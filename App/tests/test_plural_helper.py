@@ -199,8 +199,8 @@ def test_nights_read_correctly_in_czech():
 def test_the_ready_count_reads_correctly_in_both_languages():
     assert _tp("stay.detail.ready_count", 1) == "Ready to report: 1 guest."
     assert _tp("stay.detail.ready_count", 4) == "Ready to report: 4 guests."
-    assert _tp("stay.detail.ready_count", 1, "cs") == "Připraven k hlášení — hostů: 1."
-    assert _tp("stay.detail.ready_count", 5, "cs") == "Připraveno k hlášení — hostů: 5."
+    assert _tp("stay.detail.ready_count", 1, "cs") == "Připraven k hlášení (hostů: 1)."
+    assert _tp("stay.detail.ready_count", 5, "cs") == "Připraveno k hlášení (hostů: 5)."
 
 
 def test_every_counted_key_ships_all_three_forms_in_both_languages():
@@ -216,7 +216,7 @@ def test_the_flashes_read_correctly_in_both_languages():
     assert flash_plural(english, "flash.feeds.added", 4) == "Calendar added. 4 stays imported."
     assert flash_plural(english, "flash.reservations.accepted", 1) == "1 guest accepted."
     assert flash_plural(english, "flash.error.rejected", 1).startswith(
-        "UbyPort rejected 1 guest record —"
+        "UbyPort rejected 1 guest record. Open"
     )
 
     czech = _FakeRequest("cs")
@@ -335,7 +335,7 @@ def test_the_stay_detail_shows_the_czech_ready_count():
     try:
         page = _browser("cs").get(f"/reservations/{seeded['reservation_id']}")
         assert page.status_code == 200
-        assert "Připraveno k hlášení — hostů: 2." in html.unescape(page.text)
+        assert "Připraveno k hlášení (hostů: 2)." in html.unescape(page.text)
         assert "záznam(ů)" not in page.text
     finally:
         _cleanup()

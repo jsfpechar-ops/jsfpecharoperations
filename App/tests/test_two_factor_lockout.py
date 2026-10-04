@@ -293,10 +293,10 @@ def test_the_expired_notice_is_translated():
 
 def test_both_error_copies_match_the_audited_wording():
     assert host_i18n.translate("en", "auth.error.code_invalid") == (
-        "That code didn't work. Codes change every 30 seconds — enter the one showing now."
+        "That code didn't work. Codes change every 30 seconds. Enter the one showing now."
     )
     assert host_i18n.translate("cs", "auth.error.code_invalid") == (
-        "Kód nefunguje. Kódy se mění každých 30 vteřin — zadejte ten, který vidíte teď."
+        "Kód nefunguje. Kódy se mění každých 30 vteřin. Zadejte ten, který vidíte teď."
     )
     assert host_i18n.translate("en", "auth.error.code_locked") == (
         "Too many wrong codes. Wait 15 minutes, then log in again from the start."

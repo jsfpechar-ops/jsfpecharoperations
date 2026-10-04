@@ -173,8 +173,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_submit": "Send me the form link",
         "claim_sent_title": "Check your e-mail",
         "claim_sent_body": (
-            "We sent a link to %(email)s. Open it on this phone to continue — it works "
-            "for 30 minutes. If it asks for the PIN again, enter the same PIN."
+            "We sent a link to %(email)s. Open it on this phone to continue. It works for 30 minutes. If it asks for the PIN again, enter the same PIN."
         ),
         "claim_sent_retry": (
             "No e-mail after a few minutes? Check spam, or send it again"
@@ -204,8 +203,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "error_party_size": "Please enter how many people are staying (1–60).",
         "no_stays": "There's nothing to register yet",
         "no_stays_help": (
-            "Registration opens a few days before arrival. Come back to this same link then. "
-            "Already arrived? Message your host — they can send you a direct link to your stay."
+            "Registration opens a few days before arrival. Come back to this same link then. Already arrived? Message your host. They can send you a direct link to your stay."
         ),
         "bad_link_title": "This guest link is not valid",
         "bad_link_help": "It may be incomplete or may have been replaced. Please ask your host for a new link.",
@@ -220,8 +218,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "rate_limited_title": "Too many attempts from your connection",
         "rate_limited_help": (
-            "Nothing was saved. Wait about 15 minutes and try again — if you are stuck, "
-            "message your host."
+            "Nothing was saved. Wait about 15 minutes and try again. If you are stuck, message your host."
         ),
         "not_yours_title": "This form cannot be opened on this device",
         "not_yours_help": (
@@ -274,7 +271,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "previous_step": "Back",
         "add_person": "Add a person",
         "add_first_person": "Start with your own details",
-        "saved_title": "Saved — thank you",
+        "saved_title": "Saved, thank you",
         "saved_body": (
             "Your details are saved. Next, add the next person in your group."
         ),
@@ -291,7 +288,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "completed": "completed",
         "not_filled": "not filled in",
         "edit": "Edit",
-        "all_done_title": "Thank you — everyone is registered",
+        "all_done_title": "Thank you. Everyone is registered",
         "all_done_body": (
             "There is nothing more you need to do. You can close this page."
         ),
@@ -307,7 +304,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "birth_date": "Date of birth",
         "birth_date_readback": "That is %(date)s.",
         "residence_help": "Your permanent home address, as in your passport or ID card.",
-        "residence_copied": "Copied from %(name)s — change it if this person lives elsewhere.",
+        "residence_copied": "Copied from %(name)s. Change it if this person lives elsewhere.",
         "nationality": "Nationality",
         "countries_common": "Most common",
         "countries_all": "All countries",
@@ -445,9 +442,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy_basis": "Legal basis",
         "privacy_basis_body": (
-            "Article 6(1)(c) GDPR — compliance with a legal obligation, namely §§ 101–103 of "
-            "Act No. 326/1999 Coll., on the Residence of Foreign Nationals. Your consent is "
-            "not asked for, because the duty applies whether or not you agree to it."
+            "Article 6(1)(c) GDPR: compliance with a legal obligation, namely §§ 101–103 of Act No. 326/1999 Coll., on the Residence of Foreign Nationals. Your consent is not asked for, because the duty applies whether or not you agree to it."
         ),
         "privacy_data": "What is collected",
         "privacy_data_body": (
@@ -559,7 +554,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_claim_subject": "Confirm your stay at %(property)s (link valid 30 min)",
         "mail_claim_resend_subject": "New link: confirm your stay at %(property)s",
         "mail_claim_preheader": (
-            "Tap the button, then fill in each guest — about 2 minutes per person."
+            "Tap the button, then fill in each guest (about 2 minutes per person)."
         ),
         "mail_claim_resend_preheader": (
             "Your previous link has stopped working. Here is a new one."
@@ -574,8 +569,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "If the button does not work, copy this address into your browser:"
         ),
         "mail_claim_expiry": (
-            "The button works for 30 minutes. After you confirm, this phone or "
-            "computer remembers your stay — you won't need the link again on it."
+            "The button works for 30 minutes. After you confirm, this phone or computer remembers your stay. You won't need the link again on it."
         ),
         "mail_claim_expiry_resend": (
             "This new link replaces the previous one and works for 30 minutes."
@@ -587,13 +581,13 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "asked for a PIN, use the one from your host's message."
         ),
         "mail_claim_next_done": (
-            "Everyone is already registered — the link just opens your stay page."
+            "Everyone is already registered. The link just opens your stay page."
         ),
         "mail_completion_subject": (
-            "You're registered for %(property)s — nothing else to do"
+            "You're registered for %(property)s: nothing else to do"
         ),
         "mail_completion_preheader": (
-            "Everyone on this stay is registered — nothing else to do."
+            "Everyone on this stay is registered. Nothing else to do."
         ),
         "mail_completion_heading": "You're all set",
         "mail_completion_intro": (
@@ -725,8 +719,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_submit": "Pošlete mi odkaz na formulář",
         "claim_sent_title": "Zkontrolujte e-mail",
         "claim_sent_body": (
-            "Poslali jsme odkaz na %(email)s. Otevřete ho v tomto telefonu a pokračujte — "
-            "platí 30 minut. Pokud se znovu zeptá na PIN, zadejte stejný."
+            "Poslali jsme odkaz na %(email)s. Otevřete ho v tomto telefonu a pokračujte. Platí 30 minut. Pokud se znovu zeptá na PIN, zadejte stejný."
         ),
         "claim_sent_retry": (
             "E-mail ani po pár minutách nepřišel? Zkontrolujte spam, nebo ho pošlete znovu"
@@ -772,8 +765,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "rate_limited_title": "Příliš mnoho pokusů z vašeho připojení",
         "rate_limited_help": (
-            "Nic se neuložilo. Počkejte asi 15 minut a zkuste to znovu — pokud se "
-            "zaseknete, napište hostiteli."
+            "Nic se neuložilo. Počkejte asi 15 minut a zkuste to znovu. Pokud se zaseknete, napište hostiteli."
         ),
         "not_yours_title": "Tento formulář nelze na tomto zařízení otevřít",
         "not_yours_help": (
@@ -824,7 +816,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "previous_step": "Zpět",
         "add_person": "Přidat osobu",
         "add_first_person": "Začněte svými údaji",
-        "saved_title": "Uloženo — děkujeme",
+        "saved_title": "Uloženo, děkujeme",
         "saved_body": (
             "Vaše údaje jsou uložené. Teď přidejte další osobu ze skupiny."
         ),
@@ -841,7 +833,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "completed": "vyplněno",
         "not_filled": "nevyplněno",
         "edit": "Upravit",
-        "all_done_title": "Děkujeme — všichni jsou zaregistrovaní",
+        "all_done_title": "Děkujeme. Všichni jsou zaregistrovaní",
         "all_done_body": "Nic dalšího už dělat nemusíte. Stránku můžete zavřít.",
         "all_done_receipt": "Potvrzení jsme poslali na %(email)s.",
         "checkin_info": "Příjezd",
@@ -965,7 +957,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy_title": "Informace o zpracování osobních údajů",
         "privacy_intro": (
-            "Co se děje s údaji, které vyplníte — podle článků 13 a 14 GDPR."
+            "Co se děje s údaji, které vyplníte (podle článků 13 a 14 GDPR)."
         ),
         "notice_version": "Verze oznámení o ochraně osobních údajů %(version)s",
         "privacy_controller": "Správce vašich osobních údajů",
@@ -989,9 +981,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy_basis": "Právní základ",
         "privacy_basis_body": (
-            "Čl. 6 odst. 1 písm. c) GDPR — splnění právní povinnosti, konkrétně § 101–103 "
-            "zákona č. 326/1999 Sb., o pobytu cizinců. Souhlas se nevyžaduje, protože "
-            "povinnost platí bez ohledu na něj."
+            "Čl. 6 odst. 1 písm. c) GDPR: splnění právní povinnosti, konkrétně § 101–103 zákona č. 326/1999 Sb., o pobytu cizinců. Souhlas se nevyžaduje, protože povinnost platí bez ohledu na něj."
         ),
         "privacy_data": "Jaké údaje se sbírají",
         "privacy_data_body": (
@@ -1254,7 +1244,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_cookie_help": "Nur notwendige Cookies: PIN-Zugang (7 Tage), Ihre Sprache und dieser Aufenthalt (60 Tage).",
         "claim_submit": "Formular-Link senden",
         "claim_sent_title": "Prüfen Sie Ihre E-Mails",
-        "claim_sent_body": "Wir haben einen Link an %(email)s gesendet. Öffnen Sie ihn auf diesem Telefon, um fortzufahren — er gilt 30 Minuten. Wenn erneut nach der PIN gefragt wird, geben Sie dieselbe PIN ein.",
+        "claim_sent_body": "Wir haben einen Link an %(email)s gesendet. Öffnen Sie ihn auf diesem Telefon, um fortzufahren. Er gilt 30 Minuten. Wenn erneut nach der PIN gefragt wird, geben Sie dieselbe PIN ein.",
         "claim_sent_retry": "Nach ein paar Minuten keine E-Mail? Prüfen Sie den Spam-Ordner oder senden Sie sie erneut",
         "claim_error_bad_email": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
         "claim_error_bad_party": "Bitte geben Sie an, wie viele Personen übernachten (1–60).",
@@ -1280,7 +1270,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "error_no_stay": "Bitte wählen Sie Ihren Aufenthaltszeitraum.",
         "error_party_size": "Bitte geben Sie an, wie viele Personen übernachten (1–60).",
         "no_stays": "Noch nichts zu registrieren",
-        "no_stays_help": "Die Registrierung öffnet einige Tage vor der Anreise. Kommen Sie dann über denselben Link zurück. Schon angekommen? Schreiben Sie Ihrem Gastgeber — er kann Ihnen einen direkten Link zu Ihrem Aufenthalt senden.",
+        "no_stays_help": "Die Registrierung öffnet einige Tage vor der Anreise. Kommen Sie dann über denselben Link zurück. Schon angekommen? Schreiben Sie Ihrem Gastgeber. Er kann Ihnen einen direkten Link zu Ihrem Aufenthalt senden.",
         "bad_link_title": "Dieser Gast-Link ist ungültig",
         "bad_link_help": "Er ist möglicherweise unvollständig oder wurde ersetzt. Bitte fragen Sie Ihren Gastgeber nach einem neuen Link.",
         "stay_gone_title": "Für diesen Aufenthalt ist keine Registrierung mehr möglich",
@@ -1288,7 +1278,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_expired_title": "Zeit für dieses Formular abgelaufen",
         "form_expired_help": "Es wurde nichts gespeichert. Beginnen Sie erneut über den Link unten.",
         "rate_limited_title": "Zu viele Versuche von Ihrer Verbindung",
-        "rate_limited_help": "Es wurde nichts gespeichert. Warten Sie etwa 15 Minuten und versuchen Sie es erneut — wenn es nicht weitergeht, schreiben Sie Ihrem Gastgeber.",
+        "rate_limited_help": "Es wurde nichts gespeichert. Warten Sie etwa 15 Minuten und versuchen Sie es erneut. Wenn es nicht weitergeht, schreiben Sie Ihrem Gastgeber.",
         "not_yours_title": "Dieses Formular kann auf diesem Gerät nicht geöffnet werden",
         "not_yours_help": "Damit kein Gast die Passdaten eines anderen Gastes sieht, kann ein Formular nur auf dem Gerät erneut geöffnet werden, auf dem es ausgefüllt wurde. Für eine Korrektur schreiben Sie Ihrem Gastgeber.",
         "already_filed_title": "Diese Angaben wurden bereits gemeldet",
@@ -1326,7 +1316,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "previous_step": "Zurück",
         "add_person": "Person hinzufügen",
         "add_first_person": "Beginnen Sie mit Ihren eigenen Angaben",
-        "saved_title": "Gespeichert — vielen Dank",
+        "saved_title": "Gespeichert, vielen Dank",
         "saved_body": "Ihre Angaben sind gespeichert. Fügen Sie nun die nächste Person Ihrer Gruppe hinzu.",
         "reported_title": "Angaben gesendet und gemeldet",
         "reported_body": "Vielen Dank. Ihr Gastgeber hat diesen Eintrag bereits gemeldet. Wenden Sie sich an Ihren Gastgeber, falls unten etwas korrigiert werden muss.",
@@ -1338,7 +1328,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "completed": "ausgefüllt",
         "not_filled": "nicht ausgefüllt",
         "edit": "Bearbeiten",
-        "all_done_title": "Vielen Dank — alle sind registriert",
+        "all_done_title": "Vielen Dank. Alle sind registriert",
         "all_done_body": "Sie müssen nichts weiter tun. Sie können diese Seite schließen.",
         "all_done_receipt": "Wir haben eine Bestätigung an %(email)s gesendet.",
         "checkin_info": "Check-in",
@@ -1352,7 +1342,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "birth_date": "Geburtsdatum",
         "birth_date_readback": "Das ist der %(date)s.",
         "residence_help": "Ihre ständige Wohnanschrift wie in Ihrem Reisepass oder Personalausweis.",
-        "residence_copied": "Von %(name)s übernommen — ändern Sie sie, falls diese Person woanders wohnt.",
+        "residence_copied": "Von %(name)s übernommen. Ändern Sie sie, falls diese Person woanders wohnt.",
         "nationality": "Staatsangehörigkeit",
         "countries_common": "Häufigste",
         "countries_all": "Alle Länder",
@@ -1436,7 +1426,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_purpose": "Warum die Daten erhoben werden",
         "privacy_purpose_body": "Zur Erfüllung zweier gesetzlicher Pflichten eines Beherbergungsbetriebs in Tschechien: der Meldung beherbergter ausländischer Staatsangehöriger an die Fremdenpolizei und der Führung eines Hausbuchs (domovní kniha). Sie werden für keinen anderen Zweck verwendet.",
         "privacy_basis": "Rechtsgrundlage",
-        "privacy_basis_body": "Art. 6 Abs. 1 lit. c DSGVO — Erfüllung einer rechtlichen Verpflichtung, nämlich §§ 101–103 des Gesetzes Nr. 326/1999 Slg. über den Aufenthalt von Ausländern. Ihre Einwilligung wird nicht eingeholt, da die Pflicht unabhängig davon gilt, ob Sie zustimmen.",
+        "privacy_basis_body": "Art. 6 Abs. 1 lit. c DSGVO: erfüllung einer rechtlichen Verpflichtung, nämlich §§ 101–103 des Gesetzes Nr. 326/1999 Slg. über den Aufenthalt von Ausländern. Ihre Einwilligung wird nicht eingeholt, da die Pflicht unabhängig davon gilt, ob Sie zustimmen.",
         "privacy_data": "Was erhoben wird",
         "privacy_data_body": "Vor- und Nachname, Geburtsdatum, Staatsangehörigkeit, Nummer des Reisedokuments, Visumnummer (falls erteilt), ständige Wohnanschrift im Ausland, Aufenthaltszweck, Beginn und Ende Ihres Aufenthalts, Unterschrift, angegebene Personenzahl und die E-Mail-Adresse, mit der die Reservierung beansprucht wurde. Die Personenzahl dient dazu festzustellen, ob alle erwarteten Gastformulare vollständig sind, und wird mit dem Aufenthaltseintrag aufbewahrt.",
         "privacy_data_body_no_email": "Vor- und Nachname, Geburtsdatum, Staatsangehörigkeit, Nummer des Reisedokuments, Visumnummer (falls erteilt), ständige Wohnanschrift im Ausland, Aufenthaltszweck, Beginn und Ende Ihres Aufenthalts, Unterschrift und angegebene Personenzahl. Diese Version des Formulars erhebt Ihre E-Mail-Adresse nicht. Die Personenzahl dient dazu festzustellen, ob alle erwarteten Gastformulare vollständig sind, und wird mit dem Aufenthaltseintrag aufbewahrt.",
@@ -1471,20 +1461,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "back": "Zurück",
         "mail_claim_subject": "Bestätigen Sie Ihren Aufenthalt in %(property)s (Link 30 Min. gültig)",
         "mail_claim_resend_subject": "Neuer Link: Bestätigen Sie Ihren Aufenthalt in %(property)s",
-        "mail_claim_preheader": "Tippen Sie auf die Schaltfläche und erfassen Sie dann jeden Gast — etwa 2 Minuten pro Person.",
+        "mail_claim_preheader": "Tippen Sie auf die Schaltfläche und erfassen Sie dann jeden Gast (etwa 2 Minuten pro Person).",
         "mail_claim_resend_preheader": "Ihr vorheriger Link funktioniert nicht mehr. Hier ist ein neuer.",
         "mail_claim_heading": "Aufenthalt bestätigen",
         "mail_claim_resend_heading": "Hier ist Ihr neuer Link",
         "mail_claim_intro": "Bestätigen Sie Ihren Aufenthalt in %(property)s (%(dates)s), indem Sie den Link unten öffnen.",
         "mail_claim_action": "Aufenthalt bestätigen",
         "mail_link_fallback": "Falls die Schaltfläche nicht funktioniert, kopieren Sie diese Adresse in Ihren Browser:",
-        "mail_claim_expiry": "Die Schaltfläche funktioniert 30 Minuten lang. Nach der Bestätigung merkt sich dieses Telefon oder dieser Computer Ihren Aufenthalt — Sie brauchen den Link dort nicht mehr.",
+        "mail_claim_expiry": "Die Schaltfläche funktioniert 30 Minuten lang. Nach der Bestätigung merkt sich dieses Telefon oder dieser Computer Ihren Aufenthalt. Sie brauchen den Link dort nicht mehr.",
         "mail_claim_expiry_resend": "Dieser neue Link ersetzt den vorherigen und funktioniert 30 Minuten lang.",
         "mail_claim_next_label": "Wie es weitergeht",
         "mail_claim_next_body": "Sie geben die Angaben aller Gäste dieses Aufenthalts ein und unterschreiben dann. Das dauert etwa zwei Minuten pro Gast und funktioniert auf dem Telefon. Wenn nach einer PIN gefragt wird, verwenden Sie die aus der Nachricht Ihres Gastgebers.",
-        "mail_claim_next_done": "Alle sind bereits registriert — der Link öffnet nur Ihre Aufenthaltsseite.",
-        "mail_completion_subject": "Sie sind für %(property)s registriert — nichts weiter zu tun",
-        "mail_completion_preheader": "Alle Gäste dieses Aufenthalts sind registriert — nichts weiter zu tun.",
+        "mail_claim_next_done": "Alle sind bereits registriert. Der Link öffnet nur Ihre Aufenthaltsseite.",
+        "mail_completion_subject": "Sie sind für %(property)s registriert: nichts weiter zu tun",
+        "mail_completion_preheader": "Alle Gäste dieses Aufenthalts sind registriert. Nichts weiter zu tun.",
         "mail_completion_heading": "Alles erledigt",
         "mail_completion_intro": "Alle Gäste für %(property)s (%(dates)s) sind registriert. Sie müssen nichts weiter tun.",
         "mail_completion_action": "Zur Aufenthaltsseite",
@@ -1569,7 +1559,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_cookie_help": "Solo cookies necesarias: acceso con PIN (7 días), su idioma y esta estancia (60 días).",
         "claim_submit": "Enviarme el enlace",
         "claim_sent_title": "Revise su e-mail",
-        "claim_sent_body": "Hemos enviado un enlace a %(email)s. Ábralo en este teléfono para continuar — funciona durante 30 minutos. Si se le vuelve a pedir el PIN, introduzca el mismo.",
+        "claim_sent_body": "Hemos enviado un enlace a %(email)s. Ábralo en este teléfono para continuar. Funciona durante 30 minutos. Si se le vuelve a pedir el PIN, introduzca el mismo.",
         "claim_sent_retry": "¿No ha recibido el e-mail tras unos minutos? Revise el spam o envíelo de nuevo",
         "claim_error_bad_email": "Introduzca una dirección de e-mail válida.",
         "claim_error_bad_party": "Indique cuántas personas se alojan (1–60).",
@@ -1595,7 +1585,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "error_no_stay": "Seleccione las fechas de su estancia.",
         "error_party_size": "Indique cuántas personas se alojan (1–60).",
         "no_stays": "Todavía no hay nada que registrar",
-        "no_stays_help": "El registro se abre unos días antes de la llegada. Vuelva entonces a este mismo enlace. ¿Ya ha llegado? Escriba a su anfitrión — puede enviarle un enlace directo a su estancia.",
+        "no_stays_help": "El registro se abre unos días antes de la llegada. Vuelva entonces a este mismo enlace. ¿Ya ha llegado? Escriba a su anfitrión. Puede enviarle un enlace directo a su estancia.",
         "bad_link_title": "Este enlace de huésped no es válido",
         "bad_link_help": "Puede estar incompleto o haber sido sustituido. Pida a su anfitrión un enlace nuevo.",
         "stay_gone_title": "Esa estancia ya no está abierta al registro",
@@ -1603,7 +1593,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_expired_title": "El formulario ha caducado",
         "form_expired_help": "No se ha guardado nada. Vuelva a empezar desde el enlace de abajo.",
         "rate_limited_title": "Demasiados intentos desde su conexión",
-        "rate_limited_help": "No se ha guardado nada. Espere unos 15 minutos e inténtelo de nuevo — si no puede continuar, escriba a su anfitrión.",
+        "rate_limited_help": "No se ha guardado nada. Espere unos 15 minutos e inténtelo de nuevo. Si no puede continuar, escriba a su anfitrión.",
         "not_yours_title": "Este formulario no se puede abrir en este dispositivo",
         "not_yours_help": "Para que ningún huésped vea los datos del pasaporte de otro, un formulario solo puede volver a abrirse en el dispositivo en el que se rellenó. Si necesita una corrección, escriba a su anfitrión.",
         "already_filed_title": "Estos datos ya se han comunicado",
@@ -1641,7 +1631,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "previous_step": "Atrás",
         "add_person": "Añadir persona",
         "add_first_person": "Empiece con sus propios datos",
-        "saved_title": "Guardado — gracias",
+        "saved_title": "Guardado, gracias",
         "saved_body": "Sus datos se han guardado. Ahora añada a la siguiente persona de su grupo.",
         "reported_title": "Datos enviados y comunicados",
         "reported_body": "Gracias. Su anfitrión ya ha comunicado este registro. Contacte con su anfitrión si hay algo que corregir a continuación.",
@@ -1653,7 +1643,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "completed": "completado",
         "not_filled": "sin rellenar",
         "edit": "Editar",
-        "all_done_title": "Gracias — todos están registrados",
+        "all_done_title": "Gracias. Todos están registrados",
         "all_done_body": "No necesita hacer nada más. Puede cerrar esta página.",
         "all_done_receipt": "Hemos enviado una confirmación a %(email)s.",
         "checkin_info": "Check-in",
@@ -1667,7 +1657,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "birth_date": "Fecha de nacimiento",
         "birth_date_readback": "Es decir, %(date)s.",
         "residence_help": "Su domicilio permanente, tal como figura en su pasaporte o documento de identidad.",
-        "residence_copied": "Copiado de %(name)s — cámbielo si esta persona vive en otro lugar.",
+        "residence_copied": "Copiado de %(name)s. Cámbielo si esta persona vive en otro lugar.",
         "nationality": "Nacionalidad",
         "countries_common": "Más frecuentes",
         "countries_all": "Todos los países",
@@ -1751,7 +1741,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_purpose": "Por qué se recogen los datos",
         "privacy_purpose_body": "Para cumplir dos obligaciones legales de un proveedor de alojamiento en Chequia: comunicar los extranjeros alojados a la Policía de Extranjería y llevar un libro de registro (domovní kniha). No se utilizan para ningún otro fin.",
         "privacy_basis": "Base jurídica",
-        "privacy_basis_body": "Artículo 6, apartado 1, letra c, del RGPD — cumplimiento de una obligación legal, en concreto los §§ 101–103 de la Ley n.º 326/1999 Recop., sobre la residencia de extranjeros. No se le pide su consentimiento, porque la obligación se aplica tanto si está de acuerdo como si no.",
+        "privacy_basis_body": "Artículo 6, apartado 1, letra c, del RGPD: cumplimiento de una obligación legal, en concreto los §§ 101–103 de la Ley n.º 326/1999 Recop., sobre la residencia de extranjeros. No se le pide su consentimiento, porque la obligación se aplica tanto si está de acuerdo como si no.",
         "privacy_data": "Qué datos se recogen",
         "privacy_data_body": "Nombre y apellidos, fecha de nacimiento, nacionalidad, número del documento de viaje, número de visado si se expidió, domicilio permanente en el extranjero, motivo de la estancia, inicio y fin de la estancia, firma, número de personas declarado y la dirección de e-mail utilizada para reclamar la reserva. El número de personas se utiliza para determinar si están completos todos los formularios de huéspedes esperados y se conserva con el registro de la estancia.",
         "privacy_data_body_no_email": "Nombre y apellidos, fecha de nacimiento, nacionalidad, número del documento de viaje, número de visado si se expidió, domicilio permanente en el extranjero, motivo de la estancia, inicio y fin de la estancia, firma y número de personas declarado. Esta versión del formulario no recoge su dirección de e-mail. El número de personas se utiliza para determinar si están completos todos los formularios de huéspedes esperados y se conserva con el registro de la estancia.",
@@ -1786,20 +1776,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "back": "Atrás",
         "mail_claim_subject": "Confirme su estancia en %(property)s (enlace válido 30 min)",
         "mail_claim_resend_subject": "Nuevo enlace: confirme su estancia en %(property)s",
-        "mail_claim_preheader": "Toque el botón y rellene los datos de cada huésped — unos 2 minutos por persona.",
+        "mail_claim_preheader": "Toque el botón y rellene los datos de cada huésped (unos 2 minutos por persona).",
         "mail_claim_resend_preheader": "Su enlace anterior ha dejado de funcionar. Aquí tiene uno nuevo.",
         "mail_claim_heading": "Confirme su estancia",
         "mail_claim_resend_heading": "Aquí tiene su nuevo enlace",
         "mail_claim_intro": "Confirme su estancia en %(property)s (%(dates)s) abriendo el enlace de abajo.",
         "mail_claim_action": "Confirmar mi estancia",
         "mail_link_fallback": "Si el botón no funciona, copie esta dirección en su navegador:",
-        "mail_claim_expiry": "El botón funciona durante 30 minutos. Tras confirmar, este teléfono u ordenador recordará su estancia — no volverá a necesitar el enlace en él.",
+        "mail_claim_expiry": "El botón funciona durante 30 minutos. Tras confirmar, este teléfono u ordenador recordará su estancia. No volverá a necesitar el enlace en él.",
         "mail_claim_expiry_resend": "Este nuevo enlace sustituye al anterior y funciona durante 30 minutos.",
         "mail_claim_next_label": "Qué ocurre a continuación",
         "mail_claim_next_body": "Introducirá los datos de cada huésped de esta estancia y después firmará. Se tarda unos dos minutos por huésped y funciona en el teléfono. Si se le pide un PIN, use el del mensaje de su anfitrión.",
-        "mail_claim_next_done": "Todos ya están registrados — el enlace solo abre la página de su estancia.",
-        "mail_completion_subject": "Registro completado para %(property)s — no tiene que hacer nada más",
-        "mail_completion_preheader": "Todos los huéspedes de esta estancia están registrados — no tiene que hacer nada más.",
+        "mail_claim_next_done": "Todos ya están registrados. El enlace solo abre la página de su estancia.",
+        "mail_completion_subject": "Registro completado para %(property)s: no tiene que hacer nada más",
+        "mail_completion_preheader": "Todos los huéspedes de esta estancia están registrados. No tiene que hacer nada más.",
         "mail_completion_heading": "Todo listo",
         "mail_completion_intro": "Todos los huéspedes de %(property)s (%(dates)s) están registrados. No necesita hacer nada más.",
         "mail_completion_action": "Ver la página de su estancia",
@@ -1884,7 +1874,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "claim_cookie_help": "Uniquement des cookies nécessaires : accès par PIN (7 jours), votre langue et ce séjour (60 jours).",
         "claim_submit": "M'envoyer le lien",
         "claim_sent_title": "Consultez vos e-mails",
-        "claim_sent_body": "Nous avons envoyé un lien à %(email)s. Ouvrez-le sur ce téléphone pour continuer — il est valable 30 minutes. Si le PIN vous est redemandé, saisissez le même.",
+        "claim_sent_body": "Nous avons envoyé un lien à %(email)s. Ouvrez-le sur ce téléphone pour continuer. Il est valable 30 minutes. Si le PIN vous est redemandé, saisissez le même.",
         "claim_sent_retry": "Pas d'e-mail après quelques minutes ? Vérifiez vos spams ou renvoyez-le",
         "claim_error_bad_email": "Veuillez saisir une adresse e-mail valide.",
         "claim_error_bad_party": "Veuillez indiquer le nombre de personnes (1–60).",
@@ -1910,7 +1900,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "error_no_stay": "Veuillez sélectionner les dates de votre séjour.",
         "error_party_size": "Veuillez indiquer le nombre de personnes (1–60).",
         "no_stays": "Rien à enregistrer pour l'instant",
-        "no_stays_help": "L'enregistrement ouvre quelques jours avant l'arrivée. Revenez alors sur ce même lien. Déjà arrivé ? Écrivez à votre hôte — il peut vous envoyer un lien direct vers votre séjour.",
+        "no_stays_help": "L'enregistrement ouvre quelques jours avant l'arrivée. Revenez alors sur ce même lien. Déjà arrivé ? Écrivez à votre hôte. Il peut vous envoyer un lien direct vers votre séjour.",
         "bad_link_title": "Ce lien n'est pas valide",
         "bad_link_help": "Il est peut-être incomplet ou a été remplacé. Veuillez demander un nouveau lien à votre hôte.",
         "stay_gone_title": "Ce séjour n'est plus ouvert à l'enregistrement",
@@ -1918,7 +1908,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "form_expired_title": "Ce formulaire a expiré",
         "form_expired_help": "Rien n'a été enregistré. Recommencez à partir du lien ci-dessous.",
         "rate_limited_title": "Trop de tentatives depuis votre connexion",
-        "rate_limited_help": "Rien n'a été enregistré. Patientez environ 15 minutes et réessayez — en cas de blocage, écrivez à votre hôte.",
+        "rate_limited_help": "Rien n'a été enregistré. Patientez environ 15 minutes et réessayez. En cas de blocage, écrivez à votre hôte.",
         "not_yours_title": "Ce formulaire ne peut pas être ouvert sur cet appareil",
         "not_yours_help": "Pour qu'aucun voyageur ne voie les données de passeport d'un autre, un formulaire ne peut être rouvert que sur l'appareil qui l'a rempli. Pour une correction, écrivez à votre hôte.",
         "already_filed_title": "Ces informations ont déjà été déclarées",
@@ -1956,7 +1946,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "previous_step": "Retour",
         "add_person": "Ajouter une personne",
         "add_first_person": "Commencez par vos propres informations",
-        "saved_title": "Enregistré — merci",
+        "saved_title": "Enregistré, merci",
         "saved_body": "Vos informations sont enregistrées. Ajoutez maintenant la personne suivante de votre groupe.",
         "reported_title": "Informations envoyées et déclarées",
         "reported_body": "Merci. Votre hôte a déjà déclaré cette fiche. Contactez-le si une information ci-dessous doit être corrigée.",
@@ -1968,7 +1958,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "completed": "rempli",
         "not_filled": "non rempli",
         "edit": "Modifier",
-        "all_done_title": "Merci — tout le monde est enregistré",
+        "all_done_title": "Merci. Tout le monde est enregistré",
         "all_done_body": "Vous n'avez plus rien à faire. Vous pouvez fermer cette page.",
         "all_done_receipt": "Nous avons envoyé une confirmation à %(email)s.",
         "checkin_info": "Arrivée",
@@ -1982,7 +1972,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "birth_date": "Date de naissance",
         "birth_date_readback": "Soit le %(date)s.",
         "residence_help": "Votre adresse de domicile permanent, comme sur votre passeport ou carte d'identité.",
-        "residence_copied": "Copiée depuis %(name)s — modifiez-la si cette personne habite ailleurs.",
+        "residence_copied": "Copiée depuis %(name)s. Modifiez-la si cette personne habite ailleurs.",
         "nationality": "Nationalité",
         "countries_common": "Les plus courants",
         "countries_all": "Tous les pays",
@@ -2066,7 +2056,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "privacy_purpose": "Pourquoi les données sont collectées",
         "privacy_purpose_body": "Pour remplir deux obligations légales d'un hébergeur en Tchéquie : déclarer les ressortissants étrangers hébergés à la police des étrangers et tenir un registre d'hébergement (domovní kniha). Elles ne sont utilisées à aucune autre fin.",
         "privacy_basis": "Base juridique",
-        "privacy_basis_body": "Article 6, paragraphe 1, point c), du RGPD — respect d'une obligation légale, à savoir les §§ 101–103 de la loi n° 326/1999 Rec. relative au séjour des étrangers. Votre consentement n'est pas demandé, car l'obligation s'applique que vous l'acceptiez ou non.",
+        "privacy_basis_body": "Article 6, paragraphe 1, point c), du RGPD : respect d'une obligation légale, à savoir les §§ 101–103 de la loi n° 326/1999 Rec. relative au séjour des étrangers. Votre consentement n'est pas demandé, car l'obligation s'applique que vous l'acceptiez ou non.",
         "privacy_data": "Données collectées",
         "privacy_data_body": "Prénom et nom, date de naissance, nationalité, numéro du document de voyage, numéro de visa s'il en a été délivré un, adresse de domicile permanent à l'étranger, motif du séjour, début et fin de votre séjour, signature, nombre de personnes déclaré et adresse e-mail utilisée pour revendiquer la réservation. Le nombre de personnes sert à déterminer si tous les formulaires attendus sont complets et est conservé avec la fiche du séjour.",
         "privacy_data_body_no_email": "Prénom et nom, date de naissance, nationalité, numéro du document de voyage, numéro de visa s'il en a été délivré un, adresse de domicile permanent à l'étranger, motif du séjour, début et fin de votre séjour, signature et nombre de personnes déclaré. Cette version du formulaire ne collecte pas votre adresse e-mail. Le nombre de personnes sert à déterminer si tous les formulaires attendus sont complets et est conservé avec la fiche du séjour.",
@@ -2101,20 +2091,20 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "back": "Retour",
         "mail_claim_subject": "Confirmez votre séjour à %(property)s (lien valable 30 min)",
         "mail_claim_resend_subject": "Nouveau lien : confirmez votre séjour à %(property)s",
-        "mail_claim_preheader": "Touchez le bouton, puis remplissez chaque voyageur — environ 2 minutes par personne.",
+        "mail_claim_preheader": "Touchez le bouton, puis remplissez chaque voyageur (environ 2 minutes par personne).",
         "mail_claim_resend_preheader": "Votre lien précédent ne fonctionne plus. En voici un nouveau.",
         "mail_claim_heading": "Confirmez votre séjour",
         "mail_claim_resend_heading": "Voici votre nouveau lien",
         "mail_claim_intro": "Confirmez votre séjour à %(property)s (%(dates)s) en ouvrant le lien ci-dessous.",
         "mail_claim_action": "Confirmer mon séjour",
         "mail_link_fallback": "Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :",
-        "mail_claim_expiry": "Le bouton fonctionne pendant 30 minutes. Après confirmation, ce téléphone ou cet ordinateur mémorise votre séjour — vous n'aurez plus besoin du lien sur cet appareil.",
+        "mail_claim_expiry": "Le bouton fonctionne pendant 30 minutes. Après confirmation, ce téléphone ou cet ordinateur mémorise votre séjour. Vous n'aurez plus besoin du lien sur cet appareil.",
         "mail_claim_expiry_resend": "Ce nouveau lien remplace le précédent et fonctionne pendant 30 minutes.",
         "mail_claim_next_label": "La suite",
         "mail_claim_next_body": "Vous saisirez les informations de chaque voyageur de ce séjour, puis signerez. Cela prend environ deux minutes par voyageur et fonctionne sur téléphone. Si un PIN vous est demandé, utilisez celui du message de votre hôte.",
-        "mail_claim_next_done": "Tout le monde est déjà enregistré — le lien ouvre simplement la page de votre séjour.",
-        "mail_completion_subject": "Vous êtes enregistré pour %(property)s — rien d'autre à faire",
-        "mail_completion_preheader": "Tous les voyageurs de ce séjour sont enregistrés — rien d'autre à faire.",
+        "mail_claim_next_done": "Tout le monde est déjà enregistré. Le lien ouvre simplement la page de votre séjour.",
+        "mail_completion_subject": "Vous êtes enregistré pour %(property)s : rien d'autre à faire",
+        "mail_completion_preheader": "Tous les voyageurs de ce séjour sont enregistrés. Rien d'autre à faire.",
         "mail_completion_heading": "Tout est en ordre",
         "mail_completion_intro": "Tous les voyageurs pour %(property)s (%(dates)s) sont enregistrés. Vous n'avez plus rien à faire.",
         "mail_completion_action": "Voir la page du séjour",

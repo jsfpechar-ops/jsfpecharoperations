@@ -214,22 +214,22 @@ def _queue_table_labels(page_text: str) -> list:
 def test_the_new_next_actions_ship_the_audited_wording():
     assert host_i18n.STRINGS["en"][REPORTED_KEY] == "All guests reported. Nothing to do."
     assert host_i18n.STRINGS["en"][NOT_REQUIRED_KEY] == (
-        "Only Czech guests — nothing to report."
+        "Only Czech guests: nothing to report."
     )
     assert host_i18n.STRINGS["cs"][REPORTED_KEY] == (
         "Všichni hosté jsou nahlášení. Není třeba nic dělat."
     )
     assert host_i18n.STRINGS["cs"][NOT_REQUIRED_KEY] == (
-        "Jen čeští hosté — policii se nic nehlásí."
+        "Jen čeští hosté: policii se nic nehlásí."
     )
 
 
 def test_the_completed_heading_is_renamed_in_both_languages():
     assert host_i18n.STRINGS["en"]["dashboard.section.completed"] == (
-        "Done — nothing to do"
+        "Done, nothing to do"
     )
     assert host_i18n.STRINGS["cs"]["dashboard.section.completed"] == (
-        "Hotovo — není třeba nic dělat"
+        "Hotovo, není třeba nic dělat"
     )
 
 

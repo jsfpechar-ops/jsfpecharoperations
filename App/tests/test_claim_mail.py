@@ -673,7 +673,7 @@ def test_incomplete_stay_inside_the_reach_back_window_stays_reachable():
         assert "There&#39;s nothing to register yet" in apartment_landing.text
         assert (
             "Registration opens a few days before arrival. Come back to this same link then. "
-            "Already arrived? Message your host — they can send you a direct link to your stay."
+            "Already arrived? Message your host. They can send you a direct link to your stay."
         ) in apartment_landing.text
         assert f"/l/{TOKEN}/{past}" not in apartment_landing.text
 
@@ -1480,7 +1480,7 @@ def test_the_sent_claim_page_confirms_the_address_and_folds_the_form_away(monkey
         )["email_masked"]
         assert masked
         assert f"We sent a link to {masked}." in page.text
-        assert "it works for 30 minutes" in page.text
+        assert "It works for 30 minutes" in page.text
         assert "If it asks for the PIN again, enter the same PIN." in page.text
         # The form is still there, but behind a closed disclosure.
         assert '<details class="g-card g-fold">' in page.text

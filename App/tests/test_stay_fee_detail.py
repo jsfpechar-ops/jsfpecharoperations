@@ -338,7 +338,7 @@ def test_charge_cannot_bill_known_minor_days(host):
     )
 
     before = client.get(f"/stay-fees/{apartment_id}?month=2026-08")
-    assert "Exempt — under 18" in before.text
+    assert "Exempt (under 18)" in before.text
     assert "0\u00a0Kč" in before.text
 
     response = _decide(client, apartment_id, guest_ids[0], "charge")
@@ -364,7 +364,7 @@ def test_automatic_puts_the_guest_back_on_the_default_rule(host):
     assert response.status_code == 200
     stored = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
     assert stored["fee_host_decision"] is None
-    assert "Exempt — under 18" in response.text
+    assert "Exempt (under 18)" in response.text
     assert "200\u00a0Kč" not in response.text
 
 
@@ -453,7 +453,7 @@ def test_detail_heading_uses_the_host_language(host):
     czech = client.get(f"/stay-fees/{apartment_id}?month=2026-08&lang=cs")
 
     assert english.status_code == 200
-    assert "Language Demo — August 2026" in english.text
+    assert "Language Demo (August 2026)" in english.text
     assert "Srpen 2026" not in english.text
     assert czech.status_code == 200
-    assert "Language Demo — Srpen 2026" in czech.text
+    assert "Language Demo (Srpen 2026)" in czech.text

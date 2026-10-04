@@ -31,9 +31,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal.dpa_title": "Guest data processing (DPA)",
         "legal.dpa_body": (
-            "When you use the hosted service, the Operator processes guest personal data on your "
-            "instructions under a GDPR Article 28 Data Processing Agreement at /dpa. It is "
-            "automatically incorporated into the Terms — review it before processing live guest data."
+            "When you use the hosted service, the Operator processes guest personal data on your instructions under a GDPR Article 28 Data Processing Agreement at /dpa. It is automatically incorporated into the Terms. Review it before processing live guest data."
         ),
         "legal.cross_dpa": "Data Processing Agreement",
         "terms.cross_dpa": "Data Processing Agreement",
@@ -291,8 +289,7 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "legal.dpa_title": "Zpracování údajů hostů (DPA)",
         "legal.dpa_body": (
-            "Při používání hostované služby zpracovává údaje hostů na váš pokyn smlouva podle čl. 28 "
-            "GDPR. Je automaticky součástí smlouvy — před ostrým provozem si ji přečtěte na /dpa."
+            "Při používání hostované služby zpracovává údaje hostů na váš pokyn smlouva podle čl. 28 GDPR. Je automaticky součástí smlouvy. Před ostrým provozem si ji přečtěte na /dpa."
         ),
         "legal.cross_dpa": "Smlouva o zpracování údajů (DPA)",
         "terms.cross_dpa": "Smlouva o zpracování údajů (DPA)",

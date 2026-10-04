@@ -133,7 +133,7 @@
           <dt>{{ t('settings.data.retention_last') }}</dt>
           <dd>
             {% if retention_last_run %}
-              {{ retention_last_run.at }} —
+              {{ retention_last_run.at }},
               {{ t('settings.data.dry_run') if retention_last_run.dry_run else t('settings.data.live') }}
               {% if retention_last_run.counts %}
                 <span class="small muted">
@@ -149,7 +149,7 @@
           {% if backup_status %}
             <dt>{{ t('settings.data.backup') }}</dt>
             <dd>
-              {{ backup_status.at }} —
+              {{ backup_status.at }},
               {{ t('settings.data.encrypted') if backup_status.encrypted else t('settings.data.not_encrypted') }}
               <span class="small muted">{{ t('settings.data.retention_days', days=backup_status.retention_days) }}</span>
             </dd>
@@ -170,8 +170,8 @@
             {% endif %}
             {% if entities_without_contact %}
               <small>{{ t('settings.privacy.no_contact_prefix') }}
-                {% for entity in entities_without_contact %}{{ entity.name }}{{ ", " if not loop.last }}{% endfor %}
-                — <a href="/entities">{{ t('settings.privacy.add_contact') }}</a>{{ t('settings.privacy.no_contact_suffix') }}</small>
+                {% for entity in entities_without_contact %}{{ entity.name }}{{ ", " if not loop.last }}{% endfor %}.
+                <a href="/entities">{{ t('settings.privacy.add_contact') }}</a>{{ t('settings.privacy.no_contact_suffix') }}</small>
             {% endif %}
           </div>
         </div>

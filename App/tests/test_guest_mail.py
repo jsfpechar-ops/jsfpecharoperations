@@ -494,7 +494,7 @@ def test_the_completion_mail_closes_with_nothing_left_to_do():
         (
             "en",
             "You're all set",
-            "You're registered for Guest Mail Flat \u2014 nothing else to do",
+            "You're registered for Guest Mail Flat: nothing else to do",
             "Everyone for Guest Mail Flat (2026-01-05 \u2013 2026-01-08) is registered.",
             "Your host takes care of the official registration with the authorities.",
             "See your stay page",

@@ -440,13 +440,13 @@ def test_the_calendar_step_offers_adding_a_stay_by_hand():
     page = client.get("/onboarding?lang=en")
 
     assert page.status_code == 200
-    assert "Connect Airbnb or Booking.com — or add a direct booking by hand." in page.text
+    assert "Connect Airbnb or Booking.com, or add a direct booking by hand." in page.text
     assert "Add a stay by hand" in page.text
     assert 'href="/reservations#add-stay-panel"' in page.text
 
     czech = client.get("/onboarding?lang=cs")
 
-    assert "Připojte Airbnb nebo Booking.com — nebo přidejte přímou rezervaci ručně." in czech.text
+    assert "Připojte Airbnb nebo Booking.com, nebo přidejte přímou rezervaci ručně." in czech.text
     assert "Přidat pobyt ručně" in czech.text
 
 

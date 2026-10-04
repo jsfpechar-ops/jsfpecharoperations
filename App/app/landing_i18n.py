@@ -20,7 +20,7 @@ LANDING_STRINGS = {
             "and keeps the guest book."
         ),
         "landing.cta": "Try UbyHost",
-        "landing.cta.note": "Or write to support@ubyhost.com — we reply with next steps.",
+        "landing.cta.note": "Or write to support@ubyhost.com. We reply with next steps.",
         "landing.contact": "How it works",
         "landing.independent": "UbyHost is an independent private service. It is not operated or endorsed by the Czech Police or UbyPort.",
         "landing.demo.label": "A quick tour of UbyHost",
@@ -117,8 +117,7 @@ LANDING_STRINGS = {
         "pricing.card.kicker": "What you get",
         "pricing.card.price": "By agreement",
         "pricing.card.summary": (
-            "One plan with everything below. The monthly price depends on how many "
-            "properties you run — write to us and we reply with a quote."
+            "One plan with everything below. The monthly price depends on how many properties you run. Write to us and we reply with a quote."
         ),
         "pricing.card.note": "Priced for what you actually run.",
         "pricing.card.cta": "Request access and a price",
@@ -231,7 +230,7 @@ LANDING_STRINGS = {
             "ubytovací knihu."
         ),
         "landing.cta": "Vyzkoušet UbyHost",
-        "landing.cta.note": "Nebo napište na support@ubyhost.com — ozveme se s dalším postupem.",
+        "landing.cta.note": "Nebo napište na support@ubyhost.com. Ozveme se s dalším postupem.",
         "landing.contact": "Jak to funguje",
         "landing.independent": "UbyHost je nezávislá soukromá služba. Neprovozuje ji ani nedoporučuje Policie ČR ani UbyPort.",
         "landing.demo.label": "Rychlá ukázka UbyHostu",
@@ -326,8 +325,7 @@ LANDING_STRINGS = {
         "pricing.card.kicker": "Co dostanete",
         "pricing.card.price": "Dle domluvy",
         "pricing.card.summary": (
-            "Jeden tarif se vším níže. Měsíční cena závisí na počtu vašich ubytování "
-            "— napište nám a pošleme nabídku."
+            "Jeden tarif se vším níže. Měsíční cena závisí na počtu vašich ubytování. Napište nám a pošleme nabídku."
         ),
         "pricing.card.note": "Cenu nastavíme podle toho, co skutečně provozujete.",
         "pricing.card.cta": "Požádat o přístup a cenu",

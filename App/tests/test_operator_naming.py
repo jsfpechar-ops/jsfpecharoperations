@@ -51,8 +51,8 @@ PINNED = [
     ("nav.entities", "Operators", "Provozovatelé"),
     ("onboarding.entity.title", "Operator", "Provozovatel"),
     ("onboarding.entity.detail",
-     "Who runs the accommodation — a company or a self-employed person.",
-     "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba."),
+     "Who runs the accommodation: a company or a self-employed person.",
+     "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba."),
     ("onboarding.entity.prepare",
      "Have ready: name, IČO, registered address and a contact e-mail.",
      "Připravte si: jméno nebo název, IČO, sídlo a kontaktní e-mail."),
@@ -60,8 +60,8 @@ PINNED = [
     ("apartments.table.entity", "Legal operator", "Právní provozovatel"),
     ("entities.title", "Business & legal details", "Firma a právní údaje"),
     ("entities.lede",
-     "Who runs the accommodation — a company or a self-employed person.",
-     "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba."),
+     "Who runs the accommodation: a company or a self-employed person.",
+     "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba."),
     ("entities.add_action", "Add operator", "Přidat provozovatele"),
     ("entities.email_hint",
      "Shown to guests as your contact.",
@@ -221,7 +221,7 @@ def test_the_operators_page_is_named_and_explained(host):
     assert page.status_code == 200, page.text
     assert "Business &amp; legal details" in page.text
     assert (
-        "Who runs the accommodation — a company or a self-employed person."
+        "Who runs the accommodation: a company or a self-employed person."
         in page.text
     )
     assert "No operators yet. Add the first one here." in page.text
@@ -232,7 +232,7 @@ def test_the_operators_page_is_named_and_explained(host):
 def test_the_operators_page_is_named_and_explained_in_czech(host):
     page = host.get("/entities?lang=cs")
     assert "Firma a právní údaje" in page.text
-    assert "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba." in page.text
+    assert "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba." in page.text
     assert "Přidat provozovatele" in page.text
     assert "Právnické osoby" not in page.text
 
@@ -251,7 +251,7 @@ def test_the_onboarding_banner_asks_for_an_operator(host):
     assert page.status_code == 200, page.text
     assert "Operator" in page.text
     assert (
-        "Who runs the accommodation — a company or a self-employed person."
+        "Who runs the accommodation: a company or a self-employed person."
         in page.text
     )
     assert "Add operator" in page.text
@@ -261,7 +261,7 @@ def test_the_onboarding_banner_asks_for_an_operator(host):
 def test_the_onboarding_banner_asks_for_an_operator_in_czech(host):
     page = host.get("/?lang=cs")
     assert "Provozovatel" in page.text
-    assert "Kdo ubytování provozuje — firma nebo podnikající fyzická osoba." in page.text
+    assert "Kdo ubytování provozuje: firma nebo podnikající fyzická osoba." in page.text
     assert "Přidat provozovatele" in page.text
 
 

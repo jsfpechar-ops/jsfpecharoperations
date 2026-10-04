@@ -69,20 +69,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s05_title": "5. Roles of the parties",
         "terms.s05_body": (
-            "The Host is solely responsible for compliance with obligations of an accommodation "
-            "provider under Czech law, including Act No. 326/1999 Coll. on residence of foreign "
-            "nationals, related decrees, house book rules, and GDPR duties as data controller. "
-            "The Operator provides technical infrastructure and processes Guest Data on the "
-            "Host's documented instructions to deliver the Service — as a data processor under "
-            "GDPR Article 28 pursuant to the Data Processing Agreement at /dpa. Nothing in these "
-            "Terms transfers statutory duties of the Host to the Operator. The Operator is not a "
-            "joint controller unless expressly agreed in a separate written agreement. The Host "
-            "is also solely responsible for the local stay fee (poplatek z pobytu) under Act No. "
-            "565/1990 Coll. and the municipal ordinance: for collecting it, keeping the record "
-            "book, reporting to the municipality and paying it. Where the Service calculates the "
-            "fee or prepares a report, a register or a payment QR code, these are aids for the "
-            "Host. The Operator does not file the report or pay the fee. The Host checks the "
-            "figures before using them."
+            "The Host is solely responsible for compliance with obligations of an accommodation provider under Czech law, including Act No. 326/1999 Coll. on residence of foreign nationals, related decrees, house book rules, and GDPR duties as data controller. The Operator provides technical infrastructure and processes Guest Data on the Host's documented instructions to deliver the Service, as a data processor under GDPR Article 28 pursuant to the Data Processing Agreement at /dpa. Nothing in these Terms transfers statutory duties of the Host to the Operator. The Operator is not a joint controller unless expressly agreed in a separate written agreement. The Host is also solely responsible for the local stay fee (poplatek z pobytu) under Act No. 565/1990 Coll. and the municipal ordinance: for collecting it, keeping the record book, reporting to the municipality and paying it. Where the Service calculates the fee or prepares a report, a register or a payment QR code, these are aids for the Host. The Operator does not file the report or pay the fee. The Host checks the figures before using them."
         ),
         "terms.s06_title": "6. Account registration and security",
         "terms.s06_body": (

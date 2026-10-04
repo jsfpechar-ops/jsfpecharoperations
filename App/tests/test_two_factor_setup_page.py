@@ -195,10 +195,10 @@ def test_the_recovery_copy_is_the_wording_the_audit_signed_off(host):
         "kódů vás jednou přihlásí. Uložte si je do správce hesel nebo si je vytiskněte."
     )
     assert host_i18n.translate("en", "account.2fa.recovery_once") == (
-        "Save them before you leave this page — they can't be shown again."
+        "Save them before you leave this page. They can't be shown again."
     )
     assert host_i18n.translate("cs", "account.2fa.recovery_once") == (
-        "Uložte si je, než stránku opustíte — znovu je zobrazit nelze."
+        "Uložte si je, než stránku opustíte. Znovu je zobrazit nelze."
     )
 
 

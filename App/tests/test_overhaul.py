@@ -375,7 +375,7 @@ def test_an_archived_stay_says_so():
     try:
         db.update("reservation", stays[0], {"archived_at": db.utcnow()})
         page = _browser().get(f"/reservations/{stays[0]}")
-        assert "Archived — hidden from your daily work." in page.text
+        assert "Archived and hidden from your daily work." in page.text
         assert COPY_LINK_PRIMARY not in page.text
         assert "Reporting deadline" not in page.text
     finally:
@@ -388,7 +388,7 @@ def test_a_live_stay_keeps_its_deadline_and_copy_link():
         page = _browser().get(f"/reservations/{stays[0]}")
         assert "This stay is cancelled" not in page.text
         assert "Marked as not a guest stay" not in page.text
-        assert "Archived — hidden from your daily work." not in page.text
+        assert "Archived and hidden from your daily work." not in page.text
         assert COPY_LINK_PRIMARY in page.text
         assert "Reporting deadline" in page.text
         assert 'class="stay-metrics detail-hero inactive"' not in page.text

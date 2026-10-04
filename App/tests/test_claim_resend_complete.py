@@ -204,7 +204,7 @@ def test_the_first_link_for_a_stay_the_host_filled_in_is_not_a_form_promise(
 def test_the_done_copy_names_no_guest_count_and_no_dead_link():
     """The audit's copy is one sentence; nothing else leaks in beside it."""
     assert DONE["en"] == (
-        "Everyone is already registered \u2014 the link just opens your stay page."
+        "Everyone is already registered. The link just opens your stay page."
     )
     assert DONE["cs"] == (
         "Všichni už jsou zaregistrovaní \u2013 odkaz jen otevře stránku vašeho pobytu."

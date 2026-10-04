@@ -23,7 +23,7 @@ from tests.conftest import complete_guest_claim
 TOKEN = "resprefilltok"
 EN_HELP = "Your permanent home address, as in your passport or ID card."
 CS_HELP = "Adresa trvalého bydliště podle pasu nebo občanského průkazu."
-EN_COPIED = "Copied from %(name)s — change it if this person lives elsewhere."
+EN_COPIED = "Copied from %(name)s. Change it if this person lives elsewhere."
 CS_COPIED = "Převzato od: %(name)s. Pokud tato osoba bydlí jinde, adresu změňte."
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(

@@ -153,7 +153,7 @@ GUEST_EN_MESSAGES: Dict[str, str] = {
     "Month must be between 01 and 12.": "Date of birth: month must be between 01 and 12.",
     "Day must be between 01 and 31.": "Date of birth: day must be between 01 and 31.",
     "That date does not exist - please check day and month.": (
-        "Date of birth: that date does not exist — check the day and month."
+        "Date of birth: that date does not exist. Check the day and month."
     ),
 }
 
@@ -167,7 +167,7 @@ GUEST_CS_MESSAGES: Dict[str, str] = {
     "Month must be between 01 and 12.": "Datum narození: měsíc musí být mezi 01 a 12.",
     "Day must be between 01 and 31.": "Datum narození: den musí být mezi 01 a 31.",
     "That date does not exist - please check day and month.": (
-        "Datum narození: takové datum neexistuje — zkontrolujte den a měsíc."
+        "Datum narození: takové datum neexistuje. Zkontrolujte den a měsíc."
     ),
 }
 
@@ -185,7 +185,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
         "Year must be 1900 or later.": "Geburtsdatum: Das Jahr muss 1900 oder später sein.",
         "Month must be between 01 and 12.": "Geburtsdatum: Der Monat muss zwischen 01 und 12 liegen.",
         "Day must be between 01 and 31.": "Geburtsdatum: Der Tag muss zwischen 01 und 31 liegen.",
-        "That date does not exist - please check day and month.": "Geburtsdatum: Dieses Datum existiert nicht — prüfen Sie Tag und Monat.",
+        "That date does not exist - please check day and month.": "Geburtsdatum: Dieses Datum existiert nicht. Prüfen Sie Tag und Monat.",
         "Date of birth cannot be after your arrival date.": "Das Geburtsdatum darf nicht nach Ihrem Anreisedatum liegen.",
         "Date of birth cannot be in the future.": "Das Geburtsdatum darf nicht in der Zukunft liegen.",
         "Surname is required.": "Der Nachname ist erforderlich.",
@@ -223,7 +223,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
         "Year must be 1900 or later.": "Fecha de nacimiento: el año debe ser 1900 o posterior.",
         "Month must be between 01 and 12.": "Fecha de nacimiento: el mes debe estar entre 01 y 12.",
         "Day must be between 01 and 31.": "Fecha de nacimiento: el día debe estar entre 01 y 31.",
-        "That date does not exist - please check day and month.": "Fecha de nacimiento: esa fecha no existe — revise el día y el mes.",
+        "That date does not exist - please check day and month.": "Fecha de nacimiento: esa fecha no existe. Revise el día y el mes.",
         "Date of birth cannot be after your arrival date.": "La fecha de nacimiento no puede ser posterior a su fecha de llegada.",
         "Date of birth cannot be in the future.": "La fecha de nacimiento no puede ser futura.",
         "Surname is required.": "Los apellidos son obligatorios.",
@@ -261,7 +261,7 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
         "Year must be 1900 or later.": "Date de naissance : l'année doit être 1900 ou postérieure.",
         "Month must be between 01 and 12.": "Date de naissance : le mois doit être compris entre 01 et 12.",
         "Day must be between 01 and 31.": "Date de naissance : le jour doit être compris entre 01 et 31.",
-        "That date does not exist - please check day and month.": "Date de naissance : cette date n'existe pas — vérifiez le jour et le mois.",
+        "That date does not exist - please check day and month.": "Date de naissance : cette date n'existe pas. Vérifiez le jour et le mois.",
         "Date of birth cannot be after your arrival date.": "La date de naissance ne peut pas être postérieure à votre date d'arrivée.",
         "Date of birth cannot be in the future.": "La date de naissance ne peut pas être dans le futur.",
         "Surname is required.": "Le nom est obligatoire.",
