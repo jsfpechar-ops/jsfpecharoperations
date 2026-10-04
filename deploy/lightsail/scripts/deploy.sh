@@ -16,11 +16,8 @@ set -a
 source .env
 set +a
 
-litestream_enabled="${UBYHOST_LITESTREAM_ENABLED:-1}"
-case "${litestream_enabled}" in
-  0|false|no|FALSE|NO) litestream_enabled=0 ;;
-  *) litestream_enabled=1 ;;
-esac
+# shellcheck disable=SC1091
+source "$(dirname "$0")/litestream_env.sh"
 if [ "${litestream_enabled}" = "1" ]; then
   case ",${COMPOSE_PROFILES:-}," in
     *,litestream,*) ;;
