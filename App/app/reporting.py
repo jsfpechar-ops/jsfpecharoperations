@@ -83,6 +83,13 @@ HOST_SIGNATURE_REQUIRED_MESSAGE = (
 # is never blocked by this.
 SUBMISSION_MAX_AUTO_ATTEMPTS = 3
 
+# submission.mode of the sweep's one automatic resend of an interrupted batch
+# (WP31, owner decision Q4). Set when the resend's row is inserted, so it holds
+# even if the resend itself is cut off by a crash. A batch with this mode is
+# never resent automatically: when its answer is unclear too, its guests stay
+# in doubt and the host is alerted. A send by the host starts afresh.
+AUTO_RESEND_MODE = "auto_resend"
+
 # How long a stay must go untouched before the party is taken as final. A guest
 # link holder can raise the declared headcount, so the completion gate must not
 # wait forever for forms that are never coming: once every form on file is
@@ -1526,7 +1533,13 @@ def recover_stale_submissions(apartment_id: int) -> int:
 
 
 def _retry_outcome_unknown_batches(apartment_id: int) -> int:
-    """One automatic resend per interrupted batch, only from the scheduler."""
+    """One automatic resend per interrupted batch, only from the scheduler.
+
+    The resend is itself a batch (``AUTO_RESEND_MODE``). If its answer is
+    unclear as well, it is not resent again: its guests stay in doubt, out of
+    the sweep, and the outcome-unknown alert and mail already raised for it
+    tell the host to check UbyPort and send by hand (WP31).
+    """
     if alerts.open_alert(f"ubyport_auth_failed:{apartment_id}"):
         return 0
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
@@ -1538,8 +1551,9 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
         return 0
     pending = db.query(
         "SELECT id, guest_ids FROM submission WHERE apartment_id = ? "
-        "AND state = 'outcome_unknown' AND retried_at IS NULL",
-        (apartment_id,),
+        "AND state = 'outcome_unknown' AND retried_at IS NULL "
+        "AND COALESCE(mode, '') != ?",
+        (apartment_id, AUTO_RESEND_MODE),
     )
     retried = 0
     for row in pending:
@@ -1552,7 +1566,7 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
                 "UPDATE guest SET submission_id = NULL WHERE id = ? AND submit_state != ?",
                 (guest_id, SENT),
             )
-        submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode="auto")
+        submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode=AUTO_RESEND_MODE)
         retried += 1
     return retried
 

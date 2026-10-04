@@ -29,6 +29,7 @@ ENTERED_BY_KEYS = [
 ]
 MODE_KEYS = [
     "reports.mode.auto",
+    "reports.mode.auto_resend",
     "reports.mode.manual",
     "reports.mode.manual_bulk",
     "reports.mode.manual_resend",
@@ -41,6 +42,7 @@ WRITTEN_MODES = [
     "manual_bulk",
     "manual_resend",
     "auto",
+    "auto_resend",
     "completion_immediate",
     "demo",
 ]

@@ -310,3 +310,193 @@ def test_immediate_guest_save_does_not_run_the_scheduler_retry(monkeypatch):
     reporting.submit_for_apartment(apartment_id, mode="completion_immediate")
     assert batches == []
     assert db.query_one("SELECT retried_at FROM submission WHERE id = ?", (submission_id,))["retried_at"] is None
+
+
+# --- WP31: exactly one automatic resend per interrupted filing ---------------
+
+
+class _ScriptedClient:
+    """Answers each submit with the next scripted outcome and counts the calls."""
+
+    def __init__(self, outcomes):
+        self.outcomes = list(outcomes)
+        self.calls = 0
+
+    def submit(self, _header, guests):
+        self.calls += 1
+        outcome = self.outcomes.pop(0) if self.outcomes else "timeout"
+        if outcome == "timeout":
+            from app.ubyport.client import UbyportOutcomeUnknownError
+
+            raise UbyportOutcomeUnknownError("read timed out")
+        return SubmissionResult(
+            endpoint="test",
+            request_xml="<request/>",
+            response_xml="<response/>",
+            pseudo_stamp="ok" if outcome == "ok" else "",
+            record_errors=["150"] * len(guests) if outcome == "duplicate" else [],
+        )
+
+
+def _crashed_filing(monkeypatch, outcomes):
+    """A stay whose first automatic send died mid-flight, plus a scripted UbyPort."""
+    apartment_id, submission_id, guest_id, owner_id = _sweep_apartment(monkeypatch)
+    # The process died while the batch was on the wire: running, no live claim.
+    db.update("submission", submission_id, {"state": "running", "error_text": None})
+    db.execute("UPDATE guest SET submission_id = NULL WHERE id = ?", (guest_id,))
+    client = _ScriptedClient(outcomes)
+    monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: client)
+    return apartment_id, submission_id, guest_id, owner_id, client
+
+
+def _batches(apartment_id):
+    return db.query(
+        "SELECT id, mode, state, retried_at FROM submission WHERE apartment_id = ? ORDER BY id",
+        (apartment_id,),
+    )
+
+
+def _guest_row(guest_id):
+    return db.query_one(
+        "SELECT submit_state, submission_id FROM guest WHERE id = ?", (guest_id,)
+    )
+
+
+def test_a_crashed_filing_is_resent_exactly_once(monkeypatch):
+    db.init_db()
+    apartment_id, original, guest_id, owner_id, client = _crashed_filing(monkeypatch, ["ok"])
+
+    reporting.sweep(owner_user_id=owner_id)
+
+    assert client.calls == 1
+    rows = _batches(apartment_id)
+    assert [r["id"] for r in rows][0] == original
+    assert rows[0]["state"] == "outcome_unknown" and rows[0]["retried_at"]
+    assert rows[1]["mode"] == reporting.AUTO_RESEND_MODE
+    assert rows[1]["state"] == "ok"
+    assert _guest_row(guest_id)["submit_state"] == reporting.SENT
+
+    reporting.sweep(owner_user_id=owner_id)
+    assert client.calls == 1
+
+
+def test_an_unclear_resend_is_never_resent_automatically(monkeypatch):
+    db.init_db()
+    apartment_id, original, guest_id, owner_id, client = _crashed_filing(
+        monkeypatch, ["timeout", "timeout", "timeout", "timeout"]
+    )
+    mails = []
+    monkeypatch.setattr(
+        reporting.mail_notify,
+        "submission_problem",
+        lambda _apartment, submission_id, **kw: mails.append((submission_id, kw["state"])),
+    )
+
+    for _ in range(3):
+        reporting.sweep(owner_user_id=owner_id)
+
+    # One resend in three sweeps, not one per sweep.
+    assert client.calls == 1
+    rows = _batches(apartment_id)
+    assert len(rows) == 2
+    resend = rows[1]
+    assert resend["mode"] == reporting.AUTO_RESEND_MODE
+    assert resend["state"] == "outcome_unknown"
+    assert resend["retried_at"] is None
+    guest = _guest_row(guest_id)
+    assert guest["submit_state"] == reporting.PENDING
+    assert guest["submission_id"] == resend["id"], "the guest stays held on the unclear resend"
+    assert reporting.apartment_in_doubt(apartment_id)
+    assert alerts.open_alert(f"submission_outcome_unknown:{apartment_id}"), "the host is alerted"
+    assert mails == [(resend["id"], "transport_error")], "and mailed once, for the resend"
+
+
+def test_a_crash_during_the_resend_is_not_resent_again(monkeypatch):
+    db.init_db()
+    apartment_id, original, guest_id, owner_id, client = _crashed_filing(monkeypatch, [])
+    reporting.recover_stale_submissions(apartment_id)
+    # The resend itself is cut off: its row is left running with no claim.
+    resend = db.insert(
+        "submission",
+        {"apartment_id": apartment_id, "created_at": db.utcnow(),
+         "mode": reporting.AUTO_RESEND_MODE, "state": "running",
+         "guest_ids": json.dumps([guest_id])},
+    )
+    db.update("submission", original, {"retried_at": db.utcnow()})
+    db.execute("UPDATE guest SET submission_id = NULL WHERE id = ?", (guest_id,))
+
+    for _ in range(3):
+        reporting.sweep(owner_user_id=owner_id)
+
+    assert client.calls == 0
+    assert db.query_one("SELECT state FROM submission WHERE id = ?", (resend,))["state"] == "outcome_unknown"
+    assert _guest_row(guest_id)["submission_id"] == resend
+    assert alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
+
+
+def test_the_host_can_still_send_by_hand_after_an_unclear_resend(monkeypatch):
+    db.init_db()
+    apartment_id, original, guest_id, owner_id, client = _crashed_filing(
+        monkeypatch, ["timeout", "ok"]
+    )
+    reporting.sweep(owner_user_id=owner_id)
+    reporting.sweep(owner_user_id=owner_id)
+    assert client.calls == 1
+
+    # The host's send button: ignore_automation, as routes/admin.py passes it.
+    results = reporting.submit_for_apartment(
+        apartment_id, only_guest_ids=[guest_id], mode="manual", ignore_automation=True
+    )
+    assert [r["state"] for r in results] == ["ok"]
+    assert client.calls == 2
+    assert _guest_row(guest_id)["submit_state"] == reporting.SENT
+    assert not reporting.apartment_in_doubt(apartment_id)
+    assert not alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
+    modes = [r["mode"] for r in _batches(apartment_id)]
+    assert modes == ["auto", reporting.AUTO_RESEND_MODE, "manual"]
+
+    reporting.sweep(owner_user_id=owner_id)
+    assert client.calls == 2, "a filed guest is never sent again"
+
+
+def test_an_unclear_manual_send_still_gets_its_one_automatic_resend(monkeypatch):
+    db.init_db()
+    apartment_id, original, guest_id, owner_id, client = _crashed_filing(
+        monkeypatch, ["timeout", "timeout", "ok"]
+    )
+    reporting.sweep(owner_user_id=owner_id)
+    reporting.submit_for_apartment(
+        apartment_id, only_guest_ids=[guest_id], mode="manual", ignore_automation=True
+    )
+    assert client.calls == 2
+    # The host's send is not the automatic one: its unclear answer is resent once.
+    reporting.sweep(owner_user_id=owner_id)
+    reporting.sweep(owner_user_id=owner_id)
+    assert client.calls == 3
+    assert _guest_row(guest_id)["submit_state"] == reporting.SENT
+    modes = [r["mode"] for r in _batches(apartment_id)]
+    assert modes == ["auto", reporting.AUTO_RESEND_MODE, "manual", reporting.AUTO_RESEND_MODE]
+
+
+@pytest.mark.parametrize("answer", ["ok", "duplicate"])
+def test_an_accepted_resend_resolves_everything(monkeypatch, answer):
+    db.init_db()
+    apartment_id, original, guest_id, owner_id, client = _crashed_filing(monkeypatch, [answer])
+    reporting.recover_stale_submissions(apartment_id)
+    assert alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
+
+    reporting.sweep(owner_user_id=owner_id)
+
+    assert client.calls == 1
+    resend = _batches(apartment_id)[1]
+    # Duplicate answer code 150 means the register already holds the record.
+    assert resend["state"] == ("ok" if answer == "ok" else "ok_duplicate")
+    guest = _guest_row(guest_id)
+    assert guest["submit_state"] == reporting.SENT
+    assert guest["submission_id"] == resend["id"]
+    assert not reporting.apartment_in_doubt(apartment_id)
+    assert not alerts.open_alert(f"submission_outcome_unknown:{apartment_id}")
+
+    for _ in range(2):
+        reporting.sweep(owner_user_id=owner_id)
+    assert client.calls == 1
