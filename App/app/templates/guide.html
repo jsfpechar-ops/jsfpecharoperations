@@ -81,11 +81,13 @@
       <p class="small muted">{{ t('guide.reporting.receipts') }}</p>
       <h3 id="manual-filing">{{ t('guide.reporting.manual_filing_title') }}</h3>
       <p>{{ t('guide.reporting.manual_filing_lede') }}</p>
+      <p>{{ t('guide.reporting.manual_filing_before') }}</p>
       <ol>
         {% for step in ['step1', 'step2', 'step3', 'step4'] %}
         <li>{{ t('guide.reporting.manual_filing_' ~ step) }}</li>
         {% endfor %}
       </ol>
+      <p class="small muted">{{ t('guide.reporting.manual_filing_correction') }}</p>
       <p>{{ t('guide.reporting.manual_filing_duty') }}</p>
     </section>
 

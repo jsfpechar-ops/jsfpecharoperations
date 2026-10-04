@@ -14,7 +14,7 @@
 {{ page_header(t('privacy.page_title'), t('privacy.page_lede', name=operator.name)) }}
 
 <p class="lede">{{ t('privacy_first.line') }}</p>
-<p class="small muted">{{ t('privacy.effective') }}</p>
+<p class="small muted">{{ legal_effective('privacy') }}</p>
 
 {% with sections = privacy_sections, prefix = 'privacy' %}{% include "_legal_toc.html" %}{% endwith %}
 

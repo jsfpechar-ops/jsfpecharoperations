@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import secrets
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -216,7 +217,9 @@ UMAMI_HOST_URL = os.environ.get("UMAMI_HOST_URL", "").strip().rstrip("/")
 UMAMI_DOMAINS = os.environ.get("UMAMI_DOMAINS", "").strip()
 
 # Bumped when Terms of Service change materially (logged on host login).
-TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.5")
+# 1.6 (WP24): stay fee duty, filing on the host's instruction, filing by hand,
+# UbyPort credentials (§ 10a), best-effort availability, liability (§ 17).
+TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.6")
 
 # Transactional mail. Staging uses console (links appear in Settings).
 # SES is refused unless deployment is production and credentials are complete.
@@ -231,8 +234,18 @@ AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").stri
 # policy pending again, so every host is sent to /account/accept once.
 PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.6")
 
-# Bumped when the Data Processing Agreement changes materially.
-DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.5")
+# Bumped when the Data Processing Agreement changes materially. 1.6 (WP24):
+# § 11 names Render and Google Drive only as "only if used" subprocessors.
+DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.6")
+
+# WP24: the one effective date shown on /terms, /privacy and /dpa. Terms 1.6,
+# Privacy 1.6 and DPA 1.6 take effect together, so every host accepts all
+# three on one /account/accept page. The owner sets this at release, at least
+# 30 days after hosts are told (Terms § 22). ISO date, YYYY-MM-DD; a malformed
+# value stops start-up rather than printing a wrong date on a contract.
+LEGAL_EFFECTIVE_DATE = date.fromisoformat(
+    os.environ.get("UBYHOST_LEGAL_EFFECTIVE_DATE", "").strip() or "2026-11-16"
+)
 
 # BE-5: bumped whenever a legal_notice_* / privacy_* string in i18n.py changes
 # materially, so a guest's acknowledgement records which notice they saw.

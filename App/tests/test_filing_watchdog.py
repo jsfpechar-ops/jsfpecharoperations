@@ -13,6 +13,7 @@ import json
 from datetime import date, datetime, timedelta, timezone
 
 import pytest
+from markupsafe import escape
 
 from app import auth, config, db, filing_watchdog, host_i18n, mail, mail_notify, scheduler
 from tests.test_submission_retry_cap import host as host  # noqa: F401
@@ -542,7 +543,7 @@ def test_the_guide_page_shows_the_manual_filing_section(host):
         page = host.get(f"/guide?lang={lang}").text
         assert 'id="manual-filing"' in page
         for key in ("title", "step1", "step2", "step3"):
-            text = host_i18n.translate(lang, f"guide.reporting.manual_filing_{key}")
+            text = str(escape(host_i18n.translate(lang, f"guide.reporting.manual_filing_{key}")))
             assert text[:40] in page, (lang, key)
 
 

@@ -59,7 +59,7 @@ def _toc_block(html: str) -> str:
 def _toc_halves(html: str) -> tuple[list[str], list[str]]:
     block = _toc_block(html)
     wide, narrow = block.split("<details", 1)
-    href = re.compile(r'<a href="#s(\d+)">')
+    href = re.compile(r'<a href="#s(\d+[a-z]?)">')
     return href.findall(wide), href.findall(narrow)
 
 
@@ -69,7 +69,7 @@ def test_every_clause_has_a_stable_anchor_matching_the_route():
         for lang in ("en", "cs"):
             html = client.get(f"{path}?lang={lang}").text
             found = re.findall(
-                r'<section class="legal-section" id="s(\d+)">', html
+                r'<section class="legal-section" id="s(\d+[a-z]?)">', html
             )
             assert found == list(ids), (path, lang, len(found), len(ids))
             assert len(set(found)) == len(found), path

@@ -9,7 +9,11 @@ from ..templating import render
 
 router = APIRouter()
 
-TERMS_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 28))
+# WP24: § 10a (UbyPort access credentials) sits between § 10 and § 11, so the
+# later clauses keep their numbers.
+TERMS_SECTION_IDS = (
+    tuple(f"{n:02d}" for n in range(1, 11)) + ("10a",) + tuple(f"{n:02d}" for n in range(11, 28))
+)
 PRIVACY_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 23))
 DPA_SECTION_IDS = tuple(f"{n:02d}" for n in range(1, 25))
 # WP09: the five rows of 04_legal_positions.md section 5 first, then the two

@@ -10,7 +10,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Contract between the UbyHost software operator and accommodation providers "
             "who use the service. Please read carefully before using UbyHost."
         ),
-        "terms.effective": "Effective date: 19 September 2026. Version 1.5.",
+        "terms.effective": "Effective date: %(date)s. Version %(version)s.",
         "terms.operator_title": "Service provider",
         "terms.footer_link": "Terms of Service",
         "terms.footer_short": "Terms",
@@ -69,14 +69,20 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s05_title": "5. Roles of the parties",
         "terms.s05_body": (
-            "The Host is solely responsible for compliance with obligations of an accommodation provider "
-            "under Czech law, including Act No. 326/1999 Coll. on residence of foreign nationals, "
-            "related decrees, house book rules, and GDPR duties as data controller. The Operator "
-            "provides technical infrastructure and processes Guest Data on the Host's documented "
-            "instructions to deliver the Service — as a data processor under GDPR Article 28 pursuant "
-            "to the Data Processing Agreement at /dpa. Nothing in these Terms transfers statutory duties "
-            "of the Host to the Operator. The Operator is not a joint controller unless expressly agreed "
-            "in a separate written agreement."
+            "The Host is solely responsible for compliance with obligations of an accommodation "
+            "provider under Czech law, including Act No. 326/1999 Coll. on residence of foreign "
+            "nationals, related decrees, house book rules, and GDPR duties as data controller. "
+            "The Operator provides technical infrastructure and processes Guest Data on the "
+            "Host's documented instructions to deliver the Service — as a data processor under "
+            "GDPR Article 28 pursuant to the Data Processing Agreement at /dpa. Nothing in these "
+            "Terms transfers statutory duties of the Host to the Operator. The Operator is not a "
+            "joint controller unless expressly agreed in a separate written agreement. The Host "
+            "is also solely responsible for the local stay fee (poplatek z pobytu) under Act No. "
+            "565/1990 Coll. and the municipal ordinance: for collecting it, keeping the record "
+            "book, reporting to the municipality and paying it. Where the Service calculates the "
+            "fee or prepares a report, a register or a payment QR code, these are aids for the "
+            "Host. The Operator does not file the report or pay the fee. The Host checks the "
+            "figures before using them."
         ),
         "terms.s06_title": "6. Account registration and security",
         "terms.s06_body": (
@@ -131,16 +137,52 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s10_title": "10. UbyPort and police reporting",
         "terms.s10_body": (
-            "Where enabled, the Service may format and transmit reports toward UbyPort or related "
-            "channels under the Host's configured instructions: manually, immediately when all declared "
-            "forms are complete, or after a configured delay from completion, without requiring an in-app "
-            "identity-verification step. The Operator does not guarantee that any submission will "
-            "be received, accepted, validated, or deemed compliant by the Czech Police, Ministry of the "
-            "Interior, or any authority. Outages, schema changes, credential issues, network failures, "
-            "and manual review by authorities are outside the Operator's control. The Host must "
-            "independently verify submission status, retain proof of reporting, and maintain contingency "
-            "procedures (including manual filing where required). Demo, sandbox, or test data must not be "
-            "relied upon as official police records."
+            "10.1 The duty to report accommodated foreigners to the Police of the Czech Republic "
+            "under Act No. 326/1999 Coll. is the Host's. The Service is a technical tool. Where "
+            "reporting is enabled, the Service transmits records to UbyPort only on the Host's "
+            "instruction, given through the property's reporting setting (manual, immediately "
+            "when all declared forms are complete, or after a set delay) or by a send action in "
+            "the Service. Each transmission is made with the Host's own UbyPort web-service "
+            "access and in the Host's name. The Operator does not act as the Host's "
+            "representative or agent toward the police and does not report anything in its own "
+            "name. 10.2 The Operator does not guarantee that any submission will be received, "
+            "accepted, validated, or deemed compliant by the Police of the Czech Republic, the "
+            "Ministry of the Interior, or any authority. Outages, schema changes, credential "
+            "issues, network failures, and manual review by authorities are outside the "
+            "Operator's control. 10.3 The Host checks the result of every filing in the Service "
+            "(status and the police receipt, Doručenka) and keeps proof of reporting. Demo, "
+            "sandbox, or test data must not be relied upon as official police records. 10.4 If "
+            "the Service shows that a filing was rejected, failed, or has an unknown outcome, or "
+            "warns that a deadline is near, or if the Service or UbyPort's web service is "
+            "unavailable, the Host files the affected guests itself within the statutory time "
+            "limit (currently 3 working days from the start of accommodation), for example "
+            "through the UbyPort web application with its own login. Instructions are in the "
+            "Service's guide, section \"If UbyHost cannot file in time\". Before sending again "
+            "from the Service, the Host checks in the UbyPort web application that the guest is "
+            "not already reported, because a second filing counts as a duplicate. After filing "
+            "by hand, the Host records this on the stay in the Service (\"I filed this stay by "
+            "hand in UbyPort\"), so that the Service does not send those guests again. 10.5 "
+            "Notices from the Service about filings are shown in the Service and sent to the "
+            "Account e-mail. The Host keeps that e-mail address working and reads these notices."
+        ),
+        "terms.s10a_title": "10a. UbyPort access credentials",
+        "terms.s10a_body": (
+            "The Host authorises and mandates the Operator to store the UbyPort web-service user "
+            "name and password that the Host enters for a property, and to use them solely to "
+            "transmit the Host's reports to UbyPort and to test the connection when the Host "
+            "asks. This authorisation and mandate covers only storing and using the credentials "
+            "as described here; it does not make the Operator the Host's representative toward "
+            "the police (§ 10.1). The Operator stores the password encrypted, does not show it "
+            "in the Service, does not use it for any other purpose and does not give it to "
+            "anyone except as required by law. The Host may change or delete the credentials in "
+            "the Service at any time; reporting from the Service then stops until valid "
+            "credentials are entered. The Host requests web-service credentials from the Police "
+            "of the Czech Republic and keeps its own login to the UbyPort web application, so "
+            "that it can file by hand. If the Host suspects that the credentials have been "
+            "misused, it asks the police for new ones and tells the Operator. The Operator tells "
+            "the Host without undue delay if it learns that stored credentials may have been "
+            "exposed. The authorisation ends when the credentials are deleted or the Account is "
+            "closed; the Operator then deletes them."
         ),
         "terms.s11_title": "11. Intellectual property",
         "terms.s11_body": (
@@ -162,13 +204,16 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s13_title": "13. Service availability and support",
         "terms.s13_body": (
-            "The Service is provided on a commercially reasonable efforts basis. The Operator does not "
-            "guarantee uninterrupted or error-free operation, specific uptime percentages, or response "
-            "times unless agreed in a separate written SLA. Maintenance, upgrades, and emergency work "
-            "may cause temporary unavailability. The Operator is not liable for failures caused by "
-            "third-party networks, hosting providers, UbyPort, internet connectivity, or force majeure. "
-            "Support is provided through channels the Operator makes available from time to time; no "
-            "support email is guaranteed unless published on the /legal page."
+            "The Service is provided on a best-effort basis. The Operator does not guarantee "
+            "uninterrupted or error-free operation, specific uptime percentages, or response "
+            "times unless agreed in a separate written SLA. Maintenance, upgrades, and emergency "
+            "work may cause temporary unavailability; where possible, the Operator announces "
+            "planned downtime in the Service in advance. The Operator is not liable for failures "
+            "caused by third-party networks, hosting providers, UbyPort, internet connectivity, "
+            "or force majeure. An outage of the Service, of UbyPort or of a provider does not "
+            "extend the Host's statutory time limits; in that case the Host follows § 10.4. "
+            "Support is provided through channels the Operator makes available from time to "
+            "time; no support email is guaranteed unless published on the /legal page."
         ),
         "terms.s14_title": "14. Beta features and demo data",
         "terms.s14_body": (
@@ -200,16 +245,23 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s17_title": "17. Limitation of liability",
         "terms.s17_body": (
-            "To the maximum extent permitted by Czech law, the Operator shall not be liable for indirect, "
-            "incidental, special, consequential, or punitive damages, or for loss of profit, revenue, "
-            "goodwill, data, or business opportunity, even if advised of the possibility. The Operator's "
-            "aggregate liability arising out of or relating to the Service or these Terms shall not "
-            "exceed the greater of (a) amounts paid by the Host to the Operator for the Service in the "
-            "twelve (12) months preceding the claim, or (b) CZK 5,000, except where liability cannot be "
-            "limited under mandatory law (including intentional harm or gross negligence where such "
-            "limits are impermissible). For business users, the parties acknowledge that these limitations "
-            "are a material allocation of risk. Nothing excludes liability for death or personal injury "
-            "caused by negligence where exclusion is unlawful."
+            "17.1 The Operator is not liable for loss of profit, lost business opportunity or "
+            "other indirect or consequential damage. 17.2 The Operator's total liability for all "
+            "claims arising from the Service or these Terms in any calendar year is limited to "
+            "the fees the Host paid to the Operator for the Service in the twelve (12) months "
+            "before the claim, and to no less than CZK 10,000. 17.3 The Operator is not liable "
+            "for fines or other consequences of a report that was late, missing or wrong, to the "
+            "extent the Host did not check the result of the filing or did not file by hand "
+            "under § 10.4 after the Service reported a problem or was unavailable. 17.4 "
+            "Liability for damage caused intentionally or through gross negligence is never "
+            "excluded or limited. Sections 17.1 to 17.3 also do not apply to harm to a person's "
+            "natural rights (including life, health and privacy), or where the Host is a "
+            "consumer or otherwise a weaker party, because Czech law does not allow such "
+            "liability to be excluded or limited in advance (§ 2898 of Act No. 89/2012 Coll., "
+            "Civil Code). They do not limit either party's liability to data subjects or "
+            "supervisory authorities under the GDPR. 17.5 For business users the parties agree "
+            "that these limits are a fair allocation of risk, taking into account the price of "
+            "the Service and the Host's duty to check filings."
         ),
         "terms.s18_title": "18. Indemnification",
         "terms.s18_body": (
@@ -307,7 +359,7 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Smlouva mezi provozovatelem softwaru UbyHost a poskytovateli ubytování, kteří službu "
             "používají. Před použitím UbyHostu si je prosím pečlivě přečtěte."
         ),
-        "terms.effective": "Účinnost od: 19. září 2026. Verze 1.5.",
+        "terms.effective": "Účinnost od: %(date)s. Verze %(version)s.",
         "terms.operator_title": "Poskytovatel služby",
         "terms.footer_link": "Obchodní podmínky",
         "terms.footer_short": "Podmínky",
@@ -364,12 +416,18 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s05_title": "5. Role stran",
         "terms.s05_body": (
-            "Ubytovatel výhradně odpovídá za plnění povinností poskytovatele ubytování podle českého "
-            "práva, včetně zákona č. 326/1999 Sb. o pobytu cizinců, prováděcích předpisů, pravidel "
-            "domovní knihy a povinností správce podle GDPR. Provozovatel poskytuje technickou "
-            "infrastrukturu a zpracovává Údaje hostů na dokumentovaný pokyn Ubytovatele jako zpracovatel "
-            "podle čl. 28 GDPR dle DPA na /dpa. Nic v těchto Podmínkách nepřenáší zákonné povinnosti "
-            "Ubytovatele na Provozovatele. Společná správa údajů nastává jen při výslovné písemné dohodě."
+            "Ubytovatel výhradně odpovídá za plnění povinností poskytovatele ubytování podle "
+            "českého práva, včetně zákona č. 326/1999 Sb. o pobytu cizinců, prováděcích "
+            "předpisů, pravidel domovní knihy a povinností správce podle GDPR. Provozovatel "
+            "poskytuje technickou infrastrukturu a zpracovává Údaje hostů na dokumentovaný pokyn "
+            "Ubytovatele jako zpracovatel podle čl. 28 GDPR dle DPA na /dpa. Nic v těchto "
+            "Podmínkách nepřenáší zákonné povinnosti Ubytovatele na Provozovatele. Společná "
+            "správa údajů nastává jen při výslovné písemné dohodě. Ubytovatel dále výhradně "
+            "odpovídá za místní poplatek z pobytu podle zákona č. 565/1990 Sb. a obecně závazné "
+            "vyhlášky obce: za jeho vybrání, vedení evidenční knihy, ohlášení obci a odvod. "
+            "Pokud Služba poplatek vypočítá nebo připraví hlášení, evidenci či QR kód pro "
+            "platbu, jde o pomůcku pro Ubytovatele. Provozovatel hlášení nepodává a poplatek "
+            "neodvádí. Ubytovatel údaje před použitím zkontroluje."
         ),
         "terms.s06_title": "6. Registrace účtu a bezpečnost",
         "terms.s06_body": (
@@ -417,14 +475,47 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s10_title": "10. UbyPort a hlášení policii",
         "terms.s10_body": (
-            "Je-li zapnuto, Služba může formátovat a odesílat hlášení směrem k UbyPortu podle nastavení "
-            "Ubytovatele: ručně, okamžitě po dokončení všech nahlášených formulářů nebo po nastavené "
-            "prodlevě od dokončení, bez povinného ověření totožnosti v aplikaci. Provozovatel nezaručuje "
-            "přijetí, validaci ani soulad s požadavky Policie ČR, "
-            "MV ČR či jiného úřadu. Výpadky, změny schémat, problémy s přihlašovacími údaji, síť a "
-            "ruční kontrola úřady jsou mimo kontrolu Provozovatele. Ubytovatel sám ověřuje stav hlášení, "
-            "uchovává důkazy a má náhradní postupy (včetně manuálního podání). Demo, testovací nebo "
-            "vzorová data nelze považovat za oficiální policejní záznamy."
+            "10.1 Povinnost hlásit ubytování cizinců Policii České republiky podle zákona č. "
+            "326/1999 Sb. má Ubytovatel. Služba je technický nástroj. Je-li hlášení zapnuto, "
+            "Služba odesílá záznamy do UbyPortu pouze na pokyn Ubytovatele, daný nastavením "
+            "hlášení u ubytování (ručně, okamžitě po dokončení všech nahlášených formulářů, nebo "
+            "po nastavené prodlevě) nebo odesláním ve Službě. Každé odeslání probíhá s vlastními "
+            "přístupovými údaji Ubytovatele k webové službě UbyPort a jménem Ubytovatele. "
+            "Provozovatel není vůči policii zástupcem ani zmocněncem Ubytovatele a nic nehlásí "
+            "vlastním jménem. 10.2 Provozovatel nezaručuje, že hlášení Policie ČR, Ministerstvo "
+            "vnitra ČR ani jiný úřad přijme, ověří nebo uzná za řádné. Výpadky, změny schémat, "
+            "problémy s přístupovými údaji, výpadky sítě a ruční kontrola úřady jsou mimo "
+            "kontrolu Provozovatele. 10.3 Ubytovatel u každého hlášení ve Službě zkontroluje "
+            "výsledek (stav a doručenku Policie ČR) a uchovává doklad o splnění povinnosti. "
+            "Demo, testovací nebo vzorová data nelze považovat za oficiální policejní záznamy. "
+            "10.4 Pokud Služba ukáže, že hlášení bylo odmítnuto, selhalo nebo má neznámý "
+            "výsledek, nebo upozorní na blížící se lhůtu, nebo pokud Služba či webová služba "
+            "UbyPort nejsou dostupné, podá Ubytovatel hlášení dotčených hostů sám v zákonné "
+            "lhůtě (nyní 3 pracovní dny od začátku ubytování), například ve webové aplikaci "
+            "UbyPort se svým přihlášením. Návod je v průvodci ve Službě, v části „Když UbyHost "
+            "nestihne hlášení podat“. Před dalším odesláním ze Služby Ubytovatel ve webové "
+            "aplikaci UbyPort ověří, že host již nahlášen není, protože druhé odeslání se počítá "
+            "jako duplicita. Po ručním podání to Ubytovatel zaznamená u pobytu ve Službě („Tento "
+            "pobyt jsem nahlásil(a) ručně v UbyPortu“), aby Služba tyto hosty znovu neodeslala. "
+            "10.5 Upozornění Služby k hlášení se zobrazují ve Službě a posílají na e-mail Účtu. "
+            "Ubytovatel udržuje tuto adresu funkční a upozornění čte."
+        ),
+        "terms.s10a_title": "10a. Přístupové údaje k UbyPortu",
+        "terms.s10a_body": (
+            "Ubytovatel zmocňuje Provozovatele, aby uchovával přihlašovací jméno a heslo k "
+            "webové službě UbyPort, které Ubytovatel u ubytování zadá, a používal je výhradně k "
+            "odesílání hlášení Ubytovatele do UbyPortu a k ověření spojení na žádost "
+            "Ubytovatele. Toto zmocnění se týká jen uchování a použití přístupových údajů podle "
+            "tohoto článku; Provozovatel se jím nestává zástupcem Ubytovatele vůči policii (čl. "
+            "10.1). Provozovatel heslo uchovává šifrované, ve Službě ho nezobrazuje, nepoužívá "
+            "ho k jinému účelu a nikomu ho nepředává, ledaže to vyžaduje zákon. Ubytovatel může "
+            "údaje ve Službě kdykoli změnit nebo smazat; hlášení ze Služby se pak zastaví, dokud "
+            "nezadá platné údaje. Ubytovatel si přístupové údaje k webové službě vyžádá od "
+            "Policie ČR a ponechá si vlastní přihlášení do webové aplikace UbyPort, aby mohl "
+            "hlásit ručně. Při podezření na zneužití údajů požádá Ubytovatel policii o nové a "
+            "informuje Provozovatele. Provozovatel bez zbytečného odkladu informuje Ubytovatele, "
+            "zjistí-li, že uložené údaje mohly být vyzrazeny. Zmocnění končí smazáním údajů nebo "
+            "zrušením Účtu; Provozovatel je poté smaže."
         ),
         "terms.s11_title": "11. Duševní vlastnictví",
         "terms.s11_body": (
@@ -444,11 +535,15 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s13_title": "13. Dostupnost služby a podpora",
         "terms.s13_body": (
-            "Služba je poskytována s přiměřeným obchodním úsilím. Provozovatel nezaručuje nepřetržitý "
-            "provoz bez chyb, konkrétní dostupnost v procentech ani reakční doby, ledaže je dohodnuto "
-            "písemně. Údržba, aktualizace a havárie mohou způsobit výpadky. Provozovatel neodpovídá za "
-            "selhání třetích stran, UbyPortu, sítě či vyšší moci. Podpora probíhá kanály, které "
-            "Provozovatel zpřístupní; e-mail podpory není zaručen, pokud není uveden na /legal."
+            "Služba je poskytována podle možností Provozovatele (best effort). Provozovatel "
+            "nezaručuje nepřetržitý provoz bez chyb, konkrétní dostupnost v procentech ani "
+            "reakční doby, ledaže je dohodnuto písemně. Údržba, aktualizace a havárie mohou "
+            "způsobit výpadky; plánovanou odstávku Provozovatel oznámí ve Službě předem, je-li "
+            "to možné. Provozovatel neodpovídá za selhání třetích stran, UbyPortu, sítě či vyšší "
+            "moci. Výpadek Služby, UbyPortu nebo dodavatele neprodlužuje zákonné lhůty "
+            "Ubytovatele; v takovém případě postupuje Ubytovatel podle čl. 10.4. Podpora probíhá "
+            "kanály, které Provozovatel zpřístupní; e-mail podpory není zaručen, pokud není "
+            "uveden na /legal."
         ),
         "terms.s14_title": "14. Beta funkce a demo data",
         "terms.s14_body": (
@@ -478,15 +573,22 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s17_title": "17. Omezení odpovědnosti",
         "terms.s17_body": (
-            "V maximálním rozsahu povoleném českým právem Provozovatel neodpovídá za nepřímé, "
-            "nahodilé, zvláštní, následné nebo represivní škody ani za ušlý zisk, příjmy, goodwill, "
-            "data či obchodní příležitost, i když na možnost byl upozorněn. Celková odpovědnost "
-            "Provozovatele z titulu Služby nebo těchto Podmínek nepřesáhne vyšší z (a) částek uhrazených "
-            "Ubytovatelem za Službu za dvanáct (12) měsíců před vznikem nároku, nebo (b) 5 000 Kč, "
-            "s výjimkou případů, kdy odpovědnost nelze podle kogentního práva omezit (včetně úmyslu "
-            "či hrubé nedbalosti, pokud je vyloučení nepřípustné). U podnikatelů strany uznávají, že "
-            "jde o podstatné rozdělení rizika. Vyloučení se netýká smrti nebo újmy na zdraví z nedbalosti, "
-            "pokud je vyloučení nezákonné."
+            "17.1 Provozovatel neodpovídá za ušlý zisk, ztrátu obchodní příležitosti ani jinou "
+            "nepřímou či následnou škodu. 17.2 Celková odpovědnost Provozovatele za všechny "
+            "nároky ze Služby nebo z těchto Podmínek v jednom kalendářním roce je omezena na "
+            "úplatu, kterou Ubytovatel Provozovateli za Službu zaplatil za dvanáct (12) měsíců "
+            "před vznikem nároku, nejméně však na 10 000 Kč. 17.3 Provozovatel neodpovídá za "
+            "pokuty ani jiné následky opožděného, chybějícího nebo chybného hlášení v rozsahu, v "
+            "jakém Ubytovatel nezkontroloval výsledek hlášení nebo nepodal hlášení ručně podle "
+            "čl. 10.4 poté, co Služba ohlásila problém nebo nebyla dostupná. 17.4 Odpovědnost za "
+            "škodu způsobenou úmyslně nebo z hrubé nedbalosti se nikdy nevylučuje ani neomezuje. "
+            "Články 17.1 až 17.3 se nepoužijí ani na újmu na přirozených právech člověka (včetně "
+            "života, zdraví a soukromí), ani je-li Ubytovatel spotřebitelem nebo jinak slabší "
+            "stranou, protože české právo neumožňuje takovou odpovědnost předem vyloučit ani "
+            "omezit (§ 2898 zákona č. 89/2012 Sb., občanský zákoník). Neomezují ani odpovědnost "
+            "kterékoli strany vůči subjektům údajů a dozorovým úřadům podle GDPR. 17.5 U "
+            "podnikatelů strany souhlasí, že jde o přiměřené rozdělení rizika s ohledem na cenu "
+            "Služby a povinnost Ubytovatele kontrolovat hlášení."
         ),
         "terms.s18_title": "18. Náhrada škody (indemnifikace)",
         "terms.s18_body": (

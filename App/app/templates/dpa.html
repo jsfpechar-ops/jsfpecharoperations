@@ -5,7 +5,7 @@
 
 {{ page_header(t('dpa.page_title'), t('dpa.page_lede', name=operator.name)) }}
 
-<p class="small muted">{{ t('dpa.effective') }}</p>
+<p class="small muted">{{ legal_effective('dpa') }}</p>
 
 {% with sections = dpa_sections, prefix = 'dpa' %}{% include "_legal_toc.html" %}{% endwith %}
 

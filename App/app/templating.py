@@ -15,6 +15,7 @@ from markupsafe import Markup, escape
 
 from . import (
     __version__,
+    acceptance,
     access,
     alerts,
     analytics,
@@ -118,6 +119,23 @@ def _template_translate(context, key: str, **kwargs) -> str:
     request = context.get("request")
     lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
     return host_i18n.translate(lang, key, **kwargs)
+
+
+@pass_context
+def _template_legal_effective(context, doc: str) -> str:
+    """"Effective date: ... Version ..." for /terms, /privacy or /dpa (WP24).
+
+    The date is the single ``config.LEGAL_EFFECTIVE_DATE`` and the version is
+    the one hosts accept, so the page can never show another number.
+    """
+    request = context.get("request")
+    lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
+    return host_i18n.translate(
+        lang,
+        f"{doc}.effective",
+        date=acceptance.effective_date_text(host_i18n.normalise_language(lang)),
+        version=acceptance.current_versions()[doc],
+    )
 
 
 @pass_context
@@ -307,6 +325,7 @@ templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
 templates.env.filters["legal_links"] = _legal_links
 templates.env.globals["t"] = _template_translate
+templates.env.globals["legal_effective"] = _template_legal_effective
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals["identity_visible"] = _template_identity_visible
 templates.env.globals["guest_identifier"] = _template_guest_identifier

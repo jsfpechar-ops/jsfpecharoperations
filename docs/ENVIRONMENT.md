@@ -155,9 +155,10 @@ own public-register entry, or the legal pages will name the wrong company.
 
 | Variable | Default |
 | --- | --- |
-| `UBYHOST_TERMS_VERSION` | `1.5` |
+| `UBYHOST_TERMS_VERSION` | `1.6` |
 | `UBYHOST_PRIVACY_VERSION` | `1.6` |
-| `UBYHOST_DPA_VERSION` | `1.5` |
+| `UBYHOST_DPA_VERSION` | `1.6` |
+| `UBYHOST_LEGAL_EFFECTIVE_DATE` | `2026-11-16` |
 
 These override the version number displayed and logged against user acceptance.
 The document *text* lives in `App/app/terms_i18n.py`,
@@ -165,6 +166,14 @@ The document *text* lives in `App/app/terms_i18n.py`,
 changing the text — or the reverse — silently desynchronises what a host
 accepted from what they were shown. Prefer editing the text and the default in
 the same commit and leaving these unset.
+
+`UBYHOST_LEGAL_EFFECTIVE_DATE` (ISO `YYYY-MM-DD`) is the one effective date
+printed on `/terms`, `/privacy` and `/dpa`; the version beside it is the
+configured version above. Terms 1.6, Privacy 1.6 and DPA 1.6 take effect
+together, so a host accepts all three on a single `/account/accept` page. Set
+the date at release, at least 30 days after hosts are told (Terms § 22), either
+here or by changing `LEGAL_EFFECTIVE_DATE` in `App/app/config.py`. A malformed
+value stops start-up.
 
 ## Development and test only
 

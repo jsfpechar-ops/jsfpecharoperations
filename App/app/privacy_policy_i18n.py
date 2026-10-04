@@ -12,7 +12,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "replace the guest privacy notice shown to your guests — that notice names the controller "
             "configured for the property, which may differ from its property manager."
         ),
-        "privacy.effective": "Effective date: 4 October 2026. Version 1.6.",
+        "privacy.effective": "Effective date: %(date)s. Version %(version)s.",
         "privacy.cookies.table_intro": "The table below lists every cookie and item of local storage the service sets.",
         "cookies.table.name": "Name",
         "cookies.table.party": "Set by",
@@ -329,7 +329,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "nenahrazují informaci pro hosty — v ní je uveden správce nastavený pro dané ubytování, "
             "který se může lišit od správce objektu."
         ),
-        "privacy.effective": "Účinnost od: 4. října 2026. Verze 1.6.",
+        "privacy.effective": "Účinnost od: %(date)s. Verze %(version)s.",
         "privacy.cookies.table_intro": "Tabulka níže uvádí všechny soubory cookie a položky místního úložiště, které služba nastavuje.",
         "cookies.table.name": "Název",
         "cookies.table.party": "Nastavuje",
