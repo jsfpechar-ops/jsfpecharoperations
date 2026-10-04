@@ -15,6 +15,8 @@ Read this file first, then `AGENTS.md`, then the notes for the work package (WP)
 | `06_council_verdict.md`, `07_council_verdict_round2.md` | Why the order is what it is, and the four gates. |
 | `UbyHost_architecture_review.md` | Background reasoning. Section 12 holds the owner decisions on infrastructure and analytics. |
 | `skills/` | Two skills the owner uses (poteto-mode, llm-council). Not part of the app. |
+| `OWNER_MANUAL_SETUP.md` | Consolidated owner secrets, server setup, and per-patch manual steps. |
+| `MERGE_SEQUENCE.md` | Prepared `cursor/wp-stack-NN-682e` branches and merge order for all 34 PRs. |
 
 Put the whole folder in the repo at `docs/plans/UbyHost_workplan/`, except `skills/`.
 
