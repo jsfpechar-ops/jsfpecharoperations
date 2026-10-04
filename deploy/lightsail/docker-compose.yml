@@ -103,6 +103,7 @@ services:
   # .ubyhost.db-litestream metadata next to it. Only the variables it needs are
   # passed in, not the whole .env (which holds the app's secret key).
   litestream:
+    profiles: ["litestream"]
     # Pinned by tag and digest (multi-arch index of litestream/litestream:0.5.17).
     image: litestream/litestream:0.5.17@sha256:4b02b9859a6b6b4087d8b8944e15f7e984bd7957cba322bbeee38b0e27b9656a
     restart: unless-stopped

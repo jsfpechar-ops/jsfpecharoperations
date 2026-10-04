@@ -16,6 +16,20 @@ set -a
 source .env
 set +a
 
+litestream_enabled="${UBYHOST_LITESTREAM_ENABLED:-1}"
+case "${litestream_enabled}" in
+  0|false|no|FALSE|NO) litestream_enabled=0 ;;
+  *) litestream_enabled=1 ;;
+esac
+if [ "${litestream_enabled}" = "1" ]; then
+  case ",${COMPOSE_PROFILES:-}," in
+    *,litestream,*) ;;
+    *)
+      export COMPOSE_PROFILES="${COMPOSE_PROFILES:+$COMPOSE_PROFILES,}litestream"
+      ;;
+  esac
+fi
+
 for var in UBYHOST_DOMAIN ACME_EMAIL UBYHOST_PUBLIC_BASE_URL UBYHOST_ADMIN_PASSWORD; do
   if [ -z "${!var:-}" ]; then
     echo "Required variable ${var} is empty in .env" >&2

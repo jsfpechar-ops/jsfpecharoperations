@@ -240,11 +240,12 @@ def base_url(url: Optional[str] = None) -> Optional[str]:
     return base
 
 
-def browser(base: Optional[str]):
+def browser(base: Optional[str], accept_language: Optional[str] = None):
     """One browser with its own cookie jar, on the server or in-process."""
+    headers = {"Accept-Language": accept_language} if accept_language else None
     if base is None:
-        return TestClient(app)
-    return httpx.Client(base_url=base, timeout=30)
+        return TestClient(app, headers=headers)
+    return httpx.Client(base_url=base, timeout=30, headers=headers)
 
 
 def main(url=None):
@@ -303,11 +304,11 @@ def main(url=None):
             pass  # dd.mm.yyyy strings do not sort; checked properly in the test suite
 
     print("guest pages")
-    # A guest who has made no choice gets Czech: that is the page default
-    # (host_i18n.PUBLIC_DEFAULT_LANGUAGE), not English. English is one click
-    # away, and both are asserted below so neither default can rot unnoticed.
-    # The cookie is the guest's own, not the host's: the two share a browser
-    # and a guest choosing English must not switch the host's UI.
+    # WP26: with no ?lang= and no cookie, the guest page follows Accept-Language,
+    # then English. CI and TestClient default to English; Czech is asserted on a
+    # browser that sends Accept-Language: cs. The cookie is the guest's own, not
+    # the host's: the two share a browser and a guest choosing English must not
+    # switch the host's UI.
     guest = browser(base)
     guest.cookies.set(guest_routes.LANG_COOKIE, "en")
     default = browser(base)
@@ -315,12 +316,16 @@ def main(url=None):
         default,
         f"/l/{token}",
         must_contain=[
-            "Který pobyt je váš?",
-            "To je můj pobyt",
-            "Jak nakládáme s vašimi údaji",
+            i18n.STRINGS["en"]["arrival_question"],
+            i18n.STRINGS["en"]["arrival_cta"],
+            i18n.STRINGS["en"]["privacy_link"],
         ],
     )
-    check(default, f"/l/{token}/privacy", must_contain=["Nezbytné cookies"])
+    check(
+        default,
+        f"/l/{token}/privacy",
+        must_contain=[i18n.STRINGS["en"]["privacy_cookies_title"]],
+    )
     check(
         guest,
         f"/l/{token}",
@@ -352,8 +357,8 @@ def main(url=None):
         must_contain=privacy_expected,
         must_not_contain=privacy_absent,
     )
-    # A separate browser, because ?lang=cs sets a sticky cookie.
-    czech = browser(base)
+    # Czech via Accept-Language (no explicit ?lang= on these URLs).
+    czech = browser(base, accept_language="cs")
     check(czech, f"/l/{token}/privacy?lang=cs", must_contain=["Právní základ", "Policii"])
 
     entry_marker = 'name="guest_email"' if mail.mail_enabled() else 'name="surname"'
@@ -430,8 +435,10 @@ def main(url=None):
         f"/l/{token}/{stay_a}",
         must_contain=[progress_cs],
     )
+    person_cs = i18n.STRINGS["cs"]["person_progress"] % {"current": 2, "total": 2}
+    legal_cs = i18n.STRINGS["cs"]["legal_notice_title"]
     # The legal notice lives on the form page, not on the stay overview.
-    check(czech, f"/l/{token}/{stay_a}/new", must_contain=["Osoba 2 z 2", "Právní informace"])
+    check(czech, f"/l/{token}/{stay_a}/new", must_contain=[person_cs, legal_cs])
     czech_saved = czech.get(f"/l/{token}/{stay_a}?saved=1&lang=cs", follow_redirects=True)
     if czech_saved.status_code != 200 or (
         i18n.STRINGS["cs"]["saved_title"] not in czech_saved.text

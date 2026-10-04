@@ -129,20 +129,31 @@ if [ "${mem_kb:-0}" -gt 0 ] && [ "${mem_kb}" -lt 1700000 ]; then
 fi
 
 # WP05: the litestream service replicates the database to S3 continuously.
-# Without these it crash-loops and the only off-site copy is a day old.
-if [ "${DEPLOYMENT}" = "production" ]; then
+# Set UBYHOST_LITESTREAM_ENABLED=0 to deploy without S3 (nightly backup only).
+litestream_enabled="${UBYHOST_LITESTREAM_ENABLED:-1}"
+case "${litestream_enabled}" in
+  0|false|no|FALSE|NO) litestream_enabled=0 ;;
+  *) litestream_enabled=1 ;;
+esac
+if [ "${litestream_enabled}" = "0" ]; then
+  if [ "${DEPLOYMENT}" = "production" ]; then
+    warn "UBYHOST_LITESTREAM_ENABLED=0 — no continuous S3 replica; rely on nightly backup until Litestream is configured"
+  fi
+elif [ "${DEPLOYMENT}" = "production" ]; then
   for var in LITESTREAM_S3_BUCKET LITESTREAM_ACCESS_KEY_ID LITESTREAM_SECRET_ACCESS_KEY; do
     if [ -z "${!var:-}" ]; then
-      die "${var} is empty — Litestream cannot replicate the database to S3 (see README.md, Litestream)"
+      die "${var} is empty — Litestream cannot replicate the database to S3 (see README.md, Litestream), or set UBYHOST_LITESTREAM_ENABLED=0"
     fi
   done
   if [ -z "${LITESTREAM_HEARTBEAT_URL:-}" ]; then
     warn "LITESTREAM_HEARTBEAT_URL is empty — stalled replication would go unnoticed"
   fi
 fi
-case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
-  /*|*/) die "LITESTREAM_S3_PATH must not start or end with a slash" ;;
-esac
+if [ "${litestream_enabled}" = "1" ]; then
+  case "${LITESTREAM_S3_PATH:-ubyhost/production}" in
+    /*|*/) die "LITESTREAM_S3_PATH must not start or end with a slash" ;;
+  esac
+fi
 
 if [ -n "${UBYHOST_SECRET_KEY:-}" ] && [ "${#UBYHOST_SECRET_KEY}" -lt 32 ]; then
   die "UBYHOST_SECRET_KEY must be at least 32 characters (or leave empty for auto-generate)"
