@@ -162,7 +162,7 @@ own public-register entry, or the legal pages will name the wrong company.
 | `UBYHOST_TERMS_VERSION` | `1.6` |
 | `UBYHOST_PRIVACY_VERSION` | `1.6` |
 | `UBYHOST_DPA_VERSION` | `1.6` |
-| `UBYHOST_LEGAL_EFFECTIVE_DATE` | `2026-11-16` |
+| `UBYHOST_LEGAL_EFFECTIVE_DATE` | `2026-10-05` |
 
 These override the version number displayed and logged against user acceptance.
 The document *text* lives in `App/app/terms_i18n.py`,

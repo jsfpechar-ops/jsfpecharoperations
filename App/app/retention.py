@@ -4,7 +4,7 @@ BE-2 builds the job; BE-3 adds the reservation/claim/contact minimisation steps.
 It is **dry-run by default** (Rule 7): in dry-run it computes exactly the row
 set it would delete or null, audits the counts, and changes nothing. Deletion
 starts only when ``UBYHOST_RETENTION_AUTOPURGE=1``, which the owner sets once
-counsel confirms the retention anchor (G-D4).
+they accept the published retention policy (WP22 / G-D4).
 
 Never logs personal data (Rule 8): counts and ids only.
 """

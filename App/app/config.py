@@ -178,7 +178,7 @@ ROLE = os.environ.get("UBYHOST_ROLE", "web").strip().lower() or "web"
 ACCESS_LOG = os.environ.get("UBYHOST_ACCESS_LOG", "1") not in ("0", "false", "no")
 
 # BE-2: the retention job computes and audits its row set but deletes nothing
-# until this is set (Rule 7). The switch stays off until counsel signs off G-D4.
+# until this is set (Rule 7). The owner turns this on when they accept WP22.
 RETENTION_AUTOPURGE = os.environ.get("UBYHOST_RETENTION_AUTOPURGE", "0") in (
     "1", "true", "yes",
 )
@@ -300,11 +300,12 @@ DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.6")
 
 # WP24: the one effective date shown on /terms, /privacy and /dpa. Terms 1.6,
 # Privacy 1.6 and DPA 1.6 take effect together, so every host accepts all
-# three on one /account/accept page. The owner sets this at release, at least
-# 30 days after hosts are told (Terms § 22). ISO date, YYYY-MM-DD; a malformed
-# value stops start-up rather than printing a wrong date on a contract.
+# three on one /account/accept page. Set via UBYHOST_LEGAL_EFFECTIVE_DATE in
+# production .env at release (Terms § 22 allows 30 days' host notice; owner
+# decides). ISO date, YYYY-MM-DD; a malformed value stops start-up rather than
+# printing a wrong date on a contract.
 LEGAL_EFFECTIVE_DATE = date.fromisoformat(
-    os.environ.get("UBYHOST_LEGAL_EFFECTIVE_DATE", "").strip() or "2026-11-16"
+    os.environ.get("UBYHOST_LEGAL_EFFECTIVE_DATE", "").strip() or "2026-10-05"
 )
 
 # BE-5: bumped whenever a legal_notice_* / privacy_* string in i18n.py changes

@@ -63,7 +63,8 @@ Do these on the 8 GB Lightsail server as each PR is merged. Total about 2 hours.
 | 0011 WP04 | Read the HIGH RISK hunks. Optional: open one Doručenka PDF; if it shows no passport numbers, tell Cursor to unblock receipts during admin support. |
 | 0015 WP09 | Umami Cloud account in the EU region, add the site, accept and save the DPA, put `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID` (and `UMAMI_HOST_URL` if the snippet has one) in `.env`. After deploy check that `/login` and a `/l/...` page load nothing from Umami. |
 | 0018 WP23 | healthchecks.io check "Filing" (period 30 min, grace 30 min, e-mail). URL into `UBYHOST_HEARTBEAT_FILING_URL`. Force it red once to see the e-mail arrive. |
-| 0019 WP24 | Set `UBYHOST_LEGAL_EFFECTIVE_DATE` to the day you release. |
+| 0017 WP22 | When you accept the retention text: `UBYHOST_RETENTION_AUTOPURGE=1`, deploy. |
+| 0019 WP24 | Set `UBYHOST_LEGAL_EFFECTIVE_DATE` to the release day in `.env`, deploy (no lawyer wait required). |
 | 0020 WP26 | Ask a native speaker to read the German, Spanish and French guest pages, legal notice first. Until then they stay off. |
 | 0021 WP33 | Put `UBYHOST_GUEST_LANGS=en,cs` in `.env`. After a native speaker has read a language, add it (for example `en,cs,de`) and restart. Check on staging that a past stay still waiting for filing shows on the Stays page. |
 
@@ -105,7 +106,7 @@ Change any of these by telling Cursor in plain words.
 | Photos | Deleted when verified, else 7 days after check-in, 30 days at most | WP22 |
 | Ads consent | Separate unticked boxes for Google and Meta, shown only with a click ID | WP20, WP21 |
 | Payments | Not built. Testing phase. A Stripe Checkout and Billing integration (cards, Apple Pay and Google Pay through Stripe) is planned as a later WP when you set a price. | 03_when_triggered.md |
-| Lawyer | Proceeding on the researched positions; one paid hour is still recommended before the effective date | 06_council_verdict.md |
+| Lawyer | Operator may ship WP22/WP24 without external review; optional paid hour still useful | 06_council_verdict.md |
 
 ## G. Getting the first hosts
 
