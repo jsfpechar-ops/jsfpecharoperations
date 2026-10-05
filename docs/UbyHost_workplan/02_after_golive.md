@@ -207,7 +207,7 @@ Google Ads click ID, no cookie, no Google script:
 - Store it on the account (`signup_gclid`, `signup_at`). Also store `utm_source`, `utm_medium`, `utm_campaign` the same way.
 - Admin export `/admin/ads-conversions.csv`: one row per verified sign-up with a click ID, in the column format Google Ads expects for offline click conversion imports (Google Click ID, Conversion Name, Conversion Time with time zone). The owner uploads it in Google Ads by hand, or sets it as a scheduled upload later. No Google Ads API dependency in this WP.
 - Delete the click ID 90 days after sign-up [ASSUMPTION: check Google's current import window and use it].
-- Umami: `signup_start` and `signup_submitted` events on the sign-up page, no properties.
+- Umami: `signup_start` on public landing/pricing links to `/signup` only (auth pages carry no tracker); submit funnel uses server-stored `gclid` / ads CSV, not Umami.
 - Privacy page and cookie inventory: describe the click ID storage (draft for the lawyer).
 
 Tests: sign-up, verification, expiry of unverified accounts, duplicate e-mail behaviour, rate limit, `gclid` carried and stored, invalid `gclid` dropped, CSV format, deletion after the window, nothing set in cookies except the existing session and CSRF cookies.
