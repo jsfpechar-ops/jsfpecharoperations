@@ -268,10 +268,10 @@ For each merged PR (or after the big merge):
 | 0013 WP28 | Optional: review screenshots in PR. |
 | 0014 | Nothing. |
 | 0015 WP09 Umami | Umami Cloud **EU** → add website → accept DPA → copy **Website ID** and **Script URL** into **production `.env` only**: `UMAMI_WEBSITE_ID`, `UMAMI_SCRIPT_URL` (+ optional `UMAMI_HOST_URL`). Deploy. Check `/` has analytics; **`/login` and `/l/...` must not**. Turn off Replays/Heatmaps in Umami. |
-| 0016 WP27 | Confirm Lightsail region Frankfurt in AWS console (for EU claims). Decide later when to set `UBYHOST_RETENTION_AUTOPURGE=1`. |
-| 0017 WP22 | Lawyer on retention/DPA text; plan when to enable autopurge. |
+| 0016 WP27 | Confirm Lightsail region Frankfurt in AWS console (for EU claims). |
+| 0017 WP22 | Read retention/DPA § 11 in the repo; when you accept the published 1.6 texts, set `.env` `UBYHOST_RETENTION_AUTOPURGE=1` and deploy (real guest/stay-fee/invoice deletion; photo/XML sweeps already run). Optional: bump `UBYHOST_DPA_VERSION` if you change retention wording later. External counsel is optional, not a gate. |
 | 0018 WP23 | healthchecks.io new check **Filing** (30 min / 30 min grace) → `.env` `UBYHOST_HEARTBEAT_FILING_URL`. Force red once to test e-mail. Tell hosts about **“filed by hand in UbyPort”** button. |
-| 0019 WP24 | Lawyer reviews Terms/DPA 1.6; notify hosts 30 days ahead; set `.env` `UBYHOST_LEGAL_EFFECTIVE_DATE=YYYY-MM-DD` on release day; deploy on/after that date. |
+| 0019 WP24 | Set `.env` `UBYHOST_LEGAL_EFFECTIVE_DATE=YYYY-MM-DD` to the release day (must match what you show on `/terms`, `/privacy`, `/dpa`). Deploy on or after that date. Terms § 22 allows 30 days’ notice to hosts; you may proceed without that wait if you accept the risk. External counsel review is optional, not a gate. |
 | 0020 WP26 | Native speakers review DE/ES/FR pages **before** enabling languages. |
 | 0021 WP33 | `.env` `UBYHOST_GUEST_LANGS=en,cs` until reviews done; then `en,cs,de` etc. and **restart** (deploy). Staging: overdue unfiled stay visible on Stays list. |
 
@@ -279,7 +279,7 @@ For each merged PR (or after the big merge):
 
 1. PRs **0001–0021** merged and deployed.  
 2. healthchecks all green.  
-3. `.env` `UBYHOST_RETENTION_AUTOPURGE=1` → deploy.  
+3. `.env` `UBYHOST_RETENTION_AUTOPURGE=1` and `UBYHOST_LEGAL_EFFECTIVE_DATE` on or before today → deploy.  
 4. `UBYHOST_GUEST_LANGS` only lists reviewed languages.  
 5. Send hosts the manual filing guide: `compliance/05_manual_filing_fallback.md` (from repo).  
 
@@ -315,7 +315,8 @@ All on **production `.env`** unless noted. Default **off** or empty = safe.
 | `UMAMI_WEBSITE_ID` / `UMAMI_SCRIPT_URL` | empty | from Umami dashboard | WP09 |
 | `UBYHOST_META_*` | empty | from Meta | WP21 + counsel |
 | `UBYHOST_GUEST_LANGS` | `en,cs` | add `,de` etc. | After native review (WP26/33) |
-| `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` | **First real host** (Gate 4) |
+| `UBYHOST_RETENTION_AUTOPURGE` | `0` | `1` | When you accept WP22 retention + published legal 1.6 (Gate 4) |
+| `UBYHOST_LEGAL_EFFECTIVE_DATE` | `2026-10-05` in code if unset | your release `YYYY-MM-DD` | WP24 — set in `.env` before deploy |
 | `UBYHOST_UBYPORT_ENV` | `test` | `prod` | Only after signed-off real filing on **production** |
 
 After any `.env` change → **Deploy production** (Part 2).

@@ -455,8 +455,8 @@ Manual only:
 - **Expired house-book records** — the six-year duty is displayed per record and
   computed from the end of each stay. The `retention` job runs daily (BE-2) and
   **only counts and audits** what is due; it deletes nothing until
-  `UBYHOST_RETENTION_AUTOPURGE=1` is set after counsel confirms the anchor
-  (G-D4). It raises a "records reach the end of their retention period soon"
+  `UBYHOST_RETENTION_AUTOPURGE=1` is set when the owner accepts WP22 (G-D4).
+  It raises a "records reach the end of their retention period soon"
   notice for records due within `UBYHOST_RETENTION_NOTICE_DAYS` (30). The
   Settings "purge expired records" button is the same code path with deletion
   forced for that owner, and it also clears the passport images and blanks the
@@ -482,8 +482,8 @@ Minimised by the retention job (BE-3, and only once `UBYHOST_RETENTION_AUTOPURGE
 - **Empty reservations** past the six-year cutoff, with no `guest` rows, are
   deleted; their `reservation_claim` row cascades.
 
-With the flag off (the default until counsel signs off G-D4), the job counts
-and audits these row sets and changes nothing.
+With the flag off (the default until the owner enables WP22 autopurge), the job
+counts and audits these row sets and changes nothing.
 
 Also by the retention job (BE-4, same flag):
 

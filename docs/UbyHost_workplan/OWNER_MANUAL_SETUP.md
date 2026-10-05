@@ -183,8 +183,9 @@ Add external uptime check on `/healthz` (healthchecks does not do HTTP probes). 
 
 ### 0017 — WP22 Retention alignment
 
-- Decide whether to bump `UBYHOST_DPA_VERSION` / effective date (retention text in DPA may need re-acceptance).
-- Remember: guest/stay-fee/invoice deletion needs `UBYHOST_RETENTION_AUTOPURGE=1`; photo/XML sweeps run regardless.
+- Read DPA § 11 and guest/host retention copy in the repo. When you accept it, set `UBYHOST_RETENTION_AUTOPURGE=1` on production and deploy (no external lawyer sign-off required unless you want one).
+- Bump `UBYHOST_DPA_VERSION` / legal effective date only if you change retention wording later (hosts re-accept).
+- Guest/stay-fee/invoice deletion needs `UBYHOST_RETENTION_AUTOPURGE=1`; photo/XML sweeps run regardless.
 - Plan host-account closure design before billing hosts.
 
 ### 0018 — WP23 Filing watchdog (HIGH RISK)
@@ -195,10 +196,10 @@ Add external uptime check on `/healthz` (healthchecks does not do HTTP probes). 
 
 ### 0019 — WP24 Terms, DPA, manual-filing texts
 
-- Counsel review Terms/DPA 1.6 (especially § 10a, § 17, DPA § 11).
-- Notify hosts ≥ 30 days ahead (Terms § 22).
-- Set `UBYHOST_LEGAL_EFFECTIVE_DATE=YYYY-MM-DD` in server `.env` to release date before deploy (placeholder in code may differ).
-- Deploy on or after announced date.
+- Skim Terms/DPA 1.6 in the repo (especially § 10a, § 17, DPA § 11). External counsel is optional.
+- Optional: notify hosts ≥ 30 days ahead (Terms § 22). You may release sooner if you accept that risk.
+- Set `UBYHOST_LEGAL_EFFECTIVE_DATE=YYYY-MM-DD` in server `.env` to the release day before deploy (overrides the code default).
+- Deploy on or after that date.
 - Remove obsolete subprocessors (e.g. Drive/Render) from `/subprocessors` if dropped.
 
 ### 0020 — WP26 Guest languages DE/ES/FR
