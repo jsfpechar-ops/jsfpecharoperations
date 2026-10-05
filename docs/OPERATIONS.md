@@ -64,8 +64,21 @@ The host-only stay-fee remittance tool is optional per property; a zero rate
 keeps it off. From **Stay fees**, review the period, then download the council
 report PDF and register CSV. The payment QR is prepared for the host to pay the
 council; UbyHost does not collect guest payments, file reports or make that
-payment. Downloads reflect the current property settings and fee decisions, so
-keep the copies that were filed if those settings later change.
+payment.
+
+**Sealed periods.** Finalizing a period writes a frozen row (`stay_fee_filing`)
+with the period key, cadence, rate (Kč/night), totals, and register CSV that
+were shown at seal time. Live screens for an open period still follow today's
+property rate and cadence; after seal, the stored filing is what counts for
+audit.
+
+**Corrections after seal or cadence change.** A downward or upward correction
+recalculates using the **sealed** rate and cadence for that period, not the
+property's current settings. If you switch monthly → quarterly after filing
+January, correcting January still keys and labels that month under the cadence
+it was filed with (`App/app/routes/stay_fees.py`). Keep the PDF/CSV you sent
+to the obec; do not assume a fresh download months later matches an old filing
+if rates or cadence changed in between.
 
 ## The `submit_state` state machine
 
@@ -96,9 +109,17 @@ Transitions:
   three consecutive refusals the sweep stops offering it (`submit_attempts`),
   but the row stays `error` and a host send still works. See 112 below.
 - anything → `not_required` when the nationality is changed to Czech.
-- **A transport failure changes nothing.** The guest stays `pending` and the
-  `submission` row is marked `transport_error`, so the next sweep retries. This
-  is deliberate: rule 10.2(e) forbids losing the queue on a network blip.
+- **A transport failure before the register could have seen the batch** leaves
+  the guest `pending` and marks the `submission` row `transport_error`, so the
+  next sweep retries. This is deliberate: rule 10.2(e) forbids losing the queue on
+  a network blip.
+- **An unclear outcome after the request may have been delivered** parks the
+  batch as `outcome_unknown` (see the table below). The guest stays `pending`,
+  but the automatic sweep **stops offering** them until a host sends again or
+  every guest on that batch is filed some other way. Duplicates count against
+  the host, so live timeouts, HTTP 5xx, and malformed responses are not
+  auto-refiled (owner decision OD-1). The sent SOAP envelope is kept on the row
+  as evidence.
 
 `sent` rows refuse edit and delete from both the host and guest surfaces. A
 deliberate resend of a `sent` or `blocked` record requires an explicit
@@ -127,7 +148,18 @@ produced, and it is independent of the guest's `submit_state` above:
 | `ok_duplicate` | Every record was already held by the register (code 150). A success, but nothing new was filed and no Doručenka exists for this call — see below. |
 | `partial` | Some records were accepted for the first time and some were not. |
 | `error` | Records came back with correctable codes. The guest stays `error` and is retried. |
-| `transport_error` | The service could not be reached, or answered with a fault. Nothing was filed. |
+| `transport_error` | The service could not be reached, or answered with a fault before the register could have accepted the batch. Nothing was filed. |
+| `outcome_unknown` | The call finished ambiguously: timeout or TLS drop after send, HTTP 5xx, unreadable XML, or a row count mismatch. The register **may** already hold the guests. The request envelope is stored; the sweep does not resend automatically. |
+
+**Crash recovery vs live ambiguity.** A batch stuck in `running` after a
+process crash is marked `outcome_unknown` with the fixed reason *"The send stopped
+before UbyPort answered."* The scheduler may perform **one** automatic resend
+for that case only (`_retry_outcome_unknown_batches` in `reporting.py`). A live
+`UbyportOutcomeUnknownError` keeps the real error text and is never retried by
+the sweep; the host must check UbyPort and send by hand if needed (see
+`docs/UbyHost_workplan/compliance/05_manual_filing_fallback.md`). WP31's
+`auto_resend` path is separate: if that single resend also comes back unclear,
+it is not sent again.
 
 A `partial` row whose only rejection is a duplicate is still `partial`: the
 duplicate half is settled, the other half is not. `ok_duplicate` is reserved for
@@ -210,6 +242,7 @@ The message is composed in `App/app/mail_notify.py` and queued as kind
 | Trigger | Message says |
 | --- | --- |
 | UbyPort could not be reached (`transport_error`) | Nothing from this attempt reached the register. An interrupted connection clears itself when the report is sent again. |
+| Outcome unknown (`outcome_unknown`) | Same transport-style wording in the mail today, but the batch is **not** auto-retried. The host must verify in UbyPort before sending again. |
 | UbyPort answered with rejections (`error` / `partial`) | The reason UbyPort gave, then: open the stay, check nationality, date of birth and document number against the travel document, and send again. |
 
 It carries the UbyHost logo, links to **every stay in the batch** and to the
@@ -296,6 +329,7 @@ condition, not by time.
 | --- | --- | --- | --- |
 | `deadline` | critical / warning | A stay is overdue or due now with data still missing. | The stay reaches `reported` or `not_required`. |
 | `submission_transport` | **critical** | UbyPort could not be reached, or returned a fault. | The next successful call to that apartment's endpoint. |
+| `submission_outcome_unknown` | **critical** | A filing attempt ended with an unclear outcome; the register may already hold the guests. | No guest on that apartment still points at an `outcome_unknown` batch (usually after a successful manual send for every guest on the batch). |
 | `submission_rejected` | **critical** | UbyPort did not accept one or more records. | A later submission for that apartment comes back clean — including one that only produced duplicates. |
 | `receipt_missing` | warning | UbyPort accepted records for the first time but returned neither a Doručenka nor a stamp, so the register holds them and we hold no proof. | A submission for that apartment returns a Doručenka or a stamp. |
 | `submission_immediate` | warning | An automatic send triggered by form completion threw. | Not auto-cleared; resolve by sending successfully. |
@@ -309,8 +343,10 @@ condition, not by time.
 | `guest_pin_abuse` | warning | Repeated wrong PIN attempts on an apartment's guest link. | — |
 | `mail_failed` | warning | A queued guest e-mail exhausted its attempts. | — |
 
-`submission_transport` and `submission_rejected` are the two criticals. Either
-one means a filing did not land.
+`submission_transport`, `submission_outcome_unknown`, and `submission_rejected`
+are the filing criticals. Transport means nothing reached the register;
+outcome unknown means you must verify before resending; rejected means UbyPort
+answered with fixable or permanent errors.
 
 ## Schema migrations
 

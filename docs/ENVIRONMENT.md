@@ -216,3 +216,9 @@ them; Render does.
 | `RCLONE_REMOTE` | `gdrive` | `backup-gdrive.sh` |
 | `RCLONE_BACKUP_FOLDER` | `UbyHost-backups` | `backup-gdrive.sh` |
 | `SKIP_PUBLIC_SMOKE` | unset | `deploy.sh` — skips the post-deploy public smoke check |
+| `UBYHOST_LITESTREAM_ENABLED` | unset (see below) | `deploy/lightsail/scripts/litestream_env.sh`, `preflight.sh`, `deploy.sh` — `1` runs the `litestream` compose profile; `0` deploys without continuous S3 replication (nightly `age` backup only). When unset and `LITESTREAM_S3_BUCKET`, `LITESTREAM_ACCESS_KEY_ID`, and `LITESTREAM_SECRET_ACCESS_KEY` are all empty, preflight **auto-disables** Litestream (warns on production) instead of failing deploy. Set `0` explicitly for the same behaviour without the auto-detect. |
+| `LITESTREAM_S3_BUCKET` | empty in `.env.example` | Litestream replica destination (`deploy/lightsail/litestream.yml`). Required when Litestream is on. |
+| `LITESTREAM_S3_PATH` | `ubyhost/production` | Object prefix inside the bucket; use a separate prefix (and IAM scope) for staging. |
+| `LITESTREAM_S3_REGION` | `eu-central-1` | |
+| `LITESTREAM_ACCESS_KEY_ID`, `LITESTREAM_SECRET_ACCESS_KEY` | empty | Dedicated IAM user; never commit real values. |
+| `LITESTREAM_HEARTBEAT_URL` | unset | Pinged by Litestream after snapshots; recommended in production when replication is on. |
