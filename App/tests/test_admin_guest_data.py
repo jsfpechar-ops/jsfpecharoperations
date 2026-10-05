@@ -323,6 +323,9 @@ def test_every_identity_route_is_masked_or_blocked_while_supporting(seeded):
             assert response.status_code == 403
             assert response.content != PNG_BYTES
             continue
+        if path.endswith("/receipt.pdf") or path.endswith("/errors.pdf"):
+            assert response.status_code == 200, (path, response.status_code)
+            continue
         assert response.status_code == 303, (path, response.status_code)
         assert "err=" in response.headers["location"], path
         assert DOC_A.encode() not in response.content
@@ -334,6 +337,16 @@ def test_every_identity_route_is_masked_or_blocked_while_supporting(seeded):
     assert admin_zip.status_code == 303
     assert "err=" in admin_zip.headers["location"]
     assert _audit(seeded["owner"], "workspace_exported") == []
+
+
+def test_supporting_can_download_a_stored_dorucenka_and_it_is_audited(seeded):
+    client = _supporting(seeded)
+    submission_id = seeded["submission"]
+    response = client.get(f"/submissions/{submission_id}/receipt.pdf", follow_redirects=False)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/pdf")
+    rows = _audit(seeded["owner"], "export_submission_pdf")
+    assert rows and "while_supporting=1" in rows[-1]["detail"]
 
 
 def test_saving_a_masked_guest_keeps_the_stored_identity(seeded):
