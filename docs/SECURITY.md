@@ -42,7 +42,7 @@ summarises the threat model, controls, and known limitations.
 |------|-------------------|
 | **Rate limits** | SQLite-backed; effective per app instance; use Cloudflare rate rules for edge protection. |
 | **Guest PIN entropy** | New PINs are 6 digits; rotate old 4-digit PINs. Always use PIN in production (`UBYHOST_GUEST_PIN=1`). |
-| **Admin impersonation** | Intentional full read/write support access; audited; admin role only. Actions taken while previewing mutate the host workspace. |
+| **Admin impersonation** | Intentional full read/write support access; audited; admin role only. Actions taken while previewing mutate the host workspace. Bulk exports and submission request XML stay blocked while impersonating; single stored Doručenka PDFs may still be downloaded so operators can verify filing (`access.dorucenka_download_visible`). |
 | **iCal DNS rebinding** | Mitigated by pinning each fetch to the IP(s) returned at validation time (no `getaddrinfo` on connect). Keep egress restrictions as defence in depth. |
 | **Guest POST CSRF** | Guest forms do not carry host authority and require the scoped permalink/PIN cookie. Keep PIN protection enabled. |
 | **Overlapping stay selection** | One apartment permalink/PIN can select any active stay inside its configured visibility window. Keep the window short and avoid overlapping links where booking-date disclosure is unacceptable. |

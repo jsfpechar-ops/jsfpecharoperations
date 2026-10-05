@@ -41,6 +41,7 @@ or missing police data:
 | SOAP client | `App/app/ubyport/soap.py`, `client.py` | Requests rejected or PDF flag dropped |
 | Auto-submit & scheduler | `worker`, reservation automation | Stays never filed or filed twice |
 | Resend after interrupt | WP31 / submission retry rules | Duplicate or missing filings |
+| Unclear UbyPort outcome (OD-1) | `UbyportOutcomeUnknownError` → `outcome_unknown`; no live auto-retry | Duplicate filings against the host |
 | Doručenka storage & download | `receipt_pdf`, report routes, WP30 | Host has no legal proof of filing |
 | Filing watchdog & heartbeats | WP23, `UBYHOST_HEARTBEAT_*` | Failures go unnoticed |
 | Manual “filed in UbyPort” mark | WP23 | House book and UI disagree with police |
