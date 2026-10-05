@@ -57,6 +57,11 @@ NOT_REQUIRED = "not_required"  # Czech nationals: house book only
 
 AUTOMATION_MODES = ("immediate", "scheduled", "manual")
 SUBMISSION_CLAIM_TTL_SECONDS = 5 * 60
+# recover_stale_submissions writes this onto crash-stuck ``running`` batches.
+# _retry_outcome_unknown_batches retries only those rows; a live
+# UbyportOutcomeUnknownError (timeout/5xx after send) keeps a different
+# error_text and waits for a person (OD-1).
+STALE_SUBMISSION_REASON = "The send stopped before UbyPort answered."
 
 # Scheduled mode waits for the host's review window, but never past this
 # many hours before the statutory deadline (owner decision OD-2).
@@ -1135,17 +1140,6 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         )
     }
 
-    # Batches whose outcome is unknown (the register may hold them). Their
-    # guests wait for a person; see UbyportOutcomeUnknownError.
-    in_doubt_submissions = {
-        row["id"]
-        for row in db.query(
-            "SELECT id FROM submission WHERE apartment_id = ? AND state = 'outcome_unknown' "
-            "AND retried_at IS NULL",
-            (apartment_id,),
-        )
-    }
-
     out: List[Tuple[Any, Any]] = []
     # The deadline anchor depends only on the stay (the earliest guest
     # arrival), so the sweep reads it once per stay instead of once per guest.
@@ -1182,8 +1176,18 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         # host takes the record back after fixing it, so it is never bound.
         if not ignore_automation and auto_attempts(guest) >= SUBMISSION_MAX_AUTO_ATTEMPTS:
             continue
-        if not ignore_automation and guest["submission_id"] in in_doubt_submissions:
-            continue
+        # While a guest still points at an outcome-unknown batch, only a host
+        # send may try again. ``retried_at`` on the batch marks the one
+        # automatic retry; if that update lands without clearing this pointer,
+        # the guest must not become sendable to the sweep anyway.
+        if not ignore_automation and guest["submission_id"]:
+            in_doubt = db.query_one(
+                "SELECT 1 AS n FROM submission WHERE id = ? AND state = 'outcome_unknown' "
+                "LIMIT 1",
+                (guest["submission_id"],),
+            )
+            if in_doubt:
+                continue
         if not guest_is_complete(guest, reservation):
             continue
         if signature_dates_stale(guest, reservation):
@@ -1684,7 +1688,7 @@ def recover_stale_submissions(apartment_id: int) -> int:
     send path.
     """
     live_after = time.time() - SUBMISSION_CLAIM_TTL_SECONDS
-    reason = "The send stopped before UbyPort answered."
+    reason = STALE_SUBMISSION_REASON
     candidates: List[Tuple[int, List[int]]] = []
     with db.immediate() as cur:
         cur.execute(
@@ -1737,12 +1741,12 @@ def recover_stale_submissions(apartment_id: int) -> int:
 
 
 def _retry_outcome_unknown_batches(apartment_id: int) -> int:
-    """One automatic resend per interrupted batch, only from the scheduler.
+    """One automatic resend per crash-interrupted batch, only from the scheduler.
 
-    The resend is itself a batch (``AUTO_RESEND_MODE``). If its answer is
-    unclear as well, it is not resent again: its guests stay in doubt, out of
-    the sweep, and the outcome-unknown alert and mail already raised for it
-    tell the host to check UbyPort and send by hand (WP31).
+    Live unknown outcomes (timeout/5xx after send; the register may already hold
+    them) are not retried here — those wait for a person (OD-1). The resend uses
+    ``AUTO_RESEND_MODE``; if that answer is unclear too, it is not resent again
+    (WP31).
     """
     if alerts.open_alert(f"ubyport_auth_failed:{apartment_id}"):
         return 0
@@ -1755,21 +1759,23 @@ def _retry_outcome_unknown_batches(apartment_id: int) -> int:
         return 0
     pending = db.query(
         "SELECT id, guest_ids FROM submission WHERE apartment_id = ? "
-        "AND state = 'outcome_unknown' AND retried_at IS NULL "
+        "AND state = 'outcome_unknown' AND retried_at IS NULL AND error_text = ? "
         "AND COALESCE(mode, '') != ?",
-        (apartment_id, AUTO_RESEND_MODE),
+        (apartment_id, STALE_SUBMISSION_REASON, AUTO_RESEND_MODE),
     )
     retried = 0
+    now = db.utcnow()
     for row in pending:
         guest_ids = json.loads(row["guest_ids"] or "[]")
-        db.update("submission", row["id"], {"retried_at": db.utcnow()})
+        with db.immediate() as cur:
+            db.update_in(cur, "submission", row["id"], {"retried_at": now})
+            for guest_id in guest_ids:
+                cur.execute(
+                    "UPDATE guest SET submission_id = NULL WHERE id = ? AND submit_state != ?",
+                    (guest_id, SENT),
+                )
         if not guest_ids:
             continue
-        for guest_id in guest_ids:
-            db.execute(
-                "UPDATE guest SET submission_id = NULL WHERE id = ? AND submit_state != ?",
-                (guest_id, SENT),
-            )
         submit_for_apartment(apartment_id, only_guest_ids=guest_ids, mode=AUTO_RESEND_MODE)
         retried += 1
     return retried

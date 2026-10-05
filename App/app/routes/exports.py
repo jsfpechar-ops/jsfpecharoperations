@@ -60,6 +60,12 @@ def _identity_hidden(request: Request, back_path: str, guest_id: Optional[int] =
     return _back(back_path, err=_flash(request, key))
 
 
+def _dorucenka_hidden(request: Request, back_path: str):
+    if access.dorucenka_download_visible(request):
+        return None
+    return _identity_hidden(request, back_path)
+
+
 @router.get("/reservations.csv")
 def reservations_export(request: Request):
     guard = auth.require_login(request)
@@ -234,13 +240,16 @@ def submission_receipt(submission_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    hidden = _identity_hidden(request, f"/submissions/{submission_id}")
+    hidden = _dorucenka_hidden(request, f"/submissions/{submission_id}")
     if hidden:
         return hidden
     owned = access.submission(request, submission_id)
     row = db.query_one("SELECT receipt_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
     if owned:
-        db.audit("export_submission_pdf", f"submission_id={submission_id} which=receipt")
+        detail = f"submission_id={submission_id} which=receipt"
+        if auth.impersonating(request):
+            detail += " while_supporting=1"
+        db.audit("export_submission_pdf", detail)
     return _pdf_response(row["receipt_pdf"] if row else None, f"dorucenka-{submission_id}.pdf")
 
 
@@ -249,13 +258,16 @@ def submission_errors(submission_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    hidden = _identity_hidden(request, f"/submissions/{submission_id}")
+    hidden = _dorucenka_hidden(request, f"/submissions/{submission_id}")
     if hidden:
         return hidden
     owned = access.submission(request, submission_id)
     row = db.query_one("SELECT error_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
     if owned:
-        db.audit("export_submission_pdf", f"submission_id={submission_id} which=errors")
+        detail = f"submission_id={submission_id} which=errors"
+        if auth.impersonating(request):
+            detail += " while_supporting=1"
+        db.audit("export_submission_pdf", detail)
     return _pdf_response(row["error_pdf"] if row else None, f"dorucenka-chyby-{submission_id}.pdf")
 
 

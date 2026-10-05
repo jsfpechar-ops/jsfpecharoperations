@@ -225,3 +225,59 @@ def test_an_adjustment_saved_in_a_filing_cannot_be_undone(monkeypatch):
     assert "saved filing and cannot be undone" in blocked.text
     still = db.query_one("SELECT reversed_at FROM stay_fee_adjustment WHERE id = ?", (adjustment_id,))
     assert still["reversed_at"] is None
+
+
+def test_correction_after_cadence_change_includes_the_adjustment(monkeypatch):
+    """A sealed monthly period keeps its key when the property later goes quarterly.
+
+    Without that, Correct August + add bed-days stores 2026-Q3, finalize still
+    reads 2026-08, and the remitted total omits the correction.
+    """
+    client, apartment = _host()
+    _finalize_august(client, apartment, monkeypatch)
+    db.update("apartment", apartment, {"stay_fee_cadence": "quarterly"})
+    guest_id = db.query_one("SELECT id FROM guest ORDER BY id DESC")["id"]
+    token = _csrf(client, f"/stay-fees/{apartment}?month=2026-08&correct=1&lang=en")
+    added = client.post(
+        f"/stay-fees/{apartment}/adjustment",
+        data={
+            "_csrf": token,
+            "month": "2026-08",
+            "correct": "1",
+            "direction": "add",
+            "mode": "bed_days",
+            "bed_days": "2",
+            "reason": "Walk-in after filing",
+        },
+        follow_redirects=False,
+    )
+    assert added.status_code == 303
+    stored = db.query_one(
+        "SELECT period_key FROM stay_fee_adjustment WHERE apartment_id = ?",
+        (apartment,),
+    )
+    assert stored["period_key"] == "2026-08"
+    token = _csrf(client, f"/stay-fees/{apartment}?month=2026-08&correct=1&lang=en")
+    saved = client.post(
+        f"/stay-fees/{apartment}/finalize",
+        data={
+            "_csrf": token,
+            "month": "2026-08",
+            "correct": "1",
+            "rate_czk": "50",
+            "confirm_collected": "1",
+            f"collected_{guest_id}": "200",
+        },
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    current = stay_fee_filing.latest(apartment, "2026-08")
+    assert current is not None
+    assert current["version"] == 2
+    assert current["cadence"] == "monthly"
+    assert current["liable_days"] == 6
+    assert current["total_due_czk"] == 300
+    assert stay_fee_filing.latest(apartment, "2026-Q3") is None
+    payload = stay_fee_filing.payload(current)
+    assert payload["adjustments"]
+    assert payload["adjustments"][0]["delta"] == 2

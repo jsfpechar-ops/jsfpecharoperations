@@ -16,7 +16,7 @@ Technical reference stays there; **do this document in order** when you roll out
 Production site: **https://ubyhost.com** (Lightsail).  
 Staging site: **https://ubyhost-staging.onrender.com** (Render, after you recreate it).
 
-**Already done on your production (skip re-setup):** SES guest mail, healthchecks.io pings, operator fields in `.env`, Turnstile, nightly age backups (if already configured).
+**Already done on your production (skip re-setup):** See **[OWNER_PRODUCTION_STATUS.md](OWNER_PRODUCTION_STATUS.md)** for the live checklist (SES, Litestream, retention autopurge, healthchecks, real hosts, etc.). Do not repeat steps marked **Done** there.
 
 ---
 
@@ -281,7 +281,7 @@ For each merged PR (or after the big merge):
 2. healthchecks all green.  
 3. `.env` `UBYHOST_RETENTION_AUTOPURGE=1` and `UBYHOST_LEGAL_EFFECTIVE_DATE` on or before today → deploy.  
 4. `UBYHOST_GUEST_LANGS` only lists reviewed languages.  
-5. Send hosts the manual filing guide: `compliance/05_manual_filing_fallback.md` (from repo).  
+5. Optional: tell new hosts to read **Guide → manual filing** in the app (`/guide`); same steps as `compliance/05_manual_filing_fallback.md`.  
 
 ---
 

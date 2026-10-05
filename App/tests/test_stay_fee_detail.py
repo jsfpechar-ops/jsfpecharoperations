@@ -129,7 +129,16 @@ def _csrf(client) -> str:
     return match.group(1)
 
 
-def _decide(client, apartment_id, guest_id, decision, reason="", month="2026-08"):
+def _decide(
+    client,
+    apartment_id,
+    guest_id,
+    decision,
+    reason="",
+    month="2026-08",
+    *,
+    reason_reference="",
+):
     return client.post(
         "/stay-fees/guest-decision",
         data={
@@ -139,6 +148,7 @@ def _decide(client, apartment_id, guest_id, decision, reason="", month="2026-08"
             "month": month,
             "decision": decision,
             "reason": reason,
+            "reason_reference": reason_reference,
         },
         follow_redirects=True,
     )
@@ -297,6 +307,46 @@ def test_exempt_without_a_reason_is_refused(host):
     assert db.query_one("SELECT * FROM audit WHERE action = 'stay_fee_decision'") is None
 
 
+def test_exempt_rejects_a_free_text_reason(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Detail Demo")
+    _, guest_ids = _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+
+    response = _decide(client, apartment_id, guest_ids[0], "exempt", reason="ZTP/P")
+
+    assert response.status_code == 200
+    assert "Give a reason when you exempt a guest." in response.text
+    stored = db.query_one("SELECT fee_host_decision FROM guest WHERE id = ?", (guest_ids[0],))
+    assert stored["fee_host_decision"] is None
+
+
+def test_local_rule_exemption_requires_a_council_reference(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Detail Demo")
+    _, guest_ids = _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+
+    missing = _decide(client, apartment_id, guest_ids[0], "exempt", reason="local_rule")
+    assert "Give a reason when you exempt a guest." in missing.text
+    short = _decide(
+        client, apartment_id, guest_ids[0], "exempt", reason="local_rule", reason_reference="ab"
+    )
+    assert "Give a reason when you exempt a guest." in short.text
+
+    saved = _decide(
+        client,
+        apartment_id,
+        guest_ids[0],
+        "exempt",
+        reason="local_rule",
+        reason_reference="UMC-9/2026",
+    )
+    assert "Saved." in saved.text
+    row = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_ids[0],))
+    assert row["fee_host_decision"] == "exempt"
+    assert row["fee_host_reason"] == "local_rule"
+    assert row["fee_host_reason_reference"] == "UMC-9/2026"
+
+
 def test_exempt_with_a_reason_lowers_the_total_and_keeps_the_reason_out_of_the_log(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, "Detail Demo")
@@ -366,6 +416,53 @@ def test_automatic_puts_the_guest_back_on_the_default_rule(host):
     assert stored["fee_host_decision"] is None
     assert "Exempt (under 18)" in response.text
     assert "200\u00a0Kč" not in response.text
+
+
+def test_scope_ruling_is_saved_on_the_property(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Scope Demo")
+    _stay(apartment_id, "2026-08-01", "2026-09-30", [{}])
+
+    saved = client.post(
+        f"/stay-fees/{apartment_id}/scope-ruling",
+        data={
+            "_csrf": _csrf(client),
+            "month": "2026-08",
+            "rule": "calendar_days",
+            "reference": "UMC-1/2026",
+        },
+        follow_redirects=True,
+    )
+    assert saved.status_code == 200
+    assert "Saved." in saved.text
+    row = db.query_one(
+        "SELECT stay_fee_scope_rule, stay_fee_scope_reference FROM apartment WHERE id = ?",
+        (apartment_id,),
+    )
+    assert row["stay_fee_scope_rule"] == "calendar_days"
+    assert row["stay_fee_scope_reference"] == "UMC-1/2026"
+
+
+def test_scope_ruling_rejects_an_incomplete_form(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id, "Scope Demo")
+    _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
+
+    response = client.post(
+        f"/stay-fees/{apartment_id}/scope-ruling",
+        data={
+            "_csrf": _csrf(client),
+            "month": "2026-08",
+            "rule": "not-a-rule",
+            "reference": "UMC-1/2026",
+        },
+        follow_redirects=True,
+    )
+    assert "Enter the council ruling and reference." in response.text
+    row = db.query_one(
+        "SELECT stay_fee_scope_rule FROM apartment WHERE id = ?", (apartment_id,)
+    )
+    assert row["stay_fee_scope_rule"] is None
 
 
 def test_a_guest_of_another_owner_cannot_be_decided(host):

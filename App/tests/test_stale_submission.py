@@ -214,7 +214,7 @@ def _sweep_apartment(monkeypatch):
             "mode": "auto",
             "state": "outcome_unknown",
             "guest_ids": json.dumps([guest_id]),
-            "error_text": "stopped",
+            "error_text": reporting.STALE_SUBMISSION_REASON,
         },
     )
     db.execute(
@@ -234,6 +234,40 @@ def _sweep_apartment(monkeypatch):
     monkeypatch.setattr(reporting, "client_for", lambda *_a, **_k: FakeClient())
     monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _a: [])
     return apartment_id, submission_id, guest_id, owner_id
+
+
+def test_automation_skips_a_guest_while_they_still_point_at_outcome_unknown(monkeypatch):
+    """A partial retry (retried_at set, pointer not cleared) must not reopen the sweep."""
+    db.init_db()
+    apartment_id, submission_id, guest_id, _owner_id = _sweep_apartment(monkeypatch)
+    db.update("submission", submission_id, {"retried_at": db.utcnow()})
+    assert db.query_one(
+        "SELECT submission_id FROM guest WHERE id = ?", (guest_id,)
+    )["submission_id"] == submission_id
+    assert reporting.collect_sendable(apartment_id) == []
+
+
+def test_sweep_does_not_retry_a_live_unknown_outcome(monkeypatch):
+    """A timeout after send is OD-1: the host checks UbyPort, the sweep does not resend."""
+    db.init_db()
+    apartment_id, submission_id, guest_id, owner_id = _sweep_apartment(monkeypatch)
+    db.update("submission", submission_id, {"error_text": "read timed out"})
+    batches = []
+    monkeypatch.setattr(
+        reporting,
+        "submit_batch",
+        lambda *a, **k: batches.append(1) or {"submitted": 0, "state": "noop"},
+    )
+
+    reporting.sweep(owner_user_id=owner_id)
+
+    assert batches == []
+    assert db.query_one("SELECT retried_at FROM submission WHERE id = ?", (submission_id,))["retried_at"] is None
+    assert db.query_one("SELECT submission_id FROM guest WHERE id = ?", (guest_id,))["submission_id"] == submission_id
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM submission WHERE apartment_id = ?",
+        (apartment_id,),
+    )["n"] == 1
 
 
 def test_sweep_retries_an_outcome_unknown_batch_once(monkeypatch):
@@ -459,7 +493,8 @@ def test_the_host_can_still_send_by_hand_after_an_unclear_resend(monkeypatch):
     assert client.calls == 2, "a filed guest is never sent again"
 
 
-def test_an_unclear_manual_send_still_gets_its_one_automatic_resend(monkeypatch):
+def test_a_manual_send_with_an_unclear_outcome_is_not_auto_retried(monkeypatch):
+    """Live timeouts (OD-1) wait for the host; only crash-stuck batches get one sweep resend."""
     db.init_db()
     apartment_id, original, guest_id, owner_id, client = _crashed_filing(
         monkeypatch, ["timeout", "timeout", "ok"]
@@ -469,13 +504,12 @@ def test_an_unclear_manual_send_still_gets_its_one_automatic_resend(monkeypatch)
         apartment_id, only_guest_ids=[guest_id], mode="manual", ignore_automation=True
     )
     assert client.calls == 2
-    # The host's send is not the automatic one: its unclear answer is resent once.
     reporting.sweep(owner_user_id=owner_id)
     reporting.sweep(owner_user_id=owner_id)
-    assert client.calls == 3
-    assert _guest_row(guest_id)["submit_state"] == reporting.SENT
+    assert client.calls == 2
+    assert _guest_row(guest_id)["submit_state"] == reporting.PENDING
     modes = [r["mode"] for r in _batches(apartment_id)]
-    assert modes == ["auto", reporting.AUTO_RESEND_MODE, "manual", reporting.AUTO_RESEND_MODE]
+    assert modes == ["auto", reporting.AUTO_RESEND_MODE, "manual"]
 
 
 @pytest.mark.parametrize("answer", ["ok", "duplicate"])

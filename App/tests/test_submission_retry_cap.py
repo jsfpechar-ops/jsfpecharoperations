@@ -576,6 +576,7 @@ def test_an_unknown_outcome_is_recorded_and_not_refiled_by_the_sweep(monkeypatch
         monkeypatch.setattr(
             reporting, "client_for", lambda *_a, **_k: UnknownOutcomeClient()
         )
+        monkeypatch.setattr(reporting.validation, "validate_apartment", lambda _a: [])
         pairs = reporting.collect_sendable(apartment["id"], ignore_automation=True)
         assert guest_id in [guest["id"] for guest, _ in pairs]
         result = reporting.submit_batch(apartment, pairs, mode="manual")
@@ -590,6 +591,14 @@ def test_an_unknown_outcome_is_recorded_and_not_refiled_by_the_sweep(monkeypatch
         assert alerts.open_alert(f"submission_outcome_unknown:{apartment['id']}")
         assert guest_id not in [g["id"] for g, _ in reporting.collect_sendable(apartment["id"])]
         assert guest_id in [g["id"] for g, _ in reporting.collect_sendable(apartment["id"], ignore_automation=True)]
+        assert reporting._retry_outcome_unknown_batches(apartment["id"]) == 0
+        assert db.query_one(
+            "SELECT retried_at FROM submission WHERE id = ?", (submission["id"],)
+        )["retried_at"] is None
+        assert db.query_one(
+            "SELECT COUNT(*) AS n FROM submission WHERE apartment_id = ?",
+            (apartment["id"],),
+        )["n"] == 1
     finally:
         _cleanup(apartment["id"])
 

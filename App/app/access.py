@@ -33,6 +33,20 @@ def identity_visible(request: Request, guest_id: int | None = None) -> bool:
     return int(guest_id) in auth.revealed_guest_ids(request)
 
 
+def dorucenka_download_visible(request: Request) -> bool:
+    """Whether a single stored UbyPort Doručenka PDF may be downloaded.
+
+    These are the police confirmation PDFs from ``ZapisUbytovane``, not host
+    registration forms. Operators verifying filing need them while previewing a
+    host workspace (no host password). Bulk zips and submission request XML stay
+    blocked while impersonating because they carry every document number.
+    """
+    if not auth.impersonating(request):
+        return True
+    account = auth.current_user(request)
+    return bool(account and account["role"] == "admin")
+
+
 def mask_identifier(value) -> str:
     """A document or visa number with all but its last characters hidden."""
     text = str(value or "")

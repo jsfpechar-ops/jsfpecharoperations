@@ -2,6 +2,8 @@
 
 Everything Joe does by hand, in order. Cursor does the code. Details for each step are in `notes/WPNN-*.md`.
 
+**What is already done vs still open on production:** **[OWNER_PRODUCTION_STATUS.md](OWNER_PRODUCTION_STATUS.md)** (updated 2026-10-05).
+
 **Do this first.** Ask the foreign police (Ředitelství služby cizinecké policie, UbyPort support) for access to the UbyPort test environment now, so Gate 2 does not wait on them.
 
 ## A. Hand the plan to Cursor (15 minutes)
@@ -75,7 +77,7 @@ First real host day:
 1. One end-to-end filing on staging against the UbyPort test endpoint: a Friday arrival before a public holiday and one EU guest (EU guests must be filed).
 2. Every healthchecks.io check green.
 3. `UBYHOST_RETENTION_AUTOPURGE=1`.
-4. Send each new host `compliance/05_manual_filing_fallback.md`.
+4. Optional onboarding: point new hosts at in-app **Guide → manual UbyPort filing** (`/guide`); repo `compliance/05_manual_filing_fallback.md` is operator reference, not a required e-mail attachment.
 5. Gate 4 in `00_README_for_cursor.md` is met.
 
 ## E. Later PRs (0022 to 0034)

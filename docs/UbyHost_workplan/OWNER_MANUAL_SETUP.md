@@ -2,6 +2,8 @@
 
 **Start here for click-by-click workflow:** **[OWNER_WORKFLOW_STEP_BY_STEP.md](OWNER_WORKFLOW_STEP_BY_STEP.md)** (GitHub, Render, Lightsail, AWS, every patch phase).
 
+**Done vs still to do on production:** **[OWNER_PRODUCTION_STATUS.md](OWNER_PRODUCTION_STATUS.md)**.
+
 This file is the **reference** (tables, gates, preflight rules). Cursor applies code from `series/0001`–`0034` in merge order (`00_README_for_cursor.md`). Per-WP detail stays in `notes/WPNN-*.md` and `05_owner_checklist.md`.
 
 **Do first (not tied to a patch):** Ask the Foreign Police / UbyPort support for access to the **UbyPort test environment** so Gate 2 is not blocked waiting on them.
