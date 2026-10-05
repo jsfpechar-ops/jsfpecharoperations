@@ -77,7 +77,7 @@ First real host day:
 1. One end-to-end filing on staging against the UbyPort test endpoint: a Friday arrival before a public holiday and one EU guest (EU guests must be filed).
 2. Every healthchecks.io check green.
 3. `UBYHOST_RETENTION_AUTOPURGE=1`.
-4. Send each new host `compliance/05_manual_filing_fallback.md`.
+4. Optional onboarding: point new hosts at in-app **Guide → manual UbyPort filing** (`/guide`); repo `compliance/05_manual_filing_fallback.md` is operator reference, not a required e-mail attachment.
 5. Gate 4 in `00_README_for_cursor.md` is met.
 
 ## E. Later PRs (0022 to 0034)
