@@ -455,9 +455,26 @@ async def stay_fee_adjustment_add(apartment_id: int, request: Request):
     month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
     back = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
     correcting = _form_str(form, "correct") == "1"
-    period = stay_fee.property_period(apartment, month, live_only=correcting)
-    if period and period.get("frozen") and not correcting:
-        return _back(back, err=_flash(request, "flash.stay_fees.adjust_frozen"))
+    # A correction must keep the sealed period's cadence and key. The live
+    # property cadence can change after filing (monthly → quarterly); using
+    # it here would store the row under 2026-Q3 while finalize still reads
+    # 2026-08, so the remitted total would omit the adjustment.
+    sealed = stay_fee_filing.covering(apartment["id"], month) if correcting else None
+    if correcting:
+        if not sealed:
+            return _back(back, err=_flash(request, "flash.stay_fees.report_blocked"))
+        back = f"{back}&correct=1"
+        cadence = sealed["cadence"]
+        calc_month = stay_fee_filing.period_anchor(sealed)
+        period = stay_fee.property_period(
+            apartment, calc_month, live_only=True, cadence=cadence, rate=sealed["rate_czk"],
+        )
+        key = stay_fee_filing.period_key(cadence, calc_month)
+    else:
+        period = stay_fee.property_period(apartment, month)
+        if period and period.get("frozen"):
+            return _back(back, err=_flash(request, "flash.stay_fees.adjust_frozen"))
+        key = stay_fee_filing.period_key(stay_fee.cadence_of(apartment), month)
     direction = _form_str(form, "direction")
     mode = _form_str(form, "mode")
     reason = _form_str(form, "reason").strip()
@@ -467,7 +484,6 @@ async def stay_fee_adjustment_add(apartment_id: int, request: Request):
         days = _adjustment_bed_days(form)
     except ValueError:
         return _back(back, err=_flash(request, "flash.stay_fees.adjust_invalid"))
-    key = _period_key(stay_fee.cadence_of(apartment), month)
     current = stay_fee_adjustment.net_bed_days(apartment_id, key)
     guest_nights = int((period or {}).get("guest_liable_nights") or 0)
     delta = days if direction == "add" else -days
