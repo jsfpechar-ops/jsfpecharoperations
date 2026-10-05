@@ -16,7 +16,7 @@ Technical reference stays there; **do this document in order** when you roll out
 Production site: **https://ubyhost.com** (Lightsail).  
 Staging site: **https://ubyhost-staging.onrender.com** (Render, after you recreate it).
 
-**Already done on your production (skip re-setup):** SES guest mail, healthchecks.io pings, operator fields in `.env`, Turnstile, nightly age backups (if already configured).
+**Already done on your production (skip re-setup):** See **[OWNER_PRODUCTION_STATUS.md](OWNER_PRODUCTION_STATUS.md)** for the live checklist (SES, Litestream, retention autopurge, healthchecks, real hosts, etc.). Do not repeat steps marked **Done** there.
 
 ---
 

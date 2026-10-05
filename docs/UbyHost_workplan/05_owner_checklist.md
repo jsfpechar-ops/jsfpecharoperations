@@ -2,6 +2,8 @@
 
 Everything Joe does by hand, in order. Cursor does the code. Details for each step are in `notes/WPNN-*.md`.
 
+**What is already done vs still open on production:** **[OWNER_PRODUCTION_STATUS.md](OWNER_PRODUCTION_STATUS.md)** (updated 2026-10-05).
+
 **Do this first.** Ask the foreign police (Ředitelství služby cizinecké policie, UbyPort support) for access to the UbyPort test environment now, so Gate 2 does not wait on them.
 
 ## A. Hand the plan to Cursor (15 minutes)
