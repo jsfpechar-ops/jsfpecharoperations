@@ -194,6 +194,25 @@ def test_a_malformed_effective_date_stops_start_up():
     assert "Invalid isoformat" in result.stderr or "isoformat" in result.stderr
 
 
+def test_unset_legal_effective_date_defaults_to_the_release_day():
+    """WP24: production should set UBYHOST_LEGAL_EFFECTIVE_DATE; unset must not crash."""
+    env = {k: v for k, v in os.environ.items() if k != "UBYHOST_LEGAL_EFFECTIVE_DATE"}
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import app.config as c; print(c.LEGAL_EFFECTIVE_DATE.isoformat())",
+        ],
+        cwd=APP_DIR,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "2026-10-05"
+
+
 # --- one acceptance for all three -------------------------------------------------
 
 

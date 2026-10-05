@@ -347,6 +347,28 @@ def test_supporting_can_download_a_stored_dorucenka_and_it_is_audited(seeded):
     assert response.headers["content-type"].startswith("application/pdf")
     rows = _audit(seeded["owner"], "export_submission_pdf")
     assert rows and "while_supporting=1" in rows[-1]["detail"]
+    assert "which=receipt" in rows[-1]["detail"]
+
+
+def test_supporting_can_download_errors_pdf_and_it_is_audited(seeded):
+    client = _supporting(seeded)
+    submission_id = seeded["submission"]
+    response = client.get(f"/submissions/{submission_id}/errors.pdf", follow_redirects=False)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/pdf")
+    rows = _audit(seeded["owner"], "export_submission_pdf")
+    assert rows and "while_supporting=1" in rows[-1]["detail"]
+    assert "which=errors" in rows[-1]["detail"]
+
+
+def test_supporting_cannot_download_bulk_receipts_or_request_xml(seeded):
+    """Single Doručenka PDFs are allowed; bulk zip and request XML stay identity-blocked."""
+    client = _supporting(seeded)
+    submission_id = seeded["submission"]
+    for path in ("/submissions/receipts.zip", f"/submissions/{submission_id}/request.xml"):
+        response = client.get(path, follow_redirects=False)
+        assert response.status_code == 303, path
+        assert "err=" in response.headers["location"], path
 
 
 def test_saving_a_masked_guest_keeps_the_stored_identity(seeded):
