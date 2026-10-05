@@ -130,13 +130,12 @@ fi
 
 # WP05: the litestream service replicates the database to S3 continuously.
 # Set UBYHOST_LITESTREAM_ENABLED=0 to deploy without S3 (nightly backup only).
-litestream_enabled="${UBYHOST_LITESTREAM_ENABLED:-1}"
-case "${litestream_enabled}" in
-  0|false|no|FALSE|NO) litestream_enabled=0 ;;
-  *) litestream_enabled=1 ;;
-esac
+# shellcheck disable=SC1091
+source "$(dirname "$0")/litestream_env.sh"
 if [ "${litestream_enabled}" = "0" ]; then
-  if [ "${DEPLOYMENT}" = "production" ]; then
+  if [ "${litestream_auto_disabled}" = "1" ] && [ "${DEPLOYMENT}" = "production" ]; then
+    warn "Litestream S3 variables are empty — deploying without continuous replica (nightly backup only). Set LITESTREAM_* and UBYHOST_LITESTREAM_ENABLED=1 when S3 is ready."
+  elif [ "${DEPLOYMENT}" = "production" ]; then
     warn "UBYHOST_LITESTREAM_ENABLED=0 — no continuous S3 replica; rely on nightly backup until Litestream is configured"
   fi
 elif [ "${DEPLOYMENT}" = "production" ]; then
