@@ -20,12 +20,13 @@ MASK_CHAR = "\u2022"
 def identity_visible(request: Request, guest_id: int | None = None) -> bool:
     """Whether this request may see a guest's identity data in full.
 
-    Identity data means document and visa numbers, signatures, passport
-    photos, and every export that carries them. The host always sees it. An
-    admin inside the host's workspace sees it only for a guest revealed (with
-    a logged reason) in this impersonation; with no ``guest_id`` (bulk
-    exports, the workspace ZIP) the answer while impersonating is always no.
+    Platform administrators always see full data, including while previewing a
+    host workspace, so support is not blocked by masking or export gates.
+    Hosts always see their own data.
     """
+    account = auth.current_user(request)
+    if account and account["role"] == "admin":
+        return True
     if not auth.impersonating(request):
         return True
     if guest_id is None:
@@ -34,17 +35,8 @@ def identity_visible(request: Request, guest_id: int | None = None) -> bool:
 
 
 def dorucenka_download_visible(request: Request) -> bool:
-    """Whether a single stored UbyPort Doručenka PDF may be downloaded.
-
-    These are the police confirmation PDFs from ``ZapisUbytovane``, not host
-    registration forms. Operators verifying filing need them while previewing a
-    host workspace (no host password). Bulk zips and submission request XML stay
-    blocked while impersonating because they carry every document number.
-    """
-    if not auth.impersonating(request):
-        return True
-    account = auth.current_user(request)
-    return bool(account and account["role"] == "admin")
+    """Alias kept for clarity at export routes; same rule as ``identity_visible``."""
+    return identity_visible(request)
 
 
 def mask_identifier(value) -> str:

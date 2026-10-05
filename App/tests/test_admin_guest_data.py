@@ -1,9 +1,7 @@
-"""WP04: an admin inside a host's workspace sees guest identity only after a logged reveal.
+"""WP04: admin workspace preview — audit, optional reason, full support access.
 
-Covers the reason on opening a workspace, the 60-minute limit, the stop row in
-the host's audit, masking on every page and download that carries document or
-visa numbers, signatures or passport photos, the per-guest reveal, and the
-Support sessions filter in the host's Settings.
+Admins see full guest identity and all exports while previewing a host workspace.
+Opening still writes impersonation_started; reason is optional (defaults to support).
 """
 from __future__ import annotations
 
@@ -203,26 +201,27 @@ def _downloads(seeded):
 
 # --- starting, the reason ---------------------------------------------------
 
-def test_opening_a_workspace_without_a_reason_is_refused(seeded):
+def test_opening_a_workspace_without_a_reason_uses_support_in_audit(seeded):
     client = _login("wp04-admin")
-    for reason in ("", "   ", "abcd", "x" * 301):
-        response = _impersonate(client, seeded["owner"], reason)
-        assert response.status_code == 303
-        assert "err=" in response.headers["location"]
-        assert "Previewing workspace" not in client.get("/").text
-    assert _audit(seeded["owner"], "impersonation_started") == []
+    assert _impersonate(client, seeded["owner"], "").status_code == 303
+    assert "Previewing workspace" in client.get("/").text
+    rows = _audit(seeded["owner"], "impersonation_started")
+    assert rows[-1]["detail"] == "admin=wp04-admin reason=support"
 
+    client.post("/admin/stop-impersonating", follow_redirects=False)
     assert _impersonate(client, seeded["owner"], "  Host   ticket\n42  ").status_code == 303
     rows = _audit(seeded["owner"], "impersonation_started")
-    assert len(rows) == 1
-    assert rows[0]["detail"] == "admin=wp04-admin reason=Host ticket 42"
+    assert rows[-1]["detail"] == "admin=wp04-admin reason=Host ticket 42"
 
 
 def test_the_bar_shows_the_minutes_left(seeded):
     client = _supporting(seeded)
     page = client.get("/").text
-    assert 'data-impersonation-minutes="60"' in page
-    assert "60 minutes left" in page
+    if auth.IMPERSONATION_MAX_AGE <= 0:
+        assert "data-impersonation-minutes" not in page
+        return
+    assert "data-impersonation-minutes=" in page
+    assert "minutes left" in page
 
 
 def test_a_session_without_a_start_time_is_treated_as_expired(seeded):
@@ -235,6 +234,7 @@ def test_a_session_without_a_start_time_is_treated_as_expired(seeded):
 # --- the 60-minute limit and the stop row -------------------------------------
 
 def test_after_sixty_minutes_the_next_request_ends_the_impersonation(seeded, monkeypatch):
+    monkeypatch.setattr(auth, "IMPERSONATION_MAX_AGE", 3600)
     client = _supporting(seeded)
     started = time.time()
     monkeypatch.setattr(
@@ -260,6 +260,7 @@ def test_after_sixty_minutes_the_next_request_ends_the_impersonation(seeded, mon
 
 
 def test_before_sixty_minutes_the_impersonation_holds(seeded, monkeypatch):
+    monkeypatch.setattr(auth, "IMPERSONATION_MAX_AGE", 3600)
     client = _supporting(seeded)
     started = time.time()
     monkeypatch.setattr(auth.time, "time", lambda: started + auth.IMPERSONATION_MAX_AGE - 120)
@@ -296,47 +297,24 @@ def test_the_host_sees_full_identity_data(seeded):
         assert response.status_code == 200, (path, response.status_code)
 
 
-def test_every_identity_route_is_masked_or_blocked_while_supporting(seeded):
+def test_the_admin_sees_full_identity_data_while_supporting(seeded):
     client = _supporting(seeded)
-    hidden = host_i18n.translate("en", "identity.hidden")
     for path in _pages(seeded):
-        response = client.get(path)
-        assert response.status_code == 200, path
-        for secret in (DOC_A, VISA_A, DOC_B):
-            assert secret not in response.text, (path, secret)
-    # The last three characters stay, for matching a guest's word on the phone.
-    assert "•••567" in client.get(f"/reservations/{seeded['reservation']}").text
-    assert "•••321" in client.get("/housebook").text
-    assert "•••543" in client.get(f"/submissions/{seeded['submission']}").text
+        assert client.get(path).status_code == 200, path
+    assert DOC_A in client.get(f"/reservations/{seeded['reservation']}").text
+    assert VISA_A in client.get("/housebook").text
+    assert DOC_B in client.get(f"/submissions/{seeded['submission']}").text
     form = client.get(f"/guests/{seeded['guest_a']}").text
-    assert hidden in form
-    assert demo.DEMO_SIGNATURE not in form
-    assert f'src="/guests/{seeded["guest_a"]}/passport-photo"' not in form
-    assert 'id="sig-canvas"' not in form
-    assert 'name="doc_number"' not in form
-    # Names, nationality and status stay visible for support.
-    assert "Alpha" in form
-
+    assert DOC_A in form and VISA_A in form
+    assert demo.DEMO_SIGNATURE in form
+    assert f"/guests/{seeded['guest_a']}/passport-photo" in form
+    assert host_i18n.translate("en", "identity.hidden") not in form
     for method, path in _downloads(seeded):
         response = getattr(client, method)(path, follow_redirects=False)
-        if path.endswith("/passport-photo"):
-            assert response.status_code == 403
-            assert response.content != PNG_BYTES
-            continue
-        if path.endswith("/receipt.pdf") or path.endswith("/errors.pdf"):
-            assert response.status_code == 200, (path, response.status_code)
-            continue
-        assert response.status_code == 303, (path, response.status_code)
-        assert "err=" in response.headers["location"], path
-        assert DOC_A.encode() not in response.content
-
-    stay_fee_csv = client.get(f"/stay-fees/{seeded['apartment']}/csv", follow_redirects=False)
-    assert stay_fee_csv.status_code == 303
-    assert "err=" in stay_fee_csv.headers["location"]
+        assert response.status_code == 200, (path, response.status_code)
     admin_zip = client.post(f"/admin/users/{seeded['owner']}/export", follow_redirects=False)
-    assert admin_zip.status_code == 303
-    assert "err=" in admin_zip.headers["location"]
-    assert _audit(seeded["owner"], "workspace_exported") == []
+    assert admin_zip.status_code == 200
+    assert _audit(seeded["owner"], "workspace_exported")
 
 
 def test_supporting_can_download_a_stored_dorucenka_and_it_is_audited(seeded):
@@ -345,11 +323,10 @@ def test_supporting_can_download_a_stored_dorucenka_and_it_is_audited(seeded):
     response = client.get(f"/submissions/{submission_id}/receipt.pdf", follow_redirects=False)
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/pdf")
-    rows = _audit(seeded["owner"], "export_submission_pdf")
-    assert rows and "while_supporting=1" in rows[-1]["detail"]
+    assert _audit(seeded["owner"], "export_submission_pdf")
 
 
-def test_saving_a_masked_guest_keeps_the_stored_identity(seeded):
+def test_saving_a_guest_while_supporting_persists_identity(seeded):
     client = _supporting(seeded)
     guest_id = seeded["guest_a"]
     response = client.post(
@@ -360,13 +337,13 @@ def test_saving_a_masked_guest_keeps_the_stored_identity(seeded):
             "birth_date": "01011990",
             "nationality": "GBR",
             "doc_type": "pas",
-            "doc_number": "•••567",
-            "visa_number": "",
+            "doc_number": DOC_A,
+            "visa_number": VISA_A,
             "purpose": "10",
             "res_street": "Baker Street 1",
             "res_city": "London",
             "res_country": "GBR",
-            "signature": "",
+            "signature": demo.DEMO_SIGNATURE,
         },
         follow_redirects=False,
     )
@@ -379,15 +356,11 @@ def test_saving_a_masked_guest_keeps_the_stored_identity(seeded):
 
 # --- reveal -------------------------------------------------------------------
 
-def test_reveal_needs_a_reason_writes_the_audit_row_and_unmasks_only_that_guest(seeded):
+def test_reveal_still_writes_audit_and_admin_already_sees_full_identity(seeded):
     client = _supporting(seeded)
     a, b = seeded["guest_a"], seeded["guest_b"]
-
-    refused = client.post(f"/guests/{a}/reveal-identity", data={"reason": "no"},
-                          follow_redirects=False)
-    assert refused.status_code == 303 and "err=" in refused.headers["location"]
-    assert _audit(seeded["owner"], "guest_identity_revealed") == []
-    assert DOC_A not in client.get(f"/guests/{a}").text
+    assert DOC_A in client.get(f"/guests/{a}").text
+    assert DOC_B in client.get(f"/guests/{b}").text
 
     revealed = client.post(
         f"/guests/{a}/reveal-identity",
@@ -396,26 +369,8 @@ def test_reveal_needs_a_reason_writes_the_audit_row_and_unmasks_only_that_guest(
     )
     assert revealed.status_code == 303
     rows = _audit(seeded["owner"], "guest_identity_revealed")
-    assert len(rows) == 1
-    assert rows[0]["detail"] == f"guest_id={a} reason=Guest says the passport number is wrong"
-    assert rows[0]["impersonator_user_id"] == seeded["admin"]
-
-    form_a = client.get(f"/guests/{a}").text
-    assert DOC_A in form_a and VISA_A in form_a
-    assert demo.DEMO_SIGNATURE in form_a
-    # WP08 re-encodes every stored photo, so compare with the stored bytes.
-    assert client.get(f"/guests/{a}/passport-photo").content == passport_photos.read_photo(a)[0]
-    assert client.get(f"/guests/{a}/form.pdf").status_code == 200
-
-    form_b = client.get(f"/guests/{b}").text
-    assert DOC_B not in form_b
-    assert client.get(f"/guests/{b}/passport-photo").status_code == 403
-    housebook = client.get("/housebook").text
-    assert DOC_A in housebook and DOC_B not in housebook
-    # Bulk downloads stay blocked even with one guest revealed.
-    assert client.get("/housebook.csv", follow_redirects=False).status_code == 303
-    # The reveal does not restart the clock or end the preview.
-    assert 'data-impersonation-minutes="60"' in client.get("/").text
+    assert rows[-1]["detail"] == f"guest_id={a} reason=Guest says the passport number is wrong"
+    assert client.get("/housebook.csv", follow_redirects=False).status_code == 200
 
 
 def test_reveal_ends_with_the_impersonation(seeded):
@@ -424,10 +379,11 @@ def test_reveal_ends_with_the_impersonation(seeded):
     client.post(f"/guests/{a}/reveal-identity", data={"reason": REASON}, follow_redirects=False)
     client.post("/admin/stop-impersonating", follow_redirects=False)
     assert _impersonate(client, seeded["owner"]).status_code == 303
-    assert DOC_A not in client.get(f"/guests/{a}").text
+    assert DOC_A in client.get(f"/guests/{a}").text
 
 
 def test_the_reveal_keeps_the_original_start_time(seeded, monkeypatch):
+    monkeypatch.setattr(auth, "IMPERSONATION_MAX_AGE", 3600)
     client = _supporting(seeded)
     started = time.time()
     monkeypatch.setattr(auth.time, "time", lambda: started + 50 * 60)
@@ -450,6 +406,8 @@ def test_identity_helpers():
     assert auth.support_reason("abcde") == "abcde"
     assert auth.support_reason("x" * 300) == "x" * 300
     assert auth.support_reason("x" * 301) is None
+    assert auth.impersonation_audit_reason("") == "support"
+    assert auth.impersonation_audit_reason("abcde") == "abcde"
 
 
 # --- the host's Settings ------------------------------------------------------

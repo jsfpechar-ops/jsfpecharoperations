@@ -29,8 +29,20 @@ SESSION_MAX_AGE = 60 * 60 * 12
 SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 30
 TWO_FACTOR_PENDING_MAX_AGE = 10 * 60
 # An admin inside a host's workspace is sent back to their own view after this
-# long. The start time travels in the signed session payload ("ast").
-IMPERSONATION_MAX_AGE = 60 * 60
+# long. The start time travels in the signed session payload ("ast"). Set
+# UBYHOST_IMPERSONATION_MAX_HOURS=0 for no limit (operator policy).
+def _impersonation_max_age() -> int:
+    raw = os.environ.get("UBYHOST_IMPERSONATION_MAX_HOURS", "24").strip()
+    if raw in ("0", ""):
+        return 0
+    try:
+        hours = int(raw)
+    except ValueError:
+        hours = 24
+    return max(0, hours) * 3600
+
+
+IMPERSONATION_MAX_AGE = _impersonation_max_age()
 # Guests whose identity the admin revealed in this impersonation ("rv"). The
 # cap keeps the cookie small; a reveal past it drops the oldest entry.
 MAX_REVEALED_GUESTS = 50
@@ -348,13 +360,24 @@ def support_reason(value) -> Optional[str]:
     return text
 
 
+def impersonation_audit_reason(value) -> str:
+    """Reason stored when an admin opens a workspace or reveals a guest.
+
+    Optional in the UI: empty or too short values become ``support`` so support
+    is not blocked on a mandatory form field.
+    """
+    return support_reason(value) or "support"
+
+
 def impersonation_expired(payload: Optional[dict[str, Any]]) -> bool:
     """True once an impersonation has run for IMPERSONATION_MAX_AGE.
 
     A payload with "as" but no usable start time (one issued before the limit
     existed) counts as expired, so every session inside a host's workspace has
-    a reason and a clock.
+    a reason and a clock. When IMPERSONATION_MAX_AGE is 0, never expires.
     """
+    if IMPERSONATION_MAX_AGE <= 0:
+        return False
     if not payload or not payload.get("as"):
         return False
     started = payload.get("ast")
@@ -392,6 +415,8 @@ def impersonation_minutes_left(request: Request) -> Optional[int]:
     """Whole minutes left in this impersonation, rounded up; None outside one."""
     started = impersonation_started_at(request)
     if started is None:
+        return None
+    if IMPERSONATION_MAX_AGE <= 0:
         return None
     remaining = IMPERSONATION_MAX_AGE - (time.time() - started)
     return max(0, int(-(-remaining // 60)))

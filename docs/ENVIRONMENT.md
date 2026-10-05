@@ -122,6 +122,14 @@ address, so all PIN and claim rate limits share a single bucket — one guest
 retrying can lock out every other guest, and a brute-force attempt is not
 isolated to its source.
 
+## Admin workspace preview
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `UBYHOST_IMPERSONATION_MAX_HOURS` | `24` | After this many hours in a host workspace preview, the admin session returns to the admin view. `0` = no limit. |
+
+Platform admins see full guest data and all downloads while previewing; optional reason on open defaults to `support` in the audit log.
+
 ## Mail
 
 | Variable | Default | Notes |
