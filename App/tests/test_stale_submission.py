@@ -493,7 +493,8 @@ def test_the_host_can_still_send_by_hand_after_an_unclear_resend(monkeypatch):
     assert client.calls == 2, "a filed guest is never sent again"
 
 
-def test_an_unclear_manual_send_still_gets_its_one_automatic_resend(monkeypatch):
+def test_a_manual_send_with_an_unclear_outcome_is_not_auto_retried(monkeypatch):
+    """Live timeouts (OD-1) wait for the host; only crash-stuck batches get one sweep resend."""
     db.init_db()
     apartment_id, original, guest_id, owner_id, client = _crashed_filing(
         monkeypatch, ["timeout", "timeout", "ok"]
@@ -503,13 +504,12 @@ def test_an_unclear_manual_send_still_gets_its_one_automatic_resend(monkeypatch)
         apartment_id, only_guest_ids=[guest_id], mode="manual", ignore_automation=True
     )
     assert client.calls == 2
-    # The host's send is not the automatic one: its unclear answer is resent once.
     reporting.sweep(owner_user_id=owner_id)
     reporting.sweep(owner_user_id=owner_id)
-    assert client.calls == 3
-    assert _guest_row(guest_id)["submit_state"] == reporting.SENT
+    assert client.calls == 2
+    assert _guest_row(guest_id)["submit_state"] == reporting.PENDING
     modes = [r["mode"] for r in _batches(apartment_id)]
-    assert modes == ["auto", reporting.AUTO_RESEND_MODE, "manual", reporting.AUTO_RESEND_MODE]
+    assert modes == ["auto", reporting.AUTO_RESEND_MODE, "manual"]
 
 
 @pytest.mark.parametrize("answer", ["ok", "duplicate"])
