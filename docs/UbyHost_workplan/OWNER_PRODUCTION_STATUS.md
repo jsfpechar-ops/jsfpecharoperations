@@ -13,7 +13,7 @@ Living checklist for **ubyhost.com** (Lightsail). Update this when you complete 
 | Workplan **0001–0034** on `main` | **Done** — PR **#237** |
 | WP22/WP24 owner gate | **Done** — PR **#275** |
 | Litestream preflight when S3 empty | **Done** — PR **#273** |
-| Follow-up bundle (filing, stay-fee, tests, Umami cleanup) | **Open** — PR **#277** — merge then deploy |
+| Follow-up bundle (filing, stay-fee, tests, Umami cleanup, **Doručenka in workspace preview**) | **Open** — PR **#277** — merge then deploy |
 
 ---
 
