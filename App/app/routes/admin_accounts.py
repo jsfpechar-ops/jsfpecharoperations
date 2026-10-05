@@ -572,17 +572,7 @@ async def user_impersonate(user_id: int, request: Request):
     if guard or not target:
         return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
     form = await request.form()
-    reason = auth.support_reason(_form_str(form, "reason"))
-    if reason is None:
-        return _back(
-            "/admin/users",
-            err=_flash(
-                request,
-                "flash.error.support_reason",
-                min=auth.SUPPORT_REASON_MIN,
-                max=auth.SUPPORT_REASON_MAX,
-            ),
-        )
+    reason = auth.impersonation_audit_reason(_form_str(form, "reason"))
     response = RedirectResponse("/", status_code=303)
     auth.attach_session(
         response,

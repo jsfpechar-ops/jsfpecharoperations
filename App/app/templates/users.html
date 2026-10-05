@@ -57,7 +57,7 @@
                 {{ row_menu_begin(t('users.menu.aria')) }}
                   <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
                     <label class="small muted" for="support-reason-{{ user.id }}">{{ t('users.menu.open_workspace_reason') }}</label>
-                    <input type="text" id="support-reason-{{ user.id }}" name="reason" minlength="5" maxlength="300" required>
+                    <input type="text" id="support-reason-{{ user.id }}" name="reason" maxlength="300" placeholder="{{ t('users.menu.open_workspace_reason_optional') }}">
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.open_workspace') }}</button>
                   </form>
                   <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form"{% if user.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=user.display_name or user.username) }}"{% endif %}>

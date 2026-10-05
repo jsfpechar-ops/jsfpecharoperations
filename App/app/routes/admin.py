@@ -2381,17 +2381,7 @@ async def guest_reveal_identity(guest_id: int, request: Request):
     )
     if not auth.impersonating(request):
         return _back(return_to)
-    reason = auth.support_reason(_form_str(form, "reason"))
-    if reason is None:
-        return _back(
-            return_to,
-            err=_flash(
-                request,
-                "flash.error.support_reason",
-                min=auth.SUPPORT_REASON_MIN,
-                max=auth.SUPPORT_REASON_MAX,
-            ),
-        )
+    reason = auth.impersonation_audit_reason(_form_str(form, "reason"))
     account = auth.current_user(request)
     workspace = auth.workspace_user(request)
     response = _back(return_to, msg=_flash(request, "flash.identity.revealed"))
