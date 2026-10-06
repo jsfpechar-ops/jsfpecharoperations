@@ -95,5 +95,4 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-ML01 | Low open | App/app/static/app.js | Dead reset-password JS after task 0003 password removal | magic-link HANDOFF |
 | K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
 | K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
-| K-T01 | High open | App/tests order | Full suite in one process: 86 fail, 164 error (FOREIGN KEY on `audit` at `/login/link`); each file passes alone. Same on `main` 98be550 | 0006 |
 | K-ML04 | Low open | login link limit | Anyone can use up a victim's 3 requests per 15 min. Kept: counting only real accounts would reveal who uses UbyHost | 0006 |

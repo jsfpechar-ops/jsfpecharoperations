@@ -93,6 +93,10 @@ def test_production_hosts_without_totp_are_let_in(monkeypatch):
         monkeypatch.setattr(config, "DEPLOYMENT", "production")
         assert auth.require_login(request) is None
     finally:
+        # require_login names this account as the acting user for audit rows;
+        # leaving that set makes every later audit insert point at a deleted row.
+        db.set_current_actor(None)
+        db.set_current_owner(None)
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 

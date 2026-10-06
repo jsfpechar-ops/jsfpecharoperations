@@ -1,6 +1,6 @@
 # 0006 report: harden e-mail login after the #288 review
 
-Executor: the orchestrator, on the owner's "implement yourself". Branch `claude/quirky-babbage-tr05vb` (PR #290).
+Executor: the orchestrator, on the owner's "implement yourself". Also fixes the test pollution that made `main` red in pytest. Branch `claude/quirky-babbage-tr05vb` (PR #290).
 
 ## 1. Files changed
 
@@ -17,7 +17,8 @@ Executor: the orchestrator, on the owner's "implement yourself". Branch `claude/
 
 - `ruff check app tests tools scripts --select E9,F63,F7,F82,F401,F841`: All checks passed.
 - `pytest tests/test_login_hardening.py -q`: 7 passed.
-- `pytest tests -q`: 86 failed, 2549 passed, 4 skipped, 164 errors. The pristine tree gives the identical 250 failing ids and 2542 passed (the difference is the 7 new tests). See K-T01.
+- CI command (`UBYHOST_UBYPORT_ENV=mock UBYHOST_DEPLOYMENT=staging UBYHOST_ENABLE_SCHEDULER=0 pytest tests --cov=app --cov-fail-under=86`): 1 failed, 2798 passed, 4 skipped, coverage 90.39%. The one failure, `test_feed_dns_pinning::test_two_concurrent_fetches_do_not_cross_pinned_addresses`, also fails alone on the untouched tree in this sandbox (DNS or threads); CI decides whether it is real.
+- Before the fix to `test_security_hardening.py` the same run had 86 failed and 164 errors, identical on `main` (98be550). Cause: `test_production_hosts_without_totp_are_let_in` leaves `require_login`'s acting user set, then deletes the account, so every later audit insert hit a FOREIGN KEY error. The test now resets it.
 
 ## 3. Findings
 
@@ -30,7 +31,7 @@ Executor: the orchestrator, on the owner's "implement yourself". Branch `claude/
 
 ## 5. Questions
 
-Should a follow-up brief fix K-T01 (test pollution)? It hides every regression on `main` once lint is green.
+None.
 
 ## 6. Owner steps left
 
