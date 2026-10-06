@@ -98,6 +98,8 @@ async def passkey_register_options(request: Request):
         return _error(request, "passkeys.error.signed_out", 401)
     if not passkeys.available():
         return _error(request, "passkeys.error.unavailable", 409)
+    if not auth.session_is_fresh(request):
+        return _error(request, "auth.error.recent_login", 403)
     if passkeys.count_for(account["id"]) >= passkeys.MAX_PER_ACCOUNT:
         return _error(request, "passkeys.error.too_many", 409)
     ip_key = rate_limit.client_key(request)
@@ -112,6 +114,8 @@ async def passkey_register(request: Request, background: BackgroundTasks):
     account = _owner(request)
     if not account:
         return _error(request, "passkeys.error.signed_out", 401)
+    if not auth.session_is_fresh(request):
+        return _error(request, "auth.error.recent_login", 403)
     data = await _body(request)
     credential = data.get("credential")
     if not isinstance(credential, dict):
@@ -167,6 +171,8 @@ async def passkey_delete(request: Request, passkey_id: int):
     account = _owner(request)
     if not account:
         return RedirectResponse("/login", status_code=303)
+    if not auth.session_is_fresh(request):
+        return _back(_SECURITY, err=_flash(request, "auth.error.recent_login"))
     if passkeys.remove(account["id"], passkey_id) is None:
         return _back(_SECURITY, err=_flash(request, "flash.passkeys.not_found"))
     db.audit("passkey_removed", f"passkey={passkey_id}", actor=account["username"],
@@ -207,7 +213,7 @@ async def passkey_login(request: Request):
             owner = db.query_one(
                 "SELECT p.id, u.id AS uid, u.username FROM passkey p "
                 "JOIN user_account u ON u.id = p.user_account_id WHERE p.credential_id = ?",
-                (str(credential.get("rawId") or ""),),
+                (passkeys.normalise_credential_id(credential.get("rawId")),),
             )
             if owner:
                 db.audit("passkey_clone_suspected", f"passkey={owner['id']}",

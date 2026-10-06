@@ -552,7 +552,7 @@ def register(
                 },
             )
         except Exception as exc:
-            if "UNIQUE constraint failed" not in str(exc):
+            if not db.is_unique_violation(exc):
                 raise
             # A second submit raced this one for the same address.
             log.info("signup race on one address; treated as repeated")

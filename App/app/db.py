@@ -1425,6 +1425,18 @@ def null_safe_eq(column: str) -> str:
     return f"{column} {NULL_SAFE_EQ} ?"
 
 
+def is_unique_violation(exc: BaseException) -> bool:
+    """True when ``exc`` is a UNIQUE-constraint failure, on SQLite or Postgres.
+
+    Callers catch ``Exception`` around an insert or update and ask this, so no
+    route depends on one engine's error text.
+    """
+    if isinstance(exc, sqlite3.IntegrityError):
+        return "UNIQUE" in str(exc).upper()
+    # Postgres drivers: SQLSTATE 23505 is unique_violation.
+    return (getattr(exc, "sqlstate", None) or getattr(exc, "pgcode", None)) == "23505"
+
+
 def update(table: str, row_id: int, values: Dict[str, Any]) -> None:
     if not values:
         return

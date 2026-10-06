@@ -567,6 +567,29 @@ def set_account_email(user_id: int, email: str) -> None:
     if changing:
         sql += ", session_version = session_version + 1"
     db.execute(sql + " WHERE id = ?", (email, user_id))
+    # A link asked for before the change must not outlive it: an unconfirmed
+    # address-change link could otherwise hand the account to whoever holds it.
+    db.execute(
+        "UPDATE login_token SET used_at = ? WHERE user_account_id = ? AND used_at IS NULL",
+        (db.utcnow(), user_id),
+    )
+
+
+# Changing how an account is reached (login e-mail, passkeys) needs a login
+# this recent: a cookie stolen earlier cannot add a way in.
+FRESH_LOGIN_SECONDS = 10 * 60
+
+
+def session_is_fresh(request: Request, seconds: Optional[int] = None) -> bool:
+    """True when the session cookie was signed no more than ``seconds`` ago."""
+    token = request.cookies.get(SESSION_COOKIE)
+    if not token:
+        return False
+    try:
+        _serializer().loads(token, max_age=FRESH_LOGIN_SECONDS if seconds is None else seconds)
+    except BadSignature:
+        return False
+    return True
 
 
 def end_all_sessions(user_id: int) -> None:

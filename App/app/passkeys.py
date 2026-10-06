@@ -353,6 +353,16 @@ def authentication_options() -> str:
     return options_to_json(options)
 
 
+def normalise_credential_id(raw_id: Any) -> str:
+    """The stored form of a credential id, or "" when it is not valid base64url."""
+    if not isinstance(raw_id, str):
+        return ""
+    try:
+        return bytes_to_base64url(base64url_to_bytes(raw_id))
+    except (TypeError, ValueError):
+        return ""
+
+
 def authenticate(credential: Dict[str, Any]):
     """Verify a login answer. Returns ``(account, passkey_row)`` or raises.
 
