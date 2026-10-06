@@ -1,0 +1,1 @@
+Read AGENTS.md, then docs/tasks/$ARGUMENTS*.md (the brief, not the report). Follow it exactly, in order. Open only the files it names. On any stop condition in section 8, stop and write the report. Finish by writing the report in the section 9 format.

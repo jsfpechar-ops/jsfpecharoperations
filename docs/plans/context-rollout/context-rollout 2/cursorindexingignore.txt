@@ -1,0 +1,8 @@
+# Keep archived audits, applied patches and binaries out of the Cursor index.
+# They stay readable on demand via docs/archive/README.md.
+docs/archive/
+*.pdf
+*.png
+*.jpg
+App/app/static/fonts/
+App/requirements.lock
