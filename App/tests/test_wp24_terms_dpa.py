@@ -24,8 +24,8 @@ from app import acceptance, auth, config, db, host_i18n
 from app.guide_i18n import GUIDE_STRINGS
 from app.main import app
 from app.routes.legal import TERMS_SECTION_IDS
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 APP_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -146,8 +146,8 @@ def test_dpa_section_11_lists_render_and_drive_only_as_only_if_used():
 # --- versions and effective date --------------------------------------------------
 
 
-def test_terms_privacy_and_dpa_are_all_version_1_6():
-    assert acceptance.current_versions() == {"terms": "1.6", "privacy": "1.6", "dpa": "1.6"}
+def test_terms_privacy_and_dpa_are_all_version_1_7():
+    assert acceptance.current_versions() == {"terms": "1.7", "privacy": "1.7", "dpa": "1.7"}
 
 
 def test_one_effective_date_is_shown_on_all_three_pages(monkeypatch):
@@ -209,9 +209,7 @@ def test_a_host_on_the_old_versions_accepts_all_three_once(real_acceptance_pendi
     db.init_db()
     username = "wp24-accept-once"
     _cleanup(username)
-    user_id = auth.create_account(
-        username, PASSWORD, "Acceptance", role="host", must_change_password=False
-    )
+    user_id = auth.create_account(f"{username}@example.test", "Acceptance", role="host", username=username)
     try:
         # Accepted before this release: Terms 1.5, Privacy 1.5, DPA 1.5.
         for doc in acceptance.DOCUMENTS:
@@ -224,11 +222,7 @@ def test_a_host_on_the_old_versions_accepts_all_three_once(real_acceptance_pendi
         assert acceptance.pending(user_id) == ["terms", "privacy", "dpa"]
 
         client = TestClient(app)
-        login = client.post(
-            "/login?lang=en",
-            data={"username": username, "password": PASSWORD},
-            follow_redirects=False,
-        )
+        login = login_as(client, username, url="/login?lang=en", follow_redirects=False)
         assert login.status_code == 303
         gate = client.get("/", follow_redirects=False)
         assert gate.status_code == 303
@@ -251,16 +245,12 @@ def test_a_host_on_the_old_versions_accepts_all_three_once(real_acceptance_pendi
             (user_id,),
         )
         assert len(events) == 1
-        assert "terms_v1.6 privacy_v1.6 dpa_v1.6" in events[0]["detail"]
+        assert "terms_v1.7 privacy_v1.7 dpa_v1.7" in events[0]["detail"]
 
         # Signing in again asks nothing more.
         client.post("/logout", data={}, follow_redirects=False)
         again = TestClient(app)
-        again.post(
-            "/login?lang=en",
-            data={"username": username, "password": PASSWORD},
-            follow_redirects=False,
-        )
+        login_as(again, username, url="/login?lang=en", follow_redirects=False)
         assert again.get("/", follow_redirects=False).status_code == 200
     finally:
         _cleanup(username)
@@ -301,13 +291,9 @@ def host():
     db.init_db()
     username = "wp24-guide-host"
     _cleanup(username)
-    auth.create_account(username, PASSWORD, "Guide Host", must_change_password=False)
+    auth.create_account(f"{username}@example.test", "Guide Host", username=username)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client

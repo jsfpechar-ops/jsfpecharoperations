@@ -10,25 +10,26 @@
     <div class="auth-alert" role="alert">{{ t(error, email=operator().email) }}</div>
   {% endif %}
 
-  <form method="post" action="/login" class="auth-form">
+  {% if passkeys_enabled() %}
+    {# Task 0004: shown by passkeys.js only where the browser can use a passkey,
+       and offered before the e-mail link. Without JavaScript nothing changes. #}
+    <div class="auth-passkey" data-passkey-login data-passkey-supported hidden>
+      <button class="auth-submit" type="button" data-passkey-login-button>{{ t('login.passkey') }}</button>
+      <p class="auth-alert" data-passkey-error data-generic="{{ t('passkeys.error.login_failed') }}" role="alert" hidden></p>
+      <p class="auth-divider"><span>{{ t('login.passkey_or') }}</span></p>
+    </div>
+  {% endif %}
+
+  <form method="post" action="/login" class="auth-form" data-login-form>
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="next" value="{{ next if next is defined else request.query_params.get('next', '') }}">
     <div class="auth-field">
-      <label for="username">{{ t('login.username') }}</label>
-      <input type="text" id="username" name="username" required{% if not error %} autofocus{% endif %}
-             value="{{ username | default('', true) }}"
-             autocomplete="username" autocapitalize="none" spellcheck="false"
-             placeholder="{{ t('login.username_ph') }}">
+      <label for="email">{{ t('login.email') }}</label>
+      <input type="email" id="email" name="email" required autofocus maxlength="254"
+             value="{{ email | default('', true) }}"
+             autocomplete="{{ 'email webauthn' if passkeys_enabled() else 'email' }}" autocapitalize="none" spellcheck="false"
+             placeholder="{{ t('login.email_ph') }}">
     </div>
-    <div class="auth-field">
-      <label for="password">{{ t('login.password') }}</label>
-      <input type="password" id="password" name="password" required{% if error %} autofocus{% endif %}
-             autocomplete="current-password" placeholder="{{ t('login.password_ph') }}">
-    </div>
-    <details class="auth-help">
-      <summary>{{ t('login.forgot_summary') }}</summary>
-      <p class="auth-help-note">{{ t('login.forgot_body', email=operator().email) }}</p>
-    </details>
     <label class="auth-remember">
       <input type="checkbox" name="remember" value="1">
       <span>{{ t('login.remember') }}</span>
@@ -43,11 +44,19 @@
     </p>
   </form>
 
+  <details class="auth-help">
+    <summary>{{ t('login.help_summary') }}</summary>
+    <p class="auth-help-note">{{ t('login.help_body', email=operator().email) }}</p>
+  </details>
+
   <div class="auth-foot">
     <p>{{ t('login.footnote', email=operator().email) }}</p>
   </div>
 </section>
 {% if turnstile_site_key %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% if passkeys_enabled() %}
+<script src="/static/passkeys.js?v=20261006a" defer></script>
 {% endif %}
 {% endblock %}

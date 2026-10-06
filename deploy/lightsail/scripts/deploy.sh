@@ -27,7 +27,7 @@ if [ "${litestream_enabled}" = "1" ]; then
   esac
 fi
 
-for var in UBYHOST_DOMAIN ACME_EMAIL UBYHOST_PUBLIC_BASE_URL UBYHOST_ADMIN_PASSWORD; do
+for var in UBYHOST_DOMAIN ACME_EMAIL UBYHOST_PUBLIC_BASE_URL; do
   if [ -z "${!var:-}" ]; then
     echo "Required variable ${var} is empty in .env" >&2
     exit 1
@@ -73,6 +73,20 @@ fi
 
 chmod +x scripts/*.sh
 ./scripts/preflight.sh
+
+# Task 0003: hosts log in with their login e-mail only. An active account
+# without one would be locked out by this release, so refuse to deploy until
+# every active account has one (admin > Users shows them).
+# UBYHOST_ALLOW_MISSING_EMAIL=1 deploys anyway.
+if docker compose ps --status running --services 2>/dev/null | grep -qx ubyhost; then
+  MISSING_EMAIL="$(docker compose exec -T ubyhost sqlite3 /data/ubyhost.db \
+    "SELECT COUNT(*) FROM user_account WHERE active = 1 AND (email IS NULL OR email = '');" \
+    2>/dev/null || echo "?")"
+  if [ "${MISSING_EMAIL}" != "0" ] && [ "${UBYHOST_ALLOW_MISSING_EMAIL:-0}" != "1" ]; then
+    echo "Active accounts without a login e-mail: ${MISSING_EMAIL}. Add one to each in admin > Users, then deploy again." >&2
+    exit 1
+  fi
+fi
 
 BACKUP_STAMP=""
 TABLES=(user_account legal_entity apartment reservation guest submission)

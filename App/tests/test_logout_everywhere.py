@@ -7,16 +7,13 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = f"Logout-everywhere-{secrets.token_urlsafe(12)}-7"
 
 
 def _signed_in(username: str) -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en", data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 
@@ -24,7 +21,7 @@ def _signed_in(username: str) -> TestClient:
 def test_logging_out_on_one_device_signs_out_the_other():
     db.init_db()
     username = f"logout-{secrets.token_hex(4)}"
-    auth.create_account(username, PASSWORD, "Logout Host", role="host", must_change_password=False)
+    auth.create_account(f"{username}@example.test", "Logout Host", role="host", username=username)
     laptop, phone = _signed_in(username), _signed_in(username)
     copied = dict(phone.cookies)
     assert phone.get("/reservations", follow_redirects=False).status_code == 200

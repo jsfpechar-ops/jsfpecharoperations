@@ -14,28 +14,10 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app import auth, db, host_i18n
+from app import host_i18n
 from app.main import app
 
 APP = Path(__file__).resolve().parent.parent / "app"
-PASSWORD = "Secure-Password-123"
-USERNAME = "autherrhost"
-
-
-def _cleanup() -> None:
-    row = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
-    if not row:
-        return
-    db.execute("DELETE FROM audit WHERE owner_user_id = ?", (row["id"],))
-    db.execute("DELETE FROM user_account WHERE id = ?", (row["id"],))
-
-
-def _account(must_change: bool = True) -> int:
-    db.init_db()
-    _cleanup()
-    return auth.create_account(
-        USERNAME, PASSWORD, "Auth Error Host", must_change_password=must_change
-    )
 
 
 def _text(key: str, lang: str) -> str:
@@ -47,97 +29,27 @@ def _body(response) -> str:
     return html.unescape(response.text)
 
 
-# --- the two screens a stuck host actually lands on --------------------------
+# --- the screens a stuck host actually lands on --------------------------------
 
 
-def test_a_wrong_password_is_explained_in_the_page_language():
-    _account(must_change=False)
-    try:
-        for lang in ("en", "cs"):
-            response = TestClient(app).post(
-                f"/login?lang={lang}",
-                data={"username": USERNAME, "password": "not-the-password"},
-                follow_redirects=False,
-            )
-            assert response.status_code == 401
-            assert _text("auth.error.bad_credentials", lang) in _body(response)
-            # A template that forgot t() would print the key instead.
-            assert "auth.error.bad_credentials" not in _body(response)
-    finally:
-        _cleanup()
-
-
-def test_a_weak_new_password_is_explained_in_the_page_language():
-    _account(must_change=False)
-    try:
-        client = TestClient(app)
-        client.post(
-            "/login", data={"username": USERNAME, "password": PASSWORD},
-            follow_redirects=False,
-        )
-        for lang in ("en", "cs"):
-            response = client.post(
-                f"/account/password?lang={lang}",
-                data={
-                    "current_password": PASSWORD,
-                    "new_password": "alllowercase123",
-                    "confirm_password": "alllowercase123",
-                },
-                follow_redirects=False,
-            )
-            assert response.status_code == 400
-            assert _text("auth.password.mixed_case", lang) in _body(response)
-            assert "auth.password.mixed_case" not in _body(response)
-    finally:
-        _cleanup()
-
-
-def test_a_wrong_temporary_password_is_explained_in_czech():
-    """The forced first-login screen, which is where a new host starts."""
-    _account(must_change=True)
-    try:
-        client = TestClient(app)
-        client.post(
-            "/login", data={"username": USERNAME, "password": PASSWORD},
-            follow_redirects=False,
-        )
-        response = client.post(
-            "/account/password?lang=cs",
-            data={
-                "current_password": "not-the-temporary-one",
-                "new_password": PASSWORD,
-                "confirm_password": PASSWORD,
-            },
-            follow_redirects=False,
+def test_a_bad_email_is_explained_in_the_page_language():
+    for lang in ("en", "cs"):
+        response = TestClient(app).post(
+            f"/login?lang={lang}", data={"email": "not-an-address"}, follow_redirects=False
         )
         assert response.status_code == 400
-        assert _text("auth.error.temp_password_wrong", "cs") in _body(response)
-        assert "auth.error.temp_password_wrong" not in _body(response)
-    finally:
-        _cleanup()
+        assert _text("auth.error.email_invalid", lang) in _body(response)
+        # A template that forgot t() would print the key instead.
+        assert "auth.error.email_invalid" not in _body(response)
 
 
-def test_mismatched_new_passwords_are_explained_in_czech():
-    _account(must_change=True)
-    try:
-        client = TestClient(app)
-        client.post(
-            "/login", data={"username": USERNAME, "password": PASSWORD},
-            follow_redirects=False,
+def test_a_spent_link_is_explained_in_the_page_language():
+    for lang in ("en", "cs"):
+        response = TestClient(app).post(
+            f"/login/link?lang={lang}", data={"t": "not-a-real-link"}, follow_redirects=False
         )
-        response = client.post(
-            "/account/password?lang=cs",
-            data={
-                "current_password": PASSWORD,
-                "new_password": PASSWORD,
-                "confirm_password": PASSWORD + "x",
-            },
-            follow_redirects=False,
-        )
-        assert response.status_code == 400
-        assert _text("auth.error.passwords_mismatch", "cs") in _body(response)
-    finally:
-        _cleanup()
+        assert response.status_code == 410
+        assert _text("login.link.expired.body", lang) in _body(response)
 
 
 # --- the guards that keep the literals from creeping back --------------------
@@ -162,20 +74,6 @@ def test_every_auth_error_key_exists_in_both_languages():
             assert _placeholder_names(text) == _placeholder_names(
                 host_i18n.STRINGS["en"][key]
             ), (key, lang)
-
-
-def test_password_error_returns_a_key_that_exists():
-    cases = {
-        "auth.password.too_short": "Ab1",
-        "auth.password.mixed_case": "alllowercase123",
-        "auth.password.digit": "NoDigitsHereAtAll",
-        "auth.password.too_long": "A1" + "a" * 255,
-    }
-    for key, password in cases.items():
-        assert auth.password_error(password) == key, password
-        for lang in ("en", "cs"):
-            assert host_i18n.STRINGS[lang][key]
-    assert auth.password_error(PASSWORD) == ""
 
 
 def test_no_auth_route_still_carries_an_english_error_literal():

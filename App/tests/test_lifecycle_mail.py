@@ -15,8 +15,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, lifecycle_mail, mail, mail_notify, scheduler
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 PREFIX = "wp12-life-"
 NOW = datetime(2026, 10, 20, 10, 0, tzinfo=timezone.utc)
 
@@ -64,9 +64,7 @@ def _database(monkeypatch):
 
 
 def _host(name: str, *, login_days_ago: float | None = 4, email: str | None = None) -> int:
-    uid = auth.create_account(
-        PREFIX + name, PASSWORD, name.title(), role="host", must_change_password=False
-    )
+    uid = auth.create_account(str(PREFIX + name) + "@example.test", name.title(), role="host", username=PREFIX + name)
     if login_days_ago is not None:
         db.insert(
             "audit",
@@ -320,11 +318,7 @@ def test_settings_toggle_is_bound_to_the_flag():
     uid = _host("settings")
     db.execute("UPDATE user_account SET must_change_password = 0 WHERE id = ?", (uid,))
     client = TestClient(app)
-    login = client.post(
-        "/login?lang=en",
-        data={"username": PREFIX + "settings", "password": PASSWORD},
-        follow_redirects=False,
-    )
+    login = login_as(client, PREFIX + "settings", url="/login?lang=en", follow_redirects=False)
     assert login.status_code == 303, login.text
     page = client.get("/settings?lang=en")
     assert "Setup tips by e-mail" in page.text

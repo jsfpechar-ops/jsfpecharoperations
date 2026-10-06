@@ -131,19 +131,22 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "instructions, or as required by law with notice to the Controller where allowed."
         ),
         "dpa.s10_title": "10. Security measures (Article 32)",
+        # LAWYER REVIEW
         "dpa.s10_body": (
             "Taking into account the state of the art, costs, and risks, the Processor implements "
-            "measures including: access controls and authentication for Host accounts; mandatory "
-            "two-factor authentication (TOTP) in production; encryption of sensitive integration "
-            "credentials and TOTP secrets at rest; HTTPS for data in transit including HSTS on the "
-            "production hostname; Cloudflare Turnstile where configured, plus custom managed challenges, "
-            "leaked-credential mitigation, and client-side script monitoring on the production zone; "
-            "logical separation of customer data; rate limiting on authentication; "
+            "measures including: access controls and authentication for Host accounts; e-mail link "
+            "login (single-use tokens stored only as hashes); optional authenticator app (TOTP) and "
+            "passkeys (public key only; biometric data never leaves the device) for Host accounts; "
+            "encryption of sensitive integration credentials and TOTP secrets at rest; HTTPS for "
+            "data in transit including HSTS on the production hostname; Cloudflare Turnstile where "
+            "configured, plus custom managed challenges and client-side script monitoring on the "
+            "production zone; logical separation of customer data; rate limiting on authentication; "
             "backup and recovery procedures (including optional off-site copies to Google Drive and "
             "Amazon S3 when configured by the Operator); restriction of production access to authorised "
-            "personnel; and security updates to dependencies. The Controller is responsible for password "
-            "strength, device security, recovery codes, and sharing guest links only with intended "
-            "recipients. A summary is also in the Privacy Policy."
+            "personnel; and security updates to dependencies. The Controller is responsible for "
+            "securing access to its login e-mail account, protecting enrolled passkey devices, "
+            "safeguarding recovery codes, and sharing guest links only with intended recipients. "
+            "A summary is also in the Privacy Policy."
         ),
         "dpa.s11_title": "11. Subprocessors",
         "dpa.s11_body": (
@@ -366,14 +369,18 @@ DPA_STRINGS: Dict[str, Dict[str, str]] = {
             "možné."
         ),
         "dpa.s10_title": "10. Bezpečnostní opatření (čl. 32)",
+        # LAWYER REVIEW
         "dpa.s10_body": (
-            "Zpracovatel uplatňuje přiměřená opatření: řízení přístupu, povinné dvoufázové ověření "
-            "(TOTP) v produkci, šifrování citlivých údajů a TOTP, HTTPS včetně HSTS na produkční "
-            "doméně, Cloudflare Turnstile při nastavení a v produkční zóně také vlastní řízené výzvy, "
-            "kontrolu uniklých přihlašovacích údajů a monitoring skriptů v prohlížeči, oddělení dat "
-            "zákazníků, rate limiting přihlášení, zálohy včetně volitelných "
-            "off-site kopií (Google Drive, Amazon S3) a omezený přístup do produkce. Správce "
-            "odpovídá za hesla, zařízení, obnovovací kódy a sdílení odkazů hostům. Shrnutí je v Zásadách."
+            "Zpracovatel uplatňuje přiměřená opatření: řízení přístupu a ověřování pro účty "
+            "ubytovatelů; přihlášení e-mailovým odkazem (jednorázové tokeny uchovávané pouze jako "
+            "hashe); volitelná autentizační aplikace (TOTP) a passkeys (pouze veřejný klíč; "
+            "biometrická data nikdy neopustí zařízení); šifrování citlivých integračních přihlašovacích "
+            "údajů a TOTP; HTTPS včetně HSTS na produkční doméně; Cloudflare Turnstile při nastavení "
+            "a v produkční zóně vlastní řízené výzvy a monitoring skriptů v prohlížeči; oddělení dat "
+            "zákazníků; rate limiting přihlášení; zálohy včetně volitelných off-site kopií (Google "
+            "Drive, Amazon S3) a omezený přístup do produkce. Správce odpovídá za zabezpečení "
+            "přístupu ke své přihlašovací e-mailové schránce, ochranu zařízení s passkey, obnovovací "
+            "kódy a sdílení odkazů hostům. Shrnutí je v Zásadách."
         ),
         "dpa.s11_title": "11. Subzpracovatelé",
         "dpa.s11_body": (

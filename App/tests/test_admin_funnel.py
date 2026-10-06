@@ -11,8 +11,8 @@ from fastapi.testclient import TestClient
 
 from app import admin_funnel, auth, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 PREFIX = "wp11-funnel-"
 NOW = datetime(2026, 10, 15, 12, 0, tzinfo=timezone.utc)
 
@@ -46,18 +46,12 @@ def _database():
 
 
 def _account(name: str, role: str = "host") -> int:
-    return auth.create_account(
-        PREFIX + name, PASSWORD, name.title(), role=role, must_change_password=False
-    )
+    return auth.create_account(str(PREFIX + name) + "@example.test", name.title(), role=role, username=PREFIX + name)
 
 
 def _login(name: str) -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": PREFIX + name, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, PREFIX + name, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     return client
 

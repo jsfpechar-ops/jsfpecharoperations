@@ -20,8 +20,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n, rate_limit
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "lockouthost"
 
 
@@ -71,18 +71,12 @@ def _on_the_second_factor(lang: str = "en"):
     db.init_db()
     _cleanup()
     _forget_rate_limit()
-    user_id = auth.create_account(
-        USERNAME, PASSWORD, "Lockout Host", must_change_password=False
-    )
+    user_id = auth.create_account(f"{USERNAME}@example.test", "Lockout Host", username=USERNAME)
     secret = auth.new_totp_secret()
     auth.enable_totp(user_id, secret, auth.new_recovery_codes())
     client = TestClient(app)
     client.cookies.set(host_i18n.LANG_COOKIE, lang)
-    challenge = client.post(
-        "/login",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    challenge = login_as(client, USERNAME, follow_redirects=False)
     assert challenge.status_code == 200, challenge.text
     token = re.search(r'name="pending" value="([^"]+)"', challenge.text)
     assert token, challenge.text
@@ -352,9 +346,7 @@ def test_the_same_totp_code_is_refused_the_second_time():
     db.init_db()
     _cleanup()
     try:
-        user_id = auth.create_account(
-            USERNAME, PASSWORD, "Lockout Host", must_change_password=False
-        )
+        user_id = auth.create_account(f"{USERNAME}@example.test", "Lockout Host", username=USERNAME)
         secret = auth.new_totp_secret()
         auth.enable_totp(user_id, secret, auth.new_recovery_codes())
         account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
@@ -371,9 +363,7 @@ def test_a_recovery_code_can_only_be_spent_once():
     db.init_db()
     _cleanup()
     try:
-        user_id = auth.create_account(
-            USERNAME, PASSWORD, "Lockout Host", must_change_password=False
-        )
+        user_id = auth.create_account(f"{USERNAME}@example.test", "Lockout Host", username=USERNAME)
         codes = auth.new_recovery_codes()
         auth.enable_totp(user_id, auth.new_totp_secret(), codes)
         stale = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))

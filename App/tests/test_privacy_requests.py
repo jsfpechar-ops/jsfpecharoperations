@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, dsr
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 DOC = "P1234567"
 
 
@@ -35,9 +35,7 @@ def _cleanup():
 
 
 def _seed(username: str, token: str):
-    owner = auth.create_account(
-        username, PASSWORD, username.title(), must_change_password=False
-    )
+    owner = auth.create_account(f"{username}@example.test", username.title(), username=username)
     now = db.utcnow()
     entity = db.insert(
         "legal_entity", {"name": "Dsr entity", "owner_user_id": owner, "created_at": now}
@@ -86,11 +84,7 @@ def _seed(username: str, token: str):
 
 def _login(username: str) -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 

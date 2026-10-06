@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, config, db, i18n, mail, mail_notify
 from app.main import app
+from tests.conftest import login_as
 
 INTERNAL = "Downtown Comfort Loft"
 REGISTER = "č1"
@@ -66,7 +67,6 @@ def test_every_guest_mail_names_the_property_as_the_guest_pages_do(kind, extra, 
 
 # --- invoice_issued --------------------------------------------------------
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "property-name-mail-host"
 TOKEN = "propnamemailtoken"
 
@@ -114,14 +114,10 @@ def _cleanup():
 def host(monkeypatch):
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Property Name Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Property Name Host", username=USERNAME)
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client

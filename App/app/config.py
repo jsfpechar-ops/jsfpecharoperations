@@ -202,12 +202,13 @@ RESTRICTED_BLOCKS_FILING = os.environ.get("UBYHOST_RESTRICTED_BLOCKS_FILING", "0
 
 GUEST_PIN_REQUIRED = os.environ.get("UBYHOST_GUEST_PIN", "1") not in ("0", "false", "no")
 
-# A first administrator is created once on startup. Set both values in a
-# deployed environment; when the password is omitted a random one is written
-# once to DATA_DIR/initial_admin_credentials with owner-only permissions.
+# A first administrator is created once on startup, on an empty database. They
+# log in with UBYHOST_ADMIN_EMAIL (falls back to UBYHOST_OPERATOR_EMAIL). Their
+# first login link is written once to DATA_DIR/initial_admin_login with
+# owner-only permissions, because mail may not be set up yet on a new server.
 BOOTSTRAP_ADMIN = os.environ.get("UBYHOST_BOOTSTRAP_ADMIN", "1") not in ("0", "false", "no")
 ADMIN_USERNAME = os.environ.get("UBYHOST_ADMIN_USERNAME", "admin").strip().lower()
-ADMIN_PASSWORD = os.environ.get("UBYHOST_ADMIN_PASSWORD", "")
+ADMIN_EMAIL = os.environ.get("UBYHOST_ADMIN_EMAIL", "").strip()
 
 TIMEZONE = "Europe/Prague"
 
@@ -249,7 +250,8 @@ UMAMI_DOMAINS = os.environ.get("UMAMI_DOMAINS", "").strip()
 # Bumped when Terms of Service change materially (logged on host login).
 # 1.6 (WP24): stay fee duty, filing on the host's instruction, filing by hand,
 # UbyPort credentials (§ 10a), best-effort availability, liability (§ 17).
-TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.6")
+# 1.7 (Task 0005): e-mail link login replaces passwords; passkeys; mailbox duty.
+TERMS_VERSION = os.environ.get("UBYHOST_TERMS_VERSION", "1.7")
 
 # Transactional mail. Staging uses console (links appear in Settings).
 # SES is refused unless deployment is production and credentials are complete.
@@ -292,11 +294,13 @@ def meta_capi_enabled() -> bool:
 # Bumped when the public Privacy Policy changes materially. 1.6 (WP09): website
 # analytics with opt-out, own retention periods and roles. A bump makes the
 # policy pending again, so every host is sent to /account/accept once.
-PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.6")
+# 1.7 (Task 0005): auth data updated for e-mail link login and passkeys.
+PRIVACY_VERSION = os.environ.get("UBYHOST_PRIVACY_VERSION", "1.7")
 
 # Bumped when the Data Processing Agreement changes materially. 1.6 (WP24):
 # § 11 names Render and Google Drive only as "only if used" subprocessors.
-DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.6")
+# 1.7 (Task 0005): § 10 updated for e-mail link login; mailbox security duty.
+DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.7")
 
 # WP24: the one effective date shown on /terms, /privacy and /dpa. Terms 1.6,
 # Privacy 1.6 and DPA 1.6 take effect together, so every host accepts all
@@ -304,6 +308,7 @@ DPA_VERSION = os.environ.get("UBYHOST_DPA_VERSION", "1.6")
 # production .env at release (Terms § 22 allows 30 days' host notice; owner
 # decides). ISO date, YYYY-MM-DD; a malformed value stops start-up rather than
 # printing a wrong date on a contract.
+# 1.7 effective date: set UBYHOST_LEGAL_EFFECTIVE_DATE in .env before deploy.
 LEGAL_EFFECTIVE_DATE = date.fromisoformat(
     os.environ.get("UBYHOST_LEGAL_EFFECTIVE_DATE", "").strip() or "2026-10-05"
 )

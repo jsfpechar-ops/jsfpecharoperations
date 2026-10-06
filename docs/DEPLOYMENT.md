@@ -160,7 +160,7 @@ Deployment success alone does not close the release.
 | Secret | Where | Notes |
 |--------|-------|-------|
 | `UBYHOST_SECRET_KEY` | Render env (generated) | Encrypts UbyPort passwords at rest. **Never rotate** without a migration plan. |
-| `UBYHOST_ADMIN_PASSWORD` | Render env (you set) | Bootstrap admin only; change in the UI after first login. |
+| `UBYHOST_ADMIN_EMAIL` | Render env (you set) | First administrator's login address. Staging delivers no mail: login links are written to Render → Logs. |
 | UbyPort **web-service** login (`UBY-WS…`) | Entered per apartment in the UI | **Not** your normal UbyPort web login. Request from `reguby@pcr.cz` / data box `ybndqw9`. |
 | Police PDF / portal passwords | **Never** in git or Render env | Those are for the human UbyPort portal, not this app. |
 | Annotated **sample** WS credential PDF | Committed under `App/app/static/docs/` | Fictional training aid only. Regenerate with `python App/tools/generate_ubyport_sample_pdf.py` (ReportLab). |
@@ -214,8 +214,7 @@ docker run -p 8080:8080 \
   -e UBYHOST_DEPLOYMENT=production \
   -e UBYHOST_UBYPORT_ENV=test \
   -e UBYHOST_PUBLIC_BASE_URL=https://your.domain \
-  -e UBYHOST_ADMIN_USERNAME=admin \
-  -e UBYHOST_ADMIN_PASSWORD='…' \
+  -e UBYHOST_ADMIN_EMAIL=you@example.com \
   -v ubyhost-data:/data \
   ubyhost
 ```

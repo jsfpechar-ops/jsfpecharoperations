@@ -12,9 +12,9 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, mail, meta_capi, signup
 from app.main import app
+from tests.conftest import login_as
 
 DOMAIN = "meta-capi.test"
-PASSWORD = "Signup-Password-123"
 FBCLID = "IwAR2F4-dbP0l7Mn1IawQQGCINEz7PYXQvwjNwB_qa2ofrHyiLjcbCRxTDMgk"
 DATASET = "1234567890"
 TOKEN = "placeholder-access-token"
@@ -95,7 +95,7 @@ USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) ExampleBrowser/1.0"
 
 
 def _submit(client, email, *, consent=False, click=None, extra=None, user_agent=USER_AGENT):
-    data = {"email": email, "password": PASSWORD, "workspace": "Lake Flats", "accept": "1"}
+    data = {"email": email, "workspace": "Lake Flats", "accept": "1"}
     if consent:
         data["meta_consent"] = "1"
     if click:
@@ -112,7 +112,7 @@ def _verify(client, email):
         (email,),
     )
     token = db.decrypt_field(json.loads(row["payload"])[mail.CLAIM_SECRET_KEY])
-    return client.post("/signup/verify", data={"t": token, "password": PASSWORD},
+    return client.post("/signup/verify", data={"t": token},
                        follow_redirects=False)
 
 
@@ -216,7 +216,7 @@ def test_consent_stores_fbc_in_metas_format_with_the_wording():
 def test_without_consent_nothing_about_the_click_is_stored():
     email = f"no@{DOMAIN}"
     TestClient(app).post("/signup?lang=en", data={
-        "email": email, "password": PASSWORD, "workspace": "Lake Flats", "accept": "1",
+        "email": email, "workspace": "Lake Flats", "accept": "1",
         "click": _click(), "utm_source": "newsletter",
     })
     account = _account(email)
@@ -452,11 +452,10 @@ def test_the_settings_page_offers_the_meta_toggle():
 def test_an_admin_can_withdraw_meta_consent():
     email = f"adminwd@{DOMAIN}"
     _signed_up(email)
-    auth.create_account(f"metaadmin@{DOMAIN}".replace("@", "-").replace(".", "-")[:30],
-                        PASSWORD, "Admin", role="admin", must_change_password=False)
+    auth.create_account(str(f"metaadmin@{DOMAIN}".replace("@", "-").replace(".", "-")[:30]) + "@example.test", "Admin", role="admin", username=f"metaadmin@{DOMAIN}".replace("@", "-").replace(".", "-")[:30])
     username = f"metaadmin@{DOMAIN}".replace("@", "-").replace(".", "-")[:30]
     admin = TestClient(app)
-    admin.post("/login?lang=en", data={"username": username, "password": PASSWORD})
+    login_as(admin, username, url="/login?lang=en")
     user_id = _account(email)["id"]
     response = admin.post(f"/admin/users/{user_id}/ads-consent/withdraw",
                           data={"platform": "meta"}, follow_redirects=False)
@@ -536,7 +535,7 @@ def test_the_user_agent_is_kept_only_with_the_meta_consent():
     """Owner decision: client_user_agent only when the Meta box is ticked."""
     without = f"noua@{DOMAIN}"
     TestClient(app).post("/signup?lang=en", data={
-        "email": without, "password": PASSWORD, "workspace": "Lake Flats", "accept": "1",
+        "email": without, "workspace": "Lake Flats", "accept": "1",
         "click": _click(),
     }, headers={"User-Agent": USER_AGENT})
     assert db.query(

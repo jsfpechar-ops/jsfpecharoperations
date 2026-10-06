@@ -92,3 +92,6 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-O04 | Low open | requirements.txt, Caddyfile | Pillow undeclared; dev deps use >=; HSTS includeSubDomains missing | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever, so cost grows with retention | AR-43 |
 | K-W01 | Med decision | GitHub jsfpechar-ops/jsfpecharoperations | ~30 stale open PRs (wp-stack etc.); owner runs task 0001 step 12 with APPLY=1; do not close #278 or #279 | task 0001 |
+| K-ML01 | Low open | App/app/static/app.js | Dead reset-password JS after task 0003 password removal | magic-link HANDOFF |
+| K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
+| K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |

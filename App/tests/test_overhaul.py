@@ -13,10 +13,10 @@ from app import i18n
 from app.main import app
 from app.routes import guest as guest_routes
 from tests.conftest import complete_guest_claim
+from tests.conftest import login_as
 
 TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
 TOKEN = "overhaultoken"
-PASSWORD = "Overhaul-Test-Password-123"
 ADMIN_USERNAME = "overhaul-admin"
 
 
@@ -26,13 +26,7 @@ def _ensure_admin() -> int:
         "SELECT * FROM user_account WHERE username = ?", (ADMIN_USERNAME,)
     )
     if not account:
-        return auth.create_account(
-            ADMIN_USERNAME,
-            PASSWORD,
-            "Overhaul admin",
-            role="admin",
-            must_change_password=False,
-        )
+        return auth.create_account(f"{ADMIN_USERNAME}@example.test", "Overhaul admin", role="admin", username=ADMIN_USERNAME)
     return account["id"]
 
 
@@ -40,11 +34,7 @@ def _browser() -> TestClient:
     """Sign in as an English host; the assertions below read the English UI."""
     _ensure_admin()
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": ADMIN_USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, ADMIN_USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 

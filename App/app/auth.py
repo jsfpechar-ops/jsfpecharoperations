@@ -1,8 +1,10 @@
 """Host accounts, sessions, and workspace impersonation.
 
-Passwords are one-way PBKDF2 hashes. An administrator can reset a password,
-but nobody can retrieve one. Guest links remain account-free: their random
-apartment token and PIN are the boundary for the legal registration flow.
+Hosts log in with a link sent to their login e-mail (``login_link``), or with
+a passkey (task 0004). There are no passwords. An authenticator app (TOTP) is
+an optional second step after the e-mail link. Guest links remain
+account-free: their random apartment token and PIN are the boundary for the
+legal registration flow.
 """
 from __future__ import annotations
 
@@ -46,9 +48,7 @@ IMPERSONATION_MAX_AGE = _impersonation_max_age()
 # Guests whose identity the admin revealed in this impersonation ("rv"). The
 # cap keeps the cookie small; a reveal past it drops the oldest entry.
 MAX_REVEALED_GUESTS = 50
-_PBKDF2_ROUNDS = 600_000
 _USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,31}$")
-_dummy_password_hash: Optional[str] = None
 
 
 def _serializer() -> URLSafeTimedSerializer:
@@ -171,25 +171,6 @@ def verify_second_factor(account, code: str) -> bool:
     return False
 
 
-def hash_password(password: str) -> str:
-    salt = os.urandom(16)
-    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, _PBKDF2_ROUNDS)
-    return f"pbkdf2_sha256${_PBKDF2_ROUNDS}${salt.hex()}${digest.hex()}"
-
-
-def verify_password(password: str, stored: str) -> bool:
-    try:
-        algorithm, rounds, salt_hex, digest_hex = stored.split("$")
-    except ValueError:
-        return False
-    if algorithm != "pbkdf2_sha256":
-        return False
-    digest = hashlib.pbkdf2_hmac(
-        "sha256", password.encode("utf-8"), bytes.fromhex(salt_hex), int(rounds)
-    )
-    return hmac.compare_digest(digest.hex(), digest_hex)
-
-
 def normalise_username(value: str) -> str:
     return (value or "").strip().lower()
 
@@ -198,58 +179,35 @@ def username_is_valid(value: str) -> bool:
     return bool(_USERNAME_RE.fullmatch(normalise_username(value)))
 
 
-def password_error(password: str) -> str:
-    """The catalogue key of the first rule this password breaks, or "".
-
-    The caller translates it: a rule broken on a Czech page must not be
-    reported in English.
-    """
-    if len(password or "") > 256:
-        return "auth.password.too_long"
-    if len(password or "") < 12:
-        return "auth.password.too_short"
-    if password.lower() == password or password.upper() == password:
-        return "auth.password.mixed_case"
-    if not any(char.isdigit() for char in password):
-        return "auth.password.digit"
-    return ""
-
-
-def generate_password() -> str:
-    """Return a random password that satisfies password_error()."""
-    while True:
-        candidate = secrets.token_urlsafe(18)
-        if not password_error(candidate):
-            return candidate
-
-
 def accounts_exist() -> bool:
     return bool(db.query_one("SELECT id FROM user_account LIMIT 1"))
 
 
-def _dummy_hash() -> str:
-    global _dummy_password_hash
-    if _dummy_password_hash is None:
-        _dummy_password_hash = hash_password("Timing-Only-Password-123")
-    return _dummy_password_hash
+def new_username(email: str) -> str:
+    """An internal handle for a new account, derived from its e-mail.
+
+    Hosts never type it: they log in with the e-mail. It names the account in
+    the audit log, which so keeps no e-mail address.
+    """
+    local = (email or "").split("@", 1)[0].lower()
+    local = re.sub(r"[^a-z0-9._-]", "", local)
+    base = re.sub(r"^[^a-z0-9]+", "", local)[:20] or "host"
+    for _ in range(20):
+        candidate = f"{base}-{secrets.token_hex(2)}"
+        if username_is_valid(candidate) and not db.query_one(
+            "SELECT id FROM user_account WHERE username = ?", (candidate,)
+        ):
+            return candidate
+    return f"host-{secrets.token_hex(6)}"
 
 
-def authenticate(username: str, password: str):
-    identifier = normalise_username(username)
-    # A self-signed-up host (WP20) knows their e-mail better than the username
-    # generated for them. A username can never contain "@", so the two lookups
-    # cannot reach different accounts for the same input. Unverified sign-ups
-    # are inactive and so are refused here like a disabled account.
-    column = "email" if "@" in identifier else "username"
-    account = db.query_one(
-        f"SELECT * FROM user_account WHERE {column} = ? AND active = 1",
-        (identifier,),
-    )
-    stored = account["password_hash"] if account else _dummy_hash()
-    if not verify_password(password, stored) or not account:
+def account_by_email(email: str):
+    """The active account that logs in with ``email``, or None."""
+    if not email:
         return None
-    db.execute("UPDATE user_account SET last_login_at = ? WHERE id = ?", (db.utcnow(), account["id"]))
-    return account
+    return db.query_one(
+        "SELECT * FROM user_account WHERE email = ? AND active = 1", (email,)
+    )
 
 
 def issue_session(
@@ -464,7 +422,7 @@ def end_expired_impersonation(request: Request) -> Optional[RedirectResponse]:
 def session_remembers(request: Request) -> bool:
     """Whether the session in this request was started with "Remember me".
 
-    Re-issuing a session — a password change or switching 2FA on — mints a
+    Re-issuing a session (switching 2FA on, adding a passkey) mints a
     fresh cookie, so the flag has to be carried across by hand or the host
     silently drops back to the short lifetime.
     """
@@ -478,7 +436,6 @@ def session_remembers(request: Request) -> bool:
 # the first-run/account screens, sign-out, and the documents it links to.
 _ACCEPTANCE_EXEMPT_PATHS = (
     "/account/accept",
-    "/account/password",
     "/account/2fa/setup",
     "/logout",
     "/terms",
@@ -502,19 +459,6 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
     account = current_user(request)
     if not account:
         return RedirectResponse(f"/login?next={request.url.path}", status_code=303)
-    if account["must_change_password"] and request.url.path not in (
-        "/account/password", "/logout"
-    ):
-        return RedirectResponse("/account/password", status_code=303)
-    if config.DEPLOYMENT == "production" and not account["totp_enabled"] and request.url.path not in (
-        # The first run is three screens in a row: choose a password, connect an
-        # authenticator app, write down the recovery codes. The password screen
-        # has to stay reachable while 2FA is still pending: the guard above sends
-        # a host with a temporary password there, so bouncing them onward makes
-        # step 1 unreachable and the numbering on the other screens start at 2.
-        "/account/password", "/account/2fa/setup", "/logout"
-    ):
-        return RedirectResponse("/account/2fa/setup", status_code=303)
     workspace = workspace_user(request)
     expired = end_expired_impersonation(request)
     if expired is not None:
@@ -565,33 +509,64 @@ def clear_session(response) -> None:
 
 
 def create_account(
-    username: str,
-    password: str,
+    email: str,
     display_name: str = "",
     role: str = "host",
-    must_change_password: bool = True,
+    *,
+    username: str = "",
 ) -> int:
-    username = normalise_username(username)
-    if not username_is_valid(username):
-        raise ValueError("auth.error.username")
-    error = password_error(password)
-    if error:
-        raise ValueError(error)
+    """Create an active account that logs in with ``email``.
+
+    ``email`` must already be normalised (``mail.normalise_email``). The
+    username is generated unless the caller names one (tests, the bootstrap).
+    """
+    email = (email or "").strip().lower()
+    if not email or "@" not in email:
+        raise ValueError("users.email.error.invalid")
     if role not in ("admin", "host"):
         raise ValueError("Unknown account role.")
+    username = normalise_username(username) or new_username(email)
+    if not username_is_valid(username):
+        raise ValueError("auth.error.username")
     return db.insert(
         "user_account",
         {
             "username": username,
             "display_name": (display_name or "").strip(),
-            "password_hash": hash_password(password),
+            "email": email,
+            "password_hash": "",
             "role": role,
             "active": 1,
-            "must_change_password": 1 if must_change_password else 0,
+            "must_change_password": 0,
             "session_version": 1,
             "created_at": db.utcnow(),
         },
     )
+
+
+def email_taken(email: str, except_user_id: Optional[int] = None) -> bool:
+    """Whether another account already logs in with this address."""
+    row = db.query_one(
+        "SELECT id FROM user_account WHERE email = ? AND id != ?",
+        (email, int(except_user_id or 0)),
+    )
+    return bool(row)
+
+
+def set_account_email(user_id: int, email: str) -> None:
+    """Make ``email`` the account's login address.
+
+    The address is unverified until the host proves it by using a link sent
+    there, so ``email_verified_at`` is cleared. A change from an existing
+    address also ends every session: whoever held the old address must not
+    keep a session the new owner cannot see.
+    """
+    current = db.query_one("SELECT email FROM user_account WHERE id = ?", (user_id,))
+    changing = bool(current and (current["email"] or "").strip())
+    sql = "UPDATE user_account SET email = ?, email_verified_at = NULL"
+    if changing:
+        sql += ", session_version = session_version + 1"
+    db.execute(sql + " WHERE id = ?", (email, user_id))
 
 
 def end_all_sessions(user_id: int) -> None:
@@ -602,67 +577,42 @@ def end_all_sessions(user_id: int) -> None:
     )
 
 
-def set_account_password(user_id: int, password: str, must_change: bool = False) -> None:
-    error = password_error(password)
-    if error:
-        raise ValueError(error)
-    db.execute(
-        "UPDATE user_account SET password_hash = ?, must_change_password = ?, "
-        "session_version = session_version + 1 WHERE id = ?",
-        (hash_password(password), 1 if must_change else 0, user_id),
-    )
-
-
 def ensure_bootstrap_admin() -> Optional[str]:
-    """Create the first administrator and claim all legacy unowned records."""
+    """Create the first administrator and claim all legacy unowned records.
+
+    The administrator logs in with ``UBYHOST_ADMIN_EMAIL`` (or the operator
+    e-mail). The first login link is written to ``initial_admin_login`` in the
+    data directory, readable only by the app user, because on a fresh server
+    mail may not be set up yet. Returns that link, or None if nothing was made.
+    """
     if accounts_exist() or not config.BOOTSTRAP_ADMIN:
         return None
-    username = normalise_username(config.ADMIN_USERNAME) or "admin"
-    password = config.ADMIN_PASSWORD
-    if not password:
-        while True:
-            password = secrets.token_urlsafe(16)
-            if not password_error(password):
-                break
-    legacy_hash = db.get_setting("admin_password")
-    if legacy_hash and not config.ADMIN_PASSWORD:
-        password_hash = legacy_hash
-        generated_password = ""
-    else:
-        error = password_error(password)
-        if error:
-            # Startup diagnostics stay readable: the log is read by an operator,
-            # not by a host, so this one is resolved to English here.
-            raise RuntimeError(
-                "UBYHOST_ADMIN_PASSWORD is not strong enough: "
-                f"{host_i18n.translate(host_i18n.DEFAULT_LANGUAGE, error)}"
-            )
-        password_hash = hash_password(password)
-        generated_password = "" if config.ADMIN_PASSWORD else password
-    user_id = db.insert(
-        "user_account",
-        {
-            "username": username,
-            "display_name": "Administrator",
-            "password_hash": password_hash,
-            "role": "admin",
-            "active": 1,
-            "must_change_password": 1,
-            "session_version": 1,
-            "created_at": db.utcnow(),
-        },
+    from . import login_link, mail
+
+    email = mail.normalise_email(config.ADMIN_EMAIL or config.OPERATOR_EMAIL)
+    if not email:
+        raise RuntimeError(
+            "UBYHOST_ADMIN_EMAIL is empty: set the address the first administrator logs in with."
+        )
+    user_id = create_account(
+        email,
+        "Administrator",
+        role="admin",
+        username=normalise_username(config.ADMIN_USERNAME) or "admin",
     )
     db.execute("UPDATE apartment SET owner_user_id = ? WHERE owner_user_id IS NULL", (user_id,))
     db.execute("UPDATE legal_entity SET owner_user_id = ? WHERE owner_user_id IS NULL", (user_id,))
     db.execute("UPDATE alert SET owner_user_id = ? WHERE owner_user_id IS NULL", (user_id,))
     db.execute("UPDATE audit SET owner_user_id = ? WHERE owner_user_id IS NULL", (user_id,))
-    if generated_password:
-        path = Path(config.DATA_DIR) / "initial_admin_credentials"
-        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-        os.fchmod(descriptor, 0o600)
-        with os.fdopen(descriptor, "w") as handle:
-            handle.write(f"username={username}\npassword={generated_password}\n")
-    return generated_password
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    token = login_link.issue(account, purpose=login_link.INVITE)
+    link = f"{config.PUBLIC_BASE_URL}/login/link?t={token}"
+    path = Path(config.DATA_DIR) / "initial_admin_login"
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    os.fchmod(descriptor, 0o600)
+    with os.fdopen(descriptor, "w") as handle:
+        handle.write(f"email={email}\nlink={link}\n")
+    return link
 
 
 # No l, 0 or 1: a link read aloud or copied by hand stays unambiguous. The

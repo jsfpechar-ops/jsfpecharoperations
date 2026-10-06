@@ -145,8 +145,12 @@ Platform admins see full guest data and all downloads while previewing; optional
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `UBYHOST_BOOTSTRAP_ADMIN` | `1` | `0` skips creating the first administrator on startup. Use it only on an instance that already has one; with no admin and no bootstrap there is no way in. |
-| `UBYHOST_ADMIN_USERNAME` | `admin` | Lower-cased. |
-| `UBYHOST_ADMIN_PASSWORD` | unset | When omitted, a random password is written once to `$UBYHOST_DATA_DIR/initial_admin_credentials` with owner-only permissions. |
+| `UBYHOST_ADMIN_EMAIL` | unset (falls back to `UBYHOST_OPERATOR_EMAIL`) | The address the first administrator logs in with. Their first login link (valid 72 hours) is written once to `$UBYHOST_DATA_DIR/initial_admin_login` with owner-only permissions; on staging it is also written to the service log. |
+| `UBYHOST_ADMIN_USERNAME` | `admin` | Internal handle only; nobody types it any more. |
+
+There are no passwords. Every account logs in with a single-use link sent to its
+e-mail address (15 minutes), optionally followed by an authenticator-app code.
+`UBYHOST_ADMIN_PASSWORD` is no longer read and can be removed from `.env`.
 
 ## Operator identity (shown in the UI and legal pages)
 

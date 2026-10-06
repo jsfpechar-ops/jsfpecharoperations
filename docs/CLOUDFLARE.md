@@ -102,7 +102,7 @@ ACME_EMAIL=you@example.com
 CLOUDFLARE_PROXY=1
 UBYHOST_TRUSTED_PROXY_CIDRS=172.16.0.0/12
 UBYHOST_DEPLOYMENT=production
-UBYHOST_ADMIN_PASSWORD=…
+UBYHOST_ADMIN_EMAIL=you@example.com
 ```
 
 `ACME_EMAIL` is still used as contact metadata; TLS comes from the origin cert,

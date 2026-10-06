@@ -16,8 +16,8 @@ from fastapi.testclient import TestClient
 
 from app import alerts, auth, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "automation-missing-host"
 
 
@@ -69,7 +69,7 @@ def _payload(**overrides):
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Automation Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Automation Host", username=USERNAME)
     entity_id = db.insert(
         "legal_entity",
         {
@@ -99,11 +99,7 @@ def host():
         },
     )
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client, apartment_id

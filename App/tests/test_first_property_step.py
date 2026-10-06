@@ -19,8 +19,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "first-property-step-host"
 
 ENTITY_NAME = "First Step s.r.o."
@@ -152,15 +152,9 @@ def host():
         "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
     )
     if not existing:
-        auth.create_account(
-            USERNAME, PASSWORD, "First Step Host", must_change_password=False
-        )
+        auth.create_account(f"{USERNAME}@example.test", "First Step Host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client

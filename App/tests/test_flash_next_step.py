@@ -16,8 +16,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "flash-next-step-host"
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
@@ -93,13 +93,9 @@ def _cleanup():
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Flash Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Flash Host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, follow_redirects=False)
     assert response.status_code == 303, response.text
     client.cookies.set(host_i18n.LANG_COOKIE, "en")
     try:

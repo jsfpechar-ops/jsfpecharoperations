@@ -16,9 +16,9 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n, reporting
 from app.main import app
+from tests.conftest import login_as
 
 TEMPLATES = Path(__file__).resolve().parent.parent / "app" / "templates"
-PASSWORD = "Secure-Password-123"
 
 
 def _cleanup():
@@ -42,9 +42,7 @@ def _host_with_a_stay_needing_action() -> TestClient:
     now, today = db.utcnow(), date.today()
     username = "czechhost"
     existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
-    uid = existing["id"] if existing else auth.create_account(
-        username, PASSWORD, "Czech Host", must_change_password=False
-    )
+    uid = existing["id"] if existing else auth.create_account(f"{username}@example.test", "Czech Host", username=username)
     _cleanup()
     entity_id = db.insert(
         "legal_entity",
@@ -103,9 +101,7 @@ def _host_with_a_stay_needing_action() -> TestClient:
         },
     )
     client = TestClient(app)
-    client.post(
-        "/login", data={"username": username, "password": PASSWORD}, follow_redirects=False
-    )
+    login_as(client, username, follow_redirects=False)
     client.cookies.set(host_i18n.LANG_COOKIE, "cs")
     return client
 

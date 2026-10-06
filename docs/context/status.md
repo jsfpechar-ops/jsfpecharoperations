@@ -1,30 +1,28 @@
 # Status
 
-Updated: 2026-10-06 (task 0002 brief: police answers, downloads, stay-fee row). Keep each section to 5 lines or fewer.
+Updated: 2026-10-06 after merging `main` into PR #288. Keep each section to 5 lines or fewer.
 
 ## Production
 
 - Live: `8809b9f` (PR #277), Deploy production run #171, 2026-10-05. Real hosts, `ubyport=prod`.
-- `main` is at `ebdccb4` (PR #281, context system). PR #280 (admin preview) is in `main` but **not deployed yet.**
+- `main` includes context rollout (#281); admin preview (#280) is in `main` but **not deployed yet.**
 
 ## Now
 
-- Owner: hand task [0002](../tasks/0002-police-downloads-stayfee.md) to Cursor (three stacked PRs: downloads, stay-fee row, police severity). Then the owner steps at the end of that brief.
-- Owner: run task [0001](../tasks/0001-context-rollout.md) step 12 with `APPLY=1` to close the 40 listed stale PRs (keep #278 and #279 open).
+- Owner: review **[#288](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/288)** (magic link 0002–0005, police/stay-fee 0002 brief, filing-in-flight fix). Full-suite pytest still needs green before merge.
+- Lawyer: **LAWYER REVIEW** paragraphs in task 0005 (legal v1.7).
+- Owner: task [0001](../tasks/0001-context-rollout.md) step 12 with `APPLY=1` when ready (keep #278 and #279 open).
 
 ## Next
 
-- The magic link + passkeys plan. The owner is still planning it; it will be the first plan in this workflow. Don't start it until he says so.
-- Owner: deploy `main` (#280 + #281) and check the Doručenka download on a new filing.
+- After #288 deploy: set every login e-mail in `/admin/users`; run `reconcile_accepted_codes.py` per [0002-police brief](../tasks/0002-police-downloads-stayfee.md).
+- Deploy #280+#281 when ready; test Doručenka on a new filing.
 
 ## Blocked: needs owner, lawyer or council
 
-- Lawyer review of the legal texts: deletion 30+30 days, retention anchor, acceptance-row deletion, under-15 signatures, ID copies. See the K-L rows in [known-issues](known-issues.md).
-- Stale signed dates (old plan items T48–T50): keep the current safety net or restore re-signing? Owner decision (K-F18).
-- HIGH RISK filing items left open on purpose: K-F02, K-F03, K-F07. Owner: confirm the secret key was rotated after the leak (K-S10).
+- Lawyer review of legal texts (0005 and K-L rows in [known-issues](known-issues.md)).
+- Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
 
 ## Owner steps already done (don't ask again)
 
-- SES mail, Turnstile, the operator identity in `.env`, healthchecks.io (submit, iCal, mail, backup, filing), Better Stack uptime, Cloudflare + trusted proxy CIDRs, `UBYHOST_RETENTION_AUTOPURGE=1`, legal effective date, Umami, guest languages, Render staging.
-- Litestream → S3 (SSE-S3), with a restore drill passed. Nightly `age`-encrypted backup. Lightsail 8 GB.
-- Task 0001 context rollout merged (#281). Orchestrator review: approved 2026-10-06 (post-merge).
+- SES, Turnstile, operator `.env`, healthchecks, Better Stack, Cloudflare, retention autopurge, legal effective date, Umami, guest languages, Render staging, Litestream/backup drill, task 0001 context rollout (#281).

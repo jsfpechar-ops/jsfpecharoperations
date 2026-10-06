@@ -13,8 +13,8 @@ from fastapi.testclient import TestClient
 
 from app import alerts, auth, config, db, demo, reporting, stay_fee
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Budget-Password-123"
 _CSRF = re.compile(r'((?:name="csrf-token" content|name="_csrf" value)=")[^"]*')
 
 
@@ -30,7 +30,7 @@ def seeded(tmp_path_factory):
 
     patcher.setattr(demo.icalsync, "fetch_feed", _no_network)
     db.init_db()
-    owner = auth.create_account("budget-host", PASSWORD, "Budget", must_change_password=False)
+    owner = auth.create_account("budget-host@example.test", "Budget", username="budget-host")
     assert demo.seed(owner)
     # Stay fees on, and one guest without a signature, so the stay-fee pages
     # have periods, lines and the "unsigned" issue to render.
@@ -41,11 +41,7 @@ def seeded(tmp_path_factory):
     )
     db.update("guest", unsigned["id"], {"signature_png": None})
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": "budget-host", "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, "budget-host", url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     try:
         yield client

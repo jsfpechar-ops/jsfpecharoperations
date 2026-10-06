@@ -2,14 +2,15 @@
 # One-shot Lightsail production bootstrap (run on the instance via SSH).
 # Required env (do not commit secrets):
 #   UBYHOST_DOMAIN   e.g. 3-70-222-66.sslip.io
-#   UBYHOST_ADMIN_PASSWORD
+#   UBYHOST_ADMIN_EMAIL  the address the first administrator logs in with
 # Optional: ACME_EMAIL, UBYHOST_OPERATOR_EMAIL (default admin@sslip.io)
+# The first login link is written to /data/initial_admin_login.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 INSTALL_DIR="${UBYHOST_INSTALL_DIR:-/opt/ubyhost}"
 DOMAIN="${UBYHOST_DOMAIN:?set UBYHOST_DOMAIN}"
-ADMIN_PW="${UBYHOST_ADMIN_PASSWORD:?set UBYHOST_ADMIN_PASSWORD}"
+ADMIN_EMAIL="${UBYHOST_ADMIN_EMAIL:?set UBYHOST_ADMIN_EMAIL}"
 ACME_EMAIL="${ACME_EMAIL:-admin@sslip.io}"
 OPERATOR_EMAIL="${UBYHOST_OPERATOR_EMAIL:-${ACME_EMAIL}}"
 
@@ -53,7 +54,7 @@ set_kv CLOUDFLARE_PROXY "0"
 set_kv UBYHOST_DEPLOYMENT "production"
 set_kv UBYHOST_UBYPORT_ENV "test"
 set_kv UBYHOST_ADMIN_USERNAME "admin"
-set_kv UBYHOST_ADMIN_PASSWORD "${ADMIN_PW}"
+set_kv UBYHOST_ADMIN_EMAIL "${ADMIN_EMAIL}"
 set_kv ACME_EMAIL "${ACME_EMAIL}"
 set_kv UBYHOST_OPERATOR_EMAIL "${OPERATOR_EMAIL}"
 set_kv UBYHOST_GUEST_PIN "1"

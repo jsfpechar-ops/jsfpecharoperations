@@ -8,25 +8,9 @@
   t('users.lede')
 ) }}
 
-{% if new_credential %}
-<div class="panel credential-once" role="status">
-  <h2>{% if new_credential.reset %}{{ t('users.credential.reset_title') }}{% else %}{{ t('users.credential.created_title') }}{% endif %}</h2>
-  <p class="small muted">
-    {{ t('users.credential.copy_now') }}
-    {% if new_credential.reset %}{{ t('users.credential.old_password_invalid') }} {{ t('users.credential.reset_2fa') }}{% endif %}
-  </p>
-  <dl class="credential-pair">
-    <dt>{{ t('users.credential.username') }}</dt>
-    <dd class="mono">{{ new_credential.username }}</dd>
-    <dt>{{ t('users.credential.temporary_password') }}</dt>
-    <dd class="mono credential-secret">{{ new_credential.password }}</dd>
-  </dl>
-  <p class="small muted">
-    {{ t('users.credential.choose_on_login') }}
-  </p>
-  <p class="small muted">
-    {{ t('users.credential.next_steps', url=public_base_url ~ '/login') }}
-  </p>
+{% if missing_email_count %}
+<div class="panel" role="status" id="users-missing-email">
+  <p class="small"><strong>{{ t('users.email.missing_banner', count=missing_email_count) }}</strong></p>
 </div>
 {% endif %}
 
@@ -41,7 +25,7 @@
             <td data-label="{{ t('users.table.user') }}">
               <strong>{{ user.display_name or user.username }}</strong>
               <div class="small muted mono">{{ user.username }}</div>
-              {% if user.email %}<div class="small muted">{{ user.email }}</div>{% endif %}
+              {% if user.email %}<div class="small muted">{{ user.email }}</div>{% elif user.active %}<span class="pill amber">{{ t('users.status.no_email') }}</span>{% endif %}
               {% if user.signup_source %}<div class="small muted">{{ t('users.source', source=t('users.source.' ~ user.signup_source)) }}</div>{% endif %}
             </td>
             <td data-label="{{ t('users.table.role') }}">{{ user.role | capitalize }}</td>
@@ -49,12 +33,22 @@
             <td data-label="{{ t('users.table.status') }}">
               {% if user.signup_at and not user.email_verified_at and not user.active %}<span class="pill amber">{{ t('users.status.unverified') }}</span>
               {% elif not user.active %}<span class="pill grey">{{ t('users.status.disabled') }}</span>
-              {% elif user.must_change_password %}<span class="pill amber">{{ t('users.status.temporary_password') }}</span>
+              {% elif not user.last_login_at %}<span class="pill amber">{{ t('users.status.invited') }}</span>
               {% else %}<span class="pill green">{{ t('users.status.active') }}</span>{% endif %}
             </td>
             <td class="row-actions" data-label="">
-              {% if user.id != current_user.id %}
                 {{ row_menu_begin(t('users.menu.aria')) }}
+                  <form method="post" action="/admin/users/{{ user.id }}/email" class="row-menu-form">
+                    <label class="small muted" for="user-email-{{ user.id }}">{{ t('users.email.label') }}</label>
+                    <input type="email" id="user-email-{{ user.id }}" name="email" required maxlength="254"
+                           autocomplete="off" autocapitalize="none" spellcheck="false" value="{{ user.email or '' }}">
+                    {% if user.email %}
+                    <label class="small muted" for="user-email-reason-{{ user.id }}">{{ t('users.email.reason') }}</label>
+                    <input type="text" id="user-email-reason-{{ user.id }}" name="reason" required minlength="5" maxlength="300">
+                    {% endif %}
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.email.change') if user.email else t('users.email.set') }}</button>
+                  </form>
+              {% if user.id != current_user.id %}
                   <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
                     <label class="small muted" for="support-reason-{{ user.id }}">{{ t('users.menu.open_workspace_reason') }}</label>
                     <input type="text" id="support-reason-{{ user.id }}" name="reason" maxlength="300" placeholder="{{ t('users.menu.open_workspace_reason_optional') }}">
@@ -63,9 +57,11 @@
                   <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form"{% if user.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=user.display_name or user.username) }}"{% endif %}>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.disable') if user.active else t('users.menu.enable') }}</button>
                   </form>
-                  <button class="row-menu-item" type="button" role="menuitem"
-                          data-reset-password data-user-id="{{ user.id }}"
-                          data-user-label="{{ user.display_name or user.username }}">{{ t('users.menu.reset_password') }}</button>
+                  {% if user.active and user.email %}
+                  <form method="post" action="/admin/users/{{ user.id }}/invite" class="row-menu-form">
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.send_invite') }}</button>
+                  </form>
+                  {% endif %}
                   {% if user.meta_consent %}
                   <form method="post" action="/admin/users/{{ user.id }}/ads-consent/withdraw" class="row-menu-form">
                     <input type="hidden" name="platform" value="meta">
@@ -86,8 +82,8 @@
                     <input type="text" name="confirm" class="mono" required>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.schedule_deletion') }}</button>
                   </form>
-                {{ row_menu_end() }}
               {% endif %}
+                {{ row_menu_end() }}
             </td>
           </tr>
         {% endfor %}
@@ -115,44 +111,14 @@
         <input type="text" id="display_name" name="display_name" autocomplete="off">
       </div>
       <div class="field">
-        <label for="username">{{ t('users.create.username') }}</label>
-        <input type="text" id="username" name="username" required minlength="3" maxlength="32"
-               pattern="[a-z0-9][a-z0-9._-]{2,31}" autocapitalize="none" spellcheck="false"
-               autocomplete="off">
-        <div class="hint">{{ t('users.create.username_hint') }}</div>
-      </div>
-      <div class="field">
-        <label for="password">{{ t('users.create.temporary_password') }}</label>
-        <div class="password-generate">
-          <input type="text" id="password" name="password" class="mono" required readonly
-                 autocomplete="off" spellcheck="false" data-generated-password>
-          <button class="btn small ghost" type="button" data-generate-password>{{ t('users.create.regenerate') }}</button>
-          <button class="btn small ghost" type="button" data-copy="password">{{ t('common.copy') }}</button>
-        </div>
-        <div class="hint">{{ t('users.create.password_hint') }}</div>
+        <label for="email">{{ t('users.email.label') }}</label>
+        <input type="email" id="email" name="email" required maxlength="254" autocomplete="off"
+               autocapitalize="none" spellcheck="false">
+        <div class="hint">{{ t('users.email.create_hint') }}</div>
       </div>
       <button class="btn primary" type="submit">{{ t('users.create.submit') }}</button>
     </form>
   </aside>
 </div>
 
-<dialog id="reset-password-dialog" class="admin-dialog">
-  <form method="post" id="reset-password-form" class="admin-dialog-form">
-    <h2 style="margin-top:0">{{ t('users.reset.title') }}</h2>
-    <p class="small muted">{{ t('users.reset.lede_before') }}<strong id="reset-password-label"></strong>{{ t('users.reset.lede_after') }}</p>
-    <div class="field">
-      <label for="reset_password_value">{{ t('users.reset.temporary_password') }}</label>
-      <div class="password-generate">
-        <input type="text" id="reset_password_value" name="password" class="mono" required readonly
-               autocomplete="off" spellcheck="false" data-generated-password>
-        <button class="btn small ghost" type="button" data-generate-password>{{ t('users.create.regenerate') }}</button>
-        <button class="btn small ghost" type="button" data-copy="reset_password_value">{{ t('common.copy') }}</button>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="btn" type="button" data-reset-password-cancel>{{ t('confirm.cancel') }}</button>
-      <button class="btn primary" type="submit">{{ t('users.reset.save') }}</button>
-    </div>
-  </form>
-</dialog>
 {% endblock %}

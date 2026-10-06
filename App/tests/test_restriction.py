@@ -10,8 +10,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, housebook, reporting
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
         "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
@@ -57,9 +57,7 @@ def _seed():
     db.init_db()
     now = db.utcnow()
     today = date.today()
-    owner = auth.create_account(
-        "restrict-host", PASSWORD, "Restrict", must_change_password=False
-    )
+    owner = auth.create_account("restrict-host@example.test", "Restrict", username="restrict-host")
     entity = db.insert(
         "legal_entity",
         {"name": "Restriction entity", "owner_user_id": owner, "created_at": now},
@@ -118,11 +116,7 @@ def _seed():
 
 def _login() -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": "restrict-host", "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, "restrict-host", url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 

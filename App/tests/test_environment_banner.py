@@ -6,6 +6,7 @@ from starlette.testclient import TestClient
 
 from app import auth, db, host_i18n, templating
 from app.main import app
+from tests.conftest import login_as
 
 
 @pytest.fixture()
@@ -58,18 +59,8 @@ def test_production_shows_a_quiet_named_sidebar_badge(client, env):
     env("prod")
     username = "quiet-production-ui"
     if not db.query_one("SELECT id FROM user_account WHERE username = ?", (username,)):
-        auth.create_account(
-            username,
-            "Quiet-Production-Password-123",
-            "Production host",
-            role="admin",
-            must_change_password=False,
-        )
-    client.post(
-        "/login",
-        data={"username": username, "password": "Quiet-Production-Password-123"},
-        follow_redirects=False,
-    )
+        auth.create_account(f"{username}@example.test", "Production host", role="admin", username=username)
+    login_as(client, username, follow_redirects=False)
 
     page = client.get("/")
 

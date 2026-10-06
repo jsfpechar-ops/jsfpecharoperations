@@ -14,8 +14,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, validation, validation_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "validation-i18n-host"
 
 
@@ -64,7 +64,7 @@ def _broken_apartment(**overrides):
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Validation Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Validation Host", username=USERNAME)
     try:
         yield
     finally:
@@ -73,11 +73,7 @@ def host():
 
 def _signed_in(lang: str) -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        f"/login?lang={lang}",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url=f"/login?lang={lang}", follow_redirects=False)
     assert response.status_code == 303, response.text
     return client
 

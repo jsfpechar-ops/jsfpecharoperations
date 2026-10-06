@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient
 
 from app import acceptance, auth, config, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
 PASSWORD = "Secure-Password-123"
 HOST_I18N = Path(__file__).resolve().parents[1] / "app" / "host_i18n.py"
@@ -38,9 +39,7 @@ def _cleanup(*usernames: str) -> None:
 def _make(username: str, *, two_factor: bool = False, role: str = "host") -> tuple[int, str]:
     db.init_db()
     _cleanup(username)
-    user_id = auth.create_account(
-        username, PASSWORD, "Acceptance", role=role, must_change_password=False
-    )
+    user_id = auth.create_account(f"{username}@example.test", "Acceptance", role=role, username=username)
     if not two_factor:
         return user_id, ""
     secret = auth.new_totp_secret()
@@ -49,11 +48,7 @@ def _make(username: str, *, two_factor: bool = False, role: str = "host") -> tup
 
 
 def _login(client: TestClient, username: str, lang: str = "en"):
-    return client.post(
-        f"/login?lang={lang}",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    return login_as(client, username, url=f"/login?lang={lang}", follow_redirects=False)
 
 
 def _checkbox(html: str) -> str:

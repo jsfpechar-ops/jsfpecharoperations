@@ -28,6 +28,7 @@ from fastapi.testclient import TestClient
 
 from app import alerts, auth, db, reporting
 from app.ubyport.client import SubmissionResult, UbyportAuthError, UbyportOutcomeUnknownError, UbyportTransportError
+from tests.conftest import login_as
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -42,7 +43,6 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
 # these tests assert.
 BOUND = 1
 
-PASSWORD = "RetryCapTestPassword1"
 USERNAME = "retry-cap-admin"
 
 
@@ -491,19 +491,9 @@ def host(mock_ubyport):  # noqa: ARG001
     db.init_db()
     account = db.query_one("SELECT * FROM user_account WHERE username = ?", (USERNAME,))
     if not account:
-        auth.create_account(
-            USERNAME,
-            PASSWORD,
-            "Retry cap admin",
-            role="admin",
-            must_change_password=False,
-        )
+        auth.create_account(f"{USERNAME}@example.test", "Retry cap admin", role="admin", username=USERNAME)
     with TestClient(app) as test_client:
-        response = test_client.post(
-            "/login",
-            data={"username": USERNAME, "password": PASSWORD},
-            follow_redirects=False,
-        )
+        response = login_as(test_client, USERNAME, follow_redirects=False)
         assert response.status_code == 303
         # A refused login also redirects, so check where it went.
         assert "err=" not in response.headers["location"]

@@ -1,9 +1,9 @@
 """Losing the phone must not mean losing the account.
 
 Two-factor setup could only be run once. A host whose phone died, or who
-replaced it, had no self-service way back in: an administrator had to reset the
-password, which also wipes the second factor, and the host then started over.
-This is that path, done by the host, with both existing factors proved first.
+replaced it, had no self-service way back in. This is that path, done by the
+host: the old phone proves itself with a code (or a recovery code) first.
+Since task 0003 there is no password to prove as well.
 """
 from __future__ import annotations
 
@@ -17,8 +17,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "move-phone-host"
 MOVE_ACTION = "/account/2fa/move"
 
@@ -33,13 +33,9 @@ def _cleanup():
 def _client() -> TestClient:
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Move Phone", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Move Phone", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     return client
 
@@ -105,12 +101,8 @@ def phone(enrolled):
     return enrolled, secret, codes
 
 
-def _move(client, *, password=PASSWORD, code=""):
-    return client.post(
-        MOVE_ACTION,
-        data={"current_password": password, "code": code},
-        follow_redirects=False,
-    )
+def _move(client, *, code=""):
+    return client.post(MOVE_ACTION, data={"code": code}, follow_redirects=False)
 
 
 # --- the way in ----------------------------------------------------------
@@ -133,18 +125,9 @@ def test_the_move_form_is_labelled_and_its_hint_is_linked(phone):
     client, _secret, _codes = phone
     body = _body(client.get("/settings"))
 
-    assert f'<label for="move-current-password">{_text("login.password")}</label>' in body
     assert f'<label for="move-code">{_text("settings.account.2fa_move_code")}</label>' in body
     assert 'aria-describedby="move-code-hint"' in body
     assert f'id="move-code-hint">{_text("settings.account.2fa_move_code_hint")}' in body
-
-
-def test_the_password_is_masked_on_the_form(phone):
-    client, _secret, _codes = phone
-    body = _body(client.get("/settings"))
-
-    assert 'name="current_password" type="password"' in body
-    assert 'name="current_password" type="text"' not in body
 
 
 def test_settings_does_not_offer_a_move_without_a_second_factor(host):
@@ -160,17 +143,7 @@ def test_the_move_cannot_be_triggered_by_a_link(phone):
     assert client.get(MOVE_ACTION, follow_redirects=False).status_code == 405
 
 
-# --- both factors have to be proved --------------------------------------
-
-
-def test_a_wrong_password_stops_the_move(phone):
-    client, _secret, _codes = phone
-
-    response = _move(client, password="not-the-password", code="123456")
-
-    assert response.status_code == 303
-    assert _text("auth.error.current_password_wrong") in unquote(response.headers["location"])
-    assert _account()["totp_enabled"] == 1, "the second factor was wiped anyway"
+# --- the old phone has to prove itself -------------------------------------
 
 
 def test_a_wrong_code_stops_the_move(phone):
@@ -182,24 +155,6 @@ def test_a_wrong_code_stops_the_move(phone):
     assert _text("auth.error.code_invalid") in unquote(response.headers["location"])
     assert _account()["totp_enabled"] == 1, "the second factor was wiped anyway"
     assert auth.verify_second_factor(_account(), pyotp.TOTP(secret).now())
-
-
-def test_a_password_alone_is_not_enough(phone):
-    client, _secret, _codes = phone
-
-    response = _move(client, code="")
-
-    assert response.status_code == 303
-    assert _account()["totp_enabled"] == 1
-
-
-def test_a_code_alone_is_not_enough(phone):
-    client, secret, _codes = phone
-
-    response = _move(client, password="", code=pyotp.TOTP(secret).now())
-
-    assert response.status_code == 303
-    assert _account()["totp_enabled"] == 1
 
 
 # --- what a successful move does -----------------------------------------
@@ -268,9 +223,7 @@ def test_the_first_login_on_a_new_phone_is_not_refused_as_a_replay(monkeypatch):
     fixed = 1_700_000_000.0
     monkeypatch.setattr(auth.time, "time", lambda: fixed)
     try:
-        user_id = auth.create_account(
-            USERNAME, PASSWORD, "Move Phone", must_change_password=False
-        )
+        user_id = auth.create_account(f"{USERNAME}@example.test", "Move Phone", username=USERNAME)
         old_secret = auth.new_totp_secret()
         auth.enable_totp(user_id, old_secret, auth.new_recovery_codes())
         assert _account()["totp_last_step"] is None, (
@@ -341,11 +294,11 @@ def test_the_errors_come_back_in_the_hosts_language(phone):
 
     response = client.post(
         MOVE_ACTION + "?lang=cs",
-        data={"current_password": "nope", "code": ""},
+        data={"code": "000000"},
         follow_redirects=False,
     )
 
-    assert _text("auth.error.current_password_wrong", "cs") in unquote(
+    assert _text("auth.error.code_invalid", "cs") in unquote(
         response.headers["location"]
     )
 

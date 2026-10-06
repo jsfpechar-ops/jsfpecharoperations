@@ -40,8 +40,10 @@ services:
         generateValue: true
       - key: UBYHOST_ADMIN_USERNAME
         value: admin
-      - key: UBYHOST_ADMIN_PASSWORD
-        generateValue: true
+      # The first administrator logs in by e-mail link. Staging delivers no
+      # mail: the link is written to the service log (Render -> Logs).
+      - key: UBYHOST_ADMIN_EMAIL
+        sync: false
       - key: UBYHOST_MAIL_BACKEND
         value: console
       - key: UBYHOST_PUBLIC_BASE_URL

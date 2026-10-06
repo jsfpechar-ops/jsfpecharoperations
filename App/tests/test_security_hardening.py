@@ -13,9 +13,7 @@ def test_totp_and_recovery_codes_are_single_use():
     db.init_db()
     username = "two-factor-test"
     db.execute("DELETE FROM user_account WHERE username = ?", (username,))
-    user_id = auth.create_account(
-        username, "Secure-Password-123", "Two Factor", must_change_password=False
-    )
+    user_id = auth.create_account(f"{username}@example.test", "Two Factor", username=username)
     try:
         secret = auth.new_totp_secret()
         recovery = auth.new_recovery_codes()
@@ -41,9 +39,7 @@ def test_a_non_ascii_code_is_a_failure_not_a_crash():
     db.init_db()
     username = "two-factor-non-ascii"
     db.execute("DELETE FROM user_account WHERE username = ?", (username,))
-    user_id = auth.create_account(
-        username, "Secure-Password-123", "Non ASCII", must_change_password=False
-    )
+    user_id = auth.create_account(f"{username}@example.test", "Non ASCII", username=username)
     try:
         secret = auth.new_totp_secret()
         auth.enable_totp(user_id, secret, auth.new_recovery_codes())
@@ -81,13 +77,12 @@ def test_turnstile_requires_success_action_and_hostname(monkeypatch):
     assert not turnstile.verify(request, "token", "guest_pin")
 
 
-def test_production_hosts_without_totp_are_sent_to_setup(monkeypatch):
+def test_production_hosts_without_totp_are_let_in(monkeypatch):
+    """Task 0003: the authenticator app is optional, also in production."""
     db.init_db()
     username = "two-factor-required"
     db.execute("DELETE FROM user_account WHERE username = ?", (username,))
-    user_id = auth.create_account(
-        username, "Secure-Password-123", "Required", must_change_password=False
-    )
+    user_id = auth.create_account(f"{username}@example.test", "Required", username=username)
     try:
         account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
         request = SimpleNamespace(
@@ -96,9 +91,7 @@ def test_production_hosts_without_totp_are_sent_to_setup(monkeypatch):
             cookies={},
         )
         monkeypatch.setattr(config, "DEPLOYMENT", "production")
-        response = auth.require_login(request)
-        assert response is not None
-        assert response.headers["location"] == "/account/2fa/setup"
+        assert auth.require_login(request) is None
     finally:
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 

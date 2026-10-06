@@ -1,0 +1,25 @@
+{% extends "auth_base.html" %}
+{# A POST response: the language switch goes back to the login form. #}
+{% set lang_next = '/login' %}
+{% block title %}{{ t('login.sent.page_title') }}{% endblock %}
+{% block auth_body %}
+<section class="auth-card">
+  <h1 class="auth-title">{{ t('login.sent.title') }}</h1>
+  <p class="auth-lede">{{ t('login.sent.lede', email=email) }}</p>
+  {% if dev_link %}
+    <p class="auth-notice" role="status">{{ t('login.sent.dev_link') }} <a href="{{ dev_link }}">{{ t('login.sent.dev_link_open') }}</a></p>
+  {% endif %}
+  <details class="auth-help">
+    <summary>{{ t('login.sent.help_summary') }}</summary>
+    <p class="auth-help-note">{{ t('login.sent.help_body', email=operator().email) }}</p>
+    <form method="post" action="/login" class="auth-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="email" value="{{ email }}">
+      <input type="hidden" name="next" value="{{ next }}">
+      {% if remember %}<input type="hidden" name="remember" value="1">{% endif %}
+      <button class="auth-submit" type="submit">{{ t('login.sent.resend') }}</button>
+    </form>
+  </details>
+  <div class="auth-foot"><a href="/login">{{ t('login.sent.other_address') }}</a></div>
+</section>
+{% endblock %}

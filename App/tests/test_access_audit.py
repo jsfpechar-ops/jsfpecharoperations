@@ -11,8 +11,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, passport_photos
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
     "DQottAAAAABJRU5ErkJggg=="
@@ -53,9 +53,7 @@ def _cleanup():
 def _seed():
     db.init_db()
     _cleanup()
-    owner = auth.create_account(
-        "audit-host", PASSWORD, "Audit", must_change_password=False
-    )
+    owner = auth.create_account("audit-host@example.test", "Audit", username="audit-host")
     now = db.utcnow()
     entity = db.insert(
         "legal_entity", {"name": "Audit entity", "owner_user_id": owner, "created_at": now}
@@ -121,11 +119,7 @@ def _seed():
 
 def _login(username: str) -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 
@@ -169,9 +163,7 @@ def test_every_sensitive_read_writes_one_audit_row_for_the_actor():
 
 def test_an_impersonated_export_names_the_admin_and_the_workspace():
     owner, _apartment, _reservation, _guest, submission = _seed()
-    admin = auth.create_account(
-        "audit-admin", PASSWORD, "Audit Admin", role="admin", must_change_password=False
-    )
+    admin = auth.create_account("audit-admin@example.test", "Audit Admin", role="admin", username="audit-admin")
     try:
         client = _login("audit-admin")
         started = client.post(

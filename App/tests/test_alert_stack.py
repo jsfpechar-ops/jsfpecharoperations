@@ -13,8 +13,8 @@ from fastapi.testclient import TestClient
 
 from app import host_i18n, alerts, auth, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "alert-stack-host"
 
 
@@ -38,13 +38,9 @@ def _cleanup():
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Alert Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Alert Host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client

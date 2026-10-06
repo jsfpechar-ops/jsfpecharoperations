@@ -13,7 +13,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n, reporting
 from app.main import app
-from tests.test_send_controls import PASSWORD, _seed
+from tests.test_send_controls import _seed
+from tests.conftest import login_as
 
 USERNAME = "missing-guest-rows-host"
 TOKEN = "missingrows1"
@@ -23,7 +24,7 @@ def _owner_id() -> int:
     existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
     if existing:
         return existing["id"]
-    return auth.create_account(USERNAME, PASSWORD, "Missing Rows", must_change_password=False)
+    return auth.create_account(f"{USERNAME}@example.test", "Missing Rows", username=USERNAME)
 
 
 def _cleanup():
@@ -57,11 +58,7 @@ def stay():
     _apartment, reservation, _guest_id = _seed("manual", TOKEN, owner_user_id=owner_id)
     db.update("reservation", reservation["id"], {"expected_guests_override": 3})
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client, reservation

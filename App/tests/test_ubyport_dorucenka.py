@@ -19,8 +19,8 @@ from app.main import app
 from app.ubyport import soap
 from app.ubyport.client import UbyportClient
 from mock_ubyport import server as mock_server
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 
 HEADER = {
     "uIdub": "100227887600",
@@ -225,9 +225,7 @@ def _seed_owned(username: str, token: str):
 
     db.init_db()
     existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
-    owner_id = existing["id"] if existing else auth.create_account(
-        username, PASSWORD, "Receipt Owner", must_change_password=False
-    )
+    owner_id = existing["id"] if existing else auth.create_account(f"{username}@example.test", "Receipt Owner", username=username)
     apartment, _reservation, guest_id = _seed("manual", token, owner_user_id=owner_id)
     return apartment, guest_id
 
@@ -258,11 +256,7 @@ def _submit_with_response(monkeypatch, apartment, response_xml):
 
 def _login(username):
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 
