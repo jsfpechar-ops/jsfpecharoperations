@@ -4,7 +4,7 @@
 #
 # G-D2 keeps Drive alongside S3. Google processor terms (a DPA) exist only for
 # Workspace/Cloud accounts; a consumer account has none. Confirm the account
-# type before relying on this path (see FOLLOWUPS.md).
+# type before relying on this path (see docs/archive/FOLLOWUPS.md).
 #
 # One-time setup: install rclone, run `rclone config` → Google Drive → name it "gdrive".
 set -euo pipefail

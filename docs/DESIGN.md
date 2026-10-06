@@ -17,7 +17,7 @@ that document, not only against layout tests.
 
 ## Signed-in host app: selected redesign
 
-**[HOST_APP_DESIGN.md](HOST_APP_DESIGN.md)** governs the signed-in workspace. Its implementation, route coverage, verification evidence, and integration instructions are in **[plans/host-app-redesign](plans/host-app-redesign/README.md)**. The host layer is `static/host.css` and `static/host.js`, loaded only with the signed-in navigation. Keep the public site, login and guest forms under their existing rules below.
+**[HOST_APP_DESIGN.md](HOST_APP_DESIGN.md)** governs the signed-in workspace. Its implementation, route coverage, verification evidence, and integration instructions are in **[plans/host-app-redesign](archive/plans/host-app-redesign/README.md)**. The host layer is `static/host.css` and `static/host.js`, loaded only with the signed-in navigation. Keep the public site, login and guest forms under their existing rules below.
 
 ## Color mode: light only (no dark mode)
 
@@ -66,7 +66,7 @@ sizes, and do/don't rules — is **[LOGO.md](LOGO.md)**. Follow that when adding
 or moving a logo. Do not restore the retired U-swoosh, and do not invent a
 fourth lockup.
 
-The older generation brief is **[LOGO_PROMPT.md](LOGO_PROMPT.md)** (historical).
+The older generation brief is **[LOGO_PROMPT.md](archive/LOGO_PROMPT.md)** (historical).
 
 ## Contact split (host admin vs guest form)
 
@@ -127,7 +127,7 @@ The v2 ticket skin and enhancements are kept for a future revival:
 - `static/archive/ticket-wallet/guest-ticket.css`, `ticket.js`, and `README.md`;
 - `templates/guest/archive/ticket-wallet/_ticket.html` plus reference TW templates for tests.
 
-See [static/archive/ticket-wallet/README.md](../App/app/static/archive/ticket-wallet/README.md) to re-enable. Design notes and the original plan remain in [plans/PLAN_TICKET_WALLET_V2.md](plans/PLAN_TICKET_WALLET_V2.md).
+See [static/archive/ticket-wallet/README.md](../App/app/static/archive/ticket-wallet/README.md) to re-enable. Design notes and the original plan remain in [plans/PLAN_TICKET_WALLET_V2.md](archive/plans/PLAN_TICKET_WALLET_V2.md).
 
 ### Ticket Wallet design reference (archived)
 

@@ -34,7 +34,7 @@ categories and recipients are in `ROPA.md`. In scope here:
 | Question | Current position |
 |---|---|
 | Is each field necessary? | The statutory fields are required by § 101/§ 102; the optional ID image and the signature are **not** required by § 103 (review § 1) and default off |
-| Could less data do? | Names and birth dates are still cleartext for search/sort (`FOLLOWUPS.md` W2.2); document numbers are encrypted |
+| Could less data do? | Names and birth dates are still cleartext for search/sort (`docs/archive/FOLLOWUPS.md` W2.2); document numbers are encrypted |
 | Transparency | Guest notice and privacy page; acknowledgement version persisted (BE-5) |
 | Data-subject rights | Access via registration PDF/house-book CSV; erasure limited by § 101; the DSR register is BE-8 |
 

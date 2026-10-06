@@ -36,5 +36,5 @@ one place while the code computes it per guest from the stay end. The strings to
 reconcile are `privacy_retention_body` in `i18n.py`, § 11 of
 `privacy_policy_i18n.py` and § 15 of `dpa_i18n.py`. LD-3 lists these as
 LEGAL-GATED COPY but gives no replacement wording, so they were left as the
-approved text; counsel must supply the wording (see `FOLLOWUPS.md`). The same
+approved text; counsel must supply the wording (see `docs/archive/FOLLOWUPS.md`). The same
 change covers the false "encrypted backups" claim in those two documents.

@@ -5,7 +5,7 @@ materials. Do not invent a replacement mark, alter the ligature, or swap in a
 previous candidate. Light-mode surfaces only — see [DESIGN.md](DESIGN.md).
 
 The generation brief that produced the family lives in
-[LOGO_PROMPT.md](LOGO_PROMPT.md). It is historical. These files and placements
+[LOGO_PROMPT.md](archive/LOGO_PROMPT.md). It is historical. These files and placements
 are the standard now.
 
 ## The mark

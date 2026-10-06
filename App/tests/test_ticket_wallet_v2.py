@@ -1,4 +1,4 @@
-"""Ticket Wallet v2 (docs/plans/PLAN_TICKET_WALLET_V2.md): the skin's
+"""Ticket Wallet v2 (docs/archive/plans/PLAN_TICKET_WALLET_V2.md): the skin's
 contract with the templates, the enhancement script and the dictionary."""
 import re
 from pathlib import Path
