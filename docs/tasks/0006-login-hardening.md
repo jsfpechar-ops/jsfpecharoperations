@@ -6,7 +6,7 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-Close six findings from the review of PR #288 (magic link, passkeys, login e-mail change). The two medium ones let a stolen session or a stale link take over or bypass 2FA on an account.
+Close six findings from the review of PR #288, and make CI green again (step 0 below: `main` has been red since #288) (magic link, passkeys, login e-mail change). The two medium ones let a stolen session or a stale link take over or bypass 2FA on an account.
 
 ## 2. Context
 
@@ -41,6 +41,7 @@ Also (no code): strip the query string of `/login/link` from the access logs of 
 | `App/app/routes/admin_accounts.py` | edit | Findings 2, 3 and 4 |
 | `App/app/routes/passkeys.py` | edit | Findings 2 and 6 |
 | `scripts/list_accounts_without_email.py` | create | Finding 5 |
+| `App/tests/test_security.py`, `test_stay_fee_detail.py`, `test_stay_fee_downloads.py`, `test_stay_fee_finalize.py`, `test_stay_fee_list.py` | edit | Step 0: remove unused imports and variables only |
 | `App/tests/test_login_hardening.py` | create | One test per finding 1, 2, 3, 4, 6 |
 | `docs/tasks/0006-report.md` | create | §9 |
 
@@ -48,6 +49,7 @@ No other file may change. Templates change only if finding 2 needs a code field 
 
 ## 4. Steps
 
+0. **CI is red on `main` since #288** (step "Lint for runtime errors", `ruff check app tests tools --select E9,F63,F7,F82,F401,F841`, run from `App/`). Eight errors, all in tests: unused `import secrets` in `tests/test_stay_fee_detail.py`, `test_stay_fee_downloads.py`, `test_stay_fee_finalize.py`, `test_stay_fee_list.py`; unused local `login_token` at `tests/test_security.py` lines 51, 96, 133, 147. Remove them (do not skip or disable any test), then confirm the ruff command prints no errors. Make this the first commit so the PR shows green lint.
 1. Branch `task/0006-login-hardening` from `df939db`. Run the full test suite once and note the result.
 2. For each finding in order, write the failing test first, then the fix. Run only that test file after each.
 3. Write `scripts/list_accounts_without_email.py` (read-only, through `db.py`).
@@ -59,10 +61,11 @@ Migrations (no schema change), `retention.py`, the filing and UbyPort code, lega
 
 ## 6. Commands
 
-From `App/`: `.venv/bin/python -m pytest tests/test_login_hardening.py -q`, then `.venv/bin/python -m pytest tests -q`. From the repo root: `python3 scripts/context_lint.py`. Expected: all green, 0 skipped.
+From `App/`: `.venv/bin/python -m pytest tests/test_login_hardening.py -q`, then `.venv/bin/python -m pytest tests -q`. Also `ruff check app tests tools --select E9,F63,F7,F82,F401,F841` (no output). From the repo root: `python3 scripts/context_lint.py`. Expected: all green, 0 skipped.
 
 ## 7. Acceptance
 
+- [ ] Step 0: the ruff command above reports no errors.
 - [ ] Finding 1: after `set_account_email`, an old `email_change` link is refused.
 - [ ] Finding 2: passkey add, passkey delete and e-mail change are refused without a fresh proof; the old address gets a notice on request.
 - [ ] Finding 3: repeated requests for one address do not block the real owner's first link; per-IP limit still works.
