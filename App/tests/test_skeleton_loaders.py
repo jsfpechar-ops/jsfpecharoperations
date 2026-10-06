@@ -89,6 +89,8 @@ DOWNLOAD_PATHS = (
     "/guests/7/passport-photo",  # linked with the download attribute
     "/submissions/3/receipt.pdf",
     "/submissions/3/errors.pdf",
+    "/submissions/3/request.xml",
+    "/submissions/3/response.xml",
     "/submissions/receipts.zip",
     "/housebook.csv",
     "/housebook/pdfs.zip",
@@ -140,7 +142,16 @@ def test_download_links_in_templates_are_covered():
             if path.startswith("/static/"):
                 continue
             tail = text[match.end(): match.end() + 200]
-            if re.search(r"(?:^|\W)(?:pdf|zip|csv|json|export)$", path, re.IGNORECASE):
+            if re.search(r"(?:^|\W)(?:pdf|zip|csv|json|xml|export)$", path, re.IGNORECASE):
                 found.append(path)
                 assert pattern.search(path) or "download" in tail.split(">")[0], (html.name, path)
     assert "/stay-fees/1/pdf" in found and "/stay-fees/1/csv" in found
+
+
+def test_post_export_forms_opt_out_of_skeleton_markup():
+    """POST downloads that do not match DOWNLOAD_RE must carry data-no-skeleton."""
+    templates = APP_DIR / "templates"
+    base = (templates / "base.html").read_text(encoding="utf-8")
+    users = (templates / "users.html").read_text(encoding="utf-8")
+    assert 'action="/settings/workspace-export" data-no-skeleton' in base
+    assert 'action="/admin/users/{{ user.id }}/export"' in users and "data-no-skeleton" in users
