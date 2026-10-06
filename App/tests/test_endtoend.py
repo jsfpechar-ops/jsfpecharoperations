@@ -125,7 +125,7 @@ def test_02_an_empty_install_offers_the_demo(host):
 
 def test_03_apartment_is_created_with_encrypted_credentials(host):
     host.post("/entities", data={"name": "Josef Novák", "ico": "04656679", "seat": "Praha"})
-    entity = db.query_one("SELECT * FROM legal_entity")
+    entity = db.query_one("SELECT * FROM legal_entity WHERE name = ?", ("Josef Novák",))
     assert entity is not None
 
     response = host.post(
@@ -157,7 +157,8 @@ def test_03_apartment_is_created_with_encrypted_credentials(host):
     )
     assert response.status_code == 303, response.text
 
-    apartment = db.query_one("SELECT * FROM apartment")
+    apartment = db.query_one("SELECT * FROM apartment WHERE internal_name = ?", ("Vinohrady 1",))
+    assert apartment is not None
     assert apartment["addr_zip"] == "12000"
     # The password must not be readable in the database file.
     assert apartment["uby_ws_password_enc"]

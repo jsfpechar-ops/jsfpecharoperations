@@ -19,8 +19,8 @@ from fastapi.testclient import TestClient
 from app import auth, claim, db, invoices, passport_photos
 from app.main import app
 from starlette.datastructures import FormData
+from tests.conftest import login_as
 
-PASSWORD = "Download-Skeleton-12345"
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
     "DQottAAAAABJRU5ErkJggg=="
@@ -28,6 +28,38 @@ PNG_BYTES = base64.b64decode(
 SIGNATURE = "data:image/png;base64,AAAA"
 
 sync_api = pytest.importorskip("playwright.sync_api")
+
+
+def _purge_download_owner(owner_id: int) -> None:
+    for guest in db.query(
+        "SELECT g.id FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+        "WHERE r.apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?)",
+        (owner_id,),
+    ):
+        passport_photos.delete_photo(int(guest["id"]))
+    db.execute(
+        "DELETE FROM stay_fee_filing WHERE apartment_id IN "
+        "(SELECT id FROM apartment WHERE owner_user_id = ?)",
+        (owner_id,),
+    )
+    db.execute(
+        "DELETE FROM guest WHERE reservation_id IN (SELECT id FROM reservation "
+        "WHERE apartment_id IN (SELECT id FROM apartment WHERE owner_user_id = ?))",
+        (owner_id,),
+    )
+    db.execute(
+        "DELETE FROM reservation WHERE apartment_id IN "
+        "(SELECT id FROM apartment WHERE owner_user_id = ?)",
+        (owner_id,),
+    )
+    db.execute(
+        "DELETE FROM submission WHERE apartment_id IN "
+        "(SELECT id FROM apartment WHERE owner_user_id = ?)",
+        (owner_id,),
+    )
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner_id,))
+    db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+    db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (owner_id,))
 
 
 def _free_port() -> int:
@@ -38,11 +70,7 @@ def _free_port() -> int:
 
 def _session_cookie(username: str) -> str:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     token = client.cookies.get(auth.SESSION_COOKIE)
     assert token
@@ -58,7 +86,7 @@ def _skeleton_visible(page) -> bool:
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def base():
     db.init_db()
     port = _free_port()
@@ -75,11 +103,13 @@ def base():
     thread.join(timeout=5)
 
 
-@pytest.fixture(scope="module")
-def host_world():
+@pytest.fixture(scope="function")
+def host_world(monkeypatch):
     db.init_db()
+    for row in db.query("SELECT id FROM user_account WHERE username LIKE 'dl-sk%'"):
+        _purge_download_owner(int(row["id"]))
     username = f"dl-sk{secrets.token_hex(4)}"
-    owner = auth.create_account(username, PASSWORD, "DL", role="host", must_change_password=False)
+    owner = auth.create_account(f"{username}@example.test", "DL", role="host", username=username)
     entity = db.insert(
         "legal_entity",
         {"name": "DL s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()},
@@ -163,9 +193,9 @@ def host_world():
     draft["legal_entity_id"] = entity
     draft["owner_user_id"] = owner
     invoice_id = invoices.issue(draft, owner)
-    claim.prague_today = lambda: date(2026, 9, 30)
+    monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 9, 30))
     client = TestClient(app)
-    client.post("/login", data={"username": username, "password": PASSWORD}, follow_redirects=False)
+    login_as(client, username, follow_redirects=False)
     page = client.get(f"/stay-fees/{apartment}?month=2026-08&lang=en", follow_redirects=True)
     assert page.status_code == 200
     token = page.text.split('name="csrf-token" content="', 1)[1].split('"', 1)[0]
@@ -214,6 +244,14 @@ def _click_download(page, selector: str) -> None:
         link.click()
     time.sleep(0.6)
     assert not _skeleton_visible(page), selector
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_download_data(host_world):
+    yield
+    row = db.query_one("SELECT id FROM user_account WHERE username = ?", (host_world["username"],))
+    if row:
+        _purge_download_owner(int(row["id"]))
 
 
 def test_every_host_download_button_keeps_the_page_visible(base, host_world):
