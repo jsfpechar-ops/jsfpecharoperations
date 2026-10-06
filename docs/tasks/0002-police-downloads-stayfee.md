@@ -1,6 +1,8 @@
 # 0002: Land the police answers, the download skeleton fix and the stay-fee row as three stacked PRs
 
-Status: todo
+Status: review
+
+Note: Police/downloads/stay-fee work from this brief was merged into **PR #288** (single release), not three stacked PRs.
 Depends on: none | Base commit: 074be58 | Branch: task/0002a-download-skeleton, task/0002b-stay-fee-row, task/0002c-ubyport-severity
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

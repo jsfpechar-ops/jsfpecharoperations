@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-06 by Cursor (combined magic-link + bug-fix PR). Keep each section to 5 lines or fewer.
+Updated: 2026-10-06 after merging `main` into PR #288. Keep each section to 5 lines or fewer.
 
 ## Production
 
@@ -9,14 +9,14 @@ Updated: 2026-10-06 by Cursor (combined magic-link + bug-fix PR). Keep each sect
 
 ## Now
 
-- Owner: review the **combined PR** (magic link 0002–0005 + Cursor fixes from #283, #289, stay-fee/UbyPort `task/0002c`).
-- Full-suite pytest still has session-order failures before merge; browser e2e (25 tests) passes with 0 skipped.
-- Lawyer: review LAWYER REVIEW paragraphs in task 0005 (legal v1.7).
+- Owner: review **[#288](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/288)** (magic link 0002–0005, police/stay-fee 0002 brief, filing-in-flight fix). Full-suite pytest still needs green before merge.
+- Lawyer: **LAWYER REVIEW** paragraphs in task 0005 (legal v1.7).
+- Owner: task [0001](../tasks/0001-context-rollout.md) step 12 with `APPLY=1` when ready (keep #278 and #279 open).
 
 ## Next
 
-- After merge and deploy: set every account login e-mail in `/admin/users` before link-only login guard applies.
-- Close superseded PRs #283 and #289 when combined PR merges.
+- After #288 deploy: set every login e-mail in `/admin/users`; run `reconcile_accepted_codes.py` per [0002-police brief](../tasks/0002-police-downloads-stayfee.md).
+- Deploy #280+#281 when ready; test Doručenka on a new filing.
 
 ## Blocked: needs owner, lawyer or council
 
