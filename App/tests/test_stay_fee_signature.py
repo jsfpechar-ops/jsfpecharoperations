@@ -11,8 +11,8 @@ from pypdf import PdfReader
 
 from app import auth, db, stay_fee, stay_fee_remittance_pdf
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "stay-fee-signature-host"
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/h48AAAAASUVORK5CYII="
@@ -36,13 +36,9 @@ def _cleanup():
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Signature Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Signature Host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client

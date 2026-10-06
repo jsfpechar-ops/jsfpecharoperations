@@ -2,17 +2,16 @@
 
 Off unless ``UBYHOST_SIGNUP_ENABLED`` is set. The flow:
 
-1. ``/signup`` creates an *inactive* account with the e-mail, the password hash
-   and the workspace name, records the Terms/DPA acceptance, and queues a
+1. ``/signup`` creates an *inactive* account with the e-mail and the workspace
+   name, records the Terms/DPA acceptance, and queues a
    verification link. The page answers the same whether or not the address is
    already taken, so it cannot be used to find out who has an account.
-2. The link opens ``/signup/verify``, which asks for the sign-up password once
-   more. That stops a mail scanner that pre-fetches links from activating the
-   account, and it stops anyone who signed up with somebody else's address
-   from taking the account over when the owner clicks the link: only the
-   person who knows the password can finish.
-3. Activation logs the host in. ``auth.require_login`` then sends them through
-   the existing mandatory 2FA setup and onboarding.
+2. The link opens ``/signup/verify``, a page with one button. Opening the link
+   changes nothing, so a mail scanner that pre-fetches links cannot activate
+   the account. Only the person who reads that mailbox can press the button,
+   so an account created with somebody else's address belongs to the owner of
+   the address the moment it is activated (task 0003: no passwords).
+3. Activation logs the host in and onboarding starts.
 
 Ad click identifiers (legal position 3), without a cookie or an ad script:
 
@@ -314,24 +313,6 @@ def record_attempt(ip_key: str, email: str) -> None:
         rate_limit.record("signup_email", email)
 
 
-def _username_base(email: str) -> str:
-    local = email.split("@", 1)[0].lower()
-    local = re.sub(r"[^a-z0-9._-]", "", local)
-    local = re.sub(r"^[^a-z0-9]+", "", local)[:20]
-    return local or "host"
-
-
-def _new_username(email: str) -> str:
-    base = _username_base(email)
-    for _ in range(20):
-        candidate = f"{base}-{secrets.token_hex(2)}"
-        if auth.username_is_valid(candidate) and not db.query_one(
-            "SELECT id FROM user_account WHERE username = ?", (candidate,)
-        ):
-            return candidate
-    return f"host-{secrets.token_hex(6)}"
-
-
 # --- consent records ---------------------------------------------------------
 
 
@@ -506,7 +487,6 @@ def signup_source(stored: List[str], attr: Dict[str, str]) -> str:
 def register(
     *,
     email: str,
-    password: str,
     workspace: str,
     attr: Dict[str, str],
     consents: Optional[Dict[str, bool]] = None,
@@ -522,7 +502,6 @@ def register(
     """
     now = db.utcnow()
     nonce = secrets.token_urlsafe(16)
-    password_hash = auth.hash_password(password)
     existing = db.query_one("SELECT * FROM user_account WHERE email = ?", (email,))
     if existing and not (
         existing["email_verified_at"] is None
@@ -539,7 +518,7 @@ def register(
         return "exists"
     values = {
         "display_name": workspace,
-        "password_hash": password_hash,
+        "password_hash": "",
         "signup_at": now,
         "signup_verify_nonce": nonce,
         "signup_utm_source": attr.get("utm_source"),
@@ -550,14 +529,14 @@ def register(
         "onboarding_emails_opt_out_at": now if onboarding_opt_out else None,
     }
     if existing:
-        # Signing up again before confirming replaces the password and retires
-        # the older link: whoever confirms has to know the newest password.
+        # Signing up again before confirming replaces the workspace name and
+        # retires the older link: only the newest mail activates the account.
         db.update("user_account", existing["id"], values)
         user_id = int(existing["id"])
         username = existing["username"]
         outcome = "refreshed"
     else:
-        username = _new_username(email)
+        username = auth.new_username(email)
         try:
             user_id = db.insert(
                 "user_account",

@@ -15,9 +15,9 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, deadlines, host_i18n, i18n, reporting
 from app.main import app
+from tests.conftest import login_as
 
 USERNAME = "wp33-overdue-host"
-PASSWORD = "Secure-Password-123"
 TOKEN = "wp33overduetoken"
 
 
@@ -55,7 +55,7 @@ def stays():
     user_id = (
         existing["id"]
         if existing
-        else auth.create_account(USERNAME, PASSWORD, "WP33 Host", must_change_password=False)
+        else auth.create_account(f"{USERNAME}@example.test", "WP33 Host", username=USERNAME)
     )
     entity_id = db.insert(
         "legal_entity", {"name": "WP33 s.r.o.", "owner_user_id": user_id, "created_at": now}
@@ -123,7 +123,7 @@ def stays():
     unfiled = add("unfiled", reporting.PENDING)
     filed = add("filed", reporting.SENT)
     client = TestClient(app)
-    client.post("/login", data={"username": USERNAME, "password": PASSWORD}, follow_redirects=False)
+    login_as(client, USERNAME, follow_redirects=False)
     client.cookies.set(host_i18n.LANG_COOKIE, "en")
     yield client, unfiled, filed
     _cleanup()

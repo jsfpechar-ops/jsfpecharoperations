@@ -4,7 +4,6 @@ from __future__ import annotations
 from app import auth, celebrations, db
 
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "celebration-host"
 
 
@@ -33,9 +32,7 @@ def _clean() -> None:
 
 
 def _owner(username: str = USERNAME) -> int:
-    return auth.create_account(
-        username, PASSWORD, "Celebration host", must_change_password=False
-    )
+    return auth.create_account(f"{username}@example.test", "Celebration host", username=username)
 
 
 def _reservation(owner_id: int, token: str) -> int:

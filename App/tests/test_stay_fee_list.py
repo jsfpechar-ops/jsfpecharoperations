@@ -11,8 +11,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = f"Stay-fee-list-{secrets.token_urlsafe(12)}-9"
 SIGNATURE = "data:image/png;base64,AAAA"
 
 
@@ -44,24 +44,14 @@ def host(monkeypatch):
     db.init_db()
     _cleanup()
     monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 9, 30))
-    owner_id = auth.create_account(
-        "stay-fee-list-owner",
-        PASSWORD,
-        "List Demo",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("stay-fee-list-owner@example.test", "List Demo", role="host", username="stay-fee-list-owner")
     entity_id = db.insert("legal_entity", {
         "name": "List Demo s.r.o.",
         "owner_user_id": owner_id,
         "created_at": db.utcnow(),
     })
     client = TestClient(app)
-    logged_in = client.post(
-        "/login?lang=en",
-        data={"username": "stay-fee-list-owner", "password": PASSWORD},
-        follow_redirects=False,
-    )
+    logged_in = login_as(client, "stay-fee-list-owner", url="/login?lang=en", follow_redirects=False)
     assert logged_in.status_code == 303
     try:
         yield client, owner_id, entity_id
@@ -123,13 +113,7 @@ def _row_for(html, apartment_id):
 def test_login_is_required():
     db.init_db()
     _cleanup()
-    auth.create_account(
-        "stay-fee-list-owner",
-        PASSWORD,
-        "List Demo",
-        role="host",
-        must_change_password=False,
-    )
+    auth.create_account("stay-fee-list-owner@example.test", "List Demo", role="host", username="stay-fee-list-owner")
     try:
         response = TestClient(app).get("/stay-fees", follow_redirects=False)
         assert response.status_code == 303
@@ -172,13 +156,7 @@ def test_monthly_and_quarterly_rows_show_czech_periods_and_totals(host):
 def test_another_owners_properties_never_appear(host):
     client, owner_id, entity_id = host
     _property(owner_id, entity_id, "My Demo")
-    other_id = auth.create_account(
-        "stay-fee-list-other",
-        PASSWORD,
-        "Other Demo",
-        role="host",
-        must_change_password=False,
-    )
+    other_id = auth.create_account("stay-fee-list-other@example.test", "Other Demo", role="host", username="stay-fee-list-other")
     other_entity_id = db.insert("legal_entity", {
         "name": "Other Demo s.r.o.",
         "owner_user_id": other_id,

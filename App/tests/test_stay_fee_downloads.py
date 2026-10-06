@@ -12,8 +12,8 @@ from pypdf import PdfReader
 
 from app import auth, claim, db, stay_fee
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = f"Stay-fee-downloads-{secrets.token_urlsafe(12)}-9"
 SIGNATURE = "data:image/png;base64,AAAA"
 IBAN = "CZ3008000000192000781379"
 ACCOUNT = "19-2000781379/0800"
@@ -52,24 +52,14 @@ def host(monkeypatch):
     db.init_db()
     _cleanup()
     monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 9, 30))
-    owner_id = auth.create_account(
-        "stay-fee-downloads-owner",
-        PASSWORD,
-        "Downloads Demo",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("stay-fee-downloads-owner@example.test", "Downloads Demo", role="host", username="stay-fee-downloads-owner")
     entity_id = db.insert("legal_entity", {
         "name": "Downloads Demo s.r.o.",
         "owner_user_id": owner_id,
         "created_at": db.utcnow(),
     })
     client = TestClient(app)
-    logged_in = client.post(
-        "/login?lang=en",
-        data={"username": "stay-fee-downloads-owner", "password": PASSWORD},
-        follow_redirects=False,
-    )
+    logged_in = login_as(client, "stay-fee-downloads-owner", url="/login?lang=en", follow_redirects=False)
     assert logged_in.status_code == 303
     try:
         yield client, owner_id, entity_id
@@ -152,13 +142,7 @@ def _pdf_text(content: bytes) -> str:
 def test_login_is_required_for_both_downloads():
     db.init_db()
     _cleanup()
-    auth.create_account(
-        "stay-fee-downloads-owner",
-        PASSWORD,
-        "Downloads Demo",
-        role="host",
-        must_change_password=False,
-    )
+    auth.create_account("stay-fee-downloads-owner@example.test", "Downloads Demo", role="host", username="stay-fee-downloads-owner")
     try:
         client = TestClient(app)
         for path in ("/stay-fees/1/pdf", "/stay-fees/1/csv"):
@@ -290,13 +274,7 @@ def test_a_restricted_guest_is_blanked_in_the_csv(host):
 
 def test_another_owners_property_is_refused(host):
     client, _owner_id, _entity_id = host
-    other_id = auth.create_account(
-        "stay-fee-downloads-other",
-        PASSWORD,
-        "Other Demo",
-        role="host",
-        must_change_password=False,
-    )
+    other_id = auth.create_account("stay-fee-downloads-other@example.test", "Other Demo", role="host", username="stay-fee-downloads-other")
     other_entity_id = db.insert("legal_entity", {
         "name": "Other Demo s.r.o.",
         "owner_user_id": other_id,

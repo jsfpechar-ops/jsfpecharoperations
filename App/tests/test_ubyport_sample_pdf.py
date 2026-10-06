@@ -20,9 +20,9 @@ from app.ubyport_sample_pdf import (
     default_static_path,
     page_content_streams,
 )
+from tests.conftest import login_as
 
 SAMPLE_URL = "/static/docs/ubyport-ws-credential-sample.pdf"
-PASSWORD = "Sample-Pdf-Test-Password-123"
 
 
 @pytest.fixture()
@@ -33,9 +33,7 @@ def authed_client():
     if existing:
         user_id = existing["id"]
     else:
-        user_id = auth.create_account(
-            username, PASSWORD, "Sample PDF host", role="host", must_change_password=False
-        )
+        user_id = auth.create_account(f"{username}@example.test", "Sample PDF host", role="host", username=username)
     entity_id = db.insert(
         "legal_entity",
         {"name": "Sample entity", "owner_user_id": user_id, "created_at": db.utcnow()},
@@ -55,10 +53,7 @@ def authed_client():
         },
     )
     client = TestClient(app)
-    assert client.post(
-        "/login?lang=en", data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    ).status_code == 303
+    assert login_as(client, username, url="/login?lang=en", follow_redirects=False).status_code == 303
     yield client, apartment_id
     db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))

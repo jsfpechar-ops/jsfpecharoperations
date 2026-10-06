@@ -33,6 +33,7 @@
            '2fa_expired': 'auth.notice.2fa_expired',
            'form_expired': 'auth.notice.form_expired',
            'logged_out': 'auth.notice.logged_out',
+           'email_changed': 'auth.notice.email_changed',
          } %}
       {% set auth_notice_key = auth_notice_keys.get(request.query_params.get('notice')) %}
       {% if auth_notice_key %}

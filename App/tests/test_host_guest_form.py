@@ -12,7 +12,6 @@ from fastapi.testclient import TestClient
 from app import auth, claim, db, reporting, validation
 from app.main import app
 
-PASSWORD = "Secure-Password-123"
 TOKEN = "hostform-token"
 PIN = "246810"
 
@@ -59,9 +58,7 @@ def _host_stay():
     db.init_db()
     _cleanup()
     db.execute("DELETE FROM user_account WHERE username = ?", ("host-guest-form",))
-    owner_id = auth.create_account(
-        "host-guest-form", PASSWORD, role="host", must_change_password=False
-    )
+    owner_id = auth.create_account("host-guest-form@example.test", "", role="host", username="host-guest-form")
     now = db.utcnow()
     today = claim.prague_today()
     entity_id = db.insert(

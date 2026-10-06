@@ -14,8 +14,8 @@ from app import auth, claim, db
 from app.main import app
 from app.routes import admin
 from tests.conftest import complete_guest_claim
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 TOKEN = "controllertok"
 
 
@@ -45,9 +45,7 @@ def _seed(*, complete: bool = False):
     """A host, an entity (complete or not) and one active stay."""
     now = db.utcnow()
     today = claim.prague_today()
-    host = auth.create_account(
-        "controller-host", PASSWORD, "Controller", must_change_password=False
-    )
+    host = auth.create_account("controller-host@example.test", "Controller", username="controller-host")
     entity = db.insert(
         "legal_entity",
         {
@@ -128,11 +126,7 @@ def test_saving_a_complete_entity_clears_the_alert():
         "SELECT id FROM alert WHERE dedupe_key = ?", (f"controller_missing:{apartment}",)
     )
 
-    login = client.post(
-        "/login?lang=en",
-        data={"username": "controller-host", "password": PASSWORD},
-        follow_redirects=False,
-    )
+    login = login_as(client, "controller-host", url="/login?lang=en", follow_redirects=False)
     assert login.status_code == 303
     saved = client.post(
         f"/entities/{entity}",

@@ -8,9 +8,9 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
+from tests.conftest import login_as
 
 USERNAME = "stay-fee-panel-host"
-PASSWORD = "Panel-Test-Password-123"
 
 
 def _cleanup() -> None:
@@ -59,15 +59,9 @@ def _form_data(**overrides):
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(
-        USERNAME, PASSWORD, "Stay fee test host", must_change_password=False
-    )
+    auth.create_account(f"{USERNAME}@example.test", "Stay fee test host", username=USERNAME)
     client = TestClient(app)
-    login = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    login = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert login.status_code == 303, login.text
     created = client.post(
         "/apartments",

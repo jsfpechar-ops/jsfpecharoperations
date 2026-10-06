@@ -315,6 +315,8 @@ def _delete_workspace(owner_id: int) -> None:
         cur.execute("DELETE FROM lifecycle_mail_sent WHERE user_account_id = ?", (owner_id,))
         # WP20: ad click and consent records belong to the account as well.
         cur.execute("DELETE FROM ad_click WHERE user_account_id = ?", (owner_id,))
+        # Task 0003: login links (also cascade; explicit for the same reason).
+        cur.execute("DELETE FROM login_token WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
     # Files last: a rolled-back delete must not have lost the photos. One
@@ -346,6 +348,21 @@ def _raise_due_notices(today: date) -> None:
         )
 
 
+def _login_token_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Task 0003: delete login links a day after they expired.
+
+    A link row holds the address it was sent to and a hash of its secret, and
+    is useless once expired; the day of grace only keeps a just-expired link
+    explainable ("this link no longer works") on the page it opens.
+    """
+    from . import login_link
+
+    if owner_user_id is not None:
+        # Scoped runs (one workspace) leave the shared login table alone.
+        return 0
+    return login_link.purge(dry_run=dry_run)
+
+
 # Each step takes (today, dry_run, owner_user_id) and returns the affected count.
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
@@ -358,6 +375,7 @@ STEPS: List[tuple] = [
     ("audit_rows", _audit_retention_step),
     ("alerts", _alert_retention_step),
     ("rate_limit_events", _rate_limit_retention_step),
+    ("login_tokens", _login_token_step),
     ("legal_acceptance", _acceptance_retention_step),
     ("workspaces", _workspace_deletion_step),
 ]
@@ -380,6 +398,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "audit_rows": f"logged before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}",
         "alerts": f"resolved before {_days_ago_iso(config.ALERT_RETENTION_DAYS)}",
         "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours",
+        "login_tokens": "expired more than 1 day ago",
         "legal_acceptance": (
             f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
         ),

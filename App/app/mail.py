@@ -48,6 +48,11 @@ KINDS = (
     # Task 0002: the notices that the login e-mail of an account changed, one
     # to the old address and one to the new.
     "email_changed",
+    # Task 0003: the login link, the invitation to an account an admin created,
+    # and the link that confirms a new login address.
+    "login_link",
+    "account_invite",
+    "email_confirm",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -80,6 +85,9 @@ HOST_KINDS = (
     "signup_exists",
     "signup_admin",
     "email_changed",
+    "login_link",
+    "account_invite",
+    "email_confirm",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.
@@ -331,7 +339,33 @@ def _send_console(row) -> str:
         mask_email(row["to_email"]),
         row["subject"],
     )
+    _log_staging_link(row, payload)
     return f"console:{row['id']}"
+
+
+# Mails whose link logs someone in or changes their login address (task 0003).
+LINK_KINDS = frozenset({"login_link", "account_invite", "email_confirm", "signup_verify"})
+_LINK_IN_BODY = re.compile(r"https?://\S+[?&]t=[A-Za-z0-9_.\-]+")
+
+
+def _log_staging_link(row, payload: Dict[str, Any]) -> None:
+    """On staging only, write a login link to the process log.
+
+    Staging delivers no mail and its pages are public, so the link cannot be
+    shown on the page. The process log is readable only by whoever runs the
+    service (Render dashboard), which is the same person the link is for.
+    Production never takes this path: it refuses the console backend.
+    """
+    if config.DEPLOYMENT != "staging" or row["kind"] not in LINK_KINDS:
+        return
+    match = _LINK_IN_BODY.search(delivery_body(payload))
+    if match:
+        log.warning(
+            "staging %s link for %s: %s",
+            row["kind"],
+            mask_email(row["to_email"]),
+            match.group(0),
+        )
 
 
 def _ses_client():
@@ -481,56 +515,81 @@ def drain(limit: int = 8) -> Dict[str, int]:
             "email_outbox", row["id"], {"state": SENDING, "updated_at": db.utcnow()}, {"state": QUEUED}
         ):
             continue  # another drain took it
-        try:
-            provider_id = _send_console(row) if backend_name() == "console" else _send_ses(row)
-            db.update(
-                "email_outbox",
-                row["id"],
-                {
-                    "state": SENT,
-                    "provider_id": provider_id,
-                    "sent_at": db.utcnow(),
-                    "updated_at": db.utcnow(),
-                    "last_error": None,
-                    "attempts": int(row["attempts"] or 0) + 1,
-                },
-            )
-            summary["sent"] += 1
-        except Exception as exc:
-            attempts = int(row["attempts"] or 0) + 1
-            delay = min(6 * 60 * 60, 60 * (2 ** min(attempts, 8)))
-            terminal = attempts >= 8
-            db.update(
-                "email_outbox",
-                row["id"],
-                {
-                    "state": FAILED if terminal else QUEUED,
-                    "attempts": attempts,
-                    "last_error": str(exc)[:400],
-                    "next_attempt_at": (
-                        datetime.utcnow() + timedelta(seconds=delay)
-                    ).replace(microsecond=0).isoformat()
-                    + "Z",
-                    "updated_at": db.utcnow(),
-                },
-            )
-            summary["failed" if terminal else "skipped"] += 1
-            if terminal:
-                alerts.raise_alert(
-                    "warning",
-                    "mail_failed",
-                    f"E-mail could not be sent ({row['kind']}).",
-                    f"To {mask_email(row['to_email'])}: {exc}",
-                    dedupe_key=f"mail_failed:{row['id']}",
-                    apartment_id=row["apartment_id"],
-                    reservation_id=row["reservation_id"],
-                    params={
-                        "kind": row["kind"],
-                        "to": mask_email(row["to_email"]),
-                        "error": str(exc),
-                    },
-                )
+        summary[_deliver(row)] += 1
     return summary
+
+
+def _deliver(row) -> str:
+    """Send one row already marked ``sending``. Returns sent, failed or skipped."""
+    try:
+        provider_id = _send_console(row) if backend_name() == "console" else _send_ses(row)
+        db.update(
+            "email_outbox",
+            row["id"],
+            {
+                "state": SENT,
+                "provider_id": provider_id,
+                "sent_at": db.utcnow(),
+                "updated_at": db.utcnow(),
+                "last_error": None,
+                "attempts": int(row["attempts"] or 0) + 1,
+            },
+        )
+        return "sent"
+    except Exception as exc:
+        attempts = int(row["attempts"] or 0) + 1
+        delay = min(6 * 60 * 60, 60 * (2 ** min(attempts, 8)))
+        terminal = attempts >= 8
+        db.update(
+            "email_outbox",
+            row["id"],
+            {
+                "state": FAILED if terminal else QUEUED,
+                "attempts": attempts,
+                "last_error": str(exc)[:400],
+                "next_attempt_at": (
+                    datetime.utcnow() + timedelta(seconds=delay)
+                ).replace(microsecond=0).isoformat()
+                + "Z",
+                "updated_at": db.utcnow(),
+            },
+        )
+        if terminal:
+            alerts.raise_alert(
+                "warning",
+                "mail_failed",
+                f"E-mail could not be sent ({row['kind']}).",
+                f"To {mask_email(row['to_email'])}: {exc}",
+                dedupe_key=f"mail_failed:{row['id']}",
+                apartment_id=row["apartment_id"],
+                reservation_id=row["reservation_id"],
+                params={
+                    "kind": row["kind"],
+                    "to": mask_email(row["to_email"]),
+                    "error": str(exc),
+                },
+            )
+        return "failed" if terminal else "skipped"
+
+
+def send_now(outbox_id: Optional[int]) -> Optional[str]:
+    """Send one queued row straight away instead of waiting for the next drain.
+
+    For mail the reader is waiting for (a login link). Runs after the response
+    went out (a background task), so the time the page took says nothing about
+    whether a mail was sent. A row that fails here stays queued and the
+    regular drain retries it with the usual back-off.
+    """
+    if not outbox_id or not mail_enabled():
+        return None
+    row = db.query_one("SELECT * FROM email_outbox WHERE id = ?", (int(outbox_id),))
+    if not row or row["state"] != QUEUED:
+        return None
+    if not db.update_if(
+        "email_outbox", row["id"], {"state": SENDING, "updated_at": db.utcnow()}, {"state": QUEUED}
+    ):
+        return None
+    return _deliver(row)
 
 
 def purge_old(days: int = 14) -> int:

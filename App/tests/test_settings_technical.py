@@ -15,8 +15,8 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.host_i18n import STRINGS as HOST_STRINGS
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "settings-technical-host"
 
 OPEN_TAG = '<details class="panel technical" id="settings-technical">'
@@ -33,13 +33,9 @@ def _cleanup():
 def _client(lang: str) -> TestClient:
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Settings Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Settings Host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        f"/login?lang={lang}",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url=f"/login?lang={lang}", follow_redirects=False)
     assert response.status_code == 303, response.text
     return client
 

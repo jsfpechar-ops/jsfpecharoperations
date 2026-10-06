@@ -19,7 +19,6 @@ from app import auth, config, db, filing_watchdog, host_i18n, mail, mail_notify,
 from tests.test_submission_retry_cap import host as host  # noqa: F401
 
 USERNAME = "filing-watchdog-host"
-PASSWORD = "Secure-Password-123"
 TOKEN_PREFIX = "filingwatchdog"
 CONTACT = "watchdog-host@example.invalid"
 GUEST_SURNAME = "WATCHDOGSURNAME"
@@ -66,7 +65,7 @@ def world():
     user_id = (
         existing["id"]
         if existing
-        else auth.create_account(USERNAME, PASSWORD, "Watchdog Host", must_change_password=False)
+        else auth.create_account(f"{USERNAME}@example.test", "Watchdog Host", username=USERNAME)
     )
     entity_id = db.insert(
         "legal_entity",

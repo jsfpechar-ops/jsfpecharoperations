@@ -1,4 +1,4 @@
-"""A host who cannot remember their password needs a way out of the login page.
+"""A host who lost their login e-mail needs a way out of the login page.
 
 The only hint of help used to be a bare address as the fifth link of the 12.5px
 footer, and the footnote talked about who may sign up rather than about how to
@@ -31,27 +31,28 @@ def _body(response):
     return html.unescape(response.text)
 
 
-def test_the_password_field_offers_a_way_back_in():
+def test_the_login_page_offers_a_way_back_in():
+    """Task 0003: no password to forget; the way out is for a lost mailbox."""
     email = operator.details()["email"]
     for lang in LANGS:
         page = _page(lang)
         assert page.status_code == 200
         text = _body(page)
         assert '<details class="auth-help">' in page.text
-        assert host_i18n.translate(lang, "login.forgot_summary") in text
-        assert host_i18n.translate(lang, "login.forgot_body", email=email) in text
+        assert host_i18n.translate(lang, "login.help_summary") in text
+        assert host_i18n.translate(lang, "login.help_body", email=email) in text
         assert email in text
 
 
-def test_the_disclosure_sits_under_the_password_field_and_inside_the_form():
+def test_the_disclosure_sits_after_the_login_form():
     for lang in LANGS:
         text = _body(_page(lang))
         form_start = text.index('<form method="post" action="/login"')
-        password = text.index('id="password"')
-        details = text.index('<details class="auth-help">')
+        field = text.index('id="email"')
         submit = text.index('class="auth-submit"')
         form_end = text.index("</form>", form_start)
-        assert form_start < password < details < submit < form_end
+        details = text.index('<details class="auth-help">')
+        assert form_start < field < submit < form_end < details
 
 
 def test_the_footnote_names_the_address_instead_of_an_administrator():
@@ -64,7 +65,7 @@ def test_the_footnote_names_the_address_instead_of_an_administrator():
 
 
 def test_the_new_login_help_keys_carry_the_same_placeholders_in_both_languages():
-    for key in ("login.footnote", "login.forgot_body"):
+    for key in ("login.footnote", "login.help_body"):
         english = re.findall(r"%\((\w+)\)s", host_i18n.STRINGS["en"][key])
         czech = re.findall(r"%\((\w+)\)s", host_i18n.STRINGS["cs"][key])
         assert english == czech == ["email"], key

@@ -19,8 +19,8 @@ from fastapi.testclient import TestClient
 from app import auth, db, reporting, security
 from app.main import app
 from app.routes import admin, admin_accounts, api, exports, onboarding
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "route-split-host"
 
 MOVED_PATHS = {
@@ -68,7 +68,7 @@ def _host_account():
     """
     db.init_db()
     if not db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,)):
-        auth.create_account(USERNAME, PASSWORD, "Route Split", must_change_password=False)
+        auth.create_account(f"{USERNAME}@example.test", "Route Split", username=USERNAME)
 
 
 def _routes(module):
@@ -92,11 +92,7 @@ def _included_routers():
 
 def _login() -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, follow_redirects=False)
     assert response.status_code == 303
     return client
 

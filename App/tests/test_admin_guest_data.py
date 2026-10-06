@@ -14,8 +14,8 @@ from fastapi.testclient import TestClient
 
 from app import access, auth, db, demo, host_i18n, passport_photos
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 PNG_BYTES = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
     "DQottAAAAABJRU5ErkJggg=="
@@ -52,10 +52,8 @@ def _cleanup():
 def seeded():
     db.init_db()
     _cleanup()
-    owner = auth.create_account("wp04-host", PASSWORD, "WP04 Host", must_change_password=False)
-    admin = auth.create_account(
-        "wp04-admin", PASSWORD, "WP04 Admin", role="admin", must_change_password=False
-    )
+    owner = auth.create_account("wp04-host@example.test", "WP04 Host", username="wp04-host")
+    admin = auth.create_account("wp04-admin@example.test", "WP04 Admin", role="admin", username="wp04-admin")
     now = db.utcnow()
     entity = db.insert(
         "legal_entity", {"name": "WP04 entity", "owner_user_id": owner, "created_at": now}
@@ -141,11 +139,7 @@ def seeded():
 
 def _login(username: str) -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 

@@ -49,7 +49,7 @@ def _apartment(owner_id: int, entity_id: int) -> int:
 
 
 def test_onboarding_starts_with_legal_entity():
-    owner_id = auth.create_account("onboard-host", "Secure-Password-123", role="host")
+    owner_id = auth.create_account("onboard-host@example.test", "", role="host", username="onboard-host")
     progress = onboarding.progress(owner_id)
     assert progress["current"]["id"] == "entity"
     assert progress["completed"] == 0
@@ -58,7 +58,7 @@ def test_onboarding_starts_with_legal_entity():
 
 
 def test_onboarding_advances_after_entity_and_property():
-    owner_id = auth.create_account("onboard-next", "Secure-Password-123", role="host")
+    owner_id = auth.create_account("onboard-next@example.test", "", role="host", username="onboard-next")
     entity_id = _entity(owner_id)
     progress = onboarding.progress(owner_id)
     assert progress["current"]["id"] == "property"
@@ -70,12 +70,7 @@ def test_onboarding_advances_after_entity_and_property():
 
 
 def test_first_dashboard_is_a_guided_setup_journey():
-    owner_id = auth.create_account(
-        "onboard-first-view",
-        "Secure-Password-123",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("onboard-first-view@example.test", "", role="host", username="onboard-first-view")
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
     client = TestClient(app)
     client.cookies.set(
@@ -122,12 +117,7 @@ def test_the_welcome_copy_names_the_task_and_the_finish():
 
 
 def test_the_first_dashboard_list_is_one_line_per_step():
-    owner_id = auth.create_account(
-        "onboard-compact-list",
-        "Secure-Password-123",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("onboard-compact-list@example.test", "", role="host", username="onboard-compact-list")
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
     client = TestClient(app)
     client.cookies.set(
@@ -153,12 +143,7 @@ def test_the_first_dashboard_list_is_one_line_per_step():
 
 
 def test_the_full_checklist_keeps_the_detail_and_the_why():
-    owner_id = auth.create_account(
-        "onboard-full-list",
-        "Secure-Password-123",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("onboard-full-list@example.test", "", role="host", username="onboard-full-list")
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
     client = TestClient(app)
     client.cookies.set(
@@ -178,12 +163,7 @@ def test_the_full_checklist_keeps_the_detail_and_the_why():
 
 
 def test_onboarding_can_be_reopened_as_a_full_page():
-    owner_id = auth.create_account(
-        "onboard-reopen",
-        "Secure-Password-123",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("onboard-reopen@example.test", "", role="host", username="onboard-reopen")
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
     client = TestClient(app)
     client.cookies.set(
@@ -234,12 +214,7 @@ def _ready_apartment(owner_id: int, entity_id: int) -> int:
 
 
 def test_finished_onboarding_shows_guest_link_and_pin_handoff():
-    owner_id = auth.create_account(
-        "onboard-finish",
-        "Secure-Password-123",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("onboard-finish@example.test", "", role="host", username="onboard-finish")
     entity_id = _entity(owner_id)
     apartment_id = _ready_apartment(owner_id, entity_id)
     db.insert(
@@ -286,12 +261,7 @@ def test_finished_onboarding_shows_guest_link_and_pin_handoff():
 
 
 def test_host_can_skip_and_restore_setup_guidance():
-    owner_id = auth.create_account(
-        "onboard-skip",
-        "Secure-Password-123",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("onboard-skip@example.test", "", role="host", username="onboard-skip")
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
     client = TestClient(app)
     client.cookies.set(
@@ -384,7 +354,7 @@ def _manual_stay(apartment_id: int, uid: str) -> int:
 
 def test_a_hand_typed_stay_satisfies_the_calendar_step():
     """A host who takes direct bookings has no iCal feed to connect."""
-    owner_id = auth.create_account("onboard-manual", "Secure-Password-123", role="host")
+    owner_id = auth.create_account("onboard-manual@example.test", "", role="host", username="onboard-manual")
     entity_id = _entity(owner_id)
     apartment_id = _unique_apartment(owner_id, entity_id, "manualtoken1")
 
@@ -399,7 +369,7 @@ def test_a_hand_typed_stay_satisfies_the_calendar_step():
 
 def test_a_hand_typed_stay_also_lets_the_guest_link_step_finish():
     """Step 5 repeated the iCal requirement, so fixing step 3 alone was not enough."""
-    owner_id = auth.create_account("onboard-manual-end", "Secure-Password-123", role="host")
+    owner_id = auth.create_account("onboard-manual-end@example.test", "", role="host", username="onboard-manual-end")
     entity_id = _entity(owner_id)
     apartment_id = _unique_apartment(owner_id, entity_id, "manualtoken2", ready=True)
     _manual_stay(apartment_id, "hand-typed-2")
@@ -412,7 +382,7 @@ def test_a_hand_typed_stay_also_lets_the_guest_link_step_finish():
 
 
 def test_a_cancelled_hand_typed_stay_does_not_satisfy_the_calendar_step():
-    owner_id = auth.create_account("onboard-cancelled", "Secure-Password-123", role="host")
+    owner_id = auth.create_account("onboard-cancelled@example.test", "", role="host", username="onboard-cancelled")
     entity_id = _entity(owner_id)
     apartment_id = _unique_apartment(owner_id, entity_id, "manualtoken3")
     stay_id = _manual_stay(apartment_id, "hand-typed-3")
@@ -422,12 +392,7 @@ def test_a_cancelled_hand_typed_stay_does_not_satisfy_the_calendar_step():
 
 
 def test_the_calendar_step_offers_adding_a_stay_by_hand():
-    owner_id = auth.create_account(
-        "onboard-manual-copy",
-        "Secure-Password-123",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("onboard-manual-copy@example.test", "", role="host", username="onboard-manual-copy")
     entity_id = _entity(owner_id)
     _unique_apartment(owner_id, entity_id, "manualtoken4")
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
@@ -454,7 +419,7 @@ def test_the_police_reporting_step_points_at_the_property_page():
     """The credentials and the address are both on the property page, and the
     automation card only carries the credentials, so that is where the step has
     to land."""
-    owner_id = auth.create_account("onboard-ubyport", "Secure-Password-123", role="host")
+    owner_id = auth.create_account("onboard-ubyport@example.test", "", role="host", username="onboard-ubyport")
     entity_id = _entity(owner_id)
     apartment_id = _unique_apartment(owner_id, entity_id, "ubyportstep1")
 
@@ -466,12 +431,7 @@ def test_the_police_reporting_step_points_at_the_property_page():
 
 
 def test_the_police_reporting_step_is_named_for_what_it_asks_for():
-    owner_id = auth.create_account(
-        "onboard-ubyport-copy",
-        "Secure-Password-123",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("onboard-ubyport-copy@example.test", "", role="host", username="onboard-ubyport-copy")
     entity_id = _entity(owner_id)
     _unique_apartment(owner_id, entity_id, "ubyportstep2")
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
@@ -491,7 +451,7 @@ def test_the_police_reporting_step_is_named_for_what_it_asks_for():
 
 
 def test_the_police_reporting_step_without_a_property_offers_creating_one():
-    owner_id = auth.create_account("onboard-ubyport-none", "Secure-Password-123", role="host")
+    owner_id = auth.create_account("onboard-ubyport-none@example.test", "", role="host", username="onboard-ubyport-none")
     _entity(owner_id)
 
     assert onboarding.progress(owner_id)["current"]["id"] == "property"

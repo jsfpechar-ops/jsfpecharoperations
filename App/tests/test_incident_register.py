@@ -11,8 +11,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, incidents
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 
 
 def _cleanup():
@@ -27,19 +27,13 @@ def _cleanup():
 
 def _login(username: str) -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 
 
 def _account(username: str, role: str) -> int:
-    return auth.create_account(
-        username, PASSWORD, username.title(), role=role, must_change_password=False
-    )
+    return auth.create_account(f"{username}@example.test", username.title(), role=role, username=username)
 
 
 def test_the_register_is_platform_admin_only():

@@ -1,0 +1,21 @@
+{% extends "auth_base.html" %}
+{# The link's secret stays out of the language switch: it goes to /login. #}
+{% set lang_next = '/login' %}
+{% block title %}{{ t('login.link.page_title') }}{% endblock %}
+{% block auth_body %}
+<section class="auth-card">
+  {% if expired %}
+  <h1 class="auth-title">{{ t('login.link.expired.title') }}</h1>
+  <p class="auth-lede">{{ t('login.link.expired.locked') if locked else t('login.link.expired.body') }}</p>
+  <a class="auth-submit" href="/login?lang={{ lang }}">{{ t('login.link.expired.action') }}</a>
+  {% else %}
+  <h1 class="auth-title">{{ t('login.link.invite_title') if invite else t('login.link.title') }}</h1>
+  <p class="auth-lede">{{ t('login.link.lede') }}</p>
+  <form method="post" action="/login/link" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="t" value="{{ token }}">
+    <button class="auth-submit" type="submit" autofocus>{{ t('login.link.submit') }}</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

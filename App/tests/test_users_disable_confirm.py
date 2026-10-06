@@ -15,21 +15,22 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 ADMIN = "users-confirm-admin"
 HOST = "users-confirm-host"
 NAME = "Confirmable Host"
 
 COPY = {
     "en": {
-        "lede": "Create a private workspace for each host. Passwords are stored "
-        "securely and can only be reset, never viewed.",
+        # Task 0003: hosts log in with a link to their login e-mail.
+        "lede": "Create a private workspace for each host. Hosts log in with a link "
+        "sent to their login e-mail.",
         "confirm": "Disable %(name)s? They can't sign in until you enable them again.",
     },
     "cs": {
-        "lede": "Vytvořte soukromý pracovní prostor pro každého hostitele. Hesla jsou "
-        "bezpečně uložená: lze je jen resetovat, nikdy zobrazit.",
+        "lede": "Vytvořte soukromý pracovní prostor pro každého hostitele. Hostitelé se "
+        "přihlašují odkazem zaslaným na přihlašovací e-mail.",
         "confirm": "Vypnout účet %(name)s? Nebude se moci přihlásit, dokud ho znovu nezapnete.",
     },
 }
@@ -54,16 +55,10 @@ def _cleanup():
 def admin():
     db.init_db()
     _cleanup()
-    auth.create_account(
-        ADMIN, PASSWORD, "Confirm Admin", role="admin", must_change_password=False
-    )
-    auth.create_account(HOST, PASSWORD, NAME, must_change_password=False)
+    auth.create_account(f"{ADMIN}@example.test", "Confirm Admin", role="admin", username=ADMIN)
+    auth.create_account(f"{HOST}@example.test", NAME, username=HOST)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": ADMIN, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, ADMIN, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client

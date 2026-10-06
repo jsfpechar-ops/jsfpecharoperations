@@ -13,7 +13,6 @@ TEMPLATES = APP / "templates"
 STATIC = APP / "static"
 TOKEN = "pickstatus"
 ENTITY = "Pick Status Test"
-PASSWORD = "Pick-Status-Password-123"
 ADMIN_USERNAME = "pick-status-admin"
 
 AUDIT_COPY = {
@@ -58,9 +57,7 @@ def _ensure_admin() -> int:
     account = db.query_one("SELECT * FROM user_account WHERE username = ?", (ADMIN_USERNAME,))
     if account:
         return account["id"]
-    return auth.create_account(
-        ADMIN_USERNAME, PASSWORD, "Pick status admin", role="admin", must_change_password=False
-    )
+    return auth.create_account(f"{ADMIN_USERNAME}@example.test", "Pick status admin", role="admin", username=ADMIN_USERNAME)
 
 
 def _seed() -> int:

@@ -24,8 +24,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, demo, reporting
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Sweep-Geometry-123"
 
 NO_SIDEWAYS_SCROLL = "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
 
@@ -57,13 +57,11 @@ def base():
 def world():
     db.init_db()
     username = f"sweepgeo{secrets.token_hex(4)}"
-    owner = auth.create_account(username, PASSWORD, "Sweep Geometry", role="host", must_change_password=False)
+    owner = auth.create_account(f"{username}@example.test", "Sweep Geometry", role="host", username=username)
     studio = demo.seed(owner)
     assert studio, "the demo seed needs UBYHOST_UBYPORT_ENV=mock"
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en", data={"username": username, "password": PASSWORD}, follow_redirects=False
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     stay = None
     for row in db.query(

@@ -10,15 +10,15 @@ from pypdf import PdfReader
 
 from app import auth, claim, db, stay_fee_filing
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = f"Adjust-{secrets.token_urlsafe(8)}-9"
 SIGNATURE = "data:image/png;base64,AAAA"
 
 
 def _host():
     db.init_db()
     username = f"fee-adjust-{secrets.token_hex(4)}"
-    owner = auth.create_account(username, PASSWORD, "Adjust", role="host", must_change_password=False)
+    owner = auth.create_account(f"{username}@example.test", "Adjust", role="host", username=username)
     entity = db.insert("legal_entity", {"name": "Adjust s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     apartment = db.insert("apartment", {
         "internal_name": "Adjust loft",
@@ -34,7 +34,7 @@ def _host():
         "created_at": db.utcnow(),
     })
     client = TestClient(app)
-    client.post("/login", data={"username": username, "password": PASSWORD}, follow_redirects=False)
+    login_as(client, username, follow_redirects=False)
     return client, apartment
 
 

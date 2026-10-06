@@ -10,28 +10,19 @@ from PIL import Image
 
 from app import auth, config, db, passport_photos
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
-NEW_PASSWORD = "Even-Better-Password-456"
-
-
-def _login(username: str, password: str = PASSWORD) -> TestClient:
+def _login(username: str) -> TestClient:
     """Sign in as an English host. These assertions read the English UI, and a
     host who never chose a language keeps the Czech the login page showed."""
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": password},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 
 
-def _account(username: str, role: str = "host", must_change: bool = False) -> int:
-    return auth.create_account(
-        username, PASSWORD, username.title(), role=role, must_change_password=must_change
-    )
+def _account(username: str, role: str = "host") -> int:
+    return auth.create_account(f"{username}@example.test", username.title(), role=role, username=username)
 
 
 def _apartment(owner_id: int, name: str, token: str) -> int:
@@ -245,7 +236,7 @@ def test_hosts_cannot_set_new_four_digit_pins():
         _clean_accounts()
 
 
-def test_admin_can_open_a_host_workspace_without_knowing_the_password():
+def test_admin_can_open_a_host_workspace_without_a_host_login():
     db.init_db()
     _clean_accounts()
     _account("boundary-admin", role="admin")
@@ -255,8 +246,7 @@ def test_admin_can_open_a_host_workspace_without_knowing_the_password():
         admin = _login("boundary-admin")
         users = admin.get("/admin/users")
         assert users.status_code == 200
-        assert "boundary-host" in users.text
-        assert PASSWORD not in users.text
+        assert "boundary-host@example.test" in users.text
 
         response = admin.post(
             f"/admin/users/{host_id}/impersonate",
@@ -276,34 +266,6 @@ def test_admin_can_open_a_host_workspace_without_knowing_the_password():
         _clean_accounts()
 
 
-def test_temporary_password_must_be_replaced_and_invalidates_old_sessions():
-    db.init_db()
-    _clean_accounts()
-    user_id = _account("boundary-new", must_change=True)
-    try:
-        client = _login("boundary-new")
-        assert client.get("/", follow_redirects=False).headers["location"] == "/account/password"
-        changed = client.post(
-            "/account/password",
-            data={
-                "current_password": PASSWORD,
-                "new_password": NEW_PASSWORD,
-                "confirm_password": NEW_PASSWORD,
-            },
-            follow_redirects=False,
-        )
-        assert changed.status_code == 303
-        assert _login("boundary-new", NEW_PASSWORD).get("/").status_code == 200
-        assert TestClient(app).post(
-            "/login",
-            data={"username": "boundary-new", "password": PASSWORD},
-        ).status_code == 401
-        row = db.query_one("SELECT must_change_password FROM user_account WHERE id = ?", (user_id,))
-        assert row["must_change_password"] == 0
-    finally:
-        _clean_accounts()
-
-
 def test_remember_me_extends_session_max_age():
     assert auth.session_max_age({"rm": 1}) == auth.SESSION_REMEMBER_MAX_AGE
     assert auth.session_max_age({}) == auth.SESSION_MAX_AGE
@@ -316,11 +278,7 @@ def test_remember_me_login_keeps_session_active():
     _account("boundary-remember")
     try:
         client = TestClient(app)
-        response = client.post(
-            "/login",
-            data={"username": "boundary-remember", "password": PASSWORD, "remember": "on"},
-            follow_redirects=False,
-        )
+        response = login_as(client, "boundary-remember", remember=True, follow_redirects=False)
         assert response.status_code == 303
         assert client.cookies.get(auth.SESSION_COOKIE)
         assert client.get("/").status_code == 200
@@ -333,7 +291,7 @@ def test_bootstrap_admin_claims_existing_data(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "DATA_DIR", tmp_path)
     monkeypatch.setattr(config, "BOOTSTRAP_ADMIN", True)
     monkeypatch.setattr(config, "ADMIN_USERNAME", "first-admin")
-    monkeypatch.setattr(config, "ADMIN_PASSWORD", PASSWORD)
+    monkeypatch.setattr(config, "ADMIN_EMAIL", "First.Admin@Example.test")
     db.init_db()
     apartment_id = db.insert(
         "apartment",
@@ -349,44 +307,18 @@ def test_bootstrap_admin_claims_existing_data(monkeypatch, tmp_path):
         },
     )
 
-    assert auth.ensure_bootstrap_admin() == ""
+    link = auth.ensure_bootstrap_admin()
     admin = db.query_one("SELECT * FROM user_account WHERE username = 'first-admin'")
     assert admin["role"] == "admin"
-    assert auth.verify_password(PASSWORD, admin["password_hash"])
+    assert admin["email"] == "first.admin@example.test"
+    assert admin["password_hash"] == ""
+    assert "/login/link?t=" in link
+    saved = (tmp_path / "initial_admin_login").read_text()
+    assert link in saved
+    assert (tmp_path / "initial_admin_login").stat().st_mode & 0o777 == 0o600
     assert db.query_one(
         "SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,)
     )["owner_user_id"] == admin["id"]
-
-
-def test_generate_password_meets_policy():
-    for _ in range(20):
-        password = auth.generate_password()
-        assert not auth.password_error(password)
-
-
-def test_admin_create_host_generates_password_when_missing():
-    db.init_db()
-    _clean_accounts()
-    _account("boundary-admin", role="admin")
-    try:
-        admin = _login("boundary-admin")
-        response = admin.post(
-            "/admin/users",
-            data={"username": "boundary-auto", "display_name": "Auto Host"},
-            follow_redirects=False,
-        )
-        # Shown in the response body, never in a redirect URL: see
-        # tests/test_credential_handling.py for why.
-        assert response.status_code == 200
-        assert "Temporary password" in response.text
-        assert "password" not in response.headers.get("location", "").lower()
-        row = db.query_one(
-            "SELECT * FROM user_account WHERE username = ?", ("boundary-auto",)
-        )
-        assert row is not None
-        assert row["must_change_password"] == 1
-    finally:
-        _clean_accounts()
 
 
 def test_legal_entity_rows_are_clickable_and_can_be_archived():
@@ -522,11 +454,7 @@ def test_remember_me_sets_thirty_day_session_cookie():
     _account("boundary-remember")
     try:
         client = TestClient(app)
-        response = client.post(
-            "/login",
-            data={"username": "boundary-remember", "password": PASSWORD, "remember": "1"},
-            follow_redirects=False,
-        )
+        response = login_as(client, "boundary-remember", remember=True, follow_redirects=False)
         assert response.status_code == 303
         cookie = response.cookies.get(auth.SESSION_COOKIE)
         assert cookie
@@ -550,11 +478,7 @@ def test_csv_exports_stream_without_buffering_entire_file():
     _account("boundary-csv")
     try:
         client = TestClient(app)
-        client.post(
-            "/login",
-            data={"username": "boundary-csv", "password": PASSWORD},
-            follow_redirects=False,
-        )
+        login_as(client, "boundary-csv", follow_redirects=False)
         housebook_csv = client.get("/housebook.csv")
         assert housebook_csv.status_code == 200
         assert "text/csv" in housebook_csv.headers["content-type"]
@@ -682,31 +606,22 @@ def test_the_login_audit_no_longer_carries_legal_versions_free_text():
     """BE-1 moved acceptance into ``legal_acceptance`` and its own event.
 
     The login row used to carry ``terms_v… privacy_v… dpa_v… accepted``; that is
-    gone, and evidence now comes from the acceptance record itself.
+    gone, and evidence now comes from the acceptance record itself. Since task
+    0003 the row says only how the host logged in.
     """
     db.init_db()
-
-    client = TestClient(app)
-    # Use bootstrap admin if present
-    username = config.ADMIN_USERNAME
-    password = config.ADMIN_PASSWORD or ""
-    if not password:
-        creds = config.DATA_DIR / "initial_admin_credentials"
-        if creds.exists():
-            for line in creds.read_text().splitlines():
-                if line.startswith("password="):
-                    password = line.split("=", 1)[1].strip()
-    if password:
-        client.post("/login", data={"username": username, "password": password})
-        rows = db.query(
-            "SELECT detail FROM audit WHERE action = ? ORDER BY id DESC LIMIT 1",
-            ("login",),
+    _clean_accounts()
+    user_id = _account("boundary-audit")
+    try:
+        login_as(TestClient(app), "boundary-audit")
+        row = db.query_one(
+            "SELECT detail FROM audit WHERE action = 'login' AND owner_user_id = ? "
+            "ORDER BY id DESC",
+            (user_id,),
         )
-        if rows:
-            detail = rows[0]["detail"] or ""
-            assert "terms_v" not in detail
-            assert "privacy_v" not in detail
-            assert "dpa_v" not in detail
+        assert row["detail"] == "method=link"
+    finally:
+        _clean_accounts()
 
 
 def test_submissions_receipts_zip_downloads_bulk_dorucenky():

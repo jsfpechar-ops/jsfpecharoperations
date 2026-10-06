@@ -7,27 +7,17 @@ from fastapi.testclient import TestClient
 
 from app import alerts, auth, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Sync-Return-Password-123"
 USERNAME = "sync-return-host"
 
 
 def _host() -> TestClient:
     db.init_db()
     if not db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,)):
-        auth.create_account(
-            USERNAME,
-            PASSWORD,
-            "Sync redirect host",
-            role="host",
-            must_change_password=False,
-        )
+        auth.create_account(f"{USERNAME}@example.test", "Sync redirect host", role="host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 

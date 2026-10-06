@@ -90,7 +90,7 @@ def test_bootstrap_admin_is_created_once_when_web_workers_race(tmp_path):
         4,
         BOOT_ADMIN="1",
         UBYHOST_BOOTSTRAP_ADMIN="1",
-        UBYHOST_ADMIN_PASSWORD="Correct-Horse-Battery-Staple-42",
+        UBYHOST_ADMIN_EMAIL="race-admin@example.test",
     )
     failures = [err for code, _out, err in results if code != 0]
     assert not failures, failures[0]

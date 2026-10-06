@@ -20,6 +20,7 @@ never at UbyHost support, matching the guest pages.
 """
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import logging
@@ -1740,7 +1741,92 @@ def _signup_footer(lang: str) -> List[Any]:
     ]
 
 
-def build_email_changed(*, side: str, new_masked: str, lang: Optional[str] = None) -> Dict[str, str]:
+# --- e-mail login (task 0003) ------------------------------------------------
+
+# kind -> (catalogue prefix, path the link opens)
+LINK_MAIL = {
+    "login_link": ("mail.login_link", "/login/link"),
+    "account_invite": ("mail.account_invite", "/login/link"),
+    "email_confirm": ("mail.email_confirm", "/account/email/confirm"),
+}
+
+
+def build_link_mail(*, kind: str, link: str, minutes: int, lang: Optional[str] = None) -> Dict[str, str]:
+    """A mail whose one job is a link that logs in or confirms an address.
+
+    It says what the link is for, how long it works and what to do if the
+    reader did not ask for it. Nothing else: no tips, no offers.
+    """
+    if kind not in LINK_MAIL:
+        raise ValueError(f"unknown link mail {kind}")
+    prefix = LINK_MAIL[kind][0]
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    subject = _text(lang, f"{prefix}.subject")
+    heading = _text(lang, f"{prefix}.heading")
+    intro = _text(lang, f"{prefix}.intro")
+    action = _text(lang, f"{prefix}.action")
+    if minutes >= 120:
+        expiry = _text(lang, "mail.link.expiry_hours", hours=minutes // 60)
+    else:
+        expiry = _text(lang, "mail.link.expiry_minutes", minutes=minutes)
+    ignore = _text(lang, "mail.link.ignore", support=config.OPERATOR_EMAIL)
+    fallback = _guest_text(lang, "mail_link_fallback")
+    footer = _signup_footer(lang)
+    text = "\n".join(
+        [intro, "", f"{action}: {link}", "", expiry, "", ignore, "", "--", *footer]
+    )
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_button(link, action),
+        _block_paragraph(expiry, size=15),
+        _block_link(link, fallback),
+        _block_paragraph(ignore, muted=True),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
+        ),
+    }
+
+
+def link_mail(
+    *, kind: str, user_id: int, to_email: str, token: str, minutes: int,
+    lang: Optional[str] = None,
+) -> Optional[int]:
+    """Queue a login, invitation or confirmation link. Returns the outbox id.
+
+    The secret never sits in the stored body: the body carries
+    ``CLAIM_SECRET_MARKER`` and the secret travels encrypted beside it, the
+    same rule the guest claim link follows.
+    """
+    path = LINK_MAIL[kind][1]
+    link = _public(f"{path}?t={mail.CLAIM_SECRET_MARKER}")
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    content = build_link_mail(kind=kind, link=link, minutes=minutes, lang=lang)
+    payload: Dict[str, Any] = {
+        "text": content["text"],
+        "html": content["html"],
+        "lang": lang,
+        mail.CLAIM_SECRET_KEY: db.encrypt_field(token),
+    }
+    # The key changes with every link, so a second request is a second mail.
+    key_part = hashlib.sha256(token.encode("utf-8")).hexdigest()[:24]
+    return mail.enqueue(
+        kind=kind,
+        idempotency_key=f"{kind}:{user_id}:{key_part}",
+        to_email=to_email,
+        subject=content["subject"],
+        payload=payload,
+        owner_user_id=user_id,
+    )
+
+
+def build_email_changed(
+    *, side: str, new_masked: str, lang: Optional[str] = None, by: str = "support"
+) -> Dict[str, str]:
     """The notice that an account's login e-mail changed (task 0002).
 
     ``side`` is ``old`` for the address that no longer logs in and ``new`` for
@@ -1754,7 +1840,10 @@ def build_email_changed(*, side: str, new_masked: str, lang: Optional[str] = Non
     support = config.OPERATOR_EMAIL
     subject = _text(lang, "mail.email_changed.subject")
     heading = _text(lang, "mail.email_changed.heading")
-    intro = _text(lang, f"mail.email_changed.intro_{side}", address=new_masked)
+    intro_key = f"mail.email_changed.intro_{side}"
+    if side == "old" and by == "self":
+        intro_key = "mail.email_changed.intro_old_self"
+    intro = _text(lang, intro_key, address=new_masked)
     help_text = _text(lang, f"mail.email_changed.help_{side}", support=support)
     footer = _signup_footer(lang)
     text = "\n".join([intro, "", help_text, "", "--", *footer])
@@ -1772,14 +1861,17 @@ def build_email_changed(*, side: str, new_masked: str, lang: Optional[str] = Non
     }
 
 
-def email_changed(*, user_id: int, old_email: str, new_email: str, stamp: str) -> int:
+def email_changed(
+    *, user_id: int, old_email: str, new_email: str, stamp: str, by: str = "support",
+    notify_new: bool = True,
+) -> int:
     """Queue the change notice to the old and the new address. Returns how many."""
     queued = 0
     new_masked = mail.mask_email(new_email)
     for side, address in (("old", old_email), ("new", new_email)):
-        if not address:
+        if not address or (side == "new" and not notify_new):
             continue
-        content = build_email_changed(side=side, new_masked=new_masked)
+        content = build_email_changed(side=side, new_masked=new_masked, by=by)
         if mail.enqueue(
             kind="email_changed",
             idempotency_key=f"email_changed:{user_id}:{stamp}:{side}",
@@ -1806,11 +1898,10 @@ def build_signup_verify(
     intro = _text(lang, "mail.signup_verify.intro", workspace=workspace)
     action = _text(lang, "mail.signup_verify.action")
     expiry = _text(lang, "mail.signup_verify.expiry")
-    sign_in = _text(lang, "mail.signup_verify.username", username=username)
     fallback = _guest_text(lang, "mail_link_fallback")
     footer = _signup_footer(lang)
     text = "\n".join(
-        [intro, "", f"{action}: {link}", "", expiry, "", sign_in, "", "--", *footer]
+        [intro, "", f"{action}: {link}", "", expiry, "", "--", *footer]
     )
     blocks = [
         _block_heading(heading),
@@ -1818,7 +1909,6 @@ def build_signup_verify(
         _block_button(link, action),
         _block_paragraph(expiry, size=15),
         _block_link(link, fallback),
-        _block_paragraph(sign_in, muted=True),
     ]
     return {
         "subject": subject,

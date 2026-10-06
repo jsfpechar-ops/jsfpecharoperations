@@ -26,7 +26,7 @@
 | App + routes | `App/app/main.py` (routers), `App/app/routes/` (guest, admin, admin_accounts, invoices, stay_fees, exports, signup, legal, privacy_requests, onboarding, api, mail_unsubscribe) |
 | Police filing | `App/app/ubyport/` (SOAP client, errors), `App/app/reporting.py` (batches, sweep, state), `App/app/deadlines.py`, `App/app/filing_watchdog.py` |
 | Stays and guests | `App/app/icalsync.py` (feeds), `App/app/claim.py` (guest claim), `App/app/housebook.py`, `App/app/validation.py`, `App/app/passport_photos.py` |
-| Auth and security | `App/app/auth.py` (passwords, sessions, TOTP), `App/app/security.py`, `App/app/access.py`, `App/app/rate_limit.py`, `App/app/turnstile.py`, `App/app/client_ip.py`, `App/app/env_guard.py` |
+| Auth and security | `App/app/auth.py` (accounts, sessions, TOTP), `App/app/login_link.py` (e-mail login links), `App/app/security.py`, `App/app/access.py`, `App/app/rate_limit.py`, `App/app/turnstile.py`, `App/app/client_ip.py`, `App/app/env_guard.py` |
 | Data | `App/app/db.py`, `App/app/migrations/`, `App/app/retention.py`, `App/app/dsr.py`, `App/app/workspace_export.py` |
 | Money | `App/app/invoices.py`, `App/app/invoice_pdf.py`, `App/app/stay_fee.py`, `App/app/stay_fee_filing.py`, `App/app/stay_fee_remittance_pdf.py` |
 | Mail | `App/app/mail.py` (SES and outbox), `App/app/mail_notify.py`, `App/app/lifecycle_mail.py` |

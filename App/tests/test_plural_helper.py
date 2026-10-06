@@ -23,9 +23,9 @@ from fastapi.testclient import TestClient
 from app import auth, db, host_i18n, reporting, templating
 from app.main import app
 from app.routes.admin_helpers import flash_plural, plural_param
+from tests.conftest import login_as
 
 TOKEN = "pluralhelpertoken"
-PASSWORD = "Plural-Helper-Password-123"
 USERNAME = "plural-helper-admin"
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
@@ -73,24 +73,14 @@ def _ensure_admin() -> int:
     db.init_db()
     account = db.query_one("SELECT * FROM user_account WHERE username = ?", (USERNAME,))
     if not account:
-        return auth.create_account(
-            USERNAME,
-            PASSWORD,
-            "Plural helper admin",
-            role="admin",
-            must_change_password=False,
-        )
+        return auth.create_account(f"{USERNAME}@example.test", "Plural helper admin", role="admin", username=USERNAME)
     return account["id"]
 
 
 def _browser(lang: str) -> TestClient:
     _ensure_admin()
     client = TestClient(app)
-    response = client.post(
-        f"/login?lang={lang}",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url=f"/login?lang={lang}", follow_redirects=False)
     assert response.status_code == 303
     return client
 

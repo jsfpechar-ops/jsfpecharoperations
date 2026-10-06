@@ -202,12 +202,13 @@ RESTRICTED_BLOCKS_FILING = os.environ.get("UBYHOST_RESTRICTED_BLOCKS_FILING", "0
 
 GUEST_PIN_REQUIRED = os.environ.get("UBYHOST_GUEST_PIN", "1") not in ("0", "false", "no")
 
-# A first administrator is created once on startup. Set both values in a
-# deployed environment; when the password is omitted a random one is written
-# once to DATA_DIR/initial_admin_credentials with owner-only permissions.
+# A first administrator is created once on startup, on an empty database. They
+# log in with UBYHOST_ADMIN_EMAIL (falls back to UBYHOST_OPERATOR_EMAIL). Their
+# first login link is written once to DATA_DIR/initial_admin_login with
+# owner-only permissions, because mail may not be set up yet on a new server.
 BOOTSTRAP_ADMIN = os.environ.get("UBYHOST_BOOTSTRAP_ADMIN", "1") not in ("0", "false", "no")
 ADMIN_USERNAME = os.environ.get("UBYHOST_ADMIN_USERNAME", "admin").strip().lower()
-ADMIN_PASSWORD = os.environ.get("UBYHOST_ADMIN_PASSWORD", "")
+ADMIN_EMAIL = os.environ.get("UBYHOST_ADMIN_EMAIL", "").strip()
 
 TIMEZONE = "Europe/Prague"
 

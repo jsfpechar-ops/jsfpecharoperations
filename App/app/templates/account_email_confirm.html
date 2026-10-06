@@ -1,0 +1,20 @@
+{% extends "auth_base.html" %}
+{% set lang_next = '/login' %}
+{% block title %}{{ t('account.email_confirm.page_title') }}{% endblock %}
+{% block auth_body %}
+<section class="auth-card">
+  {% if expired %}
+  <h1 class="auth-title">{{ t('login.link.expired.title') }}</h1>
+  <p class="auth-lede">{{ t('account.email_confirm.expired') }}</p>
+  <a class="auth-submit" href="/settings#settings-account">{{ t('account.email_confirm.back') }}</a>
+  {% else %}
+  <h1 class="auth-title">{{ t('account.email_confirm.title') }}</h1>
+  <p class="auth-lede">{{ t('account.email_confirm.lede', email=email) }}</p>
+  <form method="post" action="/account/email/confirm" class="auth-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="t" value="{{ token }}">
+    <button class="auth-submit" type="submit" autofocus>{{ t('account.email_confirm.submit') }}</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

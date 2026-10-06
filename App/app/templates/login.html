@@ -14,21 +14,12 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="next" value="{{ next if next is defined else request.query_params.get('next', '') }}">
     <div class="auth-field">
-      <label for="username">{{ t('login.username') }}</label>
-      <input type="text" id="username" name="username" required{% if not error %} autofocus{% endif %}
-             value="{{ username | default('', true) }}"
-             autocomplete="username" autocapitalize="none" spellcheck="false"
-             placeholder="{{ t('login.username_ph') }}">
+      <label for="email">{{ t('login.email') }}</label>
+      <input type="email" id="email" name="email" required autofocus maxlength="254"
+             value="{{ email | default('', true) }}"
+             autocomplete="email" autocapitalize="none" spellcheck="false"
+             placeholder="{{ t('login.email_ph') }}">
     </div>
-    <div class="auth-field">
-      <label for="password">{{ t('login.password') }}</label>
-      <input type="password" id="password" name="password" required{% if error %} autofocus{% endif %}
-             autocomplete="current-password" placeholder="{{ t('login.password_ph') }}">
-    </div>
-    <details class="auth-help">
-      <summary>{{ t('login.forgot_summary') }}</summary>
-      <p class="auth-help-note">{{ t('login.forgot_body', email=operator().email) }}</p>
-    </details>
     <label class="auth-remember">
       <input type="checkbox" name="remember" value="1">
       <span>{{ t('login.remember') }}</span>
@@ -42,6 +33,11 @@
       {{ t('login.acceptance_before') }}<a href="/terms" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_terms') }}</a>{{ t('login.acceptance_between_terms_dpa') }}<a href="/dpa" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_dpa') }}</a>{{ t('login.acceptance_between_dpa_privacy') }}<a href="/privacy" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_privacy') }}</a>{{ t('login.acceptance_between_privacy_legal') }}<a href="/legal" target="_blank" rel="noopener noreferrer">{{ t('login.acceptance_legal') }}</a>{{ t('login.acceptance_after') }}
     </p>
   </form>
+
+  <details class="auth-help">
+    <summary>{{ t('login.help_summary') }}</summary>
+    <p class="auth-help-note">{{ t('login.help_body', email=operator().email) }}</p>
+  </details>
 
   <div class="auth-foot">
     <p>{{ t('login.footnote', email=operator().email) }}</p>

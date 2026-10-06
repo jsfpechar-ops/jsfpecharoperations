@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, db, stay_fee_filing
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = f"Stay-fee-finalize-{secrets.token_urlsafe(12)}-9"
 SIGNATURE = "data:image/png;base64,AAAA"
 
 
@@ -43,24 +43,14 @@ def host(monkeypatch):
     db.init_db()
     _cleanup()
     monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 9, 30))
-    owner_id = auth.create_account(
-        "stay-fee-finalize-owner",
-        PASSWORD,
-        "Finalize Demo",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("stay-fee-finalize-owner@example.test", "Finalize Demo", role="host", username="stay-fee-finalize-owner")
     entity_id = db.insert("legal_entity", {
         "name": "Finalize Demo s.r.o.",
         "owner_user_id": owner_id,
         "created_at": db.utcnow(),
     })
     client = TestClient(app)
-    assert client.post(
-        "/login?lang=en",
-        data={"username": "stay-fee-finalize-owner", "password": PASSWORD},
-        follow_redirects=False,
-    ).status_code == 303
+    assert login_as(client, "stay-fee-finalize-owner", url="/login?lang=en", follow_redirects=False).status_code == 303
     try:
         yield client, owner_id, entity_id
     finally:

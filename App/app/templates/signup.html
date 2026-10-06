@@ -28,17 +28,6 @@
       {% endif %}
     </div>
     <div class="auth-field">
-      <label for="password">{{ t('signup.password') }}</label>
-      <input type="password" id="password" name="password" required minlength="12" maxlength="256"
-             autocomplete="new-password"
-             aria-describedby="password-hint{% if error_field == 'password' %} password-error{% endif %}"
-             {% if error_field == 'password' %}aria-invalid="true"{% endif %}>
-      <p class="auth-hint" id="password-hint">{{ t('signup.password_hint') }}</p>
-      {% if error_field == 'password' %}
-      <p class="auth-hint err-text" id="password-error" role="alert">{{ t(error) }}</p>
-      {% endif %}
-    </div>
-    <div class="auth-field">
       <label for="workspace">{{ t('signup.workspace') }}</label>
       <input type="text" id="workspace" name="workspace" required maxlength="120"
              value="{{ workspace | default('', true) }}" autocomplete="organization"

@@ -107,20 +107,18 @@ async def lifespan(_app: FastAPI):
         # a guest.
         db.check_data_keys()
         db.init_db()
-        bootstrap_password = auth.ensure_bootstrap_admin()
+        bootstrap_link = auth.ensure_bootstrap_admin()
         rotate_weak_permalinks()
-    admin_username = auth.normalise_username(config.ADMIN_USERNAME) or "admin"
-    if bootstrap_password:
+    if bootstrap_link:
+        # The link itself stays out of the log: it logs the administrator in.
+        # Staging is the exception: it has no shell and no mail, and its log is
+        # readable only by whoever runs the service.
         log.warning(
-            "Created the first administrator (%s). One-time password saved to %s",
-            admin_username,
-            config.DATA_DIR / "initial_admin_credentials",
+            "Created the first administrator. Their first login link is in %s",
+            config.DATA_DIR / "initial_admin_login",
         )
-    elif bootstrap_password == "":
-        log.info(
-            "Created the first administrator (%s). Log in using UBYHOST_ADMIN_PASSWORD.",
-            admin_username,
-        )
+        if config.DEPLOYMENT == "staging":
+            log.warning("staging first administrator login link: %s", bootstrap_link)
     log.info("database ready at %s", config.DB_PATH)
     log.info(
         "deployment=%s ubyport=%s endpoint=%s",

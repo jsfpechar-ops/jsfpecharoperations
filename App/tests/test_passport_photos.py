@@ -127,13 +127,7 @@ def host(mock_ubyport):
     if account:
         account_id = account["id"]
     else:
-        account_id = auth.create_account(
-            "photo-admin",
-            ARCHIVE_PASSWORD,
-            "Photo admin",
-            role="admin",
-            must_change_password=False,
-        )
+        account_id = auth.create_account("photo-admin@example.test", "Photo admin", role="admin", username="photo-admin")
 
     now = db.utcnow()
     apartment_id = db.insert(
@@ -181,11 +175,7 @@ def host(mock_ubyport):
     )
 
     with TestClient(app) as test_client:
-        response = test_client.post(
-            "/login",
-            data={"username": "photo-admin", "password": ARCHIVE_PASSWORD},
-            follow_redirects=False,
-        )
+        response = login_as(test_client, "photo-admin", follow_redirects=False)
         assert response.status_code == 303
         yield test_client, guest_id
 
@@ -224,6 +214,7 @@ def test_archiving_a_guest_deletes_the_passport_scan(host):
 import io  # noqa: E402
 
 from PIL import Image  # noqa: E402
+from tests.conftest import login_as
 
 GPS_IFD = 0x8825
 ORIENTATION = 0x0112

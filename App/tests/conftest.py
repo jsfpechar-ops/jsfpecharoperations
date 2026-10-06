@@ -143,6 +143,47 @@ def csrf_token_for(client) -> str:
     return client._ubyhost_csrf_token
 
 
+def login_as(client, username, *, url="/login", remember=False, follow_redirects=True):
+    """Log ``client`` in as ``username`` through the real e-mail link (task 0003).
+
+    Mints a login link the way ``POST /login`` does and posts it to
+    ``/login/link``, carrying the query string of ``url`` (``?lang=en``) along,
+    so a test reaches the same session, language cookie and audit row a host
+    gets from the mail.
+    """
+    from app import db, login_link
+
+    account = db.query_one(
+        "SELECT * FROM user_account WHERE username = ?", (str(username).strip().lower(),)
+    )
+    assert account, f"no account {username}"
+    token = login_link.issue(account, remember=remember)
+    query = url.split("?", 1)[1] if "?" in url else ""
+    return client.post(
+        "/login/link" + (f"?{query}" if query else ""),
+        data={"t": token},
+        follow_redirects=follow_redirects,
+    )
+
+
+@pytest.fixture(autouse=True)
+def fresh_login_link_budgets():
+    """Every test starts with the e-mail login budgets unspent (task 0003).
+
+    The test client always calls from the same address, so without this the
+    per-connection budget of ``POST /login`` would run out somewhere in the
+    middle of the suite. A test that exercises the limit fills it itself.
+    """
+    try:
+        from app import db
+
+        db.execute("DELETE FROM rate_limit_event WHERE scope LIKE 'login_link%'")
+    except Exception:
+        # A test that has not created the schema yet has nothing to clear.
+        pass
+    yield
+
+
 @pytest.fixture(scope="session", autouse=True)
 def csrf_proof_on_form_posts():
     """Make ``TestClient.post`` carry the token the page rendered.

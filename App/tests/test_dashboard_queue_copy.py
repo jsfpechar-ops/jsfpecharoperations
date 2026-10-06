@@ -15,9 +15,9 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n, reporting
 from app.main import app
+from tests.conftest import login_as
 
 TOKEN = "dashboardqueuecopytoken"
-PASSWORD = "Dashboard-Queue-Password-123"
 USERNAME = "dashboard-queue-admin"
 
 REPORTED_KEY = "action.reported"
@@ -30,13 +30,7 @@ def _ensure_admin() -> int:
         "SELECT * FROM user_account WHERE username = ?", (USERNAME,)
     )
     if not account:
-        return auth.create_account(
-            USERNAME,
-            PASSWORD,
-            "Dashboard queue admin",
-            role="admin",
-            must_change_password=False,
-        )
+        return auth.create_account(f"{USERNAME}@example.test", "Dashboard queue admin", role="admin", username=USERNAME)
     return account["id"]
 
 
@@ -148,11 +142,7 @@ def _seed() -> dict:
 def _browser(lang: str) -> TestClient:
     _ensure_admin()
     client = TestClient(app)
-    response = client.post(
-        "/login",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, follow_redirects=False)
     assert response.status_code == 303
     client.cookies.set(host_i18n.LANG_COOKIE, lang)
     return client

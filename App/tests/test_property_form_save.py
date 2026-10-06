@@ -15,8 +15,8 @@ from fastapi.testclient import TestClient
 
 from app import alerts, auth, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "property-form-host"
 
 
@@ -64,13 +64,9 @@ def _payload(**overrides):
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Form Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Form Host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     created = client.post(
         "/apartments", data=_payload(internal_name="Form Flat"), follow_redirects=False
