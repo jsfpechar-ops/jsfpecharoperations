@@ -199,7 +199,7 @@ def _acceptance_retention_step(today: date, dry_run: bool, owner_user_id: Option
 
     There is no ``disabled_at`` column, so "inactive for three years" is read
     conservatively as a disabled account whose last login is also older than
-    the window; a never-used account is left alone. Recorded in FOLLOWUPS.md.
+    the window; a never-used account is left alone. Recorded in docs/archive/FOLLOWUPS.md.
     """
     cutoff = _days_ago_iso(config.AUDIT_RETENTION_DAYS)
     inner = (

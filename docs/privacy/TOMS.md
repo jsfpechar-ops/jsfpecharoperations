@@ -34,7 +34,7 @@ this from `dpa_i18n.py` § 10 once counsel approves.
 
 ## C. Not yet in place
 
-- Names and birth dates remain unencrypted for search/sort (`FOLLOWUPS.md`).
+- Names and birth dates remain unencrypted for search/sort (`docs/archive/FOLLOWUPS.md`).
 - Passport-image encryption applies to new writes and the migration, not to
   plaintext files an operator copied elsewhere.
 - These gaps are listed in the retention schedule and the audit reconciliation

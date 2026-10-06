@@ -34,7 +34,7 @@ the message does not look like a bare-address bulk send. An operator-supplied
 App code can call SES (`App/app/mail.py` `_send_ses`). **Production is live on
 `ses` since 2026-09-21** — UbyHost 1.1.0 is deployed and the Lightsail `.env` was
 flipped once domain auth and IAM were ready. Staging stays on `console` forever.
-[NEXT_MAIL_RELEASE.md](NEXT_MAIL_RELEASE.md) holds the release record and the
+[NEXT_MAIL_RELEASE.md](archive/NEXT_MAIL_RELEASE.md) holds the release record and the
 outstanding post-release checks.
 
 ## Deliverability (what matters)

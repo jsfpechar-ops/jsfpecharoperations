@@ -7,7 +7,7 @@ backups, mail, guest UX, analytics, staging — supports or surrounds that duty.
 
 This document is policy for owners, developers, and agents. It does not replace
 the technical contract in the official UbyPort materials (see
-`docs/UbyHost_workplan/notes/WP30-dorucenka-pdf.md`).
+`docs/archive/UbyHost_workplan/notes/WP30-dorucenka-pdf.md`).
 
 ## What “works” means
 
@@ -103,7 +103,7 @@ real-time filing or stored Doručenka PDFs.
 ## Related docs
 
 - `docs/DEPLOYMENT.md` — environments; prod vs mock/test.
-- `docs/UbyHost_workplan/OWNER_MANUAL_SETUP.md` — Gate 2 and per-patch checks.
-- `docs/UbyHost_workplan/notes/WP30-dorucenka-pdf.md` — Doručenka root cause.
+- `docs/archive/UbyHost_workplan/OWNER_MANUAL_SETUP.md` — Gate 2 and per-patch checks.
+- `docs/archive/UbyHost_workplan/notes/WP30-dorucenka-pdf.md` — Doručenka root cause.
 - `docs/UbyHost_workplan/compliance/05_manual_filing_fallback.md` — when the
   host files by hand in UbyPort.

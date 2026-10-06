@@ -1,6 +1,6 @@
 """Czech account normalisation, SPAYD and QR helpers (stay-fee step 2).
 
-Every expected value below is the table in docs/plans/PLAN_POPLATEK_Z_POBYTU.md §5.
+Every expected value below is the table in docs/archive/plans/PLAN_POPLATEK_Z_POBYTU.md §5.
 """
 from __future__ import annotations
 

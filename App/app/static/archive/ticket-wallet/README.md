@@ -18,7 +18,7 @@ live here so they can be revived without digging through git history.
 1. Copy `guest-ticket.css` and `ticket.js` back to `App/app/static/`.
 2. Copy `_ticket.html` to `App/app/templates/guest/`.
 3. Restore TW templates from `templates/guest/archive/ticket-wallet/` or from commit history
-   (see `docs/plans/PLAN_TICKET_WALLET_V2.md`).
+   (see `docs/archive/plans/PLAN_TICKET_WALLET_V2.md`).
 4. In `templates/guest/base.html`:
    - Add `<link rel="stylesheet" href="/static/guest-ticket.css?v=…">`
    - Set `<body class="tw">`

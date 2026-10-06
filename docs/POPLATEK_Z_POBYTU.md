@@ -54,7 +54,7 @@ out of Police reporting but still fee-liable; a foreign guest may need both.
 
 Compliance audit already flags that our single “domovní kniha” language may need
 to separate Police house-book duties from any municipal fee register
-(`docs/TECHNICAL_COMPLIANCE_AUDIT.md`).
+(`docs/archive/TECHNICAL_COMPLIANCE_AUDIT.md`).
 
 ---
 
@@ -132,5 +132,5 @@ Phase loosely; order can change after lawyer + owner priority:
 
 - Out of scope today: `App/README.md` (“Accommodation fees…”)
 - House book implementation: `App/app/housebook.py`, `/housebook`
-- Legal caution on registers: `docs/TECHNICAL_COMPLIANCE_AUDIT.md` (domovní kniha row)
+- Legal caution on registers: `docs/archive/TECHNICAL_COMPLIANCE_AUDIT.md` (domovní kniha row)
 - UI policy (sidebar, light-only): `docs/DESIGN.md`

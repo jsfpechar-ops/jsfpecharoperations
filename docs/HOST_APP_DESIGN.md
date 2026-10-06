@@ -1,12 +1,12 @@
 # UbyHost host app design specification
 
-**Status:** implemented signed-in host-app direction, 30 September 2026. Source baseline: `ceb1bc5ed34d020b0c6e21cac3c88bada74d1955`. See `docs/plans/host-app-redesign/IMPLEMENTATION.md` for the exact delivered scope and route coverage. It extends the light-mode brand policy in `docs/DESIGN.md`. It does not govern the public site, login, or guest-facing forms.
+**Status:** implemented signed-in host-app direction, 30 September 2026. Source baseline: `ceb1bc5ed34d020b0c6e21cac3c88bada74d1955`. See `docs/archive/plans/host-app-redesign/IMPLEMENTATION.md` for the exact delivered scope and route coverage. It extends the light-mode brand policy in `docs/DESIGN.md`. It does not govern the public site, login, or guest-facing forms.
 
 ## 1. Product idea
 
 The host should always be able to answer three questions without decoding the interface: **Where am I? What needs me? What happens if I press this?** The app should feel like a tidy working desk. A first-time host can add one property and one stay; an experienced host can reach any record quickly. Simplicity means fewer decisions on each screen, not fewer capabilities.
 
-The approved visual starting point is `docs/plans/host-app-redesign/approved-preview.html`: warm near-white canvas, clear type, narrow rail with Search, compact action rows, restrained coral actions, and visible guest facts. The implementation should improve consistency and actual data handling; do not transliterate demo JavaScript into production.
+The approved visual starting point is `docs/archive/plans/host-app-redesign/approved-preview.html`: warm near-white canvas, clear type, narrow rail with Search, compact action rows, restrained coral actions, and visible guest facts. The implementation should improve consistency and actual data handling; do not transliterate demo JavaScript into production.
 
 ### Non-negotiable UX rules
 
@@ -151,7 +151,7 @@ Role, impersonation, environment, authentication, and error banners are function
 
 ## 11. Review criteria
 
-Test with someone unfamiliar with the product: they should find a stay, identify missing guest details, correct an accidental guest count, inspect a saved guest without opening another page, find a police report, download an invoice PDF, find business details under Properties, and locate an enabled stay-fee report without coaching. On mobile and desktop, every task should have a visible route and honest state. See `docs/plans/host-app-redesign/TEST_REPORT.md` for measured checks and limitations. Real usability testing with novice hosts is a separate release check; it was not conducted here.
+Test with someone unfamiliar with the product: they should find a stay, identify missing guest details, correct an accidental guest count, inspect a saved guest without opening another page, find a police report, download an invoice PDF, find business details under Properties, and locate an enabled stay-fee report without coaching. On mobile and desktop, every task should have a visible route and honest state. See `docs/archive/plans/host-app-redesign/TEST_REPORT.md` for measured checks and limitations. Real usability testing with novice hosts is a separate release check; it was not conducted here.
 
 ## 12. Implementation boundaries and integration authority
 

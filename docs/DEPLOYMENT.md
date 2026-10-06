@@ -112,7 +112,7 @@ Use this whenever you ship a change that affects hosts or guests.
 1. **PR first.** Every change is pushed to a feature branch and opened as a pull
    request. CI (tests + smoke) must pass on the PR.
 2. **Staging** — **Render → `ubyhost-staging` → Manual Deploy** (see
-   `docs/UbyHost_workplan/STAGING_ON_RENDER_STEP_BY_STEP.md` for click-by-click
+   `docs/archive/UbyHost_workplan/STAGING_ON_RENDER_STEP_BY_STEP.md` for click-by-click
    setup). Optional: **Actions → Deploy staging** on a Lightsail staging VM
    (`deploy/lightsail/README.md` "Staging server"). Record the tested commit
    and obtain explicit product-owner approval using the checklist above.
@@ -147,7 +147,7 @@ Use this whenever you ship a change that affects hosts or guests.
    SQLite on the Docker volume is **not** rolled back with the code.
 
 Immediately after the 1.1.0 deployment, complete and retain the
-[post-release regression analysis](NEXT_MAIL_RELEASE.md#required-regression-analysis-immediately-after-release).
+[post-release regression analysis](archive/NEXT_MAIL_RELEASE.md#required-regression-analysis-immediately-after-release).
 Deployment success alone does not close the release.
 
 ## Secrets and credentials

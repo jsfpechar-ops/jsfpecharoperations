@@ -14,7 +14,7 @@ transparent PNGs are deliberately not used here because they assume
 ``mix-blend-mode: multiply`` on a light surface.
 
 Two rules shape what may appear in a message. First, host copy is English today
-(see ``FOLLOWUPS.md``); guest copy is translated, because the guest's language
+(see ``docs/archive/FOLLOWUPS.md``); guest copy is translated, because the guest's language
 is stored on the claim. Second, a guest is always pointed at their host and
 never at UbyHost support, matching the guest pages.
 """
@@ -67,7 +67,7 @@ _FONT = (
 
 # Mail clients fill the inbox snippet with whatever comes after the hidden
 # preheader, which is why the preview used to run on into the logo and the H1.
-# This is the spacer docs/plans/UX_AUDIT.md E-9 specifies: a figure space, a
+# This is the spacer docs/archive/plans/UX_AUDIT.md E-9 specifies: a figure space, a
 # zero-width no-break space and a combining grapheme joiner, repeated until the
 # snippet is full. All three render as nothing in every client.
 PREHEADER_SPACER = "\u2007\ufeff\u034f" * 40
@@ -1450,7 +1450,7 @@ def build_reminder_host(
 ) -> Dict[str, str]:
     """The check-in-day nudge for the host, in the host's language.
 
-    Host copy is English today, like the submission notice; see FOLLOWUPS.md.
+    Host copy is English today, like the submission notice; see docs/archive/FOLLOWUPS.md.
     """
     lang = host_i18n.normalise_language(lang)
     # The count is only known once the guest has claimed and declared a party;

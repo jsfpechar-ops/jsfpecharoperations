@@ -105,7 +105,7 @@ All of these are in the code or deploy configuration today.
 | R10 | Medium | Low | Low | Legal effect of the drawn signature for children is still open. [UNVERIFIED] |
 
 Remaining improvements, not blockers:
-1. Encrypt surname, first name and nationality too, or accept the clear text for search and sorting (`FOLLOWUPS.md` W2.2).
+1. Encrypt surname, first name and nationality too, or accept the clear text for search and sorting (`docs/archive/FOLLOWUPS.md` W2.2).
 2. Turn on `UBYHOST_RETENTION_AUTOPURGE=1`, so the 6-year deletion actually runs.
 3. Test a full restore every quarter and record it.
 4. Keep 2FA on AWS, Cloudflare, GitHub and the mailbox [OWNER TO CONFIRM].

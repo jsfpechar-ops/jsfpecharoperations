@@ -35,3 +35,5 @@ secret_key
 # never in source control.
 App/data/*
 !App/data/.gitkeep
+.codex/
+.obsidian/
