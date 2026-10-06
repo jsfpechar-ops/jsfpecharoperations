@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-06 (police answers on UbyPort, branch `fix/ubyport-police-answers`). Keep each section to 5 lines or fewer.
+Updated: 2026-10-06 (task 0002 brief: police answers, downloads, stay-fee row). Keep each section to 5 lines or fewer.
 
 ## Production
 
@@ -9,8 +9,7 @@ Updated: 2026-10-06 (police answers on UbyPort, branch `fix/ubyport-police-answe
 
 ## Now
 
-- Owner: review and merge the police-answers PR (HIGH RISK filing: 112 is now an accept, refused records are sent once). Then deploy and press **Refresh code lists** on every production property.
-- Owner: Phase 4 test filing on Lightsail staging with the UBY-WS test account (`deploy/lightsail/README.md`, "Filing against the police test environment"). Then K-F13 data check.
+- Owner: hand task [0002](../tasks/0002-police-downloads-stayfee.md) to Cursor (three stacked PRs: downloads, stay-fee row, police severity). Then the owner steps at the end of that brief.
 - Owner: run task [0001](../tasks/0001-context-rollout.md) step 12 with `APPLY=1` to close the 40 listed stale PRs (keep #278 and #279 open).
 
 ## Next

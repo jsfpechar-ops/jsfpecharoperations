@@ -39,12 +39,12 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
 | K-F11 | Med open | reporting.py:829-845 | Surplus blank guest form blocks automatic filing | F |
 | K-F12 | Med decision | reporting.py:270,1002 | Passport verification is advisory; unverified guests auto-filed | F W4.3 |
-| K-F13 | Med open | production data | 112 is "reported late", an accept (police, 24 Sep 2026). Production guests in `error`/`blocked` whose only code is 112 are in the register: check UbyPort, then mark them filed; never resend | F W4.2 |
+| K-F13 | Med open | production data | 112 is "reported late", an accept (police, 24 Sep 2026). Production guests in `error`/`blocked` whose only code is 112 are in the register. Owner: `App/scripts/reconcile_accepted_codes.py` (dry run), check 2-3 in UbyPort, then `--apply`; never resend | F W4.2 |
 | K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with the legal deadline | AR-06 |
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
 | K-F16 | Med unverified | icalsync.py ~549-642 | Date-move reconcile not atomic; re-sign alert can be lost | AR-38 |
 | K-F17 | Low unverified | reporting.py claim TTL; :1683 recover_stale_submissions | Lease may expire across slow batches; stale-running recovery unconfirmed | P A16, A30 |
-| K-F19 | Low open | codelists.py error_severities | Severities load only after "Refresh code lists"; until then only 1, 112, 150 are known and other codes count as refused | police A1-A2 |
+| K-F19 | Low open | codelists.py error_severities | Severities load on a passed connection test or "Refresh code lists"; until then only 1, 112, 150 are known and other codes count as refused | police A1-A2 |
 | K-F18 | High decision HR | reporting.py:859 signature_dates_stale | Stale signed dates: keep the safety net or restore re-signing (T48–T50)? | P Q6 |
 | K-L01 | High decision | retention.py:218,237 | Deletion 30+30 days and Terms s19 export wording need a lawyer | P Q9, G G-D11 |
 | K-L02 | High decision | retention.py ~306 | Termination deletes legal_acceptance rows; G-D7 says keep 3 years | F BE-10 |
