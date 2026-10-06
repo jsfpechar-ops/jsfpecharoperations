@@ -53,11 +53,12 @@ GitHub (main)
     │       └── ubyhost-staging   mock, manual deploy — staging only
     │
     └── AWS Lightsail (/opt/ubyhost/deploy/lightsail)
-            └── ubyhost + Caddy   production, MANUAL deploy only
+            └── ubyhost + Caddy   production, deploy after green CI on main
 ```
 
-Nothing deploys to production on a push. The Lightsail deploy runs only from
-**Actions → Deploy production → Run workflow** (with `force_confirm=DEPLOY`).
+Production promotes when **CI** on `main` finishes green (automatic **Deploy
+production**). You can still run **Actions → Deploy production** by hand with
+`force_confirm=DEPLOY`.
 
 ## First-time setup on Render (staging)
 
@@ -141,7 +142,7 @@ Use this whenever you ship a change that affects hosts or guests.
    integrity-check a SQLite backup first. It then dry-runs the new schema
    migration against a copy of that backup and compares critical live table
    row counts after startup.
-4. **Smoke production** — the workflow performs a public `/healthz` check;
+5. **Smoke production** — the workflow performs a public `/healthz` check;
    operators should also run `./scripts/status.sh` and
    `./scripts/smoke-remote.sh`. Sign in at **ubyhost.com**, open Settings, confirm:
    - Deployment = `production`
