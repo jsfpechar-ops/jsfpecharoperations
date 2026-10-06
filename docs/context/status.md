@@ -1,21 +1,21 @@
 # Status
 
-Updated: 2026-10-06 after magic-link deploy phase 1 (e-mails + production deploy).
+Updated: 2026-10-06 after task 0007 phase 2 executor closeout (PR #293).
 
 ## Production
 
-- **Phase 1 done:** login e-mails on all active accounts; deploy via Lightsail (`deploy.sh` or Actions).
-- **`main`:** #288–#292 merged (magic link, 0006 hardening, CI/deploy automation). Confirm live git SHA on server with `git rev-parse HEAD` in `/opt/ubyhost`.
-- **Phase 2:** follow [0007 post-deploy brief](../tasks/0007-post-magic-link-deploy-phase2.md) in a **new agent session**.
+- **Phase 1 done:** login e-mails on all active accounts; magic-link deploy on Lightsail.
+- **Live smoke (agent):** `/healthz` OK (`version` 1.1.0, 2026-10-06); `/legal`, `/privacy` 200; `/login` skipped (Cloudflare challenge from outside).
+- Confirm git SHA on VM: `cd /opt/ubyhost && git rev-parse HEAD` (and last Deploy production run id if you use Actions).
 
 ## Now
 
-- Owner: phase 2 checklist (proxy `/login/link` logs, `.env` admin e-mail, per-property UbyPort test, `reconcile_accepted_codes.py`).
-- Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
+- **Owner:** finish [0007 phase 2](../tasks/0007-post-magic-link-deploy-phase2.md) **A.2–F** (browser login, `.env`, proxy verify, per-property UbyPort test, reconcile 112). Step list in [0007-report](../tasks/0007-report.md).
+- Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not signed off.
 
 ## Next
 
-- After phase 2: Doručenka smoke on a new filing; optional #280+#281 features if not already live.
+- After phase 2 owner steps: Doručenka smoke on a new filing; deploy #280+#281 when you want admin preview on production.
 
 ## Blocked: needs owner, lawyer or council
 
@@ -24,4 +24,4 @@ Updated: 2026-10-06 after magic-link deploy phase 1 (e-mails + production deploy
 
 ## Owner steps already done (don't ask again)
 
-- SES, Turnstile, operator `.env`, healthchecks, Better Stack, Cloudflare, retention autopurge, Render staging, Litestream/backup drill, task 0001 context rollout (#281), **login e-mails on production accounts (Oct 2026)**.
+- SES, Turnstile, operator `.env`, healthchecks, Better Stack, Cloudflare, retention autopurge, Render staging, Litestream/backup drill, task 0001 (#281), **production login e-mails + phase 1 deploy (Oct 2026)**.
