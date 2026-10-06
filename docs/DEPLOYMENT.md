@@ -53,11 +53,12 @@ GitHub (main)
     │       └── ubyhost-staging   mock, manual deploy — staging only
     │
     └── AWS Lightsail (/opt/ubyhost/deploy/lightsail)
-            └── ubyhost + Caddy   production, MANUAL deploy only
+            └── ubyhost + Caddy   production, deploy after green CI on main
 ```
 
-Nothing deploys to production on a push. The Lightsail deploy runs only from
-**Actions → Deploy production → Run workflow** (with `force_confirm=DEPLOY`).
+Production promotes when **CI** on `main` finishes green (automatic **Deploy
+production**). You can still run **Actions → Deploy production** by hand with
+`force_confirm=DEPLOY`.
 
 ## First-time setup on Render (staging)
 
@@ -121,25 +122,27 @@ Use this whenever you ship a change that affects hosts or guests.
    setup). Optional: **Actions → Deploy staging** on a Lightsail staging VM
    (`deploy/lightsail/README.md` "Staging server"). Record the tested commit
    and obtain explicit product-owner approval using the checklist above.
-3. **Merge the approved PR to `main`.** Nothing deploys on this merge: the
-   production workflow no longer runs on a push.
-4. **Production (Lightsail) — manual only.** Promote by running **Actions →
-   Deploy production → Run workflow** and entering `DEPLOY` in `force_confirm`.
-   This deploys the current `main` revision (the workflow resolves
-   `refs/heads/main` itself, so a dispatch started from a feature branch still
-   deploys `main`). After the deploy it checks `https://ubyhost.com/healthz`.
-   Deploys are serialised by a `concurrency: deploy-production` group. SSH/manual
-   fallback:
+3. **Merge the approved PR to `main`.** GitHub Actions runs **CI** on the merge
+   commit. When that run finishes green on `main`, **Deploy production** starts
+   automatically (Lightsail + optional Render staging hook). PR CI alone does not
+   deploy production.
+4. **Production (Lightsail).** Default: wait for the automatic deploy after green
+   **CI** on `main`. Override: **Actions → Deploy production → Run workflow**,
+   enter `DEPLOY` in `force_confirm` (same `main` head, same CI gate). After
+   deploy the workflow checks `https://ubyhost.com/healthz`. Deploys are
+   serialised by `concurrency: deploy-production`. SSH fallback:
    ```bash
    cd /opt/ubyhost && git pull origin main
    cd deploy/lightsail && ./scripts/deploy.sh
    ```
-   CI-triggered deploys after green `main` run when SSH secrets are set (default on). For this build, keep `LIGHTSAIL_AUTO_DEPLOY=0` until the owner’s staging acceptance and production approval are recorded.
+   CI-triggered deploys after green `main` when SSH secrets are set. If a merge
+   lands without a green CI run on that commit, run **Actions → CI → Run workflow**
+   on branch `main`; when it passes, production deploy runs automatically.
    `deploy.sh` refuses to replace a running release unless it can create and
    integrity-check a SQLite backup first. It then dry-runs the new schema
    migration against a copy of that backup and compares critical live table
    row counts after startup.
-4. **Smoke production** — the workflow performs a public `/healthz` check;
+5. **Smoke production** — the workflow performs a public `/healthz` check;
    operators should also run `./scripts/status.sh` and
    `./scripts/smoke-remote.sh`. Sign in at **ubyhost.com**, open Settings, confirm:
    - Deployment = `production`

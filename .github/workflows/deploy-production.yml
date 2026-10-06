@@ -4,10 +4,9 @@ name: Deploy production
 # server (deploy-staging.yml, mock UbyPort) and Render ubyhost-staging (mock).
 # See docs/DEPLOYMENT.md
 #
-# MANUAL ONLY. This deploy no longer runs automatically on a push to main. Every
-# change reaches main through a reviewed pull request, and production is promoted
-# by a person running this workflow (Actions → Deploy production → Run workflow)
-# with force_confirm=DEPLOY. Staging is deployed separately: Actions → Deploy
+# Production promotes when CI on main finishes green (push after merge, or a
+# manual CI run on main). You can still run this workflow by hand with
+# force_confirm=DEPLOY. Staging is deployed separately: Actions → Deploy
 # staging (any branch), or manually in Render.
 
 on:
@@ -17,6 +16,10 @@ on:
         description: "Type DEPLOY to deploy the current main revision to production"
         required: true
         type: string
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -35,7 +38,12 @@ jobs:
   # for that commit, and checks that the server's .env says production before
   # anything on it changes.
   lightsail:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY')
+      || (github.event_name == 'workflow_run'
+      && github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.head_branch == 'main'
+      && github.event.workflow_run.event != 'pull_request')
     uses: ./.github/workflows/deploy-lightsail.yml
     with:
       environment: production
@@ -45,7 +53,12 @@ jobs:
     secrets: inherit
 
   render-staging:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.force_confirm == 'DEPLOY')
+      || (github.event_name == 'workflow_run'
+      && github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.head_branch == 'main'
+      && github.event.workflow_run.event != 'pull_request')
     runs-on: ubuntu-latest
     steps:
       - name: Optional Render staging deploy hook
