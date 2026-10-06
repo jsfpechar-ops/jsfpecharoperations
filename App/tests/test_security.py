@@ -48,7 +48,7 @@ def test_production_host_posts_require_cookie_bound_csrf_token(monkeypatch):
     monkeypatch.setattr(config, "DEPLOYMENT", "production")
     try:
         client = TestClient(app)
-        login_token = _csrf_from(client.get("/login"))
+        _csrf_from(client.get("/login"))
         denied = login_as(client, "boundary-csrf", follow_redirects=False)
         assert denied.status_code == 303
         assert denied.headers["location"].startswith("/login?notice=form_expired")
@@ -93,7 +93,7 @@ def test_login_token_survives_session_cookie_appearing_after_cross_site_navigati
     monkeypatch.setattr(config, "DEPLOYMENT", "production")
     try:
         client = TestClient(app, base_url="https://ubyhost.com")
-        login_token = _csrf_from(client.get("/login"))
+        _csrf_from(client.get("/login"))
         account = db.query_one("SELECT * FROM user_account WHERE id = ?", (account_id,))
         client.cookies.set(
             auth.SESSION_COOKIE,
@@ -130,7 +130,7 @@ def test_production_login_accepts_https_origin_behind_http_proxy(monkeypatch):
     monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://ubyhost.com")
     try:
         client = TestClient(app, base_url="http://ubyhost.com")
-        login_token = _csrf_from(client.get("/login"))
+        _csrf_from(client.get("/login"))
         response = login_as(client, "proxy-login", follow_redirects=False)
         assert response.status_code == 303
     finally:
@@ -144,7 +144,7 @@ def test_production_login_accepts_same_site_mobile_headers(monkeypatch):
     monkeypatch.setattr(config, "DEPLOYMENT", "production")
     try:
         client = TestClient(app, base_url="https://ubyhost.com")
-        login_token = _csrf_from(client.get("/login"))
+        _csrf_from(client.get("/login"))
         response = login_as(client, "mobile-login", follow_redirects=False)
         assert response.status_code == 303
     finally:

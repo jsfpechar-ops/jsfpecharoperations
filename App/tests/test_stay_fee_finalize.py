@@ -1,7 +1,6 @@
 """Sealed stay-fee periods: finalize then frozen PDF/CSV bytes."""
 from __future__ import annotations
 
-import secrets
 from datetime import date
 
 import pytest

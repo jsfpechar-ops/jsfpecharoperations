@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import io
-import secrets
 from datetime import date
 from urllib.parse import unquote
 
