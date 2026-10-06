@@ -257,6 +257,47 @@
     <div class="panel" id="settings-security">
       <h2 style="margin-top:0">{{ t('settings.nav.security') }}</h2>
       <p class="small muted">{{ t('settings.security.lede') }}</p>
+      <div class="settings-action-list" id="settings-passkeys">
+        <div class="settings-action-row">
+          <div>
+            <strong>{{ t('passkeys.title') }}</strong>
+            <small>{{ t('passkeys.help') }}</small>
+          </div>
+          {% if passkeys_available %}
+            <button class="btn small primary" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
+          {% endif %}
+        </div>
+        {% if passkeys_available %}
+          <p class="small muted" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
+          <p class="small err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
+        {% else %}
+          <p class="small muted">{{ t('passkeys.unavailable') }}</p>
+        {% endif %}
+        {% for key in passkeys %}
+          <div class="settings-action-row passkey-row">
+            <div>
+              <strong>{{ key.name }}</strong>
+              <small>{{ t('passkeys.added_on', date=key.created_at | datetime_local) }} ·
+                {% if key.last_used_at %}{{ t('passkeys.last_used', date=key.last_used_at | datetime_local) }}{% else %}{{ t('passkeys.never_used') }}{% endif %}</small>
+            </div>
+            <form method="post" action="/account/passkeys/{{ key.id }}/delete"
+                  data-confirm data-confirm-message="{{ t('passkeys.remove_confirm', name=key.name) }}">
+              <button class="btn small" type="submit">{{ t('passkeys.remove') }}</button>
+            </form>
+          </div>
+          <details class="settings-move">
+            <summary><small>{{ t('passkeys.rename') }}</small></summary>
+            <form method="post" action="/account/passkeys/{{ key.id }}/rename" class="settings-move-form">
+              <div class="field">
+                <label for="passkey-name-{{ key.id }}">{{ t('passkeys.name') }}</label>
+                <input id="passkey-name-{{ key.id }}" name="name" type="text" maxlength="60"
+                       value="{{ key.name }}" required>
+              </div>
+              <button class="btn small" type="submit">{{ t('passkeys.rename_action') }}</button>
+            </form>
+          </details>
+        {% endfor %}
+      </div>
       <div class="settings-action-list">
         <div class="settings-action-row">
           <div>

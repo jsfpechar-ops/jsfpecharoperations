@@ -317,6 +317,9 @@ def _delete_workspace(owner_id: int) -> None:
         cur.execute("DELETE FROM ad_click WHERE user_account_id = ?", (owner_id,))
         # Task 0003: login links (also cascade; explicit for the same reason).
         cur.execute("DELETE FROM login_token WHERE user_account_id = ?", (owner_id,))
+        # Task 0004: passkeys and their ceremonies (also cascade).
+        cur.execute("DELETE FROM passkey WHERE user_account_id = ?", (owner_id,))
+        cur.execute("DELETE FROM webauthn_challenge WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
     # Files last: a rolled-back delete must not have lost the photos. One
@@ -363,6 +366,20 @@ def _login_token_step(today: date, dry_run: bool, owner_user_id: Optional[int]) 
     return login_link.purge(dry_run=dry_run)
 
 
+def _webauthn_challenge_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Task 0004: delete passkey ceremonies a day after they expired.
+
+    A row is only the hash of a five-minute challenge; nothing in it is useful
+    once it has expired. Passkeys themselves live as long as the account, or
+    until the host removes them.
+    """
+    from . import passkeys
+
+    if owner_user_id is not None:
+        return 0
+    return passkeys.purge(dry_run=dry_run)
+
+
 # Each step takes (today, dry_run, owner_user_id) and returns the affected count.
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
@@ -376,6 +393,7 @@ STEPS: List[tuple] = [
     ("alerts", _alert_retention_step),
     ("rate_limit_events", _rate_limit_retention_step),
     ("login_tokens", _login_token_step),
+    ("webauthn_challenges", _webauthn_challenge_step),
     ("legal_acceptance", _acceptance_retention_step),
     ("workspaces", _workspace_deletion_step),
 ]
@@ -399,6 +417,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "alerts": f"resolved before {_days_ago_iso(config.ALERT_RETENTION_DAYS)}",
         "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours",
         "login_tokens": "expired more than 1 day ago",
+        "webauthn_challenges": "expired more than 1 day ago",
         "legal_acceptance": (
             f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
         ),

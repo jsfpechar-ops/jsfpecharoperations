@@ -53,6 +53,8 @@ KINDS = (
     "login_link",
     "account_invite",
     "email_confirm",
+    # Task 0004: the notice that a passkey was added to the account.
+    "passkey_added",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -88,6 +90,7 @@ HOST_KINDS = (
     "login_link",
     "account_invite",
     "email_confirm",
+    "passkey_added",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.

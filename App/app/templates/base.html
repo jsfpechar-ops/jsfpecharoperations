@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
-  <link rel="stylesheet" href="/static/app.css?v=20261004z">
+  <link rel="stylesheet" href="/static/app.css?v=20261006a">
   <link rel="stylesheet" href="/static/components.css?v=20261002a">
   {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20261004x">{% endif %}
 </head>
@@ -254,9 +254,39 @@
   </div>
 </dialog>
 
+{% set prompt = security_prompt() if (show_nav | default(true)) and security_prompt is defined and security_prompt else None %}
+{% if prompt %}
+{# Task 0004: shown once, to an account with no passkey and no authenticator
+   app. Without JavaScript it is an open box on the page; with it, a modal. #}
+<dialog id="security-prompt" class="admin-dialog security-prompt" open aria-labelledby="security-prompt-title">
+  <div class="admin-dialog-form">
+    <h2 id="security-prompt-title" style="margin-top:0">{{ t('security_prompt.title') }}</h2>
+    <p class="small muted">{{ t('security_prompt.lede') }}</p>
+    <div class="security-prompt-options">
+      {% if prompt.passkeys %}
+        <div class="security-prompt-option" data-passkey-supported hidden>
+          <button class="btn primary" type="button" data-passkey-add>{{ t('security_prompt.passkey') }}</button>
+          <small>{{ t('security_prompt.passkey_help') }}</small>
+          <p class="small err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
+        </div>
+      {% endif %}
+      <div class="security-prompt-option">
+        <a class="btn" href="/account/2fa/setup">{{ t('security_prompt.totp') }}</a>
+        <small>{{ t('security_prompt.totp_help') }}</small>
+      </div>
+    </div>
+    <form method="dialog" class="actions">
+      <button class="btn" type="submit" value="later" data-security-prompt-later>{{ t('security_prompt.later') }}</button>
+    </form>
+    <p class="small muted">{{ t('security_prompt.footnote') }}</p>
+  </div>
+</dialog>
+{% endif %}
+
 <script src="/static/csrf.js?v=20260915a"></script>
 <script src="/static/skeleton.js?v=20260929a"></script>
 <script src="/static/app.js?v=20261001b"></script>
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261001d" defer></script>{% endif %}
+{% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261006a" defer></script>{% endif %}
 </body>
 </html>

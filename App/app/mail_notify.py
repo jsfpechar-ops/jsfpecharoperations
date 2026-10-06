@@ -1889,6 +1889,54 @@ def email_changed(
     return queued
 
 
+def build_passkey_added(*, name: str, lang: Optional[str] = None) -> Dict[str, str]:
+    """The notice that a passkey was added (task 0004). It carries no link.
+
+    A passkey is a way into the account, so its owner hears about every new
+    one: if someone else added it from a borrowed session, this is how the
+    host finds out and removes it in Settings.
+    """
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    subject = _text(lang, "mail.passkey_added.subject")
+    heading = _text(lang, "mail.passkey_added.heading")
+    intro = _text(lang, "mail.passkey_added.intro", name=name)
+    help_text = _text(lang, "mail.passkey_added.help", support=config.OPERATOR_EMAIL)
+    footer = _signup_footer(lang)
+    text = "\n".join([intro, "", help_text, "", "--", *footer])
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_paragraph(help_text, size=15),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
+        ),
+    }
+
+
+def passkey_added(*, user_id: int, to_email: str, passkey_id: int, name: str) -> Optional[int]:
+    """Queue the passkey notice to the account's login address."""
+    if not to_email:
+        return None
+    content = build_passkey_added(name=name)
+    return mail.enqueue(
+        kind="passkey_added",
+        idempotency_key=f"passkey_added:{user_id}:{passkey_id}",
+        to_email=to_email,
+        subject=content["subject"],
+        payload={
+            "text": content["text"],
+            "html": content["html"],
+            "lang": HOST_MAIL_LANGUAGE,
+            "reply_to": config.OPERATOR_EMAIL,
+        },
+        owner_user_id=user_id,
+    )
+
+
 def build_signup_verify(
     *, lang: str, workspace: str, username: str, link: str
 ) -> Dict[str, str]:

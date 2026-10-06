@@ -1815,6 +1815,7 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "login_link",
         "account_invite",
         "email_confirm",
+        "passkey_added",
     }
 
 

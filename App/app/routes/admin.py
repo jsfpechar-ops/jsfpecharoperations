@@ -36,6 +36,7 @@ from .. import (
     housebook,
     icalsync,
     mail,
+    passkeys,
     passport_photos,
     payments,
     reporting,
@@ -48,6 +49,7 @@ from .. import (
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
+from . import passkeys as passkey_routes
 from . import signup as signup_routes
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -62,6 +64,7 @@ from .admin_helpers import query_int as _query_int
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
+router.include_router(passkey_routes.router)
 router.include_router(api.router)
 router.include_router(onboarding.router)
 router.include_router(signup_routes.router)
@@ -2770,8 +2773,16 @@ def settings_view(request: Request):
                 signup.consents_for(access.owner_id(request))
                 if access.owner_id(request) is not None else []
             ),
+            # Task 0004: Settings > Security lists the real account's passkeys.
+            "passkeys": _own_passkeys(request),
+            "passkeys_available": passkeys.available(),
         },
     )
+
+
+def _own_passkeys(request: Request):
+    account = auth.current_user(request)
+    return passkeys.for_account(account["id"]) if account else []
 
 
 def _onboarding_emails(request: Request):
