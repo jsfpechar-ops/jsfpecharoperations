@@ -1,6 +1,6 @@
 # 0006: Harden e-mail login after the #288 review
 
-Status: todo
+Status: review
 Depends on: none | Base commit: df939db | Branch: task/0006-login-hardening
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

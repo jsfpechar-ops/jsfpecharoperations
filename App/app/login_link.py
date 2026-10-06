@@ -147,7 +147,12 @@ def account_for(row):
     )
     if not account:
         return None
-    if row["purpose"] != EMAIL_CHANGE and (account["email"] or "").strip().lower() != row["email"]:
+    current = (account["email"] or "").strip().lower()
+    if row["purpose"] == EMAIL_CHANGE:
+        # Confirming the address the account already has changes nothing.
+        if current == row["email"]:
+            return None
+    elif current != row["email"]:
         return None
     return account
 

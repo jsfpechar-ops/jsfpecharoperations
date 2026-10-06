@@ -481,6 +481,8 @@ async def account_email_request(request: Request):
     account = auth.current_user(request)
     if auth.impersonating(request):
         return _back("/settings#settings-account", err=_flash(request, "auth.error.admins_only"))
+    if not auth.session_is_fresh(request):
+        return _back("/settings#settings-account", err=_flash(request, "auth.error.recent_login"))
     form = await request.form()
     email = mail.normalise_email(_form_str(form, "email"))
     if not email:
@@ -546,7 +548,7 @@ async def account_email_confirm_submit(request: Request):
     try:
         auth.set_account_email(account["id"], row["email"])
     except Exception as exc:
-        if "UNIQUE constraint failed" in str(exc):
+        if db.is_unique_violation(exc):
             return _email_confirm_page(request, {"expired": True}, status_code=410)
         raise
     # The new address just proved itself.
@@ -650,7 +652,7 @@ async def user_create(request: Request):
         # resolved in the language the host is reading the page in.
         return _back("/admin/users", err=_flash(request, str(exc)))
     except Exception as exc:
-        if "UNIQUE constraint failed" in str(exc):
+        if db.is_unique_violation(exc):
             return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
         raise
     db.audit(
@@ -706,7 +708,7 @@ async def user_email_set(user_id: int, request: Request):
     try:
         auth.set_account_email(user_id, email)
     except Exception as exc:
-        if "UNIQUE constraint failed" in str(exc):
+        if db.is_unique_violation(exc):
             return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
         raise
     detail = f"to={mail.mask_email(email)}"

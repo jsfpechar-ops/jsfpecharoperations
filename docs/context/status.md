@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-06 after merging `main` into PR #288. Keep each section to 5 lines or fewer.
+Updated: 2026-10-06 after task 0006 (PR #290). Keep each section to 5 lines or fewer.
 
 ## Production
 
@@ -9,6 +9,7 @@ Updated: 2026-10-06 after merging `main` into PR #288. Keep each section to 5 li
 
 ## Now
 
+- Owner: review **[#290](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/290)** (task 0006: login hardening + CI lint fix; report in docs/tasks). `main` pytest is red in one process: K-T01.
 - Owner: review **[#288](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/288)** (magic link 0002–0005, police/stay-fee 0002 brief, filing-in-flight fix). Full-suite pytest still needs green before merge.
 - Lawyer: **LAWYER REVIEW** paragraphs in task 0005 (legal v1.7).
 - Owner: task [0001](../tasks/0001-context-rollout.md) step 12 with `APPLY=1` when ready (keep #278 and #279 open).
