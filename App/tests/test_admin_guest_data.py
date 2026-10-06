@@ -317,7 +317,16 @@ def test_supporting_can_download_a_stored_dorucenka_and_it_is_audited(seeded):
     response = client.get(f"/submissions/{submission_id}/receipt.pdf", follow_redirects=False)
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("application/pdf")
-    assert _audit(seeded["owner"], "export_submission_pdf")
+    rows = _audit(seeded["owner"], "export_submission_pdf")
+    assert rows, "download must be audited for the host workspace"
+    assert f"submission_id={submission_id} which=receipt" in rows[-1]["detail"]
+    assert "while_supporting=1" in rows[-1]["detail"]
+
+    errors = client.get(f"/submissions/{submission_id}/errors.pdf", follow_redirects=False)
+    assert errors.status_code == 200
+    error_rows = _audit(seeded["owner"], "export_submission_pdf")
+    assert "which=errors" in error_rows[-1]["detail"]
+    assert "while_supporting=1" in error_rows[-1]["detail"]
 
 
 def test_saving_a_guest_while_supporting_persists_identity(seeded):
