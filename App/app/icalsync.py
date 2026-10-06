@@ -40,6 +40,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
+import time
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
@@ -362,6 +363,25 @@ def platform_of(url: str, ics_text: str = "") -> str:
     return "ical"
 
 
+def _send_in_flight(reservation_id: int) -> bool:
+    """True while UbyPort is being called for a guest on this stay.
+
+    The SOAP payload is built from the stay window at claim time. Rewriting
+    ``stay_from`` / ``stay_to`` (or the reservation dates that back them) while
+    that call is open leaves the house book on the new window after the guest
+    is marked sent with the old one. Host and guest saves already refuse a live
+    ``submission_claim``; the calendar has to as well.
+    """
+    return bool(
+        db.query_one(
+            "SELECT 1 AS n FROM submission_claim c "
+            "JOIN guest g ON g.id = c.guest_id "
+            "WHERE g.reservation_id = ? AND c.claimed_at >= ? LIMIT 1",
+            (reservation_id, time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS),
+        )
+    )
+
+
 def _fit_unsent_guest_windows(
     reservation_id: int,
     apartment_id: int,
@@ -378,6 +398,7 @@ def _fit_unsent_guest_windows(
         return 0
     apartment = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
     owner_user_id = apartment["owner_user_id"] if apartment else None
+    live_after = time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS
     moved = 0
     for guest in db.query(
         "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL "
@@ -394,11 +415,20 @@ def _fit_unsent_guest_windows(
         if guest["stay_from"] == new_sf and guest["stay_to"] == new_st:
             continue
         old_window = f"{guest['stay_from']}..{guest['stay_to']}"
-        db.update(
+        # Compare-and-set: a send that started after the SELECT, or a guest the
+        # register already accepted, must keep the window that went on the wire.
+        if not db.update_if(
             "guest",
             guest["id"],
             {"stay_from": new_sf, "stay_to": new_st, "updated_at": now},
-        )
+            {"submit_state": guest["submit_state"]},
+            extra_where=(
+                "NOT EXISTS (SELECT 1 FROM submission_claim "
+                "WHERE guest_id = ? AND claimed_at >= ?)"
+            ),
+            extra_params=(guest["id"], live_after),
+        ):
+            continue
         db.audit(
             "guest_stay_window_fitted",
             f"guest={guest['id']} reservation={reservation_id} was={old_window} "
@@ -649,6 +679,7 @@ def sync_feed(
     handled_uids: set = set()
     duplicate_uids: List[str] = []
     recurring_uids: List[str] = []
+    deferred_in_flight = False
 
     for event in events:
         if event["uid"] in handled_uids:
@@ -700,6 +731,25 @@ def sync_feed(
                 existing["date_from"] != event["date_from"]
                 or existing["date_to"] != event["date_to"]
             )
+            if dates_changed and _send_in_flight(existing["id"]):
+                # Keep the stored window until the in-flight send finishes.
+                # Applying the feed now would desync the house book from what
+                # went to the police; storing the new digest would also skip
+                # the next poll, so the move would never land.
+                payload["date_from"] = existing["date_from"]
+                payload["date_to"] = existing["date_to"]
+                dates_changed = False
+                deferred_in_flight = True
+                log.warning(
+                    "ical_dates_deferred_in_flight apartment_id=%s reservation_id=%s "
+                    "stored=%s..%s calendar=%s..%s",
+                    feed["apartment_id"],
+                    existing["id"],
+                    existing["date_from"],
+                    existing["date_to"],
+                    event["date_from"],
+                    event["date_to"],
+                )
             changed = {
                 k: v
                 for k, v in payload.items()
@@ -863,11 +913,14 @@ def sync_feed(
         _warn_if_guests_registered(row, feed["apartment_id"], "disappeared")
         stats["cancelled"] += 1
 
-    db.update(
-        "ical_feed",
-        feed["id"],
-        {"last_sync_at": now, "last_status": "ok", "last_error": None, **read},
-    )
+    feed_update = {"last_sync_at": now, "last_status": "ok", "last_error": None, **read}
+    if deferred_in_flight:
+        # Do not store the new digest or validators: the next poll must
+        # reconcile again once the send claim drops, or the date move is lost.
+        feed_update.pop("body_sha256", None)
+        feed_update.pop("etag", None)
+        feed_update.pop("last_modified", None)
+    db.update("ical_feed", feed["id"], feed_update)
     return stats
 
 
