@@ -1,10 +1,6 @@
 # Status
 
-<<<<<<< HEAD
-Updated: 2026-10-06 by Cursor (task 0002 report). Keep each section to 5 lines or fewer.
-=======
-Updated: 2026-10-06 (police answers on UbyPort, branch `fix/ubyport-police-answers`). Keep each section to 5 lines or fewer.
->>>>>>> bd0feb3 (Stop treating late filings as failures and stop resending refused records)
+Updated: 2026-10-06 by Cursor (combined magic-link + bug-fix PR). Keep each section to 5 lines or fewer.
 
 ## Production
 
@@ -13,24 +9,18 @@ Updated: 2026-10-06 (police answers on UbyPort, branch `fix/ubyport-police-answe
 
 ## Now
 
-<<<<<<< HEAD
-- Owner: review and merge **task 0002** PR (`task/0002-account-emails`) — login e-mail on every account (magic-link plan step 1).
-- Other agent: police / stay-fee brief on `task/0002c-ubyport-severity` (separate from magic link).
-- Task 0005 legal texts (e-mail login + passkeys, v1.7) implemented on `cursor/legal-texts-1.7-d5e1`; awaiting lawyer review of LAWYER REVIEW paragraphs.
-=======
-- Owner: review and merge the police-answers PR (HIGH RISK filing: 112 is now an accept, refused records are sent once). Then deploy and press **Refresh code lists** on every production property.
-- Owner: Phase 4 test filing on Lightsail staging with the UBY-WS test account (`deploy/lightsail/README.md`, "Filing against the police test environment"). Then K-F13 data check.
-- Owner: run task [0001](../tasks/0001-context-rollout.md) step 12 with `APPLY=1` to close the 40 listed stale PRs (keep #278 and #279 open).
->>>>>>> bd0feb3 (Stop treating late filings as failures and stop resending refused records)
+- Owner: review the **combined PR** (magic link 0002–0005 + today's Cursor bug fixes: #283 filing-in-flight, #289 admin preview/Litestream tests, stay-fee/UbyPort from `task/0002c`).
+- Full-suite pytest still has session-order failures to fix before merge; browser e2e (25 tests) passes with 0 skipped.
+- Lawyer: review LAWYER REVIEW paragraphs in task 0005 legal bump (v1.7).
 
 ## Next
 
-- After 0002 deploy: fill every account e-mail in `/admin/users`, then run 0003+0004+0005 (one release) per `docs/docs/plans/magic-link-passkeys/HANDOFF.md`.
-- Owner: deploy `main` (#280 + #281) and check Doručenka download on a new filing when ready.
+- After merge and deploy: set every account login e-mail in `/admin/users` before enabling link-only login in production (0003 guard).
+- Close superseded open PRs #283 and #289 once combined PR merges. Deploy #280+#281 when ready.
 
 ## Blocked: needs owner, lawyer or council
 
-- Lawyer review of legal texts (0005 and existing K-L rows in [known-issues](known-issues.md)).
+- Lawyer review of legal texts (0005 and K-L rows in [known-issues](known-issues.md)).
 - Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
 
 ## Owner steps already done (don't ask again)
