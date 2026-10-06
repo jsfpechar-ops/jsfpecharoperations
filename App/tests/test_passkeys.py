@@ -24,6 +24,7 @@ OTHER = "passkey-other@example.test"
 
 @pytest.fixture(autouse=True)
 def https_site(monkeypatch):
+    db.init_db()
     monkeypatch.setattr(config, "PUBLIC_BASE_URL", BASE)
     monkeypatch.setattr(mail, "backend_name", lambda: "console")
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)

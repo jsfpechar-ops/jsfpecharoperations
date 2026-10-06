@@ -18,6 +18,7 @@ EMAIL = "env-link@example.test"
 
 @pytest.fixture
 def account(monkeypatch):
+    db.init_db()
     monkeypatch.setattr(mail, "backend_name", lambda: "console")
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
     db.execute("DELETE FROM user_account WHERE email = ?", (EMAIL,))
