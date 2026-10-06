@@ -804,7 +804,11 @@ def guest_is_reportable(nationality: Optional[str]) -> bool:
 # --- accommodation facility (report header) ------------------------------
 
 _IDUB_RE = re.compile(r"^[A-Za-z0-9]{12,14}$")
-_MARK_RE = re.compile(r"^[A-Za-z]{5}$")
+# The police assign the abbreviation. Appendix 3 gives five alphanumeric
+# characters, and the web-service test account they issued on 6 October 2026
+# carries a six-character one (letters and digits, the part after UBY-WS_ in
+# the login), so the check takes what the police actually hand out.
+_MARK_RE = re.compile(r"^[A-Za-z0-9]{5,6}$")
 _HOUSE_RE = re.compile(r"^(?:\d{1,4}|E\d{1,4}|\d{1,4}E)$", re.IGNORECASE)
 _ORIENT_RE = re.compile(r"^\d{1,3}[A-Za-z]?$")
 _WS_USER_RE = re.compile(r"^(?:uby-ws[A-Za-z0-9]{6}|uby-tws[A-Za-z0-9]{5})$", re.IGNORECASE)
@@ -833,7 +837,7 @@ def validate_apartment(ap: Dict[str, Optional[str]]) -> List[Issue]:
     if not mark:
         issues.append(Issue("uby_mark", "The facility abbreviation (zkratka) is required."))
     elif not _MARK_RE.match(mark):
-        issues.append(Issue("uby_mark", "The abbreviation is exactly five letters, e.g. AAKLI."))
+        issues.append(Issue("uby_mark", "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI."))
 
     name = (ap.get("uby_name") or "").strip()
     if not name:

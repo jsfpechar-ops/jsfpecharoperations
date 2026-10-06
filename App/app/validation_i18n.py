@@ -93,8 +93,8 @@ CS_MESSAGES: Dict[str, str] = {
     "IDUB is required before anything can be reported.": "Bez IDUB nelze nic nahlásit.",
     "IDUB must be 12-14 letters or digits.": "IDUB má 12–14 písmen nebo číslic.",
     "The facility abbreviation (zkratka) is required.": "Vyplňte zkratku zařízení.",
-    "The abbreviation is exactly five letters, e.g. AAKLI.": (
-        "Zkratka má přesně pět písmen, např. AAKLI."
+    "The abbreviation is the 5 or 6 letters or digits the police assigned, e.g. AAKLI.": (
+        "Zkratka má 5 nebo 6 písmen či číslic přidělených policií, např. AAKLI."
     ),
     "Accommodation facility name is required.": "Vyplňte název ubytovacího zařízení.",
     "Facility name must be at most 35 characters.": (

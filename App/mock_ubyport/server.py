@@ -1,13 +1,21 @@
 """A local stand-in for the UbyPort SOAP service.
 
 Real credentials are issued per accommodation facility by the Foreign Police
-and take days to arrive, so this exists to exercise the whole pipeline now. It
-deliberately reproduces the behaviour that actually bites in production:
+and take days to arrive, so this exists to exercise the whole pipeline now. The
+police confirmed in writing (letter of 24 September 2026, B4) that their test
+environment behaves exactly like production, so this mock copies the
+behaviour of both:
 
 * per-record error codes returned positionally in ChybyZaznamu
-* the duplicate check that the police re-enabled on 1 September 2025, returned
-  as an error that cannot be corrected
-* "reported late" once the three-working-day window has passed
+* the Chyby code book in the real layout (appendix 5 section 5.3.2): Kod2 is
+  ERR_CZE_nnn, Kod3 the text, TextKratkyCZ the severity ("síla chyby")
+* severity decides the outcome: 0-2 the record is accepted, 4-6 it is not
+* "reported late" (112) once the three-working-day window has passed, as an
+  accepted record with severity 0, never as a refusal
+* the duplicate check, keyed on the seven fields the police named (answer A3):
+  dates from-to, surname, first name, date of birth, nationality, document
+  number and purpose of stay. Note, visa and address are not compared.
+* at most 32 records per batch (MaximalniDelkaSeznamu, answer D1-D2)
 * a real PDF Doručenka in base64, so the download path is genuinely tested
 
 Run it with:  python -m mock_ubyport.server
@@ -42,25 +50,46 @@ NS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
 
 app = FastAPI(title="Mock UbyPort", docs_url=None, redoc_url=None)
 
-# code -> (short text, is_correctable)
-ERROR_CODES: Dict[str, Tuple[str, bool]] = {
-    "5": ("Název ubytovatele není vyplněn", True),
-    "6": ("Kontakt na ubytovatele není vyplněn", True),
-    "7": ("Okres není vyplněn", True),
-    "8": ("Obec není vyplněna", True),
-    "9": ("Část obce není vyplněna", True),
-    "10": ("Ulice není vyplněna", True),
-    "11": ("Číslo orientační není vyplněno", True),
-    "12": ("PSČ není vyplněno nebo je nekorektní", True),
-    "13": ("IDUB nebo zkratka nesouhlasí s registrací", True),
-    "101": ("Příjmení není vyplněno nebo obsahuje nepovolené znaky", True),
-    "102": ("Datum narození je nekorektní", True),
-    "103": ("Státní příslušnost není v číselníku", True),
-    "106": ("Číslo cestovního dokladu je nekorektní", True),
-    "108": ("Datum do není vyšší než datum od", True),
-    "112": ("Oznámeno pozdě", False),
-    "150": ("Duplicitní záznam - data nebyla převzata", False),
+# Severity names and their explanations, copied from the police code book
+# (ciselnik_chyb_sila_chyby, sent with the letter of 24 September 2026).
+SEVERITY_TEXT: Dict[int, Tuple[str, str]] = {
+    0: ("INFORMACE", "O podezření z chyby je nutno informovat uživatele, procedura pracuje dále"),
+    1: ("OPRAVA", "Oprava údaje do korektního stavu, procedura pracuje dále"),
+    2: ("INF OPRAVA", "Oprava údaje do korektního stavu, informace uživatele a procedura pracuje dále"),
+    4: ("CHYBA UŽIVATELE", "Objekt nepřijmut, informace uživateli, zápis do LOGU, ukončení kroku cyklu procedury"),
+    5: ("CHYBA UŽIVATELE", "Objekt nepřijmut, zápis do LOGU, ukončení spojení s uživatelem"),
 }
+
+# Highest severity at which the record still counts as accepted.
+ACCEPTED_MAX_SEVERITY = 2
+
+# code -> (short text, severity). The record-field numbers are the mock's own;
+# 1 and 112 are printed with severity 0 in appendix 5, the duplicate row with
+# severity 4 in the police code book.
+ERROR_CODES: Dict[str, Tuple[str, int]] = {
+    "1": ("Nekorektní koncovka souboru", 0),
+    "5": ("Název ubytovatele není vyplněn", 5),
+    "6": ("Kontakt na ubytovatele není vyplněn", 5),
+    "7": ("Okres není vyplněn", 5),
+    "8": ("Obec není vyplněna", 5),
+    "9": ("Část obce není vyplněna", 5),
+    "10": ("Ulice není vyplněna", 5),
+    "11": ("Číslo orientační není vyplněno", 5),
+    "12": ("PSČ není vyplněno nebo je nekorektní", 5),
+    "13": ("IDUB nebo zkratka nesouhlasí s registrací", 5),
+    "101": ("Příjmení není vyplněno nebo obsahuje nepovolené znaky", 4),
+    "102": ("Datum narození je nekorektní", 4),
+    "103": ("Státní příslušnost není v číselníku", 4),
+    "106": ("Číslo cestovního dokladu je nekorektní", 4),
+    "108": ("Datum do není vyšší než datum od", 4),
+    "112": ("Oznámeno pozdě", 0),
+    "150": ("Duplicitní záznam - data nebyla převzata", 4),
+}
+
+
+def _refused(codes: List[str]) -> bool:
+    """Whether any of these codes means the record was not taken over."""
+    return any(ERROR_CODES.get(code, ("", 4))[1] > ACCEPTED_MAX_SEVERITY for code in codes)
 
 
 def _load_state() -> Dict[str, List[str]]:
@@ -120,7 +149,8 @@ def _validate_header(header: ET.Element) -> List[str]:
     mark = _text(header, "uMark") or ""
     if not (12 <= len(idub) <= 14) or not idub.isalnum():
         codes.append("13")
-    if len(mark) != 5 or not mark.isalpha():
+    # Five alphanumerics per appendix 3; the police issue six for WS test accounts.
+    if len(mark) not in (5, 6) or not mark.isalnum():
         codes.append("13")
     if not _text(header, "uName"):
         codes.append("5")
@@ -133,12 +163,18 @@ def _validate_header(header: ET.Element) -> List[str]:
 
 
 def _validate_guest(guest: ET.Element, idub: str, seen: List[str]) -> Tuple[List[str], Optional[str]]:
-    """Return (error codes, dedupe fingerprint or None)."""
+    """Return (codes, dedupe fingerprint or None).
+
+    ``idub`` is accepted for symmetry with the header check but is not part of
+    the duplicate key: the police compare only the seven fields in answer A3.
+    """
     codes: List[str] = []
     surname = _text(guest, "cSurN")
+    first_name = _text(guest, "cFirstN")
     birth = _text(guest, "cDate")
     nationality = _text(guest, "cNati")
     document = _text(guest, "cDocN")
+    purpose = _text(guest, "cPurp")
     start = _parse_iso(_text(guest, "cFrom"))
     end = _parse_iso(_text(guest, "cUntil"))
 
@@ -153,15 +189,27 @@ def _validate_guest(guest: ET.Element, idub: str, seen: List[str]) -> Tuple[List
     if start and end and end <= start:
         codes.append("108")
 
-    # Reported late: three working days after accommodation began.
-    if start and date.today() > add_working_days(start, 3):
-        codes.append("112")
-
     fingerprint = None
-    if start and document and not codes:
-        fingerprint = f"{idub}|{document}|{start.isoformat()}"
+    if start and document and not _refused(codes):
+        fingerprint = "|".join(
+            (
+                start.isoformat(),
+                end.isoformat() if end else "",
+                (surname or "").upper(),
+                (first_name or "").upper(),
+                birth or "",
+                (nationality or "").upper(),
+                document.upper(),
+                purpose or "",
+            )
+        )
         if fingerprint in seen:
             codes.append("150")
+
+    # Reported late: three working days after accommodation began. Severity 0,
+    # so the record is still taken over.
+    if start and date.today() > add_working_days(start, 3) and not _refused(codes):
+        codes.append("112")
 
     return codes, fingerprint
 
@@ -266,16 +314,20 @@ async def ws_uby(request: Request):
 def _ciselnik(kind: str) -> str:
     entries: List[Dict[str, str]] = []
     if kind == "Chyby":
-        for code, (text, _correctable) in ERROR_CODES.items():
+        # The real layout (appendix 5 section 5.3.2): Kod2 the code, Kod3 the
+        # text, TextKratkyCZ the severity digit, TextENG / TextKratkyENG its
+        # name and meaning.
+        for code, (text, severity) in ERROR_CODES.items():
+            name, meaning = SEVERITY_TEXT[severity]
             entries.append(
                 {
                     "Id": "0",
                     "Kod2": f"ERR_CZE_{code.zfill(3)}",
                     "Kod3": text,
                     "TextCZ": "",
-                    "TextENG": "INFORMACE",
-                    "TextKratkyCZ": code,
-                    "TextKratkyENG": text,
+                    "TextENG": name,
+                    "TextKratkyCZ": str(severity),
+                    "TextKratkyENG": meaning,
                 }
             )
     elif kind == "UcelyPobytu":
@@ -398,18 +450,19 @@ def _zapis(root: ET.Element) -> str:
         # A header problem stops the whole batch being taken over.
         record_errors.append(";" + "".join(f"{code};" for code in codes))
         name = f"{_text(guest, 'cSurN') or '?'} {_text(guest, 'cFirstN') or ''}".strip()
+        accepted = not _refused(codes) and not _refused(header_codes)
         rows.append(
             {
                 "name": name,
                 "doc": _text(guest, "cDocN") or "?",
-                "status": "ok" if not codes and not header_codes else "bad",
-                "errors": ", ".join(ERROR_CODES.get(code, (code, True))[0] for code in codes),
+                "status": "ok" if accepted else "bad",
+                "errors": ", ".join(ERROR_CODES.get(code, (code, 4))[0] for code in codes),
             }
         )
-        if fingerprint and not codes:
+        if fingerprint and accepted:
             accepted_fingerprints.append(fingerprint)
 
-    if not header_codes and accepted_fingerprints:
+    if accepted_fingerprints:
         state["seen"] = (seen + accepted_fingerprints)[-5000:]
         _save_state(state)
 
