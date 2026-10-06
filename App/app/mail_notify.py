@@ -1740,6 +1740,63 @@ def _signup_footer(lang: str) -> List[Any]:
     ]
 
 
+def build_email_changed(*, side: str, new_masked: str, lang: Optional[str] = None) -> Dict[str, str]:
+    """The notice that an account's login e-mail changed (task 0002).
+
+    ``side`` is ``old`` for the address that no longer logs in and ``new`` for
+    the one that now does. Neither carries a link that signs anyone in: the
+    old address must not be able to undo the change, and the new one logs in
+    from the login page like every other address.
+    """
+    if side not in ("old", "new"):
+        raise ValueError(f"unknown side {side}")
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    support = config.OPERATOR_EMAIL
+    subject = _text(lang, "mail.email_changed.subject")
+    heading = _text(lang, "mail.email_changed.heading")
+    intro = _text(lang, f"mail.email_changed.intro_{side}", address=new_masked)
+    help_text = _text(lang, f"mail.email_changed.help_{side}", support=support)
+    footer = _signup_footer(lang)
+    text = "\n".join([intro, "", help_text, "", "--", *footer])
+    blocks = [
+        _block_heading(heading),
+        _block_paragraph(intro),
+        _block_paragraph(help_text, size=15),
+    ]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
+        ),
+    }
+
+
+def email_changed(*, user_id: int, old_email: str, new_email: str, stamp: str) -> int:
+    """Queue the change notice to the old and the new address. Returns how many."""
+    queued = 0
+    new_masked = mail.mask_email(new_email)
+    for side, address in (("old", old_email), ("new", new_email)):
+        if not address:
+            continue
+        content = build_email_changed(side=side, new_masked=new_masked)
+        if mail.enqueue(
+            kind="email_changed",
+            idempotency_key=f"email_changed:{user_id}:{stamp}:{side}",
+            to_email=address,
+            subject=content["subject"],
+            payload={
+                "text": content["text"],
+                "html": content["html"],
+                "lang": HOST_MAIL_LANGUAGE,
+                "reply_to": config.OPERATOR_EMAIL,
+            },
+            owner_user_id=user_id,
+        ):
+            queued += 1
+    return queued
+
+
 def build_signup_verify(
     *, lang: str, workspace: str, username: str, link: str
 ) -> Dict[str, str]:

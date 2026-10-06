@@ -5055,6 +5055,56 @@ for _lang, _strings in _LIFECYCLE_MAIL_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 
+# Task 0002: every account gets a login e-mail before the e-mail login update.
+_ACCOUNT_EMAIL_STRINGS = {
+    "en": {
+        "users.email.label": "Login e-mail",
+        "users.email.reason": "Reason for the change (for audit):",
+        "users.email.set": "Save login e-mail",
+        "users.email.change": "Change login e-mail",
+        "users.email.create_hint": "The address this host will log in with.",
+        "users.email.saved": "Login e-mail saved.",
+        "users.email.unchanged": "That is already the login e-mail.",
+        "users.email.error.invalid": "Enter a valid e-mail address.",
+        "users.email.error.taken": "Another account already uses that e-mail.",
+        "users.email.error.reason": "Give a reason of 5 to 300 characters for changing the login e-mail.",
+        "users.email.error.not_found": "That account no longer exists.",
+        "users.email.missing_banner": "Active accounts with no login e-mail: %(count)s. Add one to each before the e-mail login update.",
+        "users.status.no_email": "No login e-mail",
+        "notification.mail_kind.email_changed": "login e-mail change notice",
+        "mail.email_changed.subject": "Your UbyHost login e-mail changed",
+        "mail.email_changed.heading": "Login e-mail changed",
+        "mail.email_changed.intro_old": "UbyHost support changed the login e-mail of your account to %(address)s. This address no longer logs in.",
+        "mail.email_changed.intro_new": "This address is now the login e-mail of a UbyHost account.",
+        "mail.email_changed.help_old": "If you did not ask for this, write to %(support)s straight away.",
+        "mail.email_changed.help_new": "Log in from the UbyHost login page with this address. If you did not expect this, write to %(support)s.",
+    },
+    "cs": {
+        "users.email.label": "Přihlašovací e-mail",
+        "users.email.reason": "Důvod změny (pro audit):",
+        "users.email.set": "Uložit přihlašovací e-mail",
+        "users.email.change": "Změnit přihlašovací e-mail",
+        "users.email.create_hint": "Adresa, kterou se hostitel bude přihlašovat.",
+        "users.email.saved": "Přihlašovací e-mail uložen.",
+        "users.email.unchanged": "Tohle už je přihlašovací e-mail.",
+        "users.email.error.invalid": "Zadejte platnou e-mailovou adresu.",
+        "users.email.error.taken": "Tento e-mail už používá jiný účet.",
+        "users.email.error.reason": "Uveďte důvod změny přihlašovacího e-mailu (5 až 300 znaků).",
+        "users.email.error.not_found": "Tento účet už neexistuje.",
+        "users.email.missing_banner": "Aktivní účty bez přihlašovacího e-mailu: %(count)s. Před aktualizací na přihlášení e-mailem každému e-mail doplňte.",
+        "users.status.no_email": "Bez přihlašovacího e-mailu",
+        "notification.mail_kind.email_changed": "oznámení o změně přihlašovacího e-mailu",
+        "mail.email_changed.subject": "Přihlašovací e-mail k UbyHostu se změnil",
+        "mail.email_changed.heading": "Přihlašovací e-mail změněn",
+        "mail.email_changed.intro_old": "Podpora UbyHostu změnila přihlašovací e-mail vašeho účtu na %(address)s. Tato adresa už k přihlášení neslouží.",
+        "mail.email_changed.intro_new": "Tato adresa je nyní přihlašovacím e-mailem účtu v UbyHostu.",
+        "mail.email_changed.help_old": "Pokud jste o změnu nežádali, napište hned na %(support)s.",
+        "mail.email_changed.help_new": "Přihlaste se touto adresou na přihlašovací stránce UbyHostu. Pokud jste to nečekali, napište na %(support)s.",
+    },
+}
+for _lang, _strings in _ACCOUNT_EMAIL_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

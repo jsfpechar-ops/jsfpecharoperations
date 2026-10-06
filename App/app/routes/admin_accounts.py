@@ -23,6 +23,7 @@ from .. import (
     host_i18n,
     incidents,
     lifecycle_mail,
+    mail,
     mail_notify,
     rate_limit,
     security,
@@ -501,6 +502,9 @@ def _render_users(request: Request, **extra):
         "users.html",
         {
             "users": users,
+            "missing_email_count": sum(
+                1 for user in users if user["active"] and not (user["email"] or "").strip()
+            ),
             "signup_enabled": config.SIGNUP_ENABLED,
             "ads_export_days": signup.GOOGLE_EXPORT_DAYS,
             **extra,
@@ -516,6 +520,12 @@ async def user_create(request: Request):
     form = await request.form()
     password = _form_str(form, "password") or auth.generate_password()
     username = _form_str(form, "username")
+    raw_email = _form_str(form, "email")
+    email = mail.normalise_email(raw_email)
+    if raw_email and not email:
+        return _back("/admin/users", err=_flash(request, "users.email.error.invalid"))
+    if email and auth.email_taken(email):
+        return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
     try:
         user_id = auth.create_account(
             username,
@@ -523,6 +533,7 @@ async def user_create(request: Request):
             _form_str(form, "display_name"),
             role="host",
             must_change_password=True,
+            email=email,
         )
     except ValueError as exc:
         # ``auth`` raises catalogue keys, so the message travels as a key and is
@@ -539,6 +550,67 @@ async def user_create(request: Request):
         request,
         new_credential={"username": username, "password": password},
     )
+
+
+@router.post("/admin/users/{user_id}/email")
+async def user_email_set(user_id: int, request: Request):
+    """Set or change the address an account logs in with (task 0002).
+
+    Setting a first address needs no reason. Changing one does: it is the
+    support step for a host who lost their mailbox, so the audit row says why,
+    both addresses get a notice, and every session of the account ends.
+    """
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    if not target:
+        return _back("/admin/users", err=_flash(request, "users.email.error.not_found"))
+    form = await request.form()
+    email = mail.normalise_email(_form_str(form, "email"))
+    if not email:
+        return _back("/admin/users", err=_flash(request, "users.email.error.invalid"))
+    old_email = (target["email"] or "").strip().lower()
+    if email == old_email:
+        return _back("/admin/users", msg=_flash(request, "users.email.unchanged"))
+    reason = ""
+    if old_email:
+        reason = auth.support_reason(_form_str(form, "reason")) or ""
+        if not reason:
+            return _back("/admin/users", err=_flash(request, "users.email.error.reason"))
+    if auth.email_taken(email, except_user_id=user_id):
+        return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
+    try:
+        auth.set_account_email(user_id, email)
+    except Exception as exc:
+        if "UNIQUE constraint failed" in str(exc):
+            return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
+        raise
+    detail = f"to={mail.mask_email(email)}"
+    if old_email:
+        detail = f"from={mail.mask_email(old_email)} {detail} reason={reason}"
+    db.audit(
+        "email_changed" if old_email else "email_set",
+        detail,
+        actor=account["username"],
+        owner_user_id=user_id,
+    )
+    if old_email:
+        mail_notify.email_changed(
+            user_id=user_id, old_email=old_email, new_email=email, stamp=db.utcnow()
+        )
+    response = _back("/admin/users", msg=_flash(request, "users.email.saved"))
+    if old_email and user_id == account["id"]:
+        # The change ended every session of this account, the admin's own
+        # included; hand this browser a fresh one.
+        refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+        remember = auth.session_remembers(request)
+        auth.attach_session(
+            response,
+            auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+            remember=remember,
+        )
+    return response
 
 
 @router.post("/admin/users/{user_id}/password")

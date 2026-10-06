@@ -45,6 +45,9 @@ KINDS = (
     "signup_verify",
     "signup_exists",
     "signup_admin",
+    # Task 0002: the notices that the login e-mail of an account changed, one
+    # to the old address and one to the new.
+    "email_changed",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -76,6 +79,7 @@ HOST_KINDS = (
     "signup_verify",
     "signup_exists",
     "signup_admin",
+    "email_changed",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.

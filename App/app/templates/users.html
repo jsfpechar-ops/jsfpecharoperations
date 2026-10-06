@@ -8,6 +8,12 @@
   t('users.lede')
 ) }}
 
+{% if missing_email_count %}
+<div class="panel" role="status" id="users-missing-email">
+  <p class="small"><strong>{{ t('users.email.missing_banner', count=missing_email_count) }}</strong></p>
+</div>
+{% endif %}
+
 {% if new_credential %}
 <div class="panel credential-once" role="status">
   <h2>{% if new_credential.reset %}{{ t('users.credential.reset_title') }}{% else %}{{ t('users.credential.created_title') }}{% endif %}</h2>
@@ -41,7 +47,7 @@
             <td data-label="{{ t('users.table.user') }}">
               <strong>{{ user.display_name or user.username }}</strong>
               <div class="small muted mono">{{ user.username }}</div>
-              {% if user.email %}<div class="small muted">{{ user.email }}</div>{% endif %}
+              {% if user.email %}<div class="small muted">{{ user.email }}</div>{% elif user.active %}<span class="pill amber">{{ t('users.status.no_email') }}</span>{% endif %}
               {% if user.signup_source %}<div class="small muted">{{ t('users.source', source=t('users.source.' ~ user.signup_source)) }}</div>{% endif %}
             </td>
             <td data-label="{{ t('users.table.role') }}">{{ user.role | capitalize }}</td>
@@ -53,8 +59,18 @@
               {% else %}<span class="pill green">{{ t('users.status.active') }}</span>{% endif %}
             </td>
             <td class="row-actions" data-label="">
-              {% if user.id != current_user.id %}
                 {{ row_menu_begin(t('users.menu.aria')) }}
+                  <form method="post" action="/admin/users/{{ user.id }}/email" class="row-menu-form">
+                    <label class="small muted" for="user-email-{{ user.id }}">{{ t('users.email.label') }}</label>
+                    <input type="email" id="user-email-{{ user.id }}" name="email" required maxlength="254"
+                           autocomplete="off" autocapitalize="none" spellcheck="false" value="{{ user.email or '' }}">
+                    {% if user.email %}
+                    <label class="small muted" for="user-email-reason-{{ user.id }}">{{ t('users.email.reason') }}</label>
+                    <input type="text" id="user-email-reason-{{ user.id }}" name="reason" required minlength="5" maxlength="300">
+                    {% endif %}
+                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.email.change') if user.email else t('users.email.set') }}</button>
+                  </form>
+              {% if user.id != current_user.id %}
                   <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
                     <label class="small muted" for="support-reason-{{ user.id }}">{{ t('users.menu.open_workspace_reason') }}</label>
                     <input type="text" id="support-reason-{{ user.id }}" name="reason" maxlength="300" placeholder="{{ t('users.menu.open_workspace_reason_optional') }}">
@@ -86,8 +102,8 @@
                     <input type="text" name="confirm" class="mono" required>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.schedule_deletion') }}</button>
                   </form>
-                {{ row_menu_end() }}
               {% endif %}
+                {{ row_menu_end() }}
             </td>
           </tr>
         {% endfor %}
@@ -113,6 +129,12 @@
       <div class="field">
         <label for="display_name">{{ t('users.create.name') }}</label>
         <input type="text" id="display_name" name="display_name" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="email">{{ t('users.email.label') }}</label>
+        <input type="email" id="email" name="email" maxlength="254" autocomplete="off"
+               autocapitalize="none" spellcheck="false">
+        <div class="hint">{{ t('users.email.create_hint') }}</div>
       </div>
       <div class="field">
         <label for="username">{{ t('users.create.username') }}</label>

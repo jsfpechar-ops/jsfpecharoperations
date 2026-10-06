@@ -570,6 +570,7 @@ def create_account(
     display_name: str = "",
     role: str = "host",
     must_change_password: bool = True,
+    email: str = "",
 ) -> int:
     username = normalise_username(username)
     if not username_is_valid(username):
@@ -579,19 +580,44 @@ def create_account(
         raise ValueError(error)
     if role not in ("admin", "host"):
         raise ValueError("Unknown account role.")
-    return db.insert(
-        "user_account",
-        {
-            "username": username,
-            "display_name": (display_name or "").strip(),
-            "password_hash": hash_password(password),
-            "role": role,
-            "active": 1,
-            "must_change_password": 1 if must_change_password else 0,
-            "session_version": 1,
-            "created_at": db.utcnow(),
-        },
+    values = {
+        "username": username,
+        "display_name": (display_name or "").strip(),
+        "password_hash": hash_password(password),
+        "role": role,
+        "active": 1,
+        "must_change_password": 1 if must_change_password else 0,
+        "session_version": 1,
+        "created_at": db.utcnow(),
+    }
+    if email:
+        values["email"] = email
+    return db.insert("user_account", values)
+
+
+def email_taken(email: str, except_user_id: Optional[int] = None) -> bool:
+    """Whether another account already logs in with this address."""
+    row = db.query_one(
+        "SELECT id FROM user_account WHERE email = ? AND id != ?",
+        (email, int(except_user_id or 0)),
     )
+    return bool(row)
+
+
+def set_account_email(user_id: int, email: str) -> None:
+    """Make ``email`` the account's login address.
+
+    The address is unverified until the host proves it by using a link sent
+    there, so ``email_verified_at`` is cleared. A change from an existing
+    address also ends every session: whoever held the old address must not
+    keep a session the new owner cannot see.
+    """
+    current = db.query_one("SELECT email FROM user_account WHERE id = ?", (user_id,))
+    changing = bool(current and (current["email"] or "").strip())
+    sql = "UPDATE user_account SET email = ?, email_verified_at = NULL"
+    if changing:
+        sql += ", session_version = session_version + 1"
+    db.execute(sql + " WHERE id = ?", (email, user_id))
 
 
 def end_all_sessions(user_id: int) -> None:
