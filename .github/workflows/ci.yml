@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # When a merge to main does not queue CI (seen after #291), run this on main
+  # so production deploy's require_green_ci gate can pass.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
