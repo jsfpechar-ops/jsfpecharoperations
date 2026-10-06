@@ -1,6 +1,6 @@
 # 0001: Context system rollout
 
-Status: review
+Status: done
 Depends on: none | Base commit: the owner's upload commit on `main` that adds `docs/plans/context-rollout/` (parent `d72c870`) | Branch: task/0001-context-rollout
 Executor: Cursor (Cloud or Local) | composer, Kimi or GLM | Fits one session
 

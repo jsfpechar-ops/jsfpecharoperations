@@ -12,6 +12,8 @@ Two sentences: what changes, and why it matters.
 
 The rules that apply, pasted in. Exact code excerpts, each with its file path. If an excerpt isn't found verbatim, STOP (§8).
 
+**Context-rollout upload (orchestrator):** put files **flat** in the rollout bundle folder under docs/plans (no subfolder). MANIFEST and place_files script at that root.
+
 ## 3. Files
 
 | Path | Action | What |

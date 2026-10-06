@@ -1,6 +1,8 @@
 # 0001 context rollout — report
 
-Status: review
+Status: done
+
+**Review (2026-10-06, Opus):** Approved. PR #281 was merged before review; CI was green. PR/branch cleanup (§7 last item) still owner-run (step 12, `APPLY=1`).
 
 ## 1. `git diff --stat main` (last 5 lines)
 

@@ -90,3 +90,4 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
 | K-O04 | Low open | requirements.txt, Caddyfile | Pillow undeclared; dev deps use >=; HSTS includeSubDomains missing | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever, so cost grows with retention | AR-43 |
+| K-W01 | Med decision | GitHub jsfpechar-ops/jsfpecharoperations | ~30 stale open PRs (wp-stack etc.); owner runs task 0001 step 12 with APPLY=1; do not close #278 or #279 | task 0001 |
