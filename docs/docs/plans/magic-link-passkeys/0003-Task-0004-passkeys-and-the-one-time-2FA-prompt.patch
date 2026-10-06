@@ -1,0 +1,2307 @@
+From 0cb1b038bf3d4ee02a762e34cc167c5dcd52d820 Mon Sep 17 00:00:00 2001
+From: UbyHost orchestrator <orchestrator@users.noreply.github.com>
+Date: Tue, 6 Oct 2026 14:50:05 +0200
+Subject: [PATCH 3/3] Task 0004: passkeys and the one-time 2FA prompt
+
+Optional WebAuthn passkeys (py_webauthn): add, rename and remove in Settings >
+Security, log in from the login page (button first, autofill too). Passkey
+login skips TOTP. One-time prompt after the first login offers a passkey first,
+then an authenticator app. The e-mail link stays the recovery path.
+---
+ App/app/host_i18n.py                     |  88 +++++
+ App/app/mail.py                          |   3 +
+ App/app/mail_notify.py                   |  48 +++
+ App/app/migrations/0006_passkeys.sql     |  45 +++
+ App/app/passkeys.py                      | 422 +++++++++++++++++++++++
+ App/app/retention.py                     |  19 +
+ App/app/routes/admin.py                  |  11 +
+ App/app/routes/passkeys.py               | 231 +++++++++++++
+ App/app/static/app.css                   |  22 ++
+ App/app/static/passkeys.js               | 230 ++++++++++++
+ App/app/templates/auth_base.html         |   2 +-
+ App/app/templates/base.html              |  32 +-
+ App/app/templates/login.html             |  17 +-
+ App/app/templates/public_legal_base.html |   2 +-
+ App/app/templates/settings.html          |  41 +++
+ App/app/templating.py                    |  41 +++
+ App/requirements.lock                    |  85 +++++
+ App/requirements.txt                     |   1 +
+ App/tests/test_claim_mail.py             |   1 +
+ App/tests/test_passkeys.py               | 414 ++++++++++++++++++++++
+ App/tests/webauthn_soft.py               | 132 +++++++
+ docs/SECURITY.md                         |   1 +
+ docs/context/architecture.md             |   2 +-
+ docs/context/decisions.md                |   2 +
+ docs/privacy/RETENTION.md                |   2 +
+ docs/privacy/ROPA.md                     |   2 +-
+ 26 files changed, 1889 insertions(+), 7 deletions(-)
+ create mode 100644 App/app/migrations/0006_passkeys.sql
+ create mode 100644 App/app/passkeys.py
+ create mode 100644 App/app/routes/passkeys.py
+ create mode 100644 App/app/static/passkeys.js
+ create mode 100644 App/tests/test_passkeys.py
+ create mode 100644 App/tests/webauthn_soft.py
+
+diff --git a/App/app/host_i18n.py b/App/app/host_i18n.py
+index 327b9d2..4c66f9f 100644
+--- a/App/app/host_i18n.py
++++ b/App/app/host_i18n.py
+@@ -5272,6 +5272,94 @@ _EMAIL_LOGIN_STRINGS = {
+ for _lang, _strings in _EMAIL_LOGIN_STRINGS.items():
+     STRINGS[_lang].update(_strings)
+ 
++# Task 0004: passkeys and the one-time "secure your account" prompt.
++_PASSKEY_STRINGS = {
++    "en": {
++        "login.passkey": "Log in with a passkey",
++        "login.passkey_or": "or get a login link by e-mail",
++        "passkeys.title": "Passkeys",
++        "passkeys.help": "Log in with Face ID, a fingerprint or your device PIN instead of opening your inbox. The e-mail link keeps working, so losing a device never locks you out.",
++        "passkeys.add": "Add a passkey",
++        "passkeys.unsupported": "This browser cannot create passkeys. Try your phone, or a current Safari, Chrome, Edge or Firefox.",
++        "passkeys.unavailable": "Passkeys need the site's own https address. They are not available on this installation.",
++        "passkeys.added_on": "Added %(date)s",
++        "passkeys.last_used": "last used %(date)s",
++        "passkeys.never_used": "not used yet",
++        "passkeys.remove": "Remove",
++        "passkeys.remove_confirm": "Remove the passkey \u201c%(name)s\u201d? That device then logs in with the e-mail link.",
++        "passkeys.rename": "Rename",
++        "passkeys.name": "Name",
++        "passkeys.rename_action": "Save name",
++        "passkeys.default_name": "Passkey",
++        "passkeys.error.failed": "The passkey was not saved. Please try again.",
++        "passkeys.error.login_failed": "That passkey did not log you in. Try again, or get a login link by e-mail.",
++        "passkeys.error.signed_out": "Your session ended. Log in again, then add the passkey.",
++        "passkeys.error.unavailable": "Passkeys are not available on this installation.",
++        "passkeys.error.too_many": "This account already has 10 passkeys. Remove one first.",
++        "passkeys.error.rate_limited": "Too many tries from this connection. Wait 15 minutes, or use the e-mail link.",
++        "flash.passkeys.added": "Passkey added. Next time, log in with it.",
++        "flash.passkeys.removed": "Passkey removed.",
++        "flash.passkeys.renamed": "Passkey renamed.",
++        "flash.passkeys.not_found": "That passkey is not on your account.",
++        "security_prompt.title": "Add a second way in?",
++        "security_prompt.lede": "You log in with a link from your inbox, and that always works. You can make logging in faster, or add a code on top of the link.",
++        "security_prompt.passkey": "Add a passkey",
++        "security_prompt.passkey_help": "Face ID, a fingerprint or your device PIN. No inbox, no code.",
++        "security_prompt.totp": "Use an authenticator app",
++        "security_prompt.totp_help": "A six-digit code from an app on your phone, asked after the e-mail link.",
++        "security_prompt.later": "Not now",
++        "security_prompt.footnote": "We ask only this once. Both options stay in Settings \u2192 Security.",
++        "mail.passkey_added.subject": "A passkey was added to your UbyHost account",
++        "mail.passkey_added.heading": "New passkey",
++        "mail.passkey_added.intro": "A passkey named \u201c%(name)s\u201d can now log in to your UbyHost account.",
++        "mail.passkey_added.help": "If this was not you, log in with the e-mail link, remove it in Settings \u2192 Security, and write to %(support)s.",
++        "notification.mail_kind.passkey_added": "new passkey notice",
++    },
++    "cs": {
++        "login.passkey": "Přihlásit se pomocí klíče (passkey)",
++        "login.passkey_or": "nebo si nechte poslat odkaz e-mailem",
++        "passkeys.title": "Přístupové klíče (passkeys)",
++        "passkeys.help": "Přihlaste se pomocí Face ID, otisku prstu nebo PINu zařízení, bez otvírání schránky. Odkaz e-mailem dál funguje, takže ztráta zařízení vás nikdy nezamkne.",
++        "passkeys.add": "Přidat klíč",
++        "passkeys.unsupported": "Tento prohlížeč neumí vytvořit přístupový klíč. Zkuste telefon nebo aktuální Safari, Chrome, Edge či Firefox.",
++        "passkeys.unavailable": "Přístupové klíče potřebují vlastní https adresu webu. V této instalaci nejsou k dispozici.",
++        "passkeys.added_on": "Přidán %(date)s",
++        "passkeys.last_used": "naposledy použit %(date)s",
++        "passkeys.never_used": "zatím nepoužit",
++        "passkeys.remove": "Odebrat",
++        "passkeys.remove_confirm": "Odebrat klíč \u201e%(name)s\u201c? Toto zařízení se pak přihlásí odkazem z e-mailu.",
++        "passkeys.rename": "Přejmenovat",
++        "passkeys.name": "Název",
++        "passkeys.rename_action": "Uložit název",
++        "passkeys.default_name": "Přístupový klíč",
++        "passkeys.error.failed": "Klíč se neuložil. Zkuste to prosím znovu.",
++        "passkeys.error.login_failed": "Tímto klíčem se přihlásit nepodařilo. Zkuste to znovu, nebo si nechte poslat odkaz e-mailem.",
++        "passkeys.error.signed_out": "Vaše přihlášení vypršelo. Přihlaste se znovu a pak klíč přidejte.",
++        "passkeys.error.unavailable": "V této instalaci přístupové klíče nejsou k dispozici.",
++        "passkeys.error.too_many": "Účet už má 10 klíčů. Nejdřív jeden odeberte.",
++        "passkeys.error.rate_limited": "Z tohoto připojení bylo příliš mnoho pokusů. Počkejte 15 minut, nebo použijte odkaz z e-mailu.",
++        "flash.passkeys.added": "Klíč je přidán. Příště se přihlaste jím.",
++        "flash.passkeys.removed": "Klíč je odebrán.",
++        "flash.passkeys.renamed": "Klíč je přejmenován.",
++        "flash.passkeys.not_found": "Tento klíč k vašemu účtu nepatří.",
++        "security_prompt.title": "Přidat druhý způsob přihlášení?",
++        "security_prompt.lede": "Přihlašujete se odkazem z e-mailu a ten funguje vždy. Přihlášení si můžete zrychlit, nebo k odkazu přidat kód.",
++        "security_prompt.passkey": "Přidat přístupový klíč",
++        "security_prompt.passkey_help": "Face ID, otisk prstu nebo PIN zařízení. Bez schránky, bez kódu.",
++        "security_prompt.totp": "Použít ověřovací aplikaci",
++        "security_prompt.totp_help": "Šestimístný kód z aplikace v telefonu, zadáte ho po odkazu z e-mailu.",
++        "security_prompt.later": "Teď ne",
++        "security_prompt.footnote": "Ptáme se jen jednou. Obě možnosti najdete v Nastavení \u2192 Zabezpečení.",
++        "mail.passkey_added.subject": "K vašemu účtu UbyHost byl přidán přístupový klíč",
++        "mail.passkey_added.heading": "Nový přístupový klíč",
++        "mail.passkey_added.intro": "Klíčem \u201e%(name)s\u201c se teď lze přihlásit k vašemu účtu UbyHost.",
++        "mail.passkey_added.help": "Pokud jste to nebyli vy, přihlaste se odkazem z e-mailu, klíč odeberte v Nastavení \u2192 Zabezpečení a napište na %(support)s.",
++        "notification.mail_kind.passkey_added": "oznámení o novém přístupovém klíči",
++    },
++}
++for _lang, _strings in _PASSKEY_STRINGS.items():
++    STRINGS[_lang].update(_strings)
++
+ def normalise_language(value: str | None) -> str:
+     value = (value or "").lower()[:2]
+     return value if value in LANGUAGES else DEFAULT_LANGUAGE
+diff --git a/App/app/mail.py b/App/app/mail.py
+index 500b14a..9cb7008 100644
+--- a/App/app/mail.py
++++ b/App/app/mail.py
+@@ -53,6 +53,8 @@ KINDS = (
+     "login_link",
+     "account_invite",
+     "email_confirm",
++    # Task 0004: the notice that a passkey was added to the account.
++    "passkey_added",
+ )
+ 
+ # The kinds addressed to a guest rather than to the host. A guest has no
+@@ -88,6 +90,7 @@ HOST_KINDS = (
+     "login_link",
+     "account_invite",
+     "email_confirm",
++    "passkey_added",
+ )
+ # The only kinds a host can unsubscribe from (WP12). Everything else is service
+ # mail about filings, stays or the account and ignores the opt-out flag.
+diff --git a/App/app/mail_notify.py b/App/app/mail_notify.py
+index db1a248..78ecfc3 100644
+--- a/App/app/mail_notify.py
++++ b/App/app/mail_notify.py
+@@ -1889,6 +1889,54 @@ def email_changed(
+     return queued
+ 
+ 
++def build_passkey_added(*, name: str, lang: Optional[str] = None) -> Dict[str, str]:
++    """The notice that a passkey was added (task 0004). It carries no link.
++
++    A passkey is a way into the account, so its owner hears about every new
++    one: if someone else added it from a borrowed session, this is how the
++    host finds out and removes it in Settings.
++    """
++    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
++    subject = _text(lang, "mail.passkey_added.subject")
++    heading = _text(lang, "mail.passkey_added.heading")
++    intro = _text(lang, "mail.passkey_added.intro", name=name)
++    help_text = _text(lang, "mail.passkey_added.help", support=config.OPERATOR_EMAIL)
++    footer = _signup_footer(lang)
++    text = "\n".join([intro, "", help_text, "", "--", *footer])
++    blocks = [
++        _block_heading(heading),
++        _block_paragraph(intro),
++        _block_paragraph(help_text, size=15),
++    ]
++    return {
++        "subject": subject,
++        "text": text,
++        "html": _shell(
++            lang=lang, title=heading, preheader=intro, blocks=blocks, footer_lines=footer
++        ),
++    }
++
++
++def passkey_added(*, user_id: int, to_email: str, passkey_id: int, name: str) -> Optional[int]:
++    """Queue the passkey notice to the account's login address."""
++    if not to_email:
++        return None
++    content = build_passkey_added(name=name)
++    return mail.enqueue(
++        kind="passkey_added",
++        idempotency_key=f"passkey_added:{user_id}:{passkey_id}",
++        to_email=to_email,
++        subject=content["subject"],
++        payload={
++            "text": content["text"],
++            "html": content["html"],
++            "lang": HOST_MAIL_LANGUAGE,
++            "reply_to": config.OPERATOR_EMAIL,
++        },
++        owner_user_id=user_id,
++    )
++
++
+ def build_signup_verify(
+     *, lang: str, workspace: str, username: str, link: str
+ ) -> Dict[str, str]:
+diff --git a/App/app/migrations/0006_passkeys.sql b/App/app/migrations/0006_passkeys.sql
+new file mode 100644
+index 0000000..0699572
+--- /dev/null
++++ b/App/app/migrations/0006_passkeys.sql
+@@ -0,0 +1,45 @@
++-- Task 0004: passkeys (WebAuthn) as an optional, faster way to log in, and the
++-- one-time "secure your account" prompt.
++--
++-- A passkey row holds the public half of a key pair that lives on the host's
++-- device or in their password manager. Nothing here logs anyone in: a copy of
++-- the database has no private key. credential_id and public_key are
++-- base64url text so the table moves to Postgres unchanged.
++--
++-- sign_count is the authenticator's counter. Most synced passkeys always
++-- report 0; a key that once counted and then goes backwards was probably
++-- cloned, and the login is refused (passkeys.py).
++CREATE TABLE IF NOT EXISTS passkey (
++    id               INTEGER PRIMARY KEY AUTOINCREMENT,
++    user_account_id  INTEGER NOT NULL REFERENCES user_account(id) ON DELETE CASCADE,
++    credential_id    TEXT NOT NULL UNIQUE,
++    public_key       TEXT NOT NULL,
++    sign_count       INTEGER NOT NULL DEFAULT 0,
++    transports       TEXT,
++    name             TEXT NOT NULL,
++    backed_up        INTEGER NOT NULL DEFAULT 0,
++    created_at       TEXT NOT NULL,
++    last_used_at     TEXT
++);
++CREATE INDEX IF NOT EXISTS idx_passkey_user ON passkey (user_account_id);
++
++-- One row per WebAuthn ceremony the server started. Only the SHA-256 of the
++-- challenge is kept; a row is spent once and dies after 5 minutes, and the
++-- retention job deletes it a day later. purpose: 'register' (bound to the
++-- account adding a passkey) or 'login' (no account yet).
++CREATE TABLE IF NOT EXISTS webauthn_challenge (
++    id               INTEGER PRIMARY KEY AUTOINCREMENT,
++    challenge_hash   TEXT NOT NULL UNIQUE,
++    purpose          TEXT NOT NULL,
++    user_account_id  INTEGER REFERENCES user_account(id) ON DELETE CASCADE,
++    created_at       TEXT NOT NULL,
++    expires_at       TEXT NOT NULL,
++    used_at          TEXT
++);
++CREATE INDEX IF NOT EXISTS idx_webauthn_challenge_expires ON webauthn_challenge (expires_at);
++
++-- The random, opaque user handle a passkey stores for this account (never the
++-- e-mail or the database id), base64url.
++ALTER TABLE user_account ADD COLUMN webauthn_user_handle TEXT;
++-- When the one-time "secure your account" prompt was shown. NULL: not yet.
++ALTER TABLE user_account ADD COLUMN two_factor_prompted_at TEXT;
+diff --git a/App/app/passkeys.py b/App/app/passkeys.py
+new file mode 100644
+index 0000000..36ec7c9
+--- /dev/null
++++ b/App/app/passkeys.py
+@@ -0,0 +1,422 @@
++"""Passkeys (WebAuthn): an optional, faster way to log in (task 0004).
++
++A passkey never replaces the e-mail link. The link always works, so a host who
++loses every device still gets in; a passkey only saves the trip to the inbox.
++
++How the pieces fit:
++
++* The relying party is the host name of ``UBYHOST_PUBLIC_BASE_URL``
++  (``ubyhost.com`` in production). WebAuthn refuses IP addresses, so on a
++  plain ``http://127.0.0.1`` run passkeys are simply not offered; use
++  ``http://localhost:8080`` to try them locally.
++* Every ceremony starts on the server: it mints a random challenge, stores
++  only its SHA-256 for five minutes, and hands the options to the browser. The
++  browser's answer carries the challenge back inside ``clientDataJSON``, so no
++  cookie or extra field is needed to find the row again. A challenge is spent
++  once, which is what stops a replayed answer.
++* Passkeys are discoverable ("resident") and need user verification (Face ID,
++  fingerprint, device PIN). That makes one a second factor on its own, so a
++  passkey login skips the authenticator-app code.
++* Phishing: the browser binds every answer to the origin it ran on, and the
++  server checks that origin and the relying-party hash. A look-alike site gets
++  an answer the server rejects.
++* Clones: an authenticator that counts its signatures and then reports a lower
++  number than last time was probably copied. The login is refused and audited.
++  Synced passkeys (iCloud Keychain, Google Password Manager, 1Password) always
++  report 0, which is fine.
++
++Only the public key, the credential id, the counter, a name the host can edit
++and two timestamps are stored. Removing a passkey deletes its row.
++"""
++from __future__ import annotations
++
++import hashlib
++import json
++from datetime import datetime, timedelta, timezone
++from typing import Any, Dict, List, Optional
++from urllib.parse import urlsplit
++
++from webauthn import (
++    generate_authentication_options,
++    generate_registration_options,
++    options_to_json,
++    verify_authentication_response,
++    verify_registration_response,
++)
++from webauthn.helpers import base64url_to_bytes, bytes_to_base64url, generate_user_handle
++from webauthn.helpers.exceptions import (
++    InvalidAuthenticationResponse,
++    InvalidCBORData,
++    InvalidJSONStructure,
++    InvalidRegistrationResponse,
++)
++from webauthn.helpers.structs import (
++    AuthenticatorSelectionCriteria,
++    AuthenticatorTransport,
++    PublicKeyCredentialDescriptor,
++    ResidentKeyRequirement,
++    UserVerificationRequirement,
++)
++
++from . import config, db, rate_limit
++
++REGISTER = "register"
++LOGIN = "login"
++
++RP_NAME = "UbyHost"
++CHALLENGE_TTL = timedelta(minutes=5)
++# The browser gives up after this long; a little shorter than the row lives.
++TIMEOUT_MS = 4 * 60 * 1000
++# Rows are deleted this long after they expire (retention.py).
++PURGE_AFTER = timedelta(days=1)
++# A host has a phone, a laptop and a spare key; ten is plenty.
++MAX_PER_ACCOUNT = 10
++NAME_MAX = 60
++
++# Budgets per connection, in the same table as the other login limits.
++_WINDOW = 15 * 60
++OPTIONS_MAX_WINDOW = 30
++FAIL_MAX_WINDOW = 20
++
++_VERIFY_ERRORS = (
++    InvalidAuthenticationResponse,
++    InvalidRegistrationResponse,
++    InvalidJSONStructure,
++    InvalidCBORData,
++    KeyError,
++    TypeError,
++    ValueError,
++)
++
++
++class PasskeyError(Exception):
++    """The browser's answer did not prove anything. ``reason`` is for the audit."""
++
++    def __init__(self, reason: str):
++        super().__init__(reason)
++        self.reason = reason
++
++
++# --- relying party ---------------------------------------------------------
++
++
++def _base() -> tuple:
++    parts = urlsplit(config.PUBLIC_BASE_URL)
++    return (parts.scheme or "").lower(), (parts.hostname or "").lower(), parts.port
++
++
++def rp_id() -> str:
++    return _base()[1]
++
++
++def expected_origin() -> str:
++    scheme, host, port = _base()
++    default = {"https": 443, "http": 80}.get(scheme)
++    return f"{scheme}://{host}" + (f":{port}" if port and port != default else "")
++
++
++def available() -> bool:
++    """Whether this deployment can offer passkeys at all.
++
++    WebAuthn needs a host name (never an IP address) and HTTPS, except on
++    ``localhost``, which browsers treat as secure for development.
++    """
++    scheme, host, _port = _base()
++    if not host or host.replace(".", "").isdigit() or ":" in host:
++        return False
++    return scheme == "https" or host == "localhost"
++
++
++# --- challenges --------------------------------------------------------------
++
++
++def _now() -> datetime:
++    return datetime.now(timezone.utc)
++
++
++def _iso(moment: datetime) -> str:
++    return moment.isoformat()
++
++
++def _hash(challenge: bytes) -> str:
++    return hashlib.sha256(challenge).hexdigest()
++
++
++def _store_challenge(challenge: bytes, purpose: str, user_id: Optional[int]) -> None:
++    now = _now()
++    db.insert(
++        "webauthn_challenge",
++        {
++            "challenge_hash": _hash(challenge),
++            "purpose": purpose,
++            "user_account_id": user_id,
++            "created_at": _iso(now),
++            "expires_at": _iso(now + CHALLENGE_TTL),
++        },
++    )
++
++
++def _spend_challenge(credential: Dict[str, Any], purpose: str, user_id: Optional[int]) -> bytes:
++    """Find and spend the challenge the browser signed. Raises if none is live."""
++    try:
++        client_data = json.loads(
++            base64url_to_bytes(credential["response"]["clientDataJSON"]).decode("utf-8")
++        )
++        challenge = base64url_to_bytes(client_data["challenge"])
++    except (KeyError, TypeError, ValueError, UnicodeDecodeError) as exc:
++        raise PasskeyError("malformed") from exc
++    now = _iso(_now())
++    row = db.query_one(
++        "SELECT * FROM webauthn_challenge WHERE challenge_hash = ? AND used_at IS NULL "
++        "AND expires_at > ?",
++        (_hash(challenge), now),
++    )
++    if not row or row["purpose"] != purpose:
++        raise PasskeyError("challenge")
++    if purpose == REGISTER and row["user_account_id"] != user_id:
++        raise PasskeyError("challenge")
++    if not db.update_if(
++        "webauthn_challenge", row["id"], {"used_at": now}, {"used_at": None},
++        extra_where="expires_at > ?", extra_params=(now,),
++    ):
++        raise PasskeyError("challenge")
++    return challenge
++
++
++def options_blocked(ip_key: str) -> bool:
++    return rate_limit.blocked("passkey_options", ip_key, OPTIONS_MAX_WINDOW, _WINDOW)
++
++
++def record_options(ip_key: str) -> None:
++    rate_limit.record("passkey_options", ip_key)
++
++
++def failures_blocked(ip_key: str) -> bool:
++    return rate_limit.blocked("passkey_fail", ip_key, FAIL_MAX_WINDOW, _WINDOW)
++
++
++def record_failure(ip_key: str) -> None:
++    rate_limit.record("passkey_fail", ip_key)
++
++
++# --- reading -----------------------------------------------------------------
++
++
++def for_account(user_id: int) -> List[Any]:
++    return db.query(
++        "SELECT id, name, created_at, last_used_at, backed_up FROM passkey "
++        "WHERE user_account_id = ? ORDER BY id",
++        (int(user_id),),
++    )
++
++
++def count_for(user_id: int) -> int:
++    row = db.query_one(
++        "SELECT COUNT(*) AS n FROM passkey WHERE user_account_id = ?", (int(user_id),)
++    )
++    return int(row["n"]) if row else 0
++
++
++def _user_handle(account: Any) -> bytes:
++    """The account's opaque WebAuthn handle, made on first use."""
++    current = account["webauthn_user_handle"]
++    if current:
++        return base64url_to_bytes(current)
++    handle = generate_user_handle()
++    encoded = bytes_to_base64url(handle)
++    if not db.update_if(
++        "user_account", int(account["id"]), {"webauthn_user_handle": encoded},
++        {"webauthn_user_handle": None},
++    ):
++        # Another tab won the race; use what it stored.
++        row = db.query_one(
++            "SELECT webauthn_user_handle FROM user_account WHERE id = ?", (int(account["id"]),)
++        )
++        return base64url_to_bytes(row["webauthn_user_handle"])
++    return handle
++
++
++# --- registration ------------------------------------------------------------
++
++
++def registration_options(account: Any) -> str:
++    """Options JSON for adding a passkey to ``account``."""
++    existing = db.query(
++        "SELECT credential_id, transports FROM passkey WHERE user_account_id = ?",
++        (int(account["id"]),),
++    )
++    options = generate_registration_options(
++        rp_id=rp_id(),
++        rp_name=RP_NAME,
++        user_id=_user_handle(account),
++        user_name=account["email"] or account["username"],
++        user_display_name=account["display_name"] or account["email"] or account["username"],
++        timeout=TIMEOUT_MS,
++        authenticator_selection=AuthenticatorSelectionCriteria(
++            resident_key=ResidentKeyRequirement.REQUIRED,
++            user_verification=UserVerificationRequirement.REQUIRED,
++        ),
++        exclude_credentials=[
++            PublicKeyCredentialDescriptor(
++                id=base64url_to_bytes(row["credential_id"]),
++                transports=_transports(row["transports"]),
++            )
++            for row in existing
++        ],
++    )
++    _store_challenge(options.challenge, REGISTER, int(account["id"]))
++    return options_to_json(options)
++
++
++def _transports(raw: Optional[str]) -> Optional[List[AuthenticatorTransport]]:
++    values = []
++    for item in (raw or "").split(","):
++        try:
++            values.append(AuthenticatorTransport(item))
++        except ValueError:
++            continue
++    return values or None
++
++
++def clean_name(name: str, fallback: str) -> str:
++    text = " ".join(str(name or "").split())[:NAME_MAX]
++    return text or fallback
++
++
++def register(account: Any, credential: Dict[str, Any], name: str) -> int:
++    """Verify the browser's answer and store the new passkey. Returns its id."""
++    if count_for(int(account["id"])) >= MAX_PER_ACCOUNT:
++        raise PasskeyError("too_many")
++    challenge = _spend_challenge(credential, REGISTER, int(account["id"]))
++    try:
++        verified = verify_registration_response(
++            credential=credential,
++            expected_challenge=challenge,
++            expected_rp_id=rp_id(),
++            expected_origin=expected_origin(),
++            require_user_verification=True,
++        )
++    except _VERIFY_ERRORS as exc:
++        raise PasskeyError("invalid") from exc
++    credential_id = bytes_to_base64url(verified.credential_id)
++    if db.query_one("SELECT id FROM passkey WHERE credential_id = ?", (credential_id,)):
++        raise PasskeyError("duplicate")
++    transports = (credential.get("response") or {}).get("transports") or []
++    return db.insert(
++        "passkey",
++        {
++            "user_account_id": int(account["id"]),
++            "credential_id": credential_id,
++            "public_key": bytes_to_base64url(verified.credential_public_key),
++            "sign_count": int(verified.sign_count or 0),
++            "transports": ",".join(t for t in transports if isinstance(t, str))[:200],
++            "name": name,
++            "backed_up": 1 if verified.credential_backed_up else 0,
++            "created_at": db.utcnow(),
++        },
++    )
++
++
++def rename(user_id: int, passkey_id: int, name: str) -> bool:
++    return db.execute_rowcount(
++        "UPDATE passkey SET name = ? WHERE id = ? AND user_account_id = ?",
++        (name, int(passkey_id), int(user_id)),
++    ) == 1
++
++
++def remove(user_id: int, passkey_id: int) -> Optional[str]:
++    """Delete one of the account's passkeys. Returns its name, or None."""
++    row = db.query_one(
++        "SELECT name FROM passkey WHERE id = ? AND user_account_id = ?",
++        (int(passkey_id), int(user_id)),
++    )
++    if not row:
++        return None
++    db.execute(
++        "DELETE FROM passkey WHERE id = ? AND user_account_id = ?",
++        (int(passkey_id), int(user_id)),
++    )
++    return row["name"]
++
++
++# --- login -------------------------------------------------------------------
++
++
++def authentication_options() -> str:
++    """Options JSON for logging in with any passkey this site knows."""
++    options = generate_authentication_options(
++        rp_id=rp_id(),
++        timeout=TIMEOUT_MS,
++        user_verification=UserVerificationRequirement.REQUIRED,
++    )
++    _store_challenge(options.challenge, LOGIN, None)
++    return options_to_json(options)
++
++
++def authenticate(credential: Dict[str, Any]):
++    """Verify a login answer. Returns ``(account, passkey_row)`` or raises.
++
++    The account must be active and the passkey's user handle must match it.
++    """
++    try:
++        credential_id = bytes_to_base64url(base64url_to_bytes(credential["rawId"]))
++    except (KeyError, TypeError, ValueError) as exc:
++        raise PasskeyError("malformed") from exc
++    challenge = _spend_challenge(credential, LOGIN, None)
++    row = db.query_one("SELECT * FROM passkey WHERE credential_id = ?", (credential_id,))
++    if not row:
++        raise PasskeyError("unknown")
++    account = db.query_one(
++        "SELECT * FROM user_account WHERE id = ? AND active = 1", (row["user_account_id"],)
++    )
++    if not account:
++        raise PasskeyError("inactive")
++    handle = (credential.get("response") or {}).get("userHandle")
++    if handle and account["webauthn_user_handle"]:
++        try:
++            same = base64url_to_bytes(handle) == base64url_to_bytes(account["webauthn_user_handle"])
++        except (TypeError, ValueError) as exc:
++            raise PasskeyError("handle") from exc
++        if not same:
++            raise PasskeyError("handle")
++    try:
++        verified = verify_authentication_response(
++            credential=credential,
++            expected_challenge=challenge,
++            expected_rp_id=rp_id(),
++            expected_origin=expected_origin(),
++            credential_public_key=base64url_to_bytes(row["public_key"]),
++            credential_current_sign_count=int(row["sign_count"] or 0),
++            require_user_verification=True,
++        )
++    except InvalidAuthenticationResponse as exc:
++        if "sign count" in str(exc).lower():
++            raise PasskeyError("sign_count") from exc
++        raise PasskeyError("invalid") from exc
++    except _VERIFY_ERRORS as exc:
++        raise PasskeyError("invalid") from exc
++    db.execute(
++        "UPDATE passkey SET sign_count = ?, last_used_at = ?, backed_up = ? WHERE id = ?",
++        (
++            int(verified.new_sign_count or 0),
++            db.utcnow(),
++            1 if verified.credential_backed_up else 0,
++            row["id"],
++        ),
++    )
++    return account, row
++
++
++# --- retention -----------------------------------------------------------------
++
++
++def purge(now: Optional[datetime] = None, dry_run: bool = False) -> int:
++    """Delete ceremonies that expired more than a day ago."""
++    cutoff = _iso((now or _now()) - PURGE_AFTER)
++    row = db.query_one(
++        "SELECT COUNT(*) AS n FROM webauthn_challenge WHERE expires_at < ?", (cutoff,)
++    )
++    count = int(row["n"]) if row else 0
++    if count and not dry_run:
++        db.execute("DELETE FROM webauthn_challenge WHERE expires_at < ?", (cutoff,))
++    return count
+diff --git a/App/app/retention.py b/App/app/retention.py
+index 245e971..2e79ee1 100644
+--- a/App/app/retention.py
++++ b/App/app/retention.py
+@@ -317,6 +317,9 @@ def _delete_workspace(owner_id: int) -> None:
+         cur.execute("DELETE FROM ad_click WHERE user_account_id = ?", (owner_id,))
+         # Task 0003: login links (also cascade; explicit for the same reason).
+         cur.execute("DELETE FROM login_token WHERE user_account_id = ?", (owner_id,))
++        # Task 0004: passkeys and their ceremonies (also cascade).
++        cur.execute("DELETE FROM passkey WHERE user_account_id = ?", (owner_id,))
++        cur.execute("DELETE FROM webauthn_challenge WHERE user_account_id = ?", (owner_id,))
+         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+     # Files last: a rolled-back delete must not have lost the photos. One
+@@ -363,6 +366,20 @@ def _login_token_step(today: date, dry_run: bool, owner_user_id: Optional[int])
+     return login_link.purge(dry_run=dry_run)
+ 
+ 
++def _webauthn_challenge_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
++    """Task 0004: delete passkey ceremonies a day after they expired.
++
++    A row is only the hash of a five-minute challenge; nothing in it is useful
++    once it has expired. Passkeys themselves live as long as the account, or
++    until the host removes them.
++    """
++    from . import passkeys
++
++    if owner_user_id is not None:
++        return 0
++    return passkeys.purge(dry_run=dry_run)
++
++
+ # Each step takes (today, dry_run, owner_user_id) and returns the affected count.
+ STEPS: List[tuple] = [
+     ("guests", _run_guest_step),
+@@ -376,6 +393,7 @@ STEPS: List[tuple] = [
+     ("alerts", _alert_retention_step),
+     ("rate_limit_events", _rate_limit_retention_step),
+     ("login_tokens", _login_token_step),
++    ("webauthn_challenges", _webauthn_challenge_step),
+     ("legal_acceptance", _acceptance_retention_step),
+     ("workspaces", _workspace_deletion_step),
+ ]
+@@ -399,6 +417,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
+         "alerts": f"resolved before {_days_ago_iso(config.ALERT_RETENTION_DAYS)}",
+         "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours",
+         "login_tokens": "expired more than 1 day ago",
++        "webauthn_challenges": "expired more than 1 day ago",
+         "legal_acceptance": (
+             f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
+         ),
+diff --git a/App/app/routes/admin.py b/App/app/routes/admin.py
+index 238f41e..453fa4b 100644
+--- a/App/app/routes/admin.py
++++ b/App/app/routes/admin.py
+@@ -36,6 +36,7 @@ from .. import (
+     housebook,
+     icalsync,
+     mail,
++    passkeys,
+     passport_photos,
+     payments,
+     reporting,
+@@ -48,6 +49,7 @@ from .. import (
+ from ..templating import render
+ from ..ubyport.client import UbyportError, UbyportTransportError
+ from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
++from . import passkeys as passkey_routes
+ from . import signup as signup_routes
+ from .admin_helpers import back as _back
+ from .admin_helpers import flash as _flash
+@@ -62,6 +64,7 @@ from .admin_helpers import query_int as _query_int
+ 
+ router = APIRouter(dependencies=[Depends(security.protect_host_post)])
+ router.include_router(admin_accounts.router)
++router.include_router(passkey_routes.router)
+ router.include_router(api.router)
+ router.include_router(onboarding.router)
+ router.include_router(signup_routes.router)
+@@ -2770,10 +2773,18 @@ def settings_view(request: Request):
+                 signup.consents_for(access.owner_id(request))
+                 if access.owner_id(request) is not None else []
+             ),
++            # Task 0004: Settings > Security lists the real account's passkeys.
++            "passkeys": _own_passkeys(request),
++            "passkeys_available": passkeys.available(),
+         },
+     )
+ 
+ 
++def _own_passkeys(request: Request):
++    account = auth.current_user(request)
++    return passkeys.for_account(account["id"]) if account else []
++
++
+ def _onboarding_emails(request: Request):
+     """The "Setup tips by e-mail" toggle: True or False, None when hidden.
+ 
+diff --git a/App/app/routes/passkeys.py b/App/app/routes/passkeys.py
+new file mode 100644
+index 0000000..52dcb2b
+--- /dev/null
++++ b/App/app/routes/passkeys.py
+@@ -0,0 +1,231 @@
++"""Passkey routes (task 0004): add, rename and remove a passkey, and log in.
++
++The two ceremonies (add, log in) need the browser's WebAuthn API, so they are
++JSON endpoints called by ``static/passkeys.js`` with the CSRF token in the
++``X-CSRF-Token`` header. Everything else is a plain form that works without
++JavaScript. The e-mail link stays the way in that never needs any of this.
++"""
++from __future__ import annotations
++
++import json
++import re
++
++from fastapi import APIRouter, BackgroundTasks, Request
++from fastapi.responses import JSONResponse, RedirectResponse
++
++from .. import auth, db, host_i18n, mail, mail_notify, passkeys, rate_limit, security
++from .admin_accounts import _finish_login
++from .admin_helpers import back as _back
++from .admin_helpers import flash as _flash
++from .admin_helpers import form_str as _form_str
++
++router = APIRouter()
++
++_SECURITY = "/settings#settings-security"
++# A WebAuthn answer is a few kilobytes; anything far bigger is not one.
++_MAX_BODY = 64 * 1024
++
++
++def _text(request: Request, key: str, **params) -> str:
++    return host_i18n.translate(host_i18n.lang_from_request(request), key, **params)
++
++
++def _error(request: Request, key: str, status_code: int) -> JSONResponse:
++    response = JSONResponse({"error": _text(request, key)}, status_code=status_code)
++    response.headers["Cache-Control"] = "no-store"
++    return response
++
++
++def _json(payload: str) -> JSONResponse:
++    response = JSONResponse(json.loads(payload))
++    response.headers["Cache-Control"] = "no-store"
++    return response
++
++
++async def _body(request: Request) -> dict:
++    raw = await request.body()
++    if len(raw) > _MAX_BODY:
++        return {}
++    try:
++        data = json.loads(raw or b"{}")
++    except (ValueError, UnicodeDecodeError):
++        return {}
++    return data if isinstance(data, dict) else {}
++
++
++def _owner(request: Request):
++    """The signed-in account managing its own passkeys, never a previewed one.
++
++    An admin previewing a host's workspace must not add a way into that
++    host's account, so these routes always act on the real account.
++    """
++    account = auth.current_user(request)
++    if not account:
++        return None
++    return db.query_one("SELECT * FROM user_account WHERE id = ? AND active = 1", (account["id"],))
++
++
++_DEVICES = (
++    (r"iPhone", "iPhone"),
++    (r"iPad", "iPad"),
++    (r"Android", "Android"),
++    (r"Macintosh|Mac OS X", "Mac"),
++    (r"Windows", "Windows"),
++    (r"CrOS", "Chromebook"),
++    (r"Linux", "Linux"),
++)
++
++
++def device_label(user_agent: str, lang: str) -> str:
++    """A first name for a new passkey from the browser that made it ("iPhone").
++
++    Only a coarse device family, never the full User-Agent string, is kept.
++    The host can rename it.
++    """
++    for pattern, label in _DEVICES:
++        if re.search(pattern, user_agent or ""):
++            return label
++    return host_i18n.translate(lang, "passkeys.default_name")
++
++
++# --- adding, renaming, removing ----------------------------------------------
++
++
++@router.post("/account/passkeys/options")
++async def passkey_register_options(request: Request):
++    account = _owner(request)
++    if not account:
++        return _error(request, "passkeys.error.signed_out", 401)
++    if not passkeys.available():
++        return _error(request, "passkeys.error.unavailable", 409)
++    if passkeys.count_for(account["id"]) >= passkeys.MAX_PER_ACCOUNT:
++        return _error(request, "passkeys.error.too_many", 409)
++    ip_key = rate_limit.client_key(request)
++    if passkeys.options_blocked(ip_key):
++        return _error(request, "passkeys.error.rate_limited", 429)
++    passkeys.record_options(ip_key)
++    return _json(passkeys.registration_options(account))
++
++
++@router.post("/account/passkeys")
++async def passkey_register(request: Request, background: BackgroundTasks):
++    account = _owner(request)
++    if not account:
++        return _error(request, "passkeys.error.signed_out", 401)
++    data = await _body(request)
++    credential = data.get("credential")
++    if not isinstance(credential, dict):
++        return _error(request, "passkeys.error.failed", 400)
++    lang = host_i18n.lang_from_request(request)
++    name = passkeys.clean_name(
++        data.get("name") or "", device_label(request.headers.get("user-agent", ""), lang)
++    )
++    try:
++        passkey_id = passkeys.register(account, credential, name)
++    except passkeys.PasskeyError as exc:
++        db.audit(
++            "passkey_add_failed", f"reason={exc.reason}",
++            actor=account["username"], owner_user_id=account["id"],
++        )
++        key = "passkeys.error.too_many" if exc.reason == "too_many" else "passkeys.error.failed"
++        return _error(request, key, 400)
++    # A second way in counts as "secured": the one-time prompt is done.
++    db.execute(
++        "UPDATE user_account SET two_factor_prompted_at = ? WHERE id = ? "
++        "AND two_factor_prompted_at IS NULL",
++        (db.utcnow(), account["id"]),
++    )
++    db.audit("passkey_added", f"passkey={passkey_id}", actor=account["username"],
++             owner_user_id=account["id"])
++    outbox_id = mail_notify.passkey_added(
++        user_id=account["id"], to_email=account["email"], passkey_id=passkey_id, name=name
++    )
++    if outbox_id:
++        background.add_task(mail.send_now, outbox_id)
++    target = _back(_SECURITY, msg=_flash(request, "flash.passkeys.added"))
++    response = JSONResponse({"redirect": target.headers["location"]})
++    response.headers["Cache-Control"] = "no-store"
++    return response
++
++
++@router.post("/account/passkeys/{passkey_id}/rename")
++async def passkey_rename(request: Request, passkey_id: int):
++    account = _owner(request)
++    if not account:
++        return RedirectResponse("/login", status_code=303)
++    form = await request.form()
++    name = passkeys.clean_name(_form_str(form, "name"), "")
++    if not name or not passkeys.rename(account["id"], passkey_id, name):
++        return _back(_SECURITY, err=_flash(request, "flash.passkeys.not_found"))
++    db.audit("passkey_renamed", f"passkey={passkey_id}", actor=account["username"],
++             owner_user_id=account["id"])
++    return _back(_SECURITY, msg=_flash(request, "flash.passkeys.renamed"))
++
++
++@router.post("/account/passkeys/{passkey_id}/delete")
++async def passkey_delete(request: Request, passkey_id: int):
++    account = _owner(request)
++    if not account:
++        return RedirectResponse("/login", status_code=303)
++    if passkeys.remove(account["id"], passkey_id) is None:
++        return _back(_SECURITY, err=_flash(request, "flash.passkeys.not_found"))
++    db.audit("passkey_removed", f"passkey={passkey_id}", actor=account["username"],
++             owner_user_id=account["id"])
++    return _back(_SECURITY, msg=_flash(request, "flash.passkeys.removed"))
++
++
++# --- logging in --------------------------------------------------------------
++
++
++@router.post("/login/passkey/options")
++async def passkey_login_options(request: Request):
++    if not passkeys.available():
++        return _error(request, "passkeys.error.unavailable", 409)
++    ip_key = rate_limit.client_key(request)
++    if passkeys.options_blocked(ip_key) or passkeys.failures_blocked(ip_key):
++        return _error(request, "passkeys.error.rate_limited", 429)
++    passkeys.record_options(ip_key)
++    return _json(passkeys.authentication_options())
++
++
++@router.post("/login/passkey")
++async def passkey_login(request: Request):
++    ip_key = rate_limit.client_key(request)
++    if passkeys.failures_blocked(ip_key):
++        return _error(request, "passkeys.error.rate_limited", 429)
++    data = await _body(request)
++    credential = data.get("credential")
++    if not isinstance(credential, dict):
++        passkeys.record_failure(ip_key)
++        return _error(request, "passkeys.error.login_failed", 400)
++    try:
++        account, row = passkeys.authenticate(credential)
++    except passkeys.PasskeyError as exc:
++        passkeys.record_failure(ip_key)
++        if exc.reason == "sign_count":
++            # Probably a cloned authenticator: tell the owner's audit log.
++            owner = db.query_one(
++                "SELECT p.id, u.id AS uid, u.username FROM passkey p "
++                "JOIN user_account u ON u.id = p.user_account_id WHERE p.credential_id = ?",
++                (str(credential.get("rawId") or ""),),
++            )
++            if owner:
++                db.audit("passkey_clone_suspected", f"passkey={owner['id']}",
++                         actor=owner["username"], owner_user_id=owner["uid"])
++        else:
++            db.audit("passkey_login_failed", f"reason={exc.reason}", actor="anonymous")
++        return _error(request, "passkeys.error.login_failed", 401)
++    next_path = security.safe_local_path(str(data.get("next") or ""), "/")
++    redirect = _finish_login(
++        request,
++        account,
++        remember=bool(data.get("remember")),
++        next_path=next_path,
++        method=f"passkey:{row['id']}",
++    )
++    response = JSONResponse({"redirect": redirect.headers["location"]})
++    response.headers["Cache-Control"] = "no-store"
++    for name, value in redirect.raw_headers:
++        if name.lower() == b"set-cookie":
++            response.raw_headers.append((name, value))
++    return response
+diff --git a/App/app/static/app.css b/App/app/static/app.css
+index 01ce987..458b979 100644
+--- a/App/app/static/app.css
++++ b/App/app/static/app.css
+@@ -3195,3 +3195,25 @@ label { color: var(--ink-secondary); font-weight: 620; }
+ .fee-line .fee-hint,
+ .fee-line .fee-decision,
+ .fee-line details { flex: 1 1 100%; }
++
++/* Task 0004: the passkey button sits above the e-mail form, split by a rule. */
++.auth-passkey { display: grid; gap: 12px; margin-bottom: 4px; }
++.auth-passkey[hidden] { display: none; }
++.auth-divider {
++  display: flex;
++  align-items: center;
++  gap: 12px;
++  margin: 4px 0 0;
++  color: var(--ink-2);
++  font-size: 14px;
++}
++.auth-divider::before,
++.auth-divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
++
++/* Task 0004: the one-time "secure your account" prompt. */
++.security-prompt { max-width: 460px; }
++.security-prompt-options { display: grid; gap: 14px; margin: 16px 0; }
++.security-prompt-option { display: grid; gap: 4px; justify-items: start; }
++.security-prompt-option[hidden] { display: none; }
++.security-prompt-option small { color: var(--ink-2); }
++.passkey-row + .settings-move { margin-top: -6px; }
+diff --git a/App/app/static/passkeys.js b/App/app/static/passkeys.js
+new file mode 100644
+index 0000000..94923b4
+--- /dev/null
++++ b/App/app/static/passkeys.js
+@@ -0,0 +1,230 @@
++/* Passkeys (task 0004): add one in Settings or the one-time prompt, and log in
++   with one on the login page. Self-served, no third-party code. Every control
++   this file drives is hidden until it knows the browser can use a passkey, so
++   without JavaScript (or WebAuthn) the e-mail link is simply the only way. */
++(function () {
++  "use strict";
++
++  var supported = !!(window.PublicKeyCredential && navigator.credentials &&
++    typeof navigator.credentials.create === "function");
++
++  var meta = document.querySelector('meta[name="csrf-token"]');
++  var csrf = meta ? meta.getAttribute("content") : "";
++
++  function toggleSupport() {
++    document.querySelectorAll("[data-passkey-supported]").forEach(function (el) {
++      el.hidden = !supported;
++    });
++    document.querySelectorAll("[data-passkey-unsupported]").forEach(function (el) {
++      el.hidden = supported;
++    });
++  }
++
++  // --- base64url <-> ArrayBuffer ------------------------------------------
++
++  function fromB64url(value) {
++    var b64 = String(value).replace(/-/g, "+").replace(/_/g, "/");
++    while (b64.length % 4) b64 += "=";
++    var raw = atob(b64);
++    var bytes = new Uint8Array(raw.length);
++    for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
++    return bytes.buffer;
++  }
++
++  function toB64url(buffer) {
++    if (!buffer) return null;
++    var bytes = new Uint8Array(buffer);
++    var raw = "";
++    for (var i = 0; i < bytes.length; i++) raw += String.fromCharCode(bytes[i]);
++    return btoa(raw).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
++  }
++
++  function creationOptions(json) {
++    if (typeof PublicKeyCredential.parseCreationOptionsFromJSON === "function") {
++      return PublicKeyCredential.parseCreationOptionsFromJSON(json);
++    }
++    var options = Object.assign({}, json);
++    options.challenge = fromB64url(json.challenge);
++    options.user = Object.assign({}, json.user, { id: fromB64url(json.user.id) });
++    options.excludeCredentials = (json.excludeCredentials || []).map(function (c) {
++      return Object.assign({}, c, { id: fromB64url(c.id) });
++    });
++    return options;
++  }
++
++  function requestOptions(json) {
++    if (typeof PublicKeyCredential.parseRequestOptionsFromJSON === "function") {
++      return PublicKeyCredential.parseRequestOptionsFromJSON(json);
++    }
++    var options = Object.assign({}, json);
++    options.challenge = fromB64url(json.challenge);
++    options.allowCredentials = (json.allowCredentials || []).map(function (c) {
++      return Object.assign({}, c, { id: fromB64url(c.id) });
++    });
++    return options;
++  }
++
++  function serialise(credential) {
++    if (typeof credential.toJSON === "function") {
++      try { return credential.toJSON(); } catch (error) { /* fall through */ }
++    }
++    var r = credential.response;
++    var response = { clientDataJSON: toB64url(r.clientDataJSON) };
++    if (r.attestationObject) {
++      response.attestationObject = toB64url(r.attestationObject);
++      response.transports = typeof r.getTransports === "function" ? r.getTransports() : [];
++    } else {
++      response.authenticatorData = toB64url(r.authenticatorData);
++      response.signature = toB64url(r.signature);
++      response.userHandle = r.userHandle ? toB64url(r.userHandle) : null;
++    }
++    return {
++      id: credential.id,
++      rawId: toB64url(credential.rawId),
++      type: credential.type,
++      response: response,
++      authenticatorAttachment: credential.authenticatorAttachment || null,
++      clientExtensionResults: typeof credential.getClientExtensionResults === "function"
++        ? credential.getClientExtensionResults() : {}
++    };
++  }
++
++  // --- talking to the server ----------------------------------------------
++
++  function post(url, body) {
++    return fetch(url, {
++      method: "POST",
++      credentials: "same-origin",
++      headers: {
++        "Content-Type": "application/json",
++        "Accept": "application/json",
++        "X-CSRF-Token": csrf
++      },
++      body: JSON.stringify(body || {})
++    }).then(function (response) {
++      return response.json().catch(function () { return {}; }).then(function (data) {
++        if (!response.ok) {
++          var error = new Error(data.error || "");
++          error.serverMessage = data.error || "";
++          throw error;
++        }
++        return data;
++      });
++    });
++  }
++
++  function showError(scope, error) {
++    // The person closed the system sheet: that is a choice, not an error.
++    if (error && (error.name === "NotAllowedError" || error.name === "AbortError")) return;
++    var box = (scope && scope.querySelector("[data-passkey-error]")) ||
++      document.querySelector("[data-passkey-error]");
++    if (!box) return;
++    box.textContent = (error && error.serverMessage) || box.getAttribute("data-generic") || "";
++    box.hidden = !box.textContent;
++  }
++
++  // --- adding a passkey ----------------------------------------------------
++
++  function addPasskey(button) {
++    var scope = button.closest(".settings-action-list, .security-prompt, .admin-dialog-form") || document;
++    button.disabled = true;
++    post("/account/passkeys/options")
++      .then(function (json) {
++        return navigator.credentials.create({ publicKey: creationOptions(json) });
++      })
++      .then(function (credential) {
++        return post("/account/passkeys", { credential: serialise(credential) });
++      })
++      .then(function (data) {
++        window.location.assign(data.redirect || "/settings#settings-security");
++      })
++      .catch(function (error) {
++        button.disabled = false;
++        showError(scope, error);
++      });
++  }
++
++  // --- logging in ----------------------------------------------------------
++
++  var conditional = null;
++
++  function finishLogin(credential, form) {
++    var remember = form && form.querySelector('input[name="remember"]');
++    var next = form && form.querySelector('input[name="next"]');
++    return post("/login/passkey", {
++      credential: serialise(credential),
++      remember: !!(remember && remember.checked),
++      next: next ? next.value : ""
++    }).then(function (data) {
++      window.location.assign(data.redirect || "/");
++    });
++  }
++
++  function startConditional(form) {
++    if (typeof PublicKeyCredential.isConditionalMediationAvailable !== "function") return;
++    PublicKeyCredential.isConditionalMediationAvailable().then(function (ok) {
++      if (!ok) return;
++      conditional = new AbortController();
++      var signal = conditional.signal;
++      post("/login/passkey/options")
++        .then(function (json) {
++          return navigator.credentials.get({
++            publicKey: requestOptions(json), mediation: "conditional", signal: signal
++          });
++        })
++        .then(function (credential) {
++          if (credential) return finishLogin(credential, form);
++        })
++        .catch(function (error) {
++          if (!signal.aborted) showError(document.querySelector("[data-passkey-login]"), error);
++        });
++    }).catch(function () { /* no autofill support: the button still works */ });
++  }
++
++  function loginWithButton(button, form) {
++    var scope = document.querySelector("[data-passkey-login]");
++    if (conditional) { conditional.abort(); conditional = null; }
++    button.disabled = true;
++    post("/login/passkey/options")
++      .then(function (json) {
++        return navigator.credentials.get({ publicKey: requestOptions(json) });
++      })
++      .then(function (credential) { return finishLogin(credential, form); })
++      .catch(function (error) {
++        button.disabled = false;
++        showError(scope, error);
++        startConditional(form);
++      });
++  }
++
++  // --- wiring ----------------------------------------------------------------
++
++  function init() {
++    toggleSupport();
++
++    var prompt = document.getElementById("security-prompt");
++    if (prompt && prompt.hasAttribute("open") && typeof prompt.showModal === "function") {
++      prompt.close();
++      prompt.showModal();
++    }
++
++    if (!supported) return;
++
++    document.querySelectorAll("[data-passkey-add]").forEach(function (button) {
++      button.addEventListener("click", function () { addPasskey(button); });
++    });
++
++    var loginButton = document.querySelector("[data-passkey-login-button]");
++    var loginForm = document.querySelector("[data-login-form]");
++    if (loginButton) {
++      loginButton.addEventListener("click", function () { loginWithButton(loginButton, loginForm); });
++      startConditional(loginForm);
++    }
++  }
++
++  if (document.readyState === "loading") {
++    document.addEventListener("DOMContentLoaded", init);
++  } else {
++    init();
++  }
++})();
+diff --git a/App/app/templates/auth_base.html b/App/app/templates/auth_base.html
+index 66d7e26..e0d4c11 100644
+--- a/App/app/templates/auth_base.html
++++ b/App/app/templates/auth_base.html
+@@ -10,7 +10,7 @@
+   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+-  <link rel="stylesheet" href="/static/app.css?v=20261004z">
++  <link rel="stylesheet" href="/static/app.css?v=20261006a">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+ </head>
+ <body class="auth-page">
+diff --git a/App/app/templates/base.html b/App/app/templates/base.html
+index 75eea0d..752c13b 100644
+--- a/App/app/templates/base.html
++++ b/App/app/templates/base.html
+@@ -10,7 +10,7 @@
+   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
+   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+-  <link rel="stylesheet" href="/static/app.css?v=20261004z">
++  <link rel="stylesheet" href="/static/app.css?v=20261006a">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+   {% if show_nav | default(true) %}<link rel="stylesheet" href="/static/host.css?v=20261004x">{% endif %}
+ </head>
+@@ -254,9 +254,39 @@
+   </div>
+ </dialog>
+ 
++{% set prompt = security_prompt() if (show_nav | default(true)) and security_prompt is defined and security_prompt else None %}
++{% if prompt %}
++{# Task 0004: shown once, to an account with no passkey and no authenticator
++   app. Without JavaScript it is an open box on the page; with it, a modal. #}
++<dialog id="security-prompt" class="admin-dialog security-prompt" open aria-labelledby="security-prompt-title">
++  <div class="admin-dialog-form">
++    <h2 id="security-prompt-title" style="margin-top:0">{{ t('security_prompt.title') }}</h2>
++    <p class="small muted">{{ t('security_prompt.lede') }}</p>
++    <div class="security-prompt-options">
++      {% if prompt.passkeys %}
++        <div class="security-prompt-option" data-passkey-supported hidden>
++          <button class="btn primary" type="button" data-passkey-add>{{ t('security_prompt.passkey') }}</button>
++          <small>{{ t('security_prompt.passkey_help') }}</small>
++          <p class="small err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
++        </div>
++      {% endif %}
++      <div class="security-prompt-option">
++        <a class="btn" href="/account/2fa/setup">{{ t('security_prompt.totp') }}</a>
++        <small>{{ t('security_prompt.totp_help') }}</small>
++      </div>
++    </div>
++    <form method="dialog" class="actions">
++      <button class="btn" type="submit" value="later" data-security-prompt-later>{{ t('security_prompt.later') }}</button>
++    </form>
++    <p class="small muted">{{ t('security_prompt.footnote') }}</p>
++  </div>
++</dialog>
++{% endif %}
++
+ <script src="/static/csrf.js?v=20260915a"></script>
+ <script src="/static/skeleton.js?v=20260929a"></script>
+ <script src="/static/app.js?v=20261001b"></script>
+ {% if show_nav | default(true) %}<script src="/static/host.js?v=20261001d" defer></script>{% endif %}
++{% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261006a" defer></script>{% endif %}
+ </body>
+ </html>
+diff --git a/App/app/templates/login.html b/App/app/templates/login.html
+index e35965c..9e70e0b 100644
+--- a/App/app/templates/login.html
++++ b/App/app/templates/login.html
+@@ -10,14 +10,24 @@
+     <div class="auth-alert" role="alert">{{ t(error, email=operator().email) }}</div>
+   {% endif %}
+ 
+-  <form method="post" action="/login" class="auth-form">
++  {% if passkeys_enabled() %}
++    {# Task 0004: shown by passkeys.js only where the browser can use a passkey,
++       and offered before the e-mail link. Without JavaScript nothing changes. #}
++    <div class="auth-passkey" data-passkey-login data-passkey-supported hidden>
++      <button class="auth-submit" type="button" data-passkey-login-button>{{ t('login.passkey') }}</button>
++      <p class="auth-alert" data-passkey-error data-generic="{{ t('passkeys.error.login_failed') }}" role="alert" hidden></p>
++      <p class="auth-divider"><span>{{ t('login.passkey_or') }}</span></p>
++    </div>
++  {% endif %}
++
++  <form method="post" action="/login" class="auth-form" data-login-form>
+     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+     <input type="hidden" name="next" value="{{ next if next is defined else request.query_params.get('next', '') }}">
+     <div class="auth-field">
+       <label for="email">{{ t('login.email') }}</label>
+       <input type="email" id="email" name="email" required autofocus maxlength="254"
+              value="{{ email | default('', true) }}"
+-             autocomplete="email" autocapitalize="none" spellcheck="false"
++             autocomplete="{{ 'email webauthn' if passkeys_enabled() else 'email' }}" autocapitalize="none" spellcheck="false"
+              placeholder="{{ t('login.email_ph') }}">
+     </div>
+     <label class="auth-remember">
+@@ -46,4 +56,7 @@
+ {% if turnstile_site_key %}
+ <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+ {% endif %}
++{% if passkeys_enabled() %}
++<script src="/static/passkeys.js?v=20261006a" defer></script>
++{% endif %}
+ {% endblock %}
+diff --git a/App/app/templates/public_legal_base.html b/App/app/templates/public_legal_base.html
+index db19368..8ce44b4 100644
+--- a/App/app/templates/public_legal_base.html
++++ b/App/app/templates/public_legal_base.html
+@@ -25,7 +25,7 @@
+   {#- landing.css first so app.css keeps the reading typography and the link
+       colour; it is here only for the shared header and footer. -#}
+   <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+-  <link rel="stylesheet" href="/static/app.css?v=20261004z">
++  <link rel="stylesheet" href="/static/app.css?v=20261006a">
+   <link rel="stylesheet" href="/static/components.css?v=20261002a">
+   {% include "_umami.html" %}
+ </head>
+diff --git a/App/app/templates/settings.html b/App/app/templates/settings.html
+index 8ad8262..06bfb72 100644
+--- a/App/app/templates/settings.html
++++ b/App/app/templates/settings.html
+@@ -257,6 +257,47 @@
+     <div class="panel" id="settings-security">
+       <h2 style="margin-top:0">{{ t('settings.nav.security') }}</h2>
+       <p class="small muted">{{ t('settings.security.lede') }}</p>
++      <div class="settings-action-list" id="settings-passkeys">
++        <div class="settings-action-row">
++          <div>
++            <strong>{{ t('passkeys.title') }}</strong>
++            <small>{{ t('passkeys.help') }}</small>
++          </div>
++          {% if passkeys_available %}
++            <button class="btn small primary" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
++          {% endif %}
++        </div>
++        {% if passkeys_available %}
++          <p class="small muted" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
++          <p class="small err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
++        {% else %}
++          <p class="small muted">{{ t('passkeys.unavailable') }}</p>
++        {% endif %}
++        {% for key in passkeys %}
++          <div class="settings-action-row passkey-row">
++            <div>
++              <strong>{{ key.name }}</strong>
++              <small>{{ t('passkeys.added_on', date=key.created_at | datetime_local) }} ·
++                {% if key.last_used_at %}{{ t('passkeys.last_used', date=key.last_used_at | datetime_local) }}{% else %}{{ t('passkeys.never_used') }}{% endif %}</small>
++            </div>
++            <form method="post" action="/account/passkeys/{{ key.id }}/delete"
++                  data-confirm data-confirm-message="{{ t('passkeys.remove_confirm', name=key.name) }}">
++              <button class="btn small" type="submit">{{ t('passkeys.remove') }}</button>
++            </form>
++          </div>
++          <details class="settings-move">
++            <summary><small>{{ t('passkeys.rename') }}</small></summary>
++            <form method="post" action="/account/passkeys/{{ key.id }}/rename" class="settings-move-form">
++              <div class="field">
++                <label for="passkey-name-{{ key.id }}">{{ t('passkeys.name') }}</label>
++                <input id="passkey-name-{{ key.id }}" name="name" type="text" maxlength="60"
++                       value="{{ key.name }}" required>
++              </div>
++              <button class="btn small" type="submit">{{ t('passkeys.rename_action') }}</button>
++            </form>
++          </details>
++        {% endfor %}
++      </div>
+       <div class="settings-action-list">
+         <div class="settings-action-row">
+           <div>
+diff --git a/App/app/templating.py b/App/app/templating.py
+index 2c28451..bb755ce 100644
+--- a/App/app/templating.py
++++ b/App/app/templating.py
+@@ -21,6 +21,7 @@ from . import (
+     analytics,
+     auth,
+     config,
++    db,
+     deadlines,
+     host_i18n,
+     i18n,
+@@ -330,7 +331,14 @@ templates.env.filters["weekday"] = _weekday
+ templates.env.filters["datetime_local"] = _datetime_local
+ templates.env.filters["from_json"] = _from_json
+ templates.env.filters["legal_links"] = _legal_links
++def _template_passkeys_enabled() -> bool:
++    from . import passkeys  # local: passkeys pulls in webauthn
++
++    return passkeys.available()
++
++
+ templates.env.globals["t"] = _template_translate
++templates.env.globals["passkeys_enabled"] = _template_passkeys_enabled
+ templates.env.globals["legal_effective"] = _template_legal_effective
+ templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
+ templates.env.globals["identity_visible"] = _template_identity_visible
+@@ -369,6 +377,38 @@ templates.env.globals.update(
+ )
+ 
+ 
++# Pages that are themselves about setting up a second way in; the prompt would
++# only get in the way there.
++_NO_SECURITY_PROMPT = ("/account/2fa", "/settings", "/account/accept")
++
++
++def _security_prompt(request: Request, account, workspace):
++    """The one-time "secure your account" pop-up (task 0004), as a callable.
++
++    Shown once, on the first app page after logging in, to an account with no
++    passkey and no authenticator app. ``base.html`` calls it, so the account
++    is only marked as prompted when the page that shows it actually renders;
++    an account that has been prompted costs no query at all.
++    """
++    def prompt():
++        if not account or account["two_factor_prompted_at"] or account["totp_enabled"]:
++            return None
++        if workspace and workspace["id"] != account["id"]:
++            return None  # an admin previewing a host's workspace
++        if request.url.path.startswith(_NO_SECURITY_PROMPT):
++            return None
++        if not db.update_if(
++            "user_account", int(account["id"]), {"two_factor_prompted_at": db.utcnow()},
++            {"two_factor_prompted_at": None},
++        ):
++            return None
++        from . import passkeys  # local: passkeys pulls in webauthn
++
++        return {"passkeys": passkeys.available()}
++
++    return prompt
++
++
+ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
+     data = dict(context or {})
+     data["request"] = request
+@@ -411,6 +451,7 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
+     data.setdefault("demo_available", config.UBYPORT_ENV == "mock")
+     if workspace and workspace["id"]:
+         data.setdefault("onboarding", onboarding.progress(workspace["id"]))
++    data.setdefault("security_prompt", _security_prompt(request, data["current_user"], workspace))
+     # WP09: set here, never from a route's context, so only the allowed public
+     # templates can ever get a tag (and the matching CSP in main._harden).
+     data["umami_tag"] = analytics.tag() if analytics.mark_public_page(request, name) else None
+diff --git a/App/requirements.lock b/App/requirements.lock
+index 3863a13..d91d806 100644
+--- a/App/requirements.lock
++++ b/App/requirements.lock
+@@ -32,6 +32,73 @@ botocore==1.43.104 \
+     # via
+     #   boto3
+     #   s3transfer
++cbor2==6.1.5 \
++    --hash=sha256:015ed73f10e1f7b67306d41e36e0d7dc40e4a2100bc5c29b7a7f039ad3dc9061 \
++    --hash=sha256:040cf628af473fe18cb6f56bdac556d2398102e56852aab5206fbeb3dbde6b52 \
++    --hash=sha256:0529a95c1330c9c381286650dd65ff5b4ef136dcee06474ad30c028b5ae99a50 \
++    --hash=sha256:09eeb76177758a0fdf1627a9428b384756872b048c6c0d7d158106b29b207d2c \
++    --hash=sha256:0b1fa210f23b1f822ee0c9157c99b0e851fce93c6da1dc8441aa7fb3c4089d70 \
++    --hash=sha256:0c1565bcd74a389b581e292592ccab0ed9c46286c6e986256820bc68c9ad7e8c \
++    --hash=sha256:0fa113902a302c22429b32e2454251a8fd14b18204fdff647c869a54114c3ed1 \
++    --hash=sha256:10d5237100190133d6a770181a63d93752cb67a2849c18484d196b5f8880784e \
++    --hash=sha256:151f624186a6b607d14074dfffe7b601f403445ab430554e3d920390c3068b05 \
++    --hash=sha256:1538e87b4b32764bc4940a37b6aa72e3bc6855033aac18d392d70daa89113a2b \
++    --hash=sha256:1ebbc6e2d5ea8acf44cc2247d48ca4ccae724fcdb97eaa673903e2d87f0ffc5d \
++    --hash=sha256:2634a4e8dbd86cfbdace0a546a1ded1fb024ebc4fbbeaea0232cc76721e6bc91 \
++    --hash=sha256:30f88d1aff6c8c58ffec56591468f820d5ce6aee0bd64ae7443c0d7ef653eaf8 \
++    --hash=sha256:40754de6aef3f3d37f2ab36bb431da145359d0e28fce739683f8717ad2e97280 \
++    --hash=sha256:4144e2ba881534f62968cdb4a4f134e07a351e75c997d8debca65fcb2edd61c8 \
++    --hash=sha256:42217c9de0ead6c5a6c1a6ca6b836204ac46b5bf4f57c758f522f308d7784bf0 \
++    --hash=sha256:4c824355799799ab065686a05f65398319109955544db35cc797c60ad208b174 \
++    --hash=sha256:4db32eefe9fc173939d114fb78e09f967e69627714ad2e3bca807d0ea9d386ad \
++    --hash=sha256:4e298c8a88488ebbf5475e51273b8d80da08f7b47aebfa79eb904fc82da49474 \
++    --hash=sha256:519f3f0d0d9467091c678f4a19a31e1b8756c10bbd6294cb3f906092f3da1597 \
++    --hash=sha256:547c58e758462f06ba542b0af21afb150ee64c4c81d7ca6d1ecae0655c6a283d \
++    --hash=sha256:5a5859d1f82dce094a1bdd6a5b318411b750262070bf5d37fbc9607d185f0b1b \
++    --hash=sha256:65a677ff460f5c31f060a4bf8518f3e8184c321fddc0223a5ac2fac59a7f9f30 \
++    --hash=sha256:68bcabc5b36a7c7c8825625b7b331a74098a4839d5d38b5cc29cb30a7acfee49 \
++    --hash=sha256:694f75fdcdb8c6b9a71ab77f789f56be1deab20bbdbf948d5ff53cd7c2543dfc \
++    --hash=sha256:6eb06160c42315ac0c4ded461c7d84d92fa18c69d13d17fc1dfc1fae96580c95 \
++    --hash=sha256:6f340682e2481ab729c399f8b81147476c5a179cfef65d02402702aeb9429088 \
++    --hash=sha256:73b97d92ce64a344015909f1888de0abec76211b9c1f33b075563a05512f3a98 \
++    --hash=sha256:773ef85feea8beb5666a525e88197e3ef1c6629c6b6cf721e31b228c97cf6555 \
++    --hash=sha256:789ef813f416d353aecd5c8824860ee4be94e0f1179a385eb2beccfbeb615e4f \
++    --hash=sha256:7de5383eb059498291415f5b07f99e54dac4603dc99960eb0e2307c9cb2dc352 \
++    --hash=sha256:7dfb68b65d6b0d0d90512626247bfa4993354f1e2b2d83b28b51785e63853422 \
++    --hash=sha256:833db11fbea9808b080e5340d5f96615e28a6a6617618a4331e60082d0dc1ca4 \
++    --hash=sha256:8665b7970e563fb807cca5c42815fe0741192a899b74bf9052557486a46f9188 \
++    --hash=sha256:9140388e9a732f3748641abb91d257d30cc466a7ed13c2c5a3d1aaa6af37bd66 \
++    --hash=sha256:9677ce1c3c0cb1fa5a4f721a127fc2cc06e8efc43ee8e5f94e292186d6b51953 \
++    --hash=sha256:9907225060f8afcf31b5c97711cd057272160056a6b1b488313cc2b20c0afe74 \
++    --hash=sha256:994b09c578e9dd7c5687a9f151f545bde705d12e47427b5a78c9d6cc970187f5 \
++    --hash=sha256:9b3ba6f694ec196ebefc9c67ebc862b0fecdd3d6f85d5557378cf20ff8b1fb31 \
++    --hash=sha256:a14edbdc9e02d9daa72c3b8805edb297a6025a35e708f7dd8ccbdf1b18adb40f \
++    --hash=sha256:a4956f498cbf5eab192e0f838cc787e09bef4caab57f05ccbf00451935cacb8b \
++    --hash=sha256:a9a154e010044662ce2e433f7c49e9c0f89ad7b86cb20e5d2e5afe6fd1753162 \
++    --hash=sha256:af14089f5fb36f89b3f766acc7d4990cdfba7487ec0249d51bfa3a8caad25f0a \
++    --hash=sha256:b586912cdb086dbad12052250acd5922fbe66a341ebee7031039eedf90fe84b1 \
++    --hash=sha256:b70d7c47ea84d456034d2be02e89d92eef7044cfcedf6f05058e21d4452f0fef \
++    --hash=sha256:b73d982e35a60e602a200feb2a9d272e850efdc9ff767b0f4887bdbc16d23e52 \
++    --hash=sha256:bb58549a45e3f6355338345a2df449f42f45d55e4a20af24d4302d76a1578650 \
++    --hash=sha256:c87272763122be24213c7bb3d47750a3af034da8755fbd3fcb0694c1efb6c3e8 \
++    --hash=sha256:c916d7af4edcbf5dba157e9a8dd927bbf1fd66d3f137618226f7ad8b54bd944a \
++    --hash=sha256:cf89dd755e9781bea60bb67c1569d32ca10c38412126ab58bbc0235c697d98fc \
++    --hash=sha256:db607ae2b12c7eb85d463fe502a2f50111125bee69e70f85f793f0b7da7896e7 \
++    --hash=sha256:dd3e4f08aaf25bca5db6274ac40e4d138b0e09890510c1fda20d5b7840e505fa \
++    --hash=sha256:e1028f34af9158ee810c705a1c6c0b7c71f1e0a3c890fb343afd75725a80c191 \
++    --hash=sha256:e1e8a6a72c7ab2f82579497cb1d5564987b02559ab980fe6a5f82a7d65031d19 \
++    --hash=sha256:e6d54e11887e649345b2ecb491a8e2866f4abdb6d83abc2a1a52d5ee23785ff8 \
++    --hash=sha256:eb30032171afc7ab95e524f13eee0c9a79af356b0414fa3a3736b3febca7d641 \
++    --hash=sha256:eba54489d82683e8cdb9af80a2e55c2089e439e76b60cdb9fd4dfdc62ecfee3c \
++    --hash=sha256:edc4a4dfa313b2cd78d7562cb99b51615e06c89832b78c0c02e2b5c2e27906ae \
++    --hash=sha256:f02c339ab9942578b63a5d54c8956191f6e88f3d8b2c918024ff565f7faa1bde \
++    --hash=sha256:f0bd6334302a5016a2b0f5530b7aea3ff588b6894523fd8491b49f7ce9e67f11 \
++    --hash=sha256:f294e65db28424fe89985faf74648622e04da7977ca5401ac65c7d1b6538d08a \
++    --hash=sha256:f850860e43d47312cb962bfdfe1cd879b180a04d0e7352f80e426b3852be8b79 \
++    --hash=sha256:f8f85a49db66df77546d278de4d249772a4557d715df07ba8ae155cfa6a7fb31 \
++    --hash=sha256:fd34b35b0a2b366f5b4bd53489ccd10d7576b0d4dd68db38ef64b4e617ea8f76 \
++    --hash=sha256:fe81e4ff1b6bab72856d020dab89d86d4dcfbe18af4ff3fe2f391e1b03d0793c
++    # via webauthn
+ certifi==2026.7.22 \
+     --hash=sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775 \
+     --hash=sha256:741e2c3b351ddf169a738da9f2c048608ff7f2c5cc02f1ebc6b118bb090d5d55
+@@ -635,6 +702,16 @@ pillow==12.3.0 \
+     # via
+     #   qrcode
+     #   reportlab
++pyasn1==0.6.4 \
++    --hash=sha256:9c447d8431c947fe4c8febc4ed9e760bc29011a5b01e5c74b67025bd9fb8ce81 \
++    --hash=sha256:deda9277cfd454080ec40b207fb6df82206a3a2688735233cdcd8d3d565f088b
++    # via
++    #   pyasn1-modules
++    #   webauthn
++pyasn1-modules==0.4.2 \
++    --hash=sha256:29253a9207ce32b64c3ac6600edc75368f98473906e8fd1043bd6b5b1de2c14a \
++    --hash=sha256:677091de870a80aae844b1ca6134f54652fa2c8c5a52aa396440ac3106e941e6
++    # via webauthn
+ pycparser==3.0 \
+     --hash=sha256:600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29 \
+     --hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992
+@@ -765,6 +842,10 @@ pydantic-core==2.46.5 \
+     --hash=sha256:fc8515076c11f3cfdf4fb142dcca0fe384b1230a3b5415458ac84f3e0903ec13 \
+     --hash=sha256:ff218293c9c806138dca139765e3b067621be52bcd93cdc14c7711be7ddc90a9
+     # via pydantic
++pyopenssl==26.4.0 \
++    --hash=sha256:28dfcce0162b9211413e26dfbfdf1d24317fbeba18fc93c12400a1856b2a0bc7 \
++    --hash=sha256:f0eb0cb2d581d3ad2b9c489468485e7f2ab6727d08401bcf9d824c3caddf3c1c
++    # via webauthn
+ pyotp==2.10.0 \
+     --hash=sha256:1df2f6a1bcc3bb0716172a5215ddc2f8c7c7fd26a13df9927d52e1746934836c \
+     --hash=sha256:d01e9703443616b03c57c700b5cbffd56a1f929c1b0f8f03131bc78c1fca9d3f
+@@ -1015,6 +1096,10 @@ watchfiles==1.3.0 \
+     --hash=sha256:ec3cd4bb181a7b6329134204c2277c7144ab5f62cce9c5335d6f901ee7ce8d6a \
+     --hash=sha256:f0c9865240e065a2247f4b5248528ae3d01e0e8ae071462c250c884dc16e3ee3
+     # via uvicorn
++webauthn==3.0.1 \
++    --hash=sha256:9927b2f530773bd1d7f8194cd643a2e634a20995ea31f2d8f7a3e70b11c93e31 \
++    --hash=sha256:da862342c91fc03fbcf9a89cee7346e55c56f8b93fbaf66cfe8a55e2f0a05f6c
++    # via -r requirements.txt
+ websockets==17.1 \
+     --hash=sha256:0014eaff8ad5b3b43feda2279f9d34bf2eaae040720b9fbbb55944b10f40b14d \
+     --hash=sha256:00679b7468b4c2b12b0757118174e8eabac56bb2f579a928a104d9554a56e098 \
+diff --git a/App/requirements.txt b/App/requirements.txt
+index b96edbd..6c55bc6 100644
+--- a/App/requirements.txt
++++ b/App/requirements.txt
+@@ -13,3 +13,4 @@ cryptography==50.0.1
+ pyotp==2.10.0
+ qrcode[pil]==8.2
+ boto3==1.43.103
++webauthn==3.0.1
+diff --git a/App/tests/test_claim_mail.py b/App/tests/test_claim_mail.py
+index 30469f9..bd88168 100644
+--- a/App/tests/test_claim_mail.py
++++ b/App/tests/test_claim_mail.py
+@@ -1815,6 +1815,7 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
+         "login_link",
+         "account_invite",
+         "email_confirm",
++        "passkey_added",
+     }
+ 
+ 
+diff --git a/App/tests/test_passkeys.py b/App/tests/test_passkeys.py
+new file mode 100644
+index 0000000..a60d275
+--- /dev/null
++++ b/App/tests/test_passkeys.py
+@@ -0,0 +1,414 @@
++"""Task 0004: passkeys, end to end against a software authenticator.
++
++The server's WebAuthn checks (py_webauthn) run unmodified; the authenticator
++in ``tests/webauthn_soft.py`` signs with a real P-256 key.
++"""
++from __future__ import annotations
++
++from datetime import date, datetime, timedelta, timezone
++
++import pytest
++from fastapi.testclient import TestClient
++
++from app import auth, config, db, mail, passkeys, retention
++from app.main import app
++from tests.conftest import csrf_token_for, login_as
++from tests.webauthn_soft import SoftAuthenticator
++
++BASE = "https://ubyhost.test"
++ORIGIN = BASE
++RP_ID = "ubyhost.test"
++EMAIL = "passkey-host@example.test"
++OTHER = "passkey-other@example.test"
++
++
++@pytest.fixture(autouse=True)
++def https_site(monkeypatch):
++    monkeypatch.setattr(config, "PUBLIC_BASE_URL", BASE)
++    monkeypatch.setattr(mail, "backend_name", lambda: "console")
++    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
++    _clean()
++    yield
++    _clean()
++
++
++def _clean():
++    for address in (EMAIL, OTHER):
++        row = db.query_one("SELECT id FROM user_account WHERE email = ?", (address,))
++        if not row:
++            continue
++        for table in ("passkey", "webauthn_challenge", "login_token", "legal_acceptance"):
++            db.execute(f"DELETE FROM {table} WHERE user_account_id = ?", (row["id"],))
++        db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (row["id"],))
++        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (row["id"],))
++        db.execute("DELETE FROM user_account WHERE id = ?", (row["id"],))
++    db.execute("DELETE FROM webauthn_challenge WHERE user_account_id IS NULL")
++    db.execute("DELETE FROM rate_limit_event WHERE scope LIKE 'passkey%'")
++
++
++def _client() -> TestClient:
++    return TestClient(app, base_url="https://testserver")
++
++
++def _account(email=EMAIL, username="passkey-host"):
++    user_id = auth.create_account(email, "Passkey Host", username=username)
++    return db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
++
++
++def _post(client, url, body=None):
++    return client.post(
++        url, json=body or {},
++        headers={"X-CSRF-Token": csrf_token_for(client), "Accept": "application/json"},
++    )
++
++
++def _signed_in(account):
++    client = _client()
++    login_as(client, account["username"], url="/login?lang=en")
++    return client
++
++
++def _add(client, authenticator=None, **create):
++    authenticator = authenticator or SoftAuthenticator(origin=ORIGIN, rp_id=RP_ID)
++    options = _post(client, "/account/passkeys/options")
++    assert options.status_code == 200, options.text
++    answer = authenticator.create(options.json(), **create)
++    return authenticator, _post(client, "/account/passkeys", {"credential": answer})
++
++
++def _login(authenticator, client=None, **get):
++    client = client or _client()
++    options = _post(client, "/login/passkey/options")
++    assert options.status_code == 200, options.text
++    answer = authenticator.get(options.json(), **get)
++    return client, _post(client, "/login/passkey", {"credential": answer, "next": "/settings"})
++
++
++# --- adding ----------------------------------------------------------------
++
++
++def test_options_ask_for_a_discoverable_verified_passkey_with_an_opaque_handle():
++    account = _account()
++    client = _signed_in(account)
++    options = _post(client, "/account/passkeys/options").json()
++    assert options["rp"] == {"id": RP_ID, "name": "UbyHost"}
++    assert options["authenticatorSelection"]["residentKey"] == "required"
++    assert options["authenticatorSelection"]["userVerification"] == "required"
++    assert options["attestation"] == "none"
++    handle = db.query_one(
++        "SELECT webauthn_user_handle FROM user_account WHERE id = ?", (account["id"],)
++    )["webauthn_user_handle"]
++    assert options["user"]["id"] == handle
++    assert str(account["id"]) != handle and EMAIL not in handle
++    # Only a hash of the challenge is stored.
++    row = db.query_one(
++        "SELECT * FROM webauthn_challenge WHERE user_account_id = ? ORDER BY id DESC",
++        (account["id"],),
++    )
++    assert row["purpose"] == "register" and options["challenge"] not in row["challenge_hash"]
++
++
++def test_adding_a_passkey_stores_only_public_data_audits_and_mails_the_owner():
++    account = _account()
++    client = _signed_in(account)
++    authenticator, response = _add(client)
++    assert response.status_code == 200, response.text
++    assert response.json()["redirect"].startswith("/settings?msg=")
++    row = db.query_one("SELECT * FROM passkey WHERE user_account_id = ?", (account["id"],))
++    assert row["credential_id"] and row["public_key"] and row["sign_count"] == 0
++    assert row["backed_up"] == 1 and row["name"] == "Passkey"
++    assert "internal" in row["transports"]
++    assert db.query_one(
++        "SELECT 1 FROM audit WHERE action = 'passkey_added' AND owner_user_id = ?",
++        (account["id"],),
++    )
++    notice = db.query_one(
++        "SELECT to_email, payload FROM email_outbox WHERE kind = 'passkey_added' "
++        "AND owner_user_id = ?",
++        (account["id"],),
++    )
++    assert notice["to_email"] == EMAIL and "/login/link" not in notice["payload"]
++    prompted = db.query_one(
++        "SELECT two_factor_prompted_at FROM user_account WHERE id = ?", (account["id"],)
++    )
++    assert prompted["two_factor_prompted_at"]
++
++
++def test_the_new_passkey_is_named_after_the_device():
++    account = _account()
++    client = _signed_in(account)
++    client.headers["User-Agent"] = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"
++    _add(client)
++    assert db.query_one(
++        "SELECT name FROM passkey WHERE user_account_id = ?", (account["id"],)
++    )["name"] == "iPhone"
++
++
++def test_a_signed_out_browser_cannot_add_a_passkey():
++    assert _post(_client(), "/account/passkeys/options").status_code == 401
++
++
++def test_a_challenge_minted_for_one_account_cannot_add_to_another():
++    first = _account()
++    second = _account(OTHER, "passkey-other")
++    a, b = _signed_in(first), _signed_in(second)
++    options = _post(a, "/account/passkeys/options").json()
++    answer = SoftAuthenticator(origin=ORIGIN, rp_id=RP_ID).create(options)
++    assert _post(b, "/account/passkeys", {"credential": answer}).status_code == 400
++    assert passkeys.count_for(second["id"]) == 0
++
++
++def test_registration_without_user_verification_is_refused():
++    account = _account()
++    _, response = _add(_signed_in(account), uv=False)
++    assert response.status_code == 400
++    assert passkeys.count_for(account["id"]) == 0
++
++
++def test_registration_from_another_origin_is_refused():
++    account = _account()
++    _, response = _add(_signed_in(account), origin="https://ubyhost.test.evil.example")
++    assert response.status_code == 400
++
++
++def test_the_same_registration_answer_cannot_be_used_twice():
++    account = _account()
++    client = _signed_in(account)
++    options = _post(client, "/account/passkeys/options").json()
++    answer = SoftAuthenticator(origin=ORIGIN, rp_id=RP_ID).create(options)
++    assert _post(client, "/account/passkeys", {"credential": answer}).status_code == 200
++    assert _post(client, "/account/passkeys", {"credential": answer}).status_code == 400
++    assert passkeys.count_for(account["id"]) == 1
++
++
++# --- logging in --------------------------------------------------------------
++
++
++def test_a_passkey_logs_in_without_the_inbox_or_a_code():
++    account = _account()
++    authenticator, _ = _add(_signed_in(account))
++    db.execute("UPDATE user_account SET totp_enabled = 1 WHERE id = ?", (account["id"],))
++    client, response = _login(authenticator)
++    assert response.status_code == 200, response.text
++    assert response.json()["redirect"] == "/settings"
++    assert auth.SESSION_COOKIE in response.headers.get("set-cookie", "")
++    assert client.get("/settings", follow_redirects=False).status_code == 200
++    audit = db.query_one(
++        "SELECT detail FROM audit WHERE action = 'login' AND owner_user_id = ? ORDER BY id DESC",
++        (account["id"],),
++    )
++    assert audit["detail"].startswith("method=passkey:")
++    assert db.query_one(
++        "SELECT last_used_at FROM passkey WHERE user_account_id = ?", (account["id"],)
++    )["last_used_at"]
++
++
++def test_login_options_name_no_account():
++    options = _post(_client(), "/login/passkey/options").json()
++    assert options["rpId"] == RP_ID
++    assert options["userVerification"] == "required"
++    assert options.get("allowCredentials", []) == []
++
++
++def test_a_replayed_login_answer_is_refused():
++    authenticator, _ = _add(_signed_in(_account()))
++    client = _client()
++    options = _post(client, "/login/passkey/options").json()
++    answer = authenticator.get(options)
++    assert _post(client, "/login/passkey", {"credential": answer}).status_code == 200
++    assert _post(_client(), "/login/passkey", {"credential": answer}).status_code == 401
++
++
++def test_a_look_alike_site_cannot_use_the_answer():
++    authenticator, _ = _add(_signed_in(_account()))
++    _, response = _login(authenticator, origin="https://ubyhost-login.example")
++    assert response.status_code == 401
++    _, response = _login(authenticator, rp_id="ubyhost-login.example")
++    assert response.status_code == 401
++
++
++def test_login_without_user_verification_is_refused():
++    authenticator, _ = _add(_signed_in(_account()))
++    _, response = _login(authenticator, uv=False)
++    assert response.status_code == 401
++
++
++def test_a_counter_that_goes_backwards_looks_cloned_and_is_refused():
++    account = _account()
++    authenticator = SoftAuthenticator(origin=ORIGIN, rp_id=RP_ID, counting=True, synced=False)
++    _add(_signed_in(account), authenticator)
++    assert _login(authenticator, count=5)[1].status_code == 200
++    assert _login(authenticator, count=3)[1].status_code == 401
++    assert db.query_one(
++        "SELECT 1 FROM audit WHERE action = 'passkey_clone_suspected' AND owner_user_id = ?",
++        (account["id"],),
++    )
++    assert db.query_one(
++        "SELECT sign_count FROM passkey WHERE user_account_id = ?", (account["id"],)
++    )["sign_count"] == 5
++
++
++def test_a_disabled_account_cannot_log_in_with_its_passkey():
++    account = _account()
++    authenticator, _ = _add(_signed_in(account))
++    db.execute("UPDATE user_account SET active = 0 WHERE id = ?", (account["id"],))
++    assert _login(authenticator)[1].status_code == 401
++
++
++def test_an_unknown_passkey_is_refused():
++    _, response = _login(SoftAuthenticator(origin=ORIGIN, rp_id=RP_ID))
++    assert response.status_code == 401
++
++
++def test_repeated_failures_block_the_connection(monkeypatch):
++    monkeypatch.setattr(passkeys, "FAIL_MAX_WINDOW", 2)
++    stranger = SoftAuthenticator(origin=ORIGIN, rp_id=RP_ID)
++    client = _client()
++    for _ in range(2):
++        assert _login(stranger, client)[1].status_code == 401
++    assert _post(client, "/login/passkey/options").status_code == 429
++
++
++def test_the_next_path_stays_on_this_site():
++    authenticator, _ = _add(_signed_in(_account()))
++    client = _client()
++    options = _post(client, "/login/passkey/options").json()
++    response = _post(client, "/login/passkey", {
++        "credential": authenticator.get(options), "next": "https://evil.example/",
++    })
++    assert response.json()["redirect"] == "/"
++
++
++# --- managing ------------------------------------------------------------------
++
++
++def test_removing_a_passkey_stops_it_logging_in():
++    account = _account()
++    client = _signed_in(account)
++    authenticator, _ = _add(client)
++    passkey_id = passkeys.for_account(account["id"])[0]["id"]
++    response = client.post(f"/account/passkeys/{passkey_id}/delete", follow_redirects=False)
++    assert response.status_code == 303
++    assert passkeys.count_for(account["id"]) == 0
++    assert _login(authenticator)[1].status_code == 401
++
++
++def test_nobody_removes_or_renames_someone_elses_passkey():
++    owner = _account()
++    _add(_signed_in(owner))
++    passkey_id = passkeys.for_account(owner["id"])[0]["id"]
++    intruder = _signed_in(_account(OTHER, "passkey-other"))
++    intruder.post(f"/account/passkeys/{passkey_id}/delete")
++    intruder.post(f"/account/passkeys/{passkey_id}/rename", data={"name": "mine"})
++    row = passkeys.for_account(owner["id"])[0]
++    assert row["name"] == "Passkey"
++
++
++def test_renaming_trims_and_keeps_the_name_short():
++    account = _account()
++    client = _signed_in(account)
++    _add(client)
++    passkey_id = passkeys.for_account(account["id"])[0]["id"]
++    client.post(f"/account/passkeys/{passkey_id}/rename", data={"name": "  Work   laptop " + "x" * 80})
++    name = passkeys.for_account(account["id"])[0]["name"]
++    assert name.startswith("Work laptop x") and len(name) == passkeys.NAME_MAX
++
++
++def test_settings_lists_passkeys_first_in_security():
++    account = _account()
++    client = _signed_in(account)
++    _add(client)
++    html = client.get("/settings").text
++    security = html[html.index('id="settings-security"'):]
++    assert security.index("settings-passkeys") < security.index("/account/2fa/setup")
++    assert "Passkey" in security and "/account/passkeys/" in security
++
++
++# --- where passkeys are offered ------------------------------------------------
++
++
++def test_the_login_page_offers_the_passkey_before_the_email_form():
++    html = _client().get("/login?lang=en").text
++    assert html.index("data-passkey-login") < html.index('action="/login"')
++    assert 'autocomplete="email webauthn"' in html
++    assert '<script src="/static/passkeys.js' in html
++
++
++def test_an_ip_address_site_offers_no_passkeys(monkeypatch):
++    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "http://127.0.0.1:8080")
++    client = TestClient(app)
++    html = client.get("/login?lang=en").text
++    assert "data-passkey-login" not in html and "passkeys.js" not in html
++    assert _post(client, "/login/passkey/options").status_code == 409
++
++
++@pytest.mark.parametrize(
++    "base, ok",
++    [
++        ("https://ubyhost.com", True),
++        ("http://localhost:8080", True),
++        ("http://ubyhost.com", False),
++        ("https://10.0.0.5", False),
++        ("http://[::1]:8080", False),
++    ],
++)
++def test_availability_follows_the_public_address(monkeypatch, base, ok):
++    monkeypatch.setattr(config, "PUBLIC_BASE_URL", base)
++    assert passkeys.available() is ok
++
++
++def test_the_script_is_served_from_this_site_and_calls_no_one_else():
++    response = _client().get("/static/passkeys.js")
++    assert response.status_code == 200
++    assert "http://" not in response.text and "https://" not in response.text
++
++
++# --- the one-time prompt -------------------------------------------------------
++
++
++def test_the_prompt_shows_once_after_the_first_login():
++    account = _account()
++    client = _client()
++    login_as(client, account["username"], follow_redirects=False)
++    first = client.get("/")
++    assert 'id="security-prompt"' in first.text
++    assert first.text.index("data-passkey-supported") < first.text.index("/account/2fa/setup")
++    assert 'id="security-prompt"' not in client.get("/").text
++    login_as(client, account["username"], follow_redirects=False)
++    assert 'id="security-prompt"' not in client.get("/").text
++
++
++def test_no_prompt_with_an_authenticator_app():
++    account = _account()
++    db.execute("UPDATE user_account SET totp_enabled = 1 WHERE id = ?", (account["id"],))
++    client = _client()
++    # Straight to a session: the TOTP step is not what this test is about.
++    response = client.get("/login")
++    client.cookies.set(
++        auth.SESSION_COOKIE, auth.issue_session(account["id"], account["session_version"])
++    )
++    assert response.status_code == 200
++    assert 'id="security-prompt"' not in client.get("/").text
++
++
++def test_no_prompt_on_settings_and_it_waits_for_the_next_page():
++    account = _account()
++    client = _client()
++    login_as(client, account["username"], follow_redirects=False)
++    assert 'id="security-prompt"' not in client.get("/settings").text
++    assert 'id="security-prompt"' in client.get("/").text
++
++
++# --- retention -------------------------------------------------------------------
++
++
++def test_expired_ceremonies_are_deleted_a_day_later():
++    _post(_client(), "/login/passkey/options")
++    old = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
++    db.execute("UPDATE webauthn_challenge SET expires_at = ? WHERE user_account_id IS NULL", (old,))
++    assert passkeys.purge(dry_run=True) >= 1
++    assert "webauthn_challenges" in dict(retention.STEPS)
++    dict(retention.STEPS)["webauthn_challenges"](date.today(), False, None)
++    assert not db.query_one(
++        "SELECT 1 FROM webauthn_challenge WHERE expires_at = ?", (old,)
++    )
+diff --git a/App/tests/webauthn_soft.py b/App/tests/webauthn_soft.py
+new file mode 100644
+index 0000000..ac84a32
+--- /dev/null
++++ b/App/tests/webauthn_soft.py
+@@ -0,0 +1,132 @@
++"""A small software authenticator for the passkey tests (task 0004).
++
++It does what a phone or a password manager does, with a P-256 key held in
++memory: answers ``navigator.credentials.create`` with a "none" attestation and
++``navigator.credentials.get`` with a real ECDSA signature. The server's checks
++run unmodified against it, so the tests prove the real verification, not a
++mock of it.
++"""
++from __future__ import annotations
++
++import hashlib
++import json
++import os
++import struct
++from base64 import urlsafe_b64decode, urlsafe_b64encode
++
++import cbor2
++from cryptography.hazmat.primitives import hashes
++from cryptography.hazmat.primitives.asymmetric import ec
++
++FLAG_UP = 0x01
++FLAG_UV = 0x04
++FLAG_BE = 0x08
++FLAG_BS = 0x10
++FLAG_AT = 0x40
++
++
++def b64url(data: bytes) -> str:
++    return urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
++
++
++def unb64url(value: str) -> bytes:
++    return urlsafe_b64decode(value + "=" * (-len(value) % 4))
++
++
++class SoftAuthenticator:
++    def __init__(self, *, origin: str, rp_id: str, counting: bool = False, synced: bool = True):
++        self.origin = origin
++        self.rp_id = rp_id
++        self.key = ec.generate_private_key(ec.SECP256R1())
++        self.credential_id = os.urandom(16)
++        self.user_handle = b""
++        # Synced passkeys report 0 for ever; a security key counts up.
++        self.counting = counting
++        self.count = 0
++        self.synced = synced
++
++    def _client_data(self, kind: str, challenge: str, origin: str | None = None) -> bytes:
++        return json.dumps(
++            {
++                "type": kind,
++                "challenge": challenge,
++                "origin": origin or self.origin,
++                "crossOrigin": False,
++            }
++        ).encode("utf-8")
++
++    def _flags(self, extra: int = 0, *, uv: bool = True) -> int:
++        flags = FLAG_UP | extra
++        if uv:
++            flags |= FLAG_UV
++        if self.synced:
++            flags |= FLAG_BE | FLAG_BS
++        return flags
++
++    def _cose_key(self) -> bytes:
++        numbers = self.key.public_key().public_numbers()
++        return cbor2.dumps(
++            {1: 2, 3: -7, -1: 1, -2: numbers.x.to_bytes(32, "big"), -3: numbers.y.to_bytes(32, "big")}
++        )
++
++    def _rp_hash(self, rp_id: str | None = None) -> bytes:
++        return hashlib.sha256((rp_id or self.rp_id).encode("utf-8")).digest()
++
++    def create(self, options: dict, *, origin: str | None = None, uv: bool = True) -> dict:
++        """The browser's answer to ``navigator.credentials.create``."""
++        self.user_handle = unb64url(options["user"]["id"])
++        client_data = self._client_data("webauthn.create", options["challenge"], origin)
++        auth_data = (
++            self._rp_hash(options.get("rp", {}).get("id"))
++            + bytes([self._flags(FLAG_AT, uv=uv)])
++            + struct.pack(">I", self.count)
++            + bytes(16)  # AAGUID: none
++            + struct.pack(">H", len(self.credential_id))
++            + self.credential_id
++            + self._cose_key()
++        )
++        attestation = cbor2.dumps({"fmt": "none", "attStmt": {}, "authData": auth_data})
++        cid = b64url(self.credential_id)
++        return {
++            "id": cid,
++            "rawId": cid,
++            "type": "public-key",
++            "response": {
++                "clientDataJSON": b64url(client_data),
++                "attestationObject": b64url(attestation),
++                "transports": ["internal", "hybrid"],
++            },
++            "clientExtensionResults": {},
++            "authenticatorAttachment": "platform",
++        }
++
++    def get(
++        self, options: dict, *, origin: str | None = None, rp_id: str | None = None,
++        uv: bool = True, count: int | None = None,
++    ) -> dict:
++        """The browser's answer to ``navigator.credentials.get``."""
++        if count is not None:
++            self.count = count
++        elif self.counting:
++            self.count += 1
++        client_data = self._client_data("webauthn.get", options["challenge"], origin)
++        auth_data = (
++            self._rp_hash(rp_id) + bytes([self._flags(uv=uv)]) + struct.pack(">I", self.count)
++        )
++        signature = self.key.sign(
++            auth_data + hashlib.sha256(client_data).digest(), ec.ECDSA(hashes.SHA256())
++        )
++        cid = b64url(self.credential_id)
++        return {
++            "id": cid,
++            "rawId": cid,
++            "type": "public-key",
++            "response": {
++                "clientDataJSON": b64url(client_data),
++                "authenticatorData": b64url(auth_data),
++                "signature": b64url(signature),
++                "userHandle": b64url(self.user_handle) if self.user_handle else None,
++            },
++            "clientExtensionResults": {},
++            "authenticatorAttachment": "platform",
++        }
+diff --git a/docs/SECURITY.md b/docs/SECURITY.md
+index 0a448ca..a07d092 100644
+--- a/docs/SECURITY.md
++++ b/docs/SECURITY.md
+@@ -11,6 +11,7 @@ summarises the threat model, controls, and known limitations.
+ | **Host auth** | Signed session cookie, `HttpOnly`, `SameSite=Strict`, `Secure` on HTTPS, session-version invalidation |
+ | **Host login** | No passwords. A single-use link mailed to the account's address (32 random bytes, stored as SHA-256, 15 minutes, newest link only); the link opens a page with a button, so a mail scanner that fetches it logs nobody in |
+ | **Host 2FA** | Optional authenticator-app TOTP as a second step after the link; one-use recovery codes |
++| **Passkeys** | Optional WebAuthn passkeys (py_webauthn): discoverable, user verification required, so a passkey login skips TOTP. RP ID is the host name of `UBYHOST_PUBLIC_BASE_URL` (never an IP; https or localhost). Challenges are stored as SHA-256, single-use, 5 minutes; origin and RP hash are checked (phishing); a sign counter that goes backwards is refused and audited (`passkey_clone_suspected`); every new passkey mails the owner. Only public keys are stored. The e-mail link always remains the recovery path |
+ | **Guest access** | 100-bit permalink token + optional six-digit PIN + signed PIN cookie bound to token and current PIN; the claim secret is stored hashed and never written into a mail body. The readable link `/l/{name}-{6-character code}` (about 30 bits) is resolved to the same token before any check, so the PIN cookie, PIN fingerprint, lockout and rate limits are keyed on the token whichever link a guest opens. Guessing a readable link reveals only the PIN page (property name and host card), never guest data |
+ | **Multi-tenant** | All host routes resolve resources through `access.*` joins on `owner_user_id` |
+ | **Secrets** | UbyPort passwords, host TOTP secrets, guest travel-document numbers, birth date, street and town of residence, signatures, the UbyPort request envelope and queued claim secrets encrypted at rest (MultiFernet over `UBYHOST_DATA_KEYS`, separate from the session secret; the old key derived from `SECRET_KEY` is kept for decryption until `scripts/reencrypt.py` has run); `SECRET_KEY` in `data/secret_key` |
+diff --git a/docs/context/architecture.md b/docs/context/architecture.md
+index 2ab08df..4e14be9 100644
+--- a/docs/context/architecture.md
++++ b/docs/context/architecture.md
+@@ -26,7 +26,7 @@
+ | App + routes | `App/app/main.py` (routers), `App/app/routes/` (guest, admin, admin_accounts, invoices, stay_fees, exports, signup, legal, privacy_requests, onboarding, api, mail_unsubscribe) |
+ | Police filing | `App/app/ubyport/` (SOAP client, errors), `App/app/reporting.py` (batches, sweep, state), `App/app/deadlines.py`, `App/app/filing_watchdog.py` |
+ | Stays and guests | `App/app/icalsync.py` (feeds), `App/app/claim.py` (guest claim), `App/app/housebook.py`, `App/app/validation.py`, `App/app/passport_photos.py` |
+-| Auth and security | `App/app/auth.py` (accounts, sessions, TOTP), `App/app/login_link.py` (e-mail login links), `App/app/security.py`, `App/app/access.py`, `App/app/rate_limit.py`, `App/app/turnstile.py`, `App/app/client_ip.py`, `App/app/env_guard.py` |
++| Auth and security | `App/app/auth.py` (accounts, sessions, TOTP), `App/app/login_link.py` (e-mail login links), `App/app/passkeys.py` (WebAuthn), `App/app/security.py`, `App/app/access.py`, `App/app/rate_limit.py`, `App/app/turnstile.py`, `App/app/client_ip.py`, `App/app/env_guard.py` |
+ | Data | `App/app/db.py`, `App/app/migrations/`, `App/app/retention.py`, `App/app/dsr.py`, `App/app/workspace_export.py` |
+ | Money | `App/app/invoices.py`, `App/app/invoice_pdf.py`, `App/app/stay_fee.py`, `App/app/stay_fee_filing.py`, `App/app/stay_fee_remittance_pdf.py` |
+ | Mail | `App/app/mail.py` (SES and outbox), `App/app/mail_notify.py`, `App/app/lifecycle_mail.py` |
+diff --git a/docs/context/decisions.md b/docs/context/decisions.md
+index c465b18..a0a4137 100644
+--- a/docs/context/decisions.md
++++ b/docs/context/decisions.md
+@@ -30,3 +30,5 @@ Append-only, one line each: `date | decision | reason | link`.
+ - 2026-10-06 | Cursor automations (regression coverage, bug sweep) stay as they are and read known-issues.md | owner choice | [prompts](prompts.md#bug-hunt-automation)
+ - 2026-10-06 | [workflow] Task 0001 merged (#281) before orchestrator review; review post-merge approved; stale PR cleanup remains owner-run | owner merged early | [0001 report](../tasks/0001-report.md)
+ - 2026-10-06 | [workflow] Context-rollout upload: flat files only in the rollout bundle folder (no subfolder); MANIFEST at bundle root | place_files script paths | [TEMPLATE](../tasks/TEMPLATE.md)
++- 2026-10-06 | New dependency `webauthn==3.0.1` (py_webauthn) with its transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned in requirements.lock | passkey verification must not be hand-rolled; owner approved all five | task 0004
++- 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
+diff --git a/docs/privacy/RETENTION.md b/docs/privacy/RETENTION.md
+index a564460..588b0f6 100644
+--- a/docs/privacy/RETENTION.md
++++ b/docs/privacy/RETENTION.md
+@@ -27,6 +27,8 @@ under the GDPR storage-limitation principle, also a ceiling.
+ | Resolved alerts | `alert` | resolved | 12 months (G-D7) | `retention.py` alert step | Operations |
+ | Rate-limit events | `rate_limit_event` | created | 24 hours (G-D7) | `retention.py` rate-limit step | Security |
+ | Login links | `login_token` (hash, account, address, purpose, times) | expiry | 1 day after expiry; deleted with the account | `retention.py` login-token step (`login_link.purge`) | Security |
++| Passkeys | `passkey` | created | until removed by the host or the account is deleted | `retention.py` workspace deletion; cascade | Contract |
++| WebAuthn challenges | `webauthn_challenge` | expiry (5 min) | 1 day after expiry | `retention.py` webauthn-challenge step (`passkeys.purge`) | Security |
+ | Container logs | Docker `json-file` | rotation | 5 × 10 MB per service | `docker-compose.yml` `logging:`; uvicorn access log off (OPS-3) | Security |
+ | Encrypted backups | `/data/backups`, Drive, S3 | snapshot age | 30 days local/off-site (G-D3) | `backup_data.sh` `UBYHOST_BACKUP_RETENTION_DAYS`; S3 lifecycle | Disaster recovery |
+ 
+diff --git a/docs/privacy/ROPA.md b/docs/privacy/ROPA.md
+index 864e52a..a829c54 100644
+--- a/docs/privacy/ROPA.md
++++ b/docs/privacy/ROPA.md
+@@ -30,7 +30,7 @@ UbyHost is the **controller** for the data below.
+ 
+ | Activity | Data | Purpose | Basis (to confirm) | Retention |
+ |---|---|---|---|---|
+-| Host accounts | E-mail address (login), username (internal), display name, TOTP secret (encrypted), recovery-code hashes, last login; login links stored only as hashes (`login_token`) | Provide the service | Contract (Art 6(1)(b)) | Life of account + 3 years |
++| Host accounts | E-mail address (login), username (internal), display name, TOTP secret (encrypted), recovery-code hashes, last login; login links stored only as hashes (`login_token`); passkey public keys, names, dates and counters (`passkey`), WebAuthn challenge hashes (`webauthn_challenge`) | Provide the service | Contract (Art 6(1)(b)) | Life of account + 3 years |
+ | Accepted terms | `legal_acceptance` rows (document, version, time, method, IP, user agent) | Demonstrate acceptance (Art 5(2), 24) | Legal obligation / accountability | Life of account + 3 years |
+ | Security logs | `audit`, `rate_limit_event`, `alert`, container logs | Operate, secure, investigate | Security (Art 6(1)(f)); legal obligation for some | Audit 3 y; resolved alerts 12 mo; rate-limit 24 h |
+ | Support mailbox | Messages to/from `support@ubyhost.com` | Answer support requests | Contract / legitimate interest | To be confirmed (LD-9 identifies the provider) |
+-- 
+2.34.1
+
