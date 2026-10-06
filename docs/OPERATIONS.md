@@ -77,13 +77,14 @@ whether that individual has been reported.
 | `pending` | Not yet accepted by UbyPort. The default, and where a record sits between the guest signing and the next sweep. |
 | `sent` | UbyPort holds this record. Never resent automatically. |
 | `error` | Rejected in a way that correcting the data can fix. |
-| `blocked` | Rejected in a way resending will not fix — in practice code 150, a duplicate. 112 does **not** belong here; see below. |
+| `blocked` | Rejected in a way resending will not fix — in practice code 150, a duplicate. 112 does **not** belong here: it is an accept; see below. |
 | `not_required` | Czech national: house book only, no reporting duty. |
 
 Transitions:
 
-- `pending → sent` — the response carried no error codes for this record.
-- `pending → error` — correctable code(s) returned.
+- `pending → sent` — the response carried no error codes for this record, or
+  only codes of severity 0-2 (for example 112, reported late).
+- `pending → error` — code(s) of severity 4-6, or of unknown severity, returned.
 - `pending → blocked` — a non-correctable code (150, or a codebook text
   matching `duplic`/`pozd`/`late`).
 - `error`/`blocked`/`pending` **→ `sent`** when the response says duplicate
@@ -93,8 +94,8 @@ Transitions:
   edit of a reportable guest also stamps `identity_verified_at`, and it resets
   `submit_attempts` to 0.
 - **Nothing changes state when the automatic sweep gives a record up.** After
-  three consecutive refusals the sweep stops offering it (`submit_attempts`),
-  but the row stays `error` and a host send still works. See 112 below.
+  one refusal the sweep stops offering it (`submit_attempts`), but the row
+  stays `error` and a host send still works. See the severity rule below.
 - anything → `not_required` when the nationality is changed to Czech.
 - **A transport failure changes nothing.** The guest stays `pending` and the
   `submission` row is marked `transport_error`, so the next sweep retries. This
@@ -113,10 +114,26 @@ book is fetched from the service with `DejMiCiselnik(Chyby)` and cached in the
 `codelist` table; `App/app/ubyport/errors.py` holds the handful that must be
 understood even with an empty cache.
 
-Classification is partly **substring matching on the code book's Czech text**
-(`duplic`, `pozd`, `late`). A wording change on the police side can therefore
-reclassify records without any change here. Only 112 and 150 are pinned to their
-code, so they cannot be reclassified by prose.
+**The severity rule.** The Foreign Police answered in writing (ŘSCP letter
+CPR-34587-2/ČJ-2026-930023, 24 September 2026, A1-A2) that the code book is
+complete and binding, and that the outcome depends only on each code's
+severity ("síla chyby"):
+
+| Severity | Police name | What it means | UbyHost |
+| --- | --- | --- | --- |
+| 0 | INFORMACE | Accepted; the user is told | `sent`, notes shown on the report |
+| 1 | OPRAVA | Accepted; correct the value in your own records | `sent` |
+| 2 | INF OPRAVA | Accepted; correct and inform the user | `sent` |
+| 4 | CHYBA UŽIVATELE | **Not accepted**; user informed | `error` (or `sent` for a duplicate) |
+| 5-6 | CHYBA UŽIVATELE | **Not accepted**; processing of the record or the connection ends | `error` / `blocked` |
+
+The severity is the `TextKratkyCZ` column of `DejMiCiselnik(Chyby)` (appendix 5,
+section 5.3.2) and is cached in `codelist.extra`. Refresh the code lists on the
+property page to load it. Until then `KNOWN_SEVERITY` in
+`App/app/ubyport/errors.py` covers 1, 112 and 150, and **a code with no known
+severity counts as not accepted**. Among refusals, substring matching on the
+code book text (`duplic`, `pozd`, `late`) still marks the ones resending cannot
+fix.
 
 Each send writes one `submission` row. Its `state` is what the call itself
 produced, and it is independent of the guest's `submit_state` above:
@@ -126,7 +143,7 @@ produced, and it is independent of the guest's `submit_state` above:
 | `ok` | At least one record was accepted for the first time and no error codes came back. A Doručenka or a stamp is expected; `receipt_missing` fires if neither arrived. |
 | `ok_duplicate` | Every record was already held by the register (code 150). A success, but nothing new was filed and no Doručenka exists for this call — see below. |
 | `partial` | Some records were accepted for the first time and some were not. |
-| `error` | Records came back with correctable codes. The guest stays `error` and is retried. |
+| `error` | Records came back refused (severity 4-6). The guest stays `error` until the host fixes the data. |
 | `transport_error` | The service could not be reached, or answered with a fault. Nothing was filed. |
 
 A `partial` row whose only rejection is a duplicate is still `partial`: the
@@ -154,41 +171,40 @@ first time *and* the service returned no error codes. `ok` with no stamp and no
 Doručenka behind it raises the `receipt_missing` warning — the register has the
 record and we hold no proof of it.
 
-**112 — critical transmission error.** The Foreign Police answered this in
-writing: in UBYPORT, 112 falls into the category of critical transmission
-errors (the 1xx series) and means **the batch of accommodated foreigners was
-not received at all**. The register does not hold the data. The usual causes
-they give are a structural fault in the submitted file (an invalid character in
-the generated `.UNZ`/`.XML`), an empty mandatory field, or an interrupted
-connection to the Police of the Czech Republic server during upload.
+**112 — reported late (accepted).** The Foreign Police answered in writing
+(24 September 2026, A4-A5 and B2-B3): 112 is "Oznámeno pozdě", severity 0. The
+register **holds** the record; it was only filed after the deadline. The guest
+goes to `sent` and is never resent, because a resend would be a duplicate.
+An earlier reading of 112 as a "critical transmission error, batch not
+received" is withdrawn. A batch that really did not arrive gets no Doručenka at
+all (B1); that is the `outcome_unknown` / `transport_error` path, not a code.
 
-So 112 is correctable, not permanent: the guest goes to `error`, stays in the
-queue, and the next send — automatic or manual — picks the record up again.
-The remedy the police prescribe is to check the guest's card in the
-accommodation system for correct nationality, date of birth and document
-number, and then **repeat the submission**.
+**Refused records are not resent blindly.** The police warn (B2-B3) that
+programs which send the same refused record every day raise the host's error
+count, and the police then contact the host. So **the automatic sweep offers a
+refused record once**: after one refusal it stops (`submit_attempts`), the stay
+gets a warning card naming the guests, and the record waits for the host.
+Nothing is lost and nothing is marked permanently rejected. Correct the guest
+card (the mandatory fields and allowed characters are in appendices 3 and 5 of
+the Provozní řád, and in the police "Tabulka povolených znaků"), then **send
+the stay again by hand**, which always works. Saving the guest form also
+resets the count. Send only the refused records again, in a new batch (C3).
 
-Be honest about what we cannot tell apart: an interrupted connection is
-transient and simply retrying is right, while an invalid character or an empty
-mandatory field is a data fault that no number of retries will clear. We
-receive the same code for both, so **UbyHost stops offering the record after
-three consecutive refusals** — the count applies only to the automatic sweep
-(`UBYHOST_SUBMIT_SWEEP_MINUTES`), never to a send you start by hand.
+**Duplicate key.** The police compare dates from-to, surname, first name, date
+of birth, nationality, travel document number and purpose of stay (A3). Note,
+visa number and address are **not** compared, so correcting only those after an
+accept still produces a duplicate. There is no duplicate limit, but the police
+review error rates; after an unclear outcome they recommend resending and
+reading a duplicate answer as proof of acceptance (C2). Many deliberate
+duplicates from one property: send them a short informative e-mail.
 
-When that happens the stay gets a warning card naming the guests that were
-dropped, and the automatic send stops re-offering them. Nothing is lost and
-nothing is marked permanently rejected: check the guest card, and the generated
-file, correct whatever the police's causes point at, and **send the stay again
-by hand** — that always works, whatever the count says. Saving the guest form
-also resets the count, so a corrected record rejoins the automatic queue.
+**Lost Doručenka.** If a record reached the police but the receipt never came
+back (C1), ask the Oddělení CIS by data box or e-mail for the receipt and for
+confirmation that the record was filed. The police confirmed one such case for
+UbyHost on 2 October 2026 (CPR-35040-2/ČJ-2026-930023: 6 of 6 accepted).
 
-112 is pinned in `App/app/ubyport/errors.py` as correctable regardless of the
-code book's wording, so a police-side text change cannot quietly turn a batch
-that was never received into a record we abandon. The rest of the 1xx series is
-deliberately **not** generalised from this answer: no code book entry tells us
-the other 1xx codes mean the same thing, and treating a batch the service did
-accept as never received risks a strike against the host. An unrecognised code
-falls through to `error`, which is correctable anyway.
+**Batch size.** At most 32 records per batch; read the live value with
+`MaximalniDelkaSeznamu` (D1-D2). There is no daily limit.
 
 The `request_xml` and `response_xml` columns on the `submission` row hold the
 exact envelope sent and received. They are the authoritative record for an

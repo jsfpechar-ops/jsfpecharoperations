@@ -31,6 +31,31 @@ Mock UbyPort (`UBYHOST_UBYPORT_ENV=mock`) is for development and Render
 staging only. It must stay behaviourally close to the real serializer rules so
 CI catches ordering and PDF bugs before production.
 
+## What the police confirmed in writing (2026)
+
+ŘSCP, Oddělení CIS, letters CPR-34587-2/ČJ-2026-930023 (24 September) and
+CPR-35040-2/ČJ-2026-930023 (2 October). Technical contact: the officer named in
+the letters (service e-mail), or ubyport@pcr.cz. Details and code-level effects:
+[OPERATIONS](OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do).
+
+- **Severity decides.** The `DejMiCiselnik(Chyby)` code book is complete and
+  binding. Severity 0-2: record accepted. 4-6: not accepted.
+- **112 = reported late**, severity 0: accepted. Never resend it.
+- **Duplicates** are keyed on dates from-to, surname, first name, birth date,
+  nationality, document number and purpose (not note, visa or address). A
+  duplicate answer proves an earlier accept. No limit, but error rates are watched.
+- **Do not auto-resend refused records**: repeated refusals raise the host's
+  error count and the police contact the host. Fix the data, then send only the
+  refused records again, in a new batch.
+- **No receipt** = the request did not match the WSDL or did not arrive. If a
+  record arrived but the receipt was lost, ask the police for it by data box or
+  e-mail. Records marked accepted in a Doručenka are filed.
+- **Batch**: at most 32 records (`MaximalniDelkaSeznamu`), no daily limit.
+  `TestDostupnosti` checks the service and its backend.
+- **Test environment** behaves exactly like production and is used for the
+  police check test that approves a new application. A UBY-WS test account was
+  issued on 6 October 2026 (kept outside git).
+
 ## Features that must stay aligned with filing
 
 Treat these as **one system** with UbyPort. A bug in any of them can mean wrong

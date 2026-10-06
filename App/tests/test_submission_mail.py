@@ -161,7 +161,7 @@ def _payload(row):
 class _RejectingClient:
     """Answers every record with one UbyPort error code."""
 
-    def __init__(self, code: str = ";112;"):
+    def __init__(self, code: str = ";106;"):
         self.code = code
 
     def submit(self, _header, _guests):
@@ -289,7 +289,7 @@ def test_the_email_uses_the_logo_docs_logo_md_names_for_mail():
     content = mail_notify.build_submission_problem(
         property_name="Riverside Loft",
         state="error",
-        reason="112: critical transmission error",
+        reason="106: Invalid value in a guest field",
         transport=False,
         stays=[],
         submission_id=None,
@@ -449,7 +449,7 @@ def test_the_ses_message_carries_both_a_text_and_an_html_part(monkeypatch):
     content = mail_notify.build_submission_problem(
         property_name="Riverside Loft",
         state="error",
-        reason="112: critical transmission error",
+        reason="106: Invalid value in a guest field",
         transport=False,
         stays=[],
         submission_id=None,
@@ -525,7 +525,7 @@ def _problem(stays=None, *, transport=False, submission_id=None):
     return mail_notify.build_submission_problem(
         property_name="Riverside Loft",
         state="error",
-        reason="112: critical transmission error",
+        reason="106: Invalid value in a guest field",
         transport=transport,
         stays=stays or [],
         submission_id=submission_id,

@@ -137,7 +137,7 @@ def test_submission_detail_rewrites_history(host, monkeypatch):
         _send(ap, monkeypatch, Accept())
         page = host.get(f"/submissions/{s1}").text
         refused_row = "pill green" in page
-        print("S1 (refused 112) detail shows green Accepted pill:", refused_row)
+        print("S1 (refused 106) detail shows green Accepted pill:", refused_row)
         assert not refused_row
     finally:
         _cleanup(ap["id"])

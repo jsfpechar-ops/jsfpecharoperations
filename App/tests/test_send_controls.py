@@ -521,16 +521,14 @@ def test_stay_submit_route_requires_duplicate_confirmation():
     )
 
 
-def test_a_critical_transmission_error_leaves_the_guest_retryable(monkeypatch):
-    """112 means the register never received the batch, so retrying is the fix.
+def test_reported_late_files_the_guest(monkeypatch):
+    """112 means reported late: the register accepted the record.
 
-    The police answered this in writing: 112 is a 1xx critical transmission
-    error, the batch was not received at all, and the remedy is to correct the
-    data and repeat the submission. Parking the guest in ``blocked`` would drop
-    them from every future automatic send, so the declaration would never
-    happen. This goes through ``submit_batch`` rather than ``classify`` because
-    the state the host sees, and the send gate that acts on it, are the parts
-    that matter.
+    The police answered in writing (24 September 2026, A4-A5) that 112 is
+    "Oznámeno pozdě" with severity 0, and that severity 0-2 means accepted. The
+    guest must end up sent, never offered again, so no duplicate follows. This
+    goes through ``submit_batch`` rather than ``classify`` because the state the
+    host sees, and the send gate that acts on it, are the parts that matter.
     """
     apartment, _reservation, guest_id = _seed("manual", "tok-112")
 
@@ -552,16 +550,12 @@ def test_a_critical_transmission_error_leaves_the_guest_retryable(monkeypatch):
 
         result = reporting.submit_batch(apartment, pairs, mode="manual")
 
-        assert result["state"] == "error"
-        assert result["blocked"] == 0
+        assert result["state"] == "ok"
         guest = db.query_one("SELECT * FROM guest WHERE id = ?", (guest_id,))
-        assert guest["submit_state"] == reporting.ERROR
-        assert guest["submit_state"] != reporting.BLOCKED
+        assert guest["submit_state"] == reporting.SENT
 
-        # The unattended sweep must pick the record back up: an ``error`` guest
-        # is retried without anyone opting into a duplicate resend.
         again = reporting.collect_sendable(apartment["id"], ignore_automation=True)
-        assert guest_id in [guest["id"] for guest, _ in again]
+        assert guest_id not in [guest["id"] for guest, _ in again]
     finally:
         db.execute("DELETE FROM alert WHERE apartment_id = ?", (apartment["id"],))
         db.execute("DELETE FROM submission WHERE apartment_id = ?", (apartment["id"],))

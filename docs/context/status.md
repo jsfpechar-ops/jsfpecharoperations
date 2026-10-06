@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-06 by the orchestrator (task 0001 review closeout). Keep each section to 5 lines or fewer.
+Updated: 2026-10-06 (police answers on UbyPort, branch `fix/ubyport-police-answers`). Keep each section to 5 lines or fewer.
 
 ## Production
 
@@ -9,6 +9,8 @@ Updated: 2026-10-06 by the orchestrator (task 0001 review closeout). Keep each s
 
 ## Now
 
+- Owner: review and merge the police-answers PR (HIGH RISK filing: 112 is now an accept, refused records are sent once). Then deploy and press **Refresh code lists** on every production property.
+- Owner: Phase 4 test filing on Lightsail staging with the UBY-WS test account (`deploy/lightsail/README.md`, "Filing against the police test environment"). Then K-F13 data check.
 - Owner: run task [0001](../tasks/0001-context-rollout.md) step 12 with `APPLY=1` to close the 40 listed stale PRs (keep #278 and #279 open).
 
 ## Next

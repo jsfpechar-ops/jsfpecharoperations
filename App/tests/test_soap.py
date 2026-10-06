@@ -227,39 +227,70 @@ def test_no_errors_means_accepted():
     assert messages == []
 
 
-def test_a_critical_transmission_error_can_be_corrected():
-    """112 means the batch never reached the register, so resending is the fix.
+def test_reported_late_is_an_accept():
+    """112 is "Oznámeno pozdě" with severity 0, so the register holds the record.
 
-    The Foreign Police answered this in writing: 112 is a critical transmission
-    error (1xx series) - the batch of accommodated foreigners was not received
-    at all. The guest must stay retryable, not land in `blocked`.
+    The Foreign Police answered in writing (24 September 2026, A4-A5): 112 means
+    reported late, and severity 0-2 means the record was accepted. Resending it
+    would only produce a duplicate.
     """
     state, messages = uby_errors.classify("", ";112;")
-    assert state == "error"
+    assert state == "accepted"
     assert any("112" in m for m in messages)
 
 
-def test_the_112_wording_carries_no_non_correctable_marker():
-    """The fallback wording is substring-matched, so it must not trip the filter.
-
-    classify() matches NON_CORRECTABLE_MARKERS against describe()'s output, and
-    describe() falls back to KNOWN_CODES when the live code book is silent. A
-    wording that happened to contain one of those markers would reclassify 112
-    on its own.
-    """
-    assert not uby_errors.is_non_correctable(uby_errors.KNOWN_CODES["112"])
+def test_the_112_wording_says_accepted():
+    """The offline wording must tell the host the record is in the register."""
+    assert "accepted" in uby_errors.KNOWN_CODES["112"]
+    assert uby_errors.severity("112") == 0
 
 
-def test_a_reworded_112_from_the_code_book_is_still_correctable():
-    """The police's own prose for 112 must not override the written answer.
+def test_severity_from_the_code_book_decides():
+    """The police decide by severity alone: 0-2 accepted, 4-6 not accepted."""
+    severities = {"106": 4, "777": 1, "778": 5}
+    assert uby_errors.classify("", ";777;", {}, severities=severities)[0] == "accepted"
+    assert uby_errors.classify("", ";778;", {}, severities=severities)[0] == "error"
+    assert uby_errors.classify("", ";106;", {}, severities=severities)[0] == "error"
+    # One refused code is enough to refuse the record.
+    assert uby_errors.classify("", ";777;106;", {}, severities=severities)[0] == "error"
+    # A late record whose text the police reword is still an accept.
+    book = {"112": "Pozdě podané hlášení"}
+    assert uby_errors.classify("", ";112;", book, severities={"112": 0})[0] == "accepted"
 
-    The cached code book is authoritative for what a code means to them, but it
-    is free text: a wording change must not silently abandon a record the
-    register never received.
-    """
-    book = {"112": "Pozdě podané hlášení - záznam nebyl přijat"}
-    state, _messages = uby_errors.classify("", ";112;", book)
-    assert state == "error"
+
+def test_an_unknown_code_is_a_refusal():
+    """No severity on file: never assume the register took the record."""
+    assert uby_errors.severity("999") is None
+    assert uby_errors.classify("", ";999;")[0] == "error"
+
+
+def test_a_code_book_duplicate_row_counts_as_duplicate():
+    book = {"151": "Duplicitní záznam - data nebyla převzata", "106": "Nekorektní číslo dokladu"}
+    assert uby_errors.record_is_duplicate(";151;", book)
+    assert uby_errors.record_is_duplicate(";150;", {})
+    assert not uby_errors.record_is_duplicate(";106;", book)
+
+
+def test_the_real_chyby_layout_is_read_with_its_severity():
+    """Appendix 5 section 5.3.2: Kod2 code, Kod3 text, TextKratkyCZ severity."""
+    from app import codelists
+
+    row = {
+        "Id": "0",
+        "Kod2": "ERR_CZE_112",
+        "Kod3": "Oznámeno pozdě",
+        "TextCZ": "",
+        "TextENG": "INFORMACE",
+        "TextKratkyCZ": "0",
+        "TextKratkyENG": "O podezření z chyby je nutno informovat uživatele, procedura pracuje dále",
+    }
+    code, text_cs, _text_en = codelists._code_and_texts(codelists.KIND_ERRORS, row)
+    assert code == "ERR_CZE_112"
+    assert text_cs == "Oznámeno pozdě"
+    assert codelists._extra(codelists.KIND_ERRORS, row) == "0"
+    cached = [{"code": code, "text_cs": text_cs, "text_en": text_cs, "extra": "0"}]
+    assert uby_errors.severities_from_rows(cached) == {"112": 0}
+    assert uby_errors.codebook_from_rows(cached)["112"] == "Oznámeno pozdě"
 
 
 def test_duplicate_is_not_correctable_by_wording():

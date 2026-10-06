@@ -79,7 +79,7 @@ def _submission_problem(lang: str):
     return mail_notify.build_submission_problem(
         property_name="Riverside Loft",
         state="error",
-        reason="112: critical transmission error",
+        reason="106: Invalid value in a guest field",
         transport=False,
         stays=[STAY],
         submission_id=7,

@@ -2585,6 +2585,7 @@ def submission_detail(submission_id: int, request: Request):
         by_id = {row["id"]: row for row in found}
         guests = [by_id[guest_id] for guest_id in guest_ids if guest_id in by_id]
     codebook = codelists.error_codebook()
+    severities = codelists.error_severities()
     from ..ubyport import errors as uby_errors
 
     lang = host_i18n.lang_from_request(request)
@@ -2601,11 +2602,11 @@ def submission_detail(submission_id: int, request: Request):
     for index, guest in enumerate(guests):
         error = raw_record_errors[index] if index < len(raw_record_errors) else ""
         state, messages = uby_errors.classify(
-            submission["header_errors"], error, codebook, lang
+            submission["header_errors"], error, codebook, lang, severities=severities
         )
         if state == "accepted":
             result = "accepted"
-        elif "150" in uby_errors.split_codes(error) or any(
+        elif uby_errors.record_is_duplicate(error, codebook) or any(
             uby_errors.is_duplicate(message) for message in messages
         ):
             result = "duplicate"

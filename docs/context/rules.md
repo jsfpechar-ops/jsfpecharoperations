@@ -6,6 +6,7 @@
 
 - UbyPort filing (`ZapisUbytovane`), correct SOAP, stored Doručenka PDFs and an honest submission state must never regress. Read [UBYPORT_CORE](../UBYPORT_CORE.md) before touching `App/app/ubyport/`, submission, claim or automation, or any guest field that maps to UbyPort.
 - Never auto-resend a record that is already `sent`: duplicates are penalised. UbyPort code 150 "duplicate" counts as success.
+- A record is accepted when every code it got has police severity 0-2 (112 included). A refused record is never resent automatically with unchanged data.
 - HIGH RISK filing changes (retry, cancel, date move, deletion) need a written owner decision first.
 
 ## Privacy

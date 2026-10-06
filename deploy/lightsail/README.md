@@ -288,6 +288,28 @@ UBYHOST_LITESTREAM_MEM=128m
 UBYHOST_CADDY_MEM=128m
 ```
 
+### Filing against the police test environment
+
+The police issued a UBY-WS **test** account for the test facility (letter of
+6 October 2026). Their test environment behaves exactly like production (B4)
+and is at `https://ubyport.pcr.cz/ws_uby_test/ws_uby.svc`; `UBYHOST_UBYPORT_ENV=test`
+selects it, nothing else to configure.
+
+1. GitHub → Actions → **Deploy staging** → Run workflow, pick the branch,
+   set **ubyport_env** to `test`.
+2. Sign in to staging, open the test property (or create one).
+3. Enter **IDUB**, **Zkratka** (it has six characters, letters and digits),
+   **web-service user name** (`UBY-WS_…`) and **password** exactly as printed on
+   the police PDF "Přihlašovací údaje pro robotické vkládání". Address and
+   facility name as on the "Přehled ubytoven" PDF.
+4. Press **Save and test connection**, then **Refresh code lists** (loads the error
+   severities). Run the Phase 4 script in `docs/PRODUCTION_CHECKLIST.md`.
+5. Back to the mock: run **Deploy staging** again with `ubyport_env` = `mock`.
+
+Never put the test password, the PDFs or the test facility address in git or in
+a PR: this repository is public. If the password leaks, ask the police for a new
+one (ŘSCP, Oddělení CIS).
+
 `preflight.sh` refuses a staging `.env` whose UbyPort is neither `mock` nor
 `test`, a `mock` staging without the profile or the mock URL, or a Litestream
 prefix containing `production`, and refuses `COMPOSE_PROFILES=staging` on

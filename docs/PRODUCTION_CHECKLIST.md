@@ -23,6 +23,7 @@ These must match **exactly** in UbyHost → apartment settings and in the police
 |-------|----------------------|------------------------|---------|
 | Laptop | `local` | `mock` | Dev |
 | Render `ubyhost-staging` | `staging` | `mock` **forever** | Demos / PR UX |
+| Lightsail staging | `staging` | `mock` or **`test`** | Real SOAP against the police test environment, UBY-WS test account |
 | Lightsail pre-live | `production` | **`test`** | Real SOAP, not the live register |
 | Lightsail live | `production` | **`prod`** | Real police reporting |
 
@@ -65,7 +66,7 @@ The app **refuses to start** if `UBYPORT_ENV=prod` without `DEPLOYMENT=productio
 
 ## Phase 4 — Validate on test UbyPort (go-live gate)
 
-Do this on Lightsail with **test**, never on Render, never with `prod`. Label the stay **TEST**. Dates in the near future.
+Do this on Lightsail with **test**, never on Render, never with `prod`. Label the stay **TEST**. Dates in the near future. Production is live on `prod`, so run it on the **Lightsail staging** server with the police-issued UBY-WS **test** account (`deploy/lightsail/README.md`, "Filing against the police test environment"). The police use the test environment for the check test that approves a new application (B4).
 
 **Operator SSH (copy-paste):**
 
@@ -85,6 +86,8 @@ Fill the report at the bottom of this file. No guest PII in git.
 3. [ ] Submit batch to UbyPort **test**. Screenshot: Reports row.
 4. [ ] Confirm submission `state` is `ok` (or document `partial` / `error`). Download Doručenka PDF. In Reports, stored request XML matches what you intended to send. House book row exists. If the state is `partial` or `error`, confirm the host contact address received the **submission-problem e-mail** (logo, the UbyPort reason, links to the affected stays) — and that an `ok` run sent no such mail.
 5. [ ] Duplicate: submit the same guest again **once** on **test**. Expect code **150** / duplicate handling — guest should not be blindly retried. Screenshot: blocked/duplicate messaging. Do **not** spam.
+5b. [ ] Late filing: one guest with an arrival more than three working days ago. Expect **112** (reported late) and the guest shown as **filed**, not rejected.
+5c. [ ] Refresh code lists on the property page, then check that Reports shows the police wording for any code that came back.
 6. [ ] Transport failure (test only): wrong WS password **once**, or briefly set an unreachable timeout if you can, then restore the real password. Host must see **Could not reach UbyPort** / transport alert; guests stay pending (no silent drop). Screenshot: alert + Reports `transport_error`. Confirm the host contact address received the **submission-problem e-mail**, and that the raw transport error text is *not* in it (it belongs in the alert).
 7. [ ] Export house book CSV — fields match the submitted guest.
 
@@ -138,17 +141,17 @@ Never copy production SQLite into staging without anonymising guest data (GDPR).
 
 ## UbyPort errors → host actions
 
-Codes are interpreted in `App/app/ubyport/errors.py` and shown on the guest/report UI. The live codebook is cached from `DejMiCiselnik(Chyby)`.
+Codes are interpreted in `App/app/ubyport/errors.py` and shown on the guest/report UI. The live codebook is cached from `DejMiCiselnik(Chyby)`. **The police decide by severity alone** (letter of 24 September 2026): severity 0-2 = accepted, 4-6 = not accepted. Details: [OPERATIONS](OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do).
 
 | Code / class | Meaning | Host action |
 |--------------|---------|-------------|
 | *(none)* / submission `ok` | Batch accepted | Archive Doručenka; done |
-| **106** | Invalid guest field | Fix the field, resend that guest |
-| **1** | Incorrect file extension | Should not occur for SOAP; check Doručenka; do not loop |
-| **112** | Critical transmission error (1xx): **the register did not receive the batch at all** | Check the guest's card (nationality, date of birth, document number) and the generated file, then **repeat the submission** — a host send is never refused. The record stays `error` and is retried automatically, but only three times: after three consecutive refusals the sweep stops offering it and a warning card names the stay. A *transient* cause (interrupted connection) and a *data* cause (invalid character, empty mandatory field) look identical to us, so retrying fixes the first and three refusals mean a human must fix the second |
-| **150** / text contains `duplic` | Duplicate — register already has the row | App treats this as already sent / not blindly retried. Submission is recorded as `ok_duplicate`; the Doručenka link points at the submission that holds it. **Do not** hammer submit |
-| Other correctable codes | Rejected, worth a fix | Edit guest, one resend |
-| `not_correctable` | Duplicate, or a codebook text matching `duplic`/`pozd`/`late` | Stop; read Doručenka |
+| **112** | Reported late (Oznámeno pozdě), severity 0: **the record was accepted** | Nothing to resend. File earlier next time |
+| Severity 0-2 codes | Accepted, with a note or a value to correct in your own records | Read the note; do not resend |
+| **106** and other severity 4-6 codes | Not accepted | Fix the field, send that guest again by hand. The automatic sweep sends a refused record only once |
+| **1** | Incorrect file extension (severity 0) | Should not occur for SOAP; check Doručenka; do not loop |
+| **150** / codebook text `Duplicitní` | Duplicate — register already has the row (police key: dates, surname, first name, birth date, nationality, document number, purpose) | App treats this as already sent / not blindly retried. Submission is recorded as `ok_duplicate`; the Doručenka link points at the submission that holds it. **Do not** hammer submit |
+| `not_correctable` | Duplicate, or a refused code whose text matches `duplic`/`pozd`/`late` | Stop; read Doručenka |
 | `transport_error` / `UbyportTransportError` | Timeout, NTLM/auth, TLS, SOAP fault | Alert: “could not deliver”. Guests stay **pending**. Fix network/password; retry **once**. No data deleted |
 | `not_configured` | Missing mark/IDUB/WS login | Complete apartment UBY-WS settings |
 | Header errors on Doručenka | Whole batch problem | Open error PDF; fix apartment header (IDUB/mark/address) |
