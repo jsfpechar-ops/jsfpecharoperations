@@ -1,6 +1,6 @@
 # 0002: Land the police answers, the download skeleton fix and the stay-fee row as three stacked PRs
 
-Status: in-progress
+Status: review
 Depends on: none | Base commit: 074be58 | Branch: task/0002a-download-skeleton, task/0002b-stay-fee-row, task/0002c-ubyport-severity
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
