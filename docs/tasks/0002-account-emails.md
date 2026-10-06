@@ -1,6 +1,6 @@
 # 0002: Login e-mail on every account
 
-Status: todo
+Status: review
 Depends on: none | Base commit: main @ pull | Branch: task/0002-account-emails
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
