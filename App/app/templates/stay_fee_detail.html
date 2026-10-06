@@ -8,8 +8,8 @@
 {% set actions %}
   {% if frozen %}
     <span class="pill green">{{ t('stay_fees.saved_version', version=filing_version) }}</span>
-    <a class="btn" href="/stay-fees/{{ apartment.id }}/csv?month={{ month_key }}">{{ t('stay_fees.download_csv') }}</a>
-    <a class="btn accent primary" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_key }}">{{ t('stay_fees.download_pdf') }}</a>
+    <a class="btn" href="/stay-fees/{{ apartment.id }}/csv?month={{ month_key }}" download>{{ t('stay_fees.download_csv') }}</a>
+    <a class="btn accent primary" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_key }}" download>{{ t('stay_fees.download_pdf') }}</a>
     <a class="btn" href="/stay-fees/{{ apartment.id }}?month={{ month_key }}&correct=1">{{ t('stay_fees.correct') }}</a>
   {% elif not issues %}
     <form method="post" action="/stay-fees/{{ apartment.id }}/finalize" class="inline-form">

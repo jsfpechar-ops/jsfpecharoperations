@@ -74,7 +74,7 @@
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.withdraw_ads_consent') }}</button>
                   </form>
                   {% endif %}
-                  <form method="post" action="/admin/users/{{ user.id }}/export" class="row-menu-form">
+                  <form method="post" action="/admin/users/{{ user.id }}/export" class="row-menu-form" data-no-skeleton>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.export') }}</button>
                   </form>
                   <form method="post" action="/admin/users/{{ user.id }}/schedule-deletion" class="row-menu-form">

@@ -111,7 +111,7 @@
         <strong>{{ t('workspace.deletion.banner_title', date=workspace_user.deletion_due_at | datetime_local) }}</strong>
         <p class="small muted" style="margin:6px 0 0">{{ t('workspace.deletion.banner_detail', date=workspace_user.deletion_due_at | datetime_local) }}</p>
       </div>
-      <form method="post" action="/settings/workspace-export">
+      <form method="post" action="/settings/workspace-export" data-no-skeleton>
         <button class="btn small" type="submit">{{ t('workspace.deletion.download_zip') }}</button>
       </form>
     </aside>
@@ -284,7 +284,7 @@
 {% endif %}
 
 <script src="/static/csrf.js?v=20260915a"></script>
-<script src="/static/skeleton.js?v=20260929a"></script>
+<script src="/static/skeleton.js?v=20261006a"></script>
 <script src="/static/app.js?v=20261001b"></script>
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261001d" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261006a" defer></script>{% endif %}
