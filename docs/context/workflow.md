@@ -6,10 +6,23 @@ This file is the single source of truth for how work is done. When the process c
 
 | Role | Who | Does | Never |
 |---|---|---|---|
-| Orchestrator | Opus (Cowork or Claude Code) | Plans in `docs/plans/`, briefs in `docs/tasks/`, reviews, context updates | Edits `App/`, runs audits nobody asked for, carries one chat across tasks |
+| Orchestrator | Any chat AI (a strong model only for HIGH RISK plans, a cheaper one otherwise) | Plans in `docs/plans/`, briefs in `docs/tasks/`, reviews, context updates | Edits `App/`, runs audits nobody asked for, carries one chat across tasks |
 | Executor | Cursor: composer, Kimi or GLM only | Applies one brief and writes its report | Designs, guesses, touches files outside the brief, merges |
 | Search helper | Sonnet or Haiku subagent | Grep and summarise; returns conclusions, not file dumps | Writes files |
 | Owner | Josef | Decides, merges, deploys, secrets, servers | |
+
+## Token budget (every AI, every session)
+
+- The orchestrator's deliverable is one Cursor prompt with the brief inside, between `<<<BRIEF` and `BRIEF>>>`. The executor creates the brief file. No patch files, uploads or pushes from the orchestrator.
+- Budget per task: aim for 40k tokens, stop at 80k and hand over what you have as a brief with open questions.
+- Read AGENTS.md, then status, then one routing row. Grep before you read; read ranges of 150 lines or less. Never clone the whole repo to answer one question; fetch single files.
+- Bugs: confirm the root cause with at most 5 greps and 2 range reads. Fixes of 40 lines or fewer go into the brief as an exact diff; bigger ones as files, change and test to add.
+- No council, review swarm or multi-agent mode unless the owner names it in the current message and the change is HIGH RISK (filing, deletion, legal or tax). Then 3 advisors on a cheaper model, no peer-review round.
+- Subagents only search, on cheap models, and return conclusions.
+- Tests run only in the executor or CI, never in the orchestrator chat.
+- One chat per task. Reviews stay under 15k tokens.
+- Uploaded PDFs: convert to text and grep. Never print passwords, IDUBs, addresses or guest data; this repo is public.
+- Reply: at most 150 words plus the prompt.
 
 ## Flow
 

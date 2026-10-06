@@ -18,6 +18,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CAPS = {
     "AGENTS.md": 1500,
     "CLAUDE.md": 50,
+    "GEMINI.md": 50,
+    ".github/copilot-instructions.md": 50,
+    ".cursor/rules/agents.mdc": 150,
     "docs/context/README.md": 700,
     "docs/context/status.md": 700,
     "docs/context/decisions.md": 2000,
@@ -33,6 +36,8 @@ CAPS = {
     "docs/tasks/[0-9][0-9][0-9][0-9]-*.md": 12000,
     "docs/archive/README.md": 1500,
 }
+# Every AI's entry file must exist and send the reader to AGENTS.md.
+POINTERS = ["CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md", ".cursor/rules/agents.mdc"]
 # Files whose links and paths are checked.
 CHECKED = ["AGENTS.md", "CLAUDE.md", "docs/context/**/*.md", "docs/tasks/*.md",
            "docs/archive/README.md", "docs/plans/README.md"]
@@ -187,6 +192,13 @@ def next_numbers() -> str:
             f"migration {max(migs, default=1) + 1:04d}")
 
 
+def check_pointers() -> None:
+    for name in POINTERS:
+        p = ROOT / name
+        if not p.is_file() or "AGENTS.md" not in p.read_text(encoding="utf-8"):
+            errors.append(f"{name}: missing or does not point to AGENTS.md")
+
+
 def main() -> int:
     strict = "--strict" in sys.argv
     check_caps()
@@ -194,6 +206,7 @@ def main() -> int:
     check_briefs()
     check_known_issues()
     check_staleness()
+    check_pointers()
     for w in warnings:
         print(f"WARN  {w}")
     for e in errors:

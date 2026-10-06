@@ -6,10 +6,20 @@
 UbyHost repo. You are the orchestrator. Read AGENTS.md and docs/context/status.md only, then the routed files for this task. No audits. Ask me if unclear. Task: <one sentence>
 ```
 
+## Orchestrator (any AI)
+
+```
+UbyHost orchestrator. Read AGENTS.md and docs/context/workflow.md#token-budget-every-ai-every-session and follow them. Task: <describe it>. Give me one Cursor prompt.
+```
+
 ## Executor
 
 ```
 Read AGENTS.md, then docs/tasks/NNNN-*.md. Follow it exactly, in order. Open only the files it names. If any stop condition in §8 happens, stop and write the report. Finish by writing docs/tasks/NNNN-report.md in the §9 format.
+```
+
+```
+Read AGENTS.md. Create docs/tasks/NNNN-name.md with exactly the content between the BRIEF markers, commit it on a new branch task/NNNN-name, then follow it exactly. Open only the files it names. If any stop condition in §8 happens, stop and write the report. Finish by writing docs/tasks/NNNN-report.md in the §9 format and opening one PR.
 ```
 
 ## Review

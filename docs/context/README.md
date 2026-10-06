@@ -34,3 +34,5 @@ The goal: every session starts from about 3–5k tokens of trusted context inste
 - 62 stale-cache rewrites (about $137).
 
 Cursor, in the same period: 142 cloud chats, 101 of them auto-spawned subagents, plus 5+ repeated whole-repo audits.
+
+Entry files for every AI (CLAUDE.md, GEMINI.md, .github/copilot-instructions.md, .cursor/rules/agents.mdc) point to AGENTS.md; context_lint.py checks them.
