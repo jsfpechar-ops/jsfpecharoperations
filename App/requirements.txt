@@ -12,5 +12,5 @@ reportlab==5.0.1
 cryptography==50.0.1
 pyotp==2.10.0
 qrcode[pil]==8.2
-boto3==1.43.103
+boto3==1.43.108
 webauthn==3.0.1
