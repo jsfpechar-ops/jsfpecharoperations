@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-06 by the orchestrator (task 0001 review closeout). Keep each section to 5 lines or fewer.
+Updated: 2026-10-06 (task 0002 brief: police answers, downloads, stay-fee row). Keep each section to 5 lines or fewer.
 
 ## Production
 
@@ -9,6 +9,7 @@ Updated: 2026-10-06 by the orchestrator (task 0001 review closeout). Keep each s
 
 ## Now
 
+- Owner: hand task [0002](../tasks/0002-police-downloads-stayfee.md) to Cursor (three stacked PRs: downloads, stay-fee row, police severity). Then the owner steps at the end of that brief.
 - Owner: run task [0001](../tasks/0001-context-rollout.md) step 12 with `APPLY=1` to close the 40 listed stale PRs (keep #278 and #279 open).
 
 ## Next

@@ -26,10 +26,15 @@ switching to `prod`.
 |------|------|----------------------|------------------------|------|---------|
 | **Local** | — | `local` (default) | `mock` | `./App/data` | Development on your laptop |
 | **Staging** | Render **`ubyhost-staging`** | `staging` | `mock` | Ephemeral (free tier OK) | Demos, UX testing, new features |
+| **Staging (Lightsail)** | second Lightsail instance | `staging` | `mock` or **`test`** | own volume | HIGH RISK click-through; real SOAP against the police test environment with the UBY-WS test account |
 | **Production** | **Lightsail** Docker stack | `production` | `test` → `prod` | Volume `ubyhost-data` | Real guest reporting |
 
-Staging is configured for `mock`; while that configuration is active, nothing
-leaves the server for the police. Do not set staging to `test` or `prod`.
+Render staging is configured for `mock`; while that configuration is active,
+nothing leaves the server for the police. Do not set Render staging to `test` or
+`prod`. The Lightsail staging server may run `test`: the police confirmed that
+their test environment behaves exactly like production and exists for debugging
+(letter of 24 September 2026, B4). See `deploy/lightsail/README.md`, "Filing
+against the police test environment".
 Production starts on the **test** UbyPort endpoint so you can validate credentials
 and field mappings before flipping to **prod**.
 

@@ -513,6 +513,8 @@ def property_address(apartment) -> str:
 
 EXEMPT_LABEL_MINOR = "Mladší 18 let"
 EXEMPT_LABEL_HOST = "Osvobozeno ubytovatelem (důvod v evidenční knize)"
+# The register line for bed-days the host entered without guest records.
+REGISTER_HOST_LINE = "přenocování bez záznamu hosta (doplněno ubytovatelem)"
 
 
 def hlaseni(group, issued_on: date) -> Dict[str, Any]:
@@ -522,22 +524,18 @@ def hlaseni(group, issued_on: date) -> Dict[str, Any]:
     signature_png = db.decrypt_field(entity["signature_png_enc"]) if entity["signature_png_enc"] else ""
     rows, minors, hosts = [], {"count": 0, "nights": 0}, {"count": 0, "nights": 0}
     for period in group["periods"]:
-        guest_nights = period.get("guest_liable_nights", period["liable_nights"])
+        # One line per facility with the bed-days the host owes. A host
+        # adjustment (bed-days added or removed without naming guests) is part
+        # of that number, not a line of its own: the office receives what is
+        # due, and the adjustment history stays in UbyHost (owner, 2026-10-06).
+        liable = period["liable_nights"]
         rows.append({
             "property_name": period["apartment"]["internal_name"],
             "property_address": property_address(period["apartment"]),
-            "liable_nights": guest_nights,
+            "liable_nights": liable,
             "rate_czk": period["rate_czk"],
-            "amount_czk": guest_nights * period["rate_czk"],
+            "amount_czk": liable * period["rate_czk"],
         })
-        if period.get("adjustment_bed_days"):
-            rows.append({
-                "property_name": "Úprava výpočtu",
-                "property_address": "Souhrnná oprava, bez údajů hostů",
-                "liable_nights": period["adjustment_bed_days"],
-                "rate_czk": period["rate_czk"],
-                "amount_czk": period["adjustment_bed_days"] * period["rate_czk"],
-            })
         for line in period["lines"]:
             if line["exempt_nights"]:
                 # A guest who turns 18 inside the period is "liable" overall
@@ -625,6 +623,9 @@ def register_rows(period) -> List[Dict[str, Any]]:
         if line["restricted"]:
             row["exempt_reason"] = (row["exempt_reason"] + f"; {RESTRICTED_NOTE}").strip("; ")
         rows.append(row)
+    # Bed-days the host added or removed without naming guests get one neutral
+    # line, so the register adds up to the same total as the report and the
+    # payment. The PDF folds them into the facility row (owner, 2026-10-06).
     delta = int(period.get("adjustment_bed_days") or 0)
     if delta:
         rows.append({
@@ -641,7 +642,7 @@ def register_rows(period) -> List[Dict[str, Any]]:
             "nights": delta,
             "rate_czk": period["rate_czk"],
             "amount_czk": delta * period["rate_czk"],
-            "exempt_reason": "úprava výpočtu (není host)",
+            "exempt_reason": REGISTER_HOST_LINE,
             "vs": vs_of(apartment),
             "council_account": apartment["stay_fee_council_account"] or "",
         })

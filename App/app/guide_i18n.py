@@ -118,7 +118,7 @@ GUIDE_STRINGS = {
         "guide.faq.twice_q": "Can a guest be reported twice?",
         "guide.faq.twice_a": "Not by UbyHost. When the police answer is unclear, UbyHost sends that batch once more at the next automatic check, and an answer that the police already hold the guest counts as reported. You get an alert whenever an answer is unclear.",
         "guide.faq.edit_q": "A guest made a mistake after the report was sent.",
-        "guide.faq.edit_a": "Correct it on the stay and send again. Records the police rejected can be corrected and are retried up to three times.",
+        "guide.faq.edit_a": "Correct it on the stay and send again. A record the police rejected is not resent until you change its data, because resending the same data only adds another rejection.",
 
         "guide.demo.body": "Press Explore with demo data to try every screen with sample properties and stays. Demo records are never sent to the police. Use Clear demo data on the Dashboard when you are done.",
     },
@@ -235,7 +235,7 @@ GUIDE_STRINGS = {
         "guide.faq.twice_q": "Může se host nahlásit dvakrát?",
         "guide.faq.twice_a": "UbyHostem ne. Když odpověď policie není jasná, UbyHost tuto dávku při příští automatické kontrole odešle ještě jednou a odpověď, že policie hosta už má, se počítá jako nahlášení. Při každé nejasné odpovědi dostanete upozornění.",
         "guide.faq.edit_q": "Host se spletl a hlášení už odešlo.",
-        "guide.faq.edit_a": "Opravte údaje na pobytu a odešlete znovu. Záznamy, které policie odmítla, lze opravit a zkouší se až třikrát.",
+        "guide.faq.edit_a": "Opravte údaje na pobytu a odešlete znovu. Záznam, který policie odmítla, se znovu neodešle, dokud jeho údaje nezměníte, protože opakované odeslání stejných údajů jen přidá další odmítnutí.",
 
         "guide.demo.body": "Tlačítkem Prohlédnout s ukázkovými daty vyzkoušíte všechny obrazovky s ukázkovými ubytováními a pobyty. Ukázkové záznamy se policii nikdy neposílají. Až skončíte, použijte na Přehledu Smazat ukázková data.",
     },
