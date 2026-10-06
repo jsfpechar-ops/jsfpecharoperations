@@ -15,8 +15,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "pin-rotation-host"
 TOKEN = "pinrotationtoken"
 PIN = "314159"
@@ -48,9 +48,7 @@ def _host() -> tuple[TestClient, int]:
     user_id = (
         existing["id"]
         if existing
-        else auth.create_account(
-            USERNAME, PASSWORD, "PIN Host", must_change_password=False
-        )
+        else auth.create_account(f"{USERNAME}@example.test", "PIN Host", username=USERNAME)
     )
     entity_id = db.insert(
         "legal_entity",
@@ -73,11 +71,7 @@ def _host() -> tuple[TestClient, int]:
         },
     )
     client = TestClient(app)
-    client.post(
-        "/login",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    login_as(client, USERNAME, follow_redirects=False)
     client.cookies.set(host_i18n.LANG_COOKIE, "en")
     return client, apartment_id
 

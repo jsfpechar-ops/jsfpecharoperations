@@ -17,8 +17,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "acceptance-host"
 LANGS = ("en", "cs")
 
@@ -69,13 +69,11 @@ def _cleanup():
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 
-def _account(*, two_factor: bool = False, must_change_password: bool = False) -> str:
+def _account(*, two_factor: bool = False) -> str:
     """A host ready to log in; returns the TOTP secret when asked for one."""
     db.init_db()
     _cleanup()
-    user_id = auth.create_account(
-        USERNAME, PASSWORD, "Acceptance", must_change_password=must_change_password
-    )
+    user_id = auth.create_account(f"{USERNAME}@example.test", "Acceptance", username=USERNAME)
     if not two_factor:
         return ""
     secret = auth.new_totp_secret()
@@ -84,11 +82,7 @@ def _account(*, two_factor: bool = False, must_change_password: bool = False) ->
 
 
 def _sign_in(client: TestClient, lang: str = "en"):
-    return client.post(
-        f"/login?lang={lang}",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    return login_as(client, USERNAME, url=f"/login?lang={lang}", follow_redirects=False)
 
 
 @pytest.fixture(autouse=True)
@@ -162,19 +156,8 @@ def test_the_login_page_does_not_repeat_the_footer_paragraph():
         _assert_no_footer_acceptance(TestClient(app).get(f"/login?lang={lang}"), lang)
 
 
-def test_the_two_forced_screens_do_not_repeat_the_footer_paragraph():
-    """Set-password and 2FA setup are the auth screens a host is pushed into."""
-    for lang in LANGS:
-        _account(must_change_password=True)
-        client = TestClient(app)
-        assert _sign_in(client, lang).status_code == 303
-        try:
-            page = client.get(f"/account/password?lang={lang}")
-            assert page.status_code == 200, page.text
-            _assert_no_footer_acceptance(page, lang)
-        finally:
-            _cleanup()
-
+def test_the_2fa_setup_screen_does_not_repeat_the_footer_paragraph():
+    """2FA setup is an auth screen a host reaches from Settings or the prompt."""
     for lang in LANGS:
         _account()
         client = TestClient(app)
@@ -191,10 +174,7 @@ def test_the_two_post_reply_screens_do_not_repeat_it_either():
     """The 2FA code and recovery-codes screens exist only as POST replies."""
     _account(two_factor=True)
     try:
-        code_page = TestClient(app).post(
-            "/login?lang=en",
-            data={"username": USERNAME, "password": PASSWORD},
-        )
+        code_page = login_as(TestClient(app), USERNAME, url="/login?lang=en")
         assert code_page.status_code == 200, code_page.text
         assert 'name="pending"' in code_page.text
         _assert_no_footer_acceptance(code_page, "en")

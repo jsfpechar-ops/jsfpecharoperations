@@ -21,6 +21,7 @@ from . import (
     analytics,
     auth,
     config,
+    db,
     deadlines,
     host_i18n,
     i18n,
@@ -330,7 +331,14 @@ templates.env.filters["weekday"] = _weekday
 templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
 templates.env.filters["legal_links"] = _legal_links
+def _template_passkeys_enabled() -> bool:
+    from . import passkeys  # local: passkeys pulls in webauthn
+
+    return passkeys.available()
+
+
 templates.env.globals["t"] = _template_translate
+templates.env.globals["passkeys_enabled"] = _template_passkeys_enabled
 templates.env.globals["legal_effective"] = _template_legal_effective
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals["identity_visible"] = _template_identity_visible
@@ -367,6 +375,38 @@ templates.env.globals.update(
     today=lambda: date.today(),
     now=lambda: datetime.now(),
 )
+
+
+# Pages that are themselves about setting up a second way in; the prompt would
+# only get in the way there.
+_NO_SECURITY_PROMPT = ("/account/2fa", "/settings", "/account/accept")
+
+
+def _security_prompt(request: Request, account, workspace):
+    """The one-time "secure your account" pop-up (task 0004), as a callable.
+
+    Shown once, on the first app page after logging in, to an account with no
+    passkey and no authenticator app. ``base.html`` calls it, so the account
+    is only marked as prompted when the page that shows it actually renders;
+    an account that has been prompted costs no query at all.
+    """
+    def prompt():
+        if not account or account["two_factor_prompted_at"] or account["totp_enabled"]:
+            return None
+        if workspace and workspace["id"] != account["id"]:
+            return None  # an admin previewing a host's workspace
+        if request.url.path.startswith(_NO_SECURITY_PROMPT):
+            return None
+        if not db.update_if(
+            "user_account", int(account["id"]), {"two_factor_prompted_at": db.utcnow()},
+            {"two_factor_prompted_at": None},
+        ):
+            return None
+        from . import passkeys  # local: passkeys pulls in webauthn
+
+        return {"passkeys": passkeys.available()}
+
+    return prompt
 
 
 def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):
@@ -411,6 +451,7 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data.setdefault("demo_available", config.UBYPORT_ENV == "mock")
     if workspace and workspace["id"]:
         data.setdefault("onboarding", onboarding.progress(workspace["id"]))
+    data.setdefault("security_prompt", _security_prompt(request, data["current_user"], workspace))
     # WP09: set here, never from a route's context, so only the allowed public
     # templates can ever get a tag (and the matching CSP in main._harden).
     data["umami_tag"] = analytics.tag() if analytics.mark_public_page(request, name) else None

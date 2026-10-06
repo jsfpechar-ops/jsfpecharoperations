@@ -14,8 +14,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "loginlanghost"
 
 
@@ -37,7 +37,7 @@ def _account(*, two_factor: bool = False) -> str:
     """A host ready to log in; returns the TOTP secret when asked for one."""
     db.init_db()
     _cleanup()
-    user_id = auth.create_account(USERNAME, PASSWORD, "Login Lang", must_change_password=False)
+    user_id = auth.create_account(f"{USERNAME}@example.test", "Login Lang", username=USERNAME)
     if not two_factor:
         return ""
     secret = auth.new_totp_secret()
@@ -46,11 +46,7 @@ def _account(*, two_factor: bool = False) -> str:
 
 
 def _sign_in(client: TestClient, query: str = "") -> "object":
-    return client.post(
-        f"/login{query}",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    return login_as(client, USERNAME, url=f"/login{query}", follow_redirects=False)
 
 
 def test_a_cookieless_login_keeps_the_czech_the_login_page_showed():

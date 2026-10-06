@@ -14,20 +14,20 @@ is missing or the police refuse a record.
 ./run.sh
 ```
 
-Then open <http://127.0.0.1:8080>. On first start, UbyHost creates the `admin`
-account and writes its one-time password to
-`data/initial_admin_credentials`. Sign in and replace that password immediately.
+Then open <http://127.0.0.1:8080>. There are no passwords: everyone logs in
+with a link sent to their e-mail address. On first start, UbyHost creates the
+administrator and writes their first login link to `data/initial_admin_login`.
+Locally no mail is delivered, so the login page shows the link instead.
 
-For a deployed environment, set both values before the first start:
+For a deployed environment, set the administrator's address before the first
+start:
 
 ```bash
-UBYHOST_ADMIN_USERNAME=admin
-UBYHOST_ADMIN_PASSWORD='a-long-unique-password'
+UBYHOST_ADMIN_EMAIL=you@example.com
 ```
 
-The initial administrator can create host accounts under **Settings → Users**.
-Each host gets a private workspace for their own properties and must replace
-the temporary password on first login.
+The administrator invites host accounts by e-mail under **Settings → Users**.
+Each host gets a private workspace and logs in with the link in the invitation.
 
 The first run installs its dependencies into `.venv/` and starts a **mock
 UbyPort server** alongside the app, so nothing is sent to the police until you

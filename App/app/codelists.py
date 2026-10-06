@@ -23,24 +23,43 @@ CISELNIK_FIELDS = ("Kod3", "Kod2", "TextKratkyCZ", "TextKratkyENG", "TextCZ", "T
 
 # "112", "0112" or "ERR_CZE_112" - all of these appear as error identifiers.
 _CODE_LIKE = re.compile(r"^(?:[A-Z]+_[A-Z]+_)?\d{1,4}$", re.IGNORECASE)
+_ERR_CODE = re.compile(r"^ERR_CZE_\d{1,4}$", re.IGNORECASE)
 
 
 def _code_and_texts(kind: str, row: Dict[str, str]) -> Tuple[str, str, str]:
     """Pull (code, Czech text, English text) out of one CiselnikType entry.
 
     The country list puts the code in Kod3 and the name in the text columns.
-    The error list is laid out the other way round, so for that one the code is
-    whichever column actually looks like a code and the description is the
-    longest column that does not.
+    The error list is laid out the other way round (appendix 5 section 5.3.2):
+    Kod2 holds ERR_CZE_nnn, Kod3 the error text, TextKratkyCZ the severity
+    digit and TextENG / TextKratkyENG the severity name and its explanation.
+    When that layout is recognised it is read as such; otherwise the code is
+    whichever column looks like a code and the text is the longest other one.
     """
     values = {field: (row.get(field) or "").strip() for field in CISELNIK_FIELDS}
     if kind == KIND_ERRORS:
+        if _ERR_CODE.match(values["Kod2"]):
+            text = values["Kod3"] or values["TextCZ"]
+            if text:
+                return values["Kod2"], text, text
         code = next((v for v in values.values() if _CODE_LIKE.match(v)), "")
         prose = [v for v in values.values() if v and v != code and not _CODE_LIKE.match(v)]
         text = max(prose, key=len) if prose else ""
         return code, text, text
     code = values["Kod3"] or values["Kod2"]
     return code, values["TextKratkyCZ"] or values["TextCZ"], values["TextKratkyENG"] or values["TextENG"]
+
+
+def _extra(kind: str, row: Dict[str, str]) -> str:
+    """What goes in codelist.extra: the severity for errors, Kod2 otherwise.
+
+    The police decide accepted / not accepted by the severity alone (letter of
+    24 September 2026, A1-A2), so it is the one extra fact the error list needs.
+    """
+    if kind == KIND_ERRORS:
+        severity = (row.get("TextKratkyCZ") or "").strip()
+        return severity if severity.isdigit() and len(severity) == 1 else ""
+    return (row.get("Kod2") or "").strip()
 
 
 def store(kind: str, rows: List[Dict[str, str]]) -> int:
@@ -61,7 +80,7 @@ def store(kind: str, rows: List[Dict[str, str]]) -> int:
                 "VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (kind, code) DO UPDATE SET "
                 "text_cs = excluded.text_cs, text_en = excluded.text_en, "
                 "extra = excluded.extra, fetched_at = excluded.fetched_at",
-                (kind, code, text_cs, text_en, (row.get("Kod2") or "").strip(), now),
+                (kind, code, text_cs, text_en, _extra(kind, row), now),
             )
             written += 1
     return written
@@ -79,6 +98,11 @@ def last_fetched(kind: str) -> Optional[str]:
 def error_codebook() -> Dict[str, str]:
     """code -> explanation, used to turn "112" into something readable."""
     return uby_errors.codebook_from_rows(cached(KIND_ERRORS))
+
+
+def error_severities() -> Dict[str, int]:
+    """code -> police severity (0-2 accepted, 4-6 not accepted)."""
+    return uby_errors.severities_from_rows(cached(KIND_ERRORS))
 
 
 # The mock server ships a tiny country sample; the bundled ISO list is complete.

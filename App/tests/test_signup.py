@@ -12,9 +12,9 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, lifecycle_mail, mail, signup
 from app.main import app
+from tests.conftest import login_as
 
 DOMAIN = "signup.test"
-PASSWORD = "Signup-Password-123"
 GCLID = "EAIaIQobChMI_test-Click123"
 
 
@@ -38,6 +38,7 @@ def _clean() -> None:
         )
     ]
     for user_id in ids:
+        db.execute("DELETE FROM login_token WHERE user_account_id = ?", (user_id,))
         db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (user_id,))
         db.execute("DELETE FROM ad_click WHERE user_account_id = ?", (user_id,))
         db.execute("DELETE FROM audit WHERE owner_user_id = ?", (user_id,))
@@ -59,9 +60,9 @@ def _click(gclid=GCLID, seen_ms=None, **more) -> str:
     return signup.issue_click(ids, seen_ms)
 
 
-def _submit(client, email, *, password=PASSWORD, workspace="Old Town Flats",
+def _submit(client, email, *, workspace="Old Town Flats",
             accept="1", consent=False, gclid="", click=None, opt_out=False, extra=None):
-    data = {"email": email, "password": password, "workspace": workspace}
+    data = {"email": email, "workspace": workspace}
     if accept:
         data["accept"] = accept
     if consent:
@@ -123,15 +124,9 @@ def _set_cookie_names(response) -> set:
 
 
 def _admin_client() -> TestClient:
-    auth.create_account(
-        "signup-admin", PASSWORD, "Admin", role="admin", must_change_password=False
-    )
+    auth.create_account("signup-admin@example.test", "Admin", role="admin", username="signup-admin")
     client = _client()
-    response = client.post(
-        "/login?lang=en",
-        data={"username": "signup-admin", "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, "signup-admin", url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 
@@ -301,8 +296,12 @@ def test_signup_creates_an_inactive_account_that_cannot_sign_in():
         "SELECT document FROM legal_acceptance WHERE user_account_id = ?", (account["id"],)
     )}
     assert docs == {"terms", "dpa", "privacy"}
-    assert auth.authenticate(email, PASSWORD) is None
-    assert auth.authenticate(account["username"], PASSWORD) is None
+    # No password exists, and an inactive account gets no login link.
+    assert account["password_hash"] == ""
+    _client().post("/login?lang=en", data={"email": email})
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM login_token WHERE user_account_id = ?", (account["id"],)
+    )["n"] == 0
 
 
 def test_the_stored_verification_mail_holds_no_usable_link():
@@ -319,7 +318,7 @@ def test_the_stored_verification_mail_holds_no_usable_link():
     assert token in mail.delivery_body(payload)
 
 
-def test_verification_needs_the_password_then_activates_and_signs_in():
+def test_the_verify_button_activates_and_signs_in():
     client = _client()
     email = f"verify@{DOMAIN}"
     _submit(client, email, consent=True, gclid=GCLID)
@@ -328,11 +327,7 @@ def test_verification_needs_the_password_then_activates_and_signs_in():
     assert page.status_code == 200
     # The GET alone (a mail scanner pre-fetching the link) activates nothing.
     assert _account(email)["active"] == 0
-    wrong = client.post("/signup/verify", data={"t": token, "password": "Wrong-Password-1"},
-                        follow_redirects=False)
-    assert wrong.status_code == 401
-    assert _account(email)["active"] == 0
-    done = client.post("/signup/verify", data={"t": token, "password": PASSWORD},
+    done = client.post("/signup/verify", data={"t": token},
                        follow_redirects=False)
     assert done.status_code == 303
     assert auth.SESSION_COOKIE in _set_cookie_names(done)
@@ -351,16 +346,20 @@ def test_verification_needs_the_password_then_activates_and_signs_in():
     assert len(notices) == 1
     assert notices[0]["to_email"] == mail.normalise_email(config.SIGNUP_NOTIFY_EMAIL)
     assert "Old Town Flats" in notices[0]["subject"]
-    # Signing in afterwards works with the e-mail and with the username.
-    assert auth.authenticate(email, PASSWORD)
-    assert auth.authenticate(account["username"], PASSWORD)
+    # Signing in afterwards works with a login link to the same address.
+    fresh = _client()
+    fresh.post("/login?lang=en", data={"email": email})
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM login_token WHERE user_account_id = ? AND used_at IS NULL",
+        (account["id"],),
+    )["n"] == 1
 
 
 def test_first_signed_in_request_runs_the_normal_guards():
     client = _client()
     email = f"guards@{DOMAIN}"
     _submit(client, email)
-    client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
+    client.post("/signup/verify", data={"t": _verify_token(email)},
                 follow_redirects=False)
     # Signed in: /signup now sends the host into the app instead.
     response = client.get("/signup", follow_redirects=False)
@@ -374,7 +373,7 @@ def test_an_expired_link_is_refused(monkeypatch):
     token = _verify_token(email)
     monkeypatch.setattr(signup, "VERIFY_MAX_AGE", -1)
     assert client.get(f"/signup/verify?t={token}").status_code == 410
-    response = client.post("/signup/verify", data={"t": token, "password": PASSWORD},
+    response = client.post("/signup/verify", data={"t": token},
                            follow_redirects=False)
     assert response.status_code == 410
     assert _account(email)["active"] == 0
@@ -385,23 +384,21 @@ def test_a_tampered_link_is_refused():
     assert client.get("/signup/verify?t=not-a-token").status_code == 410
 
 
-def test_signing_up_again_before_confirming_retires_the_old_link_and_password():
+def test_signing_up_again_before_confirming_retires_the_old_link():
     client = _client()
     email = f"again@{DOMAIN}"
     _submit(client, email)
     first = _verify_token(email)
-    _submit(client, email, password="Another-Password-456", workspace="Second name")
+    _submit(client, email, workspace="Second name")
     second = _verify_token(email)
     assert first != second
     assert db.query_one(
         "SELECT COUNT(*) AS n FROM user_account WHERE email = ?", (email,)
     )["n"] == 1
     assert client.get(f"/signup/verify?t={first}").status_code == 410
-    refused = client.post("/signup/verify", data={"t": second, "password": PASSWORD},
-                          follow_redirects=False)
-    assert refused.status_code == 401
-    ok = client.post("/signup/verify", data={"t": second, "password": "Another-Password-456"},
-                     follow_redirects=False)
+    refused = client.post("/signup/verify", data={"t": first}, follow_redirects=False)
+    assert refused.status_code == 410
+    ok = client.post("/signup/verify", data={"t": second}, follow_redirects=False)
     assert ok.status_code == 303
     assert _account(email)["display_name"] == "Second name"
 
@@ -410,15 +407,15 @@ def test_a_taken_email_gets_the_same_page_and_a_notice_mail_only():
     client = _client()
     email = f"taken@{DOMAIN}"
     _submit(client, email)
-    client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
+    client.post("/signup/verify", data={"t": _verify_token(email)},
                 follow_redirects=False)
     fresh = _submit(_client(), f"fresh@{DOMAIN}")
-    taken = _submit(_client(), email, password="Attacker-Password-789")
+    taken = _submit(_client(), email)
     assert taken.status_code == fresh.status_code == 200
     assert _card(taken.text).replace(email, "X") == _card(fresh.text).replace(f"fresh@{DOMAIN}", "X")
     account = _account(email)
     # The existing account is untouched.
-    assert auth.verify_password(PASSWORD, account["password_hash"])
+    assert account["active"] == 1 and account["display_name"] == "Old Town Flats"
     assert db.query_one(
         "SELECT COUNT(*) AS n FROM email_outbox WHERE kind = 'signup_exists' AND to_email = ?",
         (email,),
@@ -429,19 +426,19 @@ def test_a_taken_email_gets_the_same_page_and_a_notice_mail_only():
     )["n"] == 1
 
 
-def test_an_admin_created_username_account_is_not_affected():
-    user_id = auth.create_account("signup-admin-host", PASSWORD, "Host")
-    assert db.query_one("SELECT email FROM user_account WHERE id = ?", (user_id,))["email"] is None
-    assert auth.authenticate("signup-admin-host", PASSWORD)
+def test_an_admin_created_account_is_active_and_needs_no_verification():
+    user_id = auth.create_account("signup-admin-host@example.test", "Host", username="signup-admin-host")
+    row = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    assert row["email"] == "signup-admin-host@example.test"
+    assert row["active"] == 1 and row["password_hash"] == ""
 
 
 def test_form_errors_keep_the_values_and_the_click_id():
     client = _client()
     token = _click()
-    weak = _submit(client, f"weak@{DOMAIN}", password="short", click=token, consent=True,
+    weak = _submit(client, f"weak@{DOMAIN}", workspace="  ", click=token, consent=True,
                    opt_out=True)
     assert weak.status_code == 400
-    assert 'id="password-error"' in weak.text
     assert f'name="click" value="{token}"' in weak.text
     assert re.search(r'name="ads_consent" value="1" checked', weak.text)
     assert re.search(r'name="onboarding_opt_out" value="1" checked', weak.text)
@@ -537,7 +534,7 @@ def test_admin_can_withdraw_ads_consent():
 def _verified_client(email, **submit):
     client = _client()
     _submit(client, email, **submit)
-    client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
+    client.post("/signup/verify", data={"t": _verify_token(email)},
                 follow_redirects=False)
     return client
 
@@ -692,7 +689,7 @@ def test_conversion_export_format_and_filters():
         email = f"{local}@{DOMAIN}"
         _submit(client, email, consent=spec["consent"], gclid=spec["gclid"])
         if spec["verify"]:
-            client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
+            client.post("/signup/verify", data={"t": _verify_token(email)},
                         follow_redirects=False)
             client.cookies.clear()
         if spec.get("clicked"):
@@ -741,7 +738,7 @@ def test_the_export_is_for_admins_only():
     client = _client()
     email = f"host@{DOMAIN}"
     _submit(client, email)
-    client.post("/signup/verify", data={"t": _verify_token(email), "password": PASSWORD},
+    client.post("/signup/verify", data={"t": _verify_token(email)},
                 follow_redirects=False)
     assert client.post("/admin/ads-conversions.csv").status_code == 403
     assert _client().post("/admin/ads-conversions.csv", follow_redirects=False).status_code in (303, 403)
@@ -762,7 +759,7 @@ def test_only_the_existing_cookies_are_set_on_the_signup_flow():
     ]
     token = _verify_token(email)
     responses.append(client.get(f"/signup/verify?t={token}"))
-    responses.append(client.post("/signup/verify", data={"t": token, "password": PASSWORD},
+    responses.append(client.post("/signup/verify", data={"t": token},
                                  follow_redirects=False))
     allowed = {"ubyhost_csrf", "ubyhost_lang", auth.SESSION_COOKIE}
     for response in responses:

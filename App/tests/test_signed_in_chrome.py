@@ -16,8 +16,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "signed-in-chrome-host"
 
 
@@ -39,11 +39,7 @@ def _owner_id():
 
 
 def _login(client: TestClient) -> None:
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
 
 
@@ -52,7 +48,7 @@ def empty_host():
     """A brand-new host: an account and nothing else, so Overview is the zero state."""
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Chrome Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Chrome Host", username=USERNAME)
     client = TestClient(app)
     _login(client)
     try:
@@ -66,7 +62,7 @@ def host_with_property():
     """A host with one property, so Overview is not the zero state."""
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Chrome Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Chrome Host", username=USERNAME)
     entity_id = db.insert(
         "legal_entity",
         {

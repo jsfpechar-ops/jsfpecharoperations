@@ -36,6 +36,7 @@ from .. import (
     housebook,
     icalsync,
     mail,
+    passkeys,
     passport_photos,
     payments,
     reporting,
@@ -48,6 +49,7 @@ from .. import (
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
+from . import passkeys as passkey_routes
 from . import signup as signup_routes
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -62,6 +64,7 @@ from .admin_helpers import query_int as _query_int
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
+router.include_router(passkey_routes.router)
 router.include_router(api.router)
 router.include_router(onboarding.router)
 router.include_router(signup_routes.router)
@@ -1294,6 +1297,16 @@ async def test_connection(apartment_id: int, request: Request):
         f"available={available} max_batch={limit}",
     )
     alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
+    # The error code book carries the severity that decides accepted or not
+    # (police letter of 24 September 2026). Load it while the login is known
+    # to work, so no host has to find "Refresh code lists" first. Best effort:
+    # the connection test has already passed.
+    try:
+        rows = await run_in_threadpool(client.code_list, codelists.WS_KINDS[codelists.KIND_ERRORS])
+        if rows:
+            codelists.store(codelists.KIND_ERRORS, rows)
+    except Exception as exc:  # noqa: BLE001 - never fail a passed connection test
+        db.audit("ubyport_codebook_refresh_failed", f"apartment={apartment_id} error={exc}")
     return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 
@@ -2585,6 +2598,7 @@ def submission_detail(submission_id: int, request: Request):
         by_id = {row["id"]: row for row in found}
         guests = [by_id[guest_id] for guest_id in guest_ids if guest_id in by_id]
     codebook = codelists.error_codebook()
+    severities = codelists.error_severities()
     from ..ubyport import errors as uby_errors
 
     lang = host_i18n.lang_from_request(request)
@@ -2601,11 +2615,11 @@ def submission_detail(submission_id: int, request: Request):
     for index, guest in enumerate(guests):
         error = raw_record_errors[index] if index < len(raw_record_errors) else ""
         state, messages = uby_errors.classify(
-            submission["header_errors"], error, codebook, lang
+            submission["header_errors"], error, codebook, lang, severities=severities
         )
         if state == "accepted":
             result = "accepted"
-        elif "150" in uby_errors.split_codes(error) or any(
+        elif uby_errors.record_is_duplicate(error, codebook) or any(
             uby_errors.is_duplicate(message) for message in messages
         ):
             result = "duplicate"
@@ -2770,8 +2784,16 @@ def settings_view(request: Request):
                 signup.consents_for(access.owner_id(request))
                 if access.owner_id(request) is not None else []
             ),
+            # Task 0004: Settings > Security lists the real account's passkeys.
+            "passkeys": _own_passkeys(request),
+            "passkeys_available": passkeys.available(),
         },
     )
+
+
+def _own_passkeys(request: Request):
+    account = auth.current_user(request)
+    return passkeys.for_account(account["id"]) if account else []
 
 
 def _onboarding_emails(request: Request):

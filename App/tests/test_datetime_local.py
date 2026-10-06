@@ -13,9 +13,9 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, templating
 from app.main import app
+from tests.conftest import login_as
 
 TOKEN = "datetimelocaltoken"
-PASSWORD = "Date-Time-Local-Password-123"
 USERNAME = "datetime-local-admin"
 
 # 17:37 UTC is 19:37 in Prague in summer, 18:37 in winter.
@@ -37,24 +37,14 @@ def _ensure_admin() -> int:
     db.init_db()
     account = db.query_one("SELECT * FROM user_account WHERE username = ?", (USERNAME,))
     if not account:
-        return auth.create_account(
-            USERNAME,
-            PASSWORD,
-            "Date time local admin",
-            role="admin",
-            must_change_password=False,
-        )
+        return auth.create_account(f"{USERNAME}@example.test", "Date time local admin", role="admin", username=USERNAME)
     return account["id"]
 
 
 def _browser() -> TestClient:
     _ensure_admin()
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 

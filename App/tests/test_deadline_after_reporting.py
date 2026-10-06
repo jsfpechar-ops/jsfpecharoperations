@@ -17,8 +17,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, deadlines, host_i18n, reporting
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "deadline-filed-host"
 TOKEN = "deadlinefiledtoken"
 
@@ -151,7 +151,7 @@ def _seed(*, nationality: str, sent: bool, filed: datetime | None):
     user_id = (
         existing["id"]
         if existing
-        else auth.create_account(USERNAME, PASSWORD, "Deadline Host", must_change_password=False)
+        else auth.create_account(f"{USERNAME}@example.test", "Deadline Host", username=USERNAME)
     )
     global _ENTITY_ID
     _ENTITY_ID = db.insert(
@@ -212,7 +212,7 @@ def _seed(*, nationality: str, sent: bool, filed: datetime | None):
         },
     )
     client = TestClient(app)
-    client.post("/login", data={"username": USERNAME, "password": PASSWORD}, follow_redirects=False)
+    login_as(client, USERNAME, follow_redirects=False)
     client.cookies.set(host_i18n.LANG_COOKIE, "en")
     return client, reservation_id, check_in
 

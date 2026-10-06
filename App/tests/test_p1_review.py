@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from app import alerts, config, db, icalsync, reporting, scheduler
+from tests.conftest import login_as
 
 
 def _db(monkeypatch, tmp_path, name):
@@ -43,13 +44,13 @@ def test_A_job_failed_alert_is_visible_to_owner(monkeypatch, tmp_path):
     from app import auth
     from app.main import app
     _db(monkeypatch, tmp_path, "a.db")
-    uid = auth.create_account("hostadmin", "Secure-Password-123", "H", role="admin", must_change_password=False)
+    uid = auth.create_account("hostadmin@example.test", "H", role="admin", username="hostadmin")
     monkeypatch.setattr(reporting, "check_deadlines", lambda *a, **k: 1 / 0)
     scheduler._job_deadlines()
     assert len(alerts.open_alerts()) == 1                 # exists
     assert len(alerts.open_alerts(uid)) == 1              # and the host sees it
     c = TestClient(app)
-    assert c.post("/login", data={"username": "hostadmin", "password": "Secure-Password-123"}, follow_redirects=False).status_code == 303
+    assert login_as(c, "hostadmin", follow_redirects=False).status_code == 303
     page = c.get("/?lang=en")
     assert page.status_code == 200
     assert "deadline watch" in page.text
@@ -175,9 +176,9 @@ def test_A_control_owned_alert_renders(monkeypatch, tmp_path):
     from app import auth
     from app.main import app
     _db(monkeypatch, tmp_path, "a2.db")
-    uid = auth.create_account("hostadmin", "Secure-Password-123", "H", role="admin", must_change_password=False)
+    uid = auth.create_account("hostadmin@example.test", "H", role="admin", username="hostadmin")
     scheduler._job_failed("deadlines")
     db.execute("UPDATE alert SET owner_user_id=?", (uid,))
     c = TestClient(app)
-    c.post("/login", data={"username": "hostadmin", "password": "Secure-Password-123"}, follow_redirects=False)
+    login_as(c, "hostadmin", follow_redirects=False)
     assert "deadline watch" in c.get("/?lang=en").text

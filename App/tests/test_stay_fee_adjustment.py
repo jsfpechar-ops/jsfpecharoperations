@@ -8,17 +8,17 @@ from datetime import date
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
 
-from app import auth, claim, db, stay_fee_filing
+from app import auth, claim, db, stay_fee, stay_fee_filing
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = f"Adjust-{secrets.token_urlsafe(8)}-9"
 SIGNATURE = "data:image/png;base64,AAAA"
 
 
 def _host():
     db.init_db()
     username = f"fee-adjust-{secrets.token_hex(4)}"
-    owner = auth.create_account(username, PASSWORD, "Adjust", role="host", must_change_password=False)
+    owner = auth.create_account(f"{username}@example.test", "Adjust", role="host", username=username)
     entity = db.insert("legal_entity", {"name": "Adjust s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     apartment = db.insert("apartment", {
         "internal_name": "Adjust loft",
@@ -34,7 +34,7 @@ def _host():
         "created_at": db.utcnow(),
     })
     client = TestClient(app)
-    client.post("/login", data={"username": username, "password": PASSWORD}, follow_redirects=False)
+    login_as(client, username, follow_redirects=False)
     return client, apartment
 
 
@@ -186,8 +186,16 @@ def test_a_downward_adjustment_can_be_filed(monkeypatch):
     assert row["liable_days"] == 3
     assert row["total_due_czk"] == 150
     text = PdfReader(io.BytesIO(stay_fee_filing.pdf_bytes(row))).pages[0].extract_text()
-    assert "Úprava výpočtu" in text
+    # The adjustment is folded into the facility line; the office never sees
+    # a separate correction row (owner, 2026-10-06).
+    assert "Úprava výpočtu" not in text
+    assert "oprava" not in text.lower()
     assert "150 Kč" in text
+    register = stay_fee_filing.csv_bytes(row).decode("utf-8-sig")
+    assert "úprava" not in register.lower()
+    # The register still adds up to the report: one neutral line carries the
+    # bed-days that have no guest record.
+    assert stay_fee.REGISTER_HOST_LINE in register
 
 
 def test_an_adjustment_saved_in_a_filing_cannot_be_undone(monkeypatch):

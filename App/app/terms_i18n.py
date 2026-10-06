@@ -72,17 +72,21 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "The Host is solely responsible for compliance with obligations of an accommodation provider under Czech law, including Act No. 326/1999 Coll. on residence of foreign nationals, related decrees, house book rules, and GDPR duties as data controller. The Operator provides technical infrastructure and processes Guest Data on the Host's documented instructions to deliver the Service, as a data processor under GDPR Article 28 pursuant to the Data Processing Agreement at /dpa. Nothing in these Terms transfers statutory duties of the Host to the Operator. The Operator is not a joint controller unless expressly agreed in a separate written agreement. The Host is also solely responsible for the local stay fee (poplatek z pobytu) under Act No. 565/1990 Coll. and the municipal ordinance: for collecting it, keeping the record book, reporting to the municipality and paying it. Where the Service calculates the fee or prepares a report, a register or a payment QR code, these are aids for the Host. The Operator does not file the report or pay the fee. The Host checks the figures before using them."
         ),
         "terms.s06_title": "6. Account registration and security",
+        # LAWYER REVIEW
         "terms.s06_body": (
-            "The Host must provide accurate registration information and keep it current. Usernames and "
-            "passwords are personal or assigned to authorised staff only. The Host is responsible for "
-            "all activity under its Account, including actions by employees, contractors, and anyone "
-            "who gains access through the Host's credentials or guest links. The Host must use strong "
-            "passwords, enable and maintain two-factor authentication when the Service requires it "
-            "(including mandatory authenticator-based 2FA on production deployments), safeguard "
-            "recovery codes, limit access appropriately, and notify the Operator promptly if "
-            "unauthorised access is suspected. The Operator may require password changes, additional "
-            "verification, Cloudflare Turnstile, Bot Fight Mode challenges, or leaked-credential "
-            "checks on login and guest PIN flows to prevent abuse."
+            "The Host must provide accurate registration information, including a working e-mail "
+            "address, and keep it current. Login is by single-use e-mail link; the Host is "
+            "responsible for securing access to its login e-mail account. The Host is responsible "
+            "for all activity under its Account, including actions by employees, contractors, and "
+            "anyone who gains access through the Host's credentials or guest links. The Host must "
+            "protect its e-mail account and any enrolled passkey devices, enable and maintain an "
+            "authenticator app (TOTP) when the Service requires it (including on production "
+            "deployments), safeguard recovery codes, limit access appropriately, and notify the "
+            "Operator promptly if unauthorised access is suspected. Passkeys (public key stored; "
+            "biometric data never leaves the device) are available as optional additional "
+            "verification. A change of login e-mail address triggers a notice to the old address. "
+            "The Operator may require additional verification, Cloudflare Turnstile, or Bot Fight "
+            "Mode challenges on login and guest PIN flows to prevent abuse."
         ),
         "terms.s07_title": "7. Acceptable use",
         "terms.s07_body": (
@@ -417,16 +421,20 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "neodvádí. Ubytovatel údaje před použitím zkontroluje."
         ),
         "terms.s06_title": "6. Registrace účtu a bezpečnost",
+        # LAWYER REVIEW
         "terms.s06_body": (
-            "Ubytovatel uvede pravdivé registrační údaje a udržuje je aktuální. Přihlašovací údaje jsou "
-            "osobní nebo přidělené oprávněným osobám. Ubytovatel odpovídá za veškerou činnost pod svým "
-            "Účtem, včetně zaměstnanců, dodavatelů a kohokoli, kdo získá přístup přes jeho údaje nebo "
-            "odkazy pro hosty. Používejte silná hesla, zapněte a udržujte dvoufázové ověření, pokud "
-            "Služba vyžaduje (včetně povinného 2FA přes autentizační aplikaci v produkci), chraňte "
-            "obnovovací kódy, omezte přístup a při podezření na zneužití Provozovatele neprodleně "
-            "informujte. Provozovatel může vyžadovat změnu hesla, další ověření, Cloudflare "
-            "Turnstile, Bot Fight Mode nebo kontrolu uniklých přihlašovacích údajů při přihlášení "
-            "a u PIN hostů proti zneužití."
+            "Ubytovatel uvede pravdivé registrační údaje včetně funkční e-mailové adresy a udržuje je "
+            "aktuální. Přihlášení probíhá jednorázovým e-mailovým odkazem; Ubytovatel odpovídá za "
+            "zabezpečení přístupu ke své přihlašovací e-mailové schránce. Ubytovatel odpovídá za "
+            "veškerou činnost pod svým Účtem, včetně zaměstnanců, dodavatelů a kohokoli, kdo získá "
+            "přístup přes jeho údaje nebo odkazy pro hosty. Ubytovatel musí chránit svou e-mailovou "
+            "schránku a zařízení s passkey, zapnout a udržovat autentizační aplikaci (TOTP), pokud "
+            "Služba vyžaduje (včetně produkčních provozů), chránit obnovovací kódy, omezit přístup "
+            "a při podezření na zneužití Provozovatele neprodleně informovat. Passkeys (ukládá se "
+            "pouze veřejný klíč; biometrická data nikdy neopustí zařízení) jsou dostupné jako "
+            "volitelné dodatečné ověření. Změna přihlašovacího e-mailu spustí oznámení na původní "
+            "adresu. Provozovatel může vyžadovat další ověření, Cloudflare Turnstile nebo Bot Fight "
+            "Mode při přihlášení a u PIN hostů proti zneužití."
         ),
         "terms.s07_title": "7. Přípustné použití",
         "terms.s07_body": (

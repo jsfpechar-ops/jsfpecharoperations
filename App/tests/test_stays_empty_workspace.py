@@ -17,8 +17,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "stays-empty-host"
 
 EMPTY_PANEL_RE = re.compile(r'<div class="panel empty">\n(.*?)\n\s*</div>', re.DOTALL)
@@ -118,13 +118,9 @@ def host():
     _cleanup()
     existing = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
     if not existing:
-        auth.create_account(USERNAME, PASSWORD, "Stays Host", must_change_password=False)
+        auth.create_account(f"{USERNAME}@example.test", "Stays Host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client

@@ -75,7 +75,7 @@ Decision table (position, adjust per case):
 | Encrypted data only, keys safe; or short outage restored from backup without loss | `none` or `low` | Not required. Record only | No |
 | Names, stay dates or e-mails of guests exposed to an outsider | `low` to `high` depending on scale | Required if not unlikely to cause risk. When in doubt, notify | If high |
 | Document numbers, ID photos or keys exposed; or many hosts affected | `high` | Required | Required, unless Art. 34(3) applies |
-| Host login data exposed (password hashes, e-mails) | `low` to `high` | UbyHost notifies if risk | UbyHost tells hosts; force password reset |
+| Host login data exposed (login link token hashes, e-mails) | `low` to `high` | UbyHost notifies if risk | UbyHost tells hosts; end all sessions (rotate `UBYHOST_SECRET_KEY`), invalidate all outstanding login links (delete `login_token` rows), remove passkeys if key material may be compromised, change login e-mail via support flow |
 
 ## 5. Notify affected hosts (processor duty) [Oznámit ubytovatelům]
 

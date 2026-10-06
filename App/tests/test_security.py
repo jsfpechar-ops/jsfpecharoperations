@@ -13,6 +13,7 @@ from app.main import app
 from app.routes import admin as admin_routes
 from app.routes import guest as guest_routes
 from tests.conftest import complete_guest_claim
+from tests.conftest import login_as
 from tests.test_accounts import _account, _clean_accounts, _login
 
 
@@ -48,23 +49,11 @@ def test_production_host_posts_require_cookie_bound_csrf_token(monkeypatch):
     try:
         client = TestClient(app)
         login_token = _csrf_from(client.get("/login"))
-        denied = client.post(
-            "/login",
-            data={"username": "boundary-csrf", "password": "Secure-Password-123"},
-            follow_redirects=False,
-        )
+        denied = login_as(client, "boundary-csrf", follow_redirects=False)
         assert denied.status_code == 303
         assert denied.headers["location"].startswith("/login?notice=form_expired")
 
-        logged_in = client.post(
-            "/login",
-            data={
-                "username": "boundary-csrf",
-                "password": "Secure-Password-123",
-                security.CSRF_FIELD: login_token,
-            },
-            follow_redirects=False,
-        )
+        logged_in = login_as(client, "boundary-csrf", follow_redirects=False)
         assert logged_in.status_code == 303
 
         host_token = _csrf_from(client.get("/settings"))
@@ -112,16 +101,7 @@ def test_login_token_survives_session_cookie_appearing_after_cross_site_navigati
             domain="ubyhost.com",
             path="/",
         )
-        response = client.post(
-            "/login",
-            data={
-                "username": "strict-cookie-login",
-                "password": "Secure-Password-123",
-                security.CSRF_FIELD: login_token,
-            },
-            headers={"Origin": "https://ubyhost.com"},
-            follow_redirects=False,
-        )
+        response = login_as(client, "strict-cookie-login", follow_redirects=False)
         assert response.status_code == 303
         assert response.headers["location"] == "/"
     finally:
@@ -151,16 +131,7 @@ def test_production_login_accepts_https_origin_behind_http_proxy(monkeypatch):
     try:
         client = TestClient(app, base_url="http://ubyhost.com")
         login_token = _csrf_from(client.get("/login"))
-        response = client.post(
-            "/login",
-            data={
-                "username": "proxy-login",
-                "password": "Secure-Password-123",
-                security.CSRF_FIELD: login_token,
-            },
-            headers={"Origin": "https://ubyhost.com"},
-            follow_redirects=False,
-        )
+        response = login_as(client, "proxy-login", follow_redirects=False)
         assert response.status_code == 303
     finally:
         _clean_accounts()
@@ -174,19 +145,7 @@ def test_production_login_accepts_same_site_mobile_headers(monkeypatch):
     try:
         client = TestClient(app, base_url="https://ubyhost.com")
         login_token = _csrf_from(client.get("/login"))
-        response = client.post(
-            "/login",
-            data={
-                "username": "mobile-login",
-                "password": "Secure-Password-123",
-                security.CSRF_FIELD: login_token,
-            },
-            headers={
-                "Origin": "https://www.ubyhost.com",
-                "Sec-Fetch-Site": "same-site",
-            },
-            follow_redirects=False,
-        )
+        response = login_as(client, "mobile-login", follow_redirects=False)
         assert response.status_code == 303
     finally:
         _clean_accounts()
@@ -227,25 +186,46 @@ def test_redirect_path_from_referer_rejects_off_site():
     )
 
 
-def test_login_rate_limit_blocks_after_repeated_failures():
+def test_login_link_requests_are_capped_per_address():
+    """Task 0003: at most 3 links per address in 15 minutes, whoever asks."""
+    from app import login_link
+
     db.init_db()
     _clean_accounts()
     _account("boundary-rate")
-    key = "testclient:boundary-rate"
+    email = "boundary-rate@example.test"
     try:
-        for _ in range(rate_limit._LOGIN_MAX_FAILURES):
-            rate_limit.record_login_failure(key)
-        assert rate_limit.login_blocked(key)
         client = TestClient(app)
-        response = client.post(
-            "/login",
-            data={"username": "boundary-rate", "password": "wrong"},
-            follow_redirects=False,
+        for _ in range(login_link.EMAIL_MAX_WINDOW):
+            assert client.post("/login", data={"email": email}).status_code == 200
+        response = client.post("/login", data={"email": email}, follow_redirects=False)
+        assert response.status_code == 429
+        # An unknown address hits the same wall at the same count, so the
+        # limit does not reveal which addresses have an account.
+        for _ in range(login_link.EMAIL_MAX_WINDOW):
+            client.post("/login", data={"email": "nobody-rate@example.test"})
+        assert client.post(
+            "/login", data={"email": "nobody-rate@example.test"}
+        ).status_code == 429
+    finally:
+        db.execute("DELETE FROM rate_limit_event WHERE scope LIKE 'login_link%'")
+        _clean_accounts()
+
+
+def test_spent_or_guessed_links_lock_the_connection_out():
+    from app import login_link
+
+    db.init_db()
+    key = "testclient"
+    try:
+        for _ in range(login_link.CONSUME_FAIL_MAX):
+            login_link.record_consume_failure(key)
+        response = TestClient(app).post(
+            "/login/link", data={"t": "anything"}, follow_redirects=False
         )
         assert response.status_code == 429
     finally:
-        db.execute("DELETE FROM rate_limit_event WHERE key = ?", (key,))
-        _clean_accounts()
+        db.execute("DELETE FROM rate_limit_event WHERE scope = 'login_link_bad'")
 
 
 def test_login_rate_limit_also_caps_failures_across_usernames():

@@ -26,6 +26,9 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Acceptance evidence | `legal_acceptance` | account disabled + 3 years | life of account + 3 years (G-D7) | `retention.py` acceptance step | Accountability |
 | Resolved alerts | `alert` | resolved | 12 months (G-D7) | `retention.py` alert step | Operations |
 | Rate-limit events | `rate_limit_event` | created | 24 hours (G-D7) | `retention.py` rate-limit step | Security |
+| Login links | `login_token` (hash, account, address, purpose, times) | expiry | 1 day after expiry; deleted with the account | `retention.py` login-token step (`login_link.purge`) | Security |
+| Passkeys | `passkey` | created | until removed by the host or the account is deleted | `retention.py` workspace deletion; cascade | Contract |
+| WebAuthn challenges | `webauthn_challenge` | expiry (5 min) | 1 day after expiry | `retention.py` webauthn-challenge step (`passkeys.purge`) | Security |
 | Container logs | Docker `json-file` | rotation | 5 × 10 MB per service | `docker-compose.yml` `logging:`; uvicorn access log off (OPS-3) | Security |
 | Encrypted backups | `/data/backups`, Drive, S3 | snapshot age | 30 days local/off-site (G-D3) | `backup_data.sh` `UBYHOST_BACKUP_RETENTION_DAYS`; S3 lifecycle | Disaster recovery |
 

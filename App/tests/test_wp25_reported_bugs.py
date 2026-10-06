@@ -19,8 +19,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, demo, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 OTHER_SIGNATURE = "data:image/png;base64," + base64.b64encode(base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGMAAQAABQAB"
     "DQottAAAAABJRU5ErkJggg=="
@@ -51,7 +51,7 @@ def _cleanup():
 def seeded():
     db.init_db()
     _cleanup()
-    owner = auth.create_account("wp25-host", PASSWORD, "WP25 Host", must_change_password=False)
+    owner = auth.create_account("wp25-host@example.test", "WP25 Host", username="wp25-host")
     now = db.utcnow()
     entity = db.insert("legal_entity", {"name": "WP25 entity", "owner_user_id": owner, "created_at": now})
     apartment = db.insert(
@@ -158,11 +158,7 @@ def seeded():
 @pytest.fixture()
 def client(seeded):
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": "wp25-host", "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, "wp25-host", url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 

@@ -80,18 +80,20 @@ HOST_SIGNATURE_REQUIRED_MESSAGE = (
 )
 
 # How many times the unattended sweep may offer the same guest before it stops
-# and asks a human to look. A code 112 covers both an interrupted connection
-# (where retrying is exactly right) and a bad value in the generated record
-# (where retrying is futile and the register records another refusal), and the
-# response does not say which. Retrying a few times therefore costs little, but
-# retrying forever is not a policy: it is an unbounded stream of rejections
-# nobody is watching. This bounds it, and crossing the bound raises an alert so
-# the stop is visible rather than silent.
+# and asks a human to look. The Foreign Police answered in writing (letter of
+# 24 September 2026, B2-B3) that resending a record the register refused, with
+# the same data, is what badly written programs do and that it raises the
+# host's error count with the police until they contact the host. A refused
+# record (severity 4-6) carries a data problem that resending cannot fix, so the
+# sweep offers it once and then stops, and crossing the bound raises an alert
+# so the stop is visible rather than silent. (112, which an earlier reading
+# treated as "never received", is "reported late" and an accept: it no longer
+# reaches this budget at all.)
 #
 # Only the automatic sweep is bound. A host-initiated send always goes through,
 # and saving the guest form resets the count, so "fix the data and send again"
 # is never blocked by this.
-SUBMISSION_MAX_AUTO_ATTEMPTS = 3
+SUBMISSION_MAX_AUTO_ATTEMPTS = 1
 
 # submission.mode of the sweep's one automatic resend of an interrupted batch
 # (WP31, owner decision Q4). Set when the resend's row is inserted, so it holds
@@ -1416,6 +1418,7 @@ def submit_batch(
     alerts.resolve(f"submission_transport:{apartment['id']}")
 
     codebook = codelists.error_codebook()
+    severities = codelists.error_severities()
     now = db.utcnow()
     per_record = result.record_errors
     accepted_count = 0
@@ -1439,7 +1442,9 @@ def submit_batch(
 
     for index, (guest, _reservation) in enumerate(pairs):
         record_error = per_record[index] if index < len(per_record) else ""
-        state, messages = uby_errors.classify(result.header_errors, record_error, codebook)
+        state, messages = uby_errors.classify(
+            result.header_errors, record_error, codebook, severities=severities
+        )
         if state == "accepted":
             guest_writes.append(
                 (
@@ -1469,10 +1474,13 @@ def submit_batch(
             new_state = BLOCKED if state == "not_correctable" else ERROR
             # A duplicate response proves the register already has this guest.
             # This also covers an earlier accept whose HTTP response was lost.
-            # Only this record's own code 150 proves the register holds it.
-            # Prose and header-level messages must not: a false "sent" is a
-            # guest who was never filed.
-            duplicate = "150" in uby_errors.split_codes(record_error)
+            # Only this record's own duplicate code proves the register holds
+            # it: 150, or a code the police code book itself names
+            # "Duplicitní záznam". Free prose and header-level messages must
+            # not: a false "sent" is a guest who was never filed. The police
+            # confirmed (letter of 24 September 2026, C2) that a duplicate
+            # answer is proof the register accepted the record earlier.
+            duplicate = uby_errors.record_is_duplicate(record_error, codebook)
             if duplicate:
                 new_state = SENT
                 duplicate_accepts += 1
@@ -1570,8 +1578,8 @@ def submit_batch(
                 "warning",
                 "submission_stuck",
                 f"{len(guests)} guest record(s) are no longer being sent automatically.",
-                f"UbyPort refused these records on {SUBMISSION_MAX_AUTO_ATTEMPTS} consecutive "
-                "attempts, so the automatic send has stopped offering them. Check the guest "
+                "UbyPort refused these records, and sending the same data again would only add "
+                "another refusal, so the automatic send has stopped offering them. Fix the guest "
                 "data, then send the stay again by hand: " + ", ".join(names),
                 dedupe_key=f"submission_stuck:{reservation_id}",
                 apartment_id=apartment["id"],

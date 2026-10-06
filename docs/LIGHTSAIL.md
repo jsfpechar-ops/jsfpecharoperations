@@ -113,7 +113,7 @@ Required in `.env`:
 | `UBYHOST_DOMAIN` | `ubyhost.yourdomain.cz` |
 | `ACME_EMAIL` | `you@yourdomain.cz` |
 | `UBYHOST_PUBLIC_BASE_URL` | `https://ubyhost.yourdomain.cz` |
-| `UBYHOST_ADMIN_PASSWORD` | long random password |
+| `UBYHOST_ADMIN_EMAIL` | `you@yourdomain.cz` |
 | `UBYHOST_UBYPORT_ENV` | `test` (then `prod` after validation) |
 
 `deploy.sh` generates `UBYHOST_SECRET_KEY` automatically if left empty.
@@ -145,7 +145,7 @@ before the image build.
 | `UBYHOST_DOMAIN` | yes | Caddy TLS host wrong; preflight fails |
 | `ACME_EMAIL` | yes | Let's Encrypt contact / Caddy env empty |
 | `UBYHOST_PUBLIC_BASE_URL` | yes | Guest permalinks and cookies point at the wrong origin |
-| `UBYHOST_ADMIN_PASSWORD` | yes | Bootstrap admin cannot log in (or a one-time file is written in `/data`) |
+| `UBYHOST_ADMIN_EMAIL` | yes (first boot) | The first administrator falls back to `UBYHOST_OPERATOR_EMAIL`; the first login link is in `/data/initial_admin_login` |
 | `UBYHOST_DEPLOYMENT` | yes (`production`) | Settings / logs show the wrong tier; `prod` UbyPort is refused unless this is `production` |
 | `UBYHOST_UBYPORT_ENV` | yes (`test` then `prod`) | `mock` reports nowhere; `prod` on Render or without `production` **refuses to start** |
 | `UBYHOST_SECRET_KEY` | auto-generated if empty | Must be ≥32 chars. **Losing it** invalidates sessions and encrypted UBY-WS passwords |

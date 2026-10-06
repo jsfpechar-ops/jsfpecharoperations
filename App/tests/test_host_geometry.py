@@ -22,8 +22,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Geometry-Host-123"
 
 
 def _free_port():
@@ -52,11 +52,7 @@ def base():
 def _browser_session_cookie(username: str) -> str:
     """Log in through the ASGI app so CSRF and acceptance gates match other tests."""
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     token = client.cookies.get(auth.SESSION_COOKIE)
     assert token
@@ -65,7 +61,7 @@ def _browser_session_cookie(username: str) -> str:
 
 def test_dashboard_actions_share_height_and_gap(base):
     username = f"geometry{secrets.token_hex(4)}"
-    owner = auth.create_account(username, PASSWORD, "Geometry", role="host", must_change_password=False)
+    owner = auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username)
     entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     apartment = db.insert("apartment", {
         "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,
@@ -136,7 +132,7 @@ def test_the_month_filter_shares_its_page_edges(base):
     opposite problem by stranding Previous/Next at the east edge.
     """
     username = f"geomfilter{secrets.token_hex(4)}"
-    owner = auth.create_account(username, PASSWORD, "Geometry", role="host", must_change_password=False)
+    owner = auth.create_account(f"{username}@example.test", "Geometry", role="host", username=username)
     entity = db.insert("legal_entity", {"name": "Geometry s.r.o.", "owner_user_id": owner, "created_at": db.utcnow()})
     db.insert("apartment", {
         "internal_name": "Geometry loft", "owner_user_id": owner, "legal_entity_id": entity,

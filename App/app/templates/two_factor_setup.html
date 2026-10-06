@@ -3,7 +3,7 @@
 {% block auth_body %}
 <section class="auth-card">
   <h1 class="auth-title">{{ t('account.2fa.setup_title') }}</h1>
-  <p class="auth-lede">{% if first_run_step %}{{ t('account.step_prefix', n=first_run_step) }}{% endif %}{{ t('account.2fa.setup_lede') }}</p>
+  <p class="auth-lede">{{ t('account.2fa.setup_lede') }}</p>
   {% if moved %}<p class="auth-notice" role="status">{{ t('account.2fa.moved_notice') }}</p>{% endif %}
   {% if error %}<div class="auth-alert" role="alert">{{ t(error) }}</div>{% endif %}
   {% if qr_data %}

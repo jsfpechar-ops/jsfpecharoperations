@@ -11,8 +11,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = f"Stay-fee-detail-{secrets.token_urlsafe(12)}-9"
 SIGNATURE = "data:image/png;base64,AAAA"
 IBAN = "CZ3008000000192000781379"
 ACCOUNT = "19-2000781379/0800"
@@ -51,24 +51,14 @@ def host(monkeypatch):
     db.init_db()
     _cleanup()
     monkeypatch.setattr(claim, "prague_today", lambda: date(2026, 9, 30))
-    owner_id = auth.create_account(
-        "stay-fee-detail-owner",
-        PASSWORD,
-        "Detail Demo",
-        role="host",
-        must_change_password=False,
-    )
+    owner_id = auth.create_account("stay-fee-detail-owner@example.test", "Detail Demo", role="host", username="stay-fee-detail-owner")
     entity_id = db.insert("legal_entity", {
         "name": "Detail Demo s.r.o.",
         "owner_user_id": owner_id,
         "created_at": db.utcnow(),
     })
     client = TestClient(app)
-    logged_in = client.post(
-        "/login?lang=en",
-        data={"username": "stay-fee-detail-owner", "password": PASSWORD},
-        follow_redirects=False,
-    )
+    logged_in = login_as(client, "stay-fee-detail-owner", url="/login?lang=en", follow_redirects=False)
     assert logged_in.status_code == 303
     try:
         yield client, owner_id, entity_id
@@ -157,13 +147,7 @@ def _decide(
 def test_login_is_required():
     db.init_db()
     _cleanup()
-    auth.create_account(
-        "stay-fee-detail-owner",
-        PASSWORD,
-        "Detail Demo",
-        role="host",
-        must_change_password=False,
-    )
+    auth.create_account("stay-fee-detail-owner@example.test", "Detail Demo", role="host", username="stay-fee-detail-owner")
     try:
         response = TestClient(app).get("/stay-fees/1", follow_redirects=False)
         assert response.status_code == 303
@@ -174,13 +158,7 @@ def test_login_is_required():
 
 def test_another_owners_property_redirects_with_an_error(host):
     client, _owner_id, _entity_id = host
-    other_id = auth.create_account(
-        "stay-fee-detail-other",
-        PASSWORD,
-        "Other Demo",
-        role="host",
-        must_change_password=False,
-    )
+    other_id = auth.create_account("stay-fee-detail-other@example.test", "Other Demo", role="host", username="stay-fee-detail-other")
     other_entity_id = db.insert("legal_entity", {
         "name": "Other Demo s.r.o.",
         "owner_user_id": other_id,
@@ -469,13 +447,7 @@ def test_a_guest_of_another_owner_cannot_be_decided(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, "Detail Demo")
     _stay(apartment_id, "2026-08-10", "2026-08-14", [{}])
-    other_id = auth.create_account(
-        "stay-fee-detail-other",
-        PASSWORD,
-        "Other Demo",
-        role="host",
-        must_change_password=False,
-    )
+    other_id = auth.create_account("stay-fee-detail-other@example.test", "Other Demo", role="host", username="stay-fee-detail-other")
     other_entity_id = db.insert("legal_entity", {
         "name": "Other Demo s.r.o.",
         "owner_user_id": other_id,

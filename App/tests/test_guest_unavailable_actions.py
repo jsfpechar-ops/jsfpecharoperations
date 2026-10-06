@@ -13,7 +13,6 @@ from app.routes import guest as guest_routes
 TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
 TOKEN = "unavailableact"
 ENTITY = "Unavailable Action Test"
-PASSWORD = "Unavailable-Action-Password-123"
 ADMIN_USERNAME = "unavailable-action-admin"
 
 NO_RESTART = ("form_locked", "already_filed", "not_yours")
@@ -64,13 +63,7 @@ def _ensure_admin() -> int:
     account = db.query_one("SELECT * FROM user_account WHERE username = ?", (ADMIN_USERNAME,))
     if account:
         return account["id"]
-    return auth.create_account(
-        ADMIN_USERNAME,
-        PASSWORD,
-        "Unavailable action admin",
-        role="admin",
-        must_change_password=False,
-    )
+    return auth.create_account(f"{ADMIN_USERNAME}@example.test", "Unavailable action admin", role="admin", username=ADMIN_USERNAME)
 
 
 def _seed() -> int:

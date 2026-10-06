@@ -3195,3 +3195,25 @@ label { color: var(--ink-secondary); font-weight: 620; }
 .fee-line .fee-hint,
 .fee-line .fee-decision,
 .fee-line details { flex: 1 1 100%; }
+
+/* Task 0004: the passkey button sits above the e-mail form, split by a rule. */
+.auth-passkey { display: grid; gap: 12px; margin-bottom: 4px; }
+.auth-passkey[hidden] { display: none; }
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 0;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.auth-divider::before,
+.auth-divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+
+/* Task 0004: the one-time "secure your account" prompt. */
+.security-prompt { max-width: 460px; }
+.security-prompt-options { display: grid; gap: 14px; margin: 16px 0; }
+.security-prompt-option { display: grid; gap: 4px; justify-items: start; }
+.security-prompt-option[hidden] { display: none; }
+.security-prompt-option small { color: var(--ink-2); }
+.passkey-row + .settings-move { margin-top: -6px; }

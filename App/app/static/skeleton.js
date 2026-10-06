@@ -9,7 +9,12 @@
   "use strict";
   var DELAY_MS = 400;
   var SAFETY_MS = 15000;
-  var DOWNLOAD_RE = /\.(pdf|zip|csv|ics|txt|json)$/i;
+  // A path that ends in a file kind, as an extension ("/invoices/5.pdf") or as
+  // its own segment ("/stay-fees/42/pdf", "/submissions/3/request.xml",
+  // "/admin/users/3/export", "/settings/workspace-export"). Those answer with
+  // an attachment, so the
+  // browser stays on this page and a skeleton would blank it for SAFETY_MS.
+  var DOWNLOAD_RE = /(?:^|\W)(?:pdf|zip|csv|ics|txt|json|xml|export)$/i;
   var timer = null;
   var safety = null;
 

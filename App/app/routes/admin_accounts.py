@@ -10,7 +10,7 @@ import pyotp
 import qrcode
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
-from starlette.background import BackgroundTask
+from starlette.background import BackgroundTask, BackgroundTasks
 
 from .. import (
     acceptance,
@@ -23,6 +23,8 @@ from .. import (
     host_i18n,
     incidents,
     lifecycle_mail,
+    login_link,
+    mail,
     mail_notify,
     rate_limit,
     security,
@@ -61,72 +63,142 @@ def login_form(request: Request):
     return render(request, "login.html")
 
 
+def _dev_link_visible() -> bool:
+    """Show the login link on the page instead of only mailing it.
+
+    Only on a local development run with the console mail backend, where no
+    mail is delivered. Never on staging: that site is public, and a link on the
+    page would let anyone who knows an address log in as that account. Staging
+    writes link mails to its own (access-controlled) log instead.
+    """
+    return config.DEPLOYMENT == "local" and mail.backend_name() == "console"
+
+
 @router.post("/login")
 async def login_submit(request: Request):
     form = await request.form()
-    username = _form_str(form, "username")
-    # Read once, up front, so a failed attempt re-renders the form still holding
-    # the deep link the host arrived with instead of dropping them on the dashboard.
+    raw_email = _form_str(form, "email")[:254]
+    email = mail.normalise_email(raw_email)
     next_path = security.safe_local_path(_form_str(form, "next"), "/")
-    ip_key = rate_limit.client_key(request)
-    client_key = rate_limit.client_key(request, username.lower() or "unknown")
-    if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
-        return render(
-            request,
-            "login.html",
-            {"error": "auth.error.turnstile", "username": username, "next": next_path},
-            status_code=403,
-        )
-    if rate_limit.login_blocked(client_key, ip_key):
-        return render(
-            request,
-            "login.html",
-            {
-                "error": "auth.error.locked",
-                "username": username,
-                "next": next_path,
-            },
-            status_code=429,
-        )
-    account = auth.authenticate(username, _form_str(form, "password"))
-    if not account:
-        rate_limit.record_login_failure(client_key, ip_key)
-        db.audit("login_failed", request.client.host if request.client else "", actor="anonymous")
-        return render(
-            request,
-            "login.html",
-            {
-                "error": "auth.error.bad_credentials",
-                "username": username,
-                "next": next_path,
-            },
-            status_code=401,
-        )
-    target = "/account/password" if account["must_change_password"] else "/"
-    if not account["must_change_password"]:
-        target = next_path
     remember = _form_str(form, "remember") in ("1", "on", "true", "yes")
-    if account["totp_enabled"]:
+    lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)
+
+    def again(error: str, status_code: int):
         return render(
             request,
-            "two_factor_login.html",
-            {
-                "pending": auth.issue_two_factor_pending(
-                    account["id"], remember=remember, next_path=target
-                )
-            },
+            "login.html",
+            {"error": error, "email": raw_email, "next": next_path},
+            status_code=status_code,
         )
-    response = RedirectResponse(target, status_code=303)
+
+    if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
+        return again("auth.error.turnstile", 403)
+    if not email:
+        return again("auth.error.email_invalid", 400)
+    ip_key = rate_limit.client_key(request)
+    if login_link.request_blocked(ip_key, email):
+        return again("auth.error.link_rate_limited", 429)
+    login_link.record_request(ip_key, email)
+    background = BackgroundTasks()
+    context = {"email": email, "remember": remember, "next": next_path}
+    account = auth.account_by_email(email)
+    if account:
+        token = login_link.issue(
+            account, purpose=login_link.LOGIN, remember=remember, next_path=next_path
+        )
+        outbox_id = mail_notify.link_mail(
+            kind="login_link",
+            user_id=account["id"],
+            to_email=email,
+            token=token,
+            minutes=login_link.TTL_SECONDS[login_link.LOGIN] // 60,
+            lang=lang,
+        )
+        background.add_task(mail.send_now, outbox_id)
+        db.audit("login_link_sent", actor="anonymous", owner_user_id=account["id"])
+        if _dev_link_visible():
+            context["dev_link"] = f"/login/link?t={token}"
+    # The same page whether or not the address has an account: the form must
+    # not tell anyone who uses UbyHost.
+    response = render(request, "login_sent.html", context)
+    response.background = background
+    return response
+
+
+def _link_page(request: Request, context: dict, status_code: int = 200):
+    """The page a link opens: never cached, and it sends no Referer onward."""
+    response = render(request, "login_link.html", context, status_code=status_code)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@router.get("/login/link")
+def login_link_form(request: Request):
+    """Show a "Log in" button. Opening the link spends nothing (mail scanners)."""
+    token = request.query_params.get("t", "")
+    row = login_link.peek(token)
+    if not row or not login_link.account_for(row):
+        return _link_page(request, {"expired": True}, status_code=410)
+    return _link_page(request, {"token": token, "invite": row["purpose"] == login_link.INVITE})
+
+
+def _finish_login(
+    request: Request, account, *, remember: bool, next_path: str, method: str,
+    action: str = "login",
+):
+    """Start the session once the login proved who this is."""
+    response = RedirectResponse(security.safe_local_path(next_path, "/"), status_code=303)
     auth.attach_session(
         response,
         auth.issue_session(account["id"], account["session_version"], remember=remember),
         remember=remember,
     )
     _keep_login_language(request, response)
-    # Acceptance is now its own audited event (BE-1); the login row no longer
-    # carries the versions as free text.
-    db.audit("login", actor=account["username"], owner_user_id=account["id"])
+    db.execute("UPDATE user_account SET last_login_at = ? WHERE id = ?", (db.utcnow(), account["id"]))
+    db.audit(action, f"method={method}", actor=account["username"], owner_user_id=account["id"])
     return response
+
+
+@router.post("/login/link")
+async def login_link_submit(request: Request):
+    form = await request.form()
+    token = _form_str(form, "t")
+    ip_key = rate_limit.client_key(request)
+    if login_link.consume_blocked(ip_key):
+        return _link_page(request, {"expired": True, "locked": True}, status_code=429)
+    row = login_link.consume(token)
+    account = login_link.account_for(row)
+    if not account:
+        login_link.record_consume_failure(ip_key)
+        return _link_page(request, {"expired": True}, status_code=410)
+    if not account["email_verified_at"]:
+        db.execute(
+            "UPDATE user_account SET email_verified_at = ? WHERE id = ?",
+            (db.utcnow(), account["id"]),
+        )
+    if account["role"] == "admin" and row["purpose"] == login_link.INVITE:
+        # The bootstrap link has done its job; nothing on disk should still
+        # hold a working one.
+        try:
+            (config.DATA_DIR / "initial_admin_login").unlink(missing_ok=True)
+        except OSError:
+            pass
+    remember = bool(row["remember"])
+    next_path = row["next_path"] or "/"
+    if account["totp_enabled"]:
+        response = render(
+            request,
+            "two_factor_login.html",
+            {
+                "pending": auth.issue_two_factor_pending(
+                    account["id"], remember=remember, next_path=next_path
+                )
+            },
+        )
+        response.headers["Cache-Control"] = "no-store"
+        return response
+    return _finish_login(request, account, remember=remember, next_path=next_path, method="link")
 
 
 @router.get("/login/2fa")
@@ -168,19 +240,14 @@ async def two_factor_login(request: Request):
             {"pending": _form_str(form, "pending"), "error": "auth.error.code_invalid"},
             status_code=401,
         )
-    response = RedirectResponse(
-        security.safe_local_path(str(pending.get("next") or ""), "/"), status_code=303
-    )
-    auth.attach_session(
-        response,
-        auth.issue_session(
-            account["id"], account["session_version"], remember=bool(pending.get("rm"))
-        ),
+    return _finish_login(
+        request,
+        account,
         remember=bool(pending.get("rm")),
+        next_path=str(pending.get("next") or "/"),
+        method="link+totp",
+        action="two_factor_login",
     )
-    _keep_login_language(request, response)
-    db.audit("two_factor_login", actor=account["username"], owner_user_id=account["id"])
-    return response
 
 
 @router.post("/logout")
@@ -272,31 +339,6 @@ async def account_accept_submit(request: Request):
     return RedirectResponse(next_path, status_code=303)
 
 
-@router.get("/account/password")
-def account_password_form(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    account = auth.current_user(request)
-    return render(request, "account_password.html", _first_run_step(account, 1))
-
-
-def _first_run_step(account: dict, step: int) -> dict:
-    """Context for the forced first-run sequence: password → 2FA → recovery codes.
-
-    In production 2FA is mandatory, so a host who has not switched it on yet is
-    walked through all three screens with no way to skip. Only there do the
-    screens number themselves; anywhere else the ledes read as plain sentences.
-    Step 3 is the screen right after 2FA is switched on, so ``totp_enabled`` is
-    already set by then.
-    """
-    if config.DEPLOYMENT != "production":
-        return {}
-    if step < 3 and account["totp_enabled"]:
-        return {}
-    return {"first_run_step": step}
-
-
 def _totp_qr_data(uri: str) -> str:
     image = qrcode.make(uri)
     output = io.BytesIO()
@@ -322,7 +364,6 @@ def two_factor_setup_form(request: Request):
     context = {"secret": secret, "qr_data": _totp_qr_data(uri), "totp_uri": uri}
     if request.query_params.get("moved") == "1":
         context["moved"] = True
-    context.update(_first_run_step(account, 2))
     return render(request, "two_factor_setup.html", context)
 
 
@@ -352,13 +393,11 @@ async def two_factor_setup_submit(request: Request):
             "totp_uri": uri,
             "error": "auth.error.setup_code_invalid",
         }
-        context.update(_first_run_step(account, 2))
         return render(request, "two_factor_setup.html", context, status_code=400)
     recovery_codes = auth.new_recovery_codes()
     auth.enable_totp(account["id"], secret, recovery_codes)
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
     context = {"recovery_codes": recovery_codes}
-    context.update(_first_run_step(refreshed, 3))
     response = render(request, "two_factor_recovery.html", context)
     auth.attach_session(
         response,
@@ -371,12 +410,11 @@ async def two_factor_setup_submit(request: Request):
 
 @router.post("/account/2fa/move")
 async def two_factor_move(request: Request):
-    """Re-enrol the second factor on a new phone.
+    """Re-enrol the authenticator app on a new phone.
 
-    The old phone is gone or going, so both factors have to prove themselves one
-    last time: the password and a code the old device can still produce. Setup
-    then runs again and mints fresh recovery codes, because the old ones were
-    written down beside the old device.
+    The old phone has to prove itself one last time with a code (or a
+    recovery code). Setup then runs again and mints fresh recovery codes,
+    because the old ones were written down beside the old device.
     """
     guard = auth.require_login(request)
     if guard:
@@ -387,10 +425,6 @@ async def two_factor_move(request: Request):
     form = await request.form()
     if rate_limit.account_2fa_blocked(account["id"]):
         return _back("/settings", err=_flash(request, "auth.error.code_locked"))
-    if not auth.verify_password(_form_str(form, "current_password"), account["password_hash"]):
-        rate_limit.record_account_2fa_failure(account["id"])
-        db.audit("two_factor_move_failed", actor=account["username"], owner_user_id=account["id"])
-        return _back("/settings", err=_flash(request, "auth.error.current_password_wrong"))
     if not auth.verify_second_factor(account, _form_str(form, "code")):
         rate_limit.record_account_2fa_failure(account["id"])
         db.audit("two_factor_move_failed", actor=account["username"], owner_user_id=account["id"])
@@ -400,69 +434,143 @@ async def two_factor_move(request: Request):
     db.audit("two_factor_moved", actor=account["username"], owner_user_id=account["id"])
     response = RedirectResponse("/account/2fa/setup?moved=1", status_code=303)
     # reset_totp bumps session_version, so the cookie that sent this POST is stale.
-    auth.attach_session(response, auth.issue_session(refreshed["id"], refreshed["session_version"]))
-    return response
-
-
-def _password_error(key: str) -> dict:
-    """A password error together with the field it belongs under.
-
-    The message used to sit in one alert above the form, with nothing tying it
-    to the input that caused it, so a screen reader read three identical-looking
-    fields and no clue which one to fix.
-    """
-    if key in ("auth.error.temp_password_wrong", "auth.error.current_password_wrong"):
-        field = "current_password"
-    elif key == "auth.error.passwords_mismatch":
-        field = "confirm_password"
-    else:
-        field = "new_password"
-    return {"error": key, "error_field": field}
-
-
-@router.post("/account/password")
-async def account_password_update(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    account = auth.current_user(request)
-    form = await request.form()
-    if not auth.verify_password(_form_str(form, "current_password"), account["password_hash"]):
-        key = (
-            "auth.error.temp_password_wrong"
-            if account["must_change_password"]
-            else "auth.error.current_password_wrong"
-        )
-        return render(request, "account_password.html", _password_error(key), status_code=400)
-    new_password = _form_str(form, "new_password")
-    if new_password != _form_str(form, "confirm_password"):
-        return render(
-            request,
-            "account_password.html",
-            _password_error("auth.error.passwords_mismatch"),
-            status_code=400,
-        )
-    try:
-        auth.set_account_password(account["id"], new_password)
-    except ValueError as exc:
-        return render(request, "account_password.html", _password_error(str(exc)), status_code=400)
-    refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
-    if account["must_change_password"]:
-        try:
-            (config.DATA_DIR / "initial_admin_credentials").unlink(missing_ok=True)
-        except OSError:
-            pass
-    # The forced first-login branch carries on to 2FA setup; the in-app change
-    # came from Settings, so it goes back there.
-    target = "/" if account["must_change_password"] else "/settings#settings-account"
     remember = auth.session_remembers(request)
-    response = _back(target, msg=_flash(request, "flash.accounts.password_changed"))
     auth.attach_session(
         response,
         auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
         remember=remember,
     )
-    db.audit("password_changed", actor=account["username"], owner_user_id=account["id"])
+    return response
+
+
+@router.post("/account/2fa/disable")
+async def two_factor_disable(request: Request):
+    """Switch the authenticator app off. A current code proves the phone is here."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    if not account["totp_enabled"]:
+        return _back("/settings#settings-security")
+    form = await request.form()
+    if rate_limit.account_2fa_blocked(account["id"]):
+        return _back("/settings#settings-security", err=_flash(request, "auth.error.code_locked"))
+    if not auth.verify_second_factor(account, _form_str(form, "code")):
+        rate_limit.record_account_2fa_failure(account["id"])
+        db.audit("two_factor_disable_failed", actor=account["username"], owner_user_id=account["id"])
+        return _back("/settings#settings-security", err=_flash(request, "auth.error.code_invalid"))
+    auth.reset_totp(account["id"])
+    refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
+    db.audit("two_factor_disabled", actor=account["username"], owner_user_id=account["id"])
+    response = _back("/settings#settings-security", msg=_flash(request, "flash.accounts.twofa_disabled"))
+    remember = auth.session_remembers(request)
+    auth.attach_session(
+        response,
+        auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+        remember=remember,
+    )
+    return response
+
+
+@router.post("/account/email")
+async def account_email_request(request: Request):
+    """Ask to log in with a new address: a link to that address confirms it."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    if auth.impersonating(request):
+        return _back("/settings#settings-account", err=_flash(request, "auth.error.admins_only"))
+    form = await request.form()
+    email = mail.normalise_email(_form_str(form, "email"))
+    if not email:
+        return _back("/settings#settings-account", err=_flash(request, "users.email.error.invalid"))
+    if email == (account["email"] or "").strip().lower():
+        return _back("/settings#settings-account", msg=_flash(request, "users.email.unchanged"))
+    ip_key = rate_limit.client_key(request)
+    if login_link.request_blocked(ip_key, email):
+        return _back("/settings#settings-account", err=_flash(request, "auth.error.link_rate_limited"))
+    login_link.record_request(ip_key, email)
+    # A taken address gets the same answer and no mail: the form must not tell
+    # a host which addresses other accounts use.
+    background = BackgroundTasks()
+    if not auth.email_taken(email, except_user_id=account["id"]):
+        token = login_link.issue(account, purpose=login_link.EMAIL_CHANGE, email=email)
+        outbox_id = mail_notify.link_mail(
+            kind="email_confirm",
+            user_id=account["id"],
+            to_email=email,
+            token=token,
+            minutes=login_link.TTL_SECONDS[login_link.EMAIL_CHANGE] // 60,
+            lang=host_i18n.lang_from_request(request),
+        )
+        background.add_task(mail.send_now, outbox_id)
+        db.audit("email_change_requested", f"to={mail.mask_email(email)}", owner_user_id=account["id"])
+    response = _back(
+        "/settings#settings-account",
+        msg=_flash(request, "settings.account.email_sent", email=email),
+    )
+    response.background = background
+    return response
+
+
+def _email_confirm_page(request: Request, context: dict, status_code: int = 200):
+    response = render(request, "account_email_confirm.html", context, status_code=status_code)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@router.get("/account/email/confirm")
+def account_email_confirm_form(request: Request):
+    token = request.query_params.get("t", "")
+    row = login_link.peek(token, (login_link.EMAIL_CHANGE,))
+    if not row or not login_link.account_for(row):
+        return _email_confirm_page(request, {"expired": True}, status_code=410)
+    return _email_confirm_page(request, {"token": token, "email": row["email"]})
+
+
+@router.post("/account/email/confirm")
+async def account_email_confirm_submit(request: Request):
+    form = await request.form()
+    token = _form_str(form, "t")
+    ip_key = rate_limit.client_key(request)
+    if login_link.consume_blocked(ip_key):
+        return _email_confirm_page(request, {"expired": True}, status_code=429)
+    row = login_link.consume(token, (login_link.EMAIL_CHANGE,))
+    account = login_link.account_for(row)
+    if not account or auth.email_taken(row["email"], except_user_id=account["id"]):
+        login_link.record_consume_failure(ip_key)
+        return _email_confirm_page(request, {"expired": True}, status_code=410)
+    old_email = (account["email"] or "").strip().lower()
+    try:
+        auth.set_account_email(account["id"], row["email"])
+    except Exception as exc:
+        if "UNIQUE constraint failed" in str(exc):
+            return _email_confirm_page(request, {"expired": True}, status_code=410)
+        raise
+    # The new address just proved itself.
+    db.execute(
+        "UPDATE user_account SET email_verified_at = ? WHERE id = ?", (db.utcnow(), account["id"])
+    )
+    db.audit(
+        "email_changed",
+        f"from={mail.mask_email(old_email)} to={mail.mask_email(row['email'])} by=self",
+        actor=account["username"],
+        owner_user_id=account["id"],
+    )
+    mail_notify.email_changed(
+        user_id=account["id"],
+        old_email=old_email,
+        new_email=row["email"],
+        stamp=db.utcnow(),
+        by="self",
+        notify_new=False,
+    )
+    # Every session ended with the change; the host logs in again with the new
+    # address.
+    response = RedirectResponse("/login?notice=email_changed", status_code=303)
+    auth.clear_session(response)
     return response
 
 
@@ -487,7 +595,7 @@ def users_admin(request: Request):
 def _render_users(request: Request, **extra):
     users = db.query(
         "SELECT u.id, u.username, u.display_name, u.role, u.active, "
-        "u.must_change_password, u.created_at, u.last_login_at, "
+        "u.created_at, u.last_login_at, "
         "u.email, u.email_verified_at, u.signup_at, u.signup_source, "
         "(SELECT COUNT(*) FROM ad_click c WHERE c.user_account_id = u.id "
         "AND c.platform = 'google' AND c.withdrawn_at IS NULL) AS google_consent, "
@@ -501,11 +609,27 @@ def _render_users(request: Request, **extra):
         "users.html",
         {
             "users": users,
+            "missing_email_count": sum(
+                1 for user in users if user["active"] and not (user["email"] or "").strip()
+            ),
             "signup_enabled": config.SIGNUP_ENABLED,
             "ads_export_days": signup.GOOGLE_EXPORT_DAYS,
             **extra,
         },
     )
+
+
+def _send_invite(request: Request, target) -> None:
+    """Mail ``target`` a link that logs them in, valid for three days."""
+    token = login_link.issue(target, purpose=login_link.INVITE)
+    outbox_id = mail_notify.link_mail(
+        kind="account_invite",
+        user_id=target["id"],
+        to_email=target["email"],
+        token=token,
+        minutes=login_link.TTL_SECONDS[login_link.INVITE] // 60,
+    )
+    mail.send_now(outbox_id)
 
 
 @router.post("/admin/users")
@@ -514,53 +638,102 @@ async def user_create(request: Request):
     if guard:
         return guard
     form = await request.form()
-    password = _form_str(form, "password") or auth.generate_password()
-    username = _form_str(form, "username")
+    email = mail.normalise_email(_form_str(form, "email"))
+    if not email:
+        return _back("/admin/users", err=_flash(request, "users.email.error.invalid"))
+    if auth.email_taken(email):
+        return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
     try:
-        user_id = auth.create_account(
-            username,
-            password,
-            _form_str(form, "display_name"),
-            role="host",
-            must_change_password=True,
-        )
+        user_id = auth.create_account(email, _form_str(form, "display_name"), role="host")
     except ValueError as exc:
         # ``auth`` raises catalogue keys, so the message travels as a key and is
         # resolved in the language the host is reading the page in.
         return _back("/admin/users", err=_flash(request, str(exc)))
     except Exception as exc:
         if "UNIQUE constraint failed" in str(exc):
-            return _back("/admin/users", err=_flash(request, "auth.error.username_taken"))
+            return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
         raise
     db.audit(
         "user_created", f"user={user_id}", actor=account["username"], owner_user_id=user_id
     )
-    return _render_users(
-        request,
-        new_credential={"username": username, "password": password},
-    )
-
-
-@router.post("/admin/users/{user_id}/password")
-async def user_password_reset(user_id: int, request: Request):
-    account, guard = _require_admin(request)
     target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
-    if guard or not target:
-        return guard or Response(_flash(request, "auth.error.admins_only"), status_code=403)
-    if user_id == account["id"]:
-        return _back("/account/password", err=_flash(request, "auth.error.own_password"))
+    _send_invite(request, target)
+    return _back("/admin/users", msg=_flash(request, "users.invite.sent", email=email))
+
+
+@router.post("/admin/users/{user_id}/invite")
+def user_invite(user_id: int, request: Request):
+    """Send a fresh invitation link, for a host who never used theirs."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    target = db.query_one("SELECT * FROM user_account WHERE id = ? AND active = 1", (user_id,))
+    if not target or not (target["email"] or "").strip():
+        return _back("/admin/users", err=_flash(request, "users.invite.no_email"))
+    _send_invite(request, target)
+    db.audit("invite_sent", actor=account["username"], owner_user_id=user_id)
+    return _back("/admin/users", msg=_flash(request, "users.invite.sent", email=target["email"]))
+
+
+@router.post("/admin/users/{user_id}/email")
+async def user_email_set(user_id: int, request: Request):
+    """Set or change the address an account logs in with (task 0002).
+
+    Setting a first address needs no reason. Changing one does: it is the
+    support step for a host who lost their mailbox, so the audit row says why,
+    both addresses get a notice, and every session of the account ends.
+    """
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    if not target:
+        return _back("/admin/users", err=_flash(request, "users.email.error.not_found"))
     form = await request.form()
-    password = _form_str(form, "password") or auth.generate_password()
+    email = mail.normalise_email(_form_str(form, "email"))
+    if not email:
+        return _back("/admin/users", err=_flash(request, "users.email.error.invalid"))
+    old_email = (target["email"] or "").strip().lower()
+    if email == old_email:
+        return _back("/admin/users", msg=_flash(request, "users.email.unchanged"))
+    reason = ""
+    if old_email:
+        reason = auth.support_reason(_form_str(form, "reason")) or ""
+        if not reason:
+            return _back("/admin/users", err=_flash(request, "users.email.error.reason"))
+    if auth.email_taken(email, except_user_id=user_id):
+        return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
     try:
-        auth.set_account_password(user_id, password, must_change=True)
-        auth.reset_totp(user_id)
-    except ValueError as exc:
-        return _back("/admin/users", err=_flash(request, str(exc)))
-    db.audit("password_reset", actor=account["username"], owner_user_id=user_id)
-    return _render_users(
-        request,
-        new_credential={"username": target["username"], "password": password, "reset": True},
+        auth.set_account_email(user_id, email)
+    except Exception as exc:
+        if "UNIQUE constraint failed" in str(exc):
+            return _back("/admin/users", err=_flash(request, "users.email.error.taken"))
+        raise
+    detail = f"to={mail.mask_email(email)}"
+    if old_email:
+        detail = f"from={mail.mask_email(old_email)} {detail} reason={reason}"
+    db.audit(
+        "email_changed" if old_email else "email_set",
+        detail,
+        actor=account["username"],
+        owner_user_id=user_id,
     )
+    if old_email:
+        mail_notify.email_changed(
+            user_id=user_id, old_email=old_email, new_email=email, stamp=db.utcnow()
+        )
+    response = _back("/admin/users", msg=_flash(request, "users.email.saved"))
+    if old_email and user_id == account["id"]:
+        # The change ended every session of this account, the admin's own
+        # included; hand this browser a fresh one.
+        refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+        remember = auth.session_remembers(request)
+        auth.attach_session(
+            response,
+            auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+            remember=remember,
+        )
+    return response
 
 
 @router.post("/admin/users/{user_id}/impersonate")

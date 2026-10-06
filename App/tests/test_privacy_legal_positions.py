@@ -53,7 +53,7 @@ def test_the_own_retention_periods_are_published():
 
 
 def test_the_privacy_version_is_bumped_and_shown():
-    assert config.PRIVACY_VERSION == "1.6"
+    assert config.PRIVACY_VERSION == "1.7"
     assert f"Version {config.PRIVACY_VERSION}." in _get("/privacy?lang=en")
     assert f"Verze {config.PRIVACY_VERSION}." in _get("/privacy?lang=cs")
 

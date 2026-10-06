@@ -8,8 +8,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, config, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 
 
 def _cleanup():
@@ -22,11 +22,7 @@ def _cleanup():
 
 def _login(username: str) -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 
@@ -40,7 +36,7 @@ def _database():
 
 
 def test_the_panel_renders_for_a_host_without_backup_internals():
-    auth.create_account("settings-host", PASSWORD, "Host", must_change_password=False)
+    auth.create_account("settings-host@example.test", "Host", username="settings-host")
     page = _login("settings-host").get("/settings?lang=en")
     assert page.status_code == 200, page.text
     assert "Data protection" in page.text
@@ -49,9 +45,7 @@ def test_the_panel_renders_for_a_host_without_backup_internals():
 
 
 def test_a_platform_admin_sees_the_backup_marker():
-    auth.create_account(
-        "settings-admin", PASSWORD, "Admin", role="admin", must_change_password=False
-    )
+    auth.create_account("settings-admin@example.test", "Admin", role="admin", username="settings-admin")
     marker = config.DATA_DIR / "backups" / ".last_success.json"
     marker.parent.mkdir(parents=True, exist_ok=True)
     marker.write_text(

@@ -1,9 +1,9 @@
 """UX-129 (audit B-25): re-issuing a session keeps "Remember me".
 
-The first-run sequence mints a new session cookie twice — once when the host
-chooses a password, once when 2FA is switched on. Both used to drop the flag,
-so a host who ticked "Remember me for 30 days" silently fell back to the
-12-hour session.
+Switching 2FA on (or off) mints a new session cookie, and that used to drop
+the flag, so a host who ticked "Remember me for 30 days" silently fell back to
+the 12-hour session. Since task 0003 the flag also travels inside the login
+link, from the login form to the browser that opens the mail.
 """
 from __future__ import annotations
 
@@ -13,9 +13,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
-NEW_PASSWORD = "Another-Secure-Password-456"
 USERNAME = "ux129-host"
 
 
@@ -49,7 +48,7 @@ def _new_session(response) -> dict:
 def client():
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Ux 129", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Ux 129", username=USERNAME)
     try:
         yield TestClient(app)
     finally:
@@ -57,48 +56,39 @@ def client():
 
 
 def _login(client, *, remember: bool):
-    response = client.post(
-        "/login",
-        data={
-            "username": USERNAME,
-            "password": PASSWORD,
-            **({"remember": "1"} if remember else {}),
-        },
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, remember=remember, follow_redirects=False)
     assert response.status_code == 303, response.text
+    return response
 
 
-def test_remember_me_survives_a_password_change(client):
-    _login(client, remember=True)
-    response = client.post(
-        "/account/password",
-        data={
-            "current_password": PASSWORD,
-            "new_password": NEW_PASSWORD,
-            "confirm_password": NEW_PASSWORD,
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 303
+def test_the_login_link_carries_remember_me(client):
+    response = _login(client, remember=True)
     assert _new_session(response).get("rm") == 1
     assert f"Max-Age={auth.SESSION_REMEMBER_MAX_AGE}" in _session_header(response)
 
 
-def test_a_plain_session_stays_plain_after_a_password_change(client):
-    _login(client, remember=False)
-    response = client.post(
-        "/account/password",
-        data={
-            "current_password": PASSWORD,
-            "new_password": NEW_PASSWORD,
-            "confirm_password": NEW_PASSWORD,
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 303
+def test_a_plain_login_link_gives_a_plain_session(client):
+    response = _login(client, remember=False)
     assert _new_session(response).get("rm") is None
     assert f"Max-Age={auth.SESSION_MAX_AGE}" in _session_header(response)
+
+
+def test_the_remember_box_on_the_form_reaches_the_link(client):
+    """The box is ticked on the login form; the link from the mail honours it."""
+    from app import login_link
+
+    response = client.post(
+        "/login",
+        data={"email": f"{USERNAME}@example.test", "remember": "1"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 200
+    row = db.query_one(
+        "SELECT remember FROM login_token WHERE email = ? AND used_at IS NULL",
+        (f"{USERNAME}@example.test",),
+    )
+    assert row["remember"] == 1
+    assert login_link.TTL_SECONDS[login_link.LOGIN] == 15 * 60
 
 
 def test_remember_me_survives_switching_two_factor_on(client):

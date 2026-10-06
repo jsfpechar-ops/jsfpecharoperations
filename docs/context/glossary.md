@@ -4,7 +4,8 @@
 - **Doručenka**: the PDF receipt UbyPort returns for a filing. It must be stored and downloadable.
 - **Filing / submission**: sending guests to UbyPort. Its state lives in `submit_state` ([OPERATIONS](../OPERATIONS.md#the-submit_state-state-machine)).
 - **Outcome unknown**: UbyPort didn't answer clearly. It is never auto-retried live (duplicate risk).
-- **Codes 112 / 150**: UbyPort error codes. 150 = duplicate, treated as success. See [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do).
+- **Codes 112 / 150**: UbyPort error codes. 112 = reported late, accepted. 150 = duplicate, treated as success. See [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do).
+- **Severity (síla chyby)**: the police's 0-6 grade per code. 0-2 accepted, 4-6 not accepted.
 - **House book (domovní/ubytovací kniha)**: the legally required guest register (§ 102 zákon 326/1999 Sb.).
 - **Host**: the accommodation provider using UbyHost. **Workspace**: a host's account data.
 - **Property / apartment**: a place the host rents.

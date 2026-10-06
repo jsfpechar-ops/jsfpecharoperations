@@ -16,8 +16,8 @@ from fastapi.testclient import TestClient
 from starlette.datastructures import FormData
 
 from app import auth, db, demo, host_i18n, invoices
+from tests.conftest import login_as
 
-PASSWORD = "Sweep-Host-12345"
 STATIC = Path(__file__).resolve().parent.parent / "app" / "static"
 
 
@@ -25,7 +25,7 @@ STATIC = Path(__file__).resolve().parent.parent / "app" / "static"
 def world():
     db.init_db()
     username = f"sweep{secrets.token_hex(4)}"
-    owner = auth.create_account(username, PASSWORD, "Sweep Host", role="host", must_change_password=False)
+    owner = auth.create_account(f"{username}@example.test", "Sweep Host", role="host", username=username)
     studio = demo.seed(owner)
     assert studio, "the demo seed needs UBYHOST_UBYPORT_ENV=mock"
     loft = db.query_one(
@@ -57,9 +57,7 @@ def client(world):
     from app.main import app
 
     with TestClient(app) as test_client:
-        response = test_client.post(
-            "/login", data={"username": world["username"], "password": PASSWORD}, follow_redirects=False
-        )
+        response = login_as(test_client, world["username"], follow_redirects=False)
         assert response.status_code == 303
         yield test_client
 

@@ -18,8 +18,8 @@ from app.dpa_i18n import DPA_STRINGS
 from app.main import app
 from app.privacy_policy_i18n import PRIVACY_STRINGS
 from app.terms_i18n import TERMS_STRINGS
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "operator-naming-host"
 
 ENTITY_NAME = "Operator Naming s.r.o."
@@ -120,15 +120,9 @@ def host():
         "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
     )
     if not existing:
-        auth.create_account(
-            USERNAME, PASSWORD, "Operator Naming Host", must_change_password=False
-        )
+        auth.create_account(f"{USERNAME}@example.test", "Operator Naming Host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client

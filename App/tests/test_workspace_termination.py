@@ -11,8 +11,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, retention
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 
 
 def _unlock(value: str) -> None:
@@ -54,9 +54,7 @@ def _cleanup():
 
 
 def _seed(username: str):
-    owner = auth.create_account(
-        username, PASSWORD, username, must_change_password=False
-    )
+    owner = auth.create_account(f"{username}@example.test", username, username=username)
     now = db.utcnow()
     entity = db.insert(
         "legal_entity", {"name": f"{username} entity", "owner_user_id": owner, "created_at": now}
@@ -99,18 +97,12 @@ def _seed(username: str):
 
 
 def _admin(username: str) -> int:
-    return auth.create_account(
-        username, PASSWORD, username, role="admin", must_change_password=False
-    )
+    return auth.create_account(f"{username}@example.test", username, role="admin", username=username)
 
 
 def _login(username: str) -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303
     return client
 

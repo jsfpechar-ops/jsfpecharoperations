@@ -24,10 +24,10 @@ from PIL import Image
 from app import auth, claim, cookie_inventory, db, i18n, landing_i18n, public_guides
 from app.main import app
 from tests.conftest import complete_guest_claim
+from tests.conftest import login_as
 
 TOKEN = "privacyfirsttoken"
 PIN = "2468"
-PASSWORD = "Privacy-First-Pass-1"
 _PATH_PARAM = re.compile(r"\{[^}]+\}")
 
 
@@ -98,9 +98,7 @@ def _account(username: str, role: str) -> int:
     row = db.query_one("SELECT id FROM user_account WHERE username = ?", (username,))
     if row:
         return int(row["id"])
-    return auth.create_account(
-        username, PASSWORD, username.title(), role=role, must_change_password=False
-    )
+    return auth.create_account(f"{username}@example.test", username.title(), role=role, username=username)
 
 
 def _fixture():
@@ -151,11 +149,7 @@ def _crawl(client: TestClient, paths: Iterable[str]) -> None:
 
 
 def _sign_in(client: TestClient, username: str) -> None:
-    response = client.post(
-        "/login?lang=en",
-        data={"username": username, "password": PASSWORD, "remember": "1"},
-        follow_redirects=False,
-    )
+    response = login_as(client, username, url="/login?lang=en", remember=True, follow_redirects=False)
     assert response.status_code == 303, response.text
 
 

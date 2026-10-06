@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
-from .. import access, auth, db, host_i18n, mail, rate_limit, signup, turnstile
+from .. import access, auth, db, host_i18n, login_link, mail, rate_limit, signup, turnstile
 from ..templating import render
 from .admin_accounts import _keep_login_language, _require_admin
 from .admin_helpers import back as _back
@@ -66,7 +66,6 @@ async def signup_submit(request: Request):
     email = mail.normalise_email(_form_str(form, "email"))
     raw_email = _form_str(form, "email")[:254]
     workspace = " ".join(_form_str(form, "workspace").split())
-    password = _form_str(form, "password")
     click = signup.read_click(attr.get("click"))
     consents = {
         platform: _form_str(form, signup.CONSENT_FIELDS[platform]) == "1"
@@ -100,16 +99,12 @@ async def signup_submit(request: Request):
     signup.record_attempt(ip_key, email)
     if not email:
         return again("signup.error.email", 400, "email")
-    password_error = auth.password_error(password)
-    if password_error:
-        return again(password_error, 400, "password")
     if not workspace or len(workspace) > signup.WORKSPACE_MAX:
         return again("signup.error.workspace", 400, "workspace")
     if _form_str(form, "accept") != "1":
         return again("signup.error.accept", 422, "accept")
     signup.register(
         email=email,
-        password=password,
         workspace=workspace,
         attr=attr,
         consents=consents,
@@ -137,8 +132,7 @@ async def signup_verify_submit(request: Request):
     form = await request.form()
     token = _form_str(form, "t")
     ip_key = rate_limit.client_key(request)
-    client_key = rate_limit.client_key(request, "signup_verify")
-    if rate_limit.login_blocked(client_key, ip_key):
+    if login_link.consume_blocked(ip_key):
         return render(
             request,
             "signup_verify.html",
@@ -146,17 +140,8 @@ async def signup_verify_submit(request: Request):
             status_code=429,
         )
     account = signup.pending_account(token)
-    if not account:
-        return render(request, "signup_verify.html", {"expired": True}, status_code=410)
-    if not auth.verify_password(_form_str(form, "password"), account["password_hash"]):
-        rate_limit.record_login_failure(client_key, ip_key)
-        return render(
-            request,
-            "signup_verify.html",
-            {"token": token, "error": "signup.verify.error.password"},
-            status_code=401,
-        )
-    if not signup.activate(account):
+    if not account or not signup.activate(account):
+        login_link.record_consume_failure(ip_key)
         return render(request, "signup_verify.html", {"expired": True}, status_code=410)
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
     response = RedirectResponse("/", status_code=303)
@@ -164,7 +149,7 @@ async def signup_verify_submit(request: Request):
         response, auth.issue_session(refreshed["id"], refreshed["session_version"])
     )
     _keep_login_language(request, response)
-    db.audit("login", actor=refreshed["username"], owner_user_id=refreshed["id"])
+    db.audit("login", "method=signup_link", actor=refreshed["username"], owner_user_id=refreshed["id"])
     return response
 
 

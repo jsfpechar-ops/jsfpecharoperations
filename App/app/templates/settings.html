@@ -6,7 +6,7 @@
 {{ page_header(t('nav.settings'), t('settings.lede')) }}
 
 <nav class="host-property-grid" aria-label="{{ t('nav.settings') }}">
-  {% for href, key in [('#settings-account', 'settings.nav.account'), ('#settings-data', 'settings.data.title'), ('/settings/archived', 'settings.nav.archive'), ('/privacy-requests', 'nav.privacy_requests'), ('#settings-technical', 'settings.technical.title'), ('#settings-legal', 'settings.nav.legal')] %}
+  {% for href, key in [('#settings-account', 'settings.nav.account'), ('#settings-security', 'settings.nav.security'), ('#settings-data', 'settings.data.title'), ('/settings/archived', 'settings.nav.archive'), ('/privacy-requests', 'nav.privacy_requests'), ('#settings-technical', 'settings.technical.title'), ('#settings-legal', 'settings.nav.legal')] %}
     <a class="host-property-card" href="{{ href }}"><strong>{{ t(key) }}</strong><span aria-hidden="true">→</span></a>
   {% endfor %}
   {% if current_user.role == 'admin' %}
@@ -211,50 +211,25 @@
     <div class="panel" id="settings-account">
       <h2 style="margin-top:0">{{ t('settings.nav.account') }}</h2>
       <div class="account-identity">
-        <strong>{{ current_user.display_name or current_user.username }}</strong>
-        <span class="small muted mono">{{ current_user.username }}</span>
+        <strong>{{ current_user.display_name or current_user.email or current_user.username }}</strong>
       </div>
       <div class="settings-action-list">
-        <div class="settings-action-row">
-          <div>
-            <strong>{{ t('login.password') }}</strong>
-            <small>{{ t('account.password.change_lede') }}</small>
-          </div>
-          <a class="btn small" href="/account/password">{{ t('account.password.change') }}</a>
-        </div>
-        <div class="settings-action-row">
-          <div>
-            <strong>{{ t('settings.account.2fa') }}</strong>
-            <small>{{ t('settings.account.2fa_on') if current_user.totp_enabled else t('settings.account.2fa_off') }}</small>
-          </div>
-          {% if current_user.totp_enabled %}
-            <span class="pill green">{{ t('settings.account.enabled') }}</span>
-          {% else %}
-            <a class="btn primary small" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
-          {% endif %}
-        </div>
-        {% if current_user.totp_enabled %}
-          <details class="settings-move">
-            <summary>
-              <strong>{{ t('settings.account.2fa_move') }}</strong>
-              <small>{{ t('settings.account.2fa_move_help') }}</small>
-            </summary>
-            <form method="post" action="/account/2fa/move" class="settings-move-form">
-              <div class="field">
-                <label for="move-current-password">{{ t('login.password') }}</label>
-                <input id="move-current-password" name="current_password" type="password"
-                       autocomplete="current-password" required>
-              </div>
-              <div class="field">
-                <label for="move-code">{{ t('settings.account.2fa_move_code') }}</label>
-                <input id="move-code" name="code" type="text" inputmode="numeric"
-                       autocomplete="one-time-code" aria-describedby="move-code-hint" required>
-                <p class="hint" id="move-code-hint">{{ t('settings.account.2fa_move_code_hint') }}</p>
-              </div>
-              <button class="btn small" type="submit">{{ t('settings.account.2fa_move_action') }}</button>
-            </form>
-          </details>
-        {% endif %}
+        <details class="settings-move" id="settings-login-email">
+          <summary>
+            <strong>{{ t('settings.account.email') }}</strong>
+            <small>{{ current_user.email or t('users.status.no_email') }}</small>
+          </summary>
+          <form method="post" action="/account/email" class="settings-move-form">
+            <div class="field">
+              <label for="account-new-email">{{ t('settings.account.email_new') }}</label>
+              <input id="account-new-email" name="email" type="email" required maxlength="254"
+                     autocomplete="email" autocapitalize="none" spellcheck="false"
+                     aria-describedby="account-new-email-hint">
+              <p class="hint" id="account-new-email-hint">{{ t('settings.account.email_hint') }}</p>
+            </div>
+            <button class="btn small" type="submit">{{ t('settings.account.email_action') }}</button>
+          </form>
+        </details>
         {% if onboarding_emails is not none %}
           <form method="post" action="/account/onboarding-emails" class="settings-action-row" id="settings-onboarding-emails">
             <div>
@@ -275,6 +250,96 @@
             </div>
             <a class="btn small" href="/admin/users">{{ t('settings.account.users_action') }}</a>
           </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="panel" id="settings-security">
+      <h2 style="margin-top:0">{{ t('settings.nav.security') }}</h2>
+      <p class="small muted">{{ t('settings.security.lede') }}</p>
+      <div class="settings-action-list" id="settings-passkeys">
+        <div class="settings-action-row">
+          <div>
+            <strong>{{ t('passkeys.title') }}</strong>
+            <small>{{ t('passkeys.help') }}</small>
+          </div>
+          {% if passkeys_available %}
+            <button class="btn small primary" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
+          {% endif %}
+        </div>
+        {% if passkeys_available %}
+          <p class="small muted" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
+          <p class="small err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
+        {% else %}
+          <p class="small muted">{{ t('passkeys.unavailable') }}</p>
+        {% endif %}
+        {% for key in passkeys %}
+          <div class="settings-action-row passkey-row">
+            <div>
+              <strong>{{ key.name }}</strong>
+              <small>{{ t('passkeys.added_on', date=key.created_at | datetime_local) }} ·
+                {% if key.last_used_at %}{{ t('passkeys.last_used', date=key.last_used_at | datetime_local) }}{% else %}{{ t('passkeys.never_used') }}{% endif %}</small>
+            </div>
+            <form method="post" action="/account/passkeys/{{ key.id }}/delete"
+                  data-confirm data-confirm-message="{{ t('passkeys.remove_confirm', name=key.name) }}">
+              <button class="btn small" type="submit">{{ t('passkeys.remove') }}</button>
+            </form>
+          </div>
+          <details class="settings-move">
+            <summary><small>{{ t('passkeys.rename') }}</small></summary>
+            <form method="post" action="/account/passkeys/{{ key.id }}/rename" class="settings-move-form">
+              <div class="field">
+                <label for="passkey-name-{{ key.id }}">{{ t('passkeys.name') }}</label>
+                <input id="passkey-name-{{ key.id }}" name="name" type="text" maxlength="60"
+                       value="{{ key.name }}" required>
+              </div>
+              <button class="btn small" type="submit">{{ t('passkeys.rename_action') }}</button>
+            </form>
+          </details>
+        {% endfor %}
+      </div>
+      <div class="settings-action-list">
+        <div class="settings-action-row">
+          <div>
+            <strong>{{ t('settings.account.2fa') }}</strong>
+            <small>{{ t('settings.account.2fa_on') if current_user.totp_enabled else t('settings.account.2fa_off') }}</small>
+          </div>
+          {% if current_user.totp_enabled %}
+            <span class="pill green">{{ t('settings.account.enabled') }}</span>
+          {% else %}
+            <a class="btn small" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
+          {% endif %}
+        </div>
+        {% if current_user.totp_enabled %}
+          <details class="settings-move">
+            <summary>
+              <strong>{{ t('settings.account.2fa_move') }}</strong>
+              <small>{{ t('settings.account.2fa_move_help') }}</small>
+            </summary>
+            <form method="post" action="/account/2fa/move" class="settings-move-form">
+              <div class="field">
+                <label for="move-code">{{ t('settings.account.2fa_move_code') }}</label>
+                <input id="move-code" name="code" type="text" inputmode="numeric"
+                       autocomplete="one-time-code" aria-describedby="move-code-hint" required>
+                <p class="hint" id="move-code-hint">{{ t('settings.account.2fa_move_code_hint') }}</p>
+              </div>
+              <button class="btn small" type="submit">{{ t('settings.account.2fa_move_action') }}</button>
+            </form>
+          </details>
+          <details class="settings-move">
+            <summary>
+              <strong>{{ t('settings.security.2fa_off') }}</strong>
+              <small>{{ t('settings.security.2fa_off_help') }}</small>
+            </summary>
+            <form method="post" action="/account/2fa/disable" class="settings-move-form">
+              <div class="field">
+                <label for="disable-code">{{ t('settings.account.2fa_move_code') }}</label>
+                <input id="disable-code" name="code" type="text" inputmode="numeric"
+                       autocomplete="one-time-code" required>
+              </div>
+              <button class="btn small" type="submit">{{ t('settings.security.2fa_off_action') }}</button>
+            </form>
+          </details>
         {% endif %}
       </div>
     </div>

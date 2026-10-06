@@ -1,3 +1,5 @@
+import time
+
 from app import config, db, icalsync
 
 AIRBNB = """BEGIN:VCALENDAR
@@ -343,6 +345,70 @@ def test_a_filed_guest_is_not_moved_when_the_booking_changes(monkeypatch, tmp_pa
     _sync(feed_id)
     after = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
     assert before == after
+
+
+def test_a_live_send_claim_defers_fitting_the_guest_window(monkeypatch, tmp_path):
+    """The calendar must not rewrite dates an in-flight ZapisUbytovane already serialised.
+
+    Host and guest saves already refuse a live submission_claim. The feed used
+    to update stay_from/stay_to anyway, so the house book could show the new
+    window after the guest was marked sent with the old one. Once the claim
+    drops, the next poll applies the move.
+    """
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'in-flight', ?)",
+        (guest_id, time.time()),
+    )
+    try:
+        _sync(feed_id)
+        guest = db.query_one(
+            "SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,)
+        )
+        stay = db.query_one(
+            "SELECT date_from, date_to FROM reservation WHERE id = ?",
+            (reservation_id,),
+        )
+        assert (guest["stay_from"], guest["stay_to"]) == ("2099-01-10", "2099-01-12")
+        assert (stay["date_from"], stay["date_to"]) == ("2099-01-10", "2099-01-12")
+    finally:
+        db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+
+    _sync(feed_id)
+    guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    stay = db.query_one(
+        "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    assert (guest["stay_from"], guest["stay_to"]) == ("2099-02-10", "2099-02-12")
+    assert (stay["date_from"], stay["date_to"]) == ("2099-02-10", "2099-02-12")
+
+
+def test_an_expired_send_claim_does_not_block_fitting_the_guest_window(
+    monkeypatch, tmp_path
+):
+    """A claim left by a crashed worker must not freeze calendar dates forever."""
+    from app import reporting
+
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    db.execute(
+        "INSERT INTO submission_claim (guest_id, claim_token, claimed_at) "
+        "VALUES (?, 'stale', ?)",
+        (guest_id, time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS - 1),
+    )
+    try:
+        _sync(feed_id)
+        guest = db.query_one(
+            "SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,)
+        )
+        stay = db.query_one(
+            "SELECT date_from, date_to FROM reservation WHERE id = ?",
+            (reservation_id,),
+        )
+        assert (guest["stay_from"], guest["stay_to"]) == ("2099-02-10", "2099-02-12")
+        assert (stay["date_from"], stay["date_to"]) == ("2099-02-10", "2099-02-12")
+    finally:
+        db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
 
 
 def test_moved_ical_stay_does_not_raise_a_resign_alert(monkeypatch, tmp_path):

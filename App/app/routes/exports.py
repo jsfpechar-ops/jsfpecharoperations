@@ -246,7 +246,10 @@ def submission_receipt(submission_id: int, request: Request):
     owned = access.submission(request, submission_id)
     row = db.query_one("SELECT receipt_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
     if owned:
-        db.audit("export_submission_pdf", f"submission_id={submission_id} which=receipt")
+        detail = f"submission_id={submission_id} which=receipt"
+        if auth.impersonating(request):
+            detail += " while_supporting=1"
+        db.audit("export_submission_pdf", detail)
     return _pdf_response(row["receipt_pdf"] if row else None, f"dorucenka-{submission_id}.pdf")
 
 
@@ -261,7 +264,10 @@ def submission_errors(submission_id: int, request: Request):
     owned = access.submission(request, submission_id)
     row = db.query_one("SELECT error_pdf FROM submission WHERE id = ?", (submission_id,)) if owned else None
     if owned:
-        db.audit("export_submission_pdf", f"submission_id={submission_id} which=errors")
+        detail = f"submission_id={submission_id} which=errors"
+        if auth.impersonating(request):
+            detail += " while_supporting=1"
+        db.audit("export_submission_pdf", detail)
     return _pdf_response(row["error_pdf"] if row else None, f"dorucenka-chyby-{submission_id}.pdf")
 
 

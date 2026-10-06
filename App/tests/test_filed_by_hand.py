@@ -16,8 +16,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import auth, db, deadlines, filing_watchdog, host_i18n, housebook, reporting
-from tests.test_filing_watchdog import PASSWORD, USERNAME, world as world  # noqa: F401
+from tests.test_filing_watchdog import USERNAME, world as world  # noqa: F401
 from tests.test_filing_watchdog import FRIDAY, _mine
+from tests.conftest import login_as
 
 # A filing time on Wednesday 30.09.2026 at 14:32 Prague time (CEST, UTC+2).
 FILED_UTC = "2026-09-30T12:32:00+00:00"
@@ -42,9 +43,7 @@ def client(world):
     from app.main import app
 
     with TestClient(app) as test_client:
-        response = test_client.post(
-            "/login", data={"username": USERNAME, "password": PASSWORD}, follow_redirects=False
-        )
+        response = login_as(test_client, USERNAME, follow_redirects=False)
         assert response.status_code == 303 and "err=" not in response.headers["location"]
         yield test_client
     db.execute("DELETE FROM audit WHERE action LIKE 'stay_filed_manually%'")
@@ -296,9 +295,7 @@ def test_a_filing_time_in_the_future_is_refused(world, client):
 
 def test_a_stay_of_another_workspace_cannot_be_marked(world, client):
     other_user = db.query_one("SELECT id FROM user_account WHERE username = ?", ("filed-by-hand-other",))
-    other_id = other_user["id"] if other_user else auth.create_account(
-        "filed-by-hand-other", PASSWORD, "Other Host", must_change_password=False
-    )
+    other_id = other_user["id"] if other_user else auth.create_account("filed-by-hand-other@example.test", "Other Host", username="filed-by-hand-other")
     now = db.utcnow()
     apartment_id = db.insert(
         "apartment",

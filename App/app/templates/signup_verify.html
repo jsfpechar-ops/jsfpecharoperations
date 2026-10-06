@@ -17,12 +17,7 @@
   <form method="post" action="/signup/verify" class="auth-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="t" value="{{ token }}">
-    <div class="auth-field">
-      <label for="password">{{ t('signup.password') }}</label>
-      <input type="password" id="password" name="password" required autofocus
-             autocomplete="current-password">
-    </div>
-    <button class="auth-submit" type="submit">{{ t('signup.verify.submit') }}</button>
+    <button class="auth-submit" type="submit" autofocus>{{ t('signup.verify.submit') }}</button>
   </form>
   {% endif %}
 </section>

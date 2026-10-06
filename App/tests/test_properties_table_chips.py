@@ -16,8 +16,8 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, host_i18n
 from app.main import app
+from tests.conftest import login_as
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "properties-table-host"
 
 _COMPONENTS = Path(__file__).resolve().parents[1] / "app" / "templates" / "_components.html"
@@ -44,7 +44,7 @@ def _cleanup():
 
 def _seed_properties() -> None:
     """One account, one operator and one property per automation mode."""
-    auth.create_account(USERNAME, PASSWORD, "Properties Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Properties Host", username=USERNAME)
     owner_id = db.query_one(
         "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
     )["id"]
@@ -85,11 +85,7 @@ def host():
     _cleanup()
     _seed_properties()
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client
@@ -102,13 +98,9 @@ def empty_host():
     """An account with nothing in it, so the properties list shows its empty state."""
     db.init_db()
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Properties Host", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Properties Host", username=USERNAME)
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     try:
         yield client

@@ -1,9 +1,10 @@
-"""A deep link must survive one mistyped password.
+"""A deep link must survive the trip through the login e-mail.
 
 The form read ``next`` from the query string but posted to plain ``/login``, so
 after any error the page re-rendered with ``next=""`` and the host who followed
-a link from an e-mail landed on the dashboard instead. Focus also went back to
-the username field, which was already filled in.
+a link from an e-mail landed on the dashboard instead. Since task 0003 the
+deep link also rides along in the login link, so the host lands where they
+were going after opening the mail.
 """
 from __future__ import annotations
 
@@ -16,7 +17,6 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 
-PASSWORD = "Secure-Password-123"
 USERNAME = "login-next-host"
 DEEP_LINK = "/reservations/123"
 
@@ -43,7 +43,7 @@ def _database():
 @pytest.fixture
 def host():
     _cleanup()
-    auth.create_account(USERNAME, PASSWORD, "Login Next", must_change_password=False)
+    auth.create_account(f"{USERNAME}@example.test", "Login Next", username=USERNAME)
     try:
         yield USERNAME
     finally:
@@ -65,11 +65,29 @@ def _hidden_next(response) -> str:
 
 
 def _failed_attempt(next_value: str):
+    """A login form that comes back with an error (an address that is not one)."""
     return TestClient(app).post(
+        "/login", data={"email": "not-an-address", "next": next_value}, follow_redirects=False
+    )
+
+
+def _link_from_the_mail(client: TestClient, next_value: str) -> str:
+    """Ask for a link the way the form does, and read it from the outbox."""
+    from app import mail
+
+    response = client.post(
         "/login",
-        data={"username": USERNAME, "password": "not-the-password", "next": next_value},
+        data={"email": f"{USERNAME}@example.test", "next": next_value},
         follow_redirects=False,
     )
+    assert response.status_code == 200, response.text
+    row = db.query_one(
+        "SELECT payload FROM email_outbox WHERE kind = 'login_link' ORDER BY id DESC"
+    )
+    import json
+
+    body = mail.delivery_body(json.loads(row["payload"]))
+    return re.search(r"/login/link\?t=([A-Za-z0-9_-]+)", body).group(1)
 
 
 def test_the_form_carries_the_deep_link_it_was_opened_with():
@@ -78,19 +96,16 @@ def test_the_form_carries_the_deep_link_it_was_opened_with():
     assert _hidden_next(page) == DEEP_LINK
 
 
-def test_a_wrong_password_keeps_the_deep_link_in_the_form(host):
+def test_an_error_keeps_the_deep_link_in_the_form(host):
     response = _failed_attempt(DEEP_LINK)
-    assert response.status_code == 401, response.text
+    assert response.status_code == 400, response.text
     assert _hidden_next(response) == DEEP_LINK
 
 
-def test_the_deep_link_still_lands_the_host_after_a_failed_attempt(host):
-    assert _failed_attempt(DEEP_LINK).status_code == 401
-    response = TestClient(app).post(
-        "/login",
-        data={"username": USERNAME, "password": PASSWORD, "next": DEEP_LINK},
-        follow_redirects=False,
-    )
+def test_the_login_link_lands_the_host_on_the_deep_link(host):
+    client = TestClient(app)
+    token = _link_from_the_mail(client, DEEP_LINK)
+    response = client.post("/login/link", data={"t": token}, follow_redirects=False)
     assert response.status_code == 303, response.text
     assert response.headers["location"] == DEEP_LINK
 
@@ -99,22 +114,11 @@ def test_the_deep_link_still_lands_the_host_after_a_failed_attempt(host):
     "hostile",
     ("https://evil.example/steal", "//evil.example/steal", "/\\evil.example"),
 )
-def test_a_deep_link_off_this_site_is_dropped_on_an_error(host, hostile):
+def test_a_deep_link_off_this_site_is_dropped(host, hostile):
     response = _failed_attempt(hostile)
-    assert response.status_code == 401
+    assert response.status_code == 400
     assert _hidden_next(response) == "/"
-
-
-def test_focus_lands_on_the_password_only_after_an_error(host):
-    clean = TestClient(app).get("/login")
-    assert clean.status_code == 200
-    username_input = re.search(r'<input type="text" id="username"[^>]*>', clean.text)
-    assert username_input, clean.text
-    assert " autofocus" in username_input.group(0)
-
-    failed = _failed_attempt(DEEP_LINK)
-    username_input = re.search(r'<input type="text" id="username"[^>]*>', failed.text)
-    password_input = re.search(r'<input type="password" id="password"[^>]*>', failed.text)
-    assert username_input and password_input, failed.text
-    assert " autofocus" not in username_input.group(0)
-    assert " autofocus" in password_input.group(0)
+    client = TestClient(app)
+    token = _link_from_the_mail(client, hostile)
+    landed = client.post("/login/link", data={"t": token}, follow_redirects=False)
+    assert landed.headers["location"] == "/"

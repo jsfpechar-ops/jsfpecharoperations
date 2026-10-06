@@ -1809,6 +1809,13 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "signup_verify",
         "signup_exists",
         "signup_admin",
+        # Task 0002: the login e-mail change notice.
+        "email_changed",
+        # Task 0003: the login link, the invitation and the address confirmation.
+        "login_link",
+        "account_invite",
+        "email_confirm",
+        "passkey_added",
     }
 
 

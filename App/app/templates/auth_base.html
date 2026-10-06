@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
-  <link rel="stylesheet" href="/static/app.css?v=20261004z">
+  <link rel="stylesheet" href="/static/app.css?v=20261006a">
   <link rel="stylesheet" href="/static/components.css?v=20261002a">
 </head>
 <body class="auth-page">
@@ -33,6 +33,7 @@
            '2fa_expired': 'auth.notice.2fa_expired',
            'form_expired': 'auth.notice.form_expired',
            'logged_out': 'auth.notice.logged_out',
+           'email_changed': 'auth.notice.email_changed',
          } %}
       {% set auth_notice_key = auth_notice_keys.get(request.query_params.get('notice')) %}
       {% if auth_notice_key %}

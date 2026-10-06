@@ -1,9 +1,10 @@
 """The automatic retry budget for a record the register keeps refusing.
 
-The police answered in writing that 112 is a 1xx critical transmission error:
-the batch was never received and the remedy is to correct the data and repeat
-the submission. So a 112 must stay retryable -- parking the guest in ``blocked``
-would drop them from every future send and the declaration would never happen.
+The Foreign Police answered in writing (24 September 2026, B2-B3) that
+resending a refused record with the same data is what badly written programs
+do, and that it raises the host's error count with the police. A refused record
+(severity 4-6) has a data problem that resending cannot fix, so the sweep offers
+it once and then waits for the host.
 
 But "retryable" was implemented as "retried for ever": ``collect_sendable``
 skipped only ``sent`` and ``blocked``, so a record the register refused on every
@@ -27,6 +28,7 @@ from fastapi.testclient import TestClient
 
 from app import alerts, auth, db, reporting
 from app.ubyport.client import SubmissionResult, UbyportAuthError, UbyportOutcomeUnknownError, UbyportTransportError
+from tests.conftest import login_as
 
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
     bytes.fromhex(
@@ -39,14 +41,13 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
 # The policy value, written out rather than read from the module, so changing
 # the constant without meaning to fails here instead of quietly redefining what
 # these tests assert.
-BOUND = 3
+BOUND = 1
 
-PASSWORD = "RetryCapTestPassword1"
 USERNAME = "retry-cap-admin"
 
 
 class RefusingClient:
-    """A register that answers every record with 112, the retryable refusal."""
+    """A register that answers every record with 106, a correctable refusal."""
 
     def submit(self, _header, guests):
         return SubmissionResult(
@@ -54,7 +55,7 @@ class RefusingClient:
             request_xml="<request/>",
             response_xml="<response/>",
             # One entry per record, so a batch of two is refused twice.
-            record_errors=[";112;"] * len(guests),
+            record_errors=[";106;"] * len(guests),
         )
 
 
@@ -490,19 +491,9 @@ def host(mock_ubyport):  # noqa: ARG001
     db.init_db()
     account = db.query_one("SELECT * FROM user_account WHERE username = ?", (USERNAME,))
     if not account:
-        auth.create_account(
-            USERNAME,
-            PASSWORD,
-            "Retry cap admin",
-            role="admin",
-            must_change_password=False,
-        )
+        auth.create_account(f"{USERNAME}@example.test", "Retry cap admin", role="admin", username=USERNAME)
     with TestClient(app) as test_client:
-        response = test_client.post(
-            "/login",
-            data={"username": USERNAME, "password": PASSWORD},
-            follow_redirects=False,
-        )
+        response = login_as(test_client, USERNAME, follow_redirects=False)
         assert response.status_code == 303
         # A refused login also redirects, so check where it went.
         assert "err=" not in response.headers["location"]

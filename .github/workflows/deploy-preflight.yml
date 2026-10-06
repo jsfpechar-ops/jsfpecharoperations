@@ -66,7 +66,7 @@ jobs:
             echo "UBYHOST_UBYPORT_ENV=$(value UBYHOST_UBYPORT_ENV)"
             echo "COMPOSE_PROFILES=$(value COMPOSE_PROFILES)"
             echo "UBYHOST_ALLOW_PROD_MOCK=$(value UBYHOST_ALLOW_PROD_MOCK)"
-            echo "UBYHOST_ADMIN_PASSWORD=$(present UBYHOST_ADMIN_PASSWORD)"
+            echo "UBYHOST_ADMIN_EMAIL=$(present UBYHOST_ADMIN_EMAIL)"
             echo "UBYHOST_SECRET_KEY=$(present UBYHOST_SECRET_KEY)"
             echo "UBYHOST_BACKUP_PING_URL=$(present UBYHOST_BACKUP_PING_URL)"
             echo "LITESTREAM_S3_BUCKET=$(present LITESTREAM_S3_BUCKET)"

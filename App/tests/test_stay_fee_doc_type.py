@@ -44,9 +44,7 @@ def _cleanup():
 def _host_stay():
     db.init_db()
     _cleanup()
-    owner_id = auth.create_account(
-        OWNER, "Host-Fixture-7-login!", role="host", must_change_password=False
-    )
+    owner_id = auth.create_account(f"{OWNER}@example.test", "", role="host", username=OWNER)
     now = db.utcnow()
     entity_id = db.insert(
         "legal_entity",

@@ -21,8 +21,8 @@ from app import auth, codelists, db, reporting
 from app.host_i18n import STRINGS as HOST_STRINGS
 from app.main import app
 from tests.conftest import complete_guest_claim
+from tests.conftest import login_as
 
-PASSWORD = "Correct-Horse-Battery-123"
 
 # A one-pixel PNG is enough to stand for a drawn signature.
 SIGNATURE = "data:image/png;base64," + base64.b64encode(
@@ -89,18 +89,11 @@ def client(mock_ubyport):
     db.init_db()
     account = db.query_one("SELECT * FROM user_account WHERE username = 'e2e-admin'")
     if not account:
-        account_id = auth.create_account(
-            "e2e-admin", PASSWORD, "End-to-end admin", role="admin",
-            must_change_password=False,
-        )
+        account_id = auth.create_account("e2e-admin@example.test", "End-to-end admin", role="admin", username="e2e-admin")
     else:
         account_id = account["id"]
     with TestClient(app) as test_client:
-        response = test_client.post(
-            "/login?lang=en",
-            data={"username": "e2e-admin", "password": PASSWORD},
-            follow_redirects=False,
-        )
+        response = login_as(test_client, "e2e-admin", url="/login?lang=en", follow_redirects=False)
         assert response.status_code == 303
         yield test_client
     db.execute("UPDATE apartment SET owner_user_id = NULL WHERE owner_user_id = ?", (account_id,))
@@ -794,10 +787,8 @@ def test_28_the_audit_trail_records_what_happened(host):
     assert "guest_form_saved" in page.text
 
 
-def test_29_host_accounts_require_username_and_password(host):
-    user_id = auth.create_account(
-        "test-admin", PASSWORD, "Test admin", role="admin", must_change_password=False
-    )
+def test_29_host_accounts_log_in_only_through_their_email_link(host):
+    user_id = auth.create_account("test-admin@example.test", "Test admin", role="admin", username="test-admin")
     try:
         stranger = TestClient(app)
         landing = stranger.get("/", follow_redirects=False)
@@ -805,18 +796,13 @@ def test_29_host_accounts_require_username_and_password(host):
         assert 'action="/logout"' not in landing.text
         assert stranger.get("/settings", follow_redirects=False).status_code == 303
         assert stranger.post(
-            "/login", data={"username": "test-admin", "password": "wrong"}
-        ).status_code == 401
-        assert stranger.post(
-            "/login",
-            data={"username": "test-admin", "password": PASSWORD},
-            follow_redirects=False,
-        ).status_code == 303
+            "/login/link", data={"t": "guessed-link"}, follow_redirects=False
+        ).status_code == 410
+        assert login_as(stranger, "test-admin", follow_redirects=False).status_code == 303
         assert 'action="/logout"' in stranger.get("/").text
 
         stored = db.query_one("SELECT password_hash FROM user_account WHERE id = ?", (user_id,))
-        assert PASSWORD not in stored["password_hash"]
-        assert auth.verify_password(PASSWORD, stored["password_hash"])
+        assert stored["password_hash"] == ""
 
         # Guest links do not require a host account.
         apartment = db.query_one("SELECT * FROM apartment")

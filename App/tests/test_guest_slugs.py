@@ -14,11 +14,11 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, db, guest_slug, rate_limit
 from app.main import app
+from tests.conftest import login_as
 
 TOKEN = "slugtesttoken23456789"
 PIN = "731905"
 USERNAME = "slug-host"
-PASSWORD = "Secure-Password-123"
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ def _owner() -> int:
     row = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
     if row:
         return int(row["id"])
-    return auth.create_account(USERNAME, PASSWORD, "Slug Host", must_change_password=False)
+    return auth.create_account(f"{USERNAME}@example.test", "Slug Host", username=USERNAME)
 
 
 @pytest.fixture
@@ -96,11 +96,7 @@ def flat():
 
 def _host_client() -> TestClient:
     client = TestClient(app)
-    response = client.post(
-        "/login?lang=en",
-        data={"username": USERNAME, "password": PASSWORD},
-        follow_redirects=False,
-    )
+    response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
     return client
 

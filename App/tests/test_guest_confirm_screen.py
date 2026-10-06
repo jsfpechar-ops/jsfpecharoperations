@@ -14,7 +14,6 @@ from app.main import app
 TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
 TOKEN = "confirmhelp"
 ENTITY = "Confirm Help Test"
-PASSWORD = "Confirm-Help-Password-123"
 ADMIN_USERNAME = "confirm-help-admin"
 
 # The line WP17 cut, in both languages. It only repeated the button label.
@@ -52,9 +51,7 @@ def _ensure_admin() -> int:
     account = db.query_one("SELECT * FROM user_account WHERE username = ?", (ADMIN_USERNAME,))
     if account:
         return account["id"]
-    return auth.create_account(
-        ADMIN_USERNAME, PASSWORD, "Confirm help admin", role="admin", must_change_password=False
-    )
+    return auth.create_account(f"{ADMIN_USERNAME}@example.test", "Confirm help admin", role="admin", username=ADMIN_USERNAME)
 
 
 def _seed() -> int:

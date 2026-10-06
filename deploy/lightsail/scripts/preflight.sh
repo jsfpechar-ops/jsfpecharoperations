@@ -20,7 +20,7 @@ fail=0
 warn() { echo "WARNING: $*" >&2; }
 die() { echo "ERROR: $*" >&2; fail=1; }
 
-for var in UBYHOST_DOMAIN ACME_EMAIL UBYHOST_PUBLIC_BASE_URL UBYHOST_ADMIN_PASSWORD; do
+for var in UBYHOST_DOMAIN ACME_EMAIL UBYHOST_PUBLIC_BASE_URL; do
   if [ -z "${!var:-}" ]; then
     die "required variable ${var} is empty in .env"
   fi
