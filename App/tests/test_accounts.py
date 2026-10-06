@@ -572,11 +572,10 @@ def test_dpa_page_shows_operator_and_article_28():
 
 
 def test_release_legal_versions_are_coordinated():
-    # WP24 bumps Terms and DPA together with WP09's Privacy 1.6, so hosts
-    # accept all three once.
-    assert config.TERMS_VERSION == "1.6"
-    assert config.PRIVACY_VERSION == "1.6"
-    assert config.DPA_VERSION == "1.6"
+    # Task 0005 bumps all three together to 1.7 (e-mail link login, passkeys).
+    assert config.TERMS_VERSION == "1.7"
+    assert config.PRIVACY_VERSION == "1.7"
+    assert config.DPA_VERSION == "1.7"
 
 
 def test_public_legal_pages_cross_link_dpa():

@@ -56,17 +56,21 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "For each property, the configured controller legal entity is the data controller for personal data about Guests (names, travel documents, stays, signatures, and related records). The operating property manager is the default controller and remains the practical point of contact for questions about the stay. If the Host selects a different controller, that entity must genuinely determine the purposes and means of processing; changing a label in the Service does not itself transfer legal responsibility. The Operator provides hosted software and processes Guest Data only on the Host's documented instructions to deliver the Service, typically as a data processor under GDPR Article 28. The Operator is not a joint controller with the Host unless expressly agreed in writing. The Operator is controller for its own business data (accounts, security, hosting). Guest Data processing terms are in the Data Processing Agreement at /dpa. Nothing in this Policy transfers statutory duties of accommodation providers or controllers to the Operator."
         ),
         "privacy.s04_title": "4. Categories of Host User data",
+        # LAWYER REVIEW
         "privacy.s04_body": (
-            "We may process: account identifiers (username, internal user id); authentication data "
-            "(password hashes, session tokens, optional \"remember me\" duration, time-based one-time "
-            "password (TOTP) secrets stored encrypted, and one-way hashes of recovery codes); profile "
-            "and workspace settings; legal entity names, addresses, and contact e-mails you enter for "
+            "We may process: account identifiers (username, internal user id, login e-mail address); "
+            "authentication data (single-use login link token hashes stored for 1 day after expiry, "
+            "signed session tokens, optional \"remember me\" duration, time-based one-time password "
+            "(TOTP) secrets stored encrypted, passkey public keys with display names and usage dates "
+            "and counters, WebAuthn challenge hashes stored for 1 day after expiry); profile and "
+            "workspace settings; legal entity names, addresses, and contact e-mails you enter for "
             "guest notices; property and stay metadata; UbyPort or calendar integration credentials "
             "(stored encrypted at rest); audit and activity logs you generate in-app; communications "
-            "you send to us; transactional e-mail settings and delivery records; and billing or plan "
-            "information if fees apply. We do not require Host "
-            "Users to provide special categories of data about themselves unless you voluntarily "
-            "include such information in free-text fields."
+            "you send to us; transactional e-mail delivery records (account e-mails such as login "
+            "links, invitation, e-mail confirmation, e-mail change notice, and passkey-added notice "
+            "are sent on the basis of your account action and are not marketing); and billing or plan "
+            "information if fees apply. We do not require Host Users to provide special categories "
+            "of data about themselves unless you voluntarily include such information in free-text fields."
         ),
         "privacy.s05_title": "5. Guest Data processed on your instructions",
         "privacy.s05_body": (
@@ -101,12 +105,10 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "and forms submitted on that device (up to 60 days). Production traffic to ubyhost.com is "
             "proxied by Cloudflare. "
             "We may use Cloudflare Turnstile on production login and, after repeated failed guest PIN "
-            "attempts, on guest PIN pages; custom managed challenges on private paths; leaked-credential "
-            "checks that compare login attempts against known leaked-password signals at the edge "
-            "(without storing your password in Cloudflare's dashboard); and a small client-side "
-            "security script that inventories third-party scripts loaded in the browser. These "
-            "features may set or read technical identifiers and process connection data (such as IP "
-            "address) under Cloudflare's terms and privacy notice; they are not used for advertising. "
+            "attempts, on guest PIN pages; custom managed challenges on private paths; and a small "
+            "client-side security script that inventories third-party scripts loaded in the browser. "
+            "These features may set or read technical identifiers and process connection data (such as "
+            "IP address) under Cloudflare's terms and privacy notice; they are not used for advertising. "
             "We do not use third-party analytics or advertising cookies in the application as shipped. "
             "You can control cookies through browser settings; disabling session cookies will prevent "
             "login. Browsers may also honour HTTP Strict Transport Security (HSTS) so this hostname "
@@ -180,31 +182,39 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "under GDPR Chapter V. Details can be provided on request where required by law."
         ),
         "privacy.s11_title": "11. Retention",
+        # LAWYER REVIEW
         "privacy.s11_body": (
             "Host account data is retained while the account is active and for a reasonable period "
-            "after termination to allow export, resolve disputes, and comply with law. Guest Data "
+            "after termination to allow export, resolve disputes, and comply with law. Login link "
+            "token hashes are deleted 1 day after the link expires. WebAuthn challenge hashes are "
+            "deleted 1 day after the challenge expires. Passkey records (public key, display name, "
+            "dates, counter) are kept until removed by the Host or the account is deleted. Audit "
+            "logs are kept for 3 years. Guest Data "
             "retention is controlled by Host settings and legal obligations (including typical "
             "six-year house book rules); the Operator may retain encrypted database and key backups "
             "on the server and, when configured, encrypted off-site copies (for example weekly to "
             "Google Drive and monthly to Amazon S3) for disaster recovery for a limited period before "
             "purging. Completed or terminal e-mail delivery rows are normally "
             "purged after 14 days; claim e-mails remain linked to retained reservations unless the Host "
-            "releases the claim. Security logs are kept for short rolling windows unless an incident requires "
-            "longer storage. When retention ends, we delete or anonymise data unless statutory storage "
-            "applies."
+            "releases the claim. Security logs are kept for short rolling windows unless an incident "
+            "requires longer storage. When retention ends, we delete or anonymise data unless "
+            "statutory storage applies."
         ),
         "privacy.s12_title": "12. Security",
+        # LAWYER REVIEW
         "privacy.s12_body": (
             "We implement measures such as encryption of sensitive credentials and TOTP secrets at "
-            "rest, HTTPS in transit (with HSTS on the production hostname), mandatory two-factor "
-            "authentication (authenticator app) for Host accounts in production, Cloudflare edge "
+            "rest, HTTPS in transit (with HSTS on the production hostname), Cloudflare edge "
             "protections (Turnstile on host login and on guest PIN verification after repeated "
-            "failures when configured; Bot Fight Mode; leaked-credential checks on login traffic; "
-            "client-side script monitoring), access controls, rate limiting on authentication "
-            "endpoints, separation of environments, and regular dependency updates. No method of "
-            "transmission or storage is 100%% secure; Hosts must use strong passwords, protect "
-            "authenticator devices and recovery codes, and configure guest links carefully. Report "
-            "suspected security issues to the contact on /legal."
+            "failures when configured; Bot Fight Mode; client-side script monitoring), access "
+            "controls, rate limiting on authentication endpoints, separation of environments, and "
+            "regular dependency updates. Login is by single-use e-mail link; Hosts are responsible "
+            "for securing access to their login e-mail address. An authenticator app (TOTP) and "
+            "passkeys (public key stored; biometric data never leaves the device) are available as "
+            "optional additional verification. A change of login e-mail address triggers a notice "
+            "to the old address. No method of transmission or storage is 100%% secure; Hosts must "
+            "protect their e-mail account, authenticator devices, and passkey-enrolled devices, and "
+            "configure guest links carefully. Report suspected security issues to the contact on /legal."
         ),
         "privacy.s13_title": "13. Your rights (Host Users)",
         "privacy.s13_body": (
@@ -332,14 +342,19 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Správcem údajů hostů (jména, cestovní doklady, pobyty, podpisy aj.) je právnická osoba nastavená pro konkrétní ubytování. Provozovatel/správce ubytování je výchozím správcem údajů a praktickým kontaktem pro otázky k pobytu. Je-li zvolen jiný správce údajů, musí skutečně určovat účely a prostředky zpracování; pouhá změna označení ve Službě právní odpovědnost nepřenáší. Provozovatel UbyHostu poskytuje software a údaje hostů zpracovává jen na dokumentovaný pokyn ubytovatele, obvykle jako zpracovatel dle čl. 28 GDPR. Společná správa s ubytovatelem nenastává, pokud není výslovně písemně sjednána. Provozovatel je správcem vlastních provozních údajů. Podmínky zpracování údajů hostů jsou v DPA na /dpa. Povinnosti ubytovatele podle zákona se na Provozovatele nepřenášejí."
         ),
         "privacy.s04_title": "4. Kategorie údajů uživatelů účtu",
+        # LAWYER REVIEW
         "privacy.s04_body": (
-            "Můžeme zpracovávat: identifikátory účtu; autentizační údaje (hash hesla, tokeny relace, "
-            "volitelné „zapamatovat\", šifrované tajemství TOTP pro dvoufázové ověření a jednosměrné "
-            "hashe obnovovacích kódů); nastavení; názvy a kontakty právnických osob pro informace "
-            "hostům; metadata ubytování a pobytů; přihlašovací údaje k UbyPortu nebo kalendářům "
-            "(šifrovaně); auditní záznamy; komunikaci s námi; nastavení transakčních e-mailů a "
-            "záznamy o doručení; fakturační údaje. Zvláštní kategorie "
-            "údajů o ubytovateli nevyžadujeme, pokud je sami nezadáte v textových polích."
+            "Můžeme zpracovávat: identifikátory účtu (uživatelské jméno, interní ID, přihlašovací "
+            "e-mailová adresa); autentizační údaje (hashe tokenů jednorázových přihlašovacích odkazů "
+            "uchovávané 1 den po uplynutí platnosti, podepsané tokeny relace, volitelné „zapamatovat\", "
+            "šifrované tajemství TOTP pro dvoufázové ověření, veřejné klíče passkey s názvy a daty "
+            "použití a čítači, hashe WebAuthn výzev uchovávané 1 den po uplynutí platnosti); nastavení; "
+            "názvy a kontakty právnických osob pro informace hostům; metadata ubytování a pobytů; "
+            "přihlašovací údaje k UbyPortu nebo kalendářům (šifrovaně); auditní záznamy; komunikaci "
+            "s námi; záznamy o doručení transakčních e-mailů (e-maily k účtu, jako přihlašovací "
+            "odkaz, pozvánka, potvrzení e-mailu, oznámení o změně e-mailu a upozornění na přidaný "
+            "passkey, jsou odesílány na základě akce v účtu a nejde o marketing); fakturační údaje. "
+            "Zvláštní kategorie údajů o ubytovateli nevyžadujeme, pokud je sami nezadáte v textových polích."
         ),
         "privacy.s05_title": "5. Údaje hostů na pokyn ubytovatele",
         "privacy.s05_body": (
@@ -368,14 +383,13 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "rezervaci a formuláře odeslané z daného zařízení (nejvýše 60 dní). Produkční provoz "
             "ubyhost.com zprostředkovává Cloudflare. Můžeme použít Cloudflare Turnstile na produkčním "
             "přihlášení a po opakovaných neúspěšných pokusech o PIN; vlastní řízené výzvy na neveřejných "
-            "cestách; kontrolu uniklých přihlašovacích údajů, která na okraji sítě porovnává pokusy "
-            "o přihlášení se známými úniky hesel (heslo se v Cloudflare dashboardu neukládá); a malý "
-            "skript klientské bezpečnosti, který eviduje skripty třetích stran v prohlížeči. Tyto "
-            "funkce mohou zpracovávat technické identifikátory a údaje o připojení (např. IP) podle "
-            "podmínek Cloudflare; nejde o reklamu. V aplikaci v základní podobě nepoužíváme reklamní "
-            "ani analytické cookies třetích stran. Cookies lze omezit v prohlížeči; bez relačního "
-            "cookie přihlášení nefunguje. Prohlížeče mohou také dodržovat HTTP Strict Transport "
-            "Security (HSTS), takže se tato doména po omezenou dobu otevírá jen přes HTTPS."
+            "cestách; a malý "
+            "skript klientské bezpečnosti, který eviduje skripty třetích stran v "
+            "prohlížeči. Tyto funkce mohou zpracovávat technické identifikátory a údaje o připojení "
+            "(např. IP) podle podmínek Cloudflare; nejde o reklamu. V aplikaci v základní podobě "
+            "nepoužíváme reklamní ani analytické cookies třetích stran. Cookies lze omezit v prohlížeči; "
+            "bez relačního cookie přihlášení nefunguje. Prohlížeče mohou také dodržovat HTTP Strict "
+            "Transport Security (HSTS), takže se tato doména po omezenou dobu otevírá jen přes HTTPS."
         ),
         # WP09: konečné znění provozovatele z 04_legal_positions.md, oddíly 1,
         # 4 a 5. analytics_* a optout_* jen při zapnutém Umami.
@@ -449,26 +463,34 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "GDPR. Podrobnosti poskytneme na žádost, kde to zákon vyžaduje."
         ),
         "privacy.s11_title": "11. Doba uchování",
+        # LAWYER REVIEW
         "privacy.s11_body": (
             "Údaje účtu držíme po dobu aktivního účtu a přiměřeně po ukončení kvůli exportu, sporům "
-            "a zákonu. Údaje hostů řídí nastavení a povinnosti ubytovatele (včetně typické šestileté "
-            "domovní knihy); Provozovatel může uchovávat šifrované zálohy databáze a klíčů na serveru "
-            "a při nastavení off-site kopie (např. týdně na Google Drive a měsíčně na Amazon S3) pro "
-            "obnovu po havárii po omezenou dobu. Dokončené či konečné záznamy doručení "
-            "se běžně mažou po 14 dnech; e-mail k převzetí zůstává spojen s uchovanou "
-            "rezervací, pokud ubytovatel převzetí neuvolní. Bezpečnostní logy po krátkou dobu. Po uplynutí mažeme "
-            "nebo anonymizujeme, pokud zákon nevyžaduje jinak."
+            "a zákonu. Hashe tokenů přihlašovacích odkazů se mažou 1 den po uplynutí platnosti odkazu. "
+            "Hashe WebAuthn výzev se mažou 1 den po uplynutí platnosti výzvy. Záznamy passkey (veřejný "
+            "klíč, název, data, čítač) se uchovávají do jejich odebrání Ubytovatelem nebo smazání "
+            "účtu. Auditní záznamy se uchovávají 3 roky. Údaje hostů řídí nastavení a povinnosti "
+            "ubytovatele (včetně typické šestileté domovní knihy); Provozovatel může uchovávat "
+            "šifrované zálohy databáze a klíčů na serveru a při nastavení off-site kopie (např. týdně "
+            "na Google Drive a měsíčně na Amazon S3) pro obnovu po havárii po omezenou dobu. "
+            "Dokončené či konečné záznamy doručení se běžně mažou po 14 dnech; e-mail k převzetí "
+            "zůstává spojen s uchovanou rezervací, pokud ubytovatel převzetí neuvolní. Bezpečnostní "
+            "logy po krátkou dobu. Po uplynutí mažeme nebo anonymizujeme, pokud zákon nevyžaduje jinak."
         ),
         "privacy.s12_title": "12. Bezpečnost",
+        # LAWYER REVIEW
         "privacy.s12_body": (
             "Používáme šifrování citlivých přihlašovacích údajů a TOTP, HTTPS (s HSTS na produkční "
-            "doméně), povinné dvoufázové ověření účtů ubytovatelů v produkci, ochrany Cloudflare "
-            "na okraji sítě (Turnstile při přihlášení a po opakovaných neúspěších PIN u hostů, "
-            "pokud je zapnuto; Bot Fight Mode; kontrola uniklých přihlašovacích údajů; monitoring "
-            "skriptů v prohlížeči), řízení přístupu, rate limiting přihlášení, oddělení prostředí "
-            "a aktualizace závislostí. Žádný přenos není stoprocentně bezpečný; ubytovatelé mají "
-            "používat silná hesla, chránit autentizační aplikaci a obnovovací kódy a pečlivě "
-            "sdílet odkazy hostům. Bezpečnostní incidenty hlaste kontaktu na /legal."
+            "doméně), ochrany Cloudflare na okraji sítě (Turnstile při přihlášení a po opakovaných "
+            "neúspěších PIN u hostů, pokud je zapnuto; Bot Fight Mode; monitoring skriptů v "
+            "prohlížeči), řízení přístupu, rate limiting přihlášení, oddělení prostředí a aktualizace "
+            "závislostí. Přihlášení probíhá jednorázovým e-mailovým odkazem; Ubytovatelé odpovídají "
+            "za zabezpečení přístupu ke své přihlašovací e-mailové schránce. Jako volitelné "
+            "dodatečné ověření je dostupná autentizační aplikace (TOTP) a passkeys (ukládá se pouze "
+            "veřejný klíč; biometrická data nikdy neopustí zařízení). Změna přihlašovacího e-mailu "
+            "spustí oznámení na původní adresu. Žádný přenos není stoprocentně bezpečný; Ubytovatelé "
+            "musí chránit svou e-mailovou schránku, autentizační aplikaci a zařízení s passkey a "
+            "pečlivě sdílet odkazy hostům. Bezpečnostní incidenty hlaste kontaktu na /legal."
         ),
         "privacy.s13_title": "13. Vaše práva (uživatelé účtu)",
         "privacy.s13_body": (

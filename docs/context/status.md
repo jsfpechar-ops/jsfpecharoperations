@@ -11,6 +11,7 @@ Updated: 2026-10-06 by Cursor (task 0002 report). Keep each section to 5 lines o
 
 - Owner: review and merge **task 0002** PR (`task/0002-account-emails`) — login e-mail on every account (magic-link plan step 1).
 - Other agent: police / stay-fee brief on `task/0002c-ubyport-severity` (separate from magic link).
+- Task 0005 legal texts (e-mail login + passkeys, v1.7) implemented on `cursor/legal-texts-1.7-d5e1`; awaiting lawyer review of LAWYER REVIEW paragraphs.
 
 ## Next
 

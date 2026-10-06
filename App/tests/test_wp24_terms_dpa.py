@@ -146,8 +146,8 @@ def test_dpa_section_11_lists_render_and_drive_only_as_only_if_used():
 # --- versions and effective date --------------------------------------------------
 
 
-def test_terms_privacy_and_dpa_are_all_version_1_6():
-    assert acceptance.current_versions() == {"terms": "1.6", "privacy": "1.6", "dpa": "1.6"}
+def test_terms_privacy_and_dpa_are_all_version_1_7():
+    assert acceptance.current_versions() == {"terms": "1.7", "privacy": "1.7", "dpa": "1.7"}
 
 
 def test_one_effective_date_is_shown_on_all_three_pages(monkeypatch):
@@ -245,7 +245,7 @@ def test_a_host_on_the_old_versions_accepts_all_three_once(real_acceptance_pendi
             (user_id,),
         )
         assert len(events) == 1
-        assert "terms_v1.6 privacy_v1.6 dpa_v1.6" in events[0]["detail"]
+        assert "terms_v1.7 privacy_v1.7 dpa_v1.7" in events[0]["detail"]
 
         # Signing in again asks nothing more.
         client.post("/logout", data={}, follow_redirects=False)
