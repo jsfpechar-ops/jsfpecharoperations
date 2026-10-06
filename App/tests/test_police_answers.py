@@ -85,4 +85,6 @@ def test_the_issued_test_account_abbreviation_validates():
     assert validation._MARK_RE.match("AAKLI")
     assert validation._MARK_RE.match("ABC123")
     assert not validation._MARK_RE.match("AB1")
+    assert not validation._MARK_RE.match("ABCD")
+    assert not validation._MARK_RE.match("AB-12")
     assert not validation._MARK_RE.match("TOOLONG1")

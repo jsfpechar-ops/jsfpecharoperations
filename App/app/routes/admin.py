@@ -1297,6 +1297,16 @@ async def test_connection(apartment_id: int, request: Request):
         f"available={available} max_batch={limit}",
     )
     alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
+    # The error code book carries the severity that decides accepted or not
+    # (police letter of 24 September 2026). Load it while the login is known
+    # to work, so no host has to find "Refresh code lists" first. Best effort:
+    # the connection test has already passed.
+    try:
+        rows = await run_in_threadpool(client.code_list, codelists.WS_KINDS[codelists.KIND_ERRORS])
+        if rows:
+            codelists.store(codelists.KIND_ERRORS, rows)
+    except Exception as exc:  # noqa: BLE001 - never fail a passed connection test
+        db.audit("ubyport_codebook_refresh_failed", f"apartment={apartment_id} error={exc}")
     return _back(return_to, msg=_flash(request, "flash.apartments.connection_ok"))
 
 
