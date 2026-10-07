@@ -15,6 +15,8 @@ Updated: 2026-10-07 after task 0007 phase 2 complete (owner sign-off).
 
 ## Next
 
+- TTLock door codes: plan in [ttlock-door-codes](../plans/ttlock-door-codes.md). Run [0008](../tasks/0008-ttlock-fact-sheet.md) (docs-only fact sheet) plus its owner lock test. Briefs 0009+ follow the report.
+
 - Doručenka smoke on a new filing after this cutover.
 
 ## Blocked: needs owner, lawyer or council
