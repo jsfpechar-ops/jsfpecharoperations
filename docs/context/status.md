@@ -15,7 +15,7 @@ Updated: 2026-10-07 after task 0007 phase 2 complete (owner sign-off).
 
 ## Next
 
-- TTLock door codes: plan in [ttlock-door-codes](../plans/ttlock-door-codes.md), facts in [TTLOCK](../TTLOCK.md). Waiting on owner: lock list + passcode list docs, Booking.com UID check (plan §8.1). Then briefs 0008+.
+- TTLock door codes: plan [ttlock-door-codes](../plans/ttlock-door-codes.md), facts [TTLOCK](../TTLOCK.md). Run [0008](../tasks/0008-door-codes-schema.md) then [0009](../tasks/0009-ttlock-client.md). Pilot ships without a claim check (owner, accepted risk).
 
 - Doručenka smoke on a new filing after this cutover.
 

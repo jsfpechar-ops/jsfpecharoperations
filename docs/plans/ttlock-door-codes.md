@@ -57,8 +57,7 @@ Names are provider-neutral (`door_code`, `lock_account`, `lock_provider`), so an
 | `id` | PK |
 | `owner_user_id` | FK `user_account`, UNIQUE with `provider` |
 | `provider` | `'ttlock'` |
-| `ttlock_username` | the UbyHost-made user the host shares locks with |
-| `password_enc` | its random password, `db.encrypt_field` |
+| `username` | the TTLock account UbyHost uses for this host, for display |
 | `access_token_enc`, `refresh_token_enc` | `db.encrypt_field` |
 | `token_expires_at` | UTC ISO |
 | `token_version` | INTEGER, compare-and-swap on refresh |
@@ -66,7 +65,7 @@ Names are provider-neutral (`door_code`, `lock_account`, `lock_provider`), so an
 | `locks_json` | cached lock list (id, name), refreshed only on demand |
 | `locks_fetched_at`, `created_at`, `updated_at` | |
 
-UbyHost makes the TTLock user itself (§8.2). Its password is random, stored encrypted, and used only to get tokens. The host's own TTLock password never reaches UbyHost.
+The login of the account UbyHost uses (pilot: the owner's spare TTLock account) is typed in once, used for one token call and never stored. The refresh token lasts 10 years, so a re-login is needed only after `10011`.
 
 ### `apartment`: 4 new columns
 
@@ -155,12 +154,11 @@ Guards in `ttlock.py`, which every call goes through:
 
 The door code is only as safe as the guest link. Today each property has one fixed link and one property PIN, shared with every guest. A claim proves that the claimer owns *some* e-mail address, not that they hold the booking. `reservation.phone_last4` is stored from the Airbnb feed but never checked. So a former guest who kept the link and PIN can pick a stay in the 2-day window, claim it, fill in made-up names and receive the next guest's door code. Door codes must not ship until this is closed.
 
-Proposed fix: the booking code check (owner idea, 2026-10-07). Before claiming a stay, the guest types the booking confirmation number from their Airbnb or Booking.com confirmation. UbyHost compares it with the code it already holds from the feed. A former guest cannot know the next guest's booking code.
+**Owner decision 2026-10-07: accepted for the pilot, no claim check yet.** Reasons: the pilot runs only on the owner's properties, Booking.com feeds carry no data to check, and the owner prefers to keep the property PIN as the only gate. What limits the risk meanwhile:
 
-- **Airbnb:** the feed's reservation link ends in the confirmation code (`.../reservations/details/HM...`, the format UbyHost already parses into `reservation.reservation_url`). Owner check pending on a real feed. Fallback: the phone's last 4 digits, also in the feed.
-- **Booking.com:** works only if the feed's UID carries the reservation number. Unknown. Owner check pending: open the Booking.com iCal link in a browser and compare a `UID:` line with a reservation number in the extranet.
-- **Stays with no code in the feed** (manual stays, platforms that carry neither): no automatic door code. The host sends one from the TTLock app.
-- 5 wrong tries lock the stay and alert the host. The check runs at claim time, so it protects the guest data too.
+- The guest mail goes to the host in CC, with the guest names. A stranger's names are visible before check-in, and the host can delete the code in the TTLock app.
+- The host can change the property PIN (existing feature). The door-code section on the property page says, once: "Anyone with this property's guest link and PIN can register for an upcoming stay and receive its door code. Change the PIN from time to time."
+- **Gate:** door codes are not offered to other hosts until a claim check exists. The booking-code check (the guest types the booking confirmation number, compared with the code from the feed) is the parked design.
 
 ### 8.2 The TTLock account
 
@@ -253,15 +251,15 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 
 | Task | What | Depends on |
 |---|---|---|
-| 0008 | Booking code check at claim (Airbnb from `reservation_url`, Booking.com from UID if the owner check confirms). Ships on its own, before door codes, since it also protects guest data | none |
-| 0009 | Foundation. Migration, `ttlock.py` (form POST, 5 s timeout, token CAS refresh, budget counter, kill switch), retention lines, ENVIRONMENT section. HTTP faked in tests, a fixture blocks real network calls | 0008 |
-| 0010 | Host setup. Smart locks card, property door-code section, lock-ownership check. Browser and geometry tests | 0009 |
+| 0008 | Schema and settings. Migration 0007, config and kill switch, PIN retention step, RETENTION and ENVIRONMENT rows. No behaviour | none |
+| 0009 | TTLock client `App/app/ttlock.py`: endpoint allowlist, form POST with 5 s timeout, error mapping, token store with CAS refresh, call budget, lock list from `/v3/key/list`, get, change, delete, find by name. HTTP faked in tests | 0008 |
+| 0010 | Host setup. Smart locks card (connect, refresh lock list, remove), property door-code section with the risk line, lock-ownership check. Browser and geometry tests | 0009 |
 | 0011 | Issuing. `door_codes.py` states, reconciler job, first try on the save that completes registration, retries, failed notice. Test proves no write to `submission` or filing tables | 0010 |
 | 0012 | Delivery. Guest stay block, `door_code` mail with marker, host stay line. Screenshots at 360, 390 and 1280 px | 0011 |
-| 0013 | Lifecycle. Cancel, date move, PIN purge, admin usage panel | 0012 |
+| 0013 | Lifecycle. Cancel, date move, admin usage panel | 0012 |
 | docs | Subprocessor register, ROPA, privacy copy. Lawyer review if needed | before the pilot goes live |
 
-Briefs are written once the owner has pasted the lock-list and passcode-list docs and done the feed checks in §8.1.
+Briefs 0008 and 0009 are written. Later briefs are written after each review.
 
 ## 12. Pilot rollout (owner)
 
