@@ -12,6 +12,14 @@ Sources (the orchestrator sandbox cannot reach the TTLock doc hosts, so every fa
 
 UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 
+## How the gateway fits
+
+- UbyHost only ever talks to the TTLock cloud, and every call names the lock by `lockId`. It never talks to a gateway or a lock directly, and no call takes a gateway id [EU].
+- The gateway (or a lock's built-in Wi-Fi) is a relay: cloud, then gateway over Wi-Fi, then lock over Bluetooth. The host pairs it with the lock once in the TTLock app.
+- A random code from `get` does not travel through the gateway at all. The lock checks it by itself [EU]. So creating a code works even if the gateway is offline.
+- `change` and `delete` with type `2` are pushed through the gateway to the lock [CD]. If the lock is not reachable, the call fails with `-2012` [X], and UbyHost retries.
+- Not yet proven on a real lock: that a remote delete of a random code really stops the lock accepting it. Owner test A (plan §12, step 7) settles it.
+
 ## Request basics
 
 - Every call is a form-encoded `POST` (`application/x-www-form-urlencoded`) and returns JSON [X][G].
