@@ -170,7 +170,7 @@ Each host keeps their own TTLock account and shares each rental lock as **author
 - One UbyHost user per host, so that user's lock list holds only that host's locks. A host can never pick another host's lock.
 - The host cuts UbyHost off with one tap in the TTLock app.
 - An authorized admin can do more than codes (for example remote unlock through the gateway). `ttlock.py` therefore calls only an allowlist of endpoints (`/oauth2/token`, `/v3/user/register`, the eKey list, `/v3/lock/listKeyboardPwd`, `/v3/keyboardPwd/get`, `/change`, `/delete`), and a test fails if any other path appears. `/v3/lock/detail` is never called, because its response carries the lock's super passcode. `lockData` and passcode digits from list responses are dropped while parsing, and no raw response is ever logged ([TTLOCK](../TTLOCK.md#secrets-in-ttlock-responses-never-store-never-log)).
-- Pilot: the owner is the only host, so there is one such user.
+- Pilot: the owner is the only host. The pilot uses the second TTLock app account from the owner's sharing test, because sharing a lock from the app to a prefixed API user is not yet confirmed ([TTLOCK](../TTLOCK.md#auth-and-tokens)). The host types that account's login into UbyHost once. It holds nothing but the shared locks. Before other hosts join, one owner test decides: if the app can share with a prefixed API user, UbyHost makes the users itself; if not, each host makes a spare TTLock account for UbyHost.
 
 Host setup in the UbyHost app (Settings → Smart locks): "Share your locks as authorized admin with `ubyhost_h17` in the TTLock app, then tap Refresh lock list."
 

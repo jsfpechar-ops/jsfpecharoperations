@@ -26,7 +26,8 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 - Response: `access_token`, `uid`, `expires_in` (default 7,776,000 s = 90 days), `refresh_token` [EU].
 - An expired access token gives `10004` [EU].
 - Refresh: the same URL with `clientId`, `clientSecret`, `grant_type=refresh_token`, `refresh_token`. The response carries `access_token`, `expires_in`, `refresh_token` [EU]. A refresh token is valid for 10 years from its creation [EU]. UbyHost always stores the returned pair.
-- `POST /v3/user/register` with `clientId`, `clientSecret`, `username` (letters and digits only, `30002`), MD5 `password`, `date` creates a user that belongs to the developer app. The returned prefixed `username` is what the token call uses [X][EU].
+- `POST /v3/user/register` with `clientId`, `clientSecret`, `username` (letters and digits only, for example a random hex string), MD5 `password`, `date`. Returns a prefixed `username` such as `abcd_c042f4db...`. The prefix is fixed per developer app and only namespaces its users. The token call then uses the prefixed name [EU]. The platform's intended use: the app keeps the mapping to its own users and TTLock never learns who they are [EU]. UbyHost therefore registers a random string, never the host's e-mail.
+- Not stated: whether a TTLock app user can share a lock (Send eKey, authorized admin) with such a prefixed API user. The owner's test shared with a normal TTLock app account [O].
 - `POST /v3/user/delete` removes such a user [X].
 - The monthly quota is 30,000 calls per developer app, shared by every UbyHost host [O]. Paid tiers (screenshot of the developer console, owner, 2026-10-07): 500,000 for US$88/year, 2,000,000 for US$188/year, and up to 80,000,000 for US$988/year. UbyHost stays on the free tier [O].
 - No other rate limit is shown in the console [O]. `30006` still exists for a frequency limit [X].
@@ -93,7 +94,8 @@ Source for every code: [X], table "System Error Codes". The reactions are UbyHos
 ## Not stated in the supplied docs
 
 1. The eKey list endpoint for locks shared with the caller: path, parameters, the field that marks an authorized admin, and whether it returns `lockData`.
-2. Whether an authorization-code (redirect) login exists. [X] lists the errors `10002`, `10008` and `10009`, which hints at one, but documents no endpoint. Not needed with the UbyHost-made user (plan §8.2).
-3. Whether `change` can move the period of a random (`get`) code.
-4. Whether the lock applies daylight saving time on its own, or only the raw offset.
-5. Who runs `euapi.ttlock.com`, where its data is stored, and the privacy policy URL.
+2. Whether a lock can be shared from the TTLock app with a prefixed API user (see Auth and tokens).
+3. Whether an authorization-code (redirect) login exists. [X] lists the errors `10002`, `10008` and `10009`, which hints at one, but documents no endpoint. Not needed with the UbyHost-made user (plan §8.2).
+4. Whether `change` can move the period of a random (`get`) code.
+5. Whether the lock applies daylight saving time on its own, or only the raw offset.
+6. Who runs `euapi.ttlock.com`, where its data is stored, and the privacy policy URL.
