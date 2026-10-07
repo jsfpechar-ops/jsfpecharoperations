@@ -1,23 +1,21 @@
 # Status
 
-Updated: 2026-10-06 after task 0006 (PR #290). Keep each section to 5 lines or fewer.
+Updated: 2026-10-07 after task 0007 phase 2 complete (owner sign-off).
 
 ## Production
 
-- Live: `8809b9f` (PR #277), Deploy production run #171, 2026-10-05. Real hosts, `ubyport=prod`.
-- `main` includes context rollout (#281); admin preview (#280) is in `main` but **not deployed yet.**
+- **Magic-link cutover:** phase 1 + phase 2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)). E-mail login only; `.env` admin + SES; Caddy access log off; all properties connection-tested.
+- **112 reconcile:** dry run `guests answered with accepted codes only: 0` — no `--apply` needed (Oct 2026).
+- Live app: `/healthz` `version` 1.1.0. Record deploy SHA when convenient: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
 
-- Owner: review **[#290](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/290)** (task 0006: login hardening + CI lint fix; report in docs/tasks). It also fixes the pytest pollution that kept `main` red.
-- Owner: review **[#288](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/288)** (magic link 0002–0005, police/stay-fee 0002 brief, filing-in-flight fix). Full-suite pytest still needs green before merge.
-- Lawyer: **LAWYER REVIEW** paragraphs in task 0005 (legal v1.7).
-- Owner: task [0001](../tasks/0001-context-rollout.md) step 12 with `APPLY=1` when ready (keep #278 and #279 open).
+- Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
+- Optional: deploy #280+#281 (admin preview) when you want it on production.
 
 ## Next
 
-- After #288 deploy: set every login e-mail in `/admin/users`; run `reconcile_accepted_codes.py` per [0002-police brief](../tasks/0002-police-downloads-stayfee.md).
-- Deploy #280+#281 when ready; test Doručenka on a new filing.
+- Doručenka smoke on a new filing after this cutover.
 
 ## Blocked: needs owner, lawyer or council
 
@@ -26,4 +24,4 @@ Updated: 2026-10-06 after task 0006 (PR #290). Keep each section to 5 lines or f
 
 ## Owner steps already done (don't ask again)
 
-- SES, Turnstile, operator `.env`, healthchecks, Better Stack, Cloudflare, retention autopurge, legal effective date, Umami, guest languages, Render staging, Litestream/backup drill, task 0001 context rollout (#281).
+- SES, Turnstile, healthchecks, Better Stack, Cloudflare, retention autopurge, Render staging, Litestream/backup drill, task 0001 (#281), **magic-link deploy + 0007 phase 2 (Oct 2026)**.

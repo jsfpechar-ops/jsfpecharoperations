@@ -36,7 +36,7 @@ Applied via `git am docs/docs/plans/magic-link-passkeys/0001-0002-login-e-mail-o
 
 ### 4. Owner (after #288 merge)
 
-Set login e-mail on **every** account in `/admin/users` before treating link-only login as live.
+- [x] Login e-mail on **every** active account (production, Oct 2026; task 0007 phase 1).
 
 ---
 
@@ -62,8 +62,8 @@ Police bundle portion (now on `main` via #287 / #288):
 
 ### 4. Owner steps left
 
-1. Deploy; **Save and test connection** on each property.
-2. Run `reconcile_accepted_codes.py` (dry run, then `--apply` if UbyPort matches).
+1. ~~Deploy~~ — **done**. ~~Save and test connection on each property~~ — **done** (0007 §D, Oct 2026).
+2. ~~`reconcile_accepted_codes.py` dry run~~ — **done** (0 guests; no `--apply`) (0007 §F).
 
 ---
 
