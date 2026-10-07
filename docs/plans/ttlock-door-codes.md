@@ -22,20 +22,14 @@ A property without a lock sees no difference. No code runs and no API call is ma
 8. The 30,000 calls a month are per developer app, shared by every UbyHost host.
 9. Pilot on a few of the owner's properties. Built per host and per property, so other hosts only need the setting.
 
-## 3. Verified facts (official TTLock docs, pasted by the owner)
+## 3. TTLock facts
 
-`/v3/keyboardPwd/get`:
+All API facts, error codes and their UbyHost reactions live in [TTLOCK](../TTLOCK.md). Key points:
 
-- Returns a 6 to 9 digit random code from a cloud algorithm. No gateway needed. Not customisable. Length depends on the period.
-- Validity is accurate to the hour (19:20 becomes 19:00). Send whole hours.
-- Type 3 (period) must be used at least once within 24 h after the start time, or it is invalidated.
-- Form POST with `clientId`, `accessToken`, `lockId`, `keyboardPwdType`, optional `keyboardPwdName`, `startDate`, `endDate`, `date` (ms). Response `{"keyboardPwd": "0563456", "keyboardPwdId": 10236}`. The code is a string and can start with 0.
-
-`/v3/keyboardPwd/change`, with `changeType=2`: works remotely on a Wi-Fi or gateway lock. One call can change the name, the window (`startDate` and `endDate` together) and the code (`newKeyboardPwd`). Response `{"errcode": 0, ...}`.
-
-`/v3/keyboardPwd/delete`, with `deleteType=2`: deletes a random or custom code remotely on a Wi-Fi or gateway lock. Response `{"errcode": 0, ...}`.
-
-Everything else is unverified until task 0008 writes `docs/TTLOCK.md` (§12).
+- `get` type 3 needs no gateway, is accurate to the hour, and must be used within 24 h of its start.
+- `change` and `delete` work remotely through the gateway (type 2).
+- Tokens last 90 days. A refresh returns a new pair. `10003`/`10004` mean refresh, `10011` means the host must reconnect.
+- Every call's `date` must be within 5 minutes of TTLock's clock (`80000`).
 
 ## 4. How heavy is it
 
@@ -156,6 +150,22 @@ Guards in `ttlock.py`, which every call goes through:
 
 ## 8. Security
 
+### 8.1 Blocker: who gets the code
+
+The door code is only as safe as the guest link. Today each property has one fixed link and one property PIN, shared with every guest. A claim proves that the claimer owns *some* e-mail address, not that they hold the booking. `reservation.phone_last4` is stored from the Airbnb feed but never checked. So a former guest who kept the link and PIN can pick a stay in the 2-day window, claim it, fill in made-up names and receive the next guest's door code. Door codes must not ship until this is closed.
+
+Proposed fix (owner decision pending):
+
+- **Airbnb stays** (feed has the phone's last 4 digits): the claim asks "Last 4 digits of the phone number on your booking". 3 wrong answers lock the stay and alert the host. A guess succeeds 3 times in 10,000.
+- **Stays with no proof in the feed** (Booking.com, Agoda, manual stays): either the host releases the code with one tap after registration ("All guests registered for 12 to 14 Oct. Release the door code?"), or door codes are off for them. Default: host release.
+- The check runs at claim time, so it also protects the guest data, not just the door.
+
+### 8.2 The TTLock account
+
+The access token can do anything the TTLock account can do on every lock in it. Proposed (owner decision pending): UbyHost creates a dedicated TTLock user per host with the User Register API, and the host shares only the rental locks with it as admin in the TTLock app. UbyHost never sees the host's own password, holds rights only on shared locks, and the host can cut it off with one tap. Whether a shared admin can call `get`, `change` and `delete` is checked in the 0008 owner test. Fallback: the host types their TTLock login once (§10), and the password is never stored.
+
+### 8.3 Controls
+
 - **PIN at rest.** Encrypted with `db.encrypt_field`, decrypted only while rendering the page or delivering the mail, NULL after checkout.
 - **PIN in mail.** New mail kind `door_code`. The stored body holds a `{{door_code}}` marker, and the encrypted PIN sits in the payload, the same pattern as `{{claim_secret}}` in `App/app/mail.py`. The outbox row and the console mail log never hold the digits. Idempotency key `door_code:<reservation_id>:<valid_from>`, so a moved stay sends one new mail and nothing sends twice.
 - **PIN on the guest page.** Shown only to a device that passed the existing claim and PIN gate for that reservation. No JavaScript. The response has `Cache-Control: no-store`.
@@ -230,7 +240,7 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 
 | Task | What | Depends on |
 |---|---|---|
-| 0008 | Fact sheet `docs/TTLOCK.md` from the official docs. No App change | none |
+| 0008 | Fill the gaps in `docs/TTLOCK.md` (lock list, passcode list, rate limits, processor). Owner tests admin sharing and a remote delete. No App change | none |
 | 0009 | Foundation. Migration, `ttlock.py` (form POST, 5 s timeout, token CAS refresh, budget counter, kill switch), retention lines, ENVIRONMENT section. HTTP faked in tests, a fixture blocks real network calls | 0008 |
 | 0010 | Host setup. Smart locks card, property door-code section, lock-ownership check. Browser and geometry tests | 0009 |
 | 0011 | Issuing. `door_codes.py` states, reconciler job, first try on the save that completes registration, retries, failed notice. Test proves no write to `submission` or filing tables | 0010 |
@@ -240,13 +250,9 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 
 Briefs for 0009 and later are written after the 0008 report.
 
-## 12. Open questions (0008 answers them)
+## 12. Open questions
 
-1. Expired-token and dead-refresh-token error codes. Token lifetime. Does refresh rotate the refresh token?
-2. Does `change` work on a random (`get`) code, including its window?
-3. Per-second or per-minute rate limits.
-4. Is there an OAuth redirect flow, so the host never types their password into UbyHost?
-5. Who runs `euapi.ttlock.com` and where the data is stored.
+The unanswered TTLock facts are listed in [TTLOCK](../TTLOCK.md), section "Not stated in the supplied docs". Task 0008 answers them.
 
 ## 13. Why not the Gemini spec
 
