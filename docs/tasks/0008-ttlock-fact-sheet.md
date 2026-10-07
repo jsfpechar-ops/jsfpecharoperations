@@ -21,6 +21,7 @@ Already verified (do not re-research, copy into the sheet with the source "offic
 - Validity is accurate to the hour (19:20 becomes 19:00).
 - Type 3 (period) must be used at least once within 24 h after the start time, or it is invalidated.
 - Response `{"keyboardPwd": "0563456", "keyboardPwdId": 10236}`. The code is a string and can start with 0.
+- `change` with `changeType=2` and `delete` with `deleteType=2` work remotely on a Wi-Fi lock or a gateway lock. `change` can set the name, the period (`startDate` and `endDate`) and the code (`newKeyboardPwd`) in one call. Both return `{"errcode": 0, "errmsg": ...}` (source: official `/v3/keyboardPwd/change` and `/v3/keyboardPwd/delete` pages).
 
 ## 3. Files
 
@@ -38,14 +39,13 @@ No other file may change.
    - **OAuth** (`/oauth2/token`): grant types, parameters (is the password md5?), `expires_in` value, whether a refresh returns a new `refresh_token` and whether the old one stops working.
    - **Error codes** (the global error code page): the exact meaning of 10003, 10004, 10007, and every code that means "access token expired or invalid" or "refresh token invalid". Also the code for "lock not connected to a gateway", if one exists.
    - **Add custom passcode** (`/v3/keyboardPwd/add`): `addType` values, whether type 2 needs a gateway, whether the 24 h first-use rule applies, allowed code length, how to set a period.
-   - **Delete passcode** (`/v3/keyboardPwd/delete`): `deleteType` values. Does deleting a `get` random code via the cloud without a gateway stop the lock from accepting it? Quote the exact sentence if the docs say.
-   - **Change passcode** (`/v3/keyboardPwd/change`): can it move the period of a `get` code? Gateway needed?
+   - **Delete and change** (`/v3/keyboardPwd/delete`, `/v3/keyboardPwd/change`): already verified, copy from §2. Extra question: can `change` be used on a code whose period has already ended, to give it a new PIN and a new period?
    - **List passcodes of a lock** (`/v3/lock/listKeyboardPwd`): parameters, whether it shows the name we set, so a retry can find a code it already created.
    - **Lock list** (`/v3/lock/list`) and **lock detail** (`/v3/lock/detail`): which field says the lock has a gateway (for example `hasGateway`).
    - **Gateway list** (`/v3/gateway/list`): response fields.
    - **Unlock records** (`/v3/lockRecord/list`): does a passcode unlock appear without a gateway? Can we tell that a given `keyboardPwdId` was used?
-   - **Rate limits**: any stated request limit per app or per lock. Is the monthly call quota (the owner was told 30,000) per developer app or per TTLock account? Any per-second limit?
-   - **Lock capacity**: how many passcodes one lock can hold.
+   - **Rate limits**: any stated request limit per app or per lock. The 30,000 a month quota is per developer app (owner). Any per-second or per-minute limit?
+   - **Lock capacity**: how many passcodes one lock can hold, and whether an expired code still takes a slot.
    - **Errors on `add`**: the error code for a code that clashes with an existing one, and for an offline gateway.
    - **OAuth redirect**: is there an authorize-redirect flow, so a host never types their TTLock password into a third-party app?
    - **Hosting and processor**: the company that runs the platform, where `euapi.ttlock.com` data is stored, and the privacy policy URL.
