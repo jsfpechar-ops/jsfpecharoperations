@@ -19,7 +19,7 @@ A guest gets the door PIN only after their registration is complete. The PIN sho
 | Plaintext `passcode VARCHAR(20)` on `reservation` | Privacy first, public repo | `door_code.pin_enc` via `db.encrypt_field`, nulled after checkout (retention line) |
 | Guest name in `keyboardPwdName` | New personal data sent to a third party | Send `UH-<door_code.id>` |
 | `boto3` send inside the request | `mail.enqueue` outbox with retries and an idempotency key | New mail kind using the `{{claim_secret}}` marker pattern. The PIN is never stored in plaintext in the outbox or the console log |
-| PIN in the host CC copy | Host owns the lock and sees it in the host app | Host gets "code issued" or "code failed" without the digits (owner may override, see decisions) |
+| PIN in the host CC copy | Host owns the lock and sees it in the host app | Owner decision 2026-10-07: one mail to the guest with the host in CC, PIN included. The PIN still goes through the marker pattern, so it is never plaintext in the outbox |
 | Global 15:00 / 11:00 env | Each apartment has its own times | `apartment.checkin_hour`, `apartment.checkout_hour`, defaults 15 and 11 |
 | No cancel or date-change handling | iCal sync cancels and moves stays | Reconciler revokes or moves the code |
 | 10003/10004 = expired token | Unverified (TTLock docs blocked from the orchestrator sandbox) | Task 0008 verifies |
@@ -73,9 +73,13 @@ New scheduler job `door_codes` (its own job, so a TTLock outage never marks the 
 
 The briefs for 0009 and later are written after the 0008 report, because the endpoint choice changes them.
 
-## Owner decisions needed
+## Owner decisions (2026-10-07)
 
-1. Gateway: do your locks have a G2 gateway or Wi-Fi? (0008 also checks.)
-2. Scope: your own apartments only (one TTLock account) for now. Recommended.
-3. Host copy: no digits in the host mail, PIN visible in the host app. Recommended over the Gemini CC with the PIN.
-4. Subprocessor: TTLock (Sciener) goes into the subprocessor register and ROPA before 0011 ships. A lawyer note is needed if hosting is outside the EU.
+1. Gateway: every lock has a Wi-Fi gateway. The plan uses `/v3/keyboardPwd/add` (custom code, via gateway), if 0008 confirms it skips the 24 h first-use rule and supports remote delete and change. `get` stays the fallback.
+2. Scope: a pilot on a few of the owner's apartments, one TTLock account.
+3. Mail: the guest gets the PIN by e-mail with the host in CC. The PIN is valid only from check-in hour to checkout hour, which the host sets per apartment.
+4. Trigger: the code is issued when all guest forms are complete (`registration_completed_at`), not when the police accept the filing. A filing can wait up to `submit_after_hours`, and the guest must not wait for it.
+
+## Still open
+
+1. Subprocessor: TTLock (Sciener) goes into the subprocessor register and ROPA before 0011 ships. A lawyer note is needed if hosting is outside the EU.

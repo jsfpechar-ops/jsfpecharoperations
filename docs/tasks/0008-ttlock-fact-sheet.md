@@ -108,9 +108,9 @@ Write `docs/tasks/0008-report.md` (1,500 tokens at most) and set `Status: review
 
 ## Owner steps
 
-These are the checks the docs cannot settle. Do them once, with your own lock, in the TTLock phone app.
+Every lock has a Wi-Fi gateway (owner, 2026-10-07). This test checks that a remote delete reaches the lock. Do it once, on one lock, in the TTLock phone app.
 
-1. Open the TTLock app. Tap your lock. Tap **Settings**. Write down whether it shows a **Gateway** entry with a gateway name (yes or no).
-2. Tap **Passcodes**, then **Generate Passcode**, then **Timed**. Pick a start time of the next full hour and an end time 2 hours later. Save the code. Do not type it on the lock.
-3. If step 1 said no gateway: walk away from the lock (out of Bluetooth range). In the app, delete that passcode. Go back to the lock after the start time and type the code. Write down whether the door opened.
-4. Send the orchestrator the answers to steps 1 and 3. They decide between `get` and `add` in task 0009.
+1. Open the TTLock app. Tap the lock. Tap **Passcodes**, then **Generate Passcode**, then **Custom** (or **Timed** if Custom is missing). Set the start to the next full hour and the end 2 hours later. Save it.
+2. Walk away from the lock (out of Bluetooth range). In the app, delete that passcode.
+3. After the start time, type the code on the lock. Write down whether the door opened. It should not.
+4. Send the orchestrator the result of step 3 and which option you used in step 1.
