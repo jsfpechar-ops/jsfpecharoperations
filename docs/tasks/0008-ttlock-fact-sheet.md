@@ -41,7 +41,6 @@ No other file may change.
    - **Delete and change** (`/v3/keyboardPwd/delete`, `/v3/keyboardPwd/change`): already verified, copy from §2. Extra question: does `change` work on a random code from `get`, including moving its period?
    - **List passcodes of a lock** (`/v3/lock/listKeyboardPwd`): parameters, whether it shows the name we set, so a retry can find a code it already created.
    - **Lock list** (`/v3/lock/list`): parameters and the fields for lock id, name and gateway (for example `hasGateway`).
-   - **Unlock records** (`/v3/lockRecord/list`): parameters and fields. Can we tell that a given code (`keyboardPwd` or `keyboardPwdId`) was used? How fast does a gateway upload a record? Is there a callback (webhook) the platform calls on each unlock, configured on the developer app?
    - **Rate limits**: any stated request limit per app or per lock. The 30,000 a month quota is per developer app (owner). Any per-second or per-minute limit?
    - **OAuth redirect**: is there an authorize-redirect flow, so a host never types their TTLock password into a third-party app?
    - **Hosting and processor**: the company that runs the platform, where `euapi.ttlock.com` data is stored, and the privacy policy URL.
@@ -54,7 +53,6 @@ No other file may change.
    ## Random passcode (get)
    ## Delete and change
    ## Finding codes and locks
-   ## Unlock records
    ## Limits
    ## Processor and hosting
    ## Not stated in the docs
@@ -73,7 +71,7 @@ From the repo root: `python3 scripts/context_lint.py`. Expected last line: `cont
 
 ## 7. Acceptance
 
-- [ ] `docs/TTLOCK.md` exists with the 9 sections in step 2, in order.
+- [ ] `docs/TTLOCK.md` exists with the 8 sections in step 2, in order.
 - [ ] Every bullet outside "Not stated in the docs" ends with `(source: https://euopen.ttlock.com/...)` or `(source: https://open.ttlock.com/...)`. Check: `grep -c 'source: https://\(eu\)\?open.ttlock.com' docs/TTLOCK.md` is at least 15.
 - [ ] Every question in step 1 is answered or listed under "Not stated in the docs".
 - [ ] `git diff --stat` shows only the 3 files in §3.

@@ -4,7 +4,7 @@ Status: planning (orchestrator, 2026-10-07). Inputs: an owner-supplied Gemini sp
 
 ## 1. What the feature is
 
-A property can opt in to door codes. When the lead guest has finished their registration form, UbyHost asks TTLock for a timed code. The code is valid from the property's check-in hour on arrival day to its checkout hour on departure day. The guest sees it on the stay page at once and gets it by e-mail, with the host in CC. If the booking is cancelled or moved, UbyHost deletes or moves the code. If the guest never uses it within TTLock's 24 h first-use window, the host gets a mail.
+A property can opt in to door codes. When every guest on the stay is registered, UbyHost asks TTLock for a timed code. The code is valid from the property's check-in hour on arrival day to its checkout hour on departure day. The guest sees it on the stay page at once and gets it by e-mail, with the host in CC. If the booking is cancelled or moved, UbyHost deletes or moves the code.
 
 Everything else (a late guest, a new code, a manual exception) the host does in their own TTLock app. UbyHost automates only the routine.
 
@@ -13,11 +13,11 @@ A property without a lock sees no difference. No code runs and no API call is ma
 ## 2. Owner decisions (2026-10-07)
 
 1. Code type: timed random code, `/v3/keyboardPwd/get` with `keyboardPwdType=3`. The lock checks it by itself, so creating it does not need the gateway online, and the number of such codes is not limited (manuals.plus, not the official docs). Every pilot lock also has a Wi-Fi gateway, used for delete and change.
-2. Trigger: the lead guest's form is complete (`guest.is_lead = 1`). Booking platforms always have one lead guest.
+2. Trigger: the whole party is registered (`reservation.registration_completed_at`). This keeps the code as the compliance lever (owner, 2026-10-07, reversing an earlier lead-guest-only answer).
 3. The guest link goes out by automated message the day before check-in, so a code is normally created at most a day or two ahead.
 4. Guest mail carries the PIN, host in CC.
 5. Check-in and checkout hours are set by the host per property.
-6. A guest who arrives more than 24 h after check-in time: the code is left to expire, and the host gets a mail. No fresh-code button for the guest, none for the host in UbyHost. The host uses the TTLock app.
+6. A guest who arrives more than 24 h after check-in time: the code expires, and UbyHost does nothing. The guest page and mail say the code must be used for the first time within 24 h of check-in. No first-use check, no host mail, no fresh-code button. The host uses the TTLock app.
 7. No "issue code anyway" button. The host uses the TTLock app.
 8. The 30,000 calls a month are per developer app, shared by every UbyHost host.
 9. Pilot on a few of the owner's properties. Built per host and per property, so other hosts only need the setting.
@@ -90,7 +90,6 @@ The host's TTLock password is used once to get tokens and is never stored or log
 | `valid_from`, `valid_to` | UTC ISO, from Prague local hours |
 | `attempts`, `next_attempt_at`, `claimed_at` | retry and lease |
 | `last_error` | short code only, never a response body |
-| `first_use_checked_at`, `first_used` | result of the 24 h check |
 | `issued_at`, `revoked_at`, `created_at`, `updated_at` | |
 
 ### `lock_api_usage`: the budget counter
@@ -106,12 +105,12 @@ The host's TTLock password is used once to get tokens and is never stored or log
 ## 6. States
 
 ```
- lead guest's form complete, property has a lock, stay not over
+ registration complete, property has a lock, stay not over
                  |
                  v
-   pending --claim--> issuing --ok--> issued --check-in + 24 h--> first-use check
-                        |  ^             |                         used: nothing
-                   error|  |retry        |                         unused: host mail
+   pending --claim--> issuing --ok--> issued
+                        |  ^             |
+                   error|  |retry        |
                         v  |             |
                       retrying           +--booking cancelled--> revoke_pending --ok--> revoked
                         |                |
@@ -125,7 +124,7 @@ Rules:
 
 - One row per reservation (`UNIQUE`), created with `INSERT ... ON CONFLICT DO NOTHING`.
 - A process claims a row with one conditional UPDATE (`WHERE id = ? AND state IN ('pending','retrying') AND next_attempt_at <= ? AND (claimed_at IS NULL OR claimed_at < lease_cutoff)`) and calls TTLock only if `db.execute_rowcount` returns 1. Two processes can never both create a code for one stay.
-- The lead guest's form edited after the code exists: nothing changes. The code stays.
+- Registration cleared after the code exists (a form went missing): nothing changes. The code stays, because the guest is still staying.
 - A retry after a timeout first lists the lock's codes and adopts one named `UH-<door_code.id>`, so a timeout never creates a second code.
 - Backoff 1, 5, 15, 60 and 240 minutes, then `failed` and one host mail.
 - Dates moved: `change` with the new window. If 0008 finds that `change` does not work on a random code, then `delete` plus a new `get`, and the guest gets the new code by mail.
@@ -138,7 +137,6 @@ Calls happen only on events, never on polling.
 | Event | Calls |
 |---|---|
 | Lead guest registered, code created | 1 |
-| First-use check at check-in + 24 h | 1 |
 | Cancelled after the code was created | 1 |
 | Dates moved | 1 (or 2 if `change` cannot be used) |
 | Retry after an error | 1 each, at most 5 |
@@ -147,12 +145,12 @@ Calls happen only on events, never on polling.
 | Host connects the account or taps "Refresh lock list" | 1 |
 | Guest or host opens a page | 0 (reads the DB) |
 
-Expected about 2 calls per stay, so 30,000 calls cover about 15,000 stays a month across all hosts. The pilot will use a few hundred. If 0008 finds a TTLock callback for unlock records, the first-use check costs 0 and the figure becomes about 1 call per stay.
+Expected a little over 1 call per stay, so 30,000 calls cover about 25,000 stays a month across all hosts. The pilot will use a few hundred.
 
 Guards in `ttlock.py`, which every call goes through:
 
 - Below 80 % of the month: normal.
-- 80 % to 95 %: no first-use checks, no lock-list refresh. The owner gets one alert.
+- 80 % to 95 %: no lock-list refresh. The owner gets one alert.
 - Above 95 %: only create (for stays starting within 24 h) and delete. The owner gets an urgent alert.
 - The counter shows on the admin operations page.
 
@@ -170,9 +168,9 @@ Guards in `ttlock.py`, which every call goes through:
 
 ## 9. Flow
 
-1. The lead guest saves their completed form.
-2. In the same request, after the save is committed, `door_codes.on_lead_guest_complete(reservation_id)` creates the row and tries one `get` with a 5 s timeout. On success the stay page shows the PIN in that same response, and the guest mail is queued in the transaction that stores the PIN. On failure the guest sees "Your door code is being prepared. Reload this page in a minute." and the worker retries.
-3. The `door_codes` scheduler job (every minute, its own job id, so a TTLock outage never marks the mail job failed) runs `door_codes.reconcile()`. It retries due rows, handles cancellations and moves, runs the first-use checks and expires old PINs. It also creates rows the request missed, so correctness never depends on step 2.
+1. A guest saves the last missing form of the party.
+2. In the same request, after the save is committed and `registration_completed_at` is set, `door_codes.on_registration_complete(reservation_id)` creates the row and tries one `get` with a 5 s timeout. On success the stay page shows the PIN in that same response, and the guest mail is queued in the transaction that stores the PIN. On failure the guest sees "Your door code is being prepared. Reload this page in a minute." and the worker retries.
+3. The `door_codes` scheduler job (every minute, its own job id, so a TTLock outage never marks the mail job failed) runs `door_codes.reconcile()`. It retries due rows, handles cancellations and moves, and expires old PINs. It also creates rows the request missed (for example a stay completed by a scheduler tick), so correctness never depends on step 2.
 4. iCal sync never calls TTLock. It only changes `reservation`, and the reconciler sees the difference on its next run.
 
 The UbyPort submit path is not changed in any step.
@@ -200,7 +198,7 @@ Shown only when the host has a connected account. Otherwise one line: "Connect a
 
 ```
 Door code
-[x] Send the guest a door code when the lead guest is registered
+[x] Send the guest a door code when every guest is registered
 Lock            [Front door  v]
 Check-in from   [15:00 v]     Check-out until [11:00 v]
 ```
@@ -208,8 +206,7 @@ Check-in from   [15:00 v]     Check-out until [11:00 v]
 ### Host: stay detail (read-only line)
 
 - "Door code 4821936 · valid 12 Oct 15:00 to 14 Oct 11:00"
-- "Door code waits for the lead guest"
-- "Door code not used within 24 h, so it has expired"
+- "Door code waits for registration"
 - "Door code could not be created. Create one in the TTLock app."
 
 ### Guest: stay page block (under the "all done" card in `guest/stay.html`)
@@ -227,7 +224,7 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 ### Mails
 
 - `door_code` (guest, host in CC): subject "Your door code for <property>". The code, the window and the first-use deadline in Prague time, the property's check-in info, the host contact.
-- `door_code_notice` (host only): one of "not used within 24 h", "could not be created", "could not be deleted after a cancellation". Each says what to do in the TTLock app.
+- `door_code_notice` (host only): one of "could not be created", "could not be deleted after a cancellation". Each says what to do in the TTLock app.
 
 ## 11. Delivery sequence (one PR each)
 
@@ -236,9 +233,9 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 | 0008 | Fact sheet `docs/TTLOCK.md` from the official docs. No App change | none |
 | 0009 | Foundation. Migration, `ttlock.py` (form POST, 5 s timeout, token CAS refresh, budget counter, kill switch), retention lines, ENVIRONMENT section. HTTP faked in tests, a fixture blocks real network calls | 0008 |
 | 0010 | Host setup. Smart locks card, property door-code section, lock-ownership check. Browser and geometry tests | 0009 |
-| 0011 | Issuing. `door_codes.py` states, reconciler job, first try on the lead guest's save, retries, failed notice. Test proves no write to `submission` or filing tables | 0010 |
+| 0011 | Issuing. `door_codes.py` states, reconciler job, first try on the save that completes registration, retries, failed notice. Test proves no write to `submission` or filing tables | 0010 |
 | 0012 | Delivery. Guest stay block, `door_code` mail with marker, host stay line. Screenshots at 360, 390 and 1280 px | 0011 |
-| 0013 | Lifecycle. Cancel, date move, first-use check, PIN purge, admin usage panel | 0012 |
+| 0013 | Lifecycle. Cancel, date move, PIN purge, admin usage panel | 0012 |
 | docs | Subprocessor register, ROPA, privacy copy. Lawyer review if needed | before the pilot goes live |
 
 Briefs for 0009 and later are written after the 0008 report.
@@ -247,10 +244,9 @@ Briefs for 0009 and later are written after the 0008 report.
 
 1. Expired-token and dead-refresh-token error codes. Token lifetime. Does refresh rotate the refresh token?
 2. Does `change` work on a random (`get`) code, including its window?
-3. Unlock records (`/v3/lockRecord/list`): can we tell that a given code was used, with what delay through the gateway? Is there a callback (webhook) for unlock records instead?
-4. Per-second or per-minute rate limits.
-5. Is there an OAuth redirect flow, so the host never types their password into UbyHost?
-6. Who runs `euapi.ttlock.com` and where the data is stored.
+3. Per-second or per-minute rate limits.
+4. Is there an OAuth redirect flow, so the host never types their password into UbyHost?
+5. Who runs `euapi.ttlock.com` and where the data is stored.
 
 ## 13. Why not the Gemini spec
 
