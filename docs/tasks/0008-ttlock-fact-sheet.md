@@ -38,15 +38,11 @@ No other file may change.
 1. Read the official page for each endpoint and answer each question below. The paths below are the orchestrator's best guess. If the docs use a different path, use the docs' path and note it. Write "not stated in the docs" when the page does not say. Never fill a gap from memory.
    - **OAuth** (`/oauth2/token`): grant types, parameters (is the password md5?), `expires_in` value, whether a refresh returns a new `refresh_token` and whether the old one stops working.
    - **Error codes** (the global error code page): the exact meaning of 10003, 10004, 10007, and every code that means "access token expired or invalid" or "refresh token invalid". Also the code for "lock not connected to a gateway", if one exists.
-   - **Add custom passcode** (`/v3/keyboardPwd/add`): `addType` values, whether type 2 needs a gateway, whether the 24 h first-use rule applies, allowed code length, how to set a period.
-   - **Delete and change** (`/v3/keyboardPwd/delete`, `/v3/keyboardPwd/change`): already verified, copy from §2. Extra question: can `change` be used on a code whose period has already ended, to give it a new PIN and a new period?
+   - **Delete and change** (`/v3/keyboardPwd/delete`, `/v3/keyboardPwd/change`): already verified, copy from §2. Extra question: does `change` work on a random code from `get`, including moving its period?
    - **List passcodes of a lock** (`/v3/lock/listKeyboardPwd`): parameters, whether it shows the name we set, so a retry can find a code it already created.
-   - **Lock list** (`/v3/lock/list`) and **lock detail** (`/v3/lock/detail`): which field says the lock has a gateway (for example `hasGateway`).
-   - **Gateway list** (`/v3/gateway/list`): response fields.
-   - **Unlock records** (`/v3/lockRecord/list`): does a passcode unlock appear without a gateway? Can we tell that a given `keyboardPwdId` was used?
+   - **Lock list** (`/v3/lock/list`): parameters and the fields for lock id, name and gateway (for example `hasGateway`).
+   - **Unlock records** (`/v3/lockRecord/list`): parameters and fields. Can we tell that a given code (`keyboardPwd` or `keyboardPwdId`) was used? How fast does a gateway upload a record? Is there a callback (webhook) the platform calls on each unlock, configured on the developer app?
    - **Rate limits**: any stated request limit per app or per lock. The 30,000 a month quota is per developer app (owner). Any per-second or per-minute limit?
-   - **Lock capacity**: how many passcodes one lock can hold, and whether an expired code still takes a slot.
-   - **Errors on `add`**: the error code for a code that clashes with an existing one, and for an offline gateway.
    - **OAuth redirect**: is there an authorize-redirect flow, so a host never types their TTLock password into a third-party app?
    - **Hosting and processor**: the company that runs the platform, where `euapi.ttlock.com` data is stored, and the privacy policy URL.
 2. Write `docs/TTLOCK.md` with these sections, in this order. Each fact is one bullet ending in `(source: <url>)`.
@@ -56,7 +52,6 @@ No other file may change.
    ## Auth and tokens
    ## Error codes
    ## Random passcode (get)
-   ## Custom passcode (add)
    ## Delete and change
    ## Finding codes and locks
    ## Unlock records
@@ -78,7 +73,7 @@ From the repo root: `python3 scripts/context_lint.py`. Expected last line: `cont
 
 ## 7. Acceptance
 
-- [ ] `docs/TTLOCK.md` exists with the 10 sections in step 2, in order.
+- [ ] `docs/TTLOCK.md` exists with the 9 sections in step 2, in order.
 - [ ] Every bullet outside "Not stated in the docs" ends with `(source: https://euopen.ttlock.com/...)` or `(source: https://open.ttlock.com/...)`. Check: `grep -c 'source: https://\(eu\)\?open.ttlock.com' docs/TTLOCK.md` is at least 15.
 - [ ] Every question in step 1 is answered or listed under "Not stated in the docs".
 - [ ] `git diff --stat` shows only the 3 files in §3.
@@ -111,9 +106,9 @@ Write `docs/tasks/0008-report.md` (1,500 tokens at most) and set `Status: review
 
 ## Owner steps
 
-Every lock has a Wi-Fi gateway (owner, 2026-10-07). This test checks that a remote delete reaches the lock. Do it once, on one lock, in the TTLock phone app.
+Every lock has a Wi-Fi gateway (owner, 2026-10-07). This test checks that a remote delete of a timed code reaches the lock. Do it once, on one lock, in the TTLock phone app.
 
-1. Open the TTLock app. Tap the lock. Tap **Passcodes**, then **Generate Passcode**, then **Custom** (or **Timed** if Custom is missing). Set the start to the next full hour and the end 2 hours later. Save it.
+1. Open the TTLock app. Tap the lock. Tap **Passcodes**, then **Generate Passcode**, then **Timed**. Set the start to the next full hour and the end 2 hours later. Save it. Do not type it on the lock yet.
 2. Walk away from the lock (out of Bluetooth range). In the app, delete that passcode.
 3. After the start time, type the code on the lock. Write down whether the door opened. It should not.
-4. Send the orchestrator the result of step 3 and which option you used in step 1.
+4. Send the orchestrator the result of step 3.
