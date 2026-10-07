@@ -26,7 +26,8 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 - Refresh: the same URL with `client_id`, `client_secret`, `grant_type=refresh_token`, `refresh_token`. The response carries a new `access_token`, `expires_in`, `scope` and a `refresh_token` [X]. Whether the old refresh token stops working is not stated, so UbyHost always stores the returned pair.
 - `POST /v3/user/register` with `clientId`, `clientSecret`, `username` (letters and digits only, `30002`), MD5 `password`, `date` creates a user that belongs to the developer app. The returned `username` is what the token call uses [X].
 - `POST /v3/user/delete` removes such a user [X].
-- The monthly quota is 30,000 calls per developer app, shared by every UbyHost host [O].
+- The monthly quota is 30,000 calls per developer app, shared by every UbyHost host [O]. Paid tiers (screenshot of the developer console, owner, 2026-10-07): 500,000 for US$88/year, 2,000,000 for US$188/year, and up to 80,000,000 for US$988/year. UbyHost stays on the free tier [O].
+- No other rate limit is shown in the console [O]. `30006` still exists for a frequency limit [X].
 
 ## Error codes
 
@@ -61,6 +62,10 @@ Source for every code: [X], table "System Error Codes". The reactions are UbyHos
 - `POST /v3/keyboardPwd/delete` with `lockId`, `keyboardPwdId`, `deleteType=2` deletes a random or custom code remotely on a Wi-Fi lock or a lock with a gateway [CD][X]. Requires a V4 passcode lock [X].
 - `POST /v3/keyboardPwd/change` with `lockId`, `keyboardPwdId`, `changeType=2` changes the name, the period (`startDate` and `endDate` together) or the code (`newKeyboardPwd`) remotely [CD][X]. Requires a V4 passcode lock [X].
 
+## Admin sharing
+
+- A second TTLock account that received a lock as **authorized admin** can create passcodes on it [O, tested in the TTLock app 2026-10-07]. UbyHost uses one dedicated TTLock account for the pilot, with the rental locks shared to it [O].
+
 ## Custom passcode (add), not used
 
 - `POST /v3/keyboardPwd/add` with `keyboardPwd`, `startDate`, `endDate`, `addType=2` (gateway) returns `keyboardPwdId`. V4 passcode locks only [X]. UbyHost uses `get` instead [O].
@@ -73,8 +78,6 @@ Source for every code: [X], table "System Error Codes". The reactions are UbyHos
 
 1. The lock list endpoint (`/v3/lock/list`) and its fields (lock id, name, gateway flag). Needed for the property lock picker.
 2. A passcode list endpoint for one lock. Needed so a retry after a timeout can find a code it already made.
-3. Whether a user made with the User Register API can be given admin rights on a lock from the TTLock app, and then call `get`, `change` and `delete` on it.
-4. Whether an authorization-code (redirect) login exists. [X] lists the errors `10002` (invalid code), `10008` (invalid redirect_uri) and `10009` (unsupported response_type), which hints at one, but documents no endpoint.
-5. Whether `change` can move the period of a random (`get`) code.
-6. Rate limits other than the monthly quota (`30006` exists, the limit is not stated).
-7. Who runs `euapi.ttlock.com`, where its data is stored, and the privacy policy URL.
+3. Whether an authorization-code (redirect) login exists. [X] lists the errors `10002` (invalid code), `10008` (invalid redirect_uri) and `10009` (unsupported response_type), which hints at one, but documents no endpoint.
+4. Whether `change` can move the period of a random (`get`) code.
+5. Who runs `euapi.ttlock.com`, where its data is stored, and the privacy policy URL.

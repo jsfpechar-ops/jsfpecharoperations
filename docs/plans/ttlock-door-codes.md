@@ -154,15 +154,16 @@ Guards in `ttlock.py`, which every call goes through:
 
 The door code is only as safe as the guest link. Today each property has one fixed link and one property PIN, shared with every guest. A claim proves that the claimer owns *some* e-mail address, not that they hold the booking. `reservation.phone_last4` is stored from the Airbnb feed but never checked. So a former guest who kept the link and PIN can pick a stay in the 2-day window, claim it, fill in made-up names and receive the next guest's door code. Door codes must not ship until this is closed.
 
-Proposed fix (owner decision pending):
+Proposed fix: the booking code check (owner idea, 2026-10-07). Before claiming a stay, the guest types the booking confirmation number from their Airbnb or Booking.com confirmation. UbyHost compares it with the code it already holds from the feed. A former guest cannot know the next guest's booking code.
 
-- **Airbnb stays** (feed has the phone's last 4 digits): the claim asks "Last 4 digits of the phone number on your booking". 3 wrong answers lock the stay and alert the host. A guess succeeds 3 times in 10,000.
-- **Stays with no proof in the feed** (Booking.com, Agoda, manual stays): either the host releases the code with one tap after registration ("All guests registered for 12 to 14 Oct. Release the door code?"), or door codes are off for them. Default: host release.
-- The check runs at claim time, so it also protects the guest data, not just the door.
+- **Airbnb:** the feed's reservation link ends in the confirmation code (`.../reservations/details/HM...`, the format UbyHost already parses into `reservation.reservation_url`). Owner check pending on a real feed. Fallback: the phone's last 4 digits, also in the feed.
+- **Booking.com:** works only if the feed's UID carries the reservation number. Unknown. Owner check pending: open the Booking.com iCal link in a browser and compare a `UID:` line with a reservation number in the extranet.
+- **Stays with no code in the feed** (manual stays, platforms that carry neither): no automatic door code. The host sends one from the TTLock app.
+- 5 wrong tries lock the stay and alert the host. The check runs at claim time, so it protects the guest data too.
 
 ### 8.2 The TTLock account
 
-The access token can do anything the TTLock account can do on every lock in it. Proposed (owner decision pending): UbyHost creates a dedicated TTLock user per host with the User Register API, and the host shares only the rental locks with it as admin in the TTLock app. UbyHost never sees the host's own password, holds rights only on shared locks, and the host can cut it off with one tap. Whether a shared admin can call `get`, `change` and `delete` is checked in the 0008 owner test. Fallback: the host types their TTLock login once (§10), and the password is never stored.
+Pilot (owner, 2026-10-07): one dedicated UbyHost TTLock account. The owner shares each rental lock with it as **authorized admin**, which the owner confirmed can create codes. UbyHost never holds the owner's own password, has rights only on shared locks, and the owner can cut it off with one tap. Only the owner assigns locks to properties while there is one shared account, because its lock list would show every shared lock. Before other hosts join, each host gets their own UbyHost-made TTLock user (User Register API), so one host can never pick another host's lock.
 
 ### 8.3 Controls
 
@@ -240,7 +241,7 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 
 | Task | What | Depends on |
 |---|---|---|
-| 0008 | Fill the gaps in `docs/TTLOCK.md` (lock list, passcode list, rate limits, processor). Owner tests admin sharing and a remote delete. No App change | none |
+| 0008 | Booking code check at claim (Airbnb from `reservation_url`, Booking.com from UID if the owner check confirms). Ships on its own, before door codes, since it also protects guest data | none |
 | 0009 | Foundation. Migration, `ttlock.py` (form POST, 5 s timeout, token CAS refresh, budget counter, kill switch), retention lines, ENVIRONMENT section. HTTP faked in tests, a fixture blocks real network calls | 0008 |
 | 0010 | Host setup. Smart locks card, property door-code section, lock-ownership check. Browser and geometry tests | 0009 |
 | 0011 | Issuing. `door_codes.py` states, reconciler job, first try on the save that completes registration, retries, failed notice. Test proves no write to `submission` or filing tables | 0010 |
@@ -248,7 +249,7 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 | 0013 | Lifecycle. Cancel, date move, PIN purge, admin usage panel | 0012 |
 | docs | Subprocessor register, ROPA, privacy copy. Lawyer review if needed | before the pilot goes live |
 
-Briefs for 0009 and later are written after the 0008 report.
+Briefs are written once the owner has pasted the lock-list and passcode-list docs and done the feed checks in §8.1.
 
 ## 12. Open questions
 
