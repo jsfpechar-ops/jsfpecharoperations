@@ -66,9 +66,9 @@ def test_the_published_lifetimes_match_the_code_constants():
     assert host_i18n.LANG_COOKIE_MAX_AGE == 60 * 60 * 24 * 180
     assert "7 days" in rows["ubyhost_pin"]["lifetime"]["en"]
     assert auth._PIN_MAX_AGE == 60 * 60 * 24 * 7
-    assert "30 days" in rows["ubyhost_session"]["lifetime"]["en"]
-    assert auth.SESSION_REMEMBER_MAX_AGE == 60 * 60 * 24 * 30
-    assert "30 days" in rows["ubyhost_csrf"]["lifetime"]["en"]
+    assert "400 days" in rows["ubyhost_session"]["lifetime"]["en"]
+    assert auth.SESSION_REMEMBER_MAX_AGE == 60 * 60 * 24 * 400
+    assert "400 days" in rows["ubyhost_csrf"]["lifetime"]["en"]
     assert security.CSRF_MAX_AGE == auth.SESSION_REMEMBER_MAX_AGE
     for name in ("ubyhost_owned", "ubyhost_claim", "ubyhost_guest_lang"):
         assert "60 days" in rows[name]["lifetime"]["en"]

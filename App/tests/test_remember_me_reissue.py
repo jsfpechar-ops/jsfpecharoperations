@@ -73,13 +73,13 @@ def test_a_plain_login_link_gives_a_plain_session(client):
     assert f"Max-Age={auth.SESSION_MAX_AGE}" in _session_header(response)
 
 
-def test_the_remember_box_on_the_form_reaches_the_link(client):
-    """The box is ticked on the login form; the link from the mail honours it."""
+def test_the_login_form_always_mints_a_persistent_link(client):
+    """POST /login always stores remember=1 on the token (no checkbox)."""
     from app import login_link
 
     response = client.post(
         "/login",
-        data={"email": f"{USERNAME}@example.test", "remember": "1"},
+        data={"email": f"{USERNAME}@example.test"},
         follow_redirects=False,
     )
     assert response.status_code == 200

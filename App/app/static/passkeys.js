@@ -149,11 +149,10 @@
   var conditional = null;
 
   function finishLogin(credential, form) {
-    var remember = form && form.querySelector('input[name="remember"]');
     var next = form && form.querySelector('input[name="next"]');
     return post("/login/passkey", {
       credential: serialise(credential),
-      remember: !!(remember && remember.checked),
+      remember: true,
       next: next ? next.value : ""
     }).then(function (data) {
       window.location.assign(data.redirect || "/");

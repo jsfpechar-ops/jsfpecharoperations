@@ -225,7 +225,7 @@ async def passkey_login(request: Request):
     redirect = _finish_login(
         request,
         account,
-        remember=bool(data.get("remember")),
+        remember=bool(data.get("remember", True)),
         next_path=next_path,
         method=f"passkey:{row['id']}",
     )

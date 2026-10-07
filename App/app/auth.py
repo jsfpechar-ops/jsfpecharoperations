@@ -28,7 +28,9 @@ from . import acceptance, config, db, host_i18n
 
 SESSION_COOKIE = "ubyhost_session"
 SESSION_MAX_AGE = 60 * 60 * 12
-SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 30
+# Long-lived host sessions (logout or session_version bump still ends them).
+# 400 days matches common browser persistent-cookie limits.
+SESSION_REMEMBER_MAX_AGE = 60 * 60 * 24 * 400
 TWO_FACTOR_PENDING_MAX_AGE = 10 * 60
 # An admin inside a host's workspace is sent back to their own view after this
 # long. The start time travels in the signed session payload ("ast"). Set

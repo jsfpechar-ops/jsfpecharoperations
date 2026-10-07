@@ -80,7 +80,9 @@ async def login_submit(request: Request):
     raw_email = _form_str(form, "email")[:254]
     email = mail.normalise_email(raw_email)
     next_path = security.safe_local_path(_form_str(form, "next"), "/")
-    remember = _form_str(form, "remember") in ("1", "on", "true", "yes")
+    # Every successful e-mail link login gets a persistent session; re-auth is
+    # still one link away, and session_version invalidates stolen cookies.
+    remember = True
     lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)
 
     def again(error: str, status_code: int):
@@ -623,7 +625,7 @@ def _render_users(request: Request, **extra):
 
 def _send_invite(request: Request, target) -> None:
     """Mail ``target`` a link that logs them in, valid for three days."""
-    token = login_link.issue(target, purpose=login_link.INVITE)
+    token = login_link.issue(target, purpose=login_link.INVITE, remember=True)
     outbox_id = mail_notify.link_mail(
         kind="account_invite",
         user_id=target["id"],
