@@ -169,10 +169,10 @@ Each host keeps their own TTLock account and shares each rental lock as **author
 - UbyHost never sees the host's own password.
 - One UbyHost user per host, so that user's lock list holds only that host's locks. A host can never pick another host's lock.
 - The host cuts UbyHost off with one tap in the TTLock app.
-- An authorized admin can do more than codes (for example remote unlock through the gateway). `ttlock.py` therefore calls only an allowlist of endpoints (`/oauth2/token`, `/v3/user/register`, the eKey list, `/v3/lock/listKeyboardPwd`, `/v3/keyboardPwd/get`, `/change`, `/delete`), and a test fails if any other path appears. `/v3/lock/detail` is never called, because its response carries the lock's super passcode. `lockData` and passcode digits from list responses are dropped while parsing, and no raw response is ever logged ([TTLOCK](../TTLOCK.md#secrets-in-ttlock-responses-never-store-never-log)).
-- Pilot: the owner is the only host. The pilot uses the second TTLock app account from the owner's sharing test, because sharing a lock from the app to a prefixed API user is not yet confirmed ([TTLOCK](../TTLOCK.md#auth-and-tokens)). The host types that account's login into UbyHost once. It holds nothing but the shared locks. Before other hosts join, one owner test decides: if the app can share with a prefixed API user, UbyHost makes the users itself; if not, each host makes a spare TTLock account for UbyHost.
+- An authorized admin can do more than codes (for example remote unlock through the gateway). `ttlock.py` therefore calls only an allowlist of endpoints (`/oauth2/token`, `/v3/user/register`, `/v3/key/list`, `/v3/lock/listKeyboardPwd`, `/v3/keyboardPwd/get`, `/change`, `/delete`), and a test fails if any other path appears. Never called: `/v3/lock/detail` and `/v3/key/get` (super passcode in the response), `/v3/key/getUnlockLink` (remote unlock link), `/v3/key/send` and `/v3/key/authorize` (handing out access). `lockData` and passcode digits from list responses are dropped while parsing, and no raw response is ever logged ([TTLOCK](../TTLOCK.md#secrets-in-ttlock-responses-never-store-never-log)).
+- Pilot: the owner is the only host. The pilot uses the second TTLock app account from the owner's sharing test, because sharing a lock from the app to a prefixed API user is not yet confirmed ([TTLOCK](../TTLOCK.md#auth-and-tokens)). The host types that account's login into UbyHost once. It holds nothing but the shared locks. Before other hosts join, one owner test decides: if the app's share screen accepts a prefixed API user, UbyHost makes the users itself; if not, each host makes a spare TTLock account for UbyHost.
 
-Host setup in the UbyHost app (Settings → Smart locks): "Share your locks as authorized admin with `ubyhost_h17` in the TTLock app, then tap Refresh lock list."
+Host setup in the UbyHost app (Settings → Smart locks): "In the TTLock app, send each rental lock's eKey to `<name>` with Authorized admin on, Remote unlock off, and no end date. Then tap Refresh lock list." Remote unlock off means a leaked UbyHost token cannot open the door remotely. No end date means UbyHost does not silently lose access. The picker shows only locks with `keyRight = 1` and a normal status, and warns if a lock's time zone is not Prague.
 
 ### 8.3 Controls
 
@@ -267,7 +267,7 @@ Briefs are written once the owner has pasted the lock-list and passcode-list doc
 
 1. Merge the briefs in order. Deploy.
 2. In UbyHost Settings → Smart locks, tap Set up and note the UbyHost user name.
-3. In the TTLock app, share each pilot lock with that user as Authorized admin. Check that each lock's time zone is Prague (lock Settings, Lock clock).
+3. In the TTLock app, send each pilot lock's eKey to that account: Authorized admin on, Remote unlock off, no end date. Check that each lock's time zone is Prague (lock Settings, Lock clock).
 4. In UbyHost, tap Refresh lock list. On 2 or 3 properties, turn on door codes, pick the lock, set the hours.
 5. Make a test stay for tomorrow. Register as a guest with the booking code. Check the page, the mail and the CC.
 6. Type the code at 14:55 (must not open) and at 15:05 (must open). Repeat once after the next daylight-saving change.
