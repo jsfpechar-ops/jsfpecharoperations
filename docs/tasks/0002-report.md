@@ -62,8 +62,8 @@ Police bundle portion (now on `main` via #287 / #288):
 
 ### 4. Owner steps left
 
-1. ~~Deploy~~ — **done** (magic-link production deploy, Oct 2026). **Save and test connection** on each property — **open** ([0007](0007-post-magic-link-deploy-phase2.md) §D).
-2. Run `reconcile_accepted_codes.py` (dry run, then `--apply` if UbyPort matches) — **open** ([0007](0007-post-magic-link-deploy-phase2.md) §F).
+1. ~~Deploy~~ — **done**. ~~Save and test connection on each property~~ — **done** (0007 §D, Oct 2026).
+2. ~~`reconcile_accepted_codes.py` dry run~~ — **done** (0 guests; no `--apply`) (0007 §F).
 
 ---
 

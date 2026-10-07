@@ -1,6 +1,6 @@
 # 0007: Post magic-link deploy — phase 2 (production cutover)
 
-Status: in-progress
+Status: done
 Depends on: phase 1 done (login e-mails on every active account; `./scripts/deploy.sh` or Deploy production green)
 Executor: Cursor | Owner: Josef for server, proxy, UbyPort checks
 
@@ -95,12 +95,12 @@ On server (§F): `docker compose exec -T ubyhost python scripts/reconcile_accept
 ## 7. Acceptance
 
 - [x] A.1 healthz OK (agent).
-- [ ] A.2–A.4 magic-link login, Settings, Admin → Users (owner).
-- [ ] B `.env` admin e-mail and SES (owner).
-- [ ] C proxy does not log `/login/link?` tokens (owner verify).
-- [ ] D every property connection-tested (owner).
-- [ ] E legal accept flow spot-checked (owner).
-- [ ] F reconcile dry run + spot-check; `--apply` or deferred with note (owner).
+- [x] A.2–A.4 magic-link login, Settings, Admin → Users (owner, 2026-10-07).
+- [x] B `.env` admin e-mail and SES (owner).
+- [x] C proxy does not log `/login/link?` tokens (owner verify).
+- [x] D every property connection-tested (owner).
+- [x] E legal accept flow spot-checked (owner).
+- [x] F reconcile dry run: 0 guests; `--apply` skipped (nothing to change).
 - [x] G status, reports, context lint (executor).
 
 ## 8. Stop and ask

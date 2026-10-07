@@ -36,4 +36,4 @@ None.
 ## 6. Owner steps left
 
 1. ~~Set login e-mail for every account~~ — **done** (production, Oct 2026; phase 1 of task 0007).
-2. Stop logging the query string of `/login/link` in the reverse proxy — **open** (verify live Caddy matches `deploy/lightsail/caddy/Caddyfile.cloudflare`: access logging off; see [0007](0007-post-magic-link-deploy-phase2.md) §C).
+2. ~~Stop logging `/login/link` query strings~~ — **done** (live Caddyfiles comment-only `log`; task 0007 §C, Oct 2026).

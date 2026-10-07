@@ -1,21 +1,21 @@
 # Status
 
-Updated: 2026-10-06 after task 0007 phase 2 executor closeout (PR #293).
+Updated: 2026-10-07 after task 0007 phase 2 complete (owner sign-off).
 
 ## Production
 
-- **Phase 1 done:** login e-mails on all active accounts; magic-link deploy on Lightsail.
-- **Live smoke (agent):** `/healthz` OK (`version` 1.1.0, 2026-10-06); `/legal`, `/privacy` 200; `/login` skipped (Cloudflare challenge from outside).
-- Confirm git SHA on VM: `cd /opt/ubyhost && git rev-parse HEAD` (and last Deploy production run id if you use Actions).
+- **Magic-link cutover:** phase 1 + phase 2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)). E-mail login only; `.env` admin + SES; Caddy access log off; all properties connection-tested.
+- **112 reconcile:** dry run `guests answered with accepted codes only: 0` — no `--apply` needed (Oct 2026).
+- Live app: `/healthz` `version` 1.1.0. Record deploy SHA when convenient: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
 
-- **Owner:** finish [0007 phase 2](../tasks/0007-post-magic-link-deploy-phase2.md) **A.2–F** (browser login, `.env`, proxy verify, per-property UbyPort test, reconcile 112). Step list in [0007-report](../tasks/0007-report.md).
-- Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not signed off.
+- Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
+- Optional: deploy #280+#281 (admin preview) when you want it on production.
 
 ## Next
 
-- After phase 2 owner steps: Doručenka smoke on a new filing; deploy #280+#281 when you want admin preview on production.
+- Doručenka smoke on a new filing after this cutover.
 
 ## Blocked: needs owner, lawyer or council
 
@@ -24,4 +24,4 @@ Updated: 2026-10-06 after task 0007 phase 2 executor closeout (PR #293).
 
 ## Owner steps already done (don't ask again)
 
-- SES, Turnstile, operator `.env`, healthchecks, Better Stack, Cloudflare, retention autopurge, Render staging, Litestream/backup drill, task 0001 (#281), **production login e-mails + phase 1 deploy (Oct 2026)**.
+- SES, Turnstile, healthchecks, Better Stack, Cloudflare, retention autopurge, Render staging, Litestream/backup drill, task 0001 (#281), **magic-link deploy + 0007 phase 2 (Oct 2026)**.
