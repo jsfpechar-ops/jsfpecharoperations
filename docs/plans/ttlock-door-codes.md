@@ -57,7 +57,8 @@ Names are provider-neutral (`door_code`, `lock_account`, `lock_provider`), so an
 | `id` | PK |
 | `owner_user_id` | FK `user_account`, UNIQUE with `provider` |
 | `provider` | `'ttlock'` |
-| `account_label_masked` | for example `jo•••@gmail.com`, for display only |
+| `ttlock_username` | the UbyHost-made user the host shares locks with |
+| `password_enc` | its random password, `db.encrypt_field` |
 | `access_token_enc`, `refresh_token_enc` | `db.encrypt_field` |
 | `token_expires_at` | UTC ISO |
 | `token_version` | INTEGER, compare-and-swap on refresh |
@@ -65,7 +66,7 @@ Names are provider-neutral (`door_code`, `lock_account`, `lock_provider`), so an
 | `locks_json` | cached lock list (id, name), refreshed only on demand |
 | `locks_fetched_at`, `created_at`, `updated_at` | |
 
-The host's TTLock password is used once to get tokens and is never stored or logged.
+UbyHost makes the TTLock user itself (§8.2). Its password is random, stored encrypted, and used only to get tokens. The host's own TTLock password never reaches UbyHost.
 
 ### `apartment`: 4 new columns
 
@@ -163,7 +164,15 @@ Proposed fix: the booking code check (owner idea, 2026-10-07). Before claiming a
 
 ### 8.2 The TTLock account
 
-Pilot (owner, 2026-10-07): one dedicated UbyHost TTLock account. The owner shares each rental lock with it as **authorized admin**, which the owner confirmed can create codes. UbyHost never holds the owner's own password, has rights only on shared locks, and the owner can cut it off with one tap. Only the owner assigns locks to properties while there is one shared account, because its lock list would show every shared lock. Before other hosts join, each host gets their own UbyHost-made TTLock user (User Register API), so one host can never pick another host's lock.
+Each host keeps their own TTLock account and shares each rental lock as **authorized admin** with a TTLock user that UbyHost made for that host (User Register API, for example `ubyhost_h17`). The owner tested that an authorized admin can create codes.
+
+- UbyHost never sees the host's own password.
+- One UbyHost user per host, so that user's lock list holds only that host's locks. A host can never pick another host's lock.
+- The host cuts UbyHost off with one tap in the TTLock app.
+- An authorized admin can do more than codes (for example remote unlock through the gateway). `ttlock.py` therefore calls only an allowlist of endpoints (`/oauth2/token`, `/v3/user/register`, `/v3/lock/list`, the passcode list, `/v3/keyboardPwd/get`, `/change`, `/delete`), and a test fails if any other path appears.
+- Pilot: the owner is the only host, so there is one such user.
+
+Host setup in the UbyHost app (Settings → Smart locks): "Share your locks as authorized admin with `ubyhost_h17` in the TTLock app, then tap Refresh lock list."
 
 ### 8.3 Controls
 
@@ -194,13 +203,16 @@ All screens use existing components and house CSS, light mode, and work without 
 
 ```
 Smart locks
-TTLock     Not connected
-           [TTLock e-mail or phone] [Password]   (Connect)
-           We use your password once to connect and never store it.
+TTLock     Not set up                      (Set up)
 
--- after connecting --
-TTLock     Connected as jo•••@gmail.com · 4 locks
-           (Refresh lock list)   (Disconnect)
+-- after Set up --
+TTLock     In the TTLock app, share each rental lock as
+           "Authorized admin" with:  ubyhost_h17
+           (Refresh lock list)
+
+-- after sharing --
+TTLock     4 locks shared with UbyHost
+           (Refresh lock list)   (Remove)
 ```
 
 ### Host: Property → Door code (new `<details class="panel property-section" id="door-code">`)
