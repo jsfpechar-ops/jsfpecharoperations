@@ -10,7 +10,7 @@ Write `docs/TTLOCK.md`, a fact sheet of the TTLock Open Platform behaviour that 
 
 ## 2. Context
 
-- Plan: `docs/plans/ttlock-door-codes.md`, sections "Verified facts" and "Open facts". Do not change the plan. Write facts only in `docs/TTLOCK.md`.
+- Plan: `docs/plans/ttlock-door-codes.md`, sections 3 (verified facts) and 13 (open questions). Do not change the plan. Write facts only in `docs/TTLOCK.md`.
 - Official docs live at `https://euopen.ttlock.com` (EU) and `https://open.ttlock.com`. Only use pages on those two hosts. Third-party clients, blogs and forum posts do not count as a source.
 - Rule 3 (public repo): no client id, secret, token, lock id, account name or passcode in any file. Use the doc examples' placeholder values only.
 - Rule 4: no new dependency. This task adds no code.
@@ -44,7 +44,10 @@ No other file may change.
    - **Lock list** (`/v3/lock/list`) and **lock detail** (`/v3/lock/detail`): which field says the lock has a gateway (for example `hasGateway`).
    - **Gateway list** (`/v3/gateway/list`): response fields.
    - **Unlock records** (`/v3/lockRecord/list`): does a passcode unlock appear without a gateway? Can we tell that a given `keyboardPwdId` was used?
-   - **Rate limits**: any stated request limit per app or per lock.
+   - **Rate limits**: any stated request limit per app or per lock. Is the monthly call quota (the owner was told 30,000) per developer app or per TTLock account? Any per-second limit?
+   - **Lock capacity**: how many passcodes one lock can hold.
+   - **Errors on `add`**: the error code for a code that clashes with an existing one, and for an offline gateway.
+   - **OAuth redirect**: is there an authorize-redirect flow, so a host never types their TTLock password into a third-party app?
    - **Hosting and processor**: the company that runs the platform, where `euapi.ttlock.com` data is stored, and the privacy policy URL.
 2. Write `docs/TTLOCK.md` with these sections, in this order. Each fact is one bullet ending in `(source: <url>)`.
    ```
