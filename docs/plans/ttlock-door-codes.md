@@ -169,7 +169,7 @@ Each host keeps their own TTLock account and shares each rental lock as **author
 - UbyHost never sees the host's own password.
 - One UbyHost user per host, so that user's lock list holds only that host's locks. A host can never pick another host's lock.
 - The host cuts UbyHost off with one tap in the TTLock app.
-- An authorized admin can do more than codes (for example remote unlock through the gateway). `ttlock.py` therefore calls only an allowlist of endpoints (`/oauth2/token`, `/v3/user/register`, `/v3/lock/list`, the passcode list, `/v3/keyboardPwd/get`, `/change`, `/delete`), and a test fails if any other path appears.
+- An authorized admin can do more than codes (for example remote unlock through the gateway). `ttlock.py` therefore calls only an allowlist of endpoints (`/oauth2/token`, `/v3/user/register`, the eKey list, `/v3/lock/listKeyboardPwd`, `/v3/keyboardPwd/get`, `/change`, `/delete`), and a test fails if any other path appears. `/v3/lock/detail` is never called, because its response carries the lock's super passcode. `lockData` and passcode digits from list responses are dropped while parsing, and no raw response is ever logged ([TTLOCK](../TTLOCK.md#secrets-in-ttlock-responses-never-store-never-log)).
 - Pilot: the owner is the only host, so there is one such user.
 
 Host setup in the UbyHost app (Settings → Smart locks): "Share your locks as authorized admin with `ubyhost_h17` in the TTLock app, then tap Refresh lock list."
@@ -263,11 +263,22 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 
 Briefs are written once the owner has pasted the lock-list and passcode-list docs and done the feed checks in §8.1.
 
-## 12. Open questions
+## 12. Pilot rollout (owner)
+
+1. Merge the briefs in order. Deploy.
+2. In UbyHost Settings → Smart locks, tap Set up and note the UbyHost user name.
+3. In the TTLock app, share each pilot lock with that user as Authorized admin. Check that each lock's time zone is Prague (lock Settings, Lock clock).
+4. In UbyHost, tap Refresh lock list. On 2 or 3 properties, turn on door codes, pick the lock, set the hours.
+5. Make a test stay for tomorrow. Register as a guest with the booking code. Check the page, the mail and the CC.
+6. Type the code at 14:55 (must not open) and at 15:05 (must open). Repeat once after the next daylight-saving change.
+7. Cancel the test stay. Check that the code no longer opens the door.
+8. Watch the call counter on the admin operations page for the first month.
+
+## 13. Open questions
 
 The unanswered TTLock facts are listed in [TTLOCK](../TTLOCK.md), section "Not stated in the supplied docs". Task 0008 answers them.
 
-## 13. Why not the Gemini spec
+## 14. Why not the Gemini spec
 
 | Gemini spec | Repo reality |
 |---|---|
