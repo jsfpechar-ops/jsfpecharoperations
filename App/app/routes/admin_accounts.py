@@ -355,6 +355,8 @@ def two_factor_setup_form(request: Request):
         return RedirectResponse("/login", status_code=303)
     if account["totp_enabled"]:
         return _back("/settings", msg=_flash(request, "flash.accounts.twofa_enabled"))
+    if not auth.session_is_fresh(request):
+        return _back("/settings#settings-security", err=_flash(request, "auth.error.recent_login"))
     try:
         secret = db.decrypt_secret(account["totp_secret_enc"]) if account["totp_secret_enc"] else ""
     except Exception:
@@ -378,6 +380,8 @@ async def two_factor_setup_submit(request: Request):
     # set of recovery codes and silently kill the ones already written down.
     if account["totp_enabled"]:
         return _back("/settings", msg=_flash(request, "flash.accounts.twofa_enabled"))
+    if not auth.session_is_fresh(request):
+        return _back("/settings#settings-security", err=_flash(request, "auth.error.recent_login"))
     remember = auth.session_remembers(request)
     form = await request.form()
     # Authenticator apps show the code as "123 456", so a pasted one arrives
@@ -403,7 +407,12 @@ async def two_factor_setup_submit(request: Request):
     response = render(request, "two_factor_recovery.html", context)
     auth.attach_session(
         response,
-        auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+        auth.issue_session(
+            refreshed["id"],
+            refreshed["session_version"],
+            remember=remember,
+            issued_at=auth.session_issued_at(request),
+        ),
         remember=remember,
     )
     db.audit("two_factor_enabled", actor=account["username"], owner_user_id=account["id"])
@@ -437,6 +446,8 @@ async def two_factor_move(request: Request):
     response = RedirectResponse("/account/2fa/setup?moved=1", status_code=303)
     # reset_totp bumps session_version, so the cookie that sent this POST is stale.
     remember = auth.session_remembers(request)
+    # The old phone just proved itself, so this counts as a login: setup on
+    # the new phone is allowed in the next 10 minutes.
     auth.attach_session(
         response,
         auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
@@ -468,7 +479,12 @@ async def two_factor_disable(request: Request):
     remember = auth.session_remembers(request)
     auth.attach_session(
         response,
-        auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+        auth.issue_session(
+            refreshed["id"],
+            refreshed["session_version"],
+            remember=remember,
+            issued_at=auth.session_issued_at(request),
+        ),
         remember=remember,
     )
     return response
@@ -734,7 +750,12 @@ async def user_email_set(user_id: int, request: Request):
         remember = auth.session_remembers(request)
         auth.attach_session(
             response,
-            auth.issue_session(refreshed["id"], refreshed["session_version"], remember=remember),
+            auth.issue_session(
+                refreshed["id"],
+                refreshed["session_version"],
+                remember=remember,
+                issued_at=auth.session_issued_at(request),
+            ),
             remember=remember,
         )
     return response
@@ -753,7 +774,12 @@ async def user_impersonate(user_id: int, request: Request):
     response = RedirectResponse("/", status_code=303)
     auth.attach_session(
         response,
-        auth.issue_session(account["id"], account["session_version"], workspace_user_id=user_id),
+        auth.issue_session(
+            account["id"],
+            account["session_version"],
+            workspace_user_id=user_id,
+            issued_at=auth.session_issued_at(request),
+        ),
     )
     db.audit(
         "impersonation_started",
@@ -799,7 +825,14 @@ def stop_impersonating(request: Request):
         return guard
     workspace = auth.workspace_user(request)
     response = RedirectResponse("/admin/users", status_code=303)
-    auth.attach_session(response, auth.issue_session(account["id"], account["session_version"]))
+    auth.attach_session(
+        response,
+        auth.issue_session(
+            account["id"],
+            account["session_version"],
+            issued_at=auth.session_issued_at(request),
+        ),
+    )
     # The host sees the end of a support session in their own Settings audit,
     # not only the start; the admin's own workspace keeps its copy too.
     owners = [account["id"]]

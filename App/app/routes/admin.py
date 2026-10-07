@@ -2406,6 +2406,7 @@ async def guest_reveal_identity(guest_id: int, request: Request):
             workspace_user_id=workspace["id"],
             impersonation_started_at=auth.impersonation_started_at(request),
             revealed_guest_ids=[*auth.revealed_guest_ids(request), guest_id],
+            issued_at=auth.session_issued_at(request),
         ),
     )
     db.audit(
