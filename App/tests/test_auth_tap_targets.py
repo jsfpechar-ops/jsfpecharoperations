@@ -41,13 +41,6 @@ def test_the_language_switch_keeps_its_pill_and_weight():
     assert "font-weight: 760" in rules
 
 
-def test_remember_me_is_at_least_44px_tall():
-    rules = _declarations(".auth-remember")
-    assert "min-height: 44px" in rules
-    # The label is a flex row, so the taller box keeps the checkbox centred.
-    assert "align-items: center" in rules
-
-
 def test_the_font_size_token_is_real():
     assert "--text-sm:" in TOKENS_CSS.read_text(encoding="utf-8")
 

@@ -30,10 +30,6 @@
              autocomplete="{{ 'email webauthn' if passkeys_enabled() else 'email' }}" autocapitalize="none" spellcheck="false"
              placeholder="{{ t('login.email_ph') }}">
     </div>
-    <label class="auth-remember">
-      <input type="checkbox" name="remember" value="1">
-      <span>{{ t('login.remember') }}</span>
-    </label>
     {% if turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"
            data-action="host_login" data-language="{{ lang }}"></div>
@@ -57,6 +53,6 @@
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endif %}
 {% if passkeys_enabled() %}
-<script src="/static/passkeys.js?v=20261006a" defer></script>
+<script src="/static/passkeys.js?v=20261007a" defer></script>
 {% endif %}
 {% endblock %}

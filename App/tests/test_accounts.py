@@ -448,7 +448,7 @@ def test_settings_archived_hub_lists_and_restores_entities():
         _clean_accounts()
 
 
-def test_remember_me_sets_thirty_day_session_cookie():
+def test_remember_me_sets_persistent_session_cookie():
     db.init_db()
     _clean_accounts()
     _account("boundary-remember")

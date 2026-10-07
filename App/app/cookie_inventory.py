@@ -18,8 +18,8 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "surface": "host",
         "purpose": {"en": "Keeps you signed in", "cs": "Udržuje přihlášení"},
         "lifetime": {
-            "en": "12 hours, or 30 days with \u201cremember me\u201d",
-            "cs": "12 hodin, nebo 30 dní s \u201ezapamatovat si m\u011b\u201c",
+            "en": "Up to 400 days after you sign in, until you log out",
+            "cs": "A\u017e 400 dn\u00ed po p\u0159ihl\u00e1\u0161en\u00ed, dokud se neodhl\u00e1s\u00edte",
         },
     },
     {
@@ -33,8 +33,8 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
             "cs": "Chr\u00e1n\u00ed formul\u00e1\u0159e p\u0159ed po\u017eadavky z jin\u00fdch str\u00e1nek",
         },
         "lifetime": {
-            "en": "Matches the session, up to 30 days",
-            "cs": "Shodn\u00e9 s relac\u00ed, a\u017e 30 dn\u00ed",
+            "en": "Matches the session, up to 400 days",
+            "cs": "Shodn\u00e9 s relac\u00ed, a\u017e 400 dn\u00ed",
         },
     },
     {

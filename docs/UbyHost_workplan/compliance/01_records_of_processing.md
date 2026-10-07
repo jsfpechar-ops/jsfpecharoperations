@@ -22,7 +22,7 @@ Every row below refers to these codes in its "Security" column. Detail: `docs/SE
 | Code | Measure | Where in code or config |
 |---|---|---|
 | S1 | HTTPS only, HSTS on `ubyhost.com`, secure cookies in production | `security.py`, Cloudflare zone |
-| S2 | Host login by single-use e-mail link (token stored only as SHA-256 hash, 1 day after expiry); optional TOTP 2FA and passkeys (public key only, biometric data never leaves the device); recovery codes stored hashed; session versioning; 12 h sessions (30 days with "remember me") | `auth.py` |
+| S2 | Host login by single-use e-mail link (token stored only as SHA-256 hash, 1 day after expiry); optional TOTP 2FA and passkeys (public key only, biometric data never leaves the device); recovery codes stored hashed; session versioning; host sessions up to 400 days until logout | `auth.py` |
 | S3 | Login and guest PIN rate limits; Cloudflare Turnstile on host login, on guest claim/resend, and on the guest PIN after 3 failures | `rate_limit.py`, `turnstile.py`, `routes/guest.py` |
 | S4 | Guest access by 100-bit link token plus 6-digit PIN; PIN authorisation lasts 7 days; claim secret stored hashed | `auth.py`, `claim.py`, `routes/guest.py` |
 | S5 | Field encryption at rest (MultiFernet, `UBYHOST_DATA_KEYS`, separate from the session secret): travel document and visa numbers, birth date, street and town of residence, signatures, UbyPort web-service passwords, TOTP secrets, UbyPort request envelope, queued claim secrets; ID files encrypted on disk | `db.py` (`ENCRYPTED_GUEST_COLUMNS`), `passport_photos.py` |
