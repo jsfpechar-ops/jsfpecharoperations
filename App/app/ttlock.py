@@ -168,10 +168,11 @@ def _post(path: str, data: Dict[str, Any], priority: str) -> Dict[str, Any]:
         out = _parse_response(resp)
     except TTLockError as exc:
         log.warning(
-            "ttlock path=%s priority=%s errcode=%s",
+            "ttlock path=%s priority=%s errcode=%s errmsg=%s",
             path,
             priority,
             exc.code,
+            exc.message[:120],
         )
         raise
     log.info("ttlock path=%s priority=%s errcode=0", path, priority)
