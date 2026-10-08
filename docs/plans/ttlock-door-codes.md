@@ -12,7 +12,7 @@ A property without a lock sees no difference. No code runs and no API call is ma
 
 ## 2. Owner decisions (2026-10-07)
 
-1. Code type: timed random code, `/v3/keyboardPwd/get` with `keyboardPwdType=3`. The lock checks it by itself, so creating it does not need the gateway online, and the number of such codes is not limited (manuals.plus, not the official docs). Every pilot lock also has a Wi-Fi gateway, used for delete and change.
+1. Code type (owner, 2026-10-08): **custom timed codes** (`/v3/keyboardPwd/add`, `addType=2`, through the gateway), because they can really be withdrawn and have no 24 h first-use rule ([TTLOCK](../TTLOCK.md#what-the-faq-adds-about-codes)). Expired UbyHost codes are reused with `change` for the next stay instead of being deleted. Fallback: a timed random code (`get`, type 3) when the gateway stays unreachable close to check-in; the host gets a mail that this code cannot be withdrawn.
 2. Trigger: the whole party is registered (`reservation.registration_completed_at`). This keeps the code as the compliance lever (owner, 2026-10-07, reversing an earlier lead-guest-only answer).
 3. The guest link goes out by automated message the day before check-in, so a code is normally created at most a day or two ahead.
 4. Guest mail carries the PIN, host in CC.
@@ -102,27 +102,35 @@ The login of the account UbyHost uses (pilot: the owner's spare TTLock account) 
  registration complete, property has a lock, stay not over
                  |
                  v
-   pending --claim--> issuing --ok--> issued
-                        |  ^             |
-                   error|  |retry        |
-                        v  |             |
-                      retrying           +--booking cancelled--> revoke_pending --ok--> revoked
-                        |                |
-              5 tries   v                +--dates moved--> change call, stays issued, new guest mail
-                      failed  (host mail: "create a code in the TTLock app")
-                                         |
-                                  checkout + 1 day --> expired (pin_enc NULL)
+   pending --worker claims--> issuing --ok--> issued
+                                |  ^             |
+                           error|  |retry        +--cancelled--> revoke_pending --ok--> revoked
+                                v  |             |
+                              retrying           +--dates moved--> change call, stays issued, new guest mail
+                                |                |
+      gateway still down 6 h    v                +--checkout--> expired (pin_enc NULL after 1 day;
+      before check-in:  fallback random code            custom code stays on the lock as a spare slot)
+      5 tries without a fallback: failed (host mail: "create a code in the TTLock app")
 ```
+
+Issuing a custom code (worker only, one gateway call at a time):
+
+1. Pick a PIN: 6 digits from `secrets`, no repeats or runs (`111111`, `123456`), not equal to another active UbyHost code on the same lock.
+2. **Reuse a slot if there is one:** an `expired` custom row of ours on the same lock whose `valid_to` has passed. Call `change` on its `provider_code_id` with the new PIN, window and name `UH-<door_code.id>`, then move `provider_code_id` from the old row to the new one. Otherwise call `add`. Either way it is 1 call.
+3. Store `pin_enc`, `provider_code_id`, `code_kind = 'custom'`, set `issued`, and queue the guest mail in the same transaction. The guest page shows the PIN only from this moment, so a PIN on screen is always on the lock.
+4. If the lock refuses the PIN as already existing (a host code), pick a new PIN and try again, at most 3 times.
+5. `-2012` or `-3037` (gateway unreachable or busy): retry with backoff. If the stay starts within 6 h and the code is still not on the lock, create a random code with `get` instead (works offline), set `code_kind = 'random'`, and mail the host that this code cannot be withdrawn if the stay is cancelled.
 
 Rules:
 
 - One row per reservation (`UNIQUE`), created with `INSERT ... ON CONFLICT DO NOTHING`.
-- A process claims a row with one conditional UPDATE (`WHERE id = ? AND state IN ('pending','retrying') AND next_attempt_at <= ? AND (claimed_at IS NULL OR claimed_at < lease_cutoff)`) and calls TTLock only if `db.execute_rowcount` returns 1. Two processes can never both create a code for one stay.
+- The worker claims a row with one conditional UPDATE (`WHERE id = ? AND state IN ('pending','retrying') AND next_attempt_at <= ? AND (claimed_at IS NULL OR claimed_at < lease_cutoff)`) and calls TTLock only if the row count is 1. Two processes can never both create a code for one stay.
+- A timeout is ambiguous. Before retrying, the worker lists the lock's codes (`searchStr=UH-<id>`) and checks whether the code or the change already landed, comparing the window.
 - Registration cleared after the code exists (a form went missing): nothing changes. The code stays, because the guest is still staying.
-- A retry after a timeout first lists the lock's codes and adopts one named `UH-<door_code.id>`, so a timeout never creates a second code.
-- Backoff 1, 5, 15, 60 and 240 minutes, then `failed` and one host mail.
-- Dates moved: `change` with the new window. If 0008 finds that `change` does not work on a random code, then `delete` plus a new `get`, and the guest gets the new code by mail.
-- A cancellation whose delete keeps failing (gateway offline): retries continue until the old `valid_to`, and the host gets one mail after 1 h saying "delete code 48•••93 in the TTLock app". A cancelled booking's code could otherwise open the door for the next guest.
+- Backoff 1, 5, 15, 60 and 240 minutes.
+- Cancelled: `delete` (custom codes really disappear). A random fallback code cannot be withdrawn; the host gets one mail.
+- Dates moved: `change` with the new window and the same PIN, then one new guest mail.
+- Spare slots: a lock holds at most the overlapping current stays plus a spare or two. No monthly cleanup is needed, and the host's own codes are never touched.
 
 ## 7. API call budget (30,000 a month, shared by all hosts)
 
@@ -130,9 +138,11 @@ Calls happen only on events, never on polling.
 
 | Event | Calls |
 |---|---|
-| Lead guest registered, code created | 1 |
+| Registration complete, code put on the lock (`change` on a spare slot, or `add`) | 1 |
 | Cancelled after the code was created | 1 |
-| Dates moved | 1 (or 2 if `change` cannot be used) |
+| Dates moved | 1 |
+| Stay over | 0 (the code stays as a spare slot) |
+| Gateway down close to check-in, random fallback | 1 |
 | Retry after an error | 1 each, at most 5 |
 | Timeout recovery (list codes) | 1 |
 | Token refresh | 1, only near expiry or on an expired-token error |
@@ -187,11 +197,11 @@ Host setup in the UbyHost app (Settings → Smart locks): "In the TTLock app, se
 ## 9. Flow
 
 1. A guest saves the last missing form of the party.
-2. In the same request, after the save is committed and `registration_completed_at` is set, `door_codes.on_registration_complete(reservation_id)` creates the row and tries one `get` with a 5 s timeout. On success the stay page shows the PIN in that same response, and the guest mail is queued in the transaction that stores the PIN. On failure the guest sees "Your door code is being prepared. Reload this page in a minute." and the worker retries.
-3. The `door_codes` scheduler job (every minute, its own job id, so a TTLock outage never marks the mail job failed) runs `door_codes.reconcile()`. It retries due rows, handles cancellations and moves, and expires old PINs. It also creates rows the request missed (for example a stay completed by a scheduler tick), so correctness never depends on step 2.
+2. In the same request, after the save is committed and `registration_completed_at` is set, `door_codes.on_registration_complete(reservation_id)` creates the row in `pending` and sets `next_attempt_at` to now. No TTLock call happens in the request. The guest sees "Your door code is being prepared. Reload this page in a minute."
+3. The `door_codes` scheduler job (every minute, its own job id, so a TTLock outage never marks the mail job failed) runs `door_codes.reconcile()`. It issues pending rows (§6), retries, handles cancellations and moves, and expires old PINs. It also creates rows the request missed (for example a stay completed by a scheduler tick), so correctness never depends on step 2.
 4. iCal sync never calls TTLock. It only changes `reservation`, and the reconciler sees the difference on its next run.
 
-Gateway calls (`change`, `delete`, and `add` if custom codes are chosen) run only in the worker, one at a time, with a 35 s timeout, because TTLock allows one remote operation per lock at a time and waits up to 30 s itself ([TTLOCK](../TTLOCK.md#how-the-gateway-fits)). Only the cloud-only `get` may run inside a guest request.
+Gateway calls (`add`, `change`, `delete`) run only in the worker, one at a time, with a 35 s timeout, because TTLock allows one remote operation per lock at a time and waits up to 30 s itself ([TTLOCK](../TTLOCK.md#how-the-gateway-fits)).
 
 The UbyPort submit path is not changed in any step.
 
