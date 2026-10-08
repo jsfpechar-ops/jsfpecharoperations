@@ -45,6 +45,7 @@
       {% if lock.battery is not none %} · {{ t('smart_locks.battery', percent=lock.battery) }}{% endif %}</p>
     <p class="small muted">{% set used = properties_using.get(lock.lock_id, []) %}
       {% if used %}{{ used | join(', ') }}{% else %}{{ t('smart_locks.unused') }}{% endif %}</p>
+    {% if used | length > 1 %}<p class="small"><strong>{{ t('smart_locks.shared_warning') }}</strong></p>{% endif %}
     {% if lock.tz_offset_ms is not none and lock.tz_offset_ms != 3600000 %}
     <p class="small"><strong>{{ t('smart_locks.timezone_warning') }}</strong></p>
     {% endif %}
