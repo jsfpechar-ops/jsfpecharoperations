@@ -191,6 +191,8 @@ Host setup in the UbyHost app (Settings → Smart locks): "In the TTLock app, se
 3. The `door_codes` scheduler job (every minute, its own job id, so a TTLock outage never marks the mail job failed) runs `door_codes.reconcile()`. It retries due rows, handles cancellations and moves, and expires old PINs. It also creates rows the request missed (for example a stay completed by a scheduler tick), so correctness never depends on step 2.
 4. iCal sync never calls TTLock. It only changes `reservation`, and the reconciler sees the difference on its next run.
 
+Gateway calls (`change`, `delete`, and `add` if custom codes are chosen) run only in the worker, one at a time, with a 35 s timeout, because TTLock allows one remote operation per lock at a time and waits up to 30 s itself ([TTLOCK](../TTLOCK.md#how-the-gateway-fits)). Only the cloud-only `get` may run inside a guest request.
+
 The UbyPort submit path is not changed in any step.
 
 ## 10. How it looks

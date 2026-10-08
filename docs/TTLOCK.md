@@ -9,17 +9,22 @@ Sources (the orchestrator sandbox cannot reach the TTLock doc hosts, so every fa
 - **[X]** "TTLock / Sciener Open Platform API Documentation", a markdown export the owner uploaded. It uses the host `api.sciener.com` and looks like an older doc version (see the conflict under "Random passcode").
 - **[EU]** Official pages pasted by the owner, 2026-10-07: Get access token, Refresh access token, User register, Get the lock list, Get lock details, Get all created passcodes of a lock, Get a passcode, Get the eKey list of an account, Send ekey, Get one ekey, Get ekeys of a lock, Key authorization, Get the eKey unlocking link (all on `euapi.ttlock.com`).
 - **[FAQ]** Official FAQ, `https://euopen.ttlock.com/documentPages/htmlPages/example/FAQEn.html`, PDF supplied by the owner 2026-10-08. Cited as [FAQ x.y] by section and question.
+- **[GW]** Official guide pages "Unlock via network (Gateway)" and "Lock Records Notify", pasted by the owner 2026-10-08.
 - **[O]** Owner statement.
 
 UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 
 ## How the gateway fits
 
-- UbyHost only ever talks to the TTLock cloud, and every call names the lock by `lockId`. It never talks to a gateway or a lock directly, and no call takes a gateway id [EU].
-- The gateway (or a lock's built-in Wi-Fi) is a relay: cloud, then gateway over Wi-Fi, then lock over Bluetooth. The host pairs it with the lock once in the TTLock app.
-- A random code from `get` does not travel through the gateway at all. The lock checks it by itself [EU]. So creating a code works even if the gateway is offline.
-- `change` and `delete` with type `2` are pushed through the gateway to the lock [CD]. If the lock is not reachable, the call fails with `-2012` [X], and UbyHost retries.
-- Not yet proven on a real lock: that a remote delete of a random code really stops the lock accepting it. Owner test A (plan §12, step 7) settles it.
+- UbyHost only ever talks to the TTLock cloud, and every call names the lock by `lockId`. No call takes a gateway id [EU].
+- A TTLock Bluetooth lock cannot reach the internet itself. The gateway finds nearby locks of the **same administrator account** and pairs with them automatically. The server picks the gateway with the best signal for each remote operation. One gateway can serve any number of locks [GW].
+- A random code from `get` does not travel through the gateway. The lock checks it by itself [EU].
+- `add`, `change` and `delete` with type `2` go cloud, then gateway, then lock over Bluetooth [CD][GW].
+- **Remote operations are slow.** The gateway may need several seconds to connect over Bluetooth. TTLock's own timeout for a remote operation is **30 seconds**; a client that gives up sooner may never see the answer [GW]. UbyHost uses 35 s for these calls and 5 s for cloud-only calls.
+- **One remote operation per lock at a time.** A second request while the first is running "is destined to fail" [GW]. UbyHost sends gateway calls only from the worker, one at a time.
+- A weak signal, or someone touching the keypad during the operation, makes it fail [GW]. UbyHost retries.
+- Through the gateway, the cloud can also unlock and lock, read the lock state and battery, and **query and calibrate the lock time** [GW]. UbyHost uses none of these now; remote time calibration is a possible later fix for clock drift.
+- Not yet proven on a real lock: that a remote delete of a never-used random code stops the lock accepting it (see "What the FAQ adds"). Owner test A settles it.
 
 ## Request basics
 
@@ -116,7 +121,7 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 
 ## Unlock records, not used
 
-- `POST /v3/lockRecord/list` with `lockId`, optional `startDate` and `endDate`, `pageNo`, `pageSize` (max 100) returns records with `recordType` (4 = passcode unlock), `success`, `keyboardPwd`, `lockDate`, `serverDate` [X]. The developer console has a per-app **Callback URL** that pushes unlock records to a URL [O, console screenshot 2026-10-08]. UbyHost leaves it empty: unlock times say when guests come and go, and no feature needs them.
+- `POST /v3/lockRecord/list` with `lockId`, optional `startDate` and `endDate`, `pageNo`, `pageSize` (max 100) returns records with `recordType` (4 = passcode unlock), `success`, `keyboardPwd`, `lockDate`, `serverDate` [X]. The developer console has a per-app **Callback URL** that pushes unlock records to a URL [O, console screenshot 2026-10-08]. UbyHost leaves it empty: unlock times say when guests come and go, and no feature needs them. The callback receives each record with `username` (the code's name or the app user), `keyboardPwd` (the digits) and `lockDate` [GW], so it would hold guests' comings and goings plus codes. It only works for locks whose administrator got a token with UbyHost's client id [GW].
 
 ## Not stated in the supplied docs
 

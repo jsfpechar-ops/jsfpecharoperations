@@ -1,7 +1,7 @@
 # 0009: TTLock client
 
-Status: todo
-Depends on: 0008 | Base commit: after 0008 merges | Branch: task/0009-ttlock-client
+Status: blocked
+Depends on: 0008, and the owner's choice between custom and random codes (plan §2) | Base commit: after 0008 merges | Branch: task/0009-ttlock-client
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
@@ -37,7 +37,7 @@ No other file may change.
    - Budget: read this UTC month's (`YYYY-MM`) `lock_api_usage.calls` for provider `ttlock`. With `limit = config.TTLOCK_MONTHLY_CALLS`: at 80 % or more refuse `LOW`; at 95 % or more refuse `NORMAL` too. A refusal raises `TTLockError(kind="budget")` and sends nothing.
    - Count the call before sending: `INSERT INTO lock_api_usage (month, provider, calls) VALUES (?, 'ttlock', 1) ON CONFLICT (month, provider) DO UPDATE SET calls = calls + 1`.
    - Body: for `/oauth2/token`, `{"clientId", "clientSecret"}` plus `data`. For every other path, `{"clientId", "date": <now in ms>}` plus `data`.
-   - `requests.post(config.TTLOCK_API_BASE + path, data=body, timeout=5)`. `requests.RequestException` or a non-JSON answer → `TTLockError(kind="network")`.
+   - `requests.post(config.TTLOCK_API_BASE + path, data=body, timeout=...)` with a timeout of 35 s for `/v3/keyboardPwd/change` and `/v3/keyboardPwd/delete` (they go through the gateway, and TTLock itself waits up to 30 s, see `docs/TTLOCK.md` "How the gateway fits"), and 5 s for every other path. Name the set `GATEWAY_PATHS`. `requests.RequestException` or a non-JSON answer → `TTLockError(kind="network")`.
    - If the JSON has `errcode` and it is not 0, raise `TTLockError(code, ERROR_KINDS.get(code, "transient"))`. Otherwise return the dict.
    - Log one line per call: path, priority, and `errcode` if any.
 3. **Tokens.**
@@ -56,7 +56,7 @@ No other file may change.
 6. **Tests** in `App/tests/test_ttlock.py`. A fixture monkeypatches `app.ttlock.requests.post` with a fake that records `(url, data, timeout)` and pops scripted JSON answers; any unscripted call fails the test. Another fixture sets `DOOR_CODES_ENABLED = True`, dummy client id and secret, and cleans `lock_account` and `lock_api_usage`. Tests, each asserting literal values:
    - `test_paths_outside_the_allowlist_are_refused`: `_post("/v3/lock/detail", {}, NORMAL)` raises `ValueError` with no HTTP call. Also reads the source of `app/ttlock.py` and asserts none of `lock/detail`, `key/get`, `getUnlockLink`, `key/send`, `key/authorize`, `lock/unlock` appears.
    - `test_kill_switch_sends_nothing`.
-   - `test_calls_are_form_posts_with_a_5_second_timeout`.
+   - `test_timeouts_are_5_seconds_for_cloud_calls_and_35_for_gateway_calls`: `/v3/keyboardPwd/get` is sent with `timeout=5`, `/v3/keyboardPwd/delete` with `timeout=35`, both as form data.
    - `test_connect_stores_tokens_encrypted_and_never_the_password`: the plain password and its MD5 appear in no `lock_account` column and not in `caplog.text`. The token columns decrypt to the scripted tokens.
    - `test_expired_token_refreshes_once_and_retries` (10004, then refresh, then success: 3 HTTP calls, `token_version` up by 1).
    - `test_a_second_auth_error_is_raised`.
