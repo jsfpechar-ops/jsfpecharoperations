@@ -10,6 +10,18 @@
     <div class="auth-alert" role="alert">{{ t(error, email=operator().email) }}</div>
   {% endif %}
 
+  {% if staging_login_email %}
+    <div class="auth-notice" role="status">
+      <p><strong>{{ t('login.staging.title') }}</strong></p>
+      <p>{{ t('login.staging.admin_email', email=staging_login_email) }}</p>
+      {% if staging_password_enabled %}
+        <p class="small muted">{{ t('login.staging.password_help') }}</p>
+      {% else %}
+        <p class="small muted">{{ t('login.staging.logs_help') }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
   {% if passkeys_enabled() %}
     {# Task 0004: shown by passkeys.js only where the browser can use a passkey,
        and offered before the e-mail link. Without JavaScript nothing changes. #}
@@ -30,6 +42,13 @@
              autocomplete="{{ 'email webauthn' if passkeys_enabled() else 'email' }}" autocapitalize="none" spellcheck="false"
              placeholder="{{ t('login.email_ph') }}">
     </div>
+    {% if staging_password_enabled %}
+    <div class="auth-field">
+      <label for="staging_password">{{ t('login.staging.password_label') }}</label>
+      <input type="password" id="staging_password" name="staging_password" maxlength="200"
+             autocomplete="current-password" placeholder="{{ t('login.staging.password_ph') }}">
+    </div>
+    {% endif %}
     {% if turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"
            data-action="host_login" data-language="{{ lang }}"></div>

@@ -631,6 +631,29 @@ def end_all_sessions(user_id: int) -> None:
     )
 
 
+def staging_password_ok(provided: str) -> bool:
+    from . import config
+
+    expected = config.STAGING_LOGIN_PASSWORD
+    if config.DEPLOYMENT != "staging" or not expected or not provided:
+        return False
+    return secrets.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
+
+
+def staging_admin_login_email() -> Optional[str]:
+    """Address the first administrator uses on Render staging (for the login hint)."""
+    from . import config
+
+    if config.DEPLOYMENT != "staging":
+        return None
+    row = db.query_one(
+        "SELECT email FROM user_account WHERE role = 'admin' ORDER BY id LIMIT 1"
+    )
+    if row and (row["email"] or "").strip():
+        return row["email"].strip()
+    return (config.ADMIN_EMAIL or config.OPERATOR_EMAIL or "").strip() or None
+
+
 def ensure_bootstrap_admin() -> Optional[str]:
     """Create the first administrator and claim all legacy unowned records.
 
