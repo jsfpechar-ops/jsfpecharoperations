@@ -12,7 +12,7 @@ On an existing property's page, every host gets an optional "Door code" section 
 
 - Plan: `docs/plans/ttlock-door-codes.md` §2 (decisions 5, 5a, 5b) and §10 (the property sketch). Rule from `docs/HOST_APP_DESIGN.md` §6: optional features never block a first stay, so the section is edit-only, and errors redirect to a stable anchor.
 - `config.DOOR_CODES_LIVE` (added by task 0012, which runs after this one): until it is on, only stays the host added by hand get a code. Use `getattr(config, "DOOR_CODES_LIVE", False)` here so this task does not depend on 0012.
-- From task 0010 (`App/app/ttlock.py`): `allowed_for(owner_user_id)` (feature on and credentials set; there is no pilot list), `account_for(owner_user_id)`, `locks_of(account)` (items `lock_id`, `alias`, `battery`, `tz_offset_ms`, `key_end`). From 0008: `apartment.lock_provider`, `lock_id`, `checkin_hour`, `checkout_hour`; `config.DOOR_CODE_BUFFER_HOURS = 1`.
+- From task 0010: the page `/smart-locks` (setup, check for locks) and, in `App/app/ttlock.py`, `allowed_for(owner_user_id)` (feature on and credentials set), `account_for(owner_user_id)`, `locks_of(account)` (items `lock_id`, `alias`, `battery`, `tz_offset_ms`, `key_end`). From 0008: `apartment.lock_provider`, `lock_id`, `checkin_hour`, `checkout_hour`; `config.DOOR_CODE_BUFFER_HOURS = 1`.
 - Routes (`App/app/routes/admin.py`): GET `/apartments/{apartment_id}` is `apartment_detail` (renders `apartment_form.html`, near line 829). POST `/apartments/{apartment_id}` is `apartment_update`, which calls `_save_apartment_form(apartment_id, request, form)` (near line 883). That function ends with:
   ```
   db.update("apartment", apartment_id, payload)
@@ -78,16 +78,20 @@ No other file may change.
        <summary>{{ t('host.door_code') }}</summary>
        <input type="hidden" name="door_code_section" value="1">
        {% if not door_code.account %}
-         <p class="small muted">{{ t('apartment.form.door_code.connect_first') }} <a href="/settings#settings-smart-locks">{{ t('settings.smart_locks.title') }}</a></p>
+         <p class="small muted">{{ t('apartment.form.door_code.connect_first') }}</p>
+         <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code">{{ t('apartment.form.door_code.setup') }}</a>
+       {% elif not door_code.locks %}
+         <p class="small muted">{{ t('apartment.form.door_code.no_locks') }}</p>
+         <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code">{{ t('smart_locks.title') }}</a>
        {% else %}
          <p class="small muted" style="margin-top:-4px">{{ t('apartment.form.door_code.lede') }}</p>
          {% if door_code.test_mode %}<p class="small"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
          <div class="checkline"><input type="checkbox" id="door_codes" name="door_codes" value="1" {% if door_code.enabled %}checked{% endif %}><label for="door_codes">{{ t('apartment.form.door_code.enable') }}</label></div>
          <div class="field" style="max-width:320px"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
            <select id="lock_id" name="lock_id"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
-             {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.lock_id == door_code.lock_id %}selected{% endif %}>{{ lock.alias }} ({{ t('settings.smart_locks.lock_id', id=lock.lock_id) }})</option>{% endfor %}
+             {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and door_code.locks | length == 1) %}selected{% endif %}>{{ lock.alias }} ({{ t('smart_locks.lock_id', id=lock.lock_id) }})</option>{% endfor %}
            </select>
-           {% if door_code.tz_warning %}<div class="hint"><strong>{{ t('settings.smart_locks.timezone_warning') }}</strong></div>{% endif %}
+           {% if door_code.tz_warning %}<div class="hint"><strong>{{ t('smart_locks.timezone_warning') }}</strong></div>{% endif %}
          </div>
          <div class="grid two">
            {% for name, value, label in [('checkin_hour', door_code.checkin_hour, 'apartment.form.door_code.checkin'), ('checkout_hour', door_code.checkout_hour, 'apartment.form.door_code.checkout')] %}
@@ -99,7 +103,6 @@ No other file may change.
          </div>
          <p class="small">{{ t('apartment.form.door_code.margin', hours=door_code.buffer) }}</p>
          {% if door_code.overlap %}<p class="small"><strong>{{ t('apartment.form.door_code.overlap') }}</strong></p>{% endif %}
-         <p class="small muted">{{ t('apartment.form.door_code.risk') }}</p>
        {% endif %}
      </details>
      ```
@@ -110,8 +113,10 @@ No other file may change.
    | `host.door_code` | Door code | Kód ke dveřím |
    | `apartment.form.door_code.on` | On | Zapnuto |
    | `apartment.form.door_code.off` | Off | Vypnuto |
-   | `apartment.form.door_code.connect_first` | Connect a TTLock account first: | Nejdřív připojte účet TTLock: |
-   | `apartment.form.door_code.lede` | When every guest on a stay is registered, UbyHost creates a TTLock code for the stay and sends it to the guest, with you in copy. | Jakmile jsou zaregistrováni všichni hosté pobytu, UbyHost vytvoří kód TTLock pro daný pobyt a pošle ho hostovi, vám v kopii. |
+   | `apartment.form.door_code.connect_first` | Works with TTLock locks that have a gateway. Takes about two minutes. | Funguje se zámky TTLock s bránou. Zabere asi dvě minuty. |
+   | `apartment.form.door_code.setup` | Set up smart locks | Nastavit chytré zámky |
+   | `apartment.form.door_code.no_locks` | No lock is shared with UbyHost yet. | S UbyHost zatím není sdílen žádný zámek. |
+   | `apartment.form.door_code.lede` | When every guest is registered, the guest gets a door code for the stay, with you in copy. | Jakmile jsou zaregistrováni všichni hosté, host dostane kód ke dveřím pro pobyt, vy kopii. |
    | `apartment.form.door_code.test_mode` | Test mode: only stays you add by hand get a door code. Guests from booking calendars get none yet. | Testovací režim: kód ke dveřím dostanou jen pobyty, které přidáte ručně. Hosté z rezervačních kalendářů zatím žádný nedostanou. |
    | `apartment.form.door_code.enable` | Send guests a door code | Posílat hostům kód ke dveřím |
    | `apartment.form.door_code.lock` | Lock | Zámek |
@@ -120,19 +125,20 @@ No other file may change.
    | `apartment.form.door_code.checkout` | Check-out until | Odjezd do |
    | `apartment.form.door_code.margin` | Codes work from %(hours)s hour before check-in to %(hours)s hour after check-out, so a slightly wrong lock clock never locks a guest out. | Kódy fungují od %(hours)s hodiny před příjezdem do %(hours)s hodiny po odjezdu, takže mírně nepřesné hodiny zámku hosta nikdy nezamknou venku. |
    | `apartment.form.door_code.overlap` | With these times, the leaving guest's code still works when the next guest arrives. | S těmito časy funguje kód odjíždějícího hosta ještě při příjezdu dalšího. |
-   | `apartment.form.door_code.risk` | Anyone with this property's guest link and PIN can register for an upcoming stay and receive its door code. Change the PIN from time to time. | Kdokoli s odkazem pro hosty a PINem tohoto ubytování se může zaregistrovat k nadcházejícímu pobytu a dostat jeho kód ke dveřím. PIN čas od času změňte. |
    | `flash.error.door_code_lock` | Choose a lock from the list. | Vyberte zámek ze seznamu. |
    | `flash.error.door_code_hours` | Choose the check-in and check-out hour. | Vyberte hodinu příjezdu a odjezdu. |
 5. **Tests** (`App/tests/test_property_door_code.py`), with `login_as` and the host and property setup from `tests/test_property_form_save.py`. Monkeypatch the feature on (`config.DOOR_CODES_ENABLED`, `TTLOCK_CLIENT_ID`, `TTLOCK_CLIENT_SECRET`) and seed a `lock_account` with `locks_json` of two locks. Each test posts the full form the way `test_property_form_save.py` does, plus the door-code fields. Tests:
    - `test_section_absent_when_the_feature_is_off` (`id="door-code"` missing).
    - `test_section_absent_on_the_new_property_form`.
-   - `test_section_asks_to_connect_first_without_an_account`.
+   - `test_section_offers_setup_without_an_account` (a link to `/smart-locks?return_to=/apartments/<id>%23door-code`, no tick box).
+   - `test_section_says_no_lock_shared_yet` (account with an empty lock list).
    - `test_enabling_saves_lock_and_hours` (columns read back `ttlock`, the lock id, 15, 11; audit `door_codes_on`).
    - `test_enabling_without_hours_is_refused_and_saves_nothing` (an unrelated field changed in the same post is not saved either).
    - `test_a_lock_outside_the_list_is_refused`.
    - `test_unticking_turns_codes_off_and_keeps_the_settings` (`lock_provider` NULL, `lock_id` and hours kept; audit `door_codes_off`).
    - `test_overlap_warning_shows_for_tight_turnover` (check-out 11, check-in 12).
    - `test_timezone_warning_shows_for_a_lock_off_prague_time`.
+   - `test_the_only_lock_is_preselected`.
    - `test_test_mode_line_shows_until_live` (shown by default; hidden with `config.DOOR_CODES_LIVE = True` set through `monkeypatch.setattr(config, "DOOR_CODES_LIVE", True, raising=False)`).
    - `test_saving_other_fields_leaves_door_code_settings_alone` (a post without `door_code_section` keeps the four columns as they were).
 6. **Geometry.** In `App/tests/test_host_geometry.py` add `test_door_code_section_fits(base, width)` for 360, 390 and 1280, same style as task 0010's test: feature on, account seeded, property with door codes on, open `/apartments/<id>?lang=en#door-code`, open the `<details>`, assert no horizontal overflow and that both hour selects have the same height. Save a screenshot of the section at each width to `docs/tasks/0011-shots/`.
@@ -147,7 +153,7 @@ From `App/`: `.venv/bin/python -m pytest tests -q` (all pass), and `UBYHOST_REQU
 
 ## 7. Acceptance
 
-- [ ] The 11 tests in step 5 and the geometry test pass. All existing `tests/test_property_*.py` tests pass unchanged. Host geometry: 0 skipped.
+- [ ] The 13 tests in step 5 and the geometry test pass. All existing `tests/test_property_*.py` tests pass unchanged. Host geometry: 0 skipped.
 - [ ] Screenshots at 360, 390 and 1280 px in `docs/tasks/0011-shots/`.
 - [ ] `git diff --stat` shows only the files in §3 plus the screenshots.
 

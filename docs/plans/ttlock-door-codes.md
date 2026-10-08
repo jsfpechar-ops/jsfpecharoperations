@@ -140,7 +140,9 @@ Calls happen only on events, never on polling.
 | Retry after an error | 1 each, at most 5 |
 | Timeout recovery (list codes) | 1 |
 | Token refresh | 1, only near expiry or on an expired-token error |
-| Host connects the account or taps "Refresh lock list" | 1 |
+| Host taps Set up (register the UbyHost user, get a token) | 2 |
+| Host taps Check for locks | 1 |
+| Host taps Remove (delete the UbyHost user) | 1 |
 | Guest or host opens a page | 0 (reads the DB) |
 
 Expected a little over 1 call per stay, so 30,000 calls cover about 25,000 stays a month across all hosts. The pilot will use a few hundred.
@@ -166,14 +168,15 @@ The door code is only as safe as the guest link. Today each property has one fix
 
 ### 8.2 The TTLock account (owner, 2026-10-08)
 
-There is no pilot list. Once the owner switches the feature on, every host sees Settings → Smart locks, and each host connects **their own** TTLock login. One UbyHost developer app (client id and secret in `.env`) serves everyone.
+There is no pilot list and only one way to connect. Every host already has a TTLock account; they **share their locks with UbyHost** instead of giving UbyHost a login.
 
-- **Recommended:** a second TTLock account that the host's locks are shared with as Authorized admin, Remote unlock off, no end date. UbyHost can create codes but has no remote-unlock right.
-- **Simplest:** the host's own TTLock account. UbyHost then holds every right on all of that host's locks; the endpoint allowlist below still keeps it to codes, lock list and lock clock.
-- The host never types a lock ID. After connecting, UbyHost reads the account's locks (`/v3/key/list`: the host's own locks and locks shared as Authorized admin) and shows them with name, ID and battery. The property picker shows the same ID the TTLock app shows (lock, Basic information). Picking from the host's own list is easier than typing and guarantees the lock belongs to that host.
-- The password is used once and never stored. The token is encrypted per host. Connecting requires accepting the door-code terms (Guide, versioned); acceptance is audited.
-- Setup instructions for hosts live in one place: the Guide section "Door codes with TTLock" (task 0016).
-- `ttlock.py` calls only an allowlist of endpoints (`/oauth2/token`, `/v3/key/list`, `/v3/lock/listKeyboardPwd`, `/v3/keyboardPwd/get`, `/change`, `/delete`, `/v3/lock/queryDate`, `/v3/lock/updateDate`), and a test fails if any other path appears. Never called: `/v3/lock/detail` and `/v3/key/get` (super passcode in the response), `/v3/key/getUnlockLink` (remote unlock link), `/v3/key/send` and `/v3/key/authorize` (handing out access). `lockData` and passcode digits from list responses are dropped while parsing, and no raw response is ever logged ([TTLOCK](../TTLOCK.md#secrets-in-ttlock-responses-never-store-never-log)).
+- On Properties → Property tools → Smart locks the host accepts the door-code terms and taps Set up. UbyHost creates a TTLock user for that host (User Register API, random name and password, password stored encrypted) and shows its name with a copy button.
+- In the TTLock app the host sends each rental lock's eKey to that name: Authorized admin on, Remote unlock off, no end date. Then "Check for locks" lists the locks with name, ID (as in the TTLock app under Basic information) and battery.
+- The host's TTLock password never reaches UbyHost. UbyHost's user holds rights only on the shared locks and cannot open a door remotely. One user per host, so a host's list can only ever contain locks that host shared; nobody can attach someone else's lock, and nobody types a lock ID.
+- Remove deletes the TTLock user, which also deletes every eKey shared with it. A dead refresh token is recovered by logging in again with the stored password, with no host action.
+- The steps for hosts live in one place: the Guide section "Door codes with TTLock" (task 0016). Pages link to it.
+- `ttlock.py` calls only an allowlist of endpoints (`/oauth2/token`, `/v3/user/register`, `/v3/user/delete`, `/v3/key/list`, `/v3/lock/listKeyboardPwd`, `/v3/keyboardPwd/get`, `/change`, `/delete`, `/v3/lock/queryDate`, `/v3/lock/updateDate`), and a test fails if any other path appears. Never called: `/v3/lock/detail` and `/v3/key/get` (super passcode in the response), `/v3/key/getUnlockLink` (remote unlock link), `/v3/key/send` and `/v3/key/authorize` (handing out access). `lockData` and passcode digits from list responses are dropped while parsing, and no raw response is ever logged ([TTLOCK](../TTLOCK.md#secrets-in-ttlock-responses-never-store-never-log)).
+- **Pre-build check (owner, §12a):** the TTLock app's Send eKey screen must accept a prefixed API user name. The API documents it; the app screen is unconfirmed.
 
 ### 8.3 Controls
 
@@ -202,25 +205,34 @@ The UbyPort submit path is not changed in any step.
 
 All screens use existing components and house CSS, light mode, and work without JavaScript.
 
-### Host: Settings → Smart locks (new card)
+### Host: Properties → Property tools → Smart locks (new page, `/smart-locks`)
+
+Not in the main navigation and not in Settings: it sits next to Guest links and Automation, and only while the feature is on.
 
 ```
 Smart locks
-TTLock     Not set up                      (Set up)
+Optional. With a TTLock lock and gateway, guests get a timed door code once everyone is registered.
 
--- after Set up --
-TTLock     In the TTLock app, share each rental lock as
-           "Authorized admin" with:  ubyhost_h17
-           (Refresh lock list)
+-- not set up --
+[ ] I accept the door code terms. Read them          (Set up)
+Step-by-step guide
 
--- after sharing --
-TTLock     4 locks shared with UbyHost
-           (Refresh lock list)   (Remove)
+-- set up, nothing shared yet --
+Share your locks with UbyHost
+In the TTLock app, open each rental lock, tap Send eKey and enter this account:
+  abcd_uh3f9c2a71d04e8b5c   [copy]
+Turn on Authorized admin, turn off Remote unlock, leave the end date empty.
+(Check for locks)
+
+-- locks found --
+Front door · ID 532323 · battery 85 % · used by: Studio Karlín
+Back door  · ID 532401 · battery 60 % · not used by a property yet · ! Time zone is not Prague
+(Check for locks)  (Remove)
 ```
 
 ### Host: Property → Door code (new `<details class="panel property-section" id="door-code">`)
 
-Shown only when the host has a connected account. Otherwise one line: "Connect a smart lock in Settings."
+Shown on every existing property while the feature is on. Without a connection: one line and a "Set up smart locks" button that opens the Smart locks page and comes back here after "Check for locks". With a connection but no shared lock: one line and a link to the page.
 
 ```
 Door code
@@ -267,14 +279,36 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 |---|---|---|
 | [0008](../tasks/0008-door-codes-schema.md) | Schema, settings, PIN retention step | none |
 | [0009](../tasks/0009-ttlock-client.md) | TTLock client: allowlist, timeouts, tokens, budget, get/change/delete, lock list | none |
-| [0010](../tasks/0010-smart-locks-settings.md) | Settings → Smart locks card: connect own TTLock account, accept terms, lock list with ID | every host, once the feature is on |
+| [0010](../tasks/0010-smart-locks-page.md) | Properties → Property tools → Smart locks: accept terms, Set up, share eKeys, check for locks, remove | every host, once the feature is on |
 | [0011](../tasks/0011-property-door-code-section.md) | Property → Door code section (tick box, lock, required hours, warnings) | per property, off by default |
 | [0012](../tasks/0012-door-codes-issuing.md) | Issuing: hook after the guest save, background job, retries, alerts, test mode (`UBYHOST_DOOR_CODES_LIVE`) | codes for manual stays |
 | [0013](../tasks/0013-door-code-delivery.md) | Guest stay block, guest mail with host CC, host stay line | guest sees the code |
 | [0014](../tasks/0014-door-code-cancel-and-move.md) | Cancellations, date and hour changes, host notice mails | |
 | [0015](../tasks/0015-lock-clock-and-usage.md) | Weekly lock clock check, call counter, budget alerts | admin only |
-| [0016](../tasks/0016-door-codes-guide-and-legal.md) | Guide "Door codes with TTLock" (setup steps, how codes work, door-code terms), subprocessor row, ROPA | every host |
-| lawyer | Review the terms, the register row, the transfer basis and the guest privacy wording | before going live |
+| [0016](../tasks/0016-door-codes-guide-and-legal.md) | Guide "Door codes with TTLock", door-code terms, guest privacy paragraph, subprocessor row, ROPA | every host and guest of a door-code property |
+| legal | [DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md): SCCs with TTLock before any other host uses door codes; TTLock into DPA §11 at the next revision | |
+
+## 12a. Pre-build check (owner, before task 0009)
+
+One check decides the account model, so it runs before any code is written. It takes about 10 minutes on a Mac, in Terminal. The client secret stays on your machine: never paste it into a chat.
+
+1. Make a test TTLock user (replace the two placeholders):
+   ```
+   PW=$(openssl rand -hex 12)
+   curl -s https://euapi.ttlock.com/v3/user/register \
+     --data-urlencode "clientId=CLIENT_ID" --data-urlencode "clientSecret=CLIENT_SECRET" \
+     --data-urlencode "username=uhtest1" --data-urlencode "password=$(md5 -q -s "$PW")" \
+     --data-urlencode "date=$(($(date +%s)*1000))"
+   ```
+   The answer is like `{"username":"abcd_uhtest1"}`. Note that name.
+2. In the TTLock app: open a lock, Send eKey, enter `abcd_uhtest1`, Authorized admin on, Remote unlock off, Send. Write down whether the app accepts it.
+3. Delete the test user:
+   ```
+   curl -s https://euapi.ttlock.com/v3/user/delete \
+     --data-urlencode "clientId=CLIENT_ID" --data-urlencode "clientSecret=CLIENT_SECRET" \
+     --data-urlencode "username=abcd_uhtest1" --data-urlencode "date=$(($(date +%s)*1000))"
+   ```
+4. Tell the orchestrator whether step 2 worked. If it did not, the fallback is that each host makes a spare TTLock account, shares to it, and types that spare account's login once; tasks 0009 and 0010 change accordingly.
 
 ## 12. Production acceptance test (owner, before going live)
 
@@ -283,8 +317,8 @@ Everything below runs on the real server in **test mode**: only stays added by h
 **Setup**
 
 1. Deploy up to tasks 0015 and 0016. In the server `.env`: `UBYHOST_TTLOCK_CLIENT_ID`, `UBYHOST_TTLOCK_CLIENT_SECRET`, `UBYHOST_DOOR_CODES=1`. Leave `UBYHOST_DOOR_CODES_LIVE` unset. Restart.
-2. TTLock app, for each pilot lock: send the eKey to the spare account with Authorized admin on, Remote unlock off, no end date. Set the lock's time zone to Prague and calibrate its clock (lock, Settings, Lock Time).
-3. Follow the Guide section "Door codes with TTLock" as a new host would. Settings → Smart locks: connect the spare account and accept the terms. Check that every pilot lock is listed with its name, ID and battery, and no time-zone warning. Note anything in the Guide that was unclear.
+2. TTLock app, for each pilot lock: set the time zone to Prague and calibrate the clock (lock, Settings, Lock Time).
+3. Follow the Guide section "Door codes with TTLock" as a new host would: Properties → Property tools → Smart locks, accept the terms, Set up, send each pilot lock's eKey to the shown name, Check for locks. Every pilot lock is listed with its name, ID and battery, and no time-zone warning. Note anything in the Guide that was unclear.
 4. Each pilot property → Door code: tick the box, pick the lock, set check-in 15:00 and check-out 11:00, save. The section shows the test-mode line.
 
 **Checks**
@@ -298,15 +332,16 @@ Everything below runs on the real server in **test mode**: only stays added by h
 | 5 | Change the end date of a hand-added test stay by one day. | Within 2 minutes the guest gets one new mail with the new check-out; the code opens on the extra day. |
 | 6 | Cancel (archive) a hand-added test stay that has a code. | You get "door code deleted after a cancellation". Typing the code does not open the door (this settles the open question from `docs/TTLOCK.md`). |
 | 7 | Unplug the gateway. Register another hand-added test stay. Then cancel it while the gateway is still unplugged. Plug it back. | The code still appears at once (no gateway needed). After about 20 minutes (three tries) you get "delete a door code in the TTLock app". |
-| 8 | Settings → Smart locks → Remove, then connect with a wrong password, then with the right one. | "TTLock did not accept this login", then connected again. Door codes on the properties are off and need ticking again. |
+| 8 | Smart locks → Remove. Then Set up again and share one lock again. | After Remove: the eKeys are gone from the TTLock app and door codes on the properties are off. After setting up again: the lock is back after Check for locks. |
 | 9 | Admin → Operations. | "TTLock calls this month" shows a small number and "Test mode". |
 | 10 | On the server, search the app logs for one of the test PINs (the orchestrator gives the exact command for your setup). | 0 matches. |
 | 11 | After the next daylight-saving change (25 Oct 2026), repeat check 2 on a new test stay. | Same result. |
 
 **Go live**
 
-1. Only after every check passed and the lawyer has answered (task 0016 owner steps): set `UBYHOST_DOOR_CODES_LIVE=1` in `.env` and restart.
+1. Only after every check passed: set `UBYHOST_DOOR_CODES_LIVE=1` in `.env` and restart.
 2. Watch the CC copy of the first real guest's mail.
+3. Before any other host uses door codes: SCCs with TTLock signed ([DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md) section 9).
 
 **Switch off at any time**
 

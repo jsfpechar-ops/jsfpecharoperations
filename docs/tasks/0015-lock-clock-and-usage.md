@@ -97,6 +97,7 @@ From `App/`: `.venv/bin/python -m pytest tests -q` (all pass), and `UBYHOST_REQU
 
 - [ ] The 9 tests in step 6 pass; `tests/test_ttlock.py` passes; the full suite passes.
 - [ ] A screenshot of the Operations page section at 1280 px in `docs/tasks/0015-shots/`.
+- [ ] The PR description lists the outbound TTLock requests this task adds and why (rule 2).
 - [ ] `git diff --stat` shows only the files in §3 plus the screenshot.
 
 ## 8. Stop and ask

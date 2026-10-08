@@ -44,6 +44,7 @@ No other file may change.
        owner_user_id     INTEGER NOT NULL REFERENCES user_account(id) ON DELETE CASCADE,
        provider          TEXT NOT NULL DEFAULT 'ttlock',
        username          TEXT NOT NULL,
+       password_enc      TEXT,
        access_token_enc  TEXT,
        refresh_token_enc TEXT,
        token_expires_at  TEXT,
@@ -106,7 +107,7 @@ No other file may change.
    - `test_door_codes_are_off_by_default`: `config.DOOR_CODES_ENABLED is False` when `UBYHOST_DOOR_CODES` is unset.
    Create the needed `apartment` and `reservation` rows with the helpers the retention tests use, and delete everything the test made in a fixture.
 5. Docs:
-   - `docs/privacy/RETENTION.md`, table "What the code deletes or minimises", one new row: `| Door code PIN | door_code.pin_enc | code expiry | 1 day after the code expires | retention.py door-code-PIN step | Minimisation |`.
+   - `docs/privacy/RETENTION.md`, table "What the code deletes or minimises", two new rows: `| Door code PIN | door_code.pin_enc | code expiry | 1 day after the code expires | retention.py door-code-PIN step | Minimisation |` and `| TTLock connection (UbyHost-made TTLock user, its encrypted password and tokens, cached lock list) | lock_account | host removes it, or the account is deleted | until then | Smart locks page Remove; cascade from user_account | Contract |`.
    - `docs/ENVIRONMENT.md`: a new section `## Door codes (TTLock)` after `## Mail`, a table in the same format as the others, one row per variable in step 2 (`UBYHOST_DOOR_CODES`, `UBYHOST_TTLOCK_API_BASE`, `UBYHOST_TTLOCK_CLIENT_ID`, `UBYHOST_TTLOCK_CLIENT_SECRET`, `UBYHOST_TTLOCK_MONTHLY_CALLS`). The secret row says "Secret. Lightsail `.env` only, never in git."
 
 ## 5. Do not touch

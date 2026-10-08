@@ -113,6 +113,7 @@ From `App/`: `.venv/bin/python -m pytest tests -q` (all pass) and `.venv/bin/pyt
 - [ ] All tests in step 9 pass; the scheduler test passes with the new `_JOBS` entry; the full suite passes.
 - [ ] `git diff App/app/reporting.py` is empty.
 - [ ] `grep -n "log\." App/app/door_codes.py` shows no line that logs a PIN, token or request body.
+- [ ] The PR description lists the outbound TTLock requests this task adds and why (rule 2).
 - [ ] `git diff --stat` shows only the files in §3.
 
 ## 8. Stop and ask
