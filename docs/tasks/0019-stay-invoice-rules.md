@@ -1,6 +1,6 @@
 # 0019: Stay invoice rules (backend only)
 
-Status: review
+Status: done
 Depends on: none | Base commit: branch `claude/bold-ride-leloxm` (has the plan) | Branch: task/0019-stay-invoice-rules
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
