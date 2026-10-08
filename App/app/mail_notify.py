@@ -1320,7 +1320,60 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
         reservation_id=reservation["id"],
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
+        cc_email=config.SUPPORT_EMAIL if variant in _SUPPORT_COPY_VARIANTS else None,
     )
+
+
+# Notices about a code that was not created. The host creates it by hand, and
+# support gets a copy so the problem is on record. Never sent to a guest.
+_SUPPORT_COPY_VARIANTS = ("failed", "delayed")
+
+
+def door_code_delayed_notice(reservation_id: int, reason: str) -> Optional[int]:
+    """Tell the host (support in copy) that a registered stay still has no code.
+
+    One mail per stay. It needs no ``door_code`` row, because a stay whose
+    property is not set up for codes never gets one.
+    """
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+        if not reservation:
+            return None
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+        if not apartment:
+            return None
+        to_email = _entity_contact_email(apartment["legal_entity_id"])
+        if not to_email:
+            return None
+        lang = host_i18n.normalise_language(HOST_MAIL_LANGUAGE)
+        try:
+            stay_day = datetime.fromisoformat(reservation["date_from"]).strftime("%d.%m.%Y")
+        except ValueError:
+            stay_day = reservation["date_from"]
+        params = {
+            "property": apartment["internal_name"] or "",
+            "date": stay_day,
+            "reason": reason or "waiting",
+        }
+        subject = _text(lang, "mail.door_code_notice.delayed.subject", **params)
+        body = _text(lang, "mail.door_code_notice.delayed.body", **params)
+        payload = {"text": body, "html": f"<p>{html.escape(body)}</p>", "lang": lang}
+        return mail.enqueue(
+            kind="door_code_notice",
+            idempotency_key=f"door_code_notice:stay{reservation_id}:delayed",
+            to_email=to_email,
+            subject=subject,
+            payload=payload,
+            reservation_id=reservation_id,
+            apartment_id=apartment["id"],
+            owner_user_id=apartment["owner_user_id"],
+            cc_email=config.SUPPORT_EMAIL,
+        )
+    except Exception:
+        log.exception("door_code_delayed_notice_failed reservation=%s", reservation_id)
+        return None
 
 
 def build_completion(

@@ -19,6 +19,7 @@ def _env(monkeypatch):
     monkeypatch.setattr(config, "TTLOCK_CLIENT_ID", "cid")
     monkeypatch.setattr(config, "TTLOCK_CLIENT_SECRET", "csecret")
     monkeypatch.setattr(config, "DOOR_CODES_LIVE", False)
+    monkeypatch.setattr(config, "MAIL_BACKEND", "console")
     monkeypatch.setattr(door_codes, "check_lock_clocks", lambda: {})
     monkeypatch.setattr(ttlock, "find_code_by_name", lambda *a, **k: None)
     yield
@@ -57,7 +58,13 @@ def _stay(registered_minutes_ago: int) -> tuple[int, int, int]:
     )
     entity = db.insert(
         "legal_entity",
-        {"name": "Safe", "seat": "Praha", "created_at": now, "owner_user_id": owner},
+        {
+            "name": "Safe",
+            "seat": "Praha",
+            "created_at": now,
+            "owner_user_id": owner,
+            "contact_email": "host@example.test",
+        },
     )
     apartment = db.insert(
         "apartment",
@@ -204,3 +211,32 @@ def test_the_ttlock_error_number_is_kept_for_the_host(monkeypatch):
     row = db.query_one("SELECT last_error FROM door_code WHERE reservation_id = ?", (stay,))
     assert row["last_error"] == "transient:-3004"
     assert "transient:-3004" in _open_alert(stay)["detail"]
+
+
+def _mails(stay: int):
+    return db.query(
+        "SELECT kind, to_email, cc_email FROM email_outbox WHERE reservation_id = ?", (stay,)
+    )
+
+
+def test_a_missing_code_mails_only_the_host_with_support_in_copy(monkeypatch):
+    _failing_ttlock(monkeypatch)
+    _, apartment, stay = _stay(registered_minutes_ago=15)
+    door_codes.reconcile()
+    door_codes.reconcile()
+    rows = _mails(stay)
+    assert [(r["kind"], r["to_email"], r["cc_email"]) for r in rows] == [
+        ("door_code_notice", "host@example.test", "support@ubyhost.com")
+    ]
+
+
+def test_the_final_failure_notice_also_copies_support(monkeypatch):
+    from app import mail_notify
+
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    row_id = door_codes.ensure_row(stay)
+    mail_notify.door_code_notice(row_id, "failed")
+    rows = _mails(stay)
+    assert [(r["to_email"], r["cc_email"]) for r in rows] == [
+        ("host@example.test", "support@ubyhost.com")
+    ]

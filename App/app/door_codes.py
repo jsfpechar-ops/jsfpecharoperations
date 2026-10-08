@@ -764,6 +764,8 @@ def _alert_delayed() -> int:
         log.warning(
             "door_code_delayed reservation=%s reason=%s", row["reservation_id"], reason
         )
+        # One mail to the host (support in copy), once per stay. Never to the guest.
+        mail_notify.door_code_delayed_notice(int(row["reservation_id"]), reason)
     return len(rows)
 
 

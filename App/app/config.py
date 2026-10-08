@@ -247,6 +247,8 @@ OPERATOR_ICO = os.environ.get("UBYHOST_OPERATOR_ICO", "").strip()
 OPERATOR_DIC = os.environ.get("UBYHOST_OPERATOR_DIC", "").strip()
 OPERATOR_ADDRESS = os.environ.get("UBYHOST_OPERATOR_ADDRESS", "").strip()
 OPERATOR_EMAIL = os.environ.get("UBYHOST_OPERATOR_EMAIL", "").strip() or "support@ubyhost.com"
+# Gets a copy of every "door code not created" notice, so the problem is on record.
+SUPPORT_EMAIL = "support@ubyhost.com"
 OPERATOR_REGISTRY_URL = os.environ.get("UBYHOST_OPERATOR_REGISTRY_URL", "").strip()
 
 # Cloudflare Turnstile. The site key is public; keep TURNSTILE_SECRET only in
