@@ -16,7 +16,9 @@ A property without a lock sees no difference. No code runs and no API call is ma
 2. Trigger: the whole party is registered (`reservation.registration_completed_at`). This keeps the code as the compliance lever (owner, 2026-10-07, reversing an earlier lead-guest-only answer).
 3. The guest link goes out by automated message the day before check-in, so a code is normally created at most a day or two ahead.
 4. Guest mail carries the PIN, host in CC.
-5. Check-in and checkout hours are set by the host per property.
+5. **The host must set the check-in and check-out hour** for each property before door codes can be switched on. There is no default; the switch is refused until both are set (owner, 2026-10-08).
+5a. **One hour of margin on each side** (owner, 2026-10-08): a code works from 1 h before check-in to 1 h after check-out (`config.DOOR_CODE_BUFFER_HOURS`). It absorbs lock clock drift and the open question whether the lock applies daylight saving time. The property section shows this as a warning, and warns again when the margin makes back-to-back codes overlap (§10).
+5b. **Lock time** (owner, 2026-10-08): every lock must run on Prague time. The host sets the lock's time zone and calibrates its clock in the TTLock app at setup (§12). UbyHost checks it three ways: the lock picker warns when a lock's `timezoneRawOffset` is not 3,600,000 (Prague without summer time); a weekly `queryDate` per lock, with `updateDate` when the clock is more than 2 minutes off (task 0013); and the 1 h margin above.
 6. A guest who arrives more than 24 h after check-in time: the code expires, and UbyHost does nothing. The guest page and mail say the code must be used for the first time within 24 h of check-in. No first-use check, no host mail, no fresh-code button. The host uses the TTLock app.
 7. No "issue code anyway" button. The host uses the TTLock app.
 8. The 30,000 calls a month are per developer app, shared by every UbyHost host.
@@ -122,7 +124,7 @@ Rules:
 - Backoff 1, 5, 15, 60 and 240 minutes, then `failed` and one host mail.
 - Dates moved: try `change` with the new window. If TTLock refuses it for a random code, create a new code for the new window and mail it. The old code belongs to the same guest, so leaving it is harmless.
 - Cancelled (rare: guests register at most a day ahead): one `delete` attempt through the gateway, and one host mail: "This stay was cancelled after its door code was sent. The code may keep working until its end date." The host decides what to do in the TTLock app.
-- 24 h first-use rule: the guest page and mail say "Use the code for the first time before <check-in + 24 h>." A later arrival is handled by the host in the TTLock app (owner).
+- 24 h first-use rule: the guest page and mail say "Use the code for the first time before <code start + 24 h>", where the code start already includes the 1 h margin. A later arrival is handled by the host in the TTLock app (owner).
 
 ## 7. API call budget (30,000 a month, shared by all hosts)
 
@@ -224,13 +226,22 @@ Shown only when the host has a connected account. Otherwise one line: "Connect a
 ```
 Door code
 [x] Send the guest a door code when every guest is registered
-Lock            [Front door  v]
-Check-in from   [15:00 v]     Check-out until [11:00 v]
+Lock            [Front door  v]          ! Lock time zone is not Prague. Fix it in the TTLock app.
+Check-in from   [-- v]  (required)       Check-out until [-- v]  (required)
+
+  Codes work from 1 hour before check-in to 1 hour after check-out,
+  so a slightly wrong lock clock never locks a guest out.
+  ! With these times the leaving guest's code still works when the next guest arrives.   (only if check-in - check-out < 2 h)
+
+  Anyone with this property's guest link and PIN can register for an upcoming stay
+  and receive its door code. Change the PIN from time to time.
 ```
+
+Validation: both hours 0 to 23 and required when the box is ticked. The overlap warning shows when check-in hour minus check-out hour is less than 2 * `DOOR_CODE_BUFFER_HOURS`; it is a warning, not a refusal.
 
 ### Host: stay detail (read-only line)
 
-- "Door code 4821936 · valid 12 Oct 15:00 to 14 Oct 11:00"
+- "Door code 4821936 · works 12 Oct 14:00 to 14 Oct 12:00" (the real window, margin included)
 - "Door code waits for registration"
 - "Door code could not be created. Create one in the TTLock app."
 
@@ -239,8 +250,8 @@ Check-in from   [15:00 v]     Check-out until [11:00 v]
 ```
 Your door code
   4 8 2 1 9 3 6
-Works from Sat 12 Oct, 15:00 to Mon 14 Oct, 11:00.
-Use it for the first time before Sun 13 Oct, 15:00.
+Check-in from Sat 12 Oct, 15:00. Check-out by Mon 14 Oct, 11:00.
+Use the code for the first time before Sun 13 Oct, 14:00, or it stops working.
 We have sent it to j•••@gmail.com too.
 ```
 
@@ -269,10 +280,10 @@ Briefs 0008 and 0009 are written. Later briefs are written after each review.
 
 1. Merge the briefs in order. Deploy.
 2. In UbyHost Settings → Smart locks, tap Set up and note the UbyHost user name.
-3. In the TTLock app, send each pilot lock's eKey to that account: Authorized admin on, Remote unlock off, no end date. Check that each lock's time zone is Prague (lock Settings, Lock clock).
+3. In the TTLock app, send each pilot lock's eKey to that account: Authorized admin on, Remote unlock off, no end date. Set each lock's time zone to Prague and calibrate its clock (lock, Settings, Lock Time).
 4. In UbyHost, tap Refresh lock list. On 2 or 3 properties, turn on door codes, pick the lock, set the hours.
 5. Make a test stay for tomorrow. Register as a guest with the booking code. Check the page, the mail and the CC.
-6. Type the code at 14:55 (must not open) and at 15:05 (must open). Repeat once after the next daylight-saving change.
+6. With check-in at 15:00, type the code at 13:55 (must not open) and at 14:05 (must open), because of the 1 h margin. Repeat once after the next daylight-saving change (25 Oct 2026).
 7. Cancel the test stay. Check that the code no longer opens the door.
 8. Watch the call counter on the admin operations page for the first month.
 

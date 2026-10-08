@@ -94,8 +94,9 @@ No other file may change.
    TTLOCK_CLIENT_ID = os.environ.get("UBYHOST_TTLOCK_CLIENT_ID", "").strip()
    TTLOCK_CLIENT_SECRET = os.environ.get("UBYHOST_TTLOCK_CLIENT_SECRET", "").strip()
    TTLOCK_MONTHLY_CALLS = int(os.environ.get("UBYHOST_TTLOCK_MONTHLY_CALLS", "30000"))
-   DOOR_CODE_DEFAULT_CHECKIN_HOUR = 15
-   DOOR_CODE_DEFAULT_CHECKOUT_HOUR = 11
+   # Codes work from 1 h before check-in to 1 h after check-out: covers lock clock
+   # drift and any daylight-saving mismatch in the lock. Hours have no default; the host sets them.
+   DOOR_CODE_BUFFER_HOURS = 1
    ```
 3. In `App/app/retention.py`, add `_door_code_pin_step(today, dry_run, owner_user_id)`. It returns 0 when `owner_user_id` is not None. Otherwise it counts (dry run) or sets `pin_enc = NULL, updated_at = db.utcnow()` on rows where `pin_enc IS NOT NULL AND valid_to IS NOT NULL AND valid_to < ?`, the cutoff being now minus 1 day as a UTC ISO string in the same format as `db.utcnow()`. Docstring: "Door codes: the PIN is only useful during the stay; wipe it a day after the code expires. The row stays for the stay's record." Add `("door_code_pins", _door_code_pin_step)` to `STEPS`, after `("webauthn_challenges", ...)`.
 4. Create `App/tests/test_door_codes_schema.py`, using `db.init_db()` like `App/tests/test_retention_alignment.py`. Tests:

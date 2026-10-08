@@ -46,7 +46,7 @@ No other file may change.
    - `_refresh(account) -> str`: remember `v = account["token_version"]`, post `grant_type=refresh_token` and the decrypted refresh token. Then `UPDATE lock_account SET access_token_enc=?, refresh_token_enc=?, token_expires_at=?, token_version=?, updated_at=? WHERE id=? AND token_version=?` with `v + 1` and `v`. If the row count is 0, another process refreshed first: re-read the row and return its access token. On kind `reauth`, set `status = 'reauth_needed'` and re-raise.
    - `_access_token(account_id) -> str`: raise `TTLockError(kind="reauth")` if `status != 'ok'`. Refresh first if `token_expires_at` is less than 7 days away.
    - `_call(account_id, path, data, priority) -> dict`: add `accessToken` and call `_post`. On kind `auth`, refresh once and retry once. A second `auth` error is raised.
-4. **Time.** `stay_window(date_from: str, date_to: str, checkin_hour: int, checkout_hour: int) -> Tuple[int, int]`: build `datetime(..., hour, 0, 0, tzinfo=ZoneInfo(config.TIMEZONE))` for both days and return epoch milliseconds. Raise `ValueError` if the end is not after the start, or an hour is outside 0 to 23.
+4. **Time.** `stay_window(date_from: str, date_to: str, checkin_hour: int, checkout_hour: int, buffer_hours: int = 0) -> Tuple[int, int]`: build `datetime(..., hour, 0, 0, tzinfo=ZoneInfo(config.TIMEZONE))` for both days, subtract `timedelta(hours=buffer_hours)` from the start and add it to the end (wall-clock hours in Prague), and return epoch milliseconds. Raise `ValueError` if an hour is outside 0 to 23, `buffer_hours` is negative, or the end is not after the start. Task 0011 passes `config.DOOR_CODE_BUFFER_HOURS`.
 5. **API functions**, each a few lines over `_call`:
    - `list_admin_locks(account_id) -> List[dict]` (`LOW`): page `/v3/key/list` with `pageSize=1000` until `pageNo >= pages`. Keep items with `keyRight == 1` and `str(keyStatus) == "110401"`. Build each item as **only** `{"lock_id": str(lockId), "alias": lockAlias or lockName, "battery": electricQuantity, "tz_offset_ms": timezoneRawOffset, "key_end": endDate}`. Store the list as JSON in `lock_account.locks_json` with `locks_fetched_at`, and return it.
    - `create_period_code(account_id, lock_id, start_ms, end_ms, name, priority=NORMAL) -> Tuple[str, str]`: `ValueError` unless both times are whole hours (`% 3_600_000 == 0`). Post `/v3/keyboardPwd/get` with `lockId=int(lock_id)`, `keyboardPwdType=3`, `keyboardPwdName=name`, `startDate`, `endDate`. Return `(str(keyboardPwd), str(keyboardPwdId))`.
@@ -64,14 +64,14 @@ No other file may change.
    - `test_dead_refresh_token_marks_the_account_for_reconnect` (10011 → `status == "reauth_needed"`).
    - `test_refresh_race_keeps_the_winner`: bump `token_version` in the database between the read and the update; the stored tokens are the winner's.
    - `test_budget_tiers`: usage at 80 % refuses `LOW` with no HTTP call and allows `NORMAL`; at 95 % refuses `NORMAL` and allows `CRITICAL`. Each sent call adds 1 to `calls_this_month()`.
-   - `test_stay_window_across_daylight_saving`: `stay_window("2026-03-28", "2026-03-30", 15, 11)` is `(1774706400000, 1774861200000)` (14:00Z, 09:00Z). Also `("2026-10-24", "2026-10-26", 15, 11)` is `(1792846800000, 1793008800000)` (13:00Z, 10:00Z).
+   - `test_stay_window_across_daylight_saving`: `stay_window("2026-03-28", "2026-03-30", 15, 11)` is `(1774706400000, 1774861200000)` (14:00Z, 09:00Z). Also `("2026-10-24", "2026-10-26", 15, 11)` is `(1792846800000, 1793008800000)` (13:00Z, 10:00Z). With `buffer_hours=1` the two are `(1774702800000, 1774864800000)` (14:00 and 12:00 Prague) and `(1792843200000, 1793012400000)` (14:00 and 12:00 Prague).
    - `test_code_times_must_be_whole_hours`.
    - `test_pin_keeps_its_leading_zero` (answer `"0563456"`).
    - `test_lock_list_keeps_admin_locks_and_drops_secrets`: scripted items with `lockData`, `noKeyPwd`, one `keyRight: 0`, one `keyStatus: "110405"`. Only the admin, normal lock is returned and stored, and neither secret string appears in `locks_json` or `caplog.text`.
    - `test_change_sends_the_new_window_through_the_gateway`: body has `keyboardPwdId`, `startDate`, `endDate`, `changeType=2`, no `newKeyboardPwd`, and `timeout=35`.
    - `test_error_codes_map_to_kinds` (-2012 `offline`, 80000 `clock`, 30006 `rate`, 12345 `transient`).
 
-   Before writing the two `stay_window` tests, check each expected number with `datetime.fromtimestamp(ms / 1000, ZoneInfo("Europe/Prague"))`. If one does not read 15:00 or 11:00 local time, stop (§8).
+   Before writing the two `stay_window` tests, check each expected number with `datetime.fromtimestamp(ms / 1000, ZoneInfo("Europe/Prague"))`. If one does not read the stated local time (15:00 and 11:00, or 14:00 and 12:00 with the buffer), stop (§8).
 
 ## 5. Do not touch
 
