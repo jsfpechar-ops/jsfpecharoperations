@@ -18,8 +18,9 @@
 
 {% if entity %}
 {% set payer = (entity.vat_status or 'non_payer') == 'payer' %}
-<form method="post" action="/invoices" class="invoice-form">
+<form method="post" action="/invoices" class="invoice-form" data-reservation-id="{{ stay.reservation.id if stay else '' }}">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {% if stay %}<input type="hidden" name="reservation_id" value="{{ stay.reservation.id }}">{% endif %}
 
   <div class="invoice-workspace">
   <div class="invoice-document">
@@ -43,7 +44,7 @@
           {% if entity.seat %}· {{ entity.seat }}{% endif %}
         </span>
       </div>
-      <a class="btn small ghost" href="/invoices/settings?entity={{ entity.id }}&amp;next={{ (('/invoices/new?entity=' ~ entity.id) | urlencode) }}">
+      <a class="btn small ghost" href="/invoices/settings?entity={{ entity.id }}&amp;next={{ (('/invoices/new?reservation_id=' ~ (stay.reservation.id if stay else '') ~ '&entity=' ~ entity.id) | urlencode) }}">
         {{ t('invoice.edit_details') }}
       </a>
     </div>
@@ -105,12 +106,44 @@
           <th></th>
         </tr>
       </thead>
+      {% if stay %}
+      <tbody data-stay-body>
+        <tr data-item-row data-stay-row>
+          <td data-label="{{ t('invoice.col.description') }}">
+            <strong>{{ t('invoice.stay.line') }}</strong><br><span class="small">{{ stay_label }}</span>
+          </td>
+          <td data-label="{{ t('invoice.col.qty') }}">1<input type="hidden" class="input-qty" value="1"></td>
+          <td data-label="{{ t('invoice.col.unit') }}">{{ t('invoice.stay.unit') }}</td>
+          <td data-label="{{ t('invoice.col.unit_price') }}">
+            <input type="text" name="stay_price" inputmode="decimal" required class="input-price"
+                   aria-label="{{ t('invoice.stay.price') }}" value="{{ values.get('stay_price', '') }}">
+          </td>
+          <td data-label="{{ t('invoice.col.vat') }}" data-vat-col {% if not payer %}hidden{% endif %}>
+            <select name="stay_vat_rate" class="input-vat" {% if not payer %}disabled{% endif %}>
+              {% for rate in (12, 21, 0) %}
+                <option value="{{ rate }}" {% if values.get('stay_vat_rate', '12') == rate|string %}selected{% endif %}>{{ rate }} %</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td></td>
+        </tr>
+      </tbody>
+      {% endif %}
       <tbody data-item-body>
         {% set rows = values.item_rows if values is defined and values is not none else [] %}
         {% if rows %}
           {% for row in rows %}
           <tr data-item-row>
-            <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required value="{{ row.description }}"></td>
+            <td data-label="{{ t('invoice.col.description') }}">
+              <select name="item_kind" class="input-kind" aria-label="{{ t('invoice.extra.kind') }}">
+                <option value="">{{ t('invoice.extra.choose') }}</option>
+                {% for kind in extra_kinds %}
+                  <option value="{{ kind }}" {% if row.kind == kind %}selected{% endif %}>{{ t('invoice.extra.' ~ kind) }}</option>
+                {% endfor %}
+              </select>
+              <input type="text" name="item_description" maxlength="60" value="{{ row.description }}"
+                     placeholder="{{ t('invoice.extra.other_text') }}" aria-label="{{ t('invoice.extra.other_text') }}">
+            </td>
             <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="{{ row.quantity }}" inputmode="numeric" class="input-qty"></td>
             <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" value="{{ row.unit }}" class="input-unit"></td>
             <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" value="{{ row.unit_price }}" class="input-price"></td>
@@ -126,7 +159,16 @@
           {% endfor %}
         {% else %}
         <tr data-item-row>
-          <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required></td>
+            <td data-label="{{ t('invoice.col.description') }}">
+              <select name="item_kind" class="input-kind" aria-label="{{ t('invoice.extra.kind') }}">
+                <option value="">{{ t('invoice.extra.choose') }}</option>
+                {% for kind in extra_kinds %}
+                  <option value="{{ kind }}">{{ t('invoice.extra.' ~ kind) }}</option>
+                {% endfor %}
+              </select>
+              <input type="text" name="item_description" maxlength="60" value=""
+                     placeholder="{{ t('invoice.extra.other_text') }}" aria-label="{{ t('invoice.extra.other_text') }}">
+            </td>
           <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="1" inputmode="numeric" class="input-qty"></td>
           <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" class="input-unit"></td>
           <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" class="input-price"></td>
@@ -271,6 +313,11 @@
     totalEl.textContent = nf.format(total()) + " Kč";
   }
 
+  var MAX_EXTRAS = 3;
+  function syncAddButton() {
+    var add = document.querySelector("[data-add-item]");
+    if (add && body) add.hidden = body.querySelectorAll("[data-item-row]").length >= MAX_EXTRAS;
+  }
   /* Items: cloning keeps the rate of the last visible row instead of
      resetting it; the template row itself simply has no rate yet. */
   if (body) {
@@ -289,12 +336,14 @@
         vat.disabled = lastVat && lastVat.disabled;
       }
       body.appendChild(row);
+      syncAddButton();
     });
     body.addEventListener("click", function (event) {
       var button = event.target.closest("[data-remove-item]");
       if (!button) return;
       if (body.querySelectorAll("[data-item-row]").length > 1) {
         button.closest("[data-item-row]").remove();
+        syncAddButton();
       }
       syncTotal();
     });
@@ -351,7 +400,7 @@
         pendingMeta.innerHTML = '<span class="skeleton skeleton-line medium" aria-hidden="true"></span>' +
           '<span class="skeleton skeleton-line short" aria-hidden="true"></span>';
       }
-      fetch("/invoices/new?entity=" + encodeURIComponent(wanted))
+      fetch("/invoices/new?reservation_id=" + encodeURIComponent(form.getAttribute("data-reservation-id")) + "&entity=" + encodeURIComponent(wanted))
         .then(function (res) { return res.ok ? res.text() : null; })
         .then(function (html) {
           if (!html) throw new Error("fetch failed");
@@ -378,7 +427,7 @@
           syncBank();
         })
         .catch(function () {
-          window.location.assign("/invoices/new?entity=" + encodeURIComponent(wanted));
+          window.location.assign("/invoices/new?reservation_id=" + encodeURIComponent(form.getAttribute("data-reservation-id")) + "&entity=" + encodeURIComponent(wanted));
         });
     });
   }
@@ -396,6 +445,7 @@
 
   syncVat();
   syncTotal();
+  syncAddButton();
 })();
 </script>
 {% endif %}

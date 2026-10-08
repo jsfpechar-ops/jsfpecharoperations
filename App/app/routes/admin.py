@@ -36,6 +36,7 @@ from .. import (
     host_i18n,
     housebook,
     icalsync,
+    invoices,
     mail,
     passkeys,
     passport_photos,
@@ -1924,6 +1925,7 @@ def reservation_detail(reservation_id: int, request: Request):
             ),
             "stay_claim": claim.ensure_row(reservation_id),
             "hand_filing": reporting.hand_filing_view(progress),
+            "stay_invoice": invoices.active_invoice_for_stay(reservation_id),
             "door_code": (
                 door_codes.view(reservation, apartment)
                 if apartment

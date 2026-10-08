@@ -1,12 +1,12 @@
-"""Host-only invoice tool: a standalone, free-form invoice builder.
+"""Host-only invoice tool: every new invoice belongs to one stay.
 
-An invoice is NOT tied to a stay. Included in main.py after admin.router.
+Included in main.py after admin.router.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from functools import lru_cache
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse, Response
@@ -28,6 +28,7 @@ from .. import (
     rate_limit,
     security,
     stay_fee,
+    validation,
 )
 
 VAT_STATUSES = ("non_payer", "identified", "payer")
@@ -84,9 +85,58 @@ def _settings_next(request, form, entity) -> str:
     return security.safe_local_path(raw, f"/invoices/new?entity={entity['id']}")
 
 
+def _stay_for(request: Request, raw_id) -> Optional[Dict[str, Any]]:
+    """The host's own stay, shaped for invoices.build_draft, or None."""
+    text = str(raw_id or "").strip()
+    if not text.isdigit():
+        return None
+    row = access.reservation(
+        request,
+        int(text),
+        columns="r.*, a.legal_entity_id AS apartment_entity_id, a.internal_name, a.uby_name",
+    )
+    if not row:
+        return None
+    name = (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
+    return {"reservation": row, "property_name": name, "entity_id": row["apartment_entity_id"]}
+
+
+def _entity_for_stay(request, entities, stay, form=None):
+    """The property's operator when it has one; otherwise the host's pick."""
+    if stay and stay["entity_id"]:
+        for entity in entities:
+            if entity["id"] == stay["entity_id"]:
+                return entity
+    return _chosen_entity(request, entities, form)
+
+
+def _stay_options(request: Request):
+    """Stays the host can invoice, newest check-in first, for the picker."""
+    today = claim.prague_today()
+    rows = db.query(
+        "SELECT r.id, r.date_from, r.date_to, a.internal_name, a.uby_name "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        f"WHERE {db.null_safe_eq('a.owner_user_id')} AND r.status != 'cancelled' "
+        "AND r.date_to > r.date_from AND r.date_to >= ? AND r.date_from <= ? "
+        "ORDER BY r.date_from DESC, r.id DESC LIMIT 200",
+        (
+            access.owner_id(request),
+            (today - timedelta(days=invoices.STAY_PAST_DAYS)).isoformat(),
+            (today + timedelta(days=invoices.STAY_FUTURE_DAYS)).isoformat(),
+        ),
+    )
+    options = []
+    for row in rows:
+        name = (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
+        dates = validation.fmt_date_range(row["date_from"], row["date_to"])
+        options.append({"id": row["id"], "label": f"{name}, {dates}"})
+    return options
+
+
 def _form_state(request, form, entity) -> Dict[str, Any]:
     """Reshape a failed POST so the 422 render loses nothing the host typed."""
     state = {key: _form_str(form, key) for key in (
+        "stay_price", "stay_vat_rate", "reservation_id",
         "buyer_name", "buyer_street", "buyer_city", "buyer_zip", "buyer_country",
         "buyer_ico", "buyer_dic", "buyer_email", "paid_via", "paid_via_custom",
         "due_date", "duzp", "note",
@@ -96,27 +146,36 @@ def _form_state(request, form, entity) -> Dict[str, Any]:
     state["lang"] = _form_str(form, "lang")
     state["item_rows"] = [
         {key: row[key] for key in (
-            "description", "quantity", "unit", "unit_price", "vat_rate"
+            "kind", "description", "quantity", "unit", "unit_price", "vat_rate"
         )}
         for row in invoices.form_item_rows(form)
     ]
     return state
 
 
-def _form_context(request, entities, entity, *, errors=None, values=None):
+def _form_context(request, entities, entity, *, errors=None, values=None, stay=None):
+    values = dict(values or {})
+    if stay and not values and stay["reservation"]["guest_email"]:
+        values["buyer_email"] = stay["reservation"]["guest_email"]
+    lang = "cs" if _lang(request) == "cs" else "en"
     return {
         "nav": "invoices",
         "entities": entities,
         "entity": entity,
         "next_number": invoices.preview_number(entity) if entity else "",
         "errors": errors or [],
-        "values": values or {},
+        "values": values,
         "countries": codelists.nationality_options(_lang(request)),
+        "stay": stay,
+        "stay_label": invoices.stay_label(stay["property_name"], stay["reservation"], lang) if stay else "",
+        "extra_kinds": invoices.EXTRA_KINDS,
     }
 
 
-def _draft(request, entity, form):
-    draft = invoices.build_draft(entity, form, _lang(request), today=claim.prague_today())
+def _draft(request, entity, form, stay=None):
+    draft = invoices.build_draft(
+        entity, form, _lang(request), today=claim.prague_today(), stay=stay
+    )
     draft.update({"legal_entity_id": entity["id"], "owner_user_id": access.owner_id(request)})
     return draft
 
@@ -154,7 +213,7 @@ def _preview_view(draft) -> dict:
         "buyer_ico": buyer["ico"],
         "buyer_dic": buyer["dic"],
         "buyer_email": buyer["email"],
-        "stay_label": None,
+        "stay_label": draft.get("stay_label"),
         "total_haler": draft["total_haler"],
         "corrects_number": None,
         "correction_reason": None,
@@ -255,15 +314,31 @@ def invoice_new(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    entities = _entities(request)
-    entity = _chosen_entity(request, entities)
-    if entity and not request.query_params.get("entity"):
-        # A plain builder URL pins the chosen operator once, so a save on the
-        # invoice-details page always reopens the same operator's builder.
-        return RedirectResponse(
-            f"/invoices/new?entity={entity['id']}", status_code=303
+    raw_stay = request.query_params.get("reservation_id")
+    if not raw_stay:
+        return render(
+            request, "invoice_stay_picker.html", {"nav": "invoices", "stays": _stay_options(request)}
         )
-    context = _form_context(request, entities, entity)
+    stay = _stay_for(request, raw_stay)
+    if not stay:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_stay"))
+    problem = invoices.stay_problem(stay["reservation"], claim.prague_today())
+    if problem:
+        return _back("/invoices/new", err=_flash(request, problem))
+    reservation_id = stay["reservation"]["id"]
+    active = invoices.active_invoice_for_stay(reservation_id)
+    if active:
+        return _back(f"/invoices/{active['id']}", err=_flash(request, "invoice.err.stay_has_invoice"))
+    entities = _entities(request)
+    entity = _entity_for_stay(request, entities, stay)
+    if entity and request.query_params.get("entity") != str(entity["id"]):
+        # Pin the operator in the URL once, so the details page returns here.
+        return RedirectResponse(
+            f"/invoices/new?reservation_id={reservation_id}&entity={entity['id']}", status_code=303
+        )
+    if entity and stay["entity_id"] == entity["id"]:
+        entities = [entity]  # the property names its operator: no other choice
+    context = _form_context(request, entities, entity, stay=stay)
     if not entity:
         context["errors"] = [host_i18n.translate(_lang(request), "invoice.err.no_entity")]
     return render(request, "invoice_form.html", context)
@@ -374,10 +449,13 @@ async def invoice_preview(request: Request):
         return guard
     entities = _entities(request)
     form = await request.form()
-    entity = _chosen_entity(request, entities, form)
+    stay = _stay_for(request, _form_str(form, "reservation_id"))
+    if not stay or invoices.stay_problem(stay["reservation"], claim.prague_today()):
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_stay"))
+    entity = _entity_for_stay(request, entities, stay, form)
     if not entity:
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    draft = _draft(request, entity, form)
+    draft = _draft(request, entity, form, stay)
     pdf = invoices.invoice_pdf.render(
         _preview_view(draft), draft["items"], draft["lang"], preview=True
     )
@@ -395,10 +473,16 @@ async def invoice_issue(request: Request):
         return guard
     entities = _entities(request)
     form = await request.form()
-    entity = _chosen_entity(request, entities, form)
+    stay = _stay_for(request, _form_str(form, "reservation_id"))
+    if not stay:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_stay"))
+    problem = invoices.stay_problem(stay["reservation"], claim.prague_today())
+    if problem:
+        return _back("/invoices/new", err=_flash(request, problem))
+    entity = _entity_for_stay(request, entities, stay, form)
     if not entity:
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    draft = _draft(request, entity, form)
+    draft = _draft(request, entity, form, stay)
     issues = invoices.validate_for_issue(draft)
     if not issues and invoices.invoice_pdf.too_long(_preview_view(draft), draft["items"], draft["lang"]):
         issues = [invoices.validation.Issue("note", "invoice.err.too_long")]
@@ -410,9 +494,15 @@ async def invoice_issue(request: Request):
             entity,
             errors=[host_i18n.translate(lang, issue.message) for issue in issues],
             values=_form_state(request, form, entity),
+            stay=stay,
         )
         return render(request, "invoice_form.html", context, status_code=422)
-    invoice_id = invoices.issue(draft, access.owner_id(request))
+    try:
+        invoice_id = invoices.issue(draft, access.owner_id(request))
+    except invoices.StayLimit as limit:
+        if limit.invoice_id:
+            return _back(f"/invoices/{limit.invoice_id}", err=_flash(request, limit.key))
+        return _back(f"/reservations/{stay['reservation']['id']}", err=_flash(request, limit.key))
     number = db.query_one("SELECT number FROM invoice WHERE id = ?", (invoice_id,))["number"]
     return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.issued_flash", number=number))
 

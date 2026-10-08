@@ -213,20 +213,22 @@ def form_item_rows(form) -> List[Dict[str, str]]:
     (a cloned template row) are dropped but a part-typed row survives.
     """
     descs = _getlist(form, "item_description")
+    kinds = _getlist(form, "item_kind")
     qtys = _getlist(form, "item_quantity")
     units = _getlist(form, "item_unit")
     prices = _getlist(form, "item_unit_price")
     rates = _getlist(form, "item_vat_rate")
     rows: List[Dict[str, str]] = []
-    for i in range(max(len(descs), len(qtys), len(units), len(prices), len(rates))):
+    for i in range(max(len(kinds), len(descs), len(qtys), len(units), len(prices), len(rates))):
         row = {
+            "kind": _at(kinds, i),
             "description": _at(descs, i),
             "quantity": _at(qtys, i, "1"),
             "unit": _at(units, i),
             "unit_price": _at(prices, i),
             "vat_rate": _at(rates, i, "21"),
         }
-        if not (row["description"].strip() or row["unit_price"].strip()):
+        if not (row["kind"].strip() or row["description"].strip() or row["unit_price"].strip()):
             continue
         rows.append(row)
     return rows

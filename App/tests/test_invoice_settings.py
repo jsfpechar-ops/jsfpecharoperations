@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app import auth, db, invoices
 from app.main import app
 from tests.conftest import login_as
+from tests.invoice_stay_helper import drop_stays, make_stay, stay_form
 
 USERNAME = "invoice-details-host"
 
@@ -27,6 +28,7 @@ def _cleanup():
     db.execute("DELETE FROM invoice_item WHERE invoice_id IN "
                "(SELECT id FROM invoice WHERE owner_user_id = ?)", (user_id,))
     db.execute("DELETE FROM invoice WHERE owner_user_id = ?", (user_id,))
+    drop_stays(user_id)
     db.execute(
         "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
         "ON CONFLICT(key) DO UPDATE SET value = ''"
@@ -68,7 +70,8 @@ def _add_entity(**over):
 
 def test_the_builder_shows_a_supplier_summary_with_the_details_link(host):
     entity_id = _add_entity()
-    page = host.get(f"/invoices/new?entity={entity_id}")
+    stay_id = make_stay(_owner())
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}")
     assert page.status_code == 200
     assert f"/invoices/settings?entity={entity_id}" in page.text
     assert "Details s.r.o." in page.text
@@ -174,10 +177,12 @@ def test_a_bad_bank_number_keeps_the_old_value(host):
 
 def test_a_failed_issue_rerenders_every_typed_value(host):
     entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
     response = host.post(
         "/invoices",
         data={
             "legal_entity_id": str(entity_id),
+            **stay_form(stay_id),
             # customer name missing on purpose: this is the 422 path
             "buyer_email": "keep@me.test",
             "note": "typo note",

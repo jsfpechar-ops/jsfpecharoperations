@@ -99,7 +99,11 @@
         <button class="btn primary" type="button" data-copy="stay-link"
                 data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>
       {% endif %}
-      <a class="btn" href="/invoices/new">{{ t('invoice.new') }}</a>
+      {% if stay_invoice %}
+        <a class="btn" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>
+      {% else %}
+        <a class="btn" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>
+      {% endif %}
       {{ row_menu_begin() }}
         <button class="row-menu-item" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>
         {% if reservation.permalink_token %}

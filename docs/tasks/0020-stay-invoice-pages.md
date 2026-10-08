@@ -1,6 +1,6 @@
 # 0020: Stay invoice pages (picker, form, stay button)
 
-Status: todo
+Status: review
 Depends on: 0019 merged | Base commit: main after 0019 | Branch: task/0020-stay-invoice-pages
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
