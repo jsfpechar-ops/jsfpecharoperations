@@ -641,13 +641,61 @@ def end_all_sessions(user_id: int) -> None:
     )
 
 
+def _normalise_staging_secret(value: str) -> str:
+    text = (value or "").strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
+        text = text[1:-1].strip()
+    return text
+
+
+def staging_expected_password() -> str:
+    from . import config
+
+    if config.DEPLOYMENT != "staging":
+        return ""
+    return _normalise_staging_secret(os.environ.get("UBYHOST_STAGING_LOGIN_PASSWORD", ""))
+
+
 def staging_password_ok(provided: str) -> bool:
     from . import config
 
-    expected = config.STAGING_LOGIN_PASSWORD
+    expected = staging_expected_password()
     if config.DEPLOYMENT != "staging" or not expected or not provided:
         return False
-    return secrets.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
+    given = _normalise_staging_secret(provided)
+    if not given:
+        return False
+    if len(given) != len(expected):
+        return False
+    return secrets.compare_digest(given.encode("utf-8"), expected.encode("utf-8"))
+
+
+def staging_admin_username() -> str:
+    """Login handle for the first administrator (may differ from ADMIN_USERNAME)."""
+    from . import config
+
+    row = db.query_one(
+        "SELECT username FROM user_account WHERE role = 'admin' AND active = 1 ORDER BY id LIMIT 1"
+    )
+    if row and (row["username"] or "").strip():
+        return row["username"].strip()
+    return config.ADMIN_USERNAME or "admin"
+
+
+def staging_account_for_password_login(username: str, email: str):
+    """Resolve the account a staging password login should attach to."""
+    from . import config
+
+    if config.DEPLOYMENT != "staging":
+        return None
+    account = account_by_username(username) if username else None
+    if not account and email:
+        account = account_by_email(email)
+    if account:
+        return account
+    return db.query_one(
+        "SELECT * FROM user_account WHERE role = 'admin' AND active = 1 ORDER BY id LIMIT 1"
+    )
 
 
 def staging_admin_login_email() -> Optional[str]:

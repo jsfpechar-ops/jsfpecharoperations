@@ -16,7 +16,7 @@ def account(monkeypatch):
     db.init_db()
     monkeypatch.setattr(mail, "backend_name", lambda: "console")
     monkeypatch.setattr(config, "DEPLOYMENT", "staging")
-    monkeypatch.setattr(config, "STAGING_LOGIN_PASSWORD", PASSWORD)
+    monkeypatch.setenv("UBYHOST_STAGING_LOGIN_PASSWORD", PASSWORD)
     db.execute("DELETE FROM user_account WHERE email = ?", (EMAIL,))
     user_id = auth.create_account(EMAIL, "Staging Admin", role="admin", username="staging-pw-admin")
     yield user_id
@@ -40,6 +40,27 @@ def test_staging_password_logs_in_with_email(account):
     response = client.post(
         "/login?lang=en",
         data={"email": EMAIL, "staging_password": PASSWORD},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+
+def test_staging_password_ignores_surrounding_quotes(monkeypatch, account):
+    monkeypatch.setenv("UBYHOST_STAGING_LOGIN_PASSWORD", '"quoted-secret"')
+    client = TestClient(app)
+    response = client.post(
+        "/login?lang=en",
+        data={"username": "staging-pw-admin", "staging_password": "quoted-secret"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+
+def test_staging_password_accepts_any_username_when_only_admin_exists(account):
+    client = TestClient(app)
+    response = client.post(
+        "/login?lang=en",
+        data={"username": "wrong-name", "staging_password": PASSWORD},
         follow_redirects=False,
     )
     assert response.status_code == 303

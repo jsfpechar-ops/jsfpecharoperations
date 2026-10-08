@@ -222,7 +222,15 @@ BOOTSTRAP_ADMIN = os.environ.get("UBYHOST_BOOTSTRAP_ADMIN", "1") not in ("0", "f
 ADMIN_USERNAME = os.environ.get("UBYHOST_ADMIN_USERNAME", "admin").strip().lower()
 ADMIN_EMAIL = os.environ.get("UBYHOST_ADMIN_EMAIL", "").strip()
 # Render staging only: shared break-glass password (console mail, no SES). Never on production.
-STAGING_LOGIN_PASSWORD = os.environ.get("UBYHOST_STAGING_LOGIN_PASSWORD", "").strip()
+def _staging_login_password_from_env() -> str:
+    raw = os.environ.get("UBYHOST_STAGING_LOGIN_PASSWORD", "")
+    text = (raw or "").strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
+        text = text[1:-1].strip()
+    return text
+
+
+STAGING_LOGIN_PASSWORD = _staging_login_password_from_env()
 
 TIMEZONE = "Europe/Prague"
 

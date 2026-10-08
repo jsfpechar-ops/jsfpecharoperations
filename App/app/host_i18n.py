@@ -191,8 +191,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.staging.title": "Staging server",
         "login.staging.admin_email": "Administrator login e-mail: %(email)s",
         "login.staging.username_password_help": (
-            "Render does not send e-mail. Log in with username %(username)s and the password "
-            "from Render Environment (UBYHOST_STAGING_LOGIN_PASSWORD)."
+            "Render does not send e-mail. Username: %(username)s. Password: the value of "
+            "UBYHOST_STAGING_LOGIN_PASSWORD in Render Environment (not SECRET_KEY). "
+            "Redeploy after you change it."
         ),
         "login.staging.missing_password": (
             "Add UBYHOST_STAGING_LOGIN_PASSWORD in Render Environment, save, and Manual Deploy. "
@@ -1672,8 +1673,9 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.staging.title": "Testovací server",
         "login.staging.admin_email": "Přihlašovací e-mail správce: %(email)s",
         "login.staging.username_password_help": (
-            "Render neposílá e-maily. Přihlaste se uživatelským jménem %(username)s a heslem "
-            "z Render Environment (UBYHOST_STAGING_LOGIN_PASSWORD)."
+            "Render neposílá e-maily. Uživatelské jméno: %(username)s. Heslo: hodnota "
+            "UBYHOST_STAGING_LOGIN_PASSWORD v Render Environment (ne SECRET_KEY). "
+            "Po změně spusťte znovu deploy."
         ),
         "login.staging.missing_password": (
             "V Render Environment doplňte UBYHOST_STAGING_LOGIN_PASSWORD, uložte a spusťte Manual Deploy. "

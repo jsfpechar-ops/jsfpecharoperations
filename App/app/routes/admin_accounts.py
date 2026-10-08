@@ -76,8 +76,8 @@ def _login_page_context(request: Request) -> dict:
     ctx: dict = {}
     if config.DEPLOYMENT == "staging":
         ctx["staging_login_email"] = auth.staging_admin_login_email()
-        ctx["staging_password_enabled"] = bool(config.STAGING_LOGIN_PASSWORD)
-        ctx["staging_admin_username"] = config.ADMIN_USERNAME or "admin"
+        ctx["staging_password_enabled"] = bool(auth.staging_expected_password())
+        ctx["staging_admin_username"] = auth.staging_admin_username()
     return ctx
 
 
@@ -88,7 +88,7 @@ def _try_staging_password_login(
     remember: bool,
     next_path: str,
 ):
-    if config.DEPLOYMENT != "staging" or not config.STAGING_LOGIN_PASSWORD:
+    if config.DEPLOYMENT != "staging" or not auth.staging_expected_password():
         return None
     password = _form_str(form, "staging_password")
     if not password:
@@ -96,12 +96,11 @@ def _try_staging_password_login(
     if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
         return "auth.error.turnstile", 403
     username = _form_str(form, "username")
-    account = auth.account_by_username(username) if username else None
-    if not account:
-        email = mail.normalise_email(_form_str(form, "email")[:254])
-        if email:
-            account = auth.account_by_email(email)
-    if account and account["active"] and auth.staging_password_ok(password):
+    email = mail.normalise_email(_form_str(form, "email")[:254])
+    if not auth.staging_password_ok(password):
+        return "auth.error.staging_password", 403
+    account = auth.staging_account_for_password_login(username, email)
+    if account and account["active"]:
         return _finish_login(
             request,
             account,
@@ -139,7 +138,7 @@ async def login_submit(request: Request):
             return again(staging_result[0], staging_result[1])
         return staging_result
 
-    if config.DEPLOYMENT == "staging" and config.STAGING_LOGIN_PASSWORD:
+    if config.DEPLOYMENT == "staging" and auth.staging_expected_password():
         return again("auth.error.staging_password", 403)
 
     if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
