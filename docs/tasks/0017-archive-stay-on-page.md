@@ -90,7 +90,7 @@ def _with_undo(return_to: str, reservation_id: int) -> str:
     query = [
         (key, value)
         for key, value in parse_qsl(parts.query, keep_blank_values=True)
-        if key not in ("undo_stay", "undo_return")
+        if key not in ("undo_stay", "undo_return", "msg", "err")
     ]
     clean = urlunsplit(("", "", parts.path, urlencode(query), ""))
     query += [("undo_stay", str(reservation_id)), ("undo_return", clean)]
@@ -116,11 +116,11 @@ def _with_undo(return_to: str, reservation_id: int) -> str:
 5. `reservation_detail.html`: change the hidden input to `value="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}"`.
 6. `apartment_form.html`: add `name="return_to" value="/apartments/{{ apartment.id }}"` to the archive button (Anchor 3). Do not touch the Restore button.
 7. `apartments.html`: inside the archive form add `<input type="hidden" name="return_to" value="/apartments">` before the button.
-8. Create `App/tests/test_archive_stays_on_page.py`. Reuse the login and seeding helpers of `tests/test_accounts.py` (copy their pattern; do not import private helpers across test files). Tests, each asserting status 303 and the `location` header:
+8. Create `App/tests/test_archive_stays_on_page.py`. Log in with `login_as` from `tests/conftest.py` (CSRF is added to test posts automatically by its session fixture). Seed a host, property and stay the way `tests/test_accounts.py` does (copy the pattern; do not import its private `_login`). Post with `follow_redirects=False`. Tests, each asserting status 303 and the `location` header:
    - stay archive with `return_to=/reservations?range=upcoming` lands on a location that starts with `/reservations?range=upcoming&undo_stay=<id>` and does not contain `range=archive`;
    - stay archive with `return_to=/` lands on a location starting with `/?undo_stay=<id>`;
    - stay archive with `return_to=/reservations/<id>?return_to=%2Freservations` lands on `/reservations/<id>?return_to=%2Freservations&undo_stay=...`;
-   - `_with_undo("/reservations?undo_stay=9&undo_return=x", 5)` contains exactly one `undo_stay=5`;
+   - `_with_undo("/reservations?undo_stay=9&undo_return=x&msg=old", 5)` contains exactly one `undo_stay=`, its value is `5`, and no `msg=old` (an old flash must not come back);
    - property archive with `return_to=/apartments/<id>` lands on `/apartments/<id>`; with no `return_to` lands on `/apartments`;
    - an evil `return_to=https://evil.example/` lands on the default.
 

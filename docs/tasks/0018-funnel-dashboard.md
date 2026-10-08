@@ -321,7 +321,7 @@ def weekly(now: Optional[datetime] = None) -> Dict[str, List[Dict[str, Any]]]:
 7. Append tests to `test_admin_funnel.py` using its existing seeding helpers and `NOW`:
    - `overview(rows(now=NOW), now=NOW)`: `cards["hosts"]` equals the number of host rows, bars keep the stage order, every `width` is between 0 and 100, the first non-zero bar has `width == 100`, and a bar with `count == 0` has `width == 0`;
    - `weekly(now=NOW)`: both series have 12 entries, labels are in date order, and the sum of `hosts` values equals the number of host accounts whose `created_at` is within the 12 weeks (insert one host dated inside and one dated 13 weeks before, assert only the first is counted);
-   - the admin page contains `id="funnel-cards"`, `id="funnel-chart"`, `id="funnel-weekly"` and no `<script` inside `<main>`;
+   - the admin page contains `id="funnel-cards"`, `id="funnel-chart"` and `id="funnel-weekly"`, and the file `App/app/templates/admin_funnel.html` contains no `<script`;
    - Czech page still contains `Účty podle fáze`.
 
 ## 5. Do not touch
