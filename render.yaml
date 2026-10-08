@@ -40,12 +40,23 @@ services:
         generateValue: true
       - key: UBYHOST_ADMIN_USERNAME
         value: admin
-      # The first administrator logs in by e-mail link. Staging delivers no
-      # mail: the link is written to the service log (Render -> Logs).
+      # First administrator (e-mail link or staging password below).
       - key: UBYHOST_ADMIN_EMAIL
+        value: josef@ubyhost.com
+      # Staging break-glass login (Render does not deliver mail). Set in the dashboard.
+      - key: UBYHOST_STAGING_LOGIN_PASSWORD
         sync: false
       - key: UBYHOST_MAIL_BACKEND
         value: console
+      # Door codes (TTLock): set client id/secret in the Render dashboard
+      # (Environment → sync off). Mock UbyPort stays on; manual stays only
+      # until UBYHOST_DOOR_CODES_LIVE=1. See docs/DEPLOYMENT.md § Door codes.
+      - key: UBYHOST_DOOR_CODES
+        value: "1"
+      - key: UBYHOST_TTLOCK_CLIENT_ID
+        sync: false
+      - key: UBYHOST_TTLOCK_CLIENT_SECRET
+        sync: false
       - key: UBYHOST_PUBLIC_BASE_URL
         fromService:
           type: web

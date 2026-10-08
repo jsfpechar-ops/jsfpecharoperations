@@ -26,7 +26,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, guest_slug, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, door_codes, guest_slug, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -1031,6 +1031,7 @@ def privacy_notice(token: str, request: Request):
         {
             "controller": _controller(apartment),
             "passport_photo_policy": apartment["passport_photo_policy"] or "off",
+            "door_codes": apartment["lock_provider"] == "ttlock",
             "back_url": back_url,
         }
     )
@@ -1171,6 +1172,7 @@ def stay_overview(token: str, reservation_id: int, request: Request):
                 request.query_params.get("saved") == "1"
                 and any(person["mine"] and person["sent"] for person in people)
             ),
+            "door_code": door_codes.view(reservation, apartment),
         }
     )
     return _with_lang(render_guest(request, "guest/stay.html", context), lang)
@@ -1849,6 +1851,7 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
     )
     await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
+    await run_in_threadpool(door_codes.on_registration_complete, reservation_id)
 
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303

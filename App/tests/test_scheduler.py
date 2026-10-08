@@ -9,6 +9,7 @@ from app import (
     claim,
     config,
     db,
+    door_codes,
     icalsync,
     mail,
     passport_photos,
@@ -109,6 +110,12 @@ _JOBS = [
         "id": "retention",
         "run": scheduler._job_retention,
         "target": (retention, "run"),
+        "level": "warning",
+    },
+    {
+        "id": "door_codes",
+        "run": scheduler._job_door_codes,
+        "target": (door_codes, "reconcile"),
         "level": "warning",
     },
 ]

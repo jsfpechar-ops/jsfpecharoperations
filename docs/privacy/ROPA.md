@@ -17,9 +17,9 @@ entity, or an alternate controller configured per property
 | Controller | Each host's legal entity or its configured alternate controller |
 | Processor | The UbyHost operator (`config.OPERATOR_*`) |
 | Categories of data subjects | Guests staying at the controller's property |
-| Categories of personal data | Name, birth date, nationality, permanent residence; travel document and visa numbers (Fernet-encrypted at rest); drawn signature; optional passport/ID image or PDF (default **off**); stay dates; submitter IP; the e-mail/phone used to claim the stay; police submission envelopes; Doručenka/error PDFs |
+| Categories of personal data | Name, birth date, nationality, permanent residence; travel document and visa numbers (Fernet-encrypted at rest); drawn signature; optional passport/ID image or PDF (default **off**); stay dates; submitter IP; the e-mail/phone used to claim the stay; police submission envelopes; Doručenka/error PDFs; when the host uses door codes, the door code and its validity times (encrypted, deleted a day after expiry) |
 | Processing operations | Guest registration form, house book, police reporting via UbyPort, claim/reminder e-mail delivery, storage, backup |
-| Recipients | Police of the Czech Republic (UbyPort) as a statutory recipient; the subprocessors in the `/subprocessors` register |
+| Recipients | Police of the Czech Republic (UbyPort) as a statutory recipient; the subprocessors in the `/subprocessors` register; TTLock (Hangzhou Sciener Intelligent Control Technology Co., Ltd.), only for properties with door codes on: lock ID, code, validity times, reference number ([DOOR_CODES_LEGAL](DOOR_CODES_LEGAL.md)) |
 | Transfers | Cloudflare is a global edge network; AWS production is `eu-central-1`; see the register and LD-9 |
 | Security measures | `docs/SECURITY.md`; the code-enforced vs operator-configured split is `TOMS.md` (LD-7) |
 | Retention | `RETENTION.md` (LD-3); the six-year house-book duty dominates |
@@ -39,6 +39,7 @@ UbyHost is the **controller** for the data below.
 
 ## Open questions for counsel
 
+- Door codes: confirm the TTLock SCCs, the transfer impact assessment and the door-code terms ([DOOR_CODES_LEGAL](DOOR_CODES_LEGAL.md) section 9).
 - The lawful basis for each row above, and the exact retention for the support
   mailbox.
 - Whether the operator is also an independent controller for security logs and

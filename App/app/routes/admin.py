@@ -14,7 +14,7 @@ import secrets
 import time
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
-from urllib.parse import quote, urlencode, urlparse
+from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
@@ -31,6 +31,7 @@ from .. import (
     db,
     deadlines,
     demo,
+    door_codes,
     guest_slug,
     host_i18n,
     housebook,
@@ -39,11 +40,13 @@ from .. import (
     passkeys,
     passport_photos,
     payments,
+    rate_limit,
     reporting,
     claim,
     security,
     signup,
     stay_fee,
+    ttlock,
     validation,
 )
 from ..templating import render
@@ -76,6 +79,21 @@ router.include_router(signup_routes.router)
 # is generous for a real import and stops an upload from being read whole into
 # memory.
 
+_PRAGUE_TZ_OFFSETS_MS = frozenset({3_600_000, 7_200_000})
+
+
+def _door_code_hours_overlap(
+    checkin_hour: Optional[int], checkout_hour: Optional[int]
+) -> bool:
+    if checkin_hour is None or checkout_hour is None:
+        return False
+    needed = 2 * config.DOOR_CODE_BUFFER_HOURS
+    if checkin_hour >= checkout_hour:
+        gap = checkin_hour - checkout_hour
+    else:
+        gap = (24 - checkout_hour) + checkin_hour
+    return gap < needed
+
 
 def _ensure_apartment_pin(apartment):
     """Backfill a PIN for apartments created before PIN support existed."""
@@ -89,6 +107,13 @@ def _ensure_apartment_pin(apartment):
 def _safe_return_to(request: Request, default: str) -> str:
     """Accept only local paths so breadcrumbs can preserve list state safely."""
     return security.safe_local_path(request.query_params.get("return_to"), default)
+
+
+def _smart_locks_return_to(value: str) -> str:
+    path = security.safe_local_path(value, "/smart-locks")
+    if path == "/smart-locks" or path.startswith("/apartments/"):
+        return path
+    return "/smart-locks"
 
 
 def _apartment_with_secret(apartment) -> Dict[str, Any]:
@@ -176,7 +201,15 @@ def _missing_report_labels(request: Request, issues) -> List[str]:
 
 
 def _form_return_to(form, default: str) -> str:
-    return security.safe_local_path(_form_str(form, "return_to"), default)
+    raw = _form_str(form, "return_to")
+    if not raw:
+        return default
+    path = security.safe_local_path(raw, "")
+    if path:
+        return path
+    # Stays list used to quote return_to for use in links; archive posts still work.
+    path = security.safe_local_path(unquote(raw), "")
+    return path if path else default
 
 
 def _redirect_path_from_referer(request: Request, default: str = "/") -> str:
@@ -195,6 +228,19 @@ def _redirect_path_from_referer(request: Request, default: str = "/") -> str:
     if parsed.query:
         return f"{path}?{parsed.query}"
     return path
+
+
+def _with_undo(return_to: str, reservation_id: int) -> str:
+    """return_to plus the query that makes base.html show the stay Undo toast."""
+    parts = urlsplit(return_to)
+    query = [
+        (key, value)
+        for key, value in parse_qsl(parts.query, keep_blank_values=True)
+        if key not in ("undo_stay", "undo_return", "msg", "err")
+    ]
+    clean = urlunsplit(("", "", parts.path, urlencode(query), ""))
+    query += [("undo_stay", str(reservation_id)), ("undo_return", clean)]
+    return urlunsplit(("", "", parts.path, urlencode(query), ""))
 
 
 def _form_int(form, key: str) -> Optional[int]:
@@ -307,6 +353,134 @@ def guest_links(request: Request):
             }
         )
     return render(request, "guest_links.html", {"rows": rows})
+
+
+@router.get("/smart-locks")
+def smart_locks_page(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if not ttlock.enabled():
+        return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
+    owner_id = access.owner_id(request)
+    account = ttlock.account_for(owner_id)
+    locks = ttlock.locks_of(account) if account else []
+    properties_using: Dict[str, List[str]] = {}
+    for lock in locks:
+        names = [
+            row["internal_name"]
+            for row in db.query(
+                f"SELECT internal_name FROM apartment WHERE {db.null_safe_eq('owner_user_id')} "
+                "AND lock_provider = 'ttlock' AND lock_id = ?",
+                (owner_id, lock["lock_id"]),
+            )
+        ]
+        properties_using[lock["lock_id"]] = names
+    return render(
+        request,
+        "smart_locks.html",
+        {
+            "account": account,
+            "receiver": ttlock.receiver_name(account) if account else "",
+            "locks": locks,
+            "fetched_at": account["locks_fetched_at"] if account else None,
+            "reauth": bool(account and account["status"] != "ok"),
+            "return_to": _smart_locks_return_to(_safe_return_to(request, "/smart-locks")),
+            "properties_using": properties_using,
+        },
+    )
+
+
+@router.post("/smart-locks/setup")
+async def smart_locks_setup(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if not ttlock.enabled():
+        return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
+    form = await request.form()
+    return_to = _smart_locks_return_to(_form_return_to(form, "/smart-locks"))
+    if _form_str(form, "terms") != "1":
+        return _back(return_to, err=_flash(request, "flash.error.smart_locks_terms"))
+    owner_id = access.owner_id(request)
+    if rate_limit.blocked("ttlock_setup", f"user:{owner_id}", 5):
+        return _back(return_to, err=_flash(request, "flash.error.smart_locks_rate_limited"))
+    rate_limit.record("ttlock_setup", f"user:{owner_id}")
+    try:
+        ttlock.create_account(owner_id)
+    except ttlock.TTLockError:
+        return _back(return_to, err=_flash(request, "flash.error.smart_locks_failed"))
+    db.audit(
+        "door_code_terms_accepted",
+        f"version={ttlock.DOOR_CODE_TERMS_VERSION}",
+    )
+    return _back(
+        f"/smart-locks?return_to={quote(return_to, safe='')}",
+        msg=_flash(request, "flash.ok.smart_locks_ready"),
+    )
+
+
+@router.post("/smart-locks/refresh")
+async def smart_locks_refresh(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if not ttlock.enabled():
+        return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
+    form = await request.form()
+    return_to = _smart_locks_return_to(_form_return_to(form, "/smart-locks"))
+    owner_id = access.owner_id(request)
+    account = ttlock.account_for(owner_id)
+    if not account:
+        return _back(return_to, err=_flash(request, "flash.error.smart_locks_missing_account"))
+    try:
+        locks = ttlock.list_admin_locks(int(account["id"]))
+    except ttlock.TTLockError as exc:
+        if exc.kind == "budget":
+            return _back(return_to, err=_flash(request, "flash.error.smart_locks_budget"))
+        if exc.kind == "reauth":
+            return _back(return_to, err=_flash(request, "flash.error.smart_locks_reauth"))
+        return _back(return_to, err=_flash(request, "flash.error.smart_locks_failed"))
+    if not locks:
+        return _back(return_to, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
+    count = len(locks)
+    if return_to.startswith("/apartments/"):
+        target = return_to
+    else:
+        target = f"/smart-locks?return_to={quote(return_to, safe='')}"
+    return _back(
+        target,
+        msg=_flash_plural(request, "flash.ok.smart_locks_found", count=count),
+    )
+
+
+@router.post("/smart-locks/remove")
+async def smart_locks_remove(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if not ttlock.enabled():
+        return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
+    form = await request.form()
+    return_to = _smart_locks_return_to(_form_return_to(form, "/smart-locks"))
+    owner_id = access.owner_id(request)
+    account = ttlock.account_for(owner_id)
+    if not account:
+        return _back(return_to, err=_flash(request, "flash.error.smart_locks_missing_account"))
+    local_only = False
+    with db.cursor():
+        db.execute(
+            f"UPDATE apartment SET lock_provider = NULL, updated_at = ? "
+            f"WHERE {db.null_safe_eq('owner_user_id')}",
+            (db.utcnow(), owner_id),
+        )
+    try:
+        ttlock.delete_account(int(account["id"]))
+    except ttlock.TTLockError:
+        local_only = True
+    db.audit("smart_locks_removed", "")
+    key = "flash.ok.smart_locks_removed_local" if local_only else "flash.ok.smart_locks_removed"
+    return _back(f"/smart-locks?return_to={quote(return_to, safe='')}", msg=_flash(request, key))
 
 
 # --- legal entities ------------------------------------------------------
@@ -826,11 +1000,33 @@ def apartment_detail(apartment_id: int, request: Request):
             (apartment_id,),
         )
     )
+    door_code = None
+    if ttlock.allowed_for(apartment["owner_user_id"]):
+        account = ttlock.account_for(apartment["owner_user_id"])
+        locks = ttlock.locks_of(account) if account else []
+        selected = next((lock for lock in locks if lock["lock_id"] == apartment["lock_id"]), None)
+        cin, cout = apartment["checkin_hour"], apartment["checkout_hour"]
+        door_code = {
+            "account": account,
+            "locks": locks,
+            "enabled": apartment["lock_provider"] == "ttlock",
+            "lock_id": apartment["lock_id"],
+            "checkin_hour": cin,
+            "checkout_hour": cout,
+            "tz_warning": bool(
+                selected
+                and selected["tz_offset_ms"] not in (None, *_PRAGUE_TZ_OFFSETS_MS)
+            ),
+            "overlap": _door_code_hours_overlap(cin, cout),
+            "buffer": config.DOOR_CODE_BUFFER_HOURS,
+            "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
+        }
     return render(
         request,
         "apartment_form.html",
         {
             "apartment": apartment,
+            "door_code": door_code,
             "entities": entities,
             "feeds": feeds,
             "issues": issues,
@@ -946,10 +1142,69 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
                 f"/apartments/{apartment_id}#communication",
                 err=_flash(request, "flash.error.link_name_taken"),
             )
+    prior_lock_provider = apartment["lock_provider"]
+    if (
+        _form_str(form, "door_code_section") == "1"
+        and ttlock.allowed_for(apartment["owner_user_id"])
+    ):
+        owner_id = apartment["owner_user_id"]
+        if _form_str(form, "door_codes") == "1":
+            allowed_ids = [
+                lock["lock_id"]
+                for lock in ttlock.locks_of(ttlock.account_for(owner_id))
+            ]
+            lock_id = _form_str(form, "lock_id")
+            if lock_id not in allowed_ids:
+                return _back(
+                    f"/apartments/{apartment_id}#door-code",
+                    err=_flash(request, "flash.error.door_code_lock"),
+                )
+            try:
+                cin = int(_form_str(form, "checkin_hour"))
+                cout = int(_form_str(form, "checkout_hour"))
+            except ValueError:
+                return _back(
+                    f"/apartments/{apartment_id}#door-code",
+                    err=_flash(request, "flash.error.door_code_hours"),
+                )
+            if not (0 <= cin <= 23 and 0 <= cout <= 23):
+                return _back(
+                    f"/apartments/{apartment_id}#door-code",
+                    err=_flash(request, "flash.error.door_code_hours"),
+                )
+            payload.update(
+                {
+                    "lock_provider": "ttlock",
+                    "lock_id": lock_id,
+                    "checkin_hour": cin,
+                    "checkout_hour": cout,
+                }
+            )
+        else:
+            payload["lock_provider"] = None
+            if _form_str(form, "lock_id"):
+                payload["lock_id"] = _form_str(form, "lock_id")
+            if _form_str(form, "checkin_hour"):
+                try:
+                    payload["checkin_hour"] = int(_form_str(form, "checkin_hour"))
+                except ValueError:
+                    pass
+            if _form_str(form, "checkout_hour"):
+                try:
+                    payload["checkout_hour"] = int(_form_str(form, "checkout_hour"))
+                except ValueError:
+                    pass
     db.update("apartment", apartment_id, payload)
     if credentials_changed:
         alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     db.audit("apartment_updated", f"id={apartment_id}")
+    if _form_str(form, "door_code_section") == "1" and ttlock.allowed_for(apartment["owner_user_id"]):
+        new_provider = payload.get("lock_provider")
+        if new_provider != prior_lock_provider:
+            if new_provider == "ttlock":
+                db.audit("door_codes_on", f"apartment={apartment_id}")
+            else:
+                db.audit("door_codes_off", f"apartment={apartment_id}")
     return None
 
 
@@ -1142,7 +1397,7 @@ async def automation_update(apartment_id: int, request: Request):
 
 
 @router.post("/apartments/{apartment_id}/archive")
-def archive_apartment(apartment_id: int, request: Request):
+async def archive_apartment(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -1151,13 +1406,15 @@ def archive_apartment(apartment_id: int, request: Request):
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     if apartment["archived_at"]:
         return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.already_archived"))
+    form = await request.form()
+    return_to = _form_return_to(form, "/apartments")
     db.update(
         "apartment",
         apartment_id,
         {"archived_at": db.utcnow(), "active": 0},
     )
     db.audit("apartment_archived", f"id={apartment_id}")
-    return _back("/apartments", msg=_flash(request, "flash.apartments.archived", name=apartment["internal_name"]))
+    return _back(return_to, msg=_flash(request, "flash.apartments.archived", name=apartment["internal_name"]))
 
 
 @router.post("/apartments/{apartment_id}/unarchive")
@@ -1493,10 +1750,8 @@ def reservations_list(request: Request):
                     (access.owner_id(request),),
                 )["n"]
             ),
-            "return_to": quote(
-                request.url.path + (f"?{request.url.query}" if request.url.query else ""),
-                safe="",
-            ),
+            "return_to": request.url.path
+            + (f"?{request.url.query}" if request.url.query else ""),
             "show_archive": show_archive,
         },
     )
@@ -1669,6 +1924,11 @@ def reservation_detail(reservation_id: int, request: Request):
             ),
             "stay_claim": claim.ensure_row(reservation_id),
             "hand_filing": reporting.hand_filing_view(progress),
+            "door_code": (
+                door_codes.view(reservation, apartment)
+                if apartment
+                else None
+            ),
         },
     )
 
@@ -1791,11 +2051,10 @@ async def reservation_archive(reservation_id: int, request: Request):
     return_to = _form_return_to(form, _redirect_path_from_referer(request, "/reservations"))
     db.update("reservation", reservation_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("reservation_archived", f"id={reservation_id}")
-    target = (
-        f"/reservations?range=archive&undo_stay={reservation_id}"
-        f"&undo_return={quote(return_to, safe='')}"
+    return _back(
+        _with_undo(return_to, reservation_id),
+        msg=_flash(request, "archive.stay_moved"),
     )
-    return _back(target, msg=_flash(request, "archive.stay_moved"))
 
 
 @router.post("/reservations/{reservation_id}/unarchive")

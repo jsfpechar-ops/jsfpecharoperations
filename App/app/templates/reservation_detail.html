@@ -52,6 +52,12 @@
           {% endif %}
         {% endif %}
       </p>
+      {% if door_code %}<p class="small" id="door-code-line">
+        {% if door_code.state == 'issued' %}{{ t('stay.detail.door_code.issued', pin=door_code.pin, start=door_code.works_from, end=door_code.works_until) }}
+        {% elif door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}
+        {% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}
+        {% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}
+      </p>{% endif %}
     </div>
     <div class="stay-command-actions">
       {% if send_controls.send_enabled %}
@@ -108,7 +114,7 @@
           <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
                 data-confirm data-confirm-message="{{ t('confirm.archive_stay') }}">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <input type="hidden" name="return_to" value="{{ return_to }}">
+            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">
             <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.detail.menu.archive') }}</button>
           </form>
         {% endif %}

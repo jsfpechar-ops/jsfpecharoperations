@@ -103,6 +103,12 @@ def validate_runtime_env(
             "Live police reporting runs only on AWS Lightsail (ubyhost.com)."
         )
 
+    if deploy == "production" and (os_env.get("UBYHOST_STAGING_LOGIN_PASSWORD") or "").strip():
+        raise EnvGuardError(
+            "UBYHOST_STAGING_LOGIN_PASSWORD is only for Render staging. "
+            "Remove it on production."
+        )
+
     if deploy == "production" and env == "mock":
         if (os_env.get("UBYHOST_ALLOW_PROD_MOCK") or "") != "1":
             raise EnvGuardError(

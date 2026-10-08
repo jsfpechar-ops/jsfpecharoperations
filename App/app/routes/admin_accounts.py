@@ -60,18 +60,24 @@ def _keep_login_language(request: Request, response) -> None:
 def login_form(request: Request):
     if auth.current_user(request):
         return RedirectResponse("/", status_code=303)
-    return render(request, "login.html")
+    return render(request, "login.html", _login_page_context(request))
 
 
 def _dev_link_visible() -> bool:
     """Show the login link on the page instead of only mailing it.
 
     Only on a local development run with the console mail backend, where no
-    mail is delivered. Never on staging: that site is public, and a link on the
-    page would let anyone who knows an address log in as that account. Staging
-    writes link mails to its own (access-controlled) log instead.
+    mail is delivered. Staging uses ``UBYHOST_STAGING_LOGIN_PASSWORD`` instead.
     """
     return config.DEPLOYMENT == "local" and mail.backend_name() == "console"
+
+
+def _login_page_context(request: Request) -> dict:
+    ctx: dict = {}
+    if config.DEPLOYMENT == "staging":
+        ctx["staging_login_email"] = auth.staging_admin_login_email()
+        ctx["staging_password_enabled"] = bool(config.STAGING_LOGIN_PASSWORD)
+    return ctx
 
 
 @router.post("/login")
@@ -89,7 +95,7 @@ async def login_submit(request: Request):
         return render(
             request,
             "login.html",
-            {"error": error, "email": raw_email, "next": next_path},
+            {"error": error, "email": raw_email, "next": next_path, **_login_page_context(request)},
             status_code=status_code,
         )
 
@@ -97,6 +103,21 @@ async def login_submit(request: Request):
         return again("auth.error.turnstile", 403)
     if not email:
         return again("auth.error.email_invalid", 400)
+
+    staging_password = _form_str(form, "staging_password")
+    if config.DEPLOYMENT == "staging" and config.STAGING_LOGIN_PASSWORD:
+        if staging_password:
+            account = auth.account_by_email(email)
+            if account and account["active"] and auth.staging_password_ok(staging_password):
+                return _finish_login(
+                    request,
+                    account,
+                    remember=remember,
+                    next_path=next_path,
+                    method="staging_password",
+                )
+            return again("auth.error.staging_password", 403)
+
     ip_key = rate_limit.client_key(request)
     if login_link.request_blocked(ip_key, email):
         return again("auth.error.link_rate_limited", 429)

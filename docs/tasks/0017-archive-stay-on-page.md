@@ -1,6 +1,6 @@
 # 0017: Archive keeps you on the same page
 
-Status: todo
+Status: review
 Depends on: none | Base commit: current `main` | Branch: task/0017-archive-stay-on-page
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

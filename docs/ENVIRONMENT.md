@@ -147,8 +147,14 @@ Platform admins see full guest data and all downloads while previewing; optional
 | `UBYHOST_DOOR_CODES` | `0` | `1`, `true` or `yes` turns the feature on. Off in production until you set it. |
 | `UBYHOST_TTLOCK_API_BASE` | `https://euapi.ttlock.com` | TTLock API base URL (EU). |
 | `UBYHOST_TTLOCK_CLIENT_ID` | unset | TTLock Open Platform client id. |
-| `UBYHOST_TTLOCK_CLIENT_SECRET` | unset | Secret. Lightsail `.env` only, never in git. |
+| `UBYHOST_TTLOCK_CLIENT_SECRET` | unset | Secret. Set in Lightsail `.env` or Render Environment only, never in git. |
+| `UBYHOST_DOOR_CODES_LIVE` | `0` | `1`, `true` or `yes` issues door codes for calendar stays too. Leave off until manual-stay acceptance passes. |
 | `UBYHOST_TTLOCK_MONTHLY_CALLS` | `30000` | Shared monthly API call budget (all hosts). |
+
+On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
+`UBYHOST_DOOR_CODES=1` and the TTLock client id/secret in the dashboard, leave
+`UBYHOST_DOOR_CODES_LIVE` off, and use console mail for the door-code PIN. See
+[DEPLOYMENT.md](DEPLOYMENT.md#door-codes-on-render-staging).
 
 ## Accounts
 
@@ -158,9 +164,13 @@ Platform admins see full guest data and all downloads while previewing; optional
 | `UBYHOST_ADMIN_EMAIL` | unset (falls back to `UBYHOST_OPERATOR_EMAIL`) | The address the first administrator logs in with. Their first login link (valid 72 hours) is written once to `$UBYHOST_DATA_DIR/initial_admin_login` with owner-only permissions; on staging it is also written to the service log. |
 | `UBYHOST_ADMIN_USERNAME` | `admin` | Internal handle only; nobody types it any more. |
 
-There are no passwords. Every account logs in with a single-use link sent to its
-e-mail address (15 minutes), optionally followed by an authenticator-app code.
-`UBYHOST_ADMIN_PASSWORD` is no longer read and can be removed from `.env`.
+Every account logs in with a single-use link sent to its e-mail address (15
+minutes), optionally followed by an authenticator-app code. The only exception
+is **`UBYHOST_STAGING_LOGIN_PASSWORD`** on **`UBYHOST_DEPLOYMENT=staging`**
+(Render): one shared break-glass password on the login form because staging
+uses the console mail backend and does not deliver links. Refused on
+production. `UBYHOST_ADMIN_PASSWORD` is no longer read and can be removed from
+`.env`.
 
 ## Operator identity (shown in the UI and legal pages)
 
