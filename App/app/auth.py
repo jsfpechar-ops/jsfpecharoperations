@@ -648,12 +648,29 @@ def _normalise_staging_secret(value: str) -> str:
     return text
 
 
+def staging_password_env_var() -> str:
+    """Which env var supplies the staging break-glass password, if any."""
+    from . import config
+
+    if config.DEPLOYMENT != "staging":
+        return ""
+    if _normalise_staging_secret(os.environ.get("UBYHOST_STAGING_LOGIN_PASSWORD", "")):
+        return "UBYHOST_STAGING_LOGIN_PASSWORD"
+    if _normalise_staging_secret(os.environ.get("UBYHOST_ADMIN_PASSWORD", "")):
+        return "UBYHOST_ADMIN_PASSWORD"
+    return ""
+
+
 def staging_expected_password() -> str:
     from . import config
 
     if config.DEPLOYMENT != "staging":
         return ""
-    return _normalise_staging_secret(os.environ.get("UBYHOST_STAGING_LOGIN_PASSWORD", ""))
+    primary = _normalise_staging_secret(os.environ.get("UBYHOST_STAGING_LOGIN_PASSWORD", ""))
+    if primary:
+        return primary
+    # Older Render blueprints used UBYHOST_ADMIN_PASSWORD; still honour on staging only.
+    return _normalise_staging_secret(os.environ.get("UBYHOST_ADMIN_PASSWORD", ""))
 
 
 def staging_password_ok(provided: str) -> bool:

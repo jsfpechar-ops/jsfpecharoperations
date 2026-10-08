@@ -162,6 +162,7 @@ def test_healthz_includes_staging_login_metadata(staging_with_password, monkeypa
     assert body["staging_login"]["password_configured"] is True
     assert body["staging_login"]["password_length"] == len(PASSWORD)
     assert body["staging_login"]["admin_username"] == auth.staging_admin_username()
+    assert body["staging_login"]["password_env_var"] == "UBYHOST_STAGING_LOGIN_PASSWORD"
 
 
 def test_healthz_omits_staging_login_when_database_down(staging_with_password, monkeypatch):
@@ -215,3 +216,16 @@ def test_staging_expected_password_empty_off_staging(monkeypatch):
     monkeypatch.setattr(config, "DEPLOYMENT", "production")
     monkeypatch.setenv("UBYHOST_STAGING_LOGIN_PASSWORD", PASSWORD)
     assert auth.staging_expected_password() == ""
+
+
+def test_staging_password_reads_legacy_admin_password_env(staging_with_password, monkeypatch):
+    monkeypatch.delenv("UBYHOST_STAGING_LOGIN_PASSWORD", raising=False)
+    monkeypatch.setenv("UBYHOST_ADMIN_PASSWORD", PASSWORD)
+    assert auth.staging_password_env_var() == "UBYHOST_ADMIN_PASSWORD"
+    client = TestClient(app)
+    response = client.post(
+        "/login?lang=en",
+        data={"username": USERNAME, "staging_password": PASSWORD},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303

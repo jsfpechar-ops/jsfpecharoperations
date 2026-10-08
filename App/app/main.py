@@ -392,11 +392,15 @@ def healthz():
         from . import auth
 
         expected = auth.staging_expected_password()
-        payload["staging_login"] = {
+        staging_login = {
             "password_configured": bool(expected),
             "password_length": len(expected),
             "admin_username": auth.staging_admin_username(),
         }
+        source = auth.staging_password_env_var()
+        if source:
+            staging_login["password_env_var"] = source
+        payload["staging_login"] = staging_login
     return JSONResponse(payload, status_code=200 if healthy else 503)
 
 

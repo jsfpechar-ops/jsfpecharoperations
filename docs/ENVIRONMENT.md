@@ -169,8 +169,9 @@ minutes), optionally followed by an authenticator-app code. The only exception
 is **`UBYHOST_STAGING_LOGIN_PASSWORD`** on **`UBYHOST_DEPLOYMENT=staging`**
 (Render): one shared break-glass password on the login form because staging
 uses the console mail backend and does not deliver links. Refused on
-production. `UBYHOST_ADMIN_PASSWORD` is no longer read and can be removed from
-`.env`.
+production. On staging only, if `UBYHOST_STAGING_LOGIN_PASSWORD` is unset the app
+still accepts the old `UBYHOST_ADMIN_PASSWORD` name (rename when convenient).
+Remove `UBYHOST_ADMIN_PASSWORD` from production `.env` — it is never used there.
 
 ## Operator identity (shown in the UI and legal pages)
 
