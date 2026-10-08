@@ -128,7 +128,15 @@ Rules:
 
 ## 7. API call budget (30,000 a month, shared by all hosts)
 
-Calls happen only on events, never on polling.
+Calls happen only on events, never on polling. There is **no** extra job that lists or re-fetches PINs to “make sure they are still right”: a type-3 random code is a cloud algorithm (the lock often does not know it until first use), and `listKeyboardPwd` returns the digits. Unlock-record callbacks stay off for the same reason (PIN + arrival times).
+
+Operations → Background jobs gets **one** new row, in task 0012, not in 0008:
+
+| JOB | RUNS EVERY |
+|---|---|
+| door codes | 1 min |
+
+That job (`door_codes.reconcile`) retries issue, adopts a code by name after a timeout (`find_code_by_name`), expires local PIN state, and later (task 0015) checks **at most one lock clock per run**. Clock drift is the reliability spend; PIN polling is not. A TTLock outage of this job must not mark the mail job failed (own job id).
 
 | Event | Calls |
 |---|---|
