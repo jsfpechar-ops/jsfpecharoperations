@@ -8,6 +8,7 @@ Sources (the orchestrator sandbox cannot reach the TTLock doc hosts, so every fa
 - **[CD]** Official `/v3/keyboardPwd/change` and `/v3/keyboardPwd/delete` pages, pasted by the owner (`euapi.ttlock.com`).
 - **[X]** "TTLock / Sciener Open Platform API Documentation", a markdown export the owner uploaded. It uses the host `api.sciener.com` and looks like an older doc version (see the conflict under "Random passcode").
 - **[EU]** Official pages pasted by the owner, 2026-10-07: Get access token, Refresh access token, User register, Get the lock list, Get lock details, Get all created passcodes of a lock, Get a passcode, Get the eKey list of an account, Send ekey, Get one ekey, Get ekeys of a lock, Key authorization, Get the eKey unlocking link (all on `euapi.ttlock.com`).
+- **[FAQ]** Official FAQ, `https://euopen.ttlock.com/documentPages/htmlPages/example/FAQEn.html`, PDF supplied by the owner 2026-10-08. Cited as [FAQ x.y] by section and question.
 - **[O]** Owner statement.
 
 UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
@@ -53,7 +54,7 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 | Code | Meaning | UbyHost reaction |
 |---|---|---|
 | `10003` | Token does not exist | Refresh once, retry once |
-| `10004` | Token unauthorized, expired or revoked | Refresh once, retry once |
+| `10004` | Token unauthorized, expired or revoked. For an authorized admin it can also mean the top admin revoked the rights [FAQ 2.9] | Refresh once, retry once. A second `10004` means access was revoked: pause door codes for that account, host mail |
 | `10011` | Refresh token invalid | Account to `reauth_needed`, host mail, no retry |
 | `10007` | Username or password wrong | Show on the connect form, no retry |
 | `10000`, `10001` | Client id or secret wrong | Owner alert (server config), stop all calls |
@@ -61,11 +62,12 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 | `30006` | API call frequency exceeded | Back off, owner alert |
 | `80000` | `date` off by more than 5 minutes | Owner alert (server clock), retry later |
 | `-2012` | Lock not connected to any gateway | Retry with backoff. For a delete, host mail after 1 h |
+| `-3037` | Gateway busy, or offline and not yet noticed by the server [FAQ 5.4] | Retry with backoff |
 | `-4056` | Lock storage full | Host mail |
 | `90000`, `1` | TTLock internal error, generic failure | Retry with backoff |
 | `-3` | Invalid parameter | Log, no retry (a UbyHost bug) |
 
-Source for every code: [X], table "System Error Codes". The reactions are UbyHost design, not TTLock text.
+Source for every code: [X], table "System Error Codes", plus [FAQ] where marked. The reactions are UbyHost design, not TTLock text.
 
 ## Random passcode (get)
 
@@ -87,6 +89,17 @@ Source for every code: [X], table "System Error Codes". The reactions are UbyHos
 - `/v3/lock/listKeyboardPwd` with `lockId`, `pageNo`, `pageSize` (max 200), `orderBy` (required: 0 by name, 1 newest first, 2 by name reversed), optional `searchStr` (fuzzy match on the code name, or exact match on the code) [EU]. A retry after a timeout searches `searchStr=UH-<door_code.id>` and adopts the match.
 - Item fields: `keyboardPwdId`, `lockId`, `keyboardPwd`, `keyboardPwdName`, `keyboardPwdType`, `startDate`, `endDate`, `sendDate`, `isCustom`, `senderUsername` [EU].
 - `timezoneRawOffset` is the lock's offset from UTC in ms [EU]. The `/v3/lock/detail` example shows UTC+8, a common factory default. A lock set to the wrong time zone would shift every code window. The pilot still tests a code at the exact start hour.
+
+## What the FAQ adds about codes
+
+- **A random code is unknown to the lock until its first use.** Deleting a never-used random code over Bluetooth answers "data does not exist", because "the random password must be used once on the lock to be recorded" [FAQ 4.1]. So a remote delete of an unused random code may not stop the lock accepting it later. Owner test A settles this (plan §12).
+- **One random timed code per time range.** For type 3, "only one password can be generated within the same time range", and an expired timed code and a new one cannot share a range [FAQ 4.4, 4.5]. Codes on different days must differ by at least one hour at the start or the end. A stay cancelled and rebooked for the same dates and hours therefore cannot get a fresh random code without shifting the window.
+- Rounding: a same-day range rounds to half hours, a multi-day range to whole hours, a range over a year to months [FAQ 4.4].
+- **Custom codes** (`add`) are timed or permanent, accurate to the minute, have **no 24 h first-use rule**, and have no limit per time range [FAQ 4.4]. They stay on the lock after they expire until deleted. When the lock's memory is full, the oldest code is pushed out [FAQ 4.6]. Adding a code that already exists on the lock fails with "same password already exists" [FAQ 4.7]. With `addType=2` the lock must be online (gateway or Wi-Fi) [FAQ 4.8].
+- **Lock clock.** A wrong lock time makes codes invalid. Fix: TTLock app, lock, Settings, Lock Time, calibrate [FAQ 4.2, 4.8]. Unlocking with the app over Bluetooth also calibrates it [FAQ 1.10].
+- Gateway status: the server notices an offline gateway after about 10 minutes, and the app notifies the admin after 30 minutes offline [FAQ 5.8, 5.11].
+- Authorized admins have every right except deleting the lock, re-authorizing, and changing the admin's own unlock code [FAQ 1.9].
+- The monthly call limit is per application [FAQ 2.7].
 
 ## Delete and change
 
