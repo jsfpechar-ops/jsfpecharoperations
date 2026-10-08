@@ -1249,22 +1249,21 @@ def build_door_code(
     property_name: str,
     checkin: str,
     checkout: str,
-    first_use_by: str,
     host: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     subject = _guest_text(lang, "mail_door_code_subject", property=property_name)
     title = _guest_text(lang, "door_code_title")
     times = _guest_text(lang, "door_code_times", checkin=checkin, checkout=checkout)
-    first_use = _guest_text(lang, "door_code_first_use", deadline=first_use_by)
+    only_between = _guest_text(lang, "door_code_only_between")
     footer_lines = _guest_footer_lines(lang, property_name, host)
     code_line = mail.DOOR_CODE_MARKER
     blocks = [
         _block_heading(title),
         _block_paragraph(code_line, size=22),
         _block_paragraph(times),
-        _block_paragraph(first_use),
+        _block_paragraph(only_between),
     ]
-    text_lines = [title, code_line, "", times, first_use]
+    text_lines = [title, code_line, "", times, only_between]
     text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
     return {
         "subject": subject,

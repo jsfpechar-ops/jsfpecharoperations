@@ -202,7 +202,6 @@ def _door_code_content(lang: str = "en"):
         property_name="Guest Mail Flat",
         checkin="12.10.2026 15:00",
         checkout="14.10.2026 11:00",
-        first_use_by="13.10.2026 14:00",
         host=_host(),
     )
 

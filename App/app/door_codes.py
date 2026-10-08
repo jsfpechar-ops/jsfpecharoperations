@@ -145,13 +145,11 @@ def view(reservation: dict, apartment: dict) -> Optional[dict]:
         return {"state": "preparing"}
     valid_from = row["valid_from"] or ""
     valid_to = row["valid_to"] or ""
-    first_ms = _iso_to_ms(valid_from) + 24 * 3_600_000 if valid_from else 0
     return {
         "state": "issued",
         "pin": pin,
         "works_from": _fmt_local(valid_from) if valid_from else "",
         "works_until": _fmt_local(valid_to) if valid_to else "",
-        "first_use_by": _fmt_local(_ms_to_iso(first_ms)) if valid_from else "",
         "checkin": _stay_checkin_label(reservation["date_from"], apartment["checkin_hour"]),
         "checkout": _stay_checkin_label(reservation["date_to"], apartment["checkout_hour"]),
     }
@@ -217,7 +215,6 @@ def _send_code_mail(door_code_id: int) -> None:
         property_name=apartment["internal_name"] or "",
         checkin=shown["checkin"],
         checkout=shown["checkout"],
-        first_use_by=shown["first_use_by"],
     )
     payload = mail_notify.guest_payload(apartment, content, lang)
     payload[mail.DOOR_CODE_KEY] = row["pin_enc"]

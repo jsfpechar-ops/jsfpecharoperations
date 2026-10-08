@@ -179,7 +179,7 @@ The door code is only as safe as the guest link. Today each property has one fix
 There is no pilot list and only one way to connect. Every host already has a TTLock account; they **share their locks with UbyHost** instead of giving UbyHost a login.
 
 - On Properties → Property tools → Smart locks the host accepts the door-code terms and taps Set up. UbyHost creates a TTLock user for that host (User Register API, random name and password, password stored encrypted) and shows its name with a copy button.
-- In the TTLock app the host sends each rental lock's eKey to that name: Authorized admin on, Remote unlock off, no end date. Then "Check for locks" lists the locks with name, ID (as in the TTLock app under Basic information) and battery.
+- In the TTLock app, as the account that owns the lock, the host taps the lock, then Authorized Admin, then Create Admin, and sends a Permanent admin eKey to that name with "Manage their own users only" on. A plain eKey is not enough, and the screen has no Remote unlock switch (UbyHost never calls an unlock endpoint anyway). Then "Check for locks" lists the locks with name, ID (as in the TTLock app under Basic information) and battery.
 - The host's TTLock password never reaches UbyHost. UbyHost's user holds rights only on the shared locks and cannot open a door remotely. One user per host, so a host's list can only ever contain locks that host shared; nobody can attach someone else's lock, and nobody types a lock ID.
 - Remove deletes the TTLock user, which also deletes every eKey shared with it. A dead refresh token is recovered by logging in again with the stored password, with no host action.
 - The steps for hosts live in one place: the Guide section "Door codes with TTLock" (task 0016). Pages link to it.

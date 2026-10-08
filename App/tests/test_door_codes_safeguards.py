@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+from fastapi.testclient import TestClient
+
 import pytest
 
 from app import alerts, config, db, deadlines, door_codes, ttlock
@@ -240,3 +242,33 @@ def test_the_final_failure_notice_also_copies_support(monkeypatch):
     assert [(r["to_email"], r["cc_email"]) for r in rows] == [
         ("host@example.test", "support@ubyhost.com")
     ]
+
+
+def test_guests_are_not_shown_the_first_use_rule():
+    from app import mail_notify
+
+    for lang in ("en", "cs", "de", "es", "fr"):
+        content = mail_notify.build_door_code(
+            lang=lang,
+            property_name="Flat",
+            checkin="08.10.2026 16:00",
+            checkout="10.10.2026 11:00",
+        )
+        assert "09.10.2026" not in content["text"]
+    en = mail_notify.build_door_code(
+        lang="en", property_name="Flat", checkin="a", checkout="b"
+    )
+    assert "works only between check-in and check-out" in en["text"]
+    assert "first time" not in en["text"]
+
+
+def test_the_guide_walks_through_authorized_admin():
+    from app.main import app
+
+    page = TestClient(app).get("/guide?lang=en")
+    assert page.status_code == 200
+    text = page.text
+    assert "Create Admin" in text
+    assert "Manage their own users only" in text
+    assert "within 24 hours after its start time" in text
+    assert "Remote unlock" not in text

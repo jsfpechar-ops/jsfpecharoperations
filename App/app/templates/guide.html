@@ -132,9 +132,9 @@
       <h3>{{ t('guide.door_codes.need_title') }}</h3>
       <ul>{% for n in range(1, 4) %}<li>{{ t('guide.door_codes.need' ~ n) }}</li>{% endfor %}</ul>
       <h3>{{ t('guide.door_codes.steps_title') }}</h3>
-      <ol class="guide-steps">{% for n in range(1, 7) %}<li><strong>{{ t('guide.door_codes.step' ~ n ~ '_title') }}:</strong> {{ t('guide.door_codes.step' ~ n) }}</li>{% endfor %}</ol>
+      <ol class="guide-steps">{% for n in range(1, 10) %}<li><strong>{{ t('guide.door_codes.step' ~ n ~ '_title') }}:</strong> {{ t('guide.door_codes.step' ~ n) }}</li>{% endfor %}</ol>
       <h3>{{ t('guide.door_codes.how_title') }}</h3>
-      <ul>{% for n in range(1, 6) %}<li>{{ t('guide.door_codes.how' ~ n) }}</li>{% endfor %}</ul>
+      <ul>{% for n in range(1, 7) %}<li>{{ t('guide.door_codes.how' ~ n) }}</li>{% endfor %}</ul>
       <h3 id="door-codes-terms">{{ t('guide.door_codes.terms_title') }}</h3>
       <p class="small muted">{{ t('guide.door_codes.terms_version', version='2026-10-08') }}</p>
       <ol>{% for n in range(1, 10) %}<li>{{ t('guide.door_codes.terms' ~ n) }}</li>{% endfor %}</ol>
