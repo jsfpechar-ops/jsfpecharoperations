@@ -1,6 +1,6 @@
 # Invoices only for stays (not a general invoicing tool)
 
-Status: owner-approved 2026-10-08. Brief 0019 ready; 0020 after 0019 is merged.
+Status: owner-approved 2026-10-08. Briefs [0019](../tasks/0019-stay-invoice-rules.md) (backend) and [0020](../tasks/0020-stay-invoice-pages.md) (pages) ready; 0021 (alert) after 0020. The briefs win where they differ from this plan.
 
 ## 1. Problem
 
@@ -23,7 +23,8 @@ The invoice builder (`App/app/invoices.py`, `App/app/routes/invoices.py`) is fre
 ## 3. Where things are (checked in code at 2f4c107)
 
 - `invoice` table already has `reservation_id`, `stay_from`, `stay_to`, `stay_label` (`App/app/db.py:~420–470`). `_invoice_columns` already writes them (`invoices.py:336–380`). Nothing fills them today.
-- `invoice_item.kind` exists. `_items_from_form` always writes `"other"` (`invoices.py:116`).
+- `invoice_item.kind` exists, CHECK `('accommodation','stay_fee','other')`. The stay line is stored as `accommodation`, the stay fee as `stay_fee`, every other extra as `other`; the exact extra kind lives only in the draft. No table rebuild.
+- `idx_invoice_reservation` already exists: **no migration**.
 - `invoice_pdf.py:206` already prints `stay_label` under the header, so the PDF shows the stay once the label is filled.
 - `routes/invoices.py:480 _stay_property_name()` already looks up the property from `reservation_id`.
 - Manual stays: `routes/admin.py:1505 POST /reservations` creates `source='manual'` rows. `access.reservation(request, id)` (`App/app/access.py:92`) is the owner-scoped lookup.
@@ -50,9 +51,9 @@ The invoice builder (`App/app/invoices.py`, `App/app/routes/invoices.py`) is fre
 
 ### 5.2 Accommodation line (kind `stay`)
 
-- Description, fixed: cs `Ubytování – {property}, {d.m.} – {d.m.yyyy}`; en `Accommodation – {property}, {d Mon} – {d Mon yyyy}`. `{property}` = `uby_name` or `internal_name` (same as `_stay_property_name`).
-- Quantity = nights, unit `noc`/`night`. Posted quantity, unit and description for line 1 are ignored.
-- The host types the price per night **or** the total for the stay (radio, default per night; total is divided by nights and rounded so the line still sums exactly: store quantity 1 and unit `pobyt`/`stay` for the total mode).
+- Description, fixed: `Ubytování – {property}, {dd.mm.yyyy} – {dd.mm.yyyy} ({n} noci)`; en `Accommodation – …  ({n} nights)`. `{property}` = `uby_name` or `internal_name` (same as `_stay_property_name`).
+- Posted description, quantity and unit for line 1 are ignored.
+- The host types the total price for the stay. Quantity 1, unit `pobyt`/`stay`; the nights are in the wording (`(3 noci)`). No per-night mode: simpler form, no rounding.
 - Price must be > 0. VAT rate selectable for payers as today (accommodation is 12 % in CZ; default 12).
 - `stay_from`, `stay_to`, `stay_label` (= the description without the prefix) are written to the invoice row, and DUZP defaults to `date_to` (still editable).
 
@@ -82,7 +83,7 @@ Inside the same transaction that allocates the number (`allocate_number`, `invoi
 - Count `kind = 'invoice'` rows with this `reservation_id` that have no storno/corrective pointing at them. If ≥ 1 → refuse with a link to the existing invoice.
 - Count all `kind = 'invoice'` rows with this `reservation_id`. If ≥ 3 → refuse ("This stay already has 3 invoices").
 - The check and the insert run in one write transaction, so a double click yields one invoice and one error (fixes K-I01).
-- Migration `0008_invoice_reservation_index.sql`: `CREATE INDEX IF NOT EXISTS idx_invoice_reservation ON invoice (reservation_id);` (Postgres-portable). No trigger: the rule lives in Python with tests, and legacy rows stay valid.
+- No trigger: the rule lives in Python with tests, and legacy rows stay valid. "Stay required" is enforced in the routes (issue and preview); `build_draft(stay=None)` keeps the old path for corrections and old tests.
 
 ### 5.5 What doesn't change
 
@@ -93,7 +94,7 @@ Numbering, VAT maths, PDF layout (beyond filling `stay_label`), immutability tri
 - **Old PDF versions:** there are none. A PDF is rendered once at issue and stored on the invoice row (`invoice.pdf_blob` + `pdf_sha256`). The DB trigger `invoice_issued_guard` stops it from changing. "Preview" PDFs are rendered on request and never stored. A cancellation creates a **new** invoice (storno/ODD) with its own PDF. The original stays, because the law wants both. Both are visible in `/invoices` (state "cancelled" and filter "correction") and on each invoice's detail page. Size is about 5–30 KB each, kept 10 years (`invoices.purge_expired`, decision 2026-10-08). With the 3-per-stay cap a stay holds at most 3 originals + 3 stornos.
 - **Why both a hard limit and an alert:** the limit (D3) stops repeat invoices on one stay. It can't see a host who makes many manual stays just to invoice them. The alert (§7) catches that pattern without blocking honest hosts.
 
-## 7. Admin alert (brief 0020, later)
+## 7. Admin alert (brief 0021, later)
 
 Once a day, per host, over the last 30 days: flag when `invoices_issued > 2 × stays_with_check_in` **or** `manual stays created > 20` **or** any invoice total > 100,000 CZK. Show a row in the existing admin alerts (`App/app/alerts.py`), no mail to the host, no block. Thresholds are constants. Written after 0019 is merged, so it counts real stay-linked rows.
 
@@ -103,15 +104,16 @@ Once a day, per host, over the last 30 days: flag when `invoices_issued > 2 × s
 |---|---|
 | Honest host with no stay in the app | Manual stay form, linked from the picker (D2). |
 | Existing tests post free-form invoices | Fixtures add a reservation; legacy behaviour is tested via a row with `reservation_id = NULL` inserted directly. |
-| Stay fee under VAT | `stay_fee` is outside VAT; for payers the brief forces rate 0 on that line. **Accountant to confirm** (owner question Q1). |
+| Stay fee under VAT | Municipal fee, outside VAT: rate forced to 0 for payers (owner, 2026-10-08). |
 | Host cancels and re-issues to cycle | Capped at 3 invoices per stay. |
 | Copy duplication | One explanation lives in the picker ("Invoices are issued for a stay"); the button says the rest. |
 
 ## 9. Open questions
 
-- Q1 (accountant): `stay_fee` line at VAT 0 for payers. Default in 0019: forced 0. Changing it later is a one-line change.
+None. (Q1 stay fee VAT: answered 2026-10-08, 0 %.)
 
 ## 10. Briefs
 
-1. `0019-stay-only-invoices`: D1–D8, §4–§5. Template change → browser + geometry tests, 0 skipped, screenshots.
-2. `0020-invoice-abuse-alert`: §7.
+1. `0019-stay-invoice-rules`: backend rules in `invoices.py` + tests. No page change.
+2. `0020-stay-invoice-pages`: picker, form, stay button, fixtures, browser test, screenshots.
+3. `0021-invoice-abuse-alert`: §7 (brief written after 0020 is merged).
