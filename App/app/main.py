@@ -388,7 +388,7 @@ def healthz():
         payload.update(
             {"deployment": config.DEPLOYMENT, "ubyport_env": config.UBYPORT_ENV}
         )
-    if config.DEPLOYMENT == "staging":
+    if config.DEPLOYMENT == "staging" and database_ok:
         from . import auth
 
         expected = auth.staging_expected_password()
