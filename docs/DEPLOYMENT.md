@@ -75,6 +75,46 @@ production**). You can still run **Actions → Deploy production** by hand with
 Verify both services: `curl https://<host>/healthz` should return JSON with
 `deployment` and `ubyport_env`.
 
+## Door codes on Render staging
+
+Use **`ubyhost-staging`** to exercise TTLock and door codes without touching the
+police register: `UBYHOST_UBYPORT_ENV` stays **`mock`** (nothing is filed). The
+scheduler must stay on (`UBYHOST_ENABLE_SCHEDULER=1`) so codes are issued every
+minute.
+
+**On an existing service** (no Blueprint re-apply): Render → **ubyhost-staging**
+→ **Environment** → add or confirm:
+
+| Variable | Value |
+| --- | --- |
+| `UBYHOST_DOOR_CODES` | `1` |
+| `UBYHOST_TTLOCK_CLIENT_ID` | your TTLock Open Platform client id |
+| `UBYHOST_TTLOCK_CLIENT_SECRET` | your secret |
+| `UBYHOST_DOOR_CODES_LIVE` | leave unset (`0`) so only **manual** stays get codes |
+
+Save and **Manual Deploy**. New Blueprint installs get the same keys from
+`render.yaml` (secrets are `sync: false` — you paste them once in the dashboard).
+
+**Test flow**
+
+1. Log in on `https://ubyhost-staging.onrender.com`.
+2. **Property tools → Smart locks** → accept terms → **Set up** → share eKeys in
+   the TTLock app → **Check for locks**.
+3. Open a property → **Door code** → enable, pick lock, set hours.
+4. Add a **manual** stay, complete guest registration via the guest link.
+5. Door code PIN: guest stay page after registration; e-mail body in **Settings →
+   Guest e-mails** (console backend — same as claim mail).
+6. Operations (admin) shows TTLock call usage in **test mode** (not live).
+
+**Caveats**
+
+- Free-tier disk is **ephemeral**: redeploy or restart can wipe the SQLite DB;
+  repeat Smart locks setup after that.
+- Console mail does not send real e-mail; copy the door-code message from
+  Settings if you need the PIN outside the guest UI.
+- Do not set `UBYHOST_UBYPORT_ENV` to `test` or `prod` on Render; live filing
+  is Lightsail only.
+
 ## Guest e-mail (staging first)
 
 Claim links, the guest's single day-before incomplete-registration reminder, host incomplete-registration warnings, and completion receipts are delivered through Amazon SES. SES went live in production on 2026-09-21.
