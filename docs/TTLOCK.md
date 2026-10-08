@@ -103,7 +103,7 @@ Source for every code: [X], table "System Error Codes". The reactions are UbyHos
 
 ## Unlock records, not used
 
-- `POST /v3/lockRecord/list` with `lockId`, optional `startDate` and `endDate`, `pageNo`, `pageSize` (max 100) returns records with `recordType` (4 = passcode unlock), `success`, `keyboardPwd`, `lockDate`, `serverDate` [X]. No callback is documented [X].
+- `POST /v3/lockRecord/list` with `lockId`, optional `startDate` and `endDate`, `pageNo`, `pageSize` (max 100) returns records with `recordType` (4 = passcode unlock), `success`, `keyboardPwd`, `lockDate`, `serverDate` [X]. The developer console has a per-app **Callback URL** that pushes unlock records to a URL [O, console screenshot 2026-10-08]. UbyHost leaves it empty: unlock times say when guests come and go, and no feature needs them.
 
 ## Not stated in the supplied docs
 
