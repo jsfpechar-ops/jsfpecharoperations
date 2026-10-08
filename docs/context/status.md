@@ -15,6 +15,8 @@ Updated: 2026-10-07 after task 0007 phase 2 complete (owner sign-off).
 
 ## Next
 
+- TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).
+
 - Doručenka smoke on a new filing after this cutover.
 
 ## Blocked: needs owner, lawyer or council

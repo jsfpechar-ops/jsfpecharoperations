@@ -56,6 +56,7 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-L08 | Med decision | cookie and banner copy | Cloudflare cookie names unverified; no-banner wording unapproved | G MK-2/3 |
 | K-L09 | Med decision | docs/UbyHost_workplan/compliance/00_README.md | DSR/incident retention; Terms §17.2 liability floor | compliance |
 | K-L10 | Med decision | stay_fee.py | 60-night boundary; GDPR Art. 9 for disability exemptions | X |
+| K-L11 | High decision | subprocessors_i18n.py ttlock row, DPA §11 | Door codes: SCCs with TTLock (Sciener, China) must be signed before any host other than the owner uses door codes; add TTLock to DPA §11 at the next revision. Assessment done in DOOR_CODES_LEGAL | [DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md) |
 | K-P01 | High decision | access.py, auth.py (#280) | Admin preview unmasked, reason optional: align the DPIA/DPA text | AR |
 | K-P02 | High open | docs/vendors/README.md, ROPA | Support-mailbox provider has no subprocessor row and no DPA | G LD-4 |
 | K-P03 | High open | backup-gdrive.sh | Drive backups need a Workspace DPA or removal; DPA §11 lists Render | G OPS-2 |
