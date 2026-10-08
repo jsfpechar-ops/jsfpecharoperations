@@ -5,7 +5,12 @@
 {% block auth_body %}
 <section class="auth-card">
   <h1 class="auth-title">{{ t('login.sent.title') }}</h1>
-  <p class="auth-lede">{{ t('login.sent.lede', email=email) }}</p>
+  {% if staging_console_mail %}
+    <div class="auth-alert" role="alert">{{ t('login.sent.staging_no_mail') }}</div>
+    <p class="auth-lede">{{ t('login.sent.staging_back') }}</p>
+  {% else %}
+    <p class="auth-lede">{{ t('login.sent.lede', email=email) }}</p>
+  {% endif %}
   {% if dev_link %}
     <p class="auth-notice" role="status">{{ t('login.sent.dev_link') }} <a href="{{ dev_link }}">{{ t('login.sent.dev_link_open') }}</a></p>
   {% endif %}

@@ -190,10 +190,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.lede": "Your guest reporting workspace.",
         "login.staging.title": "Staging server",
         "login.staging.admin_email": "Administrator login e-mail: %(email)s",
-        "login.staging.password_help": "Render does not send mail here. Enter the staging password from Render Environment, then Continue.",
-        "login.staging.logs_help": "No staging password is set. After Continue, copy the login link from Render Logs (search: staging login_link).",
-        "login.staging.password_label": "Staging password",
-        "login.staging.password_ph": "From UBYHOST_STAGING_LOGIN_PASSWORD",
+        "login.staging.username_password_help": (
+            "Render does not send e-mail. Log in with username %(username)s and the password "
+            "from Render Environment (UBYHOST_STAGING_LOGIN_PASSWORD)."
+        ),
+        "login.staging.missing_password": (
+            "Add UBYHOST_STAGING_LOGIN_PASSWORD in Render Environment, save, and Manual Deploy. "
+            "Then this page shows username and password fields."
+        ),
+        "login.staging.submit": "Log in",
         "login.username": "Username",
         "login.password": "Password",
         "login.username_ph": "Enter your username…",
@@ -1666,10 +1671,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "login.lede": "Váš pracovní prostor pro hlášení hostů.",
         "login.staging.title": "Testovací server",
         "login.staging.admin_email": "Přihlašovací e-mail správce: %(email)s",
-        "login.staging.password_help": "Render tady neposílá e-maily. Zadejte testovací heslo z Render Environment a pokračujte.",
-        "login.staging.logs_help": "Testovací heslo není nastavené. Po pokračování zkopírujte odkaz z Render Logs (hledejte: staging login_link).",
-        "login.staging.password_label": "Heslo pro testování",
-        "login.staging.password_ph": "Z UBYHOST_STAGING_LOGIN_PASSWORD",
+        "login.staging.username_password_help": (
+            "Render neposílá e-maily. Přihlaste se uživatelským jménem %(username)s a heslem "
+            "z Render Environment (UBYHOST_STAGING_LOGIN_PASSWORD)."
+        ),
+        "login.staging.missing_password": (
+            "V Render Environment doplňte UBYHOST_STAGING_LOGIN_PASSWORD, uložte a spusťte Manual Deploy. "
+            "Pak se zobrazí přihlášení jménem a heslem."
+        ),
+        "login.staging.submit": "Přihlásit se",
         "login.username": "Uživatelské jméno",
         "login.password": "Heslo",
         "login.username_ph": "Zadejte uživatelské jméno…",
@@ -5303,6 +5313,8 @@ _EMAIL_LOGIN_STRINGS = {
         "login.sent.page_title": "Check your e-mail · UbyHost",
         "login.sent.title": "Check your e-mail",
         "login.sent.lede": "If %(email)s has a UbyHost account, a login link is on its way. It works for 15 minutes, once.",
+        "login.sent.staging_no_mail": "Render does not deliver e-mail. This link is not in your inbox.",
+        "login.sent.staging_back": "Go back and log in with username admin and your staging password.",
         "login.sent.dev_link": "Test environment: no mail is delivered here.",
         "login.sent.dev_link_open": "Open the login link",
         "login.sent.help_summary": "No e-mail after a few minutes?",
@@ -5385,6 +5397,8 @@ _EMAIL_LOGIN_STRINGS = {
         "login.sent.page_title": "Zkontrolujte e-mail · UbyHost",
         "login.sent.title": "Zkontrolujte e-mail",
         "login.sent.lede": "Pokud má %(email)s účet v UbyHostu, přihlašovací odkaz je na cestě. Platí 15 minut a jen jednou.",
+        "login.sent.staging_no_mail": "Render e-maily nedoručuje. Odkaz není ve vaší schránce.",
+        "login.sent.staging_back": "Vraťte se a přihlaste se jako admin a heslem z Render Environment.",
         "login.sent.dev_link": "Testovací prostředí: e-maily se tu nedoručují.",
         "login.sent.dev_link_open": "Otevřít přihlašovací odkaz",
         "login.sent.help_summary": "E-mail nepřišel ani po pár minutách?",

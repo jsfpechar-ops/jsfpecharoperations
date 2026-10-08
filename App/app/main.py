@@ -127,6 +127,16 @@ async def lifespan(_app: FastAPI):
         config.endpoint_for(),
     )
     env_guard.apply()
+    if config.DEPLOYMENT == "staging":
+        if config.STAGING_LOGIN_PASSWORD:
+            log.warning(
+                "staging login: username=%s password=UBYHOST_STAGING_LOGIN_PASSWORD (Render Environment)",
+                config.ADMIN_USERNAME or "admin",
+            )
+        else:
+            log.warning(
+                "staging login: set UBYHOST_STAGING_LOGIN_PASSWORD in Render Environment and redeploy"
+            )
     if config.UBYPORT_ENV == "mock":
         log.warning(
             "Running against the MOCK UbyPort server - nothing is reported to the police. "
