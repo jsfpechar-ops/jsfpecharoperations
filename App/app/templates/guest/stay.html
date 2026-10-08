@@ -62,6 +62,8 @@
         {% if claim_email_masked %}<p class="g-intro">{{ t('door_code_sent', email=claim_email_masked) }}</p>{% endif %}
       {% elif door_code.state == 'failed' %}
         <p class="g-intro">{{ t('door_code_failed') }}</p>
+      {% elif door_code.state == 'delayed' %}
+        <p class="g-intro">{{ t('door_code_delayed') }}</p>
       {% else %}
         <p class="g-intro">{{ t('door_code_preparing') }}</p>
       {% endif %}

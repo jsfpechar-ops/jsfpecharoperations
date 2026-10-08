@@ -44,4 +44,4 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-08 | Stored files: no expiry; invoices 10 y; first new file kind brings a storage module | tiny saving, legal risk | [plan](../plans/file-retention.md)
 - 2026-10-08 | Door codes: one Background jobs row (`door_codes`, 1 min, task 0012). No PIN/list/unlock poll. Timeout recovery lists by name; weekly `queryDate` (one lock per run) lives inside that same job (task 0015) | API budget + type-3 codes unknown to the lock until first use; list responses contain digits | [ttlock-door-codes](../plans/ttlock-door-codes.md#7-api-call-budget-30000-a-month-shared-by-all-hosts)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
-- 2026-10-08 | Render staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login (staging only) | test-only, mock UbyPort | [ENVIRONMENT](../ENVIRONMENT.md)
+- 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
