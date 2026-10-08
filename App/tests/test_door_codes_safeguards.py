@@ -192,3 +192,15 @@ def test_a_broken_cancellation_phase_cannot_block_issuing(monkeypatch):
     counts = door_codes.reconcile()
     assert counts["issued"] == 1
     assert _view(stay, apartment)["state"] == "issued"
+
+
+def test_the_ttlock_error_number_is_kept_for_the_host(monkeypatch):
+    def refused(*args, **kwargs):
+        raise ttlock.TTLockError("keyboardPwd conflict", code=-3004, kind="transient")
+
+    monkeypatch.setattr(ttlock, "create_period_code", refused)
+    _, apartment, stay = _stay(registered_minutes_ago=15)
+    door_codes.reconcile()
+    row = db.query_one("SELECT last_error FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["last_error"] == "transient:-3004"
+    assert "transient:-3004" in _open_alert(stay)["detail"]

@@ -349,6 +349,9 @@ def issue(door_code_id: int) -> bool:
         return True
     except ttlock.TTLockError as exc:
         kind = (exc.kind or "transient")[:40]
+        # The TTLock error number goes into last_error so the host alert and the
+        # log say what TTLock refused, not only which group the refusal is in.
+        reason = f"{kind}:{exc.code}" if exc.code is not None else kind
         if exc.kind in ("reauth", "permission", "config", "disabled"):
             new_state = FAILED
             next_at = None
@@ -368,7 +371,7 @@ def issue(door_code_id: int) -> bool:
         db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, "
             "next_attempt_at = ?, updated_at = ? WHERE id = ?",
-            (new_state, kind, next_at, now_iso, door_code_id),
+            (new_state, reason[:40], next_at, now_iso, door_code_id),
         )
         if new_state == FAILED:
             alerts.raise_alert(
