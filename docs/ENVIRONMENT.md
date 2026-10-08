@@ -147,9 +147,14 @@ Platform admins see full guest data and all downloads while previewing; optional
 | `UBYHOST_DOOR_CODES` | `0` | `1`, `true` or `yes` turns the feature on. Off in production until you set it. |
 | `UBYHOST_TTLOCK_API_BASE` | `https://euapi.ttlock.com` | TTLock API base URL (EU). |
 | `UBYHOST_TTLOCK_CLIENT_ID` | unset | TTLock Open Platform client id. |
-| `UBYHOST_TTLOCK_CLIENT_SECRET` | unset | Secret. Lightsail `.env` only, never in git. |
+| `UBYHOST_TTLOCK_CLIENT_SECRET` | unset | Secret. Set in Lightsail `.env` or Render Environment only, never in git. |
 | `UBYHOST_DOOR_CODES_LIVE` | `0` | `1`, `true` or `yes` issues door codes for calendar stays too. Leave off until manual-stay acceptance passes. |
 | `UBYHOST_TTLOCK_MONTHLY_CALLS` | `30000` | Shared monthly API call budget (all hosts). |
+
+On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
+`UBYHOST_DOOR_CODES=1` and the TTLock client id/secret in the dashboard, leave
+`UBYHOST_DOOR_CODES_LIVE` off, and use console mail for the door-code PIN. See
+[DEPLOYMENT.md](DEPLOYMENT.md#door-codes-on-render-staging).
 
 ## Accounts
 

@@ -46,6 +46,15 @@ services:
         sync: false
       - key: UBYHOST_MAIL_BACKEND
         value: console
+      # Door codes (TTLock): set client id/secret in the Render dashboard
+      # (Environment → sync off). Mock UbyPort stays on; manual stays only
+      # until UBYHOST_DOOR_CODES_LIVE=1. See docs/DEPLOYMENT.md § Door codes.
+      - key: UBYHOST_DOOR_CODES
+        value: "1"
+      - key: UBYHOST_TTLOCK_CLIENT_ID
+        sync: false
+      - key: UBYHOST_TTLOCK_CLIENT_SECRET
+        sync: false
       - key: UBYHOST_PUBLIC_BASE_URL
         fromService:
           type: web
