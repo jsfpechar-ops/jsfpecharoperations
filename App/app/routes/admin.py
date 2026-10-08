@@ -79,6 +79,21 @@ router.include_router(signup_routes.router)
 # is generous for a real import and stops an upload from being read whole into
 # memory.
 
+_PRAGUE_TZ_OFFSETS_MS = frozenset({3_600_000, 7_200_000})
+
+
+def _door_code_hours_overlap(
+    checkin_hour: Optional[int], checkout_hour: Optional[int]
+) -> bool:
+    if checkin_hour is None or checkout_hour is None:
+        return False
+    needed = 2 * config.DOOR_CODE_BUFFER_HOURS
+    if checkin_hour >= checkout_hour:
+        gap = checkin_hour - checkout_hour
+    else:
+        gap = (24 - checkout_hour) + checkin_hour
+    return gap < needed
+
 
 def _ensure_apartment_pin(apartment):
     """Backfill a PIN for apartments created before PIN support existed."""
@@ -978,11 +993,10 @@ def apartment_detail(apartment_id: int, request: Request):
             "checkin_hour": cin,
             "checkout_hour": cout,
             "tz_warning": bool(
-                selected and selected["tz_offset_ms"] not in (None, 3600000)
+                selected
+                and selected["tz_offset_ms"] not in (None, *_PRAGUE_TZ_OFFSETS_MS)
             ),
-            "overlap": cin is not None
-            and cout is not None
-            and cin - cout < 2 * config.DOOR_CODE_BUFFER_HOURS,
+            "overlap": _door_code_hours_overlap(cin, cout),
             "buffer": config.DOOR_CODE_BUFFER_HOURS,
             "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
         }

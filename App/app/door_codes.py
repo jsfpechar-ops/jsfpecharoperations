@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 from . import alerts, config, db, deadlines, mail, mail_notify, ttlock
@@ -25,6 +25,26 @@ REVOKE_FAILED = "revoke_failed"
 BACKOFF_MINUTES = (1, 5, 15, 60, 240)
 LEASE_MINUTES = 2
 BATCH = 20
+
+def _mail_idempotency_key(reservation_id: int, row: dict) -> str:
+    code_id = row["provider_code_id"] or "none"
+    return (
+        f"door_code:{reservation_id}:{row['valid_from']}:{row['valid_to']}:{code_id}"
+    )
+
+
+def _release_issue_claim(door_code_id: int, *, decrement_attempt: bool = False) -> None:
+    if decrement_attempt:
+        db.execute(
+            "UPDATE door_code SET state = ?, claimed_at = NULL, attempts = attempts - 1, "
+            "updated_at = ? WHERE id = ? AND attempts > 0",
+            (PENDING, db.utcnow(), door_code_id),
+        )
+    else:
+        db.execute(
+            "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? WHERE id = ?",
+            (PENDING, db.utcnow(), door_code_id),
+        )
 
 
 def _now() -> datetime:
@@ -179,9 +199,9 @@ def _send_code_mail(door_code_id: int) -> None:
     )
     payload = mail_notify.guest_payload(apartment, content, lang)
     payload[mail.DOOR_CODE_KEY] = row["pin_enc"]
-    mail.enqueue(
+    outbox_id = mail.enqueue(
         kind="door_code",
-        idempotency_key=f"door_code:{reservation['id']}:{row['valid_from']}",
+        idempotency_key=_mail_idempotency_key(int(reservation["id"]), row),
         to_email=claim["email"],
         cc_email=payload.get("reply_to", ""),
         subject=content["subject"],
@@ -190,6 +210,8 @@ def _send_code_mail(door_code_id: int) -> None:
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
     )
+    if outbox_id is None:
+        return
     db.execute(
         "UPDATE door_code SET notified_at = ?, updated_at = ? WHERE id = ?",
         (db.utcnow(), db.utcnow(), door_code_id),
@@ -225,18 +247,12 @@ def issue(door_code_id: int) -> bool:
         (reservation["id"], today),
     )
     if not still or not ttlock.allowed_for(apartment["owner_user_id"]):
-        db.execute(
-            "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? WHERE id = ?",
-            (PENDING, db.utcnow(), door_code_id),
-        )
+        _release_issue_claim(door_code_id, decrement_attempt=True)
         return False
 
     account = ttlock.account_for(apartment["owner_user_id"])
     if not account or account["status"] != "ok":
-        db.execute(
-            "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? WHERE id = ?",
-            (PENDING, db.utcnow(), door_code_id),
-        )
+        _release_issue_claim(door_code_id, decrement_attempt=True)
         return False
 
     try:
@@ -248,15 +264,13 @@ def issue(door_code_id: int) -> bool:
             config.DOOR_CODE_BUFFER_HOURS,
         )
     except ValueError:
-        db.execute(
-            "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? WHERE id = ?",
-            (PENDING, db.utcnow(), door_code_id),
-        )
+        _release_issue_claim(door_code_id, decrement_attempt=True)
         return False
 
     if end_ms < int(now.timestamp() * 1000):
         db.execute(
-            "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? WHERE id = ?",
+            "UPDATE door_code SET state = ?, claimed_at = NULL, attempts = attempts - 1, "
+            "updated_at = ? WHERE id = ? AND attempts > 0",
             (EXPIRED, db.utcnow(), door_code_id),
         )
         return False
@@ -392,7 +406,13 @@ def _revoke_one(row_id: int) -> None:
     if not apartment or not reservation:
         return
     account = ttlock.account_for(apartment["owner_user_id"])
-    if not account:
+    if not account or account["status"] != "ok":
+        db.execute(
+            "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
+            "WHERE id = ?",
+            (REVOKE_FAILED, "no_account", now_iso, row_id),
+        )
+        mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
         return
     attempts = int(row["attempts"])
     try:
@@ -533,21 +553,37 @@ def _handle_moves(now_iso: str) -> None:
             send_code_mail(int(row["id"]))
         except ttlock.TTLockError as exc:
             kind = exc.kind or "transient"
-            if kind in ("offline", "transient", "network", "rate"):
+            if kind in ("offline", "transient", "network", "rate", "budget"):
+                delay = 60 if kind == "budget" else 15
                 db.execute(
                     "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
-                    (_iso(_now() + timedelta(minutes=15)), kind[:40], now_iso, row["id"]),
+                    (_iso(_now() + timedelta(minutes=delay)), kind[:40], now_iso, row["id"]),
                 )
                 continue
+            old_code_id = row["provider_code_id"] or ""
             try:
                 pin, code_id = ttlock.create_period_code(
                     int(account["id"]),
                     row["lock_id"],
                     start_ms,
                     end_ms,
-                    f"UH-{row['id']}-m",
+                    f"UH-{row['id']}",
                     ttlock.NORMAL,
                 )
+                if old_code_id and old_code_id != code_id:
+                    try:
+                        ttlock.delete_code(
+                            int(account["id"]),
+                            row["lock_id"],
+                            old_code_id,
+                        )
+                    except ttlock.TTLockError:
+                        log.warning(
+                            "door_code_move_orphan lock=%s old_code=%s new_code=%s",
+                            row["lock_id"],
+                            old_code_id,
+                            code_id,
+                        )
                 db.execute(
                     "UPDATE door_code SET pin_enc = ?, provider_code_id = ?, valid_from = ?, "
                     "valid_to = ?, notified_at = NULL, next_attempt_at = NULL, last_error = NULL, "
@@ -673,6 +709,14 @@ def reconcile() -> Dict[str, int]:
     now_iso = db.utcnow()
     _handle_cancellations(now_iso)
     _handle_moves(now_iso)
+
+    unsent = db.query(
+        "SELECT id FROM door_code WHERE state = ? AND notified_at IS NULL "
+        "AND issued_at IS NOT NULL ORDER BY issued_at LIMIT ?",
+        (ISSUED, BATCH),
+    )
+    for row in unsent:
+        send_code_mail(int(row["id"]))
 
     clause, today = _eligible_sql()
     missing = db.query(
