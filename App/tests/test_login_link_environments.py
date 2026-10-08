@@ -42,6 +42,7 @@ def test_local_development_shows_the_link_on_the_page(monkeypatch, account):
 
 
 def test_staging_never_shows_the_link_but_logs_it(monkeypatch, account, caplog):
+    monkeypatch.delenv("UBYHOST_STAGING_LOGIN_PASSWORD", raising=False)
     caplog.set_level(logging.WARNING, logger=mail.log.name)
     page = _ask(monkeypatch, "staging")
     assert page.status_code == 200
