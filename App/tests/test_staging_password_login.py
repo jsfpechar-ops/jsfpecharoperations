@@ -45,6 +45,15 @@ def test_wrong_staging_password_is_rejected(account):
     assert response.status_code == 403
 
 
+def test_staging_password_ok_rejects_wrong_deployment_or_empty(monkeypatch):
+    monkeypatch.setattr(config, "DEPLOYMENT", "production")
+    monkeypatch.setattr(config, "STAGING_LOGIN_PASSWORD", PASSWORD)
+    assert auth.staging_password_ok(PASSWORD) is False
+    monkeypatch.setattr(config, "DEPLOYMENT", "staging")
+    assert auth.staging_password_ok("") is False
+    assert auth.staging_password_ok(PASSWORD) is True
+
+
 def test_production_refuses_staging_password_env(monkeypatch):
     import os
 
