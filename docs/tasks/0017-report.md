@@ -66,7 +66,7 @@ context lint: OK
 
 ## 4. Deviations
 
-None.
+- Council follow-up: stays list `return_to` is no longer pre-quoted; links use `| urlencode`. `_form_return_to` decodes once when needed. Tests for quoted `return_to`, no Referer, stay evil URL, and `undo_return`.
 
 ## 5. Questions
 

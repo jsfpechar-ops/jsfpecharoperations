@@ -383,7 +383,6 @@
           </div>
           <button class="btn small" type="submit" formmethod="post"
                   formaction="/apartments/{{ apartment.id }}/archive"
-                  name="return_to" value="/apartments/{{ apartment.id }}"
                   data-confirm data-confirm-message="{{ t('confirm.archive_property') }}">{{ t('common.archive') }}</button>
         </div>
         {% endif %}

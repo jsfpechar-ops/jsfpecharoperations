@@ -14,7 +14,7 @@ import secrets
 import time
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
-from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
@@ -176,7 +176,15 @@ def _missing_report_labels(request: Request, issues) -> List[str]:
 
 
 def _form_return_to(form, default: str) -> str:
-    return security.safe_local_path(_form_str(form, "return_to"), default)
+    raw = _form_str(form, "return_to")
+    if not raw:
+        return default
+    path = security.safe_local_path(raw, "")
+    if path:
+        return path
+    # Stays list used to quote return_to for use in links; archive posts still work.
+    path = security.safe_local_path(unquote(raw), "")
+    return path if path else default
 
 
 def _redirect_path_from_referer(request: Request, default: str = "/") -> str:
@@ -1508,10 +1516,8 @@ def reservations_list(request: Request):
                     (access.owner_id(request),),
                 )["n"]
             ),
-            "return_to": quote(
-                request.url.path + (f"?{request.url.query}" if request.url.query else ""),
-                safe="",
-            ),
+            "return_to": request.url.path
+            + (f"?{request.url.query}" if request.url.query else ""),
             "show_archive": show_archive,
         },
     )

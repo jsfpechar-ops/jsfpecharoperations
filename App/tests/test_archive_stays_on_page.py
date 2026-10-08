@@ -1,7 +1,7 @@
 """Archive redirects keep the host on the page they were on (task 0017)."""
 from __future__ import annotations
 
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 
 from fastapi.testclient import TestClient
 
@@ -107,6 +107,77 @@ def test_stay_archive_keeps_list_range():
         )
         assert location.startswith(f"/reservations?range=upcoming&undo_stay={stay_id}")
         assert "range=archive" not in location
+        qs = parse_qs(urlparse(location).query)
+        assert qs.get("undo_return") == ["/reservations?range=upcoming"]
+    finally:
+        _clean()
+
+
+def test_stay_archive_accepts_quoted_return_to_from_stays_list():
+    """Legacy stays list quoted return_to; archive must still honour the path."""
+    db.init_db()
+    _clean()
+    owner = _account()
+    apartment_id = _apartment(owner)
+    stay_id = _reservation(apartment_id)
+    client = _client()
+    try:
+        raw = "/reservations?range=past&page=2"
+        location = _expect_redirect(
+            client.post(
+                f"/reservations/{stay_id}/archive",
+                data={"return_to": quote(raw, safe="")},
+                headers={},
+                follow_redirects=False,
+            )
+        )
+        assert location.startswith(f"/reservations?range=past&page=2&undo_stay={stay_id}")
+        qs = parse_qs(urlparse(location).query)
+        assert qs.get("undo_return") == [raw]
+    finally:
+        _clean()
+
+
+def test_stay_archive_without_referer_uses_return_to():
+    db.init_db()
+    _clean()
+    owner = _account()
+    apartment_id = _apartment(owner)
+    stay_id = _reservation(apartment_id)
+    client = _client()
+    try:
+        location = _expect_redirect(
+            client.post(
+                f"/reservations/{stay_id}/archive",
+                data={"return_to": "/reservations?range=past"},
+                headers={"referer": ""},
+                follow_redirects=False,
+            )
+        )
+        assert "range=past" in location and f"undo_stay={stay_id}" in location
+        assert "range=archive" not in location
+    finally:
+        _clean()
+
+
+def test_stay_archive_evil_return_to_falls_back_to_default():
+    db.init_db()
+    _clean()
+    owner = _account()
+    apartment_id = _apartment(owner)
+    stay_id = _reservation(apartment_id)
+    client = _client()
+    try:
+        location = _expect_redirect(
+            client.post(
+                f"/reservations/{stay_id}/archive",
+                data={"return_to": "https://evil.example/"},
+                headers={"referer": ""},
+                follow_redirects=False,
+            )
+        )
+        assert urlparse(location).path == "/reservations"
+        assert f"undo_stay={stay_id}" in location
     finally:
         _clean()
 
