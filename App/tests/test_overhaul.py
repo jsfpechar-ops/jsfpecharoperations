@@ -482,7 +482,10 @@ def test_filtered_stays_return_path_and_guest_links_workspace():
         listing = browser.get(f"/reservations?range=all&apartment={apartment_id}")
         assert listing.status_code == 200
         assert "Setup readiness" not in listing.text
-        assert "%2Freservations%3Frange%3Dall" in listing.text
+        assert (
+            f'name="return_to" value="/reservations?range=all&amp;apartment={apartment_id}"'
+            in listing.text
+        )
 
         detail = browser.get(
             f"/reservations/{stays[0]}?return_to=%2Freservations%3Frange%3Dall%26apartment%3D{apartment_id}"
