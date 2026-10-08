@@ -55,6 +55,8 @@ KINDS = (
     "email_confirm",
     # Task 0004: the notice that a passkey was added to the account.
     "passkey_added",
+    "door_code",
+    "door_code_notice",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -70,6 +72,7 @@ GUEST_KINDS = (
     "reminder_guest",
     "completion",
     "invoice_issued",
+    "door_code",
 )
 HOST_KINDS = (
     "reminder_host",
@@ -91,6 +94,7 @@ HOST_KINDS = (
     "account_invite",
     "email_confirm",
     "passkey_added",
+    "door_code_notice",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.
@@ -111,6 +115,8 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 # link rather than a subtly broken one.
 CLAIM_SECRET_MARKER = "{{claim_secret}}"
 CLAIM_SECRET_KEY = "claim_secret_enc"
+DOOR_CODE_MARKER = "{{door_code}}"
+DOOR_CODE_KEY = "door_code_enc"
 
 
 class MailConfigError(RuntimeError):
@@ -267,6 +273,15 @@ def _with_secret(value: str, payload: Dict[str, Any]) -> str:
     return value.replace(CLAIM_SECRET_MARKER, db.decrypt_field(token))
 
 
+def _with_door_code(value: str, payload: Dict[str, Any]) -> str:
+    if DOOR_CODE_MARKER not in value:
+        return value
+    token = payload.get(DOOR_CODE_KEY)
+    if not token:
+        raise db.DecryptionError("outbox payload has a door code with no secret")
+    return value.replace(DOOR_CODE_MARKER, db.decrypt_field(token))
+
+
 def stored_body(payload: Dict[str, Any]) -> str:
     """The text part as it is stored: a claim link with its secret left out."""
     return payload.get("text") or ""
@@ -283,7 +298,7 @@ def delivery_body(payload: Dict[str, Any]) -> str:
     A body with no marker either never had a secret or was queued by the
     release before this one, and is passed through untouched.
     """
-    return _with_secret(stored_body(payload), payload)
+    return _with_door_code(_with_secret(stored_body(payload), payload), payload)
 
 
 def delivery_html(payload: Dict[str, Any]) -> str:
@@ -292,7 +307,7 @@ def delivery_html(payload: Dict[str, Any]) -> str:
     The secret is substituted here too, so a future HTML mail that carries a
     claim link cannot leak the marker into a delivered message.
     """
-    return _with_secret(stored_html(payload), payload)
+    return _with_door_code(_with_secret(stored_html(payload), payload), payload)
 
 
 def _reveal_claim_secret(body: str, payload_json: Optional[str]) -> str:

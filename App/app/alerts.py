@@ -450,7 +450,7 @@ def resolve_by_id(alert_id: int, user_dismissed: bool = False) -> None:
 # background job stops the sweep, the deadline watch and the calendar sync for
 # every workspace at once, so it is stored with no owner and shown to all of
 # them: a host who is never told cannot act on it.
-SYSTEM_ALERT_KINDS = frozenset({"job_failed", "turnstile_unavailable"})
+SYSTEM_ALERT_KINDS = frozenset({"job_failed", "turnstile_unavailable", "ttlock_budget"})
 
 
 def open_alerts(owner_user_id: Optional[int] = None) -> List:

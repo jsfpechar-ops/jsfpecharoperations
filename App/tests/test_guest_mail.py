@@ -25,8 +25,8 @@ HOST_PHONE = "+420999888777"
 # is a one-line edit here rather than a hunt through the assertions.
 BUTTON_MARKER = f"background:{mail_notify.BRAND_ACTION};border-radius:8px;"
 
-GUEST_KINDS = ("claim", "completion", "reminder_guest")
-HOST_KINDS = ("reminder_host",)
+GUEST_KINDS = ("claim", "completion", "reminder_guest", "door_code")
+HOST_KINDS = ("reminder_host", "door_code_notice")
 
 # Keys this change introduced. Kept explicit so a key that is added to one
 # language and forgotten in the other fails here by name rather than as a
@@ -192,6 +192,17 @@ def _completion_content(lang: str = "en"):
         property_name="Guest Mail Flat",
         dates="2026-01-05 \u2013 2026-01-08",
         stay_url=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1",
+        host=_host(),
+    )
+
+
+def _door_code_content(lang: str = "en"):
+    return mail_notify.build_door_code(
+        lang=lang,
+        property_name="Guest Mail Flat",
+        checkin="12.10.2026 15:00",
+        checkout="14.10.2026 11:00",
+        first_use_by="13.10.2026 14:00",
         host=_host(),
     )
 
@@ -472,7 +483,7 @@ def test_the_footer_names_the_host_and_never_ubyhost_support():
         assert "support@ubyhost.com" not in content["html"], kind
         assert "support@ubyhost.com" not in content["text"], kind
     for kind in GUEST_KINDS:
-        content = _all_content()[kind]
+        content = _content_for(kind, "en")
         assert HOST_EMAIL in content["html"], kind
         assert HOST_PHONE in content["html"], kind
         assert HOST_EMAIL in content["text"], kind
@@ -945,7 +956,7 @@ def test_the_from_line_is_not_a_bare_address():
 def test_the_footer_contact_is_tappable_in_the_html_part():
     """E-17 [UX-131]: a printed address on a phone means selecting it by hand."""
     for kind in GUEST_KINDS:
-        content = _all_content()[kind]
+        content = _content_for(kind, "en")
         assert f'href="mailto:{HOST_EMAIL}"' in content["html"], kind
         assert f'href="tel:{HOST_PHONE}"' in content["html"], kind
         # The address stays readable: a client that strips links must not eat it.
@@ -971,7 +982,7 @@ def test_the_tel_href_carries_no_spaces():
 def test_the_text_part_still_carries_the_plain_address():
     """A text part cannot link, so the address has to be there verbatim."""
     for kind in GUEST_KINDS:
-        content = _all_content()[kind]
+        content = _content_for(kind, "en")
         assert f"{HOST_EMAIL} \u00b7 {HOST_PHONE}" in content["text"], kind
         assert "mailto:" not in content["text"], kind
         assert "<a " not in content["text"], kind
@@ -982,6 +993,7 @@ def _content_for(kind: str, lang: str):
         "claim": lambda: _claim_content(lang),
         "completion": lambda: _completion_content(lang),
         "reminder_guest": lambda: _reminder_guest_content(lang, filled=1, expected=3),
+        "door_code": lambda: _door_code_content(lang),
     }[kind]()
 
 

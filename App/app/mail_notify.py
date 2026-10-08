@@ -25,6 +25,7 @@ import html
 import json
 import logging
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import config, db, deadlines, host_i18n, i18n, mail, validation
@@ -1240,6 +1241,86 @@ def build_claim_link(
             footer_lines=footer_lines,
         ),
     }
+
+
+def build_door_code(
+    *,
+    lang: str,
+    property_name: str,
+    checkin: str,
+    checkout: str,
+    first_use_by: str,
+    host: Optional[Dict[str, str]] = None,
+) -> Dict[str, str]:
+    subject = _guest_text(lang, "mail_door_code_subject", property=property_name)
+    title = _guest_text(lang, "door_code_title")
+    times = _guest_text(lang, "door_code_times", checkin=checkin, checkout=checkout)
+    first_use = _guest_text(lang, "door_code_first_use", deadline=first_use_by)
+    footer_lines = _guest_footer_lines(lang, property_name, host)
+    code_line = mail.DOOR_CODE_MARKER
+    blocks = [
+        _block_heading(title),
+        _block_paragraph(code_line, size=22),
+        _block_paragraph(times),
+        _block_paragraph(first_use),
+    ]
+    text_lines = [title, code_line, "", times, first_use]
+    text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang,
+            title=property_name,
+            preheader=title,
+            blocks=blocks,
+            footer_lines=footer_lines,
+        ),
+    }
+
+
+def door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
+    try:
+        return _door_code_notice(door_code_id, variant)
+    except Exception:
+        log.exception("door_code_notice_failed door_code=%s variant=%s", door_code_id, variant)
+        return None
+
+
+def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
+    row = db.query_one("SELECT * FROM door_code WHERE id = ?", (door_code_id,))
+    if not row:
+        return None
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (row["apartment_id"],))
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (row["reservation_id"],))
+    if not apartment or not reservation:
+        return None
+    to_email = _entity_contact_email(apartment["legal_entity_id"])
+    if not to_email:
+        return None
+    lang = host_i18n.normalise_language(HOST_MAIL_LANGUAGE)
+    try:
+        stay_day = datetime.fromisoformat(reservation["date_from"]).strftime("%d.%m.%Y")
+    except ValueError:
+        stay_day = reservation["date_from"]
+    params: Dict[str, str] = {"property": apartment["internal_name"] or "", "date": stay_day}
+    if variant == "cancelled_not_deleted" and row["pin_enc"]:
+        pin = db.decrypt_field(row["pin_enc"]) or ""
+        tail = pin[-2:] if len(pin) >= 2 else pin
+        params["code"] = f"••••{tail}"
+    subject = _text(lang, f"mail.door_code_notice.{variant}.subject", **params)
+    body = _text(lang, f"mail.door_code_notice.{variant}.body", **params)
+    payload = {"text": body, "html": f"<p>{html.escape(body)}</p>", "lang": lang}
+    return mail.enqueue(
+        kind="door_code_notice",
+        idempotency_key=f"door_code_notice:{door_code_id}:{variant}",
+        to_email=to_email,
+        subject=subject,
+        payload=payload,
+        reservation_id=reservation["id"],
+        apartment_id=apartment["id"],
+        owner_user_id=apartment["owner_user_id"],
+    )
 
 
 def build_completion(

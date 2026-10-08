@@ -15,6 +15,8 @@ from . import config, db
 
 log = logging.getLogger(__name__)
 
+DOOR_CODE_TERMS_VERSION = "2026-10-08"
+
 ALLOWED_PATHS = frozenset(
     {
         "/oauth2/token",
@@ -22,12 +24,21 @@ ALLOWED_PATHS = frozenset(
         "/v3/user/delete",
         "/v3/key/list",
         "/v3/lock/listKeyboardPwd",
+        "/v3/lock/queryDate",
+        "/v3/lock/updateDate",
         "/v3/keyboardPwd/get",
         "/v3/keyboardPwd/change",
         "/v3/keyboardPwd/delete",
     }
 )
-GATEWAY_PATHS = frozenset({"/v3/keyboardPwd/change", "/v3/keyboardPwd/delete"})
+GATEWAY_PATHS = frozenset(
+    {
+        "/v3/keyboardPwd/change",
+        "/v3/keyboardPwd/delete",
+        "/v3/lock/queryDate",
+        "/v3/lock/updateDate",
+    }
+)
 
 LOW, NORMAL, CRITICAL = "low", "normal", "critical"
 
@@ -169,6 +180,23 @@ def _post(path: str, data: Dict[str, Any], priority: str) -> Dict[str, Any]:
 
 def _md5_password(password: str) -> str:
     return hashlib.md5(password.encode()).hexdigest()
+
+
+def enabled() -> bool:
+    """The owner has switched door codes on and set the app's TTLock credentials."""
+    return bool(
+        config.DOOR_CODES_ENABLED and config.TTLOCK_CLIENT_ID and config.TTLOCK_CLIENT_SECRET
+    )
+
+
+def allowed_for(owner_user_id: Optional[int]) -> bool:
+    return enabled() and owner_user_id is not None
+
+
+def locks_of(account: Optional[dict]) -> List[dict]:
+    if not account:
+        return []
+    return json.loads(account["locks_json"] or "[]")
 
 
 def account_for(owner_user_id: int) -> Optional[dict]:
@@ -504,6 +532,16 @@ def delete_code(account_id: int, lock_id: str, code_id: str, priority: str = CRI
         },
         priority,
     )
+
+
+def query_lock_time(account_id: int, lock_id: str) -> int:
+    answer = _call(account_id, "/v3/lock/queryDate", {"lockId": int(lock_id)}, LOW)
+    return int(answer["date"])
+
+
+def adjust_lock_time(account_id: int, lock_id: str) -> int:
+    answer = _call(account_id, "/v3/lock/updateDate", {"lockId": int(lock_id)}, NORMAL)
+    return int(answer["date"])
 
 
 def delete_account(account_id: int) -> None:

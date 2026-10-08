@@ -83,6 +83,12 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.google_location": (
             "Conditional; used only when the Operator configures the documented backup job."
         ),
+        
+        "subprocessors.ttlock_provider": "Hangzhou Sciener Intelligent Control Technology Co., Ltd. (TTLock)",
+        "subprocessors.ttlock_purpose": "Only if used: door codes. Creating, changing and deleting timed passcodes on the host's TTLock locks, for properties where the host switched door codes on.",
+        "subprocessors.ttlock_data": "Lock ID, the code, its validity times and a reference number. No guest names or contact details.",
+        "subprocessors.ttlock_location": "EU API endpoint (euapi.ttlock.com); company based in China.",
+        "subprocessors.ttlock_safeguard": "EU Standard Contractual Clauses (2021/914, processor to processor), being concluded with TTLock; until signed, door codes run only on the operator's own properties. Data limited as stated.",
         "subprocessors.google_safeguard": (
             "Provider DPA and lawful GDPR Chapter V safeguards where required."
         ),
@@ -192,6 +198,11 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.google_location": (
             "Podmíněné použití pouze po nastavení dokumentované zálohovací úlohy Provozovatelem."
         ),
+        "subprocessors.ttlock_provider": "Hangzhou Sciener Intelligent Control Technology Co., Ltd. (TTLock)",
+        "subprocessors.ttlock_purpose": "Jen při použití: kódy ke dveřím. Vytváření, změna a mazání časově omezených kódů na zámcích TTLock hostitele, u ubytování, kde hostitel kódy zapnul.",
+        "subprocessors.ttlock_data": "ID zámku, kód, doba jeho platnosti a referenční číslo. Žádná jména ani kontakty hostů.",
+        "subprocessors.ttlock_location": "Rozhraní API v EU (euapi.ttlock.com); společnost se sídlem v Číně.",
+        "subprocessors.ttlock_safeguard": "Standardní smluvní doložky EU (2021/914, zpracovatel zpracovateli), uzavírají se s TTLock; do podpisu běží kódy ke dveřím jen na vlastních ubytováních provozovatele. Rozsah údajů omezen, jak je uvedeno.",
         "subprocessors.google_safeguard": (
             "DPA poskytovatele a zákonné záruky kapitoly V GDPR, jsou-li nutné."
         ),

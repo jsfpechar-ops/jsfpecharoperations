@@ -337,8 +337,15 @@ def _template_passkeys_enabled() -> bool:
     return passkeys.available()
 
 
+def _template_door_codes_enabled() -> bool:
+    from . import ttlock
+
+    return ttlock.enabled()
+
+
 templates.env.globals["t"] = _template_translate
 templates.env.globals["passkeys_enabled"] = _template_passkeys_enabled
+templates.env.globals["door_codes_enabled"] = _template_door_codes_enabled
 templates.env.globals["legal_effective"] = _template_legal_effective
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals["identity_visible"] = _template_identity_visible

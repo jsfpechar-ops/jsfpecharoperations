@@ -26,6 +26,7 @@ SUBPROCESSOR_IDS = (
     "umami",
     "render",
     "google",
+    "ttlock",
 )
 # Recipients that are not subprocessors (section 5). "google_ads" belongs to
 # self sign-up with Google Ads (WP20), so it is listed only while

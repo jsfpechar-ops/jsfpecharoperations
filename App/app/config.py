@@ -171,6 +171,8 @@ TTLOCK_MONTHLY_CALLS = int(os.environ.get("UBYHOST_TTLOCK_MONTHLY_CALLS", "30000
 # Codes work from 1 h before check-in to 1 h after check-out: covers lock clock
 # drift and any daylight-saving mismatch in the lock. Hours have no default; the host sets them.
 DOOR_CODE_BUFFER_HOURS = 1
+# Until this is on, only stays added by hand (reservation.source = 'manual') get a door code.
+DOOR_CODES_LIVE = os.environ.get("UBYHOST_DOOR_CODES_LIVE", "0") in ("1", "true", "yes")
 
 # Used to build the guest permalink shown to hosts for copy/paste.
 PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")

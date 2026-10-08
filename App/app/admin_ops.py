@@ -296,6 +296,16 @@ def open_alerts(limit: int = ROW_LIMIT) -> Dict[str, Any]:
 
 def overview() -> Dict[str, Any]:
     """Everything the page shows, in the order it shows it."""
+    from . import config, ttlock
+
+    issued = db.query_one(
+        "SELECT COUNT(*) AS n FROM door_code WHERE state = 'issued' "
+        "AND issued_at >= ?",
+        (datetime.now(timezone.utc).strftime("%Y-%m-01T00:00:00+00:00"),),
+    )
+    failed = db.query_one(
+        "SELECT COUNT(*) AS n FROM door_code WHERE state IN ('failed', 'revoke_failed')",
+    )
     return {
         "filings": filings_needing_attention(),
         "stuck": stuck_submissions(),
@@ -303,4 +313,12 @@ def overview() -> Dict[str, Any]:
         "jobs": job_health(),
         "mail": mail_problems(),
         "alerts": open_alerts(),
+        "ttlock": {
+            "used": ttlock.calls_this_month(),
+            "limit": config.TTLOCK_MONTHLY_CALLS,
+            "issued": int(issued["n"] or 0) if issued else 0,
+            "failed": int(failed["n"] or 0) if failed else 0,
+            "enabled": config.DOOR_CODES_ENABLED,
+            "live": config.DOOR_CODES_LIVE,
+        },
     }
