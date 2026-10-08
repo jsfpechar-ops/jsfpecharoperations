@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import csv
 import io
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 from zoneinfo import ZoneInfo
 
@@ -146,6 +146,7 @@ def rows(now: Optional[datetime] = None) -> Dict[str, Any]:
                 stage, stage_at = key, item[column]
         item["stage"] = stage
         item["stage_at"] = stage_at
+        item["stages_done"] = sum(1 for _key, column in order if item.get(column))
         items.append(item)
     counts = {key: 0 for key, _column in order}
     for item in items:
@@ -159,6 +160,7 @@ def rows(now: Optional[datetime] = None) -> Dict[str, Any]:
         "stage_columns": list(order),
         "previous_month": previous_label,
         "current_month": current_label,
+        "stages_total": len(order),
     }
 
 
@@ -201,3 +203,86 @@ def iter_csv(data: Dict[str, Any]) -> Iterator[str]:
             [csv_safe("" if item.get(key) is None else item.get(key)) for _header, key in columns]
         )
         yield flush()
+
+
+WEEKS = 12
+ACTIVE_DAYS = 30
+
+
+def overview(data: Dict[str, Any], now: Optional[datetime] = None) -> Dict[str, Any]:
+    """Stat cards and funnel bars, computed from what rows() already returned."""
+    moment = now or datetime.now(timezone.utc)
+    cutoff = (moment - timedelta(days=ACTIVE_DAYS)).replace(microsecond=0).isoformat()
+    rows_ = data["rows"]
+    cards = {
+        "hosts": len(rows_),
+        "active": sum(1 for r in rows_ if r.get("last_login_at") and r["last_login_at"] >= cutoff),
+        "filings_current": sum(r["filings_current"] for r in rows_),
+        "filings_previous": sum(r["filings_previous"] for r in rows_),
+        "retained": data["counts"].get("retained", 0),
+    }
+    counts = data["counts"]
+    top = max(counts.values(), default=0) or 1
+    signup_keys = {key for key, _column in SIGNUP_STAGES}
+    bars: List[Dict[str, Any]] = []
+    previous: Optional[int] = None
+    for key in data["stages"]:
+        count = counts[key]
+        if key in signup_keys and count == 0:
+            continue  # self sign-up is off: do not show two empty rows
+        width = round(100 * count / top)
+        bars.append(
+            {
+                "key": key,
+                "count": count,
+                "width": max(width, 2) if count else 0,
+                "of_previous": round(100 * count / previous) if previous else None,
+            }
+        )
+        previous = count
+    return {"cards": cards, "bars": bars}
+
+
+def _monday(day: date) -> date:
+    return day - timedelta(days=day.weekday())
+
+
+def weekly(now: Optional[datetime] = None) -> Dict[str, List[Dict[str, Any]]]:
+    """New host accounts and filings per week for the last WEEKS weeks (UTC)."""
+    today = (now or datetime.now(timezone.utc)).date()
+    first = _monday(today) - timedelta(weeks=WEEKS - 1)
+    starts = [first + timedelta(weeks=i) for i in range(WEEKS)]
+    since = first.isoformat()
+
+    def bucket(sql: str, params: Tuple[Any, ...]) -> List[Dict[str, Any]]:
+        totals = {start: 0 for start in starts}
+        for row in db.query(sql, params):
+            try:
+                day = date.fromisoformat(row["day"])
+            except (TypeError, ValueError):
+                continue
+            start = _monday(day)
+            if start in totals:
+                totals[start] += row["n"]
+        peak = max(totals.values(), default=0) or 1
+        return [
+            {
+                "label": start.strftime("%d.%m."),
+                "value": totals[start],
+                "height": max(round(100 * totals[start] / peak), 3) if totals[start] else 0,
+            }
+            for start in starts
+        ]
+
+    return {
+        "hosts": bucket(
+            "SELECT SUBSTR(created_at, 1, 10) AS day, COUNT(*) AS n FROM user_account "
+            "WHERE role = 'host' AND created_at >= ? GROUP BY SUBSTR(created_at, 1, 10)",
+            (since,),
+        ),
+        "filings": bucket(
+            "SELECT SUBSTR(created_at, 1, 10) AS day, COUNT(*) AS n FROM submission "
+            f"WHERE state IN ({_FILED}) AND created_at >= ? GROUP BY SUBSTR(created_at, 1, 10)",
+            (*FILED_STATES, since),
+        ),
+    }
