@@ -128,7 +128,7 @@ async def lifespan(_app: FastAPI):
     )
     env_guard.apply()
     if config.DEPLOYMENT == "staging":
-        if config.STAGING_LOGIN_PASSWORD:
+        if auth.staging_expected_password():
             log.warning(
                 "staging login: username=%s password=UBYHOST_STAGING_LOGIN_PASSWORD (Render Environment)",
                 config.ADMIN_USERNAME or "admin",
@@ -388,6 +388,15 @@ def healthz():
         payload.update(
             {"deployment": config.DEPLOYMENT, "ubyport_env": config.UBYPORT_ENV}
         )
+    if config.DEPLOYMENT == "staging":
+        from . import auth
+
+        expected = auth.staging_expected_password()
+        payload["staging_login"] = {
+            "password_configured": bool(expected),
+            "password_length": len(expected),
+            "admin_username": auth.staging_admin_username(),
+        }
     return JSONResponse(payload, status_code=200 if healthy else 503)
 
 
