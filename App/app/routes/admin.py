@@ -14,7 +14,7 @@ import secrets
 import time
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
-from urllib.parse import quote, urlencode, urlparse
+from urllib.parse import parse_qsl, quote, urlencode, urlparse, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
@@ -195,6 +195,19 @@ def _redirect_path_from_referer(request: Request, default: str = "/") -> str:
     if parsed.query:
         return f"{path}?{parsed.query}"
     return path
+
+
+def _with_undo(return_to: str, reservation_id: int) -> str:
+    """return_to plus the query that makes base.html show the stay Undo toast."""
+    parts = urlsplit(return_to)
+    query = [
+        (key, value)
+        for key, value in parse_qsl(parts.query, keep_blank_values=True)
+        if key not in ("undo_stay", "undo_return", "msg", "err")
+    ]
+    clean = urlunsplit(("", "", parts.path, urlencode(query), ""))
+    query += [("undo_stay", str(reservation_id)), ("undo_return", clean)]
+    return urlunsplit(("", "", parts.path, urlencode(query), ""))
 
 
 def _form_int(form, key: str) -> Optional[int]:
@@ -1142,7 +1155,7 @@ async def automation_update(apartment_id: int, request: Request):
 
 
 @router.post("/apartments/{apartment_id}/archive")
-def archive_apartment(apartment_id: int, request: Request):
+async def archive_apartment(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -1151,13 +1164,15 @@ def archive_apartment(apartment_id: int, request: Request):
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     if apartment["archived_at"]:
         return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.already_archived"))
+    form = await request.form()
+    return_to = _form_return_to(form, "/apartments")
     db.update(
         "apartment",
         apartment_id,
         {"archived_at": db.utcnow(), "active": 0},
     )
     db.audit("apartment_archived", f"id={apartment_id}")
-    return _back("/apartments", msg=_flash(request, "flash.apartments.archived", name=apartment["internal_name"]))
+    return _back(return_to, msg=_flash(request, "flash.apartments.archived", name=apartment["internal_name"]))
 
 
 @router.post("/apartments/{apartment_id}/unarchive")
@@ -1791,11 +1806,10 @@ async def reservation_archive(reservation_id: int, request: Request):
     return_to = _form_return_to(form, _redirect_path_from_referer(request, "/reservations"))
     db.update("reservation", reservation_id, {"archived_at": db.utcnow(), "updated_at": db.utcnow()})
     db.audit("reservation_archived", f"id={reservation_id}")
-    target = (
-        f"/reservations?range=archive&undo_stay={reservation_id}"
-        f"&undo_return={quote(return_to, safe='')}"
+    return _back(
+        _with_undo(return_to, reservation_id),
+        msg=_flash(request, "archive.stay_moved"),
     )
-    return _back(target, msg=_flash(request, "archive.stay_moved"))
 
 
 @router.post("/reservations/{reservation_id}/unarchive")
