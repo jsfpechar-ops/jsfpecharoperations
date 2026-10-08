@@ -6,7 +6,7 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-Create `App/app/ttlock.py`, the only module that talks to TTLock: a guarded HTTP call, the token store, the call budget, and eight small API functions. Nothing calls it yet, so there is no visible change. Security rules are enforced by tests, not by comments.
+Create `App/app/ttlock.py`, the only module that talks to TTLock: a guarded HTTP call, the token store, the call budget, and six small API functions. Nothing calls it yet, so there is no visible change. Security rules are enforced by tests, not by comments.
 
 ## 2. Context
 
@@ -27,8 +27,8 @@ No other file may change.
 ## 4. Steps
 
 1. **Constants and errors.**
-   - `ALLOWED_PATHS = frozenset({"/oauth2/token", "/v3/key/list", "/v3/lock/listKeyboardPwd", "/v3/keyboardPwd/add", "/v3/keyboardPwd/get", "/v3/keyboardPwd/change", "/v3/keyboardPwd/delete"})`.
-   - `GATEWAY_PATHS = frozenset({"/v3/keyboardPwd/add", "/v3/keyboardPwd/change", "/v3/keyboardPwd/delete"})`.
+   - `ALLOWED_PATHS = frozenset({"/oauth2/token", "/v3/key/list", "/v3/lock/listKeyboardPwd", "/v3/keyboardPwd/get", "/v3/keyboardPwd/change", "/v3/keyboardPwd/delete"})`.
+   - `GATEWAY_PATHS = frozenset({"/v3/keyboardPwd/change", "/v3/keyboardPwd/delete"})`.
    - `LOW, NORMAL, CRITICAL = "low", "normal", "critical"` (call priorities).
    - `class TTLockError(Exception)` with attributes `code: Optional[int]`, `kind: str` and `message: str` (TTLock's `errmsg`, at most 200 characters; it never holds secrets).
    - `ERROR_KINDS: Dict[int, str]`, from the table in `docs/TTLOCK.md` "Error codes": 10003 and 10004 → `"auth"`; 10011 → `"reauth"`; 10007 → `"login"`; 10000 and 10001 → `"config"`; 10005, 30001, -2018, 20002 → `"permission"`; 30006 → `"rate"`; 80000 → `"clock"`; -2012 → `"offline"`; -4056 → `"storage"`; 90000 and 1 → `"transient"`; -3 → `"bug"`. Unknown code → `"transient"`. No HTTP answer or bad JSON → `"network"`. Kill switch off → `"disabled"`. Budget refusal → `"budget"`.
@@ -49,11 +49,9 @@ No other file may change.
 4. **Time.** `stay_window(date_from: str, date_to: str, checkin_hour: int, checkout_hour: int) -> Tuple[int, int]`: build `datetime(..., hour, 0, 0, tzinfo=ZoneInfo(config.TIMEZONE))` for both days and return epoch milliseconds. Raise `ValueError` if the end is not after the start, or an hour is outside 0 to 23.
 5. **API functions**, each a few lines over `_call`:
    - `list_admin_locks(account_id) -> List[dict]` (`LOW`): page `/v3/key/list` with `pageSize=1000` until `pageNo >= pages`. Keep items with `keyRight == 1` and `str(keyStatus) == "110401"`. Build each item as **only** `{"lock_id": str(lockId), "alias": lockAlias or lockName, "battery": electricQuantity, "tz_offset_ms": timezoneRawOffset, "key_end": endDate}`. Store the list as JSON in `lock_account.locks_json` with `locks_fetched_at`, and return it.
-   - `create_period_code(account_id, lock_id, start_ms, end_ms, name, priority=NORMAL) -> Tuple[str, str]` (the offline fallback): `ValueError` unless both times are whole hours (`% 3_600_000 == 0`). Post `/v3/keyboardPwd/get` with `lockId=int(lock_id)`, `keyboardPwdType=3`, `keyboardPwdName=name`, `startDate`, `endDate`. Return `(str(keyboardPwd), str(keyboardPwdId))`.
+   - `create_period_code(account_id, lock_id, start_ms, end_ms, name, priority=NORMAL) -> Tuple[str, str]`: `ValueError` unless both times are whole hours (`% 3_600_000 == 0`). Post `/v3/keyboardPwd/get` with `lockId=int(lock_id)`, `keyboardPwdType=3`, `keyboardPwdName=name`, `startDate`, `endDate`. Return `(str(keyboardPwd), str(keyboardPwdId))`.
    - `find_code_by_name(account_id, lock_id, name) -> Optional[Tuple[str, str]]` (`NORMAL`): `/v3/lock/listKeyboardPwd` with `searchStr=name`, `orderBy=1`, `pageNo=1`, `pageSize=20`. Return `(pin, code_id)` of the item whose `keyboardPwdName == name` exactly, else `None`.
-   - `new_pin() -> str`: 6 digits from `secrets.randbelow`, drawn again while all digits are equal or the digits form a run up or down (`123456`, `987654`). May start with 0.
-   - `add_custom_code(account_id, lock_id, pin, start_ms, end_ms, name, priority=NORMAL) -> str`: same whole-hour check. Post `/v3/keyboardPwd/add` with `lockId`, `keyboardPwd=pin`, `keyboardPwdName=name`, `startDate`, `endDate`, `addType=2`. Return `str(keyboardPwdId)`.
-   - `change_code(account_id, lock_id, code_id, start_ms, end_ms, name=None, new_pin=None, priority=NORMAL) -> None`: same whole-hour check. Post `/v3/keyboardPwd/change` with `keyboardPwdId`, `startDate`, `endDate`, `changeType=2`, plus `keyboardPwdName` and `newKeyboardPwd` only when given.
+   - `change_code_period(account_id, lock_id, code_id, start_ms, end_ms, priority=NORMAL) -> None`: same whole-hour check. Post `/v3/keyboardPwd/change` with `keyboardPwdId`, `startDate`, `endDate`, `changeType=2`. No new PIN is ever sent.
    - `delete_code(account_id, lock_id, code_id, priority=CRITICAL) -> None`: `/v3/keyboardPwd/delete` with `deleteType=2`.
    - `calls_this_month() -> int`.
 6. **Tests** in `App/tests/test_ttlock.py`. A fixture monkeypatches `app.ttlock.requests.post` with a fake that records `(url, data, timeout)` and pops scripted JSON answers; any unscripted call fails the test. Another fixture sets `DOOR_CODES_ENABLED = True`, dummy client id and secret, and cleans `lock_account` and `lock_api_usage`. Tests, each asserting literal values:
@@ -70,9 +68,7 @@ No other file may change.
    - `test_code_times_must_be_whole_hours`.
    - `test_pin_keeps_its_leading_zero` (answer `"0563456"`).
    - `test_lock_list_keeps_admin_locks_and_drops_secrets`: scripted items with `lockData`, `noKeyPwd`, one `keyRight: 0`, one `keyStatus: "110405"`. Only the admin, normal lock is returned and stored, and neither secret string appears in `locks_json` or `caplog.text`.
-   - `test_new_pin_is_six_digits_and_never_trivial`: 2,000 draws are all 6 digits, none is `000000` to `999999` with equal digits, none is an up or down run, and at least one of the 2,000 starts with 0.
-   - `test_add_custom_code_goes_through_the_gateway`: posts `addType=2`, `keyboardPwd`, `timeout=35`, returns the id as a string.
-   - `test_change_code_sends_only_what_is_given`: without `new_pin` the body has no `newKeyboardPwd`; with it, it has; always `changeType=2`.
+   - `test_change_sends_the_new_window_through_the_gateway`: body has `keyboardPwdId`, `startDate`, `endDate`, `changeType=2`, no `newKeyboardPwd`, and `timeout=35`.
    - `test_error_codes_map_to_kinds` (-2012 `offline`, 80000 `clock`, 30006 `rate`, 12345 `transient`).
 
    Before writing the two `stay_window` tests, check each expected number with `datetime.fromtimestamp(ms / 1000, ZoneInfo("Europe/Prague"))`. If one does not read 15:00 or 11:00 local time, stop (§8).
@@ -83,11 +79,11 @@ Everything outside §3. No route, template, scheduler job or mail. Do not add `/
 
 ## 6. Commands
 
-From `App/`: `.venv/bin/python -m pytest tests -q` (expected: all pass) and `.venv/bin/python -m pytest tests/test_ttlock.py -q` (expected: 17 passed). From the repo root: `python3 scripts/context_lint.py` (expected last line: `context lint: OK`).
+From `App/`: `.venv/bin/python -m pytest tests -q` (expected: all pass) and `.venv/bin/python -m pytest tests/test_ttlock.py -q` (expected: 15 passed). From the repo root: `python3 scripts/context_lint.py` (expected last line: `context lint: OK`).
 
 ## 7. Acceptance
 
-- [ ] The 17 tests pass, and the full suite passes.
+- [ ] The 15 tests pass, and the full suite passes.
 - [ ] `grep -n "requests.post" App/app/ttlock.py` shows exactly one line, inside `_post`.
 - [ ] `grep -n "log\." App/app/ttlock.py`: no line logs `data`, `body`, a token, a password or the JSON answer.
 - [ ] `git diff --stat` shows only the files in §3.

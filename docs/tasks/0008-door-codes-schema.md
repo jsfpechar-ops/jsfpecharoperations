@@ -61,7 +61,7 @@ No other file may change.
        reservation_id   INTEGER NOT NULL UNIQUE REFERENCES reservation(id) ON DELETE CASCADE,
        apartment_id     INTEGER NOT NULL REFERENCES apartment(id) ON DELETE CASCADE,
        lock_id          TEXT NOT NULL,
-       code_kind        TEXT NOT NULL DEFAULT 'custom',
+       code_kind        TEXT NOT NULL DEFAULT 'random',
        state            TEXT NOT NULL DEFAULT 'pending',
        pin_enc          TEXT,
        provider_code_id TEXT,
