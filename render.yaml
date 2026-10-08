@@ -43,9 +43,9 @@ services:
       # First administrator (e-mail link or staging password below).
       - key: UBYHOST_ADMIN_EMAIL
         value: josef@ubyhost.com
-      # Staging break-glass login (Render does not deliver mail). Set in the dashboard.
+      # Staging username/password login (Render does not deliver mail). Copy from Environment after deploy.
       - key: UBYHOST_STAGING_LOGIN_PASSWORD
-        sync: false
+        generateValue: true
       - key: UBYHOST_MAIL_BACKEND
         value: console
       # Door codes (TTLock): set client id/secret in the Render dashboard

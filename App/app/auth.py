@@ -212,6 +212,16 @@ def account_by_email(email: str):
     )
 
 
+def account_by_username(username: str):
+    """The active account with this login handle, or None."""
+    name = normalise_username(username)
+    if not name:
+        return None
+    return db.query_one(
+        "SELECT * FROM user_account WHERE username = ? AND active = 1", (name,)
+    )
+
+
 def issue_session(
     user_id: int,
     session_version: int,

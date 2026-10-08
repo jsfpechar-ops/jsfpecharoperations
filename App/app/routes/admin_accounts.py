@@ -77,7 +77,39 @@ def _login_page_context(request: Request) -> dict:
     if config.DEPLOYMENT == "staging":
         ctx["staging_login_email"] = auth.staging_admin_login_email()
         ctx["staging_password_enabled"] = bool(config.STAGING_LOGIN_PASSWORD)
+        ctx["staging_admin_username"] = config.ADMIN_USERNAME or "admin"
     return ctx
+
+
+def _try_staging_password_login(
+    request: Request,
+    form,
+    *,
+    remember: bool,
+    next_path: str,
+):
+    if config.DEPLOYMENT != "staging" or not config.STAGING_LOGIN_PASSWORD:
+        return None
+    password = _form_str(form, "staging_password")
+    if not password:
+        return None
+    if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
+        return "auth.error.turnstile", 403
+    username = _form_str(form, "username")
+    account = auth.account_by_username(username) if username else None
+    if not account:
+        email = mail.normalise_email(_form_str(form, "email")[:254])
+        if email:
+            account = auth.account_by_email(email)
+    if account and account["active"] and auth.staging_password_ok(password):
+        return _finish_login(
+            request,
+            account,
+            remember=remember,
+            next_path=next_path,
+            method="staging_password",
+        )
+    return "auth.error.staging_password", 403
 
 
 @router.post("/login")
@@ -99,24 +131,21 @@ async def login_submit(request: Request):
             status_code=status_code,
         )
 
+    staging_result = _try_staging_password_login(
+        request, form, remember=remember, next_path=next_path
+    )
+    if staging_result is not None:
+        if isinstance(staging_result, tuple):
+            return again(staging_result[0], staging_result[1])
+        return staging_result
+
+    if config.DEPLOYMENT == "staging" and config.STAGING_LOGIN_PASSWORD:
+        return again("auth.error.staging_password", 403)
+
     if not turnstile.verify(request, form.get("cf-turnstile-response"), "host_login"):
         return again("auth.error.turnstile", 403)
     if not email:
         return again("auth.error.email_invalid", 400)
-
-    staging_password = _form_str(form, "staging_password")
-    if config.DEPLOYMENT == "staging" and config.STAGING_LOGIN_PASSWORD:
-        if staging_password:
-            account = auth.account_by_email(email)
-            if account and account["active"] and auth.staging_password_ok(staging_password):
-                return _finish_login(
-                    request,
-                    account,
-                    remember=remember,
-                    next_path=next_path,
-                    method="staging_password",
-                )
-            return again("auth.error.staging_password", 403)
 
     ip_key = rate_limit.client_key(request)
     if login_link.request_blocked(ip_key, email):
@@ -143,6 +172,8 @@ async def login_submit(request: Request):
             context["dev_link"] = f"/login/link?t={token}"
     # The same page whether or not the address has an account: the form must
     # not tell anyone who uses UbyHost.
+    if config.DEPLOYMENT == "staging":
+        context["staging_console_mail"] = True
     response = render(request, "login_sent.html", context)
     response.background = background
     return response

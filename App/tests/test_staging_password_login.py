@@ -24,7 +24,18 @@ def account(monkeypatch):
     db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 
-def test_staging_password_logs_in(account):
+def test_staging_password_logs_in_with_username(account):
+    client = TestClient(app)
+    response = client.post(
+        "/login?lang=en",
+        data={"username": "staging-pw-admin", "staging_password": PASSWORD},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert client.get("/").status_code == 200
+
+
+def test_staging_password_logs_in_with_email(account):
     client = TestClient(app)
     response = client.post(
         "/login?lang=en",
@@ -32,7 +43,6 @@ def test_staging_password_logs_in(account):
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert client.get("/").status_code == 200
 
 
 def test_wrong_staging_password_is_rejected(account):
