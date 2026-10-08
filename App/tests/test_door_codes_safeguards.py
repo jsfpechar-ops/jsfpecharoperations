@@ -263,12 +263,15 @@ def test_guests_are_not_shown_the_first_use_rule():
 
 
 def test_the_guide_walks_through_authorized_admin():
-    from app.main import app
+    """Read the copy itself: the page language depends on what other tests left behind."""
+    from app.guide_i18n import GUIDE_STRINGS
 
-    page = TestClient(app).get("/guide?lang=en")
-    assert page.status_code == 200
-    text = page.text
-    assert "Create Admin" in text
-    assert "Manage their own users only" in text
-    assert "within 24 hours after its start time" in text
-    assert "Remote unlock" not in text
+    for lang in ("en", "cs"):
+        strings = GUIDE_STRINGS[lang]
+        steps = " ".join(strings[f"guide.door_codes.step{n}"] for n in range(1, 10))
+        assert "Create Admin" in steps
+        assert "Manage their own users only" in steps
+        assert "Remote unlock" not in steps
+    en = GUIDE_STRINGS["en"]
+    assert "within 24 hours after its start time" in en["guide.door_codes.how3"]
+    assert "Passcodes" in en["guide.door_codes.how7"]

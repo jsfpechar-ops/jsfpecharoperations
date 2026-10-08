@@ -448,13 +448,15 @@ async def smart_locks_refresh(request: Request):
     if not account:
         return _back(return_to, err=_flash(request, "flash.error.smart_locks_missing_account"))
     try:
-        locks = ttlock.list_admin_locks(int(account["id"]))
+        locks, plain_keys = ttlock.check_locks(int(account["id"]))
     except ttlock.TTLockError as exc:
         if exc.kind == "budget":
             return _back(return_to, err=_flash(request, "flash.error.smart_locks_budget"))
         if exc.kind == "reauth":
             return _back(return_to, err=_flash(request, "flash.error.smart_locks_reauth"))
         return _back(return_to, err=_flash(request, "flash.error.smart_locks_failed"))
+    if not locks and plain_keys:
+        return _back(return_to, err=_flash(request, "flash.error.smart_locks_plain_key"))
     if not locks:
         return _back(return_to, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
     count = len(locks)
@@ -464,7 +466,7 @@ async def smart_locks_refresh(request: Request):
         target = f"/smart-locks?return_to={quote(return_to, safe='')}"
     return _back(
         target,
-        msg=_flash_plural(request, "flash.ok.smart_locks_found", count=count),
+        msg=_flash_plural(request, "flash.ok.smart_locks_found", count, count=count),
     )
 
 
