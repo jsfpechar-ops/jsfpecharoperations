@@ -81,13 +81,13 @@ No other file may change. `App/app/reporting.py` must not change.
    | `notification.job_name.door_codes` | door codes | kódy ke dveřím |
    | `notification.door_code_failed.title` | %(property)s: the door code for the stay from %(date)s could not be created. | %(property)s: kód ke dveřím pro pobyt od %(date)s se nepodařilo vytvořit. |
    | `notification.reason.door_code_failed` | Create a code in the TTLock app and send it to the guest. | Vytvořte kód v aplikaci TTLock a pošlete ho hostovi. |
-9. **Tests** (`App/tests/test_door_codes_issue.py`). Seed like `tests/test_stale_submission.py` (`db.insert` of `apartment` and `reservation` with `source='manual'` unless a test says otherwise), plus a `lock_account` with `status='ok'`. Turn the feature on with `monkeypatch` (`DOOR_CODES_ENABLED`, client id and secret, `DOOR_CODES_USERS`). Fake `ttlock.create_period_code` and `ttlock.find_code_by_name` with recorders. Freeze time where a test needs it. Tests, each asserting literal values:
+9. **Tests** (`App/tests/test_door_codes_issue.py`). Seed like `tests/test_stale_submission.py` (`db.insert` of `apartment` and `reservation` with `source='manual'` unless a test says otherwise), plus a `lock_account` with `status='ok'`. Turn the feature on with `monkeypatch` (`DOOR_CODES_ENABLED`, client id and secret). Fake `ttlock.create_period_code` and `ttlock.find_code_by_name` with recorders. Freeze time where a test needs it. Tests, each asserting literal values:
    - `test_completed_stay_gets_one_code`: after `reconcile()`, one row `issued`, `db.decrypt_field(pin_enc) == "0563456"`, `provider_code_id == "10236"`, `valid_from`/`valid_to` equal the buffered window, the fake was called once with name `UH-<id>`.
    - `test_a_second_run_makes_no_second_call`.
    - `test_a_claimed_row_is_not_issued_twice` (set `claimed_at` to now on a `pending` row; `issue` returns `False`, no call).
    - `test_ineligible_stays_get_nothing`: parametrize over not completed, cancelled, archived, `date_to` yesterday, `lock_provider` NULL, hours NULL. No row, no call.
    - `test_live_off_skips_calendar_stays` (`source='ical'` gets nothing) and `test_live_on_includes_calendar_stays`.
-   - `test_host_off_the_pilot_list_gets_nothing`.
+   - `test_host_without_a_connected_account_gets_nothing`.
    - `test_transient_error_backs_off_1_then_5_minutes`.
    - `test_fifth_failure_marks_failed_and_raises_one_alert` (dedupe key `door_code_failed:<reservation_id>`; a later success resolves it).
    - `test_reauth_fails_at_once`.

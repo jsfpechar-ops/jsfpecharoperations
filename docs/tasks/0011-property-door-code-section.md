@@ -6,13 +6,13 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-On an existing property's page, a host on the pilot list gets an optional "Door code" section: one tick box to switch door codes on, the lock, and the required check-in and check-out hours. Nothing issues codes yet (task 0012). Hosts off the list, and the new-property form, see no change.
+On an existing property's page, every host gets an optional "Door code" section (once the owner has switched the feature on): one tick box to switch door codes on, the lock, and the required check-in and check-out hours. Nothing issues codes yet (task 0012). The new-property form sees no change, and a host without TTLock only sees a one-line pointer to Settings.
 
 ## 2. Context
 
 - Plan: `docs/plans/ttlock-door-codes.md` §2 (decisions 5, 5a, 5b) and §10 (the property sketch). Rule from `docs/HOST_APP_DESIGN.md` §6: optional features never block a first stay, so the section is edit-only, and errors redirect to a stable anchor.
 - `config.DOOR_CODES_LIVE` (added by task 0012, which runs after this one): until it is on, only stays the host added by hand get a code. Use `getattr(config, "DOOR_CODES_LIVE", False)` here so this task does not depend on 0012.
-- From task 0010 (`App/app/ttlock.py`): `allowed_for(owner_user_id)`, `account_for(owner_user_id)`, `locks_of(account)` (items `lock_id`, `alias`, `battery`, `tz_offset_ms`, `key_end`). From 0008: `apartment.lock_provider`, `lock_id`, `checkin_hour`, `checkout_hour`; `config.DOOR_CODE_BUFFER_HOURS = 1`.
+- From task 0010 (`App/app/ttlock.py`): `allowed_for(owner_user_id)` (feature on and credentials set; there is no pilot list), `account_for(owner_user_id)`, `locks_of(account)` (items `lock_id`, `alias`, `battery`, `tz_offset_ms`, `key_end`). From 0008: `apartment.lock_provider`, `lock_id`, `checkin_hour`, `checkout_hour`; `config.DOOR_CODE_BUFFER_HOURS = 1`.
 - Routes (`App/app/routes/admin.py`): GET `/apartments/{apartment_id}` is `apartment_detail` (renders `apartment_form.html`, near line 829). POST `/apartments/{apartment_id}` is `apartment_update`, which calls `_save_apartment_form(apartment_id, request, form)` (near line 883). That function ends with:
   ```
   db.update("apartment", apartment_id, payload)
@@ -85,7 +85,7 @@ No other file may change.
          <div class="checkline"><input type="checkbox" id="door_codes" name="door_codes" value="1" {% if door_code.enabled %}checked{% endif %}><label for="door_codes">{{ t('apartment.form.door_code.enable') }}</label></div>
          <div class="field" style="max-width:320px"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
            <select id="lock_id" name="lock_id"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
-             {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.lock_id == door_code.lock_id %}selected{% endif %}>{{ lock.alias }}</option>{% endfor %}
+             {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.lock_id == door_code.lock_id %}selected{% endif %}>{{ lock.alias }} ({{ t('settings.smart_locks.lock_id', id=lock.lock_id) }})</option>{% endfor %}
            </select>
            {% if door_code.tz_warning %}<div class="hint"><strong>{{ t('settings.smart_locks.timezone_warning') }}</strong></div>{% endif %}
          </div>
@@ -123,8 +123,8 @@ No other file may change.
    | `apartment.form.door_code.risk` | Anyone with this property's guest link and PIN can register for an upcoming stay and receive its door code. Change the PIN from time to time. | Kdokoli s odkazem pro hosty a PINem tohoto ubytování se může zaregistrovat k nadcházejícímu pobytu a dostat jeho kód ke dveřím. PIN čas od času změňte. |
    | `flash.error.door_code_lock` | Choose a lock from the list. | Vyberte zámek ze seznamu. |
    | `flash.error.door_code_hours` | Choose the check-in and check-out hour. | Vyberte hodinu příjezdu a odjezdu. |
-5. **Tests** (`App/tests/test_property_door_code.py`), with `login_as` and the host and property setup from `tests/test_property_form_save.py`. Monkeypatch the feature on (`config.DOOR_CODES_ENABLED`, `TTLOCK_CLIENT_ID`, `TTLOCK_CLIENT_SECRET`, `DOOR_CODES_USERS`) and seed a `lock_account` with `locks_json` of two locks. Each test posts the full form the way `test_property_form_save.py` does, plus the door-code fields. Tests:
-   - `test_section_absent_when_not_allowed` (`id="door-code"` missing).
+5. **Tests** (`App/tests/test_property_door_code.py`), with `login_as` and the host and property setup from `tests/test_property_form_save.py`. Monkeypatch the feature on (`config.DOOR_CODES_ENABLED`, `TTLOCK_CLIENT_ID`, `TTLOCK_CLIENT_SECRET`) and seed a `lock_account` with `locks_json` of two locks. Each test posts the full form the way `test_property_form_save.py` does, plus the door-code fields. Tests:
+   - `test_section_absent_when_the_feature_is_off` (`id="door-code"` missing).
    - `test_section_absent_on_the_new_property_form`.
    - `test_section_asks_to_connect_first_without_an_account`.
    - `test_enabling_saves_lock_and_hours` (columns read back `ttlock`, the lock id, 15, 11; audit `door_codes_on`).
