@@ -206,3 +206,60 @@ def test_self_sign_up_stages_and_source_column():
     headers = [h for h, _k in admin_funnel.csv_columns("2026-09", "2026-10")]
     assert headers.index("signup_source_present") < headers.index("signed_up")
     assert "signup_source" in headers
+
+
+def test_overview_cards_and_bars():
+    for level in (0, 3, 7, 8):
+        _seed_host_at(level)
+    data = admin_funnel.rows(now=NOW)
+    view = admin_funnel.overview(data, now=NOW)
+    assert view["cards"]["hosts"] == len(data["rows"])
+    keys = [bar["key"] for bar in view["bars"]]
+    assert keys == [k for k in data["stages"] if k not in {"signed_up", "email_verified"} or data["counts"][k]]
+    for bar in view["bars"]:
+        assert 0 <= bar["width"] <= 100
+        if bar["count"] == 0:
+            assert bar["width"] == 0
+    first_nonzero = next(bar for bar in view["bars"] if bar["count"])
+    assert first_nonzero["width"] == 100
+
+
+def test_weekly_buckets_hosts_in_window():
+    recent = _iso(NOW - timedelta(weeks=2))
+    old = _iso(NOW - timedelta(weeks=13))
+    recent_id = _account("weekly-recent")
+    old_id = _account("weekly-old")
+    db.execute("UPDATE user_account SET created_at = ? WHERE id = ?", (recent, recent_id))
+    db.execute("UPDATE user_account SET created_at = ? WHERE id = ?", (old, old_id))
+    series = admin_funnel.weekly(now=NOW)
+    assert len(series["hosts"]) == 12
+    assert len(series["filings"]) == 12
+    labels = [w["label"] for w in series["hosts"]]
+    first = admin_funnel._monday(NOW.date()) - timedelta(weeks=admin_funnel.WEEKS - 1)
+    expected_labels = [(first + timedelta(weeks=i)).strftime("%d.%m.") for i in range(12)]
+    assert labels == expected_labels
+    since = first.isoformat()
+    in_window = db.query(
+        "SELECT COUNT(*) AS n FROM user_account WHERE role = 'host' AND created_at >= ?",
+        (since,),
+    )[0]["n"]
+    assert sum(w["value"] for w in series["hosts"]) == in_window
+    assert in_window >= 1
+    old_row = db.query("SELECT created_at FROM user_account WHERE id = ?", (old_id,))[0]
+    assert old_row["created_at"] < since
+
+
+def test_dashboard_markup_and_no_script():
+    for level in (0, 4, 8):
+        _seed_host_at(level)
+    _account("admin", role="admin")
+    client = _login("admin")
+    page = client.get("/admin/funnel?lang=en")
+    assert page.status_code == 200
+    assert 'id="funnel-cards"' in page.text
+    assert 'id="funnel-chart"' in page.text
+    assert 'id="funnel-weekly"' in page.text
+    template = open("app/templates/admin_funnel.html", encoding="utf-8").read()
+    assert "<script" not in template.lower()
+    czech = client.get("/admin/funnel?lang=cs").text
+    assert "Účty podle fáze" in czech

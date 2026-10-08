@@ -889,7 +889,12 @@ def funnel_admin(request: Request):
     account, guard = _require_admin(request)
     if guard:
         return guard
-    return render(request, "admin_funnel.html", {"funnel": admin_funnel.rows()})
+    data = admin_funnel.rows()
+    return render(
+        request,
+        "admin_funnel.html",
+        {"funnel": data, "overview": admin_funnel.overview(data), "weekly": admin_funnel.weekly()},
+    )
 
 
 @router.get("/admin/funnel.csv")
