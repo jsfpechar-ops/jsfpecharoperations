@@ -10,6 +10,7 @@ Sources (the orchestrator sandbox cannot reach the TTLock doc hosts, so every fa
 - **[EU]** Official pages pasted by the owner, 2026-10-07: Get access token, Refresh access token, User register, Get the lock list, Get lock details, Get all created passcodes of a lock, Get a passcode, Get the eKey list of an account, Send ekey, Get one ekey, Get ekeys of a lock, Key authorization, Get the eKey unlocking link (all on `euapi.ttlock.com`).
 - **[FAQ]** Official FAQ, `https://euopen.ttlock.com/documentPages/htmlPages/example/FAQEn.html`, PDF supplied by the owner 2026-10-08. Cited as [FAQ x.y] by section and question.
 - **[GW]** Official guide pages "Unlock via network (Gateway)" and "Lock Records Notify", pasted by the owner 2026-10-08.
+- **[LT]** Official pages "Get lock time" and "Adjust lock time", pasted by the owner 2026-10-08.
 - **[O]** Owner statement.
 
 UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
@@ -105,6 +106,12 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 - Gateway status: the server notices an offline gateway after about 10 minutes, and the app notifies the admin after 30 minutes offline [FAQ 5.8, 5.11].
 - Authorized admins have every right except deleting the lock, re-authorizing, and changing the admin's own unlock code [FAQ 1.9].
 - The monthly call limit is per application [FAQ 2.7].
+
+## Lock clock
+
+- The lock checks every code against its own clock. A wrong clock can make a valid code fail [LT][FAQ 4.2].
+- `/v3/lock/queryDate` (`lockId`) returns the lock's time as `date` in ms. `/v3/lock/updateDate` (`lockId`, `date`) sets it and returns the new time. Both need a gateway or a Wi-Fi lock [LT], so they count as gateway calls (35 s, worker only).
+- Not in the allowlist yet. Proposed: one `queryDate` per lock per week, and `updateDate` only when the drift is over 2 minutes.
 
 ## Delete and change
 
