@@ -140,6 +140,16 @@ Platform admins see full guest data and all downloads while previewing; optional
 | `UBYHOST_AWS_ACCESS_KEY_ID` | unset | |
 | `UBYHOST_AWS_SECRET_ACCESS_KEY` | unset | |
 
+## Door codes (TTLock)
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `UBYHOST_DOOR_CODES` | `0` | `1`, `true` or `yes` turns the feature on. Off in production until you set it. |
+| `UBYHOST_TTLOCK_API_BASE` | `https://euapi.ttlock.com` | TTLock API base URL (EU). |
+| `UBYHOST_TTLOCK_CLIENT_ID` | unset | TTLock Open Platform client id. |
+| `UBYHOST_TTLOCK_CLIENT_SECRET` | unset | Secret. Lightsail `.env` only, never in git. |
+| `UBYHOST_TTLOCK_MONTHLY_CALLS` | `30000` | Shared monthly API call budget (all hosts). |
+
 ## Accounts
 
 | Variable | Default | Notes |

@@ -273,6 +273,8 @@ def _delete_workspace(owner_id: int) -> None:
             (owner_id,),
         )
         cur.execute(f"DELETE FROM submission WHERE apartment_id IN {apartments}", (owner_id,))
+        # Task 0008: door codes (also cascade; explicit for the same reason).
+        cur.execute(f"DELETE FROM door_code WHERE apartment_id IN {apartments}", (owner_id,))
         cur.execute(f"DELETE FROM reservation WHERE apartment_id IN {apartments}", (owner_id,))
         cur.execute(
             f"DELETE FROM stay_fee_adjustment WHERE apartment_id IN {apartments}", (owner_id,)
@@ -320,6 +322,7 @@ def _delete_workspace(owner_id: int) -> None:
         # Task 0004: passkeys and their ceremonies (also cascade).
         cur.execute("DELETE FROM passkey WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM webauthn_challenge WHERE user_account_id = ?", (owner_id,))
+        cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
     # Files last: a rolled-back delete must not have lost the photos. One
@@ -380,6 +383,26 @@ def _webauthn_challenge_step(today: date, dry_run: bool, owner_user_id: Optional
     return passkeys.purge(dry_run=dry_run)
 
 
+def _door_code_pin_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Door codes: the PIN is only useful during the stay; wipe it a day after the code expires.
+
+    The row stays for the stay's record.
+    """
+    if owner_user_id is not None:
+        return 0
+    cutoff = _days_ago_iso(1)
+    where = "pin_enc IS NOT NULL AND valid_to IS NOT NULL AND valid_to < ?"
+    params = (cutoff,)
+    count = _scalar(f"SELECT COUNT(*) AS n FROM door_code WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(
+            "UPDATE door_code SET pin_enc = NULL, updated_at = ? WHERE "
+            + where,
+            (db.utcnow(), cutoff),
+        )
+    return count
+
+
 # Each step takes (today, dry_run, owner_user_id) and returns the affected count.
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
@@ -394,6 +417,7 @@ STEPS: List[tuple] = [
     ("rate_limit_events", _rate_limit_retention_step),
     ("login_tokens", _login_token_step),
     ("webauthn_challenges", _webauthn_challenge_step),
+    ("door_code_pins", _door_code_pin_step),
     ("legal_acceptance", _acceptance_retention_step),
     ("workspaces", _workspace_deletion_step),
 ]
@@ -418,6 +442,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours",
         "login_tokens": "expired more than 1 day ago",
         "webauthn_challenges": "expired more than 1 day ago",
+        "door_code_pins": "valid_to more than 1 day ago",
         "legal_acceptance": (
             f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
         ),

@@ -219,8 +219,12 @@ def issue_session(
     remember: bool = False,
     impersonation_started_at: Optional[int] = None,
     revealed_guest_ids: Optional[list[int]] = None,
+    issued_at: Optional[int] = None,
 ) -> str:
     payload: dict[str, Any] = {"uid": int(user_id), "sv": int(session_version)}
+    # Login time, not signature time. Re-issuing the cookie (2FA, impersonation)
+    # must copy this or a stolen older cookie looks like a login from just now.
+    payload["iat"] = int(time.time() if issued_at is None else issued_at)
     if remember:
         payload["rm"] = 1
     if workspace_user_id and workspace_user_id != user_id:
@@ -417,7 +421,14 @@ def end_expired_impersonation(request: Request) -> Optional[RedirectResponse]:
     response = RedirectResponse(
         f"/admin/users?msg={quote(notice)}", status_code=303
     )
-    attach_session(response, issue_session(account["id"], account["session_version"]))
+    attach_session(
+        response,
+        issue_session(
+            account["id"],
+            account["session_version"],
+            issued_at=session_issued_at(request),
+        ),
+    )
     return response
 
 
@@ -582,16 +593,34 @@ def set_account_email(user_id: int, email: str) -> None:
 FRESH_LOGIN_SECONDS = 10 * 60
 
 
-def session_is_fresh(request: Request, seconds: Optional[int] = None) -> bool:
-    """True when the session cookie was signed no more than ``seconds`` ago."""
-    token = request.cookies.get(SESSION_COOKIE)
-    if not token:
-        return False
+def session_issued_at(request: Request) -> int:
+    """Unix time this cookie was minted at login, or 0 when that is unknown.
+
+    Cookies issued before ``iat`` existed, and any re-issue that could not
+    copy it, return 0 so they never count as a login from this moment.
+    """
+    if current_user(request) is None:
+        return 0
+    payload = getattr(request.state, "session_payload", None) or {}
     try:
-        _serializer().loads(token, max_age=FRESH_LOGIN_SECONDS if seconds is None else seconds)
-    except BadSignature:
+        return int(payload["iat"])
+    except (KeyError, TypeError, ValueError):
+        return 0
+
+
+def session_is_fresh(request: Request, seconds: Optional[int] = None) -> bool:
+    """True when this cookie's login is no older than ``seconds``.
+
+    The clock is ``iat`` from login (e-mail link, passkey, signup), not the
+    signature time. Re-issuing the cookie does not count as a new login.
+    """
+    if current_user(request) is None:
         return False
-    return True
+    limit = FRESH_LOGIN_SECONDS if seconds is None else seconds
+    iat = session_issued_at(request)
+    if iat <= 0:
+        return False
+    return (time.time() - iat) <= limit
 
 
 def end_all_sessions(user_id: int) -> None:

@@ -364,20 +364,37 @@ def platform_of(url: str, ics_text: str = "") -> str:
 
 
 def _send_in_flight(reservation_id: int) -> bool:
-    """True while UbyPort is being called for a guest on this stay.
+    """True while this stay's dates must not follow the calendar yet.
 
-    The SOAP payload is built from the stay window at claim time. Rewriting
+    The SOAP payload is built from the stay window at send time. Rewriting
     ``stay_from`` / ``stay_to`` (or the reservation dates that back them) while
-    that call is open leaves the house book on the new window after the guest
-    is marked sent with the old one. Host and guest saves already refuse a live
-    ``submission_claim``; the calendar has to as well.
+    a send may still be landing leaves the house book on the new window after
+    the guest is marked sent with the old one. That is true for a live
+    ``submission_claim``, and also after the claim is released: a timeout or
+    5xx becomes ``outcome_unknown`` and the sweep will not retry (OD-1), but
+    the register may already hold the old window. A crash-stuck ``running``
+    batch is the same fact until ``recover_stale_submissions`` rewrites it.
+    Guests already ``sent`` (including filed by hand) do not freeze the
+    booking: their own windows stay put, and the reservation can follow the
+    calendar so the host sees the move.
     """
+    live_after = time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS
+    if db.query_one(
+        "SELECT 1 AS n FROM submission_claim c "
+        "JOIN guest g ON g.id = c.guest_id "
+        "WHERE g.reservation_id = ? AND g.archived_at IS NULL AND c.claimed_at >= ? "
+        "LIMIT 1",
+        (reservation_id, live_after),
+    ):
+        return True
     return bool(
         db.query_one(
-            "SELECT 1 AS n FROM submission_claim c "
-            "JOIN guest g ON g.id = c.guest_id "
-            "WHERE g.reservation_id = ? AND c.claimed_at >= ? LIMIT 1",
-            (reservation_id, time.time() - reporting.SUBMISSION_CLAIM_TTL_SECONDS),
+            "SELECT 1 AS n FROM guest g "
+            "JOIN submission s ON s.id = g.submission_id "
+            "WHERE g.reservation_id = ? AND g.archived_at IS NULL "
+            "AND g.submit_state != ? AND s.state IN ('running', 'outcome_unknown') "
+            "LIMIT 1",
+            (reservation_id, reporting.SENT),
         )
     )
 
@@ -415,8 +432,9 @@ def _fit_unsent_guest_windows(
         if guest["stay_from"] == new_sf and guest["stay_to"] == new_st:
             continue
         old_window = f"{guest['stay_from']}..{guest['stay_to']}"
-        # Compare-and-set: a send that started after the SELECT, or a guest the
-        # register already accepted, must keep the window that went on the wire.
+        # Compare-and-set: a send that started after the SELECT, a guest the
+        # register already accepted, or a guest whose last send has no clear
+        # answer, must keep the window that went on the wire.
         if not db.update_if(
             "guest",
             guest["id"],
@@ -424,7 +442,10 @@ def _fit_unsent_guest_windows(
             {"submit_state": guest["submit_state"]},
             extra_where=(
                 "NOT EXISTS (SELECT 1 FROM submission_claim "
-                "WHERE guest_id = ? AND claimed_at >= ?)"
+                "WHERE guest_id = ? AND claimed_at >= ?) "
+                "AND (submission_id IS NULL OR NOT EXISTS ("
+                "SELECT 1 FROM submission WHERE id = guest.submission_id "
+                "AND state IN ('running', 'outcome_unknown')))"
             ),
             extra_params=(guest["id"], live_after),
         ):
@@ -732,10 +753,10 @@ def sync_feed(
                 or existing["date_to"] != event["date_to"]
             )
             if dates_changed and _send_in_flight(existing["id"]):
-                # Keep the stored window until the in-flight send finishes.
-                # Applying the feed now would desync the house book from what
-                # went to the police; storing the new digest would also skip
-                # the next poll, so the move would never land.
+                # Keep the stored window until the send is resolved. Applying
+                # the feed now would desync the house book from what went to
+                # the police; storing the new digest would also skip the next
+                # poll, so the move would never land.
                 payload["date_from"] = existing["date_from"]
                 payload["date_to"] = existing["date_to"]
                 dates_changed = False
@@ -916,7 +937,7 @@ def sync_feed(
     feed_update = {"last_sync_at": now, "last_status": "ok", "last_error": None, **read}
     if deferred_in_flight:
         # Do not store the new digest or validators: the next poll must
-        # reconcile again once the send claim drops, or the date move is lost.
+        # reconcile again once the send is resolved, or the date move is lost.
         feed_update.pop("body_sha256", None)
         feed_update.pop("etag", None)
         feed_update.pop("last_modified", None)

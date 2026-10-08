@@ -29,6 +29,8 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Login links | `login_token` (hash, account, address, purpose, times) | expiry | 1 day after expiry; deleted with the account | `retention.py` login-token step (`login_link.purge`) | Security |
 | Passkeys | `passkey` | created | until removed by the host or the account is deleted | `retention.py` workspace deletion; cascade | Contract |
 | WebAuthn challenges | `webauthn_challenge` | expiry (5 min) | 1 day after expiry | `retention.py` webauthn-challenge step (`passkeys.purge`) | Security |
+| Door code PIN | `door_code.pin_enc` | code expiry | 1 day after the code expires | `retention.py` door-code-PIN step | Minimisation |
+| TTLock connection (UbyHost-made TTLock user, its encrypted password and tokens, cached lock list) | `lock_account` | host removes it, or the account is deleted | until then | Smart locks page Remove; cascade from user_account | Contract |
 | Container logs | Docker `json-file` | rotation | 5 × 10 MB per service | `docker-compose.yml` `logging:`; uvicorn access log off (OPS-3) | Security |
 | Encrypted backups | `/data/backups`, Drive, S3 | snapshot age | 30 days local/off-site (G-D3) | `backup_data.sh` `UBYHOST_BACKUP_RETENTION_DAYS`; S3 lifecycle | Disaster recovery |
 
