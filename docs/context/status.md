@@ -21,6 +21,7 @@ Updated: 2026-10-08 after 0019 review.
 - TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).
 
 - Doručenka smoke on a new filing after this cutover.
+- TTLock on Render staging, 2026-10-08: lock shared as authorized admin, hand-added stay completed, PIN issued, TTLock window matched UbyHost (09:00 to 16:00) and **the code opened the lock** (owner-tested). Not yet tested: change, cancel and delete (no gateway), calendar stays, daylight saving.
 
 ## Blocked: needs owner, lawyer or council
 
