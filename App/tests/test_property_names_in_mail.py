@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 from app import auth, claim, config, db, i18n, invoices, mail, mail_notify
 from app.main import app
 from tests.conftest import login_as
-from tests.invoice_stay_helper import drop_stays, make_stay, stay_form
+from tests.invoice_stay_helper import drop_stays, stay_form
 
 INTERNAL = "Downtown Comfort Loft"
 REGISTER = "č1"
