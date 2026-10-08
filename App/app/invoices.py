@@ -318,6 +318,9 @@ def _extras_from_form(form, vat_status: str, lang: str) -> List[Dict[str, Any]]:
             continue  # an untouched blank row
         if not kind:
             kind = "other"  # no kind picked: typed text is an "Other" line
+        # "stay" is the accommodation line only; a forged extra must not use it.
+        if kind == "stay":
+            kind = "invalid"
         quantity = _to_int(_at(qtys, i, "1"), default=1)
         price = _to_decimal(raw_price)
         if kind == "other":
@@ -439,17 +442,25 @@ def custom_paid_via_label(paid_via: Optional[str]) -> str:
 
 def _stay_issues(draft: Dict[str, Any]) -> List[validation.Issue]:
     items = draft["items"]
-    stay_gross = items[0]["gross_haler"] if items and items[0].get("extra_kind") == "stay" else 0
-    extras = [i for i in items if i.get("extra_kind") not in (None, "stay")]
     issues: List[validation.Issue] = []
-    if any(i["extra_kind"] not in EXTRA_KINDS or not i["description"] for i in extras):
+    # Line 1 must be the stay line; everything after it is an extra. Filtering by
+    # extra_kind == "stay" would let a forged form row with kind "stay" skip the caps.
+    if not items or items[0].get("extra_kind") != "stay":
         issues.append(validation.Issue("items", "invoice.err.extra_kind"))
-    if sum(1 for i in extras if i["extra_kind"] == "other") > 1:
+        return issues
+    stay_gross = items[0]["gross_haler"] or 0
+    extras = items[1:]
+    if any(i.get("extra_kind") not in EXTRA_KINDS or not i["description"] for i in extras):
+        issues.append(validation.Issue("items", "invoice.err.extra_kind"))
+    if sum(1 for i in extras if i.get("extra_kind") == "other") > 1:
         issues.append(validation.Issue("items", "invoice.err.one_other"))
     if any(not 1 <= i["quantity"] <= EXTRA_MAX_QUANTITY for i in extras):
         issues.append(validation.Issue("items", "invoice.err.extra_quantity"))
+    # Skip noisy caps when the stay price is already invalid (amount error covers it).
+    if items[0].get("price_invalid") or stay_gross <= 0:
+        return issues
     extras_gross = sum(i["gross_haler"] for i in extras)
-    other_gross = sum(i["gross_haler"] for i in extras if i["extra_kind"] == "other")
+    other_gross = sum(i["gross_haler"] for i in extras if i.get("extra_kind") == "other")
     if extras_gross > stay_gross * EXTRAS_MAX_SHARE:
         issues.append(validation.Issue("items", "invoice.err.extras_cap"))
     if other_gross > stay_gross * OTHER_MAX_SHARE:

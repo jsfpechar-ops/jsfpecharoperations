@@ -133,6 +133,15 @@ def test_unknown_kind_and_two_other_lines_are_refused():
                item_quantity=["1", "1"], item_unit_price=["100", "100"]))
 
 
+def test_forged_stay_kind_on_an_extra_row_is_refused():
+    """A posted item_kind=stay must not skip the extras caps (council 0019)."""
+    entity, stay = _setup()
+    keys = _keys(
+        _draft(entity, stay, item_kind=["stay"], item_description=["Hack"],
+               item_quantity=["1"], item_unit_price=["5000"]))
+    assert "invoice.err.extra_kind" in keys
+
+
 def test_extras_caps():
     entity, stay = _setup()
     assert "invoice.err.other_cap" in _keys(
@@ -148,6 +157,21 @@ def test_extra_quantity_range():
     entity, stay = _setup()
     assert "invoice.err.extra_quantity" in _keys(
         _draft(entity, stay, item_kind=["parking"], item_quantity=["100"], item_unit_price=["1"]))
+    assert "invoice.err.extra_quantity" in _keys(
+        _draft(entity, stay, item_kind=["parking"], item_quantity=["0"], item_unit_price=["1"]))
+
+
+def test_stay_plus_four_extras_hits_the_item_cap():
+    entity, stay = _setup()
+    keys = _keys(
+        _draft(
+            entity, stay,
+            item_kind=["cleaning", "parking", "pet", "breakfast"],
+            item_quantity=["1", "1", "1", "1"],
+            item_unit_price=["1", "1", "1", "1"],
+        )
+    )
+    assert "invoice.err.too_many_items" in keys
 
 
 def test_payer_stay_fee_is_always_zero_vat():
