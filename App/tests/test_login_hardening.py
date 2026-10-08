@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import sqlite3
+import time
 
+import pyotp
 import pytest
 from fastapi.testclient import TestClient
 
@@ -99,6 +101,86 @@ def test_an_old_session_cannot_start_adding_a_passkey(monkeypatch):
     )
     assert response.status_code == 403
     assert passkeys.count_for(account["id"]) == 0
+
+
+def _stale_cookie(client, account, age=3600):
+    """Replace the client's session with one whose login was ``age`` seconds ago.
+
+    The cookie is signed *now*, which is what a 2FA or impersonation re-issue
+    used to do, so a check that only looked at the signature time would pass.
+    """
+    token = auth.issue_session(
+        account["id"],
+        account["session_version"],
+        remember=True,
+        issued_at=int(time.time()) - age,
+    )
+    client.cookies.set(auth.SESSION_COOKIE, token)
+
+
+def test_a_reissued_cookie_is_not_a_fresh_login():
+    """Enabling 2FA or previewing a workspace used to re-sign the cookie and
+    make a stolen older session look like a login from this moment."""
+    account = _account()
+    client = _client(account)
+    _stale_cookie(client, account)
+    data = {"email": "next@example.test", "csrf_token": csrf_token_for(client)}
+    refused = client.post("/account/email", data=data, follow_redirects=False)
+    assert "err=" in refused.headers["location"]
+    assert not db.query_one(
+        "SELECT 1 FROM login_token WHERE user_account_id = ? AND purpose = 'email_change'",
+        (account["id"],),
+    )
+
+
+def test_an_old_session_cannot_stage_or_enable_an_authenticator():
+    account = _account()
+    client = _client(account)
+    _stale_cookie(client, account)
+    setup = client.get("/account/2fa/setup", follow_redirects=False)
+    assert setup.status_code == 303
+    assert "err=" in setup.headers["location"]
+    row = db.query_one(
+        "SELECT totp_enabled, totp_secret_enc FROM user_account WHERE id = ?",
+        (account["id"],),
+    )
+    assert row["totp_enabled"] == 0
+    assert not row["totp_secret_enc"]
+
+    client.post(
+        "/account/2fa/setup",
+        data={"code": "123456", "csrf_token": csrf_token_for(client)},
+        follow_redirects=False,
+    )
+    again = db.query_one(
+        "SELECT totp_enabled, totp_secret_enc FROM user_account WHERE id = ?",
+        (account["id"],),
+    )
+    assert again["totp_enabled"] == 0
+    assert not again["totp_secret_enc"]
+
+
+def test_enabling_two_factor_keeps_the_original_login_time():
+    account = _account()
+    client = _client(account)
+    login_iat = int(time.time()) - 30
+    _stale_cookie(client, account, age=30)
+    secret = auth.new_totp_secret()
+    auth.stage_totp(account["id"], secret)
+    response = client.post(
+        "/account/2fa/setup",
+        data={"code": pyotp.TOTP(secret).now(), "csrf_token": csrf_token_for(client)},
+        follow_redirects=False,
+    )
+    assert response.status_code == 200, response.text
+    cookie = response.cookies.get(auth.SESSION_COOKIE) or client.cookies.get(auth.SESSION_COOKIE)
+    payload = auth._session_payload(cookie)
+    assert payload is not None
+    assert payload["iat"] == login_iat
+    enabled = db.query_one(
+        "SELECT totp_enabled FROM user_account WHERE id = ?", (account["id"],)
+    )
+    assert enabled["totp_enabled"] == 1
 
 
 def test_an_old_session_cannot_remove_a_passkey(monkeypatch):
