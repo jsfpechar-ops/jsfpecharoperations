@@ -14,7 +14,7 @@ import secrets
 import time
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
-from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
