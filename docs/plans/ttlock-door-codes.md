@@ -262,30 +262,56 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 - `door_code` (guest, host in CC): subject "Your door code for <property>". The code, the window and the first-use deadline in Prague time, the property's check-in info, the host contact.
 - `door_code_notice` (host only): one of "could not be created", "could not be deleted after a cancellation". Each says what to do in the TTLock app.
 
-## 11. Delivery sequence (one PR each)
+## 11. Delivery sequence (one PR each, in order)
 
-| Task | What | Depends on |
+| Task | What | Visible change |
 |---|---|---|
-| 0008 | Schema and settings. Migration 0007, config and kill switch, PIN retention step, RETENTION and ENVIRONMENT rows. No behaviour | none |
-| 0009 | TTLock client `App/app/ttlock.py`: endpoint allowlist, form POST with 5 s timeout, error mapping, token store with CAS refresh, call budget, lock list from `/v3/key/list`, get, change, delete, find by name. HTTP faked in tests | 0008 |
-| 0010 | Host setup. Smart locks card (connect, refresh lock list, remove), property door-code section with the risk line, lock-ownership check. Browser and geometry tests | 0009 |
-| 0011 | Issuing. `door_codes.py` states, reconciler job, first try on the save that completes registration, retries, failed notice. Test proves no write to `submission` or filing tables | 0010 |
-| 0012 | Delivery. Guest stay block, `door_code` mail with marker, host stay line. Screenshots at 360, 390 and 1280 px | 0011 |
-| 0013 | Lifecycle. Cancel, date move, admin usage panel | 0012 |
-| docs | Subprocessor register, ROPA, privacy copy. Lawyer review if needed | before the pilot goes live |
+| [0008](../tasks/0008-door-codes-schema.md) | Schema, settings, PIN retention step | none |
+| [0009](../tasks/0009-ttlock-client.md) | TTLock client: allowlist, timeouts, tokens, budget, get/change/delete, lock list | none |
+| [0010](../tasks/0010-smart-locks-settings.md) | Settings → Smart locks card, pilot list (`UBYHOST_DOOR_CODES_USERS`) | pilot host only |
+| [0011](../tasks/0011-property-door-code-section.md) | Property → Door code section (tick box, lock, required hours, warnings) | pilot host only |
+| [0012](../tasks/0012-door-codes-issuing.md) | Issuing: hook after the guest save, background job, retries, alerts, test mode (`UBYHOST_DOOR_CODES_LIVE`) | codes for manual stays |
+| [0013](../tasks/0013-door-code-delivery.md) | Guest stay block, guest mail with host CC, host stay line | guest sees the code |
+| [0014](../tasks/0014-door-code-cancel-and-move.md) | Cancellations, date and hour changes, host notice mails | |
+| [0015](../tasks/0015-lock-clock-and-usage.md) | Weekly lock clock check, call counter, budget alerts | admin only |
+| docs | Subprocessor register, ROPA, privacy copy (lawyer if needed) | before going live |
 
-Briefs 0008 and 0009 are written. Later briefs are written after each review.
+## 12. Production acceptance test (owner, before going live)
 
-## 12. Pilot rollout (owner)
+Everything below runs on the real server in **test mode**: only stays added by hand get a code, so no real guest is affected. Write pass or fail next to each check. Go live only when every check passes.
 
-1. Merge the briefs in order. Deploy.
-2. In UbyHost Settings → Smart locks, tap Set up and note the UbyHost user name.
-3. In the TTLock app, send each pilot lock's eKey to that account: Authorized admin on, Remote unlock off, no end date. Set each lock's time zone to Prague and calibrate its clock (lock, Settings, Lock Time).
-4. In UbyHost, tap Refresh lock list. On 2 or 3 properties, turn on door codes, pick the lock, set the hours.
-5. Make a test stay for tomorrow. Register as a guest with the booking code. Check the page, the mail and the CC.
-6. With check-in at 15:00, type the code at 13:55 (must not open) and at 14:05 (must open), because of the 1 h margin. Repeat once after the next daylight-saving change (25 Oct 2026).
-7. Cancel the test stay. Check that the code no longer opens the door.
-8. Watch the call counter on the admin operations page for the first month.
+**Setup**
+
+1. Deploy up to task 0015. In the server `.env`: `UBYHOST_TTLOCK_CLIENT_ID`, `UBYHOST_TTLOCK_CLIENT_SECRET`, `UBYHOST_DOOR_CODES=1`, `UBYHOST_DOOR_CODES_USERS=<your user id>`. Leave `UBYHOST_DOOR_CODES_LIVE` unset. Restart.
+2. TTLock app, for each pilot lock: send the eKey to the spare account with Authorized admin on, Remote unlock off, no end date. Set the lock's time zone to Prague and calibrate its clock (lock, Settings, Lock Time).
+3. UbyHost, Settings → Smart locks: connect the spare account. Check that every pilot lock is listed with its battery and no time-zone warning.
+4. Each pilot property → Door code: tick the box, pick the lock, set check-in 15:00 and check-out 11:00, save. The section shows the test-mode line.
+
+**Checks**
+
+| # | Do | Expect |
+|---|---|---|
+| 1 | Add a stay by hand for tomorrow, 1 guest. Open the guest link on your phone, claim it with your own e-mail, fill in the form. | The stay page shows the door code within seconds. A mail with the code arrives, with the host address in CC. The host stay page shows "Door code … works … 14:00 to … 12:00". |
+| 2 | Arrival day, 13:55: type the code. Then at 14:05. | 13:55: does not open. 14:05: opens. It keeps opening after that. |
+| 3 | Departure day, 12:05: type the code. | Does not open. |
+| 4 | A real calendar stay on a pilot property completes its registration. | No code, no mail, nothing on its stay page (test mode). |
+| 5 | Change the end date of a hand-added test stay by one day. | Within 2 minutes the guest gets one new mail with the new check-out; the code opens on the extra day. |
+| 6 | Cancel (archive) a hand-added test stay that has a code. | You get "door code deleted after a cancellation". Typing the code does not open the door (this settles the open question from `docs/TTLOCK.md`). |
+| 7 | Unplug the gateway. Register another hand-added test stay. Then cancel it while the gateway is still unplugged. Plug it back. | The code still appears at once (no gateway needed). After about 20 minutes (three tries) you get "delete a door code in the TTLock app". |
+| 8 | Settings → Smart locks → Remove, then connect with a wrong password, then with the right one. | "TTLock did not accept this login", then connected again. Door codes on the properties are off and need ticking again. |
+| 9 | Admin → Operations. | "TTLock calls this month" shows a small number and "Test mode". |
+| 10 | On the server, search the app logs for one of the test PINs (the orchestrator gives the exact command for your setup). | 0 matches. |
+| 11 | After the next daylight-saving change (25 Oct 2026), repeat check 2 on a new test stay. | Same result. |
+
+**Go live**
+
+1. Set `UBYHOST_DOOR_CODES_LIVE=1` in `.env` and restart.
+2. Watch the CC copy of the first real guest's mail.
+
+**Switch off at any time**
+
+- One property: untick its Door code box.
+- Everything: set `UBYHOST_DOOR_CODES=0` and restart. No TTLock call is made after that, and codes already sent keep working until their end time.
 
 ## 13. Open questions
 

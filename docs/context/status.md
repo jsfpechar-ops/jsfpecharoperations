@@ -15,7 +15,7 @@ Updated: 2026-10-07 after task 0007 phase 2 complete (owner sign-off).
 
 ## Next
 
-- TTLock door codes: plan [ttlock-door-codes](../plans/ttlock-door-codes.md), facts [TTLOCK](../TTLOCK.md). Run [0008](../tasks/0008-door-codes-schema.md) then [0009](../tasks/0009-ttlock-client.md). Pilot ships without a claim check (owner, accepted risk).
+- TTLock door codes: plan [ttlock-door-codes](../plans/ttlock-door-codes.md) §11 lists briefs 0008 to 0015, run in order. Ships in test mode (manual stays only); go live only after the §12 acceptance test.
 
 - Doručenka smoke on a new filing after this cutover.
 
