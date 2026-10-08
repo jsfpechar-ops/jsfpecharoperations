@@ -162,6 +162,16 @@ HEARTBEAT_MAIL_URL = os.environ.get("UBYHOST_HEARTBEAT_MAIL_URL", "").strip()
 # down. Empty disables it.
 HEARTBEAT_FILING_URL = os.environ.get("UBYHOST_HEARTBEAT_FILING_URL", "").strip()
 
+# Door codes (TTLock). Off unless UBYHOST_DOOR_CODES=1; the secret is env only.
+DOOR_CODES_ENABLED = os.environ.get("UBYHOST_DOOR_CODES", "0") in ("1", "true", "yes")
+TTLOCK_API_BASE = os.environ.get("UBYHOST_TTLOCK_API_BASE", "https://euapi.ttlock.com").rstrip("/")
+TTLOCK_CLIENT_ID = os.environ.get("UBYHOST_TTLOCK_CLIENT_ID", "").strip()
+TTLOCK_CLIENT_SECRET = os.environ.get("UBYHOST_TTLOCK_CLIENT_SECRET", "").strip()
+TTLOCK_MONTHLY_CALLS = int(os.environ.get("UBYHOST_TTLOCK_MONTHLY_CALLS", "30000"))
+# Codes work from 1 h before check-in to 1 h after check-out: covers lock clock
+# drift and any daylight-saving mismatch in the lock. Hours have no default; the host sets them.
+DOOR_CODE_BUFFER_HOURS = 1
+
 # Used to build the guest permalink shown to hosts for copy/paste.
 PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
 

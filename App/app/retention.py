@@ -380,6 +380,26 @@ def _webauthn_challenge_step(today: date, dry_run: bool, owner_user_id: Optional
     return passkeys.purge(dry_run=dry_run)
 
 
+def _door_code_pin_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Door codes: the PIN is only useful during the stay; wipe it a day after the code expires.
+
+    The row stays for the stay's record.
+    """
+    if owner_user_id is not None:
+        return 0
+    cutoff = _days_ago_iso(1)
+    where = "pin_enc IS NOT NULL AND valid_to IS NOT NULL AND valid_to < ?"
+    params = (cutoff,)
+    count = _scalar(f"SELECT COUNT(*) AS n FROM door_code WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(
+            "UPDATE door_code SET pin_enc = NULL, updated_at = ? WHERE "
+            + where,
+            (db.utcnow(), cutoff),
+        )
+    return count
+
+
 # Each step takes (today, dry_run, owner_user_id) and returns the affected count.
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
@@ -394,6 +414,7 @@ STEPS: List[tuple] = [
     ("rate_limit_events", _rate_limit_retention_step),
     ("login_tokens", _login_token_step),
     ("webauthn_challenges", _webauthn_challenge_step),
+    ("door_code_pins", _door_code_pin_step),
     ("legal_acceptance", _acceptance_retention_step),
     ("workspaces", _workspace_deletion_step),
 ]
@@ -418,6 +439,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours",
         "login_tokens": "expired more than 1 day ago",
         "webauthn_challenges": "expired more than 1 day ago",
+        "door_code_pins": "valid_to more than 1 day ago",
         "legal_acceptance": (
             f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
         ),
