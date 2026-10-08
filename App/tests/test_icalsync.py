@@ -1,3 +1,4 @@
+import json
 import time
 
 from app import config, db, icalsync
@@ -409,6 +410,93 @@ def test_an_expired_send_claim_does_not_block_fitting_the_guest_window(
         assert (stay["date_from"], stay["date_to"]) == ("2099-02-10", "2099-02-12")
     finally:
         db.execute("DELETE FROM submission_claim WHERE guest_id = ?", (guest_id,))
+
+
+def _unclear_batch(reservation_id, guest_id, *, state="outcome_unknown"):
+    apartment_id = db.query_one(
+        "SELECT apartment_id FROM reservation WHERE id = ?", (reservation_id,)
+    )["apartment_id"]
+    submission_id = db.insert(
+        "submission",
+        {
+            "apartment_id": apartment_id,
+            "created_at": db.utcnow(),
+            "finished_at": db.utcnow(),
+            "mode": "auto",
+            "state": state,
+            "guest_ids": json.dumps([guest_id]),
+            "error_text": "read timed out",
+        },
+    )
+    db.update("guest", guest_id, {"submission_id": submission_id})
+    return submission_id
+
+
+def test_an_unclear_ubyport_outcome_defers_fitting_the_guest_window(
+    monkeypatch, tmp_path
+):
+    """A timeout after send is still in-flight for calendar dates.
+
+    ``submit_for_apartment`` drops the claim as soon as ZapisUbytovane
+    returns ``outcome_unknown``. Guests stay pending on that batch and the
+    sweep will not retry (OD-1). The feed used to apply a date move then, so
+    the house book could show new dates while the register held the old
+    window. Clearing the pointer (the host resolved it) lets the next poll
+    apply the move.
+    """
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    _unclear_batch(reservation_id, guest_id)
+
+    _sync(feed_id)
+    guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    stay = db.query_one(
+        "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    assert (guest["stay_from"], guest["stay_to"]) == ("2099-01-10", "2099-01-12")
+    assert (stay["date_from"], stay["date_to"]) == ("2099-01-10", "2099-01-12")
+    feed = db.query_one("SELECT body_sha256 FROM ical_feed WHERE id = ?", (feed_id,))
+    assert not feed["body_sha256"]
+
+    db.update("guest", guest_id, {"submission_id": None})
+    _sync(feed_id)
+    guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    stay = db.query_one(
+        "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    assert (guest["stay_from"], guest["stay_to"]) == ("2099-02-10", "2099-02-12")
+    assert (stay["date_from"], stay["date_to"]) == ("2099-02-10", "2099-02-12")
+
+
+def test_a_crash_stuck_running_batch_defers_fitting_the_guest_window(
+    monkeypatch, tmp_path
+):
+    """A ``running`` row with no live claim is the same fact as outcome_unknown."""
+    feed_id, reservation_id, guest_id = _moved_stay(tmp_path, monkeypatch)
+    _unclear_batch(reservation_id, guest_id, state="running")
+
+    _sync(feed_id)
+    guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    stay = db.query_one(
+        "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    assert (guest["stay_from"], guest["stay_to"]) == ("2099-01-10", "2099-01-12")
+    assert (stay["date_from"], stay["date_to"]) == ("2099-01-10", "2099-01-12")
+
+
+def test_a_hand_filed_guest_does_not_freeze_the_booking_dates(monkeypatch, tmp_path):
+    """Filed-by-hand keeps the guest window, but the reservation can follow the calendar."""
+    feed_id, reservation_id, guest_id = _moved_stay(
+        tmp_path, monkeypatch, submit_state="sent"
+    )
+    _unclear_batch(reservation_id, guest_id)
+
+    _sync(feed_id)
+    guest = db.query_one("SELECT stay_from, stay_to FROM guest WHERE id = ?", (guest_id,))
+    stay = db.query_one(
+        "SELECT date_from, date_to FROM reservation WHERE id = ?", (reservation_id,)
+    )
+    assert (guest["stay_from"], guest["stay_to"]) == ("2099-01-10", "2099-01-12")
+    assert (stay["date_from"], stay["date_to"]) == ("2099-02-10", "2099-02-12")
 
 
 def test_moved_ical_stay_does_not_raise_a_resign_alert(monkeypatch, tmp_path):
