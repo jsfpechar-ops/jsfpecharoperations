@@ -735,7 +735,7 @@ def _alert_delayed() -> int:
     today = deadlines.local_now().date().isoformat()
     sql = (
         "SELECT r.id AS reservation_id, r.date_from, a.id AS apartment_id, "
-        "a.internal_name, dc.last_error "
+        "a.internal_name, dc.last_error, (dc.id IS NOT NULL) AS has_row "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "LEFT JOIN door_code dc ON dc.reservation_id = r.id "
         "WHERE a.lock_provider = 'ttlock' AND r.status = 'active' "
@@ -747,7 +747,7 @@ def _alert_delayed() -> int:
         sql += " AND r.source = 'manual'"
     rows = db.query(sql, (cutoff, today, PENDING, ISSUING, RETRYING))
     for row in rows:
-        reason = (row["last_error"] or "").strip() or "waiting"
+        reason = (row["last_error"] or "").strip() or ("waiting" if row["has_row"] else "not_set_up")
         alerts.raise_alert(
             "warning",
             "door_code_delayed",

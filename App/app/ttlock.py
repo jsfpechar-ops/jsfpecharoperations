@@ -60,6 +60,9 @@ ERROR_KINDS: Dict[int, str] = {
     90000: "transient",
     1: "transient",
     -3: "bug",
+    # "A Passcode that has never been used on the Lock cannot be changed": the
+    # move path then makes a new code and deletes the old one.
+    -3008: "unused_code",
 }
 
 _MS_HOUR = 3_600_000

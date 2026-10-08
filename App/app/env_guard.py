@@ -109,6 +109,14 @@ def validate_runtime_env(
             "Remove it on production."
         )
 
+    if deploy == "production" and (os_env.get("UBYHOST_STAGING_NO_LOGIN") or "").strip().lower() in (
+        "1", "true", "yes", "on",
+    ):
+        raise EnvGuardError(
+            "UBYHOST_STAGING_NO_LOGIN switches the login off and is only for Render staging. "
+            "Remove it on production."
+        )
+
     if deploy == "production" and env == "mock":
         if (os_env.get("UBYHOST_ALLOW_PROD_MOCK") or "") != "1":
             raise EnvGuardError(

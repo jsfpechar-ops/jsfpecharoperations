@@ -1328,6 +1328,16 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
 _SUPPORT_COPY_VARIANTS = ("failed", "delayed")
 
 
+_DOOR_CODE_REASONS = ("waiting", "not_set_up", "no_account", "not_eligible", "bad_window")
+
+
+def _door_code_reason(lang: str, reason: str) -> str:
+    """The reason as a sentence a host can act on, with the raw token for support."""
+    key = reason if reason in _DOOR_CODE_REASONS else "other"
+    text = _text(lang, f"mail.door_code_reason.{key}")
+    return f"{text} [{reason}]"
+
+
 def door_code_delayed_notice(reservation_id: int, reason: str) -> Optional[int]:
     """Tell the host (support in copy) that a registered stay still has no code.
 
@@ -1354,7 +1364,7 @@ def door_code_delayed_notice(reservation_id: int, reason: str) -> Optional[int]:
         params = {
             "property": apartment["internal_name"] or "",
             "date": stay_day,
-            "reason": reason or "waiting",
+            "reason": _door_code_reason(lang, reason or "waiting"),
         }
         subject = _text(lang, "mail.door_code_notice.delayed.subject", **params)
         body = _text(lang, "mail.door_code_notice.delayed.body", **params)

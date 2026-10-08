@@ -1,6 +1,7 @@
 """A guest who finished registering is never left waiting in silence for a door code."""
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
@@ -271,7 +272,38 @@ def test_the_guide_walks_through_authorized_admin():
         steps = " ".join(strings[f"guide.door_codes.step{n}"] for n in range(1, 10))
         assert "Create Admin" in steps
         assert "Manage their own users only" in steps
+        assert "Smart locks" not in steps and "Check for locks" not in steps
         assert "Remote unlock" not in steps
     en = GUIDE_STRINGS["en"]
     assert "within 24 hours after its start time" in en["guide.door_codes.how3"]
     assert "Passcodes" in en["guide.door_codes.how7"]
+
+
+def test_the_host_mail_says_why_in_words_and_keeps_the_raw_reason_for_support(monkeypatch):
+    def refused(*args, **kwargs):
+        raise ttlock.TTLockError("refused", code=-1026, kind="transient")
+
+    monkeypatch.setattr(ttlock, "create_period_code", refused)
+    _, apartment, stay = _stay(registered_minutes_ago=15)
+    door_codes.reconcile()
+    row = db.query_one(
+        "SELECT payload FROM email_outbox WHERE reservation_id = ?", (stay,)
+    )
+    body = json.loads(row["payload"])["text"]
+    assert "TTLock refused or did not answer [transient:-1026]" in body
+    assert "keeps trying" not in body
+
+
+def test_a_property_with_no_lock_set_says_so_instead_of_claiming_to_retry():
+    _, apartment, stay = _stay(registered_minutes_ago=15)
+    db.execute("UPDATE apartment SET checkin_hour = NULL WHERE id = ?", (apartment,))
+    door_codes.reconcile()
+    row = db.query_one(
+        "SELECT payload FROM email_outbox WHERE reservation_id = ?", (stay,)
+    )
+    body = json.loads(row["payload"])["text"]
+    assert "no lock or no check-in and check-out time saved" in body
+
+
+def test_a_never_used_code_is_replaced_not_retried_forever():
+    assert ttlock.ERROR_KINDS[-3008] == "unused_code"
