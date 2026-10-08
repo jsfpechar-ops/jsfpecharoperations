@@ -232,6 +232,12 @@ def _staging_login_password_from_env() -> str:
 
 STAGING_LOGIN_PASSWORD = _staging_login_password_from_env()
 
+# Render staging only: skip login entirely, every visitor is the first administrator.
+# Ignored unless UBYHOST_DEPLOYMENT=staging. Never set this where real data lives.
+STAGING_NO_LOGIN = os.environ.get("UBYHOST_STAGING_NO_LOGIN", "").strip().lower() in (
+    "1", "true", "yes", "on",
+)
+
 TIMEZONE = "Europe/Prague"
 
 # Host-admin software support (sidebar + Settings). Guest stay questions go to
