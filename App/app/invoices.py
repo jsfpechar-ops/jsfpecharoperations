@@ -1,8 +1,9 @@
-"""Invoice building, numbering and issuing (standalone host tool).
+"""Invoice building, numbering and issuing (host tool).
 
-The invoice is NOT tied to a stay: the host builds a custom document with any
-number of line items, each with a quantity, unit price and VAT rate. Amounts are
+A new invoice belongs to one stay: line 1 is the accommodation, built from the
+stay; up to three extras come from a fixed list (``EXTRA_KINDS``). Amounts are
 integers in haléře. An issued invoice is immutable; a correction is a new paper.
+Drafts built without a stay (corrections, older tests) keep the free-form path.
 """
 from __future__ import annotations
 
@@ -18,6 +19,31 @@ VAT_RATES = (0, 12, 21)
 MAX_ITEMS = 4
 # Ten million CZK per figure: anything larger is a typo, not an invoice.
 MAX_AMOUNT = Decimal("10000000")
+# Invoices belong to one stay (docs/plans/stay-only-invoices.md).
+STAY_PAST_DAYS = 400
+STAY_FUTURE_DAYS = 365
+STAY_MAX_INVOICES = 3
+EXTRA_MAX_QUANTITY = 99
+OTHER_MAX_CHARS = 60
+# All extras together may equal the accommodation line; "Other" alone 30 % of it.
+EXTRAS_MAX_SHARE = Decimal("1.00")
+OTHER_MAX_SHARE = Decimal("0.30")
+EXTRA_KINDS = (
+    "cleaning", "stay_fee", "breakfast", "parking", "pet", "extra_bed", "late_checkout", "other",
+)
+EXTRA_LABELS = {
+    "cs": {
+        "cleaning": "Úklid", "stay_fee": "Poplatek z pobytu", "breakfast": "Snídaně",
+        "parking": "Parkování", "pet": "Domácí zvíře", "extra_bed": "Přistýlka",
+        "late_checkout": "Pozdní odjezd",
+    },
+    "en": {
+        "cleaning": "Cleaning", "stay_fee": "Local stay fee", "breakfast": "Breakfast",
+        "parking": "Parking", "pet": "Pet", "extra_bed": "Extra bed",
+        "late_checkout": "Late check-out",
+    },
+}
+STAY_LINE_PREFIX = {"cs": "Ubytování", "en": "Accommodation"}
 PAID_VIA_LABELS = {
     "airbnb": "Airbnb",
     "booking": "Booking.com",
@@ -206,10 +232,138 @@ def form_item_rows(form) -> List[Dict[str, str]]:
     return rows
 
 
-def build_draft(entity, form, lang: str, *, today: date) -> Dict[str, Any]:
+def stay_nights(reservation) -> int:
+    """Nights between check-in and check-out; 0 when a date is unreadable."""
+    try:
+        start = date.fromisoformat(str(reservation["date_from"])[:10])
+        end = date.fromisoformat(str(reservation["date_to"])[:10])
+    except ValueError:
+        return 0
+    return (end - start).days
+
+
+def stay_problem(reservation, today: date) -> Optional[str]:
+    """None when an invoice may be issued for this stay, else an i18n key."""
+    if reservation is None:
+        return "invoice.err.no_stay"
+    if (reservation["status"] or "") == "cancelled":
+        return "invoice.err.stay_cancelled"
+    if stay_nights(reservation) < 1:
+        return "invoice.err.stay_dates"
+    if str(reservation["date_to"])[:10] < (today - timedelta(days=STAY_PAST_DAYS)).isoformat():
+        return "invoice.err.stay_too_old"
+    if str(reservation["date_from"])[:10] > (today + timedelta(days=STAY_FUTURE_DAYS)).isoformat():
+        return "invoice.err.stay_too_far"
+    return None
+
+
+def _nights_text(nights: int, lang: str) -> str:
+    if lang == "cs":
+        word = "noc" if nights == 1 else ("noci" if 2 <= nights <= 4 else "nocí")
+    else:
+        word = "night" if nights == 1 else "nights"
+    return f"{nights} {word}"
+
+
+def stay_label(property_name: str, reservation, lang: str) -> str:
+    """'Chata, 12.10.2026 – 15.10.2026 (3 noci)': the PDF prints it under the header."""
+    dates = validation.fmt_date_range(reservation["date_from"], reservation["date_to"])
+    return f"{property_name}, {dates} ({_nights_text(stay_nights(reservation), lang)})"
+
+
+def _price_invalid(raw_price: str, price: Decimal) -> bool:
+    return (not raw_price) or _parse_decimal(raw_price) is None or price <= 0
+
+
+def _stay_item(form, vat_status: str, label: str, lang: str) -> Dict[str, Any]:
+    """Line 1. Only the price (and, for payers, the rate) comes from the form."""
+    raw_price = _form_str(form, "stay_price")
+    price = _to_decimal(raw_price)
+    if vat_status == "payer":
+        rate = _to_rate(_form_str(form, "stay_vat_rate") or "12")
+        base, vat, gross = vat_parts(1, price, rate)
+    else:
+        rate = None
+        base = vat = None
+        gross = int((price * 100).to_integral_value(rounding=ROUND_HALF_UP))
+    return {
+        "kind": "accommodation",
+        "extra_kind": "stay",
+        "description": f"{STAY_LINE_PREFIX[lang]} – {label}"[:150],
+        "quantity": 1,
+        "unit": "pobyt" if lang == "cs" else "stay",
+        "vat_rate": rate,
+        "base_haler": base,
+        "vat_haler": vat,
+        "gross_haler": gross,
+        "price_invalid": _price_invalid(raw_price, price),
+    }
+
+
+def _extras_from_form(form, vat_status: str, lang: str) -> List[Dict[str, Any]]:
+    """Lines 2-4. The wording comes from EXTRA_LABELS; only "other" takes typed text."""
+    kinds = _getlist(form, "item_kind")
+    descs = _getlist(form, "item_description")
+    qtys = _getlist(form, "item_quantity")
+    units = _getlist(form, "item_unit")
+    prices = _getlist(form, "item_unit_price")
+    rates = _getlist(form, "item_vat_rate")
+    count = max(len(kinds), len(descs), len(qtys), len(units), len(prices), len(rates))
+    items: List[Dict[str, Any]] = []
+    for i in range(count):
+        kind = _at(kinds, i).strip()
+        text = _at(descs, i).strip()
+        raw_price = _at(prices, i).strip()
+        if not (kind or text or raw_price):
+            continue  # an untouched blank row
+        if not kind:
+            kind = "other"  # no kind picked: typed text is an "Other" line
+        # "stay" is the accommodation line only; a forged extra must not use it.
+        if kind == "stay":
+            kind = "invalid"
+        quantity = _to_int(_at(qtys, i, "1"), default=1)
+        price = _to_decimal(raw_price)
+        if kind == "other":
+            description = text[:OTHER_MAX_CHARS]
+        else:
+            description = EXTRA_LABELS[lang].get(kind, "")
+        if vat_status == "payer":
+            # The local stay fee is a municipal fee outside VAT (owner, 2026-10-08).
+            rate = 0 if kind == "stay_fee" else _to_rate(_at(rates, i))
+            base, vat, gross = vat_parts(quantity, price, rate)
+        else:
+            rate = None
+            base = vat = None
+            gross = int((price * quantity * 100).to_integral_value(rounding=ROUND_HALF_UP))
+        items.append(
+            {
+                "kind": "stay_fee" if kind == "stay_fee" else "other",
+                "extra_kind": kind,
+                "description": description,
+                "quantity": quantity,
+                "unit": _at(units, i).strip()[:20],
+                "vat_rate": rate,
+                "base_haler": base,
+                "vat_haler": vat,
+                "gross_haler": gross,
+                "price_invalid": _price_invalid(raw_price, price),
+            }
+        )
+    return items
+
+
+def build_draft(entity, form, lang: str, *, today: date, stay: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Snapshot the free-form issue form into a draft. Pure except for reads."""
     vat_status = (entity["vat_status"] or "non_payer") if entity else "non_payer"
-    items = _items_from_form(form, vat_status)
+    doc_lang = "cs" if _form_str(form, "lang") == "cs" else "en"
+    label = ""
+    if stay is not None:
+        # stay = {"reservation": row, "property_name": str}; the route checked ownership.
+        label = stay_label(stay["property_name"], stay["reservation"], doc_lang)
+        items = [_stay_item(form, vat_status, label, doc_lang)]
+        items += _extras_from_form(form, vat_status, doc_lang)
+    else:
+        items = _items_from_form(form, vat_status)
     if vat_status == "payer":
         total_base = sum(i["base_haler"] or 0 for i in items)
         total_vat = sum(i["vat_haler"] or 0 for i in items)
@@ -232,7 +386,7 @@ def build_draft(entity, form, lang: str, *, today: date) -> Dict[str, Any]:
         # the invoice should print, exactly as typed (minus the edges).
         paid_via = _form_str(form, "paid_via_custom")[:60]
 
-    return {
+    draft = {
         "kind": "invoice",
         "lang": "cs" if _form_str(form, "lang") == "cs" else "en",
         "vat_status": vat_status,
@@ -258,6 +412,21 @@ def build_draft(entity, form, lang: str, *, today: date) -> Dict[str, Any]:
         "total_vat_haler": total_vat,
         "total_haler": total_haler,
     }
+    if stay is not None:
+        reservation = stay["reservation"]
+        stay_to = str(reservation["date_to"])[:10]
+        draft.update(
+            {
+                "reservation_id": reservation["id"],
+                "apartment_id": reservation["apartment_id"],
+                "stay_from": str(reservation["date_from"])[:10],
+                "stay_to": stay_to,
+                "stay_label": label,
+                # Tax point: the check-out day, never in the future.
+                "duzp": draft["duzp"] or min(stay_to, today.isoformat()),
+            }
+        )
+    return draft
 
 
 def custom_paid_via_label(paid_via: Optional[str]) -> str:
@@ -269,6 +438,34 @@ def custom_paid_via_label(paid_via: Optional[str]) -> str:
     if not paid_via:
         return ""
     return PAID_VIA_LABELS.get(paid_via, paid_via)
+
+
+def _stay_issues(draft: Dict[str, Any]) -> List[validation.Issue]:
+    items = draft["items"]
+    issues: List[validation.Issue] = []
+    # Line 1 must be the stay line; everything after it is an extra. Filtering by
+    # extra_kind == "stay" would let a forged form row with kind "stay" skip the caps.
+    if not items or items[0].get("extra_kind") != "stay":
+        issues.append(validation.Issue("items", "invoice.err.extra_kind"))
+        return issues
+    stay_gross = items[0]["gross_haler"] or 0
+    extras = items[1:]
+    if any(i.get("extra_kind") not in EXTRA_KINDS or not i["description"] for i in extras):
+        issues.append(validation.Issue("items", "invoice.err.extra_kind"))
+    if sum(1 for i in extras if i.get("extra_kind") == "other") > 1:
+        issues.append(validation.Issue("items", "invoice.err.one_other"))
+    if any(not 1 <= i["quantity"] <= EXTRA_MAX_QUANTITY for i in extras):
+        issues.append(validation.Issue("items", "invoice.err.extra_quantity"))
+    # Skip noisy caps when the stay price is already invalid (amount error covers it).
+    if items[0].get("price_invalid") or stay_gross <= 0:
+        return issues
+    extras_gross = sum(i["gross_haler"] for i in extras)
+    other_gross = sum(i["gross_haler"] for i in extras if i.get("extra_kind") == "other")
+    if extras_gross > stay_gross * EXTRAS_MAX_SHARE:
+        issues.append(validation.Issue("items", "invoice.err.extras_cap"))
+    if other_gross > stay_gross * OTHER_MAX_SHARE:
+        issues.append(validation.Issue("items", "invoice.err.other_cap"))
+    return issues
 
 
 def validate_for_issue(draft: Dict[str, Any]) -> List[validation.Issue]:
@@ -292,6 +489,8 @@ def validate_for_issue(draft: Dict[str, Any]) -> List[validation.Issue]:
         issues.append(validation.Issue("items", "invoice.err.too_many_items"))
     if draft["total_haler"] <= 0 or any(i.get("price_invalid") for i in draft["items"]):
         issues.append(validation.Issue("price_czk", "invoice.err.amount"))
+    if draft.get("kind") == "invoice" and draft.get("reservation_id"):
+        issues.extend(_stay_issues(draft))
     return issues
 
 def preview_number(entity) -> str:
@@ -404,6 +603,40 @@ def pdf_view_row(cur, invoice_id: int) -> Dict[str, Any]:
     return row
 
 
+class StayLimit(ValueError):
+    """The stay already has its invoice, or its last allowed one."""
+
+    def __init__(self, key: str, invoice_id: Optional[int] = None):
+        super().__init__(key)
+        self.key = key
+        self.invoice_id = invoice_id
+
+
+_ACTIVE_FOR_STAY_SQL = (
+    "SELECT i.id, i.number FROM invoice i WHERE i.reservation_id = ? AND i.kind = 'invoice' "
+    "AND NOT EXISTS (SELECT 1 FROM invoice c WHERE c.corrects_invoice_id = i.id) "
+    "ORDER BY i.id DESC LIMIT 1"
+)
+
+
+def active_invoice_for_stay(reservation_id: int):
+    """The stay's invoice that has no storno/ODD yet, or None."""
+    return db.query_one(_ACTIVE_FOR_STAY_SQL, (reservation_id,))
+
+
+def _check_stay_limit(cur, reservation_id: int) -> None:
+    """Runs inside the write lock, so a double click cannot slip a second one in."""
+    active = cur.execute(_ACTIVE_FOR_STAY_SQL, (reservation_id,)).fetchone()
+    if active:
+        raise StayLimit("invoice.err.stay_has_invoice", int(active["id"]))
+    total = cur.execute(
+        "SELECT COUNT(*) FROM invoice WHERE reservation_id = ? AND kind = 'invoice'",
+        (reservation_id,),
+    ).fetchone()[0]
+    if total >= STAY_MAX_INVOICES:
+        raise StayLimit("invoice.err.stay_limit")
+
+
 def _write_issued(draft: Dict[str, Any], actor_user_id: Optional[int]) -> tuple:
     """Write an issued document inside one write lock. Returns (id, number)."""
     year = int(draft["issue_date"][:4])
@@ -411,6 +644,8 @@ def _write_issued(draft: Dict[str, Any], actor_user_id: Optional[int]) -> tuple:
         entity = cur.execute(
             "SELECT * FROM legal_entity WHERE id = ?", (draft["legal_entity_id"],)
         ).fetchone()
+        if draft["kind"] == "invoice" and draft.get("reservation_id"):
+            _check_stay_limit(cur, draft["reservation_id"])
         seq_year, seq_no, number, vs = allocate_number(cur, entity, year)
         columns = _invoice_columns(draft, number, vs, seq_year, seq_no)
         cur.execute(
