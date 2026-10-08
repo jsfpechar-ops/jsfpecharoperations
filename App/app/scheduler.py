@@ -13,6 +13,7 @@ from . import (
     claim,
     config,
     db,
+    door_codes,
     dsr,
     filing_watchdog,
     host_i18n,
@@ -40,6 +41,7 @@ _JOB_LEVELS = {
     "photo_sweep": "warning",
     "retention": "warning",
     "meta_capi": "warning",
+    "door_codes": "warning",
 }
 
 
@@ -73,6 +75,7 @@ def job_intervals() -> dict:
         "photo_sweep": 12 * 60,
         "meta_capi": 10,
         "retention": 24 * 60,
+        "door_codes": 1,
     }
 
 
@@ -294,6 +297,21 @@ def _job_meta_capi() -> None:
     )
 
 
+def _job_door_codes() -> None:
+    started = time.perf_counter()
+    try:
+        summary = door_codes.reconcile()
+        if any(summary.values()):
+            log.info("door codes: %s", summary)
+    except Exception:
+        log.exception("door codes job failed")
+        _job_failed("door_codes")
+        _log_run("door_codes", started, False)
+        return
+    _job_ok("door_codes")
+    _log_run("door_codes", started, True, summary)
+
+
 def _job_retention() -> None:
     """Compute (and, once enabled, apply) the retention schedule.
 
@@ -373,6 +391,10 @@ def start() -> bool:
     _scheduler.add_job(
         _job_retention, "cron", hour=3, minute=30, id="retention",
         max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_door_codes, "interval", minutes=minutes["door_codes"],
+        id="door_codes", max_instances=1, coalesce=True,
     )
     _scheduler.start()
     log.info(

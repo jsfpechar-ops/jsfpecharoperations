@@ -52,6 +52,21 @@
       </form>
     {% endif %}
   </div>
+  {% if door_code %}
+    <div class="g-card" id="door-code">
+      <h2>{{ t('door_code_title') }}</h2>
+      {% if door_code.state == 'issued' %}
+        <p class="g-door-code" aria-label="{{ t('door_code_title') }}">{{ door_code.pin }}</p>
+        <p class="g-intro">{{ t('door_code_times', checkin=door_code.checkin, checkout=door_code.checkout) }}</p>
+        <p class="g-intro"><strong>{{ t('door_code_first_use', deadline=door_code.first_use_by) }}</strong></p>
+        {% if claim_email_masked %}<p class="g-intro">{{ t('door_code_sent', email=claim_email_masked) }}</p>{% endif %}
+      {% elif door_code.state == 'failed' %}
+        <p class="g-intro">{{ t('door_code_failed') }}</p>
+      {% else %}
+        <p class="g-intro">{{ t('door_code_preparing') }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
 {% else %}
   {% if just_saved %}
     <div class="g-card g-saved">

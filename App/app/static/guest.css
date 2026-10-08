@@ -1158,6 +1158,8 @@ details.g-why.g-fold > summary.g-why-summary::after { display: none; }
 .g-big-ok h2 { font-size: 21px; }
 .g-big-ok .g-btn { max-width: 280px; margin: 6px auto 0; }
 
+.g-door-code { font: 700 34px/1.2 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; letter-spacing: .14em; font-variant-numeric: tabular-nums; margin: 4px 0 14px; overflow-wrap: anywhere; }
+
 .g-saved { background: var(--g-ok-soft); border-color: color-mix(in srgb, var(--g-ok) 28%, transparent); }
 .g-saved h2 { color: var(--g-ok); }
 

@@ -115,6 +115,14 @@
   {% else %}<p class="muted">{{ t('ops.none') }}</p>{% endif %}
 </section>
 
+{% if ops.ttlock.enabled %}
+<section class="panel tight scroll-x" id="ops-ttlock">
+  <h2 style="margin-top:0">{{ t('ops.ttlock.title') }} <span class="pill {{ 'amber' if ops.ttlock.used >= ops.ttlock.limit * 0.8 else 'green' }}">{{ ops.ttlock.used }} / {{ ops.ttlock.limit }}</span></h2>
+  <p class="small muted">{{ t('ops.ttlock.help') }}</p>
+  <p class="small">{{ t('ops.ttlock.counts', issued=ops.ttlock.issued, failed=ops.ttlock.failed) }} · {{ t('ops.ttlock.live') if ops.ttlock.live else t('ops.ttlock.test_mode') }}</p>
+</section>
+{% endif %}
+
 <section class="panel tight scroll-x" id="ops-alerts">
   <h2 style="margin-top:0">{{ t('ops.alerts.title') }} <span class="pill {{ 'amber' if ops.alerts.count else 'green' }}">{{ ops.alerts.count }}</span></h2>
   <p class="small muted">{{ t('ops.alerts.help') }}</p>
