@@ -1,6 +1,6 @@
 # Stored files: keep for a set time, host downloads before a deadline
 
-Status: draft v2 for owner discussion, council-lite reviewed (§0, §10). **Recommended: Path R (§0). Option B (§5–§7, deletion) is kept only as a corrected design in case the owner still wants it.** No brief runs until the owner answers §9.
+Status: draft v2 for owner discussion, council-lite reviewed (§0, §10). **Owner 2026-10-08: no Files page; invoices stay 10 years; storage module only when a new large file kind is planned (§0a).** Earlier recommendation: Path R (§0). Option B (§5–§7, deletion) is kept only as a corrected design in case the owner still wants it.** No brief runs until the owner answers §9.
 Risk: **HIGH** (data deletion and legal copy). Owner: Josef. Written 2026-10-08.
 
 ## 0. Council verdict and recommendation (read this first)
@@ -19,6 +19,13 @@ Three advisors (Contrarian, First Principles, Executor) reviewed v1 independentl
 - **Invoices: unchanged, 10 years, original PDF kept.** Stay-fee files: unchanged, 6 years.
 
 If the owner still wants deletion (Option B below), the council's corrections in §10 are mandatory, and it must start with a written lawyer opinion on L3/L4 before any code.
+
+## 0a. Owner decisions and corrections (2026-10-08)
+
+- **Files page (R1): dropped** by the owner.
+- **Invoices stay 10 years.** Correction to §4 L3: the "10 years" line in the privacy policy (`privacy.own_retention_body`, privacy_policy_i18n.py:142) covers **UbyHost's own invoices to hosts**, where the law binds UbyHost (§ 35 zák. 235/2004 Sb. if UbyHost is a VAT payer). Host-issued invoices are not promised in the Terms or DPA; their 10 years is the app's own choice (`invoices.purge_expired`), matching the host's longest duty. It stays: the cost is tiny and a shorter period only adds risk.
+- **Storage module (R2): not now.** Correction to §0: the TTLock plan creates no files, so no large file kind is planned. Rule instead (decision line): the first new kind of stored file gets the storage module in its own brief, with its keep-period and legal basis.
+- To add in the legal-copy round (lawyer): one Terms/DPA sentence that the app is not the host's statutory archive and the host keeps their own copies.
 
 ## 1. Goal
 
