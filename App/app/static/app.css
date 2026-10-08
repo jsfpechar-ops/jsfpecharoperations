@@ -3217,3 +3217,27 @@ label { color: var(--ink-secondary); font-weight: 620; }
 .security-prompt-option[hidden] { display: none; }
 .security-prompt-option small { color: var(--ink-2); }
 .passkey-row + .settings-move { margin-top: -6px; }
+
+/* Funnel dashboard (0018): server-rendered bars, no script. */
+.funnel-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.funnel-card { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+.funnel-card strong { font-size: 28px; line-height: 1.1; color: var(--ink); }
+.funnel-chart { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; }
+.funnel-chart li { display: grid; grid-template-columns: 170px minmax(0, 1fr) 190px; gap: 12px; align-items: center; }
+.funnel-chart-track { height: 22px; background: var(--surface-2); border-radius: var(--radius-sm); overflow: hidden; }
+.funnel-chart-bar { display: block; height: 100%; background: var(--brand); border-radius: var(--radius-sm); }
+.funnel-chart-value { display: flex; gap: 8px; align-items: baseline; }
+.funnel-weekly { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.funnel-columns { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; height: 150px; }
+.funnel-columns li { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; min-width: 0; }
+.funnel-column-bar { display: block; width: 100%; background: var(--brand); border-radius: var(--radius-sm) var(--radius-sm) 0 0; min-height: 0; }
+.funnel-column-label { font-size: 10px; white-space: nowrap; }
+.funnel-progress { display: inline-block; width: 64px; height: 6px; margin-right: 6px; vertical-align: middle; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.funnel-progress span { display: block; height: 100%; background: var(--brand); }
+@media (max-width: 760px) {
+  .funnel-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .funnel-chart li { grid-template-columns: minmax(0, 1fr) auto; }
+  .funnel-chart-track { grid-column: 1 / -1; grid-row: 2; }
+  .funnel-weekly { grid-template-columns: minmax(0, 1fr); }
+  .funnel-column-label { display: none; }
+}

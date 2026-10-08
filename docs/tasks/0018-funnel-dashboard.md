@@ -1,6 +1,6 @@
 # 0018: Funnel page as a simple Umami-style dashboard
 
-Status: todo
+Status: review
 Depends on: none | Base commit: current `main` | Branch: task/0018-funnel-dashboard
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
