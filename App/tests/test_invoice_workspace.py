@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.conftest import login_as
+from tests.invoice_stay_helper import drop_stays, make_stay, stay_form
 
 USERNAME = "invoice-workspace-host"
 
@@ -28,6 +29,7 @@ def _cleanup():
     db.execute("DELETE FROM invoice_item WHERE invoice_id IN "
                "(SELECT id FROM invoice WHERE owner_user_id = ?)", (user_id,))
     db.execute("DELETE FROM invoice WHERE owner_user_id = ?", (user_id,))
+    drop_stays(user_id)
     db.execute(
         "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
         "ON CONFLICT(key) DO UPDATE SET value = ''"
@@ -70,8 +72,9 @@ def test_the_vat_column_answers_the_seller_status(host):
     payer_id = _add_entity(name="Payer s.r.o.", vat_status="payer",
                            registry_entry="Stavební", dic="CZ1")
     plain_id = _add_entity(name="Plain s.r.o.", vat_status="non_payer")
-    payer_page = host.get(f"/invoices/new?entity={payer_id}").text
-    plain_page = host.get(f"/invoices/new?entity={plain_id}").text
+    stay_id = make_stay(_owner())
+    payer_page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={payer_id}").text
+    plain_page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={plain_id}").text
 
     # payer: visible columns, enabled selects
     assert re.search(r'<th data-vat-col(?! [^>]*hidden)', payer_page)
@@ -85,7 +88,8 @@ def test_the_vat_column_answers_the_seller_status(host):
 
 def test_the_payment_row_is_one_choice(host):
     entity_id = _add_entity()
-    page = host.get(f"/invoices/new?entity={entity_id}").text
+    stay_id = make_stay(_owner())
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}").text
     assert 'name="already_paid" value="1"' in page
     assert 'name="already_paid" value="0"' in page
     # "already paid" starts on, so the paid row shows and the due row waits
@@ -98,10 +102,11 @@ def test_the_payment_row_is_one_choice(host):
 
 def test_the_unpaid_choice_requests_payment(host):
     entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
     response = host.post(
         "/invoices",
         data={"legal_entity_id": str(entity_id), "already_paid": "0",
-              "buyer_name": "Buyer", "item_description": ["Stay"],
+              "buyer_name": "Buyer", **stay_form(stay_id), "item_description": ["Stay"],
               "item_quantity": ["1"], "item_unit_price": ["1000"]},
         follow_redirects=False,
     )
@@ -114,7 +119,8 @@ def test_the_unpaid_choice_requests_payment(host):
 
 def test_issue_is_the_only_coral_primary_in_the_builder(host):
     entity_id = _add_entity()
-    page = host.get(f"/invoices/new?entity={entity_id}").text
+    stay_id = make_stay(_owner())
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}").text
     assert page.count("btn accent primary") == 1  # Issue invoice
     assert 'formaction="/invoices/preview"' in page  # preview stays quiet
     assert 'data-total' in page  # the live total mirrors the Decimal sum
@@ -122,7 +128,8 @@ def test_issue_is_the_only_coral_primary_in_the_builder(host):
 
 def test_language_and_note_hide_behind_more_options(host):
     entity_id = _add_entity()
-    page = host.get(f"/invoices/new?entity={entity_id}").text
+    stay_id = make_stay(_owner())
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}").text
     assert '<details class="invoice-more">' in page
     more = page.split('<details class="invoice-more">')[1].split("</details>")[0]
     assert 'id="lang"' in more
@@ -131,13 +138,14 @@ def test_language_and_note_hide_behind_more_options(host):
 
 def test_the_missing_bank_warning_waits_for_bank_transfer(host):
     entity_id = _add_entity()  # no account
-    page = host.get(f"/invoices/new?entity={entity_id}").text
+    stay_id = make_stay(_owner())
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}").text
     assert 'data-bank-warning data-has-iban="0" hidden' in page
     with_account = _add_entity(
         name="Banked s.r.o.", bank_account="123/0600",
         iban="CZ9106000000000000000123",
     )
-    page2 = host.get(f"/invoices/new?entity={with_account}").text
+    page2 = host.get(f"/invoices/new?reservation_id={stay_id}&entity={with_account}").text
     assert 'data-has-iban="1"' in page2
     # and with an account the warning never needs to render server-side
     assert 'data-bank-warning data-has-iban="1" hidden' in page2

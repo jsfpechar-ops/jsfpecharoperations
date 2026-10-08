@@ -74,7 +74,7 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-S08 | Low unverified | rate_limit.py:79 | No per-account login lockout across addresses | P A44 |
 | K-S09 | Low open | deploy-production.yml | GITHUB_TOKEN stays in the server's git remote | P A58 |
 | K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY was rotated after the history leak | AR-01 |
-| K-I01 | Med open | routes/invoices.py issue | Double submit issues two invoice numbers | P A07 |
+| K-I01 | Med fixed | routes/invoices.py issue | Double submit issues two invoice numbers (0019 lock per stay; 0020 wiring) | P A07 |
 | K-I02 | Low open | invoices.py:51-63 _parse_decimal | "1.000" parses as 1 | X |
 | K-I03 | Low open | invoices.py cancel | Concurrent cancel returns 500 | P A10 |
 | K-I04 | Low open | invoices.py | Unvalidated duzp/due/correction dates return 500 | P A11 |

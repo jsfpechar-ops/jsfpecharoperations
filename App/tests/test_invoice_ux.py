@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from app import auth, db
 from app.main import app
 from tests.conftest import login_as
+from tests.invoice_stay_helper import drop_stays, make_stay, stay_form
 
 USERNAME = "invoice-ui-host"
 
@@ -24,6 +25,7 @@ def _cleanup():
     )
     db.execute("DELETE FROM invoice_item WHERE invoice_id IN (SELECT id FROM invoice WHERE owner_user_id = ?)", (user_id,))
     db.execute("DELETE FROM invoice WHERE owner_user_id = ?", (user_id,))
+    drop_stays(user_id)
     db.execute(
         "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
         "ON CONFLICT(key) DO UPDATE SET value = ''"
@@ -68,6 +70,7 @@ def _add_entity(**over):
 
 def _items(**over):
     data = {
+        **stay_form(make_stay(_owner())),
         "item_description": ["Consulting"],
         "item_quantity": ["2"],
         "item_unit": ["h"],
@@ -131,8 +134,9 @@ def test_invoice_list_month_filter_matches_issue_date(host, monkeypatch):
 
 
 def test_the_builder_form_is_a_free_form_with_items(host):
-    _add_entity()
-    page = host.get("/invoices/new")
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner())
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}")
     assert page.status_code == 200
     assert 'name="legal_entity_id"' in page.text
     assert 'name="item_description"' in page.text
@@ -160,7 +164,8 @@ def test_issue_a_custom_invoice_and_download_the_pdf(host):
 
 
 def test_no_operator_shows_an_error(host):
-    page = host.get("/invoices/new")
+    stay_id = make_stay(_owner())
+    page = host.get(f"/invoices/new?reservation_id={stay_id}")
     assert page.status_code == 200
     assert "Assign an operator to this property first." in page.text
 
@@ -208,30 +213,33 @@ def test_send_enqueues_a_mail_with_a_working_download_token(host, monkeypatch):
 def test_a_payers_issued_invoice_shows_the_vat_breakdown(host):
     payer_id = _add_entity(name="VAT Break s.r.o.", vat_status="payer", dic="CZ1",
                            registry_entry="Stavební")
+    stay_id = make_stay(_owner(), entity_id=payer_id)
     response = host.post(
         "/invoices",
         data={"legal_entity_id": str(payer_id), "buyer_name": "Buyer",
-              "already_paid": "0", "item_description": ["Stay"],
+              "already_paid": "0", **stay_form(stay_id), "stay_vat_rate": "12",
+              "item_description": ["Stay"],
               "item_quantity": ["2"], "item_unit_price": ["1000"],
               "item_vat_rate": ["12"]},
         follow_redirects=False,
     )
     invoice_id = int(response.headers["location"].split("?")[0].rsplit("/", 1)[1])
     detail = host.get(f"/invoices/{invoice_id}?lang=en").text
-    # per item: 2 × 1000 = 2000 base, 12 % VAT = 240, gross 2240
+    # stay 10000@12% + item 2×1000@12%: base 12000, VAT 1440, gross 13440
     assert "Unit price (excl. VAT)" in detail
-    assert "2\u00a0240,00 Kč" in detail
+    assert "13\u00a0440,00 Kč" in detail
     assert "Base (excl. VAT)" in detail
-    assert "2\u00a0000,00 Kč" in detail  # base total
-    assert "240,00 Kč" in detail   # VAT total
+    assert "12\u00a0000,00 Kč" in detail  # base total
+    assert "1\u00a0440,00 Kč" in detail   # VAT total
 
 
 def test_a_non_payers_issued_invoice_keeps_the_plain_table(host):
     entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
     response = host.post(
         "/invoices",
         data={"legal_entity_id": str(entity_id), "buyer_name": "Buyer",
-              "already_paid": "1", "item_description": ["Stay"],
+              "already_paid": "1", **stay_form(stay_id), "item_description": ["Stay"],
               "item_quantity": ["1"], "item_unit_price": ["1000"]},
         follow_redirects=False,
     )
@@ -244,10 +252,11 @@ def test_a_non_payers_issued_invoice_keeps_the_plain_table(host):
 def test_switching_operator_keeps_the_form_instead_of_a_reload(host):
     """The switch patch swaps the operator chrome, so no confirm is needed
     and nothing typed can be lost."""
-    _add_entity()
-    page = host.get("/invoices/new?lang=en").text
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner())
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}&lang=en").text
     assert 'data-next-number' in page
     assert "switch_operator_confirm" not in page
     assert "window.confirm" not in page
     # the fetch patch reads the same URL the select posts to
-    assert 'fetch("/invoices/new?entity=' in page
+    assert 'fetch("/invoices/new?reservation_id=' in page

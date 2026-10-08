@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% set nav = 'invoices' %}
+{% block title %}{{ t('invoice.new') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header with context %}
+{{ page_header(t('invoice.new'), t('invoice.picker.lede'), '/invoices', t('nav.invoices')) }}
+
+<div class="panel">
+  {% if stays %}
+  <form method="get" action="/invoices/new">
+    <div class="field">
+      <label for="reservation_id">{{ t('invoice.picker.label') }}</label>
+      <select id="reservation_id" name="reservation_id" required>
+        {% for option in stays %}
+          <option value="{{ option.id }}">{{ option.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="actions">
+      <button class="btn accent primary" type="submit">{{ t('invoice.picker.continue') }}</button>
+    </div>
+  </form>
+  {% else %}
+  <p>{{ t('invoice.picker.empty') }}</p>
+  {% endif %}
+  <p class="small muted"><a href="/reservations">{{ t('invoice.picker.add_stay') }}</a></p>
+</div>
+{% endblock %}
