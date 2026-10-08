@@ -108,7 +108,7 @@
           <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
                 data-confirm data-confirm-message="{{ t('confirm.archive_stay') }}">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <input type="hidden" name="return_to" value="{{ return_to }}">
+            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">
             <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.detail.menu.archive') }}</button>
           </form>
         {% endif %}

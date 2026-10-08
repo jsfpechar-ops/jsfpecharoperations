@@ -51,6 +51,7 @@
             <a class="row-menu-item" href="/apartments/{{ apartment.id }}#ubyport" role="menuitem">{{ t('nav.automation') }}</a>
             <form method="post" action="/apartments/{{ apartment.id }}/archive" class="row-menu-form"
                   data-confirm data-confirm-message="{{ t('confirm.archive_property') }}">
+              <input type="hidden" name="return_to" value="/apartments">
               <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
             </form>
           {{ row_menu_end() }}
