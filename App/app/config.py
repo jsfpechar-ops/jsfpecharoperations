@@ -221,6 +221,8 @@ GUEST_PIN_REQUIRED = os.environ.get("UBYHOST_GUEST_PIN", "1") not in ("0", "fals
 BOOTSTRAP_ADMIN = os.environ.get("UBYHOST_BOOTSTRAP_ADMIN", "1") not in ("0", "false", "no")
 ADMIN_USERNAME = os.environ.get("UBYHOST_ADMIN_USERNAME", "admin").strip().lower()
 ADMIN_EMAIL = os.environ.get("UBYHOST_ADMIN_EMAIL", "").strip()
+# Render staging only: shared break-glass password (console mail, no SES). Never on production.
+STAGING_LOGIN_PASSWORD = os.environ.get("UBYHOST_STAGING_LOGIN_PASSWORD", "").strip()
 
 TIMEZONE = "Europe/Prague"
 

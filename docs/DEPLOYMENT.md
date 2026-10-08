@@ -66,7 +66,9 @@ production**). You can still run **Actions → Deploy production** by hand with
 2. In [Render](https://render.com/): **New → Blueprint** → connect the repo.
 3. Click **Apply**. You get **`ubyhost-staging`** (mock) and optionally **`ubyhost`**.
 4. Use **`ubyhost-staging`** only for staging: manual deploy when you want to test UI.
-   Admin password is in Render → **ubyhost-staging** → Environment.
+   Set **`UBYHOST_ADMIN_EMAIL`** (default in `render.yaml`: `josef@ubyhost.com`) and
+   **`UBYHOST_STAGING_LOGIN_PASSWORD`** in **ubyhost-staging → Environment**, then
+   log in with that e-mail and password (Render does not deliver login mail).
 5. **Production** is not on Render for this operator — see **[LIGHTSAIL.md](LIGHTSAIL.md)** and
    `deploy/lightsail/README.md`. Skip Render `ubyhost` or suspend it after Lightsail is live.
 6. Optional: GitHub secret **`RENDER_DEPLOY_HOOK`** only if you still auto-deploy Render

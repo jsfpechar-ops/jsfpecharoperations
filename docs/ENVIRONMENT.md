@@ -164,9 +164,13 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 | `UBYHOST_ADMIN_EMAIL` | unset (falls back to `UBYHOST_OPERATOR_EMAIL`) | The address the first administrator logs in with. Their first login link (valid 72 hours) is written once to `$UBYHOST_DATA_DIR/initial_admin_login` with owner-only permissions; on staging it is also written to the service log. |
 | `UBYHOST_ADMIN_USERNAME` | `admin` | Internal handle only; nobody types it any more. |
 
-There are no passwords. Every account logs in with a single-use link sent to its
-e-mail address (15 minutes), optionally followed by an authenticator-app code.
-`UBYHOST_ADMIN_PASSWORD` is no longer read and can be removed from `.env`.
+Every account logs in with a single-use link sent to its e-mail address (15
+minutes), optionally followed by an authenticator-app code. The only exception
+is **`UBYHOST_STAGING_LOGIN_PASSWORD`** on **`UBYHOST_DEPLOYMENT=staging`**
+(Render): one shared break-glass password on the login form because staging
+uses the console mail backend and does not deliver links. Refused on
+production. `UBYHOST_ADMIN_PASSWORD` is no longer read and can be removed from
+`.env`.
 
 ## Operator identity (shown in the UI and legal pages)
 

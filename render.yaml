@@ -40,9 +40,11 @@ services:
         generateValue: true
       - key: UBYHOST_ADMIN_USERNAME
         value: admin
-      # The first administrator logs in by e-mail link. Staging delivers no
-      # mail: the link is written to the service log (Render -> Logs).
+      # First administrator (e-mail link or staging password below).
       - key: UBYHOST_ADMIN_EMAIL
+        value: josef@ubyhost.com
+      # Staging break-glass login (Render does not deliver mail). Set in the dashboard.
+      - key: UBYHOST_STAGING_LOGIN_PASSWORD
         sync: false
       - key: UBYHOST_MAIL_BACKEND
         value: console
