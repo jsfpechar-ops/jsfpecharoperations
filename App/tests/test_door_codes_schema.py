@@ -182,3 +182,40 @@ def test_pin_is_wiped_a_day_after_expiry():
 
 def test_door_codes_are_off_by_default():
     assert config.DOOR_CODES_ENABLED is False
+
+
+def test_workspace_deletion_removes_door_code_and_lock_account():
+    owner = _owner()
+    _, apartment_id = _apartment(owner)
+    reservation_id = _reservation(apartment_id)
+    now = db.utcnow()
+    db.insert(
+        "door_code",
+        {
+            "reservation_id": reservation_id,
+            "apartment_id": apartment_id,
+            "lock_id": "lock-1",
+            "pin_enc": "enc",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.insert(
+        "lock_account",
+        {
+            "owner_user_id": owner,
+            "username": "ttlock-user",
+            "password_enc": "enc-pw",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    retention._delete_workspace(owner)
+    assert db.query_one("SELECT id FROM user_account WHERE id = ?", (owner,)) is None
+    assert _scalar("door_code") == 0
+    assert _scalar("lock_account") == 0
+
+
+def _scalar(table: str) -> int:
+    row = db.query_one(f"SELECT COUNT(*) AS n FROM {table}")
+    return int(row["n"]) if row else 0

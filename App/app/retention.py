@@ -273,6 +273,8 @@ def _delete_workspace(owner_id: int) -> None:
             (owner_id,),
         )
         cur.execute(f"DELETE FROM submission WHERE apartment_id IN {apartments}", (owner_id,))
+        # Task 0008: door codes (also cascade; explicit for the same reason).
+        cur.execute(f"DELETE FROM door_code WHERE apartment_id IN {apartments}", (owner_id,))
         cur.execute(f"DELETE FROM reservation WHERE apartment_id IN {apartments}", (owner_id,))
         cur.execute(
             f"DELETE FROM stay_fee_adjustment WHERE apartment_id IN {apartments}", (owner_id,)
@@ -320,6 +322,7 @@ def _delete_workspace(owner_id: int) -> None:
         # Task 0004: passkeys and their ceremonies (also cascade).
         cur.execute("DELETE FROM passkey WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM webauthn_challenge WHERE user_account_id = ?", (owner_id,))
+        cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
     # Files last: a rolled-back delete must not have lost the photos. One

@@ -61,6 +61,7 @@ App/app/config.py:169:TTLOCK_CLIENT_SECRET = os.environ.get("UBYHOST_TTLOCK_CLIE
 ## 4. Deviations
 
 - Added `door_code_pins` to `_cutoffs()` in `retention.py` so `test_every_step_of_the_run_writes_class_count_and_cutoff` gets a cutoff string for the new step (same file as step 3; not named in the brief).
+- After council review: explicit `door_code` / `lock_account` deletes in `_delete_workspace` (same pattern as passkeys; task 0008 tables).
 
 ## 5. Questions
 
