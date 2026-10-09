@@ -132,7 +132,9 @@
       <h3>{{ t('guide.door_codes.need_title') }}</h3>
       <ul>{% for n in range(1, 4) %}<li>{{ t('guide.door_codes.need' ~ n) }}</li>{% endfor %}</ul>
       <h3>{{ t('guide.door_codes.steps_title') }}</h3>
-      <ol class="guide-steps">{% for n in range(1, 10) %}<li><strong>{{ t('guide.door_codes.step' ~ n ~ '_title') }}:</strong> {{ t('guide.door_codes.step' ~ n) }}</li>{% endfor %}</ol>
+      {% set door_shots = {2: ['connect', 'name'], 7: ['connected'], 8: ['property']} %}
+      {% set shot_lang = 'cs' if lang == 'cs' else 'en' %}
+      <ol class="guide-steps">{% for n in range(1, 10) %}<li><strong>{{ t('guide.door_codes.step' ~ n ~ '_title') }}:</strong> {{ t('guide.door_codes.step' ~ n) }}{% for shot in door_shots.get(n, []) %}<figure class="guide-shot"><img src="/static/guide/door-lock-{{ shot }}-{{ shot_lang }}.png?v=20261009" alt="{{ t('guide.door_codes.shot_' ~ shot) }}" loading="lazy"></figure>{% endfor %}</li>{% endfor %}</ol>
       <h3>{{ t('guide.door_codes.how_title') }}</h3>
       <ul>{% for n in range(1, 8) %}<li>{{ t('guide.door_codes.how' ~ n) }}</li>{% endfor %}</ul>
       <h3 id="door-codes-terms">{{ t('guide.door_codes.terms_title') }}</h3>
