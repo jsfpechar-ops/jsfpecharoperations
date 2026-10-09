@@ -4,11 +4,9 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 
-from fastapi.testclient import TestClient
-
 import pytest
 
-from app import alerts, config, db, deadlines, door_codes, ttlock
+from app import config, db, deadlines, door_codes, ttlock
 
 PREFIX = "dc-safe-"
 _counter = 0
