@@ -107,7 +107,7 @@ def test_the_guest_waiting_text_says_only_that_the_code_comes_by_e_mail():
     assert "door_code_delayed" not in template
     assert "door_code_only_between" not in template
     assert mail_notify._guest_text("en", "door_code_preparing") == (
-        "You will receive your door code by e-mail."
+        "You will receive your door code by email."
     )
 
 
