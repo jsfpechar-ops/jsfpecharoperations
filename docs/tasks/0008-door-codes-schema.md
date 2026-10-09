@@ -1,6 +1,6 @@
 # 0008: Door codes, schema and settings
 
-Status: todo
+Status: done
 Depends on: none | Base commit: 9f4709f | Branch: task/0008-door-codes-schema
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

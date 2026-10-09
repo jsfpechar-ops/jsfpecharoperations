@@ -1,6 +1,6 @@
 # 0012: Issuing door codes
 
-Status: todo
+Status: done
 Depends on: 0011 | Base commit: after 0011 merges | Branch: task/0012-door-codes-issuing
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

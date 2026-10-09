@@ -1,6 +1,6 @@
 # 0010: Smart locks page under Property tools
 
-Status: todo
+Status: done
 Depends on: 0009 | Base commit: after 0009 merges | Branch: task/0010-smart-locks-page
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

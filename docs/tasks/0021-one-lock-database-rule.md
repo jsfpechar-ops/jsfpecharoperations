@@ -1,6 +1,6 @@
 # 0021: The database refuses two active properties on one lock
 
-Status: todo
+Status: replaced by 95fb903 (application-level rule shipped; the database rule in this brief is not built)
 Depends on: PR #325 merged to `main` | Base commit: `main` after PR #325 | Branch: task/0021-one-lock-database-rule
 Executor: Cursor local agent (composer, Kimi or GLM) or Claude Haiku | Fits one session
 

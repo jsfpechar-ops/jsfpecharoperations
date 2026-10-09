@@ -1,6 +1,6 @@
 # 0013: Door code on the guest page and by mail
 
-Status: todo
+Status: done
 Depends on: 0012 | Base commit: after 0012 merges | Branch: task/0013-door-code-delivery
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

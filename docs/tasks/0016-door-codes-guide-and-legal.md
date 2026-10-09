@@ -1,6 +1,6 @@
 # 0016: Door codes guide, terms, guest notice and subprocessor entry
 
-Status: todo
+Status: done
 Depends on: 0010 (run any time after it) | Base commit: after 0010 merges | Branch: task/0016-door-codes-guide-and-legal
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

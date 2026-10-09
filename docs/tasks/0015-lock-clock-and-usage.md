@@ -1,6 +1,6 @@
 # 0015: Lock clock check, call counter and budget alerts
 
-Status: todo
+Status: done
 Depends on: 0014 | Base commit: after 0014 merges | Branch: task/0015-lock-clock-and-usage
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
