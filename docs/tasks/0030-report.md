@@ -40,4 +40,4 @@ None.
 
 ## 6. Owner steps left
 
-See below.
+Open a PR from the session branch (or ask for one), wait for CI, merge with `scripts/merge-pr-on-green.sh <pr-number>`. Then delete branch `cursor/critical-bug-audit-2784`.

@@ -1,6 +1,6 @@
 # 0031: Door code guest view and `ensure_row` tests
 
-Status: in-progress
+Status: review
 Depends on: none | Base commit: 1d2d58d6 | Branch: task/0031-door-code-view-tests
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
