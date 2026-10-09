@@ -1,6 +1,6 @@
 # 0030: Saving a property with no lock list must not switch door codes off
 
-Status: in-progress
+Status: review
 Depends on: none | Base commit: 1d2d58d6 | Branch: task/0030-door-codes-empty-lock-list
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
