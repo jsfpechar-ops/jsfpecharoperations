@@ -6,7 +6,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 ## Roles
 
 - **Orchestrator** (any chat AI the owner talks to: Claude, ChatGPT, Gemini, Copilot chat, Cowork, Claude Code): plans, writes briefs in docs/tasks/, reviews reports. Never edits App/, never runs the test suite, never implements, even when the owner says "fix this": in this repo that means "write the brief". Only the exact words "implement it yourself" lift this. Follow the [token budget](docs/context/workflow.md#token-budget-every-ai-every-session).
-- **Executor** (Cursor: composer, Kimi or GLM only): follows one brief exactly. Reads only this file, the brief and the files the brief names. If you are Cursor running a brief from docs/tasks/, you are the executor.
+- **Executor** (Cursor: composer, Kimi or GLM; or Claude Haiku 5.5 at high effort): follows one brief exactly. Reads only this file, the brief and the files the brief names. If you are running a brief from docs/tasks/, you are the executor.
 - **Owner** (Josef): merges, deploys, secrets, servers. Give him numbered click-by-click steps in plain words.
 
 ## Hard rules (full text: [rules](docs/context/rules.md))

@@ -2,7 +2,7 @@
 
 Status: todo
 Depends on: 0024 merged | Base commit: `main` after 0024 | Branch: task/0025-confirmation-with-door-code
-Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
+Executor: Claude Haiku 5.5, effort high (or Cursor composer, Kimi, GLM) | Fits one session
 
 ## 1. Objective
 
@@ -80,7 +80,7 @@ B9 `App/app/door_codes.py`, in `reconcile`: `    _phase("budget_alerts", _budget
 | `App/app/claim.py` | edit | hold, code in the confirmation, `force` |
 | `App/app/mail_notify.py` | edit | door-code blocks in `build_completion` |
 | `App/app/door_codes.py` | edit | 2 helpers, release on failure, safety sweep |
-| `App/tests/test_confirmation_with_door_code.py` | create | 8 tests |
+| `App/tests/test_confirmation_with_door_code.py` | create | 8 tests (full code in step 11) |
 | `docs/tasks/0025-report.md` | create | report |
 
 No other file may change (if an existing test fails because the order changed, STOP, §8).
@@ -212,15 +212,167 @@ def _release_held_confirmations() -> int:
         ])
         text_lines.extend(["", code_title, mail.DOOR_CODE_MARKER, times, first_use])
 ```
-11. Create `App/tests/test_confirmation_with_door_code.py` (fixtures and fake TTLock from `test_door_code_handover.py`):
-   1. code made on the first try → exactly one guest mail (`completion`), it contains the PIN after rendering and the first-use deadline; no `door_code` kind mail; `door_code.notified_at` set;
-   2. first try fails → no `completion` row yet; retry succeeds → one `completion` with the code;
-   3. both tries fail → one `completion` without the code, plus the host `door_code_notice`;
-   4. property without a lock → `completion` sent at once, no code;
-   5. `DOOR_CODES_ENABLED` False → `completion` at once;
-   6. held 6 min (patch time) → `reconcile()` sends `completion` without code and logs `DOOR_CODE_PROBLEM stage=confirmation_without_code`;
-   7. a stay registered 2 days ago with `completion_notified_at` NULL and a `door_code` row → `reconcile()` sends nothing to it;
-   8. code re-made after the confirmation went (e.g. set `notified_at` NULL on an issued row whose claim has `completion_notified_at`) → a separate `door_code` mail, as today.
+11. Create `App/tests/test_confirmation_with_door_code.py` with exactly this content:
+```python
+"""The registration confirmation carries the door code (task 0025)."""
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from app import claim, config, db, door_codes, mail, ttlock
+# _env is the autouse fixture of that file; importing it here applies it here too.
+from tests.test_door_codes_safeguards import _env, _stay  # noqa: F401
+
+PIN = "4821937"
+
+
+@pytest.fixture(autouse=True)
+def _claims(_env, monkeypatch):
+    monkeypatch.setattr(
+        claim.reporting,
+        "reservation_progress",
+        lambda _r: {"expected": 1, "filled": 1, "incomplete": False, "status": "complete"},
+    )
+    yield
+    db.execute(
+        "DELETE FROM reservation_claim WHERE reservation_id IN "
+        "(SELECT id FROM reservation WHERE uid LIKE 'dc-safe-%')"
+    )
+
+
+def _claim(stay):
+    now = db.utcnow()
+    db.execute(
+        "INSERT INTO reservation_claim (reservation_id, state, email, lang, created_at, updated_at) "
+        "VALUES (?, 'claimed', 'guest@example.test', 'en', ?, ?)",
+        (stay, now, now),
+    )
+
+
+def _guest_registers(stay):
+    """What the guest form does once everyone is in (the order from step 1)."""
+    _claim(stay)
+    door_codes.on_registration_complete(stay)
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (stay,))
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    claim.maybe_notify_completion(reservation, apartment)
+
+
+def _guest_mails(stay):
+    return db.query(
+        "SELECT * FROM email_outbox WHERE reservation_id = ? AND kind IN ('completion', 'door_code') "
+        "ORDER BY id",
+        (stay,),
+    )
+
+
+def _text(row):
+    return mail.delivery_body(json.loads(row["payload"]))
+
+
+def _works(monkeypatch):
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: (PIN, "99"))
+
+
+def _refuses(monkeypatch, kind="transient"):
+    def refused(*args, **kwargs):
+        raise ttlock.TTLockError("refused", code=-1026, kind=kind)
+
+    monkeypatch.setattr(ttlock, "create_period_code", refused)
+
+
+def _due_now(stay):
+    db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE reservation_id = ?", (stay,))
+
+
+def test_a_code_made_at_once_rides_in_the_confirmation(monkeypatch):
+    _works(monkeypatch)
+    _, apartment, stay = _stay(registered_minutes_ago=0)
+    _guest_registers(stay)
+    mails = _guest_mails(stay)
+    assert [m["kind"] for m in mails] == ["completion"]
+    assert PIN in _text(mails[0])
+    assert "If you have not used it by" in _text(mails[0])
+    row = db.query_one("SELECT notified_at FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["notified_at"]
+
+
+def test_a_held_confirmation_goes_with_the_code_after_the_retry(monkeypatch):
+    _refuses(monkeypatch)
+    _, apartment, stay = _stay(registered_minutes_ago=0)
+    _guest_registers(stay)
+    assert _guest_mails(stay) == []
+    _works(monkeypatch)
+    _due_now(stay)
+    door_codes.reconcile()
+    mails = _guest_mails(stay)
+    assert [m["kind"] for m in mails] == ["completion"]
+    assert PIN in _text(mails[0])
+
+
+def test_two_refusals_send_the_confirmation_without_a_code_and_tell_the_host(monkeypatch):
+    _refuses(monkeypatch)
+    _, apartment, stay = _stay(registered_minutes_ago=0)
+    _guest_registers(stay)
+    _due_now(stay)
+    door_codes.reconcile()
+    mails = _guest_mails(stay)
+    assert [m["kind"] for m in mails] == ["completion"]
+    assert "If you have not used it by" not in _text(mails[0])
+    assert db.query(
+        "SELECT id FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code_notice'",
+        (stay,),
+    )
+
+
+def test_a_property_without_a_lock_sends_the_confirmation_at_once():
+    _, apartment, stay = _stay(registered_minutes_ago=0)
+    db.execute("UPDATE apartment SET lock_provider = NULL, lock_id = NULL WHERE id = ?", (apartment,))
+    _guest_registers(stay)
+    assert [m["kind"] for m in _guest_mails(stay)] == ["completion"]
+
+
+def test_codes_switched_off_send_the_confirmation_at_once(monkeypatch):
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
+    _, apartment, stay = _stay(registered_minutes_ago=0)
+    _guest_registers(stay)
+    assert [m["kind"] for m in _guest_mails(stay)] == ["completion"]
+
+
+def test_a_confirmation_never_waits_more_than_five_minutes(monkeypatch):
+    lines = []
+    monkeypatch.setattr(door_codes.log, "error", lambda msg, *args, **kw: lines.append(msg % args))
+    _refuses(monkeypatch, kind="budget")  # budget: TTLock is asked again only in 60 min
+    _, apartment, stay = _stay(registered_minutes_ago=6)
+    _guest_registers(stay)
+    assert _guest_mails(stay) == []
+    door_codes.reconcile()
+    mails = _guest_mails(stay)
+    assert [m["kind"] for m in mails] == ["completion"]
+    assert any(l.startswith("DOOR_CODE_PROBLEM stage=confirmation_without_code") for l in lines), lines
+
+
+def test_an_old_stay_never_gets_a_late_confirmation(monkeypatch):
+    _refuses(monkeypatch, kind="budget")
+    _, apartment, stay = _stay(registered_minutes_ago=2 * 24 * 60)
+    _claim(stay)
+    door_codes.ensure_row(stay)
+    door_codes.reconcile()
+    assert _guest_mails(stay) == []
+
+
+def test_a_code_made_after_the_confirmation_gets_its_own_mail(monkeypatch):
+    _works(monkeypatch)
+    _, apartment, stay = _stay(registered_minutes_ago=0)
+    _guest_registers(stay)
+    db.execute("UPDATE door_code SET notified_at = NULL WHERE reservation_id = ?", (stay,))
+    row = db.query_one("SELECT id FROM door_code WHERE reservation_id = ?", (stay,))
+    door_codes.send_code_mail(int(row["id"]))
+    assert [m["kind"] for m in _guest_mails(stay)] == ["completion", "door_code"]
+```
+12. Run the §6 commands in order.
 
 ## 5. Do not touch
 

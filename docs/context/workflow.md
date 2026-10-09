@@ -7,7 +7,7 @@ This file is the single source of truth for how work is done. When the process c
 | Role | Who | Does | Never |
 |---|---|---|---|
 | Orchestrator | Any chat AI (a strong model only for HIGH RISK plans, a cheaper one otherwise) | Plans in `docs/plans/`, briefs in `docs/tasks/`, reviews, context updates | Edits `App/`, runs audits nobody asked for, carries one chat across tasks |
-| Executor | Cursor: composer, Kimi or GLM only | Applies one brief and writes its report | Designs, guesses, touches files outside the brief, merges |
+| Executor | Cursor: composer, Kimi or GLM; or Claude Haiku 5.5 (effort high) | Applies one brief and writes its report | Designs, guesses, touches files outside the brief, merges |
 | Search helper | Sonnet or Haiku subagent | Grep and summarise; returns conclusions, not file dumps | Writes files |
 | Owner | Josef | Decides, merges, deploys, secrets, servers | |
 

@@ -22,7 +22,7 @@ Updated: 2026-10-09 after PR #325 review.
 
 - Doručenka smoke on a new filing after this cutover.
 
-- PR #325: run [0023](../tasks/0023-pr325-fixups.md) (CI red), merge, then 0021, [0024](../tasks/0024-door-code-immediate-handover.md), [0025](../tasks/0025-confirmation-with-door-code.md). 0022 superseded. Owner: remove TTLock keys on staging (K-S11).
+- PR #325: run [0023](../tasks/0023-pr325-fixups.md) (CI red), merge; then 0021, 0024, 0025, 0027 in that order; [0026](../tasks/0026-one-calendar-link-per-user.md) any time. 0022 superseded. Executor: Haiku 5.5, effort high.
 
 ## Blocked: needs owner, lawyer or council
 

@@ -2,7 +2,7 @@
 
 Status: todo
 Depends on: PR #325 merged (0023 done) | Base commit: `main` after PR #325 | Branch: task/0024-door-code-immediate-handover
-Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
+Executor: Claude Haiku 5.5, effort high (or Cursor composer, Kimi, GLM) | Fits one session
 
 ## 1. Objective
 
@@ -101,8 +101,9 @@ A18 `host_i18n.py`: `"mail.door_code_notice.failed.subject"`, `"mail.door_code_n
 | `App/app/i18n.py` | edit | guest texts (5 languages) |
 | `App/app/host_i18n.py` | edit | host notice texts (en, cs) |
 | `App/app/templates/guest/stay.html` | edit | 2 spots |
-| `App/tests/test_door_code_handover.py` | create | 7 tests |
-| `App/tests/test_door_codes_safeguards.py` | edit | only assertions on texts or timings this brief changes |
+| `App/tests/test_door_code_handover.py` | create | 7 tests (full code in step 14) |
+| `App/tests/test_door_codes_safeguards.py` | edit | replace one test (step 15) |
+| `App/tests/test_guest_mail.py` | edit | one line (step 16) |
 | `docs/tasks/0024-report.md` | create | report |
 
 No other file may change.
@@ -156,15 +157,180 @@ A13 → the same two lines with `.delayed.` replaced by `.failed.`.
    - en body `We are sorry: UbyHost could not create the door code for the stay from %(date)s. Reason: %(reason)s. UbyHost support has been told. Please create a code in the TTLock app (open the lock, tap Passcodes) and send it to the guest. UbyHost will not try again, so the guest gets only your code. The guest was not told about the problem.`
    - cs subject `%(property)s: vytvořte prosím kód ke dveřím sami`
    - cs body `Omlouváme se: UbyHost nemohl vytvořit kód ke dveřím pro pobyt od %(date)s. Důvod: %(reason)s. Podpora UbyHost o tom ví. Vytvořte prosím kód v aplikaci TTLock (otevřete zámek, klepněte na Kódy / Passcodes) a pošlete ho hostovi. UbyHost to už znovu nezkusí, host tedy dostane jen váš kód. Host o problému neví.`
-13. Create `App/tests/test_door_code_handover.py`. Copy the fixtures and the fake-TTLock pattern from `test_door_codes_safeguards.py`. Tests:
-   1. a first transient failure → state `retrying`, `next_attempt_at` about 1 min later, no `door_code_notice` in `email_outbox`;
-   2. a second failure → state `failed`, exactly one `door_code_notice` row, its `cc_email` is `support@ubyhost.com`, its body has `[transient` and `Passcodes`;
-   3. `reconcile()` after that does not call TTLock again for that row;
-   4. `caplog` has `DOOR_CODE_PROBLEM stage=attempt_failed` after the first failure and `DOOR_CODE_PROBLEM stage=handed_over` after the second;
-   5. the guest stay page while waiting (also 6 min after registration) shows `You will receive your door code by e-mail.` and not `taking longer`;
-   6. an issued code: the guest page and the door-code mail text both show the deadline `valid_from + 24 h` in `dd.mm.YYYY HH:MM` Prague time;
-   7. `_alert_delayed()` with `ttlock.allowed_for` patched to return False: no alert, no mail.
-14. Run the §6 commands. Fix only tests in `test_door_codes_safeguards.py` that assert the old 10 min, the old texts or the old retry count; list each in the report.
+13. Send the host mail at once instead of waiting up to 5 minutes for the mail job. In `door_codes.py` the line `            mail_notify.door_code_notice(door_code_id, "failed")` appears exactly **twice** (in `issue`). After **each**, insert (same indent):
+```python
+            mail.drain(limit=4)
+```
+In `_alert_delayed`, after the line `        mail_notify.door_code_delayed_notice(int(row["reservation_id"]), reason)` insert (same indent) `        mail.drain(limit=4)`.
+14. Create `App/tests/test_door_code_handover.py` with exactly this content:
+```python
+"""A code TTLock refuses twice is handed to the host at once (task 0024)."""
+from __future__ import annotations
+
+import json
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+from app import config, db, door_codes, mail_notify, ttlock
+# _env is the autouse fixture of that file; importing it here applies it here too.
+from tests.test_door_codes_safeguards import _env, _stay, _view  # noqa: F401
+
+
+def _refuse(monkeypatch, calls):
+    def refused(*args, **kwargs):
+        calls.append(1)
+        raise ttlock.TTLockError("refused", code=-1026, kind="transient")
+
+    monkeypatch.setattr(ttlock, "create_period_code", refused)
+
+
+def _log_lines(monkeypatch):
+    lines = []
+    monkeypatch.setattr(door_codes.log, "error", lambda msg, *args, **kw: lines.append(msg % args))
+    return lines
+
+
+def _row(stay):
+    return db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+
+
+def _notices(stay):
+    return db.query(
+        "SELECT * FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code_notice'",
+        (stay,),
+    )
+
+
+def _due_now(stay):
+    db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE reservation_id = ?", (stay,))
+
+
+def _parse(value):
+    when = datetime.fromisoformat(value)
+    return when if when.tzinfo else when.replace(tzinfo=timezone.utc)
+
+
+def test_the_first_refusal_retries_in_a_minute_without_mail(monkeypatch):
+    _refuse(monkeypatch, [])
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    row = _row(stay)
+    assert row["state"] == door_codes.RETRYING
+    wait = _parse(row["next_attempt_at"]) - datetime.now(timezone.utc)
+    assert timedelta(0) < wait <= timedelta(minutes=1, seconds=5)
+    assert _notices(stay) == []
+
+
+def test_the_second_refusal_hands_over_to_host_and_support(monkeypatch):
+    _refuse(monkeypatch, [])
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    _due_now(stay)
+    door_codes.reconcile()
+    assert _row(stay)["state"] == door_codes.FAILED
+    notices = _notices(stay)
+    assert len(notices) == 1
+    assert notices[0]["to_email"] == "host@example.test"
+    assert notices[0]["cc_email"] == "support@ubyhost.com"
+    body = json.loads(notices[0]["payload"])["text"]
+    assert "[transient:-1026]" in body
+    assert "Passcodes" in body
+    assert "will not try again" in body
+
+
+def test_after_the_hand_over_ttlock_is_not_asked_again(monkeypatch):
+    calls = []
+    _refuse(monkeypatch, calls)
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    _due_now(stay)
+    door_codes.reconcile()
+    assert len(calls) == 2
+    _due_now(stay)
+    door_codes.reconcile()
+    assert len(calls) == 2
+
+
+def test_every_problem_is_one_greppable_log_line(monkeypatch):
+    lines = _log_lines(monkeypatch)
+    _refuse(monkeypatch, [])
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    assert any(l.startswith("DOOR_CODE_PROBLEM stage=attempt_failed") for l in lines), lines
+    _due_now(stay)
+    door_codes.reconcile()
+    assert any(
+        l.startswith("DOOR_CODE_PROBLEM stage=handed_over") and f"reservation={stay}" in l
+        for l in lines
+    ), lines
+
+
+def test_the_guest_waiting_text_says_only_that_the_code_comes_by_e_mail():
+    template = (
+        Path(door_codes.__file__).parent / "templates" / "guest" / "stay.html"
+    ).read_text(encoding="utf-8")
+    assert "door_code_delayed" not in template
+    assert "door_code_only_between" not in template
+    assert mail_notify._guest_text("en", "door_code_preparing") == (
+        "You will receive your door code by e-mail."
+    )
+
+
+def test_an_issued_code_names_the_real_first_use_deadline(monkeypatch):
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "99"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    shown = _view(stay, apartment)
+    start = _parse(_row(stay)["valid_from"])
+    expected = (start + timedelta(hours=24)).astimezone(ZoneInfo(config.TIMEZONE)).strftime(
+        "%d.%m.%Y %H:%M"
+    )
+    assert shown["first_use_by"] == expected
+    content = mail_notify.build_door_code(
+        lang="en",
+        property_name="Flat",
+        checkin=shown["checkin"],
+        checkout=shown["checkout"],
+        first_use_by=shown["first_use_by"],
+    )
+    assert f"If you have not used it by {expected}, it stops working." in content["text"]
+
+
+def test_no_alert_and_no_mail_when_the_plan_has_no_door_codes(monkeypatch):
+    _refuse(monkeypatch, [])
+    _, apartment, stay = _stay(registered_minutes_ago=15)
+    monkeypatch.setattr(ttlock, "allowed_for", lambda owner_user_id: False)
+    door_codes._alert_delayed()
+    assert db.query_one(
+        "SELECT id FROM alert WHERE dedupe_key = ?", (f"door_code_delayed:{stay}",)
+    ) is None
+    assert _notices(stay) == []
+```
+15. In `App/tests/test_door_codes_safeguards.py` replace the whole function `test_guests_are_not_shown_the_first_use_rule` (from its `def` line down to, not including, `def test_the_guide_walks_through_authorized_admin`) with:
+```python
+def test_guests_see_the_exact_first_use_deadline():
+    from app import mail_notify
+
+    for lang in ("en", "cs", "de", "es", "fr"):
+        content = mail_notify.build_door_code(
+            lang=lang,
+            property_name="Flat",
+            checkin="08.10.2026 16:00",
+            checkout="10.10.2026 11:00",
+            first_use_by="09.10.2026 15:00",
+        )
+        assert "09.10.2026 15:00" in content["text"]
+    en = mail_notify.build_door_code(
+        lang="en", property_name="Flat", checkin="a", checkout="b", first_use_by="c"
+    )
+    assert "If you have not used it by c, it stops working. Then ask your host for a new code." in en["text"]
+
+
+```
+Change no other test in that file. Every other test there must still pass unchanged; if one fails, STOP (§8).
+16. In `App/tests/test_guest_mail.py`, in `_door_code_content`, after the line `        checkout="14.10.2026 11:00",` insert `        first_use_by="13.10.2026 14:00",`. Change nothing else in that file.
+17. Run the §6 commands in order.
 
 ## 5. Do not touch
 
@@ -173,7 +339,7 @@ A13 → the same two lines with `.delayed.` replaced by `.failed.`.
 ## 6. Commands
 
 From `App/`:
-- `.venv/bin/python -m pytest tests/test_door_code_handover.py tests/test_door_codes_safeguards.py -q` → 0 failed.
+- `.venv/bin/python -m pytest tests/test_door_code_handover.py tests/test_door_codes_safeguards.py tests/test_guest_mail.py -q` → 0 failed.
 - `.venv/bin/python -m pytest tests/test_guest_browser_e2e.py tests/test_host_geometry.py tests/test_wp28_geometry.py -q -rs` → 0 failed, no `SKIPPED` line (if skipped: do not install anything, go to §8).
 - `.venv/bin/python -m pytest tests -q` → 0 failed apart from the four DNS tests listed in 0023 §2.
 

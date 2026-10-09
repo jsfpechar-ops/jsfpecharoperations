@@ -2,7 +2,7 @@
 
 Status: todo
 Depends on: none | Base commit: head of `claude/staging-no-login` (PR #325) | Branch: `claude/staging-no-login` (commit on top, never rebase or force-push)
-Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
+Executor: Claude Haiku 5.5, effort high (or Cursor composer, Kimi, GLM) | Fits one session
 
 ## 1. Objective
 
