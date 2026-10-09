@@ -28,7 +28,7 @@ This file is the single source of truth for how work is done. When the process c
 
 1. **Plan** (only for big or HIGH RISK work): the orchestrator writes `docs/plans/<name>.md`. Run at most one council, and only for HIGH RISK items (filing, deletion, legal).
 2. **Brief:** the orchestrator writes `docs/tasks/NNNN-name.md` from [TEMPLATE](../tasks/TEMPLATE.md). Each brief must fit one executor session. Split big work into ordered briefs with `Depends on`.
-3. **Execute:** the owner pastes the [executor prompt](prompts.md#executor) into a new Cursor chat. The executor sets `Status: in-progress`, works, writes `NNNN-report.md`, sets `Status: review` and opens one PR.
+3. **Execute:** the owner pastes the [executor prompt](prompts.md#executor) into a new Cursor chat. The executor runs only a brief whose Status is `todo` (`replaced`, `done` or `blocked` means do not run). It sets `Status: in-progress`, works, writes `NNNN-report.md`, sets `Status: review` and opens one PR.
 4. **Review** (a new orchestrator chat, under 15k tokens):
    1. Read the report.
    2. Run `gh pr checks <pr>`. CI is the truth.
@@ -47,6 +47,8 @@ Statuses: `todo → in-progress → review → done`, plus `blocked` (with the r
 - Acceptance must be checkable by a command or a visible fact. UI work: the browser and geometry tests plus screenshots at 360, 390 and 1280 px in the report.
 - Cloud agents can't push to `main`, merge, set secrets, SSH or deploy, and their `gh` is often read-only. The brief says what to hand to the owner, with exact commands.
 - Owner steps are numbered and click-by-click, in plain words.
+- One brief owns each piece of copy. When a new brief replaces an old one, mark the old one `Status: replaced by NNNN` in the same commit that adds the new brief.
+- Anchors are the safety net, not the rule: a brief that runs after a brief it overlaps stops at its first anchor that is no longer there. `context lint` warns when two open briefs name the same file in section 3; the orchestrator says which goes first.
 
 ## Update triggers
 

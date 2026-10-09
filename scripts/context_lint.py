@@ -151,6 +151,23 @@ def check_briefs() -> None:
             errors.append(f"{rel(p)}: status {m.group(1)} but {rel(report)} is missing")
 
 
+def check_brief_overlap() -> None:
+    """Warn when two open briefs (todo or in-progress) name the same file in section 3."""
+    owners: dict[str, list[str]] = {}
+    for p in sorted((ROOT / "docs/tasks").glob("[0-9][0-9][0-9][0-9]-*.md")):
+        if p.name.endswith("-report.md"):
+            continue
+        text = p.read_text(encoding="utf-8", errors="ignore")
+        m = re.search(r"^Status: *([a-z-]+)", text, flags=re.M)
+        if not m or m.group(1) not in ("todo", "in-progress"):
+            continue
+        for path in set(re.findall(r"^\| `([^`]+)` \|", text, flags=re.M)):
+            owners.setdefault(path, []).append(p.name)
+    for path, names in sorted(owners.items()):
+        if len(names) > 1:
+            warnings.append(f"{path} is named by open briefs {', '.join(names)}; say which goes first")
+
+
 def check_known_issues() -> None:
     p = ROOT / "docs/context/known-issues.md"
     if not p.exists():
@@ -204,6 +221,7 @@ def main() -> int:
     check_caps()
     check_links()
     check_briefs()
+    check_brief_overlap()
     check_known_issues()
     check_staleness()
     check_pointers()
