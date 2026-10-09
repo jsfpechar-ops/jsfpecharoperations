@@ -34,7 +34,7 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-06 | New dependency `webauthn==3.0.1` (py_webauthn) with its transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned in requirements.lock | passkey verification must not be hand-rolled; owner approved all five | task 0004
 - 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
 - 2026-10-06 | Downloads opt out of the navigation skeleton by `download` / `data-no-skeleton` plus a path-ending rule, pinned by a template scan test | a stay-fee PDF click blanked the page for 15 s | skeleton.js
-- 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row (no "Úprava výpočtu" line); the CSV register keeps one neutral line "přenocování bez záznamu hosta" so it adds up to the payment | owner + council: register must reconcile | stay_fee.py
+- 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row the CSV register keeps one neutral line "přenocování bez záznamu hosta" so it adds up to the payment | owner + council: register must reconcile | stay_fee.py
 - 2026-10-06 | UbyPort outcome by police severity: 0-2 accepted, 4-6 not accepted; 112 = reported late = accepted (supersedes "112 = batch not received") | police letter CPR-34587-2/ČJ-2026-930023, A1-A5 | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
 - 2026-10-06 | The sweep sends a refused record once, then waits for the host to fix it (was 3 tries) | police B2-B3: resending refused data counts against the host | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
 - 2026-10-06 | Staging may target the police test environment (`ubyport_env=test`) with the issued UBY-WS test account; credentials only in the staging app, never in git | police B4: test behaves like production | [LIGHTSAIL](../LIGHTSAIL.md)
@@ -48,4 +48,4 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-09 | Door codes: 1 lock/property; fail → host+support after 2 tries; code inside confirmation; guest sees first-use deadline. Staging: TTLock keys removed, no guard | owner | 0024, 0025, K-S11
 - 2026-10-09 | [workflow] Haiku 5.5 (effort high) may execute; its briefs carry full code + tests | owner | workflow
 - 2026-10-09 | iCal link unique per user only, old duplicates kept (0026); guide pictures from `tests/guide_shots.py`, fake data (0027) | owner |
-- 2026-10-09 | [workflow] Every brief's §6 runs CI's ruff lint | #325 merged red on 2 unused imports | TEMPLATE
+- 2026-10-09 | [workflow] Briefs' §6 runs CI's ruff | #325 merged red | TEMPLATE
