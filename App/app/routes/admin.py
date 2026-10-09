@@ -1219,7 +1219,10 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
                     "checkout_hour": cout,
                 }
             )
-        else:
+        elif "door_codes_fields" in form:
+            # The tick box is on the page. Unticked means off. The same
+            # hidden door_code_section is posted when the box is missing
+            # (no account, no locks); that must not switch codes off.
             payload["lock_provider"] = None
             if _form_str(form, "lock_id"):
                 payload["lock_id"] = _form_str(form, "lock_id")
@@ -1237,13 +1240,11 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
     if credentials_changed:
         alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     db.audit("apartment_updated", f"id={apartment_id}")
-    if _form_str(form, "door_code_section") == "1" and ttlock.allowed_for(apartment["owner_user_id"]):
-        new_provider = payload.get("lock_provider")
-        if new_provider != prior_lock_provider:
-            if new_provider == "ttlock":
-                db.audit("door_codes_on", f"apartment={apartment_id}")
-            else:
-                db.audit("door_codes_off", f"apartment={apartment_id}")
+    if "lock_provider" in payload and payload["lock_provider"] != prior_lock_provider:
+        if payload["lock_provider"] == "ttlock":
+            db.audit("door_codes_on", f"apartment={apartment_id}")
+        else:
+            db.audit("door_codes_off", f"apartment={apartment_id}")
     return None
 
 
