@@ -305,3 +305,45 @@ def test_a_property_with_no_lock_set_says_so_instead_of_claiming_to_retry():
 
 def test_a_never_used_code_is_replaced_not_retried_forever():
     assert ttlock.ERROR_KINDS[-3008] == "unused_code"
+
+
+def _issued(monkeypatch, stay: int):
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "99"))
+    door_codes.reconcile()
+    row = db.query_one("SELECT state FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.ISSUED
+
+
+def test_archiving_a_stay_keeps_the_door_code(monkeypatch):
+    """Archive is reversible and the guest may still need the door."""
+    deleted = []
+    monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: deleted.append(1))
+    _, _apartment, stay = _stay(registered_minutes_ago=1)
+    _issued(monkeypatch, stay)
+    db.execute(
+        "UPDATE reservation SET archived_at = ?, updated_at = ? WHERE id = ?",
+        (db.utcnow(), db.utcnow(), stay),
+    )
+    door_codes.reconcile()
+    row = db.query_one("SELECT state FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.ISSUED
+    assert deleted == []
+    assert db.query(
+        "SELECT id FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code_notice'",
+        (stay,),
+    ) == []
+
+
+def test_cancelling_a_stay_still_revokes_the_door_code(monkeypatch):
+    deleted = []
+    monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: deleted.append(1))
+    _, _apartment, stay = _stay(registered_minutes_ago=1)
+    _issued(monkeypatch, stay)
+    db.execute(
+        "UPDATE reservation SET status = 'cancelled', updated_at = ? WHERE id = ?",
+        (db.utcnow(), stay),
+    )
+    door_codes.reconcile()
+    row = db.query_one("SELECT state FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.REVOKED
+    assert deleted == [1]

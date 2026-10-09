@@ -498,10 +498,13 @@ def _revoke_one(row_id: int) -> None:
 
 
 def _handle_cancellations(now_iso: str) -> None:
+    # Archive only hides the stay from the host's list. The guest may still be
+    # in the house, and Undo puts the stay back, so it must not delete the code.
+    # A real cancellation sets status to something other than active.
     rows = db.query(
         "SELECT dc.* FROM door_code dc "
         "JOIN reservation r ON r.id = dc.reservation_id "
-        "WHERE (r.status != 'active' OR r.archived_at IS NOT NULL)"
+        "WHERE r.status != 'active'"
     )
     for row in rows:
         state = row["state"]
