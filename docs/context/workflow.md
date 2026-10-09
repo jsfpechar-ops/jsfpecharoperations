@@ -44,7 +44,7 @@ Statuses: `todo → in-progress → review → done`, plus `blocked` (with the r
 
 - Paste the context into the brief. Quote exact code excerpts with the file path. Excerpts are anchors: if one isn't found verbatim, the executor stops.
 - Give the full code or exact diffs, never "implement X". Name every file. Number every step.
-- Acceptance must be checkable by a command or a visible fact. UI work: the browser and geometry tests plus screenshots at 360, 390 and 1280 px in the report.
+- §6 always includes CI's ruff lint (see TEMPLATE). Acceptance must be checkable by a command or a visible fact. UI work: the browser and geometry tests plus screenshots at 360, 390 and 1280 px in the report.
 - Cloud agents can't push to `main`, merge, set secrets, SSH or deploy, and their `gh` is often read-only. The brief says what to hand to the owner, with exact commands.
 - Owner steps are numbered and click-by-click, in plain words.
 

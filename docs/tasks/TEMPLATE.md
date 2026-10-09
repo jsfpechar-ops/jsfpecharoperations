@@ -31,7 +31,7 @@ Paths, plus the hard rules from AGENTS.md that apply here.
 
 ## 6. Commands
 
-The exact commands and their expected output (tests from `App/`, `python3 scripts/context_lint.py`).
+The exact commands and their expected output (tests from `App/`, `python3 scripts/context_lint.py`). Always include CI's lint, from `App/`: `.venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841` → `All checks passed!` (CI runs it before the tests; a red lint makes the whole `test` job red).
 
 ## 7. Acceptance
 
