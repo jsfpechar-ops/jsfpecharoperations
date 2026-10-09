@@ -39,12 +39,12 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
 | K-F11 | Med open | reporting.py:829-845 | Surplus blank guest form blocks automatic filing | F |
 | K-F12 | Med decision | reporting.py:270,1002 | Passport verification is advisory; unverified guests auto-filed | F W4.3 |
-| K-F13 | Med open | production data | 112 is "reported late", an accept (police, 24 Sep 2026). Production guests in `error`/`blocked` whose only code is 112 are in the register. Owner: `App/scripts/reconcile_accepted_codes.py` (dry run), check 2-3 in UbyPort, then `--apply`; never resend | F W4.2 |
 | K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with the legal deadline | AR-06 |
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
 | K-F16 | Med unverified | icalsync.py ~549-642 | Date-move reconcile not atomic; re-sign alert can be lost | AR-38 |
 | K-F17 | Low unverified | reporting.py claim TTL; :1683 recover_stale_submissions | Lease may expire across slow batches; stale-running recovery unconfirmed | P A16, A30 |
 | K-F19 | Low open | codelists.py error_severities | Severities load on a passed connection test or "Refresh code lists"; until then only 1, 112, 150 are known and other codes count as refused | police A1-A2 |
+| K-F20 | High open HR | admin.py add_feed | Same iCal URL on two properties: two stays, two filings | #325 |
 | K-F18 | High decision HR | reporting.py:859 signature_dates_stale | Stale signed dates: keep the safety net or restore re-signing (T48–T50)? | P Q6 |
 | K-L01 | High decision | retention.py:218,237 | Deletion 30+30 days and Terms s19 export wording need a lawyer | P Q9, G G-D11 |
 | K-L02 | High decision | retention.py ~306 | Termination deletes legal_acceptance rows; G-D7 says keep 3 years | F BE-10 |
@@ -56,7 +56,7 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-L08 | Med decision | cookie and banner copy | Cloudflare cookie names unverified; no-banner wording unapproved | G MK-2/3 |
 | K-L09 | Med decision | docs/UbyHost_workplan/compliance/00_README.md | DSR/incident retention; Terms §17.2 liability floor | compliance |
 | K-L10 | Med decision | stay_fee.py | 60-night boundary; GDPR Art. 9 for disability exemptions | X |
-| K-L11 | High decision | subprocessors_i18n.py ttlock row, DPA §11 | Door codes: SCCs with TTLock (Sciener, China) must be signed before any host other than the owner uses door codes; add TTLock to DPA §11 at the next revision. Assessment done in DOOR_CODES_LEGAL | [DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md) |
+| K-L11 | High decision | subprocessors_i18n.py ttlock row, DPA §11 | Sign SCCs with TTLock (Sciener, China) before any other host uses door codes; add TTLock to DPA §11 next revision | [DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md) |
 | K-P01 | High decision | access.py, auth.py (#280) | Admin preview unmasked, reason optional: align the DPIA/DPA text | AR |
 | K-P02 | High open | docs/vendors/README.md, ROPA | Support-mailbox provider has no subprocessor row and no DPA | G LD-4 |
 | K-P03 | High open | backup-gdrive.sh | Drive backups need a Workspace DPA or removal; DPA §11 lists Render | G OPS-2 |
@@ -74,6 +74,7 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-S08 | Low unverified | rate_limit.py:79 | No per-account login lockout across addresses | P A44 |
 | K-S09 | Low open | deploy-production.yml | GITHUB_TOKEN stays in the server's git remote | P A58 |
 | K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY was rotated after the history leak | AR-01 |
+| K-S11 | High decision | render.yaml staging | No-login staging + real TTLock: any visitor can make a real code | #325 |
 | K-I01 | Med fixed | routes/invoices.py issue | Double submit issues two invoice numbers (0019 lock per stay; 0020 wiring) | P A07 |
 | K-I02 | Low open | invoices.py:51-63 _parse_decimal | "1.000" parses as 1 | X |
 | K-I03 | Low open | invoices.py cancel | Concurrent cancel returns 500 | P A10 |

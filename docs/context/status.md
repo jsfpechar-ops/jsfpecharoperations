@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-08 after 0019 review.
+Updated: 2026-10-09 after PR #325 review.
 
 ## Production
 
@@ -21,6 +21,8 @@ Updated: 2026-10-08 after 0019 review.
 - TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).
 
 - Doručenka smoke on a new filing after this cutover.
+
+- PR #325 (door-code safeguards) reviewed 2026-10-09: merge after guest-page screenshots + staging guard (K-S11); hold 0021 until shared-entrance decision; new K-F20 (same iCal URL on two properties).
 
 ## Blocked: needs owner, lawyer or council
 
