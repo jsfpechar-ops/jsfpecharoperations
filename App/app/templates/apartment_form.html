@@ -303,6 +303,9 @@
       <div class="copyrow" style="margin-bottom:12px">
         <input type="text" id="permalink" readonly value="{{ permalink }}">
         {{ copy_button('permalink') }}
+        <button class="btn small" type="submit" formmethod="post"
+                formaction="/apartments/{{ apartment.id }}/regenerate-link"
+                data-confirm data-confirm-message="{{ t('confirm.regenerate_link') }}">{{ t('guest_links.new_link') }}</button>
       </div>
       {% if link_code %}
       <div class="field" style="max-width:520px">
@@ -323,6 +326,9 @@
           <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
                  inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
           {{ copy_button('permalink_pin') }}
+          <button class="btn small" type="submit" formmethod="post"
+                  formaction="/apartments/{{ apartment.id }}/regenerate-pin"
+                  data-confirm data-confirm-message="{{ t('confirm.regenerate_pin') }}">{{ t('guest_links.new_pin') }}</button>
         </div>
         <div class="hint">{{ t('apartment.form.guest_link.pin_hint') }}</div>
       </div>
@@ -352,24 +358,6 @@
       </details>
       <p class="small muted">{{ t('apartment.form.guest_link.message_help') }}</p>
       <div class="setup-list" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
-        <div class="setup-item" style="border:0;padding:0 0 14px">
-          <div class="grow">
-            <strong>{{ t('guest_links.new_link') }}</strong>
-            <div class="small muted">{{ t('apartment.form.guest_link.regenerate_link_help') }}</div>
-          </div>
-          <button class="btn small" type="submit" formmethod="post"
-                  formaction="/apartments/{{ apartment.id }}/regenerate-link"
-                  data-confirm data-confirm-message="{{ t('confirm.regenerate_link') }}">{{ t('apartment.form.guest_link.regenerate_link') }}</button>
-        </div>
-        <div class="setup-item" style="border:0;padding:0 0 14px">
-          <div class="grow">
-            <strong>{{ t('apartment.form.guest_link.regenerate_pin_title') }}</strong>
-            <div class="small muted">{{ t('apartment.form.guest_link.regenerate_pin_help') }}</div>
-          </div>
-          <button class="btn small" type="submit" formmethod="post"
-                  formaction="/apartments/{{ apartment.id }}/regenerate-pin"
-                  data-confirm data-confirm-message="{{ t('confirm.regenerate_pin') }}">{{ t('guest_links.new_pin') }}</button>
-        </div>
         {% if apartment.archived_at %}
         <div class="setup-item" style="border:0;padding:0">
           <div class="grow">

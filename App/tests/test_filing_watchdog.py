@@ -696,3 +696,60 @@ def test_a_stay_held_on_an_unclear_automatic_resend_is_at_risk_after_the_grace(w
     # No later resend can move the finish time on, so it stays at risk.
     much_later = WEDNESDAY_MORNING + 5 * filing_watchdog.RETRY_GRACE
     assert rid in _mine(filing_watchdog.at_risk_stays(much_later), {rid})
+
+
+def test_a_manual_property_is_warned_before_the_last_day(world, monkeypatch):
+    """Tuesday morning is inside 3 days of Wednesday night, and more than a day out."""
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    rid = world["add_stay"]([("DEU", "pending")])
+    now = datetime(2026, 9, 29, 8, 0)
+
+    stays = filing_watchdog.manual_deadline_stays(now)
+    assert filing_watchdog.notify_manual_hosts(stays, now) == 1
+    assert filing_watchdog.notify_manual_hosts(
+        filing_watchdog.manual_deadline_stays(now), now
+    ) == 0
+
+    rows = _outbox("manual_deadline", rid)
+    assert len(rows) == 1
+    assert rows[0]["to_email"] == CONTACT
+    text = json.loads(rows[0]["payload"])["text"]
+    assert "Watchdog Loft" in rows[0]["subject"]
+    assert "30.09.2026 23:59" in text
+    assert "press Send" in text
+    assert GUEST_SURNAME not in text
+    assert not _outbox("deadline_at_risk", rid)
+
+
+def test_the_last_day_keeps_the_existing_warning(world):
+    rid = world["add_stay"]([("DEU", "pending")])
+    assert rid not in _mine(
+        filing_watchdog.manual_deadline_stays(datetime(2026, 9, 30, 8, 0)), {rid}
+    )
+
+
+def test_a_scheduled_property_gets_no_early_manual_mail(world, monkeypatch):
+    monkeypatch.setattr(mail, "mail_enabled", lambda: True)
+    db.update("apartment", world["apartment_id"], {"automation_mode": "scheduled"})
+    rid = world["add_stay"]([("DEU", "pending")])
+    now = datetime(2026, 9, 29, 8, 0)
+    assert rid not in _mine(filing_watchdog.manual_deadline_stays(now), {rid})
+    assert filing_watchdog.notify_manual_hosts(
+        filing_watchdog.manual_deadline_stays(now), now
+    ) == 0
+
+
+@pytest.mark.parametrize("lang", ["en", "cs"])
+def test_the_manual_deadline_mail_is_translated(lang):
+    content = mail_notify.build_manual_deadline(
+        property_name="Loft",
+        arrival="25.09.2026",
+        deadline=DEADLINE,
+        unfiled=1,
+        stay_url="https://example.invalid/reservations/1",
+        lang=lang,
+    )
+    blob = content["text"] + content["subject"] + content["html"]
+    assert "mail.manual_deadline" not in blob
+    assert "25.09.2026" in content["text"]
+    assert "30.09.2026 23:59" in content["text"]

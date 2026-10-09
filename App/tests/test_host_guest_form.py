@@ -257,9 +257,9 @@ def test_the_verify_identity_form_is_not_nested_in_the_guest_form():
         assert nested.index("Save changes") >= 0
         assert 'id="signature"' in nested
 
-        # The verify button still submits, through the form attribute.
-        assert f'<form id="verify-{guest_id}"' in html
-        assert f'form="verify-{guest_id}"' in nested
+        # The document check is no longer a button on this form.
+        assert f'<form id="verify-{guest_id}"' not in html
+        assert "Mark ID checked" not in html
     finally:
         _cleanup()
 

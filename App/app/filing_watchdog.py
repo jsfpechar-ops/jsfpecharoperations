@@ -54,6 +54,10 @@ log = logging.getLogger("ubyhost.filing_watchdog")
 # A stay is at risk from this long before its deadline, and stays at risk
 # after the deadline until it is filed or no longer active.
 AT_RISK_WINDOW = timedelta(hours=24)
+# A property that sends only when the host presses send gets one earlier
+# note, while more than a day remains and the deadline is within 3 days.
+# The deadline itself is still the end of the third working day.
+MANUAL_NOTICE_WINDOW = timedelta(days=3)
 DIGEST_INTERVAL = timedelta(hours=6)
 DIGEST_SETTING = "filing_watchdog_digest_sent_at"
 # A stay with no guest on file drops off the lists this long after its
@@ -89,7 +93,10 @@ def _utc(now: Optional[datetime]) -> datetime:
 
 
 def at_risk_stays(
-    now: Optional[datetime] = None, *, include_awaiting_retry: bool = False
+    now: Optional[datetime] = None,
+    *,
+    include_awaiting_retry: bool = False,
+    window: timedelta = AT_RISK_WINDOW,
 ) -> List[Dict[str, Any]]:
     """Every stay at risk of missing its police deadline, soonest deadline first.
 
@@ -104,7 +111,7 @@ def at_risk_stays(
     rows = db.query(
         "SELECT r.id AS reservation_id, r.date_from, r.at_risk_mailed_at, "
         "r.apartment_id, a.internal_name, a.legal_entity_id, a.owner_user_id, "
-        "u.username AS workspace, g.nationality, "
+        "a.automation_mode, u.username AS workspace, g.nationality, "
         "s.state AS sub_state, s.retried_at AS sub_retried_at, "
         "s.finished_at AS sub_finished_at "
         "FROM reservation r "
@@ -131,6 +138,7 @@ def at_risk_stays(
                 "property": row["internal_name"] or "",
                 "legal_entity_id": row["legal_entity_id"],
                 "owner_user_id": row["owner_user_id"],
+                "automation_mode": row["automation_mode"] or "",
                 "workspace": row["workspace"] or "",
                 "mailed_at": row["at_risk_mailed_at"],
                 "unfiled": 0,
@@ -148,7 +156,7 @@ def at_risk_stays(
         if not anchor:
             continue
         due = deadlines.reporting_deadline(anchor)
-        if due - local > AT_RISK_WINDOW:
+        if due - local > window:
             continue
         stay["arrival"] = anchor
         stay["deadline"] = due
@@ -317,6 +325,63 @@ def send_operator_digest(
     return True
 
 
+def manual_deadline_stays(now: Optional[datetime] = None) -> List[Dict[str, Any]]:
+    """Manual-send stays whose police deadline is close, but not yet the last day.
+
+    The last day already has ``deadline_at_risk``. This is the earlier note,
+    so the two mails do not leave on the same run.
+    """
+    local = deadlines.local_now(now)
+    found = []
+    for stay in at_risk_stays(now, window=MANUAL_NOTICE_WINDOW):
+        if stay.get("automation_mode") != "manual" or stay.get("awaiting_retry"):
+            continue
+        remaining = stay["deadline"] - local
+        if not (AT_RISK_WINDOW < remaining <= MANUAL_NOTICE_WINDOW):
+            continue
+        found.append(stay)
+    return found
+
+
+def notify_manual_hosts(stays: List[Dict[str, Any]], now: Optional[datetime] = None) -> int:
+    """Queue the early manual-send note. One per stay. Returns how many."""
+    queued = 0
+    for stay in stays:
+        key = f"manual_deadline:{stay['reservation_id']}"
+        if db.query_one("SELECT id FROM email_outbox WHERE idempotency_key = ?", (key,)):
+            continue
+        try:
+            to_email = mail_notify._entity_contact_email(stay["legal_entity_id"])
+            if not to_email:
+                continue
+            lang = mail_notify.HOST_MAIL_LANGUAGE
+            content = mail_notify.build_manual_deadline(
+                property_name=stay["property"],
+                arrival=stay["arrival"].strftime("%d.%m.%Y"),
+                deadline=stay["deadline"],
+                unfiled=stay["unfiled"],
+                stay_url=_stay_url(stay["reservation_id"]),
+                lang=lang,
+            )
+            outbox_id = mail.enqueue(
+                kind="manual_deadline",
+                idempotency_key=key,
+                to_email=to_email,
+                subject=content["subject"],
+                payload={"text": content["text"], "html": content["html"], "lang": lang},
+                reservation_id=stay["reservation_id"],
+                apartment_id=stay["apartment_id"],
+                owner_user_id=stay["owner_user_id"],
+            )
+            if outbox_id:
+                queued += 1
+        except Exception:
+            log.exception(
+                "manual deadline notice failed reservation=%s", stay.get("reservation_id")
+            )
+    return queued
+
+
 def run(now: Optional[datetime] = None) -> Dict[str, int]:
     """One watchdog pass. Raises only if the at-risk query itself fails.
 
@@ -337,6 +402,11 @@ def run(now: Optional[datetime] = None) -> Dict[str, int]:
         unknown = []
     host_mails = notify_hosts(stays + unknown, now)
     try:
+        manual_mails = notify_manual_hosts(manual_deadline_stays(now), now)
+    except Exception:
+        log.exception("manual deadline notice failed")
+        manual_mails = 0
+    try:
         digest = send_operator_digest(stays, now, unknown=unknown)
     except Exception:
         log.exception("deadline digest failed")
@@ -346,6 +416,7 @@ def run(now: Optional[datetime] = None) -> Dict[str, int]:
         "unknown_risk": len(unknown),
         "awaiting_retry": awaiting,
         "host_mails": host_mails,
+        "manual_mails": manual_mails,
         "digest": int(digest),
     }
 

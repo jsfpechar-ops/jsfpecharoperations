@@ -1755,6 +1755,79 @@ def build_deadline_at_risk(
     }
 
 
+def build_manual_deadline(
+    *,
+    property_name: str,
+    arrival: str,
+    deadline: Any,
+    unfiled: int,
+    stay_url: str,
+    lang: Optional[str] = None,
+) -> Dict[str, str]:
+    """The earlier note for a property that sends only when the host presses send.
+
+    It goes out from the usual no-reply address, once per stay, while the
+    police deadline is inside 3 days and more than a day remains.
+    """
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    due = _deadline_text(deadline)
+    subject = _text(
+        lang, "mail.manual_deadline.subject", property=property_name, deadline=due
+    )
+    preheader = _text(lang, "mail.manual_deadline.preheader")
+    heading = _text(lang, "mail.manual_deadline.heading")
+    intro = _text(
+        lang, "mail.manual_deadline.intro",
+        property=property_name, arrival=arrival, deadline=due,
+    )
+    facts = [
+        (_text(lang, "mail.deadline_at_risk.property_label"), property_name),
+        (_text(lang, "mail.deadline_at_risk.arrival_label"), arrival),
+        (_text(lang, "mail.deadline_at_risk.unfiled_label"), str(unfiled)),
+        (_text(lang, "mail.deadline_at_risk.deadline_label"), due),
+    ]
+    next_label = _text(lang, "mail.deadline_at_risk.next_label")
+    next_steps = _text(lang, "mail.manual_deadline.next_steps")
+    action = _text(lang, "mail.deadline_at_risk.action_stay")
+    fallback = _guest_text(lang, "mail_link_fallback")
+    footer = _text(lang, "mail.manual_deadline.footer")
+    blocks = _guest_blocks(
+        heading=heading,
+        intro=intro,
+        action_url=stay_url,
+        action_label=action,
+        extra_blocks=[
+            _block_link(stay_url, fallback),
+            *[_block_fact(label, value) for label, value in facts],
+            _block_section(next_label, next_steps),
+        ],
+    )
+    text_lines = [
+        intro,
+        "",
+        *[f"{label}: {value}" for label, value in facts],
+        "",
+        f"{next_label}: {next_steps}",
+        "",
+        f"{action}: {stay_url}",
+        "",
+        "--",
+        "UbyHost",
+        footer,
+    ]
+    return {
+        "subject": subject,
+        "text": "\n".join(text_lines),
+        "html": _shell(
+            lang=lang,
+            title=property_name,
+            preheader=preheader,
+            blocks=blocks,
+            footer_lines=["UbyHost", footer],
+        ),
+    }
+
+
 # The digest lists at most this many stays; the rest are counted. A longer
 # list would mean something is broken for everyone, and the count says so.
 DEADLINE_DIGEST_MAX_ROWS = 50

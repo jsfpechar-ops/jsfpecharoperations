@@ -145,6 +145,18 @@ def test_the_operating_rules_lede_is_gone():
         assert host_i18n.STRINGS[lang][LEDE_KEY] not in (OLD_LEDE_EN, OLD_LEDE_CS)
 
 
+def test_a_new_property_lists_stays_starting_within_one_day(host):
+    payload = _payload(internal_name="One Day Flat")
+    del payload["permalink_window_days"]
+    created = host.post("/apartments", data=payload, follow_redirects=False)
+    assert created.status_code == 303, created.text
+    row = db.query_one(
+        "SELECT permalink_window_days FROM apartment WHERE internal_name = ?",
+        ("One Day Flat",),
+    )
+    assert row["permalink_window_days"] == 1
+
+
 def test_creating_a_property_without_a_mode_lands_on_manual(host):
     created = host.post(
         "/apartments",

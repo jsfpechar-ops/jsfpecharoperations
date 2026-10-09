@@ -196,8 +196,6 @@
             <span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
           {% elif not row.complete %}
             <span class="pill amber">{{ t('stay.detail.guests.incomplete') }}</span>
-          {% elif row.needs_verification %}
-            <span class="pill amber">{{ t('host.verify_pending') }}</span>
           {% else %}
             <span class="pill blue">{{ t('stay.detail.guests.ready') }}</span>
           {% endif %}
@@ -257,15 +255,6 @@
         </div>
       </dl>
 
-      {% if row.needs_verification %}
-        <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="verify-form guest-card-action">
-          <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-          <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
-          {% if row.has_passport_photo %}
-            <a class="small" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ t('host.verify_view_photo') }}</a>
-          {% endif %}
-        </form>
-      {% endif %}
       {% if guest.note %}
         <p class="guest-card-note">{{ t('stay.detail.guests.note', text=guest.note) }}</p>
       {% endif %}

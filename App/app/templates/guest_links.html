@@ -2,7 +2,7 @@
 {% set nav = 'guest_links' %}
 {% block title %}{{ t('guest_links.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, empty_state, copy_button, row_menu_begin, row_menu_end, onboarding_banner with context %}
+{% from "_components.html" import page_header, empty_state, copy_button, onboarding_banner with context %}
 
 {{ onboarding_banner(onboarding) }}
 {{ page_header(
@@ -28,12 +28,23 @@
       <div class="copyrow">
         <input type="text" id="link-{{ apartment.id }}" readonly value="{{ row.permalink }}">
         {{ copy_button('link-' ~ apartment.id) }}
+        <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link" class="inline"
+              data-confirm data-confirm-message="{{ t('confirm.regenerate_link') }}">
+          <input type="hidden" name="return_to" value="/guest-links">
+          <button class="btn small" type="submit">{{ t('guest_links.new_link') }}</button>
+        </form>
       </div>
 
       <label for="pin-{{ apartment.id }}" style="margin-top:14px">{{ t('guest_links.pin') }}</label>
       <div class="copyrow pin-row">
         <input type="text" id="pin-{{ apartment.id }}" readonly value="{{ row.pin }}" class="mono">
         {{ copy_button('pin-' ~ apartment.id) }}
+        <a class="btn small" href="/apartments/{{ apartment.id }}#communication">{{ t('guest_links.set_pin') }}</a>
+        <form method="post" action="/apartments/{{ apartment.id }}/regenerate-pin" class="inline"
+              data-confirm data-confirm-message="{{ t('confirm.regenerate_pin') }}">
+          <input type="hidden" name="return_to" value="/guest-links">
+          <button class="btn small" type="submit">{{ t('guest_links.new_pin') }}</button>
+        </form>
         <span class="small muted">{{ t('guest_links.pin_help') }}</span>
       </div>
 
@@ -41,8 +52,6 @@
         <summary>{{ t('guest_links.message_title') }}</summary>
         <p class="small muted">{{ t('guest_links.message_lede') }}</p>
         <pre class="message-template" id="message-{{ apartment.id }}">{{ bilingual_message('guest_links.message', link=row.permalink, pin=row.pin) }}</pre>
-        {# "Copy English only" reads this one, which is never shown. #}
-        <pre id="message-en-{{ apartment.id }}" hidden>{{ bilingual_message('guest_links.message', languages=['en'], link=row.permalink, pin=row.pin) }}</pre>
         <div class="actions">
           {# Pasting this whole block into a portal is the job of this page, so it
              gets the card's strongest button. #}
@@ -57,22 +66,6 @@
         {# The link lives on this page, so the preview of what a guest sees
            belongs here too, not only on the onboarding finish card. #}
         <a class="btn small ghost" href="/l/{{ row.link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
-        {{ row_menu_begin(t('guest_links.options')) }}
-          <button class="row-menu-item" type="button" role="menuitem" data-copy="message-en-{{ apartment.id }}"
-                  data-copy-label="{{ t('guest_links.copy_message_en') }}"
-                  data-copied-label="{{ t('guest_links.message_copied') }}">{{ t('guest_links.copy_message_en') }}</button>
-          <a class="row-menu-item" href="/apartments/{{ apartment.id }}#communication" role="menuitem">{{ t('guest_links.set_pin') }}</a>
-          <form method="post" action="/apartments/{{ apartment.id }}/regenerate-pin" class="row-menu-form"
-                data-confirm data-confirm-message="{{ t('confirm.regenerate_pin') }}">
-            <input type="hidden" name="return_to" value="/guest-links">
-            <button class="row-menu-item" type="submit" role="menuitem">{{ t('guest_links.new_pin') }}</button>
-          </form>
-          <form method="post" action="/apartments/{{ apartment.id }}/regenerate-link" class="row-menu-form"
-                data-confirm data-confirm-message="{{ t('confirm.regenerate_link') }}">
-            <input type="hidden" name="return_to" value="/guest-links">
-            <button class="row-menu-item" type="submit" role="menuitem">{{ t('guest_links.new_link') }}</button>
-          </form>
-        {{ row_menu_end() }}
       </div>
     </section>
   {% endfor %}

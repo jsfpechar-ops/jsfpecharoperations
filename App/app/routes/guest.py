@@ -522,7 +522,7 @@ def _require_pin(request: Request, token: str, lang: str):
 
 def _visible_reservations(apartment) -> List[Any]:
     """Stays a guest may pick: arriving today through the lead window."""
-    window = apartment["permalink_window_days"] or 2
+    window = apartment["permalink_window_days"] or 1
     today = claim.prague_today()
     horizon = (today + timedelta(days=window)).isoformat()
     return db.query(

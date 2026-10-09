@@ -439,7 +439,9 @@ def reservation_progress(reservation, guests: Optional[List[Any]] = None) -> Dic
     elif incomplete:
         status = "incomplete"
     elif reportable and len(sent) < len(reportable):
-        status = "awaiting_verification" if unverified else "ready"
+        # Checking a document in person is the host's own job. It does not
+        # change whether the stay is ready to send.
+        status = "ready"
     elif reportable and len(sent) == len(reportable):
         status = "reported"
     elif complete and not reportable:

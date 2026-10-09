@@ -392,10 +392,10 @@ def test_unverified_foreign_guest_can_send():
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
     progress = reporting.reservation_progress(reservation)
     controls = reporting.send_controls(reservation, apartment, progress)
-    assert progress["status"] == "awaiting_verification"
+    assert progress["status"] == "ready"
     assert controls["send_enabled"] is True
     assert controls["pending_count"] == 1
-    assert controls["send_hint_key"] == "hint.ready_id_optional"
+    assert controls["send_hint_key"] == "hint.ready_to_send"
 
 
 def test_foreign_guest_online_checkin_complete_without_passport_photo():
@@ -437,7 +437,7 @@ def test_demo_apartment_hides_send_button():
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation["id"],))
     progress = reporting.reservation_progress(reservation)
     controls = reporting.send_controls(reservation, apartment, progress)
-    assert progress["status"] == "awaiting_verification"
+    assert progress["status"] == "ready"
     assert controls["send_enabled"] is False
     assert controls["send_visible"] is False
     assert controls["send_hint_key"] == "hint.demo_preview"

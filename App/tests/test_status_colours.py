@@ -189,27 +189,29 @@ def test_the_stay_pill_is_blue_on_the_work_queue(host):
     client, _, _ = host
     page = client.get("/")
     assert page.status_code == 200
-    tone, tip = _pill(page.text, "Ready to report")
+    tone, tip = _pill(page.text, "Ready (you send)")
     assert tone == "blue", "amber reads as a problem the host has to solve"
-    assert tip == "ID not checked (optional)"
+    assert tip == host_i18n.translate("en", "status.ready_manual_tip")
+    assert "ID not checked" not in page.text
+    assert "Mark ID checked" not in page.text
 
 
 def test_the_stay_pill_is_blue_on_the_stays_list(host):
     client, _, _ = host
     page = client.get("/reservations")
     assert page.status_code == 200
-    tone, tip = _pill(page.text, "Ready to report")
+    tone, tip = _pill(page.text, "Ready (you send)")
     assert tone == "blue"
-    assert tip == "ID not checked (optional)"
+    assert tip == host_i18n.translate("en", "status.ready_manual_tip")
 
 
 def test_the_stay_pill_is_blue_on_the_stay_detail(host):
     client, _, reservation_id = host
     page = client.get(f"/reservations/{reservation_id}")
     assert page.status_code == 200
-    tone, tip = _pill(page.text, "Ready to report")
+    tone, tip = _pill(page.text, "Ready (you send)")
     assert tone == "blue"
-    assert tip == "ID not checked (optional)"
+    assert tip == host_i18n.translate("en", "status.ready_manual_tip")
 
 
 def test_the_stay_pill_is_czech_for_a_czech_host(host):
@@ -217,18 +219,18 @@ def test_the_stay_pill_is_czech_for_a_czech_host(host):
     client.cookies.set(host_i18n.LANG_COOKIE, "cs")
     page = client.get("/")
     assert page.status_code == 200
-    tone, tip = _pill(page.text, "Připraveno k hlášení")
+    tone, tip = _pill(page.text, "Připraveno (ručně)")
     assert tone == "blue"
-    assert tip == "Doklad nezkontrolován (volitelné)"
+    assert tip == host_i18n.translate("cs", "status.ready_manual_tip")
 
 
-def test_the_guest_card_keeps_its_amber_id_not_checked_pill(host):
-    """The guest-card pill is a per-person to-do, so amber stays there."""
+def test_the_guest_card_does_not_ask_for_an_id_check(host):
+    """Checking a document is the host's own job, so the card does not ask."""
     client, _, reservation_id = host
     page = client.get(f"/reservations/{reservation_id}")
     assert page.status_code == 200
-    tone, _tip = _pill(page.text, host_i18n.translate("en", "host.verify_pending"))
-    assert tone == "amber"
+    assert "ID not checked" not in page.text
+    assert "Mark ID checked" not in page.text
 
 
 def test_the_properties_list_setup_pill_is_amber_not_red(host):
