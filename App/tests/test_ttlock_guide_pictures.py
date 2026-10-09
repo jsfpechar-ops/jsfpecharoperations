@@ -4,7 +4,7 @@ from pathlib import Path
 from app.guide_i18n import GUIDE_STRINGS
 
 APP = Path(__file__).resolve().parent.parent / "app"
-SHOTS = ("home", "create-admin", "form")
+SHOTS = ("home", "create-admin")
 
 
 def test_every_picture_exists_and_stays_small():
@@ -23,6 +23,12 @@ def test_every_picture_has_alt_text_in_both_languages():
 
 def test_the_guide_shows_the_pictures_under_steps_three_to_five():
     template = (APP / "templates" / "guide.html").read_text(encoding="utf-8")
-    assert "{% set door_shots = {3: ['home'], 4: ['create-admin'], 5: ['form']} %}" in template
+    assert "{% set door_shots = {3: ['home'], 4: ['create-admin']} %}" in template
     assert 'class="guide-shot"' in template
     assert "/static/guide/ttlock-" in template
+
+
+def test_the_form_picture_is_gone():
+    # The only form screenshot showed "Manage their own users only" switched
+    # off, the opposite of step 6. Steps 5 and 6 describe the form in words.
+    assert not (APP / "static" / "guide" / "ttlock-form.png").exists()
