@@ -195,6 +195,69 @@ def send_code_mail(door_code_id: int) -> None:
         log.exception("door_code_mail_failed door_code=%s", door_code_id)
 
 
+HOLD_CONFIRMATION_MINUTES = 5
+
+
+def completion_door_code(reservation: dict, apartment: dict) -> Tuple[str, Optional[dict], Optional[dict]]:
+    """What the registration confirmation does about the door code.
+
+    ("hold", None, None): a code is still being made, wait for it.
+    ("with", row, fields): the code exists and was not sent; put it in.
+    ("without", None, None): no code is coming.
+    """
+    if not config.DOOR_CODES_ENABLED:
+        return "without", None, None
+    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (reservation["id"],))
+    if not row:
+        return "without", None, None
+    if row["state"] in (PENDING, ISSUING, RETRYING):
+        return "hold", None, None
+    if row["state"] == ISSUED and row["pin_enc"] and not row["notified_at"]:
+        shown = view(reservation, apartment)
+        if shown and shown.get("state") == "issued":
+            return "with", row, {
+                "checkin": shown["checkin"],
+                "checkout": shown["checkout"],
+                "first_use_by": shown["first_use_by"],
+            }
+    return "without", None, None
+
+
+def _release_confirmation(reservation_id: int, *, force: bool = False) -> None:
+    """Send a held registration confirmation (lazy import: claim imports us)."""
+    from . import claim
+
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    if not reservation:
+        return
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    if apartment:
+        claim.maybe_notify_completion(reservation, apartment, force=force)
+
+
+def _release_held_confirmations() -> int:
+    """Safety net: no confirmation waits longer than HOLD_CONFIRMATION_MINUTES."""
+    now = _now()
+    cutoff = _iso(now - timedelta(minutes=HOLD_CONFIRMATION_MINUTES))
+    # Only stays this brief can have held: they have a door_code row and
+    # registered in the last day. Older stays must never get a late confirmation.
+    oldest = _iso(now - timedelta(hours=24))
+    rows = db.query(
+        "SELECT r.id FROM reservation r JOIN reservation_claim c ON c.reservation_id = r.id "
+        "JOIN door_code dc ON dc.reservation_id = r.id "
+        "WHERE c.state = 'claimed' AND c.email IS NOT NULL AND c.email <> '' "
+        "AND c.completion_notified_at IS NULL AND r.status = 'active' "
+        "AND r.registration_completed_at < ? AND r.registration_completed_at > ? LIMIT ?",
+        (cutoff, oldest, BATCH),
+    )
+    for row in rows:
+        log.error(
+            "DOOR_CODE_PROBLEM stage=confirmation_without_code reservation=%s", row["id"]
+        )
+        _release_confirmation(int(row["id"]), force=True)
+    return len(rows)
+
+
 def _send_code_mail(door_code_id: int) -> None:
     row = db.query_one("SELECT * FROM door_code WHERE id = ?", (door_code_id,))
     if not row or row["state"] != ISSUED or row["notified_at"]:
@@ -209,6 +272,12 @@ def _send_code_mail(door_code_id: int) -> None:
     )
     if not claim or not (claim["email"] or "").strip():
         return
+    if not claim["completion_notified_at"]:
+        # The confirmation has not gone yet: the code travels inside it.
+        _release_confirmation(int(reservation["id"]))
+        again = db.query_one("SELECT notified_at FROM door_code WHERE id = ?", (door_code_id,))
+        if again and again["notified_at"]:
+            return
     shown = view(reservation, apartment)
     if not shown or shown.get("state") != "issued":
         return
@@ -390,6 +459,7 @@ def issue(door_code_id: int) -> bool:
                 params={"property": apartment["internal_name"], "date": reservation["date_from"]},
             )
             mail_notify.door_code_notice(door_code_id, "failed")
+            _release_confirmation(int(reservation["id"]))
             mail.drain(limit=4)
         return False
     except Exception:
@@ -421,6 +491,7 @@ def issue(door_code_id: int) -> bool:
                 params={"property": apartment["internal_name"], "date": reservation["date_from"]},
             )
             mail_notify.door_code_notice(door_code_id, "failed")
+            _release_confirmation(int(reservation["id"]))
             mail.drain(limit=4)
         return False
 
@@ -868,6 +939,7 @@ def reconcile() -> Dict[str, int]:
     if clock:
         counts.update(clock)
     _phase("budget_alerts", _budget_alerts)
+    _phase("held_confirmations", _release_held_confirmations)
     return counts
 
 

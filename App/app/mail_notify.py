@@ -1395,6 +1395,7 @@ def build_completion(
     dates: str,
     stay_url: str,
     host: Optional[Dict[str, str]] = None,
+    door_code: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
 
@@ -1418,6 +1419,19 @@ def build_completion(
         _block_paragraph(intro),
     ]
     text_lines = [intro]
+    if door_code:
+        code_title = _guest_text(lang, "door_code_title")
+        times = _guest_text(
+            lang, "door_code_times", checkin=door_code["checkin"], checkout=door_code["checkout"]
+        )
+        first_use = _guest_text(lang, "door_code_first_use", deadline=door_code["first_use_by"])
+        blocks.extend([
+            _block_heading(code_title),
+            _block_paragraph(mail.DOOR_CODE_MARKER, size=22),
+            _block_paragraph(times),
+            _block_paragraph(first_use),
+        ])
+        text_lines.extend(["", code_title, mail.DOOR_CODE_MARKER, times, first_use])
 
     # Slot 2: the links, quiet by design -- nothing here is still owed.
     blocks.append(_block_link(stay_url, action))

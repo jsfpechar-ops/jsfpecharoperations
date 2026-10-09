@@ -1844,14 +1844,14 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         actor="guest",
         owner_user_id=apartment["owner_user_id"],
     )
+    await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
+    await run_in_threadpool(door_codes.on_registration_complete, reservation_id)
     await run_in_threadpool(
         lambda: claim.maybe_notify_completion(
             db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,)),
             apartment,
         )
     )
-    await run_in_threadpool(reporting.submit_stay_if_complete, apartment["id"], reservation_id)
-    await run_in_threadpool(door_codes.on_registration_complete, reservation_id)
 
     response = RedirectResponse(
         _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303
