@@ -38,7 +38,7 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-F09 | Low open | routes/admin.py:1927 | Manual send inspects only the first batch | P A36 |
 | K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
 | K-F11 | Med open | reporting.py:829-845 | Surplus blank guest form blocks automatic filing | F |
-| K-F12 | Med decision | reporting.py:270,1002 | Passport verification is advisory; unverified guests auto-filed | F W4.3 |
+| K-F12 | Med accepted | reporting.py:270,1002 | ID check dropped from the UI (owner, 2026-10-09, PR #331); host checks documents themselves | F W4.3 |
 | K-F13 | Med open | production data | 112 is "reported late", an accept (police, 24 Sep 2026). Production guests in `error`/`blocked` whose only code is 112 are in the register. Owner: `App/scripts/reconcile_accepted_codes.py` (dry run), check 2-3 in UbyPort, then `--apply`; never resend | F W4.2 |
 | K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with the legal deadline | AR-06 |
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
