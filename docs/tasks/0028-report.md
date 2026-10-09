@@ -74,3 +74,21 @@ None.
 
 1. Open a PR for `task/0024-door-code-immediate-handover` into `main` on GitHub (PR #326 already exists for this branch; this push updates it). Wait for the checks to go green.
 2. Tell the orchestrator. It re-checks, then merge with `scripts/merge-pr-on-green.sh 326`.
+
+## Second run of this brief: stopped at step 2
+
+The brief was run again on the same branch. §8 stop condition hit at step 2: anchor E2 is not found exactly once. The import it names is already in the file, because the first run applied step 2 in `76cef9f`. Anchor E1 is also already replaced (the `first_use_by=shown["first_use_by"]` line is at `App/app/door_codes.py:221`). No code was changed in this run.
+
+Steps:
+
+1. Done. Fetched the brief from `origin/claude/charming-feynman-k7oear` and checked it out. Compared it with the copy I ran before: identical. `git pull` on `task/0024-door-code-immediate-handover`: already up to date at `76cef9f`.
+2. Stopped (§8). Anchor E2 (`from app import config, db, door_codes, mail_notify, ttlock`) found 0 times in `App/tests/test_door_code_handover.py`. The applied form (with `mail`) is present once.
+3. Skipped (not reached, stop at step 2). The test in this step is already at the end of the file from the first run.
+4. Skipped (not reached). The pre-fix run cannot be repeated on the fixed code. The pre-fix output is recorded above.
+5. Skipped (not reached). Anchor E1 is already replaced, so the same edit is in place.
+6. Skipped (not reached). The 0024 brief is not on this branch.
+7. Skipped (not reached). §6 was already run in the first pass (72 passed, full suite 2934 passed with the four DNS failures) and is still valid for this code. No new commit from this run.
+
+Section 7 for this run: not applicable (the run stopped before its checks). The first run's ticks stand.
+
+Nothing for the owner to do beyond what the first run's owner steps already list.
