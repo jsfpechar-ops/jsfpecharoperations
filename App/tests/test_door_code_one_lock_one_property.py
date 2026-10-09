@@ -84,6 +84,7 @@ def _save(client, apartment_id: int, entity: int, *, lock: bool):
         "internal_name": _apartment(apartment_id)["internal_name"],
         "legal_entity_id": str(entity),
         "door_code_section": "1",
+        "door_codes_fields": "1",
         "lock_id": LOCK["lock_id"],
         "checkin_hour": "15",
         "checkout_hour": "10",
@@ -142,3 +143,54 @@ def test_switching_it_off_frees_the_lock_for_another_property(two_properties):
     _save(client, b, entity, lock=True)
     assert _apartment(b)["lock_provider"] == "ttlock"
     assert _apartment(a)["lock_provider"] is None
+
+
+def _save_without_door_code_controls(client, apartment_id: int, entity: int):
+    """What the browser posts when the tick box is not on the page."""
+    return client.post(
+        f"/apartments/{apartment_id}",
+        data={
+            "internal_name": _apartment(apartment_id)["internal_name"],
+            "legal_entity_id": str(entity),
+            "active": "1",
+            "door_code_section": "1",
+        },
+        follow_redirects=False,
+    )
+
+
+def test_an_empty_lock_list_does_not_switch_codes_off(two_properties):
+    owner, entity, (a, _) = two_properties
+    client = _client()
+    _save(client, a, entity, lock=True)
+    db.execute(
+        "UPDATE lock_account SET locks_json = ? WHERE owner_user_id = ?",
+        ("[]", owner),
+    )
+    page = client.get(f"/apartments/{a}").text
+    assert 'name="door_codes_fields"' not in page
+    assert 'name="door_codes"' not in page
+    assert _save_without_door_code_controls(client, a, entity).status_code == 303
+    saved = _apartment(a)
+    assert saved["lock_provider"] == "ttlock"
+    assert saved["lock_id"] == LOCK["lock_id"]
+    assert not db.query(
+        "SELECT 1 AS n FROM audit WHERE action = 'door_codes_off' AND detail LIKE ?",
+        (f"%apartment={a}%",),
+    )
+
+
+def test_a_missing_lock_account_does_not_switch_codes_off(two_properties):
+    owner, entity, (a, _) = two_properties
+    client = _client()
+    _save(client, a, entity, lock=True)
+    db.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner,))
+    assert _save_without_door_code_controls(client, a, entity).status_code == 303
+    assert _apartment(a)["lock_provider"] == "ttlock"
+
+
+def test_the_lock_form_posts_the_fields_marker_when_the_box_is_shown(two_properties):
+    _, _, (a, _) = two_properties
+    page = _client().get(f"/apartments/{a}").text
+    assert 'name="door_codes_fields"' in page
+    assert 'name="door_codes"' in page

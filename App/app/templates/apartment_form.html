@@ -454,6 +454,7 @@
     {% else %}
       <p class="small muted" style="margin-top:-4px">{{ t('apartment.form.door_code.lede') }}</p>
       {% if door_code.test_mode %}<p class="small"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
+      <input type="hidden" name="door_codes_fields" value="1">
       <div class="checkline"><input type="checkbox" id="door_codes" name="door_codes" value="1" {% if door_code.enabled %}checked{% endif %}><label for="door_codes">{{ t('apartment.form.door_code.enable') }}</label></div>
       <div class="field" style="max-width:320px"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
         <select id="lock_id" name="lock_id"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
