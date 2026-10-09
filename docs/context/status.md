@@ -22,7 +22,7 @@ Updated: 2026-10-09 after PR #325 review.
 
 - Doručenka smoke on a new filing after this cutover.
 
-- PR #325 (door-code safeguards) reviewed 2026-10-09: merge after guest-page screenshots + staging guard (K-S11); hold 0021 until shared-entrance decision; new K-F20 (same iCal URL on two properties).
+- PR #325: run [0023](../tasks/0023-pr325-fixups.md) (CI red), merge, then 0021, [0024](../tasks/0024-door-code-immediate-handover.md), [0025](../tasks/0025-confirmation-with-door-code.md). 0022 superseded. Owner: remove TTLock keys on staging (K-S11).
 
 ## Blocked: needs owner, lawyer or council
 
