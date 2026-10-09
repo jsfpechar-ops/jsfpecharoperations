@@ -2587,6 +2587,7 @@ details.raw pre {
 .guide-nav-link:hover { background: var(--surface-3); color: var(--ink); }
 .guide-section h2 { margin-top: 0; }
 .guide-steps { margin: 0; padding-left: 1.2rem; display: grid; gap: 10px; }
+.guide-shot { margin: 12px 0 4px; } .guide-shot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .legal-disclaimer h3 { margin-top: 0; }
 .legal-disclaimer p { margin-bottom: 0; }
 
