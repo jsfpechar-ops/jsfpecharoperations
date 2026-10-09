@@ -1,8 +1,10 @@
 # 0022: A waiting guest sees a standard status and is told the code comes by e-mail
 
-Status: todo
+Status: replaced by 0024 (owner decision 2026-10-09)
 Depends on: PR #325 merged to `main` | Base commit: `main` after PR #325 | Branch: task/0022-guest-door-code-waiting-messages
 Executor: Cursor local agent (composer, Kimi or Claude Haiku) | Fits one session
+
+> Replaced by brief 0024 (`claude/charming-feynman-k7oear`). Do not run this brief. 0024 is the only brief that changes the guest waiting copy: while the code is not there, the guest sees only "You will receive your door code by e-mail."
 
 ## 1. Objective
 
