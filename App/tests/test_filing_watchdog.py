@@ -725,9 +725,9 @@ def test_a_manual_property_is_warned_about_eight_hours_before_the_deadline(
 
 def test_the_last_day_keeps_the_existing_warning(world):
     rid = world["add_stay"]([("DEU", "pending")])
-    assert rid not in _mine(
-        filing_watchdog.manual_deadline_stays(datetime(2026, 9, 30, 8, 0)), {rid}
-    )
+    morning = datetime(2026, 9, 30, 8, 0)
+    assert rid not in _mine(filing_watchdog.manual_deadline_stays(morning), {rid})
+    assert rid in _mine(filing_watchdog.at_risk_stays(morning), {rid})
 
 
 def test_a_manual_property_gets_no_early_mail_days_before_the_deadline(world):

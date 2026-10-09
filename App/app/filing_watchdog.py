@@ -349,7 +349,7 @@ def manual_deadline_stays(now: Optional[datetime] = None) -> List[Dict[str, Any]
 
 
 def notify_manual_hosts(stays: List[Dict[str, Any]], now: Optional[datetime] = None) -> int:
-    """Queue the early manual-send note. One per stay. Returns how many."""
+    """Queue the eight-hour manual-send note. One per stay. Returns how many."""
     queued = 0
     for stay in stays:
         key = f"manual_deadline:{stay['reservation_id']}"
