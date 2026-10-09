@@ -83,6 +83,20 @@ router.include_router(signup_routes.router)
 _PRAGUE_TZ_OFFSETS_MS = frozenset({3_600_000, 7_200_000})
 
 
+def _properties_using_lock(owner_id, lock_id: str, except_apartment_id: Optional[int] = None) -> List[str]:
+    """Names of the owner's other properties that already send codes on this lock."""
+    rows = db.query(
+        f"SELECT id, internal_name FROM apartment WHERE {db.null_safe_eq('owner_user_id')} "
+        "AND lock_provider = 'ttlock' AND lock_id = ?",
+        (owner_id, lock_id),
+    )
+    return [
+        row["internal_name"] or f"#{row['id']}"
+        for row in rows
+        if except_apartment_id is None or int(row["id"]) != int(except_apartment_id)
+    ]
+
+
 def _door_code_hours_overlap(
     checkin_hour: Optional[int], checkout_hour: Optional[int]
 ) -> bool:
@@ -435,13 +449,15 @@ async def smart_locks_refresh(request: Request):
     if not account:
         return _back(return_to, err=_flash(request, "flash.error.smart_locks_missing_account"))
     try:
-        locks = ttlock.list_admin_locks(int(account["id"]))
+        locks, plain_keys = ttlock.check_locks(int(account["id"]))
     except ttlock.TTLockError as exc:
         if exc.kind == "budget":
             return _back(return_to, err=_flash(request, "flash.error.smart_locks_budget"))
         if exc.kind == "reauth":
             return _back(return_to, err=_flash(request, "flash.error.smart_locks_reauth"))
         return _back(return_to, err=_flash(request, "flash.error.smart_locks_failed"))
+    if not locks and plain_keys:
+        return _back(return_to, err=_flash(request, "flash.error.smart_locks_plain_key"))
     if not locks:
         return _back(return_to, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
     count = len(locks)
@@ -451,7 +467,7 @@ async def smart_locks_refresh(request: Request):
         target = f"/smart-locks?return_to={quote(return_to, safe='')}"
     return _back(
         target,
-        msg=_flash_plural(request, "flash.ok.smart_locks_found", count=count),
+        msg=_flash_plural(request, "flash.ok.smart_locks_found", count, count=count),
     )
 
 
@@ -1004,7 +1020,18 @@ def apartment_detail(apartment_id: int, request: Request):
     door_code = None
     if ttlock.allowed_for(apartment["owner_user_id"]):
         account = ttlock.account_for(apartment["owner_user_id"])
-        locks = ttlock.locks_of(account) if account else []
+        locks = [
+            {
+                **lock,
+                "used_by": ", ".join(
+                    _properties_using_lock(
+                        apartment["owner_user_id"], lock["lock_id"], apartment_id
+                    )
+                ),
+            }
+            for lock in (ttlock.locks_of(account) if account else [])
+        ]
+        free_locks = [lock for lock in locks if not lock["used_by"]]
         selected = next((lock for lock in locks if lock["lock_id"] == apartment["lock_id"]), None)
         cin, cout = apartment["checkin_hour"], apartment["checkout_hour"]
         door_code = {
@@ -1012,6 +1039,9 @@ def apartment_detail(apartment_id: int, request: Request):
             "locks": locks,
             "enabled": apartment["lock_provider"] == "ttlock",
             "lock_id": apartment["lock_id"],
+            # Offered without a saved choice only when it is the one lock no other
+            # property uses; a lock must never look attached to every property.
+            "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
             "checkin_hour": cin,
             "checkout_hour": cout,
             "tz_warning": bool(
@@ -1159,6 +1189,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
                 return _back(
                     f"/apartments/{apartment_id}#door-code",
                     err=_flash(request, "flash.error.door_code_lock"),
+                )
+            newly_chosen = (
+                apartment["lock_provider"] != "ttlock" or apartment["lock_id"] != lock_id
+            )
+            if newly_chosen and _properties_using_lock(owner_id, lock_id, apartment_id):
+                return _back(
+                    f"/apartments/{apartment_id}#door-code",
+                    err=_flash(request, "flash.error.door_code_lock_taken"),
                 )
             try:
                 cin = int(_form_str(form, "checkin_hour"))

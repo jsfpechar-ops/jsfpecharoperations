@@ -58,10 +58,12 @@
       {% if door_code.state == 'issued' %}
         <p class="g-door-code" aria-label="{{ t('door_code_title') }}">{{ door_code.pin }}</p>
         <p class="g-intro">{{ t('door_code_times', checkin=door_code.checkin, checkout=door_code.checkout) }}</p>
-        <p class="g-intro"><strong>{{ t('door_code_first_use', deadline=door_code.first_use_by) }}</strong></p>
+        <p class="g-intro">{{ t('door_code_only_between') }}</p>
         {% if claim_email_masked %}<p class="g-intro">{{ t('door_code_sent', email=claim_email_masked) }}</p>{% endif %}
       {% elif door_code.state == 'failed' %}
         <p class="g-intro">{{ t('door_code_failed') }}</p>
+      {% elif door_code.state == 'delayed' %}
+        <p class="g-intro">{{ t('door_code_delayed') }}</p>
       {% else %}
         <p class="g-intro">{{ t('door_code_preparing') }}</p>
       {% endif %}

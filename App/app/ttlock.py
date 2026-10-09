@@ -60,6 +60,9 @@ ERROR_KINDS: Dict[int, str] = {
     90000: "transient",
     1: "transient",
     -3: "bug",
+    # "A Passcode that has never been used on the Lock cannot be changed": the
+    # move path then makes a new code and deletes the old one.
+    -3008: "unused_code",
 }
 
 _MS_HOUR = 3_600_000
@@ -168,10 +171,11 @@ def _post(path: str, data: Dict[str, Any], priority: str) -> Dict[str, Any]:
         out = _parse_response(resp)
     except TTLockError as exc:
         log.warning(
-            "ttlock path=%s priority=%s errcode=%s",
+            "ttlock path=%s priority=%s errcode=%s errmsg=%s",
             path,
             priority,
             exc.code,
+            exc.message[:120],
         )
         raise
     log.info("ttlock path=%s priority=%s errcode=0", path, priority)
@@ -410,8 +414,18 @@ def _whole_hour(ms: int) -> None:
 
 
 def list_admin_locks(account_id: int) -> List[dict]:
+    return check_locks(account_id)[0]
+
+
+def check_locks(account_id: int) -> Tuple[List[dict], int]:
+    """The locks UbyHost can make codes on, and how many other keys it holds.
+
+    A plain eKey cannot create codes, so it never appears in the list. Counting
+    them lets the page say "you sent the wrong kind of key" instead of "nothing".
+    """
     page_no = 1
     items: List[dict] = []
+    plain = 0
     while True:
         answer = _call(
             account_id,
@@ -427,6 +441,7 @@ def list_admin_locks(account_id: int) -> List[dict]:
             user_type = str(raw.get("userType", ""))
             key_right = raw.get("keyRight")
             if user_type != _TOP_ADMIN and int(key_right or 0) != 1:
+                plain += 1
                 continue
             items.append(
                 {
@@ -446,7 +461,7 @@ def list_admin_locks(account_id: int) -> List[dict]:
         "UPDATE lock_account SET locks_json = ?, locks_fetched_at = ?, updated_at = ? WHERE id = ?",
         (json.dumps(items), now, now, account_id),
     )
-    return items
+    return items, plain
 
 
 def create_period_code(

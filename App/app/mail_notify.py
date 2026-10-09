@@ -1249,22 +1249,21 @@ def build_door_code(
     property_name: str,
     checkin: str,
     checkout: str,
-    first_use_by: str,
     host: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     subject = _guest_text(lang, "mail_door_code_subject", property=property_name)
     title = _guest_text(lang, "door_code_title")
     times = _guest_text(lang, "door_code_times", checkin=checkin, checkout=checkout)
-    first_use = _guest_text(lang, "door_code_first_use", deadline=first_use_by)
+    only_between = _guest_text(lang, "door_code_only_between")
     footer_lines = _guest_footer_lines(lang, property_name, host)
     code_line = mail.DOOR_CODE_MARKER
     blocks = [
         _block_heading(title),
         _block_paragraph(code_line, size=22),
         _block_paragraph(times),
-        _block_paragraph(first_use),
+        _block_paragraph(only_between),
     ]
-    text_lines = [title, code_line, "", times, first_use]
+    text_lines = [title, code_line, "", times, only_between]
     text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
     return {
         "subject": subject,
@@ -1320,7 +1319,70 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
         reservation_id=reservation["id"],
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
+        cc_email=config.SUPPORT_EMAIL if variant in _SUPPORT_COPY_VARIANTS else None,
     )
+
+
+# Notices about a code that was not created. The host creates it by hand, and
+# support gets a copy so the problem is on record. Never sent to a guest.
+_SUPPORT_COPY_VARIANTS = ("failed", "delayed")
+
+
+_DOOR_CODE_REASONS = ("waiting", "not_set_up", "no_account", "not_eligible", "bad_window")
+
+
+def _door_code_reason(lang: str, reason: str) -> str:
+    """The reason as a sentence a host can act on, with the raw token for support."""
+    key = reason if reason in _DOOR_CODE_REASONS else "other"
+    text = _text(lang, f"mail.door_code_reason.{key}")
+    return f"{text} [{reason}]"
+
+
+def door_code_delayed_notice(reservation_id: int, reason: str) -> Optional[int]:
+    """Tell the host (support in copy) that a registered stay still has no code.
+
+    One mail per stay. It needs no ``door_code`` row, because a stay whose
+    property is not set up for codes never gets one.
+    """
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+        if not reservation:
+            return None
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+        if not apartment:
+            return None
+        to_email = _entity_contact_email(apartment["legal_entity_id"])
+        if not to_email:
+            return None
+        lang = host_i18n.normalise_language(HOST_MAIL_LANGUAGE)
+        try:
+            stay_day = datetime.fromisoformat(reservation["date_from"]).strftime("%d.%m.%Y")
+        except ValueError:
+            stay_day = reservation["date_from"]
+        params = {
+            "property": apartment["internal_name"] or "",
+            "date": stay_day,
+            "reason": _door_code_reason(lang, reason or "waiting"),
+        }
+        subject = _text(lang, "mail.door_code_notice.delayed.subject", **params)
+        body = _text(lang, "mail.door_code_notice.delayed.body", **params)
+        payload = {"text": body, "html": f"<p>{html.escape(body)}</p>", "lang": lang}
+        return mail.enqueue(
+            kind="door_code_notice",
+            idempotency_key=f"door_code_notice:stay{reservation_id}:delayed",
+            to_email=to_email,
+            subject=subject,
+            payload=payload,
+            reservation_id=reservation_id,
+            apartment_id=apartment["id"],
+            owner_user_id=apartment["owner_user_id"],
+            cc_email=config.SUPPORT_EMAIL,
+        )
+    except Exception:
+        log.exception("door_code_delayed_notice_failed reservation=%s", reservation_id)
+        return None
 
 
 def build_completion(

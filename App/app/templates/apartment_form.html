@@ -457,7 +457,7 @@
       <div class="checkline"><input type="checkbox" id="door_codes" name="door_codes" value="1" {% if door_code.enabled %}checked{% endif %}><label for="door_codes">{{ t('apartment.form.door_code.enable') }}</label></div>
       <div class="field" style="max-width:320px"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
         <select id="lock_id" name="lock_id"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
-          {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and door_code.locks | length == 1) %}selected{% endif %}>{{ lock.alias }} ({{ t('smart_locks.lock_id', id=lock.lock_id) }})</option>{% endfor %}
+          {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.used_by and lock.lock_id != door_code.lock_id %}disabled{% endif %} {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and lock.lock_id == door_code.default_lock_id) %}selected{% endif %}>{{ lock.alias }} ({{ t('smart_locks.lock_id', id=lock.lock_id) }}){% if lock.used_by %} · {{ t('apartment.form.door_code.in_use', property=lock.used_by) }}{% endif %}</option>{% endfor %}
         </select>
         {% if door_code.tz_warning %}<div class="hint"><strong>{{ t('smart_locks.timezone_warning') }}</strong></div>{% endif %}
       </div>
@@ -470,7 +470,11 @@
         {% endfor %}
       </div>
       <p class="small">{{ t('apartment.form.door_code.margin', hours=door_code.buffer) }}</p>
+      <p class="small">{{ t('apartment.form.door_code.first_use') }}</p>
+      <p class="small">{{ t('apartment.form.door_code.manual') }}</p>
       {% if door_code.overlap %}<p class="small"><strong>{{ t('apartment.form.door_code.overlap') }}</strong></p>{% endif %}
+      <p class="small"><a href="/guide#door-codes">{{ t('apartment.form.door_code.guide') }}</a></p>
+      <p class="small"><a href="/guide#door-codes">{{ t('apartment.form.door_code.guide') }}</a></p>
     {% endif %}
   </details>
   {% endif %}

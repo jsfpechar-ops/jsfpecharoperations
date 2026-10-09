@@ -55,6 +55,7 @@
       {% if door_code %}<p class="small" id="door-code-line">
         {% if door_code.state == 'issued' %}{{ t('stay.detail.door_code.issued', pin=door_code.pin, start=door_code.works_from, end=door_code.works_until) }}
         {% elif door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}
+        {% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}
         {% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}
         {% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}
       </p>{% endif %}

@@ -8,43 +8,53 @@
 
 {% if reauth %}<p class="small"><strong>{{ t('smart_locks.reauth') }}</strong></p>{% endif %}
 
+{% macro share_block(code_id) %}
+  <h2 style="margin-top:0">{{ t('smart_locks.share_title') }}</h2>
+  <p class="small muted">{{ t('smart_locks.warn_owner') }}</p>
+  <p style="margin-bottom:6px"><strong>{{ t('smart_locks.name_label') }}</strong></p>
+  <p style="margin-top:0"><code id="{{ code_id }}">{{ receiver }}</code> {{ copy_button(code_id) }}</p>
+  <h3>{{ t('smart_locks.steps_title') }}</h3>
+  <ol class="guide-steps">{% for n in range(1, 9) %}<li>{{ t('smart_locks.s' ~ n) }}</li>{% endfor %}</ol>
+  <p class="small" style="margin-top:16px"><strong>{{ t('smart_locks.warn_ekey') }}</strong></p>
+  <form method="post" action="/smart-locks/refresh" style="margin-top:20px"><input type="hidden" name="return_to" value="{{ return_to }}">
+    <div class="action-group"><button class="btn primary" type="submit">{{ t('smart_locks.check') }}</button></div></form>
+  <p class="small muted" style="margin-top:16px"><a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a></p>
+{% endmacro %}
+
 {% if not account %}
+<section class="panel" id="smart-locks-how">
+  <h2 style="margin-top:0">{{ t('smart_locks.how_title') }}</h2>
+  <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('smart_locks.how' ~ n) }}</li>{% endfor %}</ol>
+</section>
 <section class="panel" id="smart-locks-setup">
+  <h2 style="margin-top:0">{{ t('smart_locks.setup_title') }}</h2>
   <form method="post" action="/smart-locks/setup">
     <input type="hidden" name="return_to" value="{{ return_to }}">
     <div class="checkline"><input type="checkbox" id="terms" name="terms" value="1" required>
       <label for="terms">{{ t('smart_locks.terms') }} <a href="/guide#door-codes-terms">{{ t('smart_locks.terms_link') }}</a></label></div>
-    <div class="action-group"><button class="btn primary" type="submit">{{ t('smart_locks.setup') }}</button></div>
+    <div class="action-group" style="margin-top:28px"><button class="btn primary" type="submit">{{ t('smart_locks.setup') }}</button></div>
   </form>
-  <p class="small muted"><a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a></p>
+  <p class="small muted" style="margin-top:20px"><a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a></p>
 </section>
 {% else %}
 {% if not locks %}
 <section class="panel" id="smart-locks-share">
-  <h2 style="margin-top:0">{{ t('smart_locks.share_title') }}</h2>
-  <p>{{ t('smart_locks.share_step') }}</p>
-  <p><code id="ttlock-receiver">{{ receiver }}</code> {{ copy_button('ttlock-receiver') }}</p>
-  <p class="small muted">{{ t('smart_locks.share_settings') }} <a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a></p>
-  <form method="post" action="/smart-locks/refresh"><input type="hidden" name="return_to" value="{{ return_to }}">
-    <div class="action-group"><button class="btn primary" type="submit">{{ t('smart_locks.check') }}</button></div></form>
+  {{ share_block('ttlock-receiver') }}
 </section>
 {% else %}
 <details class="panel" id="smart-locks-add-more">
   <summary>{{ t('smart_locks.add_more') }}</summary>
-  <h2 style="margin-top:0">{{ t('smart_locks.share_title') }}</h2>
-  <p>{{ t('smart_locks.share_step') }}</p>
-  <p><code id="ttlock-receiver-more">{{ receiver }}</code> {{ copy_button('ttlock-receiver-more') }}</p>
-  <p class="small muted">{{ t('smart_locks.share_settings') }} <a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a></p>
-  <form method="post" action="/smart-locks/refresh"><input type="hidden" name="return_to" value="{{ return_to }}">
-    <div class="action-group"><button class="btn primary" type="submit">{{ t('smart_locks.check') }}</button></div></form>
+  {{ share_block('ttlock-receiver-more') }}
 </details>
 <section class="panel" id="smart-locks-list">
   {% for lock in locks %}
   <div class="smart-lock-row" style="margin-bottom:16px">
     <p><strong>{{ lock.alias }}</strong> · {{ t('smart_locks.lock_id', id=lock.lock_id) }}
       {% if lock.battery is not none %} · {{ t('smart_locks.battery', percent=lock.battery) }}{% endif %}</p>
+    <p class="small">&#10003; {{ t('smart_locks.connected') }}</p>
     <p class="small muted">{% set used = properties_using.get(lock.lock_id, []) %}
       {% if used %}{{ used | join(', ') }}{% else %}{{ t('smart_locks.unused') }}{% endif %}</p>
+    {% if used | length > 1 %}<p class="small"><strong>{{ t('smart_locks.shared_warning') }}</strong></p>{% endif %}
     {% if lock.tz_offset_ms is not none and lock.tz_offset_ms != 3600000 %}
     <p class="small"><strong>{{ t('smart_locks.timezone_warning') }}</strong></p>
     {% endif %}
