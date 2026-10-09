@@ -33,7 +33,7 @@ UbyHost is the **controller** for the data below.
 | Host accounts | E-mail address (login), username (internal), display name, TOTP secret (encrypted), recovery-code hashes, last login; login link token hashes (`login_token`, deleted 1 day after expiry); passkey public keys, names, dates and counters (`passkey`, kept until removed by Host or account deleted); WebAuthn challenge hashes (`webauthn_challenge`, deleted 1 day after expiry) | Provide the service | Contract (Art 6(1)(b)) | Life of account + 3 years (audit log 3 years) |
 | Accepted terms | `legal_acceptance` rows (document, version, time, method, IP, user agent) | Demonstrate acceptance (Art 5(2), 24) | Legal obligation / accountability | Life of account + 3 years |
 | Security logs | `audit`, `rate_limit_event`, `alert`, container logs | Operate, secure, investigate | Security (Art 6(1)(f)); legal obligation for some | Audit 3 y; resolved alerts 12 mo; rate-limit 24 h |
-| Support mailbox | Messages to/from `support@ubyhost.com` | Answer support requests | Contract / legitimate interest | To be confirmed (LD-9 identifies the provider) |
+| Support mailbox | Messages to/from `support@ubyhost.com` | Answer support requests; receive a copy of each "door code not created" notice sent to a host (property name, stay date, TTLock error; no guest name, no door code) | Contract / legitimate interest | To be confirmed (LD-9 identifies the provider) |
 | Public website | `ubyhost_lang`, `ubyhost_csrf` cookies; Cloudflare edge data | Serve the site, security | Strictly necessary under § 89(3) ZEK | Language cookie 1 y; CSRF matches the session |
 | Backups | Encrypted `age` snapshots of the database and key | Disaster recovery | Legal obligation / security | `UBYHOST_BACKUP_RETENTION_DAYS` (30) |
 
