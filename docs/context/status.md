@@ -22,7 +22,7 @@ Updated: 2026-10-09 after PR #325 review.
 
 - Doručenka smoke on a new filing after this cutover.
 
-- PR #325: run [0023](../tasks/0023-pr325-fixups.md) (CI red), merge; then 0021, 0024, 0025, 0027 in that order; [0026](../tasks/0026-one-calendar-link-per-user.md) any time. 0022 superseded. Executor: Haiku 5.5, effort high.
+- #325 merged. 0024 reviewed: run [0028](../tasks/0028-0024-guest-code-mail-fix.md) on its branch (guest code mail broken), then PR. Next 0021, 0025, 0027; [0026](../tasks/0026-one-calendar-link-per-user.md) any time. Executor: Haiku 5.5, effort high.
 
 ## Blocked: needs owner, lawyer or council
 
