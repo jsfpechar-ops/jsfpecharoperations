@@ -23,9 +23,11 @@ REVOKED = "revoked"
 REVOKE_FAILED = "revoke_failed"
 
 BACKOFF_MINUTES = (1, 5, 15, 60, 240)
+# A failed code is handed to the host after this many tries (1 min apart).
+ISSUE_MAX_ATTEMPTS = 2
 LEASE_MINUTES = 2
 # A guest who has finished registering must not wait longer than this in silence.
-DELAY_MINUTES = 10
+DELAY_MINUTES = 5
 BATCH = 20
 
 def _mail_idempotency_key(reservation_id: int, row: dict) -> str:
@@ -152,6 +154,7 @@ def view(reservation: dict, apartment: dict) -> Optional[dict]:
         "works_until": _fmt_local(valid_to) if valid_to else "",
         "checkin": _stay_checkin_label(reservation["date_from"], apartment["checkin_hour"]),
         "checkout": _stay_checkin_label(reservation["date_to"], apartment["checkout_hour"]),
+        "first_use_by": _fmt_local(_ms_to_iso(_iso_to_ms(valid_from) + 24 * 3_600_000)) if valid_from else "",
     }
 
 
@@ -215,6 +218,7 @@ def _send_code_mail(door_code_id: int) -> None:
         property_name=apartment["internal_name"] or "",
         checkin=shown["checkin"],
         checkout=shown["checkout"],
+        first_use_by=shown["first_use_by"],
     )
     payload = mail_notify.guest_payload(apartment, content, lang)
     payload[mail.DOOR_CODE_KEY] = row["pin_enc"]
@@ -359,7 +363,7 @@ def issue(door_code_id: int) -> bool:
                 "UPDATE door_code SET attempts = attempts - 1 WHERE id = ?",
                 (door_code_id,),
             )
-        elif attempts >= len(BACKOFF_MINUTES):
+        elif attempts >= ISSUE_MAX_ATTEMPTS:
             new_state = FAILED
             next_at = None
         else:
@@ -370,30 +374,10 @@ def issue(door_code_id: int) -> bool:
             "next_attempt_at = ?, updated_at = ? WHERE id = ?",
             (new_state, reason[:40], next_at, now_iso, door_code_id),
         )
-        if new_state == FAILED:
-            alerts.raise_alert(
-                "warning",
-                "door_code_failed",
-                "Door code could not be created",
-                dedupe_key=f"door_code_failed:{reservation['id']}",
-                apartment_id=apartment["id"],
-                reservation_id=reservation["id"],
-                params={"property": apartment["internal_name"], "date": reservation["date_from"]},
-            )
-            mail_notify.door_code_notice(door_code_id, "failed")
-        return False
-    except Exception:
-        log.exception("door_code_issue_failed door_code=%s", door_code_id)
-        if attempts >= len(BACKOFF_MINUTES):
-            new_state = FAILED
-            next_at = None
-        else:
-            new_state = RETRYING
-            next_at = _iso(now + timedelta(minutes=BACKOFF_MINUTES[attempts - 1]))
-        db.execute(
-            "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, "
-            "next_attempt_at = ?, updated_at = ? WHERE id = ?",
-            (new_state, "transient", next_at, now_iso, door_code_id),
+        log.error(
+            "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s attempt=%s reason=%s",
+            "handed_over" if new_state == FAILED else "attempt_failed",
+            reservation["id"], door_code_id, attempts, reason,
         )
         if new_state == FAILED:
             alerts.raise_alert(
@@ -406,6 +390,38 @@ def issue(door_code_id: int) -> bool:
                 params={"property": apartment["internal_name"], "date": reservation["date_from"]},
             )
             mail_notify.door_code_notice(door_code_id, "failed")
+            mail.drain(limit=4)
+        return False
+    except Exception:
+        log.exception("door_code_issue_failed door_code=%s", door_code_id)
+        if attempts >= ISSUE_MAX_ATTEMPTS:
+            new_state = FAILED
+            next_at = None
+        else:
+            new_state = RETRYING
+            next_at = _iso(now + timedelta(minutes=BACKOFF_MINUTES[attempts - 1]))
+        db.execute(
+            "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, "
+            "next_attempt_at = ?, updated_at = ? WHERE id = ?",
+            (new_state, "transient", next_at, now_iso, door_code_id),
+        )
+        log.error(
+            "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s attempt=%s reason=%s",
+            "handed_over" if new_state == FAILED else "attempt_failed",
+            reservation["id"], door_code_id, attempts, "transient",
+        )
+        if new_state == FAILED:
+            alerts.raise_alert(
+                "warning",
+                "door_code_failed",
+                "Door code could not be created",
+                dedupe_key=f"door_code_failed:{reservation['id']}",
+                apartment_id=apartment["id"],
+                reservation_id=reservation["id"],
+                params={"property": apartment["internal_name"], "date": reservation["date_from"]},
+            )
+            mail_notify.door_code_notice(door_code_id, "failed")
+            mail.drain(limit=4)
         return False
 
 
@@ -735,7 +751,7 @@ def _alert_delayed() -> int:
     today = deadlines.local_now().date().isoformat()
     sql = (
         "SELECT r.id AS reservation_id, r.date_from, a.id AS apartment_id, "
-        "a.internal_name, dc.last_error, (dc.id IS NOT NULL) AS has_row "
+        "a.internal_name, a.owner_user_id, dc.last_error, (dc.id IS NOT NULL) AS has_row "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "LEFT JOIN door_code dc ON dc.reservation_id = r.id "
         "WHERE a.lock_provider = 'ttlock' AND r.status = 'active' "
@@ -747,6 +763,8 @@ def _alert_delayed() -> int:
         sql += " AND r.source = 'manual'"
     rows = db.query(sql, (cutoff, today, PENDING, ISSUING, RETRYING))
     for row in rows:
+        if not ttlock.allowed_for(row["owner_user_id"]):
+            continue
         reason = (row["last_error"] or "").strip() or ("waiting" if row["has_row"] else "not_set_up")
         alerts.raise_alert(
             "warning",
@@ -758,11 +776,12 @@ def _alert_delayed() -> int:
             reservation_id=row["reservation_id"],
             params={"property": row["internal_name"], "date": row["date_from"]},
         )
-        log.warning(
-            "door_code_delayed reservation=%s reason=%s", row["reservation_id"], reason
+        log.error(
+            "DOOR_CODE_PROBLEM stage=delayed reservation=%s reason=%s", row["reservation_id"], reason
         )
         # One mail to the host (support in copy), once per stay. Never to the guest.
         mail_notify.door_code_delayed_notice(int(row["reservation_id"]), reason)
+        mail.drain(limit=4)
     return len(rows)
 
 

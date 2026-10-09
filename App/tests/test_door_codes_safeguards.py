@@ -4,11 +4,9 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 
-from fastapi.testclient import TestClient
-
 import pytest
 
-from app import alerts, config, db, deadlines, door_codes, ttlock
+from app import config, db, deadlines, door_codes, ttlock
 
 PREFIX = "dc-safe-"
 _counter = 0
@@ -245,7 +243,7 @@ def test_the_final_failure_notice_also_copies_support(monkeypatch):
     ]
 
 
-def test_guests_are_not_shown_the_first_use_rule():
+def test_guests_see_the_exact_first_use_deadline():
     from app import mail_notify
 
     for lang in ("en", "cs", "de", "es", "fr"):
@@ -254,13 +252,13 @@ def test_guests_are_not_shown_the_first_use_rule():
             property_name="Flat",
             checkin="08.10.2026 16:00",
             checkout="10.10.2026 11:00",
+            first_use_by="09.10.2026 15:00",
         )
-        assert "09.10.2026" not in content["text"]
+        assert "09.10.2026 15:00" in content["text"]
     en = mail_notify.build_door_code(
-        lang="en", property_name="Flat", checkin="a", checkout="b"
+        lang="en", property_name="Flat", checkin="a", checkout="b", first_use_by="c"
     )
-    assert "works only between check-in and check-out" in en["text"]
-    assert "first time" not in en["text"]
+    assert "If you have not used it by c, it stops working. Then ask your host for a new code." in en["text"]
 
 
 def test_the_guide_walks_through_authorized_admin():

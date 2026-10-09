@@ -1,34 +1,50 @@
-# 0022: A guest waiting for a door code is told it also arrives by e-mail
+# 0022: A waiting guest sees a standard status and is told the code comes by e-mail
 
-Status: todo
+Status: replaced by 0024 (owner decision 2026-10-09)
 Depends on: PR #325 merged to `main` | Base commit: `main` after PR #325 | Branch: task/0022-guest-door-code-waiting-messages
 Executor: Cursor local agent (composer, Kimi or Claude Haiku) | Fits one session
 
+> Replaced by brief 0024 (`claude/charming-feynman-k7oear`). Do not run this brief. 0024 is the only brief that changes the guest waiting copy: while the code is not there, the guest sees only "You will receive your door code by e-mail."
+
 ## 1. Objective
 
-On the guest stay page, a guest who finished registering but has no door code yet should read that the code will also be e-mailed to them, and, once it is late, that they should contact their host if they still have no code. Today the page only says "being prepared, reload in a minute" or "taking longer than expected".
+On the guest stay page, a guest whose door code is not ready yet must see a standard status, not a problem. The status "Your door code is being prepared." stays. Under it, the guest reads that the code will also be e-mailed to them. If the code is still not there after the normal wait, the card says "You will receive your passcode in your email." The lines "Reload this page in a minute" and "taking longer than expected" are removed everywhere, and nothing on the waiting card reads as a fault.
 
 ## 2. Context
 
 Rules that apply (AGENTS.md): rule 9 (copy: one explanation lives in one place; write "no tracking cookies", never "no cookies"; this brief does not mention cookies), rule 7 (a template change needs the browser and geometry tests with 0 skipped; screenshots are taken by the reviewer, see Owner steps), rule 4 (no dependency).
 
 Decisions already made (do not re-open):
-- The guest gets **no** e-mail when a code could not be created. The new sentence only promises the normal door-code e-mail that is sent when the code exists. That e-mail is sent only when the guest gave an address, so the sentence shows only when the template variable `claim_email_masked` is non-empty (the same variable the "issued" state already uses).
-- The sentence is shown in the two waiting states (`preparing` and `delayed`). It is **not** shown in the `failed` state, whose text already says the host will send the code.
-- The host's contact details are already on the same page in the "Your host" card right below the door-code card, so the delayed text says "below".
+- Owner decision 2026-10-09 (revised): the "being prepared" line stays. The e-mail line goes under it. The late-code line is "You will receive your passcode in your email." This replaces the earlier "taking longer than expected" text and the reload line. It also replaces the rule in brief 0024 that a waiting guest reads only the e-mail line.
+- The guest gets **no** e-mail when a code could not be created. The e-mail promise shows only when the template variable `claim_email_masked` is non-empty (the same variable the "issued" state already uses). Guests always give an address, so the late state shows the passcode sentence without a condition.
+- The e-mail line is not shown in the late state. The late sentence already says e-mail, and one explanation lives in one place (rule 9).
+- The `failed` state is unchanged. Its text already says the host will send the code.
 - Languages: English, Czech, German, Spanish, French (`App/app/i18n.py` has five blocks, in that order).
 
-Anchor 1, `App/app/templates/guest/stay.html` (must be found verbatim, exactly once):
+Anchor 1, `App/app/i18n.py`: five lines, each found verbatim exactly once, one per language block, in this order in the file. `door_code_by_email` must not exist yet (check it in step 1).
 
-```html
-      {% elif door_code.state == 'delayed' %}
-        <p class="g-intro">{{ t('door_code_delayed') }}</p>
-      {% else %}
-        <p class="g-intro">{{ t('door_code_preparing') }}</p>
-      {% endif %}
+English:
+```python
+        "door_code_preparing": "Your door code is being prepared. Reload this page in a minute.",
+```
+Czech:
+```python
+        "door_code_preparing": "Váš kód ke dveřím se připravuje. Za minutu tuto stránku obnovte.",
+```
+German:
+```python
+        "door_code_preparing": "Ihr Türcode wird vorbereitet. Laden Sie diese Seite in einer Minute neu.",
+```
+Spanish:
+```python
+        "door_code_preparing": "Estamos preparando su código de la puerta. Vuelva a cargar esta página en un minuto.",
+```
+French:
+```python
+        "door_code_preparing": "Votre code de porte est en préparation. Rechargez cette page dans une minute.",
 ```
 
-Anchor 2 to 6, `App/app/i18n.py`: five lines, each found verbatim exactly once, one per language block, in this order in the file.
+Anchor 2, `App/app/i18n.py`: five lines, same rules.
 
 English:
 ```python
@@ -51,55 +67,79 @@ French:
         "door_code_delayed": "Votre code de porte prend plus de temps que prévu. Votre hôte a été prévenu et vous l'enverra.",
 ```
 
+Anchor 3, `App/app/templates/guest/stay.html` (must be found verbatim, exactly once):
+
+```html
+      {% elif door_code.state == 'delayed' %}
+        <p class="g-intro">{{ t('door_code_delayed') }}</p>
+      {% else %}
+        <p class="g-intro">{{ t('door_code_preparing') }}</p>
+      {% endif %}
+```
+
 ## 3. Files
 
 | Path | Action | What |
 |---|---|---|
-| `App/app/i18n.py` | edit | Replace five lines (longer delayed text) and add one new key per language |
-| `App/app/templates/guest/stay.html` | edit | Show the new sentence in the two waiting states when there is an address |
-| `App/tests/test_door_code_guest_messages.py` | create | 12 tests |
+| `App/app/i18n.py` | edit | Replace the 10 anchor lines (preparing and delayed, 5 languages); add one `door_code_by_email` line per language |
+| `App/app/templates/guest/stay.html` | edit | Waiting states: status, e-mail line under it when there is an address, late sentence |
+| `App/tests/test_door_code_guest_messages.py` | create | The tests in step 4 |
 | `docs/tasks/0022-report.md` | create | The report (§9) |
 
 No other file may change.
 
 ## 4. Steps
 
-1. Run `git status --short`; it must be empty.
+1. Run `git status --short`; it must be empty. Run `grep -c door_code_by_email App/app/i18n.py`; it must print `0`.
 
-2. In `App/app/i18n.py`, replace each of the five anchor lines with the two lines below it (same 8-space indentation, in the same language block). Copy the text exactly.
+2. In `App/app/i18n.py`, replace each preparing anchor (Anchor 1) with the two lines below it, and each delayed anchor (Anchor 2) with the one line below it. Same 8-space indentation, same language block. Copy the text exactly.
 
 English:
 ```python
-        "door_code_delayed": "Your door code is taking longer than expected. Your host has been told and will send it to you. If you do not have it soon, contact your host below.",
+        "door_code_preparing": "Your door code is being prepared.",
         "door_code_by_email": "We will also e-mail it to %(email)s as soon as it is ready.",
+```
+```python
+        "door_code_delayed": "You will receive your passcode in your email.",
 ```
 Czech:
 ```python
-        "door_code_delayed": "Váš kód ke dveřím trvá déle, než jsme čekali. Hostitel o tom ví a kód vám pošle. Pokud ho brzy nedostanete, kontaktujte hostitele níže.",
+        "door_code_preparing": "Váš kód ke dveřím se připravuje.",
         "door_code_by_email": "Pošleme ho také e-mailem na %(email)s, jakmile bude hotový.",
+```
+```python
+        "door_code_delayed": "Kód ke dveřím vám přijde e-mailem.",
 ```
 German:
 ```python
-        "door_code_delayed": "Ihr Türcode braucht länger als erwartet. Ihr Gastgeber wurde informiert und schickt ihn Ihnen. Wenn Sie ihn bald nicht haben, kontaktieren Sie Ihren Gastgeber unten.",
+        "door_code_preparing": "Ihr Türcode wird vorbereitet.",
         "door_code_by_email": "Wir senden ihn Ihnen außerdem per E-Mail an %(email)s, sobald er fertig ist.",
+```
+```python
+        "door_code_delayed": "Den Türcode erhalten Sie per E-Mail.",
 ```
 Spanish:
 ```python
-        "door_code_delayed": "Su código de la puerta tarda más de lo esperado. Su anfitrión ha sido avisado y se lo enviará. Si no lo tiene pronto, contacte con su anfitrión más abajo.",
+        "door_code_preparing": "Estamos preparando su código de la puerta.",
         "door_code_by_email": "También se lo enviaremos por correo a %(email)s en cuanto esté listo.",
+```
+```python
+        "door_code_delayed": "Recibirá el código de la puerta en su correo electrónico.",
 ```
 French:
 ```python
-        "door_code_delayed": "Votre code de porte prend plus de temps que prévu. Votre hôte a été prévenu et vous l'enverra. Si vous ne l'avez pas bientôt, contactez votre hôte ci-dessous.",
+        "door_code_preparing": "Votre code de porte est en préparation.",
         "door_code_by_email": "Nous vous l'enverrons aussi par e-mail à %(email)s dès qu'il sera prêt.",
 ```
+```python
+        "door_code_delayed": "Vous recevrez le code de porte par e-mail.",
+```
 
-3. In `App/app/templates/guest/stay.html`, replace Anchor 1 with exactly:
+3. In `App/app/templates/guest/stay.html`, replace Anchor 3 with exactly:
 
 ```html
       {% elif door_code.state == 'delayed' %}
         <p class="g-intro">{{ t('door_code_delayed') }}</p>
-        {% if claim_email_masked %}<p class="g-intro">{{ t('door_code_by_email', email=claim_email_masked) }}</p>{% endif %}
       {% else %}
         <p class="g-intro">{{ t('door_code_preparing') }}</p>
         {% if claim_email_masked %}<p class="g-intro">{{ t('door_code_by_email', email=claim_email_masked) }}</p>{% endif %}
@@ -109,7 +149,7 @@ French:
 4. Create `App/tests/test_door_code_guest_messages.py` with exactly this content:
 
 ```python
-"""Task 0022: a guest waiting for a door code is told the code will also come by e-mail."""
+"""Task 0022: a waiting guest sees a standard status and the e-mail promise, never a fault."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -121,9 +161,32 @@ from app import i18n
 LANGUAGES = ("en", "cs", "de", "es", "fr")
 TEMPLATE = Path(__file__).resolve().parents[1] / "app" / "templates" / "guest" / "stay.html"
 
+EXPECTED = {
+    "door_code_preparing": {
+        "en": "Your door code is being prepared.",
+        "cs": "Váš kód ke dveřím se připravuje.",
+        "de": "Ihr Türcode wird vorbereitet.",
+        "es": "Estamos preparando su código de la puerta.",
+        "fr": "Votre code de porte est en préparation.",
+    },
+    "door_code_delayed": {
+        "en": "You will receive your passcode in your email.",
+        "cs": "Kód ke dveřím vám přijde e-mailem.",
+        "de": "Den Türcode erhalten Sie per E-Mail.",
+        "es": "Recibirá el código de la puerta en su correo electrónico.",
+        "fr": "Vous recevrez le code de porte par e-mail.",
+    },
+}
+
 
 def _text(lang: str, key: str) -> str:
     return i18n.STRINGS[lang][key]
+
+
+@pytest.mark.parametrize("lang", LANGUAGES)
+@pytest.mark.parametrize("key", sorted(EXPECTED))
+def test_waiting_copy_is_exact(lang, key):
+    assert _text(lang, key) == EXPECTED[key][lang]
 
 
 @pytest.mark.parametrize("lang", LANGUAGES)
@@ -131,29 +194,30 @@ def test_every_language_promises_the_code_by_email_to_the_masked_address(lang):
     assert "%(email)s" in _text(lang, "door_code_by_email")
 
 
-@pytest.mark.parametrize("lang", LANGUAGES)
-def test_the_delayed_text_is_translated_and_longer_than_the_old_one(lang):
-    text = _text(lang, "door_code_delayed")
-    if lang != "en":
-        assert text != _text("en", "door_code_delayed")
-    assert text.count(".") >= 2
-
-
-def test_english_wording_is_exact():
+def test_english_email_line_is_exact():
     assert _text("en", "door_code_by_email") == "We will also e-mail it to %(email)s as soon as it is ready."
-    assert _text("en", "door_code_delayed").endswith("If you do not have it soon, contact your host below.")
 
 
-def test_the_page_shows_the_email_line_in_both_waiting_states_only_when_there_is_an_address():
+def test_no_waiting_copy_says_reload_or_taking_longer():
+    for lang in LANGUAGES:
+        for key in EXPECTED:
+            assert "taking longer" not in _text(lang, key).lower()
+            assert "reload" not in _text(lang, key).lower()
+            assert "Rechargez" not in _text(lang, key)
+
+
+def test_the_waiting_states_show_the_e_mail_line_only_when_there_is_an_address():
     source = TEMPLATE.read_text(encoding="utf-8")
-    line = "{% if claim_email_masked %}<p class=\"g-intro\">{{ t('door_code_by_email', email=claim_email_masked) }}</p>{% endif %}"
-    assert source.count(line) == 2
+    late_line = "<p class=\"g-intro\">{{ t('door_code_delayed') }}</p>"
+    email_line = "{% if claim_email_masked %}<p class=\"g-intro\">{{ t('door_code_by_email', email=claim_email_masked) }}</p>{% endif %}"
+    assert source.count(email_line) == 1
+    assert source.count(late_line) == 1
     failed = source.index("door_code.state == 'failed'")
     delayed = source.index("door_code.state == 'delayed'")
-    other = source.index("{% else %}", delayed)
-    assert source.index(line) > delayed
-    assert source.index(line, other) > other
+    else_branch = source.index("{% else %}", delayed)
+    assert failed < delayed < source.index(late_line) < else_branch < source.index(email_line)
     assert "door_code_by_email" not in source[failed:delayed]
+    assert "door_code_by_email" not in source[delayed:else_branch]
 ```
 
 5. Run the commands in §6 and write the report (§9).
@@ -172,7 +236,7 @@ From `App/`:
 ```
 .venv/bin/python -m pytest tests/test_door_code_guest_messages.py -q
 ```
-Expected last line: `12 passed`.
+Expected: all tests in the file pass.
 
 ```
 .venv/bin/python -m pytest tests/test_guest_browser_e2e.py tests/test_host_geometry.py tests/test_wp28_geometry.py tests/test_download_skeleton_browser.py -q -rs
@@ -193,10 +257,11 @@ Expected last line: `context lint: OK`.
 
 ## 7. Acceptance
 
-- [ ] `12 passed` in `test_door_code_guest_messages.py`.
+- [ ] All tests in `test_door_code_guest_messages.py` pass.
 - [ ] The browser and geometry command shows 0 skipped and 0 failed (or the report states why it could not run).
 - [ ] `git diff --stat` lists only the four files in §3.
 - [ ] `grep -c door_code_by_email App/app/i18n.py` prints `5`.
+- [ ] `grep -c "Reload this page\|Rechargez\|taking longer" App/app/i18n.py` prints `0`.
 - [ ] `context lint: OK`.
 
 ## 8. Stop and ask
@@ -214,20 +279,17 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/0022-report.md` (1,500 tokens at most) and set `Status: review`. The report has:
-
-1. The files changed (`git diff --stat`).
-2. Each command, with the last 5 lines of its output.
-3. §7 ticked.
-4. Deviations.
-5. Questions.
-6. Owner steps left.
+`docs/tasks/0022-report.md` (1,500 tokens at most), `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left.
 
 ## Risk list (for the reviewer)
 
-Read the diff of `stay.html` (the two `{% if claim_email_masked %}` lines must be inside the waiting branches only, never in `failed`) and the five `door_code_delayed` and `door_code_by_email` lines in `i18n.py` (right language in the right block, `%(email)s` intact).
+Read the diff of `stay.html` (the late-state line must be the plain delayed line, and the e-mail line must sit inside the "being prepared" branch only, never in `failed` or the late state) and the `door_code_preparing`, `door_code_by_email` and `door_code_delayed` lines in `i18n.py` (right language in the right block, `%(email)s` intact). The Czech, German, Spanish and French lines are new translations and need a native-speaker read before merge.
+
+## Open before execution (owner)
+
+1. The English late line says "passcode" (owner's wording). The rest of the guest page says "door code". Confirm "passcode", or change it to "door code" in the English line and the test.
 
 ## Owner steps
 
-1. The reviewer takes the screenshots (a claimed stay is needed to see the card): the door-code card in the "being prepared" and "taking longer" states at 360, 390 and 1280 px, once with an e-mail address and once without. The executor does not take them.
+1. The reviewer takes the screenshots (a claimed stay is needed to see the card): the door-code card in the "being prepared" state and the late state, at 360, 390 and 1280 px, with an e-mail address. The executor does not take them.
 2. After merge and deploy, nothing else is needed: the text changes only the guest page.

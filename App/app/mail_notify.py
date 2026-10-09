@@ -1249,21 +1249,22 @@ def build_door_code(
     property_name: str,
     checkin: str,
     checkout: str,
+    first_use_by: str,
     host: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     subject = _guest_text(lang, "mail_door_code_subject", property=property_name)
     title = _guest_text(lang, "door_code_title")
     times = _guest_text(lang, "door_code_times", checkin=checkin, checkout=checkout)
-    only_between = _guest_text(lang, "door_code_only_between")
+    first_use = _guest_text(lang, "door_code_first_use", deadline=first_use_by)
     footer_lines = _guest_footer_lines(lang, property_name, host)
     code_line = mail.DOOR_CODE_MARKER
     blocks = [
         _block_heading(title),
         _block_paragraph(code_line, size=22),
         _block_paragraph(times),
-        _block_paragraph(only_between),
+        _block_paragraph(first_use),
     ]
-    text_lines = [title, code_line, "", times, only_between]
+    text_lines = [title, code_line, "", times, first_use]
     text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
     return {
         "subject": subject,
@@ -1303,6 +1304,8 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
     except ValueError:
         stay_day = reservation["date_from"]
     params: Dict[str, str] = {"property": apartment["internal_name"] or "", "date": stay_day}
+    if variant == "failed":
+        params["reason"] = _door_code_reason(lang, (row["last_error"] or "").strip() or "other")
     if variant == "cancelled_not_deleted" and row["pin_enc"]:
         pin = db.decrypt_field(row["pin_enc"]) or ""
         tail = pin[-2:] if len(pin) >= 2 else pin
@@ -1366,8 +1369,8 @@ def door_code_delayed_notice(reservation_id: int, reason: str) -> Optional[int]:
             "date": stay_day,
             "reason": _door_code_reason(lang, reason or "waiting"),
         }
-        subject = _text(lang, "mail.door_code_notice.delayed.subject", **params)
-        body = _text(lang, "mail.door_code_notice.delayed.body", **params)
+        subject = _text(lang, "mail.door_code_notice.failed.subject", **params)
+        body = _text(lang, "mail.door_code_notice.failed.body", **params)
         payload = {"text": body, "html": f"<p>{html.escape(body)}</p>", "lang": lang}
         return mail.enqueue(
             kind="door_code_notice",
