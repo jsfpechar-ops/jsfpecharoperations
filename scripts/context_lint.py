@@ -46,7 +46,7 @@ NO_ARCHIVE = ["AGENTS.md", "docs/context/status.md"]
 BRIEF_SECTIONS = ["## 1. Objective", "## 2. Context", "## 3. Files", "## 4. Steps",
                   "## 5. Do not touch", "## 6. Commands", "## 7. Acceptance",
                   "## 8. Stop and ask", "## 9. Report"]
-STATUSES = {"todo", "in-progress", "review", "done", "blocked"}
+STATUSES = {"todo", "in-progress", "review", "done", "blocked", "replaced"}
 PATH_PREFIXES = ("App/", "docs/", "scripts/", "deploy/", ".github/", ".cursor/")
 PLACEHOLDER = re.compile(r"[<>*{}]|NNNN|YYYY|\.\.\.")
 

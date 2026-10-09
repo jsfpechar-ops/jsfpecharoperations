@@ -1,6 +1,6 @@
 # 0022: A guest waiting for a door code is told it also arrives by e-mail
 
-Status: blocked (superseded by 0024, owner decision 2026-10-09)
+Status: replaced by 0024 (owner decision 2026-10-09)
 Depends on: PR #325 merged to `main` | Base commit: `main` after PR #325 | Branch: task/0022-guest-door-code-waiting-messages
 Executor: Cursor local agent (composer, Kimi or Claude Haiku) | Fits one session
 

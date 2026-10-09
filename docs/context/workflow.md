@@ -38,7 +38,7 @@ This file is the single source of truth for how work is done. When the process c
    6. Update status, decisions and known-issues, then set `Status: done`.
 5. **Deploy:** the owner deploys; the orchestrator updates the Production lines in [status](status.md).
 
-Statuses: `todo → in-progress → review → done`, plus `blocked` (with the reason on the Status line).
+Statuses: `todo → in-progress → review → done`, plus `blocked` (with the reason on the Status line) and `replaced` (a newer brief takes its place; name it on the Status line).
 
 ## Writing briefs for a weak executor
 
