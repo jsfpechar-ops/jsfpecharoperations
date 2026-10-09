@@ -14,7 +14,7 @@ Rules that apply (AGENTS.md): rule 9 (copy: one explanation lives in one place; 
 
 Decisions already made (do not re-open):
 - Owner decision 2026-10-09 (revised): the "being prepared" line stays. The e-mail line goes under it. The late-code line is "You will receive your passcode in your email." This replaces the earlier "taking longer than expected" text and the reload line. It also replaces the rule in brief 0024 that a waiting guest reads only the e-mail line.
-- The guest gets **no** e-mail when a code could not be created. The e-mail promise shows only when the template variable `claim_email_masked` is non-empty (the same variable the "issued" state already uses). With no address, the late state shows the "being prepared" line instead, because the passcode sentence promises an e-mail.
+- The guest gets **no** e-mail when a code could not be created. The e-mail promise shows only when the template variable `claim_email_masked` is non-empty (the same variable the "issued" state already uses). Guests always give an address, so the late state shows the passcode sentence without a condition.
 - The e-mail line is not shown in the late state. The late sentence already says e-mail, and one explanation lives in one place (rule 9).
 - The `failed` state is unchanged. Its text already says the host will send the code.
 - Languages: English, Czech, German, Spanish, French (`App/app/i18n.py` has five blocks, in that order).
@@ -137,7 +137,7 @@ French:
 
 ```html
       {% elif door_code.state == 'delayed' %}
-        <p class="g-intro">{{ t('door_code_delayed') if claim_email_masked else t('door_code_preparing') }}</p>
+        <p class="g-intro">{{ t('door_code_delayed') }}</p>
       {% else %}
         <p class="g-intro">{{ t('door_code_preparing') }}</p>
         {% if claim_email_masked %}<p class="g-intro">{{ t('door_code_by_email', email=claim_email_masked) }}</p>{% endif %}
@@ -206,7 +206,7 @@ def test_no_waiting_copy_says_reload_or_taking_longer():
 
 def test_the_waiting_states_show_the_e_mail_line_only_when_there_is_an_address():
     source = TEMPLATE.read_text(encoding="utf-8")
-    late_line = "{{ t('door_code_delayed') if claim_email_masked else t('door_code_preparing') }}"
+    late_line = "<p class=\"g-intro\">{{ t('door_code_delayed') }}</p>"
     email_line = "{% if claim_email_masked %}<p class=\"g-intro\">{{ t('door_code_by_email', email=claim_email_masked) }}</p>{% endif %}"
     assert source.count(email_line) == 1
     assert source.count(late_line) == 1
@@ -281,7 +281,7 @@ Stop, and write the report, if:
 
 ## Risk list (for the reviewer)
 
-Read the diff of `stay.html` (the late-state line must use the ternary, and the e-mail line must sit inside the "being prepared" branch only, never in `failed` or the late state) and the `door_code_preparing`, `door_code_by_email` and `door_code_delayed` lines in `i18n.py` (right language in the right block, `%(email)s` intact). The Czech, German, Spanish and French lines are new translations and need a native-speaker read before merge.
+Read the diff of `stay.html` (the late-state line must be the plain delayed line, and the e-mail line must sit inside the "being prepared" branch only, never in `failed` or the late state) and the `door_code_preparing`, `door_code_by_email` and `door_code_delayed` lines in `i18n.py` (right language in the right block, `%(email)s` intact). The Czech, German, Spanish and French lines are new translations and need a native-speaker read before merge.
 
 ## Open before execution (owner)
 
