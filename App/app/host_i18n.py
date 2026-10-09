@@ -839,6 +839,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.feeds_unreadable": (
             "Some calendars couldn't be read. See the alert on the property."
         ),
+        "flash.error.feed_duplicate": "This calendar link is already added to %(property)s. One booking calendar belongs to one property, otherwise every booking would be reported to the police twice.",
         "flash.error.feed_added_unreadable": (
             "Calendar added, but it couldn't be read. See the alert above."
         ),
@@ -2348,6 +2349,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "flash.error.feeds_unreadable": (
             "Některé kalendáře nešly načíst. Podrobnosti najdete u ubytování."
         ),
+        "flash.error.feed_duplicate": "Tento odkaz na kalendář už je přidaný u %(property)s. Jeden kalendář rezervací patří k jedné nemovitosti, jinak by se každá rezervace hlásila policii dvakrát.",
         "flash.error.feed_added_unreadable": (
             "Kalendář byl přidán, ale nepodařilo se ho načíst. Viz upozornění výše."
         ),
