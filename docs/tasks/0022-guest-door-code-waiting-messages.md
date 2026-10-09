@@ -1,6 +1,6 @@
 # 0022: A guest waiting for a door code is told it also arrives by e-mail
 
-Status: replaced by 0024 (owner decision 2026-10-09)
+Status: todo
 Depends on: PR #325 merged to `main` | Base commit: `main` after PR #325 | Branch: task/0022-guest-door-code-waiting-messages
 Executor: Cursor local agent (composer, Kimi or Claude Haiku) | Fits one session
 
@@ -13,6 +13,7 @@ On the guest stay page, a guest who finished registering but has no door code ye
 Rules that apply (AGENTS.md): rule 9 (copy: one explanation lives in one place; write "no tracking cookies", never "no cookies"; this brief does not mention cookies), rule 7 (a template change needs the browser and geometry tests with 0 skipped; screenshots are taken by the reviewer, see Owner steps), rule 4 (no dependency).
 
 Decisions already made (do not re-open):
+- Owner decision 2026-10-09: the "being prepared" line stays, and the e-mail line goes under it. This replaces 0024's rule that a waiting guest reads only the e-mail line. Nothing the guest reads while waiting may look like a fault.
 - The guest gets **no** e-mail when a code could not be created. The new sentence only promises the normal door-code e-mail that is sent when the code exists. That e-mail is sent only when the guest gave an address, so the sentence shows only when the template variable `claim_email_masked` is non-empty (the same variable the "issued" state already uses).
 - The sentence is shown in the two waiting states (`preparing` and `delayed`). It is **not** shown in the `failed` state, whose text already says the host will send the code.
 - The host's contact details are already on the same page in the "Your host" card right below the door-code card, so the delayed text says "below".
@@ -50,6 +51,8 @@ French:
 ```python
         "door_code_delayed": "Votre code de porte prend plus de temps que prévu. Votre hôte a été prévenu et vous l'enverra.",
 ```
+
+Open before execution (owner to answer): the delayed copy in section 4 still says "taking longer than expected" and "contact your host". Under the decision above, that wording may need to change. Do not execute the delayed copy until the owner has confirmed it.
 
 ## 3. Files
 
