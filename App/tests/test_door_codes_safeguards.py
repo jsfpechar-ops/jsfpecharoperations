@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 
-from app import config, db, deadlines, door_codes, ttlock
+from app import config, db, deadlines, door_codes, host_i18n, ttlock
 
 PREFIX = "dc-safe-"
 _counter = 0
@@ -314,24 +315,36 @@ def _issued(monkeypatch, stay: int):
     assert row["state"] == door_codes.ISSUED
 
 
-def test_archiving_a_stay_keeps_the_door_code(monkeypatch):
-    """Archive is reversible and the guest may still need the door."""
+def test_archiving_a_stay_cancels_its_door_code(monkeypatch):
+    """Archive is undone from the toast, but the code on the lock is not."""
     deleted = []
     monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: deleted.append(1))
     _, _apartment, stay = _stay(registered_minutes_ago=1)
     _issued(monkeypatch, stay)
+    assert stay in door_codes.live_code_reservation_ids([stay])
     db.execute(
         "UPDATE reservation SET archived_at = ?, updated_at = ? WHERE id = ?",
         (db.utcnow(), db.utcnow(), stay),
     )
     door_codes.reconcile()
     row = db.query_one("SELECT state FROM door_code WHERE reservation_id = ?", (stay,))
-    assert row["state"] == door_codes.ISSUED
-    assert deleted == []
-    assert db.query(
-        "SELECT id FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code_notice'",
-        (stay,),
-    ) == []
+    assert row["state"] == door_codes.REVOKED
+    assert deleted == [1]
+    assert stay not in door_codes.live_code_reservation_ids([stay])
+
+
+def test_the_archive_confirm_warns_that_the_code_is_cancelled():
+    en = host_i18n.STRINGS["en"]["confirm.archive_stay_code"]
+    cs = host_i18n.STRINGS["cs"]["confirm.archive_stay_code"]
+    assert "does not come back" in en
+    assert "still finishes" in en
+    assert "nevrátí" in cs
+    assert "na cestě" in cs
+    templates = Path(door_codes.__file__).parent / "templates"
+    for name in ("reservation_detail.html", "reservations.html", "dashboard.html"):
+        text = (templates / name).read_text(encoding="utf-8")
+        assert "confirm.archive_stay_code" in text
+        assert 'data-confirm-tone="warning"' in text
 
 
 def test_cancelling_a_stay_still_revokes_the_door_code(monkeypatch):

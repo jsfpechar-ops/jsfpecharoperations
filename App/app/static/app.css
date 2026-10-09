@@ -684,6 +684,15 @@ input.sr-only { width: 1px !important; height: 1px !important; padding: 0 !impor
   margin: 0;
 }
 
+#confirm-body.warning {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--warn-soft);
+  border: 1px solid color-mix(in srgb, var(--warn) 25%, transparent);
+  color: var(--ink);
+}
+
 /* Alerts behave like phone notifications: they arrive above the page instead
    of moving it, the whole message opens the relevant item, and × dismisses it
    without a navigation. They sit bottom right so the page's own primary action

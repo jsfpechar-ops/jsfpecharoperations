@@ -594,7 +594,12 @@
       pendingForm = form || null;
       pendingButton = button || null;
       if (title) title.textContent = "";
-      if (body) body.textContent = message || "";
+      if (body) {
+        body.textContent = message || "";
+        var source = form || button;
+        var tone = source ? (source.getAttribute("data-confirm-tone") || "") : "";
+        body.classList.toggle("warning", tone === "warning");
+      }
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
       if (typeof dialog.showModal === "function") dialog.showModal();
     }

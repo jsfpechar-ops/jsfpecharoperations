@@ -498,13 +498,13 @@ def _revoke_one(row_id: int) -> None:
 
 
 def _handle_cancellations(now_iso: str) -> None:
-    # Archive only hides the stay from the host's list. The guest may still be
-    # in the house, and Undo puts the stay back, so it must not delete the code.
-    # A real cancellation sets status to something other than active.
+    # Archive hides the stay and is undone from the toast, but the code on the
+    # lock is not restored with it. The archive confirm says so before the host
+    # proceeds. A cancelled stay (status no longer active) takes the same path.
     rows = db.query(
         "SELECT dc.* FROM door_code dc "
         "JOIN reservation r ON r.id = dc.reservation_id "
-        "WHERE r.status != 'active'"
+        "WHERE (r.status != 'active' OR r.archived_at IS NOT NULL)"
     )
     for row in rows:
         state = row["state"]
@@ -872,6 +872,22 @@ def reconcile() -> Dict[str, int]:
         counts.update(clock)
     _phase("budget_alerts", _budget_alerts)
     return counts
+
+
+def live_code_reservation_ids(reservation_ids) -> set:
+    """Stays whose code archive will cancel. Empty when none of them have one."""
+    ids = [int(value) for value in reservation_ids]
+    if not ids:
+        return set()
+    marks = ",".join("?" for _ in ids)
+    states = (PENDING, ISSUING, RETRYING, ISSUED, REVOKE_PENDING)
+    state_marks = ",".join("?" for _ in states)
+    rows = db.query(
+        f"SELECT reservation_id FROM door_code "
+        f"WHERE reservation_id IN ({marks}) AND state IN ({state_marks})",
+        (*ids, *states),
+    )
+    return {int(row["reservation_id"]) for row in rows}
 
 
 def on_registration_complete(reservation_id: int) -> None:

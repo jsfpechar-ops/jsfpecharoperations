@@ -117,7 +117,8 @@
           </form>
         {% else %}
           <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
-                data-confirm data-confirm-message="{{ t('confirm.archive_stay') }}">
+                data-confirm{% if reservation.id in live_door_codes %} data-confirm-tone="warning"{% endif %}
+                data-confirm-message="{{ t('confirm.archive_stay_code') if reservation.id in live_door_codes else t('confirm.archive_stay') }}">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
             <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">
             <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.detail.menu.archive') }}</button>

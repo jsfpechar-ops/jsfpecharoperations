@@ -306,6 +306,10 @@ def dashboard(request: Request):
         )["n"]
     )
     milestone, sent_count, minutes_saved = celebrations.celebration_context(owner_user_id)
+    shown = (*needs_action, *waiting, *upcoming, *completed)
+    live_door_codes = door_codes.live_code_reservation_ids(
+        row["reservation"]["id"] for row in shown
+    )
     return render(
         request,
         "dashboard.html",
@@ -327,6 +331,7 @@ def dashboard(request: Request):
             "celebration_milestone": milestone,
             "sent_guest_count": sent_count,
             "minutes_saved": minutes_saved,
+            "live_door_codes": live_door_codes,
         },
     )
 
@@ -1752,6 +1757,9 @@ def reservations_list(request: Request):
     ready_send_count = sum(
         1 for item in rows if item["controls"].get("send_enabled") and item["apartment_active"]
     )
+    live_door_codes = door_codes.live_code_reservation_ids(
+        item["reservation"]["id"] for item in rows
+    )
     query_params = [(key, value) for key, value in request.query_params.multi_items() if key != "page"]
 
     def page_url(number: int) -> str:
@@ -1763,6 +1771,7 @@ def reservations_list(request: Request):
         {
             "rows": rows,
             "ready_send_count": ready_send_count,
+            "live_door_codes": live_door_codes,
             "status": status,
             "apartments": access.apartments(request, "id, internal_name"),
             "apartment_id": apartment_id,
@@ -1970,6 +1979,7 @@ def reservation_detail(reservation_id: int, request: Request):
                 if apartment
                 else None
             ),
+            "live_door_codes": door_codes.live_code_reservation_ids([reservation_id]),
         },
     )
 

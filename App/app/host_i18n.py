@@ -1016,6 +1016,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "confirm.cancel": "Cancel",
         "confirm.proceed": "Confirm",
         "confirm.archive_stay": "Archive this stay? It moves to Archive and can be restored later.",
+        "confirm.archive_stay_code": (
+            "Archive this stay? It moves to Archive and can be restored later. "
+            "The door code is cancelled and does not come back. "
+            "A police report that has not been sent yet waits until you restore the stay. "
+            "One already on its way still finishes."
+        ),
         "confirm.archive_property": "Archive this property? It will disappear from your dashboard and guest links.",
         "confirm.clear_demo": "Clear the built-in demo data?",
         "confirm.purge_expired": "Permanently delete every guest record past the retention period? This cannot be undone.",
@@ -2526,6 +2532,12 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "confirm.cancel": "Zrušit",
         "confirm.proceed": "Potvrdit",
         "confirm.archive_stay": "Archivovat tento pobyt? Přesune se do archivu a později ho můžete obnovit.",
+        "confirm.archive_stay_code": (
+            "Archivovat tento pobyt? Přesune se do archivu a později ho můžete obnovit. "
+            "Kód ke dveřím se zruší a už se nevrátí. "
+            "Hlášení, které ještě neodešlo na policii, počká, než pobyt obnovíte. "
+            "Hlášení, které už je na cestě, se odešle."
+        ),
         "confirm.archive_property": "Archivovat toto ubytování? Zmizí z přehledu a odkazů pro hosty.",
         "confirm.clear_demo": "Smazat vestavěná ukázková data?",
         "confirm.purge_expired": "Trvale smazat všechny záznamy hostů po uplynutí zákonné doby uchovávání? Nelze vrátit.",
