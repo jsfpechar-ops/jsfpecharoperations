@@ -1,6 +1,6 @@
 # 0032: Guide drops the form picture that shows the privacy switch off
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 20413d1 | Branch: task/bundle-0025-0031 (PR #332, commit on top of it)
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

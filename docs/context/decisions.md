@@ -48,4 +48,4 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in the same commit; executors skip non-todo; lint warns on overlapping open briefs | brief collisions | [workflow](../context/workflow.md)
 - 2026-10-09 | Waiting guest sees only "You will receive your door code by e-mail." (0024; replaces 0022) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
-- 2026-10-09 | No ID-check step in the host UI; host checks documents (#331) | K-F12
+- 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
