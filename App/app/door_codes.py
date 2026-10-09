@@ -218,6 +218,7 @@ def _send_code_mail(door_code_id: int) -> None:
         property_name=apartment["internal_name"] or "",
         checkin=shown["checkin"],
         checkout=shown["checkout"],
+        first_use_by=shown["first_use_by"],
     )
     payload = mail_notify.guest_payload(apartment, content, lang)
     payload[mail.DOOR_CODE_KEY] = row["pin_enc"]

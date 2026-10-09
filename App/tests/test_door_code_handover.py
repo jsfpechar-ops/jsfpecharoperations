@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from app import config, db, door_codes, mail_notify, ttlock
+from app import config, db, door_codes, mail, mail_notify, ttlock
 # _env is the autouse fixture of that file; importing it here applies it here too.
 from tests.test_door_codes_safeguards import _env, _stay, _view  # noqa: F401
 
@@ -140,3 +140,28 @@ def test_no_alert_and_no_mail_when_the_plan_has_no_door_codes(monkeypatch):
         "SELECT id FROM alert WHERE dedupe_key = ?", (f"door_code_delayed:{stay}",)
     ) is None
     assert _notices(stay) == []
+
+
+
+def test_the_guest_door_code_mail_is_queued_with_the_deadline(monkeypatch):
+    """The whole path: code made, guest has an address, the mail is queued (task 0028)."""
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "99"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    now = db.utcnow()
+    db.execute(
+        "INSERT INTO reservation_claim (reservation_id, state, email, lang, created_at, updated_at) "
+        "VALUES (?, 'claimed', 'guest@example.test', 'en', ?, ?)",
+        (stay, now, now),
+    )
+    try:
+        door_codes.reconcile()
+        row = db.query_one(
+            "SELECT payload FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code'",
+            (stay,),
+        )
+        assert row is not None, "the guest door-code mail was not queued"
+        text = mail.delivery_body(json.loads(row["payload"]))
+        assert "4821937" in text
+        assert "If you have not used it by" in text
+    finally:
+        db.execute("DELETE FROM reservation_claim WHERE reservation_id = ?", (stay,))
