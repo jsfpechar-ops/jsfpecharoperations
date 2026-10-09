@@ -1764,10 +1764,11 @@ def build_manual_deadline(
     stay_url: str,
     lang: Optional[str] = None,
 ) -> Dict[str, str]:
-    """The earlier note for a property that sends only when the host presses send.
+    """A second note for a property that sends only when the host presses send.
 
-    It goes out from the usual no-reply address, once per stay, while the
-    police deadline is inside 3 days and more than a day remains.
+    It goes out from the usual no-reply address, once per stay, about eight
+    hours before the police deadline. ``deadline_at_risk`` already warned the
+    host in the last twenty-four hours.
     """
     lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
     due = _deadline_text(deadline)

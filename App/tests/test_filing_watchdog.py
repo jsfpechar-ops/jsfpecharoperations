@@ -698,11 +698,13 @@ def test_a_stay_held_on_an_unclear_automatic_resend_is_at_risk_after_the_grace(w
     assert rid in _mine(filing_watchdog.at_risk_stays(much_later), {rid})
 
 
-def test_a_manual_property_is_warned_before_the_last_day(world, monkeypatch):
-    """Tuesday morning is inside 3 days of Wednesday night, and more than a day out."""
+def test_a_manual_property_is_warned_about_eight_hours_before_the_deadline(
+    world, monkeypatch,
+):
+    """Wednesday afternoon is inside eight hours of Wednesday night."""
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
     rid = world["add_stay"]([("DEU", "pending")])
-    now = datetime(2026, 9, 29, 8, 0)
+    now = datetime(2026, 9, 30, 16, 0)
 
     stays = filing_watchdog.manual_deadline_stays(now)
     assert filing_watchdog.notify_manual_hosts(stays, now) == 1
@@ -728,11 +730,18 @@ def test_the_last_day_keeps_the_existing_warning(world):
     )
 
 
+def test_a_manual_property_gets_no_early_mail_days_before_the_deadline(world):
+    rid = world["add_stay"]([("DEU", "pending")])
+    assert rid not in _mine(
+        filing_watchdog.manual_deadline_stays(datetime(2026, 9, 29, 8, 0)), {rid}
+    )
+
+
 def test_a_scheduled_property_gets_no_early_manual_mail(world, monkeypatch):
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
     db.update("apartment", world["apartment_id"], {"automation_mode": "scheduled"})
     rid = world["add_stay"]([("DEU", "pending")])
-    now = datetime(2026, 9, 29, 8, 0)
+    now = datetime(2026, 9, 30, 16, 0)
     assert rid not in _mine(filing_watchdog.manual_deadline_stays(now), {rid})
     assert filing_watchdog.notify_manual_hosts(
         filing_watchdog.manual_deadline_stays(now), now

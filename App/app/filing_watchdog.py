@@ -32,6 +32,12 @@ finish time. WP31: the resend (``submission.mode = 'auto_resend'``) is never
 resent itself, so when it comes back unclear too the stay is at risk once that
 one grace is over, and stays at risk until the host files it.
 
+A property set to send only when the host presses send gets one extra note in
+the last eight hours before the police deadline (``manual_deadline``). The
+usual ``deadline_at_risk`` mail still goes out earlier, in the last twenty-four
+hours, so the two do not leave on the same run. Automatic properties do not get
+the eight-hour note.
+
 A stay with no guest entered at all is a second, weaker case ("unknown risk"):
 the guests have arrived (arrival today or earlier), the deadline is less than
 24 hours away or passed, and nobody is on file. UbyHost cannot tell whether a
@@ -54,10 +60,9 @@ log = logging.getLogger("ubyhost.filing_watchdog")
 # A stay is at risk from this long before its deadline, and stays at risk
 # after the deadline until it is filed or no longer active.
 AT_RISK_WINDOW = timedelta(hours=24)
-# A property that sends only when the host presses send gets one earlier
-# note, while more than a day remains and the deadline is within 3 days.
-# The deadline itself is still the end of the third working day.
-MANUAL_NOTICE_WINDOW = timedelta(days=3)
+# Manual-send properties: one reminder in the last eight hours before the
+# police deadline (end of the third working day after arrival).
+MANUAL_NOTICE_LEAD = timedelta(hours=8)
 DIGEST_INTERVAL = timedelta(hours=6)
 DIGEST_SETTING = "filing_watchdog_digest_sent_at"
 # A stay with no guest on file drops off the lists this long after its
@@ -326,18 +331,18 @@ def send_operator_digest(
 
 
 def manual_deadline_stays(now: Optional[datetime] = None) -> List[Dict[str, Any]]:
-    """Manual-send stays whose police deadline is close, but not yet the last day.
+    """Manual-send stays in the last eight hours before the police deadline.
 
-    The last day already has ``deadline_at_risk``. This is the earlier note,
-    so the two mails do not leave on the same run.
+    ``deadline_at_risk`` already warned the host in the last twenty-four hours.
+    This second note is closer to the deadline so the two mails do not leave
+    together.
     """
     local = deadlines.local_now(now)
     found = []
-    for stay in at_risk_stays(now, window=MANUAL_NOTICE_WINDOW):
+    for stay in at_risk_stays(now, window=MANUAL_NOTICE_LEAD):
         if stay.get("automation_mode") != "manual" or stay.get("awaiting_retry"):
             continue
-        remaining = stay["deadline"] - local
-        if not (AT_RISK_WINDOW < remaining <= MANUAL_NOTICE_WINDOW):
+        if stay["deadline"] <= local:
             continue
         found.append(stay)
     return found

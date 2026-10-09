@@ -184,6 +184,22 @@ def test_the_property_page_shows_the_same_bilingual_message(host):
     assert body.index(EN_OPENING) < body.index(CS_OPENING)
 
 
+def test_the_property_page_puts_link_actions_next_to_the_fields(host):
+    apartment_id = _apartment_id()
+
+    page = host.get(f"/apartments/{apartment_id}?lang=en")
+
+    text = page.text
+    link_at = text.index('id="permalink"')
+    pin_at = text.index('id="permalink_pin"')
+    assert link_at < text.index("Generate a new link") < pin_at
+    assert pin_at < text.index("Generate a new PIN")
+    assert f'formaction="/apartments/{apartment_id}/regenerate-link"' in text
+    assert f'formaction="/apartments/{apartment_id}/regenerate-pin"' in text
+    assert "Copy English only" not in text
+    assert "Link and PIN options" not in text
+
+
 def test_the_helper_puts_english_first():
     text = host_i18n.bilingual_message("guest_links.message", link="https://x/l/t", pin="1")
 

@@ -106,7 +106,6 @@
         <a class="btn" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>
       {% endif %}
       {{ row_menu_begin() }}
-        <button class="row-menu-item" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>
         {% if reservation.permalink_token %}
         <a class="row-menu-item" href="{{ guest_link }}" target="_blank" rel="noopener" role="menuitem">{{ t('stay.detail.menu.open_guest_form') }}</a>
         {% endif %}
