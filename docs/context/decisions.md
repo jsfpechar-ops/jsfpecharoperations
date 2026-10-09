@@ -30,7 +30,7 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-06 | Cursor automations (regression coverage, bug sweep) stay as they are and read known-issues.md | owner choice | [prompts](prompts.md#bug-hunt-automation)
 - 2026-10-06 | [workflow] Task 0001 merged (#281) before orchestrator review; review post-merge approved; stale PR cleanup remains owner-run | owner merged early | [0001 report](../tasks/0001-report.md)
 - 2026-10-06 | [workflow] Context-rollout upload: flat files only in the rollout bundle folder (no subfolder); MANIFEST at bundle root | place_files script paths | [TEMPLATE](../tasks/TEMPLATE.md)
-- 2026-10-06 | [workflow] Every chat AI is the orchestrator and follows the token budget; Cursor writes all code; pointer files point to AGENTS.md | one session spent ~320k tokens on council + implementing | [workflow](workflow.md#token-budget-every-ai-every-session)
+- 2026-10-06 | [workflow] Every chat AI is the orchestrator and follows the token budget; Cursor writes all code; pointer files point to AGENTS.md | a session spent ~320k tokens on council + implementing | [workflow](workflow.md#token-budget-every-ai-every-session)
 - 2026-10-06 | New dependency `webauthn==3.0.1` (py_webauthn) with its transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned in requirements.lock | passkey verification must not be hand-rolled; owner approved all five | task 0004
 - 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
 - 2026-10-06 | Downloads opt out of the navigation skeleton by `download` / `data-no-skeleton` plus a path-ending rule, pinned by a template scan test | a stay-fee PDF click blanked the page for 15 s | skeleton.js
@@ -45,5 +45,5 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-08 | Door codes: one Background jobs row (`door_codes`, 1 min, task 0012). No PIN/list/unlock poll. Timeout recovery lists by name; weekly `queryDate` (one lock per run) lives inside that same job (task 0015) | API budget + type-3 codes unknown to the lock until first use; list responses contain digits | [ttlock-door-codes](../plans/ttlock-door-codes.md#7-api-call-budget-30000-a-month-shared-by-all-hosts)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
-- 2026-10-09 | Waiting copy: keep "being prepared" + e-mail line (replaces 0024) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
-- 2026-10-09 | [workflow] Status `replaced`: a brief a newer one took over (0022) | `blocked` reads as waiting | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
+- 2026-10-09 | Waiting copy: "being prepared" + e-mail line; late: "passcode in your email" (replaces 0024) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
+- 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
