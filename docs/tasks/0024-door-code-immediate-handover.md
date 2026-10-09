@@ -3,6 +3,7 @@
 Status: todo
 Depends on: PR #325 merged (0023 done) | Base commit: `main` after PR #325 | Branch: task/0024-door-code-immediate-handover
 Executor: Claude Haiku 5.5, effort high (or Cursor composer, Kimi, GLM) | Fits one session
+Replaces: brief 0022 (`replaced`, never run it). This brief is the only one that changes the guest waiting copy.
 
 ## 1. Objective
 
@@ -10,7 +11,9 @@ When TTLock does not give a code, UbyHost tries once more after 1 minute. If tha
 
 ## 2. Context
 
-Owner decisions 2026-10-09 (do not re-open): hand over to the host at once instead of retrying for hours; once the host has been told, UbyHost stops trying (no second code turns up later); the guest reads only "You will receive your door code by e-mail" while waiting; the guest is told the code stops working if it is not used in time and to ask the host for a new one. Rules: 2 (the support copy is in the ROPA, task 0023), 4 (no dependency), 7 (template change: browser and geometry tests, 0 skipped).
+Owner decisions 2026-10-09 (do not re-open): hand over to the host at once instead of retrying for hours; once the host has been told, UbyHost stops trying (no second code turns up later); the guest reads only "You will receive your door code by e-mail" while waiting; the guest is told the code stops working if it is not used in time and to ask the host for a new one. Copy decision (owner, 2026-10-09, confirmed): while the code is not there, the guest sees only "You will receive your door code by e-mail." No "being prepared", no "reload", no "taking longer", no contact-the-host sentence. The host is told at once. Brief 0022 asked for other waiting copy; it is replaced, and after this brief runs its anchors (the old texts) are gone, so 0022 cannot run on top of this one.
+
+Rules: 2 (the support copy is in the ROPA, task 0023), 4 (no dependency), 7 (template change: browser and geometry tests, 0 skipped).
 
 TTLock's rule: a period code dies if it is not used within 24 h of its start. The start is check-in minus 1 h (`DOOR_CODE_BUFFER_HOURS`), so the deadline is `valid_from + 24 h`. Show that exact time; never "24 hours after check-in" (it is 1 h earlier).
 
