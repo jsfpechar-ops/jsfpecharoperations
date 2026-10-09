@@ -2564,6 +2564,7 @@ details.raw pre {
   display: grid;
   gap: 18px;
   align-items: start;
+  grid-template-columns: minmax(0, 1fr);
 }
 @media (min-width: 900px) {
   .guide-layout { grid-template-columns: 200px minmax(0, 1fr); }
@@ -2585,8 +2586,13 @@ details.raw pre {
   text-decoration: none;
 }
 .guide-nav-link:hover { background: var(--surface-3); color: var(--ink); }
+/* On a phone the section list is one column above the steps: keep it in the page flow, not pinned over it. */
+@media (max-width: 899px) {
+  .guide-nav { position: static; display: flex; flex-wrap: wrap; gap: 4px; }
+  .guide-nav-link { padding: 6px 8px; }
+}
 .guide-section h2 { margin-top: 0; }
-.guide-steps { margin: 0; padding-left: 1.2rem; display: grid; gap: 10px; }
+.guide-steps { margin: 0; padding-left: 1.2rem; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .guide-shot { margin: 12px 0 4px; } .guide-shot img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); }
 .legal-disclaimer h3 { margin-top: 0; }
 .legal-disclaimer p { margin-bottom: 0; }
