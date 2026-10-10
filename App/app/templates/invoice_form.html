@@ -95,7 +95,84 @@
   <div class="panel">
     <h2 style="margin-top:0">{{ t('invoice.section.items') }}</h2>
     <p class="small muted" style="margin-top:-4px">{{ t('invoice.items_help') }}</p>
-    <table class="table-cards" id="item-rows">
+    <style>
+      /* Keep invoice-item geometry inside the form so the shared host table
+         rules and viewport width cannot change the price/action tracks. */
+      #item-rows.invoice-items-grid {
+        display: block;
+        width: 100%;
+        table-layout: fixed;
+        container-type: inline-size;
+      }
+      .invoice-items-grid thead,
+      .invoice-items-grid tbody { display: block; width: 100%; }
+      .invoice-items-grid thead tr,
+      .invoice-items-grid tbody tr {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) 84px 124px 148px 78px 126px;
+        align-items: start;
+      }
+      .invoice-items-grid thead tr {
+        align-items: stretch;
+        background: #f7ede7;
+      }
+      .invoice-items-grid thead th {
+        display: flex;
+        align-items: center;
+        background: transparent;
+      }
+      .invoice-items-grid th,
+      .invoice-items-grid td { box-sizing: border-box; min-width: 0; }
+      .invoice-items-grid td { vertical-align: top; }
+      .invoice-items-grid input:not([type=hidden]),
+      .invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
+      .invoice-items-grid .row-actions [data-remove-item] { min-height: 48px; }
+      .invoice-items-grid [data-vat-col][hidden] {
+        display: block !important;
+        visibility: hidden;
+      }
+      .invoice-other-description-field { display: block; margin-top: 8px; }
+      .invoice-other-description-field > span {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      @container (max-width: 850px) {
+        .invoice-items-grid thead { display: none; }
+        .invoice-items-grid tbody tr {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px 14px;
+          padding: 16px;
+          border-bottom: 1px solid var(--line);
+        }
+        .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
+        .invoice-items-grid td {
+          display: block;
+          padding: 0;
+          border: 0;
+        }
+        .invoice-items-grid td:first-child,
+        .invoice-items-grid td.row-actions { grid-column: 1 / -1; }
+        .invoice-items-grid td.row-actions { text-align: left; }
+        .invoice-items-grid td.row-actions .btn { margin: 0; }
+        .invoice-items-grid td::before {
+          content: attr(data-label);
+          display: block;
+          margin-bottom: 3px;
+          color: var(--muted);
+          font-size: 11.5px;
+          font-weight: 650;
+          letter-spacing: .05em;
+          text-transform: uppercase;
+        }
+        .invoice-items-grid td:first-child::before,
+        .invoice-items-grid td.row-actions::before { display: none; }
+        .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
+      }
+    </style>
+    <table class="table-cards invoice-items-grid" id="item-rows">
       <thead>
         <tr>
           <th class="col-name">{{ t('invoice.col.description') }}</th>
@@ -141,8 +218,11 @@
                   <option value="{{ kind }}" {% if row.kind == kind %}selected{% endif %}>{{ t('invoice.extra.' ~ kind) }}</option>
                 {% endfor %}
               </select>
-              <input type="text" name="item_description" maxlength="60" value="{{ row.description }}"
-                     placeholder="{{ t('invoice.extra.other_text') }}" aria-label="{{ t('invoice.extra.other_text') }}">
+              <label class="invoice-other-description-field" data-other-description>
+                <span>{{ t('invoice.col.description') }}</span>
+                <input type="text" name="item_description" maxlength="60" value="{{ row.description }}"
+                       placeholder="{{ t('invoice.extra.other_text') }}" aria-label="{{ t('invoice.extra.other_text') }}">
+              </label>
             </td>
             <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="{{ row.quantity }}" inputmode="numeric" class="input-qty"></td>
             <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" value="{{ row.unit }}" class="input-unit"></td>
@@ -166,8 +246,11 @@
                   <option value="{{ kind }}">{{ t('invoice.extra.' ~ kind) }}</option>
                 {% endfor %}
               </select>
-              <input type="text" name="item_description" maxlength="60" value=""
-                     placeholder="{{ t('invoice.extra.other_text') }}" aria-label="{{ t('invoice.extra.other_text') }}">
+              <label class="invoice-other-description-field" data-other-description>
+                <span>{{ t('invoice.col.description') }}</span>
+                <input type="text" name="item_description" maxlength="60" value=""
+                       placeholder="{{ t('invoice.extra.other_text') }}" aria-label="{{ t('invoice.extra.other_text') }}">
+              </label>
             </td>
           <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="1" inputmode="numeric" class="input-qty"></td>
           <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" class="input-unit"></td>
@@ -313,6 +396,12 @@
     totalEl.textContent = nf.format(total()) + " Kč";
   }
 
+  function syncOtherDescription(row) {
+    var kind = row.querySelector(".input-kind");
+    var description = row.querySelector("[data-other-description]");
+    if (kind && description) description.hidden = kind.value !== "other";
+  }
+
   var MAX_EXTRAS = 3;
   function syncAddButton() {
     var add = document.querySelector("[data-add-item]");
@@ -336,6 +425,7 @@
         vat.disabled = lastVat && lastVat.disabled;
       }
       body.appendChild(row);
+      syncOtherDescription(row);
       syncAddButton();
     });
     body.addEventListener("click", function (event) {
@@ -348,7 +438,11 @@
       syncTotal();
     });
     body.addEventListener("input", syncTotal);
-    body.addEventListener("change", syncTotal);
+    body.addEventListener("change", function (event) {
+      if (event.target.matches(".input-kind")) syncOtherDescription(event.target.closest("[data-item-row]"));
+      syncTotal();
+    });
+    body.querySelectorAll("[data-item-row]").forEach(syncOtherDescription);
   }
 
   /* Payment: either the money is already here (and "paid via" says how), or

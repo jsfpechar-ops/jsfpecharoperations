@@ -38,6 +38,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import claim, db, guest_slug, i18n, mail  # noqa: E402
+from tests.browser_support import chromium_launch_kwargs
 
 
 # Layout rules every guest screen must meet. Each returns a sentence per
@@ -159,7 +160,7 @@ def live_server():
 def browser():
     with sync_api.sync_playwright() as playwright:
         try:
-            chromium = playwright.chromium.launch()
+            chromium = playwright.chromium.launch(**chromium_launch_kwargs())
         except Exception as exc:  # the browser binary is not installed
             if REQUIRE_BROWSER:
                 raise

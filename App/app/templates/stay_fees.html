@@ -6,17 +6,27 @@
 {{ page_header(t('stay_fees.title'), '', '', '', '', '') }}
 {% include "_list_filter.html" %}
 {% if periods %}
-<div class="panel tight scroll-x">
-  <table class="table-cards">
+{% set fee_list = namespace(all_unset=true) %}
+{% for period in periods %}{% if not period.unset %}{% set fee_list.all_unset = false %}{% endif %}{% endfor %}
+<div class="panel tight scroll-x fee-periods{% if fee_list.all_unset %} fee-periods-unset{% endif %}">
+  <table class="table-cards{% if fee_list.all_unset %} fee-periods-table-unset{% endif %}">
     <thead>
+      {% if fee_list.all_unset %}
+      <tr>
+        <th>{{ t('stay_fees.col.property') }}</th>
+        <th>{{ t('filter.status') }}</th>
+        <th><span class="sr-only">{{ t('common.actions') }}</span></th>
+      </tr>
+      {% else %}
       <tr>
         <th>{{ t('stay_fees.col.property') }}</th>
         <th>{{ t('stay_fees.col.period') }}</th>
         <th class="num">{{ t('stay_fees.col.liable') }}</th>
         <th class="num">{{ t('stay_fees.col.exempt') }}</th>
         <th class="num">{{ t('stay_fees.col.total') }}</th>
-        <th></th>
+        <th><span class="sr-only">{{ t('common.actions') }}</span></th>
       </tr>
+      {% endif %}
     </thead>
     <tbody>
     {% for period in periods %}
@@ -27,8 +37,16 @@
           <span class="row-primary-link">{{ apartment.internal_name }}</span>
           <div class="small muted">{{ apartment.addr_obec or '' }}</div>
         </td>
-        <td colspan="4" data-label="{{ t('stay_fees.col.period') }}">{{ t('stay_fees.status.not_setup') }}</td>
-        <td class="nowrap"><a class="btn small primary" href="/stay-fees/{{ apartment.id }}/setup">{{ t('stay_fees.setup.action') }}</a></td>
+        {% if fee_list.all_unset %}
+        <td data-label="{{ t('filter.status') }}">{{ t('stay_fees.status.not_setup') }}</td>
+        <td class="nowrap row-actions" data-label=""><a class="btn small primary" href="/stay-fees/{{ apartment.id }}/setup">{{ t('stay_fees.setup.action') }}</a></td>
+        {% else %}
+        <td data-label="{{ t('stay_fees.col.period') }}">{{ t('stay_fees.status.not_setup') }}</td>
+        <td class="num" data-label="{{ t('stay_fees.col.liable') }}">—</td>
+        <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">—</td>
+        <td class="num" data-label="{{ t('stay_fees.col.total') }}">—</td>
+        <td class="nowrap row-actions" data-label=""><a class="btn small primary" href="/stay-fees/{{ apartment.id }}/setup">{{ t('stay_fees.setup.action') }}</a></td>
+        {% endif %}
       </tr>
       {% else %}
       <tr class="clickable-row" data-href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" tabindex="0" role="link">

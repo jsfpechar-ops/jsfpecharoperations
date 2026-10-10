@@ -31,10 +31,11 @@ import json
 import logging
 import re
 import secrets
+import sqlite3
 import time
 import zipfile
 from datetime import date, datetime, timedelta, timezone
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
@@ -534,6 +535,81 @@ def pending_reportable(guests: List[Any]) -> List[Any]:
     ]
 
 
+def dashboard_overview_candidate(
+    reservation: Mapping[str, Any] | sqlite3.Row,
+    progress: Dict[str, Any],
+    urgency: str,
+    today: date,
+    days_ahead: int = 30,
+) -> bool:
+    """Whether a stay belongs in the bounded host overview candidate set."""
+    reservation_values: Any = reservation
+    try:
+        arrival = date.fromisoformat(reservation_values["date_from"])
+        departure = date.fromisoformat(reservation_values["date_to"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    routine = (arrival <= today <= departure) or (
+        today <= arrival <= today + timedelta(days=days_ahead)
+    )
+    unresolved = progress.get("status") not in FINISHED_STATUSES
+    urgent_old_work = progress.get("status") == "failed" or (
+        urgency == "overdue" and unresolved
+    )
+    return routine or urgent_old_work
+
+
+def dashboard_display_groups(
+    groups: Dict[str, List[Dict[str, Any]]], today: Optional[date] = None, limit: int = 5
+) -> Tuple[Dict[str, List[Dict[str, Any]]], int]:
+    """Choose at most ``limit`` unique rows, with host actions first.
+
+    The overflow number counts only unique actionable stays that do not fit.
+    Queue counts are computed by the caller from the full candidate groups.
+    """
+    today = today or deadlines.local_now().date()
+    limit = max(0, limit)
+    seen = set()
+    needs_action = []
+    for row in groups["needs_action"]:
+        if len(needs_action) >= limit:
+            break
+        stay_id = row["reservation"]["id"]
+        if stay_id in seen:
+            continue
+        seen.add(stay_id)
+        needs_action.append(row)
+    remaining = max(0, limit - len(needs_action))
+    current_candidates = []
+    for bucket in ("waiting", "upcoming", "completed"):
+        for row in groups[bucket]:
+            stay_id = row["reservation"]["id"]
+            if stay_id in seen:
+                continue
+            seen.add(stay_id)
+            current_candidates.append(row)
+
+    def routine_order(row):
+        reservation = row["reservation"]
+        try:
+            arrival = date.fromisoformat(reservation["date_from"])
+            departure = date.fromisoformat(reservation["date_to"])
+        except (KeyError, TypeError, ValueError):
+            arrival, departure = date.max, date.min
+        current = arrival <= today <= departure
+        return (
+            0 if current else 1,
+            arrival,
+            deadlines.URGENCY_ORDER.get(row.get("urgency", "future"), 9),
+        )
+
+    current_candidates.sort(key=routine_order)
+    return (
+        {"needs_action": needs_action, "current": current_candidates[:remaining]},
+        max(0, len({row["reservation"]["id"] for row in groups["needs_action"]}) - len(needs_action)),
+    )
+
+
 def rejected_edited_since(reservation_id: int) -> bool:
     """True when a refused guest was edited after the refusal came back.
 
@@ -706,6 +782,7 @@ def dashboard_rows(
     days_back: int = 45,
     owner_user_id: Optional[int] = None,
     apartments: Optional[List[Any]] = None,
+    overview: bool = False,
 ) -> List[Dict[str, Any]]:
     """Every stay worth looking at, ordered by how urgent it is.
 
@@ -713,17 +790,24 @@ def dashboard_rows(
     already loaded them; a stay whose apartment is not among them is looked up
     as before.
     """
-    start = (date.today() - timedelta(days=days_back)).isoformat()
-    end = (date.today() + timedelta(days=days_ahead)).isoformat()
-    rows = db.query(
+    today = deadlines.local_now().date() if overview else date.today()
+    start = (today - timedelta(days=days_back)).isoformat()
+    end = (today + timedelta(days=days_ahead)).isoformat()
+    query = (
         "SELECT r.*, a.internal_name, a.permalink_token, a.automation_mode "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND a.active = 1 AND a.archived_at IS NULL "
         "AND r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?) "
-        "AND r.date_from BETWEEN ? AND ? "
-        "ORDER BY r.date_from",
-        (owner_user_id, owner_user_id, start, end),
     )
+    if overview:
+        # The overview needs every active historical stay to detect a failed or
+        # genuinely overdue unresolved report, but it only displays routine
+        # stays that are current or arrive inside its short forward window.
+        query += "AND r.date_from <= ? ORDER BY r.date_from"
+        rows = db.query(query, (owner_user_id, owner_user_id, end))
+    else:
+        query += "AND r.date_from BETWEEN ? AND ? ORDER BY r.date_from"
+        rows = db.query(query, (owner_user_id, owner_user_id, start, end))
     out: List[Dict[str, Any]] = []
     preloaded = preload_guests(rows)
     apartments_by_id: Dict[int, Any] = {}
@@ -747,8 +831,17 @@ def dashboard_rows(
         level = deadlines.urgency(check_in) if check_in else "future"
         # A finished stay with nothing outstanding is noise on a dashboard.
         if progress["status"] in ("reported", "not_required") and level in ("overdue", "ok", "urgent", "soon"):
-            if check_in and check_in < date.today() - timedelta(days=3):
-                continue
+            if check_in and check_in < today - timedelta(days=3):
+                try:
+                    current_stay = (
+                        date.fromisoformat(reservation["date_from"])
+                        <= today
+                        <= date.fromisoformat(reservation["date_to"])
+                    )
+                except (TypeError, ValueError):
+                    current_stay = False
+                if not (overview and current_stay):
+                    continue
         apartment_id = reservation["apartment_id"]
         if apartment_id not in apartments_by_id:
             apartments_by_id[apartment_id] = access.apartment_for_reservation(
@@ -757,6 +850,11 @@ def dashboard_rows(
         apartment = apartments_by_id[apartment_id]
         controls = send_controls(reservation, apartment, progress) if apartment else {}
         cell = deadline_cell(progress, check_in)
+        if overview:
+            if not dashboard_overview_candidate(
+                reservation, progress, cell["level"], today, days_ahead
+            ):
+                continue
         out.append(
             {
                 "reservation": reservation,

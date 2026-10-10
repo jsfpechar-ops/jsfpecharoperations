@@ -1,11 +1,6 @@
 # Decisions
 
-Append-only, one line each: `date | decision | reason | link`.
-
-- Tags: `[workflow]` = a process change; also edit [workflow](workflow.md) and [prompts](prompts.md) when you add one.
-- Find past decisions with `grep -i <topic>`. Don't read this file whole.
-- Superseded lines stay; add a new line that says what it supersedes.
-- When the file goes over its cap, entries older than 90 days that nothing references move to `docs/archive/decisions-YYYY.md`.
+Append-only.
 
 - 2026-09-09 | Core product = automatic UbyPort filing plus the house book (uvítací kniha); everything else is optional | the owner's founding rule | [UBYPORT_CORE](../UBYPORT_CORE.md)
 - 2026-09-13 | Production on AWS Lightsail; Render is staging with mock UbyPort, permanently | cost, control | [LIGHTSAIL](../LIGHTSAIL.md)
@@ -48,6 +43,7 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in the same commit; executors skip non-todo; lint warns on overlapping open briefs | brief collisions | [workflow](../context/workflow.md)
 - 2026-10-09 | Waiting guest sees only "You will receive your door code by e-mail." (0024; replaces 0022) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
+- 2026-10-10 | UI decisions continue | cap | [UI](ui-decisions.md)
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
 - 2026-10-10 | PostHog replaces Umami; privacy settings live in the snippet, not the dashboard | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
 - 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)

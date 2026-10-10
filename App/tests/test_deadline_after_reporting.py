@@ -247,6 +247,9 @@ def test_a_reported_stay_past_its_deadline_shows_no_overdue(one_day_window):
         assert ("done", expected) in badges, f"{name}: {badges}"
         assert not any(level == "overdue" for level, _ in badges), name
         assert "overdue by" not in page, name
+        if name == "dashboard":
+            task = re.search(r'<p class="dashboard-row-task">(.*?)</p>', page, re.S)
+            assert task and host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
 
 
 def test_a_stay_filed_after_its_deadline_reads_late(one_day_window):
@@ -260,6 +263,9 @@ def test_a_stay_filed_after_its_deadline_reads_late(one_day_window):
         badges = _badges(page)
         assert ("neutral", "Reported 6 h late") in badges, f"{name}: {badges}"
         assert "overdue by" not in page, name
+        if name == "dashboard":
+            task = re.search(r'<p class="dashboard-row-task">(.*?)</p>', page, re.S)
+            assert task and host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
 
 
 def test_a_stay_not_reported_past_its_deadline_is_still_critical(one_day_window):

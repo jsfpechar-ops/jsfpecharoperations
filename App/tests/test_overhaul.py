@@ -316,7 +316,7 @@ def test_reservation_detail_shows_direct_guest_link():
         assert page.status_code == 200
         # The copied stay link is the readable one (WP19).
         assert f"/l/{guest_slug.current(apartment_id)}/{stays[0]}" in page.text
-        assert "Copy guest link for this stay" in page.text
+        assert "Copy guest form link" in page.text
         assert "Next step" in page.text
         assert "Edit stay details" in page.text
         assert 'class="panel stay-command-panel"' in page.text

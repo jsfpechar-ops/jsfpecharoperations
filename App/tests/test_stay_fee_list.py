@@ -179,9 +179,15 @@ def test_period_filter_uses_month_picker_not_chip_rail(host):
     assert 'type="month"' in response.text
     assert 'name="month"' in response.text
     assert 'value="2026-08"' in response.text
+    assert 'min="2000-01"' in response.text
     assert 'max="2026-09"' in response.text
-    assert 'href="/stay-fees?month=2026-07"' in response.text
-    assert 'href="/stay-fees?month=2026-09"' in response.text
+    assert 'required data-month-native' in response.text
+    assert 'data-current-month="2026-08"' in response.text
+    assert 'data-min-month="2000-01"' in response.text
+    assert 'data-max-month="2026-09"' in response.text
+    assert 'type="button" data-month-prev hidden' in response.text
+    assert 'type="button" data-month-next hidden' in response.text
+    assert 'href="/stay-fees?month=' not in response.text
     assert 'class="chip' not in response.text
     assert "list-filter" in response.text
 

@@ -10,10 +10,79 @@ from fastapi.responses import RedirectResponse
 from .. import host_i18n, validation
 
 
+class FlashMessage(str):
+    """Translated flash text with presentation metadata from its actual key.
+
+    It remains a normal string for existing callers; only ``back`` consumes
+    the metadata before serializing the translated text into the redirect.
+    """
+
+    key: str
+    toast_kind: str
+    toast_sticky: bool
+
+    def __new__(cls, text: str, key: str, kind: str = "info", sticky: bool = False):
+        value = super().__new__(cls, text)
+        value.key = key
+        value.toast_kind = kind
+        value.toast_sticky = sticky
+        return value
+
+
+_SUCCESS_FLASH_KEYS = frozenset({
+    "flash.entities.added_first",
+    "flash.entities.added",
+    "flash.entities.saved",
+    "flash.entities.restored",
+    "flash.apartments.created",
+    "flash.apartments.saved_ready",
+    "flash.apartments.settings_saved",
+    "flash.apartments.connection_ok",
+    "flash.apartments.restored",
+    "flash.reservations.created",
+    "flash.reservations.saved",
+    "flash.reservations.restored",
+    "flash.guests.added",
+    "flash.guests.saved",
+    "flash.guests.saved_plain",
+    "flash.housebook.restored",
+})
+
+_STICKY_WARNING_FLASH_KEYS = frozenset({
+    "flash.apartments.saved",
+    "flash.apartments.pin_rotated",
+    "flash.apartments.guest_link",
+})
+
+_TOAST_KINDS = frozenset({"info", "success", "warning", "partial", "error"})
+
+
+def _flash_message(text: str, key: str, *, count: Optional[int] = None) -> FlashMessage:
+    if key in _SUCCESS_FLASH_KEYS:
+        return FlashMessage(text, key, "success")
+    if key in _STICKY_WARNING_FLASH_KEYS:
+        return FlashMessage(text, key, "warning", True)
+    # This key is returned only when some guests were accepted and others were
+    # rejected. A zero count is not acceptance and remains ordinary information.
+    if key == "flash.reservations.accepted" and count and count > 0:
+        return FlashMessage(text, key, "partial", True)
+    # reported/sent/resent do not distinguish first acceptance from duplicates.
+    # Leave them, archives, errors used as msg, and all unknown keys neutral.
+    return FlashMessage(text, key)
+
+
 def back(path: str, msg: str = "", err: str = "") -> RedirectResponse:
     query = []
     if msg:
         query.append(f"msg={quote(msg)}")
+        if (
+            isinstance(msg, FlashMessage)
+            and msg.toast_kind in _TOAST_KINDS
+            and (msg.toast_kind != "info" or msg.toast_sticky)
+        ):
+            query.append(f"toast_kind={quote(msg.toast_kind)}")
+            if msg.toast_sticky:
+                query.append("toast_sticky=1")
     if err:
         query.append(f"err={quote(err)}")
     if not query:
@@ -34,14 +103,16 @@ def flash(request, key: str, **params) -> str:
     be a plain string by the time it gets there - which means a message has to
     be translated where it is raised, not where it is rendered.
     """
-    return host_i18n.translate(host_i18n.lang_from_request(request), key, **params)
+    text = host_i18n.translate(host_i18n.lang_from_request(request), key, **params)
+    return _flash_message(text, key)
 
 
 def flash_plural(request, key: str, n: int, **params) -> str:
     """A counted flash, in the one/few/many form its count needs."""
-    return host_i18n.translate_plural(
+    text = host_i18n.translate_plural(
         host_i18n.lang_from_request(request), key, n, **params
     )
+    return _flash_message(text, key, count=n)
 
 
 def plural_param(request, key: str, n: int) -> str:

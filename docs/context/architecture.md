@@ -32,7 +32,7 @@
 | Mail | `App/app/mail.py` (SES and outbox), `App/app/mail_notify.py`, `App/app/lifecycle_mail.py` |
 | Scheduler | `App/app/scheduler.py`, `App/app/worker.py`, `App/app/alerts.py` |
 | Copy (i18n) | `App/app/i18n.py` (guest), `App/app/host_i18n.py` (host, 357 KB: grep it, never read it whole), `App/app/landing_i18n.py`, and the legal `*_i18n.py` files |
-| UI | `App/app/templates/` (`guest/` = guest pages), `App/app/static/` (`app.css` 95 KB, `guest.css`, `tokens.css`) |
+| UI | `App/app/templates/` (`guest/` = guest pages; `_list_filter.html`/`_date_range.html` = shared host filters), `App/app/static/` (`app.css`, `guest.css`, `tokens.css`, `host.css`, `host-controls.css`; `app.js` = host controls/feedback) |
 
 **Large files** (grep, then read ranges only): `App/app/routes/admin.py` (116 KB), `App/app/reporting.py` (100 KB), `App/app/db.py` (69 KB), `App/app/mail_notify.py` (69 KB), `App/app/routes/guest.py` (77 KB).
 

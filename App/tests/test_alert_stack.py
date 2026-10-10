@@ -1,17 +1,13 @@
-"""The notification stack is merged and sits in the corner as floating cards.
-
-Two alerts about the same stay must not make the host read and dismiss that
-stay twice. The cards float in the bottom-right corner instead of a panel
-that pushes the page down.
-"""
+"""Host alert presentation preserves deduplication and reachable actions."""
 from __future__ import annotations
 
-from pathlib import Path
+from html.parser import HTMLParser
+from typing import ClassVar
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import host_i18n, alerts, auth, db
+from app import alerts, auth, db, host_i18n
 from app.main import app
 from tests.conftest import login_as
 
@@ -62,6 +58,46 @@ def _alert(kind: str, level: str, reservation_id: int, message: str):
 
 def _bubbles(page) -> int:
     return page.text.count("data-notification>")
+
+
+class _TreeParser(HTMLParser):
+    """Small HTML tree for checking real rendered alert placement without CSS mirrors."""
+
+    _VOID: ClassVar[set[str]] = {
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
+        "param", "source", "track", "wbr",
+    }
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.root = {"tag": None, "attrs": {}, "children": [], "parent": None}
+        self.stack = [self.root]
+
+    def handle_starttag(self, tag, attrs):
+        node = {"tag": tag, "attrs": dict(attrs), "children": [], "parent": self.stack[-1]}
+        self.stack[-1]["children"].append(node)
+        if tag not in self._VOID:
+            self.stack.append(node)
+
+    def handle_startendtag(self, tag, attrs):
+        node = {"tag": tag, "attrs": dict(attrs), "children": [], "parent": self.stack[-1]}
+        self.stack[-1]["children"].append(node)
+
+    def handle_endtag(self, tag):
+        for index in range(len(self.stack) - 1, 0, -1):
+            if self.stack[index]["tag"] == tag:
+                del self.stack[index:]
+                break
+
+    def find(self, predicate, root=None):
+        root = root or self.root
+        for child in root["children"]:
+            if predicate(child):
+                return child
+            found = self.find(predicate, child)
+            if found:
+                return found
+        return None
 
 
 def _row(alert_id: int, kind: str, level: str, reservation_id):
@@ -167,13 +203,31 @@ def test_the_summary_is_in_czech(host):
     assert 'class="notification-stack"' in page.text
 
 
-def test_notifications_float_in_the_corner():
-    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "host.css").read_text()
-    stack = css.split('.host-workspace .notification-stack {', 1)[1].split('}', 1)[0]
-    assert 'position: fixed' in stack
-    assert 'bottom: 16px' in stack
-    assert 'right: 16px' in stack
-    assert 'position: static' not in stack
+def test_notifications_render_in_host_content_flow_with_reachable_stay_link(host):
+    _alert("dates_changed_resign", "critical", 9501, "Dates changed")
+    response = host.get("/?lang=en")
+    assert response.status_code == 200, response.text
+
+    tree = _TreeParser()
+    tree.feed(response.text)
+    main = tree.find(lambda node: node["tag"] == "main" and node["attrs"].get("id") == "main-content")
+    assert main, "host response must contain its main content region"
+    stack = tree.find(lambda node: "data-host-alerts" in node["attrs"], main)
+    feedback = tree.find(lambda node: "data-host-feedback" in node["attrs"], main)
+    local_nav = tree.find(lambda node: "host-local-nav" in node["attrs"].get("class", "").split(), main)
+    assert stack and stack["parent"] is main, "the notification stack should be in the host main flow"
+    assert feedback and feedback["parent"] is main
+    assert main["children"].index(stack) < main["children"].index(feedback)
+    if local_nav:
+        assert local_nav["parent"] is main
+        assert main["children"].index(feedback) < main["children"].index(local_nav)
+
+    card = tree.find(lambda node: "data-notification" in node["attrs"], stack)
+    link = tree.find(lambda node: "notification-link" in node["attrs"].get("class", "").split(), card)
+    assert link and link["tag"] == "a" and link["attrs"].get("href") == "/reservations/9501"
+    assert tree.find(lambda node: "data-notification-dismiss" in node["attrs"], card) is None, (
+        "date-change filing gates must remain non-dismissible"
+    )
 
 
 def test_critical_notifications_are_visible_without_an_extra_click(host):

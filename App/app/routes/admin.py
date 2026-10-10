@@ -282,11 +282,13 @@ def dashboard(request: Request):
         return guard
     owner_user_id = access.owner_id(request)
     apartments = access.apartments(request)
-    rows = reporting.dashboard_rows(owner_user_id=owner_user_id, apartments=apartments)
+    today = deadlines.local_now().date()
+    rows = reporting.dashboard_rows(
+        days_ahead=30, owner_user_id=owner_user_id, apartments=apartments, overview=True
+    )
     queue = reporting.queue_groups(rows)
     counts = reporting.queue_counts(rows, queue)
-    needs_action, waiting = queue["needs_action"][:20], queue["waiting"][:20]
-    upcoming, completed = queue["upcoming"][:12], queue["completed"][:8]
+    displayed_groups, additional_action_count = reporting.dashboard_display_groups(queue, today=today)
     setup_warnings = []
     for apartment in apartments:
         issues = validation.errors_only(_apartment_issues(apartment))
@@ -294,7 +296,7 @@ def dashboard(request: Request):
             setup_warnings.append({"apartment": apartment, "issues": issues})
     # dashboard_rows() is already sorted by legal urgency, so the first row that
     # needs work is the one thing worth putting at the top of the page.
-    focus = next(iter(needs_action), None) or next(iter(waiting), None)
+    focus = next(iter(queue["needs_action"]), None) or next(iter(queue["waiting"]), None)
     # Without a feed there is nothing to sync, so the page must offer "connect a
     # calendar" instead of "update calendars".
     feed_count = int(
@@ -313,12 +315,11 @@ def dashboard(request: Request):
             "rows": rows,
             "focus": focus,
             "queue_groups": {
-                "needs_action": needs_action,
-                "waiting": waiting,
-                "upcoming": upcoming,
-                "completed": completed,
+                **displayed_groups,
             },
             "counts": counts,
+            "additional_action_count": additional_action_count,
+            "today": today,
             "apartments": apartments,
             "feed_count": feed_count,
             "setup_warnings": setup_warnings,
@@ -1696,11 +1697,11 @@ def reservations_list(request: Request):
 
     today = date.today().isoformat()
     date_range = request.query_params.get("range", "")
-    show_archive = date_range == "archive"
+    archive_scope = request.query_params.get("archive_scope") == "1"
+    show_archive = date_range == "archive" or archive_scope
     if date_range not in RESERVATION_RANGES and date_range != "archive":
-        # Explicit dates win; otherwise show what is still ahead, because a
-        # list that opens on last winter's bookings is useless.
-        date_range = "custom" if (date_from or date_to) else "upcoming"
+        # Explicit dates win; an empty date query is the unbounded default.
+        date_range = "custom" if (date_from or date_to or (archive_scope and date_range == "custom")) else "all"
     if date_range == "upcoming":
         date_from, date_to = today, ""
     elif date_range == "past":

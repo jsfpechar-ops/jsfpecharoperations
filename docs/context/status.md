@@ -1,10 +1,10 @@
 # Status
 
-Updated: 2026-10-10. Door codes: 0037 merged (#340); 0038 in PR #341, reviewed OK.
+Updated: 2026-10-11. Door codes: 0037 merged (#340); 0038 in PR #341, reviewed OK.
 
 ## Production
 
-- **Magic-link cutover:** phase 1 + phase 2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)). E-mail login only; `.env` admin + SES; Caddy access log off; all properties connection-tested.
+- **Magic-link:** phases 1–2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)); e-mail login, `.env` admin/SES, access log off, properties tested.
 - **112 reconcile:** dry run `guests answered with accepted codes only: 0` — no `--apply` needed (Oct 2026).
 - Live app: `/healthz` `version` 1.1.0. Record deploy SHA when convenient: `git rev-parse HEAD` in `/opt/ubyhost`.
 
@@ -31,6 +31,8 @@ Updated: 2026-10-10. Door codes: 0037 merged (#340); 0038 in PR #341, reviewed O
 - Lawyer review of legal texts (0005 and K-L rows in [known-issues](known-issues.md)).
 - Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
 
-## Owner steps already done (don't ask again)
+## Owner done
 
-- SES, Turnstile, healthchecks, Better Stack, Cloudflare, retention autopurge, Render staging, Litestream/backup drill, task 0001 (#281), **magic-link deploy + 0007 phase 2 (Oct 2026)**.
+- SES, Turnstile, healthchecks, Better Stack, Cloudflare, autopurge, Render staging, backup drill, 0001 (#281), magic-link/0007 phase 2 (Oct 2026).
+
+- [UI 0041](../tasks/0041-host-stay-actions.md): Paused; #338 CI imports: 0042; UI failures remain.

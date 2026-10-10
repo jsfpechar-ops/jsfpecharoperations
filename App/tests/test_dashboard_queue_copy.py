@@ -30,7 +30,7 @@ def _ensure_admin() -> int:
         "SELECT * FROM user_account WHERE username = ?", (USERNAME,)
     )
     if not account:
-        return auth.create_account(f"{USERNAME}@example.test", "Dashboard queue admin", role="admin", username=USERNAME)
+        return auth.create_account(f"{USERNAME}@example.test", "Dashboard queue host", role="host", username=USERNAME)
     return account["id"]
 
 
@@ -171,10 +171,10 @@ def _page(lang: str) -> str:
 def _next_action_for(page_text: str, stay_id: int) -> str:
     """The next-action line of one queue row, keyed by its own detail link."""
     row = re.search(
-        rf'<article data-stay-id="{stay_id}"[^>]*>(.*?)</article>', page_text, re.S,
+        rf'<article class="dashboard-row[^>]*data-stay-id="{stay_id}"[^>]*>(.*?)</article>', page_text, re.S,
     )
     assert row, f"stay {stay_id} has no row on the work queue"
-    action = re.search(r'<div class="host-task-state next-action">(.*?)</div>', row.group(1), re.S)
+    action = re.search(r'<p class="dashboard-row-task">(.*?)</p>', row.group(1), re.S)
     assert action, f"stay {stay_id} has no next-action line"
     return " ".join(action.group(1).split())
 
@@ -214,13 +214,9 @@ def test_the_new_next_actions_ship_the_audited_wording():
     )
 
 
-def test_the_completed_heading_is_renamed_in_both_languages():
-    assert host_i18n.STRINGS["en"]["dashboard.section.completed"] == (
-        "Done, nothing to do"
-    )
-    assert host_i18n.STRINGS["cs"]["dashboard.section.completed"] == (
-        "Hotovo, není třeba nic dělat"
-    )
+def test_current_dashboard_heading_is_available_in_both_languages():
+    assert host_i18n.STRINGS["en"]["dashboard.section.current"] == "Current stays and next 30 days"
+    assert host_i18n.STRINGS["cs"]["dashboard.section.current"]
 
 
 def test_the_when_column_is_renamed_in_both_languages():
@@ -288,7 +284,7 @@ def test_a_czech_host_reads_the_new_next_actions_in_czech(seeded):
 
 def test_the_action_heading_counts_the_rows_beneath_it(seeded):
     page = _page("en")
-    rows = len(re.findall(r'<article data-stay-id=', _needs_action_section(page)))
+    rows = len(re.findall(r'<article class="dashboard-row[^>]*data-stay-id=', _needs_action_section(page)))
     assert rows >= 1, "the seeded ready stay should need action"
     assert _needs_action_heading(page) == f"Needs action now ({rows})"
 
@@ -300,20 +296,20 @@ def test_the_action_heading_never_leaks_its_placeholder(seeded):
         assert re.search(r"\(\d+\)$", heading), heading
 
 
-def test_the_completed_section_is_labelled_done_nothing_to_do(seeded):
+def test_current_section_replaces_the_completed_history_section(seeded):
     page = _page("en")
-    assert host_i18n.translate("en", "dashboard.section.completed") in page
-    assert "Recently completed" not in page
+    assert host_i18n.translate("en", "dashboard.section.current") in page
+    assert host_i18n.translate("en", "dashboard.section.completed") not in page
 
 
-def test_task_cards_keep_dates_and_deadline_context(seeded):
+def test_dashboard_rows_keep_dates_and_meaningful_task_context(seeded):
     page = _page("en")
-    assert 'class="host-task-context"' in page
-    assert 'class="deadline ' in page
+    assert 'class="dashboard-row-dates"' in page
+    assert 'class="dashboard-row-task"' in page
     assert 'data-stay-id=' in page
 
 
 def test_task_cards_translate_time_context(seeded):
     page = _page("cs")
-    assert 'class="host-task-context"' in page
+    assert 'class="dashboard-row-dates"' in page
     assert 'arrives in' not in page

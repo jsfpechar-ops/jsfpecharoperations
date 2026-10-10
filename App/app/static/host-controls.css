@@ -1,0 +1,308 @@
+/* Default interaction and geometry details for signed-in host controls.
+   Keep these rules inside the host workspace; guest and public screens use
+   their own interaction language. */
+
+.host-workspace :is(a, button, summary, [role="button"]):focus-visible {
+  outline: 2px solid var(--brand-action);
+  outline-offset: 2px;
+}
+
+.host-workspace tbody tr.clickable-row:focus-within > td {
+  background: var(--surface-hover);
+}
+
+.host-workspace .host-task:focus-within {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.host-workspace .guest-card:focus-within {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+@media (hover: hover) {
+  .host-workspace tbody tr.clickable-row:hover > td {
+    background: var(--surface-hover);
+  }
+
+  .host-workspace .host-task:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-hover);
+  }
+
+  .host-workspace .guest-card:has(a:hover, button:hover) {
+    border-color: var(--border-strong);
+    background: var(--surface-hover);
+  }
+}
+
+/* Table actions remain discoverable without a hover-only reveal, including
+   when the user is navigating rows with touch or a keyboard. */
+.host-workspace tbody tr .row-actions > * {
+  opacity: 1;
+}
+
+/* Keep action groups on a shared 42px desktop / 44px mobile track. Wrapping
+   happens between controls; labels can wrap inside a control without changing
+   its reserved height or pushing neighboring content sideways. */
+.host-workspace .action-group {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.host-workspace .action-group > .btn,
+.host-workspace .action-group > form,
+.host-workspace .action-group > a,
+.host-workspace .action-group .sync-cta {
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+
+.host-workspace .action-group > .btn,
+.host-workspace .action-group > form > .btn,
+.host-workspace .action-group .sync-cta .btn {
+  height: var(--action-height);
+  min-height: var(--action-height);
+  padding: 4px 10px;
+  line-height: 1.15;
+  white-space: normal;
+  text-align: center;
+}
+
+.host-workspace .onboarding-welcome,
+.host-workspace .onboarding-intro,
+.host-workspace .onboarding-intro > *,
+.host-workspace .onboarding-meter,
+.host-workspace .onboarding-meter > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.host-workspace .onboarding-meter strong,
+.host-workspace .onboarding-meter span {
+  overflow-wrap: anywhere;
+}
+
+.host-workspace .onboarding-meter .btn {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.host-workspace .onboarding-banner-copy {
+  min-width: 0;
+}
+
+.host-workspace .onboarding-banner-actions {
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.host-workspace .onboarding-banner-actions > a,
+.host-workspace .onboarding-banner-actions > form {
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+
+.host-workspace .onboarding-banner-actions .btn {
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+.host-workspace .onboarding-demo,
+.host-workspace .onboarding-demo > div,
+.host-workspace .onboarding-demo form {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.host-workspace .onboarding-demo form .btn {
+  white-space: normal;
+}
+
+.host-workspace .archive-type-filters {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+}
+
+.host-workspace .archive-type-filters .chip {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-color: transparent;
+  border-radius: 8px;
+  white-space: normal;
+}
+
+.host-workspace .archive-type-filters .chip.on {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+
+.host-workspace .archive-type-filters .chip:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+/* Two audit scopes stay directly selectable and quiet, matching the other
+   host segmented views without hiding the filter behind a disclosure. */
+.host-workspace .host-audit-filters {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  gap: 3px;
+  margin: 12px 0 16px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+}
+
+.host-workspace .host-audit-filter {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--ink-secondary);
+  font-size: 13.5px;
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+}
+
+.host-workspace .host-audit-filter:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.host-workspace .host-audit-filter.is-active {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+
+.host-workspace .host-audit-filter:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+/* The shared CSV and inspection PDF dialogs hold small, self-contained export
+   forms. Keep their scope fields and action tracks aligned at every width. */
+.host-workspace .csv-export-dialog {
+  width: min(520px, calc(100vw - 24px));
+  max-width: 520px;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+
+.host-workspace .csv-export-dialog form {
+  min-width: 0;
+  padding: clamp(18px, 4vw, 24px);
+}
+
+.host-workspace .csv-export-dialog form > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.host-workspace .csv-export-dialog .field {
+  min-width: 0;
+}
+
+.host-workspace .csv-export-dialog .field > label {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.host-workspace .csv-export-dialog .grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.host-workspace .csv-export-dialog input[type="date"],
+.host-workspace .csv-export-dialog select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.host-workspace .csv-export-dialog .actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px !important;
+}
+
+.host-workspace .csv-export-dialog .actions .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 10px;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+}
+
+.host-workspace .csv-export-dialog .housebook-pdf-warn {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-hover);
+}
+
+@media (max-width: 760px) {
+  .host-workspace .onboarding-welcome,
+  .host-workspace .onboarding-intro {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .host-workspace .onboarding-intro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .host-workspace .onboarding-meter {
+    width: 100%;
+    text-align: left;
+  }
+
+  .host-workspace .onboarding-banner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .host-workspace .onboarding-banner-actions > .btn,
+  .host-workspace .onboarding-banner-actions > form,
+  .host-workspace .onboarding-banner-actions > form > .btn {
+    flex: 0 1 auto;
+  }
+
+  .host-workspace .onboarding-demo {
+    align-items: flex-start;
+  }
+
+  .host-workspace .host-audit-filter {
+    min-height: 44px;
+  }
+
+  .host-workspace .csv-export-dialog .grid.two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

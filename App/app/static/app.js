@@ -3,6 +3,7 @@
 
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
   var NAV_BREAKPOINT = 960;
+  var manualCopyFormId = 0;
 
   document.documentElement.classList.add("has-js");
 
@@ -10,13 +11,351 @@
     return window.innerWidth <= NAV_BREAKPOINT;
   }
 
+  function feedbackRoot() {
+    return document.querySelector("[data-host-feedback]");
+  }
+
+  function restoreManualCopy(record) {
+    var target = record && record.target;
+    if (!target) return;
+    if (record.removeOnDismiss) {
+      target.remove();
+    } else {
+      if (record.originalParent && record.originalParent.isConnected) {
+        if (record.originalNextSibling && record.originalNextSibling.parentNode === record.originalParent) {
+          record.originalParent.insertBefore(target, record.originalNextSibling);
+        } else {
+          record.originalParent.appendChild(target);
+        }
+      }
+      target.classList.toggle("sr-only", !!record.wasSrOnly);
+      target.hidden = !!record.wasHidden;
+      target.removeAttribute("data-copy-manual-visible");
+      if (record.originalTabindex === null) target.removeAttribute("tabindex");
+      else if (record.originalTabindex !== undefined) target.setAttribute("tabindex", record.originalTabindex);
+    }
+    if (!record.removeOnDismiss) {
+      if (record.originalFormAttribute === null) target.removeAttribute("form");
+      else if (record.originalFormAttribute !== undefined) target.setAttribute("form", record.originalFormAttribute);
+    }
+    if (record.generatedFormId && record.originalForm && record.originalForm.id === record.generatedFormId) {
+      record.originalForm.removeAttribute("id");
+    }
+    var root = feedbackRoot();
+    var recovery = root && root.querySelector("[data-copy-recovery]");
+    if (recovery) {
+      var records = recovery._copyManualRecords || [];
+      recovery._copyManualRecords = records.filter(function (item) { return item !== record; });
+      if (!recovery._copyManualRecords.length) recovery.hidden = true;
+    }
+  }
+
+  function placeManualCopy(record, destination) {
+    var target = record && record.target;
+    if (!target) return;
+    if (record.originalForm) {
+      if (!record.originalForm.id) {
+        var generatedId;
+        do {
+          manualCopyFormId += 1;
+          generatedId = "ubyhost-manual-copy-form-" + manualCopyFormId;
+        } while (document.getElementById(generatedId));
+        record.originalForm.id = generatedId;
+        record.generatedFormId = generatedId;
+      }
+      target.setAttribute("form", record.originalForm.id);
+    }
+    target.classList.remove("sr-only");
+    target.hidden = false;
+    if (record.originalTabindex !== null && record.originalTabindex !== undefined) target.removeAttribute("tabindex");
+    target.setAttribute("data-copy-manual-visible", "");
+    destination.appendChild(target);
+  }
+
+  function announceFeedback(message, kind) {
+    var root = feedbackRoot();
+    if (!root) return;
+    var target = root.querySelector(kind === "error" || kind === "warning" ? "[data-feedback-alert]" : "[data-feedback-live]");
+    if (!target) return;
+    target.textContent = "";
+    window.setTimeout(function () { target.textContent = message; }, 20);
+  }
+
+  function toastKind(toast) {
+    return toast.getAttribute("data-toast-kind") || (toast.classList.contains("err") ? "error" : "info");
+  }
+
+  function initToastBehavior(toast) {
+    if (toast._feedbackReady) return;
+    toast._feedbackReady = true;
+    var close = toast.querySelector("[data-toast-close]");
+    var origin = toast._feedbackOrigin || document.activeElement;
+    var kind = toastKind(toast);
+    var auto = !toast.hasAttribute("data-toast-sticky") && (kind === "success" || kind === "info");
+    var remaining = 7000;
+    var started = 0;
+    var timer = null;
+    var holds = new Set();
+    var dismiss = function () {
+      window.clearTimeout(timer);
+      (toast._copyManualTargets || []).forEach(restoreManualCopy);
+      if (toast.contains(document.activeElement) && origin && origin.isConnected && typeof origin.focus === "function") origin.focus();
+      toast.remove();
+      pumpFeedbackQueue();
+    };
+    var pause = function (reason) {
+      if (!auto || holds.has(reason)) return;
+      if (!holds.size) {
+        window.clearTimeout(timer);
+        remaining = Math.max(0, remaining - (performance.now() - started));
+        toast.classList.add("paused");
+      }
+      holds.add(reason);
+    };
+    var resume = function (reason) {
+      if (!auto || !holds.delete(reason) || holds.size) return;
+      toast.classList.remove("paused");
+      start();
+    };
+    var start = function () {
+      if (!auto || holds.size || !toast.isConnected) return;
+      started = performance.now();
+      timer = window.setTimeout(dismiss, remaining);
+    };
+    if (close) close.addEventListener("click", dismiss);
+    toast.addEventListener("mouseenter", function () { pause("hover"); });
+    toast.addEventListener("mouseleave", function () { resume("hover"); });
+    toast.addEventListener("focusin", function () { pause("focus"); });
+    toast.addEventListener("focusout", function (event) {
+      if (!toast.contains(event.relatedTarget)) resume("focus");
+    });
+    toast._toastPause = pause;
+    toast._toastResume = resume;
+    toast._feedbackDismiss = dismiss;
+    toast._feedbackReset = function () {
+      window.clearTimeout(timer);
+      remaining = 7000;
+      if (!holds.size) start();
+    };
+    if (document.hidden) pause("hidden"); else start();
+  }
+
+  var feedbackQueue = [];
+
+  function pumpFeedbackQueue() {
+    var root = feedbackRoot();
+    var rail = root && root.querySelector("[data-feedback-rail]");
+    if (!rail || rail.querySelectorAll("[data-toast]").length >= 3 || !feedbackQueue.length) return;
+    var next = feedbackQueue.shift();
+    if (next.node) {
+      rail.appendChild(next.node);
+      initToastBehavior(next.node);
+      announceFeedback(next.message, toastKind(next.node));
+      return;
+    }
+    showFeedback(next.title, next.kind, next.detail, next.origin, next.manualTargets, next.announced);
+  }
+
+  function showFeedback(title, kind, detail, origin, manualTargets, alreadyAnnounced) {
+    var root = feedbackRoot();
+    var rail = root && root.querySelector("[data-feedback-rail]");
+    if (!rail) return null;
+    var signature = [kind, title, detail || ""].join("\u0000");
+    var current = Array.prototype.find.call(rail.querySelectorAll("[data-toast]"), function (toast) {
+      return toast.getAttribute("data-feedback-signature") === signature;
+    });
+    if (current) {
+      current._feedbackReset && current._feedbackReset();
+      announceFeedback(title + (detail ? " " + detail : ""), kind);
+      return current;
+    }
+    if (rail.querySelectorAll("[data-toast]").length >= 3) {
+      var queued = feedbackQueue.find(function (item) { return item.signature === signature; });
+      if (!queued) {
+        queued = { title: title, kind: kind, detail: detail || "", origin: origin, signature: signature, manualTargets: manualTargets || [], announced: true };
+        feedbackQueue.push(queued);
+        announceFeedback(title + (detail ? " " + detail : ""), kind);
+      }
+      return null;
+    }
+    var toast = document.createElement("div");
+    toast.className = "toast feedback-card" + (kind === "error" ? " err" : "");
+    toast.setAttribute("data-toast", "");
+    toast.setAttribute("data-toast-kind", kind);
+    toast.setAttribute("data-feedback-signature", signature);
+    if (kind === "error" || kind === "warning" || kind === "partial") toast.setAttribute("data-toast-sticky", "");
+    var icon = document.createElement("span");
+    icon.className = "feedback-card-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = kind === "success" ? "✓" : kind === "error" || kind === "warning" || kind === "partial" ? "!" : "i";
+    var body = document.createElement("div");
+    body.className = "grow feedback-card-body";
+    var heading = document.createElement("strong");
+    heading.textContent = title;
+    body.appendChild(heading);
+    if (detail) {
+      var text = document.createElement("p");
+      text.textContent = detail;
+      body.appendChild(text);
+    }
+    var close = document.createElement("button");
+    close.type = "button";
+    close.setAttribute("data-toast-close", "");
+    close.setAttribute("aria-label", root.getAttribute("data-dismiss-label") || "Dismiss notification");
+    close.textContent = "×";
+    toast.appendChild(icon);
+    toast.appendChild(body);
+    toast.appendChild(close);
+    if (origin) toast._feedbackOrigin = origin;
+    if (manualTargets && manualTargets.length) {
+      toast._copyManualTargets = manualTargets;
+      var manualBody = toast.querySelector(".feedback-card-body") || toast;
+      manualTargets.forEach(function (item) { placeManualCopy(item, manualBody); });
+    }
+    rail.appendChild(toast);
+    initToastBehavior(toast);
+    if (!alreadyAnnounced) announceFeedback(title + (detail ? " " + detail : ""), kind);
+    return toast;
+  }
+
+  function copyText(text, allowLegacyFallback) {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      try {
+        return Promise.resolve(navigator.clipboard.writeText(text)).then(function () { return true; }, function () { return false; });
+      } catch (error) {
+        return Promise.resolve(false);
+      }
+    }
+    if (allowLegacyFallback === false) return Promise.resolve(false);
+    try {
+      return Promise.resolve(document.execCommand("copy") === true);
+    } catch (error) {
+      return Promise.resolve(false);
+    }
+  }
+
+  function copyFailure(target, origin, removeOnDismiss) {
+    var root = feedbackRoot();
+    if (!root) return;
+    var toast = showFeedback(
+      root.getAttribute("data-copy-failure") || "Copy failed",
+      "error",
+      root.getAttribute("data-copy-manual") || "Select the text and copy it manually.",
+      origin
+    );
+    if (!target) return;
+    var wasSrOnly = target.classList.contains("sr-only");
+    var wasHidden = target.hidden;
+    if (wasSrOnly || wasHidden) {
+      var record = {
+        target: target,
+        wasSrOnly: wasSrOnly,
+        wasHidden: wasHidden,
+        removeOnDismiss: !!removeOnDismiss,
+        origin: origin,
+        originalParent: target.parentNode,
+        originalNextSibling: target.nextSibling,
+        originalForm: target.form || null,
+        originalFormAttribute: target.getAttribute("form"),
+        originalTabindex: target.getAttribute("tabindex")
+      };
+      if (toast) {
+        toast._copyManualTargets = toast._copyManualTargets || [];
+        toast._copyManualTargets.push(record);
+        placeManualCopy(record, toast.querySelector(".feedback-card-body") || toast);
+      } else {
+        var signature = ["error", root.getAttribute("data-copy-failure") || "Copy failed", root.getAttribute("data-copy-manual") || "Select the text and copy it manually."].join("\u0000");
+        var queued = feedbackQueue.find(function (item) { return item.signature === signature; });
+        if (queued) {
+          queued.manualTargets = queued.manualTargets || [];
+          queued.manualTargets.push(record);
+        }
+        var recovery = root.querySelector("[data-copy-recovery]");
+        var recoverySource = recovery && recovery.querySelector("[data-copy-recovery-source]");
+        if (recovery && recoverySource) {
+          recovery.hidden = false;
+          recovery._copyManualRecords = recovery._copyManualRecords || [];
+          recovery._copyManualRecords.push(record);
+          placeManualCopy(record, recoverySource);
+        }
+      }
+    }
+    if (typeof target.focus === "function") target.focus();
+    if (typeof target.select === "function") target.select();
+  }
+
+  function copySuccess(button, label) {
+    var host = document.body.classList.contains("host-workspace");
+    if (!host) return;
+    var copiedLabel = label || (feedbackRoot() && feedbackRoot().getAttribute("data-copy-success")) || "Copied";
+    prepareCopyControl(button);
+    button.classList.add("copied");
+    button.classList.add("is-copy-confirmed");
+    var slot = button.querySelector("[data-copy-label-slot]");
+    if (slot) slot.setAttribute("aria-hidden", "false");
+    button.setAttribute("aria-label", copiedLabel);
+    var oldTimer = button._copyFeedbackTimer;
+    window.clearTimeout(oldTimer);
+    button._copyFeedbackTimer = window.setTimeout(function () {
+      button.classList.remove("copied");
+      button.classList.remove("is-copy-confirmed");
+      if (slot) slot.setAttribute("aria-hidden", "true");
+      if (button._copyHadAriaLabel) button.setAttribute("aria-label", button._copyOriginalAriaLabel);
+      else button.removeAttribute("aria-label");
+    }, 1600);
+    // The in-place receipt already confirms success. A second flow card would
+    // move the copied control and every action below it while focus stays put.
+    announceFeedback(copiedLabel, "success");
+  }
+
+  function prepareCopyControl(button) {
+    if (button._copyPrepared) return;
+    button._copyPrepared = true;
+    button._copyHadAriaLabel = button.hasAttribute("aria-label");
+    button._copyOriginalAriaLabel = button.getAttribute("aria-label") || "";
+    var label = button.getAttribute("data-copied-label") || (feedbackRoot() && feedbackRoot().getAttribute("data-copy-success")) || "Copied";
+    var slot = button.querySelector("[data-copy-label-slot]");
+    if (slot) {
+      slot.textContent = label;
+      slot.hidden = false;
+      slot.classList.add("copy-label-confirmed");
+      slot.setAttribute("aria-hidden", "true");
+      button.classList.add("is-copy-label-reserved");
+    } else {
+      var textNodes = Array.prototype.filter.call(button.childNodes, function (node) {
+        return node.nodeType === Node.TEXT_NODE && node.nodeValue.trim();
+      });
+      if (textNodes.length) {
+        var stack = document.createElement("span");
+        stack.className = "copy-label-stack";
+        var normal = document.createElement("span");
+        normal.className = "copy-label-default";
+        var confirmed = document.createElement("span");
+        confirmed.className = "copy-label-confirmed";
+        confirmed.textContent = label;
+        textNodes.forEach(function (node) { normal.appendChild(node); });
+        stack.appendChild(normal);
+        stack.appendChild(confirmed);
+        button.appendChild(stack);
+      }
+    }
+    var icon = document.createElement("span");
+    icon.className = "copy-state-icon";
+    icon.setAttribute("data-copy-state-icon", "");
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = '<svg viewBox="0 0 24 24" focusable="false"><path d="m5 12 4 4L19 6"/></svg>';
+    button.appendChild(icon);
+  }
+
   function initCopy() {
     document.querySelectorAll("[data-copy]").forEach(function (button) {
+      prepareCopyControl(button);
       button.addEventListener("click", function () {
         var target = document.getElementById(button.getAttribute("data-copy"));
         if (!target) return;
         // Works for form fields and for blocks of text such as the portal
         // message, so a host never has to select a paragraph by hand.
+        var originalFocus = document.activeElement;
         var text = typeof target.value === "string" ? target.value : target.textContent;
         if (typeof target.select === "function") {
           target.select();
@@ -27,45 +366,14 @@
           selection.removeAllRanges();
           selection.addRange(range);
         }
-        try {
-          var copied = navigator.clipboard
-            ? navigator.clipboard.writeText(text)
-            : Promise.resolve(document.execCommand("copy"));
-          Promise.resolve(copied).then(function () {
-            button.classList.add("copied");
-            var label = button.getAttribute("data-copied-label");
-            var copyLabel = button.getAttribute("data-copy-label") || button.getAttribute("aria-label") || "";
-            var original = button.textContent;
-            // Icon buttons keep their icon and show the label beside it; writing
-            // to textContent would delete the SVG and never bring it back.
-            var slot = button.querySelector("[data-copy-label-slot]");
-            if (label) {
-              if (slot) {
-                slot.textContent = label;
-                slot.hidden = false;
-                button.classList.add("is-labelled");
-              } else {
-                button.textContent = label;
-              }
-              button.setAttribute("aria-label", label);
-            }
-            setTimeout(function () {
-              button.classList.remove("copied");
-              if (label) {
-                if (slot) {
-                  slot.textContent = "";
-                  slot.hidden = true;
-                  button.classList.remove("is-labelled");
-                } else {
-                  button.textContent = original;
-                }
-              }
-              if (copyLabel) button.setAttribute("aria-label", copyLabel);
-            }, 1600);
-          });
-        } catch (error) {
-          // The field stays selected so it can still be copied manually.
-        }
+        copyText(text).then(function (copied) {
+          if (copied) {
+            if (originalFocus === button && button.isConnected) button.focus();
+            copySuccess(button, button.getAttribute("data-copied-label"));
+          } else {
+            copyFailure(target, button);
+          }
+        });
       });
     });
   }
@@ -143,6 +451,17 @@
   }
 
   function initRowMenus() {
+    function focusOutsideMenu(trigger, backwards) {
+      var selector = "a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1'])";
+      var candidates = Array.prototype.filter.call(document.querySelectorAll(selector), function (item) {
+        return item.tabIndex >= 0 && !item.classList.contains("sr-only") && item.getClientRects().length > 0 &&
+          !item.closest("[hidden]") && getComputedStyle(item).visibility !== "hidden";
+      });
+      var index = candidates.indexOf(trigger);
+      var next = candidates[index + (backwards ? -1 : 1)];
+      if (next) next.focus();
+    }
+
     function closeAll() {
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
     }
@@ -158,6 +477,31 @@
         if (!wasOpen) {
           positionRowMenu(trigger, panel);
           trigger.setAttribute("aria-expanded", "true");
+          var firstItem = panel.querySelector('[role="menuitem"]');
+          if (firstItem && typeof firstItem.focus === "function") firstItem.focus();
+        }
+      });
+      panel.addEventListener("keydown", function (event) {
+        var items = Array.prototype.filter.call(panel.querySelectorAll('[role="menuitem"]'), function (item) {
+          return !item.hasAttribute("disabled") && item.getClientRects().length > 0;
+        });
+        var index = items.indexOf(document.activeElement);
+        var currentTrigger = rowMenuTrigger(panel);
+        if ((event.key === "ArrowDown" || event.key === "ArrowUp") && items.length) {
+          event.preventDefault();
+          var direction = event.key === "ArrowDown" ? 1 : -1;
+          items[(index + direction + items.length) % items.length].focus();
+        } else if ((event.key === "Home" || event.key === "End") && items.length) {
+          event.preventDefault();
+          items[event.key === "Home" ? 0 : items.length - 1].focus();
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          closeRowMenu(panel);
+          if (currentTrigger) currentTrigger.focus();
+        } else if (event.key === "Tab" && currentTrigger) {
+          event.preventDefault();
+          closeRowMenu(panel);
+          focusOutsideMenu(currentTrigger, event.shiftKey);
         }
       });
     });
@@ -276,13 +620,16 @@
     var dialog = document.getElementById("csv-export-dialog");
     if (!dialog) return;
     var form = document.getElementById("csv-export-form");
-    var pending = { base: "", params: "" };
+    var pending = { base: "", params: "", scopeLabel: "" };
+    var scope = dialog.querySelector("[data-csv-scope-label]");
 
     document.querySelectorAll("[data-csv-export]").forEach(function (button) {
       button.addEventListener("click", function (event) {
         event.preventDefault();
         pending.base = button.getAttribute("data-csv-export") || "";
         pending.params = button.getAttribute("data-csv-params") || "";
+        pending.scopeLabel = button.getAttribute("data-csv-scope-label") || "";
+        if (scope && pending.scopeLabel) scope.textContent = pending.scopeLabel;
         if (typeof dialog.showModal === "function") dialog.showModal();
       });
     });
@@ -480,24 +827,332 @@
     });
   }
 
-  /* Confirmations of something you just did should not push the page down;
-     they appear over it and leave on their own. */
+  /* Confirmations share the page lane; only transient success/info cards leave on their own. */
   function initToasts() {
-    document.querySelectorAll("[data-toast]").forEach(function (toast) {
-      function dismiss() {
-        toast.classList.add("leaving");
-        setTimeout(function () { toast.remove(); }, 220);
+    var root = feedbackRoot();
+    var rail = root && root.querySelector("[data-feedback-rail]");
+    if (!rail) return;
+    var recovery = root.querySelector("[data-copy-recovery]");
+    var recoveryClose = recovery && recovery.querySelector("[data-copy-recovery-close]");
+    if (recoveryClose && !recoveryClose._copyRecoveryBound) {
+      recoveryClose._copyRecoveryBound = true;
+      recoveryClose.addEventListener("click", function () {
+        var records = (recovery._copyManualRecords || []).slice();
+        var origin = records.length ? records[0].origin : null;
+        var root = feedbackRoot();
+        var signature = ["error", root && root.getAttribute("data-copy-failure") || "Copy failed", root && root.getAttribute("data-copy-manual") || "Select the text and copy it manually."].join("\u0000");
+        feedbackQueue = feedbackQueue.filter(function (item) { return item.signature !== signature; });
+        records.forEach(restoreManualCopy);
+        recovery.hidden = true;
+        if (origin && origin.isConnected && typeof origin.focus === "function") origin.focus();
+      });
+    }
+    if (!root._feedbackVisibilityBound) {
+      root._feedbackVisibilityBound = true;
+      document.addEventListener("visibilitychange", function () {
+        rail.querySelectorAll("[data-toast]").forEach(function (toast) {
+          if (document.hidden) toast._toastPause && toast._toastPause("hidden");
+          else toast._toastResume && toast._toastResume("hidden");
+        });
+      });
+    }
+    var toasts = Array.prototype.slice.call(rail.querySelectorAll("[data-toast]"));
+    toasts.sort(function (a, b) {
+      var score = function (toast) {
+        return toastKind(toast) === "error" ? 3 : toast.hasAttribute("data-toast-sticky") ? 2 : 1;
+      };
+      return score(b) - score(a);
+    });
+    var signatures = new Set();
+    toasts.forEach(function (toast, index) {
+      var kind = toastKind(toast);
+      var messageNode = toast.querySelector(".grow");
+      var message = messageNode ? messageNode.textContent.trim() : toast.textContent.trim();
+      var signature = [kind, message].join("\u0000");
+      if (signatures.has(signature)) {
+        toast.remove();
+        return;
       }
-      var close = toast.querySelector("[data-toast-close]");
-      if (close) close.addEventListener("click", dismiss);
-      if (!toast.hasAttribute("data-toast-sticky")) {
-        setTimeout(dismiss, 4200);
+      signatures.add(signature);
+      toast.setAttribute("data-feedback-signature", signature);
+      if (!toast.querySelector(".feedback-card-icon")) {
+        var icon = document.createElement("span");
+        icon.className = "feedback-card-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = kind === "success" ? "✓" : kind === "error" || kind === "warning" || kind === "partial" ? "!" : "i";
+        toast.insertBefore(icon, toast.firstChild);
       }
+      if (index >= 3) {
+        toast.remove();
+        feedbackQueue.push({ node: toast, message: message });
+        return;
+      }
+      initToastBehavior(toast);
+      announceFeedback(message, kind);
     });
   }
 
-  /* Changing a filter is the intent; making you press Apply afterwards is
-     a click the app can take on itself. */
+  function initFilterPanels() {
+    document.querySelectorAll("[data-filter-panel]").forEach(function (form) {
+      var toggle = form.id ? document.querySelector('[data-filter-toggle][aria-controls="' + form.id + '"]') : null;
+      var controls = Array.prototype.slice.call(form.querySelectorAll("input, select, textarea"));
+      var initial = controls.map(function (control) { return control.value; });
+      var initialRange = form.querySelector("[data-range-value]") || form.querySelector('[name="range"]');
+      var initialRangeValue = initialRange ? initialRange.value : "";
+      var rangeWasEdited = false;
+      var setOpen = function (open, focus) {
+        form.classList.toggle("is-collapsed", !open);
+        if (toggle) {
+          toggle.hidden = false;
+          toggle.setAttribute("aria-expanded", open ? "true" : "false");
+          if (focus) toggle.focus();
+        }
+      };
+      form.classList.add("is-enhanced", "is-collapsed");
+      setOpen(false, false);
+      if (toggle) toggle.addEventListener("click", function () {
+        setOpen(toggle.getAttribute("aria-expanded") !== "true", false);
+      });
+      var cancel = form.querySelector("[data-filter-cancel]");
+      if (cancel) {
+        cancel.hidden = false;
+        cancel.addEventListener("click", function () {
+          controls.forEach(function (control, index) {
+            control.value = initial[index];
+            control.dispatchEvent(new Event("change", { bubbles: true }));
+          });
+          rangeWasEdited = false;
+          setOpen(false, true);
+        });
+      }
+      form.querySelectorAll("[data-range-from], [data-range-until]").forEach(function (input) {
+        input.addEventListener("change", function () { rangeWasEdited = true; });
+      });
+      form.addEventListener("submit", function (event) {
+        var from = form.querySelector("[data-range-from]");
+        var until = form.querySelector("[data-range-until]");
+        if (from && until && from.value && until.value && from.value > until.value) {
+          event.preventDefault();
+          var error = form.querySelector("[data-range-error]");
+          if (error) { error.hidden = false; error.focus(); }
+          return;
+        }
+        if (initialRange && rangeWasEdited) {
+          initialRange.value = "custom";
+        } else if (initialRange && !rangeWasEdited && form.dataset.originalRange) {
+          initialRange.value = form.dataset.originalRange;
+        } else if (initialRange && !rangeWasEdited) {
+          initialRange.value = initialRangeValue;
+        }
+      });
+      initDateRanges(form);
+      initMonthPickers(form);
+    });
+  }
+
+  function initDateRanges(form) {
+    form.querySelectorAll("[data-date-range]").forEach(function (range) {
+      var from = range.querySelector("[data-range-from]");
+      var until = range.querySelector("[data-range-until]");
+      var trigger = range.querySelector("[data-range-trigger]");
+      var popover = range.querySelector("[data-range-popover]");
+      var draftFromInput = range.querySelector("[data-range-draft-from]");
+      var draftUntilInput = range.querySelector("[data-range-draft-until]");
+      var monthLabel = range.querySelector("[data-range-month]");
+      var grid = range.querySelector("[data-range-grid]");
+      var error = range.querySelector("[data-range-error]");
+      if (!from || !until || !trigger || !popover || !grid) return;
+      trigger.hidden = false;
+      var draftFrom = from.value;
+      var draftUntil = until.value;
+      var cursor = new Date();
+      var activeDraft = "from";
+      var pad = function (n) { return String(n).padStart(2, "0"); };
+      var iso = function (date) { return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate()); };
+      var parse = function (value) { var bits = value.split("-").map(Number); return new Date(bits[0], bits[1] - 1, bits[2]); };
+      var setCaption = function () {
+        var caption = range.querySelector("[data-range-caption]");
+        if (!caption) return;
+        var formatter = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { day: "numeric", month: "short", year: "numeric" });
+        caption.textContent = draftFrom && draftUntil ? formatter.format(parse(draftFrom)) + " – " + formatter.format(parse(draftUntil)) : draftFrom ? formatter.format(parse(draftFrom)) + " →" : draftUntil ? "← " + formatter.format(parse(draftUntil)) : trigger.dataset.allDates || "";
+      };
+      var render = function () {
+        var formatter = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { month: "long", year: "numeric" });
+        monthLabel.textContent = formatter.format(cursor);
+        grid.textContent = "";
+        var weekdayFormatter = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { weekday: "short" });
+        for (var weekday = 0; weekday < 7; weekday += 1) {
+          var labelDate = new Date(2024, 0, 1 + weekday);
+          var label = document.createElement("span");
+          label.className = "range-weekday";
+          label.setAttribute("role", "columnheader");
+          label.textContent = weekdayFormatter.format(labelDate);
+          grid.appendChild(label);
+        }
+        var first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+        var offset = (first.getDay() + 6) % 7;
+        var start = new Date(cursor.getFullYear(), cursor.getMonth(), 1 - offset);
+        for (var i = 0; i < 42; i += 1) {
+          var day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+          var value = iso(day);
+          var button = document.createElement("button");
+          button.type = "button";
+          button.className = "range-day";
+          button.textContent = String(day.getDate());
+          button.setAttribute("role", "gridcell");
+          button.setAttribute("aria-label", new Intl.DateTimeFormat(document.documentElement.lang || undefined, { dateStyle: "full" }).format(day));
+          button.dataset.rangeDate = value;
+          if (day.getMonth() !== cursor.getMonth()) button.classList.add("outside-month");
+          if (value === draftFrom || value === draftUntil) button.classList.add("selected");
+          if (draftFrom && draftUntil && value >= draftFrom && value <= draftUntil) button.classList.add("in-range");
+          button.addEventListener("click", function (event) {
+            var selected = event.currentTarget.dataset.rangeDate;
+            if (activeDraft === "from") { draftFrom = selected; if (draftUntil && draftUntil < selected) draftUntil = ""; activeDraft = "until"; }
+            else { draftUntil = selected; activeDraft = "from"; }
+            draftFromInput.value = draftFrom; draftUntilInput.value = draftUntil;
+            validate(); render();
+            var focusDate = grid.querySelector('[data-range-date="' + selected + '"]'); if (focusDate) focusDate.focus();
+          });
+          button.addEventListener("keydown", function (event) {
+            var delta = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : event.key === "ArrowDown" ? 7 : event.key === "ArrowUp" ? -7 : 0;
+            if (!delta) return;
+            event.preventDefault();
+            var next = new Date(parse(event.currentTarget.dataset.rangeDate)); next.setDate(next.getDate() + delta);
+            if (next.getMonth() !== cursor.getMonth() || next.getFullYear() !== cursor.getFullYear()) { cursor = new Date(next.getFullYear(), next.getMonth(), 1); render(); }
+            var target = grid.querySelector('[data-range-date="' + iso(next) + '"]'); if (target) target.focus();
+          });
+          grid.appendChild(button);
+        }
+      };
+      var validate = function () {
+        var reversed = !!(draftFrom && draftUntil && draftFrom > draftUntil);
+        if (error) error.hidden = !reversed;
+        var apply = range.querySelector("[data-range-apply]"); if (apply) apply.disabled = reversed;
+        return !reversed;
+      };
+      var close = function (restore) {
+        popover.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+        if (restore) { draftFrom = from.value; draftUntil = until.value; draftFromInput.value = draftFrom; draftUntilInput.value = draftUntil; validate(); render(); setCaption(); }
+        trigger.focus();
+      };
+      var open = function () {
+        draftFrom = from.value; draftUntil = until.value;
+        draftFromInput.value = draftFrom; draftUntilInput.value = draftUntil;
+        activeDraft = "from";
+        setCaption();
+        var seed = draftFrom || draftUntil || iso(new Date());
+        cursor = parse(seed); cursor.setDate(1);
+        popover.hidden = false; trigger.setAttribute("aria-expanded", "true");
+        validate(); render();
+        var bounds = trigger.getBoundingClientRect();
+        var width = Math.min(360, window.innerWidth - 8);
+        popover.style.left = Math.max(4, Math.min(bounds.left, window.innerWidth - width - 4)) + "px";
+        popover.style.top = Math.min(bounds.bottom + 8, window.innerHeight - popover.offsetHeight - 8) + "px";
+        var chosen = grid.querySelector(".selected") || grid.querySelector(".range-day:not(.outside-month)");
+        if (chosen) chosen.focus();
+      };
+      trigger.addEventListener("click", open);
+      draftFromInput.addEventListener("focus", function () { activeDraft = "from"; });
+      draftUntilInput.addEventListener("focus", function () { activeDraft = "until"; });
+      draftFromInput.addEventListener("input", function () { draftFrom = draftFromInput.value; activeDraft = "until"; validate(); render(); });
+      draftUntilInput.addEventListener("input", function () { draftUntil = draftUntilInput.value; activeDraft = "from"; validate(); render(); });
+      from.addEventListener("change", function () { draftFrom = from.value; draftFromInput.value = draftFrom; validate(); render(); setCaption(); });
+      until.addEventListener("change", function () { draftUntil = until.value; draftUntilInput.value = draftUntil; validate(); render(); setCaption(); });
+      range.querySelector("[data-range-prev]").addEventListener("click", function () { cursor.setMonth(cursor.getMonth() - 1); render(); });
+      range.querySelector("[data-range-next]").addEventListener("click", function () { cursor.setMonth(cursor.getMonth() + 1); render(); });
+      range.querySelector("[data-range-clear]").addEventListener("click", function () { draftFrom = ""; draftUntil = ""; draftFromInput.value = ""; draftUntilInput.value = ""; activeDraft = "from"; validate(); render(); });
+      range.querySelector("[data-range-apply]").addEventListener("click", function () {
+        if (!validate()) return;
+        from.value = draftFrom; until.value = draftUntil;
+        from.dispatchEvent(new Event("change", { bubbles: true }));
+        until.dispatchEvent(new Event("change", { bubbles: true }));
+        setCaption(); popover.hidden = true; trigger.setAttribute("aria-expanded", "false"); trigger.focus();
+      });
+      document.addEventListener("pointerdown", function (event) { if (!range.contains(event.target) && !popover.hidden) close(true); });
+      document.addEventListener("keydown", function (event) { if (event.key === "Escape" && !popover.hidden) { event.preventDefault(); close(true); } });
+      setCaption(); render();
+    });
+  }
+
+  function initMonthPickers(form) {
+    form.querySelectorAll("[data-month-picker]").forEach(function (picker) {
+      var nativeInput = picker.querySelector("[data-month-native]");
+      var trigger = picker.querySelector("[data-month-trigger]");
+      var panel = picker.querySelector("[data-month-grid-panel]");
+      var grid = picker.querySelector("[data-month-grid]");
+      var yearLabel = picker.querySelector("[data-month-year]");
+      if (!nativeInput || !trigger || !panel || !grid) return;
+      trigger.hidden = false;
+      var min = picker.dataset.minMonth || "2000-01";
+      var max = picker.dataset.maxMonth || "9999-12";
+      var year = Number((nativeInput.value || picker.dataset.currentMonth || max).slice(0, 4));
+      var selected = nativeInput.value;
+      var optional = picker.dataset.monthOptional === "true";
+      var monthSteps = Array.prototype.slice.call(picker.querySelectorAll(".month-step"));
+      var setCaption = function () {
+        var caption = picker.querySelector("[data-month-caption]");
+        if (caption) caption.textContent = selected ? new Intl.DateTimeFormat(document.documentElement.lang || undefined, { month: "long", year: "numeric" }).format(new Date(Number(selected.slice(0, 4)), Number(selected.slice(5, 7)) - 1, 1)) : (picker.querySelector("[data-month-all]") || {}).textContent || "";
+      };
+      var render = function () {
+        yearLabel.textContent = String(year);
+        grid.querySelectorAll("[data-month-choice]").forEach(function (button) {
+          var month = button.dataset.monthChoice.slice(5);
+          button.dataset.monthChoice = String(year) + "-" + month;
+          button.disabled = button.dataset.monthChoice < min || button.dataset.monthChoice > max;
+          button.classList.toggle("selected", button.dataset.monthChoice === selected);
+          button.setAttribute("aria-pressed", button.dataset.monthChoice === selected ? "true" : "false");
+        });
+        var prev = picker.querySelector("[data-year-prev]"); var next = picker.querySelector("[data-year-next]");
+        if (prev) prev.disabled = String(year) <= min.slice(0, 4);
+        if (next) next.disabled = String(year) >= max.slice(0, 4);
+        var anchor = selected || picker.dataset.currentMonth || max;
+        var anchorBits = anchor.split("-").map(Number);
+        var prior = new Date(anchorBits[0], anchorBits[1] - 2, 1);
+        var after = new Date(anchorBits[0], anchorBits[1], 1);
+        var priorKey = prior.getFullYear() + "-" + String(prior.getMonth() + 1).padStart(2, "0");
+        var afterKey = after.getFullYear() + "-" + String(after.getMonth() + 1).padStart(2, "0");
+        var previousStep = picker.querySelector("[data-month-prev]");
+        var nextStep = picker.querySelector("[data-month-next]");
+        if (previousStep) previousStep.disabled = priorKey < min;
+        if (nextStep) nextStep.disabled = afterKey > max;
+      };
+      monthSteps.forEach(function (step) {
+        step.hidden = false;
+        step.addEventListener("click", function () {
+          var anchor = selected || picker.dataset.currentMonth || max;
+          var bits = anchor.split("-").map(Number);
+          var delta = step.hasAttribute("data-month-prev") ? -1 : 1;
+          var date = new Date(bits[0], bits[1] - 1 + delta, 1);
+          var candidate = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+          if (candidate < min || candidate > max) return;
+          selected = candidate; nativeInput.value = candidate; setCaption(); render();
+        });
+      });
+      var close = function (restore) { panel.hidden = true; trigger.setAttribute("aria-expanded", "false"); if (restore) selected = nativeInput.value; setCaption(); trigger.focus(); };
+      trigger.addEventListener("click", function () {
+        selected = nativeInput.value; year = Number((selected || picker.dataset.currentMonth || max).slice(0, 4));
+        panel.hidden = false; trigger.setAttribute("aria-expanded", "true"); render();
+        var bounds = trigger.getBoundingClientRect();
+        var width = Math.min(360, window.innerWidth - 8);
+        panel.style.left = Math.max(4, Math.min(bounds.left, window.innerWidth - width - 4)) + "px";
+        panel.style.top = Math.min(bounds.bottom + 8, window.innerHeight - panel.offsetHeight - 8) + "px";
+        var focused = grid.querySelector(".selected:not([disabled])") || grid.querySelector("[data-month-choice]:not([disabled])"); if (focused) focused.focus();
+      });
+      picker.querySelectorAll("[data-month-choice]").forEach(function (button) { button.addEventListener("click", function () { selected = button.dataset.monthChoice; nativeInput.value = selected; nativeInput.dispatchEvent(new Event("change", { bubbles: true })); setCaption(); render(); panel.hidden = true; trigger.setAttribute("aria-expanded", "false"); trigger.focus(); }); });
+      var prev = picker.querySelector("[data-year-prev]"); var next = picker.querySelector("[data-year-next]");
+      if (prev) prev.addEventListener("click", function () { year -= 1; render(); });
+      if (next) next.addEventListener("click", function () { year += 1; render(); });
+      var all = picker.querySelector("[data-month-all-choice]");
+      if (all && optional) all.addEventListener("click", function () { selected = ""; nativeInput.value = ""; nativeInput.dispatchEvent(new Event("change", { bubbles: true })); setCaption(); render(); panel.hidden = true; trigger.setAttribute("aria-expanded", "false"); trigger.focus(); });
+      nativeInput.addEventListener("change", function () { selected = nativeInput.value; setCaption(); render(); });
+      document.addEventListener("pointerdown", function (event) { if (!picker.contains(event.target) && !panel.hidden) close(true); });
+      document.addEventListener("keydown", function (event) { if (event.key === "Escape" && !panel.hidden) { event.preventDefault(); close(true); } });
+      setCaption(); render();
+    });
+  }
+
+  /* Legacy auto-submit remains available only to forms that explicitly opt in. */
   function initAutoFilters() {
     document.querySelectorAll("form[data-auto-submit]").forEach(function (form) {
       form.querySelectorAll("select, input[type=date], input[type=month]").forEach(function (input) {
@@ -586,15 +1241,32 @@
     var shell = document.getElementById("confirm-form");
     var title = document.getElementById("confirm-title");
     var body = document.getElementById("confirm-body");
+    var proceed = shell && shell.querySelector("[data-confirm-proceed]");
     if (!dialog || !shell) return;
     var pendingForm = null;
     var pendingButton = null;
+
+    function isArchiveConfirmation(form, button) {
+      var action = button && (button.getAttribute("formaction") || (button.form && button.form.getAttribute("action")));
+      if (!action && form) action = form.getAttribute("action");
+      if (!action) return false;
+      try {
+        return new URL(action, window.location.href).pathname.replace(/\/+$/, "").endsWith("/archive");
+      } catch (error) {
+        return false;
+      }
+    }
 
     function openDialog(message, form, button) {
       pendingForm = form || null;
       pendingButton = button || null;
       if (title) title.textContent = "";
       if (body) body.textContent = message || "";
+      if (proceed) {
+        proceed.textContent = isArchiveConfirmation(form, button)
+          ? proceed.getAttribute("data-confirm-archive-label") || proceed.getAttribute("data-confirm-default-label") || proceed.textContent
+          : proceed.getAttribute("data-confirm-default-label") || proceed.textContent;
+      }
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
       if (typeof dialog.showModal === "function") dialog.showModal();
     }
@@ -655,6 +1327,9 @@
     var selected = 0;
     var goPrefix = false;
     var goTimer = null;
+    var commandCopyError = null;
+    var commandResultsMaxHeight = null;
+    var commandOpener = null;
     var recentKey = "ubyhost-command-recents";
     var recents = [];
     try { recents = JSON.parse(localStorage.getItem(recentKey) || "[]"); } catch (error) { recents = []; }
@@ -685,13 +1360,54 @@
       form.submit();
     }
 
+    function clearCommandCopyError() {
+      if (commandCopyError) commandCopyError.remove();
+      commandCopyError = null;
+      if (results && commandResultsMaxHeight !== null) {
+        results.style.maxHeight = commandResultsMaxHeight;
+        commandResultsMaxHeight = null;
+      }
+    }
+
+    function showCommandCopyFailure(value) {
+      clearCommandCopyError();
+      if (!command || !results) return;
+      var root = feedbackRoot();
+      var notice = document.createElement("div");
+      notice.className = "command-copy-error";
+      notice.setAttribute("role", "alert");
+      var heading = document.createElement("strong");
+      heading.textContent = (root && root.getAttribute("data-copy-failure")) || "Copy failed";
+      var instructions = document.createElement("p");
+      instructions.textContent = (root && root.getAttribute("data-copy-manual")) || "Select the text and copy it manually.";
+      var source = document.createElement("textarea");
+      source.readOnly = true;
+      source.value = value;
+      source.setAttribute("aria-label", instructions.textContent);
+      notice.append(heading, instructions, source);
+      commandResultsMaxHeight = results.style.maxHeight;
+      results.style.maxHeight = "min(320px, 40vh)";
+      results.insertAdjacentElement("afterend", notice);
+      commandCopyError = notice;
+      source.focus();
+      source.select();
+    }
+
     function runItem(item) {
       var recentId = item.url || item.label;
       recents = [recentId].concat(recents.filter(function (value) { return value !== recentId; })).slice(0, 8);
       try { localStorage.setItem(recentKey, JSON.stringify(recents)); } catch (error) {}
       if (item.copy) {
-        Promise.resolve(navigator.clipboard && navigator.clipboard.writeText(item.copy)).then(function () {
+        clearCommandCopyError();
+        copyText(item.copy, false).then(function (copied) {
+          if (!copied) {
+            showCommandCopyFailure(item.copy);
+            return;
+          }
+          clearCommandCopyError();
           if (results) results.textContent = results.getAttribute("data-copied") || "";
+          var feedbackOrigin = commandOpener && commandOpener.isConnected ? commandOpener : document.activeElement;
+          showFeedback((feedbackRoot() && feedbackRoot().getAttribute("data-command-copied")) || "Copied", "success", "", feedbackOrigin);
           setTimeout(function () { if (command.open) command.close(); }, 450);
         });
       } else if (item.method === "post") {
@@ -785,8 +1501,10 @@
 
     function openCommand() {
       if (!command || !input) return;
+      clearCommandCopyError();
       document.dispatchEvent(new Event("host:close-navigation"));
       if (!command.open) {
+        commandOpener = document.activeElement;
         if (typeof command.showModal === "function") command.showModal();
         else command.setAttribute("open", "");
       }
@@ -825,6 +1543,7 @@
       button.addEventListener("click", closeCommand);
     });
     if (command) {
+      command.addEventListener("close", clearCommandCopyError);
       command.addEventListener("click", function (event) {
         if (event.target === command) closeCommand();
       });
@@ -840,7 +1559,7 @@
     });
 
     if (input) {
-      input.addEventListener("input", function () { render(input.value); });
+      input.addEventListener("input", function () { clearCommandCopyError(); render(input.value); });
       input.addEventListener("keydown", function (event) {
         if ((event.key === "ArrowDown" || event.key === "ArrowUp") && visible.length) {
           event.preventDefault();
@@ -927,13 +1646,9 @@
 
     if (button) {
       button.addEventListener("click", function () {
-        var filter = button.closest("form");
-        var apartment = filter && filter.querySelector('[name="apartment"]');
-        var status = filter && filter.querySelector('[name="status"]');
-        var parts = [];
-        if (apartment && apartment.value) parts.push(apartment.options[apartment.selectedIndex].text.trim());
-        if (status && status.value !== "active") parts.push(status.options[status.selectedIndex].text.trim());
-        var label = parts.join(" · ") || document.title;
+        var appliedSummary = document.querySelector('[data-filter-summary]');
+        var label = appliedSummary ? appliedSummary.textContent.replace(/\s*[·•]\s*/g, " — ").trim() : "";
+        if (!label) label = document.title;
         var url = window.location.pathname + window.location.search;
         views = views.filter(function (view) { return view.url !== url; });
         views.unshift({ label: label, url: url });
@@ -1012,6 +1727,7 @@
     initCsvExport();
     initHousebookPdfExport();
     initToasts();
+    initFilterPanels();
     initAutoFilters();
     initGeneratedPasswords();
     initResetPasswordDialog();

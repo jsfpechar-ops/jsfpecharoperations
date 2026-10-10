@@ -15,7 +15,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db
+from app import auth, db, host_i18n
 from app.main import app
 from tests.conftest import login_as
 
@@ -250,17 +250,34 @@ def test_the_czech_page_carries_the_czech_copy(host):
     assert "Připraveno pro hosty" in page.text
     assert "Připraveno k hlášení policii" in page.text
     assert "Chybí:" in page.text
-    assert "nutné pro hlášení" in page.text
 
 
-def test_the_eight_reporting_fields_carry_the_needed_to_report_tag(host):
+def test_the_eight_reporting_fields_keep_localized_labels_and_controls_without_badges(host):
     client, apartment_id = host
 
-    page = client.get(f"/apartments/{apartment_id}?lang=en")
+    fields = (
+        ("uby_idub", None, "text"),
+        ("uby_mark", "apartment.form.ubyport.mark_label", "text"),
+        ("uby_name", "automation.facility_name", "text"),
+        ("addr_house_no", "apartment.form.addr.house_no", "text"),
+        ("addr_zip", "apartment.form.addr.zip", "text"),
+        ("addr_obec", "apartment.form.addr.obec", "text"),
+        ("uby_ws_user", "automation.login", "text"),
+        ("uby_ws_password", "automation.password", "password"),
+    )
 
-    assert page.text.count("needed to report") == len(REPORT_FIELDS)
-    for field in REPORT_FIELDS:
-        assert "needed to report" in _label(page.text, field), field
+    for lang in ("en", "cs"):
+        page = client.get(f"/apartments/{apartment_id}?lang={lang}")
+        badge = host_i18n.STRINGS[lang]["apartment.form.needed_to_report"]
+        assert badge not in page.text
+        for field, label_key, input_type in fields:
+            expected_label = "IDUB" if label_key is None else host_i18n.STRINGS[lang][label_key]
+            label = _label(page.text, field)
+            assert expected_label in label, (lang, field, expected_label)
+            assert badge not in label, (lang, field)
+            assert (
+                f'type="{input_type}" id="{field}" name="{field}"' in page.text
+            ), (lang, field, input_type)
 
 
 def test_the_optional_address_fields_are_not_tagged(host):

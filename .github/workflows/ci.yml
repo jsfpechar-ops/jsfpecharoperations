@@ -95,12 +95,15 @@ jobs:
           UBYHOST_UBYPORT_ENV: mock
           UBYHOST_DEPLOYMENT: staging
           UBYHOST_ENABLE_SCHEDULER: "0"
-          # The smoke run drives the server as an anonymous staging host: no
-          # administrator is created, so no page answers with a redirect to
-          # /login. It also has to point the server at the same scratch data
-          # directory the script seeds, or the pages render without fixtures.
-          UBYHOST_BOOTSTRAP_ADMIN: "0"
+          # The smoke run exercises actual host pages through staging's
+          # synthetic no-login profile. Its fixtures belong to this scratch
+          # database and are scoped to the bootstrapped synthetic admin.
+          UBYHOST_STAGING_NO_LOGIN: "1"
+          UBYHOST_BOOTSTRAP_ADMIN: "1"
+          UBYHOST_ADMIN_EMAIL: smoke@example.invalid
+          UBYHOST_ADMIN_USERNAME: smoke-admin
           UBYHOST_GUEST_PIN: "0"
+          UBYHOST_MAIL_BACKEND: disabled
           UBYHOST_DATA_DIR: ${{ runner.temp }}/ubyhost-smoke
           PORT: "18080"
         run: |

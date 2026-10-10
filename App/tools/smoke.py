@@ -32,8 +32,7 @@ import httpx  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from PIL import Image  # noqa: E402
 
-from app import claim, db, i18n, mail  # noqa: E402
-from app.landing_i18n import LANDING_STRINGS  # noqa: E402
+from app import claim, db, host_i18n, i18n, mail  # noqa: E402
 from app.routes import guest as guest_routes  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -96,12 +95,22 @@ def seed():
     if previous:
         db.execute("DELETE FROM apartment WHERE id = ?", (previous["id"],))
         db.execute("DELETE FROM legal_entity WHERE name = ?", ("Smoke s.r.o.",))
+    admin = db.query_one(
+        "SELECT id FROM user_account WHERE role = 'admin' AND active = 1 ORDER BY id LIMIT 1"
+    )
+    if not admin:
+        raise RuntimeError(
+            "The server smoke needs a bootstrapped synthetic administrator; "
+            "use UBYHOST_DEPLOYMENT=staging and UBYHOST_STAGING_NO_LOGIN=1."
+        )
+    owner_user_id = admin["id"]
     now = db.utcnow()
     today = date.today()
     entity_id = db.insert(
         "legal_entity",
         {
             "name": "Smoke s.r.o.",
+            "owner_user_id": owner_user_id,
             "seat": "Korunní 1, 120 00 Praha 2",
             "ico": "12345678",
             "contact_email": "privacy@example.com",
@@ -111,6 +120,7 @@ def seed():
     apartment_id = db.insert(
         "apartment",
         {
+            "owner_user_id": owner_user_id,
             "legal_entity_id": entity_id,
             "internal_name": "Smoke flat",
             "city_en": "Prague",
@@ -282,17 +292,35 @@ def main(url=None):
     check(
         host,
         "/",
-        must_contain=["UbyHost", LANDING_STRINGS["cs"]["landing.footer.guestbook"]],
-        must_not_contain=["row-arrow"],
+        must_contain=[
+            host_i18n.STRINGS["en"]["dashboard.title"],
+            host_i18n.STRINGS["en"]["dashboard.section.current"],
+            "Smoke flat",
+        ],
+        must_not_contain=["/login", "row-arrow"],
     )
     check(
         host,
-        "/?lang=en",
-        must_contain=["UbyPort", LANDING_STRINGS["en"]["landing.benefit.calendar.title"]],
-        must_not_contain=["row-arrow"],
+        "/?lang=cs",
+        must_contain=[
+            host_i18n.STRINGS["cs"]["dashboard.title"],
+            host_i18n.STRINGS["cs"]["dashboard.section.current"],
+            "Smoke flat",
+        ],
+        must_not_contain=["/login", "row-arrow"],
     )
     check(host, "/housebook?lang=en", must_contain=["data-csv-export"])
-    check(host, "/guest-links?lang=en", must_contain=["Generate a new PIN"])
+    check(
+        host,
+        "/guest-links?lang=en",
+        must_contain=[
+            host_i18n.STRINGS["en"]["guest_links.title"],
+            host_i18n.STRINGS["en"]["guest_links.pin"],
+            host_i18n.STRINGS["en"]["guest_links.new_pin"],
+            'name="return_to" value="/guest-links"',
+            f'action="/apartments/{apartment_id}/regenerate-pin"',
+        ],
+    )
 
     stays_page = check(host, "/reservations?range=all").text
     order = [
