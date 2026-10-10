@@ -8,12 +8,12 @@ The rules behind each box are in [ttlock-door-codes](ttlock-door-codes.md) §6. 
 flowchart TD
     A[Last guest form saved] --> B{Property has a lock,<br/>check-in and check-out hours?}
     B -- no --> Z[Nothing happens]
-    B -- yes --> C[Ask TTLock for a random code<br/>for check-in -1 h to check-out +1 h<br/>cloud only, no gateway]
+    B -- yes --> C[Ask the TTLock cloud for a random code<br/>for check-in -1 h to check-out +1 h<br/>nothing is sent to the lock:<br/>the lock checks the code by itself]
 
     C -- code --> OK1[Guest sees the code at once<br/>and gets it by mail, host in CC<br/>use it within 24 h of the start]
     C -- "-1026 period taken" --> W[Mail host and support:<br/>an older code covers these hours,<br/>check it was deleted]
     C -- network or timeout --> R[Worker tries again in 1 min<br/>first looks for the code by name and window]
-    C -- no permission or login --> F
+    C -- UbyHost's access was removed --> F
 
     R -- code --> OK1
     R -- fails again --> F
@@ -21,10 +21,10 @@ flowchart TD
     W --> ADD[Within about 1 min the worker<br/>creates a custom code<br/>through the gateway]
     ADD -- code --> OK2[Guest sees the code<br/>and gets it by mail, host in CC<br/>no 24 h rule]
     ADD -- "-2012 no gateway" --> F
-    ADD -- gateway busy --> RB[Try again after 1 min, then 5 min]
+    ADD -- gateway not answering --> RB[Try again after 1 min, then 5 min]
     RB -- code --> OK2
-    RB -- still busy --> F
-    ADD -- no permission, lock full --> F
+    RB -- still no answer --> F
+    ADD -- access removed, lock memory full --> F
 
     F[Hand over: host mail<br/>create a code in the TTLock app<br/>Guest sees: your host will send you the door code]
 
