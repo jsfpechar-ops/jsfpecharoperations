@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-10; host geometry audit; door-code 0037 unbuilt.
+Updated: 2026-10-10; host geometry review.
 
 ## Production
 
@@ -10,7 +10,7 @@ Updated: 2026-10-10; host geometry audit; door-code 0037 unbuilt.
 
 ## Now
 
-- [UI 0040](../tasks/0040-host-wide-geometry-audit.md): PR #338 staging geometry correction underway.
+- [UI 0040](../tasks/0040-host-wide-geometry-audit.md): PR #338 checked: 3,030 passed, zero skips; CI/staging pending.
 - Lawyer: **LAWYER REVIEW** v1.7 (0005).
 - Optional: #280+#281 admin preview.
 

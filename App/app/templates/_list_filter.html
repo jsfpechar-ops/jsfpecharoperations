@@ -92,7 +92,7 @@
   </div>
   <div class="filter-panel-actions">
     <button class="btn primary filter-apply" type="submit">{{ t('host.filter.apply_filters') }}</button>
-    <button class="btn ghost" type="button" data-filter-cancel hidden>{{ t('common.cancel') }}</button>
+    <button class="btn ghost" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
     {% if filter_active %}<a class="btn ghost list-filter-reset" href="{{ filter_reset_href }}">{{ t('host.filter.reset') }} <span class="list-filter-count" aria-label="{{ t('filter.active', count=filter_active) }}">{{ filter_active }}</span></a>{% endif %}
   </div>
 </form>

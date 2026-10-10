@@ -19,7 +19,7 @@ else:
 import uvicorn
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db, onboarding
+from app import auth, claim, db, demo, onboarding
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
@@ -83,6 +83,18 @@ def dashboard_rich_host():
         "permalink_pin": "123456", "automation_mode": "manual",
         "submit_after_hours": 24, "active": 1, "created_at": now,
     })
+    # Exercise the dashboard's real calendar-sync and clear-demo actions in
+    # screenshots without calling either action or using a live feed.
+    demo_apartment_id = db.insert("apartment", {
+        "legal_entity_id": entity_id, "owner_user_id": owner_id,
+        "internal_name": demo.DEMO_APARTMENT, "permalink_token": f"demo{secrets.token_hex(4)}",
+        "permalink_pin": "123456", "automation_mode": "manual",
+        "submit_after_hours": 24, "active": 1, "created_at": now,
+    })
+    db.insert("ical_feed", {
+        "apartment_id": demo_apartment_id, "url": "https://example.test/synthetic.ics",
+        "label": "Synthetic calendar", "active": 1, "created_at": now,
+    })
     today = claim.prague_today()
 
     def stay(label, arrival, departure, expected=1):
@@ -126,6 +138,7 @@ def dashboard_rich_host():
     db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
     db.execute("DELETE FROM guest WHERE reservation_id IN (SELECT id FROM reservation WHERE apartment_id = ?)", (apartment_id,))
     db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
+    db.execute("DELETE FROM apartment WHERE id = ?", (demo_apartment_id,))
     db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
     db.execute("DELETE FROM legal_entity WHERE id = ?", (entity_id,))
     db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
@@ -236,7 +249,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
         for locale in ("en", "cs"):
-            for width in (360, 390, 1280):
+            for width in (360, 390, 1280, 1440, 1680, 1920, 2048):
                 context = browser.new_context(viewport={"width": width, "height": 1000})
                 context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
                 page = context.new_page()
@@ -279,6 +292,32 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 assert page.locator(".dashboard-stat.waiting").get_attribute("href") == "/reservations"
                 assert page.get_by_text("No guest forms are currently outstanding.", exact=True).count() == 0
                 assert page.evaluate("() => document.documentElement.scrollWidth - innerWidth") <= 1
+
+                header_actions = page.locator(".dashboard-actions")
+                assert header_actions.locator('a[href="/reservations?new=1"]').is_visible()
+                assert header_actions.locator('form[action="/sync"]').is_visible()
+                assert header_actions.locator('form[action="/demo/reset"]').is_visible()
+                header_buttons = header_actions.locator(
+                    ".action-group > .btn, .action-group > form > .btn, .action-group .sync-cta .btn"
+                )
+                assert header_buttons.count() == 3
+                header_boxes = [button.bounding_box() for button in header_buttons.all()]
+                assert all(abs(box["height"] - (44 if width <= 390 else 42)) <= 1 for box in header_boxes)
+                if width > 390:
+                    assert max(box["y"] for box in header_boxes) - min(box["y"] for box in header_boxes) <= 2
+
+                if width >= 1440:
+                    # On ultrawide screens the dashboard title/actions, count
+                    # cards, and queue should share the same centered lane.
+                    lane_boxes = page.evaluate("""() => [
+                      '.host-today-head', '.dashboard-stats', '#needs-action'
+                    ].map(selector => {
+                      const rect = document.querySelector(selector).getBoundingClientRect();
+                      return {selector, left: rect.left, right: rect.right};
+                    })""")
+                    for box in lane_boxes[1:]:
+                        assert abs(box["left"] - lane_boxes[0]["left"]) <= 2, lane_boxes
+                        assert abs(box["right"] - lane_boxes[0]["right"]) <= 2, lane_boxes
 
                 # Save the base view before interaction, with real statuses and
                 # all four positive counters visible.

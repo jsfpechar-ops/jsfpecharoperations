@@ -160,6 +160,13 @@ def test_default_stays_are_unbounded_and_native_get_filters_work_without_javascr
             page.locator("#stays-filter-panel .filter-apply").click()
         assert "range=custom" in page.url and "archive_scope=1" in page.url
         assert "10.03.2026" in page.locator(".stays-view").inner_text()
+        page.goto(base + "/invoices?lang=en")
+        empty_month = page.locator(".month-control.is-empty")
+        assert empty_month.is_visible()
+        assert page.locator("[data-month-all]").is_visible()
+        assert page.locator("[data-month-native]").is_visible()
+        assert page.locator("[data-month-trigger]").is_hidden()
+        assert empty_month.evaluate("element => getComputedStyle(element).borderLeftStyle") == "dashed"
         browser.close()
 
 
@@ -378,6 +385,8 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
             for lang in ("en", "cs"):
                 for route in routes:
                     page.goto(base + route + "?lang=" + lang)
+                    if route == "/invoices":
+                        page.wait_for_function("document.documentElement.classList.contains('has-js')")
                     toolbar = page.locator("[data-filter-toolbar]")
                     assert toolbar.is_visible(), f"{width}px {lang} {route}"
                     capture = width in (390, 1280)
@@ -411,6 +420,25 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                         _capture(page, f"{name}-{lang}-{width}-expanded")
                     else:
                         page.locator("[data-filter-toggle]").click()
+                    if route == "/invoices":
+                        month_control = page.locator(".month-control.is-empty")
+                        trigger = page.locator("[data-month-trigger]")
+                        control_box = month_control.bounding_box()
+                        trigger_box = trigger.bounding_box()
+                        assert control_box and trigger_box and trigger.is_visible(), (
+                            f"{width}px {lang}: enhanced All dates month trigger must be visible"
+                        )
+                        for edge in ("x", "y", "width", "height"):
+                            assert abs(control_box[edge] - trigger_box[edge]) <= 1, {
+                                "width": width, "lang": lang, "wrapper": control_box, "trigger": trigger_box,
+                            }
+                        wrapper_style = month_control.evaluate("""element => ({
+                          border: getComputedStyle(element).borderLeftWidth,
+                          background: getComputedStyle(element).backgroundColor
+                        })""")
+                        assert wrapper_style["border"] == "0px" and wrapper_style["background"] == "rgba(0, 0, 0, 0)", (
+                            width, lang, wrapper_style
+                        )
                     date_trigger = page.locator("[data-range-trigger]")
                     if date_trigger.count():
                         date_trigger.click()

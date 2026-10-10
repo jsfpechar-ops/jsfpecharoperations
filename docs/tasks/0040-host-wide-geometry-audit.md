@@ -1,6 +1,6 @@
 # 0040: Correct the host design across screen sizes
 
-Status: in-progress
+Status: review
 Depends on: 0032–0039 | Base commit: fd44e6acc0de4d082a32818efedfbd83b6c2b7fc | Branch: task/host-design-staging
 Executor: owner-authorized Luna team; Codex reviews and coordinates.
 
@@ -34,12 +34,12 @@ Validate measurable alignment, not only absence of horizontal overflow.
 | Owner | Allowed implementation files/regions |
 |---|---|
 | luna_properties | App/app/static/host.css; App/app/static/host-controls.css; shared page_header macro in App/app/templates/_components.html if necessary; property/entity/address template presentation in App/app/templates/ only after naming the exact files in its report |
-| luna_filters | App/app/templates/_list_filter.html, reservations.html, stay_fees.html, invoices.html, housebook.html, submissions.html and filter sections in reservation_detail.html; App/app/static/app.js filter region only if a browser-proven geometry defect needs it |
-| luna_dashboard | App/app/templates/dashboard.html; App/tests/test_host_dashboard_browser.py if independent dashboard state/row checks are needed; no reporting/query logic changes |
-| luna_invoice | App/app/templates/invoice_form.html, invoice_stay_picker.html, invoice_detail.html, invoice_settings.html; no calculations, PDF or validation changes |
-| luna_executor | App/app/static/app.js feedback/copy/search regions and App/app/templates/base.html feedback markup only; investigate notification obstruction without weakening persistent warning/Undo semantics |
-| luna_validation | App/tests/test_host_geometry.py, test_host_controls_browser.py, test_host_filter_panels_browser.py; additional App/tests/test_host_wide_geometry_browser.py if clearer; browser artifacts under generated_images/host-wide-audit/ using synthetic records only |
-| Codex | This brief, docs/DESIGN.md, docs/HOST_APP_DESIGN.md, docs/context/status.md, ui-decisions.md, known-issues.md, docs/plans/host-design-application-review.md; outside-App review gallery helper and final delivery metadata |
+| luna_filters | App/app/templates/_list_filter.html, reservations.html, stay_fees.html, invoices.html, housebook.html, submissions.html and filter sections in reservation_detail.html; App/app/host_i18n.py invoices.empty EN/CS body copy only, plus existing Cancel key use; App/app/static/app.js filter region only if a browser-proven geometry defect needs it |
+| luna_dashboard | App/app/templates/dashboard.html; App/tests/test_host_quiet_dashboard_browser.py for independent dashboard state/row checks; no reporting/query logic changes |
+| luna_invoice | App/app/templates/invoice_form.html, invoice_stay_picker.html, invoice_detail.html, invoice_settings.html; App/tests/test_host_invoice_items_browser.py actual runtime geometry/screenshots; no calculations, PDF or validation changes |
+| luna_executor | App/app/static/app.js feedback/copy/search regions; App/app/templates/base.html feedback markup and changed-asset cache tokens; App/tests/test_host_feedback_browser.py feedback/manual-copy geometry checks; preserve persistent warning/Undo semantics |
+| luna_validation | App/tests/test_host_geometry.py, test_host_controls_browser.py, test_host_filter_panels_browser.py; App/tests/test_alert_stack.py obsolete fixed-corner expectation only, preserving alert semantics tests; App/tests/test_first_property_step.py Property table-header assertion only, allowing the new semantic column class while retaining the visible-word check; additional App/tests/test_host_wide_geometry_browser.py if clearer; browser artifacts under generated_images/host-wide-audit/ using synthetic records only |
+| Codex | This brief, docs/tasks/0040-report.md final review, docs/DESIGN.md, docs/HOST_APP_DESIGN.md, docs/context/status.md, ui-decisions.md, known-issues.md, docs/plans/host-design-application-review.md and host-design-staging-handoff.md; docs/plans/invoice-address-check.md source-access status only; docs/tasks/0040-evidence/ representative unmodified synthetic PNGs and index; outside-App review gallery helper and final delivery metadata |
 
 All owners may read host templates/CSS/JS and existing tests solely for this
 owner-requested audit. Only the shared CSS owner writes host CSS. Page owners
@@ -64,6 +64,23 @@ regions. Reports: docs/tasks/0040-<owner>-report.md, at most 1,500 tokens each.
 4. Feedback owner measures toast obstruction and recommends/fixes usable
    placement and compact composition with the shared CSS owner. Preserve
    actual outcome severity, actionable persistent failures and Undo.
+   Use an aligned in-flow host feedback region after the safety notice so
+   persistent cards cannot cover row actions. Actual asynchronous copy results
+   remain visible on their originating button; do not invent save/report hooks.
+   The screenshot's persistent corner reminder is a separate component:
+   `_host_alerts.html` renders `.notification-stack`, already within main but
+   still positioned fixed by host.css. Correct that stack to the centered
+   page flow too, including mobile overrides. Verify actual persisted alerts,
+   their stay/property links and dismissal rules; a toast-only fixture cannot
+   prove this defect fixed. Preserve non-dismissible date/signature warnings.
+   Direct main-child Back links also align with their header/results lane.
+   Measured copy-success card insertion moves the originating control by 54px.
+   Remove that redundant inline-copy card only: keep Copied/checkmark and one
+   live announcement, with stable button/page positions. Preserve server
+   Save/report/Undo notices and command-palette feedback.
+   On an all-unconfigured fee list, show Property/Status/actions instead of
+   empty numerical metric columns. Configured/mixed fee tables retain their
+   metrics and existing calculations; unset cells must not distort tracks.
 5. Validation owner tests 360, 390, 760, 1024, 1280, 1440, 1680, 1920 and
    2048 CSS-pixel widths. Representative expanded/collapsed sidebar and
    EN/CS states must be covered. Assert aligned shared edges within 2 CSS
@@ -102,12 +119,12 @@ From the repository root Codex runs `python3 scripts/context_lint.py`.
 
 ## 7. Acceptance
 
-- [ ] Before evidence reproduces the shared lane mismatch at wide widths.
-- [ ] All audited pages have coherent working lanes and aligned controls.
-- [ ] Long-label, empty, populated and unset states remain geometrically sound.
-- [ ] Notifications permit action access and retain truthful outcome semantics.
-- [ ] Wide/mobile Chromium checks pass with no browser skips.
-- [ ] Final evidence and application validation are reviewed and PR updated.
+- [x] Before evidence reproduces the shared lane mismatch at wide widths.
+- [x] All audited pages have coherent working lanes and aligned controls.
+- [x] Long-label, empty, populated and unset states remain geometrically sound.
+- [x] Notifications permit action access and retain truthful outcome semantics.
+- [x] Wide/mobile Chromium checks pass with no browser skips.
+- [x] Final evidence and application validation are reviewed and PR updated.
 
 ## 8. Stop and ask
 
@@ -120,3 +137,10 @@ authorized full host audit. Never bypass checks or change business semantics.
 Each owner writes its 0040 report with changed paths, measured findings,
 checks and evidence. Validation records before/after geometry, test counts,
 skips and remaining limitations. Codex accepts only demonstrated outcomes.
+
+Local acceptance: final required-Chromium coverage run passed 3,030 tests with
+zero skips, seven warnings and 89.57% coverage (86% threshold). The refreshed
+444-combination matrix records zero lane mismatches. See the
+[validation report](0040-luna_validation-report.md) and
+[representative captures](0040-evidence/README.md). PR #338 is the review
+deliverable; CI and the owner's next staging deployment remain separate.

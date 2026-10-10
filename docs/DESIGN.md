@@ -88,10 +88,24 @@ Wide-screen audit requirement, 2026-10-10: each working page has one centered
 content lane. Its safety notice, contextual navigation, heading/actions,
 filter toolbar, expanded filters and results share the same left and right
 edges. Narrower forms may have their own lane, with headings and actions aligned
-to that form. Do not independently stretch headings or reset only a toolbar's
+to that form; shared safety notices and contextual navigation retain the host
+lane. Do not independently stretch headings or reset only a toolbar's
 horizontal margins. Browser review must measure these edges at 1440, 1680,
 1920 and 2048 CSS pixels as well as mobile, including long Czech labels and
 empty/unconfigured states; passing an overflow check alone is insufficient.
+Check row actions inside the visible panel, not just inside the document.
+Copy and More must remain adjacent with matching heights; a control below its
+neighbor or clipped by a scroll container fails review. Dense Stays columns
+become labeled cards before they stop fitting. Labels must stay readable in
+Czech as well as English. Dates, property names and long status/deadline badges
+stay within their own columns; use natural line breaks rather than clipping
+essential information or letting a badge cross into an action track.
+An entirely unconfigured fee list shows Property,
+Status and actions instead of empty numerical columns.
+At tablet/mobile breakpoints the dashboard title remains on the working
+lane's left edge. Header actions may wrap together when space runs out, with
+matching heights and readable labels; do not accidentally center only the
+title through inherited desktop alignment.
 
 ## Interaction feedback: default everywhere
 
@@ -101,7 +115,7 @@ Use a quiet surface tint for hover and a clear visible focus indicator;
 focus within an interactive row must give comparable context. Static panels
 must not suggest that they are clickable. Keep essential actions visible
 without hovering, usable by touch, and distinguishable without color alone.
-Feedback must not move content or depend on animation; respect reduced motion.
+Hover and focus must not move content or depend on animation; respect reduced motion.
 
 ## Filters on demand: host app default
 
@@ -238,6 +252,10 @@ The simple structure must still be geometrically consistent: one shared grid
 for headers and every line, equal Unit price widths, aligned first-control tops
 and a reserved removal column. Extra description stays below Other only.
 
+Property and invoice Save/Preview action bars stay in document flow at the
+form end. A floating bar that covers a focused address or description field
+is a defect, even if a full-page screenshot appears tidy.
+
 ## Copy and action confirmations: one feedback family
 
 Owner wording update, 2026-10-10: the dashboard row action is **Open**. In a stay's
@@ -253,7 +271,16 @@ for the normal and confirmed labels so nothing moves. Write the actual value
 first, then show the drawn checkmark and **Copied**. A denied clipboard operation
 must show a truthful failure and leave the source available for manual copying.
 
-Apply the notification style to transient host confirmations for saves, copy,
+Wide audit correction: inline copy success uses the button's Copied/checkmark
+receipt and one live announcement, without a second card that moves the page.
+Server Save/report, warning and Undo cards occupy an aligned feedback region
+after the safety notice, so persistent notices cannot cover row controls.
+Persistent stay/property reminders from the separate host-alert stack also
+sit in the page flow, with their real links and dismissal rules preserved.
+Manual-copy recovery stays readable and selectable within that region. Preserve
+command-palette outcome feedback inside its own interaction context.
+
+Apply the notification style to transient host confirmations for saves,
 manual reports and other existing flash/toast updates. White cards, restrained
 colored icons, readable text and a visible dismissal action; at most three
 visible cards, deduplicating repeats and queuing excess updates. Success/info
@@ -457,7 +484,7 @@ size, a signature pad that saved nothing and a date of birth a line too low.
 1. **The next action comes first.** Every page opens with what needs the host now, and the one button that does it: "Send 3 ready reports", "Remind 2 guests". Information comes after action.
 2. **One screen, one job, one primary button.**
    - Each page has a single coral primary in the header.
-   - Each table row has at most one visible action. Anything else goes in the row's ⋯ menu.
+   - Keep one primary row action beside More. Approved operator rows retain visible Edit and Invoice settings; use the shared action geometry for these frequent tasks.
 3. **Fewest clicks.** Every frequent task has a click budget (below). Meeting the budget is a requirement, not a wish. If a change adds a click to a budgeted task, it must remove one somewhere else in the same task.
 4. **No dead ends.**
    - Every empty state, error and success message says what to do next and has the button for it.
@@ -496,24 +523,22 @@ size, a signature pad that saved nothing and a date of birth a line too low.
 
 ### Layout
 
-- **Sidebar**, 232px, collapsible:
-  - Today (with a count badge) · Stays · Reports · House book · Properties · Settings;
+- **Sidebar**, collapsible:
+  - Dashboard · Stays · Properties · Invoices · Stay fees; related tools use contextual navigation;
   - the workspace name at the bottom;
   - **UbyHost support** (`support@ubyhost.com`) in the sidebar and in Settings, and nowhere guests can see it.
 - **Page header:**
-  - h1: the page's subject. On the dashboard it is the date, e.g. "Monday, 28 September".
-  - A one-line summary: "3 arrivals today · 1 ready to report".
+  - h1: the page's subject. The quiet dashboard uses Dashboard with the date above it.
+  - Show only relevant context; the dashboard's four overview cards provide its status summary.
   - The coral primary on the right.
 - **Dashboard order:**
-  - (1) the next-action card, if there is one;
-  - (2) **Needs you** (rows with a problem);
-  - (3) **Coming up** (the next 7 days);
-  - (4) **Done** (collapsed).
-  - A stay appears in one section only.
+  - Four quiet overview cards, then **Needs action now** and **Current stays and the next 30 days**.
+  - Five unique stay rows total; unresolved urgent work takes priority. View all stays opens the full list.
+  - Existing setup guidance remains relevant only while configuration needs it.
 - **Rows:**
   - date · property (with its colour mark) · guest progress (●●○ 2/3) · one status pill · one action;
   - the whole row is clickable, opening the stay;
-  - below 720px, tables become cards (the existing `table-cards` pattern).
+  - tables become labelled cards before their content stops fitting; the dense Stays table switches by 1100px.
 - **Density:**
   - body text 14–15px;
   - rows at least 52px tall;
@@ -525,9 +550,9 @@ size, a signature pad that saved nothing and a date of birth a line too low.
 | Component | Rule |
 |---|---|
 | Next-action card | One sentence, one coral button, and an optional "Why?" link. There is at most one on a page. |
-| Status pill | A dot plus the fixed status word, coloured by criticality from the `--status-*` tokens in `tokens.css`: solid red with "!" = critical (failed, rejected, overdue), amber = host action, blue = ready, teal = waiting on the guest or payer, green = done, white outline = neutral. One per row. |
+| Status pill | A dot plus a readable status label: red for critical/overdue, amber for host action, blue for ready, quiet taupe for dashboard guest waiting, green for done, outline for neutral. Other domain statuses retain their semantic tokens. A deadline can accompany the reporting state; both remain within their tracks. |
 | Side panel | Opens from the right on desktop and as a full sheet on a phone. It has a title, the form, and a sticky footer with the primary button and Cancel. `Esc` closes it. Unsaved changes ask before closing. |
-| Toast | Bottom-left, 6 seconds, "Saved — Undo". It never carries an error that needs action; those stay on the page. |
+| Host feedback | Aligned cards in page flow after the safety notice. Errors, partial results and Undo persist; routine notices pause on hover/focus. Copy success confirms on its originating button. Persistent warnings also stay in flow. |
 | Empty state | An icon, one sentence and one button. It never shows a blank table. |
 | Onboarding | The existing first-run steps, shown as a checklist card on the dashboard: Add property · Connect calendar · Share guest link · Connect UbyPort. Each step is one button, and the card disappears when all are done. |
 | Forms | Labels on top, one column, smart defaults, inline validation on blur, and an error summary at the top on submit. The primary sits at the bottom right, or in the sticky footer inside panels. |

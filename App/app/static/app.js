@@ -3,6 +3,7 @@
 
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
   var NAV_BREAKPOINT = 960;
+  var manualCopyFormId = 0;
 
   document.documentElement.classList.add("has-js");
 
@@ -12,6 +13,60 @@
 
   function feedbackRoot() {
     return document.querySelector("[data-host-feedback]");
+  }
+
+  function restoreManualCopy(record) {
+    var target = record && record.target;
+    if (!target) return;
+    if (record.removeOnDismiss) {
+      target.remove();
+    } else {
+      if (record.originalParent && record.originalParent.isConnected) {
+        if (record.originalNextSibling && record.originalNextSibling.parentNode === record.originalParent) {
+          record.originalParent.insertBefore(target, record.originalNextSibling);
+        } else {
+          record.originalParent.appendChild(target);
+        }
+      }
+      target.classList.toggle("sr-only", !!record.wasSrOnly);
+      target.hidden = !!record.wasHidden;
+      target.removeAttribute("data-copy-manual-visible");
+    }
+    if (!record.removeOnDismiss) {
+      if (record.originalFormAttribute === null) target.removeAttribute("form");
+      else if (record.originalFormAttribute !== undefined) target.setAttribute("form", record.originalFormAttribute);
+    }
+    if (record.generatedFormId && record.originalForm && record.originalForm.id === record.generatedFormId) {
+      record.originalForm.removeAttribute("id");
+    }
+    var root = feedbackRoot();
+    var recovery = root && root.querySelector("[data-copy-recovery]");
+    if (recovery) {
+      var records = recovery._copyManualRecords || [];
+      recovery._copyManualRecords = records.filter(function (item) { return item !== record; });
+      if (!recovery._copyManualRecords.length) recovery.hidden = true;
+    }
+  }
+
+  function placeManualCopy(record, destination) {
+    var target = record && record.target;
+    if (!target) return;
+    if (record.originalForm) {
+      if (!record.originalForm.id) {
+        var generatedId;
+        do {
+          manualCopyFormId += 1;
+          generatedId = "ubyhost-manual-copy-form-" + manualCopyFormId;
+        } while (document.getElementById(generatedId));
+        record.originalForm.id = generatedId;
+        record.generatedFormId = generatedId;
+      }
+      target.setAttribute("form", record.originalForm.id);
+    }
+    target.classList.remove("sr-only");
+    target.hidden = false;
+    target.setAttribute("data-copy-manual-visible", "");
+    destination.appendChild(target);
   }
 
   function announceFeedback(message, kind) {
@@ -40,19 +95,7 @@
     var holds = new Set();
     var dismiss = function () {
       window.clearTimeout(timer);
-      (toast._copyManualTargets || []).forEach(function (item) {
-        if (item.removeOnDismiss) {
-          item.target.remove();
-        } else {
-          item.target.classList.toggle("sr-only", item.wasSrOnly);
-          if (item.wasHidden) item.target.hidden = true;
-          item.target.removeAttribute("data-copy-manual-visible");
-        }
-        if (item.manualCopyBottom) item.target.style.setProperty("--manual-copy-bottom", item.manualCopyBottom);
-        else item.target.style.removeProperty("--manual-copy-bottom");
-        if (item.manualCopyRight) item.target.style.setProperty("--manual-copy-right", item.manualCopyRight);
-        else item.target.style.removeProperty("--manual-copy-right");
-      });
+      (toast._copyManualTargets || []).forEach(restoreManualCopy);
       if (toast.contains(document.activeElement) && origin && origin.isConnected && typeof origin.focus === "function") origin.focus();
       toast.remove();
       pumpFeedbackQueue();
@@ -161,7 +204,11 @@
     toast.appendChild(body);
     toast.appendChild(close);
     if (origin) toast._feedbackOrigin = origin;
-    if (manualTargets && manualTargets.length) toast._copyManualTargets = manualTargets;
+    if (manualTargets && manualTargets.length) {
+      toast._copyManualTargets = manualTargets;
+      var manualBody = toast.querySelector(".feedback-card-body") || toast;
+      manualTargets.forEach(function (item) { placeManualCopy(item, manualBody); });
+    }
     rail.appendChild(toast);
     initToastBehavior(toast);
     if (!alreadyAnnounced) announceFeedback(title + (detail ? " " + detail : ""), kind);
@@ -197,34 +244,35 @@
     var wasSrOnly = target.classList.contains("sr-only");
     var wasHidden = target.hidden;
     if (wasSrOnly || wasHidden) {
-      var manualCopyBottom = target.style.getPropertyValue("--manual-copy-bottom");
-      var manualCopyRight = target.style.getPropertyValue("--manual-copy-right");
-      target.classList.remove("sr-only");
-      target.hidden = false;
-      target.setAttribute("data-copy-manual-visible", "");
-      var rail = root.querySelector("[data-feedback-rail]");
-      if (rail) {
-        var railBox = rail.getBoundingClientRect();
-        target.style.setProperty("--manual-copy-bottom", Math.max(8, window.innerHeight - railBox.top + 8) + "px");
-        target.style.setProperty("--manual-copy-right", Math.max(8, window.innerWidth - railBox.right) + "px");
-      }
       var record = {
         target: target,
         wasSrOnly: wasSrOnly,
         wasHidden: wasHidden,
         removeOnDismiss: !!removeOnDismiss,
-        manualCopyBottom: manualCopyBottom,
-        manualCopyRight: manualCopyRight
+        origin: origin,
+        originalParent: target.parentNode,
+        originalNextSibling: target.nextSibling,
+        originalForm: target.form || null,
+        originalFormAttribute: target.getAttribute("form")
       };
       if (toast) {
         toast._copyManualTargets = toast._copyManualTargets || [];
         toast._copyManualTargets.push(record);
+        placeManualCopy(record, toast.querySelector(".feedback-card-body") || toast);
       } else {
         var signature = ["error", root.getAttribute("data-copy-failure") || "Copy failed", root.getAttribute("data-copy-manual") || "Select the text and copy it manually."].join("\u0000");
         var queued = feedbackQueue.find(function (item) { return item.signature === signature; });
         if (queued) {
           queued.manualTargets = queued.manualTargets || [];
           queued.manualTargets.push(record);
+        }
+        var recovery = root.querySelector("[data-copy-recovery]");
+        var recoverySource = recovery && recovery.querySelector("[data-copy-recovery-source]");
+        if (recovery && recoverySource) {
+          recovery.hidden = false;
+          recovery._copyManualRecords = recovery._copyManualRecords || [];
+          recovery._copyManualRecords.push(record);
+          placeManualCopy(record, recoverySource);
         }
       }
     }
@@ -251,7 +299,9 @@
       if (button._copyHadAriaLabel) button.setAttribute("aria-label", button._copyOriginalAriaLabel);
       else button.removeAttribute("aria-label");
     }, 1600);
-    showFeedback(copiedLabel, "success", "", button);
+    // The in-place receipt already confirms success. A second flow card would
+    // move the copied control and every action below it while focus stays put.
+    announceFeedback(copiedLabel, "success");
   }
 
   function prepareCopyControl(button) {
@@ -737,12 +787,26 @@
     });
   }
 
-  /* Confirmations of something you just did should not push the page down;
-     they appear over it and leave on their own. */
+  /* Confirmations share the page lane; only transient success/info cards leave on their own. */
   function initToasts() {
     var root = feedbackRoot();
     var rail = root && root.querySelector("[data-feedback-rail]");
     if (!rail) return;
+    var recovery = root.querySelector("[data-copy-recovery]");
+    var recoveryClose = recovery && recovery.querySelector("[data-copy-recovery-close]");
+    if (recoveryClose && !recoveryClose._copyRecoveryBound) {
+      recoveryClose._copyRecoveryBound = true;
+      recoveryClose.addEventListener("click", function () {
+        var records = (recovery._copyManualRecords || []).slice();
+        var origin = records.length ? records[0].origin : null;
+        var root = feedbackRoot();
+        var signature = ["error", root && root.getAttribute("data-copy-failure") || "Copy failed", root && root.getAttribute("data-copy-manual") || "Select the text and copy it manually."].join("\u0000");
+        feedbackQueue = feedbackQueue.filter(function (item) { return item.signature !== signature; });
+        records.forEach(restoreManualCopy);
+        recovery.hidden = true;
+        if (origin && origin.isConnected && typeof origin.focus === "function") origin.focus();
+      });
+    }
     if (!root._feedbackVisibilityBound) {
       root._feedbackVisibilityBound = true;
       document.addEventListener("visibilitychange", function () {
@@ -1225,6 +1289,7 @@
     var goTimer = null;
     var commandCopyError = null;
     var commandResultsMaxHeight = null;
+    var commandOpener = null;
     var recentKey = "ubyhost-command-recents";
     var recents = [];
     try { recents = JSON.parse(localStorage.getItem(recentKey) || "[]"); } catch (error) { recents = []; }
@@ -1301,7 +1366,8 @@
           }
           clearCommandCopyError();
           if (results) results.textContent = results.getAttribute("data-copied") || "";
-          showFeedback((feedbackRoot() && feedbackRoot().getAttribute("data-command-copied")) || "Copied", "success", "", document.activeElement);
+          var feedbackOrigin = commandOpener && commandOpener.isConnected ? commandOpener : document.activeElement;
+          showFeedback((feedbackRoot() && feedbackRoot().getAttribute("data-command-copied")) || "Copied", "success", "", feedbackOrigin);
           setTimeout(function () { if (command.open) command.close(); }, 450);
         });
       } else if (item.method === "post") {
@@ -1398,6 +1464,7 @@
       clearCommandCopyError();
       document.dispatchEvent(new Event("host:close-navigation"));
       if (!command.open) {
+        commandOpener = document.activeElement;
         if (typeof command.showModal === "function") command.showModal();
         else command.setAttribute("open", "");
       }

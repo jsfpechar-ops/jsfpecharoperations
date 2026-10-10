@@ -76,7 +76,9 @@ mandatory. Fresh requests to the official Police site (`policie.gov.cz`), the
 ČÚZK address-register site (`cuzk.gov.cz`) and a government law mirror
 (`mze.gov.cz`) on 2026-10-10 returned proxy **403 Forbidden**. The e-Sbírka
 attempt also failed. This was a network block, not an approval-review rejection.
-No live legal source was successfully retrieved, so this is not legal sign-off.
+No live legal source was successfully retrieved in those initial attempts, so
+they supplied no legal sign-off. The later retry below retrieved two official
+sites but still could not verify the relevant statutes or required fields.
 
 `App/app/validation.py::validate_apartment`, read directly, confirms the current
 technical readiness checks, independently of the form's optional-label styling:
@@ -105,3 +107,17 @@ then separately verify the seller/customer billing-address rules cited above.
 Never substitute a facility address for a seller's seat or invent a street
 value to satisfy a visual rule. Exact final label/validation changes that
 depend on law remain outside the UI-only work until that check is supported.
+
+## Official-source retry during 0040
+
+Read-only requests on 2026-10-10 successfully retrieved:
+
+- [Police registration-form instructions](https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/vyplnovani-prihlasovaciho-tiskopisu), HTTP 200. The address passage is explicitly under **Trvalé bydliště v zahraničí**: “uvádí se tyto údaje: stát, obec (město), ulice, číslo popisné nebo pouze některý z těchto údajů.” It concerns the guest's residence abroad, so it cannot establish facility-address or invoice requiredness.
+- [ČÚZK RÚIAN overview](https://www.cuzk.gov.cz/ruian/RUIAN.aspx) and [territorial identification](https://www.cuzk.gov.cz/ruian/Poskytovani-udaju-ISUI-RUIAN-VDP/Informace-o-uzemni-identifikaci.aspx), HTTP 200. They describe the address register and territorial elements; the retrieved text does not specify mandatory facility or billing-address components.
+
+Both e-Sbírka statute URLs above still failed: TLS EOF in the sandbox and
+tunnel HTTP 403 on authorized escalated requests. `ruian.cuzk.gov.cz` was also
+blocked. These are network failures, not an approval-review rejection.
+Sections 435 and 29 and the actual facility-address definitions remain
+unverified. No universal Street requirement, optionality guarantee, or change
+to application validation follows from these successful but inapplicable pages.

@@ -15,18 +15,13 @@ The scoped [workflow exception](../context/workflow.md#owner-authorized-host-des
 permits feature-branch push/PR and staging deployment for this task. Main push,
 production merge and production deployment remain outside its scope.
 
-Local combined validation is recorded in [0037](../tasks/0037-report.md).
+The original combined validation is recorded in [0037](../tasks/0037-report.md).
+The owner's deployed screenshots reopened acceptance; the subsequent wide,
+mobile and interaction audit is tracked in [0040](../tasks/0040-host-wide-geometry-audit.md).
 GitHub CI, PR creation and Render deployment are distinct steps. The staging
-service has not been updated in this session.
+service must be redeployed to the corrected feature commit after review.
 
-[PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338) is now open for owner review; GitHub API access succeeded. Render access and deployment remain unverified after the earlier network block.
-The saved environment draft adds `api.github.com`, `render.com`,
-`api.render.com`, `ubyhost-staging.onrender.com` and the official Czech legal
-sources while preserving package-manager domains. In environment settings,
-review/save and publish that draft. Saving alone does not activate access.
-Native Git reads and feature push authentication use the existing HTTPS proxy.
-No duplicate GitHub token is needed. Check existing deployment secret metadata
-once the API is reachable before requesting any additional credential.
+[PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338) is open for owner review; native Git/GitHub access works. The owner already deployed the first design to staging and supplied screenshots. The displayed Render service is https://ubyhost-staging-01gh.onrender.com. A read-only health request from this workspace failed with a TLS connection error; local Chromium evidence does not establish that the corrected commit is deployed there. The owner will perform the next Render deployment.
 
 Check PR #338's CI and owner review before deploying its exact feature commit
 to Render. The PR is attached to this task.
@@ -39,7 +34,7 @@ claiming deployment.
 
 `render.yaml` configures `ubyhost-staging` with `autoDeploy: false`, application
 root `App`, `UBYHOST_DEPLOYMENT=staging` and mock UbyPort. It is the documented
-UI review service at https://ubyhost-staging.onrender.com. Git push alone does
+UI review service; the owner's actual URL is https://ubyhost-staging-01gh.onrender.com. Git push alone does
 not deploy it, and adding this prototype under docs does not replace its app.
 
 Once the application feature branch passes its checks:

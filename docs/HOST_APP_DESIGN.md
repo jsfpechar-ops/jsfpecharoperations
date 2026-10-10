@@ -24,11 +24,11 @@ The approved visual starting point is `docs/archive/plans/host-app-redesign/appr
 
 Fixed 208–224 px width when open; collapses to an icon rail using the existing control. Top: UbyHost wordmark, Search button with shortcut. Main links, without category headings:
 
-1. **Today** → `/`
+1. **Dashboard** → `/`
 2. **Stays** → `/reservations`
 3. **Properties** → `/apartments`
 4. **Invoices** → `/invoices`
-5. **Stay fees** → `/stay-fees` **only when at least one active, accessible property has a positive configured rate**. If none has a rate, show a quiet “Optional stay fee” entry inside the relevant property's settings, not a dashboard task or onboarding step. If the existing route still permits a direct visit, show its accurate empty state.
+5. **Stay fees** → `/stay-fees`. Unconfigured properties show an accurate Not set up state and setup action. The fee remains optional in property settings and is not a dashboard task or onboarding requirement.
 
 Bottom: Help, then the account button (name/avatar). Account menu contains Settings, Archived records, Privacy requests, Team (admin), Incidents (admin), language, and Sign out. Environment and impersonation indicators stay visible whenever relevant; do not hide them in the menu. Legal and support links remain available from Help or the bottom of Settings. Search opens the existing command palette and includes all destinations, properties, stays, and records the user is allowed to see.
 
@@ -40,7 +40,7 @@ Do **not** render property shortcuts or saved views in the default rail. Propert
 |---|---|---|
 | Stays landing | **Stays · Police reports · Guest register** | Records tied to stays remain discoverable in one place. `/submissions` and `/housebook` are both one click from Stays. |
 | Stay detail | Guests · Police report, with a direct Invoice action | Guest facts and report state live with the stay. The unused `#money` anchor should not create an empty visual panel. |
-| Properties landing | **Properties · Business details**; “Property tools” menu for all guest links and automation overviews | Business entities may be shared across properties. Each property shows its assigned entity and links to edit it. |
+| Properties landing | **Properties · Business & legal details · Guest links · Automation & UbyPort** cross-property links | Business entities may be shared across properties. Each property shows its assigned entity and links to edit it. |
 | Property detail | Bookings · Guest link · Police reporting · Business details · Optional stay fee | Settings are grouped by the property they affect. Technical fields appear only in the relevant section. |
 | Invoices | All invoices · Invoice settings | Creation remains a prominent action; settings are one click away. |
 | Stay fees | Period selector; property/group report details | This feature is independent of stay detail and is enabled per property. |
@@ -56,14 +56,14 @@ Use the implemented top bar with menu, logo, Search, and environment indicator. 
 - Light mode only. Use existing `App/app/static/tokens.css`: `--canvas`, `--surface`, `--ink`, `--muted`, `--line`, `--brand`, semantic state colors, 4 px spacing scale, system font, and reduced-motion tokens. Preserve the real UbyHost mark and existing host/guest token split. No gradient or competing accent system.
 - Content max width approximately 1080 px for working pages, narrower for forms. On a 1024 px viewport, main content must not feel pinched by the rail; tables may scroll horizontally only as a deliberate last resort.
 - Page header: small breadcrumb or category, strong page title, one concise orientation line **when needed**, primary action aligned right. Do not put the same copy in a hero card and the heading.
-- The header, actions, navigation, filter toolbar/panel, safety notice and results share one centered working lane. Deliberately narrower forms keep their own coherent lane. Verify actual edges at wide desktop widths through 2048 CSS pixels and on mobile; absence of overflow does not prove alignment.
+- The header, actions, navigation, filter toolbar/panel, safety notice and results share one centered working lane. Deliberately narrower forms align their headings and actions internally; shared safety notices and navigation retain the host lane. Verify actual edges at wide desktop widths through 2048 CSS pixels and on mobile; absence of overflow does not prove alignment.
 - Default content density: 16–24 px gaps between groups, 12–16 px inside rows, compact list cards with borders rather than deep shadows. No giant blank “achievement” boxes. Use one coral primary action per screen or decisive step.
 - State color has a meaning: coral for an action, amber for attention, green for verified success, muted for waiting/neutral. Text labels must carry meaning without color. Do not show green “Paid” unless the manual invoice payment record actually says so.
 - Numbers and dates use the app's locale. Keep the current Prague date basis where business logic uses it. Czech and English text must have matching i18n keys. A label should fit mobile without abbreviations that change meaning.
 - Long identifiers (passport, VS, IBAN, invoice number) use a readable mono style and copy control where appropriate. Guest identity is visible inline to authorized hosts on stay detail, with wrapping and a direct Edit action. Avoid duplicating sensitive data in toast text, audit logs, screenshots, or client analytics.
 - Focus rings, skip link, visible labels, keyboard search, escape-to-close, form errors adjacent to fields, and native semantics are required. Announce success or error once. Reduced motion must remove decorative animation.
 
-## 4. Today: a useful work queue
+## 4. Dashboard: a useful work queue
 
 **Owner selection, 2026-10-10: Quiet overview.** Keep the simple text-first design,
 quiet status colors and consistent hover/keyboard feedback. No property photos
@@ -80,7 +80,7 @@ share action geometry. The owner reaffirmed the four white Quiet overview
 cards: amber Needs action, taupe Waiting for guests, muted blue Ready to send,
 Overdue red only when positive. Small dots and restrained attention lines;
 zero counts stay neutral. Count the full candidate set before the five-row cap.
-Open stay buttons and More share consistent columns across both row sections.
+Open buttons and More share consistent columns across both row sections.
 Owner's latest wording: label the row button **Open**; label invitation copying
 **Copy guest form link** and copy the guest-facing registration URL.
 
