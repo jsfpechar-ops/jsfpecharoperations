@@ -11,7 +11,13 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-import playwright.sync_api as sync_api
+
+REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
+if REQUIRE_BROWSER:
+    import playwright.sync_api as sync_api
+else:
+    sync_api = pytest.importorskip("playwright.sync_api")
+
 import uvicorn
 from fastapi.testclient import TestClient
 

@@ -14,14 +14,18 @@ from pathlib import Path
 import pytest
 import uvicorn
 from fastapi.testclient import TestClient
-from playwright import sync_api
+
+REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
+if REQUIRE_BROWSER:
+    import playwright.sync_api as sync_api
+else:
+    sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import alerts, auth, claim, db
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 
-REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
 WIDE_WIDTHS = (1024, 1280, 1440, 1680, 1920, 2048)
 MOBILE_WIDTHS = (360, 390, 760)
 MOBILE_ROUTE_KEYS = {

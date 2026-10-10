@@ -11,7 +11,12 @@ from pathlib import Path
 import pytest
 import uvicorn
 from fastapi.testclient import TestClient
-from playwright import sync_api
+
+REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
+if REQUIRE_BROWSER:
+    import playwright.sync_api as sync_api
+else:
+    sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import auth, db
 from app.main import app

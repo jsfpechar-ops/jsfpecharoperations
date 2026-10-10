@@ -79,6 +79,7 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-U10 | Low open | app.js:copy | Copy feedback fixed; CI/staging pending | UI §12 |
 | K-U11 | Med open | host.css | Geometry checked locally; CI/staging pending | [0040](../tasks/0040-host-wide-geometry-audit.md) |
 | K-U12 | Med open | reservations.html, dashboard.html | WIP: 1280px overflow; mobile menu closes | [0041](../tasks/0041-host-stay-actions.md) |
+| K-U13 | Med review | browser tests | CI imports: 0042; UI still fails | 0042 |
 | K-O01 | High open | server crontab | Backup and off-site crons aren't in the repo; verify on the server | AR-04 |
 | K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on a real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |

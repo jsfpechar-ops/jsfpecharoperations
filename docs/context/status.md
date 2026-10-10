@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-10. Door codes: 0037 merged (#340); 0038 in PR #341, reviewed OK.
+Updated: 2026-10-11. Door codes: 0037 merged (#340); 0038 in PR #341, reviewed OK.
 
 ## Production
 
@@ -35,4 +35,4 @@ Updated: 2026-10-10. Door codes: 0037 merged (#340); 0038 in PR #341, reviewed O
 
 - SES, Turnstile, healthchecks, Better Stack, Cloudflare, autopurge, Render staging, backup drill, 0001 (#281), magic-link/0007 phase 2 (Oct 2026).
 
-- [UI 0041](../tasks/0041-host-stay-actions.md): Paused; draft #338 synced with main; UI failures remain.
+- [UI 0041](../tasks/0041-host-stay-actions.md): Paused; #338 CI imports: 0042; UI failures remain.

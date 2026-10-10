@@ -36,3 +36,5 @@ per [workflow](workflow.md#compaction). Initial host entries moved here on integ
 | 2026-10-10 | Owner stopped implementation; preserve WIP as draft #338 for another AI | No further fixes/deploys; 0041 blocked; designs await hand-picking | 0041 |
 
 | 2026-10-10 | Owner requested draft #338 conflict resolution | Preserve main door-code reports and host reports under distinct names; UI remains paused | 0041 |
+
+| 2026-10-11 | Owner reported draft #338 CI failure | Scope 0042 to optional/required Playwright imports; no resumed UI implementation | 0042 |

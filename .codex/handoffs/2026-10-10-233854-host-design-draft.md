@@ -202,3 +202,12 @@ filenames, while historical host reports use explicit distinct Report paths.
 Design work remains paused, the two browser failures remain unresolved, and the
 PR stays draft. Application changes from main were automatically merged; this
 follow-up does not claim a newly passing application test suite.
+
+## CI collection follow-up, 2026-10-11
+
+CI run 38089667240 stopped at coverage collection, exit 2. Exact-head no-Playwright
+reproduction found unconditional imports in host controls, property controls and
+wide geometry modules. Brief 0042 only restores the existing optional import
+contract; required browser mode must still hard-fail without its dependency.
+This is separate from the two paused 0041 browser failures. See the 0042 report
+and final GitHub run for validation; no renewed design acceptance is implied.
