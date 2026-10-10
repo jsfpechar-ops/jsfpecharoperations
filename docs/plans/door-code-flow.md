@@ -13,7 +13,7 @@ flowchart TD
     C -- code --> OK1[Guest sees the code at once<br/>and gets it by mail, host in CC<br/>use it within 24 h of the start]
     C -- "-1026 period taken" --> W[Mail host and support:<br/>an older code covers these hours,<br/>check it was deleted]
     C -- network or timeout --> R[Worker tries again in 1 min<br/>first looks for the code by name and window]
-    C -- UbyHost's access was removed --> F
+    C -- "UbyHost access was removed" --> F
 
     R -- code --> OK1
     R -- fails again --> F
