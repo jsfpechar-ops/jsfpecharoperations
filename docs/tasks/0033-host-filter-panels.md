@@ -1,6 +1,7 @@
 # 0033: Shared host filter panels and date-range controls
 
 Status: review
+Report: docs/tasks/0033-host-filter-report.md
 Depends on: 0032 shared host feedback | Base commit: `6545d094f41b717e33ca053cb74e022fa291f5d6` plus reviewed shared changes | Branch: `task/host-design-staging`
 Executor: Luna executor, owner-authorized | Fits one staging session
 
@@ -54,7 +55,7 @@ Keep `App/app/routes/admin.py` changes within the Stays GET handler. Dashboard G
 | `App/tests/test_stays_empty_workspace.py` | Edit | Assert the current disclosure, native GET fields and primary Apply label |
 | `App/tests/test_wp33_gates.py` | Edit | Prove default All stays is unbounded; keep Past exclusion scoped to Upcoming |
 | `docs/tasks/0033-host-filter-panels.md` | Edit | This scoped implementation brief |
-| `docs/tasks/0033-report.md` | Add | Evidence and owner steps |
+| `docs/tasks/0033-host-filter-report.md` | Add | Evidence and owner steps |
 
 Shared `app.js` and `host.css` remain feedback-agent owned until root releases them. Dashboard/property templates belong to their agents. No other file may change.
 
@@ -103,7 +104,7 @@ Stop and report if a named anchor is missing, the reviewed 0032 integration chan
 
 ## 9. Report
 
-Write `docs/tasks/0033-report.md` (1,500 tokens at most) with the changed files, commands and final five output lines, §7 checked, screenshots/geometry/query evidence, deviations/questions, and remaining owner steps. Set this brief to `Status: review` when the scoped implementation is ready.
+Write `docs/tasks/0033-host-filter-report.md` (1,500 tokens at most) with the changed files, commands and final five output lines, §7 checked, screenshots/geometry/query evidence, deviations/questions, and remaining owner steps. Set this brief to `Status: review` when the scoped implementation is ready.
 
 ## Risk list
 

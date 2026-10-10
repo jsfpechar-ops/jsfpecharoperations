@@ -109,7 +109,7 @@ Exact anchors:
 | `App/tests/test_host_geometry.py` | Read only | Existing browser/fixture conventions |
 | `App/tests/test_list_filter.py` | Read only | Existing period semantics |
 | `docs/plans/host-control-review.html` | Read only | Approved visual/interaction reference |
-| `docs/tasks/0033-host-filter-panels.md`, `0033-report.md` | Create/update | Brief, evidence and review status |
+| `docs/tasks/0033-host-filter-panels.md`, `0033-host-filter-report.md` | Create/update | Brief, evidence and review status |
 
 No other file may change. If existing tests require changes for the approved
 default, identify the exact files/expectations in the report and stop for a
@@ -217,7 +217,7 @@ semantics conflict. Never replace application checks with prototype evidence.
 
 ## 9. Report
 
-`docs/tasks/0033-report.md` (≤1,500 tokens): files changed, commands and final
+`docs/tasks/0033-host-filter-report.md` (≤1,500 tokens): files changed, commands and final
 five output lines, acceptance ticked, screenshots/geometry/network evidence,
 deviations/questions, draft PR link and owner steps. Set Status: review.
 

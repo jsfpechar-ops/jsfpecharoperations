@@ -38,8 +38,8 @@ Validate measurable alignment, not only absence of horizontal overflow.
 | luna_dashboard | App/app/templates/dashboard.html; App/tests/test_host_quiet_dashboard_browser.py for independent dashboard state/row checks; no reporting/query logic changes |
 | luna_invoice | App/app/templates/invoice_form.html, invoice_stay_picker.html, invoice_detail.html, invoice_settings.html; App/tests/test_host_invoice_items_browser.py actual runtime geometry/screenshots; no calculations, PDF or validation changes |
 | luna_executor | App/app/static/app.js feedback/copy/search regions; App/app/templates/base.html feedback markup and changed-asset cache tokens; App/tests/test_host_feedback_browser.py feedback/manual-copy geometry checks; preserve persistent warning/Undo semantics |
-| luna_validation | App/tests/test_host_geometry.py, test_host_controls_browser.py, test_host_filter_panels_browser.py; App/tests/test_alert_stack.py obsolete fixed-corner expectation only, preserving alert semantics tests; App/tests/test_first_property_step.py Property table-header assertion only, allowing the new semantic column class while retaining the visible-word check; additional App/tests/test_host_wide_geometry_browser.py if clearer; browser artifacts under generated_images/host-wide-audit/ using synthetic records only |
-| Codex | This brief, docs/tasks/0040-report.md final review, docs/DESIGN.md, docs/HOST_APP_DESIGN.md, docs/context/status.md, ui-decisions.md, known-issues.md, docs/plans/host-design-application-review.md and host-design-staging-handoff.md; docs/plans/invoice-address-check.md source-access status only; docs/tasks/0040-evidence/ representative unmodified synthetic PNGs and index; outside-App review gallery helper and final delivery metadata |
+| luna_validation | scripts/context_lint.py optional explicit Report path only, retaining the default numbered report check; App/tests/test_host_geometry.py, test_host_controls_browser.py, test_host_filter_panels_browser.py; App/tests/test_alert_stack.py obsolete fixed-corner expectation only, preserving alert semantics tests; App/tests/test_first_property_step.py Property table-header assertion only, allowing the new semantic column class while retaining the visible-word check; additional App/tests/test_host_wide_geometry_browser.py if clearer; browser artifacts under generated_images/host-wide-audit/ using synthetic records only |
+| Codex | This brief, report filename/ref integration in existing host briefs/plans to avoid concurrent main doc collisions; docs/tasks/0040-report.md final review, docs/DESIGN.md, docs/HOST_APP_DESIGN.md, docs/context/status.md, ui-decisions.md, known-issues.md, docs/plans/host-design-application-review.md and host-design-staging-handoff.md; docs/plans/invoice-address-check.md source-access status only; docs/tasks/0040-evidence/ representative unmodified synthetic PNGs and index; outside-App review gallery helper and final delivery metadata |
 
 All owners may read host templates/CSS/JS and existing tests solely for this
 owner-requested audit. Only the shared CSS owner writes host CSS. Page owners
@@ -144,3 +144,7 @@ zero skips, seven warnings and 89.57% coverage (86% threshold). The refreshed
 [validation report](0040-luna_validation-report.md) and
 [representative captures](0040-evidence/README.md). PR #338 is the review
 deliverable; CI and the owner's next staging deployment remain separate.
+
+Concurrent main integration is documentation only: preserve host reports under
+unique host names and explicit Report paths; retain legacy report checks.
+Keep the tested App tree unchanged while resolving document merge conflicts.

@@ -1,6 +1,7 @@
 # 0036: Host property and operator controls
 
 Status: review
+Report: docs/tasks/0036-host-property-controls-report.md
 Depends on: none | Base commit: 6545d094f41b717e33ca053cb74e022fa291f5d6 | Branch: task/host-design-staging
 Executor: Luna (owner-authorized) | Fits one session
 
@@ -62,7 +63,7 @@ wording distinct. The shared translation owner provides `host.delete`,
 | `App/tests/test_properties_table_chips.py` | Verify | Keep the localized global Property tools menu test; the duplicate menu remains removed only from property detail context. |
 | `App/tests/test_property_readiness.py` | Update | Assert reporting badges are absent while all eight localized reporting labels and controls and existing readiness checks remain. |
 | `docs/tasks/0036-host-property-operator-controls.md` | Add | This scoped task. |
-| `docs/tasks/0036-report.md` | Add | Browser results and screenshot links. |
+| `docs/tasks/0036-host-property-controls-report.md` | Add | Browser results and screenshot links. |
 
 Optional synthetic screenshots are written outside the repository to
 `/workspace/generated_images/host-design-application/properties/` when
@@ -88,7 +89,7 @@ Optional synthetic screenshots are written outside the repository to
    navigation contexts, while Properties uses direct overview links.
 7. Run the focused browser test with required Chromium. Capture synthetic
    screenshots in EN/CS at 360, 390 and 1280 px; record commands and outcomes
-   in `0036-report.md`.
+   in `0036-host-property-controls-report.md`.
 8. Keep the property-navigation and readiness tests aligned with the approved
    UI: retain translated global Property tools labels and routes, remove only
    the duplicate property-detail menu, and assert no reporting pills while all
@@ -134,7 +135,7 @@ briefs and reports meet the template.
   details have no duplicate Property tools dropdown and retain local links.
 - [ ] Only archive actions use Delete and the confirmation says the item moves
   to Archived; restore/permanent-delete/privacy-erasure copy remains distinct.
-- [ ] Browser screenshots and command results are linked in `0036-report.md`.
+- [ ] Browser screenshots and command results are linked in `0036-host-property-controls-report.md`.
 - [ ] Navigation and readiness regression tests cover the selected behavior in
   English and Czech while keeping the global tools labels and removing only
   detail-page duplication; all eight form labels and controls remain without
@@ -149,18 +150,18 @@ Do not push, merge or deploy; staging review is coordinated by the root agent.
 
 ## 9. Report
 
-Write `docs/tasks/0036-report.md` (1,500 tokens maximum) with the files changed,
+Write `docs/tasks/0036-host-property-controls-report.md` (1,500 tokens maximum) with the files changed,
 each command and its final output lines, acceptance items checked, screenshots,
 deviations, questions and owner steps. Set this brief's status to `review` when
 implementation and browser validation are complete.
 
 ## Risk list (for the reviewer)
 
-Read the four templates in §3, the focused browser test and `0036-report.md`.
+Read the four templates in §3, the focused browser test and `0036-host-property-controls-report.md`.
 Pay particular attention to the linked-operator disabled state and the
 property archive action callsites.
 
 ## Owner steps
 
-1. Review the synthetic screenshots linked from `0036-report.md`.
+1. Review the synthetic screenshots linked from `0036-host-property-controls-report.md`.
 2. Continue with the root agent's staging review before production.

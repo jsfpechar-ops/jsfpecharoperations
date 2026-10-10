@@ -9,7 +9,7 @@
 - `App/tests/test_overhaul.py` (approved copy-label expectation only)
 - `App/tests/test_stay_missing_guest_rows.py` (approved copy-label expectation only)
 - `docs/tasks/0039-host-flash-outcomes.md`
-- `docs/tasks/0039-report.md`
+- `docs/tasks/0039-host-flash-outcomes-report.md`
 
 The base template already contained concurrent 0032 feedback-shell changes; this
 task only changed the existing message toast to consume `flash_kind` and

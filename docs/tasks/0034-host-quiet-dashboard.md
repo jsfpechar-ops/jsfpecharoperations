@@ -1,6 +1,7 @@
 # 0034: Quiet host dashboard
 
 Status: review
+Report: docs/tasks/0034-host-dashboard-report.md
 
 ## 1. Objective
 
@@ -39,7 +40,7 @@ fixtures; type-only updates must not alter query, state, or dashboard logic.
 - Dashboard regressions in `App/tests/test_deadline_after_reporting.py`,
   `App/tests/test_overview_headcount.py`, `App/tests/test_host_language.py`,
   and dashboard selectors only in `App/tests/test_signed_in_chrome.py`
-- `docs/tasks/0034-report.md`
+- `docs/tasks/0034-host-dashboard-report.md`
 
 ## 4. Steps
 
@@ -130,5 +131,5 @@ needed. Send the exact conflict and affected anchor to the owner.
 ## 9. Report
 
 Write implementation results, test outcomes, screenshot paths, and known
-limitations to `docs/tasks/0034-report.md`. Set this brief to `Status: review`
+limitations to `docs/tasks/0034-host-dashboard-report.md`. Set this brief to `Status: review`
 when the scoped implementation is ready for root review.

@@ -1,6 +1,7 @@
 # 0035 — Align host invoice items and show Other description conditionally
 
 Status: review
+Report: docs/tasks/0035-host-invoice-items-report.md
 
 ## 1. Objective
 
@@ -33,7 +34,7 @@ authoritative.
   browser launch fixture.
 - `App/tests/test_host_invoice_items_browser.py`: focused item behavior and
   geometry coverage.
-- `docs/tasks/0035-host-invoice-items.md` and `docs/tasks/0035-report.md`.
+- `docs/tasks/0035-host-invoice-items.md` and `docs/tasks/0035-host-invoice-items-report.md`.
 - `docs/tasks/0035-evidence/`: synthetic browser screenshots.
 
 ## 4. Steps
@@ -93,7 +94,7 @@ From the repository root, run `python3 scripts/context_lint.py` and
   remain intact.
 - Relevant functional and browser tests pass with zero skips. Capture English
   and Czech screenshots at 360, 390 and 1280 CSS px, plus embedded mobile
-  width; record actual commands and results in `0035-report.md`.
+  width; record actual commands and results in `0035-host-invoice-items-report.md`.
 
 ## 8. Stop and ask
 
@@ -103,6 +104,6 @@ invoice rule. Report the exact blocker and affected file; do not broaden scope.
 
 ## 9. Report
 
-Write `docs/tasks/0035-report.md` with the changed behavior, actual test
+Write `docs/tasks/0035-host-invoice-items-report.md` with the changed behavior, actual test
 commands and counts, screenshots, and any unresolved failures. Keep the report
 limited to this task's files and results.

@@ -44,3 +44,7 @@ based gitleaks need CI; no production merge/deploy occurred. The
 [address-law check](../plans/invoice-address-check.md) remains open: retrieved
 Police/ČÚZK pages do not verify facility/invoice requirements, and relevant
 statutes remain inaccessible. Address validation was not changed.
+
+Concurrent main tasks reused report numbers. Host reports now have unique
+filenames and explicit Report paths; context lint retains its default path
+for existing briefs. This integration leaves the tested App tree unchanged.

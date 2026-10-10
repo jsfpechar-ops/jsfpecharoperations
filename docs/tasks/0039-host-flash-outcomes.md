@@ -1,6 +1,7 @@
 # 0039: Truthful host flash outcome severity
 
 Status: review
+Report: docs/tasks/0039-host-flash-outcomes-report.md
 Depends on: 0032 host feedback shell | Base commit: 6545d094f41b717e33ca053cb74e022fa291f5d6 | Branch: task/host-design-staging
 Executor: Luna local agent | Fits one session
 
@@ -42,7 +43,7 @@ when its accepted count is positive. No send/receipt/report decision changes.
 | `App/tests/test_stay_missing_guest_rows.py` | Targeted edit | Expect the approved guest-form copy label |
 | `App/tests/test_two_factor_setup_page.py` | Read only | Existing neutral-flash redirect contract must pass unchanged |
 | `docs/tasks/0039-host-flash-outcomes.md` | Add | Scoped brief and acceptance status |
-| `docs/tasks/0039-report.md` | Add | Results and owner handoff |
+| `docs/tasks/0039-host-flash-outcomes-report.md` | Add | Results and owner handoff |
 
 No other file may change.
 
@@ -117,7 +118,7 @@ actions are authorized.
 
 ## 9. Report
 
-Write `docs/tasks/0039-report.md` (≤1,500 tokens), set this brief to
+Write `docs/tasks/0039-host-flash-outcomes-report.md` (≤1,500 tokens), set this brief to
 `Status: review`, and list changed files, commands with final output lines,
 acceptance results, deviations, questions, and owner steps.
 

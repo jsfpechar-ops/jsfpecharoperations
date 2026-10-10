@@ -146,7 +146,14 @@ def check_briefs() -> None:
         for sec in BRIEF_SECTIONS:
             if sec not in text:
                 errors.append(f"{rel(p)}: missing section '{sec}'")
-        report = p.with_name(p.name[:4] + "-report.md")
+        explicit_report = re.search(
+            r"^Report:\s*(docs/tasks/[^\s]+-report\.md)\s*$", text, flags=re.M
+        )
+        report = (
+            ROOT / explicit_report.group(1)
+            if explicit_report
+            else p.with_name(p.name[:4] + "-report.md")
+        )
         if m.group(1) in ("review", "done") and not report.exists():
             errors.append(f"{rel(p)}: status {m.group(1)} but {rel(report)} is missing")
 

@@ -15,7 +15,7 @@ The scoped [workflow exception](../context/workflow.md#owner-authorized-host-des
 permits feature-branch push/PR and staging deployment for this task. Main push,
 production merge and production deployment remain outside its scope.
 
-The original combined validation is recorded in [0037](../tasks/0037-report.md).
+The original combined validation is recorded in [0037](../tasks/0037-host-validation-report.md).
 The owner's deployed screenshots reopened acceptance; the subsequent wide,
 mobile and interaction audit is tracked in [0040](../tasks/0040-host-wide-geometry-audit.md).
 GitHub CI, PR creation and Render deployment are distinct steps. The staging

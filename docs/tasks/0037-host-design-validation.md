@@ -1,6 +1,7 @@
 # 0037: Validate the host design changes in Chromium
 
 Status: review
+Report: docs/tasks/0037-host-validation-report.md
 Depends on: 0033 shared host filters | Base commit: 6545d094f41b717e33ca053cb74e022fa291f5d6 | Branch: task/host-design-staging
 Executor: Luna validation sub-agent | feature branch task/host-design-staging
 
@@ -65,7 +66,7 @@ page-owner test work is complete.
 | `.github/workflows/ci.yml` | update | Configure the smoke job only for staging no-login, mock UbyPort, and scratch data |
 | `/workspace/.cloud-setup/ubyhost/install-ci-tools.sh` | add outside repo | Prepare CI system tools in `/tmp` without root or repo dependency changes |
 | `docs/tasks/0037-host-design-validation.md` | add | Validation task and exact scope |
-| `docs/tasks/0037-report.md` | add/update | Baseline and final validation evidence |
+| `docs/tasks/0037-host-validation-report.md` | add/update | Baseline and final validation evidence |
 
 No other file may change for this task. New page-owner tests remain owned by
 their respective agents; do not modify these files during validation:
@@ -177,7 +178,7 @@ Report the exact blocker and continue with unaffected checks.
 
 ## 9. Report
 
-Update `docs/tasks/0037-report.md` (1,500 tokens maximum) with changed files,
+Update `docs/tasks/0037-host-validation-report.md` (1,500 tokens maximum) with changed files,
 actual commands and exit codes, the last five log lines for each command,
 §7 acceptance, deviations, questions, and owner steps left. Mark the task
 `Status: review` after the final integration checks pass; preserve any CI-only
