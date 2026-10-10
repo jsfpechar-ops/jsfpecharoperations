@@ -37,7 +37,7 @@ keyboard. [DESIGN.md](../DESIGN.md) is the shared design contract.
 The original implementation checks and captures are recorded in reports
 [0032](../tasks/0032-host-feedback-report.md), [0033](../tasks/0033-host-filter-report.md),
 [0034](../tasks/0034-host-dashboard-report.md), [0035](../tasks/0035-host-invoice-items-report.md),
-[0036](../tasks/0036-host-property-controls-report.md), [0038](../tasks/0038-report.md) and
+[0036](../tasks/0036-host-property-controls-report.md), [0038](../tasks/0038-host-controls-report.md) and
 [0039](../tasks/0039-host-flash-outcomes-report.md); [0037](../tasks/0037-host-validation-report.md) owns final validation.
 
 Those earlier 3,022 passing tests and 174 captures are historical evidence,

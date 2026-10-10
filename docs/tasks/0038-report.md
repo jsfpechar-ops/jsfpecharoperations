@@ -1,26 +1,56 @@
-# 0038 report: Host interaction and control polish
+# 0038 report: custom code revoke until end
 
-**Status:** review
+## Files changed
 
-0038 now covers consistent host hover/focus and action geometry, the Settings audit scope controls, CSV/PDF export dialogs, copy labels, and soft-archive confirmation copy. All changes are UI-only. Existing routes, query limits, required/optional date semantics, restore behavior and backend guards remain in place.
+- `App/app/door_codes.py` — `_revoke_one`: custom + gateway kinds stay `revoke_pending` (1/15/60 then hourly); mail once at attempt 3; past `valid_to` → `revoke_failed`. Random codes unchanged.
+- `App/tests/test_door_codes_safeguards.py` — `test_a_custom_code_delete_keeps_trying`, `test_a_custom_code_delete_stops_after_the_end`
+- `docs/tasks/0038-custom-code-revoke-until-end.md` — Status review, §7 ticked
 
-Scoped files changed: `App/app/static/host-controls.css`; `App/app/static/app.js` (CSV scope population and exact `/archive` confirmation label selection only); `App/app/templates/base.html` (CSV property summary and confirm labels only); `App/app/templates/_components.html` (optional server-derived CSV scope labels only); `App/app/templates/reservation_detail.html`; `App/app/templates/settings.html`; `App/app/templates/settings_archived.html`; `App/tests/test_host_controls_browser.py`; this brief and report. `housebook.html` remained under Filters ownership; its existing call site now passes the applied property label.
+## Commands (last 5 lines each)
 
-## Validation
+Targeted pytest (`test_door_codes_safeguards.py` + `test_door_code_handover.py`):
 
-- `UBYHOST_BROWSER_EXECUTABLE=/usr/bin/chromium UBYHOST_REQUIRE_BROWSER=1 UBYHOST_CAPTURE_CONTROLS=1 .venv/bin/python -m pytest -q tests/test_host_controls_browser.py` from `App/`: **1 passed, 1 warning in 18.59s**. Chromium ran with no browser skip using synthetic fixtures. Coverage includes 13 host pages at 360, 390 and 1280px in EN/CS; empty onboarding at 360px; 42px/44px action geometry; hover, keyboard focus, touch-visible actions; Settings' All/Support `aria-current` and preserved URLs; actual CSV and inspection dialogs at all three widths/languages; applied and All-property summaries; required native CSV dates; optional native inspection dates; selected property, 100-form warning; dialog bounds, aligned buttons and no overflow; and actual archive versus non-archive confirmation labels in EN/CS. The CSV submit was intercepted to assert the original `/reservations.csv?from=…&to=…&apartment=…` URL without downloading/exporting data.
-- `python3 scripts/context_lint.py` from repository root: **context lint: OK**. It reports the existing warning that 10 App commits postdate the last `docs/context/status.md` update.
+```
+  /workspace/App/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
 
-Earlier in this task, the required Chromium run exposed an intermediate 360px stay-fees filter overflow to x430; subsequent complete runs passed after shared CSS was updated. The original 360px onboarding overflow and all sampled export/settings layouts also pass.
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+33 passed, 1 warning in 1.17s
+```
 
-## Screenshots
+Full pytest:
 
-44 PNGs use synthetic fixtures under `/workspace/generated_images/host-design-application/controls/`. The set includes the empty onboarding page, dashboard, stay detail, Properties, Archived, Settings audit scopes, and open CSV/inspection dialogs in EN/CS. Examples: [CSV export at 360px, EN](/workspace/generated_images/host-design-application/controls/csv-export-360-en.png), [inspection export at 1280px, CS](/workspace/generated_images/host-design-application/controls/inspection-export-1280-cs.png), and [Settings audit at 360px, CS](/workspace/generated_images/host-design-application/controls/settings-audit-360-cs.png).
+```
+  /workspace/App/tests/test_ubyport_sample_pdf.py:152: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    grey_pixels = sum(1 for px in crop.getdata() if px < 235)
 
-## Acceptance and owner steps
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3000 passed, 2 skipped, 7 warnings in 328.22s (0:05:28)
+```
 
-All §7 items are verified. Review the scoped CSS, selectors, scope-label wiring and confirmation-label behavior; the checked feature commit can then be deployed to staging without a production merge. This executor performed no commit, push, deployment or data export.
+Context lint:
 
-## Deviations and questions
+```
+WARN  1 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
+next free: task 0040 | migration 0009
+context lint: OK
+```
 
-None. Inspection date bounds remain optional to match the actual ZIP endpoint contract. CSV From/Until remain required. Only forms or buttons whose submitted action path ends exactly in `/archive` display Delete / Smazat; other confirmations retain Confirm / Potvrdit.
+## §7 acceptance
+
+- [x] A cancelled custom code is retried hourly until `valid_to`, with one host mail after the third failure.
+- [x] A random code's revoke is unchanged.
+- [x] Full pytest and context lint pass.
+
+## Deviations
+
+- `test_a_custom_code_delete_stops_after_the_end` seeds `revoke_pending` with a past `valid_to`. `_handle_cancellations` only moves `issued` → `revoke_pending` when `valid_to` is still in the future, so an already-ended issued row would never enter revoke.
+
+## Questions
+
+None.
+
+## Owner steps
+
+1. Merge with `scripts/merge-pr-on-green.sh` after the tests are green. Deploy staging.
+2. On a lock with a gateway: give a stay a custom code (0037 owner step 3), unplug the gateway, archive the stay. After about 80 minutes you get "delete a door code in the TTLock app". Plug the gateway back in. Within an hour, typing that code no longer opens the door.

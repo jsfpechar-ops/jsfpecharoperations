@@ -1255,16 +1255,18 @@ def build_door_code(
     subject = _guest_text(lang, "mail_door_code_subject", property=property_name)
     title = _guest_text(lang, "door_code_title")
     times = _guest_text(lang, "door_code_times", checkin=checkin, checkout=checkout)
-    first_use = _guest_text(lang, "door_code_first_use", deadline=first_use_by)
     footer_lines = _guest_footer_lines(lang, property_name, host)
     code_line = mail.DOOR_CODE_MARKER
     blocks = [
         _block_heading(title),
         _block_paragraph(code_line, size=22),
         _block_paragraph(times),
-        _block_paragraph(first_use),
     ]
-    text_lines = [title, code_line, "", times, first_use]
+    text_lines = [title, code_line, "", times]
+    if first_use_by:
+        first_use = _guest_text(lang, "door_code_first_use", deadline=first_use_by)
+        blocks.append(_block_paragraph(first_use))
+        text_lines.append(first_use)
     text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
     return {
         "subject": subject,
@@ -1328,7 +1330,7 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
 
 # Notices about a code that was not created. The host creates it by hand, and
 # support gets a copy so the problem is on record. Never sent to a guest.
-_SUPPORT_COPY_VARIANTS = ("failed", "delayed")
+_SUPPORT_COPY_VARIANTS = ("failed", "delayed", "period_taken", "moved_not_deleted")
 
 
 _DOOR_CODE_REASONS = ("waiting", "not_set_up", "no_account", "not_eligible", "bad_window")
@@ -1424,14 +1426,18 @@ def build_completion(
         times = _guest_text(
             lang, "door_code_times", checkin=door_code["checkin"], checkout=door_code["checkout"]
         )
-        first_use = _guest_text(lang, "door_code_first_use", deadline=door_code["first_use_by"])
         blocks.extend([
             _block_heading(code_title),
             _block_paragraph(mail.DOOR_CODE_MARKER, size=22),
             _block_paragraph(times),
-            _block_paragraph(first_use),
         ])
-        text_lines.extend(["", code_title, mail.DOOR_CODE_MARKER, times, first_use])
+        text_lines.extend(["", code_title, mail.DOOR_CODE_MARKER, times])
+        if door_code.get("first_use_by"):
+            first_use = _guest_text(
+                lang, "door_code_first_use", deadline=door_code["first_use_by"]
+            )
+            blocks.append(_block_paragraph(first_use))
+            text_lines.append(first_use)
 
     # Slot 2: the links, quiet by design -- nothing here is still owed.
     blocks.append(_block_link(stay_url, action))

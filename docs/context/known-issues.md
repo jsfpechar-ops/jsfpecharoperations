@@ -22,8 +22,8 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-F09 | Low open | routes/admin.py:1927 | Manual send inspects only the first batch | P A36 |
 | K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
 | K-F11 | Med open | reporting.py:829-845 | Surplus blank guest form blocks automatic filing | F |
-| K-F12 | Med accepted | reporting.py:270,1002 | ID check dropped from the UI (owner, 2026-10-09, PR #331); host checks documents themselves | F W4.3 |
-| K-F13 | Med open | production data | 112 is "reported late", an accept (police, 24 Sep 2026). Production guests in `error`/`blocked` whose only code is 112 are in the register. Owner: `App/scripts/reconcile_accepted_codes.py` (dry run), check 2-3 in UbyPort, then `--apply`; never resend | F W4.2 |
+| K-F12 | Med accepted | reporting.py | ID check dropped (PR #331); host verifies documents | F |
+| K-F13 | Med open | production | 112 = accepted late. Never resend; `reconcile_accepted_codes.py` dry run, then `--apply` | F |
 | K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with the legal deadline | AR-06 |
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
 | K-F16 | Med unverified | icalsync.py ~549-642 | Date-move reconcile not atomic; re-sign alert can be lost | AR-38 |
@@ -48,6 +48,7 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-P05 | Med open | db.py | Dead plaintext doc_number/visa_number columns not dropped | G BE-11 |
 | K-P06 | Low open | routes/stay_fees.py:576 | fee_host_reason_reference unencrypted | P A46 |
 | K-P07 | Med open | docs/vendors/README.md | Vendor DPA evidence is only a README | G LD-9 |
+| K-P08 | Med decision | posthog_sync.py | Account deletion leaves the PostHog person; by hand for now | 0039 |
 | K-S01 | Med open | .cursor/mcp.json | Agents hold a production Cloudflare MCP (removed by task 0001) | AR-41 |
 | K-S02 | Med open | server egress | SSRF DNS-rebinding residual; needs egress deny rules | S UH-11 |
 | K-S03 | Med accepted | routes/guest.py | One link + PIN reveals dates of overlapping stays | S UH-21 |
@@ -58,7 +59,6 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-S08 | Low unverified | rate_limit.py:79 | No per-account login lockout across addresses | P A44 |
 | K-S09 | Low open | deploy-production.yml | GITHUB_TOKEN stays in the server's git remote | P A58 |
 | K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY was rotated after the history leak | AR-01 |
-| K-I01 | Med fixed | routes/invoices.py issue | Double submit issues two invoice numbers (0019 lock per stay; 0020 wiring) | P A07 |
 | K-I02 | Low open | invoices.py:51-63 _parse_decimal | "1.000" parses as 1 | X |
 | K-I03 | Low open | invoices.py cancel | Concurrent cancel returns 500 | P A10 |
 | K-I04 | Low open | invoices.py | Unvalidated duzp/due/correction dates return 500 | P A11 |
@@ -84,9 +84,10 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
 | K-O04 | Low open | requirements.txt, Caddyfile | Pillow undeclared; dev deps use >=; HSTS includeSubDomains missing | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever, so cost grows with retention | AR-43 |
-| K-W01 | Med decision | GitHub jsfpechar-ops/jsfpecharoperations | ~30 stale open PRs (wp-stack etc.); owner runs task 0001 step 12 with APPLY=1; do not close #278 or #279 | task 0001 |
+| K-W01 | Med decision | GitHub repo | ~30 stale PRs; owner task 0001 step 12 APPLY=1; keep #278 #279 | 0001 |
 | K-ML01 | Low open | App/app/static/app.js | Dead reset-password JS after task 0003 password removal | magic-link HANDOFF |
 | K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
 | K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
 | K-ML04 | Low open | login link limit | Anyone can use up a victim's 3 requests per 15 min. Kept: counting only real accounts would reveal who uses UbyHost | 0006 |
-| K-D01 | High open | door_codes.py | `-1026` gives no code (0037) | #336 |
+| K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
+| K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |

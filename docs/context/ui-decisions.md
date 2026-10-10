@@ -34,3 +34,5 @@ per [workflow](workflow.md#compaction). Initial host entries moved here on integ
 - 2026-10-10 | Owner reopened design selection; only guest-link Copy availability and shared dashboard ellipsis authorized now | other design choices await hand-picking; no broader redesign | [0041](../tasks/0041-host-stay-actions.md)
 
 | 2026-10-10 | Owner stopped implementation; preserve WIP as draft #338 for another AI | No further fixes/deploys; 0041 blocked; designs await hand-picking | 0041 |
+
+| 2026-10-10 | Owner requested draft #338 conflict resolution | Preserve main door-code reports and host reports under distinct names; UI remains paused | 0041 |

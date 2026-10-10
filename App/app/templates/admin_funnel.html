@@ -3,87 +3,9 @@
 {% block title %}{{ t('funnel.title') }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
-{% macro day(value) -%}{{ value[:10] if value else '' }}{%- endmacro %}
-{{ page_header(
-  t('funnel.title'),
-  t('funnel.lede'),
-  actions='<a class="btn" href="/admin/funnel.csv">' ~ t('funnel.export_csv') ~ '</a>'
-) }}
-
-<section class="funnel-cards" id="funnel-cards">
-  <div class="funnel-card"><span class="small muted">{{ t('funnel.card.hosts') }}</span><strong>{{ overview.cards.hosts }}</strong></div>
-  <div class="funnel-card"><span class="small muted">{{ t('funnel.card.active') }}</span><strong>{{ overview.cards.active }}</strong></div>
-  <div class="funnel-card"><span class="small muted">{{ t('funnel.col.filings_month', month=funnel.current_month) }}</span><strong>{{ overview.cards.filings_current }}</strong>
-    <span class="small muted">{{ t('funnel.card.vs_previous', count=overview.cards.filings_previous, month=funnel.previous_month) }}</span></div>
-  <div class="funnel-card"><span class="small muted">{{ t('funnel.stage.retained') }}</span><strong>{{ overview.cards.retained }}</strong></div>
-</section>
-
-<section class="panel" id="funnel-counts">
-  <h2 style="margin-top:0">{{ t('funnel.counts_title') }}</h2>
-  <ol class="funnel-chart" id="funnel-chart">
-    {% for bar in overview.bars %}
-    <li>
-      <span class="funnel-chart-label">{{ t('funnel.stage.' ~ bar.key) }}</span>
-      <span class="funnel-chart-track"><span class="funnel-chart-bar" style="width:{{ bar.width }}%"></span></span>
-      <span class="funnel-chart-value"><strong data-stage="{{ bar.key }}">{{ bar.count }}</strong>
-        {% if bar.of_previous is not none %}<span class="small muted">{{ t('funnel.chart.of_previous', pct=bar.of_previous ~ '%') }}</span>{% endif %}</span>
-    </li>
-    {% endfor %}
-  </ol>
-  <p class="small muted">{{ t('funnel.counts_help') }}</p>
-</section>
-
-<section class="funnel-weekly" id="funnel-weekly">
-  {% for key, title in [('hosts', t('funnel.weekly.hosts_title')), ('filings', t('funnel.weekly.filings_title'))] %}
-  <div class="panel">
-    <h2 style="margin-top:0">{{ title }}</h2>
-    <ol class="funnel-columns" id="funnel-weekly-{{ key }}">
-      {% for week in weekly[key] %}
-      <li><span class="funnel-column-value small">{{ week.value if week.value else '' }}</span>
-        <span class="funnel-column-bar" style="height:{{ week.height }}%"></span>
-        <span class="funnel-column-label small muted">{{ week.label }}</span></li>
-      {% endfor %}
-    </ol>
-    <p class="small muted">{{ t('funnel.weekly.help') }}</p>
-  </div>
-  {% endfor %}
-</section>
-
-<section class="panel tight" id="funnel-table">
-  {% if funnel.rows %}
-  <table class="table-cards">
-    <thead><tr>
-      <th>{{ t('funnel.col.account') }}</th>
-      <th>{{ t('funnel.col.stage') }}</th>
-      <th>{{ t('funnel.col.progress') }}</th>
-      <th>{{ t('funnel.col.filings_month', month=funnel.previous_month) }}</th>
-      <th>{{ t('funnel.col.filings_month', month=funnel.current_month) }}</th>
-      <th>{{ t('funnel.col.last_login') }}</th>
-      <th>{{ t('funnel.col.last_filing') }}</th>
-    </tr></thead>
-    <tbody>
-    {% for row in funnel.rows %}
-      <tr data-account="{{ row.id }}">
-        <td data-label="{{ t('funnel.col.account') }}">
-          <a href="/admin/users#user-{{ row.id }}"><strong>{{ row.display_name or row.username }}</strong></a>
-          <div class="small muted mono">{{ row.username }}{% if not row.active %} &middot; {{ t('users.status.disabled') }}{% endif %}</div>
-        </td>
-        <td data-label="{{ t('funnel.col.stage') }}" data-stage="{{ row.stage }}">
-          <span class="pill {{ 'green' if row.stage == 'retained' else 'blue' if row.stage else 'amber' }}">{{ t('funnel.stage.' ~ row.stage) }}</span>
-          <span class="small muted">{{ day(row.stage_at) }}</span>
-        </td>
-        <td data-label="{{ t('funnel.col.progress') }}">
-          <span class="funnel-progress" aria-hidden="true"><span style="width:{{ (100 * row.stages_done / funnel.stages_total) | round | int }}%"></span></span>
-          <span class="small muted">{{ t('funnel.progress', done=row.stages_done, total=funnel.stages_total) }}</span>
-        </td>
-        <td data-label="{{ t('funnel.col.filings_month', month=funnel.previous_month) }}">{{ row.filings_previous }}</td>
-        <td data-label="{{ t('funnel.col.filings_month', month=funnel.current_month) }}">{{ row.filings_current }}</td>
-        <td data-label="{{ t('funnel.col.last_login') }}">{{ day(row.last_login_at) }}</td>
-        <td data-label="{{ t('funnel.col.last_filing') }}">{{ day(row.last_filing_at) }}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  {% else %}<p class="muted" style="padding:20px">{{ t('funnel.empty') }}</p>{% endif %}
-</section>
+{{ page_header(t('funnel.title')) }}
+<p>{{ t('funnel.posthog_body') }}</p>
+{% if posthog_url %}
+<p><a class="btn" href="{{ posthog_url }}">{{ t('funnel.posthog_link') }}</a></p>
+{% endif %}
 {% endblock %}

@@ -1,6 +1,7 @@
 # 0038: Host interaction and control polish
 
 Status: review
+Report: docs/tasks/0038-host-controls-report.md
 Depends on: 0037 | Base commit: 6545d094f41b717e33ca053cb74e022fa291f5d6 | Branch: task/host-design-staging
 Executor: Luna authorized owner | Fits one session
 
@@ -35,7 +36,7 @@ Current tokens and selectors: `App/app/static/host.css` defines `--action-height
 | `App/app/static/app.js` | Edit | Populate CSV scope summary and label only exact `/archive` confirmations |
 | `App/tests/test_host_controls_browser.py` | Add | Authenticated Chromium coverage for interactions, settings scopes, export dialog fields and geometry, copy/archive text, and overflow across host pages |
 | `docs/tasks/0038-host-controls.md` | Add | This execution brief |
-| `docs/tasks/0038-report.md` | Add | Validation evidence and reviewer handoff |
+| `docs/tasks/0038-host-controls-report.md` | Add | Validation evidence and reviewer handoff |
 
 ## 4. Steps
 
@@ -45,7 +46,7 @@ Current tokens and selectors: `App/app/static/host.css` defines `--action-height
 4. Extend only the approved export regions: add an optional server-derived property-scope label to the CSV menu macro and display/populate it in the shared CSV dialog with `textContent`. Add host-workspace scoped dialog styles; preserve CSV's required native dates and current query scope, plus the inspection bundle's optional dates, property selection, endpoint, warning and limit.
 5. In the shared confirm dialog, add localized default and archive labels. Use the Delete label only when the pending form action or button formaction path ends in `/archive`; restore the default proceed label for every other confirmation. Preserve native POST forms, bypass and submit behavior.
 6. Add required-browser checks using synthetic records, the shared Chromium launch helper, and `UBYHOST_REQUIRE_BROWSER`. Check EN/CS at 360, 390 and 1280px, page/dialog overflow, settings selected states, visible applied property scope, required CSV date fields, optional inspection date fields, native inputs, aligned controls and action tracks. Open actual archive and non-archive confirmations in EN/CS. Capture settings and open-dialog screenshots.
-7. Run `UBYHOST_BROWSER_EXECUTABLE=/usr/bin/chromium UBYHOST_REQUIRE_BROWSER=1 UBYHOST_CAPTURE_CONTROLS=1 .venv/bin/python -m pytest -q tests/test_host_controls_browser.py` from `App/` and record results in `0038-report.md`.
+7. Run `UBYHOST_BROWSER_EXECUTABLE=/usr/bin/chromium UBYHOST_REQUIRE_BROWSER=1 UBYHOST_CAPTURE_CONTROLS=1 .venv/bin/python -m pytest -q tests/test_host_controls_browser.py` from `App/` and record results in `0038-host-controls-report.md`.
 
 ## 5. Do not touch
 
@@ -79,4 +80,4 @@ Stop and report if a required-browser check fails twice, a required selector or 
 
 ## 9. Report
 
-Write `docs/tasks/0038-report.md` (1,500 tokens at most), summarize changed files and commands with results, tick §7 only for demonstrated outcomes, record deviations and questions, and list owner steps left. Keep report status at review only after tested completion.
+Write `docs/tasks/0038-host-controls-report.md` (1,500 tokens at most), summarize changed files and commands with results, tick §7 only for demonstrated outcomes, record deviations and questions, and list owner steps left. Keep report status at review only after tested completion.

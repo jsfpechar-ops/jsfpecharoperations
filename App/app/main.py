@@ -188,9 +188,9 @@ _CSP = _csp()
 
 
 def _public_csp() -> str:
-    """WP09: the CSP for the public pages that carry the Umami tag.
+    """WP09: the CSP for the public pages that carry the PostHog tag.
 
-    Derived from UMAMI_SCRIPT_URL (and UMAMI_HOST_URL), never hard-coded, so
+    Derived from POSTHOG_ASSETS_HOST and POSTHOG_HOST, never hard-coded, so
     the policy always matches the tag that templating rendered.
     """
     origin = analytics.script_origin()

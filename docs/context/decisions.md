@@ -24,14 +24,14 @@ Append-only.
 - 2026-10-06 | Cloudflare MCP servers removed from the local Cursor MCP config | context cost in every chat, and production DNS/WAF access for agents | task 0001
 - 2026-10-06 | Cursor automations (regression coverage, bug sweep) stay as they are and read known-issues.md | owner choice | [prompts](prompts.md#bug-hunt-automation)
 - 2026-10-06 | [workflow] Task 0001 merged (#281) before orchestrator review; review post-merge approved; stale PR cleanup remains owner-run | owner merged early | [0001 report](../tasks/0001-report.md)
-- 2026-10-06 | [workflow] Context-rollout upload: flat files only in the rollout bundle folder (no subfolder); MANIFEST at bundle root | place_files script paths | [TEMPLATE](../tasks/TEMPLATE.md)
+- 2026-10-06 | [workflow] Context-rollout bundle: flat files only; MANIFEST at root | place_files paths | [TEMPLATE](../tasks/TEMPLATE.md)
 - 2026-10-06 | [workflow] Every chat AI is the orchestrator and follows the token budget; Cursor writes all code; pointer files point to AGENTS.md | a session spent ~320k tokens on council + implementing | [workflow](workflow.md#token-budget-every-ai-every-session)
 - 2026-10-06 | New dependency `webauthn==3.0.1` (py_webauthn) with its transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned in requirements.lock | passkey verification must not be hand-rolled; owner approved all five | task 0004
 - 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
 - 2026-10-06 | Downloads opt out of the navigation skeleton by `download` / `data-no-skeleton` plus a path-ending rule, pinned by a template scan test | a stay-fee PDF click blanked the page for 15 s | skeleton.js
 - 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row; the CSV keeps one neutral line so it adds up | a correction line looks wrong to the office | stay_fee.py
-- 2026-10-06 | UbyPort outcome by police severity: 0-2 accepted, 4-6 not accepted; 112 = reported late = accepted (supersedes "112 = batch not received") | police letter CPR-34587-2/ČJ-2026-930023, A1-A5 | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
-- 2026-10-06 | The sweep sends a refused record once, then waits for the host to fix it (was 3 tries) | police B2-B3: resending refused data counts against the host | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
+- 2026-10-06 | UbyPort outcome: 0-2 accepted, 4-6 not; 112 = reported late = accepted (supersedes batch-not-received) | police letter A1-A5 | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
+- 2026-10-06 | Sweep: one send per refused record, then wait for host fix (was 3 tries) | police B2-B3 | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
 - 2026-10-06 | Staging may target the police test environment (`ubyport_env=test`) with the issued UBY-WS test account; credentials only in the staging app, never in git | police B4: test behaves like production | [LIGHTSAIL](../LIGHTSAIL.md)
 - 2026-10-06 | Abbreviation (zkratka) check accepts 5-6 letters or digits | the police issued a 6-character test abbreviation | validation.py
 - 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live; full rules in the plan | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
@@ -45,5 +45,5 @@ Append-only.
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
 - 2026-10-10 | UI decisions continue | cap | [UI](ui-decisions.md)
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
-- 2026-10-10 | PostHog replaces Umami and the funnel | owner | [plan](../plans/posthog-analytics.md)
+- 2026-10-10 | PostHog replaces Umami; privacy settings live in the snippet, not the dashboard | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
 - 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)

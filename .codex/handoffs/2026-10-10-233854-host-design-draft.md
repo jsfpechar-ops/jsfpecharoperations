@@ -193,3 +193,12 @@ the public repository or new screenshots.
 6. Push only the feature branch. Leave the PR draft until the owner accepts the
    selected designs and final evidence. The owner handles staging, merging and
    production; this handoff is not authorization for any deployment.
+
+## Conflict-resolution follow-up
+
+The owner subsequently requested PR #338 conflict resolution. Main was integrated
+into the feature branch; overlapping 0038/0040 door-code reports keep their main
+filenames, while historical host reports use explicit distinct Report paths.
+Design work remains paused, the two browser failures remain unresolved, and the
+PR stays draft. Application changes from main were automatically merged; this
+follow-up does not claim a newly passing application test suite.

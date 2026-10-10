@@ -1,50 +1,54 @@
-# 0040 host geometry review
+# 0040 report: door code unchanged during stay
 
-Status: review. Codex coordinated and reviewed; the owner-authorized Luna team
-executed the application changes and tests on `task/host-design-staging`.
+## Files changed
 
-The owner’s staging screenshots exposed headers/filters up to 342px left of
-results. The corrected host lane aligns shared headings, navigation, filters
-and results. Deliberately narrower forms align internally. Dense Stays tables
-become labelled cards before their tracks stop fitting; dates and long EN/CS
-statuses stay within their columns, and Copy/Send/More share heights and tops.
+- `App/app/door_codes.py` — `_handle_moves` skips TTLock replace when the code window or stay window has already started; queues `moved_during_stay` host notice.
+- `App/app/host_i18n.py` — EN and CS copy for `mail.door_code_notice.moved_during_stay`.
+- `App/tests/test_door_codes_safeguards.py` — two new tests; four existing move tests use future stay dates so they still assert pre-window replace behaviour.
+- `docs/tasks/0040-door-code-no-change-during-stay.md` — brief (Status: review).
 
-Mobile invoice/property action bars now follow forms instead of covering
-focused inputs. Persistent warnings and feedback sit in the page flow with
-links and dismissal rules retained. Inline copy success confirms on its
-button without shifting it. An enhanced empty month control uses one outline,
-with its native no-JavaScript fallback preserved. Unconfigured fee lists show
-Property/Status/actions. The approved dashboard cap, date window, semantic
-colors, filters and application behavior remain intact.
+## Commands (last 5 lines)
 
-Final required-Chromium coverage run: **3,030 passed, zero skipped, seven
-warnings; 89.57% coverage** against an 86% threshold; exit 0. The refreshed
-matrix contains **444 combinations**, 28 named host views, English/Czech and
-nine widths from 360 to 2048 pixels, with **zero lane mismatches** and a
-maximum header/results edge difference of **0px**. Focused checks cover actual
-persisted warnings, collapsed sidebars, Back links, controls and focused fields.
-Runtime Ruff, ShellCheck and JavaScript syntax checks passed. The validation
-report records commands, initial failures, final results and scope limits.
+`App/`: `.venv/bin/python -m pytest tests/test_door_codes_safeguards.py tests/test_door_code_handover.py -q`
 
-The [application review](../plans/host-design-application-review.md) lists the
-agreed design for each page. The portable gallery contains **413 unmodified
-synthetic captures**, 40 baseline and 373 corrected states, with hashes and
-measurement files. [Fifteen representative images](0040-evidence/README.md)
-are included in [PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338).
+```
+    from starlette.testclient import TestClient as TestClient  # noqa
 
-Owner reports: [dashboard](0040-luna_dashboard-report.md),
-[filters](0040-luna_filters-report.md), [invoices](0040-luna_invoice-report.md),
-[shared CSS](0040-luna_properties-report.md),
-[feedback](0040-luna_executor-report.md),
-[final validation](0040-luna_validation-report.md).
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+35 passed, 1 warning in 1.33s
+```
 
-GitHub CI and the owner’s next staging deployment remain separate. Local
-captures do not establish the deployed SHA. Docker image/health and Docker
-based gitleaks need CI; no production merge/deploy occurred. The
-[address-law check](../plans/invoice-address-check.md) remains open: retrieved
-Police/ČÚZK pages do not verify facility/invoice requirements, and relevant
-statutes remain inaccessible. Address validation was not changed.
+`App/`: `.venv/bin/python -m pytest tests -q`
 
-Concurrent main tasks reused report numbers. Host reports now have unique
-filenames and explicit Report paths; context lint retains its default path
-for existing briefs. This integration leaves the tested App tree unchanged.
+```
+    grey_pixels = sum(1 for px in crop.getdata() if px < 235)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3002 passed, 2 skipped, 7 warnings in 330.88s (0:05:30)
+```
+
+Repo root: `python3 scripts/context_lint.py`
+
+```
+next free: task 0041 | migration 0009
+context lint: OK
+```
+
+## Acceptance (§7)
+
+- [x] A change after the window has started makes no TTLock call, keeps the code, and mails the host once.
+- [x] A change before the window starts still replaces the code.
+- [x] Full pytest and context lint pass.
+
+## Deviations
+
+- Adjusted `test_a_date_change_calls_create_period_code_not_change`, `test_permission_on_a_move_does_not_add`, and `test_an_undeleted_old_code_after_a_move_tells_the_host` to use reservation dates in the future so `start_ms > now_ms` and pre-window replace behaviour is what is exercised (same file as Step 3).
+
+## Questions
+
+None.
+
+## Owner steps
+
+1. Merge with `scripts/merge-pr-on-green.sh` after the tests are green. Deploy staging.
+2. Hand-add a stay that started yesterday, register it, and type its code. Move its end date one day earlier. Within 2 minutes you get "change the door code in the TTLock app", and the code still opens the door.
