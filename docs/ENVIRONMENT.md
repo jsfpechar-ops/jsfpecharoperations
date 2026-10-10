@@ -82,22 +82,28 @@ Turnstile is **inert unless all three of the `TURNSTILE_*` values are set**.
 When it is active, an unreachable Cloudflare fails open a bounded number of
 times per address and raises `turnstile_unavailable`.
 
-## Page analytics (Umami)
+## Page analytics (PostHog)
 
 | Variable | Default | Notes |
 |---|---|---|
-| `UMAMI_WEBSITE_ID` | unset | Website ID from the Umami website settings. |
-| `UMAMI_SCRIPT_URL` | unset | Exact `src` of the tracking code from the Umami website settings. Must be `https://`. |
-| `UMAMI_HOST_URL` | unset | Optional `data-host-url`. Unset uses the tracker default; for the Umami Cloud script that is `https://gateway.umami.is`. |
-| `UMAMI_DOMAINS` | host of `UBYHOST_PUBLIC_BASE_URL` | `data-domains`, comma-separated. |
+| `POSTHOG_PROJECT_API_KEY` | unset | Project API key from PostHog. The public tag is absent until this is set. |
+| `POSTHOG_HOST` | `https://eu.i.posthog.com` | PostHog API host (`https` only). US hosts (`us.i.posthog.com`) are ignored. |
+| `POSTHOG_ASSETS_HOST` | `https://eu-assets.i.posthog.com` | Host that serves `array.js` (`https` only). US asset hosts are ignored. |
 
-The tag is rendered **only when both `UMAMI_WEBSITE_ID` and `UMAMI_SCRIPT_URL`
-are set**, and only on the public marketing and legal pages listed in
-`app/analytics.py`. Those pages get a CSP that adds the script origin to
-`script-src` and the event endpoint to `connect-src`; app, guest and auth pages
-keep the strict CSP. `tests/test_umami_guard.py` enforces this.
-While it is on, `/privacy` shows the analytics paragraph with an opt-out and
-opt-back-in link (`static/umami-optout.js`, localStorage key `umami.disabled`).
+Both hosts default to the EU region. A US API or asset host is refused and the
+tag stays off. The tag is rendered **only when `POSTHOG_PROJECT_API_KEY` is set**
+and the hosts are valid, and only on the public marketing and legal pages listed
+in `app/analytics.py`. Those pages get a CSP that adds the assets host to
+`script-src` and the API host to `connect-src`; app, guest and auth pages keep
+the strict CSP. `tests/test_umami_guard.py` enforces this.
+While it is on, `/privacy` shows the analytics paragraphs with an opt-out and
+opt-back-in link (`static/analytics-optout.js`, localStorage key
+`ubyhost.analytics.disabled`).
+
+Before you set the key:
+
+1. In PostHog, open **Settings**, then **Project**, then **IP data capture**. Turn on **Discard client IP data**.
+2. In the same project settings, find **Cookieless server hash mode** and turn it on. Without it, the cookieless page views are dropped.
 
 ## Reverse proxy and client IP
 

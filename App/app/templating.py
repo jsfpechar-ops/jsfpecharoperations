@@ -461,7 +461,7 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     data.setdefault("security_prompt", _security_prompt(request, data["current_user"], workspace))
     # WP09: set here, never from a route's context, so only the allowed public
     # templates can ever get a tag (and the matching CSP in main._harden).
-    data["umami_tag"] = analytics.tag() if analytics.mark_public_page(request, name) else None
+    data["analytics_tag"] = analytics.tag() if analytics.mark_public_page(request, name) else None
     response = templates.TemplateResponse(request, name, data, status_code=status_code)
     # Arriving on a ?lang= link (the hreflang URLs search engines index) is as
     # much a choice as clicking the switcher, so it survives the next click.
@@ -477,7 +477,7 @@ def render_guest(request: Request, name: str, context: Optional[Dict[str, Any]] 
     data["request"] = request
     data["csrf_token"] = security.csrf_token(request)
     data["open_alerts"] = []
-    data["umami_tag"] = None  # permanent rule: guest pages are never measured
+    data["analytics_tag"] = None  # permanent rule: guest pages are never measured
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
     return templates.TemplateResponse(request, name, data, status_code=status_code)

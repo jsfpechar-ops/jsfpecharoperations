@@ -66,14 +66,14 @@ def test_no_draft_markers_remain():
 
 
 def test_the_register_lists_the_section_5_subprocessors_with_safeguards():
-    assert legal.SUBPROCESSOR_IDS[:5] == ("aws_lightsail", "aws_ses", "aws_s3", "cloudflare", "umami")
+    assert legal.SUBPROCESSOR_IDS[:5] == ("aws_lightsail", "aws_ses", "aws_s3", "cloudflare", "posthog")
     for lang in ("en", "cs"):
         html = _get(f"/subprocessors?lang={lang}")
         for sid in legal.SUBPROCESSOR_IDS:
             for field in ("provider", "purpose", "data", "location", "safeguard"):
                 value = SUBPROCESSOR_STRINGS[lang][f"subprocessors.{sid}_{field}"]
                 assert value.replace("'", "&#39;") in html, (lang, sid, field)
-        for name in ("AWS Lightsail", "Amazon SES", "Amazon S3", "Cloudflare, Inc.", "Umami Cloud"):
+        for name in ("AWS Lightsail", "Amazon SES", "Amazon S3", "Cloudflare, Inc.", "PostHog, Inc."):
             assert name in html, (lang, name)
 
 

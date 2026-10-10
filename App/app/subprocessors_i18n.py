@@ -59,13 +59,17 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.cloudflare_safeguard": (
             "Cloudflare DPA, EU Standard Contractual Clauses, EU-US Data Privacy Framework."
         ),
-        "subprocessors.umami_provider": "Umami Software, Inc. (Umami Cloud)",
-        "subprocessors.umami_purpose": "Website statistics, marketing pages only.",
-        "subprocessors.umami_data": (
-            "Page views, referrer, browser, device, country, short-lived visit hash. No Guest Data."
+        "subprocessors.posthog_provider": "PostHog, Inc. (PostHog Cloud EU)",
+        "subprocessors.posthog_purpose": (
+            "Website statistics on public pages, and host-account product measurement for the operator."
         ),
-        "subprocessors.umami_location": "EU region. Used only while the Operator enables it.",
-        "subprocessors.umami_safeguard": "Umami DPA.",
+        "subprocessors.posthog_data": (
+            "Public page views and the three click events; for a host account, e-mail, workspace name, "
+            "UTM labels, sign-up source and funnel stage. No Guest Data. No advertising click "
+            "identifiers."
+        ),
+        "subprocessors.posthog_location": "EU, Frankfurt. Used only while the operator enables it.",
+        "subprocessors.posthog_safeguard": "PostHog DPA.",
         "subprocessors.render_provider": "Render",
         "subprocessors.render_purpose": "Demo hosting.",
         "subprocessors.render_data": "Demo and test data plus technical logs.",
@@ -173,14 +177,18 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.cloudflare_safeguard": (
             "DPA Cloudflare, standardní smluvní doložky EU, rámec EU-US Data Privacy Framework."
         ),
-        "subprocessors.umami_provider": "Umami Software, Inc. (Umami Cloud)",
-        "subprocessors.umami_purpose": "Statistiky návštěvnosti webu, jen marketingové stránky.",
-        "subprocessors.umami_data": (
-            "Zobrazení stránek, odkazující web, prohlížeč, zařízení, země, krátkodobý hash "
-            "návštěvy. Žádné údaje hostů."
+        "subprocessors.posthog_provider": "PostHog, Inc. (PostHog Cloud EU)",
+        "subprocessors.posthog_purpose": (
+            "Statistiky návštěvnosti na veřejných stránkách a produktové měření účtu hostitele pro "
+            "provozovatele."
         ),
-        "subprocessors.umami_location": "Region EU. Používá se, jen pokud jej Provozovatel zapne.",
-        "subprocessors.umami_safeguard": "DPA Umami.",
+        "subprocessors.posthog_data": (
+            "Zobrazení veřejných stránek a tři události kliknutí; pro účet hostitele e-mail, název "
+            "pracovního prostoru, štítky UTM, zdroj registrace a fáze funnelu. Žádné údaje hostů. "
+            "Žádné identifikátory reklamních kliknutí."
+        ),
+        "subprocessors.posthog_location": "EU, Frankfurt. Používá se, jen pokud jej provozovatel zapne.",
+        "subprocessors.posthog_safeguard": "DPA PostHog.",
         "subprocessors.render_provider": "Render",
         "subprocessors.render_purpose": "Ukázkový provoz.",
         "subprocessors.render_data": "Ukázková a testovací data a technické logy.",
