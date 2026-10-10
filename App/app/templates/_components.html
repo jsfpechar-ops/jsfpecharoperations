@@ -170,14 +170,15 @@
   {% endif %}
 {% endmacro %}
 
-{% macro csv_actions_menu(export_params='', compact=false) %}
+{% macro csv_actions_menu(export_params='', compact=false, scope_label='') %}
 <button class="btn{% if compact %} small csv-in-filter{% endif %}" type="button"
-        data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}">
+        data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}"
+        data-csv-scope-label="{{ scope_label }}">
   {{ t('csv.export_stays') }}
 </button>
 {% endmacro %}
 
-{% macro housebook_csv_menu(export_params='', compact=false, pdf_enabled=false) %}
+{% macro housebook_csv_menu(export_params='', compact=false, pdf_enabled=false, scope_label='') %}
 <div class="action-menu row-menu{% if compact %} csv-in-filter{% endif %}">
   <button class="btn row-menu-trigger{% if compact %} small{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">
     {{ t('housebook.export_menu') }}
@@ -188,7 +189,8 @@
   </button>
   <div class="row-menu-panel" role="menu" hidden>
     <button class="row-menu-item" type="button" role="menuitem"
-            data-csv-export="/housebook.csv" data-csv-params="{{ export_params }}">{{ t('csv.download') }}</button>
+            data-csv-export="/housebook.csv" data-csv-params="{{ export_params }}"
+            data-csv-scope-label="{{ scope_label }}">{{ t('csv.download') }}</button>
     {% if pdf_enabled %}
       <button class="row-menu-item" type="button" role="menuitem" data-housebook-pdf-export>{{ t('csv.download_pdfs') }}</button>
     {% endif %}

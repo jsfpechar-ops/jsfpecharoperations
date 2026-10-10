@@ -24,6 +24,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, demo, reporting
 from app.main import app
+from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 
 
@@ -84,7 +85,7 @@ def world():
 def browser():
     with sync_api.sync_playwright() as playwright:
         try:
-            chromium = playwright.chromium.launch()
+            chromium = playwright.chromium.launch(**chromium_launch_kwargs())
         except Exception as exc:
             if REQUIRE_BROWSER:
                 raise

@@ -9,6 +9,13 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 - **Executor** (Cursor: composer, Kimi or GLM only): follows one brief exactly. Reads only this file, the brief and the files the brief names. If you are Cursor running a brief from docs/tasks/, you are the executor.
 - **Owner** (Josef): merges, deploys, secrets, servers. Give him numbered click-by-click steps in plain words.
 
+**Owner-authorized exception, 2026-10-10 host redesign:** the owner explicitly
+designated Luna 6.0 subagents as executors and authorized staging deployment.
+Codex remains orchestrator/reviewer; Luna may implement the scoped host briefs
+and run application checks. Follow the [session exception](docs/context/workflow.md#owner-authorized-host-design-execution).
+This permits feature-branch push and staging review, with no main push or
+production deployment.
+
 ## Hard rules (full text: [rules](docs/context/rules.md))
 
 1. UbyPort filing correctness beats every other feature ([UBYPORT_CORE](docs/UBYPORT_CORE.md)).

@@ -98,7 +98,7 @@
         {% endif %}
       {% elif not stay_inactive %}
         <button class="btn primary" type="button" data-copy="stay-link"
-                data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>
+                data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
       {% endif %}
       {% if stay_invoice %}
         <a class="btn" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>
@@ -106,7 +106,7 @@
         <a class="btn" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>
       {% endif %}
       {{ row_menu_begin() }}
-        <button class="row-menu-item" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>
+        <button class="row-menu-item" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
         {% if reservation.permalink_token %}
         <a class="row-menu-item" href="{{ guest_link }}" target="_blank" rel="noopener" role="menuitem">{{ t('stay.detail.menu.open_guest_form') }}</a>
         {% endif %}
@@ -117,10 +117,10 @@
           </form>
         {% else %}
           <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form"
-                data-confirm data-confirm-message="{{ t('confirm.archive_stay') }}">
+                data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
             <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">
-            <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.detail.menu.archive') }}</button>
+            <button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
           </form>
         {% endif %}
         <a class="row-menu-item" href="/guest-links" role="menuitem">{{ t('stay.detail.menu.guest_links') }}</a>
@@ -205,9 +205,9 @@
             <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}" role="menuitem">{{ t('stay.detail.guests.edit') }}</a>
             <a class="row-menu-item" href="/guests/{{ guest.id }}/form.pdf" role="menuitem">{{ t('stay.detail.guests.pdf') }}</a>
             <form method="post" action="/guests/{{ guest.id }}/archive" class="row-menu-form"
-                  data-confirm data-confirm-message="{{ t('confirm.archive_guest') }}">
+                  data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
               <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-              <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
+              <button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
             </form>
           {{ row_menu_end() }}
         </div>
@@ -287,7 +287,7 @@
         </div>
         <div class="guest-card-state">
           <button class="btn small" type="button" data-copy="stay-link"
-                  data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('common.copy_link') }}</button>
+                  data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
           <a class="btn small" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
           {% if not stay_inactive and progress.expected > 1 %}
           <form method="post" action="/reservations/{{ reservation.id }}/remove-empty-slot" data-confirm data-confirm-title="{{ t('host.remove_slot') }}" data-confirm-message="{{ t('host.remove_slot_confirm') }}">

@@ -9,12 +9,13 @@ card's title).
 from __future__ import annotations
 
 import re
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, config, db, host_i18n
+from app import auth, claim, config, db, host_i18n
 from app.main import app
 from tests.conftest import login_as
 
@@ -208,20 +209,54 @@ def test_a_workspace_with_a_property_keeps_the_page_header(host_with_property):
 def test_dashboard_status_counts_use_distinct_colours(host_with_property):
     page = host_with_property.get("/?lang=en").text
 
-    assert 'class="stat-action"' in page
-    assert 'class="stat-waiting"' in page
-    assert 'class="stat-ready"' in page
-    assert 'class="stat-overdue"' in page
+    cards = re.findall(
+        r'<a class="dashboard-stat (action|waiting|ready|overdue)([^"]*)"[^>]*>'
+        r'<strong>(\d+)</strong><span>(.*?)</span></a>', page, re.S,
+    )
+    assert len(cards) == 4
+    assert {kind for kind, _classes, _count, _label in cards} == {
+        "action", "waiting", "ready", "overdue"
+    }
+    assert all(count == "0" and "is-positive" not in classes
+               for _kind, classes, count, _label in cards)
     assert "Needs action" in page
     assert "Waiting for guests" in page
 
 
+def test_positive_action_count_uses_semantic_color_and_zeros_stay_neutral(host_with_property):
+    owner_id = _owner_id()
+    apartment = db.query_one("SELECT id FROM apartment WHERE owner_user_id = ?", (owner_id,))
+    today = claim.prague_today()
+    reservation_id = db.insert("reservation", {
+        "apartment_id": apartment["id"], "source": "manual", "uid": "chrome-action-stay",
+        "date_from": (today + timedelta(days=1)).isoformat(),
+        "date_to": (today + timedelta(days=3)).isoformat(), "status": "active",
+        "expected_guests_override": 1, "created_at": db.utcnow(), "updated_at": db.utcnow(),
+    })
+    try:
+        page = host_with_property.get("/?lang=en").text
+        cards = re.findall(
+            r'<a class="dashboard-stat (action|waiting|ready|overdue)([^"]*)"[^>]*>'
+            r'<strong>(\d+)</strong><span>(.*?)</span></a>', page, re.S,
+        )
+        by_kind = {kind: (classes, count) for kind, classes, count, _label in cards}
+        assert by_kind["action"][1] == "1"
+        assert "is-positive" in by_kind["action"][0]
+        for kind in ("waiting", "ready", "overdue"):
+            assert by_kind[kind][1] == "0"
+            assert "is-positive" not in by_kind[kind][0]
+    finally:
+        db.execute("DELETE FROM reservation WHERE id = ?", (reservation_id,))
+
+
 def test_stat_tiles_use_the_status_tokens():
-    """Tiles take their colours from the criticality tokens, never hard-coded hex."""
-    css = (Path(__file__).resolve().parents[1] / "app" / "static" / "host.css").read_text()
-    for name, level in (("stat-overdue", "critical"), ("stat-action", "action"),
-                        ("stat-ready", "ready"), ("stat-waiting", "waiting")):
-        assert f".dashboard-stats .{name} {{ background: var(--status-{level}-bg);" in css
+    """Positive lines use semantic tokens; zero cards retain a neutral base."""
+    template = (Path(__file__).resolve().parents[1] / "app" / "templates" / "dashboard.html").read_text()
+    assert ".dashboard-stat { --stat-color:var(--ink-muted);" in template
+    assert "background:#fff;" in template
+    for name, token in (("action", "status-action-border"), ("waiting", "brown"),
+                        ("ready", "status-ready-ink"), ("overdue", "status-critical-border")):
+        assert f".dashboard-stat.{name}.is-positive {{ --stat-color:var(--{token}); }}" in template
 
 
 def test_the_skipped_onboarding_still_gets_the_page_header(empty_host):

@@ -19,6 +19,29 @@ that document, not only against layout tests.
 
 **[HOST_APP_DESIGN.md](HOST_APP_DESIGN.md)** governs the signed-in workspace. Its implementation, route coverage, verification evidence, and integration instructions are in **[plans/host-app-redesign](archive/plans/host-app-redesign/README.md)**. The host layer is `static/host.css` and `static/host.js`, loaded only with the signed-in navigation. Keep the public site, login and guest forms under their existing rules below.
 
+### Owner's standard: extremely easy and intuitive
+
+Reaffirmed 2026-10-10: a first-time host, including an older person, should see
+what matters and understand the next action without learning the interface.
+Use familiar words, readable text, visible labels and predictable positions.
+Show useful facts once. Reveal optional complexity only when requested. Keep
+core actions discoverable without hover, and make every interaction usable
+with touch and keyboard. Never reduce clarity by shrinking labels, relying on
+color alone or hiding the context needed to make a decision.
+
+Uniformity is a product rule: the same kind of filter, button, calendar or menu
+looks and behaves the same across pages. Different business rules retain
+their own fields and defaults. Simple navigation choices may stay directly
+visible rather than gaining an unnecessary disclosure click. Use the existing
+warm light palette; no extra photos, decorative metrics or UI explanation
+that does not help the task.
+
+The current owner-approved set and browser review are recorded in
+[host-control-polish](plans/host-control-polish.md), the
+[filter audit](plans/host-filter-audit.md) and the
+[interactive review](plans/host-control-review.html). The review is a standalone
+prototype; Cursor implements and verifies production changes from scoped briefs.
+
 ## Color mode: light only (no dark mode)
 
 **Do not implement dark mode unless the product owner explicitly asks for it.**
@@ -51,6 +74,201 @@ and update this section in the same change.
 ## Action geometry
 
 Controls that sit in the same action group share one height (`--action-height`, 42px), one gap (`--action-gap`, 8px), and the same baseline. Primary and secondary treatment may change color, never the control's height or padding. Use `.action-group` for a row, `.action-group-equal` when neighbors should share width, and `.action-group-stack` so the row becomes equal full-width controls below 760px. Do not size one button from a timestamp or a second line of meta; put that meta under the group. A future screen that places two actions together and gives them different heights is a defect, not a local exception.
+
+Owner clarification, 2026-10-10: repeat actions such as **Open** share one
+reserved column, width and height across sections. Keep the label and arrow on
+one line. Table headers and all rows share the same column definitions; reserve
+the removal/action slot even on rows without that action. Align invoice Quantity,
+Unit and Unit price across Accommodation, Cleaning and Other. On mobile, give
+prices the same full-width position rather than squeezing a desktop table.
+Additional descriptions appear below the first control without shifting its
+neighbors. Responsive previews must respond to their own available width.
+
+## Interaction feedback: default everywhere
+
+Owner decision, 2026-10-10: interactive rows, cards, links and controls must
+respond consistently to pointer hover and keyboard focus throughout the app.
+Use a quiet surface tint for hover and a clear visible focus indicator;
+focus within an interactive row must give comparable context. Static panels
+must not suggest that they are clickable. Keep essential actions visible
+without hovering, usable by touch, and distinguishable without color alone.
+Feedback must not move content or depend on animation; respect reduced motion.
+
+## Filters on demand: host app default
+
+Owner selected **an expandable panel for Stays and Invoices** on 2026-10-10.
+Progressive disclosure is the shared direction for all host pages with genuine
+result filters: show what matters, reveal choices when requested, and keep the
+interface extremely easy to understand, including for older users.
+
+- A clearly labelled **Filters** button opens an inline panel above the results.
+  It pushes content down, works by keyboard and touch, and exposes its expanded
+  state. Keep a concise summary of applied filters visible when the panel closes.
+- Keep navigation, the main page action and export accessible outside the panel.
+  Do not hide an object's selector or essential reporting context merely because
+  it resembles a filter. Only show an active-filter count when it is useful;
+  count departures from that page's defaults, not every populated control.
+- Label every field. Align related controls, allow readable mobile wrapping,
+  and avoid placeholder-only instructions or unexplained icons. Use the existing
+  white panels, warm borders, restrained coral and system typography.
+- Stays and Guest register use **one Stay dates range control**, replacing
+  separate From/Until controls in the filter row. Its popover contains labelled
+  start/end selectors, one shared calendar, Clear dates and Apply dates. Allow
+  both bounds or an open-ended range; explain reversed bounds and prevent applying
+  them. Applying dates updates only the panel draft; Apply filters commits it.
+  Escape/outside dismissal discards unconfirmed picker changes, while Cancel
+  restores all applied panel values. Preserve existing overlap/inclusive date
+  semantics and working labelled date inputs without JavaScript.
+- Owner clarified that the collapsed Stays summary should read **All properties
+  · Active** by default. Never repeat automatic preset dates or an ellipsis.
+  Show date bounds only when explicitly chosen/applied, using From/Until for
+  one-sided ranges. Invoices retain **All dates · All properties**. A date range
+  counts as one filter. The revised preview uses unbounded **All dates** as the
+  Stays default, interpreting the owner's “all the time”; Upcoming/current and
+  Past remain separate views. This replaces the earlier current/upcoming default.
+- Edits remain a draft until **Apply filters** submits the GET form once.
+  **Cancel** restores the applied values and closes the panel. Reset preserves
+  the page's established defaults. Without JavaScript, expose the fields and
+  ordinary submit controls. Preserve URLs, saved views and existing parameters.
+- Invoices and Stay fees share the chosen compact month grid: a year header
+  with arrows, twelve months and a soft coral selection. Inside a filter panel,
+  selecting a month updates the draft; Apply filters commits it. Preserve each
+  page's required/optional period, bounds and All dates availability.
+- Export dialogs keep their explicit scope; opening the panel must not silently
+  change an export. Context switches and navigation tabs are not result filters.
+- Use the same control geometry, labels, spacing and Apply/Cancel behavior on
+  Stays, Invoices, Stay fees and Guest register. Day calendars match the compact
+  month picker's borders, typography, arrow controls, focus and soft selection.
+  Preserve domain-specific choices and required/optional period semantics.
+- Archived type choices and Settings' two audit scopes use matching quiet
+  segmented controls, directly visible. Do not add a panel merely for uniformity
+  when it makes a simple choice harder. Export dialogs share the field components
+  while keeping their own explicit date/property scope.
+
+Route inventory, remaining verification and scoped execution:
+[host-control-polish](plans/host-control-polish.md).
+
+## Dashboard: only useful information
+
+Owner-selected design, 2026-10-10: **Quiet overview**, from the earlier dashboard
+options. The owner accepted the five-stay cap and updated the window to 30 days.
+The 30-day window supersedes the earlier 14-day choice. No property
+photos or decorative detail. Show vital reporting/task statuses, the context
+needed to identify a stay, and a clear next action. Use readable text, quiet
+surfaces and labelled status indicators; do not make a zero count look urgent.
+
+Limit the routine overview to current stays and arrivals in the next **30 days**.
+Show **at most five stay rows total** across all dashboard sections, with
+**View all stays** for the full list. Count each stay once; the cap is not per section.
+Give genuinely overdue or failed work priority even if its stay is older; do
+not hide an unresolved filing problem behind the date window or display cap.
+An additional actionable count links to the full work list when urgent work
+exceeds the cap. Use quiet, labelled status colors, keeping zero counts neutral.
+This changes presentation only, never filing state, deadlines or automation.
+
+Keep the four small **white** overview cards from the owner's Quiet overview
+reference: Needs action (amber), Waiting for guests (taupe), Ready to send
+(muted blue), Overdue (red only when positive). Use a small semantic dot and a
+thin attention line; no large filled alarm tiles. Zero states stay neutral.
+Row pills use the same color meanings and readable labels. Waiting indicates
+a routine state, not urgency; only genuinely missing, late or failed work gets
+attention color. Summary counts precede the five-row cap and can overlap.
+
+## Delete action: move to Archived
+
+Owner decision, 2026-10-10: label existing host archive actions **Delete**
+(Czech: **Smazat**). Keep their existing archive operation and move records to
+**Archived**; this is a copy change, not permission to permanently erase data.
+Keep the Archived destination and its existing restore controls named for
+their purpose. Do not rename archive navigation or internal routes to Delete.
+
+The confirmation must explain the result: **This item will move to Archived.**
+(Czech: **Tato položka se přesune do archivu.**) Use Delete on its confirm button.
+Success feedback must likewise say the item moved to Archived. Preserve all
+existing eligibility checks, confirmations, protections for linked operators
+and reported records, archive storage, retention and restoration behavior.
+Actual permanent deletion and privacy-erasure flows retain their distinct,
+truthful wording; do not apply a global text replacement to every delete flow.
+
+## Address labels: aligned fields without reporting pills
+
+Owner revision, 2026-10-10: remove every **Needed to report** pill. This replaces
+the earlier badge layout A. Keep complete labels, aligned input tops within
+each grid row and natural mobile stacking. Mark genuinely optional fields with
+plain `(optional)` beside their labels; do not add a replacement badge or legend.
+
+The facility's Street optional flag describes this property form. Invoice
+seller and customer addresses are separate; a reporting badge must never be
+treated as an invoice-law rule. Preserve address fields and current validation.
+Current-source facility/invoice address verification is open; street is currently
+optional in the facility form and validator. Do not claim universal statutory
+requiredness or silently change validation from an unverified design assumption.
+Missing reporting data must remain discoverable in the existing readiness/error
+flow. See the
+[targeted legal check](plans/invoice-address-check.md).
+
+## Operator actions: visible and predictable
+
+Owner-selected 2026-10-10: Edit, Invoice settings and More are visible without
+hover on every operator row, in consistent positions. More contains Delete.
+For linked operators, show that action unavailable with a visible explanation
+to move linked properties first. The explanation must work for keyboard and
+touch users; a disappearing button or hover-only tooltip is insufficient.
+Preserve existing server-side archive guards for legal entity/data-controller
+references. The action still moves eligible records to Archived.
+
+## Invoice items: retain the simple layout
+
+Owner-selected 2026-10-10: keep the current invoice-item structure and rounded
+controls. Show custom Description only for Other and retain the text if the
+user switches kinds and returns. A Cleaning unit may stay blank; do not impose
+a default or make Unit mandatory for visual consistency. Keep row/value mapping,
+quantity, price, VAT rules, caps and issued snapshots unchanged.
+
+The simple structure must still be geometrically consistent: one shared grid
+for headers and every line, equal Unit price widths, aligned first-control tops
+and a reserved removal column. Extra description stays below Other only.
+
+## Copy and action confirmations: one feedback family
+
+Owner wording update, 2026-10-10: the dashboard row action is **Open**. In a stay's
+More menu, use **Copy guest form link**, meaning the guest registration URL,
+never the internal host stay-detail URL. Use that explicit label wherever the
+same guest-form URL is copied; keep message, PIN and identifier copy labels
+specific to their own targets.
+
+Owner requested the pasted copy/checkmark and stacked-notification examples on
+2026-10-10. Adapt their visual effects to the light warm palette and current
+semantic colors. Keep familiar text labels; copy feedback reserves enough space
+for the normal and confirmed labels so nothing moves. Write the actual value
+first, then show the drawn checkmark and **Copied**. A denied clipboard operation
+must show a truthful failure and leave the source available for manual copying.
+
+Apply the notification style to transient host confirmations for saves, copy,
+manual reports and other existing flash/toast updates. White cards, restrained
+colored icons, readable text and a visible dismissal action; at most three
+visible cards, deduplicating repeats and queuing excess updates. Success/info
+may disappear after seven seconds; pause while hovered, focused or the document
+is hidden. Errors, partial results, warnings requiring action and Undo remain
+until dismissed. Respect reduced motion and announce each outcome once.
+
+Show **Changes saved** only after a successful save. A click to send is pending,
+not acceptance. Preserve separate report outcomes (accepted, already reported,
+partial, failed, transport/receipt uncertainty) and existing receipt access.
+Do not replace persistent status pills, field errors, setup warnings, safety
+banners or legal explanations with disappearing notices. Keep Undo/Restore
+working. No autonomous demo activity, no new dependency, no sensitive content
+copied into notification messages. Detailed mapping and example review:
+[feedback review](plans/host-feedback-review.md).
+
+## Properties: local work first
+
+Owner-selected 2026-10-10: remove the duplicate Property tools menu from
+individual property pages. Keep local cards and contextual settings paths.
+Provide the useful cross-property Guest links/Automation/lock overviews on the
+Properties landing page and through Search, rather than repeating that menu
+inside each property. Preserve global routes, shared-lock account setup,
+deep links and return navigation.
 
 ## Technical stack (unchanged)
 

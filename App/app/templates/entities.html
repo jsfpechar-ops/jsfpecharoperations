@@ -65,6 +65,11 @@
 
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb, onboarding_banner, row_menu_begin, row_menu_end with context %}
+<style>
+  .entities-page tbody tr .row-actions > * { opacity: 1; }
+  .entities-page .row-menu-item[aria-disabled="true"] { color: var(--muted); cursor: not-allowed; }
+  .entities-page .row-menu-explanation { max-width: 240px; margin: 0 8px 6px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+</style>
 {{ breadcrumb([
   {'label': t('nav.properties'), 'url': '/apartments'},
   {'label': t('entities.title'), 'url': ''}
@@ -87,7 +92,7 @@
 {% endif %}
 
 {% if entities %}
-<div class="panel tight scroll-x">
+<div class="panel tight scroll-x entities-page">
   <table class="table-cards">
     <thead><tr><th class="col-name">{{ t('entities.name') }}</th><th>{{ t('entities.seat') }}</th><th>{{ t('entities.ico') }}</th><th>{{ t('entities.contact') }}</th>
       <th>{{ t('entities.properties') }}</th><th></th></tr></thead>
@@ -109,14 +114,18 @@
         <td class="nowrap row-actions" data-label="">
           <a class="btn small" href="/entities?edit={{ entity.id }}">{{ t('common.edit') }}</a>
           <a class="btn small" href="/invoices/settings?entity={{ entity.id }}">{{ t('host.invoice_settings') }}</a>
-          {% if not entity.apartments %}
           {{ row_menu_begin() }}
+            {% if not entity.apartments %}
             <form method="post" action="/entities/{{ entity.id }}/archive" class="row-menu-form"
-                  data-confirm data-confirm-message="{{ t('confirm.archive_entity') }}">
-              <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
+                  data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
+              <button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
             </form>
+            {% else %}
+              <button class="row-menu-item" type="button" role="menuitem" aria-disabled="true" tabindex="0"
+                      aria-describedby="linked-operator-{{ entity.id }}">{{ t('host.delete') }}</button>
+              <div class="row-menu-explanation" id="linked-operator-{{ entity.id }}" role="note">{{ t('entities.delete_linked_help') }}</div>
+            {% endif %}
           {{ row_menu_end() }}
-          {% endif %}
         </td>
       </tr>
     {% endfor %}

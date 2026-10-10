@@ -1,29 +1,13 @@
 # Known issues
 
-**Rules**
+Replaces FOLLOWUPS.md/MEMORIES.md. Grep first; skip listed hunts; append IDs.
+Fixing PR removes rows; log decisions.
+Status: open, unverified, decision (owner/lawyer/council), accepted.
+**HR** = HIGH RISK; owner decides.
 
-- This is the single list of known bugs and open findings. It replaces FOLLOWUPS.md and every automation's MEMORIES.md.
-- **Don't read it whole.** `grep -n '<file or area>' docs/context/known-issues.md`.
-- Bug hunts: skip anything listed here and append only new IDs.
-- When an item is fixed: delete its row in the fixing PR and add a decisions line if it mattered.
+**Sources:** [source map](known-issue-sources.md), cited sections only.
 
-**Status values:** `open`, `unverified` (check before you act), `decision` (owner, lawyer or council must decide), `accepted`. **HR** = HIGH RISK: needs an owner decision before any change.
-
-**Sources** (open only the cited section):
-
-| Key | File |
-|---|---|
-| P | `docs/archive/plans/UbyHost_prelaunch_review/UbyHost_prelaunch_review.md` |
-| F | `docs/archive/FOLLOWUPS.md` |
-| AR | `docs/archive/plans/UbyHost_Audit_and_Cursor_Plan_2026-09-28.md` |
-| G | `docs/archive/plans/GDPR_REMEDIATION_PLAN.md` |
-| C | `docs/archive/TECHNICAL_COMPLIANCE_AUDIT.md` |
-| S | `docs/archive/SECURITY_REVIEW_2026-09-15.md` |
-| R | `docs/archive/PHASE_1-6_REVIEW_2026-09-24.md` |
-| UX | `docs/archive/plans/UX_IMPLEMENTATION_REVIEW.md` |
-| X | Cursor chats (not in repo) |
-
-Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were judged fixed and left out.
+Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 
 | ID | Sev/status | Where | Issue | Src |
 |---|---|---|---|---|
@@ -82,11 +66,17 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-I06 | Low unverified | invoice_pdf.py | PDF floors the unit price; the web page rounds | P A13 |
 | K-I07 | Low unverified | routes/stay_fees.py | Cadence switch may orphan adjustments | P A15 |
 | K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
+| K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify ordinary VAT invoice requirements | UI §3 |
 | K-U01 | High decision | product.html:49,113, landing.html:72,189 | CTAs dead-end at /login while sign-up is off | UX UX-9 |
 | K-U02 | Med unverified | routes/guest.py PIN gate | A wrong PIN loses the #c= claim secret | UX M-3 |
 | K-U03 | Med open | signature.js:515, settings.html:250 | Back skips validation; recovery-code field numeric-only on iOS | UX M-5, M-1 |
 | K-U04 | Med unverified | mail_notify.py, signature.js, reservations | UX majors M-4 to M-9 | UX |
-| K-U05 | Med unverified | test_guest_browser_e2e.py | [320] reported failing on main; confirm in CI | X |
+| K-U05 | Med unverified | test_guest_browser_e2e.py | Local required-browser pass on feature; confirm in CI | X |
+| K-U06 | Low open | apartment_form.html | Pills removed/aligned on feature; CI/staging pending | UI §3 |
+| K-U07 | Low decision | entities.html | Visible Delete/explanation on feature; guard retained; CI pending | UI §4 |
+| K-U08 | Low open | invoice_form.html | Other-only description fixed on feature; CI pending | UI §6 |
+| K-U09 | Low open | dashboard.html, host.css | Hover/focus fixed on feature; CI/staging pending | UI §9 |
+| K-U10 | Low open | app.js:copy | Copy outcomes fixed on feature; CI/staging pending | UI §12 |
 | K-O01 | High open | server crontab | Backup and off-site crons aren't in the repo; verify on the server | AR-04 |
 | K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on a real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |

@@ -138,8 +138,18 @@ def test_every_automation_mode_remains_accessible_in_context(host, mode, key, ho
 
 
 def test_property_tools_translates(host):
-    page = host.get("/apartments?lang=cs").text
+    # Property tools remain in the shared global navigation for these sections;
+    # the Properties landing has its own direct overview links.
+    page = host.get("/entities?lang=cs").text
     assert host_i18n.translate('cs', 'host.property_tools') in page
+    assert 'href="/automation"' in page
+
+
+def test_properties_landing_keeps_direct_localized_overview_links(host):
+    page = host.get("/apartments?lang=cs").text
+    assert host_i18n.translate("cs", "nav.guest_links") in page
+    assert host_i18n.translate("cs", "nav.automation") in page
+    assert 'href="/guest-links"' in page
     assert 'href="/automation"' in page
 
 

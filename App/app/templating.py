@@ -452,6 +452,18 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
         )
     data.setdefault("flash", request.query_params.get("msg"))
     data.setdefault("flash_error", request.query_params.get("err"))
+    # Presentation hints are emitted only by ``back()`` for translated host
+    # flash helpers. Direct/plain query messages stay neutral information.
+    # The base shell consumes these only for its host flash toast; errors keep
+    # their existing red/sticky markup and public pages get neutral defaults.
+    toast_kind = request.query_params.get("toast_kind", "")
+    data["flash_kind"] = (
+        toast_kind if workspace and toast_kind in {"info", "success", "warning", "partial", "error"}
+        else "info"
+    )
+    data["flash_sticky"] = bool(
+        workspace and data.get("flash") and request.query_params.get("toast_sticky") == "1"
+    )
     data.setdefault("celebration_milestone", None)
     data.setdefault("sent_guest_count", 0)
     data.setdefault("minutes_saved", 0)

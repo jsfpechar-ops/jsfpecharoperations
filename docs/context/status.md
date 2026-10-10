@@ -1,16 +1,17 @@
 # Status
 
-Updated: 2026-10-09 after PR cleanup.
+Updated: 2026-10-10; host UI review.
 
 ## Production
 
 - **Magic-link cutover:** phase 1 + phase 2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)). E-mail login only; `.env` admin + SES; Caddy access log off; all properties connection-tested.
 - **112 reconcile:** dry run `guests answered with accepted codes only: 0` — no `--apply` needed (Oct 2026).
-- Live app: `/healthz` `version` 1.1.0. Record deploy SHA when convenient: `git rev-parse HEAD` in `/opt/ubyhost`.
+- Live `/healthz`: version 1.1.0. Record SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
 
-- Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
+- [UI](../plans/host-design-application-review.md): Luna implemented; 3,022 pass; staging blocked.
+- Lawyer: **LAWYER REVIEW** legal v1.7 (0005), unless signed off.
 - Optional: deploy #280+#281 (admin preview) when you want it on production.
 
 ## Next

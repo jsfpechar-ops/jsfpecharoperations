@@ -50,9 +50,9 @@
             <a class="row-menu-item" href="/apartments/{{ apartment.id }}#communication" role="menuitem">{{ t('nav.guest_links') }}</a>
             <a class="row-menu-item" href="/apartments/{{ apartment.id }}#ubyport" role="menuitem">{{ t('nav.automation') }}</a>
             <form method="post" action="/apartments/{{ apartment.id }}/archive" class="row-menu-form"
-                  data-confirm data-confirm-message="{{ t('confirm.archive_property') }}">
+                  data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
               <input type="hidden" name="return_to" value="/apartments">
-              <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
+              <button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
             </form>
           {{ row_menu_end() }}
         </td>

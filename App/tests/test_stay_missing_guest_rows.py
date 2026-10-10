@@ -107,7 +107,7 @@ def test_each_row_carries_both_ways_to_fill_it(stay):
     rows = _placeholder_rows(page.text)
     assert rows, "no placeholder rows to inspect"
     for row in rows:
-        assert host_i18n.STRINGS["en"]["common.copy_link"] in row
+        assert host_i18n.STRINGS["en"]["host.copy_guest_form_link"] in row
         assert 'data-copy="stay-link"' in row
         assert host_i18n.STRINGS["en"]["stay.detail.guests.add_by_hand"] in row
         assert f'href="/reservations/{reservation["id"]}/guests/new"' in row

@@ -3,9 +3,9 @@
 {% set editing = apartment is not none %}
 {% block title %}{{ apartment.internal_name if editing else t('apartment.form.title_new') }}{% endblock %}
 
-{% macro text_field(name, label, value, hint='', optional=false, maxlength=none, placeholder='', report=false) %}
+{% macro text_field(name, label, value, hint='', optional=false, maxlength=none, placeholder='') %}
   <div class="field">
-    <label for="{{ name }}">{{ label }}{% if optional %} <span class="opt">{{ t('common.optional') }}</span>{% endif %}{% if report %} <span class="req-report">{{ t('apartment.form.needed_to_report') }}</span>{% endif %}</label>
+    <label for="{{ name }}">{{ label }}{% if optional %} <span class="opt">{{ t('common.optional') }}</span>{% endif %}</label>
     <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
            {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}>
@@ -15,6 +15,12 @@
 
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, onboarding_banner, nav_icon with context %}
+<style>
+  .property-address-grid .field > label { min-height: 2.9em; }
+  @media (max-width: 700px) {
+    .property-address-grid .field > label { min-height: 0; }
+  }
+</style>
 {% if not editing %}{{ onboarding_banner(onboarding) }}{% endif %}
 {{ page_header(
   apartment.internal_name if editing else t('apartment.form.new_property'),
@@ -157,21 +163,21 @@
       {{ t('apartment.form.address.lede_before') }}
       <span class="mono">{{ t('apartment.form.address.lede_form_name') }}</span>{{ t('apartment.form.address.lede_after') }}
     </p>
-    <div class="grid">
+    <div class="grid property-address-grid">
       {{ text_field('addr_okres', t('apartment.form.addr.okres'), apartment.addr_okres if editing else '',
          t('apartment.form.addr.okres_hint'), false, 32) }}
       {{ text_field('addr_obec', t('apartment.form.addr.obec'), apartment.addr_obec if editing else '', '', false, 48,
-         none, true) }}
+         none) }}
       {{ text_field('addr_obec_cast', t('apartment.form.addr.obec_cast'), apartment.addr_obec_cast if editing else '',
          '', true, 48) }}
     </div>
-    <div class="grid">
+    <div class="grid property-address-grid">
       {{ text_field('addr_street', t('apartment.form.addr.street'), apartment.addr_street if editing else '', '', true, 48) }}
       {{ text_field('addr_house_no', t('apartment.form.addr.house_no'), apartment.addr_house_no if editing else '',
-         t('apartment.form.addr.house_no_hint'), false, 5, none, true) }}
+         t('apartment.form.addr.house_no_hint'), false, 5, none) }}
       {{ text_field('addr_orient_no', t('apartment.form.addr.orient_no'), apartment.addr_orient_no if editing else '',
          t('apartment.form.addr.orient_no_hint'), true, 4) }}
-      {{ text_field('addr_zip', t('apartment.form.addr.zip'), apartment.addr_zip if editing else '', t('apartment.form.addr.zip_hint'), false, 6, none, true) }}
+      {{ text_field('addr_zip', t('apartment.form.addr.zip'), apartment.addr_zip if editing else '', t('apartment.form.addr.zip_hint'), false, 6, none) }}
     </div>
   </details>
 
@@ -191,21 +197,21 @@
     </p>
     <div class="grid">
       {{ text_field('uby_idub', 'IDUB', apartment.uby_idub if editing else '',
-         t('apartment.form.ubyport.idub_hint'), false, 14, none, true) }}
+         t('apartment.form.ubyport.idub_hint'), false, 14, none) }}
       {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark if editing else '',
-         t('apartment.form.ubyport.mark_hint'), false, 6, none, true) }}
+         t('apartment.form.ubyport.mark_hint'), false, 6, none) }}
     </div>
     <div class="grid two">
       {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name if editing else '',
-         t('apartment.form.ubyport.name_hint'), false, 35, none, true) }}
+         t('apartment.form.ubyport.name_hint'), false, 35, none) }}
       {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact if editing else '',
          t('apartment.form.ubyport.contact_hint'), true, 50) }}
     </div>
     <div class="grid two">
       {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user if editing else '',
-         t('apartment.form.ubyport.login_hint'), false, none, none, true) }}
+         t('apartment.form.ubyport.login_hint'), false, none, none) }}
       <div class="field">
-        <label for="uby_ws_password">{{ t('automation.password') }} <span class="req-report">{{ t('apartment.form.needed_to_report') }}</span></label>
+        <label for="uby_ws_password">{{ t('automation.password') }}</label>
         {% if editing and has_password %}
         <p class="small muted" style="margin:0 0 6px">{{ t('apartment.form.ubyport.password_saved') }}</p>
         {% endif %}
@@ -387,7 +393,7 @@
           </div>
           <button class="btn small" type="submit" formmethod="post"
                   formaction="/apartments/{{ apartment.id }}/archive"
-                  data-confirm data-confirm-message="{{ t('confirm.archive_property') }}">{{ t('common.archive') }}</button>
+                  data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">{{ t('host.delete') }}</button>
         </div>
         {% endif %}
       </div>

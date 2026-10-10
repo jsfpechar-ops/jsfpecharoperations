@@ -390,6 +390,9 @@ def test_ses_sends_a_tip_through_v2_with_the_list_unsubscribe_headers(monkeypatc
     import boto3
     from botocore.stub import ANY, Stubber
 
+    # This test supplies explicit fake credentials and uses Stubber; an
+    # injected cloud identity profile is irrelevant and can conflict with it.
+    monkeypatch.delenv("AWS_PROFILE", raising=False)
     client = boto3.client(
         "sesv2", region_name="eu-central-1", aws_access_key_id="x", aws_secret_access_key="x"
     )

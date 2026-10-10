@@ -1,11 +1,6 @@
 # Decisions
 
-Append-only, one line each: `date | decision | reason | link`.
-
-- Tags: `[workflow]` = a process change; also edit [workflow](workflow.md) and [prompts](prompts.md) when you add one.
-- Find past decisions with `grep -i <topic>`. Don't read this file whole.
-- Superseded lines stay; add a new line that says what it supersedes.
-- When the file goes over its cap, entries older than 90 days that nothing references move to `docs/archive/decisions-YYYY.md`.
+Append-only.
 
 - 2026-09-09 | Core product = automatic UbyPort filing plus the house book (uvítací kniha); everything else is optional | the owner's founding rule | [UBYPORT_CORE](../UBYPORT_CORE.md)
 - 2026-09-13 | Production on AWS Lightsail; Render is staging with mock UbyPort, permanently | cost, control | [LIGHTSAIL](../LIGHTSAIL.md)
@@ -48,3 +43,8 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in the same commit; executors skip non-todo; lint warns on overlapping open briefs | brief collisions | [workflow](../context/workflow.md)
 - 2026-10-09 | Waiting guest sees only "You will receive your door code by e-mail." (0024; replaces 0022) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
+- 2026-10-10 | Month grid for Invoices/Stay fees; pills/operator actions pending | owner choice | [plan](../plans/host-control-polish.md)
+- 2026-10-10 | Expandable Stays/Invoice filters; hover/focus default; simple near-term dashboard | owner | [UI](../plans/host-control-polish.md)
+- 2026-10-10 | Quiet overview; 5 stays; 14 days; overdue first | owner | [UI](../DESIGN.md)
+- 2026-10-10 | 30d replaces 14d; Delete archives | owner | DESIGN
+- 2026-10-10 | UI decisions continue | cap | [UI](ui-decisions.md)

@@ -11,6 +11,18 @@ This file is the single source of truth for how work is done. When the process c
 | Search helper | Sonnet or Haiku subagent | Grep and summarise; returns conclusions, not file dumps | Writes files |
 | Owner | Josef | Decides, merges, deploys, secrets, servers | |
 
+## Owner-authorized host design execution
+
+2026-10-10, host design/staging task only: the owner said “you implement it,
+i give you the permission”, then designated Luna as executor and explicitly
+authorized several Luna 6.0 subagents. This replaces the Cursor-only executor,
+search-only subagent and exact override-phrase restrictions for this task.
+Codex remains orchestrator/reviewer; Luna executors implement scoped briefs
+and run app checks with coordinated file ownership. Codex may push the
+reviewed feature branch, create its PR and deploy to staging as requested.
+Never push main, bypass CI, merge for preview, or deploy production. The
+standard roles continue outside this task. See [decision](ui-decisions.md).
+
 ## Token budget (every AI, every session)
 
 - The orchestrator's deliverable is one Cursor prompt with the brief inside, between `<<<BRIEF` and `BRIEF>>>`. The executor creates the brief file. No patch files, uploads or pushes from the orchestrator.

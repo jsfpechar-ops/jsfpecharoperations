@@ -257,6 +257,16 @@ class _Always304(BaseHTTPRequestHandler):
 def test_the_real_fetch_sends_conditional_headers_and_reads_a_304(monkeypatch):
     monkeypatch.setattr(config, "ICAL_ALLOW_PRIVATE", True)
     monkeypatch.setattr(config, "DEPLOYMENT", "test")
+    # This test's .example URL is served by its local HTTPServer. Preserve the
+    # configured proxy for all other hosts and tests.
+    import os
+
+    for variable in ("NO_PROXY", "no_proxy"):
+        inherited = os.environ.get(variable, "")
+        entries = [entry for entry in inherited.split(",") if entry]
+        if ".example" not in entries:
+            entries.append(".example")
+        monkeypatch.setenv(variable, ",".join(entries))
     real_gai = socket.getaddrinfo
     monkeypatch.setattr(
         socket, "getaddrinfo",

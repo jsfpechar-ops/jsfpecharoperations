@@ -1,0 +1,43 @@
+{# Shared, progressively enhanced day-range control. Native date inputs remain
+   visible and usable until JavaScript enhances the trigger and calendar. #}
+{% macro date_range(prefix, from_value, until_value, title_key, from_key, until_key) %}
+<div class="field stay-date-range" data-date-range data-range-prefix="{{ prefix }}">
+  <span class="field-label" id="{{ prefix }}-range-label">{{ t(title_key) }}</span>
+  <button class="btn date-range-trigger" type="button" data-range-trigger hidden
+          data-all-dates="{{ t('host.filter.all_dates') }}"
+          aria-labelledby="{{ prefix }}-range-label {{ prefix }}-range-caption"
+          aria-haspopup="dialog" aria-expanded="false">
+    <span data-range-caption id="{{ prefix }}-range-caption">{{ t('host.filter.all_dates') }}</span>
+    <span aria-hidden="true">▾</span>
+  </button>
+  <div class="date-range-content" data-range-content>
+    <div class="date-range-fields">
+      <div class="field">
+        <label for="{{ prefix }}-from">{{ t(from_key) }}</label>
+        <input type="date" id="{{ prefix }}-from" name="from" value="{{ from_value }}" data-range-from>
+      </div>
+      <div class="field">
+        <label for="{{ prefix }}-until">{{ t(until_key) }}</label>
+        <input type="date" id="{{ prefix }}-until" name="to" value="{{ until_value }}" data-range-until>
+      </div>
+    </div>
+    <div class="date-range-popover" data-range-popover role="dialog" aria-labelledby="{{ prefix }}-range-label" hidden>
+      <div class="range-draft-fields">
+        <div class="field"><label for="{{ prefix }}-draft-from">{{ t(from_key) }}</label><input type="date" id="{{ prefix }}-draft-from" data-range-draft-from></div>
+        <div class="field"><label for="{{ prefix }}-draft-until">{{ t(until_key) }}</label><input type="date" id="{{ prefix }}-draft-until" data-range-draft-until></div>
+      </div>
+      <div class="range-calendar-head">
+        <button class="btn range-step" type="button" data-range-prev aria-label="{{ t('host.filter.prev_month') }}">‹</button>
+        <strong data-range-month></strong>
+        <button class="btn range-step" type="button" data-range-next aria-label="{{ t('host.filter.next_month') }}">›</button>
+      </div>
+      <div class="range-calendar-grid" data-range-grid role="grid" aria-label="{{ t('host.filter.calendar') }}"></div>
+      <p class="small muted" data-range-error role="status" tabindex="-1" hidden>{{ t('host.filter.reversed_dates') }}</p>
+      <div class="date-range-actions">
+        <button class="btn ghost" type="button" data-range-clear>{{ t('host.filter.clear_dates') }}</button>
+        <button class="btn primary" type="button" data-range-apply>{{ t('host.filter.apply_dates') }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endmacro %}

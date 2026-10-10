@@ -225,7 +225,145 @@ body.host-workspace {
   overflow: hidden;
 }
 .host-workspace .notification-bubble form button { min-width: 44px; min-height: 44px; }
+
+/* Signed-in feedback stays readable, stable and separate from live announcements. */
+.host-workspace .toast-stack {
+  top: auto;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: auto;
+  transform: none;
+  z-index: calc(var(--z-toast) + 10);
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  gap: 10px;
+  pointer-events: none;
+}
+.host-workspace .toast-stack .toast {
+  position: relative;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 12px 30px rgba(36, 29, 26, .14);
+  overflow-wrap: anywhere;
+  pointer-events: auto;
+  animation: host-toast-in .18s ease-out;
+}
+.host-workspace .toast-stack .toast.err { border-color: #e5a8a0; border-left: 4px solid #b42318; background: #fff; color: #52221e; }
+.host-workspace .toast-stack .toast[data-toast-kind="warning"],
+.host-workspace .toast-stack .toast[data-toast-kind="partial"] { border-left: 4px solid #a15c00; background: #fffaf0; }
+.host-workspace .toast-stack .toast[data-toast-kind="success"] { border-left: 4px solid #147a4a; }
+.host-workspace .toast-stack .toast[data-toast-kind="info"] { border-left: 4px solid #426b9a; }
+.host-workspace .feedback-card-icon {
+  display: inline-grid;
+  flex: 0 0 26px;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #edf7f1;
+  color: #147a4a;
+  font-size: 15px;
+  font-weight: 800;
+}
+.host-workspace .toast.err .feedback-card-icon,
+.host-workspace .toast[data-toast-kind="error"] .feedback-card-icon { background: #fdecea; color: #b42318; }
+.host-workspace .toast[data-toast-kind="warning"] .feedback-card-icon,
+.host-workspace .toast[data-toast-kind="partial"] .feedback-card-icon { background: #fff0d6; color: #8b4c00; }
+.host-workspace .toast[data-toast-kind="info"] .feedback-card-icon { background: #edf3fa; color: #315b8a; }
+.host-workspace .feedback-card-body { min-width: 0; line-height: 1.45; }
+.host-workspace .feedback-card-body strong { display: block; font-weight: 700; }
+.host-workspace .feedback-card-body p { margin: 3px 0 0; color: var(--ink-secondary); font-size: 13px; }
+.host-workspace .toast-stack .toast > [data-toast-close] {
+  display: inline-grid;
+  flex: 0 0 44px;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px -8px -8px 0;
+  padding: 0;
+  border-radius: 8px;
+  color: var(--ink-secondary);
+  font-size: 24px;
+}
+.host-workspace .toast-stack .toast > [data-toast-close]:hover { background: var(--surface-hover); color: var(--ink); }
+.host-workspace .toast-stack .toast .toast-undo { min-height: 44px; padding: 8px; color: var(--brand-ink); }
+.host-workspace .toast-stack .toast.leaving { animation: toast-out .16s ease forwards; }
+.host-workspace .toast-stack .toast.paused .feedback-progress { animation-play-state: paused; }
+.host-workspace [data-copy] { position: relative; }
+.host-workspace .copy-label-stack { display: inline-grid; vertical-align: baseline; }
+.host-workspace .copy-label-stack > span { grid-area: 1 / 1; }
+.host-workspace .copy-label-stack .copy-label-confirmed { visibility: hidden; }
+.host-workspace [data-copy].is-copy-confirmed .copy-label-default { visibility: hidden; }
+.host-workspace [data-copy].is-copy-confirmed .copy-label-confirmed { visibility: visible; color: #bf4f40; }
+.host-workspace .btn-icon.is-copy-label-reserved {
+  width: auto;
+  min-width: 42px;
+  padding: 0 12px;
+  gap: 7px;
+}
+.host-workspace .btn-icon .copy-label-confirmed { visibility: hidden; white-space: nowrap; }
+.host-workspace .btn-icon.is-copy-confirmed .copy-label-confirmed { visibility: visible; color: #bf4f40; }
+.host-workspace [data-copy-state-icon] {
+  position: absolute;
+  z-index: 1;
+  top: 2px;
+  right: 2px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ef6b58;
+  color: #fff;
+  opacity: 0;
+  transform: scale(.72);
+  transition: opacity .14s ease, transform .14s ease;
+  pointer-events: none;
+}
+.host-workspace [data-copy-state-icon] svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 20; stroke-dashoffset: 20; }
+.host-workspace [data-copy].copied [data-copy-state-icon] { opacity: 1; transform: scale(1); }
+.host-workspace [data-copy].copied [data-copy-state-icon] svg { animation: host-copy-check .3s ease forwards; }
+.host-workspace [data-copy].copied { color: #bf4f40; border-color: #ef6b58; }
+.host-workspace [data-copy-manual-visible] {
+  position: fixed !important;
+  z-index: calc(var(--z-toast) + 11) !important;
+  right: var(--manual-copy-right, 16px) !important;
+  bottom: var(--manual-copy-bottom, calc(94px + env(safe-area-inset-bottom, 0px))) !important;
+  left: auto !important;
+  width: min(360px, calc(100vw - 32px)) !important;
+  height: auto !important;
+  min-height: 44px !important;
+  clip: auto !important;
+  clip-path: none !important;
+  padding: 10px !important;
+  border: 2px solid #b42318 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: var(--ink) !important;
+  box-shadow: 0 8px 24px rgba(36, 29, 26, .18) !important;
+}
+@keyframes host-copy-check { to { stroke-dashoffset: 0; } }
+@keyframes host-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 720px) {
+  .host-workspace .toast-stack {
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    width: min(360px, calc(100vw - 24px));
+    max-height: min(60vh, 460px);
+  }
+  .host-workspace [data-copy-manual-visible] {
+    right: var(--manual-copy-right, 12px) !important;
+    bottom: var(--manual-copy-bottom, calc(90px + env(safe-area-inset-bottom, 0px))) !important;
+    width: calc(100vw - 24px) !important;
+  }
   .host-workspace .notification-stack {
     top: auto;
     right: 12px;
@@ -239,6 +377,11 @@ body.host-workspace {
     border: 0;
     box-shadow: 0 14px 36px rgba(32, 32, 30, 0.14), 0 2px 8px rgba(32, 32, 30, 0.06);
   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .host-workspace .toast-stack .toast,
+  .host-workspace [data-copy-state-icon],
+  .host-workspace [data-copy-state-icon] svg { animation: none !important; transition: none !important; }
 }
 .host-property-save { position: sticky; bottom: 12px; z-index: 19; width: fit-content; background: white; border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: var(--shadow-popover); }
 .host-workspace { --action-gap: 8px; --action-height: 42px; }
@@ -264,6 +407,7 @@ body.host-workspace {
 .host-workspace .dashboard-stats .stat-waiting { background: var(--status-waiting-bg); border-color: var(--status-waiting-border); color: var(--status-waiting-ink); }
 /* Shared list filter (Stay fee, Invoices): the .filters panel used across the app. */
 .host-workspace .list-filter { padding: 14px 16px; }
+.host-workspace .wrap.with-sidebar > .page-header { max-width: none; }
 .host-workspace .list-filter .month-row { display: flex; align-items: center; gap: 8px; }
 .host-workspace .list-filter .month-step { width: var(--action-height); min-width: var(--action-height); height: var(--action-height); padding: 0; justify-content: center; font-size: 18px; font-weight: 700; color: var(--brand-ink); }
 .host-workspace .list-filter .month-step[disabled] { color: var(--ink-faint); }
@@ -275,6 +419,56 @@ body.host-workspace {
 .host-workspace .list-filter .list-filter-period { max-width: 260px; flex-basis: 220px; }
 .host-workspace .list-filter .list-filter-search { max-width: 240px; min-width: 200px; flex-basis: 200px; }
 .host-workspace .list-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 6px; padding: 0 6px; border-radius: var(--radius-pill); background: var(--ink); color: var(--canvas); font-size: 12px; font-weight: 700; }
+.host-workspace .filter-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; margin: 0 0 10px; }
+.host-workspace .filter-toggle { min-height: var(--action-height); }
+.host-workspace .filter-applied-summary { min-width: 0; margin: 0; color: var(--ink-secondary); font-size: 13px; line-height: 1.45; }
+.host-workspace .filter-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.host-workspace .host-filter-panel { display: block; margin: 0 0 16px; padding: 16px; }
+.host-workspace .host-filter-panel.is-collapsed { display: none; }
+.host-workspace .host-filter-panel .filter-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.host-workspace .host-filter-panel .filter-fields > .field { min-width: 0; max-width: none; }
+.host-workspace .host-filter-panel .field > label,
+.host-workspace .host-filter-panel .field > .field-label { display: block; margin: 0 0 6px; color: var(--ink-secondary); font-size: 12px; font-weight: 650; }
+.host-workspace .host-filter-panel .filter-panel-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.host-workspace .host-filter-panel .filter-panel-actions .btn { min-height: var(--action-height); }
+.host-workspace .date-range-trigger,
+.host-workspace .month-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: var(--action-height); padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; background: white; color: var(--ink); text-align: left; }
+.host-workspace .date-range-content,
+.host-workspace .month-control { position: relative; min-width: 0; }
+.host-workspace .date-range-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.host-workspace .date-range-fields .field { min-width: 0; }
+.host-workspace .date-range-fields input[type=date] { width: 100%; height: var(--action-height); }
+.has-js .host-workspace .date-range-fields { display: none; }
+.host-workspace .date-range-popover,
+.host-workspace .month-grid-panel { position: fixed; z-index: 100; width: min(360px, calc(100vw - 16px)); padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: white; box-shadow: var(--shadow-popover); }
+.host-workspace .range-calendar-head,
+.host-workspace .month-year-row { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; margin-bottom: 8px; text-align: center; }
+.host-workspace .range-step,
+.host-workspace .year-step { width: 44px; min-width: 44px; height: 44px; padding: 0; justify-content: center; font-size: 19px; }
+.host-workspace .range-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.host-workspace .range-draft-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.host-workspace .range-draft-fields .field { min-width: 0; margin: 0; }
+.host-workspace .range-draft-fields label { display: block; margin: 0 0 4px; color: var(--ink-secondary); font-size: 12px; font-weight: 650; }
+.host-workspace .range-draft-fields input[type=date] { width: 100%; min-width: 0; height: 42px; }
+.host-workspace .range-weekday { display: grid; min-height: 26px; place-items: center; color: var(--ink-muted); font-size: 11px; font-weight: 700; }
+.host-workspace .range-day { min-width: 0; min-height: 40px; padding: 0; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); }
+.host-workspace .range-day:hover,
+.host-workspace .range-day:focus-visible { border-color: var(--brand-action); outline: 2px solid color-mix(in srgb, var(--brand-action) 24%, transparent); outline-offset: 1px; }
+.host-workspace .range-day.outside-month { color: var(--ink-muted); }
+.host-workspace .range-day.in-range { border-radius: 0; background: var(--brand-soft); }
+.host-workspace .range-day.selected { border-color: var(--brand-action); border-radius: 8px; background: var(--brand-action); color: white; font-weight: 750; }
+.host-workspace .date-range-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.host-workspace .date-range-actions .btn { min-height: 44px; }
+.host-workspace .month-row { gap: 6px; }
+.host-workspace .month-control { flex: 1 1 auto; }
+.host-workspace .month-control input[data-month-native] { width: 100%; min-width: 0; height: var(--action-height); }
+.has-js .host-workspace input[data-month-native] { position: absolute; width: 1px; height: 1px; min-width: 0; opacity: 0; pointer-events: none; }
+.has-js .host-workspace .month-control-face { display: none; }
+.host-workspace .month-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.host-workspace .month-choice { min-width: 0; min-height: 42px; padding: 6px 5px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--ink-secondary); font-size: 13px; font-weight: 650; }
+.host-workspace .month-choice.selected { border-color: var(--brand-action); background: var(--brand-soft); color: var(--brand-ink); font-weight: 750; }
+.host-workspace .month-choice:disabled { opacity: .38; }
+.host-workspace .month-all-dates { width: 100%; min-height: 42px; margin-top: 8px; }
 .host-workspace .account-parts, .host-workspace .fee-adjust-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .host-workspace .fee-adjust-reason { grid-column: 1 / -1; }
 .host-workspace .fee-adjust-list { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
@@ -295,6 +489,16 @@ body.host-workspace {
   .host-workspace .account-parts, .host-workspace .fee-adjust-grid { display: grid; grid-template-columns: 1fr; }
   .host-workspace .list-filter .field { flex: 1 1 100%; max-width: none; }
   .host-workspace .list-filter .filter-actions-end { margin-left: 0; }
+  .host-workspace .filter-toolbar { align-items: flex-start; }
+  .host-workspace .filter-toolbar-actions { width: 100%; margin-left: 0; }
+  .host-workspace .host-filter-panel .filter-fields { grid-template-columns: 1fr; gap: 10px; }
+  .host-workspace .host-filter-panel .filter-panel-actions > .btn { flex: 1 1 auto; }
+  .host-workspace .date-range-popover,
+  .host-workspace .month-grid-panel { width: min(360px, calc(100vw - 8px)); padding: 8px; }
+  .host-workspace .range-day { min-height: 44px; }
+  .host-workspace .range-draft-fields input[type=date] { min-height: 44px; }
+  .host-workspace .range-calendar-grid { gap: 2px; }
+  .host-workspace .month-choice { min-height: 44px; }
 }
 
 /* House book register (WP25). Workspace table cells may break long words

@@ -75,7 +75,7 @@
 <div class="stays-toolbar">
   <div class="chips">
     {% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('past', 'stays.chip.past'), ('all', 'stays.chip.all'), ('archive', 'stays.chip.archive')] %}
-      <a class="chip {{ 'on' if date_range == value }}"
+      <a class="chip {{ 'on' if date_range == value or (value == 'archive' and show_archive) }}"
          href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
     {% endfor %}
   </div>
@@ -85,40 +85,56 @@
 <p class="small muted">{{ t('stays.archive_note') }}</p>
 {% endif %}
 
-<form method="get" action="/reservations" class="filters panel" data-auto-submit>
-  <input type="hidden" name="range" value="{{ date_range }}">
-  <div class="field">
-    <label for="apartment">{{ t('stays.filter.apartment') }}</label>
-    <select id="apartment" name="apartment">
-      <option value="">{{ t('stays.filter.all_apartments') }}</option>
-      {% for apartment in apartments %}
-        <option value="{{ apartment.id }}" {% if apartment_id == apartment.id %}selected{% endif %}>
-          {{ apartment.internal_name }}</option>
-      {% endfor %}
-    </select>
+{% set stay_property = namespace(label=t('host.filter.all_properties')) %}
+{% for property in apartments %}
+  {% if apartment_id and property.id|string == apartment_id|string %}{% set stay_property.label = property.internal_name %}{% endif %}
+{% endfor %}
+<div class="filter-toolbar" data-filter-toolbar>
+  <button class="btn filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="stays-filter-panel" hidden>
+    {{ t('host.filter.filters') }}
+  </button>
+  <p class="filter-applied-summary" data-filter-summary>
+    <span>{{ stay_property.label }}</span><span aria-hidden="true"> · </span><span>{{ t('stays.filter.state.' ~ status) }}</span>
+    {% if date_range == 'custom' and (date_from or date_to) %}
+      <span aria-hidden="true"> · </span>
+      {% if date_from and date_to %}{{ t('host.filter.range_between', start=date_from | date_cz, end=date_to | date_cz) }}
+      {% elif date_from %}{{ t('host.filter.range_from', date=date_from | date_cz) }}
+      {% else %}{{ t('host.filter.range_until', date=date_to | date_cz) }}{% endif %}
+    {% endif %}
+  </p>
+  <div class="filter-toolbar-actions">
+    <button class="btn ghost" type="button" data-save-view data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
+    {{ csv_actions_menu(csv_export_params, true, scope_label=stay_property.label) }}
   </div>
-  <div class="field">
-    <label for="status">{{ t('stays.filter.state') }}</label>
-    <select id="status" name="status">
-      {% for value, label_key in [('active', 'stays.filter.state.active'), ('cancelled', 'stays.filter.state.cancelled'), ('ignored', 'stays.filter.state.ignored'), ('all', 'stays.filter.state.all')] %}
-        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ t(label_key) }}</option>
-      {% endfor %}
-    </select>
+</div>
+<form id="stays-filter-panel" method="get" action="/reservations" class="filters panel host-filter-panel" data-filter-panel data-filter-route="stays" data-original-range="{{ date_range }}">
+  <div class="filter-fields">
+    <div class="field">
+      <label for="apartment">{{ t('stays.filter.apartment') }}</label>
+      <select id="apartment" name="apartment">
+        <option value="">{{ t('host.filter.all_properties') }}</option>
+        {% for apartment in apartments %}
+          <option value="{{ apartment.id }}" {% if apartment_id == apartment.id %}selected{% endif %}>
+            {{ apartment.internal_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="status">{{ t('stays.filter.state') }}</label>
+      <select id="status" name="status">
+        {% for value, label_key in [('active', 'stays.filter.state.active'), ('cancelled', 'stays.filter.state.cancelled'), ('ignored', 'stays.filter.state.ignored'), ('all', 'stays.filter.state.all')] %}
+          <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ t(label_key) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% from "_date_range.html" import date_range as render_date_range with context %}
+    {{ render_date_range('stays', date_from, date_to, 'host.filter.stay_dates', 'stays.filter.from', 'stays.filter.to') }}
   </div>
-  <div class="field">
-    <label for="from">{{ t('stays.filter.from') }}</label>
-    <input type="date" id="from" name="from" value="{{ date_from }}">
-  </div>
-  <div class="field">
-    <label for="to">{{ t('stays.filter.to') }}</label>
-    <input type="date" id="to" name="to" value="{{ date_to }}">
-  </div>
-  <div class="field filter-actions filter-actions-end">
-    <button class="btn filter-apply" type="submit" name="range" value="custom">{{ t('common.apply') }}</button>
-    <a class="btn ghost" href="/reservations?range=upcoming">{{ t('common.clear') }}</a>
-    <button class="btn ghost" type="button" data-save-view
-            data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
-    {{ csv_actions_menu(csv_export_params, true) }}
+  {% if show_archive %}<input type="hidden" name="archive_scope" value="1">{% endif %}
+  <div class="filter-panel-actions">
+    <button class="btn primary filter-apply" type="submit" name="range" value="custom">{{ t('host.filter.apply_filters') }}</button>
+    <button class="btn ghost" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
+    <a class="btn ghost" href="{{ '/reservations?range=archive' if show_archive else '/reservations?range=all' }}">{{ t('host.filter.reset') }}</a>
   </div>
 </form>
 {% endif %}
@@ -171,7 +187,7 @@
           {% if progress.status in ('awaiting_guest', 'incomplete') and reservation.permalink_token %}
             {{ copy_inline('stay-link-' ~ reservation.id,
                 public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id,
-                t('dashboard.focus.copy_link')) }}
+                t('host.copy_guest_form_link')) }}
           {% endif %}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}" role="menuitem">{{ t('stays.row.open') }}</a>
@@ -186,7 +202,8 @@
             {% else %}
               <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form">
                 <input type="hidden" name="return_to" value="{{ return_to }}">
-                <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
+                <button class="row-menu-item" type="submit" role="menuitem" data-confirm
+                        data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">{{ t('host.delete') }}</button>
               </form>
             {% endif %}
           {{ row_menu_end() }}

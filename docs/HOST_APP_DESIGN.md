@@ -64,11 +64,28 @@ Use the implemented top bar with menu, logo, Search, and environment indicator. 
 
 ## 4. Today: a useful work queue
 
-**Header:** “Today” and the current date. Small count of actionable stays. One “Add stay” action. No generic metrics strip unless a number has a useful destination.
+**Owner selection, 2026-10-10: Quiet overview.** Keep the simple text-first design,
+quiet status colors and consistent hover/keyboard feedback. No property photos
+or decorative details. Show at most **five unique stay rows total** across the
+dashboard. Routine stays are current or arrive within **30 days**, using Prague
+today; real overdue/failed work takes priority even for older stays. Counts
+must be calculated before truncation, with a visible additional-action count
+when necessary and **View all stays** for the full list. See
+[dashboard policy](DESIGN.md#dashboard-only-useful-information).
+The 30-day window supersedes the earlier 14-day choice.
 
-**Needs you now:** compact rows ordered by actual urgency. Each row shows arrival/departure context, property, one task label (“1 guest missing”, “Check police report”, “Property needs setup”), and one action (“Open stay”, “Check report”, “Finish setup”). A second short line is allowed only if the action would be unclear, for example “No confirmation from UbyPort yet.” Avoid “2 of 3 registered. Share the invitation to finish check-in” when the count and button already say this.
+**Header:** “Dashboard” and the current date. “Add stay” and “Update calendars”
+share action geometry. The owner reaffirmed the four white Quiet overview
+cards: amber Needs action, taupe Waiting for guests, muted blue Ready to send,
+Overdue red only when positive. Small dots and restrained attention lines;
+zero counts stay neutral. Count the full candidate set before the five-row cap.
+Open stay buttons and More share consistent columns across both row sections.
+Owner's latest wording: label the row button **Open**; label invitation copying
+**Copy guest form link** and copy the guest-facing registration URL.
 
-**Coming up:** date, property, guest count or invitation state, and a row link. Successful reports may appear as a compact recent activity line with a direct receipt link. Do not place invoicing or fee work into Today unless the backend can accurately establish a real action; the default place to find invoices and fees is their dedicated section.
+**Needs you now:** compact rows ordered by actual urgency. Each row shows arrival/departure context, property, one task label (“1 guest missing”, “Check police report”, “Property needs setup”), and one action (“Open”, “Check report”, “Finish setup”). A second short line is allowed only if the action would be unclear, for example “No confirmation from UbyPort yet.” Avoid “2 of 3 registered. Share the invitation to finish check-in” when the count and button already say this.
+
+**Current and coming up:** date, property, one meaningful status/task and a row link. Keep receipt access on the stay/report pages; do not add a separate activity feed to this overview. Do not place invoicing or fee work into the dashboard unless the backend can accurately establish a real action; the default place to find invoices and fees is their dedicated section.
 
 **Empty state:** “Nothing needs you today.” followed by the next known stay or a single Add stay action. Do not show invented “all caught up” statistics.
 
@@ -76,7 +93,20 @@ Use the implemented top bar with menu, logo, Search, and environment indicator. 
 
 ### Stays list `/reservations`
 
-Default to the most useful period (current/upcoming) while keeping existing status, date, property, archive, list/timeline, and saved filters. A row shows arrival date, property or booking label, stay range, guest count, and only a meaningful status. “Add stay” opens a short path: property → dates → expected guests → save. Calendar import, manual creation, and sync must stay available. Empty states distinguish no property, no calendar, no matching filter, and no stays.
+Existing archive actions use the owner-selected **Delete** label and explain
+that the record moves to **Archived**. Preserve archive/restore behavior and
+guards across host pages; see [action policy](DESIGN.md#delete-action-move-to-archived).
+
+The owner's latest “all the time” direction is interpreted as an unbounded
+**All dates** default, replacing the earlier current/upcoming default. Keep
+Upcoming/current and Past available as views. Default collapsed summary:
+**All properties · Active**. Show dates only for an explicitly applied custom
+range, using one **Stay dates** control in the panel. Keep existing status,
+property, archive, list/timeline and saved filters. A row shows arrival date,
+property or booking label, stay range, guest count, and only a meaningful status.
+“Add stay” opens a short path: property → dates → expected guests → save.
+Calendar import, manual creation and sync remain available. Empty states
+distinguish no property, no calendar, no matching filter and no stays.
 
 ### Stay detail `/reservations/{id}`
 
@@ -102,7 +132,7 @@ Local Stays tab “Guest register”. Preserve filter, archival, retention, lega
 
 ### Property list and detail
 
-Property list cards/rows show name, location, one truthful setup state, and a clear Open action. A contextual “Property tools” menu can reach the existing guest-link and automation overviews for multi-property users. Business details are a local tab or section of Properties, because they are used by properties and invoices. Do not duplicate a legal entity just to make the UI appear property-specific; show the assigned entity on each property and provide a direct link to its shared record.
+Property list cards/rows show name, location, one truthful setup state, and a clear Open action. Owner decision 2026-10-10: remove the duplicate Property tools menu inside individual property pages. The Properties landing page provides useful cross-property overview links, also reachable through Search. Business details are a local tab or section of Properties, because they are used by properties and invoices. Do not duplicate a legal entity just to make the UI appear property-specific; show the assigned entity on each property and provide a direct link to its shared record.
 
 Property detail groups existing sections into readable cards: **Bookings** (feeds/sync), **Guest link** (copy URL, PIN, regenerate with warning), **Police reporting** (UbyPort credentials, test connection, code lists, automation), **Business details** (assigned entity, contact), **Stay fee** (optional, rate and council/payment inputs). Keep advanced technical fields in their section, not on the landing view. Section links or anchored tabs should be stable across failed submissions.
 
@@ -112,7 +142,7 @@ The main path is **Add property → connect booking calendar or add a stay manua
 
 ### Global guest links and automation
 
-`/guest-links` and `/automation` remain working overviews for multi-property management and old links. They are reached from Properties > Property tools and Search. Each row links to the property's exact setting, so edits occur in context. Keep PIN, resend, automation, test connection, and error details as supported today. Avoid a global “on/off” appearance if settings are per property.
+`/guest-links` and `/automation` remain working overviews for multi-property management and old links. They are reached from overview links on the Properties landing page and Search. Each row links to the property's exact setting, so edits occur in context. Keep PIN, resend, automation, test connection, and error details as supported today. Avoid a global “on/off” appearance if settings are per property. Preserve shared-lock account setup, contextual property links and return navigation.
 
 ## 7. Invoices
 

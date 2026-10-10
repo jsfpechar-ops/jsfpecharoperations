@@ -12,7 +12,7 @@
 
 <p class="small muted">{{ t('archive.retention_note') }}</p>
 
-<div class="chips">
+<div class="chips archive-type-filters" role="group" aria-label="{{ t('archive.title') }}">
   {% for value, label_key in [
     ('all', 'archive.chip.all_count'),
     ('stays', 'archive.chip.stays_count'),

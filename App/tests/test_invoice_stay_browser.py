@@ -22,6 +22,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
+from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 from tests.invoice_stay_helper import make_stay
 
@@ -78,7 +79,7 @@ def _host():
 
 def _launch(playwright):
     try:
-        return playwright.chromium.launch()
+        return playwright.chromium.launch(**chromium_launch_kwargs())
     except Exception as exc:
         if REQUIRE_BROWSER:
             raise

@@ -9,30 +9,46 @@
   t('housebook.lede')
 ) }}
 
-<form method="get" action="/housebook" class="filters panel" data-auto-submit>
-  <div class="field">
-    <label for="apartment">{{ t('housebook.apartment') }}</label>
-    <select id="apartment" name="apartment">
-      <option value="">{{ t('common.all') }}</option>
-      {% for apartment in apartments %}
-        <option value="{{ apartment.id }}" {% if apartment_id == apartment.id %}selected{% endif %}>
-          {{ apartment.internal_name }}</option>
-      {% endfor %}
-    </select>
+{% set housebook_property = namespace(label=t('host.filter.all_properties')) %}
+{% for property in apartments %}
+  {% if apartment_id and property.id|string == apartment_id|string %}{% set housebook_property.label = property.internal_name %}{% endif %}
+{% endfor %}
+<div class="filter-toolbar" data-filter-toolbar>
+  <button class="btn filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="housebook-filter-panel" hidden>
+    {{ t('host.filter.filters') }}
+  </button>
+  <p class="filter-applied-summary" data-filter-summary>
+    <span>{{ housebook_property.label }}</span>
+    {% if date_from or date_to %}
+      <span aria-hidden="true"> · </span>
+      {% if date_from and date_to %}{{ t('host.filter.range_between', start=date_from | date_cz, end=date_to | date_cz) }}
+      {% elif date_from %}{{ t('host.filter.range_from', date=date_from | date_cz) }}
+      {% else %}{{ t('host.filter.range_until', date=date_to | date_cz) }}{% endif %}
+    {% endif %}
+  </p>
+  <div class="filter-toolbar-actions" aria-label="{{ t('housebook.actions') }}">
+    {{ housebook_csv_menu(housebook_csv_params, true, true, scope_label=housebook_property.label) }}
   </div>
-  <div class="field">
-    <label for="from">{{ t('housebook.from') }}</label>
-    <input type="date" id="from" name="from" value="{{ date_from }}">
+</div>
+<form id="housebook-filter-panel" method="get" action="/housebook" class="filters panel host-filter-panel" data-filter-panel data-filter-route="day-range">
+  <div class="filter-fields">
+    <div class="field">
+      <label for="apartment">{{ t('housebook.apartment') }}</label>
+      <select id="apartment" name="apartment">
+        <option value="">{{ t('host.filter.all_properties') }}</option>
+        {% for apartment in apartments %}
+          <option value="{{ apartment.id }}" {% if apartment_id == apartment.id %}selected{% endif %}>
+            {{ apartment.internal_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% from "_date_range.html" import date_range with context %}
+    {{ date_range('housebook', date_from, date_to, 'host.filter.stay_dates', 'housebook.from', 'housebook.until') }}
   </div>
-  <div class="field">
-    <label for="to">{{ t('housebook.until') }}</label>
-    <input type="date" id="to" name="to" value="{{ date_to }}">
-  </div>
-  <div class="field filter-actions">
-    <button class="btn filter-apply" type="submit">{{ t('common.filter') }}</button>
-  </div>
-  <div class="field filter-actions filter-actions-end" aria-label="{{ t('housebook.actions') }}">
-    {{ housebook_csv_menu(housebook_csv_params, true, true) }}
+  <div class="filter-panel-actions">
+    <button class="btn primary filter-apply" type="submit">{{ t('host.filter.apply_filters') }}</button>
+    <button class="btn ghost" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
+    <a class="btn ghost" href="/housebook">{{ t('host.filter.reset') }}</a>
   </div>
 </form>
 
@@ -80,9 +96,9 @@
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">{{ t('common.edit') }}</a>
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">{{ t('housebook.pdf') }}</a>
             <form method="post" action="/guests/{{ row._guest_id }}/archive" class="row-menu-form"
-                  data-confirm data-confirm-message="{{ t('confirm.archive_guest') }}">
+                  data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
               <input type="hidden" name="return_to" value="/housebook">
-              <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.archive') }}</button>
+              <button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
             </form>
           {{ row_menu_end() }}
         </td>
