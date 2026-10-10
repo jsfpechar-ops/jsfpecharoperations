@@ -80,11 +80,16 @@ def script_origin() -> Optional[str]:
 
 
 def connect_origins() -> Tuple[str, ...]:
-    """The PostHog API origin events are sent to, for CSP connect-src."""
+    """PostHog origins for CSP connect-src (API events and assets host source maps)."""
     if not enabled():
         return ()
     api = _https_origin(config.POSTHOG_HOST)
-    return (api,) if api else ()
+    assets = _https_origin(config.POSTHOG_ASSETS_HOST)
+    if api and assets:
+        return (api, assets)
+    if api:
+        return (api,)
+    return (assets,) if assets else ()
 
 
 def tag() -> Optional[dict]:

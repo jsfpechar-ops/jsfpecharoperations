@@ -205,6 +205,7 @@ def test_public_pages_carry_the_tag_and_a_matching_csp(posthog_on, path, lang):
     connect_src = re.search(r"connect-src ([^;]+)", csp).group(1).split()
     assert ASSETS_HOST in script_src
     assert API_HOST in connect_src
+    assert ASSETS_HOST in connect_src
     assert API_HOST not in script_src
 
 
