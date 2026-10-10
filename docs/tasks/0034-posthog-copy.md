@@ -1,6 +1,6 @@
 # 0034 — Copy and subprocessor
 
-Status: in-progress
+Status: review
 Depends on: 0033 | Base commit: 0033's commit | Branch: same branch
 Executor: Composer 2.5 | Fits one session
 

@@ -1,6 +1,6 @@
 # 0035 — Host profiles and stage events
 
-Status: in-progress
+Status: review
 Depends on: 0033 | Base commit: 0034's commit | Branch: same branch
 Executor: Composer 2.5 | Fits one session
 

@@ -1,6 +1,6 @@
 # 0036 — Retire the in-app dashboard
 
-Status: in-progress
+Status: review
 Depends on: 0035 | Base commit: 0035's commit | Branch: same branch
 Executor: Composer 2.5 | Fits one session
 

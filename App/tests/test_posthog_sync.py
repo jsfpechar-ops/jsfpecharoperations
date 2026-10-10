@@ -49,15 +49,22 @@ def test_first_property_backfill_and_second_run_is_quiet(posthog_on):
     assert first["sent"] > 0 and first["failed"] == 0
     stored = db.query_one("SELECT posthog_stage FROM user_account WHERE id = ?", (uid,))
     assert stored["posthog_stage"] == "first_property"
-    events = [body["event"] for body in captured]
+    events = [body["event"] for body in captured if body["distinct_id"] == str(uid)]
     assert events[-1] == "first_property"
     assert events == [key for key, _ in admin_funnel.stages()[: events.index("first_property") + 1]]
 
-    before = len(captured)
-    with patch("urllib.request.urlopen", fake_urlopen):
+    calls_for_us = 0
+
+    def counting_urlopen(request, timeout=0):
+        body = json.loads(request.data.decode())
+        if body.get("distinct_id") == str(uid):
+            nonlocal calls_for_us
+            calls_for_us += 1
+        return fake_urlopen(request, timeout)
+
+    with patch("urllib.request.urlopen", counting_urlopen):
         posthog_sync.sync()
-    new_for_us = [body for body in captured[before:] if body["distinct_id"] == str(uid)]
-    assert not new_for_us
+    assert calls_for_us == 0
 
 
 def test_failed_post_does_not_advance_stage(posthog_on):

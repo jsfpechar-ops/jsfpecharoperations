@@ -1,6 +1,6 @@
 # 0033 — Public tracker swap
 
-Status: in-progress
+Status: review
 Depends on: none | Base commit: the plan merge | Branch: task/0033-posthog-public
 Executor: Composer 2.5 | Fits one session
 
