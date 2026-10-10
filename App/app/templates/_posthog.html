@@ -1,0 +1,76 @@
+{#- WP09: the only template that may contain the PostHog tag. It prints nothing
+    unless templating.render marked this response as an allowed public page
+    (analytics.PUBLIC_ANALYTICS_TEMPLATES) and PostHog is configured.
+    Never include it from an app, guest or auth template; the guard test fails. -#}
+{%- if analytics_tag -%}
+<script>
+(function () {
+  "use strict";
+  if (navigator.doNotTrack === "1" || window.doNotTrack === "1") return;
+  try {
+    if (window.localStorage.getItem("ubyhost.analytics.disabled")) return;
+  } catch (err) {
+    /* Storage blocked: continue without opt-out. */
+  }
+  var apiKey = {{ analytics_tag.api_key | tojson }};
+  var apiHost = {{ analytics_tag.api_host | tojson }};
+  var assetsHost = {{ analytics_tag.assets_host | tojson }};
+  var stripKeys = ["gclid", "gbraid", "wbraid", "fbclid", "click", "token", "email"];
+  function scrubUrl(raw) {
+    if (!raw) return raw;
+    try {
+      var u = new URL(raw, window.location.origin);
+      for (var i = 0; i < stripKeys.length; i++) {
+        u.searchParams.delete(stripKeys[i]);
+      }
+      u.hash = "";
+      return u.toString();
+    } catch (e) {
+      return raw;
+    }
+  }
+  function scrubPath(path) {
+    if (!path || path.indexOf("?") === -1 && path.indexOf("#") === -1) return path;
+    return scrubUrl(path.indexOf("://") === -1 ? window.location.origin + path : path);
+  }
+  function beforeSend(event) {
+    if (!event || !event.properties) return event;
+    if (event.properties.$current_url) {
+      event.properties.$current_url = scrubUrl(event.properties.$current_url);
+    }
+    if (event.properties.$referrer) {
+      event.properties.$referrer = scrubUrl(event.properties.$referrer);
+    }
+    if (event.properties.$pathname) {
+      event.properties.$pathname = scrubPath(event.properties.$pathname);
+    }
+    return event;
+  }
+  var allowed = { login_click: 1, contact_click: 1, signup_start: 1 };
+  function onLoaded(ph) {
+    document.addEventListener("click", function (ev) {
+      var el = ev.target.closest("[data-analytics-event]");
+      if (!el) return;
+      var name = el.getAttribute("data-analytics-event");
+      if (allowed[name]) ph.capture(name);
+    });
+  }
+  var s = document.createElement("script");
+  s.src = assetsHost + "/static/array.js";
+  s.onload = function () {
+    window.posthog.init(apiKey, {
+      api_host: apiHost,
+      cookieless_mode: "always",
+      person_profiles: "identified" + "_only",
+      persistence: "memory",
+      autocapture: false,
+      capture_pageleave: false,
+      disable_session_recording: true,
+      before_send: beforeSend,
+      loaded: onLoaded
+    });
+  };
+  document.head.appendChild(s);
+})();
+</script>
+{%- endif -%}

@@ -36,7 +36,7 @@
     "publisher": {"@type": "Organization", "name": "UbyHost", "url": public_base_url ~ "/"}
   } | tojson }}
   </script>
-  {% include "_umami.html" %}
+  {% include "_posthog.html" %}
 </head>
 <body>
 {% set active = 'guides' if current_slug == 'hlaseni-cizincu-ubyport' else '' %}
@@ -74,7 +74,7 @@
               <li><span aria-hidden="true">✓</span>{{ item }}</li>
             {% endfor %}
           </ul>
-          <a href="/login?lang={{ lang }}" class="landing-button primary" data-umami-event="login_click">{{ t('landing.cta') }}</a>
+          <a href="/login?lang={{ lang }}" class="landing-button primary" data-analytics-event="login_click">{{ t('landing.cta') }}</a>
           <a href="/jak-to-funguje?lang={{ lang }}" class="guide-product-link">{{ t('landing.details.link') }} →</a>
         </aside>
       </div>

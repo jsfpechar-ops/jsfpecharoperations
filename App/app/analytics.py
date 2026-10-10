@@ -1,4 +1,4 @@
-"""Umami page analytics on the public marketing and legal pages only (WP09).
+"""PostHog page analytics on the public marketing and legal pages only (WP09).
 
 Permanent rule: no analytics or third-party script on app pages, guest pages
 (``/l/...``, including ``pick.html``) or auth pages. Three things enforce it:
@@ -7,9 +7,9 @@ Permanent rule: no analytics or third-party script on app pages, guest pages
   the tag. ``templating.render`` marks a response as a public analytics page
   only when it renders one of them; guest pages use ``render_guest`` and are
   never marked.
-* ``_umami.html`` renders the tag only when that mark is set, so including the
+* ``_posthog.html`` renders the tag only when that mark is set, so including the
   partial anywhere else prints nothing.
-* ``main._harden`` adds the Umami origins to the CSP only for marked responses;
+* ``main._harden`` adds the PostHog origins to the CSP only for marked responses;
   every other page keeps the strict policy, so even a stray tag would be
   blocked by the browser.
 
@@ -37,11 +37,8 @@ PUBLIC_ANALYTICS_TEMPLATES = frozenset(
     }
 )
 
-# Where the Umami Cloud tracker sends events when no data-host-url is set. Read
-# from https://cloud.umami.is/script.js on 2026-10-03: the script posts to
-# "https://gateway.umami.is/api/send", not to its own origin. The CSP needs it.
-UMAMI_CLOUD_SCRIPT_ORIGIN = "https://cloud.umami.is"
-UMAMI_CLOUD_DEFAULT_ENDPOINT = "https://gateway.umami.is"
+_US_API_HOST = "us.i.posthog.com"
+_US_ASSETS_HOST = "us-assets.i.posthog.com"
 
 STATE_FLAG = "public_analytics_page"
 
@@ -60,54 +57,48 @@ def _https_origin(url: str) -> Optional[str]:
     return f"https://{host}"
 
 
-def _domains() -> str:
-    if config.UMAMI_DOMAINS:
-        return ",".join(d.strip() for d in config.UMAMI_DOMAINS.split(",") if d.strip())
-    return urlsplit(config.PUBLIC_BASE_URL).hostname or ""
+def _host_allowed(url: str) -> bool:
+    origin = _https_origin(url)
+    if not origin:
+        return False
+    lower = origin.lower()
+    if _US_API_HOST in lower or _US_ASSETS_HOST in lower:
+        return False
+    return True
 
 
 def enabled() -> bool:
     return bool(
-        config.UMAMI_WEBSITE_ID
-        and config.UMAMI_SCRIPT_URL
-        and _https_origin(config.UMAMI_SCRIPT_URL)
+        config.POSTHOG_PROJECT_API_KEY
+        and _host_allowed(config.POSTHOG_HOST)
+        and _host_allowed(config.POSTHOG_ASSETS_HOST)
     )
 
 
 def script_origin() -> Optional[str]:
-    return _https_origin(config.UMAMI_SCRIPT_URL) if enabled() else None
+    return _https_origin(config.POSTHOG_ASSETS_HOST) if enabled() else None
 
 
 def connect_origins() -> Tuple[str, ...]:
-    """Every origin the tracker may send events to, for CSP connect-src."""
-    origin = script_origin()
-    if not origin:
+    """The PostHog API origin events are sent to, for CSP connect-src."""
+    if not enabled():
         return ()
-    origins = [origin]
-    if config.UMAMI_HOST_URL:
-        host = _https_origin(config.UMAMI_HOST_URL)
-        if host:
-            origins.append(host)
-    elif origin == UMAMI_CLOUD_SCRIPT_ORIGIN:
-        origins.append(UMAMI_CLOUD_DEFAULT_ENDPOINT)
-    return tuple(dict.fromkeys(origins))
+    api = _https_origin(config.POSTHOG_HOST)
+    return (api,) if api else ()
 
 
 def tag() -> Optional[dict]:
-    """The attributes of the tracker tag, or None when analytics is off.
-
-    No distinct ID, no tag, no performance or replay options: page views and
-    the anonymous ``data-umami-event`` clicks only. Search and hash are left
-    out so an ad click id or a token in a URL never reaches Umami.
-    """
+    """PostHog init parameters, or None when analytics is off."""
     if not enabled():
         return None
-    host_url = _https_origin(config.UMAMI_HOST_URL) if config.UMAMI_HOST_URL else None
+    api_host = _https_origin(config.POSTHOG_HOST)
+    assets_host = _https_origin(config.POSTHOG_ASSETS_HOST)
+    if not api_host or not assets_host:
+        return None
     return {
-        "src": config.UMAMI_SCRIPT_URL,
-        "website_id": config.UMAMI_WEBSITE_ID,
-        "domains": _domains(),
-        "host_url": config.UMAMI_HOST_URL if host_url else "",
+        "api_key": config.POSTHOG_PROJECT_API_KEY,
+        "api_host": api_host,
+        "assets_host": assets_host,
     }
 
 
