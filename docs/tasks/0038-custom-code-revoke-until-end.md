@@ -1,6 +1,6 @@
 # 0038: A cancelled stay's custom code is deleted, however long the gateway is down
 
-Status: todo
+Status: in-progress
 Depends on: 0037 | Base commit: 0037's merge | Branch: task/0038-custom-code-revoke
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
