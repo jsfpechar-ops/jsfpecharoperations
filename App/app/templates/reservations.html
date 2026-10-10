@@ -184,7 +184,7 @@
         </td>
         <td class="nowrap row-actions stay-col-actions" data-label="">
           {{ row_reporting_actions(reservation, row.controls, return_to) }}
-          {% if progress.status in ('awaiting_guest', 'incomplete') and reservation.permalink_token %}
+          {% if reservation.permalink_token %}
             {{ copy_inline('stay-link-' ~ reservation.id,
                 public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id,
                 t('host.copy_guest_form_link')) }}

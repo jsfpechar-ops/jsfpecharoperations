@@ -277,10 +277,10 @@
 {% endmacro %}
 
 {# Copy a value straight from a list row, so chasing a guest is one click. #}
-{% macro copy_inline(target_id, value, label='') %}
-  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}">
-  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copy-label="{{ t('common.copy') }}"
-          data-copied-label="{{ t('common.copied') }}"
+{% macro copy_inline(target_id, value, label='', role='') %}
+  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}"{% if role %} tabindex="-1"{% endif %}>
+  <button class="{{ 'row-menu-item' if role else 'btn small' }}" type="button" data-copy="{{ target_id }}" data-copy-label="{{ t('common.copy') }}"
+          data-copied-label="{{ t('common.copied') }}"{% if role %} role="{{ role }}"{% endif %}
           title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
 {% endmacro %}
 

@@ -264,6 +264,12 @@ never the internal host stay-detail URL. Use that explicit label wherever the
 same guest-form URL is copied; keep message, PIN and identifier copy labels
 specific to their own targets.
 
+Owner correction, 2026-10-10: use the shared three-dot More actions control
+on Dashboard as on the other host lists, retaining its accessible name.
+Stays inline Copy and dashboard menu Copy follow the same existing-link
+availability as Open guest form; reporting progress must not hide them.
+Missing links are not fabricated, and access/expiry checks remain on the server.
+
 Owner requested the pasted copy/checkmark and stacked-notification examples on
 2026-10-10. Adapt their visual effects to the light warm palette and current
 semantic colors. Keep familiar text labels; copy feedback reserves enough space

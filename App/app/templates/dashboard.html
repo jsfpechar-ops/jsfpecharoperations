@@ -2,7 +2,7 @@
 {% set nav = 'dashboard' %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import progress_pill, copy_inline, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, deadline_badge, property_identity, sync_calendars_button, guest_count with context %}
+{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, deadline_badge, property_identity, sync_calendars_button, guest_count with context %}
 
 {% macro dashboard_rows(items, empty_key) %}
 {% if items %}
@@ -27,21 +27,16 @@
     </div>
     <div class="dashboard-row-actions">
       <a class="btn dashboard-open" href="/reservations/{{ reservation.id }}?return_to=/">{{ t('dashboard.row.open_stay') }}</a>
-      <details class="dashboard-more">
-        <summary class="btn">{{ t('dashboard.action.more') }}</summary>
-        <div class="dashboard-more-panel">
-          <a class="dashboard-more-item" href="/reservations/{{ reservation.id }}/guests/new">{{ t('dashboard.row.add_guest') }}</a>
-          {% if reservation.permalink_token %}
-          <a class="dashboard-more-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener">{{ t('dashboard.row.open_guest_form') }}</a>
-          {% if progress.status in ('awaiting_guest', 'incomplete') %}
-            <div class="dashboard-more-copy">{{ copy_inline('dashboard-stay-link-' ~ reservation.id, public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id, t('host.copy_guest_form_link')) }}</div>
-          {% endif %}
-          {% endif %}
-          <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form" data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
-            <input type="hidden" name="return_to" value="/"><button class="dashboard-more-item" type="submit">{{ t('host.delete') }}</button>
-          </form>
-        </div>
-      </details>
+      {{ row_menu_begin() }}
+        <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
+        {% if reservation.permalink_token %}
+        <a class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('dashboard.row.open_guest_form') }}</a>
+        {{ copy_inline('dashboard-stay-link-' ~ reservation.id, public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id, t('host.copy_guest_form_link'), 'menuitem') }}
+        {% endif %}
+        <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form" data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
+          <input type="hidden" name="return_to" value="/"><button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
+        </form>
+      {{ row_menu_end() }}
     </div>
   </article>
 {% endfor %}
@@ -55,7 +50,7 @@
 .host-workspace .host-today-head h1 { margin:3px 0 0; }
 .host-workspace .dashboard-stat { --stat-color:var(--ink-muted); display:flex; align-items:center; gap:12px; min-height:70px; padding:12px 15px; border:1px solid var(--line); border-radius:11px; box-shadow:inset 3px 0 var(--stat-color); color:inherit; background:#fff; text-decoration:none; }
 .host-workspace .dashboard-stat:hover { background:var(--surface-hover); }
-.host-workspace .dashboard-stat:focus-visible, .host-workspace .dashboard-row-property:focus-visible, .host-workspace .dashboard-open:focus-visible, .host-workspace .dashboard-more summary:focus-visible { outline:3px solid var(--focus-ring); outline-offset:2px; }
+.host-workspace .dashboard-stat:focus-visible, .host-workspace .dashboard-row-property:focus-visible, .host-workspace .dashboard-open:focus-visible, .host-workspace .dashboard-row-actions .row-menu-trigger:focus-visible { outline:3px solid var(--focus-ring); outline-offset:2px; }
 .host-workspace .dashboard-stat strong { font-size:23px; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
 .host-workspace .dashboard-stat span { font-size:13px; line-height:1.25; font-weight:650; }
 .host-workspace .dashboard-stat::before { content:""; flex:0 0 9px; width:9px; height:9px; border-radius:50%; background:var(--stat-color); }
@@ -73,30 +68,22 @@
 .host-workspace .dashboard-row-property { display:inline-block; margin-top:3px; color:var(--ink); font-size:15px; font-weight:700; text-decoration:none; border-radius:3px; }
 .host-workspace .dashboard-row-task { margin-top:3px; }
 .host-workspace .dashboard-row-task .pill.teal { background:var(--brown-bg); color:var(--brown); border-color:var(--border-strong); }
-.host-workspace .dashboard-row-actions { display:grid; grid-template-columns:94px 82px; gap:8px; align-items:center; }
+.host-workspace .dashboard-row-actions { display:grid; grid-template-columns:94px 42px; justify-content:end; gap:8px; align-items:center; }
 .host-workspace .dashboard-open { width:100%; min-height:42px; justify-content:center; white-space:nowrap; }
-.host-workspace .dashboard-more { position:relative; display:block; }
-.host-workspace .dashboard-more summary { display:inline-flex; width:100%; min-height:42px; align-items:center; justify-content:center; white-space:nowrap; list-style:none; border:1px solid var(--line); background:#fff; color:var(--ink-secondary); font-size:13px; font-weight:700; cursor:pointer; }
-.host-workspace .dashboard-more summary::-webkit-details-marker, .host-workspace .dashboard-more summary::marker { display:none; content:""; }
-.host-workspace .dashboard-more summary:hover { background:var(--surface-hover); }
-.host-workspace .dashboard-more-panel { position:absolute; top:calc(100% + 6px); right:0; z-index:30; width:max-content; min-width:190px; max-width:min(280px,calc(100vw - 24px)); padding:6px; border:1px solid var(--line); border-radius:9px; background:#fff; box-shadow:var(--shadow-popover); }
-.host-workspace .dashboard-more-item { display:block; width:100%; padding:9px 11px; border:0; border-radius:6px; background:transparent; color:var(--ink-secondary); font:inherit; font-size:13px; font-weight:550; text-align:left; text-decoration:none; cursor:pointer; }
-.host-workspace .dashboard-more-item:hover { background:var(--surface-hover); }
-.host-workspace .dashboard-more-copy { padding:4px; }
-.host-workspace .dashboard-more-copy .btn { width:100%; min-height:38px; padding:7px; text-align:left; border:0; background:transparent; color:var(--ink-secondary); font-size:13px; font-weight:500; }
-.host-workspace .dashboard-more-copy .btn:hover { background:var(--surface-hover); }
+.host-workspace .dashboard-row-actions .row-menu { width:42px; }
+.host-workspace .dashboard-row-actions .row-menu-trigger { width:42px; min-width:42px; height:42px; min-height:42px; padding:0; }
 @media (max-width:760px) {
   .host-workspace .dashboard-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
   .host-workspace .dashboard-stat { min-height:62px; padding:10px 11px; gap:9px; }
   .host-workspace .dashboard-stat strong { font-size:21px; }
   .host-workspace .dashboard-row { grid-template-columns:minmax(0,1fr); gap:10px; padding:12px; }
-  .host-workspace .dashboard-row-actions { justify-content:end; }
-  .host-workspace .dashboard-open, .host-workspace .dashboard-more summary,
-  .host-workspace .dashboard-more-item, .host-workspace .dashboard-more-copy .btn { min-height:44px; }
-  .host-workspace .dashboard-more-item { display:flex; align-items:center; }
+  .host-workspace .dashboard-row-actions { grid-template-columns:94px 44px; justify-content:end; }
+  .host-workspace .dashboard-open { min-height:44px; }
+  .host-workspace .dashboard-row-actions .row-menu { width:44px; }
+  .host-workspace .dashboard-row-actions .row-menu-trigger { width:44px; min-width:44px; height:44px; min-height:44px; }
 }
 @media (max-width:380px) {
-  .host-workspace .dashboard-row-actions { grid-template-columns:1fr 1fr; }
+  .host-workspace .dashboard-row-actions { grid-template-columns:94px 44px; }
   .host-workspace .dashboard-row-dates { gap:5px; }
 }
 </style>

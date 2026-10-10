@@ -30,3 +30,7 @@ per [workflow](workflow.md#compaction). Initial host entries moved here on integ
 - 2026-10-10 | Owner's staging screenshots reopen host design acceptance: shared content edges, table/action tracks and notification obstruction require a full measured audit through 2048 CSS pixels | earlier narrow browser checks missed wide-screen defects | [0040](../tasks/0040-host-wide-geometry-audit.md)
 
 - 2026-10-10 | Shared host lanes/actions corrected; persisted warnings stay in flow; 444 EN/CS/width cases had zero lane mismatches, 3,030 tests passed with zero skips and 89.57% coverage | supersedes initial narrow-screen acceptance; CI and owner staging redeploy remain pending | [0040](../tasks/0040-host-wide-geometry-audit.md)
+
+- 2026-10-10 | Owner reopened design selection; only guest-link Copy availability and shared dashboard ellipsis authorized now | other design choices await hand-picking; no broader redesign | [0041](../tasks/0041-host-stay-actions.md)
+
+| 2026-10-10 | Owner stopped implementation; preserve WIP as draft #338 for another AI | No further fixes/deploys; 0041 blocked; designs await hand-picking | 0041 |

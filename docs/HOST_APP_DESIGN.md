@@ -80,9 +80,12 @@ share action geometry. The owner reaffirmed the four white Quiet overview
 cards: amber Needs action, taupe Waiting for guests, muted blue Ready to send,
 Overdue red only when positive. Small dots and restrained attention lines;
 zero counts stay neutral. Count the full candidate set before the five-row cap.
-Open buttons and More share consistent columns across both row sections.
+Open and the shared three-dot More actions control use consistent columns
+across both row sections.
 Owner's latest wording: label the row button **Open**; label invitation copying
-**Copy guest form link** and copy the guest-facing registration URL.
+**Copy guest form link** and copy the guest-facing registration URL. Copy
+availability follows Open guest form link availability across reporting states;
+never create or enable a missing/expired link.
 
 **Needs you now:** compact rows ordered by actual urgency. Each row shows arrival/departure context, property, one task label (“1 guest missing”, “Check police report”, “Property needs setup”), and one action (“Open”, “Check report”, “Finish setup”). A second short line is allowed only if the action would be unclear, for example “No confirmation from UbyPort yet.” Avoid “2 of 3 registered. Share the invitation to finish check-in” when the count and button already say this.
 

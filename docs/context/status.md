@@ -35,4 +35,4 @@ Updated: 2026-10-10. Door-code taken period: brief 0037, not built yet.
 
 - SES, Turnstile, healthchecks, Better Stack, Cloudflare, autopurge, Render staging, backup drill, 0001 (#281), magic-link/0007 phase 2 (Oct 2026).
 
-- [UI 0040](../tasks/0040-host-wide-geometry-audit.md): PR #338; 3,030 passed, zero skips; CI/staging pending.
+- [UI 0041](../tasks/0041-host-stay-actions.md): Paused; draft #338, overflow/menu failures; see report.
