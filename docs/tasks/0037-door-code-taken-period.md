@@ -1,6 +1,6 @@
 # 0037: A taken door-code period gets a custom code, and the host is warned
 
-Status: todo
+Status: review
 Depends on: none (runs before 0038) | Base commit: main | Branch: task/0037-door-code-taken-period
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
@@ -148,16 +148,16 @@ Expected: all pass, last lint line `context lint: OK`.
 
 ## 7. Acceptance
 
-- [ ] A guest save whose `get` returns `-1026` makes no `add` call, leaves `last_error` `period_taken:-1026`, and queues one `period_taken` host notice.
-- [ ] The next `reconcile` calls `add` once, stores `code_kind` `custom`, and the guest view and mail have no first-use sentence.
-- [ ] `-2012` on `add` fails at once; a busy gateway gets two more `add` tries (1 and 5 minutes), then `failed`. Each failure is one host mail with support in CC.
-- [ ] `find_code_by_name` never adopts a code whose window differs.
-- [ ] A date change never calls `change_code_period`. `-2018` on it does not call `add`, and the next reconcile makes no TTLock call for that stay.
-- [ ] A failed delete of a moved stay's old code queues one `moved_not_deleted` notice.
-- [ ] `grep -n "keyboardPwd/change" App/app/door_codes.py` prints nothing.
-- [ ] `grep -n "log\." App/app/ttlock.py` shows no PIN, token or response body.
-- [ ] `K-D01` is gone from `docs/context/known-issues.md`.
-- [ ] Full pytest and context lint pass.
+- [x] A guest save whose `get` returns `-1026` makes no `add` call, leaves `last_error` `period_taken:-1026`, and queues one `period_taken` host notice.
+- [x] The next `reconcile` calls `add` once, stores `code_kind` `custom`, and the guest view and mail have no first-use sentence.
+- [x] `-2012` on `add` fails at once; a busy gateway gets two more `add` tries (1 and 5 minutes), then `failed`. Each failure is one host mail with support in CC.
+- [x] `find_code_by_name` never adopts a code whose window differs.
+- [x] A date change never calls `change_code_period`. `-2018` on it does not call `add`, and the next reconcile makes no TTLock call for that stay.
+- [x] A failed delete of a moved stay's old code queues one `moved_not_deleted` notice.
+- [x] `grep -n "keyboardPwd/change" App/app/door_codes.py` prints nothing.
+- [x] `grep -n "log\." App/app/ttlock.py` shows no PIN, token or response body.
+- [x] `K-D01` is gone from `docs/context/known-issues.md`.
+- [x] Full pytest and context lint pass.
 
 ## 8. Stop and ask
 

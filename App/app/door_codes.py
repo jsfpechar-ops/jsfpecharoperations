@@ -25,6 +25,10 @@ REVOKE_FAILED = "revoke_failed"
 BACKOFF_MINUTES = (1, 5, 15, 60, 240)
 # A failed code is handed to the host after this many tries (1 min apart).
 ISSUE_MAX_ATTEMPTS = 2
+PERIOD_TAKEN = "period_taken"
+PERIOD_TAKEN_RETRY_MINUTES = (1, 5)
+PERIOD_TAKEN_MAX_ATTEMPTS = 4
+GATEWAY_RETRY_KINDS = ("offline", "transient", "network", "rate", "budget")
 LEASE_MINUTES = 2
 # A guest who has finished registering must not wait longer than this in silence.
 DELAY_MINUTES = 5
@@ -147,6 +151,10 @@ def view(reservation: dict, apartment: dict) -> Optional[dict]:
         return {"state": "preparing"}
     valid_from = row["valid_from"] or ""
     valid_to = row["valid_to"] or ""
+    custom = (row["code_kind"] or "") == "custom"
+    first_use = ""
+    if valid_from and not custom:
+        first_use = _fmt_local(_ms_to_iso(_iso_to_ms(valid_from) + 24 * 3_600_000))
     return {
         "state": "issued",
         "pin": pin,
@@ -154,7 +162,7 @@ def view(reservation: dict, apartment: dict) -> Optional[dict]:
         "works_until": _fmt_local(valid_to) if valid_to else "",
         "checkin": _stay_checkin_label(reservation["date_from"], apartment["checkin_hour"]),
         "checkout": _stay_checkin_label(reservation["date_to"], apartment["checkout_hour"]),
-        "first_use_by": _fmt_local(_ms_to_iso(_iso_to_ms(valid_from) + 24 * 3_600_000)) if valid_from else "",
+        "first_use_by": first_use,
     }
 
 
@@ -311,7 +319,7 @@ def _send_code_mail(door_code_id: int) -> None:
     mail.drain(limit=4)
 
 
-def issue(door_code_id: int) -> bool:
+def issue(door_code_id: int, *, allow_gateway: bool = False) -> bool:
     now = _now()
     now_iso = _iso(now)
     lease_cutoff = _iso(now - timedelta(minutes=LEASE_MINUTES))
@@ -374,32 +382,84 @@ def issue(door_code_id: int) -> bool:
         else ttlock.NORMAL
     )
     attempts = int(row["attempts"])
+    taken = (row["last_error"] or "").startswith(PERIOD_TAKEN)
+    via_add = False
+    kind = "random"
 
     try:
         pin: Optional[str] = None
         code_id: Optional[str] = None
         if attempts > 1:
-            found = ttlock.find_code_by_name(int(account["id"]), row["lock_id"], name)
+            found = ttlock.find_code_by_name(
+                int(account["id"]), row["lock_id"], name, start_ms, end_ms
+            )
             if found:
                 pin, code_id = found
+                kind = "custom" if taken else "random"
         if pin is None:
-            pin, code_id = ttlock.create_period_code(
-                int(account["id"]),
-                row["lock_id"],
-                start_ms,
-                end_ms,
-                name,
-                priority,
-            )
+            if taken and allow_gateway:
+                via_add = True
+                pin, code_id = ttlock.add_custom_code(
+                    int(account["id"]),
+                    row["lock_id"],
+                    start_ms,
+                    end_ms,
+                    name,
+                    priority,
+                )
+                kind = "custom"
+            elif taken:
+                _release_issue_claim(door_code_id, decrement_attempt=True)
+                return False
+            else:
+                try:
+                    pin, code_id = ttlock.create_period_code(
+                        int(account["id"]),
+                        row["lock_id"],
+                        start_ms,
+                        end_ms,
+                        name,
+                        priority,
+                    )
+                    kind = "random"
+                except ttlock.TTLockError as create_exc:
+                    if create_exc.kind != PERIOD_TAKEN:
+                        raise
+                    log.error(
+                        "DOOR_CODE_PROBLEM stage=period_taken reservation=%s door_code=%s",
+                        reservation["id"],
+                        door_code_id,
+                    )
+                    mail_notify.door_code_notice(door_code_id, "period_taken")
+                    mail.drain(limit=4)
+                    if allow_gateway:
+                        via_add = True
+                        pin, code_id = ttlock.add_custom_code(
+                            int(account["id"]),
+                            row["lock_id"],
+                            start_ms,
+                            end_ms,
+                            name,
+                            priority,
+                        )
+                        kind = "custom"
+                    else:
+                        db.execute(
+                            "UPDATE door_code SET state = ?, claimed_at = NULL, "
+                            "last_error = ?, next_attempt_at = ?, updated_at = ? WHERE id = ?",
+                            (RETRYING, "period_taken:-1026", now_iso, now_iso, door_code_id),
+                        )
+                        return False
         with db.cursor():
             db.execute(
                 "UPDATE door_code SET state = ?, pin_enc = ?, provider_code_id = ?, "
-                "valid_from = ?, valid_to = ?, issued_at = ?, claimed_at = NULL, "
+                "code_kind = ?, valid_from = ?, valid_to = ?, issued_at = ?, claimed_at = NULL, "
                 "last_error = NULL, updated_at = ? WHERE id = ?",
                 (
                     ISSUED,
                     db.encrypt_field(pin),
                     code_id,
+                    kind,
                     _ms_to_iso(start_ms),
                     _ms_to_iso(end_ms),
                     now_iso,
@@ -415,13 +475,63 @@ def issue(door_code_id: int) -> bool:
             actor="system",
             owner_user_id=apartment["owner_user_id"],
         )
-        send_code_mail(door_code_id)
+        fresh = db.query_one("SELECT status, archived_at FROM reservation WHERE id = ?", (reservation["id"],))
+        if fresh and fresh["status"] == "active" and fresh["archived_at"] is None:
+            send_code_mail(door_code_id)
         return True
     except ttlock.TTLockError as exc:
-        kind = (exc.kind or "transient")[:40]
-        # The TTLock error number goes into last_error so the host alert and the
-        # log say what TTLock refused, not only which group the refusal is in.
-        reason = f"{kind}:{exc.code}" if exc.code is not None else kind
+        kind_err = (exc.kind or "transient")[:40]
+        reason = f"{kind_err}:{exc.code}" if exc.code is not None else kind_err
+        if taken or via_add:
+            last_err = ("period_taken:" + reason)[:40]
+            if exc.code == -2012:
+                new_state = FAILED
+                next_at = None
+            elif kind_err in ("permission", "reauth", "config", "disabled", "storage", "duplicate"):
+                new_state = FAILED
+                next_at = None
+            elif kind_err == "budget":
+                new_state = RETRYING
+                next_at = _iso(now + timedelta(minutes=60))
+                db.execute(
+                    "UPDATE door_code SET attempts = attempts - 1 WHERE id = ?",
+                    (door_code_id,),
+                )
+            elif attempts >= PERIOD_TAKEN_MAX_ATTEMPTS:
+                new_state = FAILED
+                next_at = None
+            else:
+                new_state = RETRYING
+                idx = min(max(attempts - 2, 0), 1)
+                next_at = _iso(now + timedelta(minutes=PERIOD_TAKEN_RETRY_MINUTES[idx]))
+            db.execute(
+                "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, "
+                "next_attempt_at = ?, updated_at = ? WHERE id = ?",
+                (new_state, last_err, next_at, now_iso, door_code_id),
+            )
+            log.error(
+                "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s attempt=%s reason=%s",
+                "handed_over" if new_state == FAILED else "attempt_failed",
+                reservation["id"],
+                door_code_id,
+                attempts,
+                last_err,
+            )
+            if new_state == FAILED:
+                alerts.raise_alert(
+                    "warning",
+                    "door_code_failed",
+                    "Door code could not be created",
+                    dedupe_key=f"door_code_failed:{reservation['id']}",
+                    apartment_id=apartment["id"],
+                    reservation_id=reservation["id"],
+                    params={"property": apartment["internal_name"], "date": reservation["date_from"]},
+                )
+                mail_notify.door_code_notice(door_code_id, "failed")
+                _release_confirmation(int(reservation["id"]))
+                mail.drain(limit=4)
+            return False
+        kind = kind_err
         if exc.kind in ("reauth", "permission", "config", "disabled"):
             new_state = FAILED
             next_at = None
@@ -637,87 +747,109 @@ def _handle_moves(now_iso: str) -> None:
         if row["valid_from"] and row["valid_to"]:
             if _iso_to_ms(row["valid_from"]) == start_ms and _iso_to_ms(row["valid_to"]) == end_ms:
                 continue
+        last_err = (row["last_error"] or "")
+        if last_err.startswith(("permission", "reauth", "config", "disabled")):
+            continue
         account = ttlock.account_for(row["owner_user_id"])
         if not account or account["status"] != "ok":
             continue
+        name = f"UH-{row['id']}"
+        move_now = _now()
+        priority = (
+            ttlock.CRITICAL
+            if start_ms < int((move_now + timedelta(hours=24)).timestamp() * 1000)
+            else ttlock.NORMAL
+        )
+        old_code_id = row["provider_code_id"] or ""
+        via_add = False
         try:
-            ttlock.change_code_period(
-                int(account["id"]),
-                row["lock_id"],
-                row["provider_code_id"] or "",
-                start_ms,
-                end_ms,
-                ttlock.NORMAL,
-            )
-            db.execute(
-                "UPDATE door_code SET valid_from = ?, valid_to = ?, notified_at = NULL, "
-                "next_attempt_at = NULL, last_error = NULL, updated_at = ? WHERE id = ?",
-                (_ms_to_iso(start_ms), _ms_to_iso(end_ms), now_iso, row["id"]),
-            )
-            db.audit(
-                "door_code_moved",
-                f"door_code={row['id']}",
-                actor="system",
-                owner_user_id=row["owner_user_id"],
-            )
-            send_code_mail(int(row["id"]))
-        except ttlock.TTLockError as exc:
-            kind = exc.kind or "transient"
-            if kind in ("offline", "transient", "network", "rate", "budget"):
-                delay = 60 if kind == "budget" else 15
-                db.execute(
-                    "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
-                    (_iso(_now() + timedelta(minutes=delay)), kind[:40], now_iso, row["id"]),
-                )
-                continue
-            old_code_id = row["provider_code_id"] or ""
             try:
                 pin, code_id = ttlock.create_period_code(
                     int(account["id"]),
                     row["lock_id"],
                     start_ms,
                     end_ms,
-                    f"UH-{row['id']}",
-                    ttlock.NORMAL,
+                    name,
+                    priority,
                 )
-                if old_code_id and old_code_id != code_id:
-                    try:
-                        ttlock.delete_code(
-                            int(account["id"]),
-                            row["lock_id"],
-                            old_code_id,
-                        )
-                    except ttlock.TTLockError:
-                        log.warning(
-                            "door_code_move_orphan lock=%s old_code=%s new_code=%s",
-                            row["lock_id"],
-                            old_code_id,
-                            code_id,
-                        )
+                code_kind = "random"
+            except ttlock.TTLockError as create_exc:
+                if create_exc.kind != PERIOD_TAKEN:
+                    raise
+                mail_notify.door_code_notice(int(row["id"]), "period_taken")
+                mail.drain(limit=4)
+                via_add = True
+                pin, code_id = ttlock.add_custom_code(
+                    int(account["id"]),
+                    row["lock_id"],
+                    start_ms,
+                    end_ms,
+                    name,
+                    priority,
+                )
+                code_kind = "custom"
+            db.execute(
+                "UPDATE door_code SET pin_enc = ?, provider_code_id = ?, code_kind = ?, "
+                "valid_from = ?, valid_to = ?, notified_at = NULL, next_attempt_at = NULL, "
+                "last_error = NULL, updated_at = ? WHERE id = ?",
+                (
+                    db.encrypt_field(pin),
+                    code_id,
+                    code_kind,
+                    _ms_to_iso(start_ms),
+                    _ms_to_iso(end_ms),
+                    now_iso,
+                    row["id"],
+                ),
+            )
+            db.audit(
+                "door_code_replaced",
+                f"door_code={row['id']}",
+                actor="system",
+                owner_user_id=row["owner_user_id"],
+            )
+            send_code_mail(int(row["id"]))
+            if old_code_id and old_code_id != code_id:
+                try:
+                    ttlock.delete_code(
+                        int(account["id"]),
+                        row["lock_id"],
+                        old_code_id,
+                    )
+                except ttlock.TTLockError:
+                    db.audit(
+                        "door_code_move_old_not_deleted",
+                        f"door_code={row['id']}",
+                        actor="system",
+                        owner_user_id=row["owner_user_id"],
+                    )
+                    mail_notify.door_code_notice(int(row["id"]), "moved_not_deleted")
+                    mail.drain(limit=4)
+        except ttlock.TTLockError as exc:
+            kind = exc.kind or "transient"
+            reason = f"{kind}:{exc.code}" if exc.code is not None else kind
+            if via_add:
+                last_error = ("period_taken:" + reason)[:40]
+            else:
+                last_error = reason[:40]
+            if kind in ("permission", "reauth", "config", "disabled"):
                 db.execute(
-                    "UPDATE door_code SET pin_enc = ?, provider_code_id = ?, valid_from = ?, "
-                    "valid_to = ?, notified_at = NULL, next_attempt_at = NULL, last_error = NULL, "
-                    "updated_at = ? WHERE id = ?",
-                    (
-                        db.encrypt_field(pin),
-                        code_id,
-                        _ms_to_iso(start_ms),
-                        _ms_to_iso(end_ms),
-                        now_iso,
-                        row["id"],
-                    ),
+                    "UPDATE door_code SET last_error = ?, updated_at = ? WHERE id = ?",
+                    (reason[:40], now_iso, row["id"]),
                 )
-                db.audit(
-                    "door_code_replaced",
-                    f"door_code={row['id']}",
-                    actor="system",
-                    owner_user_id=row["owner_user_id"],
-                )
-                send_code_mail(int(row["id"]))
-            except ttlock.TTLockError:
+                mail_notify.door_code_notice(int(row["id"]), "failed")
+                mail.drain(limit=4)
+            elif kind in GATEWAY_RETRY_KINDS:
+                delay = 60 if kind == "budget" else 15
                 db.execute(
-                    "UPDATE door_code SET next_attempt_at = ?, updated_at = ? WHERE id = ?",
-                    (_iso(_now() + timedelta(minutes=60)), now_iso, row["id"]),
+                    "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
+                    (_iso(_now() + timedelta(minutes=delay)), last_error, now_iso, row["id"]),
+                )
+            else:
+                delay = 15
+                db.execute(
+                    "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
+                    (_iso(_now() + timedelta(minutes=delay)), last_error, now_iso, row["id"]),
                 )
 
 
@@ -884,7 +1016,8 @@ def _issue_due(now_iso: str) -> Dict[str, int]:
         (PENDING, RETRYING, now_iso, BATCH),
     )
     for row in due:
-        if _phase("issue", issue, int(row["id"])):
+        row_id = int(row["id"])
+        if _phase("issue", lambda rid: issue(rid, allow_gateway=True), row_id):
             out["issued"] += 1
     return out
 

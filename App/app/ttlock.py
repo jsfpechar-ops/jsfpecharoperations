@@ -27,12 +27,14 @@ ALLOWED_PATHS = frozenset(
         "/v3/lock/queryDate",
         "/v3/lock/updateDate",
         "/v3/keyboardPwd/get",
+        "/v3/keyboardPwd/add",
         "/v3/keyboardPwd/change",
         "/v3/keyboardPwd/delete",
     }
 )
 GATEWAY_PATHS = frozenset(
     {
+        "/v3/keyboardPwd/add",
         "/v3/keyboardPwd/change",
         "/v3/keyboardPwd/delete",
         "/v3/lock/queryDate",
@@ -63,6 +65,8 @@ ERROR_KINDS: Dict[int, str] = {
     # "A Passcode that has never been used on the Lock cannot be changed": the
     # move path then makes a new code and deletes the old one.
     -3008: "unused_code",
+    -1026: "period_taken",
+    -3007: "duplicate",
 }
 
 _MS_HOUR = 3_600_000
@@ -489,10 +493,52 @@ def create_period_code(
     return str(answer["keyboardPwd"]), str(answer["keyboardPwdId"])
 
 
+def _random_custom_pin() -> str:
+    return str(secrets.randbelow(9_000_000) + 1_000_000)
+
+
+def add_custom_code(
+    account_id: int,
+    lock_id: str,
+    start_ms: int,
+    end_ms: int,
+    name: str,
+    priority: str,
+) -> Tuple[str, str]:
+    _whole_hour(start_ms)
+    _whole_hour(end_ms)
+    pin = _random_custom_pin()
+    payload = {
+        "lockId": int(lock_id),
+        "keyboardPwd": pin,
+        "keyboardPwdName": name,
+        "keyboardPwdType": 3,
+        "startDate": start_ms,
+        "endDate": end_ms,
+        "addType": 2,
+    }
+    try:
+        answer = _call(account_id, "/v3/keyboardPwd/add", payload, priority)
+    except TTLockError as exc:
+        if exc.code != -3007:
+            raise
+        pin = _random_custom_pin()
+        payload["keyboardPwd"] = pin
+        try:
+            answer = _call(account_id, "/v3/keyboardPwd/add", payload, priority)
+        except TTLockError as retry_exc:
+            if retry_exc.code == -3007:
+                raise
+            raise
+    return pin, str(answer["keyboardPwdId"])
+
+
 def find_code_by_name(
     account_id: int,
     lock_id: str,
     name: str,
+    start_ms: int,
+    end_ms: int,
 ) -> Optional[Tuple[str, str]]:
     answer = _call(
         account_id,
@@ -507,8 +553,13 @@ def find_code_by_name(
         NORMAL,
     )
     for raw in answer.get("list") or []:
-        if str(raw.get("keyboardPwdName")) == name:
-            return str(raw["keyboardPwd"]), str(raw["keyboardPwdId"])
+        if str(raw.get("keyboardPwdName")) != name:
+            continue
+        if int(raw.get("startDate") or 0) != start_ms:
+            continue
+        if int(raw.get("endDate") or 0) != end_ms:
+            continue
+        return str(raw["keyboardPwd"]), str(raw["keyboardPwdId"])
     return None
 
 

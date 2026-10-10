@@ -97,4 +97,3 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
 | K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
 | K-ML04 | Low open | login link limit | Anyone can use up a victim's 3 requests per 15 min. Kept: counting only real accounts would reveal who uses UbyHost | 0006 |
-| K-D01 | High open | door_codes.py | `-1026` gives no code (0037) | #336 |
