@@ -15,35 +15,38 @@
   var apiKey = {{ analytics_tag.api_key | tojson }};
   var apiHost = {{ analytics_tag.api_host | tojson }};
   var assetsHost = {{ analytics_tag.assets_host | tojson }};
-  var stripKeys = ["gclid", "gbraid", "wbraid", "fbclid", "click", "token", "email"];
+  var clickIds = ["gclid", "gclsrc", "dclid", "gbraid", "wbraid", "fbclid", "msclkid", "twclid", "li_fat_id", "igshid", "ttclid", "rdt_cid", "epik", "qclid", "sccid", "oppref", "irclid", "_kx"];
+  var stripKeys = clickIds.concat(["click", "token", "email"]);
+  var prefixes = ["$initial_", "$session_entry_"];
+  function isClickIdKey(key) {
+    for (var i = 0; i < prefixes.length; i++) {
+      if (key.indexOf(prefixes[i]) === 0) key = key.slice(prefixes[i].length);
+    }
+    return clickIds.indexOf(key) !== -1;
+  }
   function scrubUrl(raw) {
-    if (!raw) return raw;
+    if (raw.indexOf("?") === -1 && raw.indexOf("#") === -1) return raw;
     try {
       var u = new URL(raw, window.location.origin);
-      for (var i = 0; i < stripKeys.length; i++) {
-        u.searchParams.delete(stripKeys[i]);
-      }
+      for (var i = 0; i < stripKeys.length; i++) u.searchParams.delete(stripKeys[i]);
       u.hash = "";
-      return u.toString();
+      return raw.indexOf("://") === -1 ? u.pathname + u.search : u.toString();
     } catch (e) {
-      return raw;
+      return raw.split("?")[0].split("#")[0];
     }
   }
-  function scrubPath(path) {
-    if (!path || path.indexOf("?") === -1 && path.indexOf("#") === -1) return path;
-    return scrubUrl(path.indexOf("://") === -1 ? window.location.origin + path : path);
+  function scrub(value) {
+    if (typeof value === "string") return scrubUrl(value);
+    if (!value || typeof value !== "object") return value;
+    for (var key in value) {
+      if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+      if (isClickIdKey(key)) delete value[key];
+      else value[key] = scrub(value[key]);
+    }
+    return value;
   }
   function beforeSend(event) {
-    if (!event || !event.properties) return event;
-    if (event.properties.$current_url) {
-      event.properties.$current_url = scrubUrl(event.properties.$current_url);
-    }
-    if (event.properties.$referrer) {
-      event.properties.$referrer = scrubUrl(event.properties.$referrer);
-    }
-    if (event.properties.$pathname) {
-      event.properties.$pathname = scrubPath(event.properties.$pathname);
-    }
+    if (event) scrub(event);
     return event;
   }
   var allowed = { login_click: 1, contact_click: 1, signup_start: 1 };
@@ -61,11 +64,25 @@
     window.posthog.init(apiKey, {
       api_host: apiHost,
       cookieless_mode: "always",
-      person_profiles: "identified" + "_only",
+      person_profiles: "identified_only",
       persistence: "memory",
+      mask_personal_data_properties: true,
+      custom_personal_data_properties: ["click", "token", "email"],
+      disable_capture_url_hashes: true,
       autocapture: false,
       capture_pageleave: false,
       disable_session_recording: true,
+      enable_heatmaps: false,
+      capture_dead_clicks: false,
+      capture_exceptions: false,
+      capture_performance: false,
+      disable_surveys: true,
+      disable_web_experiments: true,
+      disable_product_tours: true,
+      disable_conversations: true,
+      advanced_disable_flags: true,
+      advanced_disable_toolbar_metrics: true,
+      disable_external_dependency_loading: true,
       before_send: beforeSend,
       loaded: onLoaded
     });

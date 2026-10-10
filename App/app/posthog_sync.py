@@ -10,6 +10,7 @@ import json
 import logging
 import urllib.error
 import urllib.request
+import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 from . import admin_funnel, analytics, config, db
@@ -23,6 +24,7 @@ _UTM_FIELDS = (
     ("signup_utm_medium", "utm_medium"),
     ("signup_utm_campaign", "utm_campaign"),
 )
+_EVENT_NAMESPACE = uuid.UUID("6f1c5c6e-0b8e-4d55-9d43-4b1f0b7a3e37")
 
 
 def _click_id_in(value: str) -> bool:
@@ -34,19 +36,23 @@ def _stage_keys() -> List[str]:
     return [key for key, _column in admin_funnel.stages()]
 
 
-def _stages_to_send(previous: Optional[str], current: str) -> List[str]:
+def _stages_to_send(previous: Optional[str], row: Dict[str, Any]) -> List[str]:
+    current = row.get("stage") or ""
     keys = _stage_keys()
     if not current or current not in keys:
         return []
-    end = keys.index(current)
-    if not previous:
-        return keys[: end + 1]
-    if previous not in keys:
-        return keys[: end + 1]
-    start = keys.index(previous)
-    if start >= end:
-        return []
-    return keys[start + 1 : end + 1]
+    past_previous = previous is None or previous not in keys
+    result: List[str] = []
+    for key, column in admin_funnel.stages():
+        if not past_previous:
+            if key == previous:
+                past_previous = True
+            continue
+        if row.get(column):
+            result.append(key)
+        if key == current:
+            break
+    return result
 
 
 def _person_set(account: Dict[str, Any], funnel_stage: str) -> Dict[str, Any]:
@@ -77,13 +83,15 @@ def _capture(
     event: str,
     distinct_id: str,
     properties: Dict[str, Any],
-    timestamp: Optional[str] = None,
+    timestamp: Optional[str],
+    event_uuid: str,
 ) -> None:
     payload: Dict[str, Any] = {
         "api_key": api_key,
         "event": event,
         "distinct_id": distinct_id,
         "properties": properties,
+        "uuid": event_uuid,
     }
     if timestamp:
         payload["timestamp"] = timestamp
@@ -117,7 +125,8 @@ def sync() -> Dict[str, int]:
         return counts
 
     api_key = config.POSTHOG_PROJECT_API_KEY
-    api_host = analytics.tag()["api_host"] if analytics.tag() else ""
+    tag = analytics.tag()
+    api_host = tag["api_host"] if tag else ""
     if not api_host:
         return counts
 
@@ -132,8 +141,7 @@ def sync() -> Dict[str, int]:
         if not row:
             counts["skipped"] += 1
             continue
-        current = row.get("stage") or ""
-        pending = _stages_to_send(account.get("posthog_stage"), current)
+        pending = _stages_to_send(account.get("posthog_stage"), row)
         if not pending:
             counts["skipped"] += 1
             continue
@@ -152,6 +160,7 @@ def sync() -> Dict[str, int]:
             for stage_key in pending:
                 properties: Dict[str, Any] = {
                     "$ip": None,
+                    "$geoip_disable": True,
                     "$set": _person_set(person_base, stage_key),
                 }
                 _capture(
@@ -161,12 +170,13 @@ def sync() -> Dict[str, int]:
                     distinct_id,
                     properties,
                     _stage_timestamp(row, stage_key),
+                    str(uuid.uuid5(_EVENT_NAMESPACE, f"{account['id']}:{stage_key}")),
                 )
                 counts["sent"] += 1
-            db.execute(
-                "UPDATE user_account SET posthog_stage = ? WHERE id = ?",
-                (current, account["id"]),
-            )
+                db.execute(
+                    "UPDATE user_account SET posthog_stage = ? WHERE id = ?",
+                    (stage_key, account["id"]),
+                )
         except urllib.error.HTTPError as exc:
             log.warning("posthog capture failed for account %s: %s", account["id"], exc.code)
             counts["failed"] += 1

@@ -100,6 +100,11 @@ While it is on, `/privacy` shows the analytics paragraphs with an opt-out and
 opt-back-in link (`static/analytics-optout.js`, localStorage key
 `ubyhost.analytics.disabled`).
 
+Before you set the key:
+
+1. In PostHog, open **Settings**, then **Project**, then **IP data capture**. Turn on **Discard client IP data**.
+2. In the same project settings, find **Cookieless server hash mode** and turn it on. Without it, the cookieless page views are dropped.
+
 ## Reverse proxy and client IP
 
 | Variable | Default | Notes |

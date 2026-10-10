@@ -52,7 +52,7 @@ PUBLIC_PATHS = [
 
 AUTH_PATHS = ["/login", "/login/2fa", "/account/password", "/healthz"]
 
-STRIP_KEYS = ("gclid", "fbclid", "click", "token")
+STRIP_KEYS = ("gclid", "fbclid", "ttclid", "click", "token", "email")
 
 
 def _markers(text: str) -> list[str]:
@@ -132,6 +132,23 @@ def test_the_snippet_strips_sensitive_query_keys():
     source = (TEMPLATES / "_posthog.html").read_text(encoding="utf-8")
     for key in STRIP_KEYS:
         assert key in source
+
+
+def test_the_snippet_locks_the_privacy_settings():
+    source = (TEMPLATES / "_posthog.html").read_text(encoding="utf-8")
+    for needle in (
+        "advanced_disable_flags: true",
+        "disable_surveys: true",
+        "enable_heatmaps: false",
+        "capture_dead_clicks: false",
+        "capture_exceptions: false",
+        "capture_performance: false",
+        "disable_external_dependency_loading: true",
+        "mask_personal_data_properties: true",
+        "disable_session_recording: true",
+        "autocapture: false",
+    ):
+        assert needle in source
 
 
 def test_templates_and_static_contain_no_identify_call():
