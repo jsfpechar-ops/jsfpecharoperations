@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-09 after PR cleanup.
+Updated: 2026-10-09 after PR review.
 
 ## Production
 
@@ -21,7 +21,7 @@ Updated: 2026-10-09 after PR cleanup.
 
 - TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).
 
-- PR cleanup 2026-10-09: 29 outdated PRs closed. [0030](../tasks/0030-report.md) (was #327) and [0031](../tasks/0031-report.md) (was #316) done on `claude/eloquent-goodall-7o67fr`, awaiting a PR and your merge. #278 and #279 undecided.
+- PR review 2026-10-09: #327, #316, #330 closed. #332: run [0032](../tasks/0032-guide-picture-switch-on.md) (drop the form picture), then merge. #331: approved (no ID check, 1-day link window), merge after #332. #328 after #331. #278, #279 undecided.
 - Doručenka smoke on a new filing after this cutover.
 - TTLock on Render staging, 2026-10-08: lock shared as authorized admin, hand-added stay completed, PIN issued, TTLock window matched UbyHost (09:00 to 16:00) and **the code opened the lock** (owner-tested). Not yet tested: change, cancel and delete (no gateway), calendar stays, daylight saving.
 
