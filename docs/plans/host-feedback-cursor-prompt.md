@@ -84,7 +84,7 @@ Exact anchors (stop if missing):
 | `docs/plans/host-control-review.html` | Read only | Approved standalone component reference |
 | `docs/plans/host-feedback-review.md` | Read only | Scope, outcomes and design rationale |
 | `docs/tasks/0032-host-copy-notifications.md` | Create/update | Brief and status |
-| `docs/tasks/0032-report.md` | Create | Evidence and owner steps |
+| `docs/tasks/0032-host-feedback-report.md` | Create | Evidence and owner steps |
 
 No other file may change. Existing host copy markup must work through shared
 enhancement; if a specific template needs changes, report that follow-up rather
@@ -190,7 +190,7 @@ evidence. Need merge/deploy/secrets/SSH: hand exact steps to the owner.
 
 ## 9. Report
 
-Write `docs/tasks/0032-report.md` (≤1,500 tokens): files changed, commands and
+Write `docs/tasks/0032-host-feedback-report.md` (≤1,500 tokens): files changed, commands and
 last five output lines, acceptance ticked, screenshot links, deviations,
 questions, owner steps left. Set brief Status: review. Link the draft PR if one
 was created; do not claim implementation beyond this brief.

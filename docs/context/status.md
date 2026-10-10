@@ -10,9 +10,9 @@ Updated: 2026-10-10; host UI review.
 
 ## Now
 
-- [UI](../plans/host-design-application-review.md): PR #338; 3,022 pass; staging pending.
-- Lawyer: **LAWYER REVIEW** legal v1.7 (0005), unless signed off.
-- Optional: deploy #280+#281 (admin preview) when you want it on production.
+- [UI](../tasks/0040-host-wide-geometry-audit.md): PR #338 staging review found wide-screen geometry defects; audit/correction underway.
+- Lawyer: **LAWYER REVIEW** v1.7 (0005).
+- Optional: #280+#281 admin preview.
 
 ## Next
 

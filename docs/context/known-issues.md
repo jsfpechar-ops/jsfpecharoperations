@@ -77,6 +77,7 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-U08 | Low open | invoice_form.html | Other-only description fixed on feature; CI pending | UI §6 |
 | K-U09 | Low open | dashboard.html, host.css | Hover/focus fixed on feature; CI/staging pending | UI §9 |
 | K-U10 | Low open | app.js:copy | Copy outcomes fixed on feature; CI/staging pending | UI §12 |
+| K-U11 | Med open | host.css | Wide content lanes disagree; notices obstruct actions; correction underway | [0040](../tasks/0040-host-wide-geometry-audit.md) |
 | K-O01 | High open | server crontab | Backup and off-site crons aren't in the repo; verify on the server | AR-04 |
 | K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on a real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |

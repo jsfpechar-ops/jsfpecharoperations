@@ -2,7 +2,10 @@
 
 Owner-approved design, implemented on `task/host-design-staging`. This describes
 the application changes, separately from the earlier standalone prototype.
-Local application validation passed. [PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338) is open for owner review; GitHub CI and staging deployment remain pending.
+The owner's staging review exposed shared layout defects at wide screen sizes.
+The previous 3,022 passing tests did not adequately check aligned content edges.
+[0040](../tasks/0040-host-wide-geometry-audit.md) now owns the full design audit,
+correction and measured wide/mobile browser evidence. [PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338) remains the review branch.
 
 | Page | Final selected design |
 |---|---|
@@ -27,7 +30,7 @@ Application Chromium screenshots use synthetic fixtures in English and Czech
 at mobile and desktop widths. The consolidated gallery is generated outside
 the checkout at `/workspace/generated_images/host-design-application/index.html`.
 Individual checks and captures are recorded in reports
-[0032](../tasks/0032-report.md), [0033](../tasks/0033-report.md),
+[0032](../tasks/0032-host-feedback-report.md), [0033](../tasks/0033-report.md),
 [0034](../tasks/0034-report.md), [0035](../tasks/0035-report.md),
 [0036](../tasks/0036-report.md), [0038](../tasks/0038-report.md) and
 [0039](../tasks/0039-report.md); [0037](../tasks/0037-report.md) owns final validation.

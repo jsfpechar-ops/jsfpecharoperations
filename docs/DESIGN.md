@@ -84,6 +84,15 @@ prices the same full-width position rather than squeezing a desktop table.
 Additional descriptions appear below the first control without shifting its
 neighbors. Responsive previews must respond to their own available width.
 
+Wide-screen audit requirement, 2026-10-10: each working page has one centered
+content lane. Its safety notice, contextual navigation, heading/actions,
+filter toolbar, expanded filters and results share the same left and right
+edges. Narrower forms may have their own lane, with headings and actions aligned
+to that form. Do not independently stretch headings or reset only a toolbar's
+horizontal margins. Browser review must measure these edges at 1440, 1680,
+1920 and 2048 CSS pixels as well as mobile, including long Czech labels and
+empty/unconfigured states; passing an overflow check alone is insufficient.
+
 ## Interaction feedback: default everywhere
 
 Owner decision, 2026-10-10: interactive rows, cards, links and controls must

@@ -64,7 +64,7 @@ work settles and explicitly asked this task not to run it.
 - [x] No route, report decision, state, receipt, or translated copy changed.
 - [x] The separate 0032 pointer-overlap defect was subsequently corrected by
   its owner; the required feedback browser check passed with zero skips.
-  See [0032 report](0032-report.md). Combined validation belongs to 0037.
+  See [0032 report](0032-host-feedback-report.md). Combined validation belongs to 0037.
 
 ## Deviations and owner steps
 
