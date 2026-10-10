@@ -775,6 +775,9 @@ def _handle_moves(now_iso: str) -> None:
         if row["valid_from"] and row["valid_to"]:
             if _iso_to_ms(row["valid_from"]) == start_ms and _iso_to_ms(row["valid_to"]) == end_ms:
                 continue
+        if (row["valid_from"] and _iso_to_ms(row["valid_from"]) <= now_ms) or start_ms <= now_ms:
+            mail_notify.door_code_notice(int(row["id"]), "moved_during_stay")
+            continue
         # Brief 0037: a move that failed with permission (etc.) is not retried after
         # the host fixes TTLock access; the guest keeps the old code until then.
         last_err = (row["last_error"] or "")

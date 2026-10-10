@@ -318,6 +318,15 @@ def test_a_date_change_calls_create_period_code_not_change(monkeypatch):
     monkeypatch.setattr(ttlock, "change_code_period", track_change)
     monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: None)
     _, apartment, stay = _stay(registered_minutes_ago=1)
+    today = deadlines.local_now().date()
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        (
+            (today + timedelta(days=5)).isoformat(),
+            (today + timedelta(days=7)).isoformat(),
+            stay,
+        ),
+    )
     door_codes.reconcile()
     assert calls == {"change": 0, "create": 1}
 
@@ -517,6 +526,15 @@ def test_permission_on_a_move_does_not_add(monkeypatch):
     monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("1", "c1"))
     monkeypatch.setattr(ttlock, "add_custom_code", lambda *a, **k: ttlock_calls.append("add"))
     _, apartment, stay = _stay(registered_minutes_ago=1)
+    today = deadlines.local_now().date()
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        (
+            (today + timedelta(days=5)).isoformat(),
+            (today + timedelta(days=7)).isoformat(),
+            stay,
+        ),
+    )
     door_codes.reconcile()
     res = db.query_one("SELECT date_to FROM reservation WHERE id = ?", (stay,))
     new_to = (datetime.fromisoformat(res["date_to"]).date() + timedelta(days=2)).isoformat()
@@ -534,9 +552,120 @@ def test_permission_on_a_move_does_not_add(monkeypatch):
     assert ttlock_calls == []
 
 
+def _no_ttlock(monkeypatch, calls: list):
+    def boom(*args, **kwargs):
+        calls.append(1)
+        raise AssertionError("TTLock must not be called")
+
+    monkeypatch.setattr(ttlock, "create_period_code", boom)
+    monkeypatch.setattr(ttlock, "add_custom_code", boom)
+    monkeypatch.setattr(ttlock, "delete_code", boom)
+    monkeypatch.setattr(ttlock, "find_code_by_name", boom)
+
+
+def test_a_change_during_the_stay_keeps_the_code(monkeypatch):
+    ttlock_calls: list = []
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "code-1"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    today = deadlines.local_now().date()
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        (
+            (today - timedelta(days=1)).isoformat(),
+            (today + timedelta(days=2)).isoformat(),
+            stay,
+        ),
+    )
+    door_codes.reconcile()
+    before = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    past = (datetime.now(timezone.utc) - timedelta(hours=2)).replace(microsecond=0).isoformat()
+    db.execute(
+        "UPDATE door_code SET valid_from = ? WHERE reservation_id = ?",
+        (past, stay),
+    )
+    res = db.query_one("SELECT date_to FROM reservation WHERE id = ?", (stay,))
+    new_to = (datetime.fromisoformat(res["date_to"]).date() - timedelta(days=1)).isoformat()
+    db.execute("UPDATE reservation SET date_to = ? WHERE id = ?", (new_to, stay))
+    _no_ttlock(monkeypatch, ttlock_calls)
+    door_codes.reconcile()
+    assert ttlock_calls == []
+    after = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    assert after["pin_enc"] == before["pin_enc"]
+    assert after["provider_code_id"] == before["provider_code_id"]
+    assert after["valid_from"] == past
+    assert after["valid_to"] == before["valid_to"]
+    notices = db.query(
+        "SELECT idempotency_key FROM email_outbox "
+        "WHERE reservation_id = ? AND idempotency_key LIKE '%:moved_during_stay'",
+        (stay,),
+    )
+    assert len(notices) == 1
+    door_codes.reconcile()
+    notices2 = db.query(
+        "SELECT idempotency_key FROM email_outbox "
+        "WHERE reservation_id = ? AND idempotency_key LIKE '%:moved_during_stay'",
+        (stay,),
+    )
+    assert len(notices2) == 1
+
+
+def test_a_change_before_the_stay_still_replaces_the_code(monkeypatch):
+    create_calls: list = []
+
+    def create(*args, **kwargs):
+        create_calls.append(1)
+        return ("1111111", f"code-{len(create_calls)}")
+
+    monkeypatch.setattr(ttlock, "create_period_code", create)
+    monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: None)
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    today = deadlines.local_now().date()
+    first_from = (today + timedelta(days=5)).isoformat()
+    first_to = (today + timedelta(days=7)).isoformat()
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        (first_from, first_to, stay),
+    )
+    door_codes.reconcile()
+    assert len(create_calls) == 1
+    future_from = (datetime.now(timezone.utc) + timedelta(days=2)).replace(microsecond=0).isoformat()
+    future_to = (datetime.now(timezone.utc) + timedelta(days=4)).replace(microsecond=0).isoformat()
+    db.execute(
+        "UPDATE door_code SET valid_from = ?, valid_to = ? WHERE reservation_id = ?",
+        (future_from, future_to, stay),
+    )
+    new_to = (today + timedelta(days=9)).isoformat()
+    db.execute("UPDATE reservation SET date_to = ? WHERE id = ?", (new_to, stay))
+    door_codes.reconcile()
+    assert len(create_calls) == 2
+    row = db.query_one(
+        "SELECT provider_code_id, valid_from, valid_to FROM door_code WHERE reservation_id = ?",
+        (stay,),
+    )
+    assert row["provider_code_id"] == "code-2"
+    start_ms, end_ms = ttlock.stay_window(
+        db.query_one("SELECT date_from, date_to FROM reservation WHERE id = ?", (stay,))["date_from"],
+        new_to,
+        10,
+        15,
+        config.DOOR_CODE_BUFFER_HOURS,
+    )
+    assert door_codes._iso_to_ms(row["valid_from"]) == start_ms
+    assert door_codes._iso_to_ms(row["valid_to"]) == end_ms
+
+
 def test_an_undeleted_old_code_after_a_move_tells_the_host(monkeypatch):
     monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "code-old"))
     _, apartment, stay = _stay(registered_minutes_ago=1)
+    today = deadlines.local_now().date()
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        (
+            (today + timedelta(days=5)).isoformat(),
+            (today + timedelta(days=7)).isoformat(),
+            stay,
+        ),
+    )
     door_codes.reconcile()
     res = db.query_one("SELECT date_to FROM reservation WHERE id = ?", (stay,))
     new_to = (datetime.fromisoformat(res["date_to"]).date() + timedelta(days=2)).isoformat()

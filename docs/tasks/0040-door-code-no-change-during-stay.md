@@ -1,6 +1,6 @@
 # 0040: A stay that has started keeps its door code; the host is told about the change
 
-Status: in-progress
+Status: review
 Depends on: 0038 | Base commit: main | Branch: task/0040-door-code-no-change-during-stay
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
