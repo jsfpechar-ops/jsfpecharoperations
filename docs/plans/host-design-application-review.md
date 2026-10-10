@@ -2,7 +2,7 @@
 
 Owner-approved design, implemented on `task/host-design-staging`. This describes
 the application changes, separately from the earlier standalone prototype.
-Local application validation passed; GitHub CI and staging deployment remain pending.
+Local application validation passed. [PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338) is open for owner review; GitHub CI and staging deployment remain pending.
 
 | Page | Final selected design |
 |---|---|
@@ -50,6 +50,7 @@ No new legal requiredness is inferred from layout. The pasted search demo does
 not replace the existing fuzzy command engine.
 
 See [staging handoff](host-design-staging-handoff.md) for deployment state and
-remaining access requirements. GitHub API/Render access needs the saved cloud
-network draft published; a saved draft alone does not activate network access.
+remaining access requirements. GitHub API access succeeded when PR #338 was
+opened. Render access and staging deployment have not yet been reverified;
+a saved cloud network draft alone does not activate access.
 No main push, production merge or production deployment is authorized here.

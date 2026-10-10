@@ -5,7 +5,7 @@ Fixing PR removes rows; log decisions.
 Status: open, unverified, decision (owner/lawyer/council), accepted.
 **HR** = HIGH RISK; owner decides.
 
-**Sources:** [source map](known-issue-sources.md), cited sections only.
+**Sources:** [source map](known-issue-sources.md), cited sections only. Host UI fixes: [PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338), CI/staging pending.
 
 Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 

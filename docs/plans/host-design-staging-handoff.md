@@ -19,7 +19,7 @@ Local combined validation is recorded in [0037](../tasks/0037-report.md).
 GitHub CI, PR creation and Render deployment are distinct steps. The staging
 service has not been updated in this session.
 
-GitHub API and Render requests are blocked by the current cloud network policy.
+[PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338) is now open for owner review; GitHub API access succeeded. Render access and deployment remain unverified after the earlier network block.
 The saved environment draft adds `api.github.com`, `render.com`,
 `api.render.com`, `ubyhost-staging.onrender.com` and the official Czech legal
 sources while preserving package-manager domains. In environment settings,
@@ -28,8 +28,8 @@ Native Git reads and feature push authentication use the existing HTTPS proxy.
 No duplicate GitHub token is needed. Check existing deployment secret metadata
 once the API is reachable before requesting any additional credential.
 
-After publication, check the pushed feature commit's CI, create or update its
-PR, and deploy that exact feature commit to Render. Attach the PR to this task.
+Check PR #338's CI and owner review before deploying its exact feature commit
+to Render. The PR is attached to this task.
 Docker image/health and Docker-based gitleaks checks need CI because the cloud
 workspace cannot access a Docker daemon. Do not bypass those checks or merge
 to get a preview. Record the reviewed SHA and successful staging health before
