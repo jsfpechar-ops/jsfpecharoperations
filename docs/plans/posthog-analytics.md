@@ -28,7 +28,7 @@ These supersede the 2026-10-05 and 2026-10-08 Umami / in-app-funnel lines, and t
 - Ad click ids never go to PostHog: `gclid`, `gbraid`, `wbraid`, `fbclid`, the signed `click` value. The script strips them from any URL it would send. The server job never reads `ad_click`.
 - Anonymous page views are not stitched to the host person. That is accepted.
 - No new Python package. Capture is `urllib`.
-- `/admin/funnel` charts, table and CSV are removed in brief 0035, after the server job exists. The route remains as a short link to the PostHog project.
+- `/admin/funnel` charts, table and CSV are removed in brief 0036, after the server job exists. The route remains as a short link to the PostHog project.
 - Lawyer review of legal v1.7 stays open. This adds a subprocessor. It does not close that review.
 
 ## 2. What exists today
@@ -61,12 +61,12 @@ UbyPort filing, guest forms, `ad_click`, Google upload, Meta CAPI, Turnstile, se
 
 ## 5. Briefs
 
-Run 0032, then 0033, then 0034, then 0035. 0032 and 0033 both meet `privacy.html` and the guard test: 0032 changes the mechanism, 0033 changes the sentences. 0033 must not put the word Umami back into the tag.
+Run 0033, then 0034, then 0035, then 0036. 0033 and 0034 both meet `privacy.html` and the guard test: 0033 changes the mechanism, 0034 changes the sentences. 0034 must not put the word Umami back into the tag.
 
-### 0032 — Public tracker swap
+### 0033 — Public tracker swap
 
 Status: todo
-Depends on: none | Base commit: the plan merge | Branch: task/0032-posthog-public
+Depends on: none | Base commit: the plan merge | Branch: task/0033-posthog-public
 Executor: Composer 2.5 | Fits one session
 
 **Objective.** Replace the Umami tag with a PostHog cookieless snippet on the same public pages, and rename the click attribute. The sign-up and verify pages stay dark.
@@ -113,11 +113,11 @@ def test_the_sign_up_pages_never_carry_umami(umami_on, monkeypatch):
 - [App/tests/test_signup.py](App/tests/test_signup.py) — `data-umami-event` becomes `data-analytics-event`. The assertion that the sign-up page has no such attribute stays.
 - [App/tests/test_no_tracking.py](App/tests/test_no_tracking.py) — comment only, so it points at the guard test.
 
-No other file may change. Copy sentences stay in 0033, even if they still say Umami for one commit.
+No other file may change. Copy sentences stay in 0034, even if they still say Umami for one commit.
 
 **Steps.**
 
-1. Replace the config block. Delete every `UMAMI_` name. A repo search for `UMAMI_` in `App/` may remain only inside 0033's files (`privacy_policy_i18n.py`, `subprocessors_i18n.py`, `cookie_inventory.py`, `landing_i18n.py`). Those are 0033. Do not edit them here.
+1. Replace the config block. Delete every `UMAMI_` name. A repo search for `UMAMI_` in `App/` may remain only inside 0034's files (`privacy_policy_i18n.py`, `subprocessors_i18n.py`, `cookie_inventory.py`, `landing_i18n.py`). Those are 0034. Do not edit them here.
 2. Rewrite `analytics.py` as described. Refuse a non-https host the same way `_https_origin` does today.
 3. Add `_posthog.html`. It prints nothing unless `analytics_tag` is set. The inline script returns immediately when `navigator.doNotTrack` or `window.doNotTrack` is `"1"`, or when `localStorage["ubyhost.analytics.disabled"]` is set. Then it loads `{{ analytics_tag.assets_host }}/static/array.js` and calls `posthog.init` with `api_host`, `cookieless_mode: "always"`, `person_profiles: "identified_only"`, `persistence: "memory"`, `autocapture: false`, `capture_pageleave: false`, `disable_session_recording: true`. `before_send` removes the query keys `gclid`, `gbraid`, `wbraid`, `fbclid`, `click`, `token`, `email` and the hash from `$current_url`, `$referrer` and `$pathname`. `loaded` listens for clicks on `[data-analytics-event]` and calls `capture` only for `login_click`, `contact_click` and `signup_start`. The inline script must not contain the word `identify`.
 4. Point the five includes at `_posthog.html` and rename the data attributes.
@@ -136,12 +136,12 @@ No other file may change. Copy sentences stay in 0033, even if they still say Um
 - Opt-out script writes `ubyhost.analytics.disabled` and only `/privacy` loads it.
 - No `identify(` in `App/app/templates` or `App/app/static`.
 
-**Owner steps.** None in this brief. The key stays unset until 0033's copy is deployed and you have done the steps in section 6.
+**Owner steps.** None in this brief. The key stays unset until 0034's copy is deployed and you have done the steps in section 6.
 
-### 0033 — Copy and subprocessor
+### 0034 — Copy and subprocessor
 
 Status: todo
-Depends on: 0032 | Base commit: 0032's commit | Branch: same branch
+Depends on: 0033 | Base commit: 0033's commit | Branch: same branch
 Executor: Composer 2.5 | Fits one session
 
 **Objective.** Say PostHog, in English and Czech, in the privacy policy, the subprocessor register, the cookie inventory and the landing line. Remove Umami from those texts.
@@ -149,7 +149,7 @@ Executor: Composer 2.5 | Fits one session
 **Files.**
 
 - [App/app/privacy_policy_i18n.py](App/app/privacy_policy_i18n.py) — replace `privacy.analytics_body` and `privacy.optout_lede` in `en` and `cs`. Add `privacy.product_analytics_title` and `privacy.product_analytics_body` in both. Do not claim § 89(3) for the host-profile paragraph. The website paragraph may say legitimate interest and that the measurement is aggregated page statistics. Exact English website body: "On our public pages (not in the app, not on guest pages and not on sign-in) we use PostHog Cloud EU, operated by PostHog, Inc., with data stored in the EU (Frankfurt), to count visits. The measurement is set not to store a cookie and not to store your IP address. PostHog derives a short-lived visit identifier, and we see aggregated statistics (pages viewed, referring site, browser, device type, country). We do not use this for advertising. Legal basis: our legitimate interest in understanding how our website is used (Art. 6(1)(f) GDPR). You can switch measurement off in this browser here:". Exact English product body: "For our marketing and sales picture we also send PostHog, from our own server, the host account e-mail, the workspace name, the campaign labels of the sign-up link (utm_source, utm_medium, utm_campaign), the sign-up source, and how far the account has got. We do not send guest data, passport details, stay contents, door codes or advertising click identifiers. Legal basis: our legitimate interest in operating the service (Art. 6(1)(f) GDPR)." Czech: translate those two paragraphs in the same formal register as the current Umami paragraph. Do not mention Umami.
-- [App/app/templates/privacy.html](App/app/templates/privacy.html) — inside the existing `{% if analytics_tag %}` block, after the website paragraph, print the new title and body. Do not change the opt-out markup except the script name 0032 already set.
+- [App/app/templates/privacy.html](App/app/templates/privacy.html) — inside the existing `{% if analytics_tag %}` block, after the website paragraph, print the new title and body. Do not change the opt-out markup except the script name 0033 already set.
 - [App/app/subprocessors_i18n.py](App/app/subprocessors_i18n.py) — rename keys `umami_*` to `posthog_*` in `en` and `cs`. Provider: "PostHog, Inc. (PostHog Cloud EU)". Purpose: "Website statistics on public pages, and host-account product measurement for the operator." Data: "Public page views and the three click events; for a host account, e-mail, workspace name, UTM labels, sign-up source and funnel stage. No Guest Data. No advertising click identifiers." Location: "EU, Frankfurt. Used only while the operator enables it." Safeguard: "PostHog DPA."
 - [App/app/routes/legal.py](App/app/routes/legal.py) — `"umami"` in `SUBPROCESSOR_IDS` becomes `"posthog"`.
 - [App/tests/test_privacy_legal_positions.py](App/tests/test_privacy_legal_positions.py) — the five-id assertion ends with `"posthog"`.
@@ -164,10 +164,10 @@ Executor: Composer 2.5 | Fits one session
 
 **Acceptance.** A search of `App/` for `umami` finds nothing. `/privacy` shows the website paragraph, the product paragraph and the opt-out. `/subprocessors` lists PostHog, Inc. The Google Ads paragraph still says the click id goes to Google, not to PostHog.
 
-### 0034 — Host profiles and stage events
+### 0035 — Host profiles and stage events
 
 Status: todo
-Depends on: 0032 | Base commit: 0033's commit | Branch: same branch
+Depends on: 0033 | Base commit: 0034's commit | Branch: same branch
 Executor: Composer 2.5 | Fits one session
 
 **Objective.** A scheduler job sends each host's reached funnel stages and person properties to PostHog. This is the in-app analytics move. Failures never block filing, sign-up or login.
@@ -208,20 +208,20 @@ Anchor in [App/app/admin_funnel.py](App/app/admin_funnel.py): `def stages()`. Us
 
 **Acceptance.** With the key set, one scheduler run backfills current hosts and a second run sends 0. With the key unset, the job logs nothing and changes no row. A downed endpoint does not raise out of `_job_posthog`.
 
-### 0035 — Retire the in-app dashboard
+### 0036 — Retire the in-app dashboard
 
 Status: todo
-Depends on: 0034 | Base commit: 0034's commit | Branch: same branch
+Depends on: 0035 | Base commit: 0035's commit | Branch: same branch
 Executor: Composer 2.5 | Fits one session
 
-**Objective.** `/admin/funnel` stops being a dashboard. It becomes a short admin page with one link to the PostHog project. The CSV route goes away. `admin_funnel.rows()` stays, because 0034's job calls it.
+**Objective.** `/admin/funnel` stops being a dashboard. It becomes a short admin page with one link to the PostHog project. The CSV route goes away. `admin_funnel.rows()` stays, because 0035's job calls it.
 
 **Files.**
 
 - [App/app/templates/admin_funnel.html](App/app/templates/admin_funnel.html) — replace with a title, one sentence ("Host and campaign figures are in PostHog."), and a link when `posthog_url` is set. No table, no chart, no e-mail.
 - [App/app/routes/admin_accounts.py](App/app/routes/admin_accounts.py) — `funnel_admin` no longer calls `overview` or `weekly`. It passes `posthog_url`: `https://eu.posthog.com` when the key is set, else empty. Delete `funnel_admin_csv` and its imports that become unused.
 - [App/app/config.py](App/app/config.py) — `POSTHOG_APP_URL` default `https://eu.posthog.com`. The page links there only when analytics is enabled. Do not build a project-specific URL that needs another secret.
-- [App/tests/test_admin_funnel.py](App/tests/test_admin_funnel.py) — delete assertions that the HTML contains the chart, the account table or `data-account`. Keep tests of `rows()`, `stages()` and the CSV helper if 0034 still needs `rows()`. Add: the page contains the PostHog sentence; the CSV path returns 404; a guest path is unaffected.
+- [App/tests/test_admin_funnel.py](App/tests/test_admin_funnel.py) — delete assertions that the HTML contains the chart, the account table or `data-account`. Keep tests of `rows()`, `stages()` and the CSV helper if 0035 still needs `rows()`. Add: the page contains the PostHog sentence; the CSV path returns 404; a guest path is unaffected.
 - [App/app/static/app.css](App/app/static/app.css) — delete the "Funnel dashboard (0018)" block only. Leave every other rule.
 - i18n keys used only by the deleted markup: remove them in [App/app/host_i18n.py](App/app/host_i18n.py) if nothing else references them. If a test still requires `Účty podle fáze`, stop and ask rather than keeping the chart.
 
@@ -247,5 +247,5 @@ Cohorts by `funnel_stage`, campaign breakdown on the UTM properties, and time-to
 Paste this in a new Composer 2.5 chat after this plan is in the repository:
 
 ```
-Read AGENTS.md, then docs/plans/posthog-analytics.md. You are the executor. Implement briefs 0032, 0033, 0034 and 0035 from that plan, in that order, as four commits on one branch. Before editing code for a brief, write docs/tasks/NNNN-*.md by copying that brief from the plan and set Status: in-progress. Follow the brief exactly, including its copy and its code. Open only the files that brief names. If a stop condition happens, stop and write the report. Do not edit docs/plans/, AGENTS.md, docs/context/rules.md or docs/context/decisions.md. Finish by writing each docs/tasks/NNNN-report.md in the template's section 9 format, set each brief to Status: review, and open one pull request.
+Read AGENTS.md, then docs/plans/posthog-analytics.md. You are the executor. Implement briefs 0033, 0034, 0035 and 0036 from that plan, in that order, as four commits on one branch. Before editing code for a brief, write docs/tasks/NNNN-*.md by copying that brief from the plan and set Status: in-progress. Follow the brief exactly, including its copy and its code. Open only the files that brief names. If a stop condition happens, stop and write the report. Do not edit docs/plans/, AGENTS.md, docs/context/rules.md or docs/context/decisions.md. Finish by writing each docs/tasks/NNNN-report.md in the template's section 9 format, set each brief to Status: review, and open one pull request.
 ```
