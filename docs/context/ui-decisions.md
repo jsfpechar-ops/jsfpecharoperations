@@ -3,7 +3,12 @@
 Continuation of [decisions](decisions.md), split to respect its token cap.
 Append-only: date | decision | reason | link. Keep superseded lines and name
 replacements. Grep by topic. Archive only unreferenced entries older than 90 days
-per [workflow](workflow.md#compaction). No older decision entries were moved.
+per [workflow](workflow.md#compaction). Initial host entries moved here on integration:
+
+- 2026-10-10 | Month grid for Invoices/Stay fees; pills/operator actions pending | owner choice | [plan](../plans/host-control-polish.md)
+- 2026-10-10 | Expandable Stays/Invoice filters; hover/focus default; simple near-term dashboard | owner | [UI](../plans/host-control-polish.md)
+- 2026-10-10 | Quiet overview; 5 stays; 14 days; overdue first | owner | [UI](../DESIGN.md)
+- 2026-10-10 | 30d replaces 14d; Delete archives | owner | DESIGN
 
 - 2026-10-10 | Address option A: aligned labels, separate aligned reporting badges and aligned input tops | owner choice | [DESIGN](../DESIGN.md)
 - 2026-10-10 | Operator Edit/Invoice settings/More always visible; consistent Delete menu, unavailable with visible explanation when linked | owner choice; easier keyboard/touch discovery | [plan](../plans/host-control-polish.md)

@@ -23,6 +23,7 @@ A property without a lock sees no difference. No code runs and no API call is ma
 7. No "issue code anyway" button. The host uses the TTLock app.
 8. The 30,000 calls a month are per developer app, shared by every UbyHost host.
 9. Pilot on a few of the owner's properties. Built per host and per property, so other hosts only need the setting.
+10. Taken period (owner, 2026-10-10): a type-3 `get` that returns `-1026` is not retried, and the window is not shifted. The worker creates a custom code (`keyboardPwd/add`, `addType=2`) for that stay only. This is the only use of `add`. It supersedes the rejection of custom codes in item 1 for that one case. The normal stay stays a type-3 `get`. `-2018` does not fall through to `add`. UbyHost never calls `keyboardPwd/change` on a type-3 code. Full rules: §6. Brief: [0037](../tasks/0037-door-code-taken-period.md).
 
 ## 3. TTLock facts
 
@@ -100,6 +101,8 @@ The login of the account UbyHost uses (pilot: the owner's spare TTLock account) 
 
 ## 6. States
 
+Picture of the whole flow: [door-code-flow](door-code-flow.md).
+
 ```
  registration complete, property has a lock, stay not over
                  |
@@ -108,7 +111,7 @@ The login of the account UbyHost uses (pilot: the owner's spare TTLock account) 
                         |  ^             |
                    error|  |retry        +--cancelled--> revoke_pending --> revoked (best effort, see below)
                         v  |             |
-                      retrying           +--dates moved--> change call, or a new code; one new guest mail
+                      retrying           +--dates or hours moved--> a new code (custom add if the period is taken)
                         |
               5 tries   v
                       failed  (host mail: "create a code in the TTLock app")
@@ -121,9 +124,12 @@ Rules:
 - Every code is new. Back-to-back stays (one leaves at 11:00, the next arrives at 15:00) have different windows, so their codes never meet. UbyHost never changes or deletes the code of a stay that is not cancelled or moved.
 - A retry after a timeout first lists the lock's codes (`searchStr=UH-<door_code.id>`) and adopts the match, so a timeout never creates a second code.
 - Registration cleared after the code exists (a form went missing): nothing changes. The code stays, because the guest is still staying.
-- Backoff 1, 5, 15, 60 and 240 minutes, then `failed` and one host mail.
-- Dates moved: try `change` with the new window. If TTLock refuses it for a random code, create a new code for the new window and mail it. The old code belongs to the same guest, so leaving it is harmless.
-- Cancelled (rare: guests register at most a day ahead): one `delete` attempt through the gateway, and one host mail: "This stay was cancelled after its door code was sent. The code may keep working until its end date." The host decides what to do in the TTLock app.
+- Backoff 1, 5, 15, 60 and 240 minutes, then `failed` and one host mail. `-1026` is not in this retry list.
+- A free window gets one type-3 code (`keyboardPwd/get`). It expires by itself. UbyHost does not delete it at checkout and does not call `keyboardPwd/change`.
+- `-1026` on that `get` means the period is already taken (staging, 2026-10-08; the number is not in TTLock's published list). Do not call `get` again for that window. Do not shift the check-in or check-out hour. Do not reuse a cancelled stay's PIN. The guest save does not call the gateway. The worker calls `keyboardPwd/add` with `addType=2`, a new 7-digit code (no leading zero), `keyboardPwdType=3`, and the same start and end. `door_code.code_kind` becomes `custom`. A custom code has no 24-hour first-use rule, so the guest page and the guest mail omit that sentence. The host and support get one mail (`period_taken`): another code covers exactly these hours, usually a cancelled or moved stay's. A deleted code no longer opens (owner test 2026-10-10), so the mail asks the host to check that the older code was deleted.
+- `add` runs at once in the worker, never `get` again. `-2012` (no gateway connected) hands over at once. A busy gateway or a network drop gets two more `add` tries (1 and 5 minutes). Then `failed` and one host mail, support in copy. The `-1026` mail also has support in copy. If it fails for permission (`-2018`), storage, or a second duplicate PIN (`-3007`), stop and send one host mail. The guest stays on the waiting line.
+- Dates or hours changed after a code exists: create a new type-3 code for the new window. If that returns `-1026`, use the same custom `add` in that worker run. Then one delete of the old code. The old code is **not** harmless: its old dates can be booked by someone else, and the old code would then open the door during that stay. If the delete fails, the host gets one mail (`moved_not_deleted`). `-2018` stops further tries on that stay and sends one host mail. It does not trigger `add`.
+- Cancelled (rare: guests register at most a day ahead): one `delete` attempt through the gateway, and one host mail: "This stay was cancelled after its door code was sent. The code may keep working until its end date." The next guest for those dates gets their own code by the rule above, never this PIN. A custom code is known to the lock, so its delete is retried hourly until its end time (0038). Custom codes are not deleted after checkout yet; they expire, but they fill the lock's memory over time (later brief). A deleted never-typed random code no longer opens the door (§12 check 6, passed 2026-10-10).
 - 24 h first-use rule: the guest page and mail say "Use the code for the first time before <code start + 24 h>", where the code start already includes the 1 h margin. A later arrival is handled by the host in the TTLock app (owner).
 
 ## 7. API call budget (30,000 a month, shared by all hosts)
@@ -141,8 +147,9 @@ That job (`door_codes.reconcile`) retries issue, adopts a code by name after a t
 | Event | Calls |
 |---|---|
 | Registration complete, code created (`get`) | 1 |
+| Same period already taken (`get` returns `-1026`, then one `add`) | 2 |
 | Cancelled after the code was created | 1 |
-| Dates moved | 1 |
+| Dates or hours moved (`get`, or `get` plus `add`) | 1 or 2 |
 | Stay over | 0 (the code expires by itself) |
 | Lock clock check (`queryDate`), per lock per week | about 4 a month per lock |
 | Retry after an error | 1 each, at most 5 |
@@ -183,7 +190,7 @@ There is no pilot list and only one way to connect. Every host already has a TTL
 - The host's TTLock password never reaches UbyHost. UbyHost's user holds rights only on the shared locks and cannot open a door remotely. One user per host, so a host's list can only ever contain locks that host shared; nobody can attach someone else's lock, and nobody types a lock ID.
 - Remove deletes the TTLock user, which also deletes every eKey shared with it. A dead refresh token is recovered by logging in again with the stored password, with no host action.
 - The steps for hosts live in one place: the Guide section "Door codes with TTLock" (task 0016). Pages link to it.
-- `ttlock.py` calls only an allowlist of endpoints (`/oauth2/token`, `/v3/user/register`, `/v3/user/delete`, `/v3/key/list`, `/v3/lock/listKeyboardPwd`, `/v3/keyboardPwd/get`, `/change`, `/delete`, `/v3/lock/queryDate`, `/v3/lock/updateDate`), and a test fails if any other path appears. Never called: `/v3/lock/detail` and `/v3/key/get` (super passcode in the response), `/v3/key/getUnlockLink` (remote unlock link), `/v3/key/send` and `/v3/key/authorize` (handing out access). `lockData` and passcode digits from list responses are dropped while parsing, and no raw response is ever logged ([TTLOCK](../TTLOCK.md#secrets-in-ttlock-responses-never-store-never-log)).
+- `ttlock.py` calls only an allowlist of endpoints (`/oauth2/token`, `/v3/user/register`, `/v3/user/delete`, `/v3/key/list`, `/v3/lock/listKeyboardPwd`, `/v3/keyboardPwd/get`, `/add`, `/change`, `/delete`, `/v3/lock/queryDate`, `/v3/lock/updateDate`), and a test fails if any other path appears. `/add` is the taken-period fallback only (§6). Never called: `/v3/lock/detail` and `/v3/key/get` (super passcode in the response), `/v3/key/getUnlockLink` (remote unlock link), `/v3/key/send` and `/v3/key/authorize` (handing out access). `lockData` and passcode digits from list responses are dropped while parsing, and no raw response is ever logged ([TTLOCK](../TTLOCK.md#secrets-in-ttlock-responses-never-store-never-log)).
 - **Pre-build check (owner, §12a):** the TTLock app's Send eKey screen must accept a prefixed API user name. The API documents it; the app screen is unconfirmed.
 
 ### 8.3 Controls
@@ -201,7 +208,7 @@ There is no pilot list and only one way to connect. Every host already has a TTL
 ## 9. Flow
 
 1. A guest saves the last missing form of the party.
-2. In the same request, after the save is committed and `registration_completed_at` is set, `door_codes.on_registration_complete(reservation_id)` creates the row and tries one `get` (cloud only, 5 s timeout). On success the stay page shows the PIN in that same response, and the guest mail is queued in the transaction that stores the PIN. On failure the guest sees "Your door code is being prepared. Reload this page in a minute." and the worker retries.
+2. In the same request, after the save is committed and `registration_completed_at` is set, `door_codes.on_registration_complete(reservation_id)` creates the row and tries one `get` (cloud only, 5 s timeout). On success the stay page shows the PIN in that same response, and the guest mail is queued in the transaction that stores the PIN. On `-1026` the request stops there; the worker creates a custom code (§6). On any other failure the guest sees the waiting line and the worker retries `get`.
 3. The `door_codes` scheduler job (every minute, its own job id, so a TTLock outage never marks the mail job failed) runs `door_codes.reconcile()`. It retries due rows, handles cancellations and moves, and expires old PINs. It also creates rows the request missed (for example a stay completed by a scheduler tick), so correctness never depends on step 2.
 4. iCal sync never calls TTLock. It only changes `reservation`, and the reconciler sees the difference on its next run.
 
@@ -294,6 +301,8 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 | [0014](../tasks/0014-door-code-cancel-and-move.md) | Cancellations, date and hour changes, host notice mails | |
 | [0015](../tasks/0015-lock-clock-and-usage.md) | Weekly lock clock check, call counter, budget alerts | admin only |
 | [0016](../tasks/0016-door-codes-guide-and-legal.md) | Guide "Door codes with TTLock", door-code terms, guest privacy paragraph, subprocessor row, ROPA | every host and guest of a door-code property |
+| [0037](../tasks/0037-door-code-taken-period.md) | Taken period: custom `add` from the worker with its own retry limit; host warned about the older code; no `change`; adopt checks the window | guest still sees a code when the same dates are booked again |
+| [0038](../tasks/0038-custom-code-revoke-until-end.md) | A cancelled stay's custom code: delete retried until its end time | |
 | legal | [DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md): SCCs with TTLock before any other host uses door codes; TTLock into DPA §11 at the next revision | |
 
 ## 12a. Pre-build check (owner, before task 0009)
@@ -338,7 +347,8 @@ Everything below runs on the real server in **test mode**: only stays added by h
 | 3 | Departure day, 12:05: type the code. | Does not open. |
 | 4 | A real calendar stay on a pilot property completes its registration. | No code, no mail, nothing on its stay page (test mode). |
 | 5 | Change the end date of a hand-added test stay by one day. | Within 2 minutes the guest gets one new mail with the new check-out; the code opens on the extra day. |
-| 6 | Cancel (archive) a hand-added test stay that has a code. | You get "door code deleted after a cancellation". Typing the code does not open the door (this settles the open question from `docs/TTLOCK.md`). |
+| 6 | Hand-add a stay, register it, and **never type its code**. Cancel (archive) it. Then hand-add a stay for the same dates and hours and register it. Inside that window, type the first code. | You get "door code deleted after a cancellation", then "an older door code covers". The second guest gets a custom code. **The first code does not open the door.** If it opens, door codes do not go live: the owner decides how a cancelled, never-typed code is shut off (for example custom codes for every stay on locks with a gateway). | **Passed 2026-10-10 (owner).**
+| 6b | Move a registered test stay to other dates, never typing its old code. Type the old code inside the old dates. | You get one new code mail. The old code does not open the door. Same rule as check 6 if it opens. |
 | 7 | Unplug the gateway. Register another hand-added test stay. Then cancel it while the gateway is still unplugged. Plug it back. | The code still appears at once (no gateway needed). After about 20 minutes (three tries) you get "delete a door code in the TTLock app". |
 | 8 | Smart locks → Remove. Then Set up again and share one lock again. | After Remove: the eKeys are gone from the TTLock app and door codes on the properties are off. After setting up again: the lock is back after Check for locks. |
 | 9 | Admin → Operations. | "TTLock calls this month" shows a small number and "Test mode". |

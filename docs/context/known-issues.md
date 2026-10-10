@@ -5,7 +5,7 @@ Fixing PR removes rows; log decisions.
 Status: open, unverified, decision (owner/lawyer/council), accepted.
 **HR** = HIGH RISK; owner decides.
 
-**Sources:** [source map](known-issue-sources.md), cited sections only. Host UI fixes: [PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338), CI/staging pending.
+**Sources:** [source map](known-issue-sources.md). Host UI: [PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338), geometry audit underway.
 
 Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 
@@ -22,7 +22,7 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-F09 | Low open | routes/admin.py:1927 | Manual send inspects only the first batch | P A36 |
 | K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
 | K-F11 | Med open | reporting.py:829-845 | Surplus blank guest form blocks automatic filing | F |
-| K-F12 | Med decision | reporting.py:270,1002 | Passport verification is advisory; unverified guests auto-filed | F W4.3 |
+| K-F12 | Med accepted | reporting.py:270,1002 | ID check dropped from the UI (owner, 2026-10-09, PR #331); host checks documents themselves | F W4.3 |
 | K-F13 | Med open | production data | 112 is "reported late", an accept (police, 24 Sep 2026). Production guests in `error`/`blocked` whose only code is 112 are in the register. Owner: `App/scripts/reconcile_accepted_codes.py` (dry run), check 2-3 in UbyPort, then `--apply`; never resend | F W4.2 |
 | K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with the legal deadline | AR-06 |
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
@@ -40,7 +40,7 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-L08 | Med decision | cookie and banner copy | Cloudflare cookie names unverified; no-banner wording unapproved | G MK-2/3 |
 | K-L09 | Med decision | docs/UbyHost_workplan/compliance/00_README.md | DSR/incident retention; Terms §17.2 liability floor | compliance |
 | K-L10 | Med decision | stay_fee.py | 60-night boundary; GDPR Art. 9 for disability exemptions | X |
-| K-L11 | High decision | subprocessors_i18n.py ttlock row, DPA §11 | Door codes: SCCs with TTLock (Sciener, China) must be signed before any host other than the owner uses door codes; add TTLock to DPA §11 at the next revision. Assessment done in DOOR_CODES_LEGAL | [DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md) |
+| K-L11 | High decision | subprocessors_i18n.py ttlock row, DPA §11 | Door codes: SCCs with TTLock (Sciener, China) before any host but the owner; add TTLock to DPA §11 next revision | [DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md) |
 | K-P01 | High decision | access.py, auth.py (#280) | Admin preview unmasked, reason optional: align the DPIA/DPA text | AR |
 | K-P02 | High open | docs/vendors/README.md, ROPA | Support-mailbox provider has no subprocessor row and no DPA | G LD-4 |
 | K-P03 | High open | backup-gdrive.sh | Drive backups need a Workspace DPA or removal; DPA §11 lists Render | G OPS-2 |
@@ -88,3 +88,4 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
 | K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
 | K-ML04 | Low open | login link limit | Anyone can use up a victim's 3 requests per 15 min. Kept: counting only real accounts would reveal who uses UbyHost | 0006 |
+| K-D01 | High open | door_codes.py | `-1026` gives no code (0037) | #336 |

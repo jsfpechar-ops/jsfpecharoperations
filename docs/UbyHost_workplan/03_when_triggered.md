@@ -13,7 +13,7 @@ Do not implement any item here until the owner says its trigger has fired. The W
 | L5 | Google Ads API upload instead of the CSV | Manual CSV upload takes more than a few minutes a month | M |
 | L6 | Move from Lightsail to EC2 | Only if one of these is needed: automatic scaling, instance IAM roles or VPC networking, reserved pricing, or a machine type no bundle offers | S (snapshot export) |
 
-Not planned at all (owner decisions): Lambda, Turso, PostHog, in-app billing, feature flags, any analytics on app or guest pages.
+Not planned at all (owner decisions): Lambda, Turso, in-app billing, feature flags, any analytics script on app or guest pages. PostHog Cloud EU is planned in [posthog-analytics](../plans/posthog-analytics.md) (2026-10-10).
 
 ---
 

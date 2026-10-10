@@ -34,7 +34,7 @@ Append-only.
 - 2026-10-06 | The sweep sends a refused record once, then waits for the host to fix it (was 3 tries) | police B2-B3: resending refused data counts against the host | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
 - 2026-10-06 | Staging may target the police test environment (`ubyport_env=test`) with the issued UBY-WS test account; credentials only in the staging app, never in git | police B4: test behaves like production | [LIGHTSAIL](../LIGHTSAIL.md)
 - 2026-10-06 | Abbreviation (zkratka) check accepts 5-6 letters or digits | the police issued a 6-character test abbreviation | validation.py
-- 2026-10-08 | Door codes (TTLock pilot): timed random codes, cloud-only, issued once the whole party is registered; guest page + mail, host CC; best-effort delete on cancel; gateway calls worker-only; hosts share locks via a UbyHost TTLock user, never a password; test mode until `UBYHOST_DOOR_CODES_LIVE=1`; no claim check (accepted risk, owner's properties only, required before other hosts) | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
+- 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live; full rules in the plan | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Funnel: in-app dashboard, no JS; Umami public-only | own rows | 0018
 - 2026-10-08 | Stored files: no expiry; invoices 10 y; first new file kind brings a storage module | tiny saving, legal risk | [plan](../plans/file-retention.md)
 - 2026-10-08 | Door codes: one Background jobs row (`door_codes`, 1 min); no PIN/list/unlock poll; weekly `queryDate` in the same job | API budget; type-3 codes unknown to the lock until first use | [ttlock-door-codes](../plans/ttlock-door-codes.md#7-api-call-budget-30000-a-month-shared-by-all-hosts)
@@ -43,8 +43,7 @@ Append-only.
 - 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in the same commit; executors skip non-todo; lint warns on overlapping open briefs | brief collisions | [workflow](../context/workflow.md)
 - 2026-10-09 | Waiting guest sees only "You will receive your door code by e-mail." (0024; replaces 0022) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
-- 2026-10-10 | Month grid for Invoices/Stay fees; pills/operator actions pending | owner choice | [plan](../plans/host-control-polish.md)
-- 2026-10-10 | Expandable Stays/Invoice filters; hover/focus default; simple near-term dashboard | owner | [UI](../plans/host-control-polish.md)
-- 2026-10-10 | Quiet overview; 5 stays; 14 days; overdue first | owner | [UI](../DESIGN.md)
-- 2026-10-10 | 30d replaces 14d; Delete archives | owner | DESIGN
 - 2026-10-10 | UI decisions continue | cap | [UI](ui-decisions.md)
+- 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
+- 2026-10-10 | PostHog replaces Umami and the funnel | owner | [plan](../plans/posthog-analytics.md)
+- 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)
