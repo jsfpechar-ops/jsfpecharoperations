@@ -12,7 +12,7 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 ## Hard rules (full text: [rules](docs/context/rules.md))
 
 1. UbyPort filing correctness beats every other feature ([UBYPORT_CORE](docs/UBYPORT_CORE.md)).
-2. Privacy first: store only what the law or a feature needs. No tracking cookies (`App/tests/test_privacy_first.py`), no third-party scripts except Turnstile. New personal-data field: add a line in `App/app/retention.py`. New outbound request: give the reason in the PR.
+2. Privacy first: store only what the law or a feature needs. No tracking cookies (`App/tests/test_privacy_first.py`). No third-party scripts except Turnstile, and PostHog on the public pages named in `App/app/analytics.py`. New personal-data field: add a line in `App/app/retention.py`. New outbound request: give the reason in the PR.
 3. Public repo: never commit secrets, `.env`, databases, guest data or operator identity.
 4. No new dependency without an owner decision line in [decisions](docs/context/decisions.md).
 5. SQL only through `App/app/db.py` helpers, Postgres-portable. A schema change is a new `App/app/migrations/` file.
