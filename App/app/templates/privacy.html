@@ -57,8 +57,10 @@
       {#- WP09: described only while the tag is actually served (section 1). -#}
       <h3 id="analytics">{{ t('privacy.analytics_title') }}</h3>
       <p>{{ t('privacy.analytics_body') }}</p>
-      {#- Opt-out and opt-back-in; umami-optout.js toggles localStorage
-          "umami.disabled". Only this page loads that script. -#}
+      <h3>{{ t('privacy.product_analytics_title') }}</h3>
+      <p>{{ t('privacy.product_analytics_body') }}</p>
+      {#- Opt-out and opt-back-in; analytics-optout.js toggles localStorage
+          "ubyhost.analytics.disabled". Only this page loads that script. -#}
       <div class="panel quiet" id="analytics-optout" aria-live="polite">
         <p>{{ t('privacy.optout_lede') }}</p>
         <p data-optout-when="on" style="margin-bottom:0"><a href="#analytics-optout" role="button" data-optout-action="disable">{{ t('privacy.optout_disable') }}</a></p>

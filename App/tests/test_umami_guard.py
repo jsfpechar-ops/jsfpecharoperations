@@ -151,7 +151,7 @@ def test_nothing_is_rendered_and_the_csp_is_strict_while_unconfigured(monkeypatc
     for path in PUBLIC_PATHS:
         response = client.get(path)
         assert response.status_code == 200, path
-        assert "posthog" not in response.text.lower(), path
+        assert "posthog.init" not in response.text, path
         assert response.headers["content-security-policy"] == _CSP, path
 
 
@@ -169,7 +169,7 @@ def test_us_posthog_hosts_leave_the_tag_off_and_csp_strict(monkeypatch):
     assert not analytics.enabled()
     db.init_db()
     response = TestClient(app).get("/?lang=en")
-    assert "posthog" not in response.text.lower()
+    assert "posthog.init" not in response.text
     assert response.headers["content-security-policy"] == _CSP
 
 
@@ -202,13 +202,14 @@ def test_the_events_carry_no_extra_properties(posthog_on):
         assert not re.search(r"data-analytics-event-[\w-]+=", html)
 
 
-def test_privacy_and_subprocessors_describe_umami(posthog_on):
+def test_privacy_and_subprocessors_describe_posthog(posthog_on):
     client = TestClient(app)
-    for lang, needle in (("en", "Act No. 127/2005 Coll."), ("cs", "zákona č. 127/2005 Sb.")):
+    for lang in ("en", "cs"):
         privacy = client.get(f"/privacy?lang={lang}").text
-        assert "Umami Cloud" in privacy and needle in privacy, lang
+        assert "PostHog" in privacy and "Umami" not in privacy, lang
         register = client.get(f"/subprocessors?lang={lang}").text
-        assert "Umami Software, Inc. (Umami Cloud)" in register, lang
+        assert "PostHog, Inc. (PostHog Cloud EU)" in register, lang
+        assert "Umami" not in register, lang
 
 
 # --- opt-out on /privacy -----------------------------------------------------

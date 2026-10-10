@@ -230,7 +230,7 @@ def test_the_signup_form_carries_the_click_in_a_signed_hidden_field():
     assert "checked" not in box and "required" not in box
     assert signup.consent_label("google", "en")["text"] in html
     assert 'href="https://business.safety.google/privacy/"' in html
-    # Auth page: no Umami script (test_umami_guard); funnel uses signup_start on public pages.
+    # Auth page: no analytics script (test_umami_guard); funnel uses signup_start on public pages.
     assert "data-analytics-event" not in html
 
 
