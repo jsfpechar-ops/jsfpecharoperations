@@ -50,4 +50,4 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
 - 2026-10-10 | PostHog replaces Umami and the funnel | owner | [plan](../plans/posthog-analytics.md)
-- 2026-10-10 | Taken type-3 period: worker `add`; no retry, shift, reuse, or `change` | staging 2026-10-08 | [0037](../tasks/0037-door-code-taken-period.md)
+- 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`. Live only after §12 check 6 | staging; K-D01 | [0037](../tasks/0037-door-code-taken-period.md)

@@ -72,7 +72,7 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 | `-4056` | Lock storage full | Host mail |
 | `90000`, `1` | TTLock internal error, generic failure | Retry with backoff |
 | `-3` | Invalid parameter | Log, no retry (a UbyHost bug) |
-| `-1026` | Not in the published error list. On 2026-10-08 a type-3 `get` returned this for one period while `get` for other periods on the same lock returned 0. List by the new code's name found nothing. FAQ 4.4 is the matching rule: one type-3 code per range, and a deleted or expired one still blocks that range | Do not retry `get`. Worker calls `add`. See the plan §6. Official meaning still asked of TTLock |
+| `-1026` | Not in the published error list. On 2026-10-08 a type-3 `get` returned this for one period while `get` for other periods on the same lock returned 0. List by the new code's name found nothing. FAQ 4.4 is the matching rule: one type-3 code per range, and a deleted or expired one still blocks that range | Do not retry `get`. Worker calls `add`. Host mail: the older code for these hours may still work. See the plan §6. Official meaning still asked of TTLock |
 | `-3008` | A passcode that has never been used on the lock cannot be changed | UbyHost does not call `change` on a type-3 code |
 
 Source for every code: [X], table "System Error Codes", plus [FAQ] where marked. The reactions are UbyHost design, not TTLock text.
