@@ -9,14 +9,14 @@ from datetime import datetime, timedelta, timezone
 import pyotp
 import qrcode
 from fastapi import APIRouter, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask, BackgroundTasks
 
 from .. import (
     acceptance,
     access,
-    admin_funnel,
     admin_ops,
+    analytics,
     auth,
     config,
     db,
@@ -936,32 +936,12 @@ def operations_admin(request: Request):
 
 @router.get("/admin/funnel")
 def funnel_admin(request: Request):
-    """One row per host account: how far each got, from existing rows (WP11)."""
+    """Host funnel figures live in PostHog; this page links there when configured."""
     account, guard = _require_admin(request)
     if guard:
         return guard
-    data = admin_funnel.rows()
-    return render(
-        request,
-        "admin_funnel.html",
-        {"funnel": data, "overview": admin_funnel.overview(data), "weekly": admin_funnel.weekly()},
-    )
-
-
-@router.get("/admin/funnel.csv")
-def funnel_admin_csv(request: Request):
-    """The funnel table as CSV, for pasting into a CRM. Host accounts only."""
-    account, guard = _require_admin(request)
-    if guard:
-        return guard
-    data = admin_funnel.rows()
-    db.audit("export_funnel_csv", f"rows={len(data['rows'])}", actor=account["username"])
-    stamp = datetime.now().strftime("%Y%m%d")
-    return StreamingResponse(
-        admin_funnel.iter_csv(data),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="funnel-{stamp}.csv"'},
-    )
+    posthog_url = config.POSTHOG_APP_URL if analytics.enabled() else ""
+    return render(request, "admin_funnel.html", {"posthog_url": posthog_url})
 
 
 @router.post("/admin/incidents")

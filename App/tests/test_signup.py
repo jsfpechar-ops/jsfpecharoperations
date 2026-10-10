@@ -159,7 +159,7 @@ def test_landing_and_pricing_carry_a_signed_click_to_the_signup_link():
             f"{path}?lang=en&gclid={GCLID}&utm_source=google&utm_campaign=autumn"
         ).text
         assert 'href="/signup?lang=en&amp;utm_source=google&amp;utm_campaign=autumn&amp;click=' in html
-        assert 'data-umami-event="signup_start"' in html
+        assert 'data-analytics-event="signup_start"' in html
         click = signup.read_click(_click_from_href(html))
         # The value carries the identifier and the landing-page request time.
         assert click["ids"] == {"gclid": GCLID}
@@ -230,8 +230,8 @@ def test_the_signup_form_carries_the_click_in_a_signed_hidden_field():
     assert "checked" not in box and "required" not in box
     assert signup.consent_label("google", "en")["text"] in html
     assert 'href="https://business.safety.google/privacy/"' in html
-    # Auth page: no Umami script (test_umami_guard); funnel uses signup_start on public pages.
-    assert "data-umami-event" not in html
+    # Auth page: no analytics script (test_umami_guard); funnel uses signup_start on public pages.
+    assert "data-analytics-event" not in html
 
 
 def test_the_ads_box_is_shown_only_with_a_click_id():

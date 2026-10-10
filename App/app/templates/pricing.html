@@ -34,7 +34,7 @@
     "isPartOf": {"@type": "WebSite", "name": "UbyHost", "url": public_base_url ~ "/"}
   } | tojson }}
   </script>
-  {% include "_umami.html" %}
+  {% include "_posthog.html" %}
 </head>
 <body>
 {% set active = 'pricing' %}{% set switch_path = '/cenik' %}
@@ -64,9 +64,9 @@
           </ul>
         </div>
         <a class="landing-button pricing-button"
-           data-umami-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
+           data-analytics-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} <span aria-hidden="true">→</span></a>
         {% if signup_href %}
-        <a class="landing-button primary pricing-button" href="{{ signup_href }}" data-umami-event="signup_start">{{ t('signup.cta') }}</a>
+        <a class="landing-button primary pricing-button" href="{{ signup_href }}" data-analytics-event="signup_start">{{ t('signup.cta') }}</a>
         {% endif %}
         <small>{{ t('landing.cta.note') }}</small>
       </article>
@@ -89,7 +89,7 @@
     <section class="landing-final pricing-final">
       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
       <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.body') }}</p></div>
-      <a class="landing-button primary" data-umami-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }}</a>
+      <a class="landing-button primary" data-analytics-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }}</a>
     </section>
   </main>
 

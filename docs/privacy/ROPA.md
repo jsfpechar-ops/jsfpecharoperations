@@ -36,6 +36,7 @@ UbyHost is the **controller** for the data below.
 | Support mailbox | Messages to/from `support@ubyhost.com` | Answer support requests; receive a copy of each "door code not created" notice sent to a host (property name, stay date, TTLock error; no guest name, no door code) | Contract / legitimate interest | To be confirmed (LD-9 identifies the provider) |
 | Public website | `ubyhost_lang`, `ubyhost_csrf` cookies; Cloudflare edge data | Serve the site, security | Strictly necessary under § 89(3) ZEK | Language cookie 1 y; CSRF matches the session |
 | Backups | Encrypted `age` snapshots of the database and key | Disaster recovery | Legal obligation / security | `UBYHOST_BACKUP_RETENTION_DAYS` (30) |
+| Host product analytics (PostHog Cloud EU) | Host e-mail, workspace name, sign-up UTM labels, sign-up source, funnel stage | Product analytics for the operator | Legitimate interest (Art 6(1)(f)) — **LAWYER REVIEW** | Processor: PostHog, Inc. (EU region); deletion by hand on account deletion until automated (see known-issues) — **LAWYER REVIEW** |
 
 ## Open questions for counsel
 

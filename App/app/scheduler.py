@@ -21,6 +21,7 @@ from . import (
     lifecycle_mail,
     mail,
     meta_capi,
+    posthog_sync,
     passport_photos,
     reporting,
     retention,
@@ -76,6 +77,7 @@ def job_intervals() -> dict:
         "meta_capi": 10,
         "retention": 24 * 60,
         "door_codes": 1,
+        "posthog": 15,
     }
 
 
@@ -297,6 +299,27 @@ def _job_meta_capi() -> None:
     )
 
 
+def _job_posthog() -> None:
+    """Send host funnel stages to PostHog. Does nothing while PostHog is off."""
+    started = time.perf_counter()
+    try:
+        summary = posthog_sync.sync()
+        if any(summary.values()):
+            log.info("posthog sync: %s", summary)
+    except Exception:
+        log.exception("posthog sync job failed")
+        _job_failed("posthog")
+        _log_run("posthog", started, False)
+        return
+    _job_ok("posthog")
+    _log_run(
+        "posthog",
+        started,
+        True,
+        {key: value for key, value in summary.items() if isinstance(value, int)},
+    )
+
+
 def _job_door_codes() -> None:
     started = time.perf_counter()
     try:
@@ -395,6 +418,10 @@ def start() -> bool:
     _scheduler.add_job(
         _job_door_codes, "interval", minutes=minutes["door_codes"],
         id="door_codes", max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_posthog, "interval", minutes=minutes["posthog"],
+        id="posthog", max_instances=1, coalesce=True,
     )
     _scheduler.start()
     log.info(

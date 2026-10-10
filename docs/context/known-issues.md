@@ -64,6 +64,7 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-P05 | Med open | db.py | Dead plaintext doc_number/visa_number columns not dropped | G BE-11 |
 | K-P06 | Low open | routes/stay_fees.py:576 | fee_host_reason_reference unencrypted | P A46 |
 | K-P07 | Med open | docs/vendors/README.md | Vendor DPA evidence is only a README | G LD-9 |
+| K-P08 | Med decision | posthog_sync.py | Account deletion leaves the PostHog person; by hand for now | 0039 |
 | K-S01 | Med open | .cursor/mcp.json | Agents hold a production Cloudflare MCP (removed by task 0001) | AR-41 |
 | K-S02 | Med open | server egress | SSRF DNS-rebinding residual; needs egress deny rules | S UH-11 |
 | K-S03 | Med accepted | routes/guest.py | One link + PIN reveals dates of overlapping stays | S UH-21 |
@@ -74,7 +75,6 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-S08 | Low unverified | rate_limit.py:79 | No per-account login lockout across addresses | P A44 |
 | K-S09 | Low open | deploy-production.yml | GITHUB_TOKEN stays in the server's git remote | P A58 |
 | K-S10 | High decision | server .env | Owner: confirm UBYHOST_SECRET_KEY was rotated after the history leak | AR-01 |
-| K-I01 | Med fixed | routes/invoices.py issue | Double submit issues two invoice numbers (0019 lock per stay; 0020 wiring) | P A07 |
 | K-I02 | Low open | invoices.py:51-63 _parse_decimal | "1.000" parses as 1 | X |
 | K-I03 | Low open | invoices.py cancel | Concurrent cancel returns 500 | P A10 |
 | K-I04 | Low open | invoices.py | Unvalidated duzp/due/correction dates return 500 | P A11 |

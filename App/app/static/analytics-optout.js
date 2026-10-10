@@ -1,11 +1,11 @@
 /* WP09: opt-out and opt-back-in for website analytics, loaded only on /privacy
- * and only while Umami is configured. The Umami tracker counts nothing while
- * localStorage "umami.disabled" is set ("Exclude my own visits" in the Umami
- * docs). The key is written only when the visitor clicks the link, so no
- * consent is needed for it. Listed in cookie_inventory.py. */
+ * and only while PostHog is configured. The tracker counts nothing while
+ * localStorage "ubyhost.analytics.disabled" is set. The key is written only
+ * when the visitor clicks the link, so no consent is needed for it. Listed in
+ * cookie_inventory.py. */
 (function () {
   "use strict";
-  var KEY = "umami.disabled";
+  var KEY = "ubyhost.analytics.disabled";
   var root = document.getElementById("analytics-optout");
   if (!root) return;
 

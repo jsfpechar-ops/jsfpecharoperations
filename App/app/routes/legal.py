@@ -23,7 +23,7 @@ SUBPROCESSOR_IDS = (
     "aws_ses",
     "aws_s3",
     "cloudflare",
-    "umami",
+    "posthog",
     "render",
     "google",
     "ttlock",
