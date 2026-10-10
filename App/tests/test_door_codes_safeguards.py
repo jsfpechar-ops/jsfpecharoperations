@@ -303,6 +303,64 @@ def test_a_property_with_no_lock_set_says_so_instead_of_claiming_to_retry():
     assert "no lock or no check-in and check-out time saved" in body
 
 
+def test_a_dead_ttlock_connection_is_explained_in_the_delayed_host_mail():
+    _, apartment, stay = _stay(registered_minutes_ago=15)
+    row_id = door_codes.ensure_row(stay)
+    assert row_id is not None
+    db.execute("UPDATE lock_account SET status = 'reauth_needed'")
+    assert door_codes.issue(row_id) is False
+    door_codes.reconcile()
+    row = db.query_one(
+        "SELECT payload FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code_notice'",
+        (stay,),
+    )
+    body = json.loads(row["payload"])["text"]
+    assert "TTLock connection needs to be set up again [no_account]" in body
+
+
+def test_a_moved_stay_updates_the_passcode_window_when_ttlock_accepts(monkeypatch):
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "code-old"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.ISSUED
+    old_valid_to = row["valid_to"]
+
+    reservation = db.query_one("SELECT date_from, date_to FROM reservation WHERE id = ?", (stay,))
+    apt = db.query_one(
+        "SELECT checkin_hour, checkout_hour FROM apartment WHERE id = ?", (apartment,)
+    )
+    new_to = (
+        datetime.fromisoformat(reservation["date_to"]).date() + timedelta(days=2)
+    ).isoformat()
+    db.execute("UPDATE reservation SET date_to = ? WHERE id = ?", (new_to, stay))
+
+    changes = []
+
+    def record_change(account_id, lock_id, code_id, start_ms, end_ms, priority):
+        changes.append((code_id, start_ms, end_ms))
+
+    monkeypatch.setattr(ttlock, "change_code_period", record_change)
+    door_codes.reconcile()
+
+    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["provider_code_id"] == "code-old"
+    assert row["valid_to"] != old_valid_to
+    assert changes and changes[0][0] == "code-old"
+    _, end_ms = ttlock.stay_window(
+        reservation["date_from"],
+        new_to,
+        apt["checkin_hour"],
+        apt["checkout_hour"],
+        config.DOOR_CODE_BUFFER_HOURS,
+    )
+    assert door_codes._iso_to_ms(row["valid_to"]) == end_ms
+    assert db.query_one(
+        "SELECT 1 AS ok FROM audit WHERE action = 'door_code_moved' AND detail LIKE ?",
+        (f"%door_code={row['id']}%",),
+    )
+
+
 def test_a_never_used_code_is_replaced_not_retried_forever(monkeypatch):
     """TTLock -3008 on change: create a new passcode instead of retrying change forever."""
     assert ttlock.ERROR_KINDS[-3008] == "unused_code"
