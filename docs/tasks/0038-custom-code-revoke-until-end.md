@@ -1,6 +1,6 @@
 # 0038: A cancelled stay's custom code is deleted, however long the gateway is down
 
-Status: todo
+Status: review
 Depends on: 0037 | Base commit: 0037's merge | Branch: task/0038-custom-code-revoke
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
@@ -51,9 +51,9 @@ From `App/`: `.venv/bin/python -m pytest tests/test_door_codes_safeguards.py tes
 
 ## 7. Acceptance
 
-- [ ] A cancelled custom code is retried hourly until `valid_to`, with one host mail after the third failure.
-- [ ] A random code's revoke is unchanged.
-- [ ] Full pytest and context lint pass.
+- [x] A cancelled custom code is retried hourly until `valid_to`, with one host mail after the third failure.
+- [x] A random code's revoke is unchanged.
+- [x] Full pytest and context lint pass.
 
 ## 8. Stop and ask
 

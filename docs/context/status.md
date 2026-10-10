@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-10. Door-code taken period: 0037 built (PR #340).
+Updated: 2026-10-10. Door codes: 0037 merged (#340); 0038 in PR #341, reviewed OK.
 
 ## Production
 
@@ -17,7 +17,7 @@ Updated: 2026-10-10. Door-code taken period: 0037 built (PR #340).
 
 - PostHog: PR #339 (337 + [0039](../tasks/0039-posthog-hardening.md)) approved; merge on green, close #337 unmerged. Key after the PostHog owner steps.
 - Briefs ready for Cursor: [0017](../tasks/0017-archive-stay-on-page.md) (archive keeps you on the page); [0019](../tasks/0019-stay-invoice-rules.md) reviewed OK, merge `claude/bold-ride-leloxm` → main first; then [0020](../tasks/0020-stay-invoice-pages.md) stay-only invoices ([plan](../plans/stay-only-invoices.md)); 0021 alert later.
-- Door codes: [0037](../tasks/0037-door-code-taken-period.md) in PR #340 (reviewed OK); then [0038](../tasks/0038-custom-code-revoke-until-end.md). §12 check 6 passed 2026-10-10 (deleted untyped code does not open).
+- Door codes: [0037](../tasks/0037-door-code-taken-period.md) merged; [0038](../tasks/0038-custom-code-revoke-until-end.md) PR #341. Next: 0037 and 0038 owner steps on staging. §12 check 6 passed 2026-10-10 (deleted untyped code does not open).
 - Plan [file-retention](../plans/file-retention.md): decided, no build now. Lawyer round: add a Terms/DPA line that the app is not the host's statutory archive.
 
 - TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).

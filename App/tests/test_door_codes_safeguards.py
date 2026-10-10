@@ -580,3 +580,131 @@ def test_a_cancelled_stay_does_not_get_the_mail(monkeypatch):
         "SELECT 1 AS ok FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code'",
         (stay,),
     ) is None
+
+
+def _cancelled_custom_code(valid_to: str) -> tuple[int, int]:
+    """Issued custom door code on a cancelled stay. Returns stay id and door_code id."""
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    now = db.utcnow()
+    valid_from = (datetime.now(timezone.utc) - timedelta(hours=1)).replace(
+        microsecond=0
+    ).isoformat()
+    row_id = db.insert(
+        "door_code",
+        {
+            "reservation_id": stay,
+            "apartment_id": apartment,
+            "lock_id": "35662508",
+            "code_kind": "custom",
+            "state": door_codes.ISSUED,
+            "pin_enc": db.encrypt_field("4821937"),
+            "provider_code_id": "custom-pid",
+            "valid_from": valid_from,
+            "valid_to": valid_to,
+            "issued_at": now,
+            "attempts": 0,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.execute(
+        "UPDATE reservation SET status = 'cancelled', updated_at = ? WHERE id = ?",
+        (now, stay),
+    )
+    return stay, row_id
+
+
+def test_a_custom_code_delete_keeps_trying(monkeypatch):
+    delete_calls = {"n": 0}
+
+    def offline(*args, **kwargs):
+        delete_calls["n"] += 1
+        raise ttlock.TTLockError("gateway offline", code=-2012, kind="offline")
+
+    monkeypatch.setattr(ttlock, "delete_code", offline)
+    future = (datetime.now(timezone.utc) + timedelta(days=2)).replace(
+        microsecond=0
+    ).isoformat()
+    stay, row_id = _cancelled_custom_code(future)
+
+    for _ in range(5):
+        db.execute(
+            "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+            (row_id,),
+        )
+        door_codes.reconcile()
+        row = db.query_one("SELECT * FROM door_code WHERE id = ?", (row_id,))
+        assert row["state"] == door_codes.REVOKE_PENDING
+        assert row["pin_enc"] is not None
+
+    assert delete_calls["n"] == 5
+    notices = db.query(
+        "SELECT idempotency_key FROM email_outbox "
+        "WHERE reservation_id = ? AND idempotency_key LIKE '%:cancelled_not_deleted'",
+        (stay,),
+    )
+    assert len(notices) == 1
+
+    monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: None)
+    db.execute(
+        "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+        (row_id,),
+    )
+    door_codes.reconcile()
+    row = db.query_one("SELECT state, pin_enc FROM door_code WHERE id = ?", (row_id,))
+    assert row["state"] == door_codes.REVOKED
+    assert row["pin_enc"] is None
+    assert delete_calls["n"] == 5
+
+
+def test_a_custom_code_delete_stops_after_the_end(monkeypatch):
+    delete_calls = {"n": 0}
+
+    def offline(*args, **kwargs):
+        delete_calls["n"] += 1
+        raise ttlock.TTLockError("gateway offline", code=-2012, kind="offline")
+
+    monkeypatch.setattr(ttlock, "delete_code", offline)
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    now = db.utcnow()
+    past = (datetime.now(timezone.utc) - timedelta(hours=1)).replace(
+        microsecond=0
+    ).isoformat()
+    valid_from = (datetime.now(timezone.utc) - timedelta(days=2)).replace(
+        microsecond=0
+    ).isoformat()
+    row_id = db.insert(
+        "door_code",
+        {
+            "reservation_id": stay,
+            "apartment_id": apartment,
+            "lock_id": "35662508",
+            "code_kind": "custom",
+            "state": door_codes.REVOKE_PENDING,
+            "pin_enc": db.encrypt_field("4821937"),
+            "provider_code_id": "custom-pid",
+            "valid_from": valid_from,
+            "valid_to": past,
+            "issued_at": now,
+            "attempts": 0,
+            "next_attempt_at": None,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.execute(
+        "UPDATE reservation SET status = 'cancelled', updated_at = ? WHERE id = ?",
+        (now, stay),
+    )
+
+    door_codes.reconcile()
+    row = db.query_one("SELECT state FROM door_code WHERE id = ?", (row_id,))
+    assert row["state"] == door_codes.REVOKE_FAILED
+    assert delete_calls["n"] == 1
+
+    db.execute(
+        "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+        (row_id,),
+    )
+    door_codes.reconcile()
+    assert delete_calls["n"] == 1
