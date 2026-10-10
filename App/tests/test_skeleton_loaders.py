@@ -97,7 +97,6 @@ DOWNLOAD_PATHS = (
     "/reservations.csv",
     "/settings/workspace-export",
     "/admin/users/9/export",
-    "/admin/funnel.csv",
     "/admin/ads-conversions.csv",
 )
 

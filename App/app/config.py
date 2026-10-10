@@ -273,6 +273,7 @@ POSTHOG_HOST = os.environ.get("POSTHOG_HOST", "https://eu.i.posthog.com").strip(
 POSTHOG_ASSETS_HOST = (
     os.environ.get("POSTHOG_ASSETS_HOST", "https://eu-assets.i.posthog.com").strip().rstrip("/")
 )
+POSTHOG_APP_URL = os.environ.get("POSTHOG_APP_URL", "https://eu.posthog.com").strip().rstrip("/")
 
 # Bumped when Terms of Service change materially (logged on host login).
 # 1.6 (WP24): stay fee duty, filing on the host's instruction, filing by hand,
