@@ -1,4 +1,4 @@
-# 0037: PostHog hardening before the key is set
+# 0039: PostHog hardening before the key is set
 
 Status: done
 Depends on: 0033 to 0036 | Base commit: 93995e7 | Branch: claude/dazzling-hamilton-8nzb2p (PR 337's work plus this brief)
@@ -204,7 +204,7 @@ As in [TEMPLATE](TEMPLATE.md) §8. Also stop if the browser test can only pass b
 
 ## 9. Report
 
-`docs/tasks/0037-report.md`, as in [TEMPLATE](TEMPLATE.md) §9.
+`docs/tasks/0039-report.md`, as in [TEMPLATE](TEMPLATE.md) §9.
 
 ## Risk list (for the reviewer)
 

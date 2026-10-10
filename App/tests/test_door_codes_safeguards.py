@@ -303,36 +303,280 @@ def test_a_property_with_no_lock_set_says_so_instead_of_claiming_to_retry():
     assert "no lock or no check-in and check-out time saved" in body
 
 
-def test_a_never_used_code_is_replaced_not_retried_forever(monkeypatch):
-    """TTLock -3008 on change: create a new passcode instead of retrying change forever."""
-    assert ttlock.ERROR_KINDS[-3008] == "unused_code"
-    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "code-old"))
+def test_a_date_change_calls_create_period_code_not_change(monkeypatch):
+    calls = {"change": 0, "create": 0}
+
+    def track_create(*a, **k):
+        calls["create"] += 1
+        return ("4821937", "code-old")
+
+    def track_change(*a, **k):
+        calls["change"] += 1
+        raise AssertionError("change_code_period must not run")
+
+    monkeypatch.setattr(ttlock, "create_period_code", track_create)
+    monkeypatch.setattr(ttlock, "change_code_period", track_change)
+    monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: None)
     _, apartment, stay = _stay(registered_minutes_ago=1)
     door_codes.reconcile()
-    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
-    assert row["state"] == door_codes.ISSUED
-    assert row["provider_code_id"] == "code-old"
+    assert calls == {"change": 0, "create": 1}
 
     res = db.query_one("SELECT date_to FROM reservation WHERE id = ?", (stay,))
     new_to = (datetime.fromisoformat(res["date_to"]).date() + timedelta(days=2)).isoformat()
     db.execute("UPDATE reservation SET date_to = ? WHERE id = ?", (new_to, stay))
+    def second_create(*a, **k):
+        calls["create"] += 1
+        return ("9911223", "code-new")
 
-    def refuse_change(*args, **kwargs):
-        raise ttlock.TTLockError("never used", code=-3008, kind="unused_code")
+    calls["create"] = 0
+    monkeypatch.setattr(ttlock, "create_period_code", second_create)
+    door_codes.reconcile()
+    assert calls["change"] == 0
+    assert calls["create"] == 1
 
-    deleted = []
 
-    monkeypatch.setattr(ttlock, "change_code_period", refuse_change)
-    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("9911223", "code-new"))
-    monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: deleted.append(a[2]))
+def test_a_taken_period_is_not_retried_from_the_guest_save(monkeypatch):
+    add_calls = []
 
+    def taken(*args, **kwargs):
+        raise ttlock.TTLockError("taken", code=-1026, kind="period_taken")
+
+    def add(*args, **kwargs):
+        add_calls.append(1)
+        return ("1234567", "add-1")
+
+    monkeypatch.setattr(ttlock, "create_period_code", taken)
+    monkeypatch.setattr(ttlock, "add_custom_code", add)
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.on_registration_complete(stay)
+    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.RETRYING
+    assert row["last_error"] == "period_taken:-1026"
+    assert add_calls == []
+    notices = db.query(
+        "SELECT idempotency_key FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code_notice'",
+        (stay,),
+    )
+    assert len(notices) == 1
+    assert notices[0]["idempotency_key"].endswith(":period_taken")
+
+
+def test_the_worker_adds_a_custom_code_when_the_period_is_taken(monkeypatch):
+    order = []
+
+    def find(*args, **kwargs):
+        order.append("find")
+        return None
+
+    def add(*args, **kwargs):
+        order.append("add")
+        return ("7654321", "add-9")
+
+    monkeypatch.setattr(ttlock, "find_code_by_name", find)
+    monkeypatch.setattr(ttlock, "add_custom_code", add)
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    row_id = door_codes.ensure_row(stay)
+    db.execute(
+        "UPDATE door_code SET state = ?, last_error = ?, attempts = 1, next_attempt_at = NULL WHERE id = ?",
+        (door_codes.RETRYING, "period_taken:-1026", row_id),
+    )
     door_codes.reconcile()
     row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
-    assert row["provider_code_id"] == "code-new"
-    assert db.decrypt_field(row["pin_enc"]) == "9911223"
-    assert row["next_attempt_at"] is None
-    assert deleted == ["code-old"]
-    assert db.query_one(
-        "SELECT 1 AS ok FROM audit WHERE action = 'door_code_replaced' AND detail LIKE ?",
-        (f"%door_code={row['id']}%",),
+    assert row["state"] == door_codes.ISSUED
+    assert row["code_kind"] == "custom"
+    assert order == ["find", "add"]
+    shown = _view(stay, apartment)
+    assert shown["first_use_by"] == ""
+
+
+def test_a_busy_gateway_on_add_is_retried_twice(monkeypatch):
+    add_attempts = []
+
+    def add(*args, **kwargs):
+        add_attempts.append(1)
+        raise ttlock.TTLockError("busy", code=-3037, kind="transient")
+
+    monkeypatch.setattr(ttlock, "find_code_by_name", lambda *a, **k: None)
+    monkeypatch.setattr(ttlock, "add_custom_code", add)
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    row_id = door_codes.ensure_row(stay)
+    db.execute(
+        "UPDATE door_code SET state = ?, last_error = ?, attempts = 1, next_attempt_at = NULL WHERE id = ?",
+        (door_codes.RETRYING, "period_taken:-1026", row_id),
     )
+    door_codes.reconcile()
+    row = db.query_one("SELECT state, last_error FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.RETRYING
+    assert row["last_error"].startswith("period_taken")
+    assert len(add_attempts) == 1
+    assert db.query_one(
+        "SELECT 1 AS ok FROM email_outbox WHERE reservation_id = ? AND idempotency_key LIKE '%:failed'",
+        (stay,),
+    ) is None
+
+    db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE reservation_id = ?", (stay,))
+    door_codes.reconcile()
+    assert len(add_attempts) == 2
+
+    def add_ok(*args, **kwargs):
+        add_attempts.append(1)
+        return ("7654321", "add-ok")
+
+    monkeypatch.setattr(ttlock, "add_custom_code", add_ok)
+    db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE reservation_id = ?", (stay,))
+    door_codes.reconcile()
+    row = db.query_one("SELECT state, code_kind FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.ISSUED
+    assert row["code_kind"] == "custom"
+    assert len(add_attempts) == 3
+
+
+def test_add_gives_up_after_the_limit(monkeypatch):
+    monkeypatch.setattr(ttlock, "find_code_by_name", lambda *a, **k: None)
+    monkeypatch.setattr(
+        ttlock,
+        "add_custom_code",
+        lambda *a, **k: (_ for _ in ()).throw(
+            ttlock.TTLockError("busy", code=-3037, kind="transient")
+        ),
+    )
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    row_id = door_codes.ensure_row(stay)
+    db.execute(
+        "UPDATE door_code SET state = ?, last_error = ?, attempts = 1, next_attempt_at = NULL WHERE id = ?",
+        (door_codes.RETRYING, "period_taken:-1026", row_id),
+    )
+    for _ in range(3):
+        db.execute("UPDATE door_code SET next_attempt_at = NULL WHERE reservation_id = ?", (stay,))
+        door_codes.reconcile()
+    row = db.query_one("SELECT state FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.FAILED
+    failed = db.query(
+        "SELECT cc_email, idempotency_key FROM email_outbox "
+        "WHERE reservation_id = ? AND kind = 'door_code_notice'",
+        (stay,),
+    )
+    failed_rows = [r for r in failed if r["idempotency_key"].endswith(":failed")]
+    assert len(failed_rows) == 1
+    assert failed_rows[0]["cc_email"] == "support@ubyhost.com"
+
+
+def test_no_gateway_hands_over_at_once(monkeypatch):
+    monkeypatch.setattr(ttlock, "find_code_by_name", lambda *a, **k: None)
+    monkeypatch.setattr(
+        ttlock,
+        "add_custom_code",
+        lambda *a, **k: (_ for _ in ()).throw(
+            ttlock.TTLockError("offline", code=-2012, kind="offline")
+        ),
+    )
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    row_id = door_codes.ensure_row(stay)
+    db.execute(
+        "UPDATE door_code SET state = ?, last_error = ?, attempts = 1, next_attempt_at = NULL WHERE id = ?",
+        (door_codes.RETRYING, "period_taken:-1026", row_id),
+    )
+    door_codes.reconcile()
+    row = db.query_one("SELECT state FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.FAILED
+    assert db.query_one(
+        "SELECT 1 AS ok FROM email_outbox WHERE reservation_id = ? AND idempotency_key LIKE '%:failed'",
+        (stay,),
+    )
+
+
+def test_an_adopted_custom_code_stays_custom(monkeypatch):
+    def find(*args, **kwargs):
+        return ("1111111", "found-1")
+
+    monkeypatch.setattr(ttlock, "find_code_by_name", find)
+    monkeypatch.setattr(
+        ttlock,
+        "add_custom_code",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("add must not run")),
+    )
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    row_id = door_codes.ensure_row(stay)
+    db.execute(
+        "UPDATE door_code SET state = ?, last_error = ?, attempts = 1, next_attempt_at = NULL WHERE id = ?",
+        (door_codes.RETRYING, "period_taken:-1026", row_id),
+    )
+    door_codes.reconcile()
+    row = db.query_one("SELECT code_kind, state FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.ISSUED
+    assert row["code_kind"] == "custom"
+
+
+def test_permission_on_a_move_does_not_add(monkeypatch):
+    ttlock_calls = []
+
+    def create(*args, **kwargs):
+        ttlock_calls.append("create")
+        raise ttlock.TTLockError("denied", code=-2018, kind="permission")
+
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("1", "c1"))
+    monkeypatch.setattr(ttlock, "add_custom_code", lambda *a, **k: ttlock_calls.append("add"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    res = db.query_one("SELECT date_to FROM reservation WHERE id = ?", (stay,))
+    new_to = (datetime.fromisoformat(res["date_to"]).date() + timedelta(days=2)).isoformat()
+    db.execute("UPDATE reservation SET date_to = ? WHERE id = ?", (new_to, stay))
+    ttlock_calls.clear()
+    monkeypatch.setattr(ttlock, "create_period_code", create)
+    door_codes.reconcile()
+    assert ttlock_calls == ["create"]
+    assert db.query_one(
+        "SELECT 1 AS ok FROM email_outbox WHERE reservation_id = ? AND idempotency_key LIKE '%:failed'",
+        (stay,),
+    )
+    ttlock_calls.clear()
+    door_codes.reconcile()
+    assert ttlock_calls == []
+
+
+def test_an_undeleted_old_code_after_a_move_tells_the_host(monkeypatch):
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "code-old"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    res = db.query_one("SELECT date_to FROM reservation WHERE id = ?", (stay,))
+    new_to = (datetime.fromisoformat(res["date_to"]).date() + timedelta(days=2)).isoformat()
+    db.execute("UPDATE reservation SET date_to = ? WHERE id = ?", (new_to, stay))
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("9911223", "code-new"))
+    monkeypatch.setattr(
+        ttlock,
+        "delete_code",
+        lambda *a, **k: (_ for _ in ()).throw(
+            ttlock.TTLockError("offline", code=-2012, kind="offline")
+        ),
+    )
+    door_codes.reconcile()
+    row = db.query_one("SELECT provider_code_id FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["provider_code_id"] == "code-new"
+    assert db.query_one(
+        "SELECT 1 AS ok FROM email_outbox WHERE reservation_id = ? AND idempotency_key LIKE '%:moved_not_deleted'",
+        (stay,),
+    )
+
+
+def test_a_cancelled_stay_does_not_get_the_mail(monkeypatch):
+    monkeypatch.setattr(ttlock, "find_code_by_name", lambda *a, **k: None)
+
+    def add_cancel(*args, **kwargs):
+        db.execute("UPDATE reservation SET status = 'cancelled' WHERE id = ?", (stay,))
+        return ("7654321", "add-x")
+
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    row_id = door_codes.ensure_row(stay)
+    monkeypatch.setattr(ttlock, "add_custom_code", add_cancel)
+    db.execute(
+        "UPDATE door_code SET state = ?, last_error = ?, attempts = 1, next_attempt_at = NULL WHERE id = ?",
+        (door_codes.RETRYING, "period_taken:-1026", row_id),
+    )
+    assert door_codes.issue(row_id, allow_gateway=True) is True
+    row = db.query_one("SELECT state, pin_enc FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.ISSUED
+    assert db.decrypt_field(row["pin_enc"]) == "7654321"
+    assert db.query_one(
+        "SELECT 1 AS ok FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code'",
+        (stay,),
+    ) is None

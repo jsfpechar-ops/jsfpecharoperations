@@ -1,87 +1,73 @@
-# 0037 report: PostHog hardening
+# 0037 report: taken door-code period
 
-Status: review
+## Files changed
 
-## 1. Files changed
+- `App/app/ttlock.py` — `-1026`/`-3007` kinds, `keyboardPwd/add` allowlist, `add_custom_code`, window-aware `find_code_by_name`
+- `App/app/door_codes.py` — period-taken issue path, custom codes, move replaces create+add (no change), guest view omits 24h for custom
+- `App/app/mail_notify.py` — skip first-use when empty; support CC on `period_taken` and `moved_not_deleted`
+- `App/app/host_i18n.py` — new host mail strings (en/cs); updated `cancelled_deleted` body
+- `App/app/templates/guest/stay.html` — conditional first-use paragraph
+- `App/tests/test_ttlock.py`, `App/tests/test_door_codes_safeguards.py` — coverage per brief §4 step 11
+- `docs/context/known-issues.md` — removed K-D01
+- `docs/tasks/0037-door-code-taken-period.md` — Status review, §7 ticked
+
+## Commands (last 5 lines each)
+
+Targeted pytest:
 
 ```
- App/app/posthog_sync.py                      |  46 +++++++++-------
- App/app/templates/_posthog.html              |  59 ++++++++++++--------
- App/tests/test_posthog_snippet_browser.py     | 129 (new)
- App/tests/test_posthog_sync.py               | 117 ++++++++++++++++++++++++++++++++++++++--
- App/tests/test_umami_guard.py                |  19 ++++++-
- docs/ENVIRONMENT.md                           |   5 ++
- docs/privacy/RETENTION.md                    |   1 +
- docs/privacy/ROPA.md                          |   1 +
- 8 files changed, 334 insertions(+), 43 deletions(-)
-```
-
-## 2. Commands
-
-```bash
-cd App && UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_posthog_sync.py tests/test_umami_guard.py tests/test_posthog_snippet_browser.py -q
-```
-```
-..................................................                       [100%]
-=============================== warnings summary ===============================
-.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
   /workspace/App/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-50 passed, 1 warning in 2.72s
+120 passed, 1 warning in 2.04s
 ```
 
-```bash
-cd App && UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests -q
+Full pytest:
+
 ```
-```
-tests/test_ubyport_sample_pdf.py::test_watermark_renders_as_non_white_pixels
   /workspace/App/tests/test_ubyport_sample_pdf.py:152: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
     grey_pixels = sum(1 for px in crop.getdata() if px < 235)
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-2986 passed, 2 skipped, 7 warnings in 341.73s (0:05:41)
+2989 passed, 2 skipped, 7 warnings in 325.44s (0:05:25)
 ```
 
-```bash
-python3 scripts/context_lint.py
-```
-```
-ERROR docs/tasks/0036-posthog-funnel-page.md: missing section '## 9. Report'
-next free: task 0038 | migration 0009
-context lint: FAIL
-```
+Context lint:
 
-```bash
-grep -n '"identified" + "_only"' App/app/templates/_posthog.html; grep -c 'posthog_stage = ?' App/app/posthog_sync.py
 ```
-```
-grep exit: 1
-1
+WARN  App/app/door_codes.py is named by open briefs 0037-door-code-taken-period.md, 0038-custom-code-revoke-until-end.md; say which goes first
+WARN  App/tests/test_door_codes_safeguards.py is named by open briefs 0037-door-code-taken-period.md, 0038-custom-code-revoke-until-end.md; say which goes first
+next free: task 0039 | migration 0008
+context lint: OK
 ```
 
-## 3. Acceptance (brief §7)
+## §7 acceptance
 
-- [x] The browser test passes with `UBYHOST_REQUIRE_BROWSER=1`, 0 skipped.
-- [x] `grep -n '"identified" + "_only"' App/app/templates/_posthog.html` prints nothing.
-- [x] `grep -c 'posthog_stage = ?' App/app/posthog_sync.py` is 1 and that line is inside the per-stage loop (line 177).
-- [x] The four new sync tests pass.
-- [x] ROPA and RETENTION rows exist, marked `LAWYER REVIEW`.
+- [x] Guest save on `-1026`: no `add`, `last_error` `period_taken:-1026`, one `period_taken` host notice
+- [x] Worker `add` → `code_kind` `custom`, no first-use on view/mail
+- [x] `-2012` immediate fail; gateway retries then `failed` with support CC
+- [x] `find_code_by_name` window match
+- [x] Moves use `create_period_code` only; permission on move does not call `add`
+- [x] Move delete failure → `moved_not_deleted`
+- [x] No `keyboardPwd/change` in `door_codes.py`
+- [x] `ttlock.py` logs path/priority/errcode only
+- [x] K-D01 removed
+- [x] Full pytest and context lint OK
 
-## 4. Deviations
+## Deviations
 
-- `test_partial_failure_resumes_without_duplicates` compares the resumed event to `expected[2]` from the funnel row (the third truthy stage), not `our_events[2]`, because only successful HTTP captures are stored in `our_events`.
-- `context_lint.py` fails on pre-existing `docs/tasks/0036-posthog-funnel-page.md` structure; this brief forbids editing that file.
+- `test_a_cancelled_stay_does_not_get_the_mail` calls `issue(..., allow_gateway=True)` directly so cancellation/revoke in `reconcile` does not clear the stored PIN; behaviour under test matches the brief (skip guest mail when stay no longer active).
 
-## 5. Questions
+## Accepted limits (review follow-up)
+
+- **Move + gateway:** If a date change hits `-1026` then `add` fails on a busy/offline gateway, `_handle_moves` retries every 15 minutes with no cap. The guest still has the previous code until replace succeeds (K-D02).
+- **Move + permission:** A `-2018` (or reauth/config/disabled) on replace sets `last_error` and sends `failed`; later reconciles skip that stay even after TTLock access is restored. Brief 0037 chose this; host must fix access and adjust dates or codes in TTLock (K-D03).
+
+## Questions
 
 None.
 
-## 6. Owner steps left
+## Owner steps
 
-From brief §Owner steps (also added to `docs/ENVIRONMENT.md`):
-
-1. In PostHog, open **Settings**, then **Project**, then **IP data capture**. Turn on **Discard client IP data**.
-2. In the same project settings, find **Cookieless server hash mode** and turn it on. Without it, the cookieless page views are dropped.
-3. Later, and only if you want automatic deletion: decide whether UbyHost may hold a PostHog personal API key. Until then, when you delete a host account, also delete that person in PostHog (**People**, search the e-mail, **Delete person**).
+Same as brief § Owner steps (merge on green, deploy staging, hand-add/archive/register cycle with gateway online, optional security re-check, normal stay still shows 24h sentence).

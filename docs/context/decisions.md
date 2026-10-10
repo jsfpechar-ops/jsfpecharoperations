@@ -49,5 +49,5 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-09 | Waiting guest sees only "You will receive your door code by e-mail." (0024; replaces 0022) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
-- 2026-10-10 | PostHog replaces Umami; privacy settings live in the snippet, not the dashboard | owner | [plan](../plans/posthog-analytics.md), [0037](../tasks/0037-posthog-hardening.md)
+- 2026-10-10 | PostHog replaces Umami; privacy settings live in the snippet, not the dashboard | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
 - 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)
