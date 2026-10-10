@@ -1,6 +1,6 @@
 # 0037: PostHog hardening before the key is set
 
-Status: todo
+Status: done
 Depends on: 0033 to 0036 | Base commit: 93995e7 | Branch: claude/dazzling-hamilton-8nzb2p (PR 337's work plus this brief)
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
