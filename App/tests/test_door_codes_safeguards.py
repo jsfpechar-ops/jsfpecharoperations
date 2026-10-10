@@ -303,5 +303,36 @@ def test_a_property_with_no_lock_set_says_so_instead_of_claiming_to_retry():
     assert "no lock or no check-in and check-out time saved" in body
 
 
-def test_a_never_used_code_is_replaced_not_retried_forever():
+def test_a_never_used_code_is_replaced_not_retried_forever(monkeypatch):
+    """TTLock -3008 on change: create a new passcode instead of retrying change forever."""
     assert ttlock.ERROR_KINDS[-3008] == "unused_code"
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "code-old"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["state"] == door_codes.ISSUED
+    assert row["provider_code_id"] == "code-old"
+
+    res = db.query_one("SELECT date_to FROM reservation WHERE id = ?", (stay,))
+    new_to = (datetime.fromisoformat(res["date_to"]).date() + timedelta(days=2)).isoformat()
+    db.execute("UPDATE reservation SET date_to = ? WHERE id = ?", (new_to, stay))
+
+    def refuse_change(*args, **kwargs):
+        raise ttlock.TTLockError("never used", code=-3008, kind="unused_code")
+
+    deleted = []
+
+    monkeypatch.setattr(ttlock, "change_code_period", refuse_change)
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("9911223", "code-new"))
+    monkeypatch.setattr(ttlock, "delete_code", lambda *a, **k: deleted.append(a[2]))
+
+    door_codes.reconcile()
+    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["provider_code_id"] == "code-new"
+    assert db.decrypt_field(row["pin_enc"]) == "9911223"
+    assert row["next_attempt_at"] is None
+    assert deleted == ["code-old"]
+    assert db.query_one(
+        "SELECT 1 AS ok FROM audit WHERE action = 'door_code_replaced' AND detail LIKE ?",
+        (f"%door_code={row['id']}%",),
+    )
