@@ -6,7 +6,7 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-When TTLock already holds a type-3 code for a stay's hours (`-1026`), the worker creates a custom code for that stay, keeps retrying through a gateway outage, and mails the host that an older code for the same hours may still open the door. A change of dates or hours creates a new code and never calls `keyboardPwd/change`. When the old code of a moved stay cannot be deleted, the host is told.
+When TTLock already holds a type-3 code for a stay's hours (`-1026`), the worker creates a custom code for that stay at once, and mails the host (support in copy) that an older code for the same hours may still open the door. `get` is never retried for that window. If the custom code cannot be made within a few minutes, the host is told to create one in the TTLock app. A change of dates or hours creates a new code and never calls `keyboardPwd/change`. When the old code of a moved stay cannot be deleted, the host is told.
 
 ## 2. Context
 
@@ -16,7 +16,7 @@ Behaviour is decided in [plan §6](../plans/ttlock-door-codes.md#6-states) and [
 
 Why the host mail: `-1026` means another type-3 code covers exactly these hours. That is usually the code of a cancelled or moved stay. TTLock FAQ 4.1 says a never-typed random code is unknown to the lock, so deleting it may not stop it working. UbyHost cannot prove that code is dead, so it says so.
 
-Why the retry limit changes: `ISSUE_MAX_ATTEMPTS` is 2 (`door_codes.py` line 27). The guest save uses attempt 1 and the first worker `add` is attempt 2, so with today's code one gateway blip on `add` would mark the code failed. Period-taken rows get their own limit.
+Why the retry limit changes: `ISSUE_MAX_ATTEMPTS` is 2 (`door_codes.py` line 27). The guest save uses attempt 1 and the first worker `add` is attempt 2, so with today's code one busy-gateway answer on `add` would mark the code failed. Period-taken rows get their own short limit. Retrying only helps when the gateway is busy (`-3037`) or the network dropped; `-2012` (no gateway connected) will not fix itself, so it hands over at once. Retrying `get` never helps: it returns `-1026` again (Render staging retried it and never got a code).
 
 Anchor A, `App/app/ttlock.py`. Found verbatim once:
 
@@ -86,7 +86,7 @@ No other file may change.
 
 3. `find_code_by_name` gains `start_ms: int, end_ms: int` and returns a match only when `keyboardPwdName == name` and `int(startDate) == start_ms` and `int(endDate) == end_ms`. Update its one caller in `issue`. A code with the right name and the wrong window is never adopted.
 
-4. Constants in `door_codes.py`: `PERIOD_TAKEN = "period_taken"`, `PERIOD_TAKEN_RETRY_MINUTES = 5`, `PERIOD_TAKEN_MAX_ATTEMPTS = 14` (the guest save, then about an hour of `add` tries). `GATEWAY_RETRY_KINDS = ("offline", "transient", "network", "rate", "budget")`.
+4. Constants in `door_codes.py`: `PERIOD_TAKEN = "period_taken"`, `PERIOD_TAKEN_RETRY_MINUTES = (1, 5)`, `PERIOD_TAKEN_MAX_ATTEMPTS = 4` (the guest save, then at most three `add` tries, about 6 minutes). `GATEWAY_RETRY_KINDS = ("offline", "transient", "network", "rate", "budget")`.
 
 5. `issue(door_code_id, *, allow_gateway=False)`. `on_registration_complete` keeps `issue(row_id)`. `_issue_due` calls `issue(int(row["id"]), allow_gateway=True)`. Let `taken = (row["last_error"] or "").startswith(PERIOD_TAKEN)`. Set a local `via_add = False`, and set it to True right before every `add_custom_code` call. Do not call `add` from inside an `except` clause. Replace the body of the `try` so it runs at most two steps, all inside the existing outer `try` and its existing `except` clauses:
    - First, if `attempts > 1`: `find_code_by_name(..., name, start_ms, end_ms)`. On a hit, use it with `kind = "custom" if taken else "random"` and skip the cases below. On a miss, go on with the first case below that matches.
@@ -95,7 +95,7 @@ No other file may change.
    - Else: `create_period_code(..., priority)`, `kind = "random"`. If that raises `TTLockError` with `kind == "period_taken"`, catch it right there (a small inner `try` around this one call). Mail the host once with `mail_notify.door_code_notice(door_code_id, "period_taken")`. Then, if `allow_gateway`, call `add_custom_code(..., priority)` and set `kind = "custom"`. If not, set the row to `RETRYING`, `last_error = "period_taken:-1026"`, `next_attempt_at` = now, `claimed_at` NULL, and return False without the failure mail.
    - The issued `UPDATE` writes `code_kind = kind`. Before `send_code_mail`, re-read `reservation.status` and `archived_at`. If the stay is no longer active, keep the stored code and skip the mail. The next reconcile revokes it.
 
-   In the existing `except ttlock.TTLockError` handler, when `taken` or `via_add` is true: write `last_error` as `"period_taken:" + reason` (cut to 40 characters). For a kind in `GATEWAY_RETRY_KINDS` or any kind not listed below, set `RETRYING` with `next_attempt_at` = now + `PERIOD_TAKEN_RETRY_MINUTES` until `attempts >= PERIOD_TAKEN_MAX_ATTEMPTS`, then `FAILED` with the existing alert and host mail. Budget keeps its 60 minutes and does not count an attempt. Kinds `permission`, `reauth`, `config`, `disabled`, `storage` and `duplicate` go to `FAILED` at once with the existing alert and mail. Rows that are not period-taken keep today's handling exactly.
+   In the existing `except ttlock.TTLockError` handler, when `taken` or `via_add` is true: write `last_error` as `"period_taken:" + reason` (cut to 40 characters). `exc.code == -2012` goes to `FAILED` at once with the existing alert and host mail. For another kind in `GATEWAY_RETRY_KINDS` or any kind not listed below, set `RETRYING` with `next_attempt_at` = now + `PERIOD_TAKEN_RETRY_MINUTES[min(max(attempts - 2, 0), 1)]` (1, then 5 minutes; a stay first seen by the worker starts at `attempts` 1) until `attempts >= PERIOD_TAKEN_MAX_ATTEMPTS`, then `FAILED` with the existing alert and host mail. Budget keeps its 60 minutes and does not count an attempt. Kinds `permission`, `reauth`, `config`, `disabled`, `storage` and `duplicate` go to `FAILED` at once with the existing alert and mail. Rows that are not period-taken keep today's handling exactly.
 
 6. `issue` passes its local `priority` (CRITICAL when the stay starts within 24 h) to `create_period_code` and `add_custom_code`. `_handle_moves` uses the same rule for the new window.
 
@@ -103,7 +103,7 @@ No other file may change.
 
 8. In `view`, when `row["code_kind"] == "custom"`, set `first_use_by` to `""`. In `guest/stay.html`, wrap the anchor E paragraph in `{% if door_code.first_use_by %}`.
 
-9. `mail_notify.py`. In `build_door_code` and in the `build_completion` block that uses `door_code["first_use_by"]`, omit the first-use paragraph and text line when `first_use_by` is empty. `door_code_notice` needs no code change for the two new variants: they use only `property` and `date`.
+9. `mail_notify.py`. In `build_door_code` and in the `build_completion` block that uses `door_code["first_use_by"]`, omit the first-use paragraph and text line when `first_use_by` is empty. In `_door_code_notice`, pass `cc_email=config.SUPPORT_EMAIL` to `mail.enqueue` for the variants `period_taken`, `moved_not_deleted` and `failed` (the same CC `door_code_delayed_notice` uses), so the owner sees each one. The two new variants use only `property` and `date`. Where `issue` sends the `period_taken` notice, also `log.error("DOOR_CODE_PROBLEM stage=period_taken reservation=%s door_code=%s", ...)`.
 
 10. `host_i18n.py`, after anchor F in `en`:
    - `"mail.door_code_notice.period_taken.subject": "%(property)s: an older door code covers the stay from %(date)s"`
@@ -122,8 +122,9 @@ No other file may change.
    - `test_door_codes_safeguards.py`: replace `test_a_never_used_code_is_replaced_not_retried_forever` with a test that a date change calls `create_period_code` and never `change_code_period`. Add:
      - `test_a_taken_period_is_not_retried_from_the_guest_save`: `create_period_code` raises `TTLockError("taken", code=-1026, kind="period_taken")` in `on_registration_complete`; `add_custom_code` is not called; the row is `retrying` with `last_error` `period_taken:-1026`; one `period_taken` host notice is queued.
      - `test_the_worker_adds_a_custom_code_when_the_period_is_taken`: `find_code_by_name` returns None and is called before `add_custom_code`; the row ends `issued`, `code_kind` `custom`; `view` has `first_use_by == ""`.
-     - `test_a_gateway_outage_on_add_keeps_retrying`: `add_custom_code` raises `kind="offline"` on three worker runs (advance `next_attempt_at`); the row stays `retrying`, `last_error` starts with `period_taken`, no failure mail; the fourth run succeeds and the row is `issued` `custom`.
-     - `test_add_gives_up_after_the_limit`: `add_custom_code` always raises `offline`; once `attempts` reaches `PERIOD_TAKEN_MAX_ATTEMPTS` the row is `failed` and one `failed` host notice is queued.
+     - `test_a_busy_gateway_on_add_is_retried_twice`: `add_custom_code` raises `code=-3037, kind="transient"` on two worker runs (advance `next_attempt_at`); the row stays `retrying`, `last_error` starts with `period_taken`, no failure mail; the third run succeeds and the row is `issued` `custom`.
+     - `test_add_gives_up_after_the_limit`: `add_custom_code` always raises `-3037`; after the third `add` the row is `failed` and one `failed` host notice is queued, with support in CC.
+     - `test_no_gateway_hands_over_at_once`: `add_custom_code` raises `code=-2012, kind="offline"`; after that one call the row is `failed` and one `failed` notice is queued.
      - `test_an_adopted_custom_code_stays_custom`: a period-taken row whose `find_code_by_name` hits ends `code_kind` `custom`.
      - `test_permission_on_a_move_does_not_add`: `create_period_code` raises `-2018`/`permission` in `_handle_moves`; `add_custom_code` is not called; one `failed` notice; a second `reconcile` makes no TTLock call for that stay.
      - `test_an_undeleted_old_code_after_a_move_tells_the_host`: the move issues a new code, `delete_code` raises `offline`; one `moved_not_deleted` notice is queued and the new code is stored.
@@ -147,7 +148,7 @@ Expected: all pass, last lint line `context lint: OK`.
 
 - [ ] A guest save whose `get` returns `-1026` makes no `add` call, leaves `last_error` `period_taken:-1026`, and queues one `period_taken` host notice.
 - [ ] The next `reconcile` calls `add` once, stores `code_kind` `custom`, and the guest view and mail have no first-use sentence.
-- [ ] An offline gateway on `add` keeps the row `retrying` for up to `PERIOD_TAKEN_MAX_ATTEMPTS`, then `failed` with one host mail.
+- [ ] `-2012` on `add` fails at once; a busy gateway gets two more `add` tries (1 and 5 minutes), then `failed`. Each failure is one host mail with support in CC.
 - [ ] `find_code_by_name` never adopts a code whose window differs.
 - [ ] A date change never calls `change_code_period`. `-2018` on it does not call `add`, and the next reconcile makes no TTLock call for that stay.
 - [ ] A failed delete of a moved stay's old code queues one `moved_not_deleted` notice.
@@ -170,7 +171,7 @@ Write `docs/tasks/0037-report.md` (1,500 tokens at most) and set `Status: review
 
 ## Owner steps
 
-These need a lock **with a gateway**. `add` and `delete` go through the gateway, and the staging lock has none today. Without one, step 3 ends with the code `failed` after about an hour and a host mail, which is the designed fallback, not a pass.
+These need a lock **with a gateway**. `add` and `delete` go through the gateway, and the staging lock has none today. Without one, step 3 ends at once with the code `failed` and a host mail, which is the designed fallback, not a pass.
 
 1. Merge with `scripts/merge-pr-on-green.sh` after the tests are green. Deploy staging.
 2. Hand-add a stay, register it, and **do not type its code**. Archive the stay. Wait for the "door code deleted" mail.
