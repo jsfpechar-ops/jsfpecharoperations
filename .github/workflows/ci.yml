@@ -164,7 +164,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Build image
-        run: docker build -t ubyhost:ci .
+        # Docker Hub auth occasionally returns 504; one retry avoids a false red.
+        run: |
+          for attempt in 1 2; do
+            docker build -t ubyhost:ci . && exit 0
+            if [ "$attempt" = 1 ]; then
+              echo "docker build failed (attempt $attempt), retrying in 45s..."
+              sleep 45
+            fi
+          done
+          exit 1
       - name: Start container and wait for healthz
         run: |
           docker run -d --name ubyhost-ci -p 18081:8080 \

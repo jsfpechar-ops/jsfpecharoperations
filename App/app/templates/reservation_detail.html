@@ -106,7 +106,6 @@
         <a class="btn" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>
       {% endif %}
       {{ row_menu_begin() }}
-        <button class="row-menu-item" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('stay.detail.copy_link') }}</button>
         {% if reservation.permalink_token %}
         <a class="row-menu-item" href="{{ guest_link }}" target="_blank" rel="noopener" role="menuitem">{{ t('stay.detail.menu.open_guest_form') }}</a>
         {% endif %}
@@ -196,8 +195,6 @@
             <span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
           {% elif not row.complete %}
             <span class="pill amber">{{ t('stay.detail.guests.incomplete') }}</span>
-          {% elif row.needs_verification %}
-            <span class="pill amber">{{ t('host.verify_pending') }}</span>
           {% else %}
             <span class="pill blue">{{ t('stay.detail.guests.ready') }}</span>
           {% endif %}
@@ -257,15 +254,6 @@
         </div>
       </dl>
 
-      {% if row.needs_verification %}
-        <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="verify-form guest-card-action">
-          <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-          <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
-          {% if row.has_passport_photo %}
-            <a class="small" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ t('host.verify_view_photo') }}</a>
-          {% endif %}
-        </form>
-      {% endif %}
       {% if guest.note %}
         <p class="guest-card-note">{{ t('stay.detail.guests.note', text=guest.note) }}</p>
       {% endif %}

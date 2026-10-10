@@ -36,6 +36,7 @@ KINDS = (
     "workspace_deletion",
     "cancelled_with_guests",
     "deadline_at_risk",
+    "manual_deadline",
     "deadline_digest",
     "lifecycle_no_property",
     "lifecycle_no_calendar",
@@ -80,8 +81,10 @@ HOST_KINDS = (
     "workspace_deletion",
     "cancelled_with_guests",
     # WP23 filing watchdog: the host's one warning per stay, and the operator's
-    # digest. Neither goes to a guest.
+    # digest. Neither goes to a guest. manual_deadline is the eight-hour note for
+    # a property that sends only when the host presses send.
     "deadline_at_risk",
+    "manual_deadline",
     "deadline_digest",
     "lifecycle_no_property",
     "lifecycle_no_calendar",

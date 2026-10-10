@@ -922,7 +922,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
     mode = _form_str(form, "automation_mode", "manual")
     payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "manual"
     payload["submit_after_hours"] = min(_form_int(form, "submit_after_hours") or 24, 48)
-    payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
+    payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 1
     payload["permalink_reachback_days"] = validation.normalise_reachback_days(
         _form_int(form, "permalink_reachback_days")
     )
@@ -1933,10 +1933,6 @@ def reservation_detail(reservation_id: int, request: Request):
                 "complete": reporting.guest_is_complete(guest, reservation),
                 "verified": reporting.guest_identity_verified(guest),
                 "has_passport_photo": reporting.guest_has_passport_photo(guest),
-                "needs_verification": (
-                    validation.guest_is_reportable(guest["nationality"])
-                    and not reporting.guest_identity_verified(guest)
-                ),
             }
         )
     check_in = reporting.reservation_deadline_anchor(reservation)
@@ -2347,11 +2343,6 @@ def _render_host_guest_form(
                 passport_photos.is_pdf_attachment(int(guest["id"]))
                 if guest and reporting.guest_has_passport_photo(guest)
                 else False
-            ),
-            "needs_verification": (
-                guest
-                and validation.guest_is_reportable(guest["nationality"])
-                and not reporting.guest_identity_verified(guest)
             ),
         },
     )

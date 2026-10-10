@@ -32,6 +32,12 @@ finish time. WP31: the resend (``submission.mode = 'auto_resend'``) is never
 resent itself, so when it comes back unclear too the stay is at risk once that
 one grace is over, and stays at risk until the host files it.
 
+A property set to send only when the host presses send gets one extra note in
+the last eight hours before the police deadline (``manual_deadline``). The
+usual ``deadline_at_risk`` mail still goes out earlier, in the last twenty-four
+hours, so the two do not leave on the same run. Automatic properties do not get
+the eight-hour note.
+
 A stay with no guest entered at all is a second, weaker case ("unknown risk"):
 the guests have arrived (arrival today or earlier), the deadline is less than
 24 hours away or passed, and nobody is on file. UbyHost cannot tell whether a
@@ -54,6 +60,9 @@ log = logging.getLogger("ubyhost.filing_watchdog")
 # A stay is at risk from this long before its deadline, and stays at risk
 # after the deadline until it is filed or no longer active.
 AT_RISK_WINDOW = timedelta(hours=24)
+# Manual-send properties: one reminder in the last eight hours before the
+# police deadline (end of the third working day after arrival).
+MANUAL_NOTICE_LEAD = timedelta(hours=8)
 DIGEST_INTERVAL = timedelta(hours=6)
 DIGEST_SETTING = "filing_watchdog_digest_sent_at"
 # A stay with no guest on file drops off the lists this long after its
@@ -89,7 +98,10 @@ def _utc(now: Optional[datetime]) -> datetime:
 
 
 def at_risk_stays(
-    now: Optional[datetime] = None, *, include_awaiting_retry: bool = False
+    now: Optional[datetime] = None,
+    *,
+    include_awaiting_retry: bool = False,
+    window: timedelta = AT_RISK_WINDOW,
 ) -> List[Dict[str, Any]]:
     """Every stay at risk of missing its police deadline, soonest deadline first.
 
@@ -104,7 +116,7 @@ def at_risk_stays(
     rows = db.query(
         "SELECT r.id AS reservation_id, r.date_from, r.at_risk_mailed_at, "
         "r.apartment_id, a.internal_name, a.legal_entity_id, a.owner_user_id, "
-        "u.username AS workspace, g.nationality, "
+        "a.automation_mode, u.username AS workspace, g.nationality, "
         "s.state AS sub_state, s.retried_at AS sub_retried_at, "
         "s.finished_at AS sub_finished_at "
         "FROM reservation r "
@@ -131,6 +143,7 @@ def at_risk_stays(
                 "property": row["internal_name"] or "",
                 "legal_entity_id": row["legal_entity_id"],
                 "owner_user_id": row["owner_user_id"],
+                "automation_mode": row["automation_mode"] or "",
                 "workspace": row["workspace"] or "",
                 "mailed_at": row["at_risk_mailed_at"],
                 "unfiled": 0,
@@ -148,7 +161,7 @@ def at_risk_stays(
         if not anchor:
             continue
         due = deadlines.reporting_deadline(anchor)
-        if due - local > AT_RISK_WINDOW:
+        if due - local > window:
             continue
         stay["arrival"] = anchor
         stay["deadline"] = due
@@ -317,6 +330,63 @@ def send_operator_digest(
     return True
 
 
+def manual_deadline_stays(now: Optional[datetime] = None) -> List[Dict[str, Any]]:
+    """Manual-send stays in the last eight hours before the police deadline.
+
+    ``deadline_at_risk`` already warned the host in the last twenty-four hours.
+    This second note is closer to the deadline so the two mails do not leave
+    together.
+    """
+    local = deadlines.local_now(now)
+    found = []
+    for stay in at_risk_stays(now, window=MANUAL_NOTICE_LEAD):
+        if stay.get("automation_mode") != "manual" or stay.get("awaiting_retry"):
+            continue
+        if stay["deadline"] <= local:
+            continue
+        found.append(stay)
+    return found
+
+
+def notify_manual_hosts(stays: List[Dict[str, Any]], now: Optional[datetime] = None) -> int:
+    """Queue the eight-hour manual-send note. One per stay. Returns how many."""
+    queued = 0
+    for stay in stays:
+        key = f"manual_deadline:{stay['reservation_id']}"
+        if db.query_one("SELECT id FROM email_outbox WHERE idempotency_key = ?", (key,)):
+            continue
+        try:
+            to_email = mail_notify._entity_contact_email(stay["legal_entity_id"])
+            if not to_email:
+                continue
+            lang = mail_notify.HOST_MAIL_LANGUAGE
+            content = mail_notify.build_manual_deadline(
+                property_name=stay["property"],
+                arrival=stay["arrival"].strftime("%d.%m.%Y"),
+                deadline=stay["deadline"],
+                unfiled=stay["unfiled"],
+                stay_url=_stay_url(stay["reservation_id"]),
+                lang=lang,
+            )
+            outbox_id = mail.enqueue(
+                kind="manual_deadline",
+                idempotency_key=key,
+                to_email=to_email,
+                subject=content["subject"],
+                payload={"text": content["text"], "html": content["html"], "lang": lang},
+                reservation_id=stay["reservation_id"],
+                apartment_id=stay["apartment_id"],
+                owner_user_id=stay["owner_user_id"],
+            )
+            if outbox_id:
+                queued += 1
+        except Exception:
+            log.exception(
+                "manual deadline notice failed reservation=%s", stay.get("reservation_id")
+            )
+    return queued
+
+
 def run(now: Optional[datetime] = None) -> Dict[str, int]:
     """One watchdog pass. Raises only if the at-risk query itself fails.
 
@@ -337,6 +407,11 @@ def run(now: Optional[datetime] = None) -> Dict[str, int]:
         unknown = []
     host_mails = notify_hosts(stays + unknown, now)
     try:
+        manual_mails = notify_manual_hosts(manual_deadline_stays(now), now)
+    except Exception:
+        log.exception("manual deadline notice failed")
+        manual_mails = 0
+    try:
         digest = send_operator_digest(stays, now, unknown=unknown)
     except Exception:
         log.exception("deadline digest failed")
@@ -346,6 +421,7 @@ def run(now: Optional[datetime] = None) -> Dict[str, int]:
         "unknown_risk": len(unknown),
         "awaiting_retry": awaiting,
         "host_mails": host_mails,
+        "manual_mails": manual_mails,
         "digest": int(digest),
     }
 

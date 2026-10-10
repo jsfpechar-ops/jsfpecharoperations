@@ -140,33 +140,21 @@ def test_the_message_carries_the_link_and_the_pin(host):
     assert PIN in czech
 
 
-def test_the_menu_offers_the_english_half_on_its_own(host):
+def test_the_pin_and_link_actions_sit_with_the_fields(host):
+    """Copy, a chosen PIN and a new PIN belong next to the PIN, not in a menu."""
     apartment_id = _apartment_id()
 
     page = host.get("/guest-links?lang=en")
 
-    assert "Copy English only" in page.text
-    assert f'data-copy="message-en-{apartment_id}"' in page.text
-    assert _message_block(page.text, f"message-en-{apartment_id}").startswith(EN_OPENING)
-
-
-def test_the_english_only_block_holds_no_czech(host):
-    apartment_id = _apartment_id()
-
-    page = host.get("/guest-links?lang=cs")
-
-    english = _message_block(page.text, f"message-en-{apartment_id}")
-    assert EN_OPENING in english
-    assert CS_OPENING not in english
-
-
-def test_the_menu_item_is_in_the_page_language(host):
-    apartment_id = _apartment_id()
-
-    page = host.get("/guest-links?lang=cs")
-
-    assert "Kopírovat jen anglicky" in page.text
-    assert f'data-copy="message-en-{apartment_id}"' in page.text
+    assert "Copy English only" not in page.text
+    text = page.text
+    pin_at = text.index(f'id="pin-{apartment_id}"')
+    link_at = text.index(f'id="link-{apartment_id}"')
+    assert link_at < text.index("Generate a new link") < pin_at
+    assert pin_at < text.index("Set a specific PIN") < text.index("Generate a new PIN")
+    assert f'href="/apartments/{apartment_id}#communication"' in text
+    assert f'action="/apartments/{apartment_id}/regenerate-pin"' in text
+    assert f'action="/apartments/{apartment_id}/regenerate-link"' in text
 
 
 def test_the_lede_says_the_form_opens_in_the_guest_language(host):
@@ -194,6 +182,22 @@ def test_the_property_page_shows_the_same_bilingual_message(host):
     body = html.unescape(page.text)
     assert EN_OPENING in body and CS_OPENING in body
     assert body.index(EN_OPENING) < body.index(CS_OPENING)
+
+
+def test_the_property_page_puts_link_actions_next_to_the_fields(host):
+    apartment_id = _apartment_id()
+
+    page = host.get(f"/apartments/{apartment_id}?lang=en")
+
+    text = page.text
+    link_at = text.index('id="permalink"')
+    pin_at = text.index('id="permalink_pin"')
+    assert link_at < text.index("Generate a new link") < pin_at
+    assert pin_at < text.index("Generate a new PIN")
+    assert f'formaction="/apartments/{apartment_id}/regenerate-link"' in text
+    assert f'formaction="/apartments/{apartment_id}/regenerate-pin"' in text
+    assert "Copy English only" not in text
+    assert "Link and PIN options" not in text
 
 
 def test_the_helper_puts_english_first():
