@@ -173,7 +173,7 @@ Write `docs/tasks/0037-report.md` (1,500 tokens at most) and set `Status: review
 
 ## Owner steps
 
-These need a lock **with a gateway**. `add` and `delete` go through the gateway, and the staging lock has none today. Without one, step 3 ends at once with the code `failed` and a host mail, which is the designed fallback, not a pass.
+These need the lock's gateway online (the staging lock has one). `add` and `delete` go through it. If it is offline, step 3 ends at once with the code `failed` and a host mail, which is the designed fallback, not a pass.
 
 1. Merge with `scripts/merge-pr-on-green.sh` after the tests are green. Deploy staging.
 2. Hand-add a stay, register it, and **do not type its code**. Archive the stay. Wait for the "door code deleted" mail.

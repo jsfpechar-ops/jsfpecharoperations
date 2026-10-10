@@ -24,7 +24,7 @@ Updated: 2026-10-10. Door-code taken period: brief 0037, not built yet.
 
 - PR review 2026-10-09: #327, #316, #330 closed. #332: run [0032](../tasks/0032-guide-picture-switch-on.md) (drop the form picture), then merge. #331: approved (no ID check, 1-day link window), merge after #332. #328 after #331. #278, #279 undecided.
 - Doručenka smoke on a new filing after this cutover.
-- TTLock on Render staging, 2026-10-08: lock shared as authorized admin, hand-added stay completed, PIN issued, TTLock window matched UbyHost (09:00 to 16:00) and **the code opened the lock** (owner-tested). Not yet tested: change, cancel and delete (no gateway), calendar stays, daylight saving.
+- TTLock on Render staging, 2026-10-08: lock shared as authorized admin, hand-added stay completed, PIN issued, TTLock window matched UbyHost (09:00 to 16:00) and **the code opened the lock** (owner-tested). Lock has a gateway. Delete of a never-typed code tested 2026-10-10 (stops working). Not yet tested: change, calendar stays, daylight saving.
 
 ## Blocked: needs owner, lawyer or council
 
