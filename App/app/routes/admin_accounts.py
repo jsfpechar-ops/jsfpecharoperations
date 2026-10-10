@@ -9,13 +9,12 @@ from datetime import datetime, timedelta, timezone
 import pyotp
 import qrcode
 from fastapi import APIRouter, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask, BackgroundTasks
 
 from .. import (
     acceptance,
     access,
-    admin_funnel,
     admin_ops,
     analytics,
     auth,

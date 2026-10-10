@@ -4,9 +4,13 @@ Status: review
 Depends on: none | Base commit: the plan merge | Branch: task/0033-posthog-public
 Executor: Composer 2.5 | Fits one session
 
-**Objective.** Replace the Umami tag with a PostHog cookieless snippet on the same public pages, and rename the click attribute. The sign-up and verify pages stay dark.
+## 1. Objective
 
-**Context.** Anchors the executor must find verbatim. If one is missing, stop.
+Replace the Umami tag with a PostHog cookieless snippet on the same public pages, and rename the click attribute. The sign-up and verify pages stay dark.
+
+## 2. Context
+
+Anchors the executor must find verbatim. If one is missing, stop.
 
 [App/app/config.py](App/app/config.py), the Umami block starts:
 
@@ -33,7 +37,7 @@ def test_the_sign_up_pages_never_carry_umami(umami_on, monkeypatch):
     # WP20/WP21: /signup reads gclid and fbclid; it is an auth page, no tag.
 ```
 
-**Files.**
+## 3. Files
 
 - [App/app/analytics.py](App/app/analytics.py) — rewrite. Same `PUBLIC_ANALYTICS_TEMPLATES`. `enabled()` is true only when `POSTHOG_PROJECT_API_KEY` is non-empty, both hosts are `https` origins, and neither host contains `us.i.posthog.com` or `us-assets.i.posthog.com`. `script_origin()` returns the assets host. `connect_origins()` returns the API host. `tag()` returns `api_key`, `api_host`, `assets_host`, or None. Keep `mark_public_page` and `is_public_page`.
 - [App/app/config.py](App/app/config.py) — delete the four `UMAMI_*` assignments. Add `POSTHOG_PROJECT_API_KEY` (default empty), `POSTHOG_HOST` (default `https://eu.i.posthog.com`, strip trailing slash), `POSTHOG_ASSETS_HOST` (default `https://eu-assets.i.posthog.com`, strip trailing slash).
@@ -50,20 +54,23 @@ def test_the_sign_up_pages_never_carry_umami(umami_on, monkeypatch):
 
 No other file may change. Copy sentences stay in 0034, even if they still say Umami for one commit.
 
-**Steps.**
+## 4. Steps
 
 1. Replace the config block. Delete every `UMAMI_` name. A repo search for `UMAMI_` in `App/` may remain only inside 0034's files (`privacy_policy_i18n.py`, `subprocessors_i18n.py`, `cookie_inventory.py`, `landing_i18n.py`). Those are 0034. Do not edit them here.
 2. Rewrite `analytics.py` as described. Refuse a non-https host the same way `_https_origin` does today.
 3. Add `_posthog.html`. It prints nothing unless `analytics_tag` is set. The inline script returns immediately when `navigator.doNotTrack` or `window.doNotTrack` is `"1"`, or when `localStorage["ubyhost.analytics.disabled"]` is set. Then it loads `{{ analytics_tag.assets_host }}/static/array.js` and calls `posthog.init` with `api_host`, `cookieless_mode: "always"`, `person_profiles: "identified_only"`, `persistence: "memory"`, `autocapture: false`, `capture_pageleave: false`, `disable_session_recording: true`. `before_send` removes the query keys `gclid`, `gbraid`, `wbraid`, `fbclid`, `click`, `token`, `email` and the hash from `$current_url`, `$referrer` and `$pathname`. `loaded` listens for clicks on `[data-analytics-event]` and calls `capture` only for `login_click`, `contact_click` and `signup_start`. The inline script must not contain the word `identify`.
 4. Point the five includes at `_posthog.html` and rename the data attributes.
 5. Update the guard test and `test_signup.py` as in the file list.
-6. From `App/`: `.venv/bin/python -m pytest tests/test_umami_guard.py tests/test_signup.py tests/test_no_tracking.py -q`. Expected: pass, 0 failed. Then `.venv/bin/python -m pytest tests -q`. Expected: the same pass count as before this brief, 0 failed. UI: screenshots of `/` and `/privacy` at 360, 390 and 1280 px in the report, with the key set in the test client or a local env. Do not commit a real `phc_` key.
 
-**Do not touch.** `admin_funnel.py`, `scheduler.py`, migrations, guest templates, signup templates, filing, `requirements*.txt`, privacy copy strings.
+## 5. Do not touch
 
-**Stop and ask** on the template conditions in [docs/tasks/TEMPLATE.md](docs/tasks/TEMPLATE.md) section 8, and if making the US host refused forces a CSP that the stand-in test cannot derive from config.
+`admin_funnel.py`, `scheduler.py`, migrations, guest templates, signup templates, filing, `requirements*.txt`, privacy copy strings.
 
-**Acceptance.**
+## 6. Commands
+
+From `App/`: `.venv/bin/python -m pytest tests/test_umami_guard.py tests/test_signup.py tests/test_no_tracking.py -q`. Expected: pass, 0 failed. Then `.venv/bin/python -m pytest tests -q`. Expected: the same pass count as before this brief, 0 failed. UI: screenshots of `/` and `/privacy` at 360, 390 and 1280 px in the report, with the key set in the test client or a local env. Do not commit a real `phc_` key.
+
+## 7. Acceptance
 
 - Unset key: public HTML has no `posthog`, CSP equals `_CSP`.
 - Set key: public pages contain `posthog.init` and the CSP allows the configured assets host on `script-src` and the API host on `connect-src`.
@@ -71,4 +78,10 @@ No other file may change. Copy sentences stay in 0034, even if they still say Um
 - Opt-out script writes `ubyhost.analytics.disabled` and only `/privacy` loads it.
 - No `identify(` in `App/app/templates` or `App/app/static`.
 
-**Owner steps.** None in this brief. The key stays unset until 0034's copy is deployed and you have done the steps in section 6.
+## 8. Stop and ask
+
+On the template conditions in [docs/tasks/TEMPLATE.md](docs/tasks/TEMPLATE.md) section 8, and if making the US host refused forces a CSP that the stand-in test cannot derive from config.
+
+## 9. Report
+
+`docs/tasks/0033-report.md`. Owner steps: none in this brief; the key stays unset until 0034's copy is deployed.

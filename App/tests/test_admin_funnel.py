@@ -2,8 +2,6 @@
 CSV export carries the same rows as the page."""
 from __future__ import annotations
 
-import csv
-import io
 from datetime import datetime, timedelta, timezone
 
 import pytest

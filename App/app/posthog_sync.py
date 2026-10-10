@@ -11,7 +11,7 @@ import logging
 import urllib.error
 import urllib.request
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from . import admin_funnel, analytics, config, db
 
