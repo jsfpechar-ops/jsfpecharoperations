@@ -39,7 +39,7 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-F10 | Low open | routes/admin.py calendar delete | Deleted calendar's future stays stay active and alert | P A34 |
 | K-F11 | Med open | reporting.py:829-845 | Surplus blank guest form blocks automatic filing | F |
 | K-F12 | Med accepted | reporting.py | ID check dropped (PR #331); host verifies documents | F |
-| K-F13 | Med open | production | Code 112 accepted late; reconcile via `reconcile_accepted_codes.py` dry run then `--apply` | F |
+| K-F13 | Med open | production | 112 = accepted late. Never resend; `reconcile_accepted_codes.py` dry run, then `--apply` | F |
 | K-F14 | Med unverified | reporting.py due_for_automatic_send | 48 h send cap not compared with the legal deadline | AR-06 |
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
 | K-F16 | Med unverified | icalsync.py ~549-642 | Date-move reconcile not atomic; re-sign alert can be lost | AR-38 |
