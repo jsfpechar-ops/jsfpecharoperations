@@ -1,6 +1,6 @@
 # 0009: TTLock client
 
-Status: todo
+Status: done
 Depends on: 0008 | Base commit: after 0008 merges | Branch: task/0009-ttlock-client
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

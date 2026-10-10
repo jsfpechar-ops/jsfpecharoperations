@@ -652,7 +652,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "door_code_times": "Check-in from %(checkin)s. Check-out by %(checkout)s.",
         "door_code_first_use": "The code works from check-in to check-out. If you have not used it by %(deadline)s, it stops working. Then ask your host for a new code.",
         "door_code_sent": "We have also sent it to %(email)s.",
-        "door_code_preparing": "You will receive your door code by e-mail.",
+        "door_code_preparing": "You will receive your door code by email.",
         "door_code_failed": "Your host will send you the door code.",
         "mail_door_code_subject": "Your door code for %(property)s",
         "privacy_door_code_title": "Door code",

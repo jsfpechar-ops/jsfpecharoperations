@@ -1478,6 +1478,27 @@ async def unarchive_apartment(apartment_id: int, request: Request):
     return _back(return_to, msg=_flash(request, "flash.apartments.restored"))
 
 
+def _feed_already_added(apartment_id: int, url: str) -> str:
+    """The name of this owner's property that already has ``url``, or "".
+
+    One booking calendar belongs to one property: the same link on two of the
+    owner's properties turns every booking into two stays and two police
+    filings. Only this owner's properties are checked, never other users'.
+    """
+    apartment = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
+    if not apartment:
+        return ""
+    row = db.query_one(
+        "SELECT a.id, a.internal_name FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
+        f"WHERE {db.null_safe_eq('a.owner_user_id')} AND f.url = ? ORDER BY a.id LIMIT 1",
+        (apartment["owner_user_id"], url),
+    )
+    if not row:
+        return ""
+    return row["internal_name"] or f"#{row['id']}"
+
+
+
 @router.post("/apartments/{apartment_id}/feeds")
 async def add_feed(apartment_id: int, request: Request):
     guard = auth.require_login(request)
@@ -1493,6 +1514,12 @@ async def add_feed(apartment_id: int, request: Request):
         url = validate_calendar_url(url)
     except FeedUrlError as exc:
         return _back(f"/apartments/{apartment_id}", err=_flash(request, exc.key))
+    already = _feed_already_added(apartment_id, url)
+    if already:
+        return _back(
+            f"/apartments/{apartment_id}",
+            err=_flash(request, "flash.error.feed_duplicate", property=already),
+        )
     db.insert(
         "ical_feed",
         {
