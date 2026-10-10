@@ -51,3 +51,4 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
 - 2026-10-10 | PostHog replaces Umami and the funnel | owner | [plan](../plans/posthog-analytics.md)
 - 2026-10-10 | PostHog privacy settings live in the snippet, not the dashboard | [0037](../tasks/0037-posthog-hardening.md)
+- 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)
