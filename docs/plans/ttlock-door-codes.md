@@ -23,7 +23,7 @@ A property without a lock sees no difference. No code runs and no API call is ma
 7. No "issue code anyway" button. The host uses the TTLock app.
 8. The 30,000 calls a month are per developer app, shared by every UbyHost host.
 9. Pilot on a few of the owner's properties. Built per host and per property, so other hosts only need the setting.
-10. Taken period (owner, 2026-10-10): a type-3 `get` that returns `-1026` is not retried, and the window is not shifted. The worker creates a custom code (`keyboardPwd/add`, `addType=2`) for that stay only. This is the only use of `add`. It supersedes the rejection of custom codes in item 1 for that one case. The normal stay stays a type-3 `get`. `-2018` does not fall through to `add`. UbyHost never calls `keyboardPwd/change` on a type-3 code. Full rules: §6. Brief: [0032](../tasks/0032-door-code-taken-period.md).
+10. Taken period (owner, 2026-10-10): a type-3 `get` that returns `-1026` is not retried, and the window is not shifted. The worker creates a custom code (`keyboardPwd/add`, `addType=2`) for that stay only. This is the only use of `add`. It supersedes the rejection of custom codes in item 1 for that one case. The normal stay stays a type-3 `get`. `-2018` does not fall through to `add`. UbyHost never calls `keyboardPwd/change` on a type-3 code. Full rules: §6. Brief: [0037](../tasks/0037-door-code-taken-period.md).
 
 ## 3. TTLock facts
 
@@ -299,7 +299,7 @@ While being prepared: "Your door code is being prepared. Reload this page in a m
 | [0014](../tasks/0014-door-code-cancel-and-move.md) | Cancellations, date and hour changes, host notice mails | |
 | [0015](../tasks/0015-lock-clock-and-usage.md) | Weekly lock clock check, call counter, budget alerts | admin only |
 | [0016](../tasks/0016-door-codes-guide-and-legal.md) | Guide "Door codes with TTLock", door-code terms, guest privacy paragraph, subprocessor row, ROPA | every host and guest of a door-code property |
-| [0032](../tasks/0032-door-code-taken-period.md) | Taken period: custom `add` from the worker; no `change`; no retry of `-1026` | guest still sees a code when the same dates are booked again |
+| [0037](../tasks/0037-door-code-taken-period.md) | Taken period: custom `add` from the worker; no `change`; no retry of `-1026` | guest still sees a code when the same dates are booked again |
 | legal | [DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md): SCCs with TTLock before any other host uses door codes; TTLock into DPA §11 at the next revision | |
 
 ## 12a. Pre-build check (owner, before task 0009)

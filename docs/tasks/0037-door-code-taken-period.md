@@ -1,7 +1,7 @@
-# 0032: A taken door-code period gets a custom code from the worker
+# 0037: A taken door-code period gets a custom code from the worker
 
 Status: todo
-Depends on: none | Base commit: main | Branch: task/0032-door-code-taken-period
+Depends on: none | Base commit: main | Branch: task/0037-door-code-taken-period
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
@@ -125,7 +125,7 @@ Stop, and write the report, if an anchor is missing, a test fails twice, a file 
 
 ## 9. Report
 
-Write `docs/tasks/0032-report.md` (1,500 tokens at most) and set `Status: review`. The report has the files changed, each command with its last 5 lines, §7 ticked, deviations, questions, and owner steps.
+Write `docs/tasks/0037-report.md` (1,500 tokens at most) and set `Status: review`. The report has the files changed, each command with its last 5 lines, §7 ticked, deviations, questions, and owner steps.
 
 ## Risk list (for the reviewer)
 
