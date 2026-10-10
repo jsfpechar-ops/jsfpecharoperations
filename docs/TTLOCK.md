@@ -25,7 +25,7 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 - **One remote operation per lock at a time.** A second request while the first is running "is destined to fail" [GW]. UbyHost sends gateway calls only from the worker, one at a time.
 - A weak signal, or someone touching the keypad during the operation, makes it fail [GW]. UbyHost retries.
 - Through the gateway, the cloud can also unlock and lock, read the lock state and battery, and **query and calibrate the lock time** [GW]. UbyHost uses none of these now; remote time calibration is a possible later fix for clock drift.
-- Not yet proven on a real lock: that a remote delete of a never-used random code stops the lock accepting it (see "What the FAQ adds"). Owner test A settles it.
+- Proven on a real lock (owner, 2026-10-10): a never-typed random code that is deleted no longer opens the door.
 
 ## Request basics
 
@@ -100,7 +100,7 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 
 ## What the FAQ adds about codes
 
-- **A random code is unknown to the lock until its first use.** Deleting a never-used random code over Bluetooth answers "data does not exist", because "the random password must be used once on the lock to be recorded" [FAQ 4.1]. So a remote delete of an unused random code may not stop the lock accepting it later. Owner test A settles this (plan §12).
+- **A random code is unknown to the lock until its first use.** Deleting a never-used random code over Bluetooth answers "data does not exist", because "the random password must be used once on the lock to be recorded" [FAQ 4.1]. Owner test 2026-10-10: a never-typed random code was deleted, then typed, and the door did not open. So a delete does stop an unused random code [O].
 - **One random timed code per time range.** For type 3, "only one password can be generated within the same time range", and an expired timed code and a new one cannot share a range [FAQ 4.4, 4.5]. Codes on different days must differ by at least one hour at the start or the end. A stay cancelled and rebooked for the same dates and hours therefore cannot get a fresh random code. UbyHost does not shift the window and does not reuse the old PIN. It creates a custom code for that stay ([plan](plans/ttlock-door-codes.md) §6).
 - Rounding: a same-day range rounds to half hours, a multi-day range to whole hours, a range over a year to months [FAQ 4.4].
 - **Custom codes** (`add`) are timed or permanent, accurate to the minute, have **no 24 h first-use rule**, and have no limit per time range [FAQ 4.4]. They stay on the lock after they expire until deleted. When the lock's memory is full, the oldest code is pushed out [FAQ 4.6]. Adding a code that already exists on the lock fails with "same password already exists" [FAQ 4.7]. With `addType=2` the lock must be online (gateway or Wi-Fi) [FAQ 4.8].

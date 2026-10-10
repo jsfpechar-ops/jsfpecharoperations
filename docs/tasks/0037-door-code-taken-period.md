@@ -14,7 +14,7 @@ Rules that apply: AGENTS.md rule 2 (one new outbound call, `POST /v3/keyboardPwd
 
 Behaviour is decided in [plan §6](../plans/ttlock-door-codes.md#6-states) and [TTLOCK](../TTLOCK.md) (rows `-1026`, `-3008`). Do not re-open it. Treat only `-1026` as "period taken".
 
-Why the host mail: `-1026` means another type-3 code covers exactly these hours. That is usually the code of a cancelled or moved stay. TTLock FAQ 4.1 says a never-typed random code is unknown to the lock, so deleting it may not stop it working. UbyHost cannot prove that code is dead, so it says so.
+Why the host mail: `-1026` means another type-3 code covers exactly these hours, usually a cancelled or moved stay's. A deleted code no longer opens (owner test 2026-10-10), but a delete can fail, so the host checks.
 
 Why the retry limit changes: `ISSUE_MAX_ATTEMPTS` is 2 (`door_codes.py` line 27). The guest save uses attempt 1 and the first worker `add` is attempt 2, so with today's code one busy-gateway answer on `add` would mark the code failed. Period-taken rows get their own short limit. Retrying only helps when the gateway is busy (`-3037`) or the network dropped; `-2012` (no gateway connected) will not fix itself, so it hands over at once. Retrying `get` never helps: it returns `-1026` again (Render staging retried it and never got a code).
 
@@ -70,11 +70,11 @@ Anchor F, `App/app/host_i18n.py`, once in `en` and once in `cs`: the key `"mail.
 | `App/app/ttlock.py` | edit | Steps 1, 2, 3 |
 | `App/app/door_codes.py` | edit | Steps 4 to 8 |
 | `App/app/mail_notify.py` | edit | Step 9 |
-| `App/app/host_i18n.py` | edit | Step 10 |
+| `App/app/host_i18n.py` | edit | Step 10 (four new strings, one changed body in `en` and `cs`) |
 | `App/app/templates/guest/stay.html` | edit | Step 8 |
 | `App/tests/test_ttlock.py` | edit | Step 11 |
 | `App/tests/test_door_codes_safeguards.py` | edit | Step 11 |
-| `docs/context/known-issues.md` | edit | In the `K-D01` row, delete `` `-1026` no code; `` and keep the rest: the go-live check is still open |
+| `docs/context/known-issues.md` | edit | Delete the `K-D01` row |
 
 No other file may change.
 
@@ -107,14 +107,16 @@ No other file may change.
 
 10. `host_i18n.py`, after anchor F in `en`:
    - `"mail.door_code_notice.period_taken.subject": "%(property)s: an older door code covers the stay from %(date)s"`
-   - `"mail.door_code_notice.period_taken.body": "TTLock reported that another code already covers exactly the hours of the stay from %(date)s, for example the code of a cancelled or moved stay. UbyHost is giving this guest a new code of their own. If the older code was never typed, it may still open the door during this stay. Check this lock's passcodes in the TTLock app."`
+   - `"mail.door_code_notice.period_taken.body": "TTLock reported that another code already covers exactly the hours of the stay from %(date)s, for example the code of a cancelled or moved stay. UbyHost is giving this guest a new code of their own. If the older code was not deleted, it still opens the door during this stay. Check this lock's passcodes in the TTLock app."`
    - `"mail.door_code_notice.moved_not_deleted.subject": "%(property)s: delete an old door code in the TTLock app"`
+   - Replace the value of `"mail.door_code_notice.cancelled_deleted.body"` with `"The stay from %(date)s was cancelled after its door code was sent. UbyHost deleted the code from the lock, so it no longer opens the door."` (the old last sentence is disproved by the owner's lock test).
    - `"mail.door_code_notice.moved_not_deleted.body": "The stay from %(date)s changed its dates or hours and got a new door code. UbyHost could not delete the old code from the lock. Its old dates may be booked by someone else, so delete it in the TTLock app."`
 
    After anchor F in `cs`:
    - `"mail.door_code_notice.period_taken.subject": "%(property)s: pobyt od %(date)s pokrývá i starší kód ke dveřím"`
-   - `"mail.door_code_notice.period_taken.body": "TTLock hlásí, že přesně hodiny pobytu od %(date)s už pokrývá jiný kód, například kód zrušeného nebo přesunutého pobytu. UbyHost dává tomuto hostovi jeho vlastní nový kód. Pokud starší kód nikdo nezadal, může dveře otevírat i během tohoto pobytu. Zkontrolujte kódy tohoto zámku v aplikaci TTLock."`
+   - `"mail.door_code_notice.period_taken.body": "TTLock hlásí, že přesně hodiny pobytu od %(date)s už pokrývá jiný kód, například kód zrušeného nebo přesunutého pobytu. UbyHost dává tomuto hostovi jeho vlastní nový kód. Pokud starší kód nebyl smazán, otevírá dveře i během tohoto pobytu. Zkontrolujte kódy tohoto zámku v aplikaci TTLock."`
    - `"mail.door_code_notice.moved_not_deleted.subject": "%(property)s: smažte starý kód ke dveřím v aplikaci TTLock"`
+   - Replace the value of `"mail.door_code_notice.cancelled_deleted.body"` with `"Pobyt od %(date)s byl zrušen po odeslání kódu ke dveřím. UbyHost kód ze zámku smazal, takže už dveře neotevře."`
    - `"mail.door_code_notice.moved_not_deleted.body": "Pobyt od %(date)s změnil termín nebo hodiny a dostal nový kód ke dveřím. UbyHost se nepodařilo starý kód ze zámku smazat. Jeho původní termín může mít rezervovaný někdo jiný, proto ho smažte v aplikaci TTLock."`
 
 11. Tests. Monkeypatch every TTLock function a test reaches; no test may make a real `_call`.
@@ -154,7 +156,7 @@ Expected: all pass, last lint line `context lint: OK`.
 - [ ] A failed delete of a moved stay's old code queues one `moved_not_deleted` notice.
 - [ ] `grep -n "keyboardPwd/change" App/app/door_codes.py` prints nothing.
 - [ ] `grep -n "log\." App/app/ttlock.py` shows no PIN, token or response body.
-- [ ] `K-D01` no longer mentions `-1026` and still names §12 check 6.
+- [ ] `K-D01` is gone from `docs/context/known-issues.md`.
 - [ ] Full pytest and context lint pass.
 
 ## 8. Stop and ask
@@ -176,5 +178,5 @@ These need a lock **with a gateway**. `add` and `delete` go through the gateway,
 1. Merge with `scripts/merge-pr-on-green.sh` after the tests are green. Deploy staging.
 2. Hand-add a stay, register it, and **do not type its code**. Archive the stay. Wait for the "door code deleted" mail.
 3. Hand-add a new stay for the same dates and hours and register it. Within about a minute: you get the "an older door code covers" mail, the guest page shows a code, the TTLock app lists a custom passcode for that period, and the page has no 24-hour sentence.
-4. **The security check.** Inside that window, type the code from step 2 on the lock. Write down whether it opens. If it opens, stop: tell the orchestrator. Door codes must not go live until the owner decides how a cancelled, never-typed code is shut off (plan §12, check 6).
+4. Optional repeat of the security check (passed 2026-10-10): type the code from step 2 inside the window. It must not open.
 5. Register a stay on free dates. The code appears on the save itself, and the 24-hour sentence is there.
