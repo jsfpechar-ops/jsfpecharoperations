@@ -97,3 +97,5 @@ Seeded 2026-10-06 from the audits against `d72c870`. About 100 findings were jud
 | K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
 | K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
 | K-ML04 | Low open | login link limit | Anyone can use up a victim's 3 requests per 15 min. Kept: counting only real accounts would reveal who uses UbyHost | 0006 |
+| K-D02 | Low open | door_codes.py `_handle_moves` | After `-1026` on a move, a dead gateway retries every 15 min without a cap; guest keeps the old code (harmless) | 0037 |
+| K-D03 | Med decision | door_codes.py `_handle_moves` | Permission/reauth/config/disabled on a move skips further tries even after TTLock access is fixed; brief 0037 accepted this | 0037 |

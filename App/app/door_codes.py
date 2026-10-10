@@ -747,6 +747,8 @@ def _handle_moves(now_iso: str) -> None:
         if row["valid_from"] and row["valid_to"]:
             if _iso_to_ms(row["valid_from"]) == start_ms and _iso_to_ms(row["valid_to"]) == end_ms:
                 continue
+        # Brief 0037: a move that failed with permission (etc.) is not retried after
+        # the host fixes TTLock access; the guest keeps the old code until then.
         last_err = (row["last_error"] or "")
         if last_err.startswith(("permission", "reauth", "config", "disabled")):
             continue
@@ -839,14 +841,9 @@ def _handle_moves(now_iso: str) -> None:
                 )
                 mail_notify.door_code_notice(int(row["id"]), "failed")
                 mail.drain(limit=4)
-            elif kind in GATEWAY_RETRY_KINDS:
-                delay = 60 if kind == "budget" else 15
-                db.execute(
-                    "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
-                    (_iso(_now() + timedelta(minutes=delay)), last_error, now_iso, row["id"]),
-                )
             else:
-                delay = 15
+                # No attempt cap on move replace: the guest still has the old PIN.
+                delay = 60 if kind == "budget" else 15
                 db.execute(
                     "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
                     (_iso(_now() + timedelta(minutes=delay)), last_error, now_iso, row["id"]),

@@ -59,6 +59,11 @@ context lint: OK
 
 - `test_a_cancelled_stay_does_not_get_the_mail` calls `issue(..., allow_gateway=True)` directly so cancellation/revoke in `reconcile` does not clear the stored PIN; behaviour under test matches the brief (skip guest mail when stay no longer active).
 
+## Accepted limits (review follow-up)
+
+- **Move + gateway:** If a date change hits `-1026` then `add` fails on a busy/offline gateway, `_handle_moves` retries every 15 minutes with no cap. The guest still has the previous code until replace succeeds (K-D02).
+- **Move + permission:** A `-2018` (or reauth/config/disabled) on replace sets `last_error` and sends `failed`; later reconciles skip that stay even after TTLock access is restored. Brief 0037 chose this; host must fix access and adjust dates or codes in TTLock (K-D03).
+
 ## Questions
 
 None.

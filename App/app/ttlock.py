@@ -524,12 +524,7 @@ def add_custom_code(
             raise
         pin = _random_custom_pin()
         payload["keyboardPwd"] = pin
-        try:
-            answer = _call(account_id, "/v3/keyboardPwd/add", payload, priority)
-        except TTLockError as retry_exc:
-            if retry_exc.code == -3007:
-                raise
-            raise
+        answer = _call(account_id, "/v3/keyboardPwd/add", payload, priority)
     return pin, str(answer["keyboardPwdId"])
 
 
