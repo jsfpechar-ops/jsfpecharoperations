@@ -157,7 +157,9 @@ _READINESS_REPORT_FIELDS = (
 )
 
 
-def _readiness(apartment, entities, issues, has_stays: bool) -> Dict[str, Any]:
+def _readiness(
+    apartment, entities, issues, has_stays: bool, *, invite: bool = True
+) -> Dict[str, Any]:
     """What still stands between this property and its two jobs.
 
     Every item carries the anchor of the field that answers it, so the checklist
@@ -167,25 +169,27 @@ def _readiness(apartment, entities, issues, has_stays: bool) -> Dict[str, Any]:
     by_field: Dict[str, str] = {}
     for issue in validation.errors_only(issues):
         by_field.setdefault(issue.field, issue.message)
-    entity = next((e for e in entities if e["id"] == apartment["legal_entity_id"]), None)
-    invite = [
-        {
-            "key": "name",
-            "anchor": "basics",
-            "done": bool((apartment["internal_name"] or "").strip()),
-        },
-        {
-            "key": "operator",
-            "anchor": "basics",
-            "done": bool(entity and (entity["contact_email"] or "").strip()),
-        },
-        {
-            "key": "controller",
-            "anchor": "basics",
-            "done": guest.controller_complete(apartment),
-        },
-        {"key": "stays", "anchor": "calendars", "done": has_stays},
-    ]
+    invite_items = []
+    if invite:
+        entity = next((e for e in entities if e["id"] == apartment["legal_entity_id"]), None)
+        invite_items = [
+            {
+                "key": "name",
+                "anchor": "basics",
+                "done": bool((apartment["internal_name"] or "").strip()),
+            },
+            {
+                "key": "operator",
+                "anchor": "basics",
+                "done": bool(entity and (entity["contact_email"] or "").strip()),
+            },
+            {
+                "key": "controller",
+                "anchor": "basics",
+                "done": guest.controller_complete(apartment),
+            },
+            {"key": "stays", "anchor": "calendars", "done": has_stays},
+        ]
     report = [
         {
             "key": key,
@@ -196,9 +200,9 @@ def _readiness(apartment, entities, issues, has_stays: bool) -> Dict[str, Any]:
         for key, field, anchor in _READINESS_REPORT_FIELDS
     ]
     return {
-        "invite": invite,
+        "invite": invite_items,
         "report": report,
-        "invite_ready": all(item["done"] for item in invite),
+        "invite_ready": all(item["done"] for item in invite_items),
     }
 
 
@@ -311,11 +315,17 @@ def dashboard(request: Request):
     queue = reporting.queue_groups(rows)
     counts = reporting.queue_counts(rows, queue)
     displayed_groups, additional_action_count = reporting.dashboard_display_groups(queue, today=today)
-    setup_warnings = []
+    missing_report_rows = []
     for apartment in apartments:
-        issues = validation.errors_only(_apartment_issues(apartment))
-        if issues:
-            setup_warnings.append({"apartment": apartment, "issues": issues})
+        if not apartment["active"]:
+            continue
+        issues = _apartment_issues(apartment)
+        readiness = _readiness(apartment, [], issues, False, invite=False)
+        pending = [item for item in readiness["report"] if not item["done"]]
+        if pending:
+            missing_report_rows.append({"apartment": apartment, "missing": pending})
+    missing_report_display = missing_report_rows[:5]
+    missing_report_more = max(0, len(missing_report_rows) - len(missing_report_display))
     # dashboard_rows() is already sorted by legal urgency, so the first row that
     # needs work is the one thing worth putting at the top of the page.
     focus = next(iter(queue["needs_action"]), None) or next(iter(queue["waiting"]), None)
@@ -344,7 +354,8 @@ def dashboard(request: Request):
             "today": today,
             "apartments": apartments,
             "feed_count": feed_count,
-            "setup_warnings": setup_warnings,
+            "missing_report_display": missing_report_display,
+            "missing_report_more": missing_report_more,
             "last_sync": db.get_setting("last_ical_sync"),
             "demo_loaded": any(demo.is_demo_apartment(apartment) for apartment in apartments),
             "celebration_milestone": milestone,
