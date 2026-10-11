@@ -3329,6 +3329,23 @@ _INTERFACE_STRINGS = {
         "apartment.form.ubyport.password_new_hint": 'Enter it once when you first set up reporting. It is encrypted before it is written to disk and is never displayed again after save.',
         "apartment.form.ubyport.password_saved": "Saved. UbyHost keeps it encrypted and does not show it again.",
         "apartment.form.ubyport.sample_help": "A fictional police letter with SAMPLE watermarks. It shows every value to copy into UbyHost, including zkratka and contact that real WS PDFs often omit.",
+        "apartment.form.ubyport.ws_request.body": (
+            "Dobrý den, pro ubytovací zařízení s IDUB %(idub)s žádám o vytvoření účtu pro robotické "
+            "zasílání dat (webové služby UbyPort) pro aplikaci UbyHost. Děkuji. %(operator_name)s"
+        ),
+        "apartment.form.ubyport.ws_request.download": "Download .txt",
+        "apartment.form.ubyport.ws_request.intro_1": (
+            "Copy this request into your data box to ask the Foreign Police for web-service login details."
+        ),
+        "apartment.form.ubyport.ws_request.intro_2": (
+            "The message below is in Czech because it goes to the Czech Police."
+        ),
+        "apartment.form.ubyport.ws_request.recipient": "Recipient: Foreign Police Directorate",
+        "apartment.form.ubyport.ws_request.subject": (
+            "Žádost o zřízení účtu pro robotické zasílání dat (UbyPort webové služby)"
+        ),
+        "apartment.form.ubyport.ws_request.subject_label": "Subject",
+        "apartment.form.ubyport.ws_request.summary": "I don't have web-service credentials yet",
         "common.none": "(none)",
         "common.remove": 'Remove',
         "common.save_changes": 'Save changes',
@@ -4124,6 +4141,23 @@ _INTERFACE_STRINGS = {
         "apartment.form.ubyport.password_new_hint": 'Zadejte jednou při prvním nastavení hlášení. Před zápisem na disk se šifruje a po uložení se nezobrazuje.',
         "apartment.form.ubyport.password_saved": "Uloženo. UbyHost ho drží šifrovaně a znovu nezobrazuje.",
         "apartment.form.ubyport.sample_help": "Ukázkový dopis policie s vodoznaky SAMPLE. Ukazuje každou hodnotu pro UbyHost, včetně zkratky a kontaktu, které reálná PDF často neobsahují.",
+        "apartment.form.ubyport.ws_request.body": (
+            "Dobrý den, pro ubytovací zařízení s IDUB %(idub)s žádám o vytvoření účtu pro robotické "
+            "zasílání dat (webové služby UbyPort) pro aplikaci UbyHost. Děkuji. %(operator_name)s"
+        ),
+        "apartment.form.ubyport.ws_request.download": "Stáhnout .txt",
+        "apartment.form.ubyport.ws_request.intro_1": (
+            "Zkopírujte tuto žádost do datové schránky a požádejte cizineckou policii o přihlašovací údaje webové služby."
+        ),
+        "apartment.form.ubyport.ws_request.intro_2": (
+            "Text žádosti je v češtině, protože jde policii."
+        ),
+        "apartment.form.ubyport.ws_request.recipient": "Příjemce: Ředitelství služby cizinecké policie",
+        "apartment.form.ubyport.ws_request.subject": (
+            "Žádost o zřízení účtu pro robotické zasílání dat (UbyPort webové služby)"
+        ),
+        "apartment.form.ubyport.ws_request.subject_label": "Předmět",
+        "apartment.form.ubyport.ws_request.summary": "Zatím nemám přihlašovací údaje webové služby",
         "common.none": "(žádná)",
         "common.remove": 'Odebrat',
         "common.save_changes": 'Uložit změny',
