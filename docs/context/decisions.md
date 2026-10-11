@@ -49,3 +49,4 @@ Append-only.
 - 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; requests lib; 24 h cache; 20/h per user | owner | [0055](../tasks/0055-ares-lookup.md)
 - 2026-10-11 | Facility abbreviation is the part after UBY-WS_ (UBY-WS_MLJNO → MLJNO) | owner | [0043](../tasks/0043-police-setup-fewer-fields.md)
+- 2026-10-11 | Web-service credential request: data box ybndqw9, Ředitelství služby cizinecké policie, Olšanská 2, 130 51 Praha 3 | owner | [0044](../tasks/0044-ws-request-letter.md)
