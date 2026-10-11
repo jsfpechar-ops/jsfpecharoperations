@@ -272,7 +272,6 @@ def test_invoice_fill_screenshots_at_required_widths():
     import uvicorn
 
     sync_api = pytest.importorskip("playwright.sync_api")
-    from tests.browser_support import chromium_launch_kwargs
     from tests.test_invoice_stay_browser import _browser_session_cookie, _launch
 
     shots = os.environ.get("UBYHOST_SHOTS_DIR")
