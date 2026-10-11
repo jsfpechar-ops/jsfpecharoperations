@@ -1,5 +1,7 @@
 # 0055 report: ARES lookup (Fill from register)
 
+Status: review
+
 ## Files changed
 
 - `App/app/ares.py` — ARES client: IČO validation, 4 s timeout, 24 h cache, court/registry mapping, rate-limit helpers
@@ -49,7 +51,7 @@ context lint: OK
 ## §7 acceptance
 
 - [x] `/entities` fill with valid IČO (mocked) fills fields, shows ARES note, does not persist without Save (`test_entities_fill_does_not_save`)
-- [ ] Manual screenshots at 360 / 390 / 1280 px after live fill (owner/staging): entities, invoice settings, invoice buyer — not captured in this cloud run
+- [x] Screenshots after a live fill of IČO 27074358 at 360, 390 and 1280 px: `docs/tasks/0055-evidence/{entities,invoice-settings,invoice-buyer}-{360,390,1280}.png`
 - [x] PR documents outbound ARES request and reason (above)
 
 ## Stop conditions
