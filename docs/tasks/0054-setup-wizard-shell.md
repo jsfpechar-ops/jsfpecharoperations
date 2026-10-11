@@ -1,6 +1,6 @@
 # 0054: "Set up your first flat": wizard shell and screens 0–3
 
-Status: todo
+Status: done
 Depends on: none (uses 0045's split when merged; until then screen 2 shows the existing address fields) | Branch: task/0054-setup-wizard-shell
 Executor: Cursor local agent | Fits one session
 

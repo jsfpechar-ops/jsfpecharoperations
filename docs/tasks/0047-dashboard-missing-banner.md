@@ -1,6 +1,6 @@
 # 0047: One banner that says what blocks reporting
 
-Status: todo
+Status: done
 Depends on: none | Branch: task/0047-dashboard-missing-banner
 Executor: Cursor local agent | Fits one session
 

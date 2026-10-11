@@ -1,6 +1,6 @@
 # 0051: Stay fee "Ready to send by data box" panel + sent/paid marks
 
-Status: todo
+Status: done
 Depends on: none | Branch: task/0051-stay-fee-send-panel
 Executor: Cursor local agent | Fits one session
 Next free migration: 0009

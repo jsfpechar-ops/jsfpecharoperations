@@ -1,6 +1,6 @@
 # 0048: Show the platform logo next to each booking source
 
-Status: review
+Status: done
 Depends on: owner logo files in App/app/static/platforms/ | Branch: task/0048-platform-logos
 Executor: Cursor local agent | Fits one session
 

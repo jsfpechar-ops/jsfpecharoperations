@@ -1,6 +1,6 @@
 # 0043: Police setup asks for 3 fields, fills the rest
 
-Status: review
+Status: done
 Depends on: none | Base commit: main HEAD | Branch: task/0043-police-setup-fewer-fields
 Executor: Cursor local agent | Fits one session
 Risk: HIGH (UbyPort report header). Owner confirms §8.1 before merge.

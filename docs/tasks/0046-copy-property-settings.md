@@ -1,6 +1,6 @@
 # 0046: "Copy from another property"
 
-Status: todo
+Status: done
 Depends on: none | Branch: task/0046-copy-property-settings
 Executor: Cursor local agent | Fits one session
 
