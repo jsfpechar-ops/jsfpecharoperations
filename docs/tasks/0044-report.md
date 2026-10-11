@@ -1,5 +1,7 @@
 # 0044 report: web-service credential request letter
 
+Status: review
+
 ## Files changed
 
 - `App/app/templates/apartment_form.html` — `<details id="ws-request-letter">` under the web-service login row (open when `uby_ws_user` is empty); recipient, subject, read-only body textarea with copy, download link.
@@ -30,7 +32,8 @@ Root: `python3 scripts/context_lint.py` → OK.
 ## Screenshots
 
 - 360px: `docs/tasks/0044-screenshots/ws-request-360.png` (UbyPort + request block open).
-- 390px / 1280px: not captured in this run (Playwright login/session setup timed out after 360px). Re-run locally with acceptance cleared and `#ubyport` opened before capture.
+- 390px: `docs/tasks/0044-screenshots/ws-request-390.png`
+- 1280px: `docs/tasks/0044-screenshots/ws-request-1280.png`
 
 ## §8.1 (owner)
 
