@@ -1,6 +1,6 @@
 # 0062: Calmer forms: "More options", default guest message, one-operator auto-pick, residence = nationality
 
-Status: todo
+Status: review
 Depends on: none (rebase after 0043/0045 if they merged first) | Branch: task/0062-calmer-forms
 Executor: Cursor local agent | Fits one session
 

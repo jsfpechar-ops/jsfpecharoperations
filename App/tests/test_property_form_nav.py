@@ -126,7 +126,8 @@ def test_the_new_property_form_keeps_its_own_nav_labels(host):
     nav = _nav(client.get("/apartments/new?lang=en").text)
 
     assert '<a href="#ubyport">3. UbyPort</a>' in nav
-    assert '<a href="#automation">4. Automation</a>' in nav
+    assert 'href="#automation"' not in nav
+    assert '<a href="#communication">5. Guest link</a>' in nav
 
 
 def test_the_audited_copy_is_in_both_dictionaries():
