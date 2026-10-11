@@ -1,6 +1,6 @@
 # 0044: "I don't have web-service credentials yet" letter
 
-Status: todo
+Status: done
 Depends on: 0043 merged | Branch: task/0044-ws-request-letter
 Executor: Cursor local agent | Fits one session
 

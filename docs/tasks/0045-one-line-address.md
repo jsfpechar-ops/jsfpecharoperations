@@ -1,6 +1,6 @@
 # 0045: Property address as one line, split for the police
 
-Status: todo
+Status: done
 Depends on: 0043 merged | Branch: task/0045-one-line-address
 Executor: Cursor local agent | Fits one session
 Risk: HIGH (UbyPort report header). Never overwrite a field the host typed.

@@ -1,6 +1,6 @@
 # 0055: Fill business details from the IČO (ARES)
 
-Status: todo
+Status: done
 Depends on: none | Branch: task/0055-ares-lookup
 Executor: Cursor local agent | Fits one session
 

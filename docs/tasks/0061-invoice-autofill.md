@@ -1,6 +1,6 @@
 # 0061: Invoice fills itself: guest's details, BIC from the bank code, last price hint
 
-Status: todo
+Status: done
 Depends on: none | Branch: task/0061-invoice-autofill
 Executor: Cursor local agent | Fits one session
 
