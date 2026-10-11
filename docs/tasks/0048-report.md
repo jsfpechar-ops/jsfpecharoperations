@@ -58,6 +58,7 @@ context lint: OK
 
 ## 4. Deviations
 
+- **Owner filenames:** logos on `main` use `airbnb-icon.svg`, `booking-icon.svg`, `logo-echalupy-cz-2.svg`, `Vrbo.svg`, and `Trip.com_logo.svg.webp`; `source_mark` maps slugs to those basenames (also supports simple `{slug}.svg` / `.png` / `.webp` fallbacks).
 - **Landing:** skipped per brief §8.2.
 - **`App/tests/test_overhaul.py`:** `_stay_sources()` updated to read labels inside `source-badge` markup (not listed in §3; needed after HTML change).
 - **Browser geometry suite:** six failures remain on this branch; `test_stay_row_actions_fit_midwidth_lanes` also fails on current `main` without these changes (pre-existing lane overflow). Not introduced by logos.
