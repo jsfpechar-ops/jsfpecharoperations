@@ -18,8 +18,11 @@
   <div class="grid">
     <div class="field">
       <label for="{{ prefix }}ico">{{ t('entities.ico') }}</label>
-      <input type="text" id="{{ prefix }}ico" name="ico" inputmode="numeric" required
-             value="{{ (entity.ico or '') if entity else '' }}">
+      <div class="action-group" style="align-items:flex-end">
+        <input type="text" id="{{ prefix }}ico" name="ico" inputmode="numeric" required
+               value="{{ (entity.ico or '') if entity else '' }}">
+        <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
+      </div>
     </div>
     <div class="field">
       <label for="{{ prefix }}dic">{{ t('entities.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
@@ -84,6 +87,8 @@
     <a class="btn small ghost" href="/entities">{{ t('common.close') }}</a>
   </div>
   <form method="post" action="/entities/{{ edit_entity.id }}" enctype="multipart/form-data">
+    {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
+    {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
     {{ operator_fields('edit_', edit_entity) }}
     {{ signature_fields('edit_', edit_entity, signature_preview) }}
     <div class="actions"><button class="btn primary" type="submit">{{ t('entities.save') }}</button></div>
@@ -174,7 +179,9 @@
 <div class="panel entity-add" id="entity-add">
   <h2 style="margin-top:0">{{ t('entities.add') }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
-    {{ operator_fields('new_', none) }}
+    {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
+    {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
+    {{ operator_fields('new_', new_entity or none) }}
     {{ signature_fields('new_', none) }}
     <div class="actions"><button class="btn primary" type="submit">{{ t('entities.add_action') }}</button></div>
   </form>

@@ -24,6 +24,7 @@ from starlette.datastructures import UploadFile
 from .. import (
     access,
     alerts,
+    ares,
     auth,
     celebrations,
     codelists,
@@ -673,6 +674,101 @@ def _drawn_signature(value: str) -> Optional[str]:
     return value
 
 
+_ENTITY_ARES_FIELDS = ("name", "seat", "dic")
+
+
+def _entity_form_values(form, base: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    fields = (
+        "name",
+        "seat",
+        "ico",
+        "dic",
+        "contact_email",
+        "contact_phone",
+        "signature_name",
+    )
+    values: Dict[str, Any] = {}
+    for field in fields:
+        if field in form:
+            values[field] = _form_str(form, field)
+        elif base:
+            values[field] = base.get(field) or ""
+        else:
+            values[field] = ""
+    return values
+
+
+def _ares_field_labels(lang: str, fields: List[str]) -> str:
+    return ", ".join(host_i18n.translate(lang, f"ares.field.{field}") for field in fields)
+
+
+def _entities_list_context(request: Request, owner_user_id: int) -> Dict[str, Any]:
+    rows = db.query(
+        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
+        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
+        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NULL ORDER BY e.name",
+        (owner_user_id,),
+    )
+    archived = db.query(
+        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
+        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
+        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NOT NULL "
+        "ORDER BY e.archived_at DESC",
+        (owner_user_id,),
+    )
+    return {"entities": rows, "archived_entities": archived}
+
+
+async def _entities_ares_rerender(
+    request: Request,
+    form,
+    *,
+    edit_entity: Optional[Dict[str, Any]] = None,
+):
+    owner_user_id = access.owner_id(request)
+    lang = host_i18n.lang_from_request(request)
+    values = _entity_form_values(form, edit_entity)
+    ares_error = None
+    ares_note = None
+    ico = (values.get("ico") or "").strip()
+    if ares.rate_limited(owner_user_id):
+        ares_error = host_i18n.translate(lang, "ares.rate_limited")
+    elif not validation.ico_ok(ico):
+        ares_error = host_i18n.translate(lang, "ares.failure")
+    else:
+        ares.record_lookup(owner_user_id)
+        data = ares.lookup(ico)
+        if not data:
+            ares_error = host_i18n.translate(lang, "ares.failure")
+        else:
+            filled = ares.merge_blank(values, data, _ENTITY_ARES_FIELDS)
+            if filled:
+                ares_note = host_i18n.translate(
+                    lang, "ares.filled", fields=_ares_field_labels(lang, filled)
+                )
+    signature_preview = _form_str(form, "signature_drawn")
+    if not signature_preview and edit_entity and edit_entity.get("signature_png_enc"):
+        signature_preview = db.decrypt_field(edit_entity["signature_png_enc"])
+    merged_edit = None
+    new_entity = None
+    if edit_entity:
+        merged_edit = dict(edit_entity)
+        merged_edit.update(values)
+    else:
+        new_entity = values
+    context = _entities_list_context(request, owner_user_id)
+    context.update(
+        {
+            "edit_entity": merged_edit,
+            "new_entity": new_entity,
+            "signature_preview": signature_preview,
+            "ares_error": ares_error,
+            "ares_note": ares_note,
+        }
+    )
+    return render(request, "entities.html", context)
+
+
 async def _signature_payload(form) -> Optional[Dict[str, Any]]:
     """Validate and encrypt the optional entity signature fields."""
     payload: Dict[str, Any] = {}
@@ -724,6 +820,8 @@ async def create_entity(request: Request):
     if guard:
         return guard
     form = await request.form()
+    if form.get("fill_from_register"):
+        return await _entities_ares_rerender(request, form)
     payload = _entity_post_payload(form)
     if not payload.get("name"):
         return _back("/entities", err=_flash(request, "flash.error.name_required"))
@@ -754,9 +852,12 @@ async def update_entity(entity_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    if not access.entity(request, entity_id):
+    entity = access.entity(request, entity_id)
+    if not entity:
         return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
     form = await request.form()
+    if form.get("fill_from_register"):
+        return await _entities_ares_rerender(request, form, edit_entity=entity)
     payload = _entity_post_payload(form)
     if not payload.get("name"):
         return _back("/entities", err=_flash(request, "flash.error.name_required"))

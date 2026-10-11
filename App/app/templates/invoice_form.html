@@ -79,7 +79,12 @@
       </div>
       <div class="field">
         <label for="buyer_ico">{{ t('invoice.buyer.ico') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" value="{{ values.get('buyer_ico', '') }}">
+        <div class="action-group" style="align-items:flex-end">
+          <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" value="{{ values.get('buyer_ico', '') }}">
+          <button class="btn" type="submit" name="fill_buyer_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
+        </div>
+        {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
+        {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
       </div>
       <div class="field">
         <label for="buyer_dic">{{ t('invoice.buyer.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
