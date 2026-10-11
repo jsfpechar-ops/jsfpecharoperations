@@ -303,6 +303,21 @@ def test_a_property_with_no_lock_set_says_so_instead_of_claiming_to_retry():
     assert "no lock or no check-in and check-out time saved" in body
 
 
+def test_a_dead_ttlock_connection_is_explained_in_the_delayed_host_mail():
+    _, apartment, stay = _stay(registered_minutes_ago=15)
+    row_id = door_codes.ensure_row(stay)
+    assert row_id is not None
+    db.execute("UPDATE lock_account SET status = 'reauth_needed'")
+    assert door_codes.issue(row_id) is False
+    door_codes.reconcile()
+    row = db.query_one(
+        "SELECT payload FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code_notice'",
+        (stay,),
+    )
+    body = json.loads(row["payload"])["text"]
+    assert "TTLock connection needs to be set up again [no_account]" in body
+
+
 def test_a_date_change_calls_create_period_code_not_change(monkeypatch):
     calls = {"change": 0, "create": 0}
 
@@ -837,3 +852,184 @@ def test_a_custom_code_delete_stops_after_the_end(monkeypatch):
     )
     door_codes.reconcile()
     assert delete_calls["n"] == 1
+
+
+def test_a_revived_stay_keeps_its_custom_code(monkeypatch):
+    """Calendar cancel then the same UID comes back: do not delete the PIN.
+
+    0038 retries custom-code deletes until valid_to. The due query used to
+    ignore whether the stay was active again, so a booking that flickered
+    off the feed would lose its working code hours later.
+    """
+    delete_calls = {"n": 0}
+
+    def offline(*args, **kwargs):
+        delete_calls["n"] += 1
+        raise ttlock.TTLockError("gateway offline", code=-2012, kind="offline")
+
+    monkeypatch.setattr(ttlock, "delete_code", offline)
+    future = (datetime.now(timezone.utc) + timedelta(days=2)).replace(
+        microsecond=0
+    ).isoformat()
+    stay, row_id = _cancelled_custom_code(future)
+    door_codes.reconcile()
+    row = db.query_one("SELECT state, pin_enc FROM door_code WHERE id = ?", (row_id,))
+    assert row["state"] == door_codes.REVOKE_PENDING
+    assert row["pin_enc"] is not None
+    first_tries = delete_calls["n"]
+    assert first_tries >= 1
+
+    db.execute(
+        "UPDATE reservation SET status = 'active', updated_at = ? WHERE id = ?",
+        (db.utcnow(), stay),
+    )
+    db.execute(
+        "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+        (row_id,),
+    )
+    door_codes.reconcile()
+    row = db.query_one(
+        "SELECT state, pin_enc FROM door_code WHERE id = ?", (row_id,)
+    )
+    assert row["state"] == door_codes.ISSUED
+    assert db.decrypt_field(row["pin_enc"]) == "4821937"
+    assert delete_calls["n"] == first_tries
+
+
+def test_an_unarchived_stay_keeps_its_custom_code(monkeypatch):
+    """Archive undo must not keep a queued custom-code delete running."""
+    delete_calls = {"n": 0}
+
+    def offline(*args, **kwargs):
+        delete_calls["n"] += 1
+        raise ttlock.TTLockError("gateway offline", code=-2012, kind="offline")
+
+    monkeypatch.setattr(ttlock, "delete_code", offline)
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    now = db.utcnow()
+    valid_from = (datetime.now(timezone.utc) - timedelta(hours=1)).replace(
+        microsecond=0
+    ).isoformat()
+    valid_to = (datetime.now(timezone.utc) + timedelta(days=2)).replace(
+        microsecond=0
+    ).isoformat()
+    row_id = db.insert(
+        "door_code",
+        {
+            "reservation_id": stay,
+            "apartment_id": apartment,
+            "lock_id": "35662508",
+            "code_kind": "custom",
+            "state": door_codes.ISSUED,
+            "pin_enc": db.encrypt_field("4821937"),
+            "provider_code_id": "custom-pid",
+            "valid_from": valid_from,
+            "valid_to": valid_to,
+            "issued_at": now,
+            "attempts": 0,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.execute(
+        "UPDATE reservation SET archived_at = ?, updated_at = ? WHERE id = ?",
+        (now, now, stay),
+    )
+    door_codes.reconcile()
+    assert db.query_one("SELECT state FROM door_code WHERE id = ?", (row_id,))[
+        "state"
+    ] == door_codes.REVOKE_PENDING
+    first_tries = delete_calls["n"]
+
+    db.execute(
+        "UPDATE reservation SET archived_at = NULL, updated_at = ? WHERE id = ?",
+        (db.utcnow(), stay),
+    )
+    db.execute(
+        "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+        (row_id,),
+    )
+    door_codes.reconcile()
+    row = db.query_one("SELECT state, pin_enc FROM door_code WHERE id = ?", (row_id,))
+    assert row["state"] == door_codes.ISSUED
+    assert db.decrypt_field(row["pin_enc"]) == "4821937"
+    assert delete_calls["n"] == first_tries
+    assert _view(stay, apartment)["pin"] == "4821937"
+
+
+def test_a_random_code_delete_stops_after_three_failures(monkeypatch):
+    delete_calls = {"n": 0}
+
+    def offline(*args, **kwargs):
+        delete_calls["n"] += 1
+        raise ttlock.TTLockError("gateway offline", code=-2012, kind="offline")
+
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "rand-1"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    row = db.query_one("SELECT id, code_kind FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["code_kind"] == "random"
+
+    now = db.utcnow()
+    db.execute(
+        "UPDATE reservation SET status = 'cancelled', updated_at = ? WHERE id = ?",
+        (now, stay),
+    )
+    monkeypatch.setattr(ttlock, "delete_code", offline)
+
+    for _ in range(3):
+        db.execute(
+            "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+            (row["id"],),
+        )
+        door_codes.reconcile()
+
+    assert delete_calls["n"] == 3
+    final = db.query_one("SELECT state FROM door_code WHERE id = ?", (row["id"],))
+    assert final["state"] == door_codes.REVOKE_FAILED
+    notices = db.query(
+        "SELECT idempotency_key FROM email_outbox "
+        "WHERE reservation_id = ? AND idempotency_key LIKE '%:cancelled_not_deleted'",
+        (stay,),
+    )
+    assert len(notices) == 1
+
+    db.execute(
+        "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+        (row["id"],),
+    )
+    door_codes.reconcile()
+    assert delete_calls["n"] == 3
+
+
+def test_a_move_into_the_stay_window_keeps_the_code(monkeypatch):
+    """When the stay window has started but the issued code is still future, do not replace."""
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "code-1"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    today = deadlines.local_now().date()
+    future_from = (today + timedelta(days=5)).isoformat()
+    future_to = (today + timedelta(days=7)).isoformat()
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        (future_from, future_to, stay),
+    )
+    door_codes.reconcile()
+    before = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    assert door_codes._iso_to_ms(before["valid_from"]) > now_ms
+
+    past_from = (today - timedelta(days=1)).isoformat()
+    db.execute("UPDATE reservation SET date_from = ? WHERE id = ?", (past_from, stay))
+    ttlock_calls: list = []
+    _no_ttlock(monkeypatch, ttlock_calls)
+    door_codes.reconcile()
+    assert ttlock_calls == []
+    after = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    assert after["pin_enc"] == before["pin_enc"]
+    assert after["provider_code_id"] == before["provider_code_id"]
+    notices = db.query(
+        "SELECT idempotency_key FROM email_outbox "
+        "WHERE reservation_id = ? AND idempotency_key LIKE '%:moved_during_stay'",
+        (stay,),
+    )
+    assert len(notices) == 1

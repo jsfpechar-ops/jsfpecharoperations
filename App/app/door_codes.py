@@ -606,6 +606,23 @@ def issue(door_code_id: int, *, allow_gateway: bool = False) -> bool:
         return False
 
 
+def _stay_is_live(reservation) -> bool:
+    return bool(
+        reservation
+        and reservation["status"] == "active"
+        and reservation["archived_at"] is None
+    )
+
+
+def _keep_issued(row_id: int, now_iso: str) -> None:
+    """The stay is back; leave the PIN on the lock and show it again."""
+    db.execute(
+        "UPDATE door_code SET state = ?, claimed_at = NULL, attempts = 0, "
+        "next_attempt_at = NULL, last_error = NULL, updated_at = ? WHERE id = ?",
+        (ISSUED, now_iso, row_id),
+    )
+
+
 def _revoke_one(row_id: int) -> None:
     now = _now()
     now_iso = _iso(now)
@@ -624,6 +641,9 @@ def _revoke_one(row_id: int) -> None:
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (row["apartment_id"],))
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (row["reservation_id"],))
     if not apartment or not reservation:
+        return
+    if _stay_is_live(reservation):
+        _keep_issued(row_id, now_iso)
         return
     account = ttlock.account_for(apartment["owner_user_id"])
     if not account or account["status"] != "ok":
@@ -728,9 +748,27 @@ def _handle_cancellations(now_iso: str) -> None:
                     (REVOKE_PENDING, now_iso, now_iso, row["id"]),
                 )
 
+    # A calendar revival or archive undo can bring the stay back while a
+    # delete is still queued. 0038 keeps retrying custom-code deletes until
+    # valid_to, so without this abort the guest's working PIN is removed
+    # hours later. Restore before the due query so the stay page shows it.
+    revived = db.query(
+        "SELECT dc.id FROM door_code dc "
+        "JOIN reservation r ON r.id = dc.reservation_id "
+        "WHERE dc.state IN (?, ?) AND r.status = 'active' AND r.archived_at IS NULL "
+        "AND dc.pin_enc IS NOT NULL",
+        (REVOKE_PENDING, REVOKE_FAILED),
+    )
+    for item in revived:
+        _keep_issued(int(item["id"]), now_iso)
+        db.audit("door_code_revoke_aborted", f"door_code={item['id']}", actor="system")
+
     due = db.query(
-        "SELECT id FROM door_code WHERE state = ? AND (next_attempt_at IS NULL OR next_attempt_at <= ?) "
-        "ORDER BY next_attempt_at LIMIT ?",
+        "SELECT dc.id FROM door_code dc "
+        "JOIN reservation r ON r.id = dc.reservation_id "
+        "WHERE dc.state = ? AND (r.status != 'active' OR r.archived_at IS NOT NULL) "
+        "AND (dc.next_attempt_at IS NULL OR dc.next_attempt_at <= ?) "
+        "ORDER BY dc.next_attempt_at LIMIT ?",
         (REVOKE_PENDING, now_iso, BATCH),
     )
     for item in due:
