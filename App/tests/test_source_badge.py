@@ -10,7 +10,7 @@ def test_source_mark_renders_img_for_known_platform():
     html = templating.source_mark("airbnb")
     assert isinstance(html, Markup)
     assert "<img" in html
-    assert 'src="/static/platforms/airbnb.svg"' in html
+    assert 'src="/static/platforms/airbnb-icon.svg"' in html
     assert 'alt=""' in html
     assert "http" not in html.lower().replace("/static/", "")
 
@@ -30,7 +30,7 @@ def test_source_badge_macro_includes_img_when_logo_exists():
     )
     assert "<img" in rendered
     assert "Booking.com" in rendered
-    assert 'src="/static/platforms/booking.svg"' in rendered
+    assert 'src="/static/platforms/booking-icon.svg"' in rendered
 
 
 def test_source_badge_macro_label_only_without_logo():
@@ -50,8 +50,15 @@ def test_source_mark_rejects_invalid_keys():
     assert templating.source_mark("airbnb!") == ""
 
 
+def test_source_mark_supports_vrbo_and_trip_owner_files():
+    vrbo = templating.source_mark("vrbo")
+    trip = templating.source_mark("trip")
+    assert 'src="/static/platforms/Vrbo.svg"' in vrbo
+    assert 'src="/static/platforms/Trip.com_logo.svg.webp"' in trip
+
+
 def test_source_mark_monkeypatched_cache(tmp_path, monkeypatch):
-    monkeypatch.setitem(templating._PLATFORM_LOGO_KEYS, "demo", ".png")
+    monkeypatch.setitem(templating._PLATFORM_LOGO_KEYS, "demo", "demo.png")
     html = templating.source_mark("demo")
     assert 'src="/static/platforms/demo.png"' in html
     monkeypatch.delitem(templating._PLATFORM_LOGO_KEYS, "demo", raising=False)
