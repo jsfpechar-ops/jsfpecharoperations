@@ -837,3 +837,81 @@ def test_a_custom_code_delete_stops_after_the_end(monkeypatch):
     )
     door_codes.reconcile()
     assert delete_calls["n"] == 1
+
+
+def test_a_random_code_delete_stops_after_three_failures(monkeypatch):
+    delete_calls = {"n": 0}
+
+    def offline(*args, **kwargs):
+        delete_calls["n"] += 1
+        raise ttlock.TTLockError("gateway offline", code=-2012, kind="offline")
+
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "rand-1"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    row = db.query_one("SELECT id, code_kind FROM door_code WHERE reservation_id = ?", (stay,))
+    assert row["code_kind"] == "random"
+
+    now = db.utcnow()
+    db.execute(
+        "UPDATE reservation SET status = 'cancelled', updated_at = ? WHERE id = ?",
+        (now, stay),
+    )
+    monkeypatch.setattr(ttlock, "delete_code", offline)
+
+    for _ in range(3):
+        db.execute(
+            "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+            (row["id"],),
+        )
+        door_codes.reconcile()
+
+    assert delete_calls["n"] == 3
+    final = db.query_one("SELECT state FROM door_code WHERE id = ?", (row["id"],))
+    assert final["state"] == door_codes.REVOKE_FAILED
+    notices = db.query(
+        "SELECT idempotency_key FROM email_outbox "
+        "WHERE reservation_id = ? AND idempotency_key LIKE '%:cancelled_not_deleted'",
+        (stay,),
+    )
+    assert len(notices) == 1
+
+    db.execute(
+        "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+        (row["id"],),
+    )
+    door_codes.reconcile()
+    assert delete_calls["n"] == 3
+
+
+def test_a_move_into_the_stay_window_keeps_the_code(monkeypatch):
+    """When the stay window has started but the issued code is still future, do not replace."""
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "code-1"))
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    today = deadlines.local_now().date()
+    future_from = (today + timedelta(days=5)).isoformat()
+    future_to = (today + timedelta(days=7)).isoformat()
+    db.execute(
+        "UPDATE reservation SET date_from = ?, date_to = ? WHERE id = ?",
+        (future_from, future_to, stay),
+    )
+    door_codes.reconcile()
+    before = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    assert door_codes._iso_to_ms(before["valid_from"]) > now_ms
+
+    past_from = (today - timedelta(days=1)).isoformat()
+    db.execute("UPDATE reservation SET date_from = ? WHERE id = ?", (past_from, stay))
+    ttlock_calls: list = []
+    _no_ttlock(monkeypatch, ttlock_calls)
+    door_codes.reconcile()
+    assert ttlock_calls == []
+    after = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (stay,))
+    assert after["pin_enc"] == before["pin_enc"]
+    assert after["provider_code_id"] == before["provider_code_id"]
+    notices = db.query(
+        "SELECT idempotency_key FROM email_outbox "
+        "WHERE reservation_id = ? AND idempotency_key LIKE '%:moved_during_stay'",
+        (stay,),
+    )
+    assert len(notices) == 1
