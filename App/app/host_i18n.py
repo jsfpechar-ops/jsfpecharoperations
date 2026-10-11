@@ -3296,9 +3296,16 @@ _INTERFACE_STRINGS = {
         "apartment.form.guest_link.regenerate_pin_title": 'Generate a new PIN only',
         "apartment.form.guest_link.window_hint": 'Only stays whose check-in date falls in this window are listed on the apartment link. A past stay keeps working through its own stay-specific link for the number of days set below.',
         "apartment.form.guest_link.window_label": 'Show stays starting within (days)',
+        "apartment.form.guest_message.default": (
+            "Hello, before you arrive please fill in the short check-in form at the link below. "
+            "It takes about 2 minutes per person and is required by Czech law. "
+            "Thank you and see you soon!"
+        ),
         "apartment.form.guest_message.hint": "Shown on the guest form. Do not include access codes or other secrets.",
         "apartment.form.guest_message.label": 'Custom message for guests',
         "apartment.form.guest_message.placeholder": 'For example: Welcome! Please complete this form before arrival.',
+        "apartment.form.more_options": "More options",
+        "apartment.form.operator_only": "Operator: %(name)s · change",
         "apartment.form.passport_policy.label": 'Passport or ID photo from the guest',
         "apartment.form.passport_policy.hint": "Required asks foreign guests to upload a document photo for your review. It is never sent to the police.",
         "apartment.form.passport_policy.off": "Off (default): host checks the document at arrival",
@@ -4132,9 +4139,16 @@ _INTERFACE_STRINGS = {
         "apartment.form.guest_link.regenerate_pin_title": 'Vygenerovat jen nový PIN',
         "apartment.form.guest_link.window_hint": 'Na odkazu bytu se zobrazí jen pobyty, jejichž datum příjezdu spadá do tohoto okna. Minulý pobyt zůstává dostupný přes odkaz konkrétního pobytu po počet dní nastavený níže.',
         "apartment.form.guest_link.window_label": 'Zobrazit pobyty začínající do (dní)',
+        "apartment.form.guest_message.default": (
+            "Dobrý den, před příjezdem prosím vyplňte krátký registrační formulář na odkazu níže. "
+            "Na osobu to zabere asi 2 minuty a zákon to vyžaduje. "
+            "Děkujeme a těšíme se na vás!"
+        ),
         "apartment.form.guest_message.hint": "Zobrazí se ve formuláři hostů. Nevkládejte přístupové kódy ani jiná tajná data.",
         "apartment.form.guest_message.label": 'Vlastní zpráva pro hosty',
         "apartment.form.guest_message.placeholder": 'Například: Vítejte! Vyplňte prosím tento formulář před příjezdem.',
+        "apartment.form.more_options": "Další možnosti",
+        "apartment.form.operator_only": "Provozovatel: %(name)s · změnit",
         "apartment.form.passport_policy.label": 'Fotografie pasu nebo dokladu od hosta',
         "apartment.form.passport_policy.hint": "Povinné: cizinci nahrají fotku dokladu k vaší kontrole. Policii se nikdy neposílá.",
         "apartment.form.passport_policy.off": "Vypnuto (výchozí): doklad zkontrolujete při příjezdu",

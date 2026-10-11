@@ -77,7 +77,6 @@
     <a href="#calendars">{{ t('apartment.form.nav.calendars') }}</a>
   {% else %}
     <a href="#ubyport">{{ t('apartment.form.nav.ubyport') }}</a>
-    <a href="#automation">{{ t('apartment.form.nav.automation') }}</a>
     <a href="#communication">{{ t('apartment.form.nav.guest_link_new') }}</a>
   {% endif %}
 </nav>
@@ -122,6 +121,7 @@
 </section></details>
 {% endif %}
 
+{% set more_open = more_options_open|default(false) or copied_from_name %}
 <form method="post" action="{{ '/apartments/' ~ apartment.id if editing else '/apartments' }}">
   {% if editing %}<input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}">{% endif %}
   {# The first submit button is the one Enter activates. Without this, Enter in
@@ -135,48 +135,106 @@
       {{ text_field('city_en', t('apartment.form.city_en.label'), apartment.city_en if editing else '',
          t('apartment.form.city_en.hint'), true) }}
     </div>
-    <div class="field" style="max-width:420px">
-      <label for="legal_entity_id">{{ t('apartment.form.entity.label') }}</label>
-      <select id="legal_entity_id" name="legal_entity_id">
-        <option value="">{{ t('common.none') }}</option>
-        {% for entity in entities %}
-          <option value="{{ entity.id }}"
-            {% if (editing and apartment.legal_entity_id == entity.id)
-               or (not editing and selected_entity_id == entity.id)
-               or (not editing and property_prefill.get('legal_entity_id') == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
-        {% endfor %}
-      </select>
-      <div class="hint">{{ t('apartment.form.entity.hint') }} {% if editing and apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}">{{ t('host.business') }} →</a>{% else %}<a href="/entities">{{ t('host.business') }} →</a>{% endif %}</div>
-    </div>
-    <div class="field" style="max-width:620px">
-      <label class="checkline" for="controller_is_operator">
-        <input type="checkbox" id="controller_is_operator"
-               data-controller-same-toggle data-controller-target="alternate-controller"
-               {% if not editing and not property_prefill.get('data_controller_entity_id') %}checked
-               {% elif editing and not apartment.data_controller_entity_id %}checked{% endif %}>
-        <span>
-          {{ t('apartment.form.controller.same_label') }}
-          <small>{{ t('apartment.form.controller.same_hint') }}</small>
-        </span>
-      </label>
-    </div>
-    <div class="field" id="alternate-controller" style="max-width:420px"
-         {% if (not editing and not property_prefill.get('data_controller_entity_id'))
-            or (editing and not apartment.data_controller_entity_id) %}hidden{% endif %}>
-      <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
-      <select id="data_controller_entity_id" name="data_controller_entity_id">
-        <option value="">{{ t('apartment.form.controller.choose') }}</option>
-        {% for entity in entities %}
-          <option value="{{ entity.id }}"
-            {% if (editing and apartment.data_controller_entity_id == entity.id)
-               or (not editing and property_prefill.get('data_controller_entity_id') == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
-        {% endfor %}
-      </select>
-      <div class="hint">
-        {{ t('apartment.form.controller.alternate_hint') }}
-        <a href="/entities">{{ t('apartment.form.controller.manage_entities') }}</a>
+    {% if not editing and entities|length == 1 %}
+      {% set operator_line = t('apartment.form.operator_only', name=entities[0].name).split(' · ', 1) %}
+      <input type="hidden" name="legal_entity_id" value="{{ entities[0].id }}" id="legal_entity_id">
+      <p class="operator-only-line" id="operator-picker">
+        <span>{{ operator_line[0] }}</span>
+        {% if operator_line|length > 1 %}
+          · <details class="operator-change">
+            <summary>{{ operator_line[1] }}</summary>
+            <div class="field" style="max-width:420px;margin-top:10px">
+              <label for="legal_entity_id_select">{{ t('apartment.form.entity.label') }}</label>
+              <select id="legal_entity_id_select" name="legal_entity_id">
+                <option value="">{{ t('common.none') }}</option>
+                {% for entity in entities %}
+                  <option value="{{ entity.id }}" {% if entity.id == entities[0].id %}selected{% endif %}>{{ entity.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </details>
+        {% endif %}
+      </p>
+      <div class="hint">{{ t('apartment.form.entity.hint') }} <a href="/entities">{{ t('host.business') }} →</a></div>
+    {% else %}
+      <div class="field" style="max-width:420px">
+        <label for="legal_entity_id">{{ t('apartment.form.entity.label') }}</label>
+        <select id="legal_entity_id" name="legal_entity_id">
+          <option value="">{{ t('common.none') }}</option>
+          {% for entity in entities %}
+            <option value="{{ entity.id }}"
+              {% if (editing and apartment.legal_entity_id == entity.id)
+                 or (not editing and selected_entity_id == entity.id)
+                 or (not editing and property_prefill.get('legal_entity_id') == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
+          {% endfor %}
+        </select>
+        <div class="hint">{{ t('apartment.form.entity.hint') }} {% if editing and apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}">{{ t('host.business') }} →</a>{% else %}<a href="/entities">{{ t('host.business') }} →</a>{% endif %}</div>
       </div>
-    </div>
+    {% endif %}
+    <details class="more-options" id="property-more-options" {% if more_open %}open{% endif %}>
+      <summary>{{ t('apartment.form.more_options') }}</summary>
+      <div class="more-options-body">
+        <div class="field" style="max-width:620px">
+          <label class="checkline" for="controller_is_operator">
+            <input type="checkbox" id="controller_is_operator"
+                   data-controller-same-toggle data-controller-target="alternate-controller"
+                   {% if (not editing and not property_prefill.get('data_controller_entity_id')) or (editing and not apartment.data_controller_entity_id) %}checked{% endif %}>
+            <span>
+              {{ t('apartment.form.controller.same_label') }}
+              <small>{{ t('apartment.form.controller.same_hint') }}</small>
+            </span>
+          </label>
+        </div>
+        <div class="field" id="alternate-controller" style="max-width:420px"
+             {% if (not editing and not property_prefill.get('data_controller_entity_id')) or (editing and not apartment.data_controller_entity_id) %}hidden{% endif %}>
+          <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
+          <select id="data_controller_entity_id" name="data_controller_entity_id">
+            <option value="">{{ t('apartment.form.controller.choose') }}</option>
+            {% for entity in entities %}
+              <option value="{{ entity.id }}"
+                {% if (editing and apartment.data_controller_entity_id == entity.id) or (not editing and property_prefill.get('data_controller_entity_id') == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
+            {% endfor %}
+          </select>
+          <div class="hint">
+            {{ t('apartment.form.controller.alternate_hint') }}
+            <a href="/entities">{{ t('apartment.form.controller.manage_entities') }}</a>
+          </div>
+        </div>
+        {% if not editing %}
+        <p class="small muted" style="margin-top:-4px">
+          {{ t('apartment.form.automation.new_lede') }}
+        </p>
+        <div class="grid two">
+          <div class="field">
+            <label for="automation_mode">{{ t('automation.timing_title') }}</label>
+            {% set auto_mode = property_prefill.get('automation_mode', 'manual') %}
+            <select id="automation_mode" name="automation_mode"
+                    data-automation-mode data-hours-target="submit_after_hours">
+              <option value="manual" {% if auto_mode == 'manual' %}selected{% endif %}>{{ t('automation.mode.manual') }}</option>
+              <option value="scheduled" {% if auto_mode == 'scheduled' %}selected{% endif %}>{{ t('apartment.form.automation.mode.scheduled') }}</option>
+              <option value="immediate" {% if auto_mode == 'immediate' %}selected{% endif %}>{{ t('automation.mode.immediate') }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="submit_after_hours">{{ t('automation.hours') }}</label>
+            <input type="number" id="submit_after_hours" name="submit_after_hours" min="0" max="48" value="{{ property_prefill.get('submit_after_hours', 24) }}">
+            <div class="hint">{{ t('apartment.form.automation.hours_hint') }}</div>
+          </div>
+        </div>
+        <div class="field" style="max-width:320px">
+          <label for="default_purpose">{{ t('automation.default_purpose') }}</label>
+          <select id="default_purpose" name="default_purpose">
+            {% set purpose_default = property_prefill.get('default_purpose', '10') %}
+            {% for purpose in purposes %}
+              <option value="{{ purpose.code }}" {% if purpose.code == purpose_default %}selected{% endif %}>
+                {{ purpose.label }}</option>
+            {% endfor %}
+          </select>
+          <div class="hint">{{ t('apartment.form.automation.purpose_hint') }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </details>
     <div class="checkline" style="margin-top:6px">
       <input type="checkbox" id="active" name="active" value="1"
              {% if not editing or apartment.active %}checked{% endif %}>
@@ -324,42 +382,6 @@
     </dl>
     <a class="btn" href="/automation#apartment-{{ apartment.id }}">{{ t('apartment.form.automation.open') }}</a>
   </details>
-  {% else %}
-  <details class="panel property-section" id="automation" {% if copied_from_name %}open{% endif %}>
-    <summary>{{ t('nav.automation') }}</summary>
-    <p class="small muted" style="margin-top:-4px">
-      {{ t('apartment.form.automation.new_lede') }}
-    </p>
-    {% set auto_mode = property_prefill.get('automation_mode', 'manual') %}
-    <div class="grid two">
-      <div class="field">
-        <label for="automation_mode">{{ t('automation.timing_title') }}</label>
-        <select id="automation_mode" name="automation_mode"
-                data-automation-mode data-hours-target="submit_after_hours">
-          <option value="manual" {% if auto_mode == 'manual' %}selected{% endif %}>{{ t('automation.mode.manual') }}</option>
-          <option value="scheduled" {% if auto_mode == 'scheduled' %}selected{% endif %}>{{ t('apartment.form.automation.mode.scheduled') }}</option>
-          <option value="immediate" {% if auto_mode == 'immediate' %}selected{% endif %}>{{ t('automation.mode.immediate') }}</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="submit_after_hours">{{ t('automation.hours') }}</label>
-        <input type="number" id="submit_after_hours" name="submit_after_hours" min="0" max="48"
-               value="{{ property_prefill.get('submit_after_hours', 24) }}">
-        <div class="hint">{{ t('apartment.form.automation.hours_hint') }}</div>
-      </div>
-    </div>
-    <div class="field" style="max-width:320px">
-      <label for="default_purpose">{{ t('automation.default_purpose') }}</label>
-      <select id="default_purpose" name="default_purpose">
-        {% set purpose_default = property_prefill.get('default_purpose', '10') %}
-        {% for purpose in purposes %}
-          <option value="{{ purpose.code }}" {% if purpose.code == purpose_default %}selected{% endif %}>
-            {{ purpose.label }}</option>
-        {% endfor %}
-      </select>
-      <div class="hint">{{ t('apartment.form.automation.purpose_hint') }}</div>
-    </div>
-  </details>
   {% endif %}
 
   <details class="panel property-section" id="communication" {% if copied_from_name %}open{% endif %}>
@@ -378,48 +400,53 @@
         <input type="text" id="permalink" readonly value="{{ permalink }}">
         {{ copy_button('permalink') }}
       </div>
-      {% if link_code %}
-      <div class="field" style="max-width:520px">
-        <label for="guest_link_name">{{ t('apartment.form.guest_link.name_label') }}</label>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span class="small muted mono" aria-hidden="true">/l/</span>
-          <input type="text" id="guest_link_name" name="guest_link_name" value="{{ link_readable }}"
-                 class="mono" maxlength="80" autocomplete="off" autocapitalize="off" spellcheck="false"
-                 aria-describedby="guest_link_name_hint">
-          <span class="small muted mono" aria-hidden="true">-{{ link_code }}</span>
+      <details class="more-options" {% if more_open %}open{% endif %}>
+        <summary>{{ t('apartment.form.more_options') }}</summary>
+        <div class="more-options-body">
+          {% if link_code %}
+          <div class="field" style="max-width:520px">
+            <label for="guest_link_name">{{ t('apartment.form.guest_link.name_label') }}</label>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span class="small muted mono" aria-hidden="true">/l/</span>
+              <input type="text" id="guest_link_name" name="guest_link_name" value="{{ link_readable }}"
+                     class="mono" maxlength="80" autocomplete="off" autocapitalize="off" spellcheck="false"
+                     aria-describedby="guest_link_name_hint">
+              <span class="small muted mono" aria-hidden="true">-{{ link_code }}</span>
+            </div>
+            <div class="hint" id="guest_link_name_hint">{{ t('apartment.form.guest_link.name_hint') }}</div>
+          </div>
+          {% endif %}
+          <div class="field" style="max-width:280px">
+            <label for="permalink_pin">{{ t('guest_links.pin') }}</label>
+            <div class="copyrow pin-row">
+              <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
+                     inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
+              {{ copy_button('permalink_pin') }}
+            </div>
+            <div class="hint">{{ t('apartment.form.guest_link.pin_hint') }}</div>
+          </div>
+          <div class="field" style="max-width:280px">
+            <label for="permalink_window_days">{{ t('apartment.form.guest_link.window_label') }}</label>
+            <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
+                   value="{{ apartment.permalink_window_days }}">
+            <div class="hint">{{ t('apartment.form.guest_link.window_hint') }}</div>
+          </div>
+          <div class="field" style="max-width:280px">
+            <label for="permalink_reachback_days">{{ t('apartment.form.guest_link.reachback_label') }}</label>
+            <input type="number" id="permalink_reachback_days" name="permalink_reachback_days" min="1" max="3650"
+                   value="{{ apartment.permalink_reachback_days or 365 }}">
+            <div class="hint">{{ t('apartment.form.guest_link.reachback_hint') }}</div>
+          </div>
+          <div class="field" style="max-width:320px">
+            <label for="passport_photo_policy">{{ t('apartment.form.passport_policy.label') }}</label>
+            <select id="passport_photo_policy" name="passport_photo_policy">
+              <option value="off" {% if (apartment.passport_photo_policy if editing else 'off') != 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.off') }}</option>
+              <option value="required_foreign" {% if editing and apartment.passport_photo_policy == 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.required') }}</option>
+            </select>
+            <div class="hint">{{ t('apartment.form.passport_policy.hint') }}</div>
+          </div>
         </div>
-        <div class="hint" id="guest_link_name_hint">{{ t('apartment.form.guest_link.name_hint') }}</div>
-      </div>
-      {% endif %}
-      <div class="field" style="max-width:280px">
-        <label for="permalink_pin">{{ t('guest_links.pin') }}</label>
-        <div class="copyrow pin-row">
-          <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono"
-                 inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
-          {{ copy_button('permalink_pin') }}
-        </div>
-        <div class="hint">{{ t('apartment.form.guest_link.pin_hint') }}</div>
-      </div>
-      <div class="field" style="max-width:280px">
-        <label for="permalink_window_days">{{ t('apartment.form.guest_link.window_label') }}</label>
-        <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
-               value="{{ apartment.permalink_window_days }}">
-        <div class="hint">{{ t('apartment.form.guest_link.window_hint') }}</div>
-      </div>
-      <div class="field" style="max-width:280px">
-        <label for="permalink_reachback_days">{{ t('apartment.form.guest_link.reachback_label') }}</label>
-        <input type="number" id="permalink_reachback_days" name="permalink_reachback_days" min="1" max="3650"
-               value="{{ apartment.permalink_reachback_days or 365 }}">
-        <div class="hint">{{ t('apartment.form.guest_link.reachback_hint') }}</div>
-      </div>
-      <div class="field" style="max-width:320px">
-        <label for="passport_photo_policy">{{ t('apartment.form.passport_policy.label') }}</label>
-        <select id="passport_photo_policy" name="passport_photo_policy">
-          <option value="off" {% if (apartment.passport_photo_policy if editing else 'off') != 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.off') }}</option>
-          <option value="required_foreign" {% if editing and apartment.passport_photo_policy == 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.required') }}</option>
-        </select>
-        <div class="hint">{{ t('apartment.form.passport_policy.hint') }}</div>
-      </div>
+      </details>
       <details class="message-details" open>
         <summary>{{ t('guest_links.message_title') }}</summary>
         <pre>{{ bilingual_message('guest_links.message', link=permalink, pin=pin) }}</pre>
@@ -629,14 +656,19 @@
              placeholder="{{ t('apartment.form.calendars.url_ph') }}">
       <div class="hint">{{ t('apartment.form.calendars.url_hint') }}</div>
     </div>
-    <div class="field">
-      <label for="label">{{ t('apartment.form.feed.portal') }}</label>
-      <input type="text" id="label" name="label" placeholder="{{ t('apartment.form.calendars.portal_ph') }}">
-    </div>
-    <div class="field">
-      <label for="own_name">{{ t('apartment.form.calendars.own_name_label') }}</label>
-      <input type="text" id="own_name" name="own_name" placeholder="{{ t('apartment.form.calendars.own_name_ph') }}">
-    </div>
+    <details class="more-options" {% if more_open %}open{% endif %}>
+      <summary>{{ t('apartment.form.more_options') }}</summary>
+      <div class="more-options-body">
+        <div class="field">
+          <label for="label">{{ t('apartment.form.feed.portal') }}</label>
+          <input type="text" id="label" name="label" placeholder="{{ t('apartment.form.calendars.portal_ph') }}">
+        </div>
+        <div class="field">
+          <label for="own_name">{{ t('apartment.form.calendars.own_name_label') }}</label>
+          <input type="text" id="own_name" name="own_name" placeholder="{{ t('apartment.form.calendars.own_name_ph') }}">
+        </div>
+      </div>
+    </details>
     <div class="actions"><button class="btn primary" type="submit">{{ t('apartment.form.calendars.add_sync') }}</button></div>
   </form>
 </div>

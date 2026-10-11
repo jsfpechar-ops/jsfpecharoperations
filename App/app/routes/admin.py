@@ -156,6 +156,36 @@ _READINESS_REPORT_FIELDS = (
     ("password", "uby_ws_password", "ubyport"),
 )
 
+_MORE_OPTIONS_FIELDS = frozenset(
+    {
+        "data_controller_entity_id",
+        "automation_mode",
+        "submit_after_hours",
+        "default_purpose",
+        "guest_link_name",
+        "permalink_pin",
+        "permalink_window_days",
+        "permalink_reachback_days",
+        "passport_photo_policy",
+        "label",
+        "own_name",
+    }
+)
+
+
+def _more_options_open(request: Request, issues, readiness=None) -> bool:
+    """Whether advanced property fields should render inside an open <details>."""
+    if request.query_params.get("open_more") == "1":
+        return True
+    missing = {issue.field for issue in validation.errors_only(issues)}
+    if missing & _MORE_OPTIONS_FIELDS:
+        return True
+    if readiness:
+        for item in readiness.get("invite", []):
+            if item.get("key") == "controller" and not item.get("done"):
+                return True
+    return False
+
 
 def _readiness(
     apartment, entities, issues, has_stays: bool, *, invite: bool = True
@@ -1023,6 +1053,7 @@ def apartment_new(request: Request):
             "address_line": "",
             "address_details_open": True,
             "account": account,
+            "more_options_open": _more_options_open(request, []),
             **copy_ctx,
         },
     )
@@ -1252,6 +1283,8 @@ async def apartment_create(request: Request):
     payload.pop("_stay_fee_account_raw", None)
     if not payload["internal_name"]:
         return _back("/apartments/new", err=_flash(request, "flash.error.name_required"))
+    if not payload["guest_message"].strip():
+        payload["guest_message"] = _host_text(request, "apartment.form.guest_message.default")
     payload["permalink_token"] = auth.new_permalink_token()
     payload["permalink_pin"] = auth.new_permalink_pin()
     payload["created_at"] = db.utcnow()
@@ -1356,6 +1389,7 @@ def apartment_detail(apartment_id: int, request: Request):
             "buffer": config.DOOR_CODE_BUFFER_HOURS,
             "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
         }
+    readiness = _readiness(apartment, entities, issues, has_stays)
     return render(
         request,
         "apartment_form.html",
@@ -1367,7 +1401,8 @@ def apartment_detail(apartment_id: int, request: Request):
             "issues": issues,
             "address_line": address_line,
             "address_details_open": address_details_open,
-            "readiness": _readiness(apartment, entities, issues, has_stays),
+            "readiness": readiness,
+            "more_options_open": _more_options_open(request, issues, readiness),
             "purposes": codelists.purpose_options("en"),
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
             "link_base": f"{config.PUBLIC_BASE_URL}/l/",

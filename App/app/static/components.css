@@ -132,3 +132,22 @@ dialog::backdrop { background:rgba(10,10,9,.58) }
 .source-badge img { width:16px;height:16px;flex:0 0 auto }
 .feed-table .source-badge { gap:4px }
 .feed-table .source-badge img { width:14px;height:14px }
+.host-workspace .more-options { margin-top: 14px; }
+.host-workspace .more-options > summary {
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 0;
+  list-style: none;
+}
+.host-workspace .more-options > summary::-webkit-details-marker { display: none; }
+.host-workspace .more-options[open] > summary { margin-bottom: 16px; }
+.host-workspace .more-options-body { display: grid; gap: 12px; }
+.host-workspace .operator-only-line { margin: 0 0 6px; }
+.host-workspace .operator-change { display: inline; }
+.host-workspace .operator-change > summary {
+  display: inline;
+  cursor: pointer;
+  color: var(--brand);
+  font-weight: 600;
+}
