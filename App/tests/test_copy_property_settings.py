@@ -1,8 +1,6 @@
 """Copy settings from another property on the apartment form."""
 from __future__ import annotations
 
-import re
-
 import pytest
 from fastapi.testclient import TestClient
 
