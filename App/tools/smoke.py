@@ -310,14 +310,24 @@ def main(url=None):
         must_not_contain=["/login", "row-arrow"],
     )
     check(host, "/housebook?lang=en", must_contain=["data-csv-export"])
+    legacy_guest_links = host.get("/guest-links?lang=en", follow_redirects=False)
+    if legacy_guest_links.status_code not in (302, 303):
+        FAILURES.append(
+            f"/guest-links?lang=en: HTTP {legacy_guest_links.status_code}, expected redirect"
+        )
+    elif f"/apartments/{apartment_id}#communication" not in (
+        legacy_guest_links.headers.get("location") or ""
+    ):
+        FAILURES.append(
+            "/guest-links?lang=en: location missing property #communication anchor"
+        )
     check(
         host,
-        "/guest-links?lang=en",
+        f"/apartments/{apartment_id}?lang=en",
         must_contain=[
-            host_i18n.STRINGS["en"]["guest_links.title"],
             host_i18n.STRINGS["en"]["guest_links.pin"],
             host_i18n.STRINGS["en"]["guest_links.new_pin"],
-            'name="return_to" value="/guest-links"',
+            f'name="return_to" value="/apartments/{apartment_id}#communication"',
             f'action="/apartments/{apartment_id}/regenerate-pin"',
         ],
     )
