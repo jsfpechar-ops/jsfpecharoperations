@@ -33,6 +33,17 @@
 
   <div class="panel invoice-settings-form">
     <div class="field">
+      <label for="lookup_ico">{{ t('entities.ico') }}</label>
+      <div class="action-group" style="align-items:flex-end">
+        <input type="text" id="lookup_ico" name="ico" inputmode="numeric" maxlength="8"
+               value="{{ entity.ico or '' }}">
+        <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
+      </div>
+      {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
+      {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
+      {% if ares_vat_found %}<p class="hint">{{ t('ares.vat_found') }}</p>{% endif %}
+    </div>
+    <div class="field">
       <span class="label">{{ t('entities.bank.label') }}</span>
       {% set account = bank_parts %}
       {% set prefix = 'invoice_' %}

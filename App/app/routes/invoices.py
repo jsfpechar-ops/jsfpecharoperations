@@ -13,6 +13,7 @@ from fastapi.responses import RedirectResponse, Response
 
 from .. import (
     access,
+    ares,
     auth,
     claim,
     codelists,
@@ -380,6 +381,8 @@ async def invoice_settings_save(request: Request):
     entity = _chosen_entity(request, entities, form)
     if not entity:
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
+    if form.get("fill_from_register"):
+        return _invoice_settings_ares_rerender(request, form, entity)
     redirect = _settings_next(request, form, entity)
     detail = _settings_detail_payload(form)
     if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
@@ -408,6 +411,118 @@ async def invoice_settings_save(request: Request):
     db.audit("entity_invoice_details_saved", f"id={entity['id']}",
              owner_user_id=access.owner_id(request))
     return _back(redirect, msg=_flash(request, "flash.entities.saved"))
+
+
+_SETTINGS_ARES_FIELDS = ("registry_entry",)
+
+
+def _settings_entity_from_form(entity: Dict[str, Any], form) -> Dict[str, Any]:
+    row = dict(entity)
+    for key in (
+        "ico",
+        "bic",
+        "vat_status",
+        "registry_entry",
+        "invoice_prefix",
+        "invoice_next_number",
+        "invoice_due_days",
+    ):
+        if key in form:
+            row[key] = _form_str(form, key)
+    return row
+
+
+def _invoice_settings_ares_rerender(request: Request, form, entity: Dict[str, Any]):
+    owner_id = access.owner_id(request)
+    lang = _lang(request)
+    row = _settings_entity_from_form(entity, form)
+    ares_error = None
+    ares_note = None
+    ares_vat_found = False
+    ico = (_form_str(form, "ico") or row.get("ico") or "").strip()
+    row["ico"] = ico
+    if ares.rate_limited(owner_id):
+        ares_error = host_i18n.translate(lang, "ares.rate_limited")
+    elif not validation.ico_ok(ico):
+        ares_error = host_i18n.translate(lang, "ares.failure")
+    else:
+        ares.record_lookup(owner_id)
+        data = ares.lookup(ico)
+        if not data:
+            ares_error = host_i18n.translate(lang, "ares.failure")
+        else:
+            filled = ares.merge_blank(row, data, _SETTINGS_ARES_FIELDS)
+            if data.get("vat_payer"):
+                ares_vat_found = True
+                current = _form_str(form, "vat_status") or entity.get("vat_status") or "non_payer"
+                if current == "non_payer":
+                    row["vat_status"] = "payer"
+                    if "vat_status" not in filled:
+                        filled.append("vat_status")
+            if filled:
+                labels = ", ".join(
+                    host_i18n.translate(lang, f"ares.field.{field}") for field in filled
+                )
+                ares_note = host_i18n.translate(lang, "ares.filled", fields=labels)
+    entities = _entities(request)
+    redirect = _settings_next(request, form, entity)
+    return render(
+        request,
+        "invoice_settings.html",
+        {
+            "nav": "invoices",
+            "entity": row,
+            "entities": entities,
+            "bank_parts": payments.czech_account_parts(row.get("bank_account") or ""),
+            "next": redirect,
+            "ares_error": ares_error,
+            "ares_note": ares_note,
+            "ares_vat_found": ares_vat_found,
+        },
+    )
+
+
+_BUYER_ARES_MAP = {
+    "buyer_name": "name",
+    "buyer_street": "street",
+    "buyer_city": "city",
+    "buyer_zip": "zip",
+    "buyer_country": "country",
+    "buyer_dic": "dic",
+}
+
+
+def _buyer_ares_fill(request: Request, form, values: Dict[str, Any]) -> Dict[str, Any]:
+    owner_id = access.owner_id(request)
+    lang = _lang(request)
+    meta = {"ares_error": None, "ares_note": None}
+    ico = (_form_str(form, "buyer_ico") or values.get("buyer_ico") or "").strip()
+    if ares.rate_limited(owner_id):
+        meta["ares_error"] = host_i18n.translate(lang, "ares.rate_limited")
+        return meta
+    if not validation.ico_ok(ico):
+        meta["ares_error"] = host_i18n.translate(lang, "ares.failure")
+        return meta
+    ares.record_lookup(owner_id)
+    data = ares.lookup(ico)
+    if not data:
+        meta["ares_error"] = host_i18n.translate(lang, "ares.failure")
+        return meta
+    filled: list[str] = []
+    for form_field, ares_key in _BUYER_ARES_MAP.items():
+        if str(values.get(form_field) or "").strip():
+            continue
+        value = data.get(ares_key)
+        if value is None or not str(value).strip():
+            continue
+        values[form_field] = value
+        filled.append(form_field)
+    if filled:
+        labels = ", ".join(
+            host_i18n.translate(lang, f"ares.field.{field}") for field in filled
+        )
+        meta["ares_note"] = host_i18n.translate(lang, "ares.filled", fields=labels)
+    return meta
 
 
 def _settings_detail_payload(form) -> Dict[str, Any]:
@@ -482,6 +597,12 @@ async def invoice_issue(request: Request):
     entity = _entity_for_stay(request, entities, stay, form)
     if not entity:
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
+    if form.get("fill_buyer_from_register"):
+        values = _form_state(request, form, entity)
+        meta = _buyer_ares_fill(request, form, values)
+        context = _form_context(request, entities, entity, values=values, stay=stay)
+        context.update(meta)
+        return render(request, "invoice_form.html", context)
     draft = _draft(request, entity, form, stay)
     issues = invoices.validate_for_issue(draft)
     if not issues and invoices.invoice_pdf.too_long(_preview_view(draft), draft["items"], draft["lang"]):
