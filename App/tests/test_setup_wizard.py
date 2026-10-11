@@ -3,12 +3,10 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app import auth, config, db, onboarding
 from app.main import app
-from tests.conftest import login_as
 
 
 def setup_module():
