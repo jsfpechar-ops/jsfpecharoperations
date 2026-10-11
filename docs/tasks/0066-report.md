@@ -5,7 +5,9 @@
 - `App/app/templates/_host_navigation.html` — removed Properties / Guest links / Automation / Smart locks sub-bar.
 - `App/app/templates/apartment_form.html` — editable `#automation` timing; guest-link copy/preview on `#communication`; communication open when editing.
 - `App/app/templates/settings.html` — Business & legal details card → `/entities`.
-- `App/app/routes/admin.py` — `/guest-links` and `/automation` 303 redirects; removed standalone automation POST/helpers; property save keeps automation fields; regenerate return_to → property `#communication`.
+- `App/app/routes/admin.py` — `/guest-links` and `/automation` 303 redirects; removed standalone automation POST/helpers; property save updates automation only when `automation_mode` is posted; `_save_address_only` for setup wizard; regenerate return_to → property `#communication`.
+- `App/app/routes/setup_wizard.py` — address step uses `_save_address_only` (no full-form wipe).
+- `App/app/templates/setup/address.html` — wizard validation error line.
 - `App/app/routes/api.py` — command palette entries → `/apartments`.
 - `App/app/templates/reservation_detail.html` — guest-link menu → property `#communication`.
 - Deleted `App/app/templates/automation.html`, `App/app/templates/guest_links.html`.
@@ -29,10 +31,15 @@
 
 Nothing on `/guest-links` required a redesign beyond moving copy/preview controls onto the property page.
 
+## Follow-up fixes (same PR)
+
+1. **Automation regression:** `_save_apartment_form` pops `automation_mode` / `submit_after_hours` / `default_purpose` when those fields are absent from the POST (partial saves no longer reset timing to manual/24/10).
+2. **Setup wizard address (0054):** `_save_address_only` updates only `addr_*` fields; validates merged row and rejects on address issues only. Tests in `test_setup_wizard.py`.
+
 ## Tests
 
 ```
-6 failed, 3135 passed, 4 skipped, 7 warnings in ~437s
+6 failed, 3138 passed, 4 skipped, 7 warnings in ~464s
 ```
 
 Failures (all browser geometry / copy-feedback on stays row at 1280px width):  

@@ -133,6 +133,37 @@ def test_automation_redirects_to_apartments_with_two(two_properties):
     assert response.headers["location"] == "/apartments"
 
 
+def test_property_save_without_automation_fields_preserves_timing(host):
+    client, apartment_id = host
+    db.update(
+        "apartment",
+        apartment_id,
+        {
+            "automation_mode": "scheduled",
+            "submit_after_hours": 12,
+            "default_purpose": "10",
+        },
+    )
+    apt = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    response = client.post(
+        f"/apartments/{apartment_id}",
+        data={
+            "return_to": f"/apartments/{apartment_id}",
+            "internal_name": apt["internal_name"],
+            "legal_entity_id": apt["legal_entity_id"],
+            "permalink_pin": apt["permalink_pin"],
+            "permalink_window_days": str(apt["permalink_window_days"] or 2),
+            "permalink_reachback_days": str(apt["permalink_reachback_days"] or 365),
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code in (303, 302)
+    row = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    assert row["automation_mode"] == "scheduled"
+    assert row["submit_after_hours"] == 12
+    assert row["default_purpose"] == "10"
+
+
 def test_property_save_updates_automation_fields(host):
     client, apartment_id = host
     apt = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))

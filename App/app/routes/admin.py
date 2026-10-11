@@ -1475,6 +1475,58 @@ async def apartment_update(apartment_id: int, request: Request):
     return _back(return_to, msg=msg)
 
 
+_ADDRESS_ONLY_FIELDS = (
+    "addr_okres",
+    "addr_obec",
+    "addr_obec_cast",
+    "addr_street",
+    "addr_house_no",
+    "addr_orient_no",
+    "addr_zip",
+)
+
+
+def _save_address_only(apartment_id: int, request: Request, form) -> Optional[Response]:
+    """Persist only police address fields (setup wizard address step)."""
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/setup/name", err=_flash(request, "flash.error.no_such_apartment"))
+    payload: Dict[str, Any] = {
+        field: _form_str(form, field) for field in _ADDRESS_ONLY_FIELDS
+    }
+    payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
+    _apply_address_line_from_form(form, payload)
+    merged = dict(apartment)
+    merged.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS})
+    address_issues = [
+        issue
+        for issue in validation.errors_only(validation.validate_apartment(_apartment_with_secret(merged)))
+        if issue.field in _ADDRESS_ONLY_FIELDS
+    ]
+    if address_issues:
+        from .setup_wizard import _address_preview, _step_context
+
+        return render(
+            request,
+            "setup/address.html",
+            _step_context(
+                request,
+                "address",
+                address_error=address_issues[0].message,
+                address_preview=_address_preview(apartment),
+                split_address=hasattr(validation, "split_czech_address"),
+            ),
+            status_code=400,
+        )
+    db.update(
+        "apartment",
+        apartment_id,
+        {field: payload[field] for field in _ADDRESS_ONLY_FIELDS},
+    )
+    db.audit("apartment_updated", f"id={apartment_id}")
+    return None
+
+
 def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Optional[Response], bool]:
     """Persist the property form, or return the redirect that rejects it.
 
@@ -1485,6 +1537,9 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
     payload = _apartment_payload(form)
+    if "automation_mode" not in form:
+        for key in ("automation_mode", "submit_after_hours", "default_purpose"):
+            payload.pop(key, None)
     _apply_police_defaults(payload, access.entities(request))
     address_mismatch = _apply_address_line_from_form(form, payload)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):

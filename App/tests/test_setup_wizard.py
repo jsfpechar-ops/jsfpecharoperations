@@ -61,6 +61,104 @@ def test_name_step_creates_property_with_name_only():
     assert row["active"] == 1
 
 
+_ADDR_FIELDS = {
+    "addr_okres",
+    "addr_obec",
+    "addr_obec_cast",
+    "addr_street",
+    "addr_house_no",
+    "addr_orient_no",
+    "addr_zip",
+}
+
+
+def _row_without_address(row) -> dict:
+    skip = _ADDR_FIELDS | {"updated_at"}
+    data = dict(row)
+    return {key: value for key, value in data.items() if key not in skip}
+
+
+def test_setup_address_save_leaves_other_property_fields_intact():
+    client = _session_client("wizard-address-preserve")
+    apartment_id = _walk_to_address(client, "Configured flat")
+    db.update(
+        "apartment",
+        apartment_id,
+        {
+            "uby_idub": "123456789012",
+            "uby_ws_user": "UBY-WSabcdef",
+            "uby_ws_password_enc": db.encrypt_secret("secret-pass"),
+            "guest_message": "Welcome message",
+            "automation_mode": "scheduled",
+            "submit_after_hours": 12,
+            "default_purpose": "10",
+            "stay_fee_rate_czk": 50,
+            "lock_provider": "ttlock",
+            "lock_id": "lock-123",
+            "addr_street": "Old street",
+            "addr_house_no": "1",
+            "addr_zip": "12000",
+            "addr_obec": "Praha",
+        },
+    )
+    before = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+
+    response = client.post(
+        "/setup/address",
+        data={
+            "internal_name": before["internal_name"],
+            "active": "1",
+            "addr_street": "New street",
+            "addr_house_no": "99",
+            "addr_zip": "11000",
+            "addr_obec": "Praha",
+            "addr_okres": "Praha",
+            "return_to": "/setup/bookings",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    after = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    assert after["addr_street"] == "New street"
+    assert after["addr_house_no"] == "99"
+    assert after["addr_zip"] == "11000"
+    assert _row_without_address(before) == _row_without_address(after)
+
+
+def test_setup_address_rejects_invalid_address_without_changing_row():
+    client = _session_client("wizard-address-reject")
+    apartment_id = _walk_to_address(client, "Reject flat")
+    db.update(
+        "apartment",
+        apartment_id,
+        {
+            "addr_street": "Keep me",
+            "addr_house_no": "5",
+            "addr_zip": "12000",
+            "addr_obec": "Praha",
+        },
+    )
+    before = dict(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
+
+    response = client.post(
+        "/setup/address",
+        data={
+            "internal_name": before["internal_name"],
+            "active": "1",
+            "addr_street": "Broken",
+            "addr_house_no": "",
+            "addr_zip": "",
+            "addr_obec": "Praha",
+            "return_to": "/setup/bookings",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert 'class="wizard-error"' in response.text
+    after = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+    assert dict(after) == before
+
+
 def test_address_step_uses_property_validation():
     client = _session_client("wizard-address-validation")
     apartment_id = _walk_to_address(client)

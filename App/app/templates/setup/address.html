@@ -3,6 +3,7 @@
 <header class="wizard-head">
   <h1>{{ t('setup.address.title') }}</h1>
 </header>
+{% if address_error %}<p class="wizard-error" role="alert">{{ address_error }}</p>{% endif %}
 <form class="wizard-form" method="post" action="/setup/address">
   <input type="hidden" name="active" value="1">
   <input type="hidden" name="internal_name" value="{{ apartment.internal_name }}">

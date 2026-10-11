@@ -14,7 +14,7 @@ from ..templating import render
 from .admin import (
     _apartment_payload,
     _feed_already_added,
-    _save_apartment_form,
+    _save_address_only,
 )
 from .admin_helpers import form_str as _form_str
 
@@ -192,7 +192,7 @@ async def setup_post(step: str, request: Request):
     if step == "address":
         if not apartment:
             return RedirectResponse("/setup/name", status_code=303)
-        rejected, _address_mismatch = _save_apartment_form(apartment["id"], request, form)
+        rejected = _save_address_only(apartment["id"], request, form)
         if rejected:
             return rejected
         return RedirectResponse("/setup/bookings", status_code=303)
