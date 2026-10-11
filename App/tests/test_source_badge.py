@@ -80,7 +80,6 @@ def test_stays_list_platform_badge_screenshots():
     import uvicorn
 
     sync_api = pytest.importorskip("playwright.sync_api")
-    from tests.browser_support import chromium_launch_kwargs
     from tests.test_invoice_stay_browser import _browser_session_cookie, _launch
 
     from app import auth, claim, db
