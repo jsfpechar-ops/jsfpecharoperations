@@ -135,11 +135,11 @@ def test_the_setup_steps_a_new_czech_host_reads_are_czech():
     client = _host_with_a_stay_needing_action()
     page = client.get("/")
     assert page.status_code == 200
-    banner = re.search(r'<aside class="onboarding-banner".*?</aside>', page.text, re.S)
+    banner = re.search(r'<aside class="onboarding-banner[^"]*".*?</aside>', page.text, re.S)
     assert banner, "no onboarding banner while setup is unfinished"
     text = " ".join(banner.group(0).split())
-    assert "Setup step" not in text, "the setup prompt is in English for a Czech host"
-    assert host_i18n.translate("cs", "onboarding.step_of").split("%")[0].strip() in text
+    assert "Setup:" not in text, "the setup prompt is in English for a Czech host"
+    assert host_i18n.translate("cs", "setup.banner.line").split("%")[0].strip() in text
 
 
 def test_onboarding_copy_lives_in_the_translation_tables():

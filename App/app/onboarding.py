@@ -21,6 +21,65 @@ def set_dismissed(owner_user_id: int, dismissed: bool) -> None:
     db.set_setting(_dismissed_key(owner_user_id), "1" if dismissed else "0")
 
 
+WIZARD_STEPS = ("welcome", "name", "address", "bookings")
+WIZARD_STEP_NUMBERS = {"welcome": 1, "name": 2, "address": 3, "bookings": 4}
+WIZARD_TOTAL_STEPS = 5
+
+
+def first_apartment(owner_user_id: int):
+    return db.query_one(
+        "SELECT a.*, "
+        "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
+        "FROM apartment a "
+        f"WHERE a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} "
+        "ORDER BY a.id LIMIT 1",
+        (owner_user_id,),
+    )
+
+
+def _address_complete(apartment) -> bool:
+    if not apartment:
+        return False
+    for field in ("addr_street", "addr_house_no", "addr_zip", "addr_obec"):
+        if not (apartment[field] or "").strip():
+            return False
+    zipcode = validation.normalise_zip(apartment["addr_zip"])
+    return zipcode and len(zipcode) == 5
+
+
+def _bookings_complete(owner_user_id: int, apartment) -> bool:
+    if not apartment:
+        return False
+    if int(apartment["feeds"] or 0) > 0:
+        return True
+    manual = int(
+        db.query_one(
+            "SELECT COUNT(*) AS n FROM reservation r "
+            f"WHERE r.apartment_id = ? AND r.status = 'active' AND r.source = 'manual'",
+            (apartment["id"],),
+        )["n"]
+    )
+    return manual > 0
+
+
+def wizard_step(owner_user_id: int) -> str:
+    """First unfinished setup-wizard screen after welcome."""
+    apartment = first_apartment(owner_user_id)
+    if not apartment:
+        return "name"
+    if not _address_complete(apartment):
+        return "address"
+    if not _bookings_complete(owner_user_id, apartment):
+        return "bookings"
+    return "complete"
+
+
+def wizard_step_number(step: str) -> int:
+    if step == "complete":
+        return WIZARD_TOTAL_STEPS
+    return WIZARD_STEP_NUMBERS.get(step, 1)
+
+
 def _apartment_issues(apartment) -> List[validation.Issue]:
     data = dict(apartment)
     data["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
@@ -146,6 +205,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
             "communication_url": f"/apartments/{first_apartment['id']}#communication",
             "property_url": f"/apartments/{first_apartment['id']}",
         }
+    wstep = wizard_step(owner_user_id)
     return {
         "steps": steps,
         "current": current,
@@ -157,4 +217,8 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         "dismissed": is_dismissed(owner_user_id),
         "setup_issues": setup_issues,
         "first_apartment_id": first_apartment["id"] if first_apartment else None,
+        "wizard_step": wstep,
+        "wizard_step_number": wizard_step_number(wstep),
+        "wizard_total_steps": WIZARD_TOTAL_STEPS,
+        "wizard_complete": wstep == "complete",
     }

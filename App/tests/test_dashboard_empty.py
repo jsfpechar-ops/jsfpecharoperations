@@ -146,7 +146,7 @@ def test_the_finish_setup_panel_gives_way_to_the_banner(host):
     page = client.get("/?lang=en")
 
     assert "Finish setup" not in page.text
-    assert 'class="onboarding-banner"' in page.text
+    assert "onboarding-banner" in page.text
 
 
 def test_the_finish_setup_panel_returns_when_the_banner_is_hidden(host):
@@ -156,4 +156,4 @@ def test_the_finish_setup_panel_returns_when_the_banner_is_hidden(host):
     page = client.get("/?lang=en")
 
     assert "Finish setup" in page.text
-    assert 'class="onboarding-banner"' not in page.text
+    assert "onboarding-banner" not in page.text

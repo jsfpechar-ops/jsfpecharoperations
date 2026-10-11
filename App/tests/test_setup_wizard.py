@@ -1,0 +1,166 @@
+"""Setup wizard shell: welcome through bookings."""
+from __future__ import annotations
+
+from unittest.mock import patch
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app import auth, config, db, onboarding
+from app.main import app
+from tests.conftest import login_as
+
+
+def setup_module():
+    db.init_db()
+
+
+def _session_client(username: str) -> TestClient:
+    owner_id = auth.create_account(f"{username}@example.test", "", role="host", username=username)
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
+    client = TestClient(app)
+    client.cookies.set(auth.SESSION_COOKIE, auth.issue_session(owner_id, account["session_version"]))
+    return client
+
+
+def _walk_to_address(client: TestClient, name: str = "Flat Vinohrady") -> int:
+    client.post("/setup/welcome", follow_redirects=False)
+    response = client.post(
+        "/setup/name",
+        data={"internal_name": name, "active": "1"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    apartment = db.query_one(
+        "SELECT id FROM apartment WHERE internal_name = ? ORDER BY id DESC LIMIT 1",
+        (name,),
+    )
+    assert apartment
+    return apartment["id"]
+
+
+def test_setup_resume_after_name_lands_on_address():
+    client = _session_client("wizard-resume")
+    _walk_to_address(client)
+    response = client.get("/setup", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"].endswith("/setup/address")
+
+
+def test_name_step_creates_property_with_name_only():
+    client = _session_client("wizard-name-only")
+    client.post("/setup/welcome", follow_redirects=False)
+    response = client.post(
+        "/setup/name",
+        data={"internal_name": "Studio Karlín", "active": "1"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    row = db.query_one(
+        "SELECT * FROM apartment WHERE internal_name = ?", ("Studio Karlín",)
+    )
+    assert row
+    assert row["active"] == 1
+
+
+def test_address_step_uses_property_validation():
+    client = _session_client("wizard-address-validation")
+    apartment_id = _walk_to_address(client)
+    response = client.post(
+        "/setup/address",
+        data={
+            "internal_name": "Flat Vinohrady",
+            "active": "1",
+            "addr_street": "Main",
+            "addr_house_no": "1",
+            "addr_zip": "12345",
+            "addr_obec": "Prague",
+            "return_to": "/setup/bookings",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    row = db.query_one("SELECT addr_zip FROM apartment WHERE id = ?", (apartment_id,))
+    assert row["addr_zip"] == "12345"
+
+
+def test_another_owner_cannot_reach_foreign_property_wizard():
+    owner_a = _session_client("wizard-owner-a")
+    _walk_to_address(owner_a, "Owner A flat")
+    owner_b = _session_client("wizard-owner-b")
+    response = owner_b.get("/setup/address", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"].endswith("/setup/name")
+    row = db.query_one("SELECT internal_name FROM apartment WHERE internal_name = ?", ("Owner A flat",))
+    assert row
+    assert db.query_one(
+        "SELECT COUNT(*) AS n FROM apartment WHERE internal_name = ?",
+        ("Owner A flat",),
+    )["n"] == 1
+
+
+def test_sync_failure_shows_friendly_error_and_removes_feed(monkeypatch):
+    client = _session_client("wizard-sync-fail")
+    apartment_id = _walk_to_address(client)
+    db.execute(
+        "UPDATE apartment SET addr_street = ?, addr_house_no = ?, addr_zip = ?, addr_obec = ? WHERE id = ?",
+        ("Street", "12", "12000", "Prague", apartment_id),
+    )
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "http://testserver")
+
+    def _fail_sync(_apartment_id):
+        return {"created": 0, "updated": 0, "errors": 1}
+
+    with patch("app.routes.setup_wizard.validate_calendar_url", lambda url: url):
+        with patch("app.routes.setup_wizard.icalsync.sync_all", _fail_sync):
+            client.post("/setup/bookings", data={"source": "airbnb"}, follow_redirects=False)
+            response = client.post(
+                "/setup/bookings",
+                data={
+                    "source": "airbnb",
+                    "url": "https://example.test/calendar.ics",
+                },
+                follow_redirects=False,
+            )
+    assert response.status_code == 400
+    assert "could not read" in response.text.lower()
+    feeds = db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
+    assert feeds == []
+
+
+def test_wizard_screens_work_without_javascript():
+    client = _session_client("wizard-no-js")
+    for path in ("/setup/welcome",):
+        page = client.get(path)
+        assert page.status_code == 200
+        assert 'method="post"' in page.text
+    _walk_to_address(client)
+    for path in ("/setup/name?edit=1", "/setup/address", "/setup/bookings"):
+        page = client.get(path)
+        assert page.status_code == 200
+        assert "<form" in page.text
+
+
+def test_wizard_step_progress():
+    owner_id = auth.create_account("wizard-step@example.test", "", role="host", username="wizard-step")
+    assert onboarding.wizard_step(owner_id) == "name"
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "owner_user_id": owner_id,
+            "internal_name": "X",
+            "permalink_token": "tok1234567",
+            "permalink_pin": "123456",
+            "automation_mode": "manual",
+            "submit_after_hours": 24,
+            "active": 1,
+            "created_at": db.utcnow(),
+        },
+    )
+    assert onboarding.wizard_step(owner_id) == "address"
+    db.execute(
+        "UPDATE apartment SET addr_street = 'S', addr_house_no = '1', addr_zip = '11000', addr_obec = 'Praha' "
+        "WHERE id = ?",
+        (apartment_id,),
+    )
+    assert onboarding.wizard_step(owner_id) == "bookings"

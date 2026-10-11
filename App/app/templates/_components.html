@@ -345,30 +345,15 @@
 {% endmacro %}
 
 {% macro onboarding_banner(onboarding) %}
-  {% if onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
-    <aside class="onboarding-banner" aria-label="{{ t('onboarding.welcome_title') }}">
-      <div class="onboarding-banner-progress" aria-hidden="true">
-        <span style="width:{{ onboarding.percent }}%"></span>
-      </div>
-      <div class="onboarding-banner-copy">
-        <small>{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</small>
-        <strong>{{ t('onboarding.step_of', n=onboarding.completed + 1, total=onboarding.total,
-                     title=t('onboarding.' ~ onboarding.current.id ~ '.title')) }}</strong>
-        <small>{{ t('onboarding.' ~ onboarding.current.id ~ '.detail') }}</small>
-      </div>
-      <div class="onboarding-banner-actions">
-        <a class="small" href="/onboarding">{{ t('onboarding.all_steps') }}</a>
-        <a class="btn primary small" href="{{ onboarding.current.url }}">
-          {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
-        {% if onboarding.current.manual_url %}
-          <a class="small" href="{{ onboarding.current.manual_url }}">
-            {{ t('onboarding.' ~ onboarding.current.id ~ '.manual') }}</a>
-        {% endif %}
-        <form method="post" action="/onboarding/dismiss">
-          <input type="hidden" name="return_to" value="{{ request.url.path }}">
-          <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
-        </form>
-      </div>
+  {% if onboarding and not onboarding.wizard_complete and not onboarding.dismissed %}
+    <aside class="onboarding-banner onboarding-banner-setup" aria-label="{{ t('setup.banner.aria') }}">
+      <a class="onboarding-banner-setup-link" href="/setup">
+        {{ t('setup.banner.line', step=onboarding.wizard_step_number, total=onboarding.wizard_total_steps) }}
+      </a>
+      <form method="post" action="/onboarding/dismiss">
+        <input type="hidden" name="return_to" value="{{ request.url.path }}">
+        <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
+      </form>
     </aside>
   {% endif %}
 {% endmacro %}
