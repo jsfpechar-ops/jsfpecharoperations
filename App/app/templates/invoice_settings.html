@@ -53,6 +53,9 @@
       <div class="field">
         <label for="bic">{{ t('entities.bic.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
         <input type="text" id="bic" name="bic" value="{{ entity.bic or '' }}">
+        {% if bic_from_bank %}
+        <div class="hint">{{ t('invoice.fill_guest.bic_filled') }}</div>
+        {% endif %}
       </div>
     </div>
     <div class="grid">

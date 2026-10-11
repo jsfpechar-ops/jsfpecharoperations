@@ -18,7 +18,7 @@ entity, or an alternate controller configured per property
 | Processor | The UbyHost operator (`config.OPERATOR_*`) |
 | Categories of data subjects | Guests staying at the controller's property |
 | Categories of personal data | Name, birth date, nationality, permanent residence; travel document and visa numbers (Fernet-encrypted at rest); drawn signature; optional passport/ID image or PDF (default **off**); stay dates; submitter IP; the e-mail/phone used to claim the stay; police submission envelopes; Doručenka/error PDFs; when the host uses door codes, the door code and its validity times (encrypted, deleted a day after expiry) |
-| Processing operations | Guest registration form, house book, police reporting via UbyPort, claim/reminder e-mail delivery, storage, backup |
+| Processing operations | Guest registration form, house book, police reporting via UbyPort, claim/reminder e-mail delivery, storage, backup; on the host's button press, check-in name and address may be copied into that stay's invoice buyer fields |
 | Recipients | Police of the Czech Republic (UbyPort) as a statutory recipient; the subprocessors in the `/subprocessors` register; TTLock (Hangzhou Sciener Intelligent Control Technology Co., Ltd.), only for properties with door codes on: lock ID, code, validity times, reference number ([DOOR_CODES_LEGAL](DOOR_CODES_LEGAL.md)) |
 | Transfers | Cloudflare is a global edge network; AWS production is `eu-central-1`; see the register and LD-9 |
 | Security measures | `docs/SECURITY.md`; the code-enforced vs operator-configured split is `TOMS.md` (LD-7) |

@@ -11,6 +11,8 @@ import io
 import re
 import unicodedata
 from decimal import Decimal
+from functools import lru_cache
+from pathlib import Path
 
 import qrcode
 from qrcode.constants import ERROR_CORRECT_M
@@ -59,6 +61,42 @@ def compose_czech_account(prefix: str, number: str, bank: str) -> str:
     if not prefix and not number and not bank:
         return ""
     return f"{prefix}-{number}/{bank}" if prefix else f"{number}/{bank}"
+
+
+_BANK_CODES_PATH = Path(__file__).resolve().parent / "data" / "bank_codes.csv"
+
+
+@lru_cache(maxsize=1)
+def _bank_bic_by_code() -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    if not _BANK_CODES_PATH.is_file():
+        return mapping
+    with _BANK_CODES_PATH.open(encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if line.lower().startswith("code;"):
+                continue
+            row = line.split(";")
+            if len(row) < 3:
+                continue
+            code, bic = row[0].strip(), row[2].strip().upper()
+            if code.isdigit() and len(code) == 4 and bic:
+                mapping[code] = bic
+    return mapping
+
+
+def bic_for_account(account: str) -> str:
+    """BIC for a Czech domestic account or CZ IBAN; empty when unknown."""
+    text = re.sub(r"\s+", "", account or "").upper()
+    parts = czech_account_parts(text)
+    bank_code = (parts.get("bank") or "").strip()
+    if not bank_code and parts.get("iban", "").startswith("CZ") and len(parts["iban"]) >= 8:
+        bank_code = parts["iban"][4:8]
+    if not bank_code.isdigit() or len(bank_code) != 4:
+        return ""
+    return _bank_bic_by_code().get(bank_code, "")
 
 
 def preserve_iban_only_account(existing: str, prefix: str, number: str, bank: str) -> bool:

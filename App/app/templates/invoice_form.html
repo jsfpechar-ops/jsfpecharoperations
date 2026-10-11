@@ -52,6 +52,11 @@
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('invoice.section.customer') }}</h2>
+    {% if show_fill_guest %}
+    <div class="actions" style="margin-bottom:12px">
+      <button type="submit" name="fill_from_guest" value="1" formnovalidate class="btn-secondary">{{ t('invoice.fill_guest.button') }}</button>
+    </div>
+    {% endif %}
     <div class="grid invoice-buyer-grid">
       <div class="field">
         <label for="buyer_name">{{ t('invoice.buyer.name') }}</label>
@@ -198,7 +203,12 @@
           <td data-label="{{ t('invoice.col.unit') }}">{{ t('invoice.stay.unit') }}</td>
           <td data-label="{{ t('invoice.col.unit_price') }}">
             <input type="text" name="stay_price" inputmode="decimal" required class="input-price"
-                   aria-label="{{ t('invoice.stay.price') }}" value="{{ values.get('stay_price', '') }}">
+                   aria-label="{{ t('invoice.stay.price') }}"
+                   {% if stay_price_hint %}placeholder="{{ stay_price_hint }}" aria-describedby="stay-price-hint"{% endif %}
+                   value="{{ values.get('stay_price', '') }}">
+            {% if stay_price_hint %}
+            <span id="stay-price-hint" class="small muted">{{ t('invoice.price_hint', price=stay_price_hint) }}</span>
+            {% endif %}
           </td>
           <td data-label="{{ t('invoice.col.vat') }}" data-vat-col {% if not payer %}hidden{% endif %}>
             <select name="stay_vat_rate" class="input-vat" {% if not payer %}disabled{% endif %}>

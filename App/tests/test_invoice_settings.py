@@ -121,9 +121,9 @@ def test_settings_save_normalises_the_bank_and_keeps_absent_fields(host):
     # bank normalised through the payments helper
     assert row["bank_account"] == "19-2000781379/0800"
     assert row["iban"].startswith("CZ")
-    # absent fields untouched
+    # absent fields untouched; BIC fills from the bank code when blank
     assert row["registry_entry"] is None
-    assert row["bic"] is None
+    assert row["bic"] == "GIBACZPX"
 
 
 def test_saving_other_fields_does_not_wipe_an_iban_only_account(host):
