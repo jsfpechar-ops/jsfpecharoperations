@@ -92,6 +92,7 @@ PLATFORM_HINTS = (
     ("trip", ("trip.com", "ctrip")),
     ("google", ("google.com/calendar", "calendar.google")),
     ("apple", ("icloud.com",)),
+    ("echalupy", ("e-chalupy", "echalupy")),
 )
 
 

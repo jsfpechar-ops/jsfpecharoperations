@@ -499,3 +499,7 @@
   </div>
 </div>
 {% endmacro %}
+
+{% macro source_badge(key, label) %}
+<span class="source-badge">{{ source_mark(key) }}{{ label }}</span>
+{% endmacro %}
