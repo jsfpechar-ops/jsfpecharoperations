@@ -1,5 +1,7 @@
 # 0054 report: setup wizard shell
 
+Status: review
+
 ## Files
 
 - `App/app/routes/setup_wizard.py` — GET/POST `/setup/{welcome,name,address,bookings}`, resume via `/setup`
@@ -23,9 +25,7 @@ Full suite: `3055 passed, 2 skipped`; six Playwright geometry/copy tests failed 
 
 ## Screenshots
 
-Capture blocked in this run (browser login/session setup against the uvicorn test server). Wizard pages render in `test_setup_wizard` and manual `/setup/welcome` walk-through. Owner can capture with:
-
-`docs/tasks/screenshots/0054/{welcome,name,address,bookings}-{360,390,1280}.png`
+`docs/tasks/0054-screenshots/` at 360, 390 and 1280 px: welcome, name, address, bookings, bookings-paste, bookings-found.
 
 ## Acceptance walk-through
 
