@@ -5,7 +5,7 @@ import sqlite3
 import unicodedata
 from datetime import date
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
 from .. import (
@@ -65,6 +65,8 @@ STAY_FEE_STATUSES = (
     ("waiting", "stay_fees.status.in_progress"),
     ("ready", "stay_fees.status.ready"),
     ("saved", "stay_fees.status.saved"),
+    ("sent", "stay_fees.status.sent"),
+    ("paid", "stay_fees.status.paid"),
 )
 
 
@@ -72,6 +74,10 @@ def _row_status(row: dict) -> str:
     if row["unset"]:
         return "attention"
     if row.get("frozen"):
+        if row.get("paid_at"):
+            return "paid"
+        if row.get("sent_at"):
+            return "sent"
         return "saved"
     issues = row["issues"] or []
     if issues == ["stay_fees.issue.period_running"]:
@@ -174,6 +180,9 @@ def _fee_values(form) -> dict:
         "stay_fee_authority_name": _form_str(form, "stay_fee_authority_name")[:200].strip() or None,
         "stay_fee_authority_address": _form_str(form, "stay_fee_authority_address")[:200].strip() or None,
         "stay_fee_authority_contact": _form_str(form, "stay_fee_authority_contact")[:200].strip() or None,
+        "stay_fee_authority_databox": (
+            validation.normalise_databox(_form_str(form, "stay_fee_authority_databox")) or None
+        ),
         "stay_fee_payee": _form_str(form, "stay_fee_payee")[:60].strip() or None,
         "stay_fee_instruction": _form_str(form, "stay_fee_instruction")[:500].strip() or None,
     }
@@ -288,6 +297,8 @@ def stay_fee_detail(apartment_id: int, request: Request):
             issues.append("stay_fees.issue.unsigned")
         issues = list(dict.fromkeys(issues))
     pay = stay_fee.payment_details(group) if frozen else None
+    filing_row = stay_fee_filing.covering(apartment["id"], selected_month) if frozen else None
+    send_panel = _send_panel_context(apartment, period, group, filing_row) if filing_row else None
     return render(request, "stay_fee_detail.html", {
         "nav": "stay_fees",
         "apartment": apartment,
@@ -305,7 +316,53 @@ def stay_fee_detail(apartment_id: int, request: Request):
         "correcting": correcting,
         "filing_version": period.get("version") if period else None,
         "exempt_categories": stay_fee.EXEMPT_CATEGORIES,
+        "send_panel": send_panel,
     })
+
+
+def _operator_line(apartment) -> str:
+    entity = None
+    entity_id = apartment["legal_entity_id"]
+    if entity_id:
+        entity = db.query_one("SELECT * FROM legal_entity WHERE id = ?", (entity_id,))
+    name = (entity["name"] if entity else "") or (apartment["internal_name"] or "")
+    ico = (entity["ico"] if entity else "") or ""
+    if ico.strip():
+        return f"{name}, IČO {ico.strip()}"
+    return name
+
+
+def _send_panel_context(apartment, period, group, filing_row: dict) -> dict:
+    period_label = period["label"] if period else ""
+    property_name = apartment["internal_name"] or ""
+    subject_cs = f"Ohlášení poplatku z pobytu – {period_label} – {property_name}"
+    amount = stay_fee.format_czk(group["total_czk"])
+    body_cs = "\n".join([
+        _operator_line(apartment),
+        period_label,
+        f"Částka k úhradě: {amount}. Podrobnosti v příloze.",
+    ])
+    return {
+        "filing_id": filing_row["id"],
+        "authority_name": apartment["stay_fee_authority_name"] or "",
+        "databox": apartment["stay_fee_authority_databox"] or "",
+        "subject_cs": subject_cs,
+        "body_cs": body_cs,
+        "sent_at": filing_row["sent_at"],
+        "paid_at": filing_row["paid_at"],
+        "sent_message_id": filing_row["sent_message_id"] or "",
+    }
+
+
+def _filing_for_action(request: Request, apartment_id: int, filing_id: int):
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return None, None
+    row = db.query_one(
+        "SELECT * FROM stay_fee_filing WHERE id = ? AND apartment_id = ? AND superseded_at IS NULL",
+        (filing_id, apartment_id),
+    )
+    return apartment, row
 
 
 def _guest_lines(apartment, period):
@@ -670,3 +727,52 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
         return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
     db.audit("stay_fee_finalize", f"apartment_id={apartment['id']} period={key}")
     return _back(back_path, msg=_flash(request, "flash.stay_fees.period_saved"))
+
+
+@router.post("/stay-fees/{apartment_id}/filings/{filing_id}/sent")
+async def stay_fee_filing_sent(apartment_id: int, filing_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, row = _filing_for_action(request, apartment_id, filing_id)
+    if not apartment or not row:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
+    back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    undo = _form_str(form, "undo") == "1"
+    if undo:
+        if row["sent_at"]:
+            db.update("stay_fee_filing", filing_id, {"sent_at": None, "sent_message_id": None})
+            db.audit("stay_fee_sent_undo", f"filing_id={filing_id}")
+    elif not row["sent_at"]:
+        message_id = _form_str(form, "sent_message_id")[:100].strip() or None
+        db.update(
+            "stay_fee_filing",
+            filing_id,
+            {"sent_at": db.utcnow(), "sent_message_id": message_id},
+        )
+        db.audit("stay_fee_sent", f"filing_id={filing_id}")
+    return _back(back_path, msg=_flash(request, "flash.stay_fees.saved"))
+
+
+@router.post("/stay-fees/{apartment_id}/filings/{filing_id}/paid")
+async def stay_fee_filing_paid(apartment_id: int, filing_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, row = _filing_for_action(request, apartment_id, filing_id)
+    if not apartment or not row:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
+    back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    undo = _form_str(form, "undo") == "1"
+    if undo:
+        if row["paid_at"]:
+            db.update("stay_fee_filing", filing_id, {"paid_at": None})
+            db.audit("stay_fee_paid_undo", f"filing_id={filing_id}")
+    elif not row["paid_at"]:
+        db.update("stay_fee_filing", filing_id, {"paid_at": db.utcnow()})
+        db.audit("stay_fee_paid", f"filing_id={filing_id}")
+    return _back(back_path, msg=_flash(request, "flash.stay_fees.saved"))

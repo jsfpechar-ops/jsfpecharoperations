@@ -1189,6 +1189,9 @@ def _apartment_payload(form) -> Dict[str, Any]:
             ("stay_fee_instruction", 500),
         ):
             payload[key] = _form_str(form, key)[:limit].strip() or None
+        payload["stay_fee_authority_databox"] = (
+            validation.normalise_databox(_form_str(form, "stay_fee_authority_databox")) or None
+        )
         if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
             prefix = _form_str(form, "account_prefix")
             number = _form_str(form, "account_number")
