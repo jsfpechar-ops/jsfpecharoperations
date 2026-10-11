@@ -1,0 +1,13 @@
+{% extends "setup/_layout.html" %}
+{% block wizard_body %}
+<header class="wizard-head">
+  <h1>{{ t('setup.welcome.title') }}</h1>
+  <p class="wizard-lede">{{ t('setup.welcome.lede') }}</p>
+  <p class="wizard-prepare">{{ t('setup.welcome.prepare') }}</p>
+</header>
+<form class="wizard-form" method="post" action="/setup/welcome">
+  <div class="wizard-actions">
+    <button class="btn primary wizard-continue" type="submit">{{ t('setup.welcome.start') }}</button>
+  </div>
+</form>
+{% endblock %}
