@@ -72,26 +72,14 @@ def test_the_nav_numbers_run_one_to_five_without_a_gap(host):
     assert targets == ['calendars', 'communication', 'ubyport', 'basics', 'stay-fee-settings', 'address']
 
 
-def test_the_automation_summary_names_the_page_it_sends_you_to(host):
+def test_the_automation_panel_is_editable_on_the_property_page(host):
     client, apartment_id = host
 
-    page = client.get(f"/apartments/{apartment_id}?lang=en")
+    panel = _automation_panel(client.get(f"/apartments/{apartment_id}?lang=en").text)
 
-    assert (
-        "Send timing and default purpose are set on the Automation page."
-        in _rendered_text(page.text)
-    )
-
-
-def test_the_czech_automation_summary_says_the_same(host):
-    client, apartment_id = host
-
-    page = client.get(f"/apartments/{apartment_id}?lang=cs")
-
-    assert (
-        "Časování odesílání a výchozí účel pobytu nastavíte na stránce Automatizace."
-        in _rendered_text(page.text)
-    )
+    assert 'name="automation_mode"' in panel
+    assert 'name="default_purpose"' in panel
+    assert "Automatic modes do not wait for ID verification" in panel
 
 
 def test_the_automation_summary_no_longer_promises_credentials(host):
@@ -111,12 +99,12 @@ def test_the_czech_automation_summary_no_longer_promises_credentials(host):
     assert "údaje UbyPortu" not in _automation_panel(page)
 
 
-def test_the_automation_panel_still_links_to_the_automation_page(host):
+def test_the_automation_panel_does_not_link_away(host):
     client, apartment_id = host
 
     page = client.get(f"/apartments/{apartment_id}?lang=en").text
 
-    assert f'href="/automation#apartment-{apartment_id}"' in _automation_panel(page)
+    assert "/automation" not in _automation_panel(page)
 
 
 def test_the_new_property_form_keeps_its_own_nav_labels(host):

@@ -273,7 +273,7 @@
 
   <details class="panel property-section" id="ubyport">
     <summary>{{ t('host.reporting') }}</summary>
-    <p><a href="#automation">{{ t('nav.automation') }} →</a></p>
+    <p><a href="#automation">{{ t('automation.timing_title') }} →</a></p>
     <p class="small muted" style="margin-top:-4px">
       {{ t('apartment.form.ubyport.intro') }}
     </p>
@@ -370,24 +370,40 @@
   {% if editing %}
   <details class="panel property-section" id="automation">
     <summary>{{ t('nav.automation') }}</summary>
-    <p class="small muted" style="margin-top:-4px">
-      {{ t('apartment.form.automation.editing_lede_before') }}
-      <a href="/automation#apartment-{{ apartment.id }}">{{ t('apartment.form.automation.page_name') }}</a>{{ t('apartment.form.automation.editing_lede_after') }}
-    </p>
-    <dl class="kv">
-      <dt>{{ t('automation.timing_label') }}</dt>
-      <dd>
-        {% if apartment.automation_mode == 'immediate' %}{{ t('apartment.form.automation.summary.immediate') }}
-        {% elif apartment.automation_mode == 'manual' %}{{ t('apartment.form.automation.summary.manual') }}
-        {% else %}{{ t('stay.detail.note.scheduled', hours=apartment.submit_after_hours) }}{% endif %}
-      </dd>
-      <dt>{{ t('automation.default_purpose') }}</dt><dd>{{ purpose_label(apartment.default_purpose or '10', lang) }}</dd>
-    </dl>
-    <a class="btn" href="/automation#apartment-{{ apartment.id }}">{{ t('apartment.form.automation.open') }}</a>
+    <h3 style="margin-top:0">{{ t('automation.timing_title') }}</h3>
+    <p class="small muted">{{ t('automation.timing_help') }}</p>
+    <div class="grid two">
+      <div class="field">
+        <label for="automation_mode">{{ t('automation.timing_label') }}</label>
+        <select id="automation_mode" name="automation_mode"
+                data-automation-mode data-hours-target="submit_after_hours">
+          <option value="manual" {% if apartment.automation_mode == 'manual' %}selected{% endif %}>
+            {{ t('automation.mode.manual') }}</option>
+          <option value="scheduled" {% if apartment.automation_mode == 'scheduled' %}selected{% endif %}>
+            {{ t('automation.mode.scheduled') }}</option>
+          <option value="immediate" {% if apartment.automation_mode == 'immediate' %}selected{% endif %}>
+            {{ t('automation.mode.immediate') }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="submit_after_hours">{{ t('automation.hours') }}</label>
+        <input type="number" id="submit_after_hours" name="submit_after_hours"
+               min="0" max="48" value="{{ apartment.submit_after_hours }}">
+      </div>
+    </div>
+    <div class="field" style="max-width:320px">
+      <label for="default_purpose">{{ t('automation.default_purpose') }}</label>
+      <select id="default_purpose" name="default_purpose">
+        {% for purpose in purposes %}
+          <option value="{{ purpose.code }}"
+            {% if apartment.default_purpose == purpose.code %}selected{% endif %}>{{ purpose.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
   </details>
   {% endif %}
 
-  <details class="panel property-section" id="communication" {% if copied_from_name %}open{% endif %}>
+  <details class="panel property-section" id="communication" {% if editing or copied_from_name %}open{% endif %}>
     <summary>{{ t('nav.guest_links') }}</summary>
     <div class="field">
       <label for="guest_message">{{ t('apartment.form.guest_message.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
@@ -452,7 +468,18 @@
       </details>
       <details class="message-details" open>
         <summary>{{ t('guest_links.message_title') }}</summary>
-        <pre>{{ bilingual_message('guest_links.message', link=permalink, pin=pin) }}</pre>
+        <p class="small muted">{{ t('guest_links.message_lede') }}</p>
+        <pre class="message-template" id="message-{{ apartment.id }}">{{ bilingual_message('guest_links.message', link=permalink, pin=pin) }}</pre>
+        <pre id="message-en-{{ apartment.id }}" hidden>{{ bilingual_message('guest_links.message', languages=['en'], link=permalink, pin=pin) }}</pre>
+        <div class="actions">
+          <button class="btn small primary" type="button" data-copy="message-{{ apartment.id }}"
+                  data-copy-label="{{ t('guest_links.copy_message') }}"
+                  data-copied-label="{{ t('guest_links.message_copied') }}">{{ t('guest_links.copy_message') }}</button>
+          <button class="btn small" type="button" data-copy="message-en-{{ apartment.id }}"
+                  data-copy-label="{{ t('guest_links.copy_message_en') }}"
+                  data-copied-label="{{ t('guest_links.message_copied') }}">{{ t('guest_links.copy_message_en') }}</button>
+          <a class="btn small ghost" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+        </div>
       </details>
       <p class="small muted">{{ t('apartment.form.guest_link.message_help') }}</p>
       <div class="setup-list" style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">

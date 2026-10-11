@@ -105,8 +105,8 @@ def _page(browser, base, world, width, signed_in=True):
 def test_guest_links_message_wraps_instead_of_widening_the_page(base, world, browser, width):
     context, page = _page(browser, base, world, width)
     try:
-        page.goto(base + "/guest-links?lang=en")
-        page.wait_for_selector(".message-template")
+        page.goto(f"{base}/apartments/{world['studio']}?lang=en")
+        page.wait_for_selector("#communication .message-template")
         assert page.evaluate(NO_SIDEWAYS_SCROLL) <= 1
     finally:
         context.close()

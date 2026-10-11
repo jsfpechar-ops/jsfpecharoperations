@@ -6,7 +6,7 @@
 {{ page_header(t('nav.settings'), t('settings.lede')) }}
 
 <nav class="host-property-grid" aria-label="{{ t('nav.settings') }}">
-  {% for href, key in [('#settings-account', 'settings.nav.account'), ('#settings-security', 'settings.nav.security'), ('#settings-data', 'settings.data.title'), ('/settings/archived', 'settings.nav.archive'), ('/privacy-requests', 'nav.privacy_requests'), ('#settings-technical', 'settings.technical.title'), ('#settings-legal', 'settings.nav.legal')] %}
+  {% for href, key in [('#settings-account', 'settings.nav.account'), ('#settings-security', 'settings.nav.security'), ('#settings-data', 'settings.data.title'), ('/entities', 'host.business'), ('/settings/archived', 'settings.nav.archive'), ('/privacy-requests', 'nav.privacy_requests'), ('#settings-technical', 'settings.technical.title'), ('#settings-legal', 'settings.nav.legal')] %}
     <a class="host-property-card" href="{{ href }}"><strong>{{ t(key) }}</strong><span aria-hidden="true">→</span></a>
   {% endfor %}
   {% if current_user.role == 'admin' %}

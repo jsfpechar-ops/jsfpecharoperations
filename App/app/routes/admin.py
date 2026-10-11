@@ -417,33 +417,22 @@ def guide_view(request: Request):
 
 # --- guest communication ------------------------------------------------
 
+def _property_hub_redirect(request: Request, anchor: str) -> RedirectResponse:
+    apartments = access.apartments(request)
+    if len(apartments) == 1:
+        return RedirectResponse(
+            f"/apartments/{apartments[0]['id']}#{anchor}",
+            status_code=303,
+        )
+    return RedirectResponse("/apartments", status_code=303)
+
+
 @router.get("/guest-links")
 def guest_links(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartments = db.query(
-        "SELECT a.*, e.name AS entity_name, "
-        "  (SELECT COUNT(*) FROM ical_feed f WHERE f.apartment_id = a.id AND f.active = 1) AS feeds "
-        "FROM apartment a LEFT JOIN legal_entity e ON e.id = a.legal_entity_id "
-        f"WHERE a.active = 1 AND a.archived_at IS NULL AND {db.null_safe_eq('a.owner_user_id')} "
-        "ORDER BY a.internal_name",
-        (access.owner_id(request),),
-    )
-    rows = []
-    for apartment in apartments:
-        apartment = _ensure_apartment_pin(apartment)
-        link_key = guest_slug.link_key(apartment)
-        rows.append(
-            {
-                "apartment": apartment,
-                "issues": validation.errors_only(_apartment_issues(apartment)),
-                "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
-                "link_key": link_key,
-                "pin": apartment["permalink_pin"] or "",
-            }
-        )
-    return render(request, "guest_links.html", {"rows": rows})
+    return _property_hub_redirect(request, "communication")
 
 
 @router.get("/smart-locks")
@@ -1417,6 +1406,7 @@ def apartment_detail(apartment_id: int, request: Request):
             "more_options_open": _more_options_open(request, issues, readiness),
             "purposes": codelists.purpose_options("en"),
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
+            "link_key": link_key,
             "link_base": f"{config.PUBLIC_BASE_URL}/l/",
             "link_readable": (
                 guest_slug.readable_of(link_key) if link_key != apartment["permalink_token"] else ""
@@ -1485,6 +1475,58 @@ async def apartment_update(apartment_id: int, request: Request):
     return _back(return_to, msg=msg)
 
 
+_ADDRESS_ONLY_FIELDS = (
+    "addr_okres",
+    "addr_obec",
+    "addr_obec_cast",
+    "addr_street",
+    "addr_house_no",
+    "addr_orient_no",
+    "addr_zip",
+)
+
+
+def _save_address_only(apartment_id: int, request: Request, form) -> Optional[Response]:
+    """Persist only police address fields (setup wizard address step)."""
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return _back("/setup/name", err=_flash(request, "flash.error.no_such_apartment"))
+    payload: Dict[str, Any] = {
+        field: _form_str(form, field) for field in _ADDRESS_ONLY_FIELDS
+    }
+    payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
+    _apply_address_line_from_form(form, payload)
+    merged = dict(apartment)
+    merged.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS})
+    address_issues = [
+        issue
+        for issue in validation.errors_only(validation.validate_apartment(_apartment_with_secret(merged)))
+        if issue.field in _ADDRESS_ONLY_FIELDS
+    ]
+    if address_issues:
+        from .setup_wizard import _address_preview, _step_context
+
+        return render(
+            request,
+            "setup/address.html",
+            _step_context(
+                request,
+                "address",
+                address_error=address_issues[0].message,
+                address_preview=_address_preview(apartment),
+                split_address=hasattr(validation, "split_czech_address"),
+            ),
+            status_code=400,
+        )
+    db.update(
+        "apartment",
+        apartment_id,
+        {field: payload[field] for field in _ADDRESS_ONLY_FIELDS},
+    )
+    db.audit("apartment_updated", f"id={apartment_id}")
+    return None
+
+
 def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Optional[Response], bool]:
     """Persist the property form, or return the redirect that rejects it.
 
@@ -1495,6 +1537,9 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
     payload = _apartment_payload(form)
+    if "automation_mode" not in form:
+        for key in ("automation_mode", "submit_after_hours", "default_purpose"):
+            payload.pop(key, None)
     _apply_police_defaults(payload, access.entities(request))
     address_mismatch = _apply_address_line_from_form(form, payload)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
@@ -1505,8 +1550,6 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_controller")), False
     if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
         payload["data_controller_entity_id"] = None
-    for key in ("automation_mode", "submit_after_hours", "default_purpose"):
-        payload.pop(key, None)
     password = _form_str(form, "uby_ws_password")
     if password:
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
@@ -1642,7 +1685,7 @@ async def regenerate_pin(apartment_id: int, request: Request):
     # The PIN itself stays out of the flash: ?msg= lands in browser history and
     # access logs, and the guest link card already shows the new PIN.
     return _back(
-        _form_return_to(form, "/guest-links"),
+        _form_return_to(form, f"/apartments/{apartment_id}#communication"),
         msg=_flash(request, "flash.apartments.pin_rotated"),
     )
 
@@ -1669,7 +1712,7 @@ async def regenerate_link(apartment_id: int, request: Request):
     guest_slug.rotate(apartment_id)
     db.audit("permalink_rotated", f"apartment={apartment_id}")
     return _back(
-        _form_return_to(form, "/guest-links"),
+        _form_return_to(form, f"/apartments/{apartment_id}#communication"),
         msg=_flash(request, "flash.apartments.guest_link"),
     )
 
@@ -1692,127 +1735,12 @@ def _posted_credentials(form) -> bool:
     return any(_form_str(form, field) for field in UBYPORT_CREDENTIAL_FIELDS)
 
 
-def _automation_payload(form) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {field: _form_str(form, field) for field in UBYPORT_TEXT_FIELDS}
-    payload["uby_mark"] = payload["uby_mark"].upper()
-    mode = _form_str(form, "automation_mode", "scheduled")
-    payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "scheduled"
-    payload["submit_after_hours"] = min(_form_int(form, "submit_after_hours") or 24, 48)
-    purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
-    payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
-    return payload
-
-
-# What the property form calls each field the automation card can report as
-# missing. The anchor is the field's own id on that page, so the link lands on
-# the input the host has to fill in.
-_APARTMENT_FIELD_LABELS: Dict[str, Optional[str]] = {
-    "uby_idub": None,
-    "uby_mark": "apartment.form.ubyport.mark_label",
-    "uby_name": "automation.facility_name",
-    "uby_contact": "automation.contact",
-    "uby_ws_user": "automation.login",
-    "uby_ws_password": "automation.password",
-    "addr_okres": "apartment.form.addr.okres",
-    "addr_obec": "apartment.form.addr.obec",
-    "addr_obec_cast": "apartment.form.addr.obec_cast",
-    "addr_street": "apartment.form.addr.street",
-    "addr_house_no": "apartment.form.addr.house_no",
-    "addr_orient_no": "apartment.form.addr.orient_no",
-    "addr_zip": "apartment.form.addr.zip",
-    "legal_entity_id": "apartment.form.entity.label",
-}
-
-# The two labels that read the same in both languages, so they need no key.
-_APARTMENT_FIELD_LITERALS = {"uby_idub": "IDUB"}
-
-
-def _missing_fields(issues: List[validation.Issue]) -> List[Dict[str, str]]:
-    """The validation issues as links the host can act on.
-
-    One entry per field: a name that is both empty and too long is still one
-    thing to go and fix.
-    """
-    missing: List[Dict[str, str]] = []
-    for issue in issues:
-        if any(item["field"] == issue.field for item in missing):
-            continue
-        missing.append(
-            {
-                "field": issue.field,
-                "label_key": _APARTMENT_FIELD_LABELS.get(issue.field) or "",
-                "label": _APARTMENT_FIELD_LITERALS.get(issue.field, issue.field),
-            }
-        )
-    return missing
-
-
-def _save_automation_form(apartment_id: int, form) -> None:
-    """Persist the automation card.
-
-    Split out of ``automation_update`` because the credentials test on this page
-    has to save what the host just typed before it uses it. It is a *different*
-    payload from the property form's: the card posts no name, address or entity,
-    so saving it through ``_apartment_payload`` would blank them.
-    """
-    payload = _automation_payload(form)
-    password = _form_str(form, "uby_ws_password")
-    if password:
-        payload["uby_ws_password_enc"] = db.encrypt_secret(password)
-    current = db.query_one(
-        "SELECT uby_ws_user FROM apartment WHERE id = ?", (apartment_id,)
-    )
-    current_user = (current["uby_ws_user"] if current else "") or ""
-    db.update("apartment", apartment_id, payload)
-    # AR-18: saving the card (mode, review hours) is not new credentials, so it
-    # must not lift the pause that stops the retry storm against the police
-    # account. A new password or a changed login is the fix the pause waits for.
-    if password or (payload.get("uby_ws_user") or "") != current_user:
-        alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
-    db.audit("automation_updated", f"id={apartment_id} mode={payload['automation_mode']}")
-
-
 @router.get("/automation")
 def automation_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartments = access.apartments(request)
-    rows = []
-    for apartment in apartments:
-        issues = validation.errors_only(_apartment_issues(apartment))
-        rows.append(
-            {
-                "apartment": apartment,
-                "issues": issues,
-                "missing": _missing_fields(issues),
-                "has_password": bool(apartment["uby_ws_password_enc"]),
-            }
-        )
-    return render(
-        request,
-        "automation.html",
-        {
-            "rows": rows,
-            "purposes": codelists.purpose_options("en"),
-        },
-    )
-
-
-@router.post("/automation/{apartment_id}")
-async def automation_update(apartment_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return _back("/automation", err=_flash(request, "flash.error.no_such_apartment"))
-    form = await request.form()
-    _save_automation_form(apartment_id, form)
-    return _back(
-        _form_return_to(form, f"/automation#apartment-{apartment_id}"),
-        msg=_flash(request, "flash.apartments.settings_saved", name=apartment["internal_name"]),
-    )
+    return _property_hub_redirect(request, "automation")
 
 
 @router.post("/apartments/{apartment_id}/archive")
@@ -1970,12 +1898,7 @@ async def test_connection(apartment_id: int, request: Request):
     # A host pastes the credentials from the police letter and clicks the test.
     # Testing the saved values while the typed ones sat in the form was a
     # silent data loss, so the typed values are saved first and then tested.
-    if _form_str(form, "form_source") == "automation":
-        # The automation card posts only its own fields, so it has to be saved
-        # through its own payload; the property payload would blank the rest.
-        if access.apartment(request, apartment_id):
-            _save_automation_form(apartment_id, form)
-    elif _posted_credentials(form):
+    if _posted_credentials(form):
         rejected, _address_mismatch = _save_apartment_form(apartment_id, request, form)
         if rejected:
             return rejected
