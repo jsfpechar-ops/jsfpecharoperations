@@ -14,7 +14,7 @@
 {% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, onboarding_banner, nav_icon with context %}
+{% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, onboarding_banner, nav_icon, source_badge with context %}
 {% set property_prefill = property_prefill or {} %}
 {% set copy_property_peers = copy_property_peers or [] %}
 <style>
@@ -593,7 +593,7 @@
         {% for feed in feeds %}
           <tr>
             <td data-label="{{ t('apartment.form.feed.name') }}"><strong>{{ feed.own_name or '—' }}</strong></td>
-            <td data-label="{{ t('apartment.form.feed.portal') }}">{{ feed.label or '—' }}</td>
+            <td data-label="{{ t('apartment.form.feed.portal') }}">{{ source_badge(feed_platform_key(feed.url), feed.label or '—') }}</td>
             <td class="nowrap" data-label="{{ t('apartment.form.feed.last_sync') }}">
               {% if feed.last_status == 'ok' %}<span class="pill green">{{ t('apartment.form.feed.status.ok') }}</span>
               {% elif feed.last_status == 'suspect' %}<span class="pill amber">{{ t('apartment.form.feed.status.suspect') }}</span>

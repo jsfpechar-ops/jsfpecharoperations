@@ -24,6 +24,7 @@ from . import (
     db,
     deadlines,
     host_i18n,
+    icalsync,
     i18n,
     onboarding,
     operator,
@@ -218,6 +219,53 @@ _PORTAL_LABELS = {
     "apple": "Apple Calendar",
 }
 _SOURCE_KEYS = {"manual": "stays.source.manual", "ical": "stays.source.ical"}
+_PLATFORM_LOGO_DIR = config.BASE_DIR / "static" / "platforms"
+# Owner filenames in static/platforms/ (slug -> basename). Checked once at import.
+_PLATFORM_LOGO_FILES = {
+    "airbnb": "airbnb-icon.svg",
+    "booking": "booking-icon.svg",
+    "echalupy": "logo-echalupy-cz-2.svg",
+    "vrbo": "Vrbo.svg",
+    "trip": "Trip.com_logo.svg.webp",
+}
+_PLATFORM_LOGO_KEYS: dict[str, str] = {}
+_ALLOWED_LOGO_SUFFIXES = (".svg", ".png", ".webp")
+
+
+def _load_platform_logo_keys() -> dict[str, str]:
+    keys: dict[str, str] = {}
+    if not _PLATFORM_LOGO_DIR.is_dir():
+        return keys
+    for slug, filename in _PLATFORM_LOGO_FILES.items():
+        if (_PLATFORM_LOGO_DIR / filename).is_file():
+            keys[slug] = filename
+    for path in _PLATFORM_LOGO_DIR.iterdir():
+        if not path.is_file():
+            continue
+        suffix = path.suffix.lower()
+        if suffix not in _ALLOWED_LOGO_SUFFIXES:
+            continue
+        stem = path.stem.lower()
+        if re.fullmatch(r"[a-z]+", stem):
+            keys.setdefault(stem, path.name)
+    return keys
+
+
+_PLATFORM_LOGO_KEYS.update(_load_platform_logo_keys())
+
+
+def source_mark(key: object) -> Markup:
+    """Small platform logo markup when a local static file exists."""
+    normalized = (str(key or "")).strip().lower()
+    if not re.fullmatch(r"[a-z]+", normalized):
+        return Markup("")
+    filename = _PLATFORM_LOGO_KEYS.get(normalized)
+    if not filename:
+        return Markup("")
+    return Markup(
+        f'<img src="/static/platforms/{filename}" alt="" aria-hidden="true"'
+        f' width="16" height="16" loading="lazy">'
+    )
 _ENTERED_BY_KEYS = {
     "guest": "stay.detail.guests.entered_by.guest",
     "host": "stay.detail.guests.entered_by.host",
@@ -375,6 +423,8 @@ templates.env.globals.update(
     nights_label=_nights_label,
     pass_date=_pass_date,
     source_label=_source_label,
+    source_mark=source_mark,
+    feed_platform_key=icalsync.platform_of,
     entered_by_label=_entered_by_label,
     report_mode_label=_report_mode_label,
     tp=_template_plural,

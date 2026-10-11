@@ -129,6 +129,14 @@ def _seed_stays():
 
 def _stay_sources(page_text: str):
     """What the Source column of a stays table actually renders, one per row."""
+    badges = [
+        value.strip()
+        for value in re.findall(
+            r'class="source-badge">(?:<img[^>]*>)?([^<]+)', page_text
+        )
+    ]
+    if badges:
+        return badges
     return [
         value.strip()
         for value in re.findall(r'data-label="Source">\s*([^<]+)', page_text)

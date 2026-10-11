@@ -128,3 +128,7 @@ dialog::backdrop { background:rgba(10,10,9,.58) }
 .command-search { background:linear-gradient(135deg,var(--amber-bg),var(--surface) 52%) }
 .command-option { border-radius:9px }
 .command-option.is-selected { color:var(--ink);background:var(--blue-bg) }
+.source-badge { display:inline-flex;align-items:center;gap:6px;min-width:0 }
+.source-badge img { width:16px;height:16px;flex:0 0 auto }
+.feed-table .source-badge { gap:4px }
+.feed-table .source-badge img { width:14px;height:14px }
