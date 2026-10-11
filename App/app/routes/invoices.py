@@ -27,6 +27,7 @@ from .. import (
     mail_notify,
     payments,
     rate_limit,
+    reporting,
     security,
     stay_fee,
     validation,
@@ -134,6 +135,56 @@ def _stay_options(request: Request):
     return options
 
 
+def _lead_guest(reservation) -> Optional[Dict[str, Any]]:
+    """Lowest-id complete guest on the stay, or None."""
+    rows = db.query(
+        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL ORDER BY id ASC",
+        (reservation["id"],),
+    )
+    for row in rows:
+        if reporting.guest_is_complete(row, reservation):
+            return row
+    return None
+
+
+def _guest_buyer_values(guest) -> Dict[str, str]:
+    first = (guest.get("first_name") or "").strip()
+    last = (guest.get("surname") or "").strip()
+    name = f"{first} {last}".strip()
+    return {
+        "buyer_name": name,
+        "buyer_street": (guest.get("res_street") or "").strip(),
+        "buyer_city": (guest.get("res_city") or "").strip(),
+        "buyer_country": (guest.get("res_country") or "").strip(),
+    }
+
+
+def _merge_guest_fill(state: Dict[str, Any], guest) -> None:
+    """Copy guest address fields into blank buyer slots only."""
+    for key, value in _guest_buyer_values(guest).items():
+        if value and not (state.get(key) or "").strip():
+            state[key] = value
+
+
+def _last_stay_price_hint(request: Request, apartment_id: int) -> str:
+    """Last issued accommodation unit price on this property, for a placeholder."""
+    row = db.query_one(
+        "SELECT ii.gross_haler, ii.quantity FROM invoice i "
+        "JOIN invoice_item ii ON ii.invoice_id = i.id "
+        f"WHERE i.apartment_id = ? AND {db.null_safe_eq('i.owner_user_id')} "
+        "AND i.kind = 'invoice' AND ii.kind = 'accommodation' "
+        "ORDER BY i.issue_date DESC, i.id DESC LIMIT 1",
+        (apartment_id, access.owner_id(request)),
+    )
+    if not row or not row["gross_haler"]:
+        return ""
+    qty = row["quantity"] or 1
+    amount = row["gross_haler"] / (100 * qty)
+    if amount == int(amount):
+        return str(int(amount))
+    return f"{amount:.2f}".rstrip("0").rstrip(".")
+
+
 def _form_state(request, form, entity) -> Dict[str, Any]:
     """Reshape a failed POST so the 422 render loses nothing the host typed."""
     state = {key: _form_str(form, key) for key in (
@@ -159,6 +210,10 @@ def _form_context(request, entities, entity, *, errors=None, values=None, stay=N
     if stay and not values and stay["reservation"]["guest_email"]:
         values["buyer_email"] = stay["reservation"]["guest_email"]
     lang = "cs" if _lang(request) == "cs" else "en"
+    lead_guest = _lead_guest(stay["reservation"]) if stay else None
+    price_hint = ""
+    if stay:
+        price_hint = _last_stay_price_hint(request, stay["reservation"]["apartment_id"])
     return {
         "nav": "invoices",
         "entities": entities,
@@ -170,6 +225,8 @@ def _form_context(request, entities, entity, *, errors=None, values=None, stay=N
         "stay": stay,
         "stay_label": invoices.stay_label(stay["property_name"], stay["reservation"], lang) if stay else "",
         "extra_kinds": invoices.EXTRA_KINDS,
+        "show_fill_guest": bool(lead_guest),
+        "stay_price_hint": price_hint,
     }
 
 
@@ -359,11 +416,15 @@ def invoice_settings(request: Request):
     entity = _chosen_entity(request, entities)
     if not entity:
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
+    account = entity["bank_account"] or entity.get("iban") or ""
+    derived_bic = payments.bic_for_account(account)
+    stored_bic = (entity.get("bic") or "").strip().upper()
     return render(request, "invoice_settings.html", {
         "nav": "invoices",
         "entity": entity,
         "entities": entities,
         "bank_parts": payments.czech_account_parts(entity["bank_account"] or ""),
+        "bic_from_bank": bool(derived_bic and stored_bic == derived_bic),
         "next": security.safe_local_path(
             request.query_params.get("next") or "",
             f"/invoices/new?entity={entity['id']}",
@@ -407,6 +468,13 @@ async def invoice_settings_save(request: Request):
         else:
             detail["bank_account"] = None
             detail["iban"] = None
+    explicit_bic = "bic" in form
+    if not explicit_bic and not (entity.get("bic") or "").strip():
+        account = detail.get("bank_account", entity.get("bank_account")) or ""
+        iban = detail.get("iban", entity.get("iban")) or ""
+        derived = payments.bic_for_account(account or iban or "")
+        if derived:
+            detail["bic"] = derived
     db.update("legal_entity", entity["id"], detail)
     db.audit("entity_invoice_details_saved", f"id={entity['id']}",
              owner_user_id=access.owner_id(request))
@@ -603,6 +671,15 @@ async def invoice_issue(request: Request):
         context = _form_context(request, entities, entity, values=values, stay=stay)
         context.update(meta)
         return render(request, "invoice_form.html", context)
+    if form.get("fill_from_guest"):
+        guest = _lead_guest(stay["reservation"])
+        if guest:
+            state = _form_state(request, form, entity)
+            _merge_guest_fill(state, guest)
+            context = _form_context(
+                request, entities, entity, values=state, stay=stay
+            )
+            return render(request, "invoice_form.html", context)
     draft = _draft(request, entity, form, stay)
     issues = invoices.validate_for_issue(draft)
     if not issues and invoices.invoice_pdf.too_long(_preview_view(draft), draft["items"], draft["lang"]):
