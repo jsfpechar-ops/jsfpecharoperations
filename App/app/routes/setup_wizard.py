@@ -192,7 +192,7 @@ async def setup_post(step: str, request: Request):
     if step == "address":
         if not apartment:
             return RedirectResponse("/setup/name", status_code=303)
-        rejected = _save_apartment_form(apartment["id"], request, form)
+        rejected, _address_mismatch = _save_apartment_form(apartment["id"], request, form)
         if rejected:
             return rejected
         return RedirectResponse("/setup/bookings", status_code=303)
