@@ -309,6 +309,17 @@ def normalise_zip(value: Optional[str]) -> str:
     return "".join(ch for ch in (value or "") if ch.isdigit())
 
 
+def normalise_databox(value: Optional[str]) -> str:
+    """Czech data-box ID: exactly seven lowercase letters or digits."""
+    raw = (value or "").strip().lower()
+    if _DATABOX_RE.fullmatch(raw):
+        return raw
+    return ""
+
+
+_DATABOX_RE = re.compile(r"[a-z0-9]{7}")
+
+
 # --- birth date ----------------------------------------------------------
 
 def normalise_birth_date(value: Optional[str]) -> str:

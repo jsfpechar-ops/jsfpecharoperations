@@ -191,4 +191,7 @@ def frozen_summary(row: Dict[str, Any], apartment) -> Dict[str, Any]:
         "filing_id": row["id"],
         "version": row["version"],
         "total_collected_czk": row["total_collected_czk"],
+        "sent_at": row["sent_at"],
+        "paid_at": row["paid_at"],
+        "sent_message_id": row["sent_message_id"],
     }

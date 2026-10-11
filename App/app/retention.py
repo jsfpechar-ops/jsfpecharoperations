@@ -120,6 +120,9 @@ def _empty_reservation_step(today: date, dry_run: bool, owner_user_id: Optional[
 def _stay_fee_records_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Delete sealed stay-fee periods and their adjustments past the guest rule.
 
+    ``sent_message_id``, ``sent_at`` and ``paid_at`` on ``stay_fee_filing`` go
+    with the filing row (host operational marks, same retention as the seal).
+
     The stay-fee book (§ 3g(4) zákon 565/1990 Sb.) has the same six years as
     the house book and the same 31 January deletion day. A period is a month
     (``YYYY-MM``) or a quarter (``YYYY-Qn``), so it ends inside the year in its

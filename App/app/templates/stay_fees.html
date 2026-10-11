@@ -65,7 +65,11 @@
         <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">{{ period.exempt_nights }}</td>
         <td class="num" data-label="{{ t('stay_fees.col.total') }}">{{ period.total_display }}</td>
         <td class="nowrap">
-          {% if period.status == 'saved' %}
+          {% if period.status == 'paid' %}
+            <span class="pill green">{{ t('stay_fees.status.paid') }}</span>
+          {% elif period.status == 'sent' %}
+            <span class="pill blue">{{ t('stay_fees.status.sent') }}</span>
+          {% elif period.status == 'saved' %}
             <span class="pill green">{{ t('stay_fees.saved_version', version=period.version) }}</span>
           {% elif period.status == 'attention' %}
             <span class="pill amber">{{ t('stay_fees.needs_setup') }}</span>
