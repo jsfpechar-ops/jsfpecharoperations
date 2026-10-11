@@ -963,6 +963,26 @@ def _apartment_payload(form) -> Dict[str, Any]:
     return payload
 
 
+def _apply_police_defaults(payload: Dict[str, Any], entities: List[Dict[str, Any]]) -> None:
+    """Fill empty police header fields from data the host already entered."""
+    if not (payload.get("uby_mark") or "").strip():
+        mark = validation.mark_from_ws_user(payload.get("uby_ws_user") or "")
+        if mark:
+            payload["uby_mark"] = mark
+    if not (payload.get("uby_name") or "").strip():
+        internal = (payload.get("internal_name") or "").strip()
+        if internal:
+            payload["uby_name"] = internal[:35].strip()
+    if not (payload.get("uby_contact") or "").strip():
+        entity_id = payload.get("legal_entity_id")
+        if entity_id:
+            entity = next((row for row in entities if row["id"] == entity_id), None)
+            if entity:
+                email = (entity.get("contact_email") or "").strip()
+                if email:
+                    payload["uby_contact"] = email[:50]
+
+
 @router.post("/apartments")
 async def apartment_create(request: Request):
     guard = auth.require_login(request)
@@ -970,6 +990,7 @@ async def apartment_create(request: Request):
         return guard
     form = await request.form()
     payload = _apartment_payload(form)
+    _apply_police_defaults(payload, access.entities(request))
     payload.pop("_stay_fee_account_raw", None)
     if not payload["internal_name"]:
         return _back("/apartments/new", err=_flash(request, "flash.error.name_required"))
@@ -1118,6 +1139,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     payload = _apartment_payload(form)
+    _apply_police_defaults(payload, access.entities(request))
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
         return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_entity"))
     if payload["data_controller_entity_id"] and not access.entity(
