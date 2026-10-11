@@ -40,7 +40,7 @@ def first_apartment(owner_user_id: int):
 def _address_complete(apartment) -> bool:
     if not apartment:
         return False
-    for field in ("addr_street", "addr_house_no", "addr_zip", "addr_obec"):
+    for field in ("addr_house_no", "addr_zip", "addr_obec"):
         if not (apartment[field] or "").strip():
             return False
     zipcode = validation.normalise_zip(apartment["addr_zip"])
