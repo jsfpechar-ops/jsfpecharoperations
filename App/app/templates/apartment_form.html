@@ -15,6 +15,8 @@
 
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, onboarding_banner, nav_icon with context %}
+{% set property_prefill = property_prefill or {} %}
+{% set copy_property_peers = copy_property_peers or [] %}
 <style>
   .property-address-grid .field > label { min-height: 2.9em; }
   @media (max-width: 700px) {
@@ -28,6 +30,27 @@
   '/apartments',
   t('apartment.form.back')
 ) }}
+
+{% if copy_property_peers %}
+<form method="get" action="{{ '/apartments/' ~ apartment.id if editing else '/apartments/new' }}" class="panel copy-property-form" style="margin-bottom:16px">
+  <div class="copyrow">
+    <div class="field grow">
+      <label for="copy_from">{{ t('apartment.form.copy_from.label') }}</label>
+      <select id="copy_from" name="copy_from" required>
+        <option value="" disabled {% if not copy_from_id %}selected{% endif %}>{{ t('apartment.form.copy_from.choose') }}</option>
+        {% for peer in copy_property_peers %}
+        <option value="{{ peer.id }}" {% if copy_from_id == peer.id %}selected{% endif %}>{{ peer.internal_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
+  </div>
+  {% if copied_from_name %}
+  <p class="small" style="margin:10px 0 0">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}</p>
+  <p class="small muted" style="margin:4px 0 0">{{ t('apartment.form.copy_from.vs_hint') }}</p>
+  {% endif %}
+</form>
+{% endif %}
 
 {% if editing %}
 <div class="host-property-grid">
@@ -104,7 +127,7 @@
   {# The first submit button is the one Enter activates. Without this, Enter in
      any field posted to the credentials test and dropped every edit. #}
   <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
-  <details class="panel property-section" id="basics" {% if not editing %}open{% endif %}>
+  <details class="panel property-section" id="basics" {% if not editing or copied_from_name %}open{% endif %}>
     <summary>{{ t('apartment.form.basics.title') }}</summary>
     <div class="grid two">
       {{ text_field('internal_name', t('apartment.form.internal_name.label'), apartment.internal_name if editing else '',
@@ -119,7 +142,8 @@
         {% for entity in entities %}
           <option value="{{ entity.id }}"
             {% if (editing and apartment.legal_entity_id == entity.id)
-               or (not editing and selected_entity_id == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
+               or (not editing and selected_entity_id == entity.id)
+               or (not editing and property_prefill.get('legal_entity_id') == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
         {% endfor %}
       </select>
       <div class="hint">{{ t('apartment.form.entity.hint') }} {% if editing and apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}">{{ t('host.business') }} →</a>{% else %}<a href="/entities">{{ t('host.business') }} →</a>{% endif %}</div>
@@ -128,7 +152,8 @@
       <label class="checkline" for="controller_is_operator">
         <input type="checkbox" id="controller_is_operator"
                data-controller-same-toggle data-controller-target="alternate-controller"
-               {% if not editing or not apartment.data_controller_entity_id %}checked{% endif %}>
+               {% if not editing and not property_prefill.get('data_controller_entity_id') %}checked
+               {% elif editing and not apartment.data_controller_entity_id %}checked{% endif %}>
         <span>
           {{ t('apartment.form.controller.same_label') }}
           <small>{{ t('apartment.form.controller.same_hint') }}</small>
@@ -136,13 +161,15 @@
       </label>
     </div>
     <div class="field" id="alternate-controller" style="max-width:420px"
-         {% if not editing or not apartment.data_controller_entity_id %}hidden{% endif %}>
+         {% if (not editing and not property_prefill.get('data_controller_entity_id'))
+            or (editing and not apartment.data_controller_entity_id) %}hidden{% endif %}>
       <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
       <select id="data_controller_entity_id" name="data_controller_entity_id">
         <option value="">{{ t('apartment.form.controller.choose') }}</option>
         {% for entity in entities %}
           <option value="{{ entity.id }}"
-            {% if editing and apartment.data_controller_entity_id == entity.id %}selected{% endif %}>{{ entity.name }}</option>
+            {% if (editing and apartment.data_controller_entity_id == entity.id)
+               or (not editing and property_prefill.get('data_controller_entity_id') == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
         {% endfor %}
       </select>
       <div class="hint">
@@ -298,32 +325,35 @@
     <a class="btn" href="/automation#apartment-{{ apartment.id }}">{{ t('apartment.form.automation.open') }}</a>
   </details>
   {% else %}
-  <details class="panel property-section" id="automation">
+  <details class="panel property-section" id="automation" {% if copied_from_name %}open{% endif %}>
     <summary>{{ t('nav.automation') }}</summary>
     <p class="small muted" style="margin-top:-4px">
       {{ t('apartment.form.automation.new_lede') }}
     </p>
+    {% set auto_mode = property_prefill.get('automation_mode', 'manual') %}
     <div class="grid two">
       <div class="field">
         <label for="automation_mode">{{ t('automation.timing_title') }}</label>
         <select id="automation_mode" name="automation_mode"
                 data-automation-mode data-hours-target="submit_after_hours">
-          <option value="manual" selected>{{ t('automation.mode.manual') }}</option>
-          <option value="scheduled">{{ t('apartment.form.automation.mode.scheduled') }}</option>
-          <option value="immediate">{{ t('automation.mode.immediate') }}</option>
+          <option value="manual" {% if auto_mode == 'manual' %}selected{% endif %}>{{ t('automation.mode.manual') }}</option>
+          <option value="scheduled" {% if auto_mode == 'scheduled' %}selected{% endif %}>{{ t('apartment.form.automation.mode.scheduled') }}</option>
+          <option value="immediate" {% if auto_mode == 'immediate' %}selected{% endif %}>{{ t('automation.mode.immediate') }}</option>
         </select>
       </div>
       <div class="field">
         <label for="submit_after_hours">{{ t('automation.hours') }}</label>
-        <input type="number" id="submit_after_hours" name="submit_after_hours" min="0" max="48" value="24">
+        <input type="number" id="submit_after_hours" name="submit_after_hours" min="0" max="48"
+               value="{{ property_prefill.get('submit_after_hours', 24) }}">
         <div class="hint">{{ t('apartment.form.automation.hours_hint') }}</div>
       </div>
     </div>
     <div class="field" style="max-width:320px">
       <label for="default_purpose">{{ t('automation.default_purpose') }}</label>
       <select id="default_purpose" name="default_purpose">
+        {% set purpose_default = property_prefill.get('default_purpose', '10') %}
         {% for purpose in purposes %}
-          <option value="{{ purpose.code }}" {% if purpose.code == '10' %}selected{% endif %}>
+          <option value="{{ purpose.code }}" {% if purpose.code == purpose_default %}selected{% endif %}>
             {{ purpose.label }}</option>
         {% endfor %}
       </select>
@@ -332,7 +362,7 @@
   </details>
   {% endif %}
 
-  <details class="panel property-section" id="communication">
+  <details class="panel property-section" id="communication" {% if copied_from_name %}open{% endif %}>
     <summary>{{ t('nav.guest_links') }}</summary>
     <div class="field">
       <label for="guest_message">{{ t('apartment.form.guest_message.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
@@ -440,8 +470,18 @@
     {% endif %}
   </details>
 
+  {% if not editing and copied_from_name and property_prefill.get('stay_fee_rate_czk') %}
+  <details class="panel property-section" id="stay-fee-settings" open>
+    <summary>{{ t('apartment.form.stay_fee.heading') }}</summary>
+    <p class="small muted" style="margin-top:-4px">{{ t('apartment.form.stay_fee.lede') }}</p>
+    {% with apartment=property_prefill %}
+    {% include "_stay_fee_fields.html" %}
+    {% endwith %}
+  </details>
+  {% endif %}
+
   {% if editing %}
-  <details class="panel property-section" id="stay-fee-settings" {% if not editing %}open{% endif %}>
+  <details class="panel property-section" id="stay-fee-settings" {% if copied_from_name %}open{% endif %}>
     <summary>{{ t('apartment.form.stay_fee.heading') }}</summary>
     <p class="small muted" style="margin-top:-4px">
       {{ t('apartment.form.stay_fee.lede') }}

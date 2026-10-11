@@ -893,6 +893,13 @@ def apartment_new(request: Request):
     entities = access.entities(request)
     if selected_entity_id and not any(entity["id"] == selected_entity_id for entity in entities):
         selected_entity_id = None
+    not_found, copy_ctx = _property_copy_form_context(request)
+    if not_found:
+        return not_found
+    prefill = copy_ctx["property_prefill"]
+    if not selected_entity_id and prefill.get("legal_entity_id"):
+        selected_entity_id = prefill["legal_entity_id"]
+    account = payments.czech_account_parts(prefill.get("stay_fee_council_account") or "")
     return render(
         request,
         "apartment_form.html",
@@ -903,6 +910,8 @@ def apartment_new(request: Request):
             "purposes": codelists.purpose_options("en"),
             "address_line": "",
             "address_details_open": True,
+            "account": account,
+            **copy_ctx,
         },
     )
 
@@ -925,6 +934,97 @@ APARTMENT_TEXT_FIELDS = (
     "guest_message",
     "notes",
 )
+
+_COPY_PROPERTY_KEYS = (
+    "legal_entity_id",
+    "data_controller_entity_id",
+    "automation_mode",
+    "submit_after_hours",
+    "default_purpose",
+    "permalink_window_days",
+    "permalink_reachback_days",
+    "stay_fee_rate_czk",
+    "stay_fee_cadence",
+    "stay_fee_authority_name",
+    "stay_fee_authority_address",
+    "stay_fee_authority_contact",
+    "stay_fee_payee",
+    "stay_fee_instruction",
+    "stay_fee_council_account",
+)
+
+
+def _property_copy_value_empty(key: str, value: Any) -> bool:
+    if value is None:
+        return True
+    if key in {
+        "legal_entity_id",
+        "data_controller_entity_id",
+        "submit_after_hours",
+        "permalink_window_days",
+        "permalink_reachback_days",
+        "stay_fee_rate_czk",
+    }:
+        return not value
+    if isinstance(value, str):
+        return not value.strip()
+    return False
+
+
+def _property_copy_values(source: Dict[str, Any]) -> Dict[str, Any]:
+    copied: Dict[str, Any] = {}
+    for key in _COPY_PROPERTY_KEYS:
+        value = source[key]
+        if _property_copy_value_empty(key, value):
+            continue
+        copied[key] = value
+    return copied
+
+
+def _apply_property_copy(
+    apartment: Dict[str, Any], copy_values: Dict[str, Any]
+) -> Dict[str, Any]:
+    merged = dict(apartment)
+    for key, value in copy_values.items():
+        if not _property_copy_value_empty(key, merged.get(key)):
+            continue
+        merged[key] = value
+    return merged
+
+
+def _property_copy_form_context(
+    request: Request,
+    *,
+    apartment: Optional[Dict[str, Any]] = None,
+    apartment_id: Optional[int] = None,
+) -> tuple[Optional[Response], Dict[str, Any]]:
+    """Load copy_from prefill, or return a 404 when the source is out of scope."""
+    peers = [
+        row
+        for row in access.apartments(request)
+        if apartment_id is None or row["id"] != apartment_id
+    ]
+    copy_from_id = _query_int(request, "copy_from")
+    property_prefill: Dict[str, Any] = {}
+    copied_from_name: Optional[str] = None
+    display_apartment = apartment
+    if copy_from_id and (apartment_id is None or copy_from_id != apartment_id):
+        source = access.apartment(request, copy_from_id)
+        if not source:
+            return Response("Not found.", status_code=404), {}
+        copy_values = _property_copy_values(source)
+        copied_from_name = source["internal_name"]
+        if display_apartment is None:
+            property_prefill = copy_values
+        else:
+            display_apartment = _apply_property_copy(display_apartment, copy_values)
+    return None, {
+        "copy_property_peers": peers,
+        "copy_from_id": copy_from_id,
+        "property_prefill": property_prefill,
+        "copied_from_name": copied_from_name,
+        "apartment": display_apartment,
+    }
 
 
 def _apply_address_line_from_form(form, payload: Dict[str, Any]) -> bool:
@@ -1070,6 +1170,12 @@ def apartment_detail(apartment_id: int, request: Request):
     )
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+    not_found, copy_ctx = _property_copy_form_context(
+        request, apartment=apartment, apartment_id=apartment_id
+    )
+    if not_found:
+        return not_found
+    apartment = copy_ctx["apartment"]
     feeds = db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
     entities = access.entities(request)
     issues = list(_apartment_issues(apartment))
@@ -1167,6 +1273,7 @@ def apartment_detail(apartment_id: int, request: Request):
                 and int(peer["stay_fee_rate_czk"] or 0) > 0
             ],
             "ws_request": _ws_request_letter(apartment, entities),
+            **copy_ctx,
         },
     )
 
