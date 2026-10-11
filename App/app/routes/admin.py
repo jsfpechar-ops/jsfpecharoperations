@@ -880,6 +880,8 @@ def apartment_new(request: Request):
             "entities": entities,
             "selected_entity_id": selected_entity_id,
             "purposes": codelists.purpose_options("en"),
+            "address_line": "",
+            "address_details_open": True,
         },
     )
 
@@ -902,6 +904,25 @@ APARTMENT_TEXT_FIELDS = (
     "guest_message",
     "notes",
 )
+
+
+def _apply_address_line_from_form(form, payload: Dict[str, Any]) -> bool:
+    """Parse ``address_line`` into empty addr_* fields. Return True when details conflict."""
+    line = _form_str(form, "address_line").strip()
+    if not line:
+        return False
+    split = validation.split_czech_address(line)
+    if not split:
+        return False
+    return validation.merge_split_address_fields(payload, split)
+
+
+def _append_query_param(path: str, name: str, value: str) -> str:
+    if not value:
+        return path
+    parsed = urlsplit(path)
+    query = urlencode([*parse_qsl(parsed.query, keep_blank_values=True), (name, value)])
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query, parsed.fragment))
 
 
 def _apartment_payload(form) -> Dict[str, Any]:
@@ -970,6 +991,7 @@ async def apartment_create(request: Request):
         return guard
     form = await request.form()
     payload = _apartment_payload(form)
+    _apply_address_line_from_form(form, payload)
     payload.pop("_stay_fee_account_raw", None)
     if not payload["internal_name"]:
         return _back("/apartments/new", err=_flash(request, "flash.error.name_required"))
@@ -1008,7 +1030,25 @@ def apartment_detail(apartment_id: int, request: Request):
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     feeds = db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
     entities = access.entities(request)
-    issues = _apartment_issues(apartment)
+    issues = list(_apartment_issues(apartment))
+    if request.query_params.get("address_line_mismatch") == "1":
+        issues.append(
+            validation.Issue(
+                "address_line",
+                _host_text(request, "apartment.form.address.line_details_mismatch"),
+                "warning",
+            )
+        )
+    address_line = (request.query_params.get("address_line") or "").strip() or validation.compose_czech_address_line(
+        apartment
+    )
+    address_details_open = (
+        request.query_params.get("address_line_mismatch") == "1"
+        or any(
+            issue.is_error and issue.field in ("addr_house_no", "addr_zip", "addr_obec")
+            for issue in issues
+        )
+    )
     # A connected calendar or a hand-typed stay both mean guests are on their
     # way, which is all the "Ready to invite guests" list asks about.
     link_key = guest_slug.link_key(apartment)
@@ -1062,6 +1102,8 @@ def apartment_detail(apartment_id: int, request: Request):
             "entities": entities,
             "feeds": feeds,
             "issues": issues,
+            "address_line": address_line,
+            "address_details_open": address_details_open,
             "readiness": _readiness(apartment, entities, issues, has_stays),
             "purposes": codelists.purpose_options("en"),
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
@@ -1092,7 +1134,7 @@ async def apartment_update(apartment_id: int, request: Request):
     if guard:
         return guard
     form = await request.form()
-    rejected = _save_apartment_form(apartment_id, request, form)
+    rejected, address_mismatch = _save_apartment_form(apartment_id, request, form)
     if rejected:
         return rejected
     # "Saved." said nothing about whether the property can actually report, so
@@ -1105,10 +1147,13 @@ async def apartment_update(apartment_id: int, request: Request):
         msg = _flash(request, "flash.apartments.saved", fields=", ".join(missing))
     else:
         msg = _flash(request, "flash.apartments.saved_ready")
-    return _back(_form_return_to(form, f"/apartments/{apartment_id}"), msg=msg)
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}")
+    if address_mismatch:
+        return_to = _append_query_param(return_to, "address_line_mismatch", "1")
+    return _back(return_to, msg=msg)
 
 
-def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[Response]:
+def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Optional[Response], bool]:
     """Persist the property form, or return the redirect that rejects it.
 
     Split out of ``apartment_update`` because the credentials test has to be
@@ -1116,14 +1161,15 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
     """
     apartment = access.apartment(request, apartment_id)
     if not apartment:
-        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
     payload = _apartment_payload(form)
+    address_mismatch = _apply_address_line_from_form(form, payload)
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
-        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_entity"))
+        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_entity")), False
     if payload["data_controller_entity_id"] and not access.entity(
         request, payload["data_controller_entity_id"]
     ):
-        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_controller"))
+        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_controller")), False
     if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
         payload["data_controller_entity_id"] = None
     for key in ("automation_mode", "submit_after_hours", "default_purpose"):
@@ -1135,7 +1181,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
     if pin_raw:
         pin = auth.normalise_permalink_pin(pin_raw)
         if not pin or len(pin) != 6:
-            return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits"))
+            return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits")), False
         payload["permalink_pin"] = pin
     link_readable = None
     if "guest_link_name" in form:
@@ -1144,7 +1190,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
             return _back(
                 f"/apartments/{apartment_id}#communication",
                 err=_flash(request, f"flash.error.link_name_{link_error}"),
-            )
+            ), False
     raw_account = payload.pop("_stay_fee_account_raw", None)
     if raw_account is not None:
         if raw_account.strip():
@@ -1157,7 +1203,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
                 return _back(
                     f"/apartments/{apartment_id}#stay-fee-settings",
                     err=_flash(request, "flash.stay_fees.account_invalid"),
-                )
+                ), False
         else:
             payload["stay_fee_council_account"] = None
             payload["stay_fee_council_iban"] = None
@@ -1173,7 +1219,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
             return _back(
                 f"/apartments/{apartment_id}#communication",
                 err=_flash(request, "flash.error.link_name_taken"),
-            )
+            ), False
     prior_lock_provider = apartment["lock_provider"]
     if (
         _form_str(form, "door_code_section") == "1"
@@ -1190,7 +1236,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
                 return _back(
                     f"/apartments/{apartment_id}#door-code",
                     err=_flash(request, "flash.error.door_code_lock"),
-                )
+                ), False
             newly_chosen = (
                 apartment["lock_provider"] != "ttlock" or apartment["lock_id"] != lock_id
             )
@@ -1198,7 +1244,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
                 return _back(
                     f"/apartments/{apartment_id}#door-code",
                     err=_flash(request, "flash.error.door_code_lock_taken"),
-                )
+                ), False
             try:
                 cin = int(_form_str(form, "checkin_hour"))
                 cout = int(_form_str(form, "checkout_hour"))
@@ -1206,12 +1252,12 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
                 return _back(
                     f"/apartments/{apartment_id}#door-code",
                     err=_flash(request, "flash.error.door_code_hours"),
-                )
+                ), False
             if not (0 <= cin <= 23 and 0 <= cout <= 23):
                 return _back(
                     f"/apartments/{apartment_id}#door-code",
                     err=_flash(request, "flash.error.door_code_hours"),
-                )
+                ), False
             payload.update(
                 {
                     "lock_provider": "ttlock",
@@ -1246,8 +1292,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> Optional[
             db.audit("door_codes_on", f"apartment={apartment_id}")
         else:
             db.audit("door_codes_off", f"apartment={apartment_id}")
-    return None
-
+    return None, address_mismatch
 
 @router.post("/apartments/{apartment_id}/regenerate-pin")
 async def regenerate_pin(apartment_id: int, request: Request):
@@ -1598,7 +1643,7 @@ async def test_connection(apartment_id: int, request: Request):
         if access.apartment(request, apartment_id):
             _save_automation_form(apartment_id, form)
     elif _posted_credentials(form):
-        rejected = _save_apartment_form(apartment_id, request, form)
+        rejected, _address_mismatch = _save_apartment_form(apartment_id, request, form)
         if rejected:
             return rejected
     apartment = access.apartment(request, apartment_id)

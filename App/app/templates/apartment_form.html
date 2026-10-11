@@ -159,26 +159,31 @@
 
   <details class="panel property-section" id="address" {% if not editing %}open{% endif %}>
     <summary>{{ t('apartment.form.address.title') }}</summary>
-    <p class="small muted" style="margin-top:-4px">
-      {{ t('apartment.form.address.lede_before') }}
-      <span class="mono">{{ t('apartment.form.address.lede_form_name') }}</span>{{ t('apartment.form.address.lede_after') }}
-    </p>
-    <div class="grid property-address-grid">
-      {{ text_field('addr_okres', t('apartment.form.addr.okres'), apartment.addr_okres if editing else '',
-         t('apartment.form.addr.okres_hint'), false, 32) }}
-      {{ text_field('addr_obec', t('apartment.form.addr.obec'), apartment.addr_obec if editing else '', '', false, 48,
-         none) }}
-      {{ text_field('addr_obec_cast', t('apartment.form.addr.obec_cast'), apartment.addr_obec_cast if editing else '',
-         '', true, 48) }}
-    </div>
-    <div class="grid property-address-grid">
-      {{ text_field('addr_street', t('apartment.form.addr.street'), apartment.addr_street if editing else '', '', true, 48) }}
-      {{ text_field('addr_house_no', t('apartment.form.addr.house_no'), apartment.addr_house_no if editing else '',
-         t('apartment.form.addr.house_no_hint'), false, 5, none) }}
-      {{ text_field('addr_orient_no', t('apartment.form.addr.orient_no'), apartment.addr_orient_no if editing else '',
-         t('apartment.form.addr.orient_no_hint'), true, 4) }}
-      {{ text_field('addr_zip', t('apartment.form.addr.zip'), apartment.addr_zip if editing else '', t('apartment.form.addr.zip_hint'), false, 6, none) }}
-    </div>
+    <p class="small muted" style="margin-top:-4px">{{ t('apartment.form.address.lede') }}</p>
+    {{ text_field('address_line', t('apartment.form.address.line_label'), address_line|default('', true), '',
+       false, none, t('apartment.form.address.line_placeholder')) }}
+    {% for issue in issues|default([]) if issue.field == 'address_line' and not issue.is_error %}
+    <div class="hint"><strong>{{ issue.message }}</strong></div>
+    {% endfor %}
+    <details class="property-address-police" {% if address_details_open|default(true) %}open{% endif %}>
+      <summary>{{ t('apartment.form.address.police_details_title') }}</summary>
+      <div class="grid property-address-grid">
+        {{ text_field('addr_okres', t('apartment.form.addr.okres'), apartment.addr_okres if editing else '',
+           t('apartment.form.addr.okres_hint'), false, 32) }}
+        {{ text_field('addr_obec', t('apartment.form.addr.obec'), apartment.addr_obec if editing else '', '', false, 48,
+           none) }}
+        {{ text_field('addr_obec_cast', t('apartment.form.addr.obec_cast'), apartment.addr_obec_cast if editing else '',
+           '', true, 48) }}
+      </div>
+      <div class="grid property-address-grid">
+        {{ text_field('addr_street', t('apartment.form.addr.street'), apartment.addr_street if editing else '', '', true, 48) }}
+        {{ text_field('addr_house_no', t('apartment.form.addr.house_no'), apartment.addr_house_no if editing else '',
+           t('apartment.form.addr.house_no_hint'), false, 5, none) }}
+        {{ text_field('addr_orient_no', t('apartment.form.addr.orient_no'), apartment.addr_orient_no if editing else '',
+           t('apartment.form.addr.orient_no_hint'), true, 4) }}
+        {{ text_field('addr_zip', t('apartment.form.addr.zip'), apartment.addr_zip if editing else '', t('apartment.form.addr.zip_hint'), false, 6, none) }}
+      </div>
+    </details>
   </details>
 
   <details class="panel property-section" id="ubyport">
