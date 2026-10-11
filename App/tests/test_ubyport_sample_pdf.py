@@ -193,10 +193,8 @@ def test_apartment_form_links_to_sample_pdf(authed_client):
     assert "Filled from your operator contact e-mail when left blank" in page.text
 
 
-def test_automation_page_links_to_sample_and_property_setup(authed_client):
+def test_automation_redirects_to_property_timing(authed_client):
     client, apartment_id = authed_client
-    page = client.get("/automation")
-    assert page.status_code == 200
-    assert SAMPLE_URL in page.text
-    assert "Open annotated sample PDF" in page.text
-    assert f"/apartments/{apartment_id}#ubyport" in page.text
+    response = client.get("/automation", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/apartments/{apartment_id}#automation"

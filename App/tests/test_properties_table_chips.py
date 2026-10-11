@@ -126,7 +126,7 @@ def _cell(page: str, lang: str, column_key: str) -> str:
 def test_technical_automation_column_is_not_on_property_landing(host):
     page = host.get("/apartments?lang=en").text
     assert '<th>Automation</th>' not in page
-    assert 'href="/automation"' in page  # Property tools still reaches overview.
+    assert 'href="/automation"' not in page
 
 
 @pytest.mark.parametrize("mode,key,hours", MODES)
@@ -134,23 +134,19 @@ def test_every_automation_mode_remains_accessible_in_context(host, mode, key, ho
     apartment = db.query_one("SELECT id FROM apartment WHERE internal_name = ?", (f"Flat {mode}",))
     page = host.get(f"/apartments/{apartment['id']}?lang=en").text
     assert 'id="automation"' in page
-    assert f"/automation#apartment-{apartment['id']}" in page
+    assert 'name="automation_mode"' in page
 
 
-def test_property_tools_translates(host):
-    # Property tools remain in the shared global navigation for these sections;
-    # the Properties landing has its own direct overview links.
+def test_entities_page_has_no_property_tools_bar(host):
     page = host.get("/entities?lang=cs").text
-    assert host_i18n.translate('cs', 'host.property_tools') in page
-    assert 'href="/automation"' in page
+    assert 'class="host-local-nav"' not in page
 
 
-def test_properties_landing_keeps_direct_localized_overview_links(host):
+def test_properties_landing_has_no_secondary_property_bar(host):
     page = host.get("/apartments?lang=cs").text
-    assert host_i18n.translate("cs", "nav.guest_links") in page
-    assert host_i18n.translate("cs", "nav.automation") in page
-    assert 'href="/guest-links"' in page
-    assert 'href="/automation"' in page
+    assert 'class="host-local-nav"' not in page
+    assert 'href="/guest-links"' not in page
+    assert 'href="/automation"' not in page
 
 
 def test_the_setup_pill_survives(host):

@@ -242,19 +242,18 @@ def test_the_properties_list_setup_pill_is_amber_not_red(host):
     assert tone == "amber", "guests can still register, so it is a warning"
 
 
-def test_the_guest_links_setup_pill_is_amber(host):
-    client, _, _ = host
-    page = client.get("/guest-links")
+def test_the_property_readiness_lists_missing_setup_items(host):
+    client, apartment_id, _ = host
+    page = client.get(f"/apartments/{apartment_id}")
     assert page.status_code == 200
-    tone, _tip = _pill_containing(page.text, "setup item")
-    assert tone == "amber"
+    assert 'class="readiness-item' in page.text
+    assert "✗" in page.text
 
 
-def test_the_automation_setup_banner_is_amber_and_not_a_red_pill(host):
-    client, _, _ = host
-    page = client.get("/automation")
+def test_the_property_readiness_is_not_a_red_pill(host):
+    client, apartment_id, _ = host
+    page = client.get(f"/apartments/{apartment_id}")
     assert page.status_code == 200
-    assert 'class="banner warning"' in page.text, "automation lost its setup warning"
     tones = {tone for tone, _tip, _label in _pills(page.text)}
     assert "red" not in tones, "setup incomplete is a warning, not a rejection"
 

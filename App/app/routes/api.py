@@ -39,8 +39,8 @@ def command_palette(request: Request):
     destinations = [
         ("nav.properties", "/apartments", "property apartment ubytovani"),
         ("host.business", "/entities", "business operator company billing firma"),
-        ("nav.guest_links", "/guest-links", "invitation guest link pin"),
-        ("nav.automation", "/automation", "automatic reporting timing"),
+        ("nav.guest_links", "/apartments", "invitation guest link pin"),
+        ("nav.automation", "/apartments", "automatic reporting timing police"),
         ("host.invoice_settings", "/invoices/settings", "invoice settings faktura"),
         ("settings.nav.archive", "/settings/archived", "restore archived records"),
         ("nav.privacy_requests", "/privacy-requests", "privacy gdpr"),

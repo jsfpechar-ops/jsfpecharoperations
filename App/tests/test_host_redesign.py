@@ -50,7 +50,7 @@ def test_all_host_destinations_render_with_valid_structure(fee_host, lang):
                  f'/guests/{guests[0]}', f'/reservations/{reservation}/guests/new',
                  '/submissions', '/housebook', '/apartments', f'/apartments/{apartment}',
                  '/apartments/new', '/entities', f'/entities?edit={entity}',
-                 '/guest-links', '/automation', '/invoices', '/invoices/new',
+                 '/invoices', '/invoices/new',
                  '/invoices/settings', '/stay-fees', f'/stay-fees/{apartment}?month=2026-08',
                  '/settings', '/settings/archived', '/privacy-requests', '/guide', '/onboarding'):
         response = client.get(path + ('&' if '?' in path else '?') + 'lang=' + lang)
@@ -77,11 +77,10 @@ def test_context_navigation_and_command_palette_preserve_destinations(fee_host):
     stays = client.get('/reservations').text
     assert 'href="/submissions"' in stays and 'href="/housebook"' in stays
     props = client.get('/apartments').text
-    for path in ('/entities', '/guest-links', '/automation'):
-        assert f'href="{path}"' in props
-        assert f'href="{path}"' not in rail(props)
+    assert 'href="/entities"' in client.get('/settings').text
     urls = {item.get('url') for item in client.get('/api/command-palette').json()['items']}
-    assert {'/apartments', '/entities', '/guest-links', '/automation', '/settings/archived', '/privacy-requests', '/invoices/settings'} <= urls
+    assert {'/apartments', '/entities', '/settings/archived', '/privacy-requests', '/invoices/settings'} <= urls
+    assert '/guest-links' not in urls and '/automation' not in urls
     assert '/admin/users' not in urls
 
 

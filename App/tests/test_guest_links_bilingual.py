@@ -106,7 +106,7 @@ def test_a_czech_host_still_gets_the_english_half(host):
     """The whole point: the Czech host's message must be readable by a foreign guest."""
     apartment_id = _apartment_id()
 
-    page = host.get("/guest-links?lang=cs")
+    page = host.get(f"/apartments/{apartment_id}?lang=cs")
 
     assert page.status_code == 200
     message = _message_block(page.text, f"message-{apartment_id}")
@@ -118,7 +118,7 @@ def test_a_czech_host_still_gets_the_english_half(host):
 def test_an_english_host_gets_the_same_bilingual_message(host):
     apartment_id = _apartment_id()
 
-    page = host.get("/guest-links?lang=en")
+    page = host.get(f"/apartments/{apartment_id}?lang=en")
 
     message = _message_block(page.text, f"message-{apartment_id}")
     assert EN_OPENING in message and CS_OPENING in message
@@ -129,7 +129,7 @@ def test_the_message_carries_the_link_and_the_pin(host):
     """Both halves have to be usable on their own, so both carry link and PIN."""
     apartment_id = _apartment_id()
 
-    page = host.get("/guest-links?lang=cs")
+    page = host.get(f"/apartments/{apartment_id}?lang=cs")
 
     message = _message_block(page.text, f"message-{apartment_id}")
     english, czech = message.split(CS_OPENING, 1)
@@ -143,7 +143,7 @@ def test_the_message_carries_the_link_and_the_pin(host):
 def test_the_menu_offers_the_english_half_on_its_own(host):
     apartment_id = _apartment_id()
 
-    page = host.get("/guest-links?lang=en")
+    page = host.get(f"/apartments/{apartment_id}?lang=en")
 
     assert "Copy English only" in page.text
     assert f'data-copy="message-en-{apartment_id}"' in page.text
@@ -153,7 +153,7 @@ def test_the_menu_offers_the_english_half_on_its_own(host):
 def test_the_english_only_block_holds_no_czech(host):
     apartment_id = _apartment_id()
 
-    page = host.get("/guest-links?lang=cs")
+    page = host.get(f"/apartments/{apartment_id}?lang=cs")
 
     english = _message_block(page.text, f"message-en-{apartment_id}")
     assert EN_OPENING in english
@@ -163,24 +163,24 @@ def test_the_english_only_block_holds_no_czech(host):
 def test_the_menu_item_is_in_the_page_language(host):
     apartment_id = _apartment_id()
 
-    page = host.get("/guest-links?lang=cs")
+    page = host.get(f"/apartments/{apartment_id}?lang=cs")
 
     assert "Kopírovat jen anglicky" in page.text
     assert f'data-copy="message-en-{apartment_id}"' in page.text
 
 
 def test_the_lede_says_the_form_opens_in_the_guest_language(host):
-    _apartment_id()
+    apartment_id = _apartment_id()
 
-    page = host.get("/guest-links?lang=en")
+    page = host.get(f"/apartments/{apartment_id}?lang=en")
 
     assert "Guests from abroad read the English part" in page.text
 
 
 def test_the_lede_is_in_czech_too(host):
-    _apartment_id()
+    apartment_id = _apartment_id()
 
-    page = host.get("/guest-links?lang=cs")
+    page = host.get(f"/apartments/{apartment_id}?lang=cs")
 
     assert "Zahraniční hosté si přečtou anglickou část" in page.text
 

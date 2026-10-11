@@ -190,7 +190,7 @@ def test_the_renamed_keys_exist_in_both_languages():
 
 
 def test_the_navigation_links_to_operators(host):
-    page = host.get("/apartments?lang=en")
+    page = host.get("/settings?lang=en")
     assert page.status_code == 200, page.text
     assert 'href="/entities"' in page.text
     assert "Business &amp; legal details" in page.text
@@ -198,7 +198,7 @@ def test_the_navigation_links_to_operators(host):
 
 
 def test_the_navigation_says_it_in_czech(host):
-    page = host.get("/apartments?lang=cs")
+    page = host.get("/settings?lang=cs")
     assert ">Firma a právní údaje<" in page.text
     assert "Právnické osoby" not in page.text
 

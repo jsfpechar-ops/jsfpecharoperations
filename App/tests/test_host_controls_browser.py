@@ -150,8 +150,6 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         ("invoices", "/invoices"),
         ("stay-fees", "/stay-fees"),
         ("guest-register", "/housebook"),
-        ("guest-links", "/guest-links"),
-        ("automation", "/automation"),
         ("archive", "/settings/archived"),
         ("settings", "/settings"),
     ]

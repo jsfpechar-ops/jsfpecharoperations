@@ -144,9 +144,8 @@ def test_each_property_form_explanation_renders_once():
     template = (TEMPLATES / "apartment_form.html").read_text(encoding="utf-8")
     assert template.count("apartment.form.calendars.lede") == 1
     assert template.count("t('guest_links.lede')") == 1
-    assert "guest_links.message_lede" not in template
-    guest_links = (TEMPLATES / "guest_links.html").read_text(encoding="utf-8")
-    assert guest_links.count("t('guest_links.message_lede')") == 1
+    assert template.count("t('guest_links.message_lede')") == 1
+    assert not (TEMPLATES / "guest_links.html").exists()
 
 
 def test_one_retention_note_not_three():

@@ -190,11 +190,11 @@ def test_the_edit_form_does_not_carry_a_mode_default(host):
 
     page = host.get(f"/apartments/{apartment_id}")
     assert page.status_code == 200, page.text
-    assert 'id="automation_mode"' not in page.text
-    assert LEDE_EN not in page.text
+    assert _selected_mode(page.text) == "scheduled"
+    assert 'id="automation"' in page.text
 
 
-def test_editing_a_property_never_rewrites_its_mode(host):
+def test_editing_a_property_can_change_its_mode(host):
     created = host.post(
         "/apartments",
         data=_payload(internal_name="Manual Flat"),
@@ -216,4 +216,4 @@ def test_editing_a_property_never_rewrites_its_mode(host):
         follow_redirects=False,
     )
     assert edited.status_code == 303, edited.text
-    assert _mode_of("Manual Flat") == "manual"
+    assert _mode_of("Manual Flat") == "scheduled"

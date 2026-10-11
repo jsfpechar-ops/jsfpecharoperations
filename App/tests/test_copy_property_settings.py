@@ -150,7 +150,7 @@ def test_allowed_settings_are_copied_on_edit(host_pair):
     assert "Copied from Source flat" in text
     assert f'<option value="{entity_id}"' in text and "selected" in text
     assert f'<option value="{controller_id}"' in text and "selected" in text
-    assert 'name="automation_mode"' not in text  # edit shows automation summary only
+    assert 'name="automation_mode"' in text
     assert 'name="stay_fee_rate_czk"' in text
     assert 'value="21"' in text
     assert "City office" in text

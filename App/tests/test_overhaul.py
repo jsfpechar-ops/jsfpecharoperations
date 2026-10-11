@@ -329,7 +329,7 @@ def test_reservation_detail_shows_direct_guest_link():
         assert "Edit stay details" in page.text
         assert 'class="panel stay-command-panel"' in page.text
         assert page.text.count('name="expected_guests_override"') == 1
-        assert 'href="/guest-links"' in page.text
+        assert f'href="/apartments/{apartment_id}#communication"' in page.text
     finally:
         _cleanup()
 
@@ -502,7 +502,7 @@ def test_filtered_stays_return_path_and_guest_links_workspace():
         assert "Back to stays" in detail.text
         assert f"/reservations?range=all&amp;apartment={apartment_id}" in detail.text
 
-        links = browser.get("/guest-links")
+        links = browser.get(f"/apartments/{apartment_id}")
         assert links.status_code == 200
         slug = guest_slug.current(apartment_id)
         assert f"/l/{slug}" in links.text

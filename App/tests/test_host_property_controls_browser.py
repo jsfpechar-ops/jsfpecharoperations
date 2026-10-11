@@ -210,8 +210,7 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
 
         page.set_viewport_size({"width": 1280, "height": 1000})
         page.goto(f"{base}/apartments?lang=en")
-        assert page.locator('.host-local-nav a[href="/guest-links"]').is_visible()
-        assert page.locator('.host-local-nav a[href="/automation"]').is_visible()
+        assert page.locator(".host-local-nav").count() == 0
         assert page.locator(".host-tools").count() == 0
         page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
         assert page.locator(".host-tools").count() == 0
