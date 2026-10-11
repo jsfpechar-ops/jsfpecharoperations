@@ -327,7 +327,7 @@ def main(url=None):
         must_contain=[
             host_i18n.STRINGS["en"]["guest_links.pin"],
             host_i18n.STRINGS["en"]["guest_links.new_pin"],
-            f'name="return_to" value="/apartments/{apartment_id}#communication"',
+            f'name="return_to" value="/apartments/{apartment_id}"',
             f'action="/apartments/{apartment_id}/regenerate-pin"',
         ],
     )
