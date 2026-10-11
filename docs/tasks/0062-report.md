@@ -41,7 +41,7 @@ context lint: OK
 ## 3. Acceptance (§7)
 
 - [x] New-property form: essentials visible; automation, controller, and link options under **More options** (closed by default).
-- [ ] Screenshots at 360 / 390 / 1280 px — not captured in this run (no `UBYHOST_CAPTURE_*`); owner can run `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_CAPTURE_PROPERTY_CONTROLS=1` on `test_host_property_controls_browser.py` for property form, and add guest-form captures manually on staging.
+- [x] Screenshots at 360, 390 and 1280 px: `docs/tasks/0062-evidence/property-closed-*.png`, `property-open-*.png`, `guest-form-*.png`.
 
 ## 4. Deviations
 
