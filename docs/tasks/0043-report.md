@@ -1,5 +1,7 @@
 # 0043 report: Police setup asks for 3 fields, fills the rest
 
+Status: review
+
 ## Files changed
 
 - `App/app/validation.py` — `mark_from_ws_user()` for production `uby-ws` logins only
