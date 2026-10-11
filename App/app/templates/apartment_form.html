@@ -245,6 +245,26 @@
       </div>
     </details>
     {% if editing %}
+    <details class="panel property-section" id="ws-request-letter"{% if not apartment.uby_ws_user %} open{% endif %}>
+      <summary>{{ t('apartment.form.ubyport.ws_request.summary') }}</summary>
+      <p class="small muted">{{ t('apartment.form.ubyport.ws_request.intro_1') }}</p>
+      <p class="small muted">{{ t('apartment.form.ubyport.ws_request.intro_2') }}</p>
+      <p class="small">{{ t('apartment.form.ubyport.ws_request.recipient') }}</p>
+      <p class="small">
+        {{ t('apartment.form.ubyport.ws_request.subject_label') }}:
+        {{ ws_request.subject }}
+        {{ copy_inline('ws-request-subject', ws_request.subject, t('common.copy')) }}
+      </p>
+      <div class="field">
+        <textarea id="ws-request-body" readonly rows="4">{{ ws_request.body }}</textarea>
+        <div class="actions">
+          {{ copy_button('ws-request-body') }}
+          <a class="btn small" href="/apartments/{{ apartment.id }}/ws-request.txt">{{ t('apartment.form.ubyport.ws_request.download') }}</a>
+        </div>
+      </div>
+    </details>
+    {% endif %}
+    {% if editing %}
     <div class="actions">
       <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/test-connection"
               formmethod="post" formnovalidate>{{ t('apartment.form.test_connection') }}</button>

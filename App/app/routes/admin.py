@@ -201,6 +201,27 @@ def _readiness(apartment, entities, issues, has_stays: bool) -> Dict[str, Any]:
     }
 
 
+_WS_REQUEST_IDUB_PLACEHOLDER = "[doplňte IDUB]"
+_WS_REQUEST_OPERATOR_PLACEHOLDER = "[jméno provozovatele]"
+
+
+def _ws_request_letter(apartment, entities) -> Dict[str, str]:
+    """Czech data-box text for hosts who still need UbyPort web-service credentials."""
+    idub = (apartment["uby_idub"] or "").strip() or _WS_REQUEST_IDUB_PLACEHOLDER
+    entity = next((e for e in entities if e["id"] == apartment["legal_entity_id"]), None)
+    operator_name = (
+        (entity["name"] if entity else "").strip() or _WS_REQUEST_OPERATOR_PLACEHOLDER
+    )
+    body = host_i18n.translate(
+        "cs",
+        "apartment.form.ubyport.ws_request.body",
+        idub=idub,
+        operator_name=operator_name,
+    )
+    subject = host_i18n.translate("cs", "apartment.form.ubyport.ws_request.subject")
+    return {"body": body, "subject": subject}
+
+
 def _missing_report_labels(request: Request, issues) -> List[str]:
     """The names of the reporting fields this property still lacks.
 
@@ -1145,6 +1166,27 @@ def apartment_detail(apartment_id: int, request: Request):
                 if peer["id"] != apartment["id"]
                 and int(peer["stay_fee_rate_czk"] or 0) > 0
             ],
+            "ws_request": _ws_request_letter(apartment, entities),
+        },
+    )
+
+
+@router.get("/apartments/{apartment_id}/ws-request.txt")
+def apartment_ws_request_download(apartment_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return Response("Not found.", status_code=404)
+    entities = access.entities(request)
+    letter = _ws_request_letter(apartment, entities)
+    return Response(
+        letter["body"].encode("utf-8"),
+        media_type="text/plain; charset=utf-8",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": 'attachment; filename="ubyport-ws-zadost.txt"',
         },
     )
 
