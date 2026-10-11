@@ -673,13 +673,24 @@ async def invoice_issue(request: Request):
         return render(request, "invoice_form.html", context)
     if form.get("fill_from_guest"):
         guest = _lead_guest(stay["reservation"])
+        state = _form_state(request, form, entity)
         if guest:
-            state = _form_state(request, form, entity)
             _merge_guest_fill(state, guest)
-            context = _form_context(
-                request, entities, entity, values=state, stay=stay
-            )
-            return render(request, "invoice_form.html", context)
+        context = _form_context(request, entities, entity, values=state, stay=stay)
+        if not guest:
+            context["errors"] = [
+                host_i18n.translate(_lang(request), "invoice.fill_guest.none")
+            ]
+        return render(request, "invoice_form.html", context)
+    if any(str(key).startswith("fill_") for key in form):
+        context = _form_context(
+            request,
+            entities,
+            entity,
+            values=_form_state(request, form, entity),
+            stay=stay,
+        )
+        return render(request, "invoice_form.html", context)
     draft = _draft(request, entity, form, stay)
     issues = invoices.validate_for_issue(draft)
     if not issues and invoices.invoice_pdf.too_long(_preview_view(draft), draft["items"], draft["lang"]):
