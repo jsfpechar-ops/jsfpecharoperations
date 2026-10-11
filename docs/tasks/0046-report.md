@@ -38,11 +38,11 @@ Root: `python3 scripts/context_lint.py` → OK.
 
 ## Screenshots
 
-Rendered from authenticated `TestClient` HTML at 360, 390 and 1280 px (new before/after Copy, edit after Copy):
+Property form before Copy, after Copy on a new flat, and after Copy on an existing flat, at 360, 390 and 1280 px:
 
-- `/opt/cursor/artifacts/screenshots/0046-new-before-360.png` (and 390, 1280)
-- `/opt/cursor/artifacts/screenshots/0046-new-after-360.png` (and 390, 1280)
-- `/opt/cursor/artifacts/screenshots/0046-edit-after-360.png` (and 390, 1280)
+- `docs/tasks/0046-evidence/new-before-{360,390,1280}.png`
+- `docs/tasks/0046-evidence/new-after-{360,390,1280}.png`
+- `docs/tasks/0046-evidence/edit-after-{360,390,1280}.png`
 
 ## Notes
 
