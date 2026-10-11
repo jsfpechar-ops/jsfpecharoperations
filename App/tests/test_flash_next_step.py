@@ -28,11 +28,11 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
     )
 ).decode()
 
-# validate_apartment()'s eight reporting fields, in readiness-checklist order.
+# Readiness-checklist reporting fields still missing on a bare save (facility name
+# is filled from the property name when left blank).
 REPORT_FIELD_KEYS = (
     "idub",
     "mark",
-    "facility_name",
     "house_no",
     "zip",
     "obec",

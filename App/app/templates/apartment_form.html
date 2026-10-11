@@ -198,14 +198,6 @@
     <div class="grid">
       {{ text_field('uby_idub', 'IDUB', apartment.uby_idub if editing else '',
          t('apartment.form.ubyport.idub_hint'), false, 14, none) }}
-      {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark if editing else '',
-         t('apartment.form.ubyport.mark_hint'), false, 6, none) }}
-    </div>
-    <div class="grid two">
-      {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name if editing else '',
-         t('apartment.form.ubyport.name_hint'), false, 35, none) }}
-      {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact if editing else '',
-         t('apartment.form.ubyport.contact_hint'), true, 50) }}
     </div>
     <div class="grid two">
       {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user if editing else '',
@@ -226,6 +218,27 @@
         </div>
       </div>
     </div>
+    {% set ns = namespace(derived_open=false) %}
+    {% if issues %}
+    {% for issue in issues %}
+    {% if issue.is_error and issue.field in ('uby_mark', 'uby_name', 'uby_contact') %}
+    {% set ns.derived_open = true %}
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+    <details class="police-derived" {% if ns.derived_open %}open{% endif %}>
+      <summary>{{ t('apartment.form.ubyport.derived_summary') }}</summary>
+      <div class="grid">
+        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark if editing else '',
+           t('apartment.form.ubyport.derived_mark_hint'), false, 6, none) }}
+      </div>
+      <div class="grid two">
+        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name if editing else '',
+           t('apartment.form.ubyport.derived_name_hint'), false, 35, none) }}
+        {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact if editing else '',
+           t('apartment.form.ubyport.derived_contact_hint'), true, 50) }}
+      </div>
+    </details>
     {% if editing %}
     <div class="actions">
       <button class="btn" type="submit" formaction="/apartments/{{ apartment.id }}/test-connection"

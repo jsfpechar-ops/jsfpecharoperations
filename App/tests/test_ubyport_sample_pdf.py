@@ -189,8 +189,8 @@ def test_apartment_form_links_to_sample_pdf(authed_client):
     assert SAMPLE_URL in page.text
     # WP17 (review 3.E item 7): one hint per field, no separate field map.
     assert "Where each UbyHost field comes from" not in page.text
-    assert "Five letters on file with the police" in page.text
-    assert "E-mail or phone from your original UbyPort registration" in page.text
+    assert "Filled from the six characters after UBY-WS" in page.text
+    assert "Filled from your operator contact e-mail when left blank" in page.text
 
 
 def test_automation_page_links_to_sample_and_property_setup(authed_client):
