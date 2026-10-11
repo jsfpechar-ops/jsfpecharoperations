@@ -263,9 +263,10 @@ def test_fee_template_peers_excludes_current_and_zero_rate_properties(host):
     page = client.get(f"/apartments/{apartment_id}?lang=en")
 
     assert page.status_code == 200
-    assert f'<option value="{peer_id}"' in page.text
-    assert f'<option value="{apartment_id}"' not in page.text
-    assert f'<option value="{zero_rate_id}"' not in page.text
+    fee_block = page.text.split('id="fee-copy-source"', 1)[1].split("</select>", 1)[0]
+    assert f'<option value="{peer_id}"' in fee_block
+    assert f'<option value="{apartment_id}"' not in fee_block
+    assert f'<option value="{zero_rate_id}"' not in fee_block
 
 
 def test_missing_fee_details_warning_shows_for_enabled_rate_without_vs(host):
