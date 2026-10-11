@@ -1,5 +1,7 @@
 # 0047 report: Dashboard missing-report banner
 
+Status: review
+
 ## Files
 
 - `App/app/routes/admin.py` — build `missing_report_display` / `missing_report_more` from `_readiness(..., invite=False)` and `_apartment_issues()` for active properties only; `_readiness` accepts `invite=False` so the dashboard does not load controller data.
@@ -25,5 +27,5 @@ Captured with `UBYHOST_CAPTURE_0047=1 .venv/bin/python -m pytest tests/test_dash
 
 | Case | 360px | 390px | 1280px |
 |---|---|---|---|
-| 1 incomplete property | `generated_images/0047-evidence/one-incomplete-360.png` | `one-incomplete-390.png` | `one-incomplete-1280.png` |
-| 6 incomplete properties | `six-incomplete-360.png` | `six-incomplete-390.png` | `six-incomplete-1280.png` |
+| 1 incomplete property | `docs/tasks/0047-evidence/one-incomplete-360.png` | `one-incomplete-390.png` | `one-incomplete-1280.png` |
+| 6 incomplete properties | `docs/tasks/0047-evidence/six-incomplete-360.png` | `six-incomplete-390.png` | `six-incomplete-1280.png` |
