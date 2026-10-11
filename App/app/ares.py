@@ -117,6 +117,12 @@ def _map_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _cache_store(text: str, now: float, data: Optional[Dict[str, Any]]) -> None:
+    if len(_CACHE) > 1000:
+        _CACHE.clear()
+    _CACHE[text] = (now, data)
+
+
 def lookup(ico: str) -> Optional[Dict[str, Any]]:
     """Return mapped ARES data or None on any failure (including invalid IČO)."""
     text = (ico or "").strip()
@@ -126,7 +132,6 @@ def lookup(ico: str) -> Optional[Dict[str, Any]]:
     cached = _CACHE.get(text)
     if cached and now - cached[0] < _CACHE_TTL_SECONDS:
         return cached[1]
-    data: Optional[Dict[str, Any]] = None
     try:
         response = requests.get(
             _API_URL.format(ico=text),
@@ -134,14 +139,14 @@ def lookup(ico: str) -> Optional[Dict[str, Any]]:
             headers={"User-Agent": _USER_AGENT},
         )
         if response.status_code == 404:
-            data = None
-        elif response.ok:
+            _cache_store(text, now, None)
+            return None
+        if response.ok:
             data = _map_payload(response.json())
             if not data.get("name"):
-                data = None
-        else:
-            data = None
+                return None
+            _cache_store(text, now, data)
+            return data
+        return None
     except Exception:
-        data = None
-    _CACHE[text] = (now, data)
-    return data
+        return None

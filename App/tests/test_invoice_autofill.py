@@ -165,6 +165,27 @@ def test_no_complete_guest_means_no_fill_button(host):
     assert 'name="fill_from_guest"' not in page.text
 
 
+def test_fill_guest_without_complete_guest_does_not_issue(host):
+    entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
+    owner_id = _owner()
+    response = host.post(
+        "/invoices",
+        data={
+            "legal_entity_id": str(entity_id),
+            **stay_form(stay_id),
+            "fill_from_guest": "1",
+            "lang": "en",
+        },
+    )
+    assert response.status_code == 200
+    assert "No checked-in guest on this stay yet." in response.text
+    assert (
+        db.query_one("SELECT COUNT(*) AS n FROM invoice WHERE owner_user_id = ?", (owner_id,))["n"]
+        == 0
+    )
+
+
 def test_another_hosts_guest_is_never_used(host):
     entity_id = _add_entity()
     other_stay = make_stay(_owner(OTHER))

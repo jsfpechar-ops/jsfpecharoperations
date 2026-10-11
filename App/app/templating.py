@@ -222,11 +222,9 @@ _SOURCE_KEYS = {"manual": "stays.source.manual", "ical": "stays.source.ical"}
 _PLATFORM_LOGO_DIR = config.BASE_DIR / "static" / "platforms"
 # Owner filenames in static/platforms/ (slug -> basename). Checked once at import.
 _PLATFORM_LOGO_FILES = {
-    "airbnb": "airbnb-icon.svg",
-    "booking": "booking-icon.svg",
-    "echalupy": "logo-echalupy-cz-2.svg",
-    "vrbo": "Vrbo.svg",
-    "trip": "Trip.com_logo.svg.webp",
+    "airbnb": "airbnb.svg",
+    "booking": "booking.svg",
+    "echalupy": "echalupy.svg",
 }
 _PLATFORM_LOGO_KEYS: dict[str, str] = {}
 _ALLOWED_LOGO_SUFFIXES = (".svg", ".png", ".webp")

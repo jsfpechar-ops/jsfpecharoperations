@@ -111,6 +111,24 @@ def test_lookup_timeout_returns_none(mock_get):
     assert ares.lookup(ICO) is None
 
 
+@patch("app.ares.requests.get")
+def test_lookup_timeout_not_cached_then_succeeds(mock_get):
+    mock_get.side_effect = [requests.Timeout(), _mock_response()]
+    assert ares.lookup(ICO) is None
+    data = ares.lookup(ICO)
+    assert data is not None
+    assert data["name"] == "ARES Test s.r.o."
+    assert mock_get.call_count == 2
+
+
+@patch("app.ares.requests.get")
+def test_lookup_404_is_cached(mock_get):
+    mock_get.return_value = _mock_response(status_code=404)
+    assert ares.lookup(ICO) is None
+    assert ares.lookup(ICO) is None
+    mock_get.assert_called_once()
+
+
 def test_entities_fill_does_not_save(host):
     with patch("app.ares.requests.get") as mock_get:
         mock_get.return_value = _mock_response()
