@@ -254,7 +254,19 @@ def _ws_request_letter(apartment, entities) -> Dict[str, str]:
         operator_name=operator_name,
     )
     subject = host_i18n.translate("cs", "apartment.form.ubyport.ws_request.subject")
-    return {"body": body, "subject": subject}
+    # The file the host downloads is the Czech request, with the public
+    # recipient the Foreign Police publish for electronic delivery.
+    header = "\n".join([
+        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.recipient"),
+        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.address_street"),
+        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.address_city"),
+        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.databox"),
+        "",
+        f"{host_i18n.translate('cs', 'apartment.form.ubyport.ws_request.subject_label')}: {subject}",
+        "",
+        body,
+    ])
+    return {"body": body, "subject": subject, "download": header}
 
 
 def _missing_report_labels(request: Request, issues) -> List[str]:
@@ -1439,7 +1451,7 @@ def apartment_ws_request_download(apartment_id: int, request: Request):
     entities = access.entities(request)
     letter = _ws_request_letter(apartment, entities)
     return Response(
-        letter["body"].encode("utf-8"),
+        letter["download"].encode("utf-8"),
         media_type="text/plain; charset=utf-8",
         headers={
             "Cache-Control": "no-store",

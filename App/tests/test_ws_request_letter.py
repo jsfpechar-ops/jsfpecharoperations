@@ -96,6 +96,9 @@ def test_download_contains_idub_and_operator(letter_world):
     assert IDUB in text
     assert ENTITY_NAME in text
     assert "robotické zasílání" in text
+    assert "ybndqw9" in text
+    assert "Olšanská 2" in text
+    assert "130 51 Praha 3" in text
 
 
 def test_download_uses_idub_placeholder_when_empty(letter_world):
@@ -126,6 +129,8 @@ def test_form_block_open_without_ws_user(letter_world):
     assert SUMMARY_EN in page.text
     assert f'id="ws-request-letter" open' in page.text.replace("\n", " ")
     assert f"/apartments/{apartment_id}/ws-request.txt" in page.text
+    assert "ybndqw9" in page.text
+    assert "Olšanská 2" in page.text
 
 
 def test_form_block_closed_when_ws_user_set(letter_world):

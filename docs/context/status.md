@@ -10,7 +10,7 @@ Updated: 2026-10-11. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047
 
 ## Now
 
-- Check production `/healthz`. The credential letter (0044) still uses the fallback recipient until you send the data-box ID and subject.
+- Check production `/healthz`. The credential letter goes to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
 - Optional: deploy #280+#281 (admin preview) when you want it on production.
 
