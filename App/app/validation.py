@@ -811,19 +811,29 @@ _IDUB_RE = re.compile(r"^[A-Za-z0-9]{12,14}$")
 _MARK_RE = re.compile(r"^[A-Za-z0-9]{5,6}$")
 _HOUSE_RE = re.compile(r"^(?:\d{1,4}|E\d{1,4}|\d{1,4}E)$", re.IGNORECASE)
 _ORIENT_RE = re.compile(r"^\d{1,3}[A-Za-z]?$")
-_WS_USER_RE = re.compile(r"^(?:uby-ws[A-Za-z0-9]{6}|uby-tws[A-Za-z0-9]{5})$", re.IGNORECASE)
+_WS_USER_RE = re.compile(
+    r"^(?:uby-ws[A-Za-z0-9]{6}|uby-ws_[A-Za-z0-9]{5,6}|uby-tws[A-Za-z0-9]{5})$",
+    re.IGNORECASE,
+)
 
 
 def mark_from_ws_user(user: str) -> str:
-    """Six-character facility abbreviation from a production web-service login."""
+    """Facility abbreviation from a production web-service login.
+
+    UBY-WS_MLJNO yields MLJNO (the characters after UBY-WS_). A login with no
+    underscore, UBY-WSab12cd, yields the six characters after UBY-WS. Test
+    logins (uby-tws…) are never used.
+    """
     login = (user or "").strip()
     if not _WS_USER_RE.match(login):
         return ""
     lowered = login.lower()
     if lowered.startswith("uby-tws"):
         return ""
+    if lowered.startswith("uby-ws_"):
+        return login[7:].upper()
     if lowered.startswith("uby-ws"):
-        return login[-6:].upper()
+        return login[6:].upper()
     return ""
 
 

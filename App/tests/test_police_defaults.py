@@ -99,6 +99,8 @@ def _db():
 
 def test_mark_from_ws_user_derives_production_login():
     assert validation.mark_from_ws_user("UBY-WSab12cd") == "AB12CD"
+    assert validation.mark_from_ws_user("UBY-WS_MLJNO") == "MLJNO"
+    assert validation.mark_from_ws_user("uby-ws_mljno") == "MLJNO"
 
 
 def test_mark_from_ws_user_ignores_test_login():

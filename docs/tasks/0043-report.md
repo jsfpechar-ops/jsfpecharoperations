@@ -44,7 +44,7 @@ context lint: OK
 
 ## §8
 
-1. **OWNER CHECK (§8.1):** Not confirmed on a real production protocol in this session. Implementation assumes the six characters after `UBY-WS` in the web-service login are the facility abbreviation, matching `validation._WS_USER_RE` and the existing `mark_hint` copy. Owner must confirm before merge; if wrong, remove `mark_from_ws_user` and the mark derivation tests per brief §8.1.
+1. **OWNER CHECK (§8.1):** Confirmed 2026-10-11. Production login `UBY-WS_MLJNO` → abbreviation `MLJNO` (the characters after `UBY-WS_`). `mark_from_ws_user` uses that form, and still accepts a six-character suffix with no underscore. Test logins (`uby-tws`) are not used.
 2. §2 excerpts: found as described.
 3. Entity list: `access.entities(request)` in both handlers; no new SQL.
 
