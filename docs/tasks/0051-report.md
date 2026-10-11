@@ -50,9 +50,9 @@ Migration `0009_stay_fee_send.sql`: four `ALTER TABLE` statements (apartment `st
 - [x] Finalize August 2026 period → send panel with databox ID, Czech subject/text, PDF link, data-box login link; mark sent → list **Sent**; mark paid → **Paid** (covered by `test_stay_fee_send_panel.py`).
 - [x] Screenshots at 360, 390, 1280 px (from `test_send_panel_geometry_and_screenshots`):
 
-<img alt="Send panel 360px" src="/opt/cursor/artifacts/stay-fee-send-panel/send-panel-360.png" />
-<img alt="Send panel 390px" src="/opt/cursor/artifacts/stay-fee-send-panel/send-panel-390.png" />
-<img alt="Send panel 1280px" src="/opt/cursor/artifacts/stay-fee-send-panel/send-panel-1280.png" />
+- `docs/tasks/0051-evidence/send-panel-360.png`
+- `docs/tasks/0051-evidence/send-panel-390.png`
+- `docs/tasks/0051-evidence/send-panel-1280.png`
 
 ## 4. Deviations
 
