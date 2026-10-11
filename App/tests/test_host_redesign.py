@@ -76,7 +76,6 @@ def test_context_navigation_and_command_palette_preserve_destinations(fee_host):
     client, _, _ = fee_host
     stays = client.get('/reservations').text
     assert 'href="/submissions"' in stays and 'href="/housebook"' in stays
-    props = client.get('/apartments').text
     assert 'href="/entities"' in client.get('/settings').text
     urls = {item.get('url') for item in client.get('/api/command-palette').json()['items']}
     assert {'/apartments', '/entities', '/settings/archived', '/privacy-requests', '/invoices/settings'} <= urls
