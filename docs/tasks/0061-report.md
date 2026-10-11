@@ -1,5 +1,7 @@
 # 0061 report: Invoice autofill
 
+Status: review
+
 ## Worktree
 
 `../uby-0061` could not be created (permission denied on `/`). Used `/workspace/uby-0061` with branch `task/0061-invoice-autofill` and linked `App/.venv` to the main checkout venv.
