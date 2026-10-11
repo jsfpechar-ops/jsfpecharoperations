@@ -1,5 +1,7 @@
 # 0045 report: Property address as one line
 
+Status: review
+
 ## Files changed
 
 | Path | Change |
