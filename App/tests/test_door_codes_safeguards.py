@@ -385,6 +385,26 @@ def test_a_taken_period_is_not_retried_from_the_guest_save(monkeypatch):
     assert notices[0]["idempotency_key"].endswith(":period_taken")
 
 
+def test_period_taken_notice_is_informational_and_copies_support():
+    """0067: hosts are not asked to audit TTLock; support still gets a copy."""
+    from app import mail_notify
+
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    row_id = door_codes.ensure_row(stay)
+    mail_notify.door_code_notice(row_id, "period_taken")
+    row = db.query_one(
+        "SELECT payload, cc_email, subject FROM email_outbox "
+        "WHERE reservation_id = ? AND kind = 'door_code_notice'",
+        (stay,),
+    )
+    assert row["cc_email"] == "support@ubyhost.com"
+    body = json.loads(row["payload"])["text"]
+    assert "Nothing to do." in body
+    assert "no longer opens the door" in body
+    assert "Check this lock" not in body
+    assert "got its own door code" in row["subject"]
+
+
 def test_the_worker_adds_a_custom_code_when_the_period_is_taken(monkeypatch):
     order = []
 
