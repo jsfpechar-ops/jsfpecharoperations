@@ -26,14 +26,13 @@ SUBPROCESSOR_IDS = (
     "posthog",
     "render",
     "google",
-    "ttlock",
 )
 # Recipients that are not subprocessors (section 5). "google_ads" belongs to
 # self sign-up with Google Ads (WP20), so it is listed only while
 # UBYHOST_SIGNUP_ENABLED is on (recipient_ids()).
 # "meta_ads" (WP21) is listed only while sign-up is on and the Meta
 # Conversions API is configured.
-RECIPIENT_IDS = ("google_ads", "meta_ads", "police", "municipality")
+RECIPIENT_IDS = ("google_ads", "meta_ads", "police", "municipality", "ttlock")
 
 
 def recipient_ids() -> tuple:
