@@ -52,5 +52,5 @@ The PIN is encrypted at rest and never stored in plain text in the outbox or the
 
 | # | Action | Owner | Before |
 |---|---|---|---|
-| 1 | Ship the copy in [0068](../tasks/0068-ttlock-host-provider-copy.md): terms, register, guest notice | executor | other hosts use door codes |
+| 1 | Ship the copy in [0068](../tasks/0068-ttlock-host-provider-copy.md): terms, register, guest notice | executor | done 2026-10-12 (#372) |
 | 2 | Confirm TTLock's developer terms allow use by a multi-host platform (asked 2026-10-12) | owner | other hosts use door codes |

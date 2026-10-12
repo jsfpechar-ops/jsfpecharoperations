@@ -1,6 +1,6 @@
 # 0067 report: Informational period_taken mail
 
-Status: review
+Status: done
 
 ## 1. Files changed
 
