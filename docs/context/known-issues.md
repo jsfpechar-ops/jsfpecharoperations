@@ -91,3 +91,4 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-ML04 | Low open | login link limit | Anyone can use up a victim's 3 requests per 15 min. Kept: counting only real accounts would reveal who uses UbyHost | 0006 |
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
+| K-D04 | High open | door_codes `issue`, `_handle_moves` | Same hours rebooked while a cancelled code is undeleted: `get` returns the old PIN to the new guest | [0069](../tasks/0069-same-period-shared-pin.md) |

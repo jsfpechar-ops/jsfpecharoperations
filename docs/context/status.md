@@ -17,7 +17,7 @@ Updated: 2026-10-12. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047
 ## Next
 
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
-- Merged 0067 (#371, period_taken mail a notice) and 0068 (#372, TTLock = host's own provider in terms, register, guest notice). Open: TTLock follow-up questions sent ([TTLOCK](../TTLOCK.md#not-stated-in-the-supplied-docs) item 6), platform terms ([legal](../privacy/DOOR_CODES_LEGAL.md) §9).
+- Merged 0067 (#371) and 0068 (#372). TTLock answered all questions ([TTLOCK](../TTLOCK.md#what-ttlock-support-confirmed-2026-10-12)). Next: [0069](../tasks/0069-same-period-shared-pin.md), same-hours rebooking must not reuse a PIN (K-D04).
 - Plan [file-retention](../plans/file-retention.md): decided, no build now. Lawyer round: add a Terms/DPA line that the app is not the host's statutory archive.
 
 - TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).

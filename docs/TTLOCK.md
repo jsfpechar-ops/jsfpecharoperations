@@ -66,6 +66,7 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 | `10000`, `10001` | Client id or secret wrong | Owner alert (server config), stop all calls |
 | `10005`, `30001`, `-2018`, `20002` | No permission, or not the lock admin | Host mail ("UbyHost has no admin rights on this lock"), no retry |
 | `30006` | API call frequency exceeded | Back off, owner alert |
+| `30007` | Monthly call limit exceeded; calls are refused until the 1st of the month, Beijing time [O, TTLock 2026-10-12]. Upgrade: Developer Account, Basic Information, Developer Version | Same as UbyHost's own `budget` stop (0069) |
 | `80000` | `date` off by more than 5 minutes | Owner alert (server clock), retry later |
 | `-2012` | Lock not connected to any gateway | Retry with backoff. For a delete, host mail after 1 h |
 | `-3037` | Gateway busy, or offline and not yet noticed by the server [FAQ 5.4] | Retry with backoff |
@@ -73,7 +74,7 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 | `90000`, `1` | TTLock internal error, generic failure | Retry with backoff |
 | `-3` | Invalid parameter | Log, no retry (a UbyHost bug) |
 | `-1026` | Official (TTLock support, 2026-10-12): "Passcode with this validity period has been generated before and deleted." A type-3 code for exactly this lock and period was made and then deleted; that period can never get a type-3 code again. Seen on staging 2026-10-08 | Do not retry `get`. Worker calls `add`. Host mail is informational (0067). See the plan §6 |
-| `-3008` | A passcode that has never been used on the lock cannot be changed (confirmed by TTLock support 2026-10-12: a random code does not exist on the lock until first use) | UbyHost does not call `change` on a type-3 code |
+| `-3008` | A passcode that has never been used on the lock cannot be changed (confirmed by TTLock support 2026-10-12: a random code does not exist on the lock until first use). Once typed, a random code becomes a custom code and can be changed or deleted | UbyHost does not call `change` on a type-3 code |
 
 Source for every code: [X], table "System Error Codes", plus [FAQ] where marked. The reactions are UbyHost design, not TTLock text.
 
@@ -133,11 +134,17 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 
 - `POST /v3/lockRecord/list` with `lockId`, optional `startDate` and `endDate`, `pageNo`, `pageSize` (max 100) returns records with `recordType` (4 = passcode unlock), `success`, `keyboardPwd`, `lockDate`, `serverDate` [X]. The developer console has a per-app **Callback URL** that pushes unlock records to a URL [O, console screenshot 2026-10-08]. UbyHost leaves it empty: unlock times say when guests come and go, and no feature needs them. The callback receives each record with `username` (the code's name or the app user), `keyboardPwd` (the digits) and `lockDate` [GW], so it would hold guests' comings and goings plus codes. It only works for locks whose administrator got a token with UbyHost's client id [GW].
 
-## Not stated in the supplied docs
+## What TTLock support confirmed (2026-10-12)
 
-1. Whether the TTLock app's share screen accepts a prefixed API user (the API's Send ekey does).
-2. Whether an authorization-code (redirect) login exists. [X] lists the errors `10002`, `10008` and `10009`, which hints at one, but documents no endpoint. Not needed with the UbyHost-made user (plan §8.2).
-3. Whether `change` can move the period of a random (`get`) code that has already been typed on the lock. An unused one cannot: `-3008` [owner log 2026-10-08]. UbyHost does not call `change` for type 3.
-4. Whether the lock applies daylight saving time on its own, or only the raw offset.
-5. Answered (TTLock support, 2026-10-12): EU users' data is stored in Germany; TTLock does not think it meets GDPR standards. Legal handling: [DOOR_CODES_LEGAL](privacy/DOOR_CODES_LEGAL.md) §4.
-6. What a second type-3 `get` for the same lock and period returns when the first code was **not** deleted (for example a cancelled stay whose delete failed): the same PIN, a different PIN, or an error. `-1026` covers only the deleted case. Asked of TTLock 2026-10-12.
+1. **Same period, old code not deleted:** `get` returns the same code, because one period has one code. UbyHost never hands it to a second stay (0069).
+2. **Deleting a never-used random code** with `deleteType=2` sends the lock a command to block it. With the gateway offline the call fails; nothing is queued.
+3. **Time zones:** the servers apply none. Only the lock has `timezoneRawOffset`; a code works by the lock's clock and the code's period. UbyHost sends instants (ms) computed from Prague time with daylight saving (`ttlock.stay_window`, zoneinfo), so the clock change is handled.
+4. **Lock memory:** about 150 codes, by model. Expired codes stay but are overwritten by new ones, oldest expired first; a valid code is never pushed out. With every slot valid, the lock answers "running out of memory" (`-4056`). The API cannot report free space. No cleanup of old custom codes is needed.
+5. **A typed random code** becomes a custom code and can be changed or deleted.
+6. **Error list:** TTLock will publish an updated list (promised for the week of 2026-10-12).
+7. **Call limit:** `30007`, see the error table.
+8. **Platform use:** one developer app may serve many hosts; TTLock suggests separate apps per project.
+9. **Sharing to the API user:** the app's Authorized Admin screen accepts the prefixed user, and that user can log in to the TTLock app. Its stored password is therefore a door key: encrypted at rest, never shown (plan §8.2).
+10. **Data:** EU users' data is stored in Germany; TTLock does not think it meets GDPR standards ([DOOR_CODES_LEGAL](privacy/DOOR_CODES_LEGAL.md) §4).
+
+Still unknown: whether an authorization-code (redirect) login exists ([X] lists `10002`, `10008`, `10009`); not needed with the UbyHost-made user.
