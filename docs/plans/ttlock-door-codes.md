@@ -203,7 +203,7 @@ There is no pilot list and only one way to connect. Every host already has a TTL
 - **Data sent to TTLock.** Lock id, validity window and the code name `UH-<id>`. No guest name, e-mail or reservation summary.
 - **Logging.** Error code and door-code id only. A test asserts that no PIN or token reaches the log.
 - **Audit.** One `audit` row per create, change and delete.
-- **Privacy register.** TTLock (Sciener, Hangzhou) goes into the subprocessor register and the ROPA before the guest block ships. If data is stored outside the EU, the lawyer reviews the transfer basis first.
+- **Privacy register.** TTLock (Sciener, Hangzhou) is the host's own lock provider, listed as a recipient that is not a subprocessor, and in the ROPA ([DOOR_CODES_LEGAL](../privacy/DOOR_CODES_LEGAL.md) §1, 0068).
 
 ## 9. Flow
 

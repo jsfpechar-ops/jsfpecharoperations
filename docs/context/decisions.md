@@ -30,14 +30,14 @@ Append-only.
 - 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
 - 2026-10-06 | Downloads skip the navigation skeleton (`download`, `data-no-skeleton`, path-ending rule), pinned by a template scan test | a stay-fee PDF click blanked the page for 15 s | skeleton.js
 - 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row; the CSV keeps one neutral line so it adds up | a correction line looks wrong to the office | stay_fee.py
-- 2026-10-06 | UbyPort outcome: 0-2 accepted, 4-6 not; 112 = reported late = accepted (replaces batch-not-received) | police letter A1-A5 | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
-- 2026-10-06 | Sweep: one send per refused record, then wait for host fix (was 3 tries) | police B2-B3 | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
+- 2026-10-06 | UbyPort outcome: 0-2 accepted, 4-6 not; 112 = reported late = accepted (replaces batch-not-received) | police letter A1-A5 | [OPERATIONS](../OPERATIONS.md)
+- 2026-10-06 | Sweep: one send per refused record, then wait for host fix (was 3 tries) | police B2-B3 | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-06 | Staging may use the police test environment (`ubyport_env=test`, UBY-WS test account); credentials only in the staging app | police B4: test behaves like production | [LIGHTSAIL](../LIGHTSAIL.md)
 - 2026-10-06 | Abbreviation (zkratka) check accepts 5-6 letters or digits | the police issued a 6-character test abbreviation | validation.py
 - 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live; full rules in the plan | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Funnel: in-app dashboard, no JS; Umami public-only | own rows | 0018
 - 2026-10-08 | Stored files: no expiry; invoices 10 y; first new file kind brings a storage module | tiny saving, legal risk | [plan](../plans/file-retention.md)
-- 2026-10-08 | Door codes: one 1-min `door_codes` job; no PIN/list/unlock poll; weekly `queryDate` in it | API budget; type-3 codes unknown to the lock until first use | [ttlock-door-codes](../plans/ttlock-door-codes.md#7-api-call-budget-30000-a-month-shared-by-all-hosts)
+- 2026-10-08 | Door codes: one 1-min `door_codes` job; no PIN/list/unlock poll; weekly `queryDate` in it | API budget; type-3 codes unknown to the lock until first use | [plan §7](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
 - 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in the same commit; executors skip non-todo; lint warns on overlapping open briefs | brief collisions | [workflow](workflow.md)
@@ -50,4 +50,4 @@ Append-only.
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; requests lib; 24 h cache; 20/h per user | owner | [0055](../tasks/0055-ares-lookup.md)
 - 2026-10-11 | Facility abbreviation is the part after UBY-WS_ (UBY-WS_MLJNO → MLJNO) | owner | [0043](../tasks/0043-police-setup-fewer-fields.md)
 - 2026-10-11 | Web-service credential request: data box ybndqw9, Ředitelství služby cizinecké policie, Olšanská 2, 130 51 Praha 3 | owner | [0044](../tasks/0044-ws-request-letter.md)
-- 2026-10-12 | -1026 = the period's type-3 code was made, then deleted; period_taken mail is a notice | TTLock | [0067](../tasks/0067-period-taken-mail-copy.md)
+- 2026-10-12 | TTLock: -1026 = period's code made, then deleted (period_taken mail a notice, 0067); TTLock = host's own provider, not our subprocessor, no SCCs (not GDPR-ready, data in DE) | TTLock, owner | [legal](../privacy/DOOR_CODES_LEGAL.md)

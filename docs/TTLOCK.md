@@ -139,5 +139,5 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 2. Whether an authorization-code (redirect) login exists. [X] lists the errors `10002`, `10008` and `10009`, which hints at one, but documents no endpoint. Not needed with the UbyHost-made user (plan §8.2).
 3. Whether `change` can move the period of a random (`get`) code that has already been typed on the lock. An unused one cannot: `-3008` [owner log 2026-10-08]. UbyHost does not call `change` for type 3.
 4. Whether the lock applies daylight saving time on its own, or only the raw offset.
-5. Who runs `euapi.ttlock.com`, where its data is stored, and the privacy policy URL.
+5. Answered (TTLock support, 2026-10-12): EU users' data is stored in Germany; TTLock does not think it meets GDPR standards. Legal handling: [DOOR_CODES_LEGAL](privacy/DOOR_CODES_LEGAL.md) §4.
 6. What a second type-3 `get` for the same lock and period returns when the first code was **not** deleted (for example a cancelled stay whose delete failed): the same PIN, a different PIN, or an error. `-1026` covers only the deleted case. Asked of TTLock 2026-10-12.
