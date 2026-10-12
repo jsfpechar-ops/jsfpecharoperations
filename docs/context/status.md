@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-11. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047, 0062, 0054. Main CI green.
+Updated: 2026-10-12. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047, 0062, 0054. Main CI green.
 
 ## Production
 
@@ -17,6 +17,7 @@ Updated: 2026-10-11. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047
 ## Next
 
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
+- TTLock confirmed -1026 (made and deleted). Brief [0067](../tasks/0067-period-taken-mail-copy.md): informational period_taken mail. Asked TTLock: same window, old code not deleted ([TTLOCK](../TTLOCK.md#not-stated-in-the-supplied-docs) item 6).
 - Plan [file-retention](../plans/file-retention.md): decided, no build now. Lawyer round: add a Terms/DPA line that the app is not the host's statutory archive.
 
 - TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).
