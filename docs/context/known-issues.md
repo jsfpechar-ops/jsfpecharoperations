@@ -1,13 +1,12 @@
 # Known issues
 
-Replaces FOLLOWUPS.md/MEMORIES.md. Grep first; skip listed hunts; append IDs.
-Fixing PR removes rows; log decisions.
+Replaces FOLLOWUPS/MEMORIES. Grep first; skip listed hunts; append IDs. Fixed: remove, log decision.
 Status: open, unverified, decision (owner/lawyer/council), accepted.
 **HR** = HIGH RISK; owner decides.
 
-**Sources:** [source map](known-issue-sources.md). Host UI: [PR #338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338), geometry audit underway.
+**Sources:** [map](known-issue-sources.md). Host UI: [#338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338), geometry audit underway.
 
-Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
+Seed: `d72c870`; ~100 fixes omitted.
 
 | ID | Sev/status | Where | Issue | Src |
 |---|---|---|---|---|
@@ -28,7 +27,7 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-F15 | Med unverified | icalsync.py ~750 | Vanished bookings may keep a live guest link | AR-27 |
 | K-F16 | Med unverified | icalsync.py ~549-642 | Date-move reconcile not atomic; re-sign alert can be lost | AR-38 |
 | K-F17 | Low unverified | reporting.py claim TTL; :1683 recover_stale_submissions | Lease may expire across slow batches; stale-running recovery unconfirmed | P A16, A30 |
-| K-F19 | Low open | codelists.py error_severities | Severities load on a passed connection test or "Refresh code lists"; until then only 1, 112, 150 are known and other codes count as refused | police A1-A2 |
+| K-F19 | Low open | codelists.py error_severities | Before successful test/Refresh code lists, only 1/112/150 known; other codes refused | police A1-A2 |
 | K-F18 | High decision HR | reporting.py:859 signature_dates_stale | Stale signed dates: keep the safety net or restore re-signing (T48–T50)? | P Q6 |
 | K-L01 | High decision | retention.py:218,237 | Deletion 30+30 days and Terms s19 export wording need a lawyer | P Q9, G G-D11 |
 | K-L02 | High decision | retention.py ~306 | Termination deletes legal_acceptance rows; G-D7 says keep 3 years | F BE-10 |
@@ -92,3 +91,4 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-ML04 | Low open | login link limit | Anyone can use up a victim's 3 requests per 15 min. Kept: counting only real accounts would reveal who uses UbyHost | 0006 |
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
+| K-U14 | Med unverified | Settings | Verify form/save ownership (0069) | [plan](../plans/host-navigation-maintainability.md) |

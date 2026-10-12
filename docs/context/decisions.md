@@ -18,7 +18,7 @@ Append-only.
 - 2026-10-05 | Admin preview: full workspace access, reason optional, 24 h default | the owner must be able to support hosts | PR #280, K-P01
 - 2026-10-05 | Ticket Wallet guest UI archived (kept in `App/app/static/archive/`), may return | simpler guest form | -
 - 2026-10-06 | [workflow] Opus orchestrates only (plans, briefs, reviews); Cursor executes with composer, Kimi or GLM only | Opus was 92% of $1,588 per 30 days | [workflow](workflow.md)
-- 2026-10-06 | [workflow] Context system: AGENTS.md L0 + `docs/context/` L1 + `docs/plans/` L2; audits archived; known-issues.md replaces FOLLOWUPS.md | 87% of spend was re-read context | [README](README.md)
+- 2026-10-06 | [workflow] Context: AGENTS.md L0, context L1, plans L2; audits archived; known-issues replaces FOLLOWUPS | re-reading used 87% of spend | [README](README.md)
 - 2026-10-06 | [workflow] WP/patch series closed at WP33/0034; new work uses task numbers NNNN | one numbering scheme | [workflow](workflow.md)
 - 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in one day found the same issues | [workflow](workflow.md)
 - 2026-10-06 | Cloudflare MCP servers removed from the local Cursor MCP config | context cost in every chat, and production DNS/WAF access for agents | task 0001
@@ -51,3 +51,4 @@ Append-only.
 - 2026-10-11 | Facility abbreviation is the part after UBY-WS_ (UBY-WS_MLJNO → MLJNO) | owner | [0043](../tasks/0043-police-setup-fewer-fields.md)
 - 2026-10-11 | Web-service credential request: data box ybndqw9, Ředitelství služby cizinecké policie, Olšanská 2, 130 51 Praha 3 | owner | [0044](../tasks/0044-ws-request-letter.md)
 - 2026-10-12 | TTLock: -1026 = period's code made, then deleted (period_taken mail a notice, 0067); TTLock = host's own provider, not our subprocessor, no SCCs (not GDPR-ready, data in DE) | TTLock, owner | [legal](../privacy/DOOR_CODES_LEGAL.md)
+- 2026-10-12 | Navigation decisions: [UI](ui-decisions.md) | owner

@@ -38,3 +38,6 @@ per [workflow](workflow.md#compaction). Initial host entries moved here on integ
 | 2026-10-10 | Owner requested draft #338 conflict resolution | Preserve main door-code reports and host reports under distinct names; UI remains paused | 0041 |
 
 | 2026-10-11 | Owner reported draft #338 CI failure | Scope 0042 to optional/required Playwright imports; no resumed UI implementation | 0042 |
+
+- 2026-10-12 | Owner selected combined property tabs/cards and grouped editor; requested whole-host plan and designs for approval. Other page layouts remain proposed; no implementation/deploy authorization | avoid duplicate editors | [plan](../plans/host-navigation-maintainability.md), [gallery](../plans/host-navigation-design-review.html)
+- 2026-10-12 | [workflow] Owner approves all navigation designs, detailed Cursor implementation and planning PR; integration-only task PRs, staging first, main promotion only after explicit staging-candidate approval. Supersedes proposed-layout status above | current main CI auto-deploys; avoid premature production | [protocol](../plans/host-navigation-execution-protocol.md), briefs 0069–0084
