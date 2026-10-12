@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from app import config, db, deadlines, door_codes, ttlock
+from app import config, db, deadlines, door_codes, mail_notify, ttlock
 
 PREFIX = "dc-safe-"
 _counter = 0
@@ -288,8 +288,9 @@ def test_the_host_mail_says_why_in_words_and_keeps_the_raw_reason_for_support(mo
         "SELECT payload FROM email_outbox WHERE reservation_id = ?", (stay,)
     )
     body = json.loads(row["payload"])["text"]
-    assert "TTLock refused or did not answer [transient:-1026]" in body
-    assert "keeps trying" not in body
+    assert "TTLock's cloud server is not responding or returned an error. This is a problem on TTLock's side, not with your lock or your settings [transient:-1026]" in body
+    assert "keeps trying" in body
+    assert "will not try again" not in body
 
 
 def test_a_property_with_no_lock_set_says_so_instead_of_claiming_to_retry():
@@ -1061,3 +1062,40 @@ def test_a_move_into_the_stay_window_keeps_the_code(monkeypatch):
         (stay,),
     )
     assert len(notices) == 1
+
+
+def test_host_mails_name_the_cause_in_plain_words():
+    def en(reason):
+        return mail_notify._door_code_reason("en", reason)
+
+    assert en("transient:90000").startswith("TTLock's cloud server is not responding")
+    assert en("network").startswith("TTLock's cloud server is not responding")
+    assert "gateway" in en("offline:-2012")
+    assert "gateway" in en("period_taken:offline:-2012")
+    assert "Authorized Admin" in en("permission:-2018")
+    assert "memory is full" in en("storage:-4056")
+    assert "monthly limit" in en("budget")
+    assert en("not_set_up").startswith("this property has no lock")
+    assert en("something_new").startswith("TTLock's cloud refused")
+    assert en("transient:90000").endswith("[transient:90000]")
+
+
+def test_the_late_code_mail_says_ubyhost_keeps_trying():
+    _, apartment, stay = _stay(registered_minutes_ago=15)
+    row_id = door_codes.ensure_row(stay)
+    db.execute(
+        "UPDATE door_code SET state = ?, last_error = ?, next_attempt_at = ? WHERE id = ?",
+        (door_codes.RETRYING, "transient:90000", "2999-01-01T00:00:00+00:00", row_id),
+    )
+    door_codes._alert_delayed()
+    notices = db.query(
+        "SELECT payload, cc_email FROM email_outbox "
+        "WHERE reservation_id = ? AND idempotency_key LIKE '%:delayed'",
+        (stay,),
+    )
+    assert len(notices) == 1
+    body = json.loads(notices[0]["payload"])["text"]
+    assert "keeps trying" in body
+    assert "will not try again" not in body
+    assert "TTLock's cloud server is not responding" in body
+    assert notices[0]["cc_email"] == "support@ubyhost.com"
