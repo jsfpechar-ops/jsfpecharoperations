@@ -5,7 +5,7 @@ Status: review
 ## SHAs
 
 - Base (integration): `98c600be8e3e3cde2779e6b955f25f1c4992c1b0`
-- Result: `473789228c8fe57a91c9974783e5bb7566b6ee26`
+- Result: `05a495de9e9acf7eccd75a7a8f0b2d8ffda2881b`
 - App baseline cited in brief: `7b27d09402f9656b0c606c131793310925936526` (main); integration branch already carries planning-only commits ahead of that app SHA.
 
 ## Summary
