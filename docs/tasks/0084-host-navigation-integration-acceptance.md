@@ -1,7 +1,7 @@
 # 0084: Verify the integrated host navigation candidate
 
 Status: blocked — depends on reviewed 0083 and every preceding implementation report.
-Depends on: 0071–0083 done | Branch: task/0084-host-navigation-integration-acceptance | PR base: task/host-navigation-integration
+Depends on: 0075–0083 and 0087–0094 reviewed | Branch: task/0084-host-navigation-integration-acceptance | PR base: task/production-host-ux-integration
 Patch status: ready — verification/report only; no application patch
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
@@ -11,7 +11,7 @@ Establish a green, reproducible integration candidate before staging. Verify the
 
 ## 2. Context
 
-Read AGENTS.md, the execution protocol and reports 0071–0083. All designs are approved; this task verifies behavior rather than redesigning it. Read only changed source paths and tests recorded by those reports, the ownership inventory, approved plan/boards and the named deployment/CI configuration.
+Read AGENTS.md, the execution protocol and reports 0087–0094 and 0075–0083. All designs are approved; this task verifies behavior rather than redesigning it. Read only changed source paths and tests recorded by those reports, the 0094 ownership inventory, approved plan/boards and the named deployment/CI configuration.
 
 Current source deployment warning:
 
@@ -38,7 +38,7 @@ No application/test/workflow/secret/schema change. If any defect requires a fix,
 ## 4. Steps
 
 1. Confirm all predecessors done and integrated sequentially, capture full integration SHA C and current main SHA P. Confirm no unrelated changes, unresolved conflicts, missing source patches or skipped requirements. Record every report and current CI reference.
-2. Reconcile the ownership inventory with the final source: one editor per property setting, one shared entity editor, one fee field/save owner, no copied global guest-link/automation editor, no desktop/mobile cloned forms. Count real rendered IDs/controls, not conditional template source branches.
+2. Reconcile the 0094 ownership inventory with the final source: one editor per property setting, one shared entity editor, one fee field/save owner, no copied global guest-link/automation editor, no desktop/mobile cloned forms. Count real rendered IDs/controls, not conditional template source branches.
 3. Use synthetic fixtures to execute the entire execution-protocol behavior matrix: one/many/no/archived properties; dirty Save/Discard/Stay; hidden invalid controls; legacy hashes/GET/POST adapters; report month/context returns; shared entity and immutable invoice; rate/IBAN/omitted values; valid/unavailable invitation links; expected-slot safeguards; role-aware account and shared-lock navigation. Link each fact to a focused test or measured/manual evidence.
 4. Verify all page families through normal links/Search/Back; actual report/register/privacy/archive routes remain available. Do not exercise real provider mutations. Cover EN/CS, JS-enabled and required native fallbacks, keyboard/focus, copy/save/error feedback, long names and expanded/collapsed rail.
 5. Run §6 with the supported browser environment, capture actual implementation screenshots at 360/390/1280 and measured widths 760/1024/1440/1680/1920/2048 as well. Put the full test/route matrix in the integration acceptance document, short summary in the report. Generated mockups are never test screenshots.

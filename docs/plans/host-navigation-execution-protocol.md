@@ -1,5 +1,7 @@
 # Approved host navigation: execution protocol
 
+Current entry: [production UX correction prompt](production-host-ux-cursor-prompt.md). Run 0087–0094 first; 0071–0074 are replaced. Then release refreshed 0075–0083 and use 0084–0086 acceptance/staging/promotion. The current requirements override older source anchors and disclosure suggestions; never execute a replaced/blocked task.
+
 Approved by owner in chat: 2026-10-12. Code base inspected: `c4c8f979319e53341833065b2a8790c30159581f`.
 Scope: the five approved boards and [whole plan](host-navigation-maintainability.md). Cursor implements; Codex orchestrates/reviews. Staging first. Production only after explicit approval of the implemented staging candidate.
 
@@ -24,12 +26,12 @@ Therefore:
 
 ## 3. Branch topology and PR ownership
 
-Planning branch: `task/host-navigation-plan`. Integration branch: `task/host-navigation-integration`. Task branches use their brief names. The planning PR is reviewable and held off main; Cursor can check out its branch directly without merging it first.
+Planning branch: `task/host-navigation-plan`. Integration branch: `task/production-host-ux-integration`. Task branches use their brief names. The planning PR is reviewable and held off main; Cursor can check out its branch directly without merging it first.
 
 ```text
 main (c4c8f97... inspected base)
   └─ task/host-navigation-plan         planning PR → main, do not merge yet
-       └─ task/host-navigation-integration
+       └─ task/production-host-ux-integration
             ├─ task/0071-...          report PR → integration
             ├─ task/0072-...          scoped extraction PR → integration
             └─ subsequent tasks      one reviewed PR at a time → integration
@@ -42,13 +44,13 @@ Owner initialization, after reviewing the planning PR:
 
 ```bash
 git fetch origin task/host-navigation-plan
-git switch -c task/host-navigation-integration origin/task/host-navigation-plan
-git push -u origin task/host-navigation-integration
+git switch -c task/production-host-ux-integration origin/task/host-navigation-plan
+git push -u origin task/production-host-ux-integration
 ```
 
 If the integration branch already exists, fetch and switch to it; do not recreate, reset or force-push it. Preserve dirty working trees and unrelated work; use an isolated worktree when necessary. Record the integration SHA before each task.
 
-Each task starts from the latest reviewed integration tip, not from stale main or an earlier task. Its PR base must be `task/host-navigation-integration`. Owner merge uses `scripts/merge-pr-on-green.sh` after the orchestrator verifies the PR base, current head CI, scope and report. The script checks CI but does not enforce a staging approval/base-branch gate; inspect the base before calling it.
+Each task starts from the latest reviewed integration tip, not from stale main or an earlier task. Its PR base must be `task/production-host-ux-integration`. Owner merge uses `scripts/merge-pr-on-green.sh` after the orchestrator verifies the PR base, current head CI, scope and report. The script checks CI but does not enforce a staging approval/base-branch gate; inspect the base before calling it.
 
 The final integration PR to main remains draft/unmerged until production approval. If the planning PR is separate, do not merge it independently and do not duplicate its changes across releases; final promotion already contains the planning ancestry.
 
