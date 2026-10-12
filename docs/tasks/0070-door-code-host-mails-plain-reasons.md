@@ -1,6 +1,6 @@
 # 0070: Door-code host mails: a true "late" mail, plain reasons that name TTLock
 
-Status: todo
+Status: review
 Depends on: 0069 (run it first; both edit the same files, on different lines) | Base commit: 0e8e468 | Branch: task/0070-door-code-host-mails
 Executor: Cursor local agent (composer) | Fits one session
 
