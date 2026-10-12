@@ -40,7 +40,6 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-L08 | Med decision | cookie and banner copy | Cloudflare cookie names unverified; no-banner wording unapproved | G MK-2/3 |
 | K-L09 | Med decision | docs/UbyHost_workplan/compliance/00_README.md | DSR/incident retention; Terms §17.2 liability floor | compliance |
 | K-L10 | Med decision | stay_fee.py | 60-night boundary; GDPR Art. 9 for disability exemptions | X |
-| K-L11 | High open | subprocessors_i18n.py, guide terms4, guest notice | TTLock = host's own provider, not subprocessor; copy says SCCs. Fix before other hosts | [0068](../tasks/0068-ttlock-host-provider-copy.md) |
 | K-P01 | High decision | access.py, auth.py (#280) | Admin preview unmasked, reason optional: align the DPIA/DPA text | AR |
 | K-P02 | High open | docs/vendors/README.md, ROPA | Support-mailbox provider has no subprocessor row and no DPA | G LD-4 |
 | K-P03 | High open | backup-gdrive.sh | Drive backups need a Workspace DPA or removal; DPA §11 lists Render | G OPS-2 |
@@ -92,3 +91,4 @@ Seed: 2026-10-06 `d72c870`; ~100 fixed omitted.
 | K-ML04 | Low open | login link limit | Anyone can use up a victim's 3 requests per 15 min. Kept: counting only real accounts would reveal who uses UbyHost | 0006 |
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
+| K-D04 | High open | door_codes `issue`, `_handle_moves` | Same hours rebooked while a cancelled code is undeleted: `get` returns the old PIN to the new guest | [0069](../tasks/0069-same-period-shared-pin.md) |
