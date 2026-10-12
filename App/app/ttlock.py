@@ -15,7 +15,7 @@ from . import config, db
 
 log = logging.getLogger(__name__)
 
-DOOR_CODE_TERMS_VERSION = "2026-10-08"
+DOOR_CODE_TERMS_VERSION = "2026-10-12"
 
 ALLOWED_PATHS = frozenset(
     {
