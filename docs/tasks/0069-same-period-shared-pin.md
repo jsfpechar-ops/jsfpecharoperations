@@ -1,6 +1,6 @@
 # 0069: Never hand a cancelled stay's PIN to the next guest
 
-Status: todo
+Status: review
 Depends on: 0067, 0068 (merged) | Base commit: 0e8e468 | Branch: task/0069-same-period-shared-pin
 Executor: Cursor local agent (composer) | Fits one session
 
