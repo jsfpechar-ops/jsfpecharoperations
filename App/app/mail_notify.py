@@ -1330,7 +1330,7 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
 
 # Notices about a code that was not created. The host creates it by hand, and
 # support gets a copy so the problem is on record. Never sent to a guest.
-_SUPPORT_COPY_VARIANTS = ("failed", "delayed", "period_taken", "moved_not_deleted")
+_SUPPORT_COPY_VARIANTS = ("failed", "delayed", "period_taken", "period_shared", "moved_not_deleted")
 
 
 _DOOR_CODE_REASONS = ("waiting", "not_set_up", "no_account", "not_eligible", "bad_window")
