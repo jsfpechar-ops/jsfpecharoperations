@@ -517,7 +517,8 @@ def test_22_house_book_export_covers_everyone_including_czechs(host, monkeypatch
 
     page = host.get("/housebook?lang=en")
     assert page.status_code == 200
-    assert "Your legal duty" in page.text
+    assert 'href="/guide#housebook"' in page.text
+    assert "Your legal duty" not in page.text
 
     csv = host.get("/housebook.csv")
     assert csv.status_code == 200

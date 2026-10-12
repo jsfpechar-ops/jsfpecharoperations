@@ -133,6 +133,10 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
             assert page.locator(".req-report").count() == 0
             assert page.locator("#addr_street").get_attribute("name") == "addr_street"
             assert page.locator("#addr_house_no").get_attribute("name") == "addr_house_no"
+            assert page.locator('input[name="address_line"]').count() == 0
+            assert page.locator(".property-address-police").count() == 0
+            guest_default = page.locator("#guest_message").input_value()
+            assert "Welcome!" in guest_default or "Vítejte!" in guest_default
             labels = page.locator("#address .property-address-grid").first.locator("label")
             assert labels.count() == 3
             first_row = page.locator("#address .property-address-grid").first

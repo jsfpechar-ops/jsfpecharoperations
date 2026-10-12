@@ -3373,9 +3373,8 @@ _INTERFACE_STRINGS = {
         "apartment.form.guest_link.window_hint": 'Only stays whose check-in date falls in this window are listed on the apartment link. A past stay keeps working through its own stay-specific link for the number of days set below.',
         "apartment.form.guest_link.window_label": 'Show stays starting within (days)',
         "apartment.form.guest_message.default": (
-            "Hello, before you arrive please fill in the short check-in form at the link below. "
-            "It takes about 2 minutes per person and is required by Czech law. "
-            "Thank you and see you soon!"
+            "Welcome! Please complete the guest registration form before your stay. "
+            "If you have any questions, please contact your host. Thank you!"
         ),
         "apartment.form.guest_message.hint": "Shown on the guest form. Do not include access codes or other secrets.",
         "apartment.form.guest_message.label": 'Custom message for guests',
@@ -3463,8 +3462,9 @@ _INTERFACE_STRINGS = {
         "apartment.form.ubyport.mark_label": 'Facility abbreviation (zkratka)',
         "apartment.form.ubyport.mismatch_help": "UbyPort compares IDUB, zkratka, name, address, and contact to the register. A typo or an Airbnb listing name fails even when the web-service login works. You often only see that on the first real submission.",
         "apartment.form.ubyport.name_hint": "PDF “Ubytovací zařízení:”. First line only, not your listing title; max 35 characters.",
-        "apartment.form.ubyport.password_edit_hint": 'Only type here if the Foreign Police sent you a new password. Saving the rest of this form without touching this field keeps the password you already stored.',
-        "apartment.form.ubyport.password_new_hint": 'Enter it once when you first set up reporting. It is encrypted before it is written to disk and is never displayed again after save.',
+        "apartment.form.ubyport.password_edit_hint": "Leave blank to keep the saved password.",
+        "apartment.form.ubyport.password_new_hint": "Password from your police letter.",
+        "apartment.form.ubyport.credentials_help_heading": "Where to find your credentials",
         "apartment.form.ubyport.password_saved": "Saved. UbyHost keeps it encrypted and does not show it again.",
         "apartment.form.ubyport.sample_help": "A fictional police letter with SAMPLE watermarks. It shows every value to copy into UbyHost, including zkratka and contact that real WS PDFs often omit.",
         "apartment.form.ubyport.ws_request.address_city": "130 51 Praha 3",
@@ -4228,9 +4228,8 @@ _INTERFACE_STRINGS = {
         "apartment.form.guest_link.window_hint": 'Na odkazu bytu se zobrazí jen pobyty, jejichž datum příjezdu spadá do tohoto okna. Minulý pobyt zůstává dostupný přes odkaz konkrétního pobytu po počet dní nastavený níže.',
         "apartment.form.guest_link.window_label": 'Zobrazit pobyty začínající do (dní)',
         "apartment.form.guest_message.default": (
-            "Dobrý den, před příjezdem prosím vyplňte krátký registrační formulář na odkazu níže. "
-            "Na osobu to zabere asi 2 minuty a zákon to vyžaduje. "
-            "Děkujeme a těšíme se na vás!"
+            "Vítejte! Před pobytem prosím vyplňte registrační formulář hostů. "
+            "Pokud máte jakékoli dotazy, obraťte se na svého hostitele. Děkujeme!"
         ),
         "apartment.form.guest_message.hint": "Zobrazí se ve formuláři hostů. Nevkládejte přístupové kódy ani jiná tajná data.",
         "apartment.form.guest_message.label": 'Vlastní zpráva pro hosty',
@@ -4318,8 +4317,9 @@ _INTERFACE_STRINGS = {
         "apartment.form.ubyport.mark_label": 'Zkratka ubytovacího zařízení',
         "apartment.form.ubyport.mismatch_help": "UbyPort porovnává IDUB, zkratku, název, adresu a kontakt s registrem. Překlep nebo název z Airbnb selže i když přihlášení webové služby funguje. Často to vidíte při prvním skutečném odeslání.",
         "apartment.form.ubyport.name_hint": "„Ubytovací zařízení:“ v PDF. Jen první řádek, ne název inzerátu; max. 35 znaků.",
-        "apartment.form.ubyport.password_edit_hint": 'Pište sem jen pokud policie cizinců poslala nové heslo. Uložení zbytku formuláře bez změny tohoto pole ponechá uložené heslo.',
-        "apartment.form.ubyport.password_new_hint": 'Zadejte jednou při prvním nastavení hlášení. Před zápisem na disk se šifruje a po uložení se nezobrazuje.',
+        "apartment.form.ubyport.password_edit_hint": "Pro zachování uloženého hesla nechte prázdné.",
+        "apartment.form.ubyport.password_new_hint": "Heslo z dopisu od policie.",
+        "apartment.form.ubyport.credentials_help_heading": "Kde najdete přihlašovací údaje",
         "apartment.form.ubyport.password_saved": "Uloženo. UbyHost ho drží šifrovaně a znovu nezobrazuje.",
         "apartment.form.ubyport.sample_help": "Ukázkový dopis policie s vodoznaky SAMPLE. Ukazuje každou hodnotu pro UbyHost, včetně zkratky a kontaktu, které reálná PDF často neobsahují.",
         "apartment.form.ubyport.ws_request.address_city": "130 51 Praha 3",

@@ -185,12 +185,16 @@ def test_apartment_form_links_to_sample_pdf(authed_client):
     client, apartment_id = authed_client
     page = client.get(f"/apartments/{apartment_id}")
     assert page.status_code == 200
-    assert "Open annotated sample PDF" in page.text
-    assert SAMPLE_URL in page.text
+    assert "Where to find your credentials" in page.text
+    assert 'href="/guide#ubyport-credentials"' in page.text
+    guide = client.get("/guide")
+    assert guide.status_code == 200
+    assert "Open annotated sample PDF" in guide.text
+    assert SAMPLE_URL in guide.text
     # WP17 (review 3.E item 7): one hint per field, no separate field map.
     assert "Where each UbyHost field comes from" not in page.text
-    assert "Filled from the characters after UBY-WS_" in page.text
-    assert "Filled from your operator contact e-mail when left blank" in page.text
+    assert "Filled from the characters after UBY-WS_" not in page.text
+    assert "Filled from your operator contact e-mail when left blank" not in page.text
 
 
 def test_automation_redirects_to_property_timing(authed_client):

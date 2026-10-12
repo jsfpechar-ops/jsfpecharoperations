@@ -128,9 +128,6 @@ def setup_get(step: str, request: Request):
         return RedirectResponse("/setup/name", status_code=303)
     template = f"setup/{step}.html"
     extra: Dict[str, Any] = {}
-    if step == "address":
-        extra["address_preview"] = _address_preview(apartment)
-        extra["split_address"] = hasattr(validation, "split_czech_address")
     if step == "bookings":
         extra["booking_sources"] = _BOOKING_SOURCES
         extra["selected_source"] = request.query_params.get("source", "")
