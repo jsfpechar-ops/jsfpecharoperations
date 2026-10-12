@@ -38,6 +38,8 @@ standard roles continue outside this task. See [decision](ui-decisions.md).
 
 ## Flow
 
+0071–0086: [staging-first protocol](../plans/host-navigation-execution-protocol.md).
+
 1. **Plan** (only for big or HIGH RISK work): the orchestrator writes `docs/plans/<name>.md`. Run at most one council, and only for HIGH RISK items (filing, deletion, legal).
 2. **Brief:** the orchestrator writes `docs/tasks/NNNN-name.md` from [TEMPLATE](../tasks/TEMPLATE.md). Each brief must fit one executor session. Split big work into ordered briefs with `Depends on`.
 3. **Execute:** the owner pastes the [executor prompt](prompts.md#executor) into a new Cursor chat. The executor runs only a brief whose Status is `todo` (`replaced`, `done` or `blocked` means do not run). It sets `Status: in-progress`, works, writes `NNNN-report.md`, sets `Status: review` and opens one PR.

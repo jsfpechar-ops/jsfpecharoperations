@@ -749,11 +749,18 @@ def test_stay_link_reach_back_window_bounds_a_forgotten_form():
 
         # A stranger cannot tell an old id from an id that never existed. The
         # language switcher echoes the path that was asked for, so normalise
-        # only that echo: everything else has to be byte-identical.
+        # that echo. CSRF tokens rotate per response, so normalise those too;
+        # everything else has to be byte-identical.
         def shape(response, reservation_id):
-            return response.status_code, response.text.replace(
+            text = response.text.replace(
                 f"/l/{TOKEN}/{reservation_id}", "/l/{TOKEN}/{ID}"
             )
+            text = re.sub(
+                r'(<meta name="csrf-token" content=")[^"]*(")',
+                r"\1{CSRF}\2",
+                text,
+            )
+            return response.status_code, text
 
         never_existed = browser.get(f"/l/{TOKEN}/987654")
         assert never_existed.status_code == 404

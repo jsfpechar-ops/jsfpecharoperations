@@ -29,21 +29,12 @@ unchanged when the IP is reused.
 
 ## Recommended Lightsail plan
 
-<<<<<<< HEAD
 | Your scale | Bundle | Price (IPv4, approx.) | RAM |
 |------------|--------|------------------------|-----|
-| **Production (ubyhost.com)** | **General purpose 8 GB** | **$44/mo** (bundle only) | **8 GB** |
+| **Production (ubyhost.com)** | **General purpose 8 GB** | **$44/mo** (bundle only) | **8 GB** — see [Sizing](#sizing-wp32) |
 | Solo host / cost-conscious try-out | Micro | ~$7/mo | 1 GB |
 | Growing toward many properties on a budget | Small | ~$12/mo | 2 GB |
 | **Not supported** | Nano | ~$5/mo | 512 MB — the app container has `mem_limit: 768m` |
-=======
-| Your scale | Plan | Price (IPv4) | RAM |
-|------------|------|--------------|-----|
-| **~10 properties, busy weeks** | **Micro** | **$7/mo** | 1 GB |
-| Growing toward 25+ properties | Small | $12/mo | 2 GB |
-| **Not supported** | Nano | $5/mo | 512 MB |
-| **Production (WP32)** | 8 GB, 2 vCPUs, 160 GB SSD | | 8 GB; see [Sizing](#sizing-wp32) |
->>>>>>> ccd9ede (WP32: Size the containers for the 8 GB server)
 
 Use **Frankfurt (`eu-central-1`)** or your nearest EU region. Enable the **static
 IP** (included). Do **not** buy Lightsail managed MySQL — UbyHost uses SQLite on
