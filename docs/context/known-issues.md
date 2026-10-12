@@ -1,12 +1,11 @@
 # Known issues
 
-Replaces FOLLOWUPS/MEMORIES. Grep first; skip listed hunts; append IDs. Fixed: remove, log decision.
-Status: open, unverified, decision (owner/lawyer/council), accepted.
+Grep first; avoid repeated hunts. Fixed: remove and log decision.
+Status: open, unverified, decision, accepted.
 **HR** = HIGH RISK; owner decides.
 
-**Sources:** [map](known-issue-sources.md). Host UI: [#338](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/338), geometry audit underway.
+**Sources:** [map](known-issue-sources.md); host geometry audit.
 
-Seed: `d72c870`; ~100 fixes omitted.
 
 | ID | Sev/status | Where | Issue | Src |
 |---|---|---|---|---|
@@ -92,3 +91,5 @@ Seed: `d72c870`; ~100 fixes omitted.
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same hours rebooked while a cancelled code is undeleted: `get` returns the old PIN to the new guest | [0069](../tasks/0069-same-period-shared-pin.md) |
 | K-U14 | Med unverified | Settings | Verify form/save ownership (0071) | [plan](../plans/host-navigation-maintainability.md) |
+
+| K-U15 | High open | Host forms/navigation | Clipping, forms/defaults, hidden PIN/actions, clutter, locks/onboarding; source audit done, fixes pending | [0087–0094](../plans/production-host-ux-corrections.md) |

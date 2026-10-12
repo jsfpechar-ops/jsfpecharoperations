@@ -1,6 +1,6 @@
 # 0072: Extract the existing property editor without changing behavior
 
-Status: blocked — depends on reviewed 0071 and its green baseline; orchestrator sets todo after verification.
+Status: replaced — 0094 implements the corrected property editor/tabs/calendars after 0087–0093; do not apply this stale patch.
 Depends on: 0071 done | Base source: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0072-property-editor-extraction | PR base: task/host-navigation-integration
 Patch status: ready — exact extraction command below; verify against reviewed integration HEAD before release.
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session

@@ -2,9 +2,9 @@
 
 Status: blocked — depends on reviewed 0081; exact patch must be released against that integration revision.
 
-Depends on: 0081 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0082-fee-report-navigation | PR base: task/host-navigation-integration
+Depends on: 0081 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0082-fee-report-navigation | PR base: task/production-host-ux-integration
 
-Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
+Patch status: pending — rebase against reviewed 0094/correction predecessors and release the exact patch; acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

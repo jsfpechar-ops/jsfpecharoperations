@@ -1,6 +1,6 @@
 # 0071: Host navigation ownership and readiness
 
-Status: todo
+Status: replaced — 0091 provides current host audit evidence and 0094 provides the corrected form/navigation inventory.
 Depends on: none (designs approved in chat 2026-10-12) | Base commit: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0071-host-navigation-readiness | PR base: task/host-navigation-integration
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session | Documentation and verification only
 

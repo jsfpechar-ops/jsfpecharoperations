@@ -1,6 +1,6 @@
 # 0074: Focused property calendar management
 
-Status: blocked — depends on reviewed 0073; exact patch must be released against that integration revision.
+Status: replaced — 0094 implements the corrected property editor/tabs/calendars after 0087–0093; do not apply this stale patch.
 
 Depends on: 0073 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0074-property-calendars | PR base: task/host-navigation-integration
 

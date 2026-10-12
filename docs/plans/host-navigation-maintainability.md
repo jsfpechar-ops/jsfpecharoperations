@@ -3,6 +3,10 @@
 Status: approved for phased Cursor implementation and staging review — production awaits explicit staging-candidate approval.
 Owner: Josef | Prepared: 2026-10-12 | Base: `c4c8f979319e53341833065b2a8790c30159581f` (current main source base; planning branch `task/host-navigation-plan`)
 
+## Current owner corrections and execution entry
+
+[Production UX corrections](production-host-ux-corrections.md) supersede conflicting older parser, platform, active/controller-toggle, disclosure and onboarding instructions. Start with [the new Cursor prompt](production-host-ux-cursor-prompt.md). 0087–0094 deliver the urgent corrections and revised property navigation; 0072–0074 are replaced by 0094. Remaining 0075–0086 stay gated until their exact patches are refreshed against the reviewed correction integration SHA. Essential settings are visible; routine explanations use shared ? help, not More options. Production remains behind explicit staging-candidate approval.
+
 ## 1. Outcome and approval scope
 
 Make the signed-in host app easier to scan, navigate and maintain. Preserve the familiar warm visual system and property shortcut cards. Each setting has one canonical editor; other pages summarize it and link to that editor.
@@ -197,10 +201,10 @@ Full branch, approval, test, evidence and release rules live in the execution pr
 
 | Brief | Deliverable | Initial state |
 |---|---|---|
-| [0071](../tasks/0071-host-navigation-readiness.md) | Source/editor inventory and real baseline | todo |
-| [0072](../tasks/0072-property-editor-extraction.md) | Exact canonical property/form extraction | blocked until 0071 review; exact command included |
-| [0073](../tasks/0073-property-navigation.md) | Property tabs, grouped editor, drafts and validation | blocked until predecessor review/patch release |
-| [0074](../tasks/0074-property-calendars.md) | Calendar tab, connection form and details | blocked |
+| [0071](../tasks/0071-host-navigation-readiness.md) | Source/editor inventory and real baseline | replaced by 0091/0094 |
+| [0072](../tasks/0072-property-editor-extraction.md) | Exact canonical property/form extraction | replaced by 0094 |
+| [0073](../tasks/0073-property-navigation.md) | Property tabs, grouped editor, drafts and validation | replaced by 0094 |
+| [0074](../tasks/0074-property-calendars.md) | Calendar tab, connection form and details | replaced by 0094 |
 | [0075](../tasks/0075-shared-entity-fields.md) | Shared business/invoice field ownership | blocked |
 | [0076](../tasks/0076-canonical-entity-navigation.md) | Canonical entity editor and legacy adapters | blocked |
 | [0077](../tasks/0077-canonical-fee-setup.md) | Canonical fee setup and scoped compatibility | blocked |

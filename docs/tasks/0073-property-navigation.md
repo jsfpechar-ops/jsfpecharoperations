@@ -1,6 +1,6 @@
 # 0073: Property tabs, grouped editor and safe drafts
 
-Status: blocked — depends on reviewed 0072; exact patch must be released against that integration revision.
+Status: replaced — 0094 implements the corrected property editor/tabs/calendars after 0087–0093; do not apply this stale patch.
 
 Depends on: 0072 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0073-property-navigation | PR base: task/host-navigation-integration
 
