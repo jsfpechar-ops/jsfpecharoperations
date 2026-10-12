@@ -26,6 +26,9 @@ BACKOFF_MINUTES = (1, 5, 15, 60, 240)
 # A failed code is handed to the host after this many tries (1 min apart).
 ISSUE_MAX_ATTEMPTS = 2
 PERIOD_TAKEN = "period_taken"
+# A type-3 ``get`` for a period whose earlier code was never deleted returns
+# that same code (TTLock support, 2026-10-12). Such a code is never reused.
+PERIOD_SHARED = "period_shared"
 PERIOD_TAKEN_RETRY_MINUTES = (1, 5)
 PERIOD_TAKEN_MAX_ATTEMPTS = 4
 GATEWAY_RETRY_KINDS = ("offline", "transient", "network", "rate", "budget")
@@ -319,6 +322,26 @@ def _send_code_mail(door_code_id: int) -> None:
     mail.drain(limit=4)
 
 
+def _create_random(
+    account_id: int,
+    lock_id: str,
+    start_ms: int,
+    end_ms: int,
+    name: str,
+    priority: str,
+    door_code_id: int,
+) -> Tuple[str, str]:
+    pin, code_id = ttlock.create_period_code(account_id, lock_id, start_ms, end_ms, name, priority)
+    other = db.query_one(
+        "SELECT id FROM door_code WHERE lock_id = ? AND provider_code_id = ? "
+        "AND valid_from = ? AND valid_to = ? AND id != ?",
+        (lock_id, str(code_id), _ms_to_iso(start_ms), _ms_to_iso(end_ms), door_code_id),
+    )
+    if other:
+        raise ttlock.TTLockError("period already has an undeleted code", kind=PERIOD_SHARED)
+    return pin, code_id
+
+
 def issue(door_code_id: int, *, allow_gateway: bool = False) -> bool:
     now = _now()
     now_iso = _iso(now)
@@ -413,24 +436,26 @@ def issue(door_code_id: int, *, allow_gateway: bool = False) -> bool:
                 return False
             else:
                 try:
-                    pin, code_id = ttlock.create_period_code(
+                    pin, code_id = _create_random(
                         int(account["id"]),
                         row["lock_id"],
                         start_ms,
                         end_ms,
                         name,
                         priority,
+                        door_code_id,
                     )
                     kind = "random"
                 except ttlock.TTLockError as create_exc:
-                    if create_exc.kind != PERIOD_TAKEN:
+                    if create_exc.kind not in (PERIOD_TAKEN, PERIOD_SHARED):
                         raise
                     log.error(
-                        "DOOR_CODE_PROBLEM stage=period_taken reservation=%s door_code=%s",
+                        "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s",
+                        create_exc.kind,
                         reservation["id"],
                         door_code_id,
                     )
-                    mail_notify.door_code_notice(door_code_id, "period_taken")
+                    mail_notify.door_code_notice(door_code_id, create_exc.kind)
                     mail.drain(limit=4)
                     if allow_gateway:
                         via_add = True
@@ -447,7 +472,15 @@ def issue(door_code_id: int, *, allow_gateway: bool = False) -> bool:
                         db.execute(
                             "UPDATE door_code SET state = ?, claimed_at = NULL, "
                             "last_error = ?, next_attempt_at = ?, updated_at = ? WHERE id = ?",
-                            (RETRYING, "period_taken:-1026", now_iso, now_iso, door_code_id),
+                            (
+                                RETRYING,
+                                "period_taken:-1026"
+                                if create_exc.kind == PERIOD_TAKEN
+                                else "period_taken:shared",
+                                now_iso,
+                                now_iso,
+                                door_code_id,
+                            ),
                         )
                         return False
         with db.cursor():
@@ -675,8 +708,9 @@ def _revoke_one(row_id: int) -> None:
         mail_notify.door_code_notice(row_id, "cancelled_deleted")
     except ttlock.TTLockError as exc:
         kind = exc.kind or "transient"
-        is_custom = (row["code_kind"] or "") == "custom"
-        if is_custom and kind in GATEWAY_RETRY_KINDS:
+        # Every code, random or custom, is retried until its end: an undeleted
+        # code is handed again to the next stay with the same hours.
+        if kind in GATEWAY_RETRY_KINDS:
             past_end = bool(
                 row["valid_to"]
                 and _iso_to_ms(row["valid_to"]) <= int(now.timestamp() * 1000)
@@ -703,14 +737,6 @@ def _revoke_one(row_id: int) -> None:
                 )
                 if attempts == 3:
                     mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
-        elif kind in ("offline", "transient", "network", "rate") and attempts < 3:
-            delays = (1, 15, 60)
-            next_at = _iso(now + timedelta(minutes=delays[min(attempts - 1, 2)]))
-            db.execute(
-                "UPDATE door_code SET claimed_at = NULL, next_attempt_at = ?, last_error = ?, "
-                "updated_at = ? WHERE id = ?",
-                (next_at, kind[:40], now_iso, row_id),
-            )
         else:
             db.execute(
                 "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
@@ -835,19 +861,20 @@ def _handle_moves(now_iso: str) -> None:
         via_add = False
         try:
             try:
-                pin, code_id = ttlock.create_period_code(
+                pin, code_id = _create_random(
                     int(account["id"]),
                     row["lock_id"],
                     start_ms,
                     end_ms,
                     name,
                     priority,
+                    int(row["id"]),
                 )
                 code_kind = "random"
             except ttlock.TTLockError as create_exc:
-                if create_exc.kind != PERIOD_TAKEN:
+                if create_exc.kind not in (PERIOD_TAKEN, PERIOD_SHARED):
                     raise
-                mail_notify.door_code_notice(int(row["id"]), "period_taken")
+                mail_notify.door_code_notice(int(row["id"]), create_exc.kind)
                 mail.drain(limit=4)
                 via_add = True
                 pin, code_id = ttlock.add_custom_code(
