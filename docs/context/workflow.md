@@ -38,7 +38,7 @@ standard roles continue outside this task. See [decision](ui-decisions.md).
 
 ## Flow
 
-0069–0084: [staging-first protocol](../plans/host-navigation-execution-protocol.md).
+0071–0086: [staging-first protocol](../plans/host-navigation-execution-protocol.md).
 
 1. **Plan** (only for big or HIGH RISK work): the orchestrator writes `docs/plans/<name>.md`. Run at most one council, and only for HIGH RISK items (filing, deletion, legal).
 2. **Brief:** the orchestrator writes `docs/tasks/NNNN-name.md` from [TEMPLATE](../tasks/TEMPLATE.md). Each brief must fit one executor session. Split big work into ordered briefs with `Depends on`.

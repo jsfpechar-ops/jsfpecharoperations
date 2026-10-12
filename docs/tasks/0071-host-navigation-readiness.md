@@ -1,7 +1,7 @@
-# 0069: Host navigation ownership and readiness
+# 0071: Host navigation ownership and readiness
 
 Status: todo
-Depends on: none (designs approved in chat 2026-10-12) | Base commit: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0069-host-navigation-readiness | PR base: task/host-navigation-integration
+Depends on: none (designs approved in chat 2026-10-12) | Base commit: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0071-host-navigation-readiness | PR base: task/host-navigation-integration
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session | Documentation and verification only
 
 ## 1. Objective
@@ -59,8 +59,8 @@ Only these files may be created/edited. Follow the staging-first branch/report r
 | Path | Action | What |
 |---|---|---|
 | `docs/plans/host-navigation-ownership.md` | create | Verified inventory and next-phase exact scope |
-| `docs/tasks/0069-report.md` | create | Required report, 1500 tokens maximum |
-| `docs/tasks/0069-host-navigation-readiness.md` | edit | Status only, including the reason if blocked |
+| `docs/tasks/0071-report.md` | create | Required report, 1500 tokens maximum |
+| `docs/tasks/0071-host-navigation-readiness.md` | edit | Status only, including the reason if blocked |
 
 Read-only source allowlist:
 
@@ -125,7 +125,7 @@ Stop and report if an anchor/contract is absent, an unapproved design change is 
 
 ## 9. Report
 
-Create `docs/tasks/0069-report.md` (1500 tokens maximum): files changed and diff stat; baseline commands and last five output lines; §7 checked/unchecked; verified duplicate/shared-editor findings; discrepancies/limitations; exact next-phase recommendation; owner steps. Link the detailed ownership inventory rather than repeating it.
+Create `docs/tasks/0071-report.md` (1500 tokens maximum): files changed and diff stat; baseline commands and last five output lines; §7 checked/unchecked; verified duplicate/shared-editor findings; discrepancies/limitations; exact next-phase recommendation; owner steps. Link the detailed ownership inventory rather than repeating it.
 
 ## Risk list (for the reviewer)
 
@@ -140,7 +140,7 @@ Read the full ownership inventory, this brief's status diff and the report. Ther
 ## Executor prompt
 
 ```text
-Read AGENTS.md and docs/tasks/0069-host-navigation-readiness.md.
+Read AGENTS.md and docs/tasks/0071-host-navigation-readiness.md.
 Run only when its Status is todo. Follow the documentation-only scope exactly.
 Read only its named sources, verify editor ownership and capture the current
 test baseline. Do not implement the redesign or change tests. Write the required

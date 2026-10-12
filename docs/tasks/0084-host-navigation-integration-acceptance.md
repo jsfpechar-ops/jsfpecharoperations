@@ -1,7 +1,7 @@
-# 0082: Verify the integrated host navigation candidate
+# 0084: Verify the integrated host navigation candidate
 
-Status: blocked — depends on reviewed 0081 and every preceding implementation report.
-Depends on: 0069–0081 done | Branch: task/0082-host-navigation-integration-acceptance | PR base: task/host-navigation-integration
+Status: blocked — depends on reviewed 0083 and every preceding implementation report.
+Depends on: 0071–0083 done | Branch: task/0084-host-navigation-integration-acceptance | PR base: task/host-navigation-integration
 Patch status: ready — verification/report only; no application patch
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
@@ -11,7 +11,7 @@ Establish a green, reproducible integration candidate before staging. Verify the
 
 ## 2. Context
 
-Read AGENTS.md, the execution protocol and reports 0069–0081. All designs are approved; this task verifies behavior rather than redesigning it. Read only changed source paths and tests recorded by those reports, the ownership inventory, approved plan/boards and the named deployment/CI configuration.
+Read AGENTS.md, the execution protocol and reports 0071–0083. All designs are approved; this task verifies behavior rather than redesigning it. Read only changed source paths and tests recorded by those reports, the ownership inventory, approved plan/boards and the named deployment/CI configuration.
 
 Current source deployment warning:
 
@@ -29,9 +29,9 @@ Current source deployment warning:
 | Path | Action | What |
 |---|---|---|
 | `docs/plans/host-navigation-integration-acceptance.md` | create | Full route/behavior/locale/width checklist and actual results |
-| `docs/tasks/0082-report.md` | create | Required short report |
-| `docs/tasks/0082-host-navigation-integration-acceptance.md` | edit | Status only |
-| `docs/tasks/0082-evidence/` | create | Synthetic screenshots, sanitized logs/measurements only |
+| `docs/tasks/0084-report.md` | create | Required short report |
+| `docs/tasks/0084-host-navigation-integration-acceptance.md` | edit | Status only |
+| `docs/tasks/0084-evidence/` | create | Synthetic screenshots, sanitized logs/measurements only |
 
 No application/test/workflow/secret/schema change. If any defect requires a fix, issue a scoped correction brief and rerun affected acceptance against the corrected candidate; do not patch inside this verification task.
 
@@ -43,7 +43,7 @@ No application/test/workflow/secret/schema change. If any defect requires a fix,
 4. Verify all page families through normal links/Search/Back; actual report/register/privacy/archive routes remain available. Do not exercise real provider mutations. Cover EN/CS, JS-enabled and required native fallbacks, keyboard/focus, copy/save/error feedback, long names and expanded/collapsed rail.
 5. Run §6 with the supported browser environment, capture actual implementation screenshots at 360/390/1280 and measured widths 760/1024/1440/1680/1920/2048 as well. Put the full test/route matrix in the integration acceptance document, short summary in the report. Generated mockups are never test screenshots.
 6. CI on the final feature candidate must be green including all required jobs. If GitHub checks are unavailable, mark CI unverified and do not call candidate accepted. If main advanced materially since the inspected base, reconcile through a new scoped update and rerun tests before staging approval.
-7. Set review and stop. The owner/orchestrator must review evidence before marking done and releasing staging 0083. Do not merge to main or deploy from this task.
+7. Set review and stop. The owner/orchestrator must review evidence before marking done and releasing staging 0085. Do not merge to main or deploy from this task.
 
 ## 5. Do not touch
 
@@ -51,7 +51,7 @@ All application/test/deploy/business code and data; no skipped tests, relaxed as
 
 ## 6. Commands
 
-Use all exact full-suite/ruff/context commands from the execution protocol; REQUIRE_BROWSER=1, deployment=staging, UbyPort=mock, scheduler off, coverage >=86. Add focused tests introduced by 0071–0081, then the full regression suite. Record actual command results and CI check URLs for current candidate C. Required browser/geometry 0 skips; unknown/pending/failing CI blocks acceptance.
+Use all exact full-suite/ruff/context commands from the execution protocol; REQUIRE_BROWSER=1, deployment=staging, UbyPort=mock, scheduler off, coverage >=86. Add focused tests introduced by 0073–0083, then the full regression suite. Record actual command results and CI check URLs for current candidate C. Required browser/geometry 0 skips; unknown/pending/failing CI blocks acceptance.
 
 For source revision evidence:
 
@@ -80,7 +80,7 @@ Stop/report if any predecessor is unreviewed, checks fail/skip, CI/source SHA is
 
 ## 9. Report
 
-Write `docs/tasks/0082-report.md` (<=1500 tokens): candidate/base, report/diff scope, full/focused/CI results, §7, links to acceptance/screenshots/measurements, limitations and owner staging steps. Set review; no deployment claim.
+Write `docs/tasks/0084-report.md` (<=1500 tokens): candidate/base, report/diff scope, full/focused/CI results, §7, links to acceptance/screenshots/measurements, limitations and owner staging steps. Set review; no deployment claim.
 
 ## Risk list (for the reviewer)
 
@@ -89,5 +89,5 @@ Review the complete acceptance matrix against the integrated source changes and 
 ## Owner steps
 
 1. Review acceptance, current CI and unresolved defects.
-2. Mark 0082 done only when evidence is complete; select candidate C for staging.
-3. Release 0083 and follow its Render staging instructions; stay off main.
+2. Mark 0084 done only when evidence is complete; select candidate C for staging.
+3. Release 0085 and follow its Render staging instructions; stay off main.

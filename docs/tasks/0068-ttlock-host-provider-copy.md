@@ -1,6 +1,6 @@
 # 0068: TTLock is the host's own provider (copy)
 
-Status: todo
+Status: done
 Depends on: none (may run before or after 0067; no shared lines) | Base commit: f55e156 | Branch: task/0068-ttlock-host-provider-copy
 Executor: Cursor local agent (composer; copy and one tuple move) | Fits one session
 

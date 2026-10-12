@@ -4,7 +4,7 @@ Deep designs, one per feature. Open a plan only when you're working on that feat
 
 | Plan | State |
 |---|---|
-| [host-navigation-maintainability.md](host-navigation-maintainability.md) | Approved host navigation/editor ownership; [Cursor prompt](host-navigation-cursor-prompt.md), briefs 0069–0084, staging-first and explicit production gate |
+| [host-navigation-maintainability.md](host-navigation-maintainability.md) | Approved host navigation/editor ownership; [Cursor prompt](host-navigation-cursor-prompt.md), briefs 0071–0086, staging-first and explicit production gate |
 | [host-control-polish.md](host-control-polish.md) | Approved host design implemented by Luna; combined validation/staging pending; address source verification open |
 | [host-design-application-review.md](host-design-application-review.md) | Final selected application designs and real Chromium screenshot gallery |
 | [host-feedback-review.md](host-feedback-review.md) | Supplied copy/search/notification examples reviewed; truthful accessible host feedback chosen |

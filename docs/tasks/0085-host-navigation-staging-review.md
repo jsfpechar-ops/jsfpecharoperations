@@ -1,7 +1,7 @@
-# 0083: Deploy the reviewed candidate to staging and collect acceptance
+# 0085: Deploy the reviewed candidate to staging and collect acceptance
 
-Status: blocked — depends on reviewed 0082 and green CI for the complete integration candidate.
-Depends on: 0082 done | Candidate: exact published integration SHA recorded at release
+Status: blocked — depends on reviewed 0084 and green CI for the complete integration candidate.
+Depends on: 0084 done | Candidate: exact published integration SHA recorded at release
 Patch status: ready — owner-operated deployment steps, no application patch
 Executor: Cursor collects evidence; owner performs Render/configuration/deployment actions
 
@@ -11,7 +11,7 @@ Test the implemented design on staging before any main merge or production deplo
 
 ## 2. Context
 
-Read AGENTS.md, the execution protocol, 0082 report/acceptance, `docs/DEPLOYMENT.md` promotion section, `render.yaml` staging section and `docs/plans/host-design-staging-handoff.md` Render instructions. The Render service is ubyhost-staging with manual deployment and mock UbyPort. The prior service URL is documented, not guaranteed current. GitHub Deploy staging targets a different Lightsail instance.
+Read AGENTS.md, the execution protocol, 0084 report/acceptance, `docs/DEPLOYMENT.md` promotion section, `render.yaml` staging section and `docs/plans/host-design-staging-handoff.md` Render instructions. The Render service is ubyhost-staging with manual deployment and mock UbyPort. The prior service URL is documented, not guaranteed current. GitHub Deploy staging targets a different Lightsail instance.
 
 Exact current staging anchors in `render.yaml`:
 
@@ -30,21 +30,21 @@ No main merge is needed to preview. Main CI can deploy production automatically,
 | Path | Action | What |
 |---|---|---|
 | `docs/plans/host-navigation-staging-acceptance.md` | create | Actual candidate/service/health/walkthrough/defect record |
-| `docs/tasks/0083-report.md` | create | Required short report |
-| `docs/tasks/0083-host-navigation-staging-review.md` | edit | Status only |
-| `docs/tasks/0083-evidence/` | create | Synthetic staging screenshots and sanitized measurements |
+| `docs/tasks/0085-report.md` | create | Required short report |
+| `docs/tasks/0085-host-navigation-staging-review.md` | edit | Status only |
+| `docs/tasks/0085-evidence/` | create | Synthetic staging screenshots and sanitized measurements |
 
 No application/workflow/server config/secret/data edits. Owner provider actions are permitted only for the documented staging service and existing mock configuration; a need to change configuration requires an explicit scoped owner action, not an automatic Blueprint reset.
 
 ## 4. Steps
 
-1. Verify 0082 done, capture candidate full SHA C, integration branch and main base P, green CI/run URL, previous staging branch/deploy/SHA and rollback route. Freeze the candidate during deployment; if head moves, repin/recheck instead of deploying an unknown moving tip.
+1. Verify 0084 done, capture candidate full SHA C, integration branch and main base P, green CI/run URL, previous staging branch/deploy/SHA and rollback route. Freeze the candidate during deployment; if head moves, repin/recheck instead of deploying an unknown moving tip.
 2. Owner: open Render -> ubyhost-staging -> Settings -> Build & Deploy. Confirm integration branch selection, staging tier, mock UbyPort, console mail and synthetic data. Do not print secrets, copy production data, switch provider flags or enable production filing/lock behavior.
 3. Owner: Manual Deploy -> Deploy latest commit. Confirm deployment metadata names C, wait for Live and record deploy ID/time. If the service cannot deploy/pin C without selecting a different branch, stop for a safe owner correction. Do not merge to main for a preview.
 4. Verify actual current service URL and /healthz; verify deployed SHA via Render metadata as well. Health/version alone does not identify code. Sign in using the existing staging method; do not expose credentials in reports/screenshots.
 5. Walk every task in the checklist below on synthetic records, EN/CS at desktop/mobile. Review the actual screens against all five boards, preserving complete fields and existing behavior over abbreviated sample image content. Record pass/fail/evidence for each.
 6. If defects appear, do not promote. Issue a correction brief, retest/redeploy its complete candidate and reset acceptance to the new SHA. Redeploy the recorded known-good staging release if the candidate breaks the service; data is synthetic and this is a code rollback, not a production database operation.
-7. Write acceptance/report and set review. A staging pass is not production approval. Owner explicitly approves staged C and the proposed promotion head F only after reviewing this record, including the protocol proof for any evidence-only commits; record that separately for 0084.
+7. Write acceptance/report and set review. A staging pass is not production approval. Owner explicitly approves staged C and the proposed promotion head F only after reviewing this record, including the protocol proof for any evidence-only commits; record that separately for 0086.
 
 ## 5. Do not touch
 
@@ -52,7 +52,7 @@ Production/main, provider secrets/real guests, live SOAP/mail/TTLock actions, fe
 
 ## 6. Commands and observations
 
-Use actual Render release metadata for C, HTTPS health and authenticated UI. A failed/blocked health request is recorded as unverified, never guessed. Local application tests already have 0082 evidence; rerun only affected checks for a new fix. Root context lint/diff checks validate report edits. Do not run a production deploy command from this task.
+Use actual Render release metadata for C, HTTPS health and authenticated UI. A failed/blocked health request is recorded as unverified, never guessed. Local application tests already have 0084 evidence; rerun only affected checks for a new fix. Root context lint/diff checks validate report edits. Do not run a production deploy command from this task.
 
 Staging walkthrough, with evidence:
 
@@ -83,7 +83,7 @@ Stop/report on wrong tier/service, unverified SHA, unavailable access, productio
 
 ## 9. Report
 
-Write `docs/tasks/0083-report.md` (<=1500 tokens): full C/P, Render service/URL/deploy/time, health/CI, walkthrough evidence, defects/resolution/rollback readiness and production-approval status. Link the full staging acceptance document. Set review; no production deployment claim.
+Write `docs/tasks/0085-report.md` (<=1500 tokens): full C/P, Render service/URL/deploy/time, health/CI, walkthrough evidence, defects/resolution/rollback readiness and production-approval status. Link the full staging acceptance document. Set review; no production deployment claim.
 
 ## Risk list (for the reviewer)
 
@@ -93,4 +93,4 @@ Check candidate provenance, actual provider metadata, full staging matrix, synth
 
 1. Deploy exactly C to the staging service and complete the walkthrough.
 2. Review defects/evidence; request corrections or explicitly approve C for production.
-3. Have the orchestrator record that exact approval and release 0084; until then no main merge or production action.
+3. Have the orchestrator record that exact approval and release 0086; until then no main merge or production action.

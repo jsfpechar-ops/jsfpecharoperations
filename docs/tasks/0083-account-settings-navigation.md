@@ -1,8 +1,8 @@
-# 0080: Fee lists and report detail under the shared host layout
+# 0083: Account and advanced settings without duplicate editors
 
-Status: blocked — depends on reviewed 0079; exact patch must be released against that integration revision.
+Status: blocked — depends on reviewed 0082; exact patch must be released against that integration revision.
 
-Depends on: 0079 done | Source baseline: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0080-fee-report-navigation | PR base: task/host-navigation-integration
+Depends on: 0082 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0083-account-settings-navigation | PR base: task/host-navigation-integration
 
 Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
@@ -10,22 +10,16 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-Fee lists and report detail under the shared host layout. Deliver the approved design through one maintained implementation, preserving existing business behavior.
+Account and advanced settings without duplicate editors. Deliver the approved design through one maintained implementation, preserving existing business behavior.
 
 ## 2. Context
 
 Read AGENTS.md, the execution protocol and the reviewed prerequisite report/inventory. Designs are approved; do not repeat design approval. These verified source anchors document the starting contracts; the released exact patch must refresh any changed anchor against its actual predecessor.
 
-`App/app/routes/stay_fees.py`:
+`App/app/templates/base.html`:
 
 ```
-@router.get("/stay-fees/{apartment_id}/pdf")
-```
-
-`App/app/routes/stay_fees.py`:
-
-```
-@router.post("/stay-fees/{apartment_id}/finalize")
+        <form method="post" action="/language" class="lang-switch compact">
 ```
 
 ## 3. Files
@@ -36,25 +30,29 @@ Explicit allowlist below. A partial introduced by an earlier task must already e
 
 |---|---|---|
 
-| `App/app/templates/stay_fees.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/settings.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/templates/stay_fee_detail.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/_host_navigation.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+
+| `App/app/templates/base.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/templates/_components.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+
+| `App/app/routes/api.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/static/host.css` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/host_i18n.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/tests/test_host_fee_navigation.py` | create | Named shared rendering or meaningful regression coverage |
+| `App/tests/test_host_account_navigation.py` | create | Named shared rendering or meaningful regression coverage |
 
-| `docs/tasks/0080-fee-report-navigation.md` | edit | Lifecycle status only |
+| `docs/tasks/0083-account-settings-navigation.md` | edit | Lifecycle status only |
 
-| `docs/tasks/0080-report.md` | create | Required report, 1500 tokens maximum |
+| `docs/tasks/0083-report.md` | create | Required report, 1500 tokens maximum |
 
-| `docs/tasks/0080-evidence/` | create | Synthetic screenshots and measured evidence only |
+| `docs/tasks/0083-evidence/` | create | Synthetic screenshots and measured evidence only |
 
-Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0069, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_stay_fee_list.py`, `App/tests/test_stay_fee_detail.py`, `App/tests/test_stay_fee_downloads.py`, `App/tests/test_stay_fee_finalize.py`, `App/tests/test_stay_fee_send_panel.py`, `App/tests/test_stay_fee_adjustment.py`, `App/tests/test_host_wide_geometry_browser.py`. No unrelated whole-repo audit.
+Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0071, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_account_emails.py`, `App/tests/test_auth_forms_no_js.py`, `App/tests/test_host_redesign.py`, `App/tests/test_host_wide_geometry_browser.py`, `App/tests/test_host_controls_browser.py`. No unrelated whole-repo audit.
 
 ## 4. Steps
 
@@ -62,15 +60,15 @@ Read-only source: the predecessor inventory/brief/report, relevant routes/guards
 
 2. Apply the released exact patch only, then verify the following phase requirements in order:
 
-3. Keep period-first list and current audited per-facility report unit. Not set up shows state/action instead of meaningless blank totals. Do not mix a different period report detail into the selected-period list.
+3. Group Account/Security/Data & archive/Privacy/Technical/Help as a concise native navigation/index. Ordinary accounts do not see admin controls; retain current role/impersonation/environment warnings and complete account-menu hierarchy.
 
-4. Report detail prioritizes identity/period, calculated totals, actual blockers, PDF/CSV, council payment details and current protected guest fee decisions. Set up/Fix links go to 0075 canonical fee editor and return to the exact report period.
+4. Keep email change/confirmation and language under their existing distinct endpoints/actions. No generic Save changes that broadly overwrites account/security preferences.
 
-5. Preserve finalized snapshots, legal register fields, exemptions/reasons, adjustments and current manually recorded sent/paid facts. Payment details ready means an account/QR is available, not paid. No automatic bank/municipal claim.
+5. Link Business & legal details to the canonical shared entity editor. Keep archive/restore, privacy requests, retention/backups/export, security/passkeys/2FA, legal/support/guide and specialized admin routes reachable.
 
-6. Retain current protected download/export handlers and Invoice Companion PDF design. Align period/filter/results lanes and action geometry without modifying report data or calculations.
+6. Technical/destructive actions keep consequences, confirmations and authorization; no new form or altered retention policy. Auth forms remain usable without JavaScript.
 
-7. Check rate-off/incomplete/blocked/finalized/report-ready cases, long Czech council names/amounts, responsive cards and safe return links. No fee engine/backend edits.
+7. Preserve Search destinations and normal-link keyboard/mobile behavior; do not add property fees/guest links/credentials editors to account settings.
 
 8. Run §6, capture the actual changed pages with synthetic fixtures, compare every changed path with §3, write §9 and set review. Do not merge, deploy, advance to a blocked task or modify the next task.
 
@@ -84,7 +82,7 @@ Use the exact staging/mock/REQUIRE_BROWSER environment and setup from the execut
 
 ```bash
 
-.venv/bin/python -m pytest tests/test_stay_fee_list.py tests/test_stay_fee_detail.py tests/test_stay_fee_downloads.py tests/test_stay_fee_finalize.py tests/test_stay_fee_send_panel.py tests/test_stay_fee_adjustment.py tests/test_host_wide_geometry_browser.py -q -rs
+.venv/bin/python -m pytest tests/test_account_emails.py tests/test_auth_forms_no_js.py tests/test_host_redesign.py tests/test_host_wide_geometry_browser.py tests/test_host_controls_browser.py -q -rs
 
 ```
 
@@ -92,13 +90,13 @@ Include the named new regression tests once created. Then run the protocol full 
 
 ## 7. Acceptance
 
-- [ ] List and detail show the same selected/audited period and facility scope; frozen data unchanged.
+- [ ] Account menu/Settings/Search reach every current permitted destination; no unintended admin disclosure.
 
-- [ ] Configuration links reach one editor and return to the same month; rate 0 remains optional.
+- [ ] Email/language/security/retention actions preserve current methods, CSRF and validation.
 
-- [ ] Actual protected PDF/CSV and guest decision/adjustment/finalization controls remain available with guards.
+- [ ] Shared business link points to the same editor; no duplicated property or entity settings form.
 
-- [ ] Manual filing/payment markers are labelled truthfully, no copied configuration form on the report.
+- [ ] EN/CS/mobile/wide/focus and auth-without-JS tests green; destructive warnings intact.
 
 - [ ] Focused/full/CI checks pass at actual current head, coverage threshold retained, required browser/geometry 0 skips.
 
@@ -112,7 +110,7 @@ Stop/report if the patch is pending, predecessor/anchor/base differs, source pat
 
 ## 9. Report
 
-Create `docs/tasks/0080-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
+Create `docs/tasks/0083-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
 
 ## Risk list (for the reviewer)
 

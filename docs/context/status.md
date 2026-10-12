@@ -16,11 +16,10 @@ Updated: 2026-10-12. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047
 
 ## Next
 
-- Host navigation approved: [plan](../plans/host-navigation-maintainability.md), 0069–0084. Integration → staging → explicit approval before main/production.
+- Host navigation approved: [plan](../plans/host-navigation-maintainability.md), 0071–0086. Integration → staging → explicit approval before main/production.
 
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
-- TTLock is the host's own provider (legal §1); copy brief [0068](../tasks/0068-ttlock-host-provider-copy.md) before other hosts.
-- TTLock confirmed -1026 (made and deleted). Brief [0067](../tasks/0067-period-taken-mail-copy.md): informational period_taken mail. Asked TTLock: same window, old code not deleted ([TTLOCK](../TTLOCK.md#not-stated-in-the-supplied-docs) item 6).
+- Merged 0067 (#371) and 0068 (#372). TTLock answered all questions ([TTLOCK](../TTLOCK.md#what-ttlock-support-confirmed-2026-10-12)). Next: [0069](../tasks/0069-same-period-shared-pin.md), same-hours rebooking must not reuse a PIN (K-D04).
 - Plan [file-retention](../plans/file-retention.md): decided, no build now. Lawyer round: add a Terms/DPA line that the app is not the host's statutory archive.
 
 - TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).

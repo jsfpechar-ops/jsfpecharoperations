@@ -1,6 +1,6 @@
 # Cursor master prompt — approved host navigation
 
-Use a fresh Cursor executor chat per released task. This full prompt stays in the repo so it need not be reconstructed from chat. The ordered briefs contain the page-specific scope and acceptance. Start with 0069.
+Use a fresh Cursor executor chat per released task. This full prompt stays in the repo so it need not be reconstructed from chat. The ordered briefs contain the page-specific scope and acceptance. Start with 0071.
 
 ```text
 You are the Cursor executor for UbyHost's approved host navigation redesign.
@@ -13,14 +13,14 @@ Read, in this order:
 3. docs/plans/host-navigation-execution-protocol.md.
 4. docs/plans/host-navigation-maintainability.md (ownership/page specs/sequence).
 5. docs/plans/host-navigation-design-approval.md.
-6. docs/tasks/0069-host-navigation-readiness.md for the initial session,
+6. docs/tasks/0071-host-navigation-readiness.md for the initial session,
    or the one explicitly released next brief for a later session.
 View the relevant board in docs/plans/host-navigation-design-review.html.
 Read only the source paths the active brief names. Grep before reading ranges.
 
 AUTHORITY AND SCOPE
 You implement only a released todo brief with completed prerequisites and a
-ready exact patch (0069 is verification-only). You do not design a different
+ready exact patch (0071 is verification-only). You do not design a different
 layout, skip readiness, broaden its file allowlist or invent a generic form
 framework. Blocked phase contracts are not instructions to guess code.
 The orchestrator releases the exact next patch after reviewing its predecessor.
@@ -36,14 +36,14 @@ Record starting full SHA and verify the brief's exact anchors before edits.
 Stop if branch, dependency, base, anchor, file scope or patch status differs.
 Never force-push or bypass hooks/checks. Do not extract or print credentials.
 
-FIRST SESSION: 0069
+FIRST SESSION: 0071
 Perform the precise route/form/field/handler inventory and current test baseline
-specified in 0069. No application edits, no production data, no live provider
+specified in 0071. No application edits, no production data, no live provider
 calls, no test loosening. Create docs/plans/host-navigation-ownership.md and
-docs/tasks/0069-report.md. Report actual failures/skips and current revision.
+docs/tasks/0071-report.md. Report actual failures/skips and current revision.
 The earlier 0066 result was not wholly green; do not copy its counts as yours.
-Set 0069 review (or blocked with evidence), then STOP for orchestrator review.
-Do not start 0070 or any blocked task in this same executor session.
+Set 0071 review (or blocked with evidence), then STOP for orchestrator review.
+Do not start 0072 or any blocked task in this same executor session.
 
 ALL IMPLEMENTATION SESSIONS
 Follow the active brief's numbered exact patch steps. One canonical editor per
@@ -103,12 +103,12 @@ Never claim success without real passing evidence, weaken failing tests, run
 outside scope, retry the same failure repeatedly or silently skip a safeguard.
 
 STAGING / PRODUCTION
-0082 proves the integrated candidate locally/CI. 0083 supplies owner-operated
+0084 proves the integrated candidate locally/CI. 0085 supplies owner-operated
 Render staging steps, full deployed SHA and walkthrough evidence. Do not merge
 to main just to preview it. If a code/runtime fix changes the candidate, retest/redeploy it. Evidence-only
 report commits follow the protocol allowlist/proof and explicit approval; never
 mislabel a later SHA as the actual staged SHA.
-0084 remains blocked until the owner explicitly approves that staging SHA.
+0086 remains blocked until the owner explicitly approves that staging SHA.
 Design approval is not production approval. Production promotion and rollback
 are owner-operated; after approved main merge the existing automatic deployment
 may run. Record the actual release revision and smoke result, not a guessed
@@ -119,7 +119,7 @@ health/version field. Finish each task at its review boundary.
 
 ```text
 Read AGENTS.md, then docs/plans/host-navigation-cursor-prompt.md and follow its
-full master prompt. Start docs/tasks/0069-host-navigation-readiness.md only.
+full master prompt. Start docs/tasks/0071-host-navigation-readiness.md only.
 Preserve all existing work; your PR base is task/host-navigation-integration.
 Record the real baseline/ownership report and stop for review. Staging first;
 no main merge or production action before explicit staging-candidate approval.
@@ -127,16 +127,16 @@ no main merge or production action before explicit staging-candidate approval.
 
 ## Initial brief bundled for the executor
 
-The following snapshot is generated from 0069 and validated before publication.
+The following snapshot is generated from 0071 and validated before publication.
 The task file remains authoritative; do not overwrite it if it has advanced.
 This supplies the repo-standard embedded brief for the initial Cursor prompt.
 
 ````text
 <<<BRIEF
-# 0069: Host navigation ownership and readiness
+# 0071: Host navigation ownership and readiness
 
 Status: todo
-Depends on: none (designs approved in chat 2026-10-12) | Base commit: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0069-host-navigation-readiness | PR base: task/host-navigation-integration
+Depends on: none (designs approved in chat 2026-10-12) | Base commit: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0071-host-navigation-readiness | PR base: task/host-navigation-integration
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session | Documentation and verification only
 
 ## 1. Objective
@@ -194,8 +194,8 @@ Only these files may be created/edited. Follow the staging-first branch/report r
 | Path | Action | What |
 |---|---|---|
 | `docs/plans/host-navigation-ownership.md` | create | Verified inventory and next-phase exact scope |
-| `docs/tasks/0069-report.md` | create | Required report, 1500 tokens maximum |
-| `docs/tasks/0069-host-navigation-readiness.md` | edit | Status only, including the reason if blocked |
+| `docs/tasks/0071-report.md` | create | Required report, 1500 tokens maximum |
+| `docs/tasks/0071-host-navigation-readiness.md` | edit | Status only, including the reason if blocked |
 
 Read-only source allowlist:
 
@@ -260,7 +260,7 @@ Stop and report if an anchor/contract is absent, an unapproved design change is 
 
 ## 9. Report
 
-Create `docs/tasks/0069-report.md` (1500 tokens maximum): files changed and diff stat; baseline commands and last five output lines; §7 checked/unchecked; verified duplicate/shared-editor findings; discrepancies/limitations; exact next-phase recommendation; owner steps. Link the detailed ownership inventory rather than repeating it.
+Create `docs/tasks/0071-report.md` (1500 tokens maximum): files changed and diff stat; baseline commands and last five output lines; §7 checked/unchecked; verified duplicate/shared-editor findings; discrepancies/limitations; exact next-phase recommendation; owner steps. Link the detailed ownership inventory rather than repeating it.
 
 ## Risk list (for the reviewer)
 
@@ -275,7 +275,7 @@ Read the full ownership inventory, this brief's status diff and the report. Ther
 ## Executor prompt
 
 ```text
-Read AGENTS.md and docs/tasks/0069-host-navigation-readiness.md.
+Read AGENTS.md and docs/tasks/0071-host-navigation-readiness.md.
 Run only when its Status is todo. Follow the documentation-only scope exactly.
 Read only its named sources, verify editor ownership and capture the current
 test baseline. Do not implement the redesign or change tests. Write the required

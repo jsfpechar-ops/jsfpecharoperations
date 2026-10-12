@@ -18,6 +18,6 @@ Additional decisions:
 - One shared business editor with Business details/Invoice details, reached from Properties and invoice settings: approved, keeping existing capabilities and issued snapshots.
 - Existing property save initially remains a full-property draft; switching sections keeps unsaved edits. Section-specific saves require their own scoped contract brief if later needed.
 
-Owner explicitly approved the design set: “its great im happy with it … first staging then production after approval.” Readiness 0069 is todo. This authorizes preparation and implementation through the repository executor/review process and staging review; production promotion requires a separate approval of the staging candidate.
+Owner explicitly approved the design set: “its great im happy with it … first staging then production after approval.” Readiness 0071 is todo. This authorizes preparation and implementation through the repository executor/review process and staging review; production promotion requires a separate approval of the staging candidate.
 
 Application work proceeds through the repo's small executor briefs, reports, browser/geometry evidence, CI and owner merge/deployment process. The execution protocol documents that current green main CI can deploy production automatically: do not merge any delivery PR to main before staging acceptance and explicit promotion approval. No implemented or deployed result is claimed by these planning artifacts.

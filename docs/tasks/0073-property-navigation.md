@@ -1,8 +1,8 @@
-# 0071: Property tabs, grouped editor and safe drafts
+# 0073: Property tabs, grouped editor and safe drafts
 
-Status: blocked — depends on reviewed 0070; exact patch must be released against that integration revision.
+Status: blocked — depends on reviewed 0072; exact patch must be released against that integration revision.
 
-Depends on: 0070 done | Source baseline: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0071-property-navigation | PR base: task/host-navigation-integration
+Depends on: 0072 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0073-property-navigation | PR base: task/host-navigation-integration
 
 Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
@@ -58,13 +58,13 @@ Explicit allowlist below. A partial introduced by an earlier task must already e
 
 | `App/tests/test_property_navigation_save.py` | create | Named shared rendering or meaningful regression coverage |
 
-| `docs/tasks/0071-property-navigation.md` | edit | Lifecycle status only |
+| `docs/tasks/0073-property-navigation.md` | edit | Lifecycle status only |
 
-| `docs/tasks/0071-report.md` | create | Required report, 1500 tokens maximum |
+| `docs/tasks/0073-report.md` | create | Required report, 1500 tokens maximum |
 
-| `docs/tasks/0071-evidence/` | create | Synthetic screenshots and measured evidence only |
+| `docs/tasks/0073-evidence/` | create | Synthetic screenshots and measured evidence only |
 
-Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0069, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_property_hub.py`, `App/tests/test_property_form_save.py`, `App/tests/test_property_form_nav.py`, `App/tests/test_new_property_defaults.py`, `App/tests/test_copy_property_settings.py`, `App/tests/test_stay_fee_property_panel.py`, `App/tests/test_host_property_controls_browser.py`, `App/tests/test_host_wide_geometry_browser.py`. No unrelated whole-repo audit.
+Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0071, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_property_hub.py`, `App/tests/test_property_form_save.py`, `App/tests/test_property_form_nav.py`, `App/tests/test_new_property_defaults.py`, `App/tests/test_copy_property_settings.py`, `App/tests/test_stay_fee_property_panel.py`, `App/tests/test_host_property_controls_browser.py`, `App/tests/test_host_wide_geometry_browser.py`. No unrelated whole-repo audit.
 
 ## 4. Steps
 
@@ -128,7 +128,7 @@ Stop/report if the patch is pending, predecessor/anchor/base differs, source pat
 
 ## 9. Report
 
-Create `docs/tasks/0071-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
+Create `docs/tasks/0073-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
 
 ## Risk list (for the reviewer)
 

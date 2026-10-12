@@ -1,8 +1,8 @@
-# 0079: Invoice navigation and canonical configuration
+# 0079: Quiet dashboard and Stays list consistency
 
 Status: blocked — depends on reviewed 0078; exact patch must be released against that integration revision.
 
-Depends on: 0078 done | Source baseline: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0079-invoice-navigation | PR base: task/host-navigation-integration
+Depends on: 0078 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0079-daily-work-lists | PR base: task/host-navigation-integration
 
 Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
@@ -10,22 +10,16 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-Invoice navigation and canonical configuration. Deliver the approved design through one maintained implementation, preserving existing business behavior.
+Quiet dashboard and Stays list consistency. Deliver the approved design through one maintained implementation, preserving existing business behavior.
 
 ## 2. Context
 
 Read AGENTS.md, the execution protocol and the reviewed prerequisite report/inventory. Designs are approved; do not repeat design approval. These verified source anchors document the starting contracts; the released exact patch must refresh any changed anchor against its actual predecessor.
 
-`App/app/routes/invoices.py`:
+`App/app/templates/_host_navigation.html`:
 
 ```
-    raw_stay = request.query_params.get("reservation_id")
-```
-
-`App/app/routes/invoices.py`:
-
-```
-    active = invoices.active_invoice_for_stay(reservation_id)
+{% if nav in ('reservations', 'submissions', 'housebook') %}
 ```
 
 ## 3. Files
@@ -36,31 +30,29 @@ Explicit allowlist below. A partial introduced by an earlier task must already e
 
 |---|---|---|
 
-| `App/app/templates/invoices.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/dashboard.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/templates/invoice_stay_picker.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
-
-| `App/app/templates/invoice_form.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
-
-| `App/app/templates/invoice_detail.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
-
-| `App/app/templates/_host_navigation.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/reservations.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/templates/_components.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
+| `App/app/templates/_host_navigation.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+
 | `App/app/static/host.css` | edit | Only the released phase-specific patch; retain unrelated behavior |
+
+| `App/app/static/host-controls.css` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/host_i18n.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/tests/test_host_invoice_navigation.py` | create | Named shared rendering or meaningful regression coverage |
+| `App/tests/test_host_list_layouts_browser.py` | create | Named shared rendering or meaningful regression coverage |
 
-| `docs/tasks/0079-invoice-navigation.md` | edit | Lifecycle status only |
+| `docs/tasks/0079-daily-work-lists.md` | edit | Lifecycle status only |
 
 | `docs/tasks/0079-report.md` | create | Required report, 1500 tokens maximum |
 
 | `docs/tasks/0079-evidence/` | create | Synthetic screenshots and measured evidence only |
 
-Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0069, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_invoice_stay_rules.py`, `App/tests/test_invoice_stay_pages.py`, `App/tests/test_invoice_stay_browser.py`, `App/tests/test_invoice_settings.py`, `App/tests/test_invoice_immutability.py`, `App/tests/test_invoice_numbering.py`, `App/tests/test_invoice_vat.py`, `App/tests/test_host_invoice_items_browser.py`. No unrelated whole-repo audit.
+Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0071, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_host_quiet_dashboard_browser.py`, `App/tests/test_host_stay_actions_browser.py`, `App/tests/test_host_filter_panels_browser.py`, `App/tests/test_host_feedback_browser.py`, `App/tests/test_host_wide_geometry_browser.py`, `App/tests/test_host_redesign.py`. No unrelated whole-repo audit.
 
 ## 4. Steps
 
@@ -68,15 +60,15 @@ Read-only source: the predecessor inventory/brief/report, relevant routes/guards
 
 2. Apply the released exact patch only, then verify the following phase requirements in order:
 
-3. Retain searchable/filterable invoice list, period controls, Generate invoice, direct PDF and the canonical entity Invoice details link. Show existing manually recorded payment facts accurately; no bank-derived Unpaid inference.
+3. Retain Quiet overview, four white state cards and existing semantic counts/30-day routine window/five-unique-row cap. Count before truncation, overdue/failed work first, no inferred invoice/fee tasks.
 
-4. Creation remains stay-linked: existing selector, eligibility, correct assigned entity and existing-invoice recovery. Preserve typed builder data on 422/ARES/preview and safe configuration-return context.
+4. Keep Stays/Police reports/Guest register local navigation, All dates default and All properties · Active collapsed summary. Reuse current shared filters/date range and preserve timeline/saved/custom/archive semantics.
 
-5. Keep the owner-selected invoice item grid, aligned Quantity/Unit/Unit price, optional Cleaning unit and custom Description only for Other. Do not replace it with a new card-based builder.
+5. Use one aligned row/action grid with Open and adjacent More. Keep property/dates/guest progress/status readable; narrow widths become labelled cards before actions or translated labels clip.
 
-6. Detail keeps actual download/send/record-payment/cancel-correct capabilities and restrictions. No changes to numbering, amounts, rounding, VAT, issued snapshot, signatures, PDFs or emails.
+6. Preserve Add stay/import/sync operations and actual guest-form-link availability. Do not change date/filter business logic or enable missing/expired links to make a screenshot match.
 
-7. Verify switching entity configuration and returning to the builder retains correct stay/entity and all fields. No duplicate business/account/VAT editor embedded in invoice form.
+7. Measure real component edges and action tracks at all required widths, expanded/collapsed rail, long Czech property names and counts. Keep shared CSS scoped so invoice/property forms do not regress.
 
 8. Run §6, capture the actual changed pages with synthetic fixtures, compare every changed path with §3, write §9 and set review. Do not merge, deploy, advance to a blocked task or modify the next task.
 
@@ -90,7 +82,7 @@ Use the exact staging/mock/REQUIRE_BROWSER environment and setup from the execut
 
 ```bash
 
-.venv/bin/python -m pytest tests/test_invoice_stay_rules.py tests/test_invoice_stay_pages.py tests/test_invoice_stay_browser.py tests/test_invoice_settings.py tests/test_invoice_immutability.py tests/test_invoice_numbering.py tests/test_invoice_vat.py tests/test_host_invoice_items_browser.py -q -rs
+.venv/bin/python -m pytest tests/test_host_quiet_dashboard_browser.py tests/test_host_stay_actions_browser.py tests/test_host_filter_panels_browser.py tests/test_host_feedback_browser.py tests/test_host_wide_geometry_browser.py tests/test_host_redesign.py -q -rs
 
 ```
 
@@ -98,13 +90,13 @@ Include the named new regression tests once created. Then run the protocol full 
 
 ## 7. Acceptance
 
-- [ ] Invoice list/PDF/settings links work in EN/CS/mobile; configuration resolves to the same entity editor.
+- [ ] Existing dashboard count/window/cap and filter semantics unchanged; no duplicated stays or fake positive status.
 
-- [ ] New invoice needs an eligible stay and has current existing-invoice protection; no generic standalone creation.
+- [ ] Open/More/Copy controls fit actual row containers at mid/wide/mobile widths with shared heights.
 
-- [ ] 422/preview/ARES and return navigation retain values; row/item controls align and do not clip.
+- [ ] Keyboard, filters/apply/cancel/reset, long CS labels and collapsed rail work without horizontal page overflow.
 
-- [ ] Issued bytes/data/numbering/VAT/manual payment rules unchanged.
+- [ ] Current browser regressions resolved by scoped layout changes, not relaxed assertions.
 
 - [ ] Focused/full/CI checks pass at actual current head, coverage threshold retained, required browser/geometry 0 skips.
 

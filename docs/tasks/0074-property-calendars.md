@@ -1,8 +1,8 @@
-# 0081: Account and advanced settings without duplicate editors
+# 0074: Focused property calendar management
 
-Status: blocked — depends on reviewed 0080; exact patch must be released against that integration revision.
+Status: blocked — depends on reviewed 0073; exact patch must be released against that integration revision.
 
-Depends on: 0080 done | Source baseline: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0081-account-settings-navigation | PR base: task/host-navigation-integration
+Depends on: 0073 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0074-property-calendars | PR base: task/host-navigation-integration
 
 Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
@@ -10,16 +10,22 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-Account and advanced settings without duplicate editors. Deliver the approved design through one maintained implementation, preserving existing business behavior.
+Focused property calendar management. Deliver the approved design through one maintained implementation, preserving existing business behavior.
 
 ## 2. Context
 
 Read AGENTS.md, the execution protocol and the reviewed prerequisite report/inventory. Designs are approved; do not repeat design approval. These verified source anchors document the starting contracts; the released exact patch must refresh any changed anchor against its actual predecessor.
 
-`App/app/templates/base.html`:
+`App/app/routes/admin.py`:
 
 ```
-        <form method="post" action="/language" class="lang-switch compact">
+@router.post("/apartments/{apartment_id}/feeds")
+```
+
+`App/app/routes/admin.py`:
+
+```
+@router.post("/feeds/{feed_id}/delete")
 ```
 
 ## 3. Files
@@ -30,29 +36,27 @@ Explicit allowlist below. A partial introduced by an earlier task must already e
 
 |---|---|---|
 
-| `App/app/templates/settings.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/_property_calendars.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/templates/_host_navigation.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
-
-| `App/app/templates/base.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/apartment_form.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/templates/_components.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/routes/api.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
-
 | `App/app/static/host.css` | edit | Only the released phase-specific patch; retain unrelated behavior |
+
+| `App/app/static/app.js` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/host_i18n.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/tests/test_host_account_navigation.py` | create | Named shared rendering or meaningful regression coverage |
+| `App/tests/test_property_calendar_navigation.py` | create | Named shared rendering or meaningful regression coverage |
 
-| `docs/tasks/0081-account-settings-navigation.md` | edit | Lifecycle status only |
+| `docs/tasks/0074-property-calendars.md` | edit | Lifecycle status only |
 
-| `docs/tasks/0081-report.md` | create | Required report, 1500 tokens maximum |
+| `docs/tasks/0074-report.md` | create | Required report, 1500 tokens maximum |
 
-| `docs/tasks/0081-evidence/` | create | Synthetic screenshots and measured evidence only |
+| `docs/tasks/0074-evidence/` | create | Synthetic screenshots and measured evidence only |
 
-Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0069, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_account_emails.py`, `App/tests/test_auth_forms_no_js.py`, `App/tests/test_host_redesign.py`, `App/tests/test_host_wide_geometry_browser.py`, `App/tests/test_host_controls_browser.py`. No unrelated whole-repo audit.
+Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0071, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_property_hub.py`, `App/tests/test_host_property_controls_browser.py`, `App/tests/test_host_wide_geometry_browser.py`, `App/tests/test_host_feedback_browser.py`. No unrelated whole-repo audit.
 
 ## 4. Steps
 
@@ -60,15 +64,15 @@ Read-only source: the predecessor inventory/brief/report, relevant routes/guards
 
 2. Apply the released exact patch only, then verify the following phase requirements in order:
 
-3. Group Account/Security/Data & archive/Privacy/Technical/Help as a concise native navigation/index. Ordinary accounts do not see admin controls; retain current role/impersonation/environment warnings and complete account-menu hierarchy.
+3. Show platform/name, actual last_status and last_checked_at before URL. Keep never-checked/suspect/error distinct and text-labelled; a green badge never comes from URL presence alone.
 
-4. Keep email change/confirmation and language under their existing distinct endpoints/actions. No generic Save changes that broadly overwrites account/security preferences.
+4. Connect calendar opens one connection form; advanced portal/name options stay optional and collapsed. Preserve original URL/label/own_name names and add-and-sync endpoint. No always-open second sidebar form and no nested settings/calendar forms.
 
-5. Link Business & legal details to the canonical shared entity editor. Keep archive/restore, privacy requests, retention/backups/export, security/passkeys/2FA, legal/support/guide and specialized admin routes reachable.
+5. Put full URL/removal under native details/More. Retain removal consequences/confirmation and the current calendar-import lifecycle. Keep recovery errors persistent and partial results honest.
 
-6. Technical/destructive actions keep consequences, confirmations and authorization; no new form or altered retention policy. Auth forms remain usable without JavaScript.
+6. Use only existing sync operations. No per-feed Sync now unless 0071 confirms an actual authorized handler; UI must describe the handler actual scope. Do not add backend sync functionality in this brief.
 
-7. Preserve Search destinations and normal-link keyboard/mobile behavior; do not add property fees/guest links/credentials editors to account settings.
+7. Preserve dirty settings navigation and entered connection URL on invalid input. Add meaningful tests of failed/successful connection feedback and scope, not screenshot-only tests.
 
 8. Run §6, capture the actual changed pages with synthetic fixtures, compare every changed path with §3, write §9 and set review. Do not merge, deploy, advance to a blocked task or modify the next task.
 
@@ -82,7 +86,7 @@ Use the exact staging/mock/REQUIRE_BROWSER environment and setup from the execut
 
 ```bash
 
-.venv/bin/python -m pytest tests/test_account_emails.py tests/test_auth_forms_no_js.py tests/test_host_redesign.py tests/test_host_wide_geometry_browser.py tests/test_host_controls_browser.py -q -rs
+.venv/bin/python -m pytest tests/test_property_hub.py tests/test_host_property_controls_browser.py tests/test_host_wide_geometry_browser.py tests/test_host_feedback_browser.py -q -rs
 
 ```
 
@@ -90,13 +94,13 @@ Include the named new regression tests once created. Then run the protocol full 
 
 ## 7. Acceptance
 
-- [ ] Account menu/Settings/Search reach every current permitted destination; no unintended admin disclosure.
+- [ ] Connected/suspect/failed/never states accurate; no URL duplication or leaked secrets in feedback.
 
-- [ ] Email/language/security/retention actions preserve current methods, CSRF and validation.
+- [ ] Add/remove use current guards and expected archived/import behavior; cancellation has no mutation.
 
-- [ ] Shared business link points to the same editor; no duplicated property or entity settings form.
+- [ ] One connection form, outside settings; desktop/mobile labels/actions fit.
 
-- [ ] EN/CS/mobile/wide/focus and auth-without-JS tests green; destructive warnings intact.
+- [ ] A connection failure retains typed URL and explains recovery; changing tabs does not discard the property draft silently.
 
 - [ ] Focused/full/CI checks pass at actual current head, coverage threshold retained, required browser/geometry 0 skips.
 
@@ -110,7 +114,7 @@ Stop/report if the patch is pending, predecessor/anchor/base differs, source pat
 
 ## 9. Report
 
-Create `docs/tasks/0081-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
+Create `docs/tasks/0074-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
 
 ## Risk list (for the reviewer)
 

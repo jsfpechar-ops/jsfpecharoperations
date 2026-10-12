@@ -1,7 +1,7 @@
-# 0084: Owner-approved production promotion and smoke report
+# 0086: Owner-approved production promotion and smoke report
 
 Status: blocked — explicit owner approval of the accepted staging candidate is required.
-Depends on: 0083 done plus exact staging-candidate production approval | Operator: owner only
+Depends on: 0085 done plus exact staging-candidate production approval | Operator: owner only
 Patch status: ready — gated owner runbook; no application patch
 
 ## 1. Objective
@@ -10,7 +10,7 @@ Promote only the explicitly approved staging candidate and record the actual pro
 
 ## 2. Context
 
-Read AGENTS.md, execution protocol §§2/8/9, 0083 report/staging acceptance, `docs/DEPLOYMENT.md` promotion section, `docs/LIGHTSAIL.md` current release/rollback section and `scripts/merge-pr-on-green.sh`. Current successful main CI can automatically trigger Deploy production, so merging the final PR is itself a production-release action.
+Read AGENTS.md, execution protocol §§2/8/9, 0085 report/staging acceptance, `docs/DEPLOYMENT.md` promotion section, `docs/LIGHTSAIL.md` current release/rollback section and `scripts/merge-pr-on-green.sh`. Current successful main CI can automatically trigger Deploy production, so merging the final PR is itself a production-release action.
 
 The executor/orchestrator may prepare the final reviewable candidate/PR and evidence. Only the owner performs main merge, production workflow, server/secrets or rollback operations. No action is permitted by this blocked file until its explicit approval record exists.
 
@@ -20,8 +20,8 @@ The executor/orchestrator may prepare the final reviewable candidate/PR and evid
 |---|---|---|
 | `docs/plans/host-navigation-production-approval.md` | create | Exact owner instruction, candidate and staging evidence; never prefilled |
 | `docs/plans/host-navigation-production-release.md` | create | Actual release/health/smoke/rollback record |
-| `docs/tasks/0084-report.md` | create | Required final report |
-| `docs/tasks/0084-host-navigation-production-promotion.md` | edit | Actual lifecycle status only |
+| `docs/tasks/0086-report.md` | create | Required final report |
+| `docs/tasks/0086-host-navigation-production-promotion.md` | edit | Actual lifecycle status only |
 | `docs/context/status.md` | edit | At most five lines, actual deployed revision/outcome |
 
 No application/workflow/schema/dependency changes and no production database mutation. Owner release operations follow the existing guard/runbooks, not a scripted executor workaround.
@@ -60,7 +60,7 @@ Keep blocked without explicit candidate approval. Stop/report on changed candida
 
 ## 9. Report
 
-Write `docs/tasks/0084-report.md` (<=1500 tokens): approval/C/P/M, final PR and CI/deployment links, source/health/smoke evidence, data/rollback guard results, unresolved issues, status updates and owner verdict. Link full approval/release records; redact operational secrets and personal data.
+Write `docs/tasks/0086-report.md` (<=1500 tokens): approval/C/P/M, final PR and CI/deployment links, source/health/smoke evidence, data/rollback guard results, unresolved issues, status updates and owner verdict. Link full approval/release records; redact operational secrets and personal data.
 
 ## Risk list (for the reviewer)
 
@@ -68,6 +68,6 @@ Approval provenance, candidate/tree matching, actual final-main/deployed revisio
 
 ## Owner steps
 
-1. Approve the exact staging candidate for production after reviewing 0083.
+1. Approve the exact staging candidate for production after reviewing 0085.
 2. Guardedly merge its final promotion PR; watch main CI/production deployment.
 3. Verify revision/health/read-only smoke; approve completion or execute the established rollback.

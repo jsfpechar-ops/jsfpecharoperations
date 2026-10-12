@@ -1,8 +1,8 @@
-# 0072: Focused property calendar management
+# 0082: Fee lists and report detail under the shared host layout
 
-Status: blocked — depends on reviewed 0071; exact patch must be released against that integration revision.
+Status: blocked — depends on reviewed 0081; exact patch must be released against that integration revision.
 
-Depends on: 0071 done | Source baseline: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0072-property-calendars | PR base: task/host-navigation-integration
+Depends on: 0081 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0082-fee-report-navigation | PR base: task/host-navigation-integration
 
 Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
@@ -10,22 +10,22 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-Focused property calendar management. Deliver the approved design through one maintained implementation, preserving existing business behavior.
+Fee lists and report detail under the shared host layout. Deliver the approved design through one maintained implementation, preserving existing business behavior.
 
 ## 2. Context
 
 Read AGENTS.md, the execution protocol and the reviewed prerequisite report/inventory. Designs are approved; do not repeat design approval. These verified source anchors document the starting contracts; the released exact patch must refresh any changed anchor against its actual predecessor.
 
-`App/app/routes/admin.py`:
+`App/app/routes/stay_fees.py`:
 
 ```
-@router.post("/apartments/{apartment_id}/feeds")
+@router.get("/stay-fees/{apartment_id}/pdf")
 ```
 
-`App/app/routes/admin.py`:
+`App/app/routes/stay_fees.py`:
 
 ```
-@router.post("/feeds/{feed_id}/delete")
+@router.post("/stay-fees/{apartment_id}/finalize")
 ```
 
 ## 3. Files
@@ -36,27 +36,25 @@ Explicit allowlist below. A partial introduced by an earlier task must already e
 
 |---|---|---|
 
-| `App/app/templates/_property_calendars.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/stay_fees.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/templates/apartment_form.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/stay_fee_detail.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/templates/_components.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/static/host.css` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/static/app.js` | edit | Only the released phase-specific patch; retain unrelated behavior |
-
 | `App/app/host_i18n.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/tests/test_property_calendar_navigation.py` | create | Named shared rendering or meaningful regression coverage |
+| `App/tests/test_host_fee_navigation.py` | create | Named shared rendering or meaningful regression coverage |
 
-| `docs/tasks/0072-property-calendars.md` | edit | Lifecycle status only |
+| `docs/tasks/0082-fee-report-navigation.md` | edit | Lifecycle status only |
 
-| `docs/tasks/0072-report.md` | create | Required report, 1500 tokens maximum |
+| `docs/tasks/0082-report.md` | create | Required report, 1500 tokens maximum |
 
-| `docs/tasks/0072-evidence/` | create | Synthetic screenshots and measured evidence only |
+| `docs/tasks/0082-evidence/` | create | Synthetic screenshots and measured evidence only |
 
-Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0069, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_property_hub.py`, `App/tests/test_host_property_controls_browser.py`, `App/tests/test_host_wide_geometry_browser.py`, `App/tests/test_host_feedback_browser.py`. No unrelated whole-repo audit.
+Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0071, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_stay_fee_list.py`, `App/tests/test_stay_fee_detail.py`, `App/tests/test_stay_fee_downloads.py`, `App/tests/test_stay_fee_finalize.py`, `App/tests/test_stay_fee_send_panel.py`, `App/tests/test_stay_fee_adjustment.py`, `App/tests/test_host_wide_geometry_browser.py`. No unrelated whole-repo audit.
 
 ## 4. Steps
 
@@ -64,15 +62,15 @@ Read-only source: the predecessor inventory/brief/report, relevant routes/guards
 
 2. Apply the released exact patch only, then verify the following phase requirements in order:
 
-3. Show platform/name, actual last_status and last_checked_at before URL. Keep never-checked/suspect/error distinct and text-labelled; a green badge never comes from URL presence alone.
+3. Keep period-first list and current audited per-facility report unit. Not set up shows state/action instead of meaningless blank totals. Do not mix a different period report detail into the selected-period list.
 
-4. Connect calendar opens one connection form; advanced portal/name options stay optional and collapsed. Preserve original URL/label/own_name names and add-and-sync endpoint. No always-open second sidebar form and no nested settings/calendar forms.
+4. Report detail prioritizes identity/period, calculated totals, actual blockers, PDF/CSV, council payment details and current protected guest fee decisions. Set up/Fix links go to 0077 canonical fee editor and return to the exact report period.
 
-5. Put full URL/removal under native details/More. Retain removal consequences/confirmation and the current calendar-import lifecycle. Keep recovery errors persistent and partial results honest.
+5. Preserve finalized snapshots, legal register fields, exemptions/reasons, adjustments and current manually recorded sent/paid facts. Payment details ready means an account/QR is available, not paid. No automatic bank/municipal claim.
 
-6. Use only existing sync operations. No per-feed Sync now unless 0069 confirms an actual authorized handler; UI must describe the handler actual scope. Do not add backend sync functionality in this brief.
+6. Retain current protected download/export handlers and Invoice Companion PDF design. Align period/filter/results lanes and action geometry without modifying report data or calculations.
 
-7. Preserve dirty settings navigation and entered connection URL on invalid input. Add meaningful tests of failed/successful connection feedback and scope, not screenshot-only tests.
+7. Check rate-off/incomplete/blocked/finalized/report-ready cases, long Czech council names/amounts, responsive cards and safe return links. No fee engine/backend edits.
 
 8. Run §6, capture the actual changed pages with synthetic fixtures, compare every changed path with §3, write §9 and set review. Do not merge, deploy, advance to a blocked task or modify the next task.
 
@@ -86,7 +84,7 @@ Use the exact staging/mock/REQUIRE_BROWSER environment and setup from the execut
 
 ```bash
 
-.venv/bin/python -m pytest tests/test_property_hub.py tests/test_host_property_controls_browser.py tests/test_host_wide_geometry_browser.py tests/test_host_feedback_browser.py -q -rs
+.venv/bin/python -m pytest tests/test_stay_fee_list.py tests/test_stay_fee_detail.py tests/test_stay_fee_downloads.py tests/test_stay_fee_finalize.py tests/test_stay_fee_send_panel.py tests/test_stay_fee_adjustment.py tests/test_host_wide_geometry_browser.py -q -rs
 
 ```
 
@@ -94,13 +92,13 @@ Include the named new regression tests once created. Then run the protocol full 
 
 ## 7. Acceptance
 
-- [ ] Connected/suspect/failed/never states accurate; no URL duplication or leaked secrets in feedback.
+- [ ] List and detail show the same selected/audited period and facility scope; frozen data unchanged.
 
-- [ ] Add/remove use current guards and expected archived/import behavior; cancellation has no mutation.
+- [ ] Configuration links reach one editor and return to the same month; rate 0 remains optional.
 
-- [ ] One connection form, outside settings; desktop/mobile labels/actions fit.
+- [ ] Actual protected PDF/CSV and guest decision/adjustment/finalization controls remain available with guards.
 
-- [ ] A connection failure retains typed URL and explains recovery; changing tabs does not discard the property draft silently.
+- [ ] Manual filing/payment markers are labelled truthfully, no copied configuration form on the report.
 
 - [ ] Focused/full/CI checks pass at actual current head, coverage threshold retained, required browser/geometry 0 skips.
 
@@ -114,7 +112,7 @@ Stop/report if the patch is pending, predecessor/anchor/base differs, source pat
 
 ## 9. Report
 
-Create `docs/tasks/0072-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
+Create `docs/tasks/0082-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
 
 ## Risk list (for the reviewer)
 

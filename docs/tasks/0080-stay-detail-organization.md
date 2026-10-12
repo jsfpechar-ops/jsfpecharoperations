@@ -1,8 +1,8 @@
-# 0076: Properties list and read-only cross-property summaries
+# 0080: Stay detail with next action and inline guest facts
 
-Status: blocked — depends on reviewed 0075; exact patch must be released against that integration revision.
+Status: blocked — depends on reviewed 0079; exact patch must be released against that integration revision.
 
-Depends on: 0075 done | Source baseline: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0076-properties-overview | PR base: task/host-navigation-integration
+Depends on: 0079 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0080-stay-detail-organization | PR base: task/host-navigation-integration
 
 Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
@@ -10,7 +10,7 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-Properties list and read-only cross-property summaries. Deliver the approved design through one maintained implementation, preserving existing business behavior.
+Stay detail with next action and inline guest facts. Deliver the approved design through one maintained implementation, preserving existing business behavior.
 
 ## 2. Context
 
@@ -19,13 +19,7 @@ Read AGENTS.md, the execution protocol and the reviewed prerequisite report/inve
 `App/app/routes/admin.py`:
 
 ```
-@router.get("/apartments")
-```
-
-`App/app/routes/admin.py`:
-
-```
-    return _property_hub_redirect(request, "communication")
+@router.post("/reservations/{reservation_id}/remove-empty-slot")
 ```
 
 ## 3. Files
@@ -36,27 +30,23 @@ Explicit allowlist below. A partial introduced by an earlier task must already e
 
 |---|---|---|
 
-| `App/app/templates/apartments.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/reservation_detail.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/templates/_components.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
-
-| `App/app/routes/admin.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
-
-| `App/app/routes/api.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/static/host.css` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/host_i18n.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/tests/test_host_properties_navigation.py` | create | Named shared rendering or meaningful regression coverage |
+| `App/tests/test_host_stay_detail_layout_browser.py` | create | Named shared rendering or meaningful regression coverage |
 
-| `docs/tasks/0076-properties-overview.md` | edit | Lifecycle status only |
+| `docs/tasks/0080-stay-detail-organization.md` | edit | Lifecycle status only |
 
-| `docs/tasks/0076-report.md` | create | Required report, 1500 tokens maximum |
+| `docs/tasks/0080-report.md` | create | Required report, 1500 tokens maximum |
 
-| `docs/tasks/0076-evidence/` | create | Synthetic screenshots and measured evidence only |
+| `docs/tasks/0080-evidence/` | create | Synthetic screenshots and measured evidence only |
 
-Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0069, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_property_hub.py`, `App/tests/test_host_redesign.py`, `App/tests/test_host_property_controls_browser.py`, `App/tests/test_host_wide_geometry_browser.py`, `App/tests/test_property_readiness.py`. No unrelated whole-repo audit.
+Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0071, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_host_redesign.py`, `App/tests/test_host_stay_actions_browser.py`, `App/tests/test_host_wide_geometry_browser.py`, `App/tests/test_property_hub.py`, `App/tests/test_invoice_stay_pages.py`. No unrelated whole-repo audit.
 
 ## 4. Steps
 
@@ -64,15 +54,15 @@ Read-only source: the predecessor inventory/brief/report, relevant routes/guards
 
 2. Apply the released exact patch only, then verify the following phase requirements in order:
 
-3. Use the approved compact property list: name/location, actual setup state/calendar count and aligned Open. Retain Add property, active/archive/filter views, restoration and copied-property navigation.
+3. Order property/dates, actual next action, then Guests with count/Edit count/Add guest and saved facts inline, followed by police reporting. Do not put full guest facts behind a new mandatory tab.
 
-4. Expose shared Business & legal details and connected lock accounts once as contextual links, using their canonical record scopes.
+4. Preserve document type/number, DOB, nationality, residence, purpose, stay dates and existing signature/verification state. Use only authorized current fields and wrapping; never expose sensitive details in toast/analytics/evidence.
 
-5. Add the approved optional native disclosure of read-only guest-link/automation summaries using existing authorized property data. Each row links to its exact property editor; no editable controls, new global settings route or inferred status.
+5. Keep valid guest-form-link Copy/share/preview actions and the extra empty-slot action with current safe guard. Registered/reported guest removal is not equivalent to reducing expected count.
 
-6. Preserve /guest-links and /automation one-property redirect and multiple/no-property return to Properties. Search entries lead to canonical features without losing authorized destinations.
+6. Keep police result/receipt/errors/correction links and #reports, prior-return context, eligible stay invoice action and unavailable-state explanations. Do not invent confirmation or add a fee panel/check-in tracker.
 
-7. Keep empty/no-match/archived states distinct; no photos, cards full of decorative setup claims, fee/lock onboarding nags or duplicated legal-entity fields.
+7. Verify actual two-row guest content geometry, mobile card controls, archived/submitted restrictions and error/status variants. No report/save/business logic changes in this template task.
 
 8. Run §6, capture the actual changed pages with synthetic fixtures, compare every changed path with §3, write §9 and set review. Do not merge, deploy, advance to a blocked task or modify the next task.
 
@@ -86,7 +76,7 @@ Use the exact staging/mock/REQUIRE_BROWSER environment and setup from the execut
 
 ```bash
 
-.venv/bin/python -m pytest tests/test_property_hub.py tests/test_host_redesign.py tests/test_host_property_controls_browser.py tests/test_host_wide_geometry_browser.py tests/test_property_readiness.py -q -rs
+.venv/bin/python -m pytest tests/test_host_redesign.py tests/test_host_stay_actions_browser.py tests/test_host_wide_geometry_browser.py tests/test_property_hub.py tests/test_invoice_stay_pages.py -q -rs
 
 ```
 
@@ -94,13 +84,13 @@ Include the named new regression tests once created. Then run the protocol full 
 
 ## 7. Acceptance
 
-- [ ] One/many/no/archived properties render truthful summaries with usable Open/setup/restore paths.
+- [ ] Host sees all existing saved guest facts without opening another page; mobile fields/actions readable.
 
-- [ ] Read-only summaries cannot mutate settings and every configuration link chooses the correct property/section.
+- [ ] Removing an empty extra slot does not delete a real guest or rewrite a submitted report.
 
-- [ ] Search/legacy redirects/shared entity/lock routes remain reachable without the removed global sub-bar.
+- [ ] Actual report and invite states/action availability retained; missing/expired links stay unavailable.
 
-- [ ] Labels/actions align and remain readable in CS and mobile/wide lanes.
+- [ ] Invoice navigation identifies the proper stay; reports/register/return anchors remain usable.
 
 - [ ] Focused/full/CI checks pass at actual current head, coverage threshold retained, required browser/geometry 0 skips.
 
@@ -114,7 +104,7 @@ Stop/report if the patch is pending, predecessor/anchor/base differs, source pat
 
 ## 9. Report
 
-Create `docs/tasks/0076-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
+Create `docs/tasks/0080-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
 
 ## Risk list (for the reviewer)
 

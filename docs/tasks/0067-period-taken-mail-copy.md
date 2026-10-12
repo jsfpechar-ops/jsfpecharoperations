@@ -1,6 +1,6 @@
 # 0067: Informational period_taken mail
 
-Status: todo
+Status: done
 Depends on: 0037 (merged) | Base commit: f55e156 | Branch: task/0067-period-taken-mail-copy
 Executor: Cursor local agent (composer; copy-only, the cheapest model fits) | Fits one session
 

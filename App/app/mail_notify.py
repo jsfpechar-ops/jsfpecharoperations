@@ -1330,15 +1330,44 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
 
 # Notices about a code that was not created. The host creates it by hand, and
 # support gets a copy so the problem is on record. Never sent to a guest.
-_SUPPORT_COPY_VARIANTS = ("failed", "delayed", "period_taken", "moved_not_deleted")
+_SUPPORT_COPY_VARIANTS = ("failed", "delayed", "period_taken", "period_shared", "moved_not_deleted")
 
 
-_DOOR_CODE_REASONS = ("waiting", "not_set_up", "no_account", "not_eligible", "bad_window")
+_DOOR_CODE_REASONS = (
+    "waiting",
+    "not_set_up",
+    "no_account",
+    "not_eligible",
+    "bad_window",
+    "cloud",
+    "offline",
+    "permission",
+    "storage",
+    "budget",
+)
+# TTLock error kinds (ttlock.ERROR_KINDS) as the reason a host reads.
+_DOOR_CODE_REASON_KINDS = {
+    "transient": "cloud",
+    "network": "cloud",
+    "rate": "cloud",
+    "auth": "cloud",
+    "offline": "offline",
+    "permission": "permission",
+    "reauth": "no_account",
+    "storage": "storage",
+    "budget": "budget",
+}
+# Reasons where nothing is retried: the late mail keeps the "failed" text.
+_DOOR_CODE_NO_RETRY = ("not_set_up", "not_eligible", "bad_window")
 
 
 def _door_code_reason(lang: str, reason: str) -> str:
     """The reason as a sentence a host can act on, with the raw token for support."""
-    key = reason if reason in _DOOR_CODE_REASONS else "other"
+    parts = reason.split(":")
+    kind = parts[1] if parts[0] == "period_taken" and len(parts) > 1 else parts[0]
+    key = _DOOR_CODE_REASON_KINDS.get(kind, kind)
+    if key not in _DOOR_CODE_REASONS:
+        key = "other"
     text = _text(lang, f"mail.door_code_reason.{key}")
     return f"{text} [{reason}]"
 
@@ -1371,8 +1400,9 @@ def door_code_delayed_notice(reservation_id: int, reason: str) -> Optional[int]:
             "date": stay_day,
             "reason": _door_code_reason(lang, reason or "waiting"),
         }
-        subject = _text(lang, "mail.door_code_notice.failed.subject", **params)
-        body = _text(lang, "mail.door_code_notice.failed.body", **params)
+        variant = "failed" if (reason or "waiting") in _DOOR_CODE_NO_RETRY else "delayed"
+        subject = _text(lang, f"mail.door_code_notice.{variant}.subject", **params)
+        body = _text(lang, f"mail.door_code_notice.{variant}.body", **params)
         payload = {"text": body, "html": f"<p>{html.escape(body)}</p>", "lang": lang}
         return mail.enqueue(
             kind="door_code_notice",

@@ -1,7 +1,7 @@
-# 0070: Extract the existing property editor without changing behavior
+# 0072: Extract the existing property editor without changing behavior
 
-Status: blocked — depends on reviewed 0069 and its green baseline; orchestrator sets todo after verification.
-Depends on: 0069 done | Base source: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0070-property-editor-extraction | PR base: task/host-navigation-integration
+Status: blocked — depends on reviewed 0071 and its green baseline; orchestrator sets todo after verification.
+Depends on: 0071 done | Base source: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0072-property-editor-extraction | PR base: task/host-navigation-integration
 Patch status: ready — exact extraction command below; verify against reviewed integration HEAD before release.
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
@@ -11,7 +11,7 @@ Extract the current full property form and calendar block into canonical Jinja p
 
 ## 2. Context
 
-Read AGENTS.md, the execution protocol and the reviewed 0069 report/inventory. Designs are approved; this phase is structural only. Exact anchors in App/app/templates/apartment_form.html:
+Read AGENTS.md, the execution protocol and the reviewed 0071 report/inventory. Designs are approved; this phase is structural only. Exact anchors in App/app/templates/apartment_form.html:
 
 ```jinja
 {% set more_open = more_options_open|default(false) or copied_from_name %}
@@ -32,15 +32,15 @@ The form must retain its hidden Enter-default submit, field names/defaults, copi
 | `App/app/templates/apartment_form.html` | edit | Replace only the exact original form/calendar spans with canonical includes |
 | `App/app/templates/_property_settings_form.html` | create | Byte-preserved original full property form |
 | `App/app/templates/_property_calendars.html` | create | Byte-preserved original conditional calendar block |
-| `docs/tasks/0070-property-editor-extraction.md` | edit | Lifecycle status only |
-| `docs/tasks/0070-report.md` | create | Required report |
-| `docs/tasks/0070-evidence/` | create | Synthetic screenshots and focused equivalence evidence only |
+| `docs/tasks/0072-property-editor-extraction.md` | edit | Lifecycle status only |
+| `docs/tasks/0072-report.md` | create | Required report |
+| `docs/tasks/0072-evidence/` | create | Synthetic screenshots and focused equivalence evidence only |
 
 Read-only tests: test_property_form_save.py, test_property_form_nav.py, test_property_hub.py, test_property_readiness.py, test_copy_property_settings.py, test_stay_fee_property_panel.py, test_host_property_controls_browser.py, test_host_wide_geometry_browser.py, test_host_redesign.py, plus their existing fixtures/helpers. No tests change in this extraction.
 
 ## 4. Steps
 
-1. Confirm 0069 is done, baseline prerequisites satisfied, branch/base recorded, source anchors unchanged and no pre-existing user changes overwritten. Capture existing property/create page screenshots and relevant form control names/actions using synthetic fixtures. Verify one full form and the separate calendar forms in rendered HTML before the patch.
+1. Confirm 0071 is done, baseline prerequisites satisfied, branch/base recorded, source anchors unchanged and no pre-existing user changes overwritten. Capture existing property/create page screenshots and relevant form control names/actions using synthetic fixtures. Verify one full form and the separate calendar forms in rendered HTML before the patch.
 2. Execute this complete command from repo root once. It refuses if anchors or target partials are unexpected. Do not relax its assertions to fit a different revision; obtain a corrected exact patch instead.
 
 ```python
@@ -118,7 +118,7 @@ Stop/report on absent anchors, existing partial targets, unreviewed prerequisite
 
 ## 9. Report
 
-Write docs/tasks/0070-report.md (<=1500 tokens), mark review: base/ending SHA, changed paths/stat, focused/full results and skips, §7 ticked with links, control equivalence, screenshot/geometry evidence, deviations and exact next-task risks. Publication, review and merge follow the integration-only protocol.
+Write docs/tasks/0072-report.md (<=1500 tokens), mark review: base/ending SHA, changed paths/stat, focused/full results and skips, §7 ticked with links, control equivalence, screenshot/geometry evidence, deviations and exact next-task risks. Publication, review and merge follow the integration-only protocol.
 
 ## Risk list (for the reviewer)
 
@@ -126,6 +126,6 @@ Read apartment_form.html and both new partials. Confirm every extracted byte is 
 
 ## Owner steps
 
-1. Review 0070 report and current-head CI/scope.
+1. Review 0072 report and current-head CI/scope.
 2. Confirm the PR base is task/host-navigation-integration before guarded merge.
-3. Have the orchestrator release the exact 0071 patch against that reviewed tip.
+3. Have the orchestrator release the exact 0073 patch against that reviewed tip.

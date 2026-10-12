@@ -1,8 +1,8 @@
-# 0074: One business editor with invoice details
+# 0076: One business editor with invoice details
 
-Status: blocked — depends on reviewed 0073; exact patch must be released against that integration revision.
+Status: blocked — depends on reviewed 0075; exact patch must be released against that integration revision.
 
-Depends on: 0073 done | Source baseline: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0074-canonical-entity-navigation | PR base: task/host-navigation-integration
+Depends on: 0075 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0076-canonical-entity-navigation | PR base: task/host-navigation-integration
 
 Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
@@ -72,13 +72,13 @@ Explicit allowlist below. A partial introduced by an earlier task must already e
 
 | `App/tests/test_entity_editor_navigation.py` | create | Named shared rendering or meaningful regression coverage |
 
-| `docs/tasks/0074-canonical-entity-navigation.md` | edit | Lifecycle status only |
+| `docs/tasks/0076-canonical-entity-navigation.md` | edit | Lifecycle status only |
 
-| `docs/tasks/0074-report.md` | create | Required report, 1500 tokens maximum |
+| `docs/tasks/0076-report.md` | create | Required report, 1500 tokens maximum |
 
-| `docs/tasks/0074-evidence/` | create | Synthetic screenshots and measured evidence only |
+| `docs/tasks/0076-evidence/` | create | Synthetic screenshots and measured evidence only |
 
-Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0069, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_invoice_settings.py`, `App/tests/test_invoice_entity.py`, `App/tests/test_invoice_immutability.py`, `App/tests/test_invoice_autofill.py`, `App/tests/test_ares.py`, `App/tests/test_host_property_controls_browser.py`, `App/tests/test_host_wide_geometry_browser.py`. No unrelated whole-repo audit.
+Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0071, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_invoice_settings.py`, `App/tests/test_invoice_entity.py`, `App/tests/test_invoice_immutability.py`, `App/tests/test_invoice_autofill.py`, `App/tests/test_ares.py`, `App/tests/test_host_property_controls_browser.py`, `App/tests/test_host_wide_geometry_browser.py`. No unrelated whole-repo audit.
 
 ## 4. Steps
 
@@ -88,7 +88,7 @@ Read-only source: the predecessor inventory/brief/report, relevant routes/guards
 
 3. Present one entity editor based on /entities?edit={id}, with Business details and Invoice details sections. Show assigned entity/linked properties context without inventing a per-property business record. Selecting a different operator remains a property relationship operation.
 
-4. Render 0073 partials once. Preserve required business context for create/edit and all invoice defaults. Do not hide Edit/Invoice settings/More actions on the entity list; unavailable Delete retains its explanation/guard.
+4. Render 0075 partials once. Preserve required business context for create/edit and all invoice defaults. Do not hide Edit/Invoice settings/More actions on the entity list; unavailable Delete retains its explanation/guard.
 
 5. Route property business cards, Properties, Settings and invoice supplier/details links to the correct shared record/section. Preserve original invoice/stay/property return and safe-local-path validation, including multi-entity selection and no-entity recovery.
 
@@ -136,7 +136,7 @@ Stop/report if the patch is pending, predecessor/anchor/base differs, source pat
 
 ## 9. Report
 
-Create `docs/tasks/0074-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
+Create `docs/tasks/0076-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
 
 ## Risk list (for the reviewer)
 

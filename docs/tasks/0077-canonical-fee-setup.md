@@ -1,8 +1,8 @@
-# 0077: Quiet dashboard and Stays list consistency
+# 0077: Canonical fee setup and compatibility adapters
 
 Status: blocked — depends on reviewed 0076; exact patch must be released against that integration revision.
 
-Depends on: 0076 done | Source baseline: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0077-daily-work-lists | PR base: task/host-navigation-integration
+Depends on: 0076 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0077-canonical-fee-setup | PR base: task/host-navigation-integration
 
 Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
@@ -10,16 +10,28 @@ Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
 ## 1. Objective
 
-Quiet dashboard and Stays list consistency. Deliver the approved design through one maintained implementation, preserving existing business behavior.
+Canonical fee setup and compatibility adapters. Deliver the approved design through one maintained implementation, preserving existing business behavior.
 
 ## 2. Context
 
 Read AGENTS.md, the execution protocol and the reviewed prerequisite report/inventory. Designs are approved; do not repeat design approval. These verified source anchors document the starting contracts; the released exact patch must refresh any changed anchor against its actual predecessor.
 
-`App/app/templates/_host_navigation.html`:
+`App/app/routes/stay_fees.py`:
 
 ```
-{% if nav in ('reservations', 'submissions', 'housebook') %}
+def _fee_values(form) -> dict:
+```
+
+`App/app/templates/stay_fee_setup.html`:
+
+```
+  {% include "_stay_fee_fields.html" %}
+```
+
+`App/app/routes/stay_fees.py`:
+
+```
+@router.post("/stay-fees/{apartment_id}/setup")
 ```
 
 ## 3. Files
@@ -30,29 +42,31 @@ Explicit allowlist below. A partial introduced by an earlier task must already e
 
 |---|---|---|
 
-| `App/app/templates/dashboard.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/_stay_fee_fields.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/templates/reservations.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/stay_fee_setup.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/templates/_components.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/_property_settings_form.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/templates/_host_navigation.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/stay_fees.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/static/host.css` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/templates/stay_fee_detail.html` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/app/static/host-controls.css` | edit | Only the released phase-specific patch; retain unrelated behavior |
+| `App/app/routes/admin.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
+
+| `App/app/routes/stay_fees.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
 | `App/app/host_i18n.py` | edit | Only the released phase-specific patch; retain unrelated behavior |
 
-| `App/tests/test_host_list_layouts_browser.py` | create | Named shared rendering or meaningful regression coverage |
+| `App/tests/test_fee_setup_compatibility.py` | create | Named shared rendering or meaningful regression coverage |
 
-| `docs/tasks/0077-daily-work-lists.md` | edit | Lifecycle status only |
+| `docs/tasks/0077-canonical-fee-setup.md` | edit | Lifecycle status only |
 
 | `docs/tasks/0077-report.md` | create | Required report, 1500 tokens maximum |
 
 | `docs/tasks/0077-evidence/` | create | Synthetic screenshots and measured evidence only |
 
-Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0069, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_host_quiet_dashboard_browser.py`, `App/tests/test_host_stay_actions_browser.py`, `App/tests/test_host_filter_panels_browser.py`, `App/tests/test_host_feedback_browser.py`, `App/tests/test_host_wide_geometry_browser.py`, `App/tests/test_host_redesign.py`. No unrelated whole-repo audit.
+Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0071, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_stay_fee_property_panel.py`, `App/tests/test_stay_fee.py`, `App/tests/test_stay_fee_detail.py`, `App/tests/test_stay_fee_finalize.py`, `App/tests/test_stay_fee_downloads.py`, `App/tests/test_copy_property_settings.py`. No unrelated whole-repo audit.
 
 ## 4. Steps
 
@@ -60,15 +74,15 @@ Read-only source: the predecessor inventory/brief/report, relevant routes/guards
 
 2. Apply the released exact patch only, then verify the following phase requirements in order:
 
-3. Retain Quiet overview, four white state cards and existing semantic counts/30-day routine window/five-unique-row cap. Count before truncation, overdue/failed work first, no inferred invoice/fee tasks.
+3. Keep fee configuration in property Settings -> Reporting & fees -> Stay fee. All Set up/Fix links target that same editor with a validated return to the exact prior period/report/filter context.
 
-4. Keep Stays/Police reports/Guest register local navigation, All dates default and All properties · Active collapsed summary. Reuse current shared filters/date range and preserve timeline/saved/custom/archive semantics.
+4. Keep _stay_fee_fields.html as the authoritative field markup, including bank/account partials and copy-from-property behavior. Do not copy fields into a report or a second fee page.
 
-5. Use one aligned row/action grid with Open and adjacent More. Keep property/dates/guest progress/status readable; narrow widths become labelled cards before actions or translated labels clip.
+5. Compare and explicitly preserve current _fee_values/property normalization semantics before factoring helpers: omitted fields keep, explicit blank clears where already defined, invalid account saves nothing, IBAN-only existing account survives unrelated saves, rate clamping and cadence/symbol rules remain identical.
 
-6. Preserve Add stay/import/sync operations and actual guest-form-link availability. Do not change date/filter business logic or enable missing/expired links to make a screenshot match.
+6. Legacy GET setup becomes a guarded canonical link/redirect; legacy POST uses the same scoped fee save implementation and rerender context. It must not call the broad property saver with only fee fields. No unrelated credentials/timing/operator/lock update.
 
-7. Measure real component edges and action tracks at all required widths, expanded/collapsed rail, long Czech property names and counts. Keep shared CSS scoped so invoice/property forms do not regress.
+7. Retain rate 0 as optional/off, feature eligibility, archive/access checks, council metadata and original month after save/error. No report calculation, finalized snapshot, payment marker or exemption-policy edit.
 
 8. Run §6, capture the actual changed pages with synthetic fixtures, compare every changed path with §3, write §9 and set review. Do not merge, deploy, advance to a blocked task or modify the next task.
 
@@ -82,7 +96,7 @@ Use the exact staging/mock/REQUIRE_BROWSER environment and setup from the execut
 
 ```bash
 
-.venv/bin/python -m pytest tests/test_host_quiet_dashboard_browser.py tests/test_host_stay_actions_browser.py tests/test_host_filter_panels_browser.py tests/test_host_feedback_browser.py tests/test_host_wide_geometry_browser.py tests/test_host_redesign.py -q -rs
+.venv/bin/python -m pytest tests/test_stay_fee_property_panel.py tests/test_stay_fee.py tests/test_stay_fee_detail.py tests/test_stay_fee_finalize.py tests/test_stay_fee_downloads.py tests/test_copy_property_settings.py -q -rs
 
 ```
 
@@ -90,13 +104,13 @@ Include the named new regression tests once created. Then run the protocol full 
 
 ## 7. Acceptance
 
-- [ ] Existing dashboard count/window/cap and filter semantics unchanged; no duplicated stays or fake positive status.
+- [ ] Identical field ownership and explicit blank/absent/invalid/IBAN-only behavior through property and legacy adapter entry points.
 
-- [ ] Open/More/Copy controls fit actual row containers at mid/wide/mobile widths with shared heights.
+- [ ] Fee-only save preserves every non-fee property field; full property save without fee fields preserves stored fee configuration.
 
-- [ ] Keyboard, filters/apply/cancel/reset, long CS labels and collapsed rail work without horizontal page overflow.
+- [ ] Old setup URL and custom report month return work; invalid input retained with actionable error.
 
-- [ ] Current browser regressions resolved by scoped layout changes, not relaxed assertions.
+- [ ] Rate 0 stays optional; finalized report contents and fee math unchanged.
 
 - [ ] Focused/full/CI checks pass at actual current head, coverage threshold retained, required browser/geometry 0 skips.
 

@@ -56,6 +56,7 @@ ERROR_KINDS: Dict[int, str] = {
     -2018: "permission",
     20002: "permission",
     30006: "rate",
+    30007: "budget",
     80000: "clock",
     -2012: "offline",
     -4056: "storage",

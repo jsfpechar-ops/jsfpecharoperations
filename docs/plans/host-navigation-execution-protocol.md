@@ -1,6 +1,6 @@
 # Approved host navigation: execution protocol
 
-Approved by owner in chat: 2026-10-12. Code base inspected: `0e8e468f6f8a7d4e33109493c115f580e0006504`.
+Approved by owner in chat: 2026-10-12. Code base inspected: `c4c8f979319e53341833065b2a8790c30159581f`.
 Scope: the five approved boards and [whole plan](host-navigation-maintainability.md). Cursor implements; Codex orchestrates/reviews. Staging first. Production only after explicit approval of the implemented staging candidate.
 
 ## 1. Approval and hard limits
@@ -27,11 +27,11 @@ Therefore:
 Planning branch: `task/host-navigation-plan`. Integration branch: `task/host-navigation-integration`. Task branches use their brief names. The planning PR is reviewable and held off main; Cursor can check out its branch directly without merging it first.
 
 ```text
-main (0e8e468... inspected base)
+main (c4c8f97... inspected base)
   └─ task/host-navigation-plan         planning PR → main, do not merge yet
        └─ task/host-navigation-integration
-            ├─ task/0069-...          report PR → integration
-            ├─ task/0070-...          scoped extraction PR → integration
+            ├─ task/0071-...          report PR → integration
+            ├─ task/0072-...          scoped extraction PR → integration
             └─ subsequent tasks      one reviewed PR at a time → integration
 
 approved integration SHA → staging → explicit owner approval
@@ -54,7 +54,7 @@ The final integration PR to main remains draft/unmerged until production approva
 
 ## 4. Brief release lifecycle
 
-0069 is **todo**. 0070 includes an exact deterministic extraction command but depends on reviewed 0069. The later task files are complete implementation/acceptance contracts, explicitly **blocked** until their predecessors are reviewed and the orchestrator attaches an exact patch against that current revision. They are not runnable instructions to improvise.
+0071 is **todo**. 0072 includes an exact deterministic extraction command but depends on reviewed 0071. The later task files are complete implementation/acceptance contracts, explicitly **blocked** until their predecessors are reviewed and the orchestrator attaches an exact patch against that current revision. They are not runnable instructions to improvise.
 
 This is a source-verification gate, not repeated design permission. Every future code patch must reflect the predecessor's actual implementation; a prewritten guessed diff would defeat the repo's anchor rule. The owner has authorized progression within scope. After each report, the orchestrator:
 
@@ -131,7 +131,7 @@ Every task names focused tests, executed before the full check. Browser/geometry
 
 Record failed counts, skips and causes accurately. Historical 0066 failures are not current results. Fix diagnosed failures through a scoped correction brief; don't weaken assertions, skip failing tests, normalize clipped layouts or blindly repeat the entire suite. CI must be green on the actual current PR head, including smoke/guest-browser/shellcheck/Docker/secrets/context jobs.
 
-## 8. Staging gate — task 0083
+## 8. Staging gate — task 0085
 
 Owner operates **Render → ubyhost-staging**, which has manual deploy and mock UbyPort. Actual previously documented URL is `https://ubyhost-staging-01gh.onrender.com`; verify the service's current URL before recording it. GitHub Deploy staging targets a separate Lightsail service and is not a substitute for a Render deployment claim.
 
@@ -139,7 +139,7 @@ Owner operates **Render → ubyhost-staging**, which has manual deploy and mock 
 2. Verify staging tier, mock UbyPort and console mail in the service configuration without printing secrets. Never use production guests. Do not flip live lock/provider flags or treat mock reporting as a police filing.
 3. Select the integration branch on Render and **Manual Deploy → Deploy latest commit**. Check deployed commit is C and status Live; if Render cannot pin the checked SHA, do not deploy a moving tip.
 4. Verify health and actual signed-in pages. Production health does not necessarily expose a commit or tier: verify SHA via provider release metadata as well as health, not a guessed health field.
-5. Execute the detailed 0083 walkthrough in EN/CS and desktop/mobile. Capture before/after values for unchanged settings using fixtures, not sensitive screenshots. Verify old links and return navigation. Record every failure.
+5. Execute the detailed 0085 walkthrough in EN/CS and desktop/mobile. Capture before/after values for unchanged settings using fixtures, not sensitive screenshots. Verify old links and return navigation. Record every failure.
 6. If a code/runtime/configuration fix changes C, rerun affected checks, redeploy and obtain approval for the new candidate. Previous approval does not carry to unreviewed new code. Evidence-only commits use the narrow rule below.
 
 Required staging report: service/URL, branch, deployed full SHA C, compared main base P, deploy ID/time in Prague, health result, CI run URL for C, test matrix, screenshot links, discovered defects/resolution, rollout/rollback readiness. Status cannot be passed from local screenshots alone.
@@ -148,13 +148,13 @@ Required staging report: service/URL, branch, deployed full SHA C, compared main
 
 Staging has a concrete deployed SHA C. Writing acceptance/status reports necessarily creates later commits. Do not create an endless redeploy/report loop or silently call a later SHA the staged SHA.
 
-Record the tested code SHA C and proposed promotion head F separately. F may differ from C only in these evidence paths: `docs/tasks/0082-report.md`, `0083-report.md`, `0084-report.md`, their respective `0082-evidence/`, `0083-evidence/`, `0084-evidence/` directories, status-only edits to those three briefs, `docs/plans/host-navigation-integration-acceptance.md`, `host-navigation-staging-acceptance.md`, `host-navigation-production-approval.md`, `host-navigation-production-release.md`, and `docs/context/status.md`. The unprefixed task/plan names here are relative to their stated docs directories.
+Record the tested code SHA C and proposed promotion head F separately. F may differ from C only in these evidence paths: `docs/tasks/0084-report.md`, `0085-report.md`, `0086-report.md`, their respective `0084-evidence/`, `0085-evidence/`, `0086-evidence/` directories, status-only edits to those three briefs, `docs/plans/host-navigation-integration-acceptance.md`, `host-navigation-staging-acceptance.md`, `host-navigation-production-approval.md`, `host-navigation-production-release.md`, and `docs/context/status.md`. The unprefixed task/plan names here are relative to their stated docs directories.
 
 The orchestrator must prove the complete C-to-F path diff is confined to that allowlist and that App, tests, workflows, scripts, deployment/configuration/dependency files and every other non-evidence path are identical. Record C/F and that proof in the approval record. The owner approval must explicitly cover F or the tested C content plus these evidence-only commits. Do not infer this allowance from design approval. If any other path changes, F is a new candidate requiring re-tests, staging and approval. Current-head CI must still be green for F.
 
-## 9. Production approval and promotion — task 0084
+## 9. Production approval and promotion — task 0086
 
-0084 is owner-operated and blocked until 0083 has evidence and the owner explicitly approves production for candidate C. Put that approval in `docs/plans/host-navigation-production-approval.md`: full C and promotion head F, C-to-F evidence-only proof if applicable, staging deploy ID/URL, main base P, date/time, exact approving owner instruction, test-report links, known limitations and allowed promotion. Never prefill approval, infer it from design approval, or mark it approved because CI is green.
+0086 is owner-operated and blocked until 0085 has evidence and the owner explicitly approves production for candidate C. Put that approval in `docs/plans/host-navigation-production-approval.md`: full C and promotion head F, C-to-F evidence-only proof if applicable, staging deploy ID/URL, main base P, date/time, exact approving owner instruction, test-report links, known limitations and allowed promotion. Never prefill approval, infer it from design approval, or mark it approved because CI is green.
 
 Before promotion, verify main is still P (or that a re-integrated candidate has been re-tested and re-approved). The final PR head must be approved F, with all non-evidence paths identical to staged C under the explicit rule above. If unrelated main changes would alter the delivered tree, integrate them and repeat staging acceptance. The owner reviews the final PR diff and base before invoking `scripts/merge-pr-on-green.sh`.
 
@@ -166,6 +166,6 @@ Rollback: owner redeploys the previously recorded known-good code revision using
 
 ## 10. Ordered task files
 
-0069 readiness → 0070 property extraction → 0071 property navigation → 0072 calendars → 0073 shared entity fields → 0074 entity navigation → 0075 fee setup compatibility → 0076 Properties → 0077 Dashboard/Stays list → 0078 stay detail → 0079 invoices → 0080 fee reports → 0081 account → 0082 integration acceptance → 0083 staging → 0084 owner promotion.
+0071 readiness → 0072 property extraction → 0073 property navigation → 0074 calendars → 0075 shared entity fields → 0076 entity navigation → 0077 fee setup compatibility → 0078 Properties → 0079 Dashboard/Stays list → 0080 stay detail → 0081 invoices → 0082 fee reports → 0083 account → 0084 integration acceptance → 0085 staging → 0086 owner promotion.
 
 See the plan's linked task list and [Cursor master prompt](host-navigation-cursor-prompt.md). Resume from the first released todo task whose prerequisites are done; never infer that blocked tasks are optional.

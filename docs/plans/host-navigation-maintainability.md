@@ -1,7 +1,7 @@
 # Host navigation and one editor per setting
 
 Status: approved for phased Cursor implementation and staging review — production awaits explicit staging-candidate approval.
-Owner: Josef | Prepared: 2026-10-12 | Base: `0e8e468f6f8a7d4e33109493c115f580e0006504` (current main source base; planning branch `task/host-navigation-plan`)
+Owner: Josef | Prepared: 2026-10-12 | Base: `c4c8f979319e53341833065b2a8790c30159581f` (current main source base; planning branch `task/host-navigation-plan`)
 
 ## 1. Outcome and approval scope
 
@@ -139,11 +139,11 @@ Account menu → Settings groups **Account · Security · Data & archive · Priv
 
 ## 8. Ordered delivery phases
 
-Each row has a numbered contract in docs/tasks. 0069 is runnable; 0070 includes the exact extraction command and awaits reviewed readiness. Later implementation contracts stay blocked until the orchestrator releases exact code/diffs against their reviewed integration predecessor. This follows the repo anchor rule instead of asking Cursor to guess patches against future files. File allowlists are explicit and no unnamed change is authorized.
+Each row has a numbered contract in docs/tasks. 0071 is runnable; 0072 includes the exact extraction command and awaits reviewed readiness. Later implementation contracts stay blocked until the orchestrator releases exact code/diffs against their reviewed integration predecessor. This follows the repo anchor rule instead of asking Cursor to guess patches against future files. File allowlists are explicit and no unnamed change is authorized.
 
 | Phase | Deliverable and likely files | Dependency and acceptance |
 |---|---|---|
-| 0 | Task **0069**: documentation-only ownership inventory and fresh verification report; no application edits | Designs approved; actual route/form table, duplicate-field list and test baseline; unresolved failures named |
+| 0 | Task **0071**: documentation-only ownership inventory and fresh verification report; no application edits | Designs approved; actual route/form table, duplicate-field list and test baseline; unresolved failures named |
 | 1a | Shared property section partials extracted from `apartment_form.html`; relevant property regression tests | 0; rendered names/IDs/payloads equivalent, no removed capability |
 | 1b | Property tabs, grouped editor, legacy anchors, dirty-form handling; `apartment_form.html`, shared nav/components, `host.css`, `app.js`, EN/CS copy, scoped tests | 1a; one editor, cards land correctly, hidden-section validation/dirty navigation safe |
 | 1c | Calendar tab/connection form/details; property calendar partials and existing feed routes only if justified | 1b; add/remove/errors use existing operations, URLs discreet, drafts protected |
@@ -158,7 +158,7 @@ Each row has a numbered contract in docs/tasks. 0069 is runnable; 0070 includes 
 | 6 | Account settings organization and Help/Search/role-aware link review; `settings.html`, host nav, `api.py`, scoped tests | 2b/5b; specialized actions remain distinct, ordinary user never sees admin controls |
 | 7 | Whole-navigation acceptance report and owner staging review | All prior phases; route/locale/width matrix green, review screenshots, no unresolved release regressions |
 
-Do not let two open implementation briefs independently own the same template/copy. Create sequential dependency chains and rebase anchors after each completed phase. Numbered briefs 0069–0084 are now written. Tasks 0067/0068 on current main belong to unrelated TTLock work and must not be overwritten. All task PRs target task/host-navigation-integration; main is held until staging acceptance and promotion approval.
+Do not let two open implementation briefs independently own the same template/copy. Create sequential dependency chains and rebase anchors after each completed phase. Numbered briefs 0071–0086 are now written. Tasks 0067–0070 on current main belong to unrelated TTLock work and must not be overwritten. All task PRs target task/host-navigation-integration; main is held until staging acceptance and promotion approval.
 
 ## 9. Verification and release evidence
 
@@ -185,11 +185,11 @@ Behavior matrix:
 ## 10. Approved execution and staging-first rollout
 
 1. All five design boards were approved in chat on 2026-10-12; do not request the same approval again.
-2. Review the planning PR without merging it to main. Current main CI can automatically deploy production. Initialize/fetch task/host-navigation-integration from the planning branch, then start 0069 with the master Cursor prompt.
+2. Review the planning PR without merging it to main. Current main CI can automatically deploy production. Initialize/fetch task/host-navigation-integration from the planning branch, then start 0071 with the master Cursor prompt.
 3. Execute/review one released brief at a time. Each task PR targets integration; source patches for later blocked contracts are released by the orchestrator against the reviewed predecessor, not improvised by Cursor.
 4. Review exact files/CI/reports/screenshots before owner guarded integration merge. No main merge or production workflow action during implementation or preview.
-5. 0082 establishes the complete green integration candidate C. 0083 deploys C to Render ubyhost-staging with mock data/configuration and records actual SHA/health/walkthrough evidence. Fix/new candidate requires renewed checks/staging acceptance.
-6. Owner explicitly approves the implemented C for production, with the staging acceptance record. Only then release 0084 and perform final reviewed main promotion; current green main CI may deploy production automatically. Verify actual source revision and read-only smoke; owner rollback uses known-good code without replacing data.
+5. 0084 establishes the complete green integration candidate C. 0085 deploys C to Render ubyhost-staging with mock data/configuration and records actual SHA/health/walkthrough evidence. Fix/new candidate requires renewed checks/staging acceptance.
+6. Owner explicitly approves the implemented C for production, with the staging acceptance record. Only then release 0086 and perform final reviewed main promotion; current green main CI may deploy production automatically. Verify actual source revision and read-only smoke; owner rollback uses known-good code without replacing data.
 
 Full branch, approval, test, evidence and release rules live in the execution protocol. Design approval does not substitute for staging acceptance or production-candidate approval.
 
@@ -197,21 +197,21 @@ Full branch, approval, test, evidence and release rules live in the execution pr
 
 | Brief | Deliverable | Initial state |
 |---|---|---|
-| [0069](../tasks/0069-host-navigation-readiness.md) | Source/editor inventory and real baseline | todo |
-| [0070](../tasks/0070-property-editor-extraction.md) | Exact canonical property/form extraction | blocked until 0069 review; exact command included |
-| [0071](../tasks/0071-property-navigation.md) | Property tabs, grouped editor, drafts and validation | blocked until predecessor review/patch release |
-| [0072](../tasks/0072-property-calendars.md) | Calendar tab, connection form and details | blocked |
-| [0073](../tasks/0073-shared-entity-fields.md) | Shared business/invoice field ownership | blocked |
-| [0074](../tasks/0074-canonical-entity-navigation.md) | Canonical entity editor and legacy adapters | blocked |
-| [0075](../tasks/0075-canonical-fee-setup.md) | Canonical fee setup and scoped compatibility | blocked |
-| [0076](../tasks/0076-properties-overview.md) | Properties list and read-only summaries | blocked |
-| [0077](../tasks/0077-daily-work-lists.md) | Quiet dashboard and Stays list | blocked |
-| [0078](../tasks/0078-stay-detail-organization.md) | Inline guest facts and stay actions | blocked |
-| [0079](../tasks/0079-invoice-navigation.md) | Stay-linked invoice flow and canonical settings | blocked |
-| [0080](../tasks/0080-fee-report-navigation.md) | Period/fee report navigation | blocked |
-| [0081](../tasks/0081-account-settings-navigation.md) | Account/advanced navigation | blocked |
-| [0082](../tasks/0082-host-navigation-integration-acceptance.md) | Full integrated acceptance/CI | blocked until all implementation reviewed |
-| [0083](../tasks/0083-host-navigation-staging-review.md) | Actual Render staging deployment/walkthrough | blocked until 0082; owner deployment |
-| [0084](../tasks/0084-host-navigation-production-promotion.md) | Exact production approval/promotion/smoke | blocked until staging pass and explicit owner approval |
+| [0071](../tasks/0071-host-navigation-readiness.md) | Source/editor inventory and real baseline | todo |
+| [0072](../tasks/0072-property-editor-extraction.md) | Exact canonical property/form extraction | blocked until 0071 review; exact command included |
+| [0073](../tasks/0073-property-navigation.md) | Property tabs, grouped editor, drafts and validation | blocked until predecessor review/patch release |
+| [0074](../tasks/0074-property-calendars.md) | Calendar tab, connection form and details | blocked |
+| [0075](../tasks/0075-shared-entity-fields.md) | Shared business/invoice field ownership | blocked |
+| [0076](../tasks/0076-canonical-entity-navigation.md) | Canonical entity editor and legacy adapters | blocked |
+| [0077](../tasks/0077-canonical-fee-setup.md) | Canonical fee setup and scoped compatibility | blocked |
+| [0078](../tasks/0078-properties-overview.md) | Properties list and read-only summaries | blocked |
+| [0079](../tasks/0079-daily-work-lists.md) | Quiet dashboard and Stays list | blocked |
+| [0080](../tasks/0080-stay-detail-organization.md) | Inline guest facts and stay actions | blocked |
+| [0081](../tasks/0081-invoice-navigation.md) | Stay-linked invoice flow and canonical settings | blocked |
+| [0082](../tasks/0082-fee-report-navigation.md) | Period/fee report navigation | blocked |
+| [0083](../tasks/0083-account-settings-navigation.md) | Account/advanced navigation | blocked |
+| [0084](../tasks/0084-host-navigation-integration-acceptance.md) | Full integrated acceptance/CI | blocked until all implementation reviewed |
+| [0085](../tasks/0085-host-navigation-staging-review.md) | Actual Render staging deployment/walkthrough | blocked until 0084; owner deployment |
+| [0086](../tasks/0086-host-navigation-production-promotion.md) | Exact production approval/promotion/smoke | blocked until staging pass and explicit owner approval |
 
 Use [the Cursor master prompt](host-navigation-cursor-prompt.md), [execution protocol](host-navigation-execution-protocol.md) and [approval record](host-navigation-design-approval.md). Each brief follows the repo template with scope, sources, ordered requirements, checks, stop/report rules and owner steps. A blocked contract without a released patch is never executable.

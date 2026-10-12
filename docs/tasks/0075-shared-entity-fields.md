@@ -1,8 +1,8 @@
-# 0073: Shared business and invoice field ownership
+# 0075: Shared business and invoice field ownership
 
-Status: blocked — depends on reviewed 0072; exact patch must be released against that integration revision.
+Status: blocked — depends on reviewed 0074; exact patch must be released against that integration revision.
 
-Depends on: 0072 done | Source baseline: 0e8e468f6f8a7d4e33109493c115f580e0006504 | Branch: task/0073-shared-entity-fields | PR base: task/host-navigation-integration
+Depends on: 0074 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0075-shared-entity-fields | PR base: task/host-navigation-integration
 
 Patch status: pending — acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
 
@@ -52,13 +52,13 @@ Explicit allowlist below. A partial introduced by an earlier task must already e
 
 | `App/tests/test_entity_editor_fields.py` | create | Named shared rendering or meaningful regression coverage |
 
-| `docs/tasks/0073-shared-entity-fields.md` | edit | Lifecycle status only |
+| `docs/tasks/0075-shared-entity-fields.md` | edit | Lifecycle status only |
 
-| `docs/tasks/0073-report.md` | create | Required report, 1500 tokens maximum |
+| `docs/tasks/0075-report.md` | create | Required report, 1500 tokens maximum |
 
-| `docs/tasks/0073-evidence/` | create | Synthetic screenshots and measured evidence only |
+| `docs/tasks/0075-evidence/` | create | Synthetic screenshots and measured evidence only |
 
-Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0069, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_invoice_settings.py`, `App/tests/test_invoice_entity.py`, `App/tests/test_invoice_immutability.py`, `App/tests/test_invoice_numbering.py`, `App/tests/test_invoice_vat.py`, `App/tests/test_ares.py`, `App/tests/test_host_property_controls_browser.py`. No unrelated whole-repo audit.
+Read-only source: the predecessor inventory/brief/report, relevant routes/guards identified by 0071, shared field/date/filter/account primitives already named in the plan, and the following tests/fixtures: `App/tests/test_invoice_settings.py`, `App/tests/test_invoice_entity.py`, `App/tests/test_invoice_immutability.py`, `App/tests/test_invoice_numbering.py`, `App/tests/test_invoice_vat.py`, `App/tests/test_ares.py`, `App/tests/test_host_property_controls_browser.py`. No unrelated whole-repo audit.
 
 ## 4. Steps
 
@@ -66,7 +66,7 @@ Read-only source: the predecessor inventory/brief/report, relevant routes/guards
 
 2. Apply the released exact patch only, then verify the following phase requirements in order:
 
-3. Use the 0069 field-by-field matrix, not a generic entity field list. Separate business identity/contact/signature fields from invoice defaults; shared registration/VAT/account representations get one authoritative field markup/normalization definition with explicit context.
+3. Use the 0071 field-by-field matrix, not a generic entity field list. Separate business identity/contact/signature fields from invoice defaults; shared registration/VAT/account representations get one authoritative field markup/normalization definition with explicit context.
 
 4. Extract current business create/edit and invoice fields into named Jinja partials while preserving input names, prefixes, types, requiredness, file upload encoding and action targets. Do not assume creating an entity and saving invoice defaults require identical payloads.
 
@@ -74,7 +74,7 @@ Read-only source: the predecessor inventory/brief/report, relevant routes/guards
 
 6. Consolidate overlapping normalization only after equivalence tests cover absent versus blank, bank prefix/number/bank, IBAN-only preservation, explicit BIC versus derived BIC, VAT modes, invoice prefix/year/number/due days and signature lifecycle. If handlers differ intentionally, share helpers with explicit policy rather than erase the difference.
 
-7. Do not redirect entry URLs yet; prove shared field rendering/update behavior before the canonical entity navigation in 0074. Never mutate issued invoice snapshots or numbering history.
+7. Do not redirect entry URLs yet; prove shared field rendering/update behavior before the canonical entity navigation in 0076. Never mutate issued invoice snapshots or numbering history.
 
 8. Run §6, capture the actual changed pages with synthetic fixtures, compare every changed path with §3, write §9 and set review. Do not merge, deploy, advance to a blocked task or modify the next task.
 
@@ -116,7 +116,7 @@ Stop/report if the patch is pending, predecessor/anchor/base differs, source pat
 
 ## 9. Report
 
-Create `docs/tasks/0073-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
+Create `docs/tasks/0075-report.md` (<=1500 tokens): starting/ending SHA, file/diff stat, exact commands/results including failures/skips, §7 evidence, synthetic screenshot/geometry links, deviations/risks and owner steps. Set this brief review or blocked with the reason; link full logs instead of dumping them. PR targets integration only.
 
 ## Risk list (for the reviewer)
 
