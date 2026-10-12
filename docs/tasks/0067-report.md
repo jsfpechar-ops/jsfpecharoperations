@@ -54,7 +54,7 @@ context lint: OK
 
 ## 4. Deviations
 
-§8 triggered after the full suite failed on the same six browser tests on a second run. Copy edits match §4; no other files touched. Failures do not reference `period_taken` or `host_i18n` mail keys (grep in `App/tests/`). Likely cloud-agent browser/environment flake; CI on the PR should be the gate.
+§8 triggered after the full suite failed on the same six browser tests on a second run (cloud-agent browser flake; rely on CI). PR CI also failed once on `test_query_budget.py::test_batched_pages_render_exactly_as_the_per_stay_path` (`stay_1`, `stay_2`); fixed by freezing `reporting.hand_filing_view` clock in that test so stay-page `datetime-local` fields match between batched and fallback renders.
 
 ## 5. Questions
 

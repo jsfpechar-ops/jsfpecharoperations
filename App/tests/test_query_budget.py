@@ -6,7 +6,7 @@ SQLite's own statement trace, so they include every helper and template call.
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -134,6 +134,15 @@ def _render_all(client):
 
 def test_batched_pages_render_exactly_as_the_per_stay_path(seeded, monkeypatch):
     """Every changed page, rendered with the batching and with the old per-stay reads."""
+    # Stay pages print hand-filing ``datetime-local`` values from wall clock; freeze
+    # so the batched pass and the fallback pass compare the same markup.
+    frozen = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+    real_hand_filing = reporting.hand_filing_view
+    monkeypatch.setattr(
+        reporting,
+        "hand_filing_view",
+        lambda progress, now=None: real_hand_filing(progress, now=frozen),
+    )
     _render_all(seeded)  # settle one-off writes from first views
     batched = _render_all(seeded)
 
