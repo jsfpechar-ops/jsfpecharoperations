@@ -289,7 +289,8 @@ def test_the_host_mail_says_why_in_words_and_keeps_the_raw_reason_for_support(mo
     )
     body = json.loads(row["payload"])["text"]
     assert "TTLock's cloud server is not responding or returned an error. This is a problem on TTLock's side, not with your lock or your settings [transient:-1026]" in body
-    assert "keeps trying" not in body
+    assert "keeps trying" in body
+    assert "will not try again" not in body
 
 
 def test_a_property_with_no_lock_set_says_so_instead_of_claiming_to_retry():
