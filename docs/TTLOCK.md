@@ -72,8 +72,8 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 | `-4056` | Lock storage full | Host mail |
 | `90000`, `1` | TTLock internal error, generic failure | Retry with backoff |
 | `-3` | Invalid parameter | Log, no retry (a UbyHost bug) |
-| `-1026` | Not in the published error list. On 2026-10-08 a type-3 `get` returned this for one period while `get` for other periods on the same lock returned 0. List by the new code's name found nothing. FAQ 4.4 is the matching rule: one type-3 code per range, and a deleted or expired one still blocks that range | Do not retry `get`. Worker calls `add`. Host mail: the older code for these hours may still work. See the plan §6. Official meaning still asked of TTLock |
-| `-3008` | A passcode that has never been used on the lock cannot be changed | UbyHost does not call `change` on a type-3 code |
+| `-1026` | Official (TTLock support, 2026-10-12): "Passcode with this validity period has been generated before and deleted." A type-3 code for exactly this lock and period was made and then deleted; that period can never get a type-3 code again. Seen on staging 2026-10-08 | Do not retry `get`. Worker calls `add`. Host mail is informational (0067). See the plan §6 |
+| `-3008` | A passcode that has never been used on the lock cannot be changed (confirmed by TTLock support 2026-10-12: a random code does not exist on the lock until first use) | UbyHost does not call `change` on a type-3 code |
 
 Source for every code: [X], table "System Error Codes", plus [FAQ] where marked. The reactions are UbyHost design, not TTLock text.
 
@@ -139,4 +139,5 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 2. Whether an authorization-code (redirect) login exists. [X] lists the errors `10002`, `10008` and `10009`, which hints at one, but documents no endpoint. Not needed with the UbyHost-made user (plan §8.2).
 3. Whether `change` can move the period of a random (`get`) code that has already been typed on the lock. An unused one cannot: `-3008` [owner log 2026-10-08]. UbyHost does not call `change` for type 3.
 4. Whether the lock applies daylight saving time on its own, or only the raw offset.
-5. Who runs `euapi.ttlock.com`, where its data is stored, and the privacy policy URL.
+5. Answered (TTLock support, 2026-10-12): EU users' data is stored in Germany; TTLock does not think it meets GDPR standards. Legal handling: [DOOR_CODES_LEGAL](privacy/DOOR_CODES_LEGAL.md) §4.
+6. What a second type-3 `get` for the same lock and period returns when the first code was **not** deleted (for example a cancelled stay whose delete failed): the same PIN, a different PIN, or an error. `-1026` covers only the deleted case. Asked of TTLock 2026-10-12.
