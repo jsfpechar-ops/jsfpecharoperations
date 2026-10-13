@@ -315,9 +315,12 @@ def main(url=None):
         FAILURES.append(
             f"/guest-links?lang=en: HTTP {legacy_guest_links.status_code}, expected redirect"
         )
-    elif f"/apartments/{apartment_id}#communication" not in (
-        legacy_guest_links.headers.get("location") or ""
+    elif not (
+        (legacy_guest_links.headers.get("location") or "").startswith(f"/apartments/{apartment_id}")
+        and (legacy_guest_links.headers.get("location") or "").endswith("#communication")
     ):
+        # 0094: the property page has tabs, so the redirect carries
+        # ?view=settings&section=guests before the legacy #communication anchor.
         FAILURES.append(
             "/guest-links?lang=en: location missing property #communication anchor"
         )
@@ -327,7 +330,8 @@ def main(url=None):
         must_contain=[
             host_i18n.STRINGS["en"]["guest_links.pin"],
             host_i18n.STRINGS["en"]["guest_links.new_pin"],
-            f'name="return_to" value="/apartments/{apartment_id}"',
+            # 0094: saves return to the same property tab (?view=settings&section=...).
+            f'name="return_to" value="/apartments/{apartment_id}?view=settings',
             f'action="/apartments/{apartment_id}/regenerate-pin"',
         ],
     )
