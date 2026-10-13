@@ -5,7 +5,7 @@ Status: review
 ## SHAs
 
 - Base (integration): `98c600be8e3e3cde2779e6b955f25f1c4992c1b0`
-- Result: `f18d776cbbb13aa13c7ba466731fa83e2a6bc6d7`
+- Result: see latest commit on `task/0087-host-copy-address-corrections` (0095 review fixes layered on 0087).
 
 ## Summary
 
@@ -13,7 +13,7 @@ Structured `addr_*` fields only (no `address_line` parser). UbyPort header field
 
 ## Files
 
-Per brief §3 plus `test_copy_cleanup.py`, `test_ubyport_sample_pdf.py`, `test_endtoend.py` (template assertions). `test_police_defaults.py`: replaced police-derived open/close checks with visible-field checks and **`test_property_page_shows_mark_error_when_abbreviation_missing`** (zkratka error stays on the property page).
+Per brief §3 plus `test_copy_cleanup.py`, `test_ubyport_sample_pdf.py`, `test_endtoend.py` (template assertions). `test_police_defaults.py`: replaced police-derived open/close checks with visible-field checks and **`test_property_page_shows_mark_error_when_abbreviation_missing`** (exact string: "The facility abbreviation (zkratka) is required."). 0095 also adjusted copy-correction tests and refreshed browser evidence.
 
 ## Tests
 
@@ -35,7 +35,15 @@ Screenshots land in `docs/tasks/0087-evidence/` only when `UBYHOST_CAPTURE_0087=
 
 ## Pre-existing full-suite browser failures (evidence)
 
-Captured on integration HEAD **before** 0087 application commits: `docs/tasks/0087-evidence/integration-head-browser-failures.txt` (SHA `98c600be…`, **6 failed**, 48.29s). Same six tests still fail on the 0087 branch; CI main job skips them because `UBYHOST_REQUIRE_BROWSER` is unset.
+Captured on integration HEAD **before** 0087 application commits: `docs/tasks/0087-evidence/integration-head-browser-failures.txt` (SHA `98c600be…`, **6 failed**, 48.29s). Re-run on base `98c600be8e3e3cde2779e6b955f25f1c4992c1b0` (2026-10-13): **6 failed**, 19.00s — last lines:
+
+```
+FAILED tests/test_host_wide_geometry_browser.py::test_stay_row_actions_fit_midwidth_lanes
+FAILED tests/test_host_wide_geometry_browser.py::test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned
+6 failed, 1 warning in 19.00s
+```
+
+Same six tests still fail on the 0087+0095 branch; CI main job skips them because `UBYHOST_REQUIRE_BROWSER` is unset.
 
 ## §7 acceptance
 

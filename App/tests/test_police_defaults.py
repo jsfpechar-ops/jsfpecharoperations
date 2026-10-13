@@ -179,5 +179,5 @@ def test_property_page_shows_mark_error_when_abbreviation_missing(host):
     )
     page = host.get(f"/apartments/{apartment_id}?lang=en")
     assert page.status_code == 200, page.text
-    assert "facility abbreviation" in page.text.lower()
+    assert "The facility abbreviation (zkratka) is required." in page.text
     assert 'id="uby_mark"' in page.text

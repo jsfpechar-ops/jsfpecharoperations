@@ -8,7 +8,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
-from .. import access, auth, db, guest_slug, icalsync, onboarding, validation
+from .. import access, auth, db, guest_slug, icalsync, onboarding
 from ..feed_url import FeedUrlError, validate_calendar_url
 from ..templating import render
 from .admin import (

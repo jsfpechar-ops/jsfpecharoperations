@@ -19,6 +19,7 @@
 {% set copy_property_peers = copy_property_peers or [] %}
 <style>
   .property-address-grid .field > label { min-height: 2.9em; }
+  #uby_ws_password::placeholder { color: inherit; opacity: 1; letter-spacing: .12em; }
   @media (max-width: 700px) {
     .property-address-grid .field > label { min-height: 0; }
   }
@@ -278,8 +279,8 @@
       <div class="field">
         <label for="uby_ws_password">{{ t('automation.password') }}</label>
         <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
-               placeholder="{{ t('automation.password_keep') if editing and has_password else t('automation.password_paste') }}">
-        <div class="hint">
+               {% if editing and has_password %}placeholder="••••••••" {% endif %}aria-describedby="uby_ws_password-hint">
+        <div class="hint" id="uby_ws_password-hint">
           {% if editing and has_password %}
           {{ t('apartment.form.ubyport.password_edit_hint') }}
           {% else %}
@@ -374,7 +375,7 @@
     <div class="field">
       <label for="guest_message">{{ t('apartment.form.guest_message.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
       <textarea id="guest_message" name="guest_message" maxlength="1000"
-                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ (apartment.guest_message or t('apartment.form.guest_message.default')) if editing else t('apartment.form.guest_message.default') }}</textarea>
+                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ (apartment.guest_message or '') if editing else t('apartment.form.guest_message.default') }}</textarea>
       <div class="hint">{{ t('apartment.form.guest_message.hint') }}</div>
     </div>
     {% if editing %}

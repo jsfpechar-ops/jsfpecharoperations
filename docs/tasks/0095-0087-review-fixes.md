@@ -1,6 +1,6 @@
 # 0095: 0087 review fixes: password copy, honest guest message, evidence test
 
-Status: todo
+Status: review
 Depends on: 0087 (PR #381, head e96eefb7f97bc33df1f5160363acd539fea2458e) | Base commit: e96eefb7f97bc33df1f5160363acd539fea2458e | Branch: task/0087-host-copy-address-corrections (push to the same branch; this updates PR #381)
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session | Run before 0088
 

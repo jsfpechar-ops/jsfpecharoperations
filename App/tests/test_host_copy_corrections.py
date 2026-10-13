@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import secrets
 import socket
 import threading
@@ -26,7 +27,7 @@ from tests.conftest import login_as
 
 USERNAME = "copy-corrections-host"
 REPO_ROOT = Path(__file__).resolve().parents[2]
-MEASURE_WIDTHS = (760, 1024, 1440, 1680, 1920, 2048)
+MEASURE_WIDTHS = (360, 390, 760, 1024, 1280, 1440, 1680, 2048)
 SHOT_WIDTHS = (360, 390, 1280)
 
 _OVERFLOW_JS = """(selector) => {
@@ -278,6 +279,79 @@ def test_guide_housebook_anchor_contains_legal_copy(host):
         assert host_i18n.STRINGS[lang]["housebook.legal_inspection"] in page
 
 
+def test_password_field_has_one_sentence(host):
+    client = host["client"]
+    stored = "keep-me-secret"
+    created = client.post(
+        "/apartments",
+        data=_apartment_payload(host["entity"], uby_ws_password=stored),
+        follow_redirects=False,
+    )
+    assert created.status_code == 303
+    apartment_id = db.query_one("SELECT id FROM apartment WHERE internal_name = ?", ("Copy Flat",))["id"]
+    before_enc = db.query_one("SELECT uby_ws_password_enc FROM apartment WHERE id = ?", (apartment_id,))[
+        "uby_ws_password_enc"
+    ]
+    edit = client.get(f"/apartments/{apartment_id}?lang=en").text
+    hint = host_i18n.STRINGS["en"]["apartment.form.ubyport.password_edit_hint"]
+    assert edit.count(hint) == 1
+    password_input = re.search(
+        r'<input[^>]*id="uby_ws_password"[^>]*>',
+        edit,
+    )
+    assert password_input
+    tag = password_input.group(0)
+    assert 'placeholder="••••••••"' in tag
+    assert 'value="' not in tag
+    assert 'aria-describedby="uby_ws_password-hint"' in tag
+    assert stored not in edit
+    updated = client.post(
+        f"/apartments/{apartment_id}",
+        data=_apartment_payload(host["entity"], uby_ws_password="", internal_name="Copy Flat"),
+        follow_redirects=False,
+    )
+    assert updated.status_code == 303
+    after_enc = db.query_one("SELECT uby_ws_password_enc FROM apartment WHERE id = ?", (apartment_id,))[
+        "uby_ws_password_enc"
+    ]
+    assert after_enc == before_enc
+
+    new_page = client.get("/apartments/new?lang=en").text
+    new_input = re.search(r'<input[^>]*id="uby_ws_password"[^>]*>', new_page)
+    assert new_input
+    assert "placeholder=" not in new_input.group(0)
+    new_hint = host_i18n.STRINGS["en"]["apartment.form.ubyport.password_new_hint"]
+    assert new_page.count(new_hint) == 1
+
+
+def test_edit_shows_stored_guest_message_exactly(host):
+    client = host["client"]
+    apartment_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Blank message flat",
+            "owner_user_id": host["owner"],
+            "legal_entity_id": host["entity"],
+            "addr_obec": "Praha",
+            "guest_message": "",
+            "permalink_token": f"bm{secrets.token_hex(4)}",
+            "permalink_pin": "123456",
+            "active": 1,
+            "created_at": db.utcnow(),
+        },
+    )
+    default_en = host_i18n.STRINGS["en"]["apartment.form.guest_message.default"]
+    edit = client.get(f"/apartments/{apartment_id}?lang=en").text
+    match = re.search(
+        r'<textarea id="guest_message"[^>]*>(.*?)</textarea>',
+        edit,
+        re.DOTALL,
+    )
+    assert match is not None
+    assert match.group(1) == ""
+    assert default_en not in match.group(0)
+
+
 def test_stay_fee_detail_has_no_external_databox_button(host):
     client = host["client"]
     apartment_id = db.insert(
@@ -304,6 +378,17 @@ def _free_port():
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         return sock.getsockname()[1]
+
+
+def _open_property_reporting_sections(page) -> None:
+    page.evaluate(
+        """() => {
+          const u = document.querySelector('#ubyport');
+          const a = document.querySelector('#address');
+          if (u) u.open = true;
+          if (a) a.open = true;
+        }"""
+    )
 
 
 def _set_sidebar(page, collapsed: bool) -> None:
@@ -408,7 +493,8 @@ def test_copy_correction_pages_browser_evidence(browser_base):
                 _assert_lane_fits(page, "#address")
                 _maybe_shot(page, f"property-new-{width}-{lang}.png")
 
-                page.goto(f"{base}/apartments/{apartment_id}?lang={lang}#communication")
+                page.goto(f"{base}/apartments/{apartment_id}?lang={lang}")
+                _open_property_reporting_sections(page)
                 assert page.locator('input[name="address_line"]').count() == 0
                 assert page.locator(".property-address-police").count() == 0
                 assert page.locator(".police-derived").count() == 0
@@ -439,10 +525,11 @@ def test_copy_correction_pages_browser_evidence(browser_base):
             _maybe_shot(page, f"setup-address-error-{lang}.png")
 
             for width in MEASURE_WIDTHS:
+                page.set_viewport_size({"width": width, "height": 900})
+                page.goto(f"{base}/apartments/{apartment_id}?lang={lang}#address")
+                _open_property_reporting_sections(page)
                 for collapsed in (False, True):
-                    page.set_viewport_size({"width": width, "height": 900})
                     _set_sidebar(page, collapsed)
-                    page.goto(f"{base}/apartments/{apartment_id}?lang={lang}#address")
                     fit = page.evaluate(_OVERFLOW_JS, "#address")
                     main = page.evaluate(
                         """() => {
@@ -470,20 +557,3 @@ def test_copy_correction_pages_browser_evidence(browser_base):
     folder = _evidence_dir()
     if folder:
         (folder / "measurements.json").write_text(json.dumps(measurements, indent=2), encoding="utf-8")
-
-
-def test_integration_head_browser_failures_recorded():
-    """Evidence file captured on integration HEAD before 0087 (see report)."""
-    log_path = REPO_ROOT / "docs" / "tasks" / "0087-evidence" / "integration-head-browser-failures.txt"
-    assert log_path.is_file(), "missing baseline browser failure log"
-    text = log_path.read_text(encoding="utf-8")
-    for needle in (
-        "test_host_feedback_browser.py::test_host_copy_feedback_truth_and_geometry",
-        "test_host_quiet_dashboard_browser.py::test_dashboard_geometry_locales_and_screenshots",
-        "test_host_stay_actions_browser.py::test_stays_guest_link_copy_is_status_independent_and_token_guarded",
-        "test_host_wide_geometry_browser.py::test_host_wide_lanes_align",
-        "test_host_wide_geometry_browser.py::test_stay_row_actions_fit_midwidth_lanes",
-        "test_host_wide_geometry_browser.py::test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned",
-    ):
-        assert needle in text
-    assert "6 failed" in text or text.count("FAILED") >= 6

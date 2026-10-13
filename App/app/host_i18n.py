@@ -3219,10 +3219,6 @@ _INTERFACE_STRINGS = {
         "common.all": "All",
         "common.filter": "Filter",
         "housebook.title": "House book",
-        "housebook.lede": (
-            "Every guest record and stay date. Keep this register for six years after "
-            "the last entry and produce it during a police inspection."
-        ),
         "housebook.apartment": "Property",
         "housebook.from": "Stays from",
         "housebook.until": "Stays until",
@@ -3268,8 +3264,6 @@ _INTERFACE_STRINGS = {
         "automation.contact": "Contact at registration",
         "automation.login": "Web-service login",
         "automation.password": "Web-service password",
-        "automation.password_keep": "Leave empty to keep the saved password",
-        "automation.password_paste": "Paste from the police letter",
         "automation.password_replace": "Fill this only when replacing the police-issued password. Otherwise leave it empty.",
         "automation.password_new": "Required once; encrypted at rest and never shown again after save.",
         "automation.save": "Save %(property)s",
@@ -3444,7 +3438,7 @@ _INTERFACE_STRINGS = {
         "apartment.form.ubyport.mark_label": 'Facility abbreviation (zkratka)',
         "apartment.form.ubyport.mismatch_help": "UbyPort compares IDUB, zkratka, name, address, and contact to the register. A typo or an Airbnb listing name fails even when the web-service login works. You often only see that on the first real submission.",
         "apartment.form.ubyport.name_hint": "PDF “Ubytovací zařízení:”. First line only, not your listing title; max 35 characters.",
-        "apartment.form.ubyport.password_edit_hint": "Leave blank to keep the saved password.",
+        "apartment.form.ubyport.password_edit_hint": "Password saved. Leave blank to keep it.",
         "apartment.form.ubyport.password_new_hint": "Password from your police letter.",
         "apartment.form.ubyport.credentials_help_heading": "Where to find your credentials",
         "apartment.form.ubyport.sample_help": "A fictional police letter with SAMPLE watermarks. It shows every value to copy into UbyHost, including zkratka and contact that real WS PDFs often omit.",
@@ -4063,10 +4057,6 @@ _INTERFACE_STRINGS = {
         "common.all": "Vše",
         "common.filter": "Filtrovat",
         "housebook.title": "Domovní kniha",
-        "housebook.lede": (
-            "Každý záznam hosta a termín pobytu. Evidenci uchovávejte šest let od "
-            "posledního zápisu a předložte ji při policejní kontrole."
-        ),
         "housebook.apartment": "Ubytování",
         "housebook.from": "Pobyty od",
         "housebook.until": "Pobyty do",
@@ -4112,8 +4102,6 @@ _INTERFACE_STRINGS = {
         "automation.contact": "Kontaktní osoba při registraci",
         "automation.login": "Přihlášení webové služby",
         "automation.password": "Heslo webové služby",
-        "automation.password_keep": "Prázdné pole zachová uložené heslo",
-        "automation.password_paste": "Vložte heslo z dopisu policie",
         "automation.password_replace": "Vyplňte jen při výměně hesla vydaného policií. Jinak ponechte prázdné.",
         "automation.password_new": "Vyžaduje se jednou; ukládá se šifrovaně a po uložení se nezobrazuje.",
         "automation.save": "Uložit %(property)s",
@@ -4288,7 +4276,7 @@ _INTERFACE_STRINGS = {
         "apartment.form.ubyport.mark_label": 'Zkratka ubytovacího zařízení',
         "apartment.form.ubyport.mismatch_help": "UbyPort porovnává IDUB, zkratku, název, adresu a kontakt s registrem. Překlep nebo název z Airbnb selže i když přihlášení webové služby funguje. Často to vidíte při prvním skutečném odeslání.",
         "apartment.form.ubyport.name_hint": "„Ubytovací zařízení:“ v PDF. Jen první řádek, ne název inzerátu; max. 35 znaků.",
-        "apartment.form.ubyport.password_edit_hint": "Pro zachování uloženého hesla nechte prázdné.",
+        "apartment.form.ubyport.password_edit_hint": "Heslo je uložené. Pro jeho zachování nechte pole prázdné.",
         "apartment.form.ubyport.password_new_hint": "Heslo z dopisu od policie.",
         "apartment.form.ubyport.credentials_help_heading": "Kde najdete přihlašovací údaje",
         "apartment.form.ubyport.sample_help": "Ukázkový dopis policie s vodoznaky SAMPLE. Ukazuje každou hodnotu pro UbyHost, včetně zkratky a kontaktu, které reálná PDF často neobsahují.",
