@@ -502,7 +502,12 @@ def _property_hub_redirect(request: Request, anchor: str) -> RedirectResponse:
             f"/apartments/{apartments[0]['id']}?view=settings&section={section}#{anchor}",
             status_code=303,
         )
-    return RedirectResponse("/apartments", status_code=303)
+    # 0078: several (or no) properties land on the Properties summary, never
+    # on an arbitrary record.
+    return RedirectResponse(f"/apartments#{PROPERTY_SUMMARIES_ANCHOR}", status_code=303)
+
+
+PROPERTY_SUMMARIES_ANCHOR = "property-summaries"
 
 
 @router.get("/guest-links")
@@ -690,7 +695,7 @@ def entity_editor_url(entity_id: int, next_path: str = "", section: str = "") ->
     query: Dict[str, Any] = {"edit": entity_id}
     if next_path:
         query["next"] = next_path
-    url = "/entities?" + urlencode(query)
+    url = "/entities?" + urlencode(query, safe="/")
     return url + (f"#{ENTITY_INVOICE_ANCHOR}" if section == "invoice" else "")
 
 
@@ -1182,12 +1187,21 @@ def apartments_list(request: Request):
         f"WHERE a.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.archived_at DESC",
         (access.owner_id(request),),
     )
+    # 0078: the read-only guest-link summary shows the link the host copies,
+    # read without creating a slug (guest_slug.current, never ensure, on GET).
     enriched = [
-        {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in rows
+        {
+            "apartment": row,
+            "issues": validation.errors_only(_apartment_issues(row)),
+            "link_key": guest_slug.current(int(row["id"])) or (row["permalink_token"] or ""),
+        }
+        for row in rows
     ]
     archived_rows = [
         {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in archived
     ]
+    entities = access.entities(request)
+    owner_id = access.owner_id(request)
     return render(
         request,
         "apartments.html",
@@ -1196,7 +1210,13 @@ def apartments_list(request: Request):
             "archived_rows": archived_rows,
             # With no operator there is nothing the property form can attach to,
             # so the empty state names the operator as the first step instead.
-            "has_operator": bool(access.entities(request)),
+            "has_operator": bool(entities),
+            # 0078: shared records reached once from Properties, in their own scope.
+            "business_href": (
+                entity_editor_url(entities[0]["id"], "/apartments") if len(entities) == 1
+                else "/entities"
+            ) if entities else "",
+            "lock_account": bool(ttlock.enabled() and ttlock.account_for(owner_id)),
             "last_sync": db.get_setting("last_ical_sync"),
         },
     )

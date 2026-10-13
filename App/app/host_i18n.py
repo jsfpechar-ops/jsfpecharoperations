@@ -6213,6 +6213,30 @@ _ENTITY_EDITOR_0076_STRINGS = {
 for _lang, _strings in _ENTITY_EDITOR_0076_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0078: Properties list, shared-record links and the read-only summary.
+_PROPERTIES_0078_STRINGS = {
+    "en": {
+        "properties.shared.aria": "Shared across your properties",
+        "properties.shared.lock": "Door lock account",
+        "properties.choose_business": "Choose business",
+        "properties.open": "Open",
+        "properties.summary.title": "Guest links and reporting timing",
+        "properties.summary.help": "One line per property. To change a setting, open it; it is edited in that property's Settings.",
+        "properties.summary.hours": "%(hours)s h",
+    },
+    "cs": {
+        "properties.shared.aria": "Společné pro všechna ubytování",
+        "properties.shared.lock": "Účet digitálního zámku",
+        "properties.choose_business": "Vybrat firmu",
+        "properties.open": "Otevřít",
+        "properties.summary.title": "Odkazy pro hosty a načasování hlášení",
+        "properties.summary.help": "Jeden řádek za každé ubytování. Nastavení otevřete kliknutím; upravuje se v Nastavení daného ubytování.",
+        "properties.summary.hours": "%(hours)s h",
+    },
+}
+for _lang, _strings in _PROPERTIES_0078_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

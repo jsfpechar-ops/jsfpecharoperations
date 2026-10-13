@@ -1132,4 +1132,16 @@ body.host-workspace {
 .entity-section + .entity-section { margin-top: 26px; }
 .entity-section-head { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 14px; }
 .entity-section-title { margin: 0 0 14px; padding: 8px 14px; font-size: 15px; background: var(--brand-soft); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
-.entity-section-head .entity-section-title { margin: 0; flex: 1 1 auto; }
+.entity-section-head .entity-section-title { margin: 0; flex: 1 1 0; min-width: 0; }
+
+/* 0078 */
+/* Properties: shared records once, an aligned Open, and the visible read-only summary. */
+.properties-shared { display: flex; flex-wrap: wrap; gap: 8px 12px; margin: 0 0 16px; }
+.properties-shared-link { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface, #fff); color: var(--ink); font-weight: 600; text-decoration: none; }
+.properties-shared-link:hover { border-color: var(--brand); }
+.properties-shared-link .nav-icon { flex: none; }
+.properties-table .property-location { margin-top: 2px; }
+.property-summaries { margin-top: 28px; }
+.property-summaries-head { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; }
+.property-summaries-title { flex: 1 1 0; min-width: 0; margin: 0; padding: 8px 14px; font-size: 15px; background: var(--brand-soft); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
+.property-summary-link { overflow-wrap: anywhere; }
