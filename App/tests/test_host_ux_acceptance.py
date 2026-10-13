@@ -432,9 +432,11 @@ def test_one_many_no_and_archived_properties_on_hubs_and_search(acc):
     assert f"/apartments/{acc['p3']}" not in many_urls
     assert "/smart-locks" in many_urls  # connected lock account
     assert "/smart-locks" not in {i.get("url") for i in palette(none)}
-    # Properties list: active rows, archived listed separately with Restore.
+    # Properties list: active rows only; archived ones and their Restore live
+    # in Settings › Data & archive › Archived (owner, 2026-10-13).
     listing = many.get("/apartments?lang=en").text
-    assert f'/apartments/{acc["p3"]}/unarchive' in listing
+    assert f'/apartments/{acc["p3"]}/unarchive' not in listing
+    assert f'/apartments/{acc["p3"]}/unarchive' in many.get("/settings/archived?lang=en").text
     summary = listing[listing.index('id="property-summaries"'):]
     summary = summary[:summary.index("</section>")]
     assert "Archived Gamma" not in summary and "Studio Beta" in summary

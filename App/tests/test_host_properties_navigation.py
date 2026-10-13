@@ -150,8 +150,11 @@ def test_summary_is_visible_read_only_and_links_to_each_editor(host):
     assert '<option value="scheduled" selected>Automatically, after a delay' in summary
     assert 'value="6" data-timing-hours-input' in summary
     assert "Starý byt" not in summary
-    # The archived property keeps its own list with Restore.
-    assert f'action="/apartments/{archived}/unarchive"' in page
+    # Archived properties are off the working list; Restore lives in
+    # Settings › Data & archive › Archived (owner, 2026-10-13).
+    assert f'action="/apartments/{archived}/unarchive"' not in page
+    archive = host.get("/settings/archived?lang=en").text
+    assert f'action="/apartments/{archived}/unarchive"' in archive
 
 
 def test_listing_never_creates_a_guest_link_slug(host):
