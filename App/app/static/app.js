@@ -1711,8 +1711,91 @@
     });
   }
 
+  /* 0093 help: contextual "?" tips (macro help_tip). Hover/focus/tap open, Esc and outside click close. */
+  function initHelpTips() {
+    var tips = Array.prototype.slice.call(document.querySelectorAll("[data-help-tip]"));
+    if (!tips.length) return;
+    var current = null;
+    var timer = null;
+
+    function place(tip) {
+      var btn = tip.querySelector(".help-tip-btn");
+      var body = tip.querySelector(".help-tip-body");
+      var margin = 8;
+      var vw = document.documentElement.clientWidth;
+      var vh = window.innerHeight;
+      body.style.width = Math.min(320, vw - 2 * margin) + "px";
+      var r = btn.getBoundingClientRect();
+      var w = body.offsetWidth;
+      var h = body.offsetHeight;
+      var left = Math.max(margin, Math.min(r.left, vw - w - margin));
+      var top = r.bottom + 6;
+      if (top + h > vh - margin && r.top - 6 - h >= margin) top = r.top - 6 - h;
+      top = Math.max(margin, Math.min(top, vh - h - margin));
+      body.style.left = left + "px";
+      body.style.top = top + "px";
+    }
+    function close(tip) {
+      tip.classList.remove("is-open");
+      tip.removeAttribute("data-pinned");
+      tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "false");
+      if (current === tip) current = null;
+    }
+    function open(tip, pinned) {
+      if (current && current !== tip) close(current);
+      window.clearTimeout(timer);
+      current = tip;
+      tip.classList.add("is-open");
+      tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "true");
+      if (pinned) tip.setAttribute("data-pinned", "1");
+      place(tip);
+    }
+    function closeSoon(tip) {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(function () {
+        if (!tip.hasAttribute("data-pinned") && !tip.contains(document.activeElement)) close(tip);
+      }, 150);
+    }
+
+    tips.forEach(function (tip) {
+      var btn = tip.querySelector(".help-tip-btn");
+      tip.setAttribute("data-js", "1");
+      tip.addEventListener("pointerenter", function (e) {
+        if (e.pointerType === "mouse") open(tip, false);
+      });
+      tip.addEventListener("pointerleave", function (e) {
+        if (e.pointerType === "mouse") closeSoon(tip);
+      });
+      btn.addEventListener("focus", function () {
+        if (btn.matches(":focus-visible")) open(tip, false);
+      });
+      tip.addEventListener("focusout", function (e) {
+        if (!tip.contains(e.relatedTarget)) close(tip);
+      });
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (tip.classList.contains("is-open") && tip.hasAttribute("data-pinned")) close(tip);
+        else open(tip, true);
+      });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape" || !current) return;
+      var tip = current;
+      close(tip);
+      tip.querySelector(".help-tip-btn").focus();
+    });
+    document.addEventListener("click", function (e) {
+      if (current && !current.contains(e.target)) close(current);
+    });
+    function reflow() { if (current) place(current); }
+    window.addEventListener("resize", reflow);
+    window.addEventListener("scroll", reflow, true);
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
+    initHelpTips();
     initBirthDateInputs();
     initRowMenus();
     initClickableRows();
