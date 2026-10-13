@@ -6375,6 +6375,26 @@ _PROPERTIES_0098_STRINGS = {
 for _lang, _strings in _PROPERTIES_0098_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0099: shared list-page layout (sub-page tabs, toolbar summary).
+_LIST_LAYOUT_0099_STRINGS = {
+    "en": {
+        "tabs.stays.reports": "Police reports",
+        "tabs.stays.register": "Guest register",
+        "properties.list.count": "%(count)s properties",
+        "properties.list.count.one": "%(count)s property",
+        "properties.list.count.few": "%(count)s properties",
+    },
+    "cs": {
+        "tabs.stays.reports": "Hlášení policii",
+        "tabs.stays.register": "Domovní kniha",
+        "properties.list.count": "%(count)s ubytování",
+        "properties.list.count.one": "%(count)s ubytování",
+        "properties.list.count.few": "%(count)s ubytování",
+    },
+}
+for _lang, _strings in _LIST_LAYOUT_0099_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

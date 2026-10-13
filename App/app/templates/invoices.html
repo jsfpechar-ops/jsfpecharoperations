@@ -2,10 +2,10 @@
 {% set nav = 'invoices' %}
 {% block title %}{{ t('invoices.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header with context %}
-{{ page_header(t('invoices.title'), t('invoices.lede'), '', '', '',
-    '<a class="btn ghost" href="/invoices/settings">' ~ t('host.invoice_settings') ~ '</a>'
-    ~ '<a class="btn accent primary" href="/invoices/new">' ~ t('invoice.new') ~ '</a>') }}
+{% from "_components.html" import list_page_header, empty_state with context %}
+{#- 0099: Invoice settings is the second tab (it was a button here). -#}
+{{ list_page_header(t('invoices.title'),
+    actions='<a class="btn accent primary" href="/invoices/new">' ~ t('invoice.new') ~ '</a>') }}
 {% include "_list_filter.html" %}
 {% if invoices %}
 <div class="panel tight scroll-x list-cards lc-invoices">
@@ -23,7 +23,7 @@
     </thead>
     <tbody>
     {% for inv in invoices %}
-      <tr class="clickable-row" data-href="/invoices/{{ inv.id }}" tabindex="0" role="link">
+      <tr class="clickable-row" data-href="/invoices/{{ inv.id }}" tabindex="0" role="link" aria-label="{{ inv.number }} · {{ inv.buyer_name }}">
         <td class="mono small" data-label="{{ t('invoices.col.number') }}"><a href="/invoices/{{ inv.id }}">{{ inv.number }}</a></td>
         <td class="nowrap small" data-label="{{ t('invoices.col.date') }}">{{ inv.issue_date | date_cz }}</td>
         <td class="col-name" data-label="{{ t('invoices.col.customer') }}">{{ inv.buyer_name }}</td>
@@ -47,14 +47,10 @@
 </nav>
 {% endif %}
 {% else %}
-<div class="panel empty">
-  {% if filter_active %}
-  <h2>{{ t('filter.no_results') }}</h2>
-  <a class="btn" href="{{ filter_reset_href }}">{{ t('filter.reset') }}</a>
-  {% else %}
-  <h2>{{ t('invoices.empty_title') }}</h2>
-  <p class="lede">{{ t('invoices.empty') }}</p>
-  {% endif %}
-</div>
+{% if filter_active %}
+{{ empty_state(t('filter.no_results'), '', filter_reset_href, t('filter.reset'), primary=false) }}
+{% else %}
+{{ empty_state(t('invoices.empty_title'), t('invoices.empty'), '/invoices/new', t('invoice.new')) }}
+{% endif %}
 {% endif %}
 {% endblock %}

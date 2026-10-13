@@ -1506,3 +1506,66 @@ body.host-workspace {
   .host-workspace .property-summary-table td:first-child { min-width: 0; }
 }
 /* end 0098 */
+
+/* 0099 */
+/* One list-page layout for Stays, Properties, Invoices and Stay fees:
+   notices, title row (title left; actions right, meta under them), sub-page
+   tabs, toolbar, one list panel, secondary sections. Every block is a direct
+   child of the lane, so they share one left edge and one vertical rhythm. */
+.host-workspace .list-notices { margin: 0 auto 16px; }
+.host-workspace .list-notices > * { margin: 0; }
+.host-workspace .page-header.list-page-header { align-items: flex-start; gap: 12px 20px; margin: 0 auto 20px; padding: 8px 0 16px; }
+.host-workspace .page-header.list-page-header h1 { margin: 0; }
+.host-workspace .page-header.has-tabs { margin-bottom: 0; padding-bottom: 14px; border-bottom: 0; }
+.host-workspace .list-page-side { display: flex; flex: 0 1 auto; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 0; }
+.host-workspace .list-page-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.host-workspace .list-page-actions > form,
+.host-workspace .list-page-actions .sync-cta,
+.host-workspace .list-page-actions .sync-cta-form { display: flex; margin: 0; }
+.host-workspace .list-page-actions .btn { height: var(--action-height, 42px); min-height: var(--action-height, 42px); padding: 0 16px; font-size: 13px; white-space: nowrap; }
+.host-workspace .list-page-meta { margin: 0; color: var(--ink-muted); font-size: 12px; line-height: 1.35; text-align: right; }
+
+/* The one tab component: plain links under the title row, an underline on the
+   open page. The first tab's text starts at the title's left edge. */
+.host-workspace .sub-tabs { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 22px; margin: 0 auto 20px; padding: 0; border-bottom: 1px solid var(--line); }
+.host-workspace .sub-tabs > .sub-tab { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: -1px; padding: 0; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--ink-secondary); font-size: 14px; font-weight: 650; text-decoration: none; }
+.host-workspace .sub-tabs > .sub-tab:hover { background: none; color: var(--ink); border-bottom-color: var(--border-strong, var(--line)); }
+.host-workspace .sub-tabs > .sub-tab[aria-current] { background: none; color: var(--brand-ink); border-bottom-color: var(--brand); }
+.host-workspace .sub-tabs > .sub-tab:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* The one toolbar: chips, Filters and the summary left; list actions right. */
+.host-workspace .list-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; margin: 0 auto 12px; }
+.host-workspace .list-toolbar-main { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; gap: 8px 14px; min-width: 0; }
+.host-workspace .list-toolbar .chips { margin: 0; }
+.host-workspace .list-toolbar .filter-toolbar-actions { margin-left: auto; }
+
+/* Secondary sections below the list: a plain heading with its "?". */
+.host-workspace .list-section,
+.host-workspace .property-summaries { margin: 32px auto 0; }
+.host-workspace .list-section-heading { margin: 0 auto 10px; }
+.host-workspace .list-section-heading h2 { margin: 0; }
+
+/* The one empty state: a message and one button. */
+.host-workspace .empty-state > :first-child { margin-top: 0; }
+.host-workspace .empty-state p { margin: 0 auto; max-width: 560px; }
+.host-workspace .empty-state h2 + p { margin-top: 6px; }
+.host-workspace .empty-state-action { display: flex; justify-content: center; margin-top: 14px; }
+.host-workspace .empty-state-extra { display: grid; justify-items: center; gap: 8px; margin: 12px 0 0; }
+
+/* Dashboard stay rows are full click targets like every list row. */
+.host-workspace .dashboard-row.clickable-row { cursor: pointer; }
+.host-workspace .dashboard-row.clickable-row:hover { background: var(--surface-hover); }
+.host-workspace .dashboard-row.clickable-row:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; background: #fff; }
+
+@media (max-width: 760px) {
+  /* Same stacking point as the shared page header (app.css). */
+  .host-workspace .page-header.list-page-header { flex-direction: column; align-items: stretch; }
+  .host-workspace .list-page-side { align-items: stretch; }
+  .host-workspace .list-page-actions { justify-content: flex-start; }
+  .host-workspace .list-page-actions > *,
+  .host-workspace .list-page-actions .btn { flex: 1 1 auto; }
+  .host-workspace .list-page-meta { text-align: left; }
+  .host-workspace .sub-tabs { gap: 0 16px; }
+  .host-workspace .list-toolbar .filter-toolbar-actions { width: 100%; margin-left: 0; }
+}
+/* end 0099 */

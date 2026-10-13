@@ -21,7 +21,7 @@ from tests.conftest import login_as
 
 USERNAME = "stays-empty-host"
 
-EMPTY_PANEL_RE = re.compile(r'<div class="panel empty">\n(.*?)\n\s*</div>', re.DOTALL)
+EMPTY_PANEL_RE = re.compile(r'<div class="panel empty empty-state" data-empty-state>(.*?)\n  </div>', re.DOTALL)
 FILTER_FORM_RE = re.compile(
     r'<form id="stays-filter-panel" method="get" action="/reservations".*?</form>',
     re.DOTALL,
@@ -141,7 +141,7 @@ def test_the_page_shows_no_toolbar_without_a_property(host):
     page = host.get("/reservations")
 
     assert page.status_code == 200
-    assert 'class="stays-toolbar"' not in page.text
+    assert 'data-list-toolbar' not in page.text
     assert 'data-filter-panel' not in page.text
     assert "data-save-view" not in page.text
     assert TIMELINE_LABEL not in page.text
@@ -229,7 +229,7 @@ def test_with_a_calendar_the_empty_state_keeps_its_quiet_link(host_with_property
 def test_the_toolbar_and_filters_return_with_a_property(host_with_property):
     page = host_with_property.get("/reservations")
 
-    assert 'class="stays-toolbar"' in page.text
+    assert 'data-list-toolbar' in page.text
     assert 'id="stays-filter-panel"' in page.text
     assert 'data-filter-panel' in page.text
     assert 'action="/reservations/submit-ready"' in page.text
@@ -275,5 +275,5 @@ def test_the_czech_page_without_a_property_shows_no_toolbar(host):
     page = host.get("/reservations?lang=cs")
 
     assert page.status_code == 200
-    assert 'class="stays-toolbar"' not in page.text
+    assert 'data-list-toolbar' not in page.text
     assert STRINGS["cs"]["stays.empty.no_apartments"] in page.text
