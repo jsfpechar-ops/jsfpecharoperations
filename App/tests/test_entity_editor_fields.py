@@ -9,12 +9,18 @@ requiredness, upload encoding and action targets). No network: ARES is mocked.
 from __future__ import annotations
 
 import base64
+import os
 import re
+import secrets
+import socket
+import threading
+import time
 from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+import uvicorn
 from fastapi.testclient import TestClient
 
 from app import ares, auth, db, host_i18n, invoices, payments
@@ -254,7 +260,7 @@ def test_the_derived_bic_is_labelled_on_the_settings_page(host):
 def test_an_invalid_account_keeps_the_stored_value_and_every_typed_value(host):
     entity_id = _entity()
     response = _post_settings(host, entity_id, {
-        "account_prefix": "", "account_number": "1234567899", "account_bank": "0100",
+        "account_prefix": "", "account_number": "1234567890", "account_bank": "0100",
         "bic": "TYPEDBIC", "registry_entry": "Typed registry", "vat_status": "payer",
         "invoice_prefix": "TY", "invoice_next_number": "77", "invoice_due_days": "5",
         "ico": ICO,
@@ -262,7 +268,7 @@ def test_an_invalid_account_keeps_the_stored_value_and_every_typed_value(host):
     assert response.status_code == 422
     page = response.text
     assert "That account number is not valid." in page
-    for typed in ('value="1234567899"', 'value="0100"', 'value="TYPEDBIC"',
+    for typed in ('value="1234567890"', 'value="0100"', 'value="TYPEDBIC"',
                   'value="Typed registry"', 'value="TY"', 'value="77"', 'value="5"'):
         assert typed in page, typed
     assert re.search(r'<option value="payer"\s+selected', page)
@@ -568,3 +574,104 @@ def test_lookup_errors_rerender_with_the_actual_message(host):
         ares.record_lookup(_owner())
     limited = _post_settings(host, entity_id, {"fill_from_register": "1", "ico": ICO})
     assert host_i18n.translate("en", "ares.rate_limited") in limited.text
+
+
+# --- browser: both editors fit 360-1280 in EN and CS -------------------------
+
+EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0075-evidence"
+BROWSER_USER = "fields0075"
+
+
+@pytest.fixture(scope="module")
+def browser_host():
+    db.init_db()
+    username = f"{BROWSER_USER}-{secrets.token_hex(3)}"
+    owner_id = auth.create_account(f"{username}@example.test", "Pole Host", username=username)
+    entity_id = db.insert("legal_entity", {
+        "name": "Ukázka Pole s.r.o.", "seat": "Václavské náměstí 1, 110 00 Praha 1",
+        "ico": ICO, "dic": "CZ04656679", "contact_email": "pole@example.test",
+        "contact_phone": "+420 777 000 111", "bank_account": "19-2000781379/0800",
+        "iban": payments.normalise_account("19-2000781379/0800")[1], "bic": "GIBACZPX",
+        "registry_entry": "Zapsáno v živnostenském rejstříku", "vat_status": "non_payer",
+        "invoice_prefix": "UB", "invoice_due_days": 14, "signature_name": "Jana Pole",
+        "owner_user_id": owner_id, "created_at": db.utcnow(),
+    })
+    client = TestClient(app)
+    response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
+    assert response.status_code == 303, response.text
+    yield {"client": client, "owner": owner_id, "entity": entity_id}
+    db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner_id,))
+    db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+
+
+@pytest.fixture(scope="module")
+def live_base(browser_host):
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="error"))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    deadline = time.time() + 15
+    while not server.started and time.time() < deadline:
+        time.sleep(0.05)
+    if not server.started:
+        pytest.fail("the test server did not start")
+    yield f"http://127.0.0.1:{port}"
+    server.should_exit = True
+    thread.join(timeout=5)
+
+
+_FIT_SCRIPT = """(selector) => {
+  const root = document.documentElement;
+  const form = document.querySelector(selector);
+  const fields = [...form.querySelectorAll('input:not([type=hidden]):not(.sr-only), select, button')];
+  const width = root.clientWidth;
+  const bad = fields.filter((el) => {
+    const box = el.getBoundingClientRect();
+    return box.width > 0 && (box.left < -0.5 || box.right > width + 0.5
+      || (el.tagName !== 'BUTTON' && el.type !== 'checkbox' && box.width < 40)
+      || box.height < 16);
+  }).map((el) => el.name || el.id || el.textContent.trim());
+  return {overflow: root.scrollWidth - width, bad, count: fields.length};
+}"""
+
+
+def test_entity_and_invoice_editors_fit_every_width(browser_host, live_base):
+    sync_api = pytest.importorskip("playwright.sync_api")
+    from tests.browser_support import chromium_launch_kwargs
+
+    entity_id = browser_host["entity"]
+    pages = (
+        ("entity-edit", f"/entities?edit={entity_id}", "#entity-edit form"),
+        ("entity-add", "/entities", "#entity-add form"),
+        ("invoice-settings", f"/invoices/settings?entity={entity_id}",
+         'form[action="/invoices/settings"]'),
+    )
+    capture = os.environ.get("UBYHOST_CAPTURE_0075") == "1"
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        try:
+            for width in (360, 390, 1280):
+                context = browser.new_context(viewport={"width": width, "height": 900})
+                cookie = browser_host["client"].cookies.get(auth.SESSION_COOKIE)
+                context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie,
+                                      "url": live_base + "/"}])
+                page = context.new_page()
+                for lang in ("en", "cs"):
+                    for name, path, selector in pages:
+                        joiner = "&" if "?" in path else "?"
+                        page.goto(f"{live_base}{path}{joiner}lang={lang}")
+                        result = page.evaluate(_FIT_SCRIPT, selector)
+                        assert result["count"] >= 4, (name, width, lang, result)
+                        assert result["overflow"] <= 0, (name, width, lang, result)
+                        assert not result["bad"], (name, width, lang, result)
+                        if capture:
+                            EVIDENCE.mkdir(parents=True, exist_ok=True)
+                            page.locator(selector).scroll_into_view_if_needed()
+                            page.locator(selector).screenshot(
+                                path=str(EVIDENCE / f"{name}-{width}-{lang}.png"))
+                context.close()
+        finally:
+            browser.close()

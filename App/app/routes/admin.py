@@ -567,6 +567,10 @@ async def smart_locks_remove(request: Request):
 
 # --- legal entities ------------------------------------------------------
 
+# 0075: invoice-default normalisation and the ARES lookup live with the
+# invoice settings route; the entity editor calls the same functions.
+from . import invoices as invoice_routes  # noqa: E402
+
 @router.get("/entities")
 def entities(request: Request):
     guard = auth.require_login(request)
@@ -620,7 +624,6 @@ ENTITY_FIELDS = (
     "invoice_prefix",
 )
 
-VAT_STATUSES = ("non_payer", "identified", "payer")
 ENTITY_SIGNATURE_MAX_BYTES = 300 * 1024
 
 
@@ -650,47 +653,17 @@ def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
                 host_i18n.lang_from_request(request), "entities.ico.invalid"
             ),
         )
-    if "bank_account" in form:
-        account = _form_str(form, "bank_account")
-        if account:
-            try:
-                payload["bank_account"], payload["iban"] = payments.normalise_account(
-                    account
-                )
-            except ValueError:
-                return _back(
-                    "/entities",
-                    err=host_i18n.translate(
-                        host_i18n.lang_from_request(request), "entities.bank.invalid"
-                    ),
-                )
-        else:
-            payload["bank_account"] = None
-            payload["iban"] = None
-    if "bic" in form:
-        payload["bic"] = _form_str(form, "bic").replace(" ", "").upper() or None
-    if "registry_entry" in form:
-        payload["registry_entry"] = _form_str(form, "registry_entry") or None
-    if "vat_status" in form:
-        vat = _form_str(form, "vat_status")
-        payload["vat_status"] = vat if vat in VAT_STATUSES else "non_payer"
-    if "invoice_prefix" in form:
-        prefix = (
-            "".join(ch for ch in _form_str(form, "invoice_prefix").upper() if ch.isalnum())
-        )[:6]
-        payload["invoice_prefix"] = prefix or None
-    if "invoice_next_number" in form:
-        next_no = _form_str(form, "invoice_next_number").strip()
-        if next_no.isdigit() and int(next_no) > 0:
-            payload["invoice_next_number"] = int(next_no)
-            payload["invoice_next_number_year"] = date.today().year
-        else:
-            payload["invoice_next_number"] = None
-            payload["invoice_next_number_year"] = None
-    if "invoice_due_days" in form:
-        due_raw = _form_str(form, "invoice_due_days")
-        due = int(due_raw) if due_raw.isdigit() else 14
-        payload["invoice_due_days"] = max(0, min(due, 365))
+    # 0075: the invoice defaults share one normaliser with /invoices/settings.
+    # Entity-editor policy: no three-part account and no BIC derivation.
+    detail = invoice_routes.invoice_detail_payload(form)
+    if not invoice_routes.apply_account_payload(detail, form, accept_parts=False):
+        return _back(
+            "/entities",
+            err=host_i18n.translate(
+                host_i18n.lang_from_request(request), "entities.bank.invalid"
+            ),
+        )
+    payload.update(detail)
     return None
 
 
@@ -740,10 +713,6 @@ def _entity_form_values(form, base: Optional[Dict[str, Any]] = None) -> Dict[str
     return values
 
 
-def _ares_field_labels(lang: str, fields: List[str]) -> str:
-    return ", ".join(host_i18n.translate(lang, f"ares.field.{field}") for field in fields)
-
-
 def _entities_list_context(request: Request, owner_user_id: int) -> Dict[str, Any]:
     rows = db.query(
         "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
@@ -770,24 +739,12 @@ async def _entities_ares_rerender(
     owner_user_id = access.owner_id(request)
     lang = host_i18n.lang_from_request(request)
     values = _entity_form_values(form, edit_entity)
-    ares_error = None
     ares_note = None
     ico = (values.get("ico") or "").strip()
-    if ares.rate_limited(owner_user_id):
-        ares_error = host_i18n.translate(lang, "ares.rate_limited")
-    elif not validation.ico_ok(ico):
-        ares_error = host_i18n.translate(lang, "ares.failure")
-    else:
-        ares.record_lookup(owner_user_id)
-        data = ares.lookup(ico)
-        if not data:
-            ares_error = host_i18n.translate(lang, "ares.failure")
-        else:
-            filled = ares.merge_blank(values, data, _ENTITY_ARES_FIELDS)
-            if filled:
-                ares_note = host_i18n.translate(
-                    lang, "ares.filled", fields=_ares_field_labels(lang, filled)
-                )
+    data, ares_error = invoice_routes.register_lookup(owner_user_id, lang, ico)
+    if data:
+        filled = ares.merge_blank(values, data, _ENTITY_ARES_FIELDS)
+        ares_note = invoice_routes.register_filled_note(lang, filled)
     signature_preview = _form_str(form, "signature_drawn")
     if not signature_preview and edit_entity and edit_entity.get("signature_png_enc"):
         signature_preview = db.decrypt_field(edit_entity["signature_png_enc"])

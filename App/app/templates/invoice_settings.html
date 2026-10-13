@@ -37,7 +37,7 @@
     {% call ico_field('lookup_ico', entity.ico, 'lookup') %}
       {{ register_messages(ares_error, ares_note, ares_vat_found) }}
     {% endcall %}
-    {{ invoice_fields(entity, bank_parts, bic_from_bank) }}
+    {{ invoice_fields(entity, bank_parts, bic_from_bank, account_error) }}
     <div class="actions">
       <button class="btn primary" type="submit">{{ t('common.save') }}</button>
     </div>
