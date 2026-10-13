@@ -55,7 +55,7 @@
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
   {% if fee_return_to %}<input type="hidden" name="fee_return_to" value="{{ fee_return_to }}">{% endif %}
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  {% if setup_guide %}<input type="hidden" name="setup_step" value="{{ setup_guide.key }}">{% endif %}
+  {% if setup_guide and not setup_guide.legacy %}<input type="hidden" name="setup_step" value="{{ setup_guide.key }}">{% endif %}
   {# The first submit button is the one Enter activates. Without this, Enter in
      any field posted to the credentials test and dropped every edit. #}
   <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>

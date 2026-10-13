@@ -177,7 +177,7 @@
         <td class="num stay-col-guests" data-label="{{ t('stays.table.guests') }}">{{ guest_count(progress, placeholder=true) }}</td>
         <td class="stay-col-reporting" data-label="{{ t('stays.table.reporting') }}">
           {% if reservation.status != 'active' %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
-          {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}{% endif %}
+          {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
         </td>
         <td class="nowrap stay-col-deadline" data-label="{{ t('stays.table.deadline') }}">
           {% if check_in and reservation.status == 'active' %}

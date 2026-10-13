@@ -1,17 +1,47 @@
-{#- 0096: guided setup of a new property. One step at a time, one primary action:
+{#- 0096/0100: guided setup of a property. One step at a time, one primary action:
     the step's own control (Add calendar, Save changes) when the step's place is
-    on screen, otherwise this panel's Continue / Done. Skip only for optional
-    steps. Plain links and forms, so it works without JavaScript. -#}
+    on screen, otherwise this panel's Continue / Done. Quiet text buttons for
+    Skip, "still waiting for my police login" and Hide. Plain links and forms,
+    so it works without JavaScript. -#}
+{%- from "_components.html" import help_tip, progress_pill, guest_count with context -%}
 {%- set guide = setup_guide -%}
 {%- set at_step = property_view == guide.view and (not guide.section or settings_section == guide.section) -%}
+{%- set demo_state = setup_demo.state if setup_demo else '' -%}
+{%- set title_key = 'setup_guide.try.registered_title' if demo_state == 'registered' else 'setup_guide.' ~ guide.key ~ '.title' -%}
+{%- set text_key = {'open': 'setup_guide.try.open_text', 'registered': 'setup_guide.try.registered_text'}.get(demo_state, 'setup_guide.' ~ guide.key ~ '.text') -%}
+{%- macro setup_form(step, action, label, cls='btn', novalidate=false) -%}
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="step" value="{{ step }}">
+      <button class="{{ cls }}" type="submit" name="action" value="{{ action }}"{% if novalidate %} formnovalidate{% endif %}>{{ label }}</button>
+    </form>
+{%- endmacro -%}
+{%- macro waiting_note() -%}
+  <p class="small property-setup-note" id="setup-waiting-note">{{ t('setup_guide.reporting.wait_now') }}
+    {{ t('setup_guide.reporting.wait_then_manual' if apartment.automation_mode == 'manual' else 'setup_guide.reporting.wait_then_auto', minutes=setup_sweep_minutes) }}</p>
+  <p class="small property-setup-note">{{ t('setup_guide.reporting.wait_deadline') }}
+    <a href="/guide#manual-filing">{{ t('setup_guide.reporting.wait_by_hand') }}</a></p>
+{%- endmacro -%}
 <section class="panel property-setup" id="property-setup" aria-labelledby="property-setup-title"
-         data-setup-guide data-setup-view="{{ guide.view }}" data-setup-section="{{ guide.section or '' }}">
+         data-setup-guide data-setup-view="{{ guide.view }}" data-setup-section="{{ guide.section or '' }}" data-setup-step="{{ guide.key }}">
+  {% if guide.reporting_waiting and guide.key != 'reporting' %}
+  {#- Police reporting was put off: it stays on top until the login is saved. -#}
+  <p class="property-setup-waiting" data-setup-waiting>
+    <span class="pill amber">{{ t('setup_guide.reporting.waiting_item') }}</span>
+    <a href="{{ guide.reporting_url }}">{{ t('setup_guide.reporting.add_login') }}</a>
+    {{ help_tip('setup-waiting-help', t('setup_guide.reporting.wait_now') ~ ' ' ~ t('setup_guide.reporting.wait_deadline'), '/guide#manual-filing') }}
+  </p>
+  {% endif %}
   <ol class="property-setup-progress" aria-hidden="true">
-    {% for n in range(1, guide.total + 1) %}<li class="{{ 'is-done' if n < guide.number else ('is-current' if n == guide.number else '') }}"></li>{% endfor %}
+    {% for item in guide.progress %}<li class="is-{{ item.state }}"></li>{% endfor %}
   </ol>
-  <h2 id="property-setup-title">{{ t('setup_guide.count', n=guide.number, total=guide.total) }} · {{ t('setup_guide.' ~ guide.key ~ '.title') }}</h2>
-  <p class="property-setup-text">{{ t('setup_guide.' ~ guide.key ~ '.text') }}</p>
-  {% if guide.key == 'guest_links' %}
+  <h2 id="property-setup-title">{{ t('setup_guide.count', n=guide.number, total=guide.total) }} · {{ t(title_key) }}</h2>
+  <p class="property-setup-text">{{ t(text_key) }}{% if guide.key == 'try' and demo_state == 'none' %} {{ help_tip('setup-try-help', t('setup_guide.try.help')) }}{% endif %}</p>
+
+  {% if guide.key in ('guest_links', 'pin') %}
+  {% if guide.key == 'pin' %}
+  <p class="property-setup-pin"><span class="muted">{{ t('setup_guide.pin.label') }}</span> <strong class="mono" data-setup-pin>{{ pin }}</strong></p>
+  {% endif %}
   <div class="property-setup-snippet">
     <label class="sr-only" for="setup-guest-snippet">{{ t('setup_guide.guest_links.title') }}</label>
     <textarea id="setup-guest-snippet" readonly rows="3">{{ t('setup_guide.guest_links.snippet', url=permalink, pin=pin) }}</textarea>
@@ -19,28 +49,66 @@
   <div class="actions property-setup-actions">
     <button class="btn" type="button" data-copy="setup-guest-snippet"
             data-copy-label="{{ t('setup_guide.guest_links.copy') }}" data-copied-label="{{ t('common.copied') }}">{{ t('setup_guide.guest_links.copy') }}</button>
-    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <input type="hidden" name="step" value="guest_links">
-      <button class="btn primary" type="submit" name="action" value="done">{{ t('setup_guide.guest_links.done') }}</button>
+    {{ setup_form(guide.key, 'done', t('setup_guide.' ~ guide.key ~ '.done'), 'btn primary') }}
+  </div>
+
+  {% elif guide.key == 'try' %}
+  {% if demo_state == 'registered' %}
+  {%- set demo_stay = setup_demo.reservation -%}
+  <p class="property-setup-demo" data-setup-demo>
+    <a href="/reservations/{{ demo_stay.id }}?return_to={{ ('/apartments/' ~ apartment.id) | urlencode }}">{{ t('setup_guide.try.open_stay') }}</a>
+    · {{ progress_pill(setup_demo.progress.status, apartment.automation_mode, is_demo=true) }}
+    · {{ guest_count(setup_demo.progress) }}
+  </p>
+  <div class="actions property-setup-actions">
+    {{ setup_form('try', 'done', t('setup_guide.try.delete'), 'btn primary') }}
+  </div>
+  {% elif demo_state == 'open' %}
+  <div class="actions property-setup-actions">
+    <a class="btn primary" href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener" data-setup-demo-form>{{ t('setup_guide.try.open') }}</a>
+    {#- A GET form, not a link: the page's in-place tab switch would swallow a link to this same page. -#}
+    <form method="get" action="/apartments/{{ apartment.id }}" class="inline">
+      <input type="hidden" name="view" value="overview">
+      <button class="property-setup-quiet" type="submit">{{ t('setup_guide.try.check') }}</button>
     </form>
   </div>
+  <div class="property-setup-skip">{{ setup_form('try', 'skip', t('setup_guide.skip'), 'link-button') }}</div>
   {% else %}
+  <div class="actions property-setup-actions">
+    {{ setup_form('try', 'demo', t('setup_guide.try.create'), 'btn primary') }}
+  </div>
+  <div class="property-setup-skip">{{ setup_form('try', 'skip', t('setup_guide.skip'), 'link-button') }}</div>
+  {% endif %}
+
+  {% else %}
+  {% if guide.key == 'reporting' and guide.reporting_waiting %}
+  <p class="property-setup-waiting"><span class="pill amber">{{ t('setup_guide.reporting.waiting_item') }}</span></p>
+  {{ waiting_note() }}
+  {% endif %}
   <div class="actions property-setup-actions">
     <a class="btn primary" href="{{ guide.url }}" data-setup-continue{% if at_step %} hidden{% endif %}>{{ t('setup_guide.continue') }}</a>
     {% if guide.optional %}
-    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <input type="hidden" name="step" value="{{ guide.key }}">
-      <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('setup_guide.skip') }}</button>
-    </form>
+    {{ setup_form(guide.key, 'skip', t('setup_guide.skip'), 'btn', true) }}
     {% elif guide.key == 'automation' %}
-    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
-      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <input type="hidden" name="step" value="automation">
-      <button class="btn" type="submit" name="action" value="keep">{{ t('setup_guide.automation.keep_manual' if apartment.automation_mode == 'manual' else 'setup_guide.automation.keep_current') }}</button>
-    </form>
+    {{ setup_form('automation', 'keep', t('setup_guide.automation.keep_manual' if apartment.automation_mode == 'manual' else 'setup_guide.automation.keep_current')) }}
     {% endif %}
   </div>
+  {% if guide.key == 'calendar' and guide.legacy %}
+  {#- A property from before the guide has no connect-only Bookings view, so its quiet skip lives here. -#}
+  <div class="property-setup-skip">{{ setup_form('calendar', 'skip', t('setup_guide.calendar.skip'), 'link-button') }}</div>
   {% endif %}
+  {% if guide.key == 'reporting' and not guide.reporting_waiting %}
+  <div class="property-setup-skip property-setup-wait" data-setup-wait>
+    {{ setup_form('reporting', 'wait', t('setup_guide.reporting.wait'), 'link-button', true) }}
+    {{ waiting_note() }}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <div class="property-setup-hide">
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="link-button" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
+    </form>
+  </div>
 </section>

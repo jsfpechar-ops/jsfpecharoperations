@@ -6,7 +6,8 @@
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set feed_draft = feed_draft or {} -%}
 {%- set feed_errors = feed_errors or {} -%}
-{%- set setup_calendar = setup_guide and setup_guide.key == 'calendar' -%}
+{#- 0100: a property from before the guide keeps its usual Bookings view. -#}
+{%- set setup_calendar = setup_guide and setup_guide.key == 'calendar' and not setup_guide.legacy -%}
 {%- set connect_open = (not feeds) or feed_errors or just_created or add_calendar or setup_calendar -%}
 {#- 0096: during the setup guide's calendar step this view is only the connect
     form and one quiet way past it; the feed list and the manual-stay button

@@ -30,7 +30,7 @@
     a skipped calendar (stays added by hand) does not hold back the compact line. -#}
 {%- set invite_open = (readiness.invite | rejectattr('done') | map(attribute='key') | list) if readiness else [] -%}
 {%- set invite_ok = readiness and (readiness.invite_ready or (setup_finished and invite_open == ['stays'])) -%}
-{% if setup_guide %}
+{% if setup_guide and not setup_guide.legacy %}
 {% elif readiness and invite_ok and report_missing == 0 %}
 <section class="panel host-setup-complete" aria-label="{{ t('host.setup_details') }}">
   <p class="small"><span class="readiness-mark" aria-hidden="true">✓</span> {{ t('property_nav.setup_complete') }} {{ t('apartment.form.readiness.invite_ready') }}</p>
@@ -73,4 +73,11 @@
     </ul>
   </div>
 </section></section>
+{% endif %}
+{% if setup_hidden %}
+{#- 0100: the host hid an unfinished setup guide; one quiet way back. -#}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
+</form>
 {% endif %}

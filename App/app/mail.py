@@ -214,6 +214,13 @@ def enqueue(
     if not mail_enabled():
         log.info("mail disabled; skip enqueue kind=%s key=%s", kind, idempotency_key)
         return None
+    if kind in GUEST_KINDS and reservation_id and db.query_one(
+        "SELECT 1 AS n FROM reservation WHERE id = ? AND source = 'demo'", (reservation_id,)
+    ):
+        # 0100: the setup guide's demo stay has made-up guests; their
+        # addresses must not be mailed (a bounce counts against the sender).
+        log.info("demo stay; skip guest mail kind=%s", kind)
+        return None
     to_email = normalise_email(to_email)
     if not to_email:
         return None
