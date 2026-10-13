@@ -90,6 +90,7 @@ def world():
         "internal_name": LONG_TITLE, "owner_user_id": owner_id, "legal_entity_id": entity_id,
         "permalink_token": f"locknav{secrets.token_hex(4)}", "permalink_pin": "123456",
         "checkin_hour": 15, "checkout_hour": 10, "active": 1, "created_at": db.utcnow(),
+        "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000",
     })
     other = auth.create_account(f"other-{username}@example.test", "Other", role="host", username=f"other-{username}")
     foreign_id = db.insert("apartment", {

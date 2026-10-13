@@ -1916,11 +1916,15 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         payload["data_controller_entity_id"] = None
     _apply_police_defaults(payload, access.entities(request))
     address_mismatch = False
+    for field in _ADDRESS_ONLY_FIELDS:
+        if field not in form:
+            # A section form without address inputs must not blank the address.
+            payload.pop(field, None)
     if any(field in form for field in _ADDRESS_ONLY_FIELDS):
         # The address stays complete once the property exists: a Settings save
         # that clears or breaks it is refused with the typed values kept.
         merged = dict(apartment)
-        merged.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS if field in form})
+        merged.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS if field in payload})
         address_errors = _create_address_errors(merged)
         if address_errors:
             return _refuse_apartment_save(request, apartment, form, None, address_errors), False

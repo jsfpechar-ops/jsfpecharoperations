@@ -1046,6 +1046,8 @@ body.host-workspace {
 }
 @media (max-width: 700px) {
   .host-workspace .property-address-grid .field > .field-label-row { flex: none; }
+  /* A longer label (optional + hint) wraps in a narrow column: keep the inputs on one line. */
+  .host-workspace .property-address-grid .field { justify-content: flex-end; }
 }
 
 /* 0094 */

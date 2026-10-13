@@ -177,6 +177,7 @@ def test_create_refuses_a_missing_or_malformed_operator_without_writing(value):
         data={
             "internal_name": "Refused flat",
             "city_en": "Brno",
+            "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000",
             "legal_entity_id": value,
             "uby_ws_password": "typed-secret",
             "uby_contact": "contact@example.test",
@@ -198,7 +199,7 @@ def test_create_refuses_a_foreign_or_archived_operator():
     for entity_id in (other["entities"][0], archived):
         response = host["client"].post(
             "/apartments",
-            data={"internal_name": "Refused flat", "legal_entity_id": str(entity_id)},
+            data={"internal_name": "Refused flat", "legal_entity_id": str(entity_id), "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
             follow_redirects=False,
         )
         assert response.status_code == 400
@@ -236,7 +237,7 @@ def test_create_forces_active_and_defaults_the_controller_to_the_operator():
     operator = host["entities"][1]
     response = host["client"].post(
         "/apartments",
-        data={"internal_name": "Forged flat", "legal_entity_id": str(operator), "active": "0"},
+        data={"internal_name": "Forged flat", "legal_entity_id": str(operator), "active": "0", "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
         follow_redirects=False,
     )
     assert response.status_code == 303
@@ -257,6 +258,7 @@ def test_create_rejects_a_foreign_controller():
         "/apartments",
         data={
             "internal_name": "Controller flat",
+            "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000",
             "legal_entity_id": str(host["entities"][0]),
             "data_controller_entity_id": str(other["entities"][0]),
         },

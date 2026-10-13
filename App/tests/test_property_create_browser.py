@@ -64,7 +64,13 @@ def _rows(owner_id):
 
 
 def _form(**overrides):
-    data = {"internal_name": "Synthetic Loft", "city_en": "Brno"}
+    data = {
+        "internal_name": "Synthetic Loft",
+        "city_en": "Brno",
+        "addr_obec": "Praha",
+        "addr_house_no": "12",
+        "addr_zip": "11000",
+    }
     data.update(overrides)
     return data
 
@@ -121,7 +127,7 @@ def test_one_operator_is_chosen_and_one_submit_creates_a_manual_property():
     assert (row["active"], row["automation_mode"], row["default_purpose"]) == (1, "manual", "10")
     assert row["guest_message"] == host_i18n.translate("en", "apartment.form.guest_message.default")
     assert row["lock_provider"] is None and not row["uby_ws_password_enc"]
-    assert not any(row[f] for f in ("addr_obec", "addr_house_no", "addr_zip"))
+    assert (row["addr_obec"], row["addr_house_no"], row["addr_zip"]) == ("Praha", "12", "11000")
     # The first-use choice is optional and appears only right after create.
     detail = host["client"].get(response.headers["location"]).text
     assert 'class="panel property-first-use"' in detail
@@ -184,7 +190,7 @@ def test_blank_name_and_invalid_address_parts_are_refused_with_values():
     assert "Postcode must be exactly 5 digits." not in czech.text
 
 
-def test_partial_valid_address_is_saved_as_typed_without_parsing():
+def test_complete_address_is_saved_as_typed_without_parsing():
     host = _host(1)
     response = host["client"].post(
         "/apartments",
@@ -196,7 +202,22 @@ def test_partial_valid_address_is_saved_as_typed_without_parsing():
     (row,) = _rows(host["owner"])
     assert row["addr_street"] == "Nádražní 12/3"
     assert row["addr_zip"] == "60200"
-    assert not row["addr_house_no"] and not row["addr_obec"]
+    assert row["addr_obec"] == "Praha" and row["addr_house_no"] == "12"
+
+
+def test_partial_address_is_refused_and_the_draft_kept():
+    host = _host(1)
+    response = host["client"].post(
+        "/apartments",
+        data=_form(legal_entity_id=str(host["entities"][0]), addr_street="Nádražní 12/3",
+                   addr_zip="602 00", addr_obec="", addr_house_no=""),
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert re.search(r'id="addr_obec"[^>]*aria-invalid="true"', response.text)
+    assert re.search(r'id="addr_house_no"[^>]*aria-invalid="true"', response.text)
+    assert 'value="Nádražní 12/3"' in response.text and 'value="602 00"' in response.text
+    assert _rows(host["owner"]) == []
 
 
 def test_foreign_operator_and_foreign_copy_are_refused():
@@ -242,7 +263,8 @@ def test_copy_is_an_explicit_choice_and_survives_a_refusal():
     assert refused.status_code == 400
     assert '<input type="hidden" name="automation_mode" value="scheduled">' in refused.text
     created = host["client"].post(
-        "/apartments", data={**hidden, "internal_name": "Copied Loft", "legal_entity_id": str(host["entities"][0])},
+        "/apartments", data={**hidden, "internal_name": "Copied Loft", "legal_entity_id": str(host["entities"][0]),
+              "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
         follow_redirects=False,
     )
     assert created.status_code == 303
@@ -401,6 +423,8 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         _shot(page, "create-error-1280-en")
         page.select_option("#legal_entity_id", str(host["entities"][1]))
         page.locator("#addr_zip").fill("11000")
+        page.locator("#addr_obec").fill("Praha")
+        page.locator("#addr_house_no").fill("12")
         page.locator(".property-create-actions .btn.primary").click()
         page.wait_for_load_state()
         assert "created=1" in page.url
@@ -424,6 +448,8 @@ def test_create_page_works_without_javascript(base):
         page.goto(f"{base}/apartments/new?lang=cs")
         page.locator("#internal_name").fill("Synthetic No-JS Flat")
         page.locator("#addr_obec").fill("Praha")
+        page.locator("#addr_house_no").fill("12")
+        page.locator("#addr_zip").fill("11000")
         page.locator(".property-create-actions .btn.primary").click()
         page.wait_for_load_state()
         assert "created=1" in page.url
