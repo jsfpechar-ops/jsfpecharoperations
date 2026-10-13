@@ -8,17 +8,19 @@
 
 {% if reauth %}<p class="small"><strong>{{ t('smart_locks.reauth') }}</strong></p>{% endif %}
 
-{% macro share_block(code_id) %}
+{% macro share_block(code_id, section) %}
   <h2 style="margin-top:0">{{ t('smart_locks.share_title') }}</h2>
   <p class="small muted">{{ t('smart_locks.warn_owner') }}</p>
   <p style="margin-bottom:6px"><strong>{{ t('smart_locks.name_label') }}</strong></p>
   <p style="margin-top:0"><code id="{{ code_id }}">{{ receiver }}</code> {{ copy_button(code_id) }}</p>
-  <h3>{{ t('smart_locks.steps_title') }}</h3>
-  <ol class="guide-steps">{% for n in range(1, 9) %}<li>{{ t('smart_locks.s' ~ n) }}</li>{% endfor %}</ol>
+  {# 0090: three essentials here; every TTLock tap lives in the Guide. #}
+  <h3 class="smart-locks-steps-title">{{ t('smart_locks.steps_title') }}
+    <a class="help-link" href="/guide#door-codes-share" aria-label="{{ t('smart_locks.guide_link') }}" title="{{ t('smart_locks.guide_link') }}">?</a></h3>
+  <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('smart_locks.essential' ~ n) }}</li>{% endfor %}</ol>
   <p class="small" style="margin-top:16px"><strong>{{ t('smart_locks.warn_ekey') }}</strong></p>
   <form method="post" action="/smart-locks/refresh" style="margin-top:20px"><input type="hidden" name="return_to" value="{{ return_to }}">
+    <input type="hidden" name="section" value="{{ section }}">
     <div class="action-group"><button class="btn primary" type="submit">{{ t('smart_locks.check') }}</button></div></form>
-  <p class="small muted" style="margin-top:16px"><a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a></p>
 {% endmacro %}
 
 {% if not account %}
@@ -39,12 +41,12 @@
 {% else %}
 {% if not locks %}
 <section class="panel" id="smart-locks-share">
-  {{ share_block('ttlock-receiver') }}
+  {{ share_block('ttlock-receiver', 'share') }}
 </section>
 {% else %}
 <details class="panel" id="smart-locks-add-more">
   <summary>{{ t('smart_locks.add_more') }}</summary>
-  {{ share_block('ttlock-receiver-more') }}
+  {{ share_block('ttlock-receiver-more', 'add-more') }}
 </details>
 <section class="panel" id="smart-locks-list">
   {% for lock in locks %}
@@ -62,6 +64,7 @@
   {% endfor %}
   <div class="action-group">
     <form method="post" action="/smart-locks/refresh" style="display:inline"><input type="hidden" name="return_to" value="{{ return_to }}">
+      <input type="hidden" name="section" value="list">
       <button class="btn primary" type="submit">{{ t('smart_locks.check') }}</button></form>
     <form method="post" action="/smart-locks/remove" style="display:inline" data-confirm data-confirm-message="{{ t('smart_locks.remove_confirm') }}"><input type="hidden" name="return_to" value="{{ return_to }}">
       <button class="btn danger" type="submit">{{ t('smart_locks.remove') }}</button></form>

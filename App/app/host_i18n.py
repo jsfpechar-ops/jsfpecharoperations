@@ -3750,7 +3750,7 @@ _INTERFACE_STRINGS = {
         "smart_locks.how2": "In the TTLock app you add UbyHost as an Authorized Admin of your lock. We show you every tap.",
         "smart_locks.how3": "From then on every guest gets their own entry code automatically, once everyone has registered.",
         "smart_locks.setup_title": "Connect your digital door lock",
-        "smart_locks.name_label": "Your UbyHost name. Copy it, you paste it in step 6:",
+        "smart_locks.name_label": "Your UbyHost name. Copy it, you paste it in TTLock:",
         "smart_locks.warn_owner": "Only the owner of the lock can do this. A lock that someone else shared with you will not work.",
         "smart_locks.steps_title": "Do this in the TTLock app",
         "smart_locks.s1": "Copy your UbyHost name above. Tap the copy button next to it.",
@@ -4588,7 +4588,7 @@ _INTERFACE_STRINGS = {
         "smart_locks.how2": "V aplikaci TTLock přidáte UbyHost jako Autorizovaného správce svého zámku. Ukážeme vám každé klepnutí.",
         "smart_locks.how3": "Od té chvíle každý host automaticky dostane vlastní vstupní kód, jakmile jsou všichni zaregistrováni.",
         "smart_locks.setup_title": "Připojte svůj digitální zámek",
-        "smart_locks.name_label": "Váš název UbyHost. Zkopírujte ho, vložíte ho v kroku 6:",
+        "smart_locks.name_label": "Váš název UbyHost. Zkopírujte ho, vložíte ho v TTLock:",
         "smart_locks.warn_owner": "Může to udělat jen vlastník zámku. Zámek, který vám někdo jen nasdílel, nebude fungovat.",
         "smart_locks.steps_title": "Udělejte to v aplikaci TTLock",
         "smart_locks.s1": "Zkopírujte svůj název UbyHost výše. Klepněte na tlačítko kopírovat vedle něj.",
@@ -5968,6 +5968,23 @@ _CALENDAR_PLATFORM_STRINGS = {
     },
 }
 for _lang, _strings in _CALENDAR_PLATFORM_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0090: three lock-sharing essentials; the full TTLock steps live in the Guide.
+_LOCK_ESSENTIAL_STRINGS = {
+    "en": {
+        "smart_locks.essential1": "Open your lock in TTLock.",
+        "smart_locks.essential2": "Share administrator access with the account above.",
+        "smart_locks.essential3": "Return here and check for locks.",
+    },
+    "cs": {
+        "smart_locks.essential1": "Otevřete svůj zámek v TTLock.",
+        "smart_locks.essential2": "Sdílejte přístup správce s účtem uvedeným výše.",
+        "smart_locks.essential3": "Vraťte se sem a vyhledejte zámky.",
+    },
+}
+for _lang, _strings in _LOCK_ESSENTIAL_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 def normalise_language(value: str | None) -> str:

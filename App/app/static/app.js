@@ -781,14 +781,27 @@
   }
 
   function initDetailsLinks() {
+    // 0090: open every <details> around the target (not only the target),
+    // then bring it into view, so a returned section is never folded away.
     function openTarget(hash) {
       if (!hash || hash.charAt(0) !== "#") return;
-      var target = document.getElementById(hash.slice(1));
-      if (target && target.tagName === "DETAILS") target.open = true;
+      var id;
+      try { id = decodeURIComponent(hash.slice(1)); } catch (_) { return; }
+      var target = document.getElementById(id);
+      if (!target) return;
+      var node = target;
+      while (node) {
+        if (node.tagName === "DETAILS") node.open = true;
+        node = node.parentElement;
+      }
+      window.requestAnimationFrame(function () {
+        target.scrollIntoView({ block: "start", behavior: "auto" });
+      });
     }
     document.querySelectorAll("[data-open-details]").forEach(function (link) {
       link.addEventListener("click", function () { openTarget(link.hash); });
     });
+    window.addEventListener("hashchange", function () { openTarget(window.location.hash); });
     openTarget(window.location.hash);
   }
 

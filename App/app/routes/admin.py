@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import secrets
 import time
 from datetime import date, timedelta
@@ -130,6 +131,41 @@ def _smart_locks_return_to(value: str) -> str:
     if path == "/smart-locks" or path.startswith("/apartments/"):
         return path
     return "/smart-locks"
+
+
+# 0090: lock feedback lands on the section it is about, not the page top.
+# Forms post a constrained section name; never a path or hash from the client.
+_SMART_LOCK_SECTIONS = {
+    "how": "smart-locks-how",
+    "share": "smart-locks-share",
+    "add-more": "smart-locks-add-more",
+    "list": "smart-locks-list",
+}
+
+
+def _smart_locks_url(return_to: str, section: str) -> str:
+    """The lock page, keeping the sanitized return path, at a real section."""
+    anchor = _SMART_LOCK_SECTIONS.get(section, "smart-locks-how")
+    return f"/smart-locks?return_to={quote(return_to, safe='')}#{anchor}"
+
+
+def _smart_locks_section(form, has_locks: bool) -> str:
+    """Where a refresh came from: the posted section if it is a known one."""
+    section = _form_str(form, "section")
+    if section in ("share", "add-more", "list"):
+        return section
+    return "list" if has_locks else "share"
+
+
+def _lock_property_return(request: Request, return_to: str) -> Optional[str]:
+    """``/apartments/{id}#door-code`` when return_to names the host's own property."""
+    match = re.fullmatch(r"/apartments/(\d+)", return_to.split("?", 1)[0])
+    if not match:
+        return None
+    apartment_id = int(match.group(1))
+    if not access.apartment(request, apartment_id):
+        return None
+    return f"/apartments/{apartment_id}#door-code"
 
 
 def _apartment_with_secret(apartment) -> Dict[str, Any]:
@@ -517,22 +553,23 @@ async def smart_locks_setup(request: Request):
         return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
     form = await request.form()
     return_to = _smart_locks_return_to(_form_return_to(form, "/smart-locks"))
+    setup_page = _smart_locks_url(return_to, "how")
     if _form_str(form, "terms") != "1":
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_terms"))
+        return _back(setup_page, err=_flash(request, "flash.error.smart_locks_terms"))
     owner_id = access.owner_id(request)
     if rate_limit.blocked("ttlock_setup", f"user:{owner_id}", 5):
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_rate_limited"))
+        return _back(setup_page, err=_flash(request, "flash.error.smart_locks_rate_limited"))
     rate_limit.record("ttlock_setup", f"user:{owner_id}")
     try:
         ttlock.create_account(owner_id)
     except ttlock.TTLockError:
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_failed"))
+        return _back(setup_page, err=_flash(request, "flash.error.smart_locks_failed"))
     db.audit(
         "door_code_terms_accepted",
         f"version={ttlock.DOOR_CODE_TERMS_VERSION}",
     )
     return _back(
-        f"/smart-locks?return_to={quote(return_to, safe='')}",
+        _smart_locks_url(return_to, "share"),
         msg=_flash(request, "flash.ok.smart_locks_ready"),
     )
 
@@ -549,24 +586,30 @@ async def smart_locks_refresh(request: Request):
     owner_id = access.owner_id(request)
     account = ttlock.account_for(owner_id)
     if not account:
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_missing_account"))
+        return _back(
+            _smart_locks_url(return_to, "how"),
+            err=_flash(request, "flash.error.smart_locks_missing_account"),
+        )
+    # Failures stay on the section the host acted in, with the real error.
+    here = _smart_locks_url(return_to, _smart_locks_section(form, bool(ttlock.locks_of(account))))
     try:
         locks, plain_keys = ttlock.check_locks(int(account["id"]))
     except ttlock.TTLockError as exc:
         if exc.kind == "budget":
-            return _back(return_to, err=_flash(request, "flash.error.smart_locks_budget"))
+            return _back(here, err=_flash(request, "flash.error.smart_locks_budget"))
         if exc.kind == "reauth":
-            return _back(return_to, err=_flash(request, "flash.error.smart_locks_reauth"))
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_failed"))
+            return _back(here, err=_flash(request, "flash.error.smart_locks_reauth"))
+        return _back(here, err=_flash(request, "flash.error.smart_locks_failed"))
+    # No usable lock now means the page shows the sharing steps again.
+    share = _smart_locks_url(return_to, "share")
     if not locks and plain_keys:
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_plain_key"))
+        return _back(share, err=_flash(request, "flash.error.smart_locks_plain_key"))
     if not locks:
-        return _back(return_to, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
+        return _back(share, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
     count = len(locks)
-    if return_to.startswith("/apartments/"):
-        target = return_to
-    else:
-        target = f"/smart-locks?return_to={quote(return_to, safe='')}"
+    # Found from a property: back to that property's lock section to choose
+    # one. Nothing is assigned or switched on here.
+    target = _lock_property_return(request, return_to) or _smart_locks_url(return_to, "list")
     return _back(
         target,
         msg=_flash_plural(request, "flash.ok.smart_locks_found", count, count=count),
@@ -585,7 +628,10 @@ async def smart_locks_remove(request: Request):
     owner_id = access.owner_id(request)
     account = ttlock.account_for(owner_id)
     if not account:
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_missing_account"))
+        return _back(
+            _smart_locks_url(return_to, "how"),
+            err=_flash(request, "flash.error.smart_locks_missing_account"),
+        )
     local_only = False
     with db.cursor():
         db.execute(
@@ -599,7 +645,7 @@ async def smart_locks_remove(request: Request):
         local_only = True
     db.audit("smart_locks_removed", "")
     key = "flash.ok.smart_locks_removed_local" if local_only else "flash.ok.smart_locks_removed"
-    return _back(f"/smart-locks?return_to={quote(return_to, safe='')}", msg=_flash(request, key))
+    return _back(_smart_locks_url(return_to, "how"), msg=_flash(request, key))
 
 
 # --- legal entities ------------------------------------------------------

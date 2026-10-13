@@ -505,10 +505,10 @@
     <input type="hidden" name="door_code_section" value="1">
     {% if not door_code.account %}
       <p class="small muted">{{ t('apartment.form.door_code.connect_first') }}</p>
-      <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code">{{ t('apartment.form.door_code.setup') }}</a>
+      <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
     {% elif not door_code.locks %}
       <p class="small muted">{{ t('apartment.form.door_code.no_locks') }}</p>
-      <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code">{{ t('smart_locks.title') }}</a>
+      <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-share">{{ t('smart_locks.title') }}</a>
     {% else %}
       <p class="small muted" style="margin-top:-4px">{{ t('apartment.form.door_code.lede') }}</p>
       {% if door_code.test_mode %}<p class="small"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
