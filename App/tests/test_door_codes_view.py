@@ -189,7 +189,7 @@ def test_view_failed_expired_and_issued():
     )
     shown = door_codes.view(issued, _apartment_row(apartment_id))
     assert shown["state"] == "issued"
-    assert shown["pin"] == "4829"
+    assert shown["pin"] == "4829#"
     assert shown["works_from"] == "01.06.2026 15:00"
     assert shown["works_until"] == "05.06.2026 10:00"
     # TTLock: first-use deadline is 24 h after the code becomes valid (valid_from).

@@ -37,6 +37,17 @@ LEASE_MINUTES = 2
 DELAY_MINUTES = 5
 BATCH = 20
 
+KEYPAD_CONFIRM_SUFFIX = "#"
+
+
+def guest_pin_display(pin: str) -> str:
+    """Digits guests type on the TTLock keypad, including the final # confirm."""
+    pin = (pin or "").strip()
+    if not pin or pin.endswith(KEYPAD_CONFIRM_SUFFIX):
+        return pin
+    return f"{pin}{KEYPAD_CONFIRM_SUFFIX}"
+
+
 def _mail_idempotency_key(reservation_id: int, row: dict) -> str:
     code_id = row["provider_code_id"] or "none"
     return (
@@ -160,7 +171,7 @@ def view(reservation: dict, apartment: dict) -> Optional[dict]:
         first_use = _fmt_local(_ms_to_iso(_iso_to_ms(valid_from) + 24 * 3_600_000))
     return {
         "state": "issued",
-        "pin": pin,
+        "pin": guest_pin_display(pin),
         "works_from": _fmt_local(valid_from) if valid_from else "",
         "works_until": _fmt_local(valid_to) if valid_to else "",
         "checkin": _stay_checkin_label(reservation["date_from"], apartment["checkin_hour"]),

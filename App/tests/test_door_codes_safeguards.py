@@ -258,7 +258,10 @@ def test_guests_see_the_exact_first_use_deadline():
     en = mail_notify.build_door_code(
         lang="en", property_name="Flat", checkin="a", checkout="b", first_use_by="c"
     )
-    assert "If you have not used it by c, it stops working. Then ask your host for a new code." in en["text"]
+    assert (
+        "You must enter it on the lock for the first time within 24 hours of check-in, "
+        "by c, or it expires. Contact your host and they will issue a new code."
+    ) in en["text"]
 
 
 def test_the_guide_walks_through_authorized_admin():
@@ -384,6 +387,14 @@ def test_a_taken_period_is_not_retried_from_the_guest_save(monkeypatch):
     )
     assert len(notices) == 1
     assert notices[0]["idempotency_key"].endswith(":period_taken")
+    row = db.query_one(
+        "SELECT payload, cc_email FROM email_outbox WHERE reservation_id = ? AND idempotency_key LIKE '%:period_taken'",
+        (stay,),
+    )
+    body = json.loads(row["payload"])["text"]
+    assert "Nothing to do" in body
+    assert "Passcodes" not in body
+    assert row["cc_email"] == "support@ubyhost.com"
 
 
 def test_the_worker_adds_a_custom_code_when_the_period_is_taken(monkeypatch):
@@ -955,7 +966,7 @@ def test_an_unarchived_stay_keeps_its_custom_code(monkeypatch):
     assert row["state"] == door_codes.ISSUED
     assert db.decrypt_field(row["pin_enc"]) == "4821937"
     assert delete_calls["n"] == first_tries
-    assert _view(stay, apartment)["pin"] == "4821937"
+    assert _view(stay, apartment)["pin"] == "4821937#"
 
 
 def test_a_random_code_delete_keeps_trying_until_its_end(monkeypatch):
@@ -1020,11 +1031,34 @@ def test_an_undeleted_code_for_the_same_hours_is_never_handed_out_again(monkeypa
     assert row["code_kind"] == "custom"
     assert db.decrypt_field(row["pin_enc"]) == "7654321"
     notices = db.query(
-        "SELECT idempotency_key FROM email_outbox "
+        "SELECT payload, cc_email, idempotency_key FROM email_outbox "
         "WHERE reservation_id = ? AND idempotency_key LIKE '%:period_shared'",
         (second,),
     )
     assert len(notices) == 1
+    body = json.loads(notices[0]["payload"])["text"]
+    assert "old code still opens" in body
+    assert "Delete it in the TTLock app" in body
+    assert notices[0]["cc_email"] == "support@ubyhost.com"
+
+
+def test_a_bad_window_delayed_mail_does_not_promise_retries():
+    _, apartment, stay = _stay(registered_minutes_ago=15)
+    row_id = door_codes.ensure_row(stay)
+    db.execute(
+        "UPDATE door_code SET state = ?, last_error = ? WHERE id = ?",
+        (door_codes.PENDING, "bad_window", row_id),
+    )
+    door_codes._alert_delayed()
+    row = db.query_one(
+        "SELECT payload FROM email_outbox "
+        "WHERE reservation_id = ? AND idempotency_key LIKE '%:delayed'",
+        (stay,),
+    )
+    body = json.loads(row["payload"])["text"]
+    assert "valid period" in body
+    assert "will not try again" in body
+    assert "keeps trying" not in body
 
 
 def test_the_monthly_limit_error_counts_as_budget():
