@@ -871,3 +871,10 @@ body.host-workspace {
 .help-tip:not([data-js]):focus-within > .help-tip-body { display: block; }
 .help-tip[data-js] > .help-tip-body { position: fixed; }
 .help-tip.is-open > .help-tip-body { display: block; }
+
+/* 0081 */
+.invoice-stay-context { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 12px; }
+.invoice-items-heading { display: flex; align-items: center; gap: 8px; }
+.invoice-items-heading h2 { margin: 0; }
+.page-actions { flex-wrap: wrap; }
+.stay-command-actions .actions { flex-wrap: wrap; }

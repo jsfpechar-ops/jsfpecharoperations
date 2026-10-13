@@ -4,7 +4,8 @@
 {% block content %}
 {% from "_components.html" import page_header with context %}
 {{ page_header(t('invoices.title'), t('invoices.lede'), '', '', '',
-    '<a class="btn accent primary" href="/invoices/new">' ~ t('invoice.new') ~ '</a>') }}
+    '<a class="btn ghost" href="/invoices/settings">' ~ t('host.invoice_settings') ~ '</a>'
+    ~ '<a class="btn accent primary" href="/invoices/new">' ~ t('invoice.new') ~ '</a>') }}
 {% include "_list_filter.html" %}
 {% if invoices %}
 <div class="panel tight scroll-x">

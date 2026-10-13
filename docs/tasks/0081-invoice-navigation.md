@@ -1,6 +1,6 @@
 # 0081: Invoice navigation and canonical configuration
 
-Status: todo — combined staging lane, run in the order and mode of [the combined plan](../plans/host-ux-combined-staging.md) §2–§3.
+Status: review
 
 Depends on: 0080 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0081-invoice-navigation | PR base: task/production-host-ux-integration
 

@@ -5934,6 +5934,24 @@ _STAY_DETAIL_0080_STRINGS = {
 for _lang, _strings in _STAY_DETAIL_0080_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0081: invoice navigation context and picker help.
+_INVOICE_0081_STRINGS = {
+    "en": {
+        "invoice.context.stay": "Stay",
+        "invoice.context.open_stay": "Open stay",
+        "invoice.picker.help": "Stays from the last 400 days and the next year. The invoice is issued for the stay you pick.",
+        "invoice.detail.paid_recorded": "Paid on",
+    },
+    "cs": {
+        "invoice.context.stay": "Pobyt",
+        "invoice.context.open_stay": "Otevřít pobyt",
+        "invoice.picker.help": "Pobyty za posledních 400 dní a na příští rok. Faktura se vystaví k vybranému pobytu.",
+        "invoice.detail.paid_recorded": "Zaplaceno dne",
+    },
+}
+for _lang, _strings in _INVOICE_0081_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE
