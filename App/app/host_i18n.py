@@ -6039,6 +6039,48 @@ _LOCK_ESSENTIAL_STRINGS = {
 for _lang, _strings in _LOCK_ESSENTIAL_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0083: Settings groups: Account, Security, Data & archive, Privacy, Technical, Help.
+_SETTINGS_GROUP_STRINGS = {
+    "en": {
+        "settings.index_label": "Settings sections",
+        "settings.group.account": "Account",
+        "settings.group.security": "Security",
+        "settings.group.data": "Data & archive",
+        "settings.group.privacy": "Privacy",
+        "settings.group.technical": "Technical",
+        "settings.group.help": "Help",
+        "settings.business.title": "Business & legal details",
+        "settings.business.help": "Names, addresses and invoice details of the businesses you report and invoice under.",
+        "settings.business.action": "Open business details",
+        "settings.account.incidents_help": "Review security incidents across workspaces.",
+        "settings.account.incidents_action": "View incidents",
+        "settings.privacy.requests_help": "Requests from guests about their data, and their deadlines.",
+        "settings.privacy.requests_action": "Open requests",
+        "settings.help.guide_help": "Step-by-step guides, and how to reach support.",
+        "settings.help.guide_action": "Open Help",
+    },
+    "cs": {
+        "settings.index_label": "Sekce nastavení",
+        "settings.group.account": "Účet",
+        "settings.group.security": "Zabezpečení",
+        "settings.group.data": "Data a archiv",
+        "settings.group.privacy": "Soukromí",
+        "settings.group.technical": "Technické",
+        "settings.group.help": "Nápověda",
+        "settings.business.title": "Firemní a právní údaje",
+        "settings.business.help": "Názvy, adresy a fakturační údaje podnikatelů, za které hlásíte a fakturujete.",
+        "settings.business.action": "Otevřít firemní údaje",
+        "settings.account.incidents_help": "Přehled bezpečnostních incidentů napříč účty.",
+        "settings.account.incidents_action": "Zobrazit incidenty",
+        "settings.privacy.requests_help": "Žádosti hostů o jejich údaje a jejich lhůty.",
+        "settings.privacy.requests_action": "Otevřít žádosti",
+        "settings.help.guide_help": "Návody krok za krokem a kontakt na podporu.",
+        "settings.help.guide_action": "Otevřít nápovědu",
+    },
+}
+for _lang, _strings in _SETTINGS_GROUP_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

@@ -937,3 +937,15 @@ body.host-workspace {
 /* 0090: contextual ? link to the full Guide steps */
 .help-link { display: inline-flex; align-items: center; justify-content: center; width: 1.5em; height: 1.5em; margin-left: 6px; border: 1px solid var(--border-strong, #ccc); border-radius: 50%; font-size: 14px; font-weight: 700; text-decoration: none; vertical-align: middle; }
 .help-link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* 0083 */
+.settings-groups { display: grid; gap: 28px; max-width: 880px; }
+.settings-group { display: grid; gap: 14px; scroll-margin-top: 16px; }
+.settings-group > .panel { margin: 0; }
+.settings-group-title { margin: 0; padding: 8px 14px; font-size: 15px; background: var(--brand-soft); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
+.settings-heading { position: relative; display: flex; align-items: center; gap: 6px; margin: 0 0 10px; flex-wrap: wrap; }
+.settings-heading h3 { margin: 0; }
+.settings-email-form { padding: 12px 0 16px; border-bottom: 1px solid var(--line); max-width: none; }
+.settings-email-form .field { max-width: 420px; }
+.settings-groups .settings-action-row .btn { white-space: normal; }
+@media (max-width: 640px) { .settings-groups { gap: 22px; } }

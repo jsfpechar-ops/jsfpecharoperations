@@ -504,3 +504,19 @@
 {% macro source_badge(key, label) %}
 <span class="source-badge">{{ source_mark(key) }}{{ label }}</span>
 {% endmacro %}
+
+{# 0083: a visible settings group with an ordinary header bar. #}
+{% macro settings_group(key, title) %}
+  <section class="settings-group" id="settings-group-{{ key }}" aria-labelledby="settings-group-{{ key }}-title">
+    <h2 class="settings-group-title" id="settings-group-{{ key }}-title">{{ title }}</h2>
+    {{ caller() }}
+  </section>
+{% endmacro %}
+
+{# 0083: a panel heading with the routine helper text behind the shared ? tip. #}
+{% macro settings_heading(key, title, help_text='', guide_href='') %}
+  <div class="settings-heading">
+    <h3>{{ title }}</h3>
+    {% if help_text %}{{ help_tip('settings-' ~ key ~ '-help', help_text, guide_href) }}{% endif %}
+  </div>
+{% endmacro %}
