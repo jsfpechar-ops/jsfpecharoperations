@@ -113,7 +113,7 @@ def at_risk_stays(
         "LEFT JOIN submission s ON s.id = g.submission_id "
         "LEFT JOIN user_account u ON u.id = a.owner_user_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
-        "AND r.source != 'demo' "  # 0100: the setup guide's demo stay
+        "AND COALESCE(r.source, '') != 'demo' "  # 0100: the setup guide's demo stay
         "AND g.archived_at IS NULL AND g.submit_state != ? "
         "AND g.nationality IS NOT NULL AND g.nationality != '' "
         "ORDER BY r.id",
@@ -184,7 +184,7 @@ def unknown_risk_stays(now: Optional[datetime] = None) -> List[Dict[str, Any]]:
         "JOIN apartment a ON a.id = r.apartment_id "
         "LEFT JOIN user_account u ON u.id = a.owner_user_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
-        "AND r.source != 'demo' "  # 0100: the setup guide's demo stay
+        "AND COALESCE(r.source, '') != 'demo' "  # 0100: the setup guide's demo stay
         "AND r.date_from <= ? AND r.date_from >= ? "
         "AND NOT EXISTS (SELECT 1 FROM guest g "
         "WHERE g.reservation_id = r.id AND g.archived_at IS NULL) "

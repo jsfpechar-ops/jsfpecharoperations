@@ -532,7 +532,7 @@ def _visible_reservations(apartment) -> List[Any]:
         "AND r.archived_at IS NULL "
         # 0100: a real guest must never pick the setup guide's demo stay, or
         # their record would sit in a stay that is never reported.
-        "AND r.source != 'demo' "
+        "AND COALESCE(r.source, '') != 'demo' "
         "AND r.date_from >= ? AND r.date_from <= ? "
         "AND c.guest_access_locked_at IS NULL "
         "ORDER BY r.date_from",
@@ -608,7 +608,7 @@ def _claimable_reservation(apartment, reservation_id: int):
     reservation = db.query_one(
         "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
         "AND status = 'active' AND archived_at IS NULL "
-        "AND source != 'demo'",  # 0100: a demo stay is never claimed
+        "AND COALESCE(source, '') != 'demo'",  # 0100: a demo stay is never claimed
         (reservation_id, apartment["id"]),
     )
     if not reservation:

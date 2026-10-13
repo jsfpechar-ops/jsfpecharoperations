@@ -97,7 +97,7 @@ def _housebook_sql(
         "WHERE r.status != 'ignored' AND g.archived_at IS NULL "
         "AND g.restricted_at IS NULL "
         # 0100: the setup guide's demo stay holds made-up guests only.
-        "AND r.source != 'demo' "
+        "AND COALESCE(r.source, '') != 'demo' "
         "AND (? IS NULL OR a.owner_user_id = ?)"
     )
     params: List[Any] = [owner_user_id, owner_user_id]
@@ -179,7 +179,7 @@ def housebook_archived_rows(
         "JOIN reservation r ON r.id = g.reservation_id "
         "JOIN apartment a ON a.id = r.apartment_id "
         "WHERE g.archived_at IS NOT NULL AND (? IS NULL OR a.owner_user_id = ?) "
-        "AND r.source != 'demo'"
+        "AND COALESCE(r.source, '') != 'demo'"
     )
     params: List[Any] = [owner_user_id, owner_user_id]
     if apartment_id:

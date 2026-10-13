@@ -75,7 +75,7 @@ def is_demo_apartment(apartment) -> bool:
 # picker leave it out too. tests/test_demo_stay_exclusion.py pins each one.
 DEMO_STAY_SOURCE = "demo"
 # For SQL that names the reservation ``r``.
-NOT_DEMO_STAY_SQL = "r.source != 'demo'"
+NOT_DEMO_STAY_SQL = "COALESCE(r.source, '') != 'demo'"
 
 
 def is_demo_stay(reservation) -> bool:

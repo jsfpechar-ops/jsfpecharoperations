@@ -27,7 +27,7 @@ def _export_sql(
         "SELECT r.*, a.internal_name AS apartment_name FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.archived_at IS NULL AND (? IS NULL OR a.owner_user_id = ?) "
-        "AND r.source != 'demo'"  # 0100: the setup guide's demo stay
+        "AND COALESCE(r.source, '') != 'demo'"  # 0100: the setup guide's demo stay
     )
     params: List[Any] = [owner_user_id, owner_user_id]
     if apartment_id:

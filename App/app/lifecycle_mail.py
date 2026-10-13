@@ -78,7 +78,7 @@ _RULES = {
         _FIRST_CALENDAR,
         "NOT EXISTS (SELECT 1 FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE a.owner_user_id = u.id AND r.registration_completed_at IS NOT NULL "
-        "AND r.source != 'demo')",  # 0100: a demo registration is not a guest
+        "AND COALESCE(r.source, '') != 'demo')",  # 0100: a demo registration is not a guest
     ),
 }
 

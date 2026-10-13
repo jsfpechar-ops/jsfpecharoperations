@@ -128,7 +128,7 @@ def _stay_options(request: Request):
         "SELECT r.id, r.date_from, r.date_to, a.internal_name, a.uby_name "
         "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         f"WHERE {db.null_safe_eq('a.owner_user_id')} AND r.status != 'cancelled' "
-        "AND r.source != 'demo' "  # 0100: the setup guide's demo stay
+        "AND COALESCE(r.source, '') != 'demo' "  # 0100: the setup guide's demo stay
         "AND r.date_to > r.date_from AND r.date_to >= ? AND r.date_from <= ? "
         "ORDER BY r.date_from DESC, r.id DESC LIMIT 200",
         (

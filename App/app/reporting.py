@@ -512,10 +512,18 @@ def queue_counts(
     rows: List[Dict[str, Any]], groups: Dict[str, List[Dict[str, Any]]]
 ) -> Dict[str, int]:
     """Numbers for the Overview stat strip, derived from the same buckets."""
+    from . import demo
+
     return {
         "attention": len(groups["needs_action"]),
         "awaiting": len(groups["waiting"]),
-        "ready": sum(1 for row in rows if row["progress"]["status"] == "ready"),
+        # 0100: the setup guide's demo stay can never be sent, so it is not
+        # "ready to send" on the dashboard either.
+        "ready": sum(
+            1 for row in rows
+            if row["progress"]["status"] == "ready"
+            and not demo.is_demo_stay(row.get("reservation"))
+        ),
         "overdue": sum(
             1 for row in rows
             if row["urgency"] == "overdue"
@@ -1241,7 +1249,7 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
         row["id"]: row
         for row in db.query(
             "SELECT * FROM reservation WHERE apartment_id = ? AND status = 'active' "
-            "AND archived_at IS NULL AND source != 'demo'",
+            "AND archived_at IS NULL AND COALESCE(source, '') != 'demo'",
             (apartment_id,),
         )
     }
@@ -2267,7 +2275,7 @@ def check_deadlines(
     rows = db.query(
         "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
-        "AND r.source != 'demo' "
+        "AND COALESCE(r.source, '') != 'demo' "
         "AND (? IS NULL OR a.owner_user_id = ?)",
         (owner_user_id, owner_user_id),
     )

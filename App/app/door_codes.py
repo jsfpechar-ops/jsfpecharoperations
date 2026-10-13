@@ -101,7 +101,7 @@ def _eligible_sql() -> Tuple[str, str]:
         "AND a.lock_provider = 'ttlock' AND a.lock_id IS NOT NULL "
         "AND a.checkin_hour IS NOT NULL AND a.checkout_hour IS NOT NULL "
         # 0100: the setup guide's demo stay never opens a real door.
-        "AND r.source != 'demo'"
+        "AND COALESCE(r.source, '') != 'demo'"
     )
     if not config.DOOR_CODES_LIVE:
         sql += " AND r.source = 'manual'"
@@ -1055,7 +1055,7 @@ def _alert_delayed() -> int:
         "WHERE a.lock_provider = 'ttlock' AND r.status = 'active' "
         "AND r.archived_at IS NULL AND r.registration_completed_at IS NOT NULL "
         "AND r.registration_completed_at < ? AND r.date_to >= ? "
-        "AND r.source != 'demo' "
+        "AND COALESCE(r.source, '') != 'demo' "
         "AND (dc.id IS NULL OR dc.state IN (?, ?, ?))"
     )
     if not config.DOOR_CODES_LIVE:
