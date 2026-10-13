@@ -34,6 +34,9 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
 REPORT_FIELD_KEYS = (
     "idub",
     "mark",
+    # 0097: the UbyPort facility name is no longer copied from the property
+    # name, so a fresh property lists it as missing until the host types it.
+    "facility_name",
     "ws_user",
     "password",
 )
