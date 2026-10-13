@@ -26,12 +26,13 @@ MEASURE = """() => {
     const actions = [...tr.querySelectorAll('td.row-actions button, td.row-actions .row-menu-trigger')]
       .filter(el => el.offsetParent !== null && !el.closest('.row-menu-panel'))
       .map(el => { const r = el.getBoundingClientRect(); return {left: r.left, right: r.right, top: r.top, bottom: r.bottom, h: r.height}; });
-    return {rects, actions, cards: getComputedStyle(tr).display === 'grid'};
+    return {rects, actions, height: tr.getBoundingClientRect().height};
   });
   const sc = document.documentElement;
   return {viewLeft: v.left, viewRight: v.right, viewScroll: view.scrollWidth, viewClient: view.clientWidth,
           docScroll: sc.scrollWidth, tableScroll: view.querySelector('table').scrollWidth,
-          overflow: getComputedStyle(view).overflowX, rows};
+          overflow: getComputedStyle(view).overflowX, rows,
+          header: getComputedStyle(view.querySelector('thead')).display !== 'none'};
 }"""
 
 
@@ -68,20 +69,31 @@ def test_stays_fit_lane_at_every_width_and_sidebar_state(stay_actions_host, stay
                         continue
                     page.wait_for_timeout(80)
                     m = page.evaluate(MEASURE)
+                    if capture and width in EVIDENCE_WIDTHS:
+                        EVIDENCE.mkdir(parents=True, exist_ok=True)
+                        name = f"stays-{width}-{locale}-{'collapsed' if collapsed else 'expanded'}.png"
+                        page.locator(".stays-view").first.screenshot(path=str(EVIDENCE / name))
                     state = f"{locale}/{width}/{'collapsed' if collapsed else 'expanded'}"
                     lane = round(m["viewClient"])
                     matrix.append({"locale": locale, "width": width,
                                    "sidebar": "collapsed" if collapsed else "expanded",
                                    "lane": lane, "docScroll": m["docScroll"], "viewScroll": m["viewScroll"],
-                                   "cards": all(r["cards"] for r in m["rows"])})
+                                   "mode": "row" if m["header"] else "card",
+                                   "rowHeights": [round(r["height"]) for r in m["rows"]]})
                     assert m["overflow"] not in ("auto", "scroll"), state
                     assert m["viewScroll"] <= m["viewClient"] + 1, (state, m["viewScroll"], m["viewClient"])
                     assert m["tableScroll"] <= m["viewClient"] + 1, state
                     assert m["docScroll"] <= width + 1, (state, m["docScroll"])
                     assert len(m["rows"]) >= 7, state
+                    # One row per stay with a header at a lane of 900px or more, compact cards below.
+                    assert m["header"] == (lane >= 900), (state, lane)
+                    heights = sorted(r["height"] for r in m["rows"])
+                    median = heights[(len(heights) - 1) // 2]  # lower median: Send rows may wrap in CS
+                    assert median <= (72 if m["header"] else (160 if lane >= 600 else 200)), (state, lane, heights)
+                    if m["header"]:
+                        assert heights[-1] <= 125, (state, heights)
+                        assert heights[0] >= 55, (state, heights)
                     for row in m["rows"]:
-                        # Cards at a lane of 1100px or less, table above: never a cramped table.
-                        assert row["cards"] == (lane <= 1100), (state, lane, row["cards"])
                         for r in row["rects"]:
                             assert r["left"] >= m["viewLeft"] - 1 and r["right"] <= m["viewRight"] + 1, (state, r)
                             assert r["font"] >= 11, (state, r)
@@ -90,12 +102,8 @@ def test_stays_fit_lane_at_every_width_and_sidebar_state(stay_actions_host, stay
                             for b in actions[i + 1:]:
                                 assert (a["right"] <= b["left"] + 1 or b["right"] <= a["left"] + 1
                                         or a["bottom"] <= b["top"] + 1 or b["bottom"] <= a["top"] + 1), (state, a, b)
-                    if capture and width in EVIDENCE_WIDTHS:
-                        EVIDENCE.mkdir(parents=True, exist_ok=True)
-                        name = f"stays-{width}-{locale}-{'collapsed' if collapsed else 'expanded'}.png"
-                        page.locator(".stays-view").first.screenshot(path=str(EVIDENCE / name))
         context.close()
         browser.close()
-    assert any(item["cards"] for item in matrix)  # host lane is capped at 1080px: cards everywhere today
+    assert {item["mode"] for item in matrix} == {"row", "card"}
     if capture:
         (EVIDENCE / "measurements.json").write_text(json.dumps(matrix, indent=1))

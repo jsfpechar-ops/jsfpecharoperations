@@ -6,7 +6,17 @@
   "lane": 330,
   "docScroll": 360,
   "viewScroll": 330,
-  "cards": true
+  "mode": "card",
+  "rowHeights": [
+   168,
+   169,
+   221,
+   169,
+   221,
+   169,
+   221,
+   167
+  ]
  },
  {
   "locale": "en",
@@ -15,7 +25,17 @@
   "lane": 360,
   "docScroll": 390,
   "viewScroll": 360,
-  "cards": true
+  "mode": "card",
+  "rowHeights": [
+   168,
+   155,
+   169,
+   155,
+   155,
+   155,
+   169,
+   167
+  ]
  },
  {
   "locale": "en",
@@ -24,7 +44,17 @@
   "lane": 718,
   "docScroll": 760,
   "viewScroll": 718,
-  "cards": true
+  "mode": "card",
+  "rowHeights": [
+   153,
+   155,
+   155,
+   155,
+   155,
+   155,
+   155,
+   152
+  ]
  },
  {
   "locale": "en",
@@ -33,7 +63,17 @@
   "lane": 758,
   "docScroll": 1024,
   "viewScroll": 758,
-  "cards": true
+  "mode": "card",
+  "rowHeights": [
+   151,
+   153,
+   153,
+   153,
+   153,
+   153,
+   153,
+   150
+  ]
  },
  {
   "locale": "en",
@@ -42,7 +82,17 @@
   "lane": 994,
   "docScroll": 1280,
   "viewScroll": 994,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   78,
+   66,
+   65
+  ]
  },
  {
   "locale": "en",
@@ -51,7 +101,17 @@
   "lane": 1078,
   "docScroll": 1440,
   "viewScroll": 1078,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   65
+  ]
  },
  {
   "locale": "en",
@@ -60,7 +120,17 @@
   "lane": 1078,
   "docScroll": 1680,
   "viewScroll": 1078,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   65
+  ]
  },
  {
   "locale": "en",
@@ -69,7 +139,17 @@
   "lane": 1078,
   "docScroll": 1920,
   "viewScroll": 1078,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   65
+  ]
  },
  {
   "locale": "en",
@@ -78,7 +158,17 @@
   "lane": 1078,
   "docScroll": 2048,
   "viewScroll": 1078,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   65
+  ]
  },
  {
   "locale": "en",
@@ -87,7 +177,17 @@
   "lane": 884,
   "docScroll": 1024,
   "viewScroll": 884,
-  "cards": true
+  "mode": "card",
+  "rowHeights": [
+   151,
+   153,
+   153,
+   153,
+   153,
+   153,
+   153,
+   150
+  ]
  },
  {
   "locale": "cs",
@@ -96,7 +196,17 @@
   "lane": 330,
   "docScroll": 360,
   "viewScroll": 330,
-  "cards": true
+  "mode": "card",
+  "rowHeights": [
+   168,
+   155,
+   221,
+   169,
+   221,
+   169,
+   242,
+   167
+  ]
  },
  {
   "locale": "cs",
@@ -105,7 +215,17 @@
   "lane": 360,
   "docScroll": 390,
   "viewScroll": 360,
-  "cards": true
+  "mode": "card",
+  "rowHeights": [
+   153,
+   155,
+   221,
+   155,
+   207,
+   155,
+   221,
+   152
+  ]
  },
  {
   "locale": "cs",
@@ -114,7 +234,17 @@
   "lane": 718,
   "docScroll": 760,
   "viewScroll": 718,
-  "cards": true
+  "mode": "card",
+  "rowHeights": [
+   153,
+   155,
+   155,
+   155,
+   155,
+   155,
+   155,
+   152
+  ]
  },
  {
   "locale": "cs",
@@ -123,7 +253,17 @@
   "lane": 892,
   "docScroll": 1024,
   "viewScroll": 892,
-  "cards": true
+  "mode": "card",
+  "rowHeights": [
+   151,
+   153,
+   153,
+   153,
+   153,
+   153,
+   153,
+   150
+  ]
  },
  {
   "locale": "cs",
@@ -132,7 +272,17 @@
   "lane": 1078,
   "docScroll": 1280,
   "viewScroll": 1078,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
  },
  {
   "locale": "cs",
@@ -141,7 +291,17 @@
   "lane": 1078,
   "docScroll": 1440,
   "viewScroll": 1078,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
  },
  {
   "locale": "cs",
@@ -150,7 +310,17 @@
   "lane": 1078,
   "docScroll": 1680,
   "viewScroll": 1078,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
  },
  {
   "locale": "cs",
@@ -159,7 +329,17 @@
   "lane": 1078,
   "docScroll": 1920,
   "viewScroll": 1078,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
  },
  {
   "locale": "cs",
@@ -168,6 +348,16 @@
   "lane": 1078,
   "docScroll": 2048,
   "viewScroll": 1078,
-  "cards": true
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
  }
 ]

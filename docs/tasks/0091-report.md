@@ -3,12 +3,13 @@
 Base: ab0a2f1 (main) plus merge of claude/quirky-lamport-9svmd1 (00e5c4e: 0087/0095 corrections, combined-staging plan). Status: review.
 
 ## What changed
-- `App/app/static/host.css`: one `/* 0091 */` block. `.stays-view` is a named inline-size container (`stays-list`); labelled cards at lane <= 1100px (2 columns, 1 column <= 600px); row actions wrap as whole controls (Send, Copy, More), no nowrap or percentage widths, More is fixed-size, Copy has natural width and its label may wrap; tap targets 44px at <= 720px. Open row-menu items get min-height 44px at <= 720px (the panel is moved to body, so the rule is unscoped).
-- `reservations.html`: `.scroll-x` removed from the stays panel (no sideways scroll, no clipping).
-- Tests: `test_host_fit_browser.py` (new: EN/CS x 9 widths x sidebar expanded/collapsed; lane scrollWidth, cell/action bounds inside lane, font >= 11px, no action overlaps, cards iff lane <= 1100). `test_host_wide_geometry_browser.py` and `test_host_stay_actions_browser.py` updated: actions may wrap (same row or distinct rows, never overlapping or clipped; heights still checked). No assertion was removed or skipped.
-- Extra item: screenshot writes in `test_host_stay_actions_browser.py` (generated_images/0041-evidence) are now gated by `UBYHOST_CAPTURE_0041=1`.
-- Finding: the host lane is capped at 1080px (host.css:41), so stays are cards at every desktop width today; the table only returns if the lane exceeds 1100px.
-- Original defect reproduced: at 1280 expanded, Copy/More ended at x=1257/1301 while the panel ended at 1246 (clipped), because the table was chosen by viewport (>=1101) but the lane was about 996.
+- `App/app/static/host.css`: one `/* 0091 */` block. `.stays-view` is a named inline-size container (`stays-list`). Lane >= 900px: one grid row per stay under one header row, no per-cell labels (6 columns: Stay | Property with Source muted below | Guests | Reporting | Deadline | Actions); actions right-aligned, wrap inside their cell. Lane < 900px: compact card (dates + nights and status pill; property and source; guests and deadline; wrapping actions); below 600px actions share the full width. Cell labels are screen-reader text only. 44px tap targets at <= 720px, including the open row menu (panel lives in body).
+- `reservations.html`: `.scroll-x` removed; Source is no longer its own column (it sits under the property, class `stay-col-source` kept, portal link kept).
+- Lane cap: `.wrap.with-sidebar > * { max-width: 1080px }` (host.css:41) pre-existed and is shared by all host pages and the lane-alignment tests, so it is kept (lane 994 at 1280 expanded, 1078 at 1440+). Row mode needs 900px minimum.
+- Row heights (EN, lane 994/1078): 66px typical at 1280 and 1440, 78px for one row that wraps a long name, 109px for Send rows in CS (Send + Copy wrap in the actions cell). Cards: about 150-153px at 760-1024 (44px buttons).
+- Tests: `test_host_fit_browser.py` (new: EN/CS x 9 widths x sidebar states; no overflow; bounds; fonts; no overlaps; row mode iff lane >= 900 with lower-median row height <= 72 and max <= 125; card median <= 160 / 200 below 600px). `test_host_wide_geometry_browser.py` (two spots) and `test_host_stay_actions_browser.py`: actions may wrap onto distinct rows, never overlap or clip; nothing removed or skipped.
+- Screenshot writes in `test_host_stay_actions_browser.py` are gated by `UBYHOST_CAPTURE_0041=1`.
+- Original defect: at 1280 expanded, Copy/More were clipped by the panel (table chosen by viewport, lane about 996).
 
 ## Baseline failures (6)
 | Test | Now | Cause |
@@ -26,8 +27,7 @@ Dashboard test, three separate causes, outside my files:
 3. After 1 and 2, line 254 (`activeElement !== document.body`) fails after Tab from the last menu item: focusOutsideMenu in app.js finds no next focusable after the last dashboard row. Needs an app.js decision (return focus to the trigger when nothing follows) or a test change. dashboard.html and app.js are outside section 3.
 
 ## Tests run (from App)
-- stay_actions, wide_geometry, fit, feedback, controls browsers: 10 passed, 0 skipped.
-- Also passed: test_host_filter_panels_browser, test_host_geometry, test_host_redesign (29 passed, 1 failed = dashboard above).
+- wide_geometry: 6 passed. stay_actions, fit, feedback, controls, filter_panels, geometry, redesign: 22 passed. 0 skipped. Dashboard test fails as above.
 - Not run: whole suite and coverage gate (instructed).
 
 ## Audit (read-only; evidence = existing wide-geometry matrix, EN/CS, 360/390/760/1024-2048, no-overflow and no-obstruction assertions passing)
