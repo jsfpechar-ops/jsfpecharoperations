@@ -6259,6 +6259,18 @@ _REGISTER_LOOKUP_STRINGS = {
 for _lang, _strings in _REGISTER_LOOKUP_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0093 pass: help text for the lock steps title (replaces a title-only "?" link).
+_HELP_0093_STRINGS = {
+    "en": {
+        "smart_locks.steps_help": "These are the three essentials. Every TTLock tap is in the Guide.",
+    },
+    "cs": {
+        "smart_locks.steps_help": "Tady jsou jen tři podstatné kroky. Každé klepnutí v TTLocku najdete v Návodu.",
+    },
+}
+for _lang, _strings in _HELP_0093_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

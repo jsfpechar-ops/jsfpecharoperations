@@ -2,7 +2,7 @@
 {% set nav = 'invoices' %}
 {% block title %}{{ t('invoice.new') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, help_tip with context %}
+{% from "_components.html" import page_header, field_label, help_tip with context %}
 {{ page_header(t('invoice.new'), t('invoices.lede'), '/invoices', t('nav.invoices')) }}
 
 {% if errors %}
@@ -332,9 +332,8 @@
     <div class="grid" id="due-fields" data-due-fields
          {% if values.get('already_paid', '1') != '0' %}hidden{% endif %}>
       <div class="field">
-        <label for="due_date">{{ t('invoice.due') }}</label>
-        <input type="date" id="due_date" name="due_date" value="{{ values.get('due_date', '') }}">
-        <div class="hint">{{ t('invoice.due_help') }}</div>
+        {{ field_label('due_date', t('invoice.due'), t('invoice.due_help')) }}
+        <input type="date" id="due_date" name="due_date" value="{{ values.get('due_date', '') }}" aria-describedby="due_date-help">
       </div>
       <div class="field invoice-paid-duzp-clone" hidden></div>
     </div>

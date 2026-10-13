@@ -1154,3 +1154,8 @@ body.host-workspace {
 
 .host-workspace .entity-register-lookup { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .host-workspace .entity-register-lookup > p { margin: 0; }
+
+/* 0093 pass */
+.heading-with-tip { position: relative; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; }
+.heading-with-tip > h2 { margin: 0; }
+.smart-locks-steps-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }

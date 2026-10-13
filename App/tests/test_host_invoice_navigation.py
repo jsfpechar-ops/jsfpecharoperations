@@ -104,7 +104,8 @@ def test_detail_links_stay_settings_and_payment_fact(world):
     invoice_id = _issue(world, paid=True)
     html = client.get(f"/invoices/{invoice_id}").text
     assert f'href="/reservations/{world["stay"]}"' in html
-    assert f"/invoices/settings?entity={world['entity']}&amp;next=/invoices/{invoice_id}" in html
+    assert f"/entities?edit={world['entity']}&amp;next=/invoices/{invoice_id}#entity-invoice" in html
+    assert "/invoices/settings?entity=" not in html
     assert "Paid on" in html
     unpaid = _issue(world, paid=False, stay=make_stay(world["owner"], entity_id=world["entity"]))
     html = client.get(f"/invoices/{unpaid}").text
