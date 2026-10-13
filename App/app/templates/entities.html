@@ -45,6 +45,7 @@
   <section class="entity-section" id="entity-business" aria-labelledby="entity-business-title">
     <h3 class="entity-section-title" id="entity-business-title">{{ t('entities.section.business') }}</h3>
     <form method="post" action="/entities/{{ edit_entity.id }}" enctype="multipart/form-data" data-unsaved-guard>
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
       {{ business_form_body('edit_', edit_entity, signature_preview, ares_error, ares_note) }}
       <div class="actions"><button class="btn primary" type="submit">{{ t('entities.save') }}</button></div>
@@ -155,6 +156,7 @@
 <div class="panel entity-add" id="entity-add">
   <h2 style="margin-top:0">{{ t('entities.add') }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     {{ business_form_body('new_', new_entity or none, '', ares_error, ares_note) }}
     <div class="actions"><button class="btn primary" type="submit">{{ t('entities.add_action') }}</button></div>
   </form>
