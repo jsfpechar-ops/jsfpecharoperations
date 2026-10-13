@@ -1318,13 +1318,13 @@ def _refuse_apartment_create(
 
 
 def _create_address_errors(payload: Dict[str, Any]) -> Dict[str, str]:
-    """0092: the address is optional at create. A blank or partly filled
-    address is incomplete setup (readiness keeps reporting blocked until the
-    required parts exist). A component the host did type must pass the same
-    per-field check as the property editor before anything is written."""
+    """The police address is required: at create and on every Settings save
+    (owner, 2026-10-13). Municipality, house number and postcode must be
+    present and every typed component must pass the per-field check before
+    anything is written. Saved exactly as typed."""
     errors: Dict[str, str] = {}
     for issue in validation.errors_only(validation.validate_apartment(dict(payload))):
-        if issue.field in _ADDRESS_ONLY_FIELDS and (payload.get(issue.field) or "").strip():
+        if issue.field in _ADDRESS_ONLY_FIELDS:
             errors.setdefault(issue.field, issue.message)
     return errors
 
@@ -1712,7 +1712,11 @@ def _render_property_detail(
 
 
 def _refuse_apartment_save(
-    request: Request, apartment: Dict[str, Any], form, operator_error: Optional[str]
+    request: Request,
+    apartment: Dict[str, Any],
+    form,
+    operator_error: Optional[str],
+    address_errors: Optional[Dict[str, str]] = None,
 ):
     """Render the property page again with the host's unsaved values."""
     draft = dict(apartment)
@@ -1736,8 +1740,12 @@ def _refuse_apartment_save(
         draft,
         copy_ctx,
         operator_error=operator_error,
-        extra={"property_view": "settings", "settings_section": "property"},
-        status_code=400 if operator_error else 200,
+        extra={
+            "property_view": "settings",
+            "settings_section": "property",
+            "address_errors": address_errors or {},
+        },
+        status_code=400 if (operator_error or address_errors) else 200,
     )
 
 
@@ -1908,6 +1916,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         payload["data_controller_entity_id"] = None
     _apply_police_defaults(payload, access.entities(request))
     address_mismatch = False
+    if any(field in form for field in _ADDRESS_ONLY_FIELDS):
+        # The address stays complete once the property exists: a Settings save
+        # that clears or breaks it is refused with the typed values kept.
+        merged = dict(apartment)
+        merged.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS if field in form})
+        address_errors = _create_address_errors(merged)
+        if address_errors:
+            return _refuse_apartment_save(request, apartment, form, None, address_errors), False
     password = _form_str(form, "uby_ws_password")
     if password:
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)

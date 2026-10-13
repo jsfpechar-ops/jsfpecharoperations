@@ -65,7 +65,7 @@
       </section>
 
       <section class="panel property-create-card" id="address" aria-labelledby="property-create-address">
-        <header class="property-create-head">{{ nav_icon('report') }}<div><div class="heading-with-tip"><h2 id="property-create-address">{{ t('property_create.address') }} <span class="opt">{{ t('common.optional') }}</span></h2>
+        <header class="property-create-head">{{ nav_icon('report') }}<div><div class="heading-with-tip"><h2 id="property-create-address">{{ t('property_create.address') }}</h2>
           {{ help_tip('property-create-address-help', t('property_create.address_lede')) }}</div></div></header>
         {% include "_property_address_fields.html" %}
       </section>
@@ -83,8 +83,8 @@
       <li>{{ nav_icon('calendar') }}<div><strong>{{ t('property_create.next_calendar') }}</strong><small>{{ t('property_create.next_calendar_body') }}</small></div></li>
       <li>{{ nav_icon('link') }}<div><strong>{{ t('property_create.next_guests') }}</strong><small>{{ t('property_create.next_guests_body') }}</small></div></li>
       <li>{{ nav_icon('report') }}<div><strong>{{ t('property_create.next_reporting') }}</strong><small>{{ t('property_create.next_reporting_body') }}</small></div></li>
+      <li>{{ nav_icon('lock') }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong><small>{{ t('property_create.next_lock_body') }} <a href="/guide#door-codes">{{ t('help.tip.more') }}</a></small></div></li>
     </ul>
-    <p class="small property-create-lock"><a href="/guide#door-codes">{{ t('host.door_code') }}</a> · {{ t('common.optional') }}</p>
     {% if copy_property_peers %}
     <form method="get" action="/apartments/new" class="property-create-copy">
       <label for="copy_from">{{ t('apartment.form.copy_from.label') }}</label>
