@@ -1,0 +1,19 @@
+# Captured on integration HEAD 98c600be8e3e3cde2779e6b955f25f1c4992c1b0 (before 0087 application commits).
+# Command: UBYHOST_REQUIRE_BROWSER=1 UBYHOST_UBYPORT_ENV=mock UBYHOST_DEPLOYMENT=staging UBYHOST_ENABLE_SCHEDULER=0 \
+#   pytest <six tests listed below> -q --tb=no (from App/)
+
+FFFFFF                                                                   [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/App/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_host_feedback_browser.py::test_host_copy_feedback_truth_and_geometry
+FAILED tests/test_host_quiet_dashboard_browser.py::test_dashboard_geometry_locales_and_screenshots
+FAILED tests/test_host_stay_actions_browser.py::test_stays_guest_link_copy_is_status_independent_and_token_guarded
+FAILED tests/test_host_wide_geometry_browser.py::test_host_wide_lanes_align
+FAILED tests/test_host_wide_geometry_browser.py::test_stay_row_actions_fit_midwidth_lanes
+FAILED tests/test_host_wide_geometry_browser.py::test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned
+6 failed, 1 warning in 48.29s

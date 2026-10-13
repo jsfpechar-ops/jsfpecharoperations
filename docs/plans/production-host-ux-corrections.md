@@ -1,5 +1,7 @@
 # Production host UX corrections
 
+> **2026-10-13:** superseded for branching and patch release by the [combined staging lane](host-ux-combined-staging.md): one branch, one draft PR to main, staging only.
+
 Owner requirements captured 2026-10-12. Source reviewed: main `7b27d09402f9656b0c606c131793310925936526`. PR #378 is merged; it delivered the navigation plan, not these corrections. This document takes precedence over conflicting optional-platform, active-toggle, address-parser or onboarding instructions in that plan. No application change has been implemented or tested by the orchestrator in this review.
 
 ## What the owner wants

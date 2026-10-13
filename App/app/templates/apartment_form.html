@@ -14,11 +14,12 @@
 {% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, onboarding_banner, nav_icon, source_badge with context %}
+{% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, onboarding_banner, nav_icon, source_badge, field_label with context %}
 {% set property_prefill = property_prefill or {} %}
 {% set copy_property_peers = copy_property_peers or [] %}
 <style>
   .property-address-grid .field > label { min-height: 2.9em; }
+  #uby_ws_password::placeholder { color: inherit; opacity: 1; letter-spacing: .12em; }
   @media (max-width: 700px) {
     .property-address-grid .field > label { min-height: 0; }
   }
@@ -244,46 +245,29 @@
 
   <details class="panel property-section" id="address" {% if not editing %}open{% endif %}>
     <summary>{{ t('apartment.form.address.title') }}</summary>
-    <p class="small muted" style="margin-top:-4px">{{ t('apartment.form.address.lede') }}</p>
-    {{ text_field('address_line', t('apartment.form.address.line_label'), address_line|default('', true), '',
-       false, none, t('apartment.form.address.line_placeholder')) }}
-    {% for issue in issues|default([]) if issue.field == 'address_line' and not issue.is_error %}
-    <div class="hint"><strong>{{ issue.message }}</strong></div>
-    {% endfor %}
-    <details class="property-address-police" {% if address_details_open|default(true) %}open{% endif %}>
-      <summary>{{ t('apartment.form.address.police_details_title') }}</summary>
-      <div class="grid property-address-grid">
-        {{ text_field('addr_okres', t('apartment.form.addr.okres'), apartment.addr_okres if editing else '',
-           t('apartment.form.addr.okres_hint'), false, 32) }}
-        {{ text_field('addr_obec', t('apartment.form.addr.obec'), apartment.addr_obec if editing else '', '', false, 48,
-           none) }}
-        {{ text_field('addr_obec_cast', t('apartment.form.addr.obec_cast'), apartment.addr_obec_cast if editing else '',
-           '', true, 48) }}
-      </div>
-      <div class="grid property-address-grid">
-        {{ text_field('addr_street', t('apartment.form.addr.street'), apartment.addr_street if editing else '', '', true, 48) }}
-        {{ text_field('addr_house_no', t('apartment.form.addr.house_no'), apartment.addr_house_no if editing else '',
-           t('apartment.form.addr.house_no_hint'), false, 5, none) }}
-        {{ text_field('addr_orient_no', t('apartment.form.addr.orient_no'), apartment.addr_orient_no if editing else '',
-           t('apartment.form.addr.orient_no_hint'), true, 4) }}
-        {{ text_field('addr_zip', t('apartment.form.addr.zip'), apartment.addr_zip if editing else '', t('apartment.form.addr.zip_hint'), false, 6, none) }}
-      </div>
-    </details>
+    <div class="grid property-address-grid">
+      {{ text_field('addr_okres', t('apartment.form.addr.okres'), apartment.addr_okres if editing else '',
+         t('apartment.form.addr.okres_hint'), false, 32) }}
+      {{ text_field('addr_obec', t('apartment.form.addr.obec'), apartment.addr_obec if editing else '', '', false, 48,
+         none) }}
+      {{ text_field('addr_obec_cast', t('apartment.form.addr.obec_cast'), apartment.addr_obec_cast if editing else '',
+         '', true, 48) }}
+    </div>
+    <div class="grid property-address-grid">
+      {{ text_field('addr_street', t('apartment.form.addr.street'), apartment.addr_street if editing else '', '', true, 48) }}
+      {{ text_field('addr_house_no', t('apartment.form.addr.house_no'), apartment.addr_house_no if editing else '',
+         t('apartment.form.addr.house_no_hint'), false, 5, none) }}
+      {{ text_field('addr_orient_no', t('apartment.form.addr.orient_no'), apartment.addr_orient_no if editing else '',
+         t('apartment.form.addr.orient_no_hint'), true, 4) }}
+      {{ text_field('addr_zip', t('apartment.form.addr.zip'), apartment.addr_zip if editing else '', t('apartment.form.addr.zip_hint'), false, 6, none) }}
+    </div>
   </details>
 
   <details class="panel property-section" id="ubyport">
     <summary>{{ t('host.reporting') }}</summary>
     <p><a href="#automation">{{ t('automation.timing_title') }} →</a></p>
-    <p class="small muted" style="margin-top:-4px">
-      {{ t('apartment.form.ubyport.intro') }}
-    </p>
-    <p class="small" style="margin:12px 0">
-      <a class="btn small" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">
-        {{ t('automation.sample_pdf') }}</a>
-      <span class="muted">{{ t('apartment.form.ubyport.sample_help') }}</span>
-    </p>
-    <p class="small muted">
-      {{ t('apartment.form.ubyport.mismatch_help') }}
+    <p class="small" style="margin-top:-4px">
+      <a href="/guide#ubyport-credentials">{{ t('apartment.form.ubyport.credentials_help_heading') }}</a>
     </p>
     <div class="grid">
       {{ text_field('uby_idub', 'IDUB', apartment.uby_idub if editing else '',
@@ -294,12 +278,9 @@
          t('apartment.form.ubyport.login_hint'), false, none, none) }}
       <div class="field">
         <label for="uby_ws_password">{{ t('automation.password') }}</label>
-        {% if editing and has_password %}
-        <p class="small muted" style="margin:0 0 6px">{{ t('apartment.form.ubyport.password_saved') }}</p>
-        {% endif %}
         <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
-               placeholder="{{ t('automation.password_keep') if editing and has_password else t('automation.password_paste') }}">
-        <div class="hint">
+               {% if editing and has_password %}placeholder="••••••••" {% endif %}aria-describedby="uby_ws_password-hint">
+        <div class="hint" id="uby_ws_password-hint">
           {% if editing and has_password %}
           {{ t('apartment.form.ubyport.password_edit_hint') }}
           {% else %}
@@ -308,27 +289,13 @@
         </div>
       </div>
     </div>
-    {% set ns = namespace(derived_open=false) %}
-    {% if issues %}
-    {% for issue in issues %}
-    {% if issue.is_error and issue.field in ('uby_mark', 'uby_name', 'uby_contact') %}
-    {% set ns.derived_open = true %}
-    {% endif %}
-    {% endfor %}
-    {% endif %}
-    <details class="police-derived" {% if ns.derived_open %}open{% endif %}>
-      <summary>{{ t('apartment.form.ubyport.derived_summary') }}</summary>
-      <div class="grid">
-        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark if editing else '',
-           t('apartment.form.ubyport.derived_mark_hint'), false, 6, none) }}
-      </div>
-      <div class="grid two">
-        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name if editing else '',
-           t('apartment.form.ubyport.derived_name_hint'), false, 35, none) }}
-        {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact if editing else '',
-           t('apartment.form.ubyport.derived_contact_hint'), true, 50) }}
-      </div>
-    </details>
+    <div class="grid">
+      {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark if editing else '', '', false, 6, none) }}
+    </div>
+    <div class="grid two">
+      {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name if editing else '', '', false, 35, none) }}
+      {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact if editing else '', '', true, 50) }}
+    </div>
     {% if editing %}
     <details class="panel property-section" id="ws-request-letter"{% if not apartment.uby_ws_user %} open{% endif %}>
       <summary>{{ t('apartment.form.ubyport.ws_request.summary') }}</summary>
@@ -408,7 +375,7 @@
     <div class="field">
       <label for="guest_message">{{ t('apartment.form.guest_message.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
       <textarea id="guest_message" name="guest_message" maxlength="1000"
-                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ (apartment.guest_message or '') if editing else '' }}</textarea>
+                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ (apartment.guest_message or '') if editing else t('apartment.form.guest_message.default') }}</textarea>
       <div class="hint">{{ t('apartment.form.guest_message.hint') }}</div>
     </div>
     {% if editing %}
@@ -445,10 +412,9 @@
             <div class="hint">{{ t('apartment.form.guest_link.pin_hint') }}</div>
           </div>
           <div class="field" style="max-width:280px">
-            <label for="permalink_window_days">{{ t('apartment.form.guest_link.window_label') }}</label>
+            {{ field_label('permalink_window_days', t('apartment.form.guest_link.window_label'), t('apartment.form.guest_link.window_hint')) }}
             <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
                    value="{{ apartment.permalink_window_days }}">
-            <div class="hint">{{ t('apartment.form.guest_link.window_hint') }}</div>
           </div>
           <div class="field" style="max-width:280px">
             <label for="permalink_reachback_days">{{ t('apartment.form.guest_link.reachback_label') }}</label>
@@ -615,7 +581,6 @@
       <p class="small">{{ t('apartment.form.door_code.first_use') }}</p>
       <p class="small">{{ t('apartment.form.door_code.manual') }}</p>
       {% if door_code.overlap %}<p class="small"><strong>{{ t('apartment.form.door_code.overlap') }}</strong></p>{% endif %}
-      <p class="small"><a href="/guide#door-codes">{{ t('apartment.form.door_code.guide') }}</a></p>
       <p class="small"><a href="/guide#door-codes">{{ t('apartment.form.door_code.guide') }}</a></p>
     {% endif %}
   </details>

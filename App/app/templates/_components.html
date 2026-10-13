@@ -1,3 +1,19 @@
+{#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
+    id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
+{% macro help_tip(id, text, guide_href='') %}
+  <span class="help-tip" data-help-tip>
+    <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">?</button>
+    <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
+  </span>
+{% endmacro %}
+
+{% macro field_label(for, text, help_text='', optional=false, guide_href='') %}
+  <div class="field-label-row">
+    <label for="{{ for }}">{{ text }}{% if optional %} <span class="muted">{{ t('common.optional') }}</span>{% endif %}</label>
+    {% if help_text %}{{ help_tip(for ~ '-help', help_text, guide_href) }}{% endif %}
+  </div>
+{% endmacro %}
+
 {% macro page_header(title, description='', back_url='', back_label='', eyebrow='', actions='') %}
   <header class="page-header">
     <div class="page-header-main">

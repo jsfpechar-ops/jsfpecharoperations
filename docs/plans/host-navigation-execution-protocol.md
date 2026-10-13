@@ -1,5 +1,7 @@
 # Approved host navigation: execution protocol
 
+> **2026-10-13:** superseded for branching and patch release by the [combined staging lane](host-ux-combined-staging.md): one branch, one draft PR to main, staging only.
+
 Current entry: [production UX correction prompt](production-host-ux-cursor-prompt.md). Run 0087–0094 first; 0071–0074 are replaced. Then release refreshed 0075–0083 and use 0084–0086 acceptance/staging/promotion. The current requirements override older source anchors and disclosure suggestions; never execute a replaced/blocked task.
 
 Approved by owner in chat: 2026-10-12. Code base inspected: `c4c8f979319e53341833065b2a8790c30159581f`.

@@ -9,14 +9,6 @@
   <input type="hidden" name="internal_name" value="{{ apartment.internal_name }}">
   <input type="hidden" name="return_to" value="/setup/bookings">
   {% if apartment.legal_entity_id %}<input type="hidden" name="legal_entity_id" value="{{ apartment.legal_entity_id }}">{% endif %}
-  {% if split_address %}
-  <label class="wizard-field" for="address_line">
-    <span>{{ t('setup.address.title') }}</span>
-    <input id="address_line" name="address_line" type="text" maxlength="120"
-           placeholder="{{ t('setup.address.line_placeholder') }}"
-           value="{{ address_line|default('', true) }}">
-  </label>
-  {% else %}
   <div class="wizard-address-grid">
     <label class="wizard-field" for="addr_okres">
       <span>{{ t('apartment.form.addr.okres') }}</span>
@@ -47,9 +39,6 @@
       <input id="addr_zip" name="addr_zip" type="text" maxlength="6" inputmode="numeric" value="{{ apartment.addr_zip or '' }}" required>
     </label>
   </div>
-  {% endif %}
-  <p class="wizard-preview-label">{{ t('setup.address.preview_label') }}</p>
-  <p class="wizard-preview" id="address-preview">{{ address_preview or t('setup.address.preview_empty') }}</p>
   <div class="wizard-actions">
     <a class="btn ghost wizard-back" href="/setup/name?edit=1">{{ t('setup.frame.back') }}</a>
     <button class="btn primary wizard-continue" type="submit">{{ t('setup.frame.continue') }}</button>
