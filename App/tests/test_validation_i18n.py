@@ -91,7 +91,12 @@ def _apartment(**overrides):
         "created_at": now,
     }
     data.update(overrides)
-    return db.insert("apartment", data)
+    apartment_id = db.insert("apartment", data)
+    from app import property_setup
+
+    property_setup.start(apartment_id)
+    property_setup.finish(apartment_id)
+    return apartment_id
 
 
 def test_every_apartment_issue_has_czech():

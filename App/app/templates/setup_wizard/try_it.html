@@ -1,0 +1,49 @@
+{% extends "setup_wizard/_layout.html" %}
+{% from "_components.html" import help_tip, progress_pill, guest_count with context %}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('setup_guide.try.text') }} {{ help_tip('setup-try-help', t('setup_guide.try.help')) }}</p>
+{% set demo_state = setup_demo.state if setup_demo else 'none' %}
+{% if demo_state == 'registered' %}
+{% set demo_stay = setup_demo.reservation %}
+<p class="setup-wizard-lede">{{ t('setup_guide.try.registered_text') }}</p>
+<p class="setup-wizard-demo-preview">
+  <a href="/reservations/{{ demo_stay.id }}">{{ t('setup_guide.try.open_stay') }}</a>
+  · {{ progress_pill(setup_demo.progress.status, apartment.automation_mode, is_demo=true) }}
+  · {{ guest_count(setup_demo.progress) }}
+</p>
+{% elif demo_state == 'open' %}
+<p class="setup-wizard-lede">{{ t('wizard.try_it.waiting') }}</p>
+<p class="small muted">{{ t('wizard.try_it.demo_pin', pin=setup_demo.pin) }}</p>
+{% endif %}
+{% endblock %}
+{% block wizard_actions %}
+{% set demo_state = setup_demo.state if setup_demo else 'none' %}
+{% if demo_state == 'registered' %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="step" value="try_it">
+  <button class="link-button" type="submit" name="action" value="keep_demo" formnovalidate>{{ t('wizard.try_it.keep') }}</button>
+</form>
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="step" value="try_it">
+  <button class="btn primary" type="submit" name="action" value="done">{{ t('wizard.try_it.delete_continue') }}</button>
+</form>
+{% elif demo_state == 'open' %}
+<form method="get" action="/apartments/{{ apartment.id }}/setup/try_it" class="inline setup-wizard-skip">
+  <button class="link-button" type="submit">{{ t('wizard.try_it.check_again') }}</button>
+</form>
+<a class="btn primary" href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ t('setup_guide.try.open') }}</a>
+{% else %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="step" value="try_it">
+  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
+</form>
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="step" value="try_it">
+  <button class="btn primary" type="submit" name="action" value="demo">{{ t('setup_guide.try.create') }}</button>
+</form>
+{% endif %}
+{% endblock %}

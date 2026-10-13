@@ -1,0 +1,43 @@
+{% extends "setup_wizard/_layout.html" %}
+{% from "_components.html" import field_label with context %}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('setup_guide.calendar.text') }}</p>
+{% set feed_draft = feed_draft or {} %}
+{% set feed_errors = feed_errors or {} %}
+{% set first_feed_error = (['label', 'label_other', 'url', 'own_name'] | select('in', feed_errors) | list | first) %}
+<form method="post" action="/apartments/{{ apartment.id }}/feeds" class="setup-wizard-form" id="calendar-add">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/guest_link">
+  <div class="field">
+    <label for="label">{{ t('calendar.platform_label') }}</label>
+    <select id="label" name="label" required{% if feed_errors.label %} aria-invalid="true"{% endif %}>
+      <option value="" disabled selected>{{ t('calendar.choose_platform') }}</option>
+      {% for key, name in calendar_platforms %}
+      <option value="{{ key }}" {% if feed_draft.label == key %}selected{% endif %}>{{ name or t('calendar.platform.other') }}</option>
+      {% endfor %}
+    </select>
+    {% if feed_errors.label %}<p class="err-text" role="alert">{{ feed_errors.label }}</p>{% endif %}
+  </div>
+  <div class="field">
+    <label for="label_other">{{ t('calendar.other_label') }}</label>
+    <input type="text" id="label_other" name="label_other" maxlength="80" value="{{ feed_draft.label_other or '' }}">
+  </div>
+  <div class="field">
+    {{ field_label('url', t('apartment.form.calendars.url_label'), t('apartment.form.calendars.url_hint'), false, '/guide#stays') }}
+    <input type="url" id="url" name="url" required value="{{ feed_draft.url or '' }}" placeholder="{{ t('apartment.form.calendars.url_ph') }}">
+    {% if feed_errors.url %}<p class="err-text" role="alert">{{ feed_errors.url }}</p>{% endif %}
+  </div>
+  <div class="field">
+    <label for="own_name">{{ t('apartment.form.calendars.own_name_label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+    <input type="text" id="own_name" name="own_name" maxlength="100" value="{{ feed_draft.own_name or '' }}">
+  </div>
+</form>
+{% endblock %}
+{% block wizard_actions %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="step" value="calendar">
+  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('setup_guide.calendar.skip') }}</button>
+</form>
+<button class="btn primary" type="submit" form="calendar-add">{{ t('wizard.calendar.add') }}</button>
+{% endblock %}

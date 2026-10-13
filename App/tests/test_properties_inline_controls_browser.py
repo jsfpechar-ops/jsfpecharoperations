@@ -68,7 +68,12 @@ def _property(name, entity_id, owner_id, **over) -> int:
         "active": 1, "created_at": db.utcnow(),
     }
     values.update(over)
-    return db.insert("apartment", values)
+    apartment_id = db.insert("apartment", values)
+    from app import property_setup
+
+    property_setup.start(apartment_id)
+    property_setup.finish(apartment_id)
+    return apartment_id
 
 
 def _link_key(apartment_id: int) -> str:

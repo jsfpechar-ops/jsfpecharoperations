@@ -1,0 +1,22 @@
+{% extends "setup_wizard/_layout.html" %}
+{% block wizard_content %}
+<h2 class="setup-wizard-section-title">{{ t('wizard.done.title') }}</h2>
+<ul class="setup-wizard-checklist">
+  {% for row in checklist %}
+  <li class="is-{{ row.status }}">
+    <span class="setup-wizard-check-mark" aria-hidden="true">{% if row.status == 'done' %}✓{% elif row.status == 'skipped' %}–{% elif row.status == 'waiting' %}…{% else %}○{% endif %}</span>
+    <span>{{ t('wizard.step.' ~ row.key) }}</span>
+    {% if row.status == 'waiting' %}
+    <a href="/apartments/{{ apartment.id }}/setup/police">{{ t('setup_guide.reporting.add_login') }}</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% if reporting_waiting %}
+<p class="setup-wizard-waiting"><span class="pill amber">{{ t('setup_guide.reporting.waiting_item') }}</span></p>
+{% endif %}
+{% endblock %}
+{% block wizard_actions %}
+<span></span>
+<a class="btn primary" href="/apartments/{{ apartment.id }}?view=overview">{{ t('wizard.done.go') }}</a>
+{% endblock %}

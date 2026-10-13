@@ -33,8 +33,8 @@ REMOVED_PATTERNS = {
     "/stay-fees/{id}/setup": re.compile(r"/stay-fees/[^\"'\s]*/setup"),
     "/apartments/{id}/ws-request.txt": re.compile(r"ws-request"),
     "/automation": re.compile(r"[\"'](?:\{\{ *[a-z_]+ *\}\})?/automation[\"'?#]"),
-    "/setup, /setup/<step>": re.compile(r"[\"']/setup[\"'/?#]"),
-    "setup_wizard module": re.compile(r"setup_wizard"),
+    "/setup, /setup/<step>": re.compile(r"[\"']\/setup[\"']"),
+    "setup_wizard module": re.compile(r"routes/setup_wizard"),
     "app.js old-hash table": re.compile(r"var HASHES\s*="),
 }
 

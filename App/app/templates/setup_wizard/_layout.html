@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ t('wizard.title', name=apartment.internal_name) }}{% endblock %}
+{% block content %}
+{% from "_components.html" import help_tip, copy_button, progress_pill, guest_count with context %}
+{% set base_setup = '/apartments/' ~ apartment.id ~ '/' ~ 'setup' %}
+{% set values = draft if draft is defined else apartment %}
+<div class="setup-wizard" data-setup-wizard data-setup-step="{{ wizard_step }}">
+  <header class="setup-wizard-head">
+    <h1>{{ t('wizard.title', name=apartment.internal_name) }}</h1>
+    {% if guide %}
+    <p class="setup-wizard-subline">{{ t('wizard.count', n=guide.number, total=guide.total, step=t('wizard.step.' ~ guide.key)) }}</p>
+    <ol class="setup-wizard-progress" aria-hidden="true">
+      {% for item in guide.progress %}
+      <li class="is-{{ item.state }}"></li>
+      {% endfor %}
+    </ol>
+    {% endif %}
+    <form method="post" action="{{ base_setup }}" class="setup-wizard-exit">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="link-button" type="submit" name="action" value="hide" formnovalidate>{{ t('wizard.exit') }}</button>
+    </form>
+  </header>
+  <div class="setup-wizard-body">
+    {% block wizard_content %}{% endblock %}
+  </div>
+  <footer class="setup-wizard-foot">
+    {% if prev_step %}
+    <a class="setup-wizard-back" href="{{ base_setup }}/{{ prev_step }}"><span aria-hidden="true">←</span> {{ t('wizard.back') }}</a>
+    {% else %}
+    <span></span>
+    {% endif %}
+    {% block wizard_actions %}{% endblock %}
+  </footer>
+</div>
+{% endblock %}

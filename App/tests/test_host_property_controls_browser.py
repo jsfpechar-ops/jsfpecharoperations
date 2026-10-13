@@ -18,7 +18,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth, db
+from app import auth, db, property_setup
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
@@ -59,6 +59,8 @@ def host():
         "active": 1,
         "created_at": db.utcnow(),
     })
+    property_setup.start(apartment_id)
+    property_setup.finish(apartment_id)
     client = TestClient(app)
     response = login_as(client, username, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
@@ -222,7 +224,7 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
         page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
         assert page.locator(".host-tools").count() == 0
         assert page.locator(".host-local-nav").count() == 0
-        assert page.locator('a[href$="#communication"]').count() > 0
+        assert page.locator('[data-copy="overview-guest-url"]').count() > 0
         browser.close()
 
 

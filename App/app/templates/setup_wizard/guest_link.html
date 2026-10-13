@@ -1,0 +1,29 @@
+{% extends "setup_wizard/_layout.html" %}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('wizard.guest_link.pin_why') }}</p>
+<div class="setup-wizard-cards">
+  <div class="setup-wizard-card">
+    <h2>{{ t('wizard.guest_link.link_title') }}</h2>
+    <p class="mono setup-wizard-url" id="wizard-guest-url">{{ permalink }}</p>
+    <button class="btn small" type="button" data-copy="wizard-guest-url" data-copy-label="{{ t('common.copy') }}" data-copied-label="{{ t('common.copied') }}">{{ t('common.copy') }}</button>
+  </div>
+  <div class="setup-wizard-card">
+    <h2>{{ t('wizard.guest_link.pin_title') }}</h2>
+    <p class="setup-wizard-pin mono" id="wizard-guest-pin">{{ pin }}</p>
+    <button class="btn small" type="button" data-copy="wizard-guest-pin" data-copy-label="{{ t('common.copy') }}" data-copied-label="{{ t('common.copied') }}">{{ t('common.copy') }}</button>
+  </div>
+</div>
+<section class="setup-wizard-message">
+  <h3>{{ t('wizard.guest_link.message_title') }}</h3>
+  <textarea id="wizard-guest-message" readonly rows="3">{{ t('setup_guide.guest_links.snippet', url=permalink, pin=pin) }}</textarea>
+  <button class="btn small" type="button" data-copy="wizard-guest-message" data-copy-label="{{ t('wizard.guest_link.copy_message') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_message') }}</button>
+</section>
+{% endblock %}
+{% block wizard_actions %}
+<span></span>
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="step" value="guest_link">
+  <button class="btn primary" type="submit" name="action" value="done">{{ t('wizard.guest_link.done') }}</button>
+</form>
+{% endblock %}

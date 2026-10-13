@@ -291,12 +291,16 @@ def _form_return_to(form, default: str) -> str:
     raw = _form_str(form, "return_to")
     if not raw:
         return default
+    fragment = urlsplit(raw).fragment
     path = security.safe_local_path(raw, "")
-    if path:
-        return path
-    # Stays list used to quote return_to for use in links; archive posts still work.
-    path = security.safe_local_path(unquote(raw), "")
-    return path if path else default
+    if not path:
+        # Stays list used to quote return_to for use in links; archive posts still work.
+        path = security.safe_local_path(unquote(raw), "")
+    if not path:
+        return default
+    if fragment and re.fullmatch(r"[\w-]+", fragment):
+        return f"{path}#{fragment}"
+    return path
 
 
 def _redirect_path_from_referer(request: Request, default: str = "/") -> str:
@@ -1468,7 +1472,7 @@ async def apartment_create(request: Request):
     # 0096: a new property starts its guided setup at the calendar.
     property_setup.start(apartment_id)
     return _back(
-        f"/apartments/{apartment_id}?view=bookings&created=1#calendar-connect",
+        f"/apartments/{apartment_id}/setup/calendar",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -1501,7 +1505,6 @@ def _property_view_state(
     request: Request,
     extra: Optional[Dict[str, Any]],
     *,
-    setup_guide: Optional[Dict[str, Any]] = None,
     lock_available: bool = True,
 ) -> Dict[str, Any]:
     extra = extra or {}
@@ -1509,9 +1512,6 @@ def _property_view_state(
     section = extra.get("settings_section") or request.query_params.get("section") or ""
     if section not in PROPERTY_SETTINGS_SECTIONS or (section == "lock" and not lock_available):
         section = ""
-    if view not in PROPERTY_VIEWS and not section and setup_guide and not setup_guide["legacy"]:
-        # 0096: a property in its guided setup opens on the step it is on.
-        view, section = setup_guide["view"], setup_guide["section"] or ""
     if view not in PROPERTY_VIEWS:
         view = "settings" if section else "overview"
     return {
@@ -1562,15 +1562,28 @@ def _setup_state(apartment, *, feeds: int, report_complete: bool, stays: int) ->
     return property_setup.legacy_state()
 
 
-def _setup_guide(apartment, feeds, readiness, lock_available: bool) -> tuple[Optional[Dict[str, Any]], bool]:
-    """0096: the current setup step (or None) and whether the guide is finished."""
+def _setup_progress(apartment, feeds, readiness, lock_available: bool) -> Optional[Dict[str, Any]]:
+    """0102: compact setup progress for the property Overview card."""
     report_complete = all(item["done"] for item in readiness["report"])
     facts = _setup_facts(apartment["id"])
     state = _setup_state(
         apartment, feeds=len(feeds), report_complete=report_complete, stays=facts["stays"]
     )
-    if not state:
-        return None, False
+    if not state or state["finished"]:
+        return None
+    facts_payload = {
+        "feeds": len(feeds),
+        "stays": facts["stays"],
+        "guests_registered": facts["guests_registered"],
+        "report_complete": report_complete,
+    }
+    if state.get("hidden"):
+        return {
+            "hidden": True,
+            "done": property_setup.done_count(state, apartment, facts_payload),
+            "total": property_setup.TOTAL_STEPS,
+            "continue_url": property_setup.wizard_url(apartment["id"], "calendar"),
+        }
     guide = property_setup.current(
         apartment,
         state,
@@ -1580,39 +1593,29 @@ def _setup_guide(apartment, feeds, readiness, lock_available: bool) -> tuple[Opt
         stays=facts["stays"],
         guests_registered=facts["guests_registered"],
     )
-    if state.get("hidden") and not state["finished"]:
-        return None, False
     if guide is None and not state["finished"] and property_setup.load(apartment["id"]):
         property_setup.finish(apartment["id"])
-    return guide, guide is None
+        return None
+    if not guide:
+        return None
+    return {
+        "done": guide["done_count"],
+        "total": guide["total"],
+        "continue_url": guide["url"],
+        "reporting_waiting": guide.get("reporting_waiting"),
+        "hidden": False,
+    }
 
 
-def _setup_guide_for(request: Request, apartment_id: int) -> tuple[Optional[Dict[str, Any]], bool]:
-    """The setup step of a property, read fresh after a write."""
+def _setup_progress_for(request: Request, apartment_id: int) -> Optional[Dict[str, Any]]:
     apartment = access.apartment(request, apartment_id)
     if not apartment:
-        return None, False
+        return None
     feeds = db.query(
         "SELECT id FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,)
     )
     readiness = _readiness(apartment, [], _apartment_issues(apartment), False, invite=False)
-    return _setup_guide(apartment, feeds, readiness, ttlock.allowed_for(apartment["owner_user_id"]))
-
-
-def _setup_demo(apartment, guide: Optional[Dict[str, Any]], link_key: str, lang: str) -> Optional[Dict[str, Any]]:
-    """0100: the "Try it out" step's demo stay and how far the host got with it."""
-    if not guide or guide["key"] != "try":
-        return None
-    stay = demo.demo_stay_for(apartment["id"])
-    if not stay:
-        return {"state": "none"}
-    progress = reporting.reservation_progress(stay)
-    return {
-        "state": "registered" if progress["filled"] >= 1 else "open",
-        "reservation": stay,
-        "progress": progress,
-        "guest_url": f"/l/{link_key}/{stay['id']}?lang={lang}",
-    }
+    return _setup_progress(apartment, feeds, readiness, ttlock.allowed_for(apartment["owner_user_id"]))
 
 
 def _render_apartment_detail(
@@ -1676,7 +1679,7 @@ def _render_apartment_detail(
             "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
         }
     readiness = _readiness(apartment, entities, issues, has_stays)
-    setup_guide, setup_finished = _setup_guide(apartment, feeds, readiness, door_code is not None)
+    setup_progress = _setup_progress(apartment, feeds, readiness, door_code is not None)
     setup_stored = property_setup.load(apartment_id)
     return render(
         request,
@@ -1711,20 +1714,11 @@ def _render_apartment_detail(
             "operator_error": operator_error,
             "calendar_platforms": CALENDAR_PLATFORMS,
             "just_created": request.query_params.get("created") == "1",
-            "setup_guide": setup_guide,
-            "setup_finished": setup_finished,
-            # 0100: the host hid an unfinished guide; Overview offers it back.
-            "setup_hidden": bool(
-                setup_stored and setup_stored["hidden"] and not setup_stored["finished"]
-            ),
-            "setup_demo": _setup_demo(
-                apartment, setup_guide, link_key, host_i18n.lang_from_request(request)
-            ),
-            "setup_sweep_minutes": config.SUBMIT_SWEEP_MINUTES,
+            "setup_progress": setup_progress,
+            "setup_finished": setup_progress is None and bool(setup_stored and setup_stored.get("finished")),
+            "setup_hidden": bool(setup_progress and setup_progress.get("hidden")),
             **(extra or {}),
-            **_property_view_state(
-                request, extra, setup_guide=setup_guide, lock_available=door_code is not None
-            ),
+            **_property_view_state(request, extra, lock_available=door_code is not None),
         },
         status_code=status_code,
     )
@@ -1778,6 +1772,11 @@ def _refuse_apartment_save(
         "property_prefill": {},
         "copied_from_name": None,
     }
+    from .onboarding_wizard import refuse_setup_save
+
+    wizard = refuse_setup_save(request, apartment, form, address_errors=address_errors or {})
+    if wizard:
+        return wizard
     return _render_apartment_detail(
         request,
         draft,
@@ -1808,6 +1807,25 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
     fee_draft = stay_fee_routes.fee_form_values(form)
     fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
     draft.update(fee_draft)
+    from .onboarding_wizard import render_wizard
+
+    return_to = _form_str(form, "return_to")
+    if return_to.startswith(f"/apartments/{apartment['id']}/setup/"):
+        fee_draft = stay_fee_routes.fee_form_values(form)
+        fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
+        merged = dict(apartment)
+        merged.update(fee_draft)
+        return render_wizard(
+            request,
+            apartment["id"],
+            "stay_fee",
+            extra={
+                "draft": merged,
+                "fee_account": stay_fee_routes.fee_account_draft(form),
+                "fee_account_error": True,
+            },
+            status_code=400,
+        )
     copy_ctx = {
         "copy_property_peers": [
             row for row in access.apartments(request) if row["id"] != apartment["id"]
@@ -1864,30 +1882,31 @@ async def apartment_update(apartment_id: int, request: Request):
 
 
 def _setup_after_save(request: Request, apartment_id: int, form, return_to: str) -> Optional[tuple[str, str]]:
-    """0096: a save made during the guided setup moves on to the next step.
-
-    A save from the step's own Settings section counts as that step done
-    (Stay fee, Door lock, Automation); Police reporting is done only when its
-    details are complete. Returns (where to go, flash override) or None.
-    """
+    """0102: a wizard save marks its step and returns to the next setup page."""
+    wizard_prefix = f"/apartments/{apartment_id}/setup"
     step = _form_str(form, "setup_step")
-    if step not in property_setup.STEPS:
+    if not return_to.startswith(wizard_prefix):
         return None
     stored = property_setup.load(apartment_id)
     if stored and (stored["finished"] or stored["hidden"]):
+        return return_to, ""
+    if step not in property_setup.STEPS:
+        return return_to, ""
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
         return None
-    section = dict(parse_qsl(urlsplit(return_to).query)).get("section", "")
-    if property_setup.SAVE_SECTIONS.get(step) == section:
+    feeds = db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
+    readiness = _readiness(apartment, [], _apartment_issues(apartment), bool(feeds), invite=False)
+    report_complete = all(item["done"] for item in readiness["report"])
+    if step == "police" and report_complete:
         property_setup.mark(apartment_id, step, "done")
-    guide, finished = _setup_guide_for(request, apartment_id)
-    if guide:
-        return guide["url"], ""
-    if finished:
-        return (
-            f"/apartments/{apartment_id}?view=overview",
-            _flash(request, "flash.setup.complete"),
-        )
-    return None
+    elif step in ("stay_fee", "door_lock"):
+        property_setup.mark(apartment_id, step, "done")
+    if return_to.endswith("/done"):
+        property_setup.mark(apartment_id, "automation", "done")
+        property_setup.finish(apartment_id)
+        return return_to, _flash(request, "flash.setup.complete")
+    return return_to, ""
 
 
 _ADDRESS_ONLY_FIELDS = (
@@ -2105,7 +2124,11 @@ async def automation_timing_save(apartment_id: int, request: Request):
     message = _flash(request, "flash.properties.timing_saved")
     if as_json:
         return JSONResponse({"ok": True, "message": str(message), **values})
-    return _back(_PROPERTY_SUMMARIES, msg=message)
+    return_to = _form_return_to(form, _PROPERTY_SUMMARIES)
+    setup_next = _setup_after_save(request, apartment_id, form, return_to)
+    if setup_next:
+        return _back(setup_next[0], msg=setup_next[1] or message)
+    return _back(return_to, msg=message)
 
 
 @router.post("/apartments/{apartment_id}/regenerate-link")
@@ -2321,7 +2344,18 @@ async def add_feed(apartment_id: int, request: Request):
         already = _feed_already_added(apartment_id, url)
         if already:
             feed_errors["url"] = _host_text(request, "flash.error.feed_duplicate", property=already)
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}?view=bookings#calendars")
     if feed_errors:
+        if return_to.startswith(f"/apartments/{apartment_id}/setup/"):
+            from .onboarding_wizard import render_wizard
+
+            return render_wizard(
+                request,
+                apartment_id,
+                "calendar",
+                extra={"feed_draft": draft, "feed_errors": feed_errors},
+                status_code=400,
+            )
         return _render_property_detail(
             apartment_id,
             request,
@@ -2345,80 +2379,9 @@ async def add_feed(apartment_id: int, request: Request):
             f"/apartments/{apartment_id}?view=bookings#calendars",
             err=_flash(request, "flash.error.feed_added_unreadable"),
         )
-    # 0096: during the guided setup the next step follows the first calendar.
-    guide, _finished = _setup_guide_for(request, apartment_id)
     return _back(
-        guide["url"] if guide and not guide["legacy"] else f"/apartments/{apartment_id}?view=bookings#calendars",
+        return_to,
         msg=_flash_plural(request, "flash.feeds.added", totals["created"]),
-    )
-
-
-# 0096: the guide's own buttons. Only the step on screen can be answered, and
-# only with what that step offers.
-_SETUP_ACTIONS = {
-    "skip": property_setup.SKIPPABLE,
-    "done": property_setup.TEACHING,
-    "keep": frozenset({"automation"}),
-    # 0100: "I'm still waiting for my police login" moves the guide on; the
-    # step stays unfinished until the police details are complete.
-    "wait": frozenset({"reporting"}),
-    # 0100: "Try it out" makes the demo stay (never reported, see demo.py).
-    "demo": frozenset({"try"}),
-}
-_SETUP_MARKS = {"skip": "skipped", "wait": "waiting"}
-
-
-@router.post("/apartments/{apartment_id}/setup")
-async def property_setup_step(apartment_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
-    form = await request.form()
-    step, action = _form_str(form, "step"), _form_str(form, "action")
-    overview = f"/apartments/{apartment_id}?view=overview"
-    if action == "show":
-        stored = property_setup.load(apartment_id)
-        if stored and stored["hidden"]:
-            property_setup.set_hidden(apartment_id, False)
-            db.audit("property_setup_step", f"apartment={apartment_id} action=show")
-        guide, _finished = _setup_guide_for(request, apartment_id)
-        return _back(guide["url"] if guide else overview)
-    guide, finished = _setup_guide_for(request, apartment_id)
-    if not guide:
-        return _back(overview)
-    if action == "hide":
-        property_setup.set_hidden(apartment_id, True)
-        db.audit("property_setup_step", f"apartment={apartment_id} action=hide")
-        return _back(overview, msg=_flash(request, "flash.setup.hidden"))
-    if guide["key"] != step or step not in _SETUP_ACTIONS.get(action, ()):
-        return _back(guide["url"])
-    if action == "wait" and guide["reporting_waiting"]:
-        return _back(guide["url"])
-    if step == "try":
-        stay = demo.demo_stay_for(apartment_id)
-        if action == "demo":
-            demo.create_demo_stay(apartment_id)
-            db.audit("property_setup_step", f"apartment={apartment_id} step=try action=demo")
-            return _back(f"{overview}#property-setup")
-        if action == "done" and not (
-            stay and reporting.reservation_progress(stay)["filled"] >= 1
-        ):
-            # "Delete demo stay" follows a test registration, never precedes it.
-            return _back(guide["url"])
-    deleted = False
-    if step == "try" and stay:
-        deleted = demo.delete_demo_stay(stay["id"], apartment_id)
-    property_setup.mark(apartment_id, step, _SETUP_MARKS.get(action, "done"))
-    db.audit("property_setup_step", f"apartment={apartment_id} step={step} action={action}")
-    guide, finished = _setup_guide_for(request, apartment_id)
-    if guide:
-        return _back(guide["url"], msg=_flash(request, "flash.setup.demo_deleted") if deleted else "")
-    return _back(
-        f"/apartments/{apartment_id}?view=overview",
-        msg=_flash(request, "flash.setup.complete"),
     )
 
 

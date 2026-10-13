@@ -1,19 +1,40 @@
-{#- 0094: Overview tab. Read-only: shortcut cards with a real summary and one link
-    to the canonical editor, plus the setup status lists. No form, no field. -#}
+{#- 0094/0102: Overview tab — shortcut cards and setup progress. -#}
 {%- from "_components.html" import nav_icon, copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set operator = (entities | selectattr('id', 'equalto', apartment.legal_entity_id) | list | first) -%}
 {%- set feed_errors_count = feeds | selectattr('last_status', 'equalto', 'error') | list | length -%}
 {%- set report_missing = (readiness.report | rejectattr('done') | list | length) if readiness else 0 -%}
 {%- set address_text = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') -%}
+{% if setup_progress and not setup_progress.hidden %}
+<section class="panel setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
+  <p>{{ t('wizard.continue_card', done=setup_progress.done, total=setup_progress.total) }}
+    {% if setup_progress.reporting_waiting %}<span class="pill amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
+  </p>
+  <div class="actions">
+    <a class="btn primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="link-button" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
+    </form>
+  </div>
+</section>
+{% elif setup_hidden %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
+</form>
+{% endif %}
 <div class="host-property-grid">
   <a class="host-property-card" href="{{ base_url }}?view=bookings#calendars">{{ nav_icon('calendar') }}<div><strong>{{ t('host.bookings') }}</strong>
     <small>{{ tp('apartment.form.calendars_count', feeds | length) }}{% if feed_errors_count %} · {{ t('apartment.form.feed.status.error') }}{% endif %}</small></div><span aria-hidden="true">→</span></a>
-  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ nav_icon('link') }}<div><strong>{{ t('nav.guest_links') }}</strong>
-    <small class="mono">/l/{{ link_key }}</small></div><span aria-hidden="true">→</span></a>
+  <div class="host-property-card host-property-card-static">{{ nav_icon('link') }}<div><strong>{{ t('nav.guest_links') }}</strong>
+    <small>{{ t('wizard.guest_link.ready') }}</small>
+    <div class="actions" style="margin-top:8px">
+      <button class="btn small" type="button" data-copy="overview-guest-url" data-copy-label="{{ t('wizard.guest_link.copy_link') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_link') }}</button>
+      <span class="sr-only" id="overview-guest-url">{{ permalink }}</span>
+    </div></div></div>
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#ubyport">{{ nav_icon('report') }}<div><strong>{{ t('host.reporting') }}</strong>
     <small>{{ t('property_nav.report_ready') if not report_missing else tp('property_nav.report_missing', report_missing) }}</small></div><span aria-hidden="true">→</span></a>
-  {#- 0076: the assigned business opens in the shared editor and returns here; with none, choose one in Settings. -#}
   <a class="host-property-card" href="{{ ('/entities?edit=' ~ apartment.legal_entity_id ~ '&next=' ~ (base_url | urlencode)) if operator else (base_url ~ '?view=settings&section=property#operator-picker') }}">{{ nav_icon('entity') }}<div><strong>{{ t('host.business') }}</strong>
     {% if operator %}<small>{{ operator.name }}</small>{% endif %}</div><span aria-hidden="true">→</span></a>
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#stay-fee-settings">{{ nav_icon('coins') }}<div><strong>{{ t('host.fee') }}</strong>
@@ -26,19 +47,14 @@
   {% endif %}
 </div>
 
-{#- 0096: the guide replaces the checklist while it runs. Once it is finished,
-    a skipped calendar (stays added by hand) does not hold back the compact line. -#}
 {%- set invite_open = (readiness.invite | rejectattr('done') | map(attribute='key') | list) if readiness else [] -%}
 {%- set invite_ok = readiness and (readiness.invite_ready or (setup_finished and invite_open == ['stays'])) -%}
-{% if setup_guide and not setup_guide.legacy %}
-{% elif readiness and invite_ok and report_missing == 0 %}
+{% if setup_finished and readiness and invite_ok and report_missing == 0 %}
 <section class="panel host-setup-complete" aria-label="{{ t('host.setup_details') }}">
   <p class="small"><span class="readiness-mark" aria-hidden="true">✓</span> {{ t('property_nav.setup_complete') }} {{ t('apartment.form.readiness.invite_ready') }}</p>
   {{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}
 </section>
-{% elif readiness %}
-{# Two short lists instead of one red paragraph: what a guest needs, and what
-   the police register needs. Every item links to the field that answers it. #}
+{% elif setup_finished and readiness %}
 <section class="panel host-checklist" aria-labelledby="property-readiness-title">
 <h2 id="property-readiness-title" class="property-section-title">{{ t('host.setup_details') }}</h2>
 <section class="readiness">
@@ -73,11 +89,4 @@
     </ul>
   </div>
 </section></section>
-{% endif %}
-{% if setup_hidden %}
-{#- 0100: the host hid an unfinished setup guide; one quiet way back. -#}
-<form method="post" action="/apartments/{{ apartment.id }}/setup" class="property-setup-show">
-  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
-</form>
 {% endif %}

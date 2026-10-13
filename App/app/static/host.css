@@ -1495,6 +1495,45 @@ body.host-workspace {
 .stay-demo-banner form.inline { margin: 0; }
 /* end 0100 */
 
+/* 0102 */
+.setup-wizard { max-width: 720px; margin: 0 auto 32px; padding: 0 16px; overflow-x: clip; box-sizing: border-box; width: 100%; }
+.setup-wizard-head { position: relative; margin-bottom: 20px; }
+.setup-wizard-head h1 { margin: 0 0 4px; font-size: 22px; }
+.setup-wizard-subline { margin: 0 0 10px; color: var(--ink-secondary); }
+.setup-wizard-exit { position: absolute; top: 0; right: 0; margin: 0; }
+.setup-wizard-progress { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.setup-wizard-progress li { flex: 1 1 0; height: 6px; border-radius: 999px; background: var(--line); }
+.setup-wizard-progress li.is-done { background: var(--ok, #1e6b3a); }
+.setup-wizard-progress li.is-current { background: var(--brand); }
+.setup-wizard-progress li.is-waiting { background: var(--amber, #b7791f); }
+.setup-wizard-progress li.is-skipped { background: var(--line); opacity: 0.55; }
+.setup-wizard-body { max-width: 640px; margin: 0 auto; }
+.setup-wizard-lede { margin: 0 0 16px; color: var(--ink-secondary); }
+.setup-wizard-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 24px; max-width: 640px; margin-left: auto; margin-right: auto; }
+.setup-wizard-foot .btn.primary { margin-left: auto; }
+.setup-wizard-skip { margin-right: auto; }
+.setup-wizard-skip .link-button { min-height: 44px; }
+.setup-wizard-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+@media (max-width: 599px) { .setup-wizard-cards { grid-template-columns: 1fr; } }
+.setup-wizard-card { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.setup-wizard-card h2 { margin: 0 0 8px; font-size: 16px; }
+.setup-wizard-pin { font-size: 28px; letter-spacing: 0.14em; margin: 0 0 8px; }
+.setup-wizard-url { font-size: 13px; overflow-wrap: anywhere; margin: 0 0 8px; }
+.setup-wizard-message textarea { width: 100%; box-sizing: border-box; margin: 8px 0; }
+.setup-wizard-radios { display: flex; flex-direction: column; gap: 10px; }
+.setup-wizard-radio-card { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+.setup-wizard-radio-card:has(input:checked) { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
+.setup-wizard-radio-card strong { display: block; }
+.setup-wizard-radio-card small { display: block; color: var(--ink-secondary); margin-top: 4px; }
+.setup-wizard-wait.btn.ghost { border: 1px solid var(--line); min-height: 44px; }
+.setup-wizard-note-box { margin-top: 12px; padding: 12px; border-radius: 8px; background: var(--surface-alt, #f3f3f0); }
+.setup-wizard-checklist { list-style: none; padding: 0; margin: 0; }
+.setup-wizard-checklist li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.setup-wizard-checklist li.is-waiting { color: var(--amber, #b7791f); }
+.setup-continue-card .actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 10px; }
+.host-property-card-static { cursor: default; text-decoration: none; color: inherit; }
+/* end 0102 */
+
 /* 0098 */
 /* Properties summary: full guest link, PIN and inline reporting timing. Rows
    reuse the Properties table design (lc-properties list cards); only the

@@ -381,12 +381,12 @@ def test_the_guide_shows_the_copy_for_the_property_mode(world):
     apartment_id = world["apartment_id"]
     _strip_login(apartment_id)
     property_setup.start(apartment_id)
-    for step in ("calendar", "guest_links", "pin", "try"):
+    for step in ("calendar", "guest_link", "try_it"):
         property_setup.mark(apartment_id, step, "done")
     for mode, key in (("manual", "wait_then_manual"), ("scheduled", "wait_then_auto"), ("immediate", "wait_then_auto")):
         db.update("apartment", apartment_id, {"automation_mode": mode})
         for lang in ("en", "cs"):
-            page = world["client"].get(f"/apartments/{apartment_id}?lang={lang}").text.replace("&#39;", "'")
+            page = world["client"].get(f"/apartments/{apartment_id}/setup/police?lang={lang}").text.replace("&#39;", "'")
             expected = host_i18n.translate(lang, f"setup_guide.reporting.{key}", minutes=config.SUBMIT_SWEEP_MINUTES)
             assert expected.replace("“", "&#8220;") in page or expected in page, (mode, lang)
             assert host_i18n.translate(lang, "setup_guide.reporting.wait_deadline") in page

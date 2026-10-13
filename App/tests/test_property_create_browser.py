@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import re
 import secrets
+from urllib.parse import urlparse
 import socket
 import threading
 import time
@@ -119,8 +120,8 @@ def test_one_operator_is_chosen_and_one_submit_creates_a_manual_property():
     )
     assert response.status_code == 303
     (row,) = _rows(host["owner"])
-    assert response.headers["location"].startswith(f"/apartments/{row['id']}?view=bookings&created=1")
-    assert response.headers["location"].endswith("#calendar-connect")
+    assert f"/apartments/{row['id']}/setup/calendar" in response.headers["location"]
+    assert "/setup/calendar" in response.headers["location"]
     assert row["internal_name"] == "Synthetic Loft" and row["city_en"] == "Brno"
     assert row["legal_entity_id"] == host["entities"][0]
     assert row["data_controller_entity_id"] is None
@@ -128,13 +129,13 @@ def test_one_operator_is_chosen_and_one_submit_creates_a_manual_property():
     assert row["guest_message"] == host_i18n.translate("en", "apartment.form.guest_message.default")
     assert row["lock_provider"] is None and not row["uby_ws_password_enc"]
     assert (row["addr_obec"], row["addr_house_no"], row["addr_zip"]) == ("Praha", "12", "11000")
-    # 0096: the setup guide opens on its calendar step (the open connect form
-    # and one quiet skip); the old "What next?" box is gone.
+    # 0102: new properties land on the calendar wizard step (query may carry the create toast).
+    location_path = urlparse(response.headers["location"]).path
+    assert location_path == f"/apartments/{row['id']}/setup/calendar"
     detail = host["client"].get(response.headers["location"]).text
     assert 'class="panel property-first-use"' not in detail
-    assert 'data-setup-guide data-setup-view="bookings"' in detail
-    assert 'class="calendar-connect" id="calendar-connect"' in detail
-    assert f'action="/apartments/{row["id"]}/setup" class="property-setup-skip"' in detail
+    assert "data-setup-wizard" in detail
+    assert 'id="calendar-add"' in detail
 
 
 def test_several_operators_need_a_choice_and_keep_the_draft():
@@ -428,12 +429,12 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         page.locator("#addr_house_no").fill("12")
         page.locator(".property-create-actions .btn.primary").click()
         page.wait_for_load_state()
-        assert "created=1" in page.url
-        assert page.locator("#property-setup").is_visible()  # 0096 setup guide
+        assert "/setup/calendar" in page.url
+        assert page.locator("[data-setup-wizard]").is_visible()
         _shot(page, "created-1280-en")
         page.set_viewport_size({"width": 390, "height": 900})
         page.reload()
-        assert page.locator(".property-setup-skip .link-button").count() == 1
+        assert page.locator(".setup-wizard-skip .link-button").count() == 1
         _shot(page, "created-390-en")
         browser.close()
 
@@ -453,7 +454,7 @@ def test_create_page_works_without_javascript(base):
         page.locator("#addr_zip").fill("11000")
         page.locator(".property-create-actions .btn.primary").click()
         page.wait_for_load_state()
-        assert "created=1" in page.url
+        assert "/setup/calendar" in page.url
         row = db.query_one("SELECT * FROM apartment WHERE owner_user_id = ?", (host["owner"],))
         assert row["internal_name"] == "Synthetic No-JS Flat" and row["addr_obec"] == "Praha"
         browser.close()

@@ -1,0 +1,24 @@
+{% extends "setup_wizard/_layout.html" %}
+{% set apartment = draft if draft is defined else apartment %}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('setup_guide.fee.text') }}</p>
+<form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="stay-fee-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/door_lock">
+  <input type="hidden" name="setup_step" value="stay_fee">
+  <input type="hidden" name="internal_name" value="{{ apartment.internal_name }}">
+  <input type="hidden" name="legal_entity_id" value="{{ apartment.legal_entity_id }}">
+  <input type="hidden" name="city_en" value="{{ apartment.city_en or '' }}">
+  <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
+  {% set account = fee_account %}
+  {% include "_stay_fee_fields.html" %}
+</form>
+{% endblock %}
+{% block wizard_actions %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="step" value="stay_fee">
+  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.skip') }}</button>
+</form>
+<button class="btn primary" type="submit" form="stay-fee-form">{{ t('wizard.save_continue') }}</button>
+{% endblock %}

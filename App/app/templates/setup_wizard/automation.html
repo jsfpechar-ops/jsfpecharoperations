@@ -1,0 +1,34 @@
+{% extends "setup_wizard/_layout.html" %}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('setup_guide.automation.text') }}</p>
+<form method="post" action="/apartments/{{ apartment.id }}/automation-timing" class="setup-wizard-form" id="automation-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/done">
+  <input type="hidden" name="setup_step" value="automation">
+  <div class="setup-wizard-radios">
+    <label class="setup-wizard-radio-card">
+      <input type="radio" name="automation_mode" value="manual" {% if apartment.automation_mode == 'manual' %}checked{% endif %}>
+      <span><strong>{{ t('automation.mode.manual') }}</strong>
+      <small>{{ t('wizard.automation.manual_detail') }}</small></span>
+    </label>
+    <label class="setup-wizard-radio-card">
+      <input type="radio" name="automation_mode" value="scheduled" {% if apartment.automation_mode == 'scheduled' %}checked{% endif %}>
+      <span><strong>{{ t('automation.mode.scheduled') }}</strong>
+      <small>{{ t('wizard.automation.scheduled_detail') }}</small></span>
+      <div class="field inline-hours">
+        <label for="submit_after_hours">{{ t('automation.hours') }}</label>
+        <input type="number" id="submit_after_hours" name="submit_after_hours" min="1" max="48" value="{{ apartment.submit_after_hours or 2 }}">
+      </div>
+    </label>
+    <label class="setup-wizard-radio-card">
+      <input type="radio" name="automation_mode" value="immediate" {% if apartment.automation_mode == 'immediate' %}checked{% endif %}>
+      <span><strong>{{ t('automation.mode.immediate') }}</strong>
+      <small>{{ t('wizard.automation.immediate_detail') }}</small></span>
+    </label>
+  </div>
+</form>
+{% endblock %}
+{% block wizard_actions %}
+<span></span>
+<button class="btn primary" type="submit" form="automation-form">{{ t('wizard.automation.finish') }}</button>
+{% endblock %}

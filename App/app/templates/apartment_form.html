@@ -25,7 +25,6 @@
    page once; ?view= picks the one shown without JavaScript, app.js switches them
    in place (initPropertyViews) so the settings draft is never re-rendered. #}
 {% set base_url = '/apartments/' ~ apartment.id %}
-{% if setup_guide %}{% include "_property_setup_guide.html" %}{% endif %}
 <nav class="property-tabs" aria-label="{{ t('property_nav.tabs_aria') }}">
   {% for key, label in [('overview', t('property_nav.overview')), ('bookings', t('property_nav.bookings')), ('settings', t('property_nav.settings'))] %}
   <a href="{{ base_url }}?view={{ key }}" data-property-tab="{{ key }}"{% if key == property_view %} aria-current="page"{% endif %}>{{ label }}</a>

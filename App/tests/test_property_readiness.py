@@ -15,7 +15,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, host_i18n
+from app import auth, db, host_i18n, property_setup
 from app.main import app
 from tests.conftest import login_as
 
@@ -138,6 +138,8 @@ def host():
             "created_at": db.utcnow(),
         },
     )
+    property_setup.start(apartment_id)
+    property_setup.finish(apartment_id)
     client = TestClient(app)
     response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
