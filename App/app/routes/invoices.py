@@ -81,10 +81,19 @@ def _chosen_entity(request, entities, form=None):
     return entities[0] if entities else None
 
 
-def _settings_next(request, form, entity) -> str:
-    """Where ?next= on the settings page points; the builder keeps the operator."""
-    raw = _form_str(form, "next") if form is not None else ""
-    return security.safe_local_path(raw, f"/invoices/new?entity={entity['id']}")
+def owned_entity(entities, wanted) -> Optional[Dict[str, Any]]:
+    """0076: the host's active operator with this id, else None (never a fallback)."""
+    text = str(wanted or "").strip()
+    if text.isdigit():
+        for entity in entities:
+            if str(entity["id"]) == text:
+                return entity
+    return None
+
+
+def builder_path(entity_id) -> str:
+    """The invoice builder for one operator: the old invoice-settings default return."""
+    return f"/invoices/new?entity={entity_id}"
 
 
 def _stay_for(request: Request, raw_id) -> Optional[Dict[str, Any]]:
@@ -402,78 +411,44 @@ def invoice_new(request: Request):
     return render(request, "invoice_form.html", context)
 
 
-@router.get("/invoices/settings")
-def invoice_settings(request: Request):
-    """Invoice details of one operator: the fields the printed document uses.
+# --- 0076: invoice details of one operator -------------------------------
+# The canonical editor is the shared business editor (/entities?edit={id},
+# Invoice details), rendered by routes/admin.py. That module also keeps the
+# legacy GET/POST /invoices/settings adapters. The save, lookup and
+# normalisation live here, so admin imports invoices and never the reverse.
 
-    Registered before ``/invoices/{invoice_id}`` so "settings" is never read
-    as an invoice number.
-    """
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    entities = _entities(request)
-    entity = _chosen_entity(request, entities)
-    if not entity:
-        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    account = entity["bank_account"] or entity.get("iban") or ""
+
+def invoice_bank_view(entity: Dict[str, Any]) -> Dict[str, Any]:
+    """The stored account as editor parts, and whether the BIC is the derived one."""
+    account = entity.get("bank_account") or entity.get("iban") or ""
     derived_bic = payments.bic_for_account(account)
     stored_bic = (entity.get("bic") or "").strip().upper()
-    return _settings_page(
-        request,
-        entity,
-        entities,
-        security.safe_local_path(
-            request.query_params.get("next") or "",
-            f"/invoices/new?entity={entity['id']}",
-        ),
-        payments.czech_account_parts(entity["bank_account"] or ""),
-        bic_from_bank=bool(derived_bic and stored_bic == derived_bic),
-    )
-
-
-def _settings_page(request, entity, entities, next_path, bank_parts, *, status_code=200, **extra):
-    """The one renderer of invoice_settings.html: GET, ARES and error rerenders."""
-    context = {
-        "nav": "invoices",
-        "entity": entity,
-        "entities": entities,
-        "bank_parts": bank_parts,
-        "next": next_path,
+    return {
+        "bank_parts": payments.czech_account_parts(entity.get("bank_account") or ""),
+        "bic_from_bank": bool(derived_bic and stored_bic == derived_bic),
     }
-    context.update(extra)
-    return render(request, "invoice_settings.html", context, status_code=status_code)
 
 
-@router.post("/invoices/settings")
-async def invoice_settings_save(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    entities = _entities(request)
-    form = await request.form()
-    entity = _chosen_entity(request, entities, form)
-    if not entity:
-        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    if form.get("fill_from_register"):
-        return _invoice_settings_ares_rerender(request, form, entity)
-    redirect = _settings_next(request, form, entity)
+def save_invoice_details(request: Request, form, entity: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Save the invoice details a POST carried for ``entity`` (already authorised).
+
+    Returns None when saved. On a refused account it saves nothing and returns
+    the rerender state (every typed value, the error) for a 422 page. Issued
+    invoices keep their own snapshot; only ``legal_entity`` changes.
+    """
     detail = invoice_detail_payload(form)
     if not apply_account_payload(detail, form, entity, accept_parts=True):
-        return _settings_page(
-            request,
-            _settings_entity_from_form(entity, form),
-            entities,
-            redirect,
-            _typed_bank_parts(form, entity),
-            status_code=422,
-            account_error=host_i18n.translate(_lang(request), "entities.bank.invalid"),
-        )
+        return {
+            "entity": _settings_entity_from_form(entity, form),
+            "bank_parts": _typed_bank_parts(form, entity),
+            "bic_from_bank": False,
+            "account_error": host_i18n.translate(_lang(request), "entities.bank.invalid"),
+        }
     derive_missing_bic(detail, form, entity)
     db.update("legal_entity", entity["id"], detail)
     db.audit("entity_invoice_details_saved", f"id={entity['id']}",
              owner_user_id=access.owner_id(request))
-    return _back(redirect, msg=_flash(request, "flash.entities.saved"))
+    return None
 
 
 _SETTINGS_ARES_FIELDS = ("registry_entry",)
@@ -495,7 +470,12 @@ def _settings_entity_from_form(entity: Dict[str, Any], form) -> Dict[str, Any]:
     return row
 
 
-def _invoice_settings_ares_rerender(request: Request, form, entity: Dict[str, Any]):
+def lookup_invoice_details(request: Request, form, entity: Dict[str, Any]) -> Dict[str, Any]:
+    """The click-only register lookup of the invoice details; saves nothing.
+
+    The IČO here is lookup-only (0075 policy, kept by 0076): it fills a blank
+    registry entry and proposes VAT payer, but is never stored from this form.
+    """
     owner_id = access.owner_id(request)
     lang = _lang(request)
     row = _settings_entity_from_form(entity, form)
@@ -514,16 +494,14 @@ def _invoice_settings_ares_rerender(request: Request, form, entity: Dict[str, An
                 if "vat_status" not in filled:
                     filled.append("vat_status")
         ares_note = register_filled_note(lang, filled)
-    return _settings_page(
-        request,
-        row,
-        _entities(request),
-        _settings_next(request, form, entity),
-        _typed_bank_parts(form, entity),
-        ares_error=ares_error,
-        ares_note=ares_note,
-        ares_vat_found=ares_vat_found,
-    )
+    return {
+        "entity": row,
+        "bank_parts": _typed_bank_parts(form, entity),
+        "bic_from_bank": False,
+        "ares_error": ares_error,
+        "ares_note": ares_note,
+        "ares_vat_found": ares_vat_found,
+    }
 
 
 def _typed_bank_parts(form, entity: Dict[str, Any]) -> Dict[str, str]:

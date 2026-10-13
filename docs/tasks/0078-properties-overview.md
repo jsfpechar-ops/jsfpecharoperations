@@ -1,6 +1,6 @@
 # 0078: Properties list and read-only cross-property summaries
 
-Status: todo — combined staging lane, run in the order and mode of [the combined plan](../plans/host-ux-combined-staging.md) §2–§3.
+Status: review — combined staging lane, run in the order and mode of [the combined plan](../plans/host-ux-combined-staging.md) §2–§3.
 
 Depends on: 0077 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0078-properties-overview | PR base: task/production-host-ux-integration
 

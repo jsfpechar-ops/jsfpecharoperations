@@ -116,7 +116,8 @@ def test_guest_links_redirects_to_apartments_with_two(two_properties):
     client, _first, _second = two_properties
     response = client.get("/guest-links", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == "/apartments"
+    # 0078: several properties land on the Properties summary, not a record.
+    assert response.headers["location"] == "/apartments#property-summaries"
 
 
 def test_automation_redirects_to_automation_anchor_with_one_property(host):
@@ -130,7 +131,8 @@ def test_automation_redirects_to_apartments_with_two(two_properties):
     client, _first, _second = two_properties
     response = client.get("/automation", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == "/apartments"
+    # 0078: several properties land on the Properties summary, not a record.
+    assert response.headers["location"] == "/apartments#property-summaries"
 
 
 def test_property_save_without_automation_fields_preserves_timing(host):
@@ -213,7 +215,8 @@ def test_entities_reachable_from_property_and_settings(host):
     # 0088: the operator link opens that operator's business details.
     assert 'href="/entities' in property_page
     settings = client.get("/settings").text
-    assert 'href="/entities"' in settings
+    # 0076: with one business, Account settings opens its editor directly.
+    assert re.search(r'href="/entities(\?edit=\d+&amp;next=/settings)?"', settings)
 
 
 def test_templates_do_not_link_to_removed_pages(host):

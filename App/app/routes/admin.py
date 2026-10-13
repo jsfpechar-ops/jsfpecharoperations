@@ -503,7 +503,12 @@ def _property_hub_redirect(request: Request, anchor: str) -> RedirectResponse:
             f"/apartments/{apartments[0]['id']}?view=settings&section={section}#{anchor}",
             status_code=303,
         )
-    return RedirectResponse("/apartments", status_code=303)
+    # 0078: several (or no) properties land on the Properties summary, never
+    # on an arbitrary record.
+    return RedirectResponse(f"/apartments#{PROPERTY_SUMMARIES_ANCHOR}", status_code=303)
+
+
+PROPERTY_SUMMARIES_ANCHOR = "property-summaries"
 
 
 @router.get("/guest-links")
@@ -665,38 +670,168 @@ def entities(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    owner_user_id = access.owner_id(request)
-    rows = db.query(
-        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
-        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
-        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NULL ORDER BY e.name",
-        (owner_user_id,),
-    )
-    archived = db.query(
-        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
-        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
-        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NOT NULL "
-        "ORDER BY e.archived_at DESC",
-        (owner_user_id,),
-    )
     edit_entity = None
     edit_id = request.query_params.get("edit")
     if edit_id and edit_id.isdigit():
         edit_entity = access.entity(request, int(edit_id))
-    signature_preview = (
-        db.decrypt_field(edit_entity["signature_png_enc"])
-        if edit_entity and edit_entity["signature_png_enc"]
-        else ""
-    )
-    return render(
+    return _entities_page(
         request,
-        "entities.html",
+        edit_entity=dict(edit_entity) if edit_entity else None,
+        next_path=_entity_next(request.query_params.get("next")),
+    )
+
+
+# --- 0076: the one business editor (Business details + Invoice details) ----
+
+ENTITY_INVOICE_ANCHOR = "entity-invoice"
+
+
+def _entity_next(raw: Optional[str]) -> str:
+    """A safe same-site return path from ``next``, or "" (never an outside URL)."""
+    return security.safe_local_path(raw or "", "")
+
+
+def entity_editor_url(entity_id: int, next_path: str = "", section: str = "") -> str:
+    """The canonical editor of one business; ``section="invoice"`` opens Invoice details."""
+    query: Dict[str, Any] = {"edit": entity_id}
+    if next_path:
+        query["next"] = next_path
+    url = "/entities?" + urlencode(query, safe="/")
+    return url + (f"#{ENTITY_INVOICE_ANCHOR}" if section == "invoice" else "")
+
+
+def _entity_linked_properties(request: Request, entity_id: int) -> List[Dict[str, Any]]:
+    """The host's active properties that use this business (operator or controller)."""
+    return db.query(
+        "SELECT id, internal_name FROM apartment WHERE "
+        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND archived_at IS NULL "
+        f"AND {db.null_safe_eq('owner_user_id')} ORDER BY internal_name",
+        (entity_id, entity_id, access.owner_id(request)),
+    )
+
+
+def _entities_page(
+    request: Request,
+    *,
+    edit_entity: Optional[Dict[str, Any]] = None,
+    new_entity: Optional[Dict[str, Any]] = None,
+    signature_preview: Optional[str] = None,
+    ares_error: Optional[str] = None,
+    ares_note: Optional[str] = None,
+    invoice: Optional[Dict[str, Any]] = None,
+    next_path: str = "",
+    status_code: int = 200,
+):
+    """The one renderer of entities.html: GET, both ARES rerenders and 422s.
+
+    ``invoice`` is the Invoice details state of a rerender (typed values,
+    messages); without it the stored values of ``edit_entity`` are shown.
+    """
+    context = _entities_list_context(request, access.owner_id(request))
+    if signature_preview is None:
+        signature_preview = (
+            db.decrypt_field(edit_entity["signature_png_enc"])
+            if edit_entity and edit_entity.get("signature_png_enc")
+            else ""
+        )
+    invoice_state = None
+    if edit_entity and not edit_entity.get("archived_at"):
+        invoice_state = invoice or {
+            "entity": edit_entity,
+            **invoice_routes.invoice_bank_view(edit_entity),
+        }
+    context.update(
         {
-            "entities": rows,
-            "archived_entities": archived,
             "edit_entity": edit_entity,
+            "new_entity": new_entity,
             "signature_preview": signature_preview,
-        },
+            "ares_error": ares_error,
+            "ares_note": ares_note,
+            "invoice": invoice_state,
+            "linked_properties": (
+                _entity_linked_properties(request, edit_entity["id"]) if edit_entity else []
+            ),
+            "next_path": next_path,
+        }
+    )
+    return render(request, "entities.html", context, status_code=status_code)
+
+
+def _invoice_details_response(request: Request, form, entity: Dict[str, Any], *, default_next: str):
+    """Save or look up Invoice details; the canonical and the legacy POST both land here."""
+    next_path = _entity_next(_form_str(form, "next"))
+    if form.get("fill_from_register"):
+        state = invoice_routes.lookup_invoice_details(request, form, entity)
+        return _entities_page(request, edit_entity=entity, invoice=state, next_path=next_path)
+    refused = invoice_routes.save_invoice_details(request, form, entity)
+    if refused:
+        return _entities_page(
+            request, edit_entity=entity, invoice=refused, next_path=next_path, status_code=422
+        )
+    return _back(next_path or default_next, msg=_flash(request, "flash.entities.saved"))
+
+
+@router.post("/entities/{entity_id}/invoice")
+async def entity_invoice_details(entity_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entity = access.entity(request, entity_id)
+    if not entity or entity["archived_at"]:
+        return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
+    form = await request.form()
+    return _invoice_details_response(
+        request, form, dict(entity), default_next=entity_editor_url(entity_id, section="invoice")
+    )
+
+
+def _legacy_invoice_entity(request: Request, wanted: str):
+    """(entity, entities) for the old invoice-settings URLs; a named id must be the host's."""
+    entities = access.entities(request)
+    if wanted:
+        return invoice_routes.owned_entity(entities, wanted), entities
+    return (entities[0] if len(entities) == 1 else None), entities
+
+
+@router.get("/invoices/settings")
+def invoice_settings_legacy(request: Request):
+    """Old bookmark: open the business editor at Invoice details of the right operator.
+
+    Registered on this router (included before invoices.router), so
+    "settings" is never read as an invoice number.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entity, entities = _legacy_invoice_entity(request, request.query_params.get("entity") or "")
+    if not entities:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
+    if not entity:
+        # Several operators and none (or not one of the host's) named: the list
+        # is the picker; never open an arbitrary record.
+        return RedirectResponse("/entities", status_code=303)
+    next_path = _entity_next(request.query_params.get("next"))
+    target = entity_editor_url(
+        entity["id"], next_path or invoice_routes.builder_path(entity["id"]), section="invoice"
+    )
+    return RedirectResponse(target, status_code=303)
+
+
+@router.post("/invoices/settings")
+async def invoice_settings_legacy_save(request: Request):
+    """Old form posts: the same save, validation and rerender as the editor; no redirect."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    wanted = _form_str(form, "legal_entity_id") or (request.query_params.get("entity") or "")
+    entity, entities = _legacy_invoice_entity(request, wanted)
+    if not entities:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
+    if not entity:
+        return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
+    return _invoice_details_response(
+        request, form, dict(entity), default_next=invoice_routes.builder_path(entity["id"])
     )
 
 
@@ -844,17 +979,15 @@ async def _entities_ares_rerender(
         merged_edit.update(values)
     else:
         new_entity = values
-    context = _entities_list_context(request, owner_user_id)
-    context.update(
-        {
-            "edit_entity": merged_edit,
-            "new_entity": new_entity,
-            "signature_preview": signature_preview,
-            "ares_error": ares_error,
-            "ares_note": ares_note,
-        }
+    return _entities_page(
+        request,
+        edit_entity=merged_edit,
+        new_entity=new_entity,
+        signature_preview=signature_preview,
+        ares_error=ares_error,
+        ares_note=ares_note,
+        next_path=_entity_next(_form_str(form, "next")),
     )
-    return render(request, "entities.html", context)
 
 
 async def _signature_payload(form) -> Optional[Dict[str, Any]]:
@@ -958,7 +1091,9 @@ async def update_entity(entity_id: int, request: Request):
     payload.update(signature)
     db.update("legal_entity", entity_id, payload)
     _resolve_controller_alerts(entity_id)
-    return _back("/entities", msg=_flash(request, "flash.entities.saved"))
+    # 0076: back to where the editor was opened from (property, invoice), if any.
+    next_path = _entity_next(_form_str(form, "next"))
+    return _back(next_path or "/entities", msg=_flash(request, "flash.entities.saved"))
 
 
 @router.post("/entities/{entity_id}/archive")
@@ -1053,12 +1188,21 @@ def apartments_list(request: Request):
         f"WHERE a.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.archived_at DESC",
         (access.owner_id(request),),
     )
+    # 0078: the read-only guest-link summary shows the link the host copies,
+    # read without creating a slug (guest_slug.current, never ensure, on GET).
     enriched = [
-        {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in rows
+        {
+            "apartment": row,
+            "issues": validation.errors_only(_apartment_issues(row)),
+            "link_key": guest_slug.current(int(row["id"])) or (row["permalink_token"] or ""),
+        }
+        for row in rows
     ]
     archived_rows = [
         {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in archived
     ]
+    entities = access.entities(request)
+    owner_id = access.owner_id(request)
     return render(
         request,
         "apartments.html",
@@ -1067,7 +1211,13 @@ def apartments_list(request: Request):
             "archived_rows": archived_rows,
             # With no operator there is nothing the property form can attach to,
             # so the empty state names the operator as the first step instead.
-            "has_operator": bool(access.entities(request)),
+            "has_operator": bool(entities),
+            # 0078: shared records reached once from Properties, in their own scope.
+            "business_href": (
+                entity_editor_url(entities[0]["id"], "/apartments") if len(entities) == 1
+                else "/entities"
+            ) if entities else "",
+            "lock_account": bool(ttlock.enabled() and ttlock.account_for(owner_id)),
             "last_sync": db.get_setting("last_ical_sync"),
         },
     )
@@ -3679,6 +3829,8 @@ def settings_view(request: Request):
                 "(contact_email IS NULL OR TRIM(contact_email) = '') ORDER BY name",
                 (access.owner_id(request),),
             ),
+            # 0076: Account settings opens the one business editor when there is one.
+            "business_entities": access.entities(request),
             "apartments_without_entity": db.query(
                 "SELECT id, internal_name FROM apartment "
                 f"WHERE {db.null_safe_eq('owner_user_id')} AND legal_entity_id IS NULL AND active = 1 "

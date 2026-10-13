@@ -2,7 +2,7 @@
 {% set nav = 'apartments' %}
 {% block title %}{{ t('apartments.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner, property_identity, sync_calendars_button, nav_icon with context %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end, onboarding_banner, property_identity, sync_calendars_button, nav_icon, help_tip with context %}
 {{ onboarding_banner(onboarding) }}
 {% set header_actions %}
   <div class="page-toolbar">
@@ -19,9 +19,17 @@
   actions=header_actions
 ) }}
 
+{% if business_href or lock_account %}
+{#- 0078: shared records, once, in their own scope (not per property). -#}
+<nav class="properties-shared" aria-label="{{ t('properties.shared.aria') }}">
+  {% if business_href %}<a class="properties-shared-link" href="{{ business_href }}">{{ nav_icon('entity') }}<span>{{ t('host.business') }}</span></a>{% endif %}
+  {% if lock_account %}<a class="properties-shared-link" href="/smart-locks">{{ nav_icon('lock') }}<span>{{ t('properties.shared.lock') }}</span></a>{% endif %}
+</nav>
+{% endif %}
+
 {% if rows %}
 <div class="panel tight scroll-x">
-  <table class="table-cards">
+  <table class="table-cards properties-table">
     <thead>
       <tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('apartments.table.entity') }}</th><th>{{ t('apartments.table.calendars') }}</th>
         <th>{{ t('apartments.table.stays') }}</th><th>{{ t('apartments.table.setup') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr>
@@ -29,14 +37,16 @@
     <tbody>
     {% for row in rows %}
       {% set apartment = row.apartment %}
-      <tr class="clickable-row" data-href="/apartments/{{ apartment.id }}" tabindex="0" role="link"
+      {% set base_url = '/apartments/' ~ apartment.id %}
+      <tr class="clickable-row" data-href="{{ base_url }}" tabindex="0" role="link"
           aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('apartments.table.property') }}">
-          <a class="row-primary-link" href="/apartments/{{ apartment.id }}">{{ property_identity(apartment.id, apartment.internal_name) }}</a>
+          <a class="row-primary-link" href="{{ base_url }}">{{ property_identity(apartment.id, apartment.internal_name) }}</a>
           {% if not apartment.active %}<span class="pill grey">{{ t('apartments.inactive') }}</span>{% endif %}
+          {% if apartment.addr_obec %}<div class="small muted property-location">{{ apartment.addr_obec }}</div>{% endif %}
           {% if apartment.uby_name %}<div class="small muted">{{ apartment.uby_name }}</div>{% endif %}
         </td>
-        <td data-label="{{ t('apartments.table.entity') }}">{% if apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}">{{ row.apartment.entity_name or '—' }}</a>{% else %}—{% endif %}</td>
+        <td data-label="{{ t('apartments.table.entity') }}">{% if apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}&amp;next=/apartments">{{ row.apartment.entity_name or '—' }}</a>{% else %}<a href="{{ base_url }}?view=settings&amp;section=property#operator-picker">{{ t('properties.choose_business') }}</a>{% endif %}</td>
         <td class="num" data-label="{{ t('apartments.table.calendars') }}">{{ apartment.feeds }}</td>
         <td class="num" data-label="{{ t('apartments.table.stays') }}">{{ apartment.reservations }}</td>
         <td data-label="{{ t('apartments.table.setup') }}">
@@ -45,10 +55,11 @@
           {% else %}<span class="pill green">{{ t('apartments.setup.ready') }}</span>{% endif %}
         </td>
         <td class="nowrap row-actions" data-label="">
+          <a class="btn small" href="{{ base_url }}">{{ t('properties.open') }}</a>
           {{ row_menu_begin() }}
-            <a class="row-menu-item" href="/apartments/{{ apartment.id }}" role="menuitem">{{ t('apartments.row.edit') }}</a>
-            <a class="row-menu-item" href="/apartments/{{ apartment.id }}#communication" role="menuitem">{{ t('nav.guest_links') }}</a>
-            <a class="row-menu-item" href="/apartments/{{ apartment.id }}#ubyport" role="menuitem">{{ t('nav.automation') }}</a>
+            <a class="row-menu-item" href="{{ base_url }}?view=settings&amp;section=property#basics" role="menuitem">{{ t('apartments.row.edit') }}</a>
+            <a class="row-menu-item" href="{{ base_url }}?view=settings&amp;section=guests#communication" role="menuitem">{{ t('nav.guest_links') }}</a>
+            <a class="row-menu-item" href="{{ base_url }}?view=settings&amp;section=automation#automation" role="menuitem">{{ t('nav.automation') }}</a>
             <form method="post" action="/apartments/{{ apartment.id }}/archive" class="row-menu-form"
                   data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">
               <input type="hidden" name="return_to" value="/apartments">
@@ -61,6 +72,35 @@
     </tbody>
   </table>
 </div>
+
+{#- 0078: cross-property guest links and reporting timing. Read-only status and
+    links to each property's own editor; visible, never folded. -#}
+<section class="property-summaries" id="property-summaries" aria-labelledby="property-summaries-title">
+  <div class="property-summaries-head">
+    <h2 class="property-summaries-title" id="property-summaries-title">{{ t('properties.summary.title') }}</h2>
+    {{ help_tip('property-summaries-help', t('properties.summary.help')) }}
+  </div>
+  <div class="panel tight scroll-x">
+    <table class="table-cards property-summary-table">
+      <thead><tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('nav.guest_links') }}</th><th>{{ t('automation.timing_title') }}</th></tr></thead>
+      <tbody>
+      {% for row in rows %}
+        {% set apartment = row.apartment %}
+        {% set base_url = '/apartments/' ~ apartment.id %}
+        <tr>
+          <td data-label="{{ t('apartments.table.property') }}"><a href="{{ base_url }}">{{ apartment.internal_name }}</a></td>
+          <td data-label="{{ t('nav.guest_links') }}">
+            <a class="mono property-summary-link" href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ ('/l/' ~ row.link_key) if row.link_key else '—' }}</a>
+          </td>
+          <td data-label="{{ t('automation.timing_title') }}">
+            <a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.mode.' ~ (apartment.automation_mode if apartment.automation_mode in ('manual', 'scheduled', 'immediate') else 'manual')) }}{% if apartment.automation_mode == 'scheduled' %} · {{ t('properties.summary.hours', hours=apartment.submit_after_hours) }}{% endif %}</a>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% else %}
 <div class="panel empty">
   {% if has_operator %}

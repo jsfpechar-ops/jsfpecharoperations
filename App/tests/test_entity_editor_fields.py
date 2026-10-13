@@ -416,6 +416,11 @@ def test_saving_details_never_changes_an_issued_invoice(host):
 
 # --- rendered contract ------------------------------------------------------
 
+def _form_body(page, marker):
+    """The markup of the one form whose opening tag contains ``marker``."""
+    return page.split(marker, 1)[1].split("</form>", 1)[0]
+
+
 def _tag(page, name, index=0):
     tags = re.findall(r'<(?:input|select)\b[^>]*\bname="%s"[^>]*>' % re.escape(name), page)
     return tags[index]
@@ -433,25 +438,34 @@ def test_the_entity_forms_keep_their_contract(host):
         "signature_name": ('type="text"', False), "signature_file": ('type="file"', False),
         "signature_drawn": ('type="hidden"', False),
     }
-    for index, prefix in ((0, "edit_"), (1, "new_")):
+    # 0076: the edit panel also holds Invoice details; check each business form alone.
+    forms = (
+        (_form_body(page, f'action="/entities/{entity_id}" enctype'), "edit_"),
+        (_form_body(page, 'action="/entities" enctype'), "new_"),
+    )
+    for form, prefix in forms:
+        assert form.count('name="fill_from_register" value="1" formnovalidate') == 1
+        for absent in ("vat_status", "invoice_prefix", "account_number", "registry_entry"):
+            assert f'name="{absent}"' not in form
         for name, (kind, required) in expected.items():
-            tag = _tag(page, name, index)
+            tag = _tag(form, name)
             assert kind in tag, (name, tag)
             assert (" required" in tag) is required, (name, tag)
             field_id = "signature" if name == "signature_drawn" else name
             assert f'id="{prefix}{field_id}"' in tag, (name, tag)
     assert 'accept="image/png,image/jpeg"' in _tag(page, "signature_file")
     assert 'maxlength="80"' in _tag(page, "signature_name")
-    assert page.count('name="fill_from_register" value="1" formnovalidate') == 2
-    for absent in ("vat_status", "invoice_prefix", "account_number", "registry_entry"):
-        assert f'name="{absent}"' not in page
+    # Business details + the Invoice details lookup + Add business.
+    assert page.count('name="fill_from_register" value="1" formnovalidate') == 3
 
 
 def test_the_invoice_settings_form_keeps_its_contract(host):
     entity_id = _entity()
+    # 0076: the legacy URL opens the business editor; Invoice details is its own
+    # urlencoded form (no enctype) with the same fields and guards.
     page = host.get(f"/invoices/settings?entity={entity_id}&lang=en").text
-    form = page.split('<form method="post" action="/invoices/settings">', 1)[1]
-    assert "enctype" not in form.split(">", 1)[0]
+    form = _form_body(page, f'<form method="post" action="/entities/{entity_id}/invoice" data-unsaved-guard>')
+    assert 'name="_csrf"' in form and f'name="legal_entity_id" value="{entity_id}"' in form
     ico = _tag(form, "ico")
     assert 'id="lookup_ico"' in ico and 'maxlength="8"' in ico and " required" not in ico
     assert 'name="fill_from_register" value="1" formnovalidate' in form
@@ -483,9 +497,10 @@ def test_each_shared_field_has_one_template_definition():
     for needle, owner in owners.items():
         found = sorted(p.name for p in TEMPLATES.rglob("*.html") if needle in p.read_text())
         assert found == [owner], (needle, found)
-    for page in ("entities.html", "invoice_settings.html"):
-        text = (TEMPLATES / page).read_text()
-        assert "<details" not in text and "{% macro" not in text, page
+    # 0076: invoice_settings.html is gone; the business editor is the one page.
+    assert not (TEMPLATES / "invoice_settings.html").exists()
+    text = (TEMPLATES / "entities.html").read_text()
+    assert "<details" not in text and "{% macro" not in text
 
 
 # --- ARES: click-only, rate-limited, retains typed values -------------------
@@ -644,10 +659,11 @@ def test_entity_and_invoice_editors_fit_every_width(browser_host, live_base):
 
     entity_id = browser_host["entity"]
     pages = (
-        ("entity-edit", f"/entities?edit={entity_id}", "#entity-edit form"),
+        ("entity-edit", f"/entities?edit={entity_id}", "#entity-business form"),
         ("entity-add", "/entities", "#entity-add form"),
+        # 0076: the legacy URL lands on the editor's Invoice details form.
         ("invoice-settings", f"/invoices/settings?entity={entity_id}",
-         'form[action="/invoices/settings"]'),
+         "#entity-invoice form"),
     )
     capture = os.environ.get("UBYHOST_CAPTURE_0075") == "1"
     with sync_api.sync_playwright() as playwright:

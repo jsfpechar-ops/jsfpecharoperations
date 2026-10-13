@@ -51,7 +51,7 @@
           {% if entity.seat %}· {{ entity.seat }}{% endif %}
         </span>
       </div>
-      <a class="btn small ghost" href="/invoices/settings?entity={{ entity.id }}&amp;next={{ (('/invoices/new?reservation_id=' ~ (stay.reservation.id if stay else '') ~ '&entity=' ~ entity.id) | urlencode) }}">
+      <a class="btn small ghost" href="/entities?edit={{ entity.id }}&amp;next={{ (('/invoices/new?reservation_id=' ~ (stay.reservation.id if stay else '') ~ '&entity=' ~ entity.id) | urlencode) }}#entity-invoice">
         {{ t('invoice.edit_details') }}
       </a>
     </div>

@@ -1975,8 +1975,33 @@
     reveal(new URL(window.location.href), false);
   }
 
+  /* 0076: a page with several independent forms (the business editor's
+     Business details and Invoice details). Saving one form, or leaving the
+     page, asks first when another of them holds unsaved changes. */
+  function initUnsavedForms() {
+    var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
+    if (!forms.length) return;
+    var submitting = null;
+    forms.forEach(function (form) {
+      var mark = function () { form.setAttribute("data-dirty", "1"); };
+      form.addEventListener("input", mark);
+      form.addEventListener("change", mark);
+      form.addEventListener("submit", function () { submitting = form; });
+    });
+    window.addEventListener("beforeunload", function (event) {
+      var unsaved = forms.some(function (form) {
+        return form !== submitting && form.getAttribute("data-dirty") === "1";
+      });
+      submitting = null;
+      if (!unsaved) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
+    initUnsavedForms();
     initHelpTips();
     initBirthDateInputs();
     initRowMenus();
