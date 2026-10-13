@@ -187,6 +187,17 @@ def test_apartment_form_links_to_sample_pdf(authed_client):
     assert page.status_code == 200
     assert "Where to find your credentials" in page.text
     assert 'href="/guide#ubyport-credentials"' in page.text
+    # 0097: the example letter is linked again next to the Police reporting heading.
+    head = page.text.split('id="ubyport"', 1)[1].split('id="uby_idub"', 1)[0]
+    import re
+
+    tag = re.search(r'<a [^>]*id="police-sample-link"[^>]*>([^<]*)</a>', head)
+    assert tag, head
+    assert f'href="{SAMPLE_URL}?v=20261004a"' in tag.group(0)
+    assert 'target="_blank"' in tag.group(0) and 'rel="noopener"' in tag.group(0)
+    assert "See an example police letter (what is what)" in tag.group(1)
+    for lang, text in (("cs", "Ukázka dopisu od policie"), ("en", "See an example police letter")):
+        assert text in client.get(f"/apartments/{apartment_id}?lang={lang}").text
     guide = client.get("/guide")
     assert guide.status_code == 200
     assert "Open annotated sample PDF" in guide.text

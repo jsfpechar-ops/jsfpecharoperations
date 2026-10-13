@@ -44,7 +44,11 @@ _LIST_JS = """() => {
   const labels = [...panel.querySelectorAll('tbody tr:first-child td')].map(td => {
     const b = getComputedStyle(td, '::before'); return b.content;
   });
-  return {scrollWidth: panel.scrollWidth, clientWidth: panel.clientWidth, panelLeft: pr.left, panelRight: pr.right,
+  const box = sel => { const el = document.querySelector(sel); if (!el) return null;
+    const r = el.getBoundingClientRect(); return {left: r.left, right: r.right, top: r.top, bottom: r.bottom}; };
+  const shown = sel => { const b = box(sel); return b && b.right > b.left ? b : null; };
+  return {summary: box('#fee-list-summary'), filter: shown('#list-filter-panel') || shown('[data-filter-toolbar]'), panelTop: pr.top,
+          scrollWidth: panel.scrollWidth, clientWidth: panel.clientWidth, panelLeft: pr.left, panelRight: pr.right,
           panelWidth: Math.round(pr.width), cards, acts, labels, rows: panel.querySelectorAll('tbody tr').length};
 }"""
 
@@ -79,6 +83,19 @@ def test_list_panels_never_scroll_sideways_and_actions_stay_visible(acc, base):
                         failures.append((label, "action outside panel", act))
                     if act["right"] > width + 1:
                         failures.append((label, "action past viewport", act))
+                if name == "fees":
+                    # 0097: the month summary sits in the page lane, left-aligned
+                    # with the filter row and the list panel, above the table.
+                    summary, filt = result["summary"], result["filter"]
+                    if not summary:
+                        failures.append((label, "no fee summary line"))
+                    else:
+                        if abs(summary["left"] - result["panelLeft"]) > 1 or summary["right"] > result["panelRight"] + 1:
+                            failures.append((label, "fee summary outside the content lane", summary, result["panelLeft"]))
+                        if filt and abs(summary["left"] - filt["left"]) > 1:
+                            failures.append((label, "fee summary not aligned with the filter row", summary, filt))
+                        if summary["bottom"] > result["panelTop"] + 1:
+                            failures.append((label, "fee summary not above the table", summary))
                 if width >= 1280 and result["cards"]:
                     failures.append((label, "desktop width must keep the table", result["panelWidth"]))
                 if width == 760 and not result["cards"]:

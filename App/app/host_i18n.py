@@ -3432,38 +3432,18 @@ _INTERFACE_STRINGS = {
         "apartment.form.refresh_codelists": 'Refresh code lists from UbyPort',
         "apartment.form.test_connection": 'Save and test connection',
         "apartment.form.title_new": 'New apartment',
-        "apartment.form.ubyport.contact_hint": "E-mail or phone from your original UbyPort registration; often not on the web-service PDF. A wrong value can get reports rejected.",
-        "apartment.form.ubyport.idub_hint": "PDF line “IDUB:”, 12–14 digits, character for character.",
+        "apartment.form.ubyport.contact_hint": "An e-mail or phone where the police can reach you about your reports, as given when you registered in UbyPort. The web-service letter often does not show it.",
+        "apartment.form.ubyport.idub_hint": "The police number of your accommodation (12–14 numbers). On the police letter it is the line “IDUB:”. Copy it exactly.",
         "apartment.form.ubyport.intro": "These are not your normal UbyPort portal login (ub…). Use the separate letter titled “Výpis z databáze přihlašovacích údajů” (web-service / robotické vkládání), usually a PDF whose filename contains your IDUB and UBY-WS.",
-        "apartment.form.ubyport.login_hint": "PDF “Přihlašovací jméno:”. Copy exactly (including _ or digits).",
-        "apartment.form.ubyport.mark_hint": "Five letters on file with the police (some accounts have six, with digits), usually the part after UBY-WS_ in your login (UBY-WS_DEMO1 → DEMO1). Check the UbyPort portal if unsure.",
+        "apartment.form.ubyport.login_hint": "The user name UbyHost uses to send reports for you. It starts with UBY-WS. On the web-service letter it is the line “Přihlašovací jméno:”. It is not your normal UbyPort portal login. Copy it exactly, including _ and numbers.",
+        "apartment.form.ubyport.mark_hint": "A short code (5 or 6 letters or numbers) the police gave your accommodation. On the police letter it is the line “Zkratka ubytovacího zařízení”. If your web-service letter has no such line, it is the part after UBY-WS_ in your login (UBY-WS_DEMO1 → DEMO1).",
         "apartment.form.ubyport.mark_label": 'Facility abbreviation (zkratka)',
         "apartment.form.ubyport.mismatch_help": "UbyPort compares IDUB, zkratka, name, address, and contact to the register. A typo or an Airbnb listing name fails even when the web-service login works. You often only see that on the first real submission.",
-        "apartment.form.ubyport.name_hint": "PDF “Ubytovací zařízení:”. First line only, not your listing title; max 35 characters.",
+        "apartment.form.ubyport.name_hint": "The name the police have for your accommodation. On the police letter it is the line “Ubytovací zařízení:”: copy only its first line, at most 35 characters. Not your property or listing name: a different name gets reports rejected.",
         "apartment.form.ubyport.password_edit_hint": "Password saved. Leave blank to keep it.",
         "apartment.form.ubyport.password_new_hint": "Password from your police letter.",
         "apartment.form.ubyport.credentials_help_heading": "Where to find your credentials",
         "apartment.form.ubyport.sample_help": "A fictional police letter with SAMPLE watermarks. It shows every value to copy into UbyHost, including zkratka and contact that real WS PDFs often omit.",
-        "apartment.form.ubyport.ws_request.address_city": "130 51 Praha 3",
-        "apartment.form.ubyport.ws_request.address_street": "Olšanská 2",
-        "apartment.form.ubyport.ws_request.body": (
-            "Dobrý den, pro ubytovací zařízení s IDUB %(idub)s žádám o vytvoření účtu pro robotické "
-            "zasílání dat (webové služby UbyPort) pro aplikaci UbyHost. Děkuji. %(operator_name)s"
-        ),
-        "apartment.form.ubyport.ws_request.databox": "Data box: ybndqw9",
-        "apartment.form.ubyport.ws_request.download": "Download .txt",
-        "apartment.form.ubyport.ws_request.intro_1": (
-            "Copy this request into your data box to ask the Foreign Police for web-service login details."
-        ),
-        "apartment.form.ubyport.ws_request.intro_2": (
-            "The message below is in Czech because it goes to the Czech Police."
-        ),
-        "apartment.form.ubyport.ws_request.recipient": "Recipient: Foreign Police Directorate",
-        "apartment.form.ubyport.ws_request.subject": (
-            "Žádost o zřízení účtu pro robotické zasílání dat (UbyPort webové služby)"
-        ),
-        "apartment.form.ubyport.ws_request.subject_label": "Subject",
-        "apartment.form.ubyport.ws_request.summary": "I don't have web-service credentials yet",
         "common.none": "(none)",
         "common.remove": 'Remove',
         "common.save_changes": 'Save changes',
@@ -4270,38 +4250,18 @@ _INTERFACE_STRINGS = {
         "apartment.form.refresh_codelists": 'Obnovit číselníky z UbyPortu',
         "apartment.form.test_connection": 'Uložit a otestovat spojení',
         "apartment.form.title_new": 'Nové ubytování',
-        "apartment.form.ubyport.contact_hint": "E-mail nebo telefon z původní registrace v UbyPortu; na PDF webové služby často chybí. Špatná hodnota může vést k odmítnutí hlášení.",
-        "apartment.form.ubyport.idub_hint": "Řádek „IDUB:“ v PDF, 12–14 číslic znak po znaku.",
+        "apartment.form.ubyport.contact_hint": "E-mail nebo telefon, na kterém vás policie zastihne kvůli hlášením, jak jste ho uvedli při registraci v UbyPortu. Dopis k webové službě ho často neobsahuje.",
+        "apartment.form.ubyport.idub_hint": "Policejní číslo vašeho ubytování (12–14 číslic). V dopise od policie je to řádek „IDUB:“. Opište ho přesně.",
         "apartment.form.ubyport.intro": "Nejde o běžné přihlášení do portálu UbyPort (ub…). Použijte samostatný dopis „Výpis z databáze přihlašovacích údajů“ (webová služba / robotické vkládání), obvykle PDF, v jehož názvu je IDUB a UBY-WS.",
-        "apartment.form.ubyport.login_hint": "„Přihlašovací jméno:“ v PDF. Kopírujte přesně (včetně _ nebo číslic).",
-        "apartment.form.ubyport.mark_hint": "Pět písmen (někdy šest, i s číslicemi) v evidenci policie, obvykle část za UBY-WS_ v přihlášení (UBY-WS_DEMO1 → DEMO1). Při nejistotě ověřte v portálu UbyPort.",
+        "apartment.form.ubyport.login_hint": "Uživatelské jméno, kterým UbyHost odesílá hlášení za vás. Začíná na UBY-WS. V dopise k webové službě je to řádek „Přihlašovací jméno:“. Nejde o běžné přihlášení do portálu UbyPort. Opište ho přesně, včetně _ a číslic.",
+        "apartment.form.ubyport.mark_hint": "Krátký kód (5 nebo 6 písmen či číslic), který policie přidělila vašemu ubytování. V dopise od policie je to řádek „Zkratka ubytovacího zařízení“. Pokud ho dopis k webové službě nemá, je to část za UBY-WS_ v přihlašovacím jménu (UBY-WS_DEMO1 → DEMO1).",
         "apartment.form.ubyport.mark_label": 'Zkratka ubytovacího zařízení',
         "apartment.form.ubyport.mismatch_help": "UbyPort porovnává IDUB, zkratku, název, adresu a kontakt s registrem. Překlep nebo název z Airbnb selže i když přihlášení webové služby funguje. Často to vidíte při prvním skutečném odeslání.",
-        "apartment.form.ubyport.name_hint": "„Ubytovací zařízení:“ v PDF. Jen první řádek, ne název inzerátu; max. 35 znaků.",
+        "apartment.form.ubyport.name_hint": "Název, pod kterým policie vaše ubytování vede. V dopise od policie je to řádek „Ubytovací zařízení:“: opište jen jeho první řádek, nejvýše 35 znaků. Nejde o název ubytování ani inzerátu: jiný název vede k odmítnutí hlášení.",
         "apartment.form.ubyport.password_edit_hint": "Heslo je uložené. Pro jeho zachování nechte pole prázdné.",
         "apartment.form.ubyport.password_new_hint": "Heslo z dopisu od policie.",
         "apartment.form.ubyport.credentials_help_heading": "Kde najdete přihlašovací údaje",
         "apartment.form.ubyport.sample_help": "Ukázkový dopis policie s vodoznaky SAMPLE. Ukazuje každou hodnotu pro UbyHost, včetně zkratky a kontaktu, které reálná PDF často neobsahují.",
-        "apartment.form.ubyport.ws_request.address_city": "130 51 Praha 3",
-        "apartment.form.ubyport.ws_request.address_street": "Olšanská 2",
-        "apartment.form.ubyport.ws_request.body": (
-            "Dobrý den, pro ubytovací zařízení s IDUB %(idub)s žádám o vytvoření účtu pro robotické "
-            "zasílání dat (webové služby UbyPort) pro aplikaci UbyHost. Děkuji. %(operator_name)s"
-        ),
-        "apartment.form.ubyport.ws_request.databox": "Datová schránka: ybndqw9",
-        "apartment.form.ubyport.ws_request.download": "Stáhnout .txt",
-        "apartment.form.ubyport.ws_request.intro_1": (
-            "Zkopírujte tuto žádost do datové schránky a požádejte cizineckou policii o přihlašovací údaje webové služby."
-        ),
-        "apartment.form.ubyport.ws_request.intro_2": (
-            "Text žádosti je v češtině, protože jde policii."
-        ),
-        "apartment.form.ubyport.ws_request.recipient": "Příjemce: Ředitelství služby cizinecké policie",
-        "apartment.form.ubyport.ws_request.subject": (
-            "Žádost o zřízení účtu pro robotické zasílání dat (UbyPort webové služby)"
-        ),
-        "apartment.form.ubyport.ws_request.subject_label": "Předmět",
-        "apartment.form.ubyport.ws_request.summary": "Zatím nemám přihlašovací údaje webové služby",
         "common.none": "(žádná)",
         "common.remove": 'Odebrat',
         "common.save_changes": 'Uložit změny',
@@ -6193,6 +6153,39 @@ _SETUP_COMPLETE_STRINGS = {
     "cs": {"property_nav.setup_complete": "Nastaveno: můžete zvát hosty i hlásit policii."},
 }
 for _lang, _strings in _SETUP_COMPLETE_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0097: Police reporting and Stay fee help in plain words; the police letter
+# sample next to the section; one line instead of the request-letter generator.
+_REPORTING_HELP_0097_STRINGS = {
+    "en": {
+        "apartment.form.ubyport.sample_link": "See an example police letter (what is what)",
+        "apartment.form.ubyport.no_credentials": "No web-service credentials yet? The Foreign Police explain how to request them:",
+        "apartment.form.ubyport.no_credentials_link": "UbyPort data sending options (policie.gov.cz)",
+        "apartment.form.ubyport.password_help": "The password that belongs to the web-service login. On the web-service letter it is the line “Přístupové heslo:”. Copy it exactly.",
+        "apartment.form.stay_fee.rate_help": "The amount per guest per night set in your municipality's stay-fee decree (obecně závazná vyhláška o místním poplatku z pobytu), usually on the municipality website. At most 50 Kč. 0 turns the stay fee off.",
+        "apartment.form.stay_fee.cadence_help": "How often your municipality wants the report and the payment, as its decree says: every month or every quarter.",
+        "apartment.form.stay_fee.vs_help": "The number the municipality gave you for paying the stay fee, usually in its registration confirmation or letter. Up to 10 numbers. Properties with the same operator and the same symbol share one report.",
+        "apartment.form.stay_fee.account_help": "The municipality bank account for the stay fee, from its website or letter. Czech format: prefix (if any), account number, bank code. Used for the payment QR code.",
+        "apartment.form.stay_fee.authority_name_help": "The office that collects the stay fee, as it names itself on its letter or website, for example “Úřad městské části Praha 3”. Printed on the report.",
+        "apartment.form.stay_fee.authority_address_help": "The department that handles the stay fee and its postal address, as on the office's letter. Printed on the report.",
+        "apartment.form.stay_fee.authority_contact_help": "Phone, e-mail or account line of the office, written as the office gives it. Printed on the report.",
+    },
+    "cs": {
+        "apartment.form.ubyport.sample_link": "Ukázka dopisu od policie (co je co)",
+        "apartment.form.ubyport.no_credentials": "Ještě nemáte přihlašovací údaje k webové službě? Cizinecká policie popisuje, jak o ně požádat:",
+        "apartment.form.ubyport.no_credentials_link": "Možnosti zasílání dat aplikací UbyPort (policie.gov.cz)",
+        "apartment.form.ubyport.password_help": "Heslo k přihlašovacímu jménu webové služby. V dopise k webové službě je to řádek „Přístupové heslo:“. Opište ho přesně.",
+        "apartment.form.stay_fee.rate_help": "Částka za hosta a noc podle obecně závazné vyhlášky vaší obce o místním poplatku z pobytu, obvykle na webu obce. Nejvýše 50 Kč. 0 poplatek vypne.",
+        "apartment.form.stay_fee.cadence_help": "Jak často obec chce hlášení a platbu, podle její vyhlášky: každý měsíc, nebo každé čtvrtletí.",
+        "apartment.form.stay_fee.vs_help": "Číslo, které vám obec přidělila pro placení poplatku, obvykle v potvrzení registrace nebo v dopise. Až 10 číslic. Ubytování se stejným provozovatelem a stejným symbolem mají jedno společné hlášení.",
+        "apartment.form.stay_fee.account_help": "Bankovní účet obce pro poplatek z pobytu, z jejího webu nebo dopisu. Český formát: předčíslí (je-li), číslo účtu, kód banky. Použije se pro platební QR kód.",
+        "apartment.form.stay_fee.authority_name_help": "Úřad, který poplatek vybírá, jak se sám uvádí v dopise nebo na webu, například „Úřad městské části Praha 3“. Vytiskne se na hlášení.",
+        "apartment.form.stay_fee.authority_address_help": "Odbor, který poplatek spravuje, a jeho poštovní adresa podle dopisu úřadu. Vytiskne se na hlášení.",
+        "apartment.form.stay_fee.authority_contact_help": "Telefon, e-mail nebo účet úřadu tak, jak je úřad uvádí. Vytiskne se na hlášení.",
+    },
+}
+for _lang, _strings in _REPORTING_HELP_0097_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 # 0077: one fee editor; the way back to the fee report it was opened from.

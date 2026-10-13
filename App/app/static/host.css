@@ -902,7 +902,7 @@ body.host-workspace {
 .stay-command-actions .actions { flex-wrap: wrap; }
 
 /* 0082 */
-.host-workspace .fee-list-summary { margin: 0 0 10px; }
+.host-workspace .fee-list-summary { margin: 0 auto 10px; } /* 0097: inside the page lane, like the filter row */
 .host-workspace .fee-periods td.row-actions { text-align: right; }
 .host-workspace .fee-blockers { border-left: 4px solid var(--status-critical-border); }
 .host-workspace .fee-blockers h2 { margin: 0 0 8px; font-size: 16px; }
@@ -1445,3 +1445,14 @@ body.host-workspace {
 .unsaved-dialog .unsaved-dialog-actions .btn { min-height: 44px; }
 .host-property-save [data-unsaved-reset][hidden] { display: none; }
 /* end O1 unsaved */
+
+/* 0097: Police reporting example link and fine print; the stay-fee account label. */
+.host-workspace .police-section-head { gap: 4px 10px; }
+.host-workspace .police-section-head .police-sample-link { margin-left: auto; white-space: normal; text-align: left; }
+.host-workspace .police-no-credentials { margin: 4px 0 16px; overflow-wrap: anywhere; }
+.host-workspace .fee-account-label { margin-bottom: 6px; }
+.host-workspace .field-group-label { font-size: 13.5px; font-weight: 620; color: var(--ink-secondary); }
+@media (max-width: 600px) {
+  .host-workspace .police-section-head .police-sample-link { margin-left: 0; }
+}
+/* end 0097 */
