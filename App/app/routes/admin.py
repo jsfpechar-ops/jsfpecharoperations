@@ -1198,6 +1198,11 @@ def apartments_list(request: Request):
         }
         for row in rows
     ]
+    # 0098: the full URL the host copies (as Settings → Guest links shows it).
+    for item in enriched:
+        item["link_url"] = (
+            f"{config.PUBLIC_BASE_URL}/l/{item['link_key']}" if item["link_key"] else ""
+        )
     archived_rows = [
         {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in archived
     ]
@@ -1440,6 +1445,21 @@ def _property_copy_form_context(
     }
 
 
+def _automation_timing_values(form) -> Dict[str, Any]:
+    """The one normaliser for "When to send to UbyPort" (mode + delay hours).
+
+    0098: shared by the Settings → Automation save (via _apartment_payload) and
+    the inline timing control on Properties, so both store identical values.
+    """
+    # A brand-new property starts on Manual: a first-time host should see one
+    # send themselves before anything leaves for the police.
+    mode = _form_str(form, "automation_mode", "manual")
+    return {
+        "automation_mode": mode if mode in reporting.AUTOMATION_MODES else "manual",
+        "submit_after_hours": min(_form_int(form, "submit_after_hours") or 24, 48),
+    }
+
+
 def _apartment_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = {field: _form_str(form, field) for field in APARTMENT_TEXT_FIELDS}
     payload["guest_message"] = payload["guest_message"][:1000]
@@ -1449,11 +1469,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["data_controller_entity_id"] = _form_int(
         form, "data_controller_entity_id"
     )
-    # A brand-new property starts on Manual: a first-time host should see one
-    # send themselves before anything leaves for the police.
-    mode = _form_str(form, "automation_mode", "manual")
-    payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "manual"
-    payload["submit_after_hours"] = min(_form_int(form, "submit_after_hours") or 24, 48)
+    payload.update(_automation_timing_values(form))
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
     payload["permalink_reachback_days"] = validation.normalise_reachback_days(
         _form_int(form, "permalink_reachback_days")
@@ -2046,10 +2062,61 @@ async def regenerate_pin(apartment_id: int, request: Request):
     db.audit("pin_rotated", f"apartment={apartment_id}")
     # The PIN itself stays out of the flash: ?msg= lands in browser history and
     # access logs, and the guest link card already shows the new PIN.
-    return _back(
-        _form_return_to(form, f"/apartments/{apartment_id}#communication"),
-        msg=_flash(request, "flash.apartments.pin_rotated"),
-    )
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}#communication")
+    if return_to == "/apartments":
+        # 0098: New PIN on the Properties summary row; safe_local_path drops
+        # the fragment, so land back on that row's section.
+        return_to = _PROPERTY_SUMMARIES
+    return _back(return_to, msg=_flash(request, "flash.apartments.pin_rotated"))
+
+
+_PROPERTY_SUMMARIES = "/apartments#property-summaries"
+
+
+def _wants_json(request: Request) -> bool:
+    return "application/json" in (request.headers.get("accept") or "").lower()
+
+
+@router.post("/apartments/{apartment_id}/automation-timing")
+async def automation_timing_save(apartment_id: int, request: Request):
+    """0098: inline "When to send to UbyPort" on Properties.
+
+    A scoped entry point to the Automation save: it writes only the two timing
+    columns, through the same normaliser (_automation_timing_values) the
+    Settings → Automation form uses. Default purpose and every other field are
+    untouched. Same login, CSRF and ownership checks as the property save.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    as_json = _wants_json(request)
+    apartment = access.apartment(request, apartment_id)
+
+    def refuse(key: str, status: int):
+        message = _flash(request, key)
+        if as_json:
+            return JSONResponse({"ok": False, "error": str(message)}, status_code=status)
+        return _back(_PROPERTY_SUMMARIES, err=message)
+
+    if not apartment:
+        return refuse("flash.error.no_such_apartment", 404)
+    mode = _form_str(form, "automation_mode")
+    if mode not in reporting.AUTOMATION_MODES:
+        return refuse("flash.properties.timing_invalid", 400)
+    if mode == "scheduled":
+        # The Automation editor clamps silently; an inline save that would
+        # store something other than what was typed is refused instead.
+        hours = _form_int(form, "submit_after_hours")
+        if hours is None or not 1 <= hours <= 48:
+            return refuse("flash.properties.timing_hours", 400)
+    values = _automation_timing_values(form)
+    db.update("apartment", apartment_id, values)
+    db.audit("apartment_updated", f"id={apartment_id}")
+    message = _flash(request, "flash.properties.timing_saved")
+    if as_json:
+        return JSONResponse({"ok": True, "message": str(message), **values})
+    return _back(_PROPERTY_SUMMARIES, msg=message)
 
 
 @router.post("/apartments/{apartment_id}/regenerate-link")

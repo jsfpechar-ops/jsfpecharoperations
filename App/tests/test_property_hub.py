@@ -223,5 +223,6 @@ def test_templates_do_not_link_to_removed_pages(host):
     client, apartment_id = host
     for path in ("/apartments", f"/apartments/{apartment_id}", "/settings", "/entities"):
         text = client.get(path).text
-        assert "/automation" not in text
+        # The removed /automation page (0098's /apartments/<id>/automation-timing is not it).
+        assert not re.search(r'"/automation["?#]', text)
         assert "/guest-links" not in text

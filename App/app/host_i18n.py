@@ -6231,7 +6231,7 @@ _PROPERTIES_0078_STRINGS = {
         "properties.choose_business": "Choose business",
         "properties.open": "Open",
         "properties.summary.title": "Guest links and reporting timing",
-        "properties.summary.help": "One line per property. To change a setting, open it; it is edited in that property's Settings.",
+        "properties.summary.help": "Copy each guest link and PIN, or change when stays are sent to UbyPort. Everything else is in each property's Settings.",
         "properties.summary.hours": "%(hours)s h",
     },
     "cs": {
@@ -6240,7 +6240,7 @@ _PROPERTIES_0078_STRINGS = {
         "properties.choose_business": "Vybrat firmu",
         "properties.open": "Otevřít",
         "properties.summary.title": "Odkazy pro hosty a načasování hlášení",
-        "properties.summary.help": "Jeden řádek za každé ubytování. Nastavení otevřete kliknutím; upravuje se v Nastavení daného ubytování.",
+        "properties.summary.help": "Zkopírujte odkaz a PIN pro hosty nebo změňte, kdy se pobyty odesílají do UbyPortu. Vše ostatní je v Nastavení každého ubytování.",
         "properties.summary.hours": "%(hours)s h",
     },
 }
@@ -6291,6 +6291,34 @@ _UNSAVED_O1_STRINGS = {
     },
 }
 for _lang, _strings in _UNSAVED_O1_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0098: inline guest link, PIN and reporting timing on Properties.
+_PROPERTIES_0098_STRINGS = {
+    "en": {
+        "properties.inline.copy_pin": "Copy PIN",
+        "properties.inline.new_pin_confirm": "Generate a new PIN for %(name)s? The old PIN stops working for guests at once; update your portal messages.",
+        "properties.inline.hours_unit": "h",
+        "properties.inline.saving": "Saving…",
+        "properties.inline.saved": "Saved",
+        "properties.inline.save_failed": "Could not save. Check your connection and try again.",
+        "flash.properties.timing_saved": "Reporting timing saved.",
+        "flash.properties.timing_hours": "Enter the delay in whole hours, from 1 to 48. Nothing was saved.",
+        "flash.properties.timing_invalid": "Choose when to send to UbyPort. Nothing was saved.",
+    },
+    "cs": {
+        "properties.inline.copy_pin": "Kopírovat PIN",
+        "properties.inline.new_pin_confirm": "Vygenerovat nový PIN pro %(name)s? Starý PIN hostům okamžitě přestane fungovat; upravte zprávy na portálech.",
+        "properties.inline.hours_unit": "h",
+        "properties.inline.saving": "Ukládám…",
+        "properties.inline.saved": "Uloženo",
+        "properties.inline.save_failed": "Nepodařilo se uložit. Zkontrolujte připojení a zkuste to znovu.",
+        "flash.properties.timing_saved": "Načasování hlášení je uložené.",
+        "flash.properties.timing_hours": "Zadejte prodlevu v celých hodinách, od 1 do 48. Nic se neuložilo.",
+        "flash.properties.timing_invalid": "Vyberte, kdy odesílat do UbyPortu. Nic se neuložilo.",
+    },
+}
+for _lang, _strings in _PROPERTIES_0098_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 def normalise_language(value: str | None) -> str:

@@ -550,6 +550,68 @@
     });
   }
 
+  /* ---- 0098 inline reporting timing (Properties summary) ------------------- */
+  // Saves on change (debounced for the hours box) through the same POST the
+  // visible Save button sends without JS; shows "Saved" or the server's error.
+  function initInlineTiming() {
+    document.querySelectorAll("form[data-inline-timing]").forEach(function (form) {
+      if (!window.fetch || !window.FormData) return;
+      var select = form.querySelector("[data-timing-mode]");
+      var hours = form.querySelector("[data-timing-hours-input]");
+      var status = form.querySelector("[data-timing-status]");
+      var timer = null;
+      var seq = 0;
+      form.classList.add("is-live");
+
+      function show(text, kind) {
+        if (!status) return;
+        status.textContent = text;
+        status.classList.toggle("is-error", kind === "error");
+        status.classList.toggle("is-saved", kind === "saved");
+      }
+
+      function save() {
+        window.clearTimeout(timer);
+        timer = null;
+        var mine = ++seq;
+        show(form.getAttribute("data-saving") || "", "");
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        var headers = { "Accept": "application/json" };
+        if (meta) headers["X-CSRF-Token"] = meta.getAttribute("content") || "";
+        fetch(form.getAttribute("action"), {
+          method: "POST",
+          body: new FormData(form),
+          headers: headers,
+          credentials: "same-origin"
+        }).then(function (response) {
+          return response.json().catch(function () { return { ok: false }; });
+        }).then(function (data) {
+          if (mine !== seq) return;
+          if (data && data.ok) show(form.getAttribute("data-saved") || "", "saved");
+          else show((data && data.error) || form.getAttribute("data-failed") || "", "error");
+        }).catch(function () {
+          if (mine === seq) show(form.getAttribute("data-failed") || "", "error");
+        });
+      }
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        save();
+      });
+      if (select) select.addEventListener("change", save);
+      if (hours) {
+        hours.addEventListener("input", function () {
+          window.clearTimeout(timer);
+          timer = window.setTimeout(save, 700);
+        });
+        hours.addEventListener("change", function () {
+          if (timer) save();
+        });
+      }
+    });
+  }
+  /* ---- end 0098 ------------------------------------------------------------- */
+
   function initControllerFields() {
     document.querySelectorAll("[data-controller-same-toggle]").forEach(function (checkbox) {
       var panel = document.getElementById(checkbox.getAttribute("data-controller-target"));
@@ -2148,6 +2210,7 @@
     initPropertyViews();
     initDetailsLinks();
     initAutomationFields();
+    initInlineTiming();
     initControllerFields();
     initFeeTemplateCopy();
     initCsvExport();

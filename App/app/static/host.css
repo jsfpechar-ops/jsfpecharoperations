@@ -1146,11 +1146,7 @@ body.host-workspace {
 .properties-shared-link { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface, #fff); color: var(--ink); font-weight: 600; text-decoration: none; }
 .properties-shared-link:hover { border-color: var(--brand); }
 .properties-shared-link .nav-icon { flex: none; }
-.properties-table .property-location { margin-top: 2px; }
 .property-summaries { margin-top: 28px; }
-.property-summaries-head { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; }
-.property-summaries-title { flex: 1 1 0; min-width: 0; margin: 0; padding: 8px 14px; font-size: 15px; background: var(--brand-soft); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
-.property-summary-link { overflow-wrap: anywhere; }
 
 .host-workspace .entity-register-lookup { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .host-workspace .entity-register-lookup > p { margin: 0; }
@@ -1445,3 +1441,35 @@ body.host-workspace {
 .unsaved-dialog .unsaved-dialog-actions .btn { min-height: 44px; }
 .host-property-save [data-unsaved-reset][hidden] { display: none; }
 /* end O1 unsaved */
+
+/* 0098 */
+/* Properties summary: full guest link, PIN and inline reporting timing. Rows
+   reuse the Properties table design (lc-properties list cards); only the
+   cells' contents are new here. */
+.host-workspace .property-summary-table td { vertical-align: middle; }
+/* The name wraps between words only, as in the table above. */
+.host-workspace .property-summary-table td:first-child { min-width: 10rem; overflow-wrap: break-word; }
+.host-workspace .property-summary-table td.property-inline-timing { min-width: 20.5rem; }
+.host-workspace .property-inline-value { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.host-workspace .property-inline-url { flex: 1 1 auto; min-width: 0; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; word-break: break-all; }
+.host-workspace .property-inline-pin-value { font-size: 14px; letter-spacing: 0.04em; white-space: nowrap; }
+.host-workspace .property-inline-icons { display: inline-flex; flex: none; align-items: center; gap: 4px; }
+.host-workspace .property-inline-icons .btn-icon { width: 44px; height: 44px; }
+.host-workspace .property-inline-form { display: inline-flex; margin: 0; }
+.host-workspace .property-timing-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0; min-width: 0; }
+.host-workspace .property-timing-form select { flex: 1 1 100%; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; }
+.host-workspace .property-timing-hours { display: none; flex: none; align-items: center; gap: 4px; }
+.host-workspace .property-timing-form:has([data-timing-mode] option[value="scheduled"]:checked) .property-timing-hours { display: inline-flex; }
+.host-workspace .property-timing-hours input { width: 4.5rem; min-height: 44px; }
+.host-workspace .property-timing-form [data-timing-save] { min-height: 44px; }
+.host-workspace .property-timing-form.is-live [data-timing-save] { display: none; }
+.host-workspace .property-timing-status { flex: 1 1 100%; min-width: 0; margin: 0; font-weight: 400; }
+.host-workspace .property-timing-status:empty { display: none; }
+.host-workspace .property-timing-status.is-error { color: var(--bad); }
+.host-workspace .property-timing-status.is-saved { color: var(--ok); }
+@container list-cards (max-width: 799.98px) {
+  .host-workspace .property-summary-table td.property-inline-link,
+  .host-workspace .property-summary-table td.property-inline-timing { grid-column: 1 / -1; min-width: 0; }
+  .host-workspace .property-summary-table td:first-child { min-width: 0; }
+}
+/* end 0098 */

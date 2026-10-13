@@ -72,6 +72,9 @@ CREATE_FIELDS = {"internal_name", "city_en", "legal_entity_id", "addr_okres", "a
 GUEST_LINK_AND_AUTOMATION = {"permalink_pin", "guest_link_name", "guest_message", "permalink_window_days",
                              "permalink_reachback_days", "passport_photo_policy", "automation_mode",
                              "submit_after_hours", "default_purpose"}
+# 0098 (owner): the Properties summary has the inline timing control, a second
+# entry point to the Automation save (one normaliser). Nothing else is allowed.
+INLINE_TIMING_0098 = {"automation_mode", "submit_after_hours"}
 FEE_FIELDS = {n for n in PROPERTY_SETTINGS if n.startswith("stay_fee_")}
 BUSINESS_FIELDS = {"name", "seat", "ico", "dic", "contact_email", "contact_phone",
                    "signature_file", "signature_name"}
@@ -348,6 +351,8 @@ def test_each_property_setting_has_exactly_one_editable_control_in_the_whole_hos
         if key in ("business-editor", "businesses"):
             # The entity editor's own invoice account fields share the generic part names (0075).
             allowed = allowed | {"account_prefix", "account_number", "account_bank"}
+        if key == "properties":
+            allowed = allowed | INLINE_TIMING_0098
         stray = sorted((names & PROPERTY_SETTINGS) - allowed)
         assert not stray, f"{key}: property setting editable outside the property page: {stray}"
 
@@ -358,16 +363,21 @@ def test_guest_link_automation_and_fee_have_no_copied_editor(acc):
         if key.startswith("property-") and key != "property-new":
             continue
         names = set(_editable(_inventory(html)))
+        if key == "properties":
+            names -= INLINE_TIMING_0098
         assert not names & GUEST_LINK_AND_AUTOMATION, (key, names & GUEST_LINK_AND_AUTOMATION)
         assert not names & FEE_FIELDS, (key, names & FEE_FIELDS)
     # The fee list only links to the one editor (Set up for the rate-0 property);
     # the report's forms are decisions and manual records, never fee configuration.
     assert f"/apartments/{acc['p2']}?view=settings&amp;section=reporting" in pages["fees"]
-    # The Properties summary is read-only.
+    # 0098: the Properties summary posts only to the scoped timing route and
+    # the existing regenerate-pin route; no other editor lives there.
     listing = pages["properties"]
     start = listing.index('id="property-summaries"')
     summary = listing[start:listing.index("</section>", start)]
-    assert "<input" not in summary and "<select" not in summary and "<form" not in summary
+    actions = set(re.findall(r'<form[^>]*action="/apartments/\d+/([a-z-]+)"', summary))
+    assert actions == {"automation-timing", "regenerate-pin"}, actions
+    assert "<textarea" not in summary and len(re.findall(r"<form", summary)) == 2 * summary.count("data-summary-row")
 
 
 def test_one_shared_entity_editor_owns_business_and_invoice_fields(acc):
