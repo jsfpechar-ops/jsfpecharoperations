@@ -419,17 +419,30 @@ def invoice_settings(request: Request):
     account = entity["bank_account"] or entity.get("iban") or ""
     derived_bic = payments.bic_for_account(account)
     stored_bic = (entity.get("bic") or "").strip().upper()
-    return render(request, "invoice_settings.html", {
-        "nav": "invoices",
-        "entity": entity,
-        "entities": entities,
-        "bank_parts": payments.czech_account_parts(entity["bank_account"] or ""),
-        "bic_from_bank": bool(derived_bic and stored_bic == derived_bic),
-        "next": security.safe_local_path(
+    return _settings_page(
+        request,
+        entity,
+        entities,
+        security.safe_local_path(
             request.query_params.get("next") or "",
             f"/invoices/new?entity={entity['id']}",
         ),
-    })
+        payments.czech_account_parts(entity["bank_account"] or ""),
+        bic_from_bank=bool(derived_bic and stored_bic == derived_bic),
+    )
+
+
+def _settings_page(request, entity, entities, next_path, bank_parts, *, status_code=200, **extra):
+    """The one renderer of invoice_settings.html: GET, ARES and error rerenders."""
+    context = {
+        "nav": "invoices",
+        "entity": entity,
+        "entities": entities,
+        "bank_parts": bank_parts,
+        "next": next_path,
+    }
+    context.update(extra)
+    return render(request, "invoice_settings.html", context, status_code=status_code)
 
 
 @router.post("/invoices/settings")
@@ -445,36 +458,18 @@ async def invoice_settings_save(request: Request):
     if form.get("fill_from_register"):
         return _invoice_settings_ares_rerender(request, form, entity)
     redirect = _settings_next(request, form, entity)
-    detail = _settings_detail_payload(form)
-    if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
-        prefix = _form_str(form, "account_prefix")
-        number = _form_str(form, "account_number")
-        bank = _form_str(form, "account_bank")
-        existing = entity["bank_account"] or entity.get("iban") or ""
-        if not payments.preserve_iban_only_account(existing, prefix, number, bank):
-            detail["bank_account"] = payments.compose_czech_account(prefix, number, bank)
-    if "bank_account" in detail:
-        account = detail["bank_account"]
-        if account:
-            try:
-                detail["bank_account"], detail["iban"] = payments.normalise_account(
-                    account
-                )
-            except ValueError:
-                return _back(
-                    f"/invoices/settings?entity={entity['id']}",
-                    err=_flash(request, "entities.bank.invalid"),
-                )
-        else:
-            detail["bank_account"] = None
-            detail["iban"] = None
-    explicit_bic = "bic" in form
-    if not explicit_bic and not (entity.get("bic") or "").strip():
-        account = detail.get("bank_account", entity.get("bank_account")) or ""
-        iban = detail.get("iban", entity.get("iban")) or ""
-        derived = payments.bic_for_account(account or iban or "")
-        if derived:
-            detail["bic"] = derived
+    detail = invoice_detail_payload(form)
+    if not apply_account_payload(detail, form, entity, accept_parts=True):
+        return _settings_page(
+            request,
+            _settings_entity_from_form(entity, form),
+            entities,
+            redirect,
+            _typed_bank_parts(form, entity),
+            status_code=422,
+            account_error=host_i18n.translate(_lang(request), "entities.bank.invalid"),
+        )
+    derive_missing_bic(detail, form, entity)
     db.update("legal_entity", entity["id"], detail)
     db.audit("entity_invoice_details_saved", f"id={entity['id']}",
              owner_user_id=access.owner_id(request))
@@ -504,50 +499,43 @@ def _invoice_settings_ares_rerender(request: Request, form, entity: Dict[str, An
     owner_id = access.owner_id(request)
     lang = _lang(request)
     row = _settings_entity_from_form(entity, form)
-    ares_error = None
     ares_note = None
     ares_vat_found = False
     ico = (_form_str(form, "ico") or row.get("ico") or "").strip()
     row["ico"] = ico
-    if ares.rate_limited(owner_id):
-        ares_error = host_i18n.translate(lang, "ares.rate_limited")
-    elif not validation.ico_ok(ico):
-        ares_error = host_i18n.translate(lang, "ares.failure")
-    else:
-        ares.record_lookup(owner_id)
-        data = ares.lookup(ico)
-        if not data:
-            ares_error = host_i18n.translate(lang, "ares.failure")
-        else:
-            filled = ares.merge_blank(row, data, _SETTINGS_ARES_FIELDS)
-            if data.get("vat_payer"):
-                ares_vat_found = True
-                current = _form_str(form, "vat_status") or entity.get("vat_status") or "non_payer"
-                if current == "non_payer":
-                    row["vat_status"] = "payer"
-                    if "vat_status" not in filled:
-                        filled.append("vat_status")
-            if filled:
-                labels = ", ".join(
-                    host_i18n.translate(lang, f"ares.field.{field}") for field in filled
-                )
-                ares_note = host_i18n.translate(lang, "ares.filled", fields=labels)
-    entities = _entities(request)
-    redirect = _settings_next(request, form, entity)
-    return render(
+    data, ares_error = register_lookup(owner_id, lang, ico)
+    if data:
+        filled = ares.merge_blank(row, data, _SETTINGS_ARES_FIELDS)
+        if data.get("vat_payer"):
+            ares_vat_found = True
+            current = _form_str(form, "vat_status") or entity.get("vat_status") or "non_payer"
+            if current == "non_payer":
+                row["vat_status"] = "payer"
+                if "vat_status" not in filled:
+                    filled.append("vat_status")
+        ares_note = register_filled_note(lang, filled)
+    return _settings_page(
         request,
-        "invoice_settings.html",
-        {
-            "nav": "invoices",
-            "entity": row,
-            "entities": entities,
-            "bank_parts": payments.czech_account_parts(row.get("bank_account") or ""),
-            "next": redirect,
-            "ares_error": ares_error,
-            "ares_note": ares_note,
-            "ares_vat_found": ares_vat_found,
-        },
+        row,
+        _entities(request),
+        _settings_next(request, form, entity),
+        _typed_bank_parts(form, entity),
+        ares_error=ares_error,
+        ares_note=ares_note,
+        ares_vat_found=ares_vat_found,
     )
+
+
+def _typed_bank_parts(form, entity: Dict[str, Any]) -> Dict[str, str]:
+    """The account editor's values on a rerender: what was typed, else what is stored."""
+    if not any(key in form for key in ACCOUNT_PART_FIELDS):
+        return payments.czech_account_parts(entity.get("bank_account") or "")
+    parts = {key.split("_", 1)[1]: _form_str(form, key) for key in ACCOUNT_PART_FIELDS}
+    parts["iban"] = ""
+    if not payments.compose_czech_account(parts["prefix"], parts["number"], parts["bank"]):
+        existing = entity.get("bank_account") or entity.get("iban") or ""
+        parts["iban"] = payments.czech_account_parts(existing).get("iban", "")
+    return parts
 
 
 _BUYER_ARES_MAP = {
@@ -593,8 +581,19 @@ def _buyer_ares_fill(request: Request, form, values: Dict[str, Any]) -> Dict[str
     return meta
 
 
-def _settings_detail_payload(form) -> Dict[str, Any]:
-    """Presence-checked invoice details: sent = update (blank clears), absent = keep."""
+# --- 0075: invoice-default normalisation and register lookup -------------
+# The one implementation behind both /invoices/settings and the entity editor
+# (routes/admin.py). Each caller states its policy explicitly: only invoice
+# settings composes the three account fields and derives a missing BIC.
+
+ACCOUNT_PART_FIELDS = ("account_prefix", "account_number", "account_bank")
+
+
+def invoice_detail_payload(form) -> Dict[str, Any]:
+    """Presence-checked invoice details: sent = update (blank clears), absent = keep.
+
+    ``bank_account`` stays raw here; ``apply_account_payload`` validates it.
+    """
     detail: Dict[str, Any] = {}
     if "bank_account" in form:
         detail["bank_account"] = _form_str(form, "bank_account")
@@ -623,6 +622,78 @@ def _settings_detail_payload(form) -> Dict[str, Any]:
         due = int(due_raw) if due_raw.isdigit() else 14
         detail["invoice_due_days"] = max(0, min(due, 365))
     return detail
+
+
+def apply_account_payload(
+    detail: Dict[str, Any],
+    form,
+    entity: Optional[Dict[str, Any]] = None,
+    *,
+    accept_parts: bool,
+) -> bool:
+    """Validate the account in ``detail`` into ``bank_account`` and ``iban``.
+
+    With ``accept_parts`` the three domestic fields are composed first, except
+    that an all-empty set never wipes a stored IBAN-only account. A sent blank
+    clears both columns. Returns False for an invalid account (nothing set).
+    """
+    if accept_parts and any(key in form for key in ACCOUNT_PART_FIELDS):
+        prefix, number, bank = (_form_str(form, key) for key in ACCOUNT_PART_FIELDS)
+        existing = ((entity or {}).get("bank_account") or (entity or {}).get("iban") or "")
+        if not payments.preserve_iban_only_account(existing, prefix, number, bank):
+            detail["bank_account"] = payments.compose_czech_account(prefix, number, bank)
+    if "bank_account" not in detail:
+        return True
+    account = detail["bank_account"]
+    if not account:
+        detail["bank_account"] = None
+        detail["iban"] = None
+        return True
+    try:
+        detail["bank_account"], detail["iban"] = payments.normalise_account(account)
+    except ValueError:
+        detail.pop("bank_account", None)
+        detail.pop("iban", None)
+        return False
+    return True
+
+
+def derive_missing_bic(detail: Dict[str, Any], form, entity: Dict[str, Any]) -> None:
+    """Invoice-settings policy: an absent BIC with none stored comes from the bank code.
+
+    A posted BIC (even blank) and a stored BIC always win.
+    """
+    if "bic" in form or (entity.get("bic") or "").strip():
+        return
+    account = detail.get("bank_account", entity.get("bank_account")) or ""
+    iban = detail.get("iban", entity.get("iban")) or ""
+    derived = payments.bic_for_account(account or iban or "")
+    if derived:
+        detail["bic"] = derived
+
+
+def register_lookup(owner_id, lang: str, ico: str):
+    """One click-only ARES lookup under the existing per-owner limit and cache.
+
+    Returns ``(data, None)`` or ``(None, translated_error)``.
+    """
+    if ares.rate_limited(owner_id):
+        return None, host_i18n.translate(lang, "ares.rate_limited")
+    if not validation.ico_ok(ico):
+        return None, host_i18n.translate(lang, "ares.failure")
+    ares.record_lookup(owner_id)
+    data = ares.lookup(ico)
+    if not data:
+        return None, host_i18n.translate(lang, "ares.failure")
+    return data, None
+
+
+def register_filled_note(lang: str, filled) -> Optional[str]:
+    """The "filled from ARES: …" note for the fields a lookup filled, or None."""
+    if not filled:
+        return None
+    labels = ", ".join(host_i18n.translate(lang, f"ares.field.{field}") for field in filled)
+    return host_i18n.translate(lang, "ares.filled", fields=labels)
 
 
 @router.post("/invoices/preview")

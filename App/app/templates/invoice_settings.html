@@ -3,6 +3,8 @@
 {% block title %}{{ t('invoice.settings.title', name=entity.name) }}{% endblock %}
 {% block content %}
 {% from "_components.html" import page_header with context %}
+{% from "_entity_business_fields.html" import ico_field, register_messages with context %}
+{% from "_entity_invoice_fields.html" import invoice_fields with context %}
 {{ page_header(t('invoice.settings.title', name=entity.name), t('invoice.settings.lede'), next, t('common.back')) }}
 
 {% if entities | length > 1 %}
@@ -32,67 +34,10 @@
   <input type="hidden" name="_invoice_account_existing" value="{{ entity.bank_account or entity.iban or '' }}">
 
   <div class="panel invoice-settings-form">
-    <div class="field">
-      <label for="lookup_ico">{{ t('entities.ico') }}</label>
-      <div class="action-group" style="align-items:flex-end">
-        <input type="text" id="lookup_ico" name="ico" inputmode="numeric" maxlength="8"
-               value="{{ entity.ico or '' }}">
-        <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
-      </div>
-      {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
-      {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
-      {% if ares_vat_found %}<p class="hint">{{ t('ares.vat_found') }}</p>{% endif %}
-    </div>
-    <div class="field">
-      <span class="label">{{ t('entities.bank.label') }}</span>
-      {% set account = bank_parts %}
-      {% set prefix = 'invoice_' %}
-      {% include "_account_parts.html" %}
-    </div>
-    <div class="grid">
-      <div class="field">
-        <label for="bic">{{ t('entities.bic.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="text" id="bic" name="bic" value="{{ entity.bic or '' }}">
-        {% if bic_from_bank %}
-        <div class="hint">{{ t('invoice.fill_guest.bic_filled') }}</div>
-        {% endif %}
-      </div>
-    </div>
-    <div class="grid">
-      <div class="field">
-        <label for="vat_status">{{ t('entities.vat_status.label') }}</label>
-        <select id="vat_status" name="vat_status">
-          <option value="non_payer" {% if (entity.vat_status or 'non_payer') == 'non_payer' %}selected{% endif %}>{{ t('entities.vat_status.non_payer') }}</option>
-          <option value="identified" {% if entity.vat_status == 'identified' %}selected{% endif %}>{{ t('entities.vat_status.identified') }}</option>
-          <option value="payer" {% if entity.vat_status == 'payer' %}selected{% endif %}>{{ t('entities.vat_status.payer') }}</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="registry_entry">{{ t('entities.registry.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="text" id="registry_entry" name="registry_entry"
-               value="{{ entity.registry_entry or '' }}"
-               placeholder="{{ t('entities.registry.trade') }}">
-      </div>
-    </div>
-    <div class="grid">
-      <div class="field">
-        <label for="invoice_prefix">{{ t('entities.invoice_prefix.label') }}</label>
-        <input type="text" id="invoice_prefix" name="invoice_prefix" maxlength="6"
-               value="{{ entity.invoice_prefix or '' }}">
-      </div>
-      <div class="field">
-        <label for="invoice_next_number">{{ t('entities.invoice_next.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="number" id="invoice_next_number" name="invoice_next_number" min="1" inputmode="numeric"
-               value="{{ entity.invoice_next_number if entity.invoice_next_number else '' }}">
-        <div class="hint">{{ t('entities.invoice_next.hint') }}</div>
-      </div>
-      <div class="field">
-        <label for="invoice_due_days">{{ t('entities.invoice_due.label') }}</label>
-        <input type="number" id="invoice_due_days" name="invoice_due_days" min="0" max="365" inputmode="numeric"
-               value="{{ entity.invoice_due_days if entity.invoice_due_days is not none else 14 }}">
-      </div>
-    </div>
-    <p class="hint">{{ t('entities.invoice.snapshot_hint') }}</p>
+    {% call ico_field('lookup_ico', entity.ico, 'lookup') %}
+      {{ register_messages(ares_error, ares_note, ares_vat_found) }}
+    {% endcall %}
+    {{ invoice_fields(entity, bank_parts, bic_from_bank) }}
     <div class="actions">
       <button class="btn primary" type="submit">{{ t('common.save') }}</button>
     </div>
