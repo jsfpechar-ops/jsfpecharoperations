@@ -257,6 +257,8 @@ _GUESTS_SQL = (
     "SELECT g.*, r.date_from AS res_from, r.date_to AS res_to, r.id AS res_id "
     "FROM guest g JOIN reservation r ON r.id = g.reservation_id "
     "WHERE r.apartment_id = ? AND r.status = 'active' AND g.archived_at IS NULL "
+    # 0100: the setup guide's demo stay (demo.DEMO_STAY_SOURCE) owes no fee.
+    "AND r.source != 'demo' "
     "AND COALESCE(g.stay_from, r.date_from) <= ? AND COALESCE(g.stay_to, r.date_to) >= ? "
     "ORDER BY COALESCE(g.stay_from, r.date_from), g.id"
 )
@@ -478,6 +480,7 @@ def unsigned_stays(
     rows = db.query(
         "SELECT g.* FROM guest g JOIN reservation r ON r.id = g.reservation_id "
         "WHERE r.apartment_id = ? AND r.status = 'active' AND g.archived_at IS NULL "
+        "AND r.source != 'demo' "
         "AND COALESCE(g.stay_from, r.date_from) <= ? AND COALESCE(g.stay_to, r.date_to) >= ?",
         (apartment_id, last.isoformat(), first.isoformat()),
     )

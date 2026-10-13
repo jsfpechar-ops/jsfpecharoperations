@@ -248,6 +248,11 @@ def stay_problem(reservation, today: date) -> Optional[str]:
     """None when an invoice may be issued for this stay, else an i18n key."""
     if reservation is None:
         return "invoice.err.no_stay"
+    from . import demo
+
+    # 0100: the setup guide's demo stay is not a real stay to bill.
+    if demo.is_demo_stay(reservation):
+        return "invoice.err.demo_stay"
     if (reservation["status"] or "") == "cancelled":
         return "invoice.err.stay_cancelled"
     if stay_nights(reservation) < 1:

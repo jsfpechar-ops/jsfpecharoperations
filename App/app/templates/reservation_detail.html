@@ -43,6 +43,17 @@
   <div class="grow">{{ t('stay.detail.banner.archived') }}</div>
 </div>
 {% endif %}
+{% if is_demo_stay %}
+{#- 0100: the setup guide's demo stay. Never reported; left out of fees, invoices and the house book. -#}
+<div class="banner info stay-demo-banner" id="demo-stay">
+  <div class="grow">{{ t('stay.detail.banner.demo') }}</div>
+  <form method="post" action="/reservations/{{ reservation.id }}/delete-demo" class="inline"
+        data-confirm data-confirm-message="{{ t('confirm.delete_demo_stay') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button class="btn small" type="submit">{{ t('setup_guide.try.delete') }}</button>
+  </form>
+</div>
+{% endif %}
 
 {# The stay page has one ordered grammar. Every panel joins a group; nothing is
    appended bare. The order is: Now -> Guests -> Payments -> Police reporting ->
@@ -358,7 +369,7 @@
       <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
       {# A cancelled or archived stay sends nothing, so "Waiting for guest"
          would contradict the banner above; show the stay's own state. #}
-      <div class="metric-value small-value">{% if stay_inactive %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% endif %}</div>
+      <div class="metric-value small-value">{% if stay_inactive %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=is_demo_stay) }}{% endif %}</div>
 
     </div>
   </div>

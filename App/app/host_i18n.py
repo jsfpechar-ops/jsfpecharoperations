@@ -6311,6 +6311,98 @@ _PROPERTIES_0098_STRINGS = {
 for _lang, _strings in _PROPERTIES_0098_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0100: the setup guide teaches the app (guest link, PIN, a demo stay), lets a
+# host go on while the police login is on its way, and can be hidden.
+# The waiting copy matches reporting.py: without a complete login nothing is
+# sent (submit_for_apartment stops at "not_configured"); afterwards the sweep
+# every SUBMIT_SWEEP_MINUTES sends every finished registration that is due,
+# late ones included (due_for_automatic_send has no cut-off after the
+# deadline), and a manual property waits for the host's Send.
+_SETUP_GUIDE_0100_STRINGS = {
+    "en": {
+        "setup_guide.guest_links.title": "This is your guest link",
+        "setup_guide.guest_links.text": "Guests open it to register before they arrive. Paste it into your platform's automated message, for example the one sent after booking.",
+        "setup_guide.pin.title": "This is your PIN",
+        "setup_guide.pin.text": "The guest form is private. Guests type this PIN to open it, so send it together with the link.",
+        "setup_guide.pin.label": "PIN",
+        "setup_guide.pin.done": "Got it",
+        "setup_guide.try.title": "Try it out",
+        "setup_guide.try.text": "Make a demo stay and fill in the guest form yourself, as a guest would. Use made-up details.",
+        "setup_guide.try.help": "A demo stay is never sent to the police. It is left out of stay fees, invoices and the house book.",
+        "setup_guide.try.create": "Create a demo stay",
+        "setup_guide.try.open_text": "Your demo stay is ready. Open the guest form in a new tab, fill it in and send it, then come back here.",
+        "setup_guide.try.open": "Open the guest form",
+        "setup_guide.try.check": "I've sent the form",
+        "setup_guide.try.registered_title": "This is what you see when a guest registers",
+        "setup_guide.try.registered_text": "The stay now shows its status and its guests, here and in Stays.",
+        "setup_guide.try.open_stay": "Open the demo stay",
+        "setup_guide.try.delete": "Delete demo stay",
+        "setup_guide.reporting.text": "Add your Ubyport login, and UbyHost reports your foreign guests to the police for you.",
+        "setup_guide.reporting.wait": "I'm still waiting for my police login",
+        "setup_guide.reporting.wait_now": "You can keep setting up, and guests can register as usual. Nothing goes to the police until your login is saved.",
+        "setup_guide.reporting.wait_then_manual": "Then finished stays wait in Stays as “Ready to report” until you press Send to UbyPort.",
+        "setup_guide.reporting.wait_then_auto": "Then UbyHost sends every finished registration by itself: stays that are already due go out within about %(minutes)s minutes, late ones too.",
+        "setup_guide.reporting.wait_deadline": "The legal deadline still applies: report foreign guests within 3 working days of arrival.",
+        "setup_guide.reporting.wait_by_hand": "If your login won't come in time, report them by hand",
+        "setup_guide.reporting.waiting_item": "Police reporting: waiting for login",
+        "setup_guide.reporting.add_login": "Add police login",
+        "setup_guide.fee.text": "Optional. If your town charges a stay fee, UbyHost counts it for each stay and prepares the report for the town.",
+        "setup_guide.lock.text": "Optional. Guests get their own door code for each stay when they finish registering.",
+        "setup_guide.automation.text": "Choose whether UbyHost sends your guests to the police by itself or waits for you.",
+        "setup_guide.hide": "Hide setup guide",
+        "setup_guide.show": "Show setup guide",
+        "flash.setup.hidden": "Setup guide hidden.",
+        "flash.setup.demo_deleted": "Demo stay deleted.",
+        "stays.source.demo": "Demo",
+        "hint.demo_stay": "This is a demo stay. It is never sent to the police.",
+        "stay.detail.banner.demo": "Demo stay from the setup guide: left out of stay fees, invoices and the house book.",
+        "invoice.err.demo_stay": "A demo stay can't be invoiced.",
+        "confirm.delete_demo_stay": "Delete the demo stay and its made-up guests?",
+    },
+    "cs": {
+        "setup_guide.guest_links.title": "Toto je váš odkaz pro hosty",
+        "setup_guide.guest_links.text": "Hosté přes něj vyplní registraci před příjezdem. Vložte ho do automatické zprávy na své platformě, třeba do té, která chodí po rezervaci.",
+        "setup_guide.pin.title": "Toto je váš PIN",
+        "setup_guide.pin.text": "Formulář pro hosty je soukromý. Hosté ho otevřou tímto PINem, proto ho posílejte spolu s odkazem.",
+        "setup_guide.pin.label": "PIN",
+        "setup_guide.pin.done": "Rozumím",
+        "setup_guide.try.title": "Vyzkoušejte si to",
+        "setup_guide.try.text": "Vytvořte ukázkový pobyt a vyplňte formulář sami, jako host. Použijte smyšlené údaje.",
+        "setup_guide.try.help": "Ukázkový pobyt se nikdy neodešle policii. Nepočítá se do poplatků z pobytu, faktur ani domovní knihy.",
+        "setup_guide.try.create": "Vytvořit ukázkový pobyt",
+        "setup_guide.try.open_text": "Ukázkový pobyt je připravený. Otevřete formulář v nové záložce, vyplňte ho a odešlete, pak se vraťte sem.",
+        "setup_guide.try.open": "Otevřít formulář pro hosty",
+        "setup_guide.try.check": "Formulář jsem odeslal(a)",
+        "setup_guide.try.registered_title": "Takhle to vypadá, když se host zaregistruje",
+        "setup_guide.try.registered_text": "Pobyt teď ukazuje svůj stav a hosty, tady i v Pobytech.",
+        "setup_guide.try.open_stay": "Otevřít ukázkový pobyt",
+        "setup_guide.try.delete": "Smazat ukázkový pobyt",
+        "setup_guide.reporting.text": "Doplňte přihlašovací údaje k Ubyportu a UbyHost bude cizince hlásit policii za vás.",
+        "setup_guide.reporting.wait": "Na přihlašovací údaje od policie ještě čekám",
+        "setup_guide.reporting.wait_now": "Nastavení můžete dokončit a hosté se mohou registrovat jako obvykle. Policii se nic neodešle, dokud přihlašovací údaje neuložíte.",
+        "setup_guide.reporting.wait_then_manual": "Pak dokončené pobyty čekají v Pobytech jako „Připraveno k hlášení“, dokud nestisknete Odeslat do UbyPortu.",
+        "setup_guide.reporting.wait_then_auto": "Pak UbyHost sám odešle každou dokončenou registraci: pobyty, které už jsou na řadě, odejdou zhruba do %(minutes)s minut, i ty po termínu.",
+        "setup_guide.reporting.wait_deadline": "Zákonná lhůta ale platí dál: cizince nahlaste do 3 pracovních dnů od příjezdu.",
+        "setup_guide.reporting.wait_by_hand": "Pokud údaje nepřijdou včas, nahlaste je ručně",
+        "setup_guide.reporting.waiting_item": "Hlášení policii: čeká na přihlašovací údaje",
+        "setup_guide.reporting.add_login": "Doplnit přihlašovací údaje",
+        "setup_guide.fee.text": "Nepovinné. Pokud obec vybírá poplatek z pobytu, UbyHost ho spočítá u každého pobytu a připraví hlášení pro obec.",
+        "setup_guide.lock.text": "Nepovinné. Hosté dostanou ke každému pobytu vlastní kód ke dveřím, jakmile dokončí registraci.",
+        "setup_guide.automation.text": "Zvolte, jestli UbyHost odešle hosty policii sám, nebo počká na vás.",
+        "setup_guide.hide": "Skrýt průvodce nastavením",
+        "setup_guide.show": "Zobrazit průvodce nastavením",
+        "flash.setup.hidden": "Průvodce nastavením je skrytý.",
+        "flash.setup.demo_deleted": "Ukázkový pobyt byl smazán.",
+        "stays.source.demo": "Ukázka",
+        "hint.demo_stay": "Toto je ukázkový pobyt. Policii se nikdy neodešle.",
+        "stay.detail.banner.demo": "Ukázkový pobyt z průvodce nastavením: nepočítá se do poplatků z pobytu, faktur ani domovní knihy.",
+        "invoice.err.demo_stay": "Ukázkový pobyt nelze fakturovat.",
+        "confirm.delete_demo_stay": "Smazat ukázkový pobyt i se smyšlenými hosty?",
+    },
+}
+for _lang, _strings in _SETUP_GUIDE_0100_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 # 0099: shared list-page layout (sub-page tabs, toolbar summary).
 _LIST_LAYOUT_0099_STRINGS = {
     "en": {

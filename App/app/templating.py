@@ -218,7 +218,7 @@ _PORTAL_LABELS = {
     "google": "Google Calendar",
     "apple": "Apple Calendar",
 }
-_SOURCE_KEYS = {"manual": "stays.source.manual", "ical": "stays.source.ical"}
+_SOURCE_KEYS = {"manual": "stays.source.manual", "ical": "stays.source.ical", "demo": "stays.source.demo"}
 _PLATFORM_LOGO_DIR = config.BASE_DIR / "static" / "platforms"
 # Owner filenames in static/platforms/ (slug -> basename). Checked once at import.
 _PLATFORM_LOGO_FILES = {

@@ -25,7 +25,7 @@
         {% elif progress.not_registered %}<span class="pill amber">{{ tp('host.missing', progress.not_registered) }}</span>
         {% elif cell.state in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}
         {% elif progress.status in ('reported', 'not_required') %}{{ next_action(progress, reservation) }}
-        {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo='(demo)' in reservation.internal_name) }}{% endif %}
+        {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
       </p>
     </div>
     <div class="dashboard-row-actions">

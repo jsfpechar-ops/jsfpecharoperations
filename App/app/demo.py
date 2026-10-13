@@ -65,6 +65,85 @@ def is_demo_apartment(apartment) -> bool:
     return bool(entity and entity["name"] in (DEMO_ENTITY, DEMO_CONTROLLER))
 
 
+# 0100: the setup guide's "Try it out" makes one demo stay inside a real
+# property, so the host can fill the guest form with made-up details. The stay
+# is marked by ``reservation.source`` (an existing free-text column, so no
+# schema change). It is never reported: ``reporting.collect_sendable`` drops it
+# before any lease or batch, and ``reporting.submit_batch`` refuses it again.
+# The stay fee report, invoices, the house book and stays exports, the deadline
+# watch, the filing watchdog, door codes, guest e-mail and the guest stay
+# picker leave it out too. tests/test_demo_stay_exclusion.py pins each one.
+DEMO_STAY_SOURCE = "demo"
+# For SQL that names the reservation ``r``.
+NOT_DEMO_STAY_SQL = "r.source != 'demo'"
+
+
+def is_demo_stay(reservation) -> bool:
+    if not reservation:
+        return False
+    try:
+        source = reservation["source"]
+    except (KeyError, IndexError):
+        return False
+    return (source or "") == DEMO_STAY_SOURCE
+
+
+def demo_stay_for(apartment_id: int):
+    """The setup guide's demo stay of this property, or None."""
+    return db.query_one(
+        "SELECT * FROM reservation WHERE apartment_id = ? AND source = ? "
+        "AND archived_at IS NULL ORDER BY id DESC LIMIT 1",
+        (int(apartment_id), DEMO_STAY_SOURCE),
+    )
+
+
+def create_demo_stay(apartment_id: int) -> int:
+    """One night from today for one person; the existing one if there is one."""
+    existing = demo_stay_for(apartment_id)
+    if existing:
+        return int(existing["id"])
+    import secrets
+
+    today = claim.prague_today()
+    now = db.utcnow()
+    return db.insert(
+        "reservation",
+        {
+            "apartment_id": int(apartment_id),
+            "source": DEMO_STAY_SOURCE,
+            "uid": f"demo-{secrets.token_hex(8)}",
+            "date_from": today.isoformat(),
+            "date_to": (today + timedelta(days=1)).isoformat(),
+            "summary": "Demo",
+            "expected_guests_override": 1,
+            "status": "active",
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+
+
+def delete_demo_stay(reservation_id: int, apartment_id: int) -> bool:
+    """Delete a demo stay and its made-up guests. Never touches a real stay."""
+    reservation = db.query_one(
+        "SELECT * FROM reservation WHERE id = ? AND apartment_id = ?",
+        (int(reservation_id), int(apartment_id)),
+    )
+    if not is_demo_stay(reservation):
+        return False
+    from . import passport_photos
+
+    for guest in db.query("SELECT id FROM guest WHERE reservation_id = ?", (reservation["id"],)):
+        passport_photos.delete_photo(int(guest["id"]))
+    db.execute("DELETE FROM alert WHERE reservation_id = ?", (reservation["id"],))
+    db.execute("DELETE FROM guest WHERE reservation_id = ?", (reservation["id"],))
+    db.execute(
+        "DELETE FROM reservation WHERE id = ? AND source = ?",
+        (reservation["id"], DEMO_STAY_SOURCE),
+    )
+    return True
+
+
 def sample_calendar_url() -> str:
     """The app serves this feed itself, so it never points at the mock server.
 

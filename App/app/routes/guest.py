@@ -530,6 +530,9 @@ def _visible_reservations(apartment) -> List[Any]:
         "LEFT JOIN reservation_claim c ON c.reservation_id = r.id "
         "WHERE r.apartment_id = ? AND r.status = 'active' "
         "AND r.archived_at IS NULL "
+        # 0100: a real guest must never pick the setup guide's demo stay, or
+        # their record would sit in a stay that is never reported.
+        "AND r.source != 'demo' "
         "AND r.date_from >= ? AND r.date_from <= ? "
         "AND c.guest_access_locked_at IS NULL "
         "ORDER BY r.date_from",
@@ -573,6 +576,13 @@ def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Req
     )
     if not reservation:
         return None
+    if reservation["source"] == "demo":
+        # 0100: only the signed-in host opens their own demo stay. It is left
+        # out of the picker, so for the host it answers like a listed stay.
+        if not (request and _host_owns_apartment(request, apartment)):
+            return None
+        demo_row = claim.ensure_row(reservation["id"])
+        return reservation if claim.guest_access_open(reservation, demo_row) else None
     reachback = validation.normalise_reachback_days(apartment["permalink_reachback_days"])
     cutoff = (claim.prague_today() - timedelta(days=reachback)).isoformat()
     if (reservation["date_to"] or "") < cutoff:
@@ -597,7 +607,8 @@ def _claimable_reservation(apartment, reservation_id: int):
     """
     reservation = db.query_one(
         "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
-        "AND status = 'active' AND archived_at IS NULL",
+        "AND status = 'active' AND archived_at IS NULL "
+        "AND source != 'demo'",  # 0100: a demo stay is never claimed
         (reservation_id, apartment["id"]),
     )
     if not reservation:

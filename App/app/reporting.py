@@ -641,11 +641,14 @@ def send_controls(reservation, apartment, progress: Dict[str, Any]) -> Dict[str,
 
     send_enabled = can_send and not auto_immediate
 
-    if apartment and demo.is_demo_apartment(apartment):
+    demo_stay = demo.is_demo_stay(reservation)
+    if demo_stay or (apartment and demo.is_demo_apartment(apartment)):
         return {
             "send_enabled": False,
             "send_visible": False,
-            "send_hint_key": "hint.demo_preview",
+            # 0100: a demo stay sits in a real property, so "use a real
+            # property" would be wrong advice there.
+            "send_hint_key": "hint.demo_stay" if demo_stay else "hint.demo_preview",
             "auto_immediate": auto_immediate,
             "pending_count": len(pending),
             "rejected_edited": False,
@@ -1212,6 +1215,7 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     if not apartment:
         return []
+    from . import demo
 
     sql = (
         "SELECT g.*, r.id AS res_id FROM guest g "
@@ -1231,11 +1235,13 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
     # tables have id, created_at and archived_at, and a duplicated column name
     # resolves to the first (the guest's) value, so callers reading
     # ``reservation["id"]`` would silently be handed the guest id.
+    # 0100: the setup guide's demo stay holds made-up guests and is never
+    # sendable, by any caller (sweep, host send, resend, completion send).
     reservations = {
         row["id"]: row
         for row in db.query(
             "SELECT * FROM reservation WHERE apartment_id = ? AND status = 'active' "
-            "AND archived_at IS NULL",
+            "AND archived_at IS NULL AND source != 'demo'",
             (apartment_id,),
         )
     }
@@ -1246,7 +1252,7 @@ def collect_sendable(apartment_id: int, only_guest_ids: Optional[List[int]] = No
     anchors: Dict[int, Optional[date]] = {}
     for guest in db.query(sql, params):
         reservation = reservations.get(guest["reservation_id"])
-        if not reservation:
+        if not reservation or demo.is_demo_stay(reservation):
             continue
         # BE-9: a restricted record may be withheld from filing, but only once
         # counsel confirms the statutory duty permits it. Off by default.
@@ -1388,6 +1394,14 @@ def submit_batch(
     Returns a summary dict; never raises for transport problems, because losing
     the queue on a network blip is exactly what 10.2(e) forbids.
     """
+    from . import demo
+
+    # 0100: a demo stay can only reach here through a bug upstream; drop it
+    # before a submission row or a UbyPort call exists.
+    real = [(g, r) for g, r in pairs if not demo.is_demo_stay(r)]
+    if len(real) != len(pairs):
+        log.error("submit_batch_refused_demo_stay apartment_id=%s", apartment["id"])
+    pairs = real
     if not pairs:
         return {"submitted": 0, "submission_id": None, "state": "noop"}
 
@@ -2249,9 +2263,11 @@ def check_deadlines(
         ")",
         (db.utcnow(), owner_user_id, owner_user_id),
     )
+    # 0100: a demo stay has no deadline to chase.
     rows = db.query(
         "SELECT r.*, a.internal_name FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
         "WHERE r.status = 'active' AND r.archived_at IS NULL AND a.active = 1 "
+        "AND r.source != 'demo' "
         "AND (? IS NULL OR a.owner_user_id = ?)",
         (owner_user_id, owner_user_id),
     )

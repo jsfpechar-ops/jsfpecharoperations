@@ -1457,7 +1457,7 @@ body.host-workspace {
 /* end 0097 */
 
 /* 0096: guided setup of a new property (one step, one primary action). */
-.host-workspace .property-setup { margin: 0 0 16px; border-left: 4px solid var(--brand); scroll-margin-top: 88px; }
+.host-workspace .property-setup { margin-top: 0; margin-bottom: 16px; border-left: 4px solid var(--brand); scroll-margin-top: 88px; }
 .property-setup h2 { margin: 0 0 6px; font-size: 18px; line-height: 1.3; overflow-wrap: anywhere; }
 .property-setup-text { margin: 0 0 12px; color: var(--ink-secondary); }
 .property-setup-progress { display: flex; gap: 6px; margin: 0 0 12px; padding: 0; list-style: none; }
@@ -1475,6 +1475,25 @@ body.host-workspace {
 .property-setup-skip .link-button:focus-visible { outline: 3px solid var(--brand-ring, var(--brand)); outline-offset: 2px; }
 .property-group-intro { margin: -6px 0 14px; color: var(--ink-secondary); font-size: 14px; }
 /* end 0096 */
+
+/* 0100: beginner walk-through steps, the police-login waiting path, Hide/Show. */
+.property-setup-progress li.is-waiting { background: var(--amber, #b7791f); }
+.property-setup-waiting { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin: 0 0 12px; }
+.property-setup-waiting a { font-size: 14px; }
+.property-setup-note { margin: 6px 0 0; color: var(--ink-secondary); max-width: 60ch; }
+.property-setup-wait .link-button { text-align: left; }
+.property-setup-pin { margin: 0 0 10px; font-size: 16px; }
+.property-setup-pin strong { font-size: 22px; letter-spacing: 0.12em; }
+.property-setup-demo { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 0 0 4px; }
+.property-setup-quiet { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink-secondary); font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.property-setup-quiet:hover { color: var(--ink); }
+.property-setup-quiet:focus-visible { outline: 3px solid var(--brand-ring, var(--brand)); outline-offset: 2px; }
+.property-setup-hide, .property-setup-show { margin: 8px 0 0; }
+.property-setup-hide .link-button, .property-setup-show .link-button { min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink-secondary); font: inherit; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.property-setup-hide .link-button:hover, .property-setup-show .link-button:hover { color: var(--ink); }
+.property-setup-hide .link-button:focus-visible, .property-setup-show .link-button:focus-visible { outline: 3px solid var(--brand-ring, var(--brand)); outline-offset: 2px; }
+.stay-demo-banner form.inline { margin: 0; }
+/* end 0100 */
 
 /* 0098 */
 /* Properties summary: full guest link, PIN and inline reporting timing. Rows
