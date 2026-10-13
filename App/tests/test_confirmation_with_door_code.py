@@ -77,8 +77,8 @@ def test_a_code_made_at_once_rides_in_the_confirmation(monkeypatch):
     _guest_registers(stay)
     mails = _guest_mails(stay)
     assert [m["kind"] for m in mails] == ["completion"]
-    assert PIN in _text(mails[0])
-    assert "If you have not used it by" in _text(mails[0])
+    assert f"{PIN}#" in _text(mails[0])
+    assert "within 24 hours of check-in" in _text(mails[0])
     row = db.query_one("SELECT notified_at FROM door_code WHERE reservation_id = ?", (stay,))
     assert row["notified_at"]
 
@@ -93,7 +93,7 @@ def test_a_held_confirmation_goes_with_the_code_after_the_retry(monkeypatch):
     door_codes.reconcile()
     mails = _guest_mails(stay)
     assert [m["kind"] for m in mails] == ["completion"]
-    assert PIN in _text(mails[0])
+    assert f"{PIN}#" in _text(mails[0])
 
 
 def test_two_refusals_send_the_confirmation_without_a_code_and_tell_the_host(monkeypatch):
@@ -104,7 +104,7 @@ def test_two_refusals_send_the_confirmation_without_a_code_and_tell_the_host(mon
     door_codes.reconcile()
     mails = _guest_mails(stay)
     assert [m["kind"] for m in mails] == ["completion"]
-    assert "If you have not used it by" not in _text(mails[0])
+    assert "within 24 hours of check-in" not in _text(mails[0])
     assert db.query(
         "SELECT id FROM email_outbox WHERE reservation_id = ? AND kind = 'door_code_notice'",
         (stay,),

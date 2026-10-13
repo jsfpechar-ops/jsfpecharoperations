@@ -258,7 +258,10 @@ def test_guests_see_the_exact_first_use_deadline():
     en = mail_notify.build_door_code(
         lang="en", property_name="Flat", checkin="a", checkout="b", first_use_by="c"
     )
-    assert "If you have not used it by c, it stops working. Then ask your host for a new code." in en["text"]
+    assert (
+        "You must enter it on the lock for the first time within 24 hours of check-in, "
+        "by c, or it expires. Contact your host and they will issue a new code."
+    ) in en["text"]
 
 
 def test_the_guide_walks_through_authorized_admin():
@@ -955,7 +958,7 @@ def test_an_unarchived_stay_keeps_its_custom_code(monkeypatch):
     assert row["state"] == door_codes.ISSUED
     assert db.decrypt_field(row["pin_enc"]) == "4821937"
     assert delete_calls["n"] == first_tries
-    assert _view(stay, apartment)["pin"] == "4821937"
+    assert _view(stay, apartment)["pin"] == "4821937#"
 
 
 def test_a_random_code_delete_keeps_trying_until_its_end(monkeypatch):

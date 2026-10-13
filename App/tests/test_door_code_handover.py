@@ -128,7 +128,10 @@ def test_an_issued_code_names_the_real_first_use_deadline(monkeypatch):
         checkout=shown["checkout"],
         first_use_by=shown["first_use_by"],
     )
-    assert f"If you have not used it by {expected}, it stops working." in content["text"]
+    assert (
+        f"You must enter it on the lock for the first time within 24 hours of check-in, "
+        f"by {expected}, or it expires."
+    ) in content["text"]
 
 
 def test_no_alert_and_no_mail_when_the_plan_has_no_door_codes(monkeypatch):
@@ -161,7 +164,7 @@ def test_the_guest_door_code_mail_is_queued_with_the_deadline(monkeypatch):
         )
         assert row is not None, "the guest door-code mail was not queued"
         text = mail.delivery_body(json.loads(row["payload"]))
-        assert "4821937" in text
-        assert "If you have not used it by" in text
+        assert "4821937#" in text
+        assert "within 24 hours of check-in" in text
     finally:
         db.execute("DELETE FROM reservation_claim WHERE reservation_id = ?", (stay,))
