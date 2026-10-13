@@ -1166,3 +1166,274 @@ body.host-workspace {
 /* As for the house book: the sr-only actions header must not widen the page
    while the fee table scrolls inside its panel (CS at 760 px). */
 .host-workspace .panel.fee-periods { position: relative; }
+
+/* O2 list cards */
+/* Properties, Businesses, Invoices, Stay fees and Reports lists fit the content
+   lane, not the viewport (same idea as .stays-view): the panel is an inline-size
+   container, the sidebar state changes its width, and a list that no longer fits
+   as a table becomes compact labelled cards instead of sliding sideways. */
+.host-workspace .panel.list-cards { container-name: list-cards; container-type: inline-size; }
+/* Measured min-content table widths (EN/CS, synthetic rows) + ~40px margin give
+   each list its own switch point, so a 1280px laptop (panel ~994px, rail
+   expanded) keeps tables: Properties 800, Invoices 830, Reports 850, Stay fees
+   940, Businesses 950. Long names wrap inside the table instead of forcing
+   cards. Below its switch point a list becomes compact labelled cards; the
+   panel keeps scroll-x only as a last-resort safety. */
+.host-workspace .list-cards td.col-name,
+.host-workspace .lc-properties td:first-child,
+.host-workspace .lc-fees td:first-child { overflow-wrap: anywhere; }
+@container list-cards (max-width: 799.98px) {
+  .host-workspace .lc-properties table,
+  .host-workspace .lc-properties tbody { display: block; width: 100%; min-width: 0; }
+  .host-workspace .lc-properties thead { display: none; }
+  .host-workspace .lc-properties tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .host-workspace .lc-properties tr:last-child { border-bottom: 0; }
+  .host-workspace .lc-properties td,
+  .host-workspace .lc-properties td:first-child {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .host-workspace .lc-properties td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .host-workspace .lc-properties td[data-label=""]::before { display: none; }
+  .host-workspace .lc-properties td:empty { display: none; }
+  /* The primary field (name, number, period) is the bold first line. */
+  .host-workspace .lc-properties td:first-child { grid-column: 1 / -1; font-weight: 700; }
+  .host-workspace .lc-properties td:first-child::before { display: none; }
+  .host-workspace .lc-properties td:first-child .small { font-weight: 400; }
+  .host-workspace .lc-properties td.row-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+  .host-workspace .lc-properties td.row-actions > * { margin: 0; }
+  .host-workspace .lc-properties td.num { text-align: left; }
+  .host-workspace .lc-properties td.nowrap { white-space: normal; }
+  .host-workspace .lc-properties .pill { white-space: normal; }
+}
+@container list-cards (max-width: 829.98px) {
+  .host-workspace .lc-invoices table,
+  .host-workspace .lc-invoices tbody { display: block; width: 100%; min-width: 0; }
+  .host-workspace .lc-invoices thead { display: none; }
+  .host-workspace .lc-invoices tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .host-workspace .lc-invoices tr:last-child { border-bottom: 0; }
+  .host-workspace .lc-invoices td,
+  .host-workspace .lc-invoices td:first-child {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .host-workspace .lc-invoices td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .host-workspace .lc-invoices td[data-label=""]::before { display: none; }
+  .host-workspace .lc-invoices td:empty { display: none; }
+  /* The primary field (name, number, period) is the bold first line. */
+  .host-workspace .lc-invoices td:first-child { grid-column: 1 / -1; font-weight: 700; }
+  .host-workspace .lc-invoices td:first-child::before { display: none; }
+  .host-workspace .lc-invoices td:first-child .small { font-weight: 400; }
+  .host-workspace .lc-invoices td.row-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+  .host-workspace .lc-invoices td.row-actions > * { margin: 0; }
+  .host-workspace .lc-invoices td.num { text-align: left; }
+  .host-workspace .lc-invoices td.nowrap { white-space: normal; }
+  .host-workspace .lc-invoices .pill { white-space: normal; }
+}
+@container list-cards (max-width: 849.98px) {
+  .host-workspace .lc-reports table,
+  .host-workspace .lc-reports tbody { display: block; width: 100%; min-width: 0; }
+  .host-workspace .lc-reports thead { display: none; }
+  .host-workspace .lc-reports tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .host-workspace .lc-reports tr:last-child { border-bottom: 0; }
+  .host-workspace .lc-reports td,
+  .host-workspace .lc-reports td:first-child {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .host-workspace .lc-reports td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .host-workspace .lc-reports td[data-label=""]::before { display: none; }
+  .host-workspace .lc-reports td:empty { display: none; }
+  /* The primary field (name, number, period) is the bold first line. */
+  .host-workspace .lc-reports td:first-child { grid-column: 1 / -1; font-weight: 700; }
+  .host-workspace .lc-reports td:first-child::before { display: none; }
+  .host-workspace .lc-reports td:first-child .small { font-weight: 400; }
+  .host-workspace .lc-reports td.row-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+  .host-workspace .lc-reports td.row-actions > * { margin: 0; }
+  .host-workspace .lc-reports td.num { text-align: left; }
+  .host-workspace .lc-reports td.nowrap { white-space: normal; }
+  .host-workspace .lc-reports .pill { white-space: normal; }
+}
+@container list-cards (max-width: 939.98px) {
+  .host-workspace .lc-fees table,
+  .host-workspace .lc-fees tbody { display: block; width: 100%; min-width: 0; }
+  .host-workspace .lc-fees thead { display: none; }
+  .host-workspace .lc-fees tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .host-workspace .lc-fees tr:last-child { border-bottom: 0; }
+  .host-workspace .lc-fees td,
+  .host-workspace .lc-fees td:first-child {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .host-workspace .lc-fees td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .host-workspace .lc-fees td[data-label=""]::before { display: none; }
+  .host-workspace .lc-fees td:empty { display: none; }
+  /* The primary field (name, number, period) is the bold first line. */
+  .host-workspace .lc-fees td:first-child { grid-column: 1 / -1; font-weight: 700; }
+  .host-workspace .lc-fees td:first-child::before { display: none; }
+  .host-workspace .lc-fees td:first-child .small { font-weight: 400; }
+  .host-workspace .lc-fees td.row-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+  .host-workspace .lc-fees td.row-actions > * { margin: 0; }
+  .host-workspace .lc-fees td.num { text-align: left; }
+  .host-workspace .lc-fees td.nowrap { white-space: normal; }
+  .host-workspace .lc-fees .pill { white-space: normal; }
+}
+@container list-cards (max-width: 949.98px) {
+  .host-workspace .lc-entities table,
+  .host-workspace .lc-entities tbody { display: block; width: 100%; min-width: 0; }
+  .host-workspace .lc-entities thead { display: none; }
+  .host-workspace .lc-entities tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 18px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .host-workspace .lc-entities tr:last-child { border-bottom: 0; }
+  .host-workspace .lc-entities td,
+  .host-workspace .lc-entities td:first-child {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .host-workspace .lc-entities td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .host-workspace .lc-entities td[data-label=""]::before { display: none; }
+  .host-workspace .lc-entities td:empty { display: none; }
+  /* The primary field (name, number, period) is the bold first line. */
+  .host-workspace .lc-entities td:first-child { grid-column: 1 / -1; font-weight: 700; }
+  .host-workspace .lc-entities td:first-child::before { display: none; }
+  .host-workspace .lc-entities td:first-child .small { font-weight: 400; }
+  .host-workspace .lc-entities td.row-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+  .host-workspace .lc-entities td.row-actions > * { margin: 0; }
+  .host-workspace .lc-entities td.num { text-align: left; }
+  .host-workspace .lc-entities td.nowrap { white-space: normal; }
+  .host-workspace .lc-entities .pill { white-space: normal; }
+}
