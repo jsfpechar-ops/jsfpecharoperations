@@ -224,6 +224,16 @@ def test_sync_failure_shows_friendly_error_and_removes_feed(monkeypatch):
     assert feeds == []
 
 
+def test_setup_address_page_has_structured_fields_only():
+    client = _session_client("wizard-structured-address")
+    _walk_to_address(client)
+    page = client.get("/setup/address")
+    assert page.status_code == 200
+    assert 'name="address_line"' not in page.text
+    assert 'id="addr_obec"' in page.text
+    assert "wizard-preview" not in page.text
+
+
 def test_wizard_screens_work_without_javascript():
     client = _session_client("wizard-no-js")
     for path in ("/setup/welcome",):

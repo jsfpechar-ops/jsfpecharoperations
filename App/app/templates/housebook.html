@@ -6,7 +6,7 @@
 {% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') %}
 {{ page_header(
   t('housebook.title'),
-  t('housebook.lede')
+  ''
 ) }}
 
 {% set housebook_property = namespace(label=t('host.filter.all_properties')) %}
@@ -139,15 +139,7 @@
 </div>
 {% endif %}
 
-<details class="panel quiet housebook-legal" id="housebook-legal-details">
-  <summary>{{ t('housebook.legal_title') }}</summary>
-  <p class="small muted">{{ t('housebook.legal_body') }}</p>
-  <ul class="legal-list small">
-    <li>{{ t('housebook.legal_paper') }}</li>
-    <li>{{ t('housebook.legal_inspection') }}</li>
-  </ul>
-  <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
-</details>
+<p class="small" style="margin-top:16px"><a href="/guide#housebook">{{ t('nav.guide') }}</a></p>
 
 <dialog id="housebook-pdf-dialog" class="csv-export-dialog">
   <form id="housebook-pdf-form" method="get" action="/housebook/pdfs.zip">

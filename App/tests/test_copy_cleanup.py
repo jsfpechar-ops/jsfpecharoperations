@@ -132,12 +132,15 @@ def test_the_reporting_section_still_states_the_deadline_and_timing():
 
 
 def test_the_house_book_legal_block_renders_once():
-    template = (TEMPLATES / "housebook.html").read_text(encoding="utf-8")
-    assert template.count("t('housebook.legal_body')") == 1
-    assert template.count("t('housebook.legal_paper')") == 1
-    assert template.count("t('housebook.legal_footnote')") == 1
-    assert "housebook-legal-intro" not in template
-    assert "ubyhost_housebook_legal_v1" not in template
+    housebook = (TEMPLATES / "housebook.html").read_text(encoding="utf-8")
+    guide = (TEMPLATES / "guide.html").read_text(encoding="utf-8")
+    assert "housebook-legal-details" not in housebook
+    assert 'href="/guide#housebook"' in housebook
+    assert guide.count("t('housebook.legal_body')") == 1
+    assert guide.count("t('housebook.legal_paper')") == 1
+    assert guide.count("t('housebook.legal_footnote')") == 1
+    assert "housebook-legal-intro" not in housebook
+    assert "ubyhost_housebook_legal_v1" not in housebook
 
 
 def test_each_property_form_explanation_renders_once():

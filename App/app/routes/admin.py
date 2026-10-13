@@ -1051,8 +1051,6 @@ def apartment_new(request: Request):
             "entities": entities,
             "selected_entity_id": selected_entity_id,
             "purposes": codelists.purpose_options("en"),
-            "address_line": "",
-            "address_details_open": True,
             "account": account,
             "more_options_open": _more_options_open(request, []),
             **copy_ctx,
@@ -1171,25 +1169,6 @@ def _property_copy_form_context(
     }
 
 
-def _apply_address_line_from_form(form, payload: Dict[str, Any]) -> bool:
-    """Parse ``address_line`` into empty addr_* fields. Return True when details conflict."""
-    line = _form_str(form, "address_line").strip()
-    if not line:
-        return False
-    split = validation.split_czech_address(line)
-    if not split:
-        return False
-    return validation.merge_split_address_fields(payload, split)
-
-
-def _append_query_param(path: str, name: str, value: str) -> str:
-    if not value:
-        return path
-    parsed = urlsplit(path)
-    query = urlencode([*parse_qsl(parsed.query, keep_blank_values=True), (name, value)])
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query, parsed.fragment))
-
-
 def _apartment_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = {field: _form_str(form, field) for field in APARTMENT_TEXT_FIELDS}
     payload["guest_message"] = payload["guest_message"][:1000]
@@ -1280,7 +1259,6 @@ async def apartment_create(request: Request):
     form = await request.form()
     payload = _apartment_payload(form)
     _apply_police_defaults(payload, access.entities(request))
-    _apply_address_line_from_form(form, payload)
     payload.pop("_stay_fee_account_raw", None)
     if not payload["internal_name"]:
         return _back("/apartments/new", err=_flash(request, "flash.error.name_required"))
@@ -1328,24 +1306,6 @@ def apartment_detail(apartment_id: int, request: Request):
     feeds = db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
     entities = access.entities(request)
     issues = list(_apartment_issues(apartment))
-    if request.query_params.get("address_line_mismatch") == "1":
-        issues.append(
-            validation.Issue(
-                "address_line",
-                _host_text(request, "apartment.form.address.line_details_mismatch"),
-                "warning",
-            )
-        )
-    address_line = (request.query_params.get("address_line") or "").strip() or validation.compose_czech_address_line(
-        apartment
-    )
-    address_details_open = (
-        request.query_params.get("address_line_mismatch") == "1"
-        or any(
-            issue.is_error and issue.field in ("addr_house_no", "addr_zip", "addr_obec")
-            for issue in issues
-        )
-    )
     # A connected calendar or a hand-typed stay both mean guests are on their
     # way, which is all the "Ready to invite guests" list asks about.
     link_key = guest_slug.link_key(apartment)
@@ -1400,8 +1360,6 @@ def apartment_detail(apartment_id: int, request: Request):
             "entities": entities,
             "feeds": feeds,
             "issues": issues,
-            "address_line": address_line,
-            "address_details_open": address_details_open,
             "readiness": readiness,
             "more_options_open": _more_options_open(request, issues, readiness),
             "purposes": codelists.purpose_options("en"),
@@ -1456,7 +1414,7 @@ async def apartment_update(apartment_id: int, request: Request):
     if guard:
         return guard
     form = await request.form()
-    rejected, address_mismatch = _save_apartment_form(apartment_id, request, form)
+    rejected, _address_mismatch = _save_apartment_form(apartment_id, request, form)
     if rejected:
         return rejected
     # "Saved." said nothing about whether the property can actually report, so
@@ -1470,8 +1428,6 @@ async def apartment_update(apartment_id: int, request: Request):
     else:
         msg = _flash(request, "flash.apartments.saved_ready")
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
-    if address_mismatch:
-        return_to = _append_query_param(return_to, "address_line_mismatch", "1")
     return _back(return_to, msg=msg)
 
 
@@ -1495,7 +1451,6 @@ def _save_address_only(apartment_id: int, request: Request, form) -> Optional[Re
         field: _form_str(form, field) for field in _ADDRESS_ONLY_FIELDS
     }
     payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
-    _apply_address_line_from_form(form, payload)
     merged = dict(apartment)
     merged.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS})
     address_issues = [
@@ -1504,8 +1459,10 @@ def _save_address_only(apartment_id: int, request: Request, form) -> Optional[Re
         if issue.field in _ADDRESS_ONLY_FIELDS
     ]
     if address_issues:
-        from .setup_wizard import _address_preview, _step_context
+        from .setup_wizard import _step_context
 
+        draft_apartment = dict(apartment)
+        draft_apartment.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS})
         return render(
             request,
             "setup/address.html",
@@ -1513,8 +1470,7 @@ def _save_address_only(apartment_id: int, request: Request, form) -> Optional[Re
                 request,
                 "address",
                 address_error=address_issues[0].message,
-                address_preview=_address_preview(apartment),
-                split_address=hasattr(validation, "split_czech_address"),
+                apartment=draft_apartment,
             ),
             status_code=400,
         )
@@ -1541,7 +1497,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         for key in ("automation_mode", "submit_after_hours", "default_purpose"):
             payload.pop(key, None)
     _apply_police_defaults(payload, access.entities(request))
-    address_mismatch = _apply_address_line_from_form(form, payload)
+    address_mismatch = False
     if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
         return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_entity")), False
     if payload["data_controller_entity_id"] and not access.entity(
