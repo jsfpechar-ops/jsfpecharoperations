@@ -4,6 +4,8 @@
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
   var NAV_BREAKPOINT = 960;
   var manualCopyFormId = 0;
+  /* 0099: every clickable list row, table or dashboard card. */
+  var ROW_SELECTOR = "tr[data-href], .clickable-row[data-href]";
 
   document.documentElement.classList.add("has-js");
 
@@ -727,14 +729,20 @@
   }
 
   function initClickableRows() {
-    document.querySelectorAll("tr[data-href]").forEach(function (row) {
+    /* 0099: one behaviour for every list row (table rows and dashboard stay
+       rows): click or Enter/Space opens it; controls inside keep their own
+       action, and selecting text in a row does not navigate. */
+    document.querySelectorAll(ROW_SELECTOR).forEach(function (row) {
       function openRow() {
         if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
         window.location.assign(row.getAttribute("data-href"));
       }
 
       row.addEventListener("click", function (event) {
-        if (event.target.closest("a, button, input, select, textarea, label, form, .row-menu, .row-actions")) return;
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.target.closest("a, button, input, select, textarea, label, form, summary, details, dialog, .row-menu, .row-actions, .dashboard-row-actions")) return;
+        var selection = window.getSelection ? String(window.getSelection()) : "";
+        if (selection && row.contains(window.getSelection().anchorNode)) return;
         openRow();
       });
 
@@ -1694,7 +1702,7 @@
         }
         return;
       }
-      var rows = Array.prototype.slice.call(document.querySelectorAll("tr[data-href]"));
+      var rows = Array.prototype.slice.call(document.querySelectorAll(ROW_SELECTOR));
       if (!rows.length) return;
       var current = rows.findIndex(function (row) { return row.classList.contains("row-selected"); });
       if (event.key === "j" || event.key === "k") {

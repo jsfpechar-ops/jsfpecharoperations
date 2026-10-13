@@ -14,8 +14,9 @@
   </div>
 {% endmacro %}
 
-{% macro page_header(title, description='', back_url='', back_label='', eyebrow='', actions='') %}
-  <header class="page-header">
+{% macro page_header(title, description='', back_url='', back_label='', eyebrow='', actions='', tabs=none) %}
+  {% set header_tabs = page_tabs() if tabs is none else tabs %}
+  <header class="page-header{{ ' has-tabs' if header_tabs }}">
     <div class="page-header-main">
       {% if back_url %}
         <a class="back-link" href="{{ back_url }}"><span aria-hidden="true">&larr;</span> {{ back_label or t('common.back') }}</a>
@@ -26,6 +27,64 @@
     </div>
     {% if actions %}<div class="page-actions">{{ actions | safe }}</div>{% endif %}
   </header>
+  {{ sub_tabs(header_tabs) }}
+{% endmacro %}
+
+{#- 0099: one tab component for every section's sub-pages. items is a list of
+    (href, label key, current); tabs are plain links (no JS) and the open page
+    carries aria-current. Rendered directly under the title row. -#}
+{% macro sub_tabs(items, label='') %}
+{% if items %}
+<nav class="sub-tabs host-local-nav" aria-label="{{ label or t('host.section_navigation') }}" data-sub-tabs>
+  {%- for href, key, current in items %}<a class="sub-tab" href="{{ href }}"{% if current %} aria-current="page"{% endif %}>{{ t(key) }}</a>{% endfor -%}
+</nav>
+{% endif %}
+{% endmacro %}
+
+{#- 0099: the shared list-page layout (Stays, Properties, Invoices, Stay fees).
+    Order: notices, title row (title left; actions right with at most one
+    filled primary; small meta under the actions), sub-page tabs, toolbar, one
+    list panel, secondary sections. tabs none = the section's own tabs. -#}
+{% macro list_page_header(title, actions='', meta='', tabs=none) %}
+  {% set header_tabs = page_tabs() if tabs is none else tabs %}
+  {% set setup_notice = onboarding_banner(onboarding) | trim %}
+  {% if setup_notice %}<div class="list-notices" data-list-notices>{{ setup_notice }}</div>{% endif %}
+  <header class="page-header list-page-header{{ ' has-tabs' if header_tabs }}" data-list-title-row>
+    <div class="page-header-main"><h1>{{ title }}</h1></div>
+    {% if actions | trim or meta %}
+    <div class="list-page-side">
+      {% if actions | trim %}<div class="page-actions list-page-actions" data-list-actions>{{ actions | safe }}</div>{% endif %}
+      {% if meta %}<p class="small muted list-page-meta" data-list-meta>{{ meta }}</p>{% endif %}
+    </div>
+    {% endif %}
+  </header>
+  {{ sub_tabs(header_tabs) }}
+{% endmacro %}
+
+{#- 0099: the one list toolbar. Left: quick-filter chips, the Filters button
+    (JS shows it for panel_id; without JS the panel stays open) and the applied
+    summary. Right: secondary list actions (Save this view, Export CSV). -#}
+{% macro list_toolbar(summary='', chips='', panel_id='', actions='') %}
+<div class="filter-toolbar list-toolbar" data-filter-toolbar data-list-toolbar>
+  <div class="list-toolbar-main">
+    {% if chips | trim %}<div class="chips list-toolbar-chips">{{ chips | safe }}</div>{% endif %}
+    {% if panel_id %}
+    <button class="btn filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="{{ panel_id }}" hidden>
+      {{ t('host.filter.filters') }}
+    </button>
+    {% endif %}
+    {% if summary | trim %}<p class="filter-applied-summary" data-filter-summary>{{ summary | safe }}</p>{% endif %}
+  </div>
+  {% if actions | trim %}<div class="filter-toolbar-actions">{{ actions | safe }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{#- 0099: a plain secondary-section heading with an optional "?" tip. -#}
+{% macro list_section_heading(id, title, help_text='') %}
+  <div class="heading-with-tip list-section-heading">
+    <h2 id="{{ id }}">{{ title }}</h2>
+    {% if help_text %}{{ help_tip(id ~ '-help', help_text) }}{% endif %}
+  </div>
 {% endmacro %}
 
 {% macro breadcrumb(items) %}
@@ -264,11 +323,15 @@
   {%- endif -%}
 {%- endmacro %}
 
-{% macro empty_state(title, body='', action_url='', action_label='') %}
-  <div class="panel empty">
-    <h2>{{ title }}</h2>
+{#- 0099: the one empty state: a message and at most one button (primary=false
+    for a neutral one such as "Show all stays"). A caller block, when given,
+    holds a page-specific extra (the practice-mode demo loader on Stays). -#}
+{% macro empty_state(title, body='', action_url='', action_label='', primary=true) %}
+  <div class="panel empty empty-state" data-empty-state>
+    {% if title %}<h2>{{ title }}</h2>{% endif %}
     {% if body %}<p>{{ body }}</p>{% endif %}
-    {% if action_url %}<a class="btn primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+    {% if action_url %}<div class="empty-state-action"><a class="btn{{ ' primary' if primary }}" href="{{ action_url }}">{{ action_label }}</a></div>{% endif %}
+    {% if caller is defined %}{{ caller() }}{% endif %}
   </div>
 {% endmacro %}
 

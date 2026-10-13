@@ -76,8 +76,9 @@ EMPTY_COPY = [
     ),
 ]
 
+# 0099: the shared empty-state component (_components.empty_state).
 EMPTY_PANEL_RE = re.compile(
-    r'<div class="panel empty">\n(.*?)\n</div>', re.DOTALL
+    r'<div class="panel empty empty-state" data-empty-state>(.*?)\n  </div>', re.DOTALL
 )
 PRIMARY_LINK_RE = re.compile(
     r'<a class="btn primary" href="([^"]+)">([^<]+)</a>'

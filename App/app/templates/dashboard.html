@@ -9,7 +9,10 @@
 <div class="dashboard-row-list">
 {% for row in items %}
   {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
-  <article class="dashboard-row {{ 'is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}">
+  {#- 0099: the whole row opens the stay, as on every list (shared clickable-row). -#}
+  <article class="dashboard-row clickable-row {{ 'is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}"
+           data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
+           aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
     <div class="dashboard-row-copy">
       <p class="dashboard-row-dates">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}
         {% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}<span>{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}</span>{% endif %}
