@@ -29,7 +29,7 @@ Status: review. Executor: Claude (owner-authorized to implement and verify). Mat
 
 ## Open (not fixed; need a brief or a decision)
 
-- **O1** Dirty property settings: only the browser's native Leave/Stay prompt. Plan maintainability §5 requires a Save / Discard / Stay choice and a Discard control; neither exists. Drafts do survive in-page tab/group switches and Back/Forward. Needs a scoped `app.js`/template brief.
+- **O1** fixed: in-app Save / Discard / Stay `<dialog>` for `data-unsaved-guard` forms (property Settings, business editor) plus a save-bar "Discard changes" button; `initUnsavedDialog` in `app.js`, test `test_host_unsaved_changes_browser.py`, screenshots `0084-evidence/o1-*.png`.
 - **O2** FIXED ("0084 O2"): Properties, Businesses, Invoices, Stay fees and Reports lists are compact labelled cards when their panel is under a per-list width (800-950 px; container query, `/* O2 list cards */` in host.css), table above; no inner sideways scroll, actions visible. Test: `tests/test_host_list_cards_browser.py`; screenshots `0084-evidence/o2-*.png`.
 - **O3** Pre-existing: most other host POST forms (account settings, archive/restore menus, smart-lock forms) depend on `csrf.js` and do not work with JavaScript off. Rule 6 covers auth forms only; noted, not changed.
 - Carried over from task reports: the invoice-details lookup-only IČO (0076 decision 1); the Technical/2FA/passkey disclosures kept on Settings (0083); `#file-by-hand` stays a `<details>` (0080).
@@ -55,7 +55,7 @@ python3 scripts/context_lint.py                                      → context
 - [ ] Full suite + coverage and current-head CI: coordinator.
 - [x] EN/CS, all widths, rail states, long content, keyboard and focus measured.
 - [x] Synthetic screenshots and measurements.
-- [ ] No outstanding defect: O1 and O2 are open for review.
+- [x] No outstanding defect: O1 and O2 fixed.
 
 ## Limitations
 
@@ -67,5 +67,5 @@ python3 scripts/context_lint.py                                      → context
 ## Owner steps
 
 1. Open `docs/tasks/0084-evidence/property-guests-1280-en.jpg`, `property-overview-360-cs.jpg` and `fees-390-cs.jpg`.
-2. Decide O1 (Save/Discard/Stay) and O2 (mid-width list tables), or ask the orchestrator for briefs.
+2. O1 (Save/Discard/Stay) and O2 (list cards) are fixed; review them on staging.
 3. After green CI on the 0084 head, release 0085 (staging) with this exact SHA. Stay off `main`.

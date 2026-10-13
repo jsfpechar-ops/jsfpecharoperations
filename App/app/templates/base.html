@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/static/app.css?v=20261006a">
   <link rel="stylesheet" href="/static/components.css?v=20261002a">
   {% if show_nav | default(true) %}
-  <link rel="stylesheet" href="/static/host.css?v=20261013-0084">
+  <link rel="stylesheet" href="/static/host.css?v=20261013-host-ux-o1o2">
   <link rel="stylesheet" href="/static/host-controls.css?v=20261010-host-design-0033">
   {% endif %}
 </head>
@@ -219,6 +219,18 @@
   </form>
 </dialog>
 
+{# 0084 O1: opened by app.js when an in-app link would leave a form with unsaved changes. #}
+<dialog id="unsaved-dialog" class="admin-dialog unsaved-dialog" aria-labelledby="unsaved-dialog-title">
+  <div class="admin-dialog-form">
+    <h2 id="unsaved-dialog-title" class="unsaved-dialog-title">{{ t('unsaved.title') }}</h2>
+    <div class="actions unsaved-dialog-actions">
+      <button class="btn" type="button" data-unsaved-stay>{{ t('unsaved.stay') }}</button>
+      <button class="btn" type="button" data-unsaved-discard>{{ t('unsaved.discard') }}</button>
+      <button class="btn primary" type="button" data-unsaved-save>{{ t('unsaved.save') }}</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="csv-export-dialog" class="csv-export-dialog">
   <form id="csv-export-form">
     <h2 style="margin-top:0">{{ t('data.export_csv_title') }}</h2>
@@ -303,7 +315,7 @@
 
 <script src="/static/csrf.js?v=20260915a"></script>
 <script src="/static/skeleton.js?v=20261006a"></script>
-<script src="/static/app.js?v=20261013-host-ux-combined"></script>
+<script src="/static/app.js?v=20261013-host-ux-o1o2"></script>
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261001d" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261006a" defer></script>{% endif %}
 </body>

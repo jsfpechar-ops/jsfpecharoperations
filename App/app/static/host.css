@@ -1437,3 +1437,11 @@ body.host-workspace {
   .host-workspace .lc-entities td.nowrap { white-space: normal; }
   .host-workspace .lc-entities .pill { white-space: normal; }
 }
+
+/* O1 unsaved: Save / Discard / Stay dialog and the save bar's Discard button. */
+.unsaved-dialog { width: min(calc(100vw - 24px), 420px); }
+.unsaved-dialog .unsaved-dialog-title { margin: 0; font-size: 1.15rem; line-height: 1.3; }
+.unsaved-dialog .unsaved-dialog-actions { margin-top: 4px; justify-content: flex-end; }
+.unsaved-dialog .unsaved-dialog-actions .btn { min-height: 44px; }
+.host-property-save [data-unsaved-reset][hidden] { display: none; }
+/* end O1 unsaved */
