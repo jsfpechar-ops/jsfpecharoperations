@@ -36,7 +36,7 @@ def _check_pairs(pairs, label, locale):
         o, m = pair["open"], pair["more"]
         assert abs(o["h"] - m["h"]) <= 1, (label, o, m)
         assert abs(m["w"] - m["h"]) <= 1, (label, m)
-        assert o["w"] >= 90, (label, o)
+        assert 50 <= o["w"] <= 90, (label, o)
         assert m["l"] >= o["r"] - 1 and m["l"] - o["r"] <= 14, ("More not adjacent to Open", label, o, m)
         assert abs(o["t"] - m["t"]) <= 2, (label, o, m)
         assert o["l"] >= pair["row"]["l"] - 1 and m["r"] <= pair["row"]["r"] + 1, ("clipped", label, pair)
@@ -78,3 +78,33 @@ def test_dashboard_and_stays_share_open_more_pair(
         browser.close()
     for key, per_page in heights.items():
         assert per_page["dashboard"] == per_page["stays"], (key, per_page)
+
+
+ONE_LINE = """() => [...document.querySelectorAll('.stays-view tbody tr')].map(tr => {
+  const one = el => { if (!el) return true; const lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.3;
+    const r = el.getBoundingClientRect(); return r.height <= lh * 1.4 + 12; };
+  return {pill: one(tr.querySelector('.stay-col-reporting .pill')), deadline: one(tr.querySelector('.stay-col-deadline .deadline')),
+          height: tr.getBoundingClientRect().height, name: tr.querySelector('.property-identity').textContent.trim().length,
+          send: !!tr.querySelector('.row-action-form')};
+})"""
+
+
+def test_stays_pills_and_deadlines_stay_on_one_line(stay_actions_host, stay_actions_base):
+    cookie = stay_actions_host["client"].cookies.get(auth.SESSION_COOKIE)
+    with sync_api.sync_playwright() as playwright:
+        browser = _browser(playwright)
+        for locale in ("en", "cs"):
+            for width in (1280, 1440):
+                context = browser.new_context(viewport={"width": width, "height": 900})
+                context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": stay_actions_base + "/"}])
+                page = context.new_page()
+                page.goto(f"{stay_actions_base}/reservations?range=all&lang={locale}")
+                page.wait_for_load_state("networkidle")
+                rows = page.evaluate(ONE_LINE)
+                assert len(rows) >= 7
+                for row in rows:
+                    assert row["pill"] and row["deadline"], (locale, width, row)
+                    if row["name"] <= 24 and not row["send"] and not (locale == "cs" and width == 1280):  # wrap is allowed where the lane cannot hold Send, the long Czech Copy label, Open and More
+                        assert row["height"] <= 72, (locale, width, row)
+                context.close()
+        browser.close()
