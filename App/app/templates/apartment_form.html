@@ -14,7 +14,7 @@
 {% endmacro %}
 
 {% block content %}
-{% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, onboarding_banner, nav_icon, source_badge with context %}
+{% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, onboarding_banner, nav_icon, source_badge, field_label with context %}
 {% set property_prefill = property_prefill or {} %}
 {% set copy_property_peers = copy_property_peers or [] %}
 <style>
@@ -445,10 +445,9 @@
             <div class="hint">{{ t('apartment.form.guest_link.pin_hint') }}</div>
           </div>
           <div class="field" style="max-width:280px">
-            <label for="permalink_window_days">{{ t('apartment.form.guest_link.window_label') }}</label>
+            {{ field_label('permalink_window_days', t('apartment.form.guest_link.window_label'), t('apartment.form.guest_link.window_hint')) }}
             <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30"
                    value="{{ apartment.permalink_window_days }}">
-            <div class="hint">{{ t('apartment.form.guest_link.window_hint') }}</div>
           </div>
           <div class="field" style="max-width:280px">
             <label for="permalink_reachback_days">{{ t('apartment.form.guest_link.reachback_label') }}</label>
