@@ -5916,6 +5916,29 @@ _PASSKEY_STRINGS = {
 for _lang, _strings in _PASSKEY_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+
+# 0088: required property operator, controller defaults to the operator.
+_PROPERTY_OPERATOR_STRINGS = {
+    "en": {
+        "apartment.form.operator.choose": "Choose operator",
+        "apartment.form.operator.required": "Choose the operator for this property.",
+        "apartment.form.operator.add_first": "Add an operator to continue.",
+        "apartment.form.operator.add_business": "Add business details",
+        "apartment.form.operator.check_again": "Check again",
+        "apartment.form.controller.same_as_operator": "Same as operator",
+    },
+    "cs": {
+        "apartment.form.operator.choose": "Vyberte provozovatele",
+        "apartment.form.operator.required": "Vyberte provozovatele tohoto ubytování.",
+        "apartment.form.operator.add_first": "Nejprve přidejte provozovatele.",
+        "apartment.form.operator.add_business": "Přidat firemní údaje",
+        "apartment.form.operator.check_again": "Zkontrolovat znovu",
+        "apartment.form.controller.same_as_operator": "Stejný jako provozovatel",
+    },
+}
+for _lang, _strings in _PROPERTY_OPERATOR_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

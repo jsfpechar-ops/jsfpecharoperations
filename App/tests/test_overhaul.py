@@ -653,10 +653,15 @@ def test_property_can_use_separate_pm_and_data_controller():
         assert "privacy@controller.test" not in picker.text
 
         settings = _browser().get(f"/apartments/{apartment_id}")
-        assert 'id="controller_is_operator"' in settings.text
-        assert re.search(
-            rf'<option value="{controller_id}"\s+selected', settings.text
-        )
+        # 0088: one visible selector, the override still selected; no checkbox.
+        assert 'id="controller_is_operator"' not in settings.text
+        controller_select = settings.text[
+            settings.text.index('id="data_controller_entity_id"') : settings.text.index(
+                "</select>", settings.text.index('id="data_controller_entity_id"')
+            )
+        ]
+        assert re.search(rf'<option value="{controller_id}"\s+selected', controller_select)
+        assert "Same as operator" in controller_select
     finally:
         db.update(
             "apartment",

@@ -825,3 +825,9 @@ body.host-workspace {
 .host-workspace .signature-block > legend { padding: 0 6px; color: var(--ink); font-size: 14px; font-weight: 650; }
 .host-workspace .signature-block .action-group { margin: 10px 0 14px; }
 .host-workspace .signature-block .action-group > label.btn { margin: 0; }
+
+/* 0088: required operator field */
+.property-section .property-operator { max-width: 420px; }
+.property-operator-hint { margin: -6px 0 16px; }
+.property-operator-empty .err-text { margin: 8px 0; }
+.property-operator-empty .actions { flex-wrap: wrap; }

@@ -18,14 +18,30 @@ def _session_client(username: str) -> TestClient:
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
     client = TestClient(app)
     client.cookies.set(auth.SESSION_COOKIE, auth.issue_session(owner_id, account["session_version"]))
+    client.owner_id = owner_id
     return client
+
+
+def _add_entity(owner_id: int, name: str = "Wizard Operator s.r.o.") -> int:
+    return db.insert(
+        "legal_entity",
+        {
+            "name": name,
+            "seat": "Praha",
+            "ico": "12345678",
+            "contact_email": "wizard-operator@example.test",
+            "owner_user_id": owner_id,
+            "created_at": db.utcnow(),
+        },
+    )
 
 
 def _walk_to_address(client: TestClient, name: str = "Flat Vinohrady") -> int:
     client.post("/setup/welcome", follow_redirects=False)
+    entity_id = _add_entity(client.owner_id)
     response = client.post(
         "/setup/name",
-        data={"internal_name": name, "active": "1"},
+        data={"internal_name": name, "legal_entity_id": str(entity_id)},
         follow_redirects=False,
     )
     assert response.status_code == 303
@@ -45,7 +61,8 @@ def test_setup_resume_after_name_lands_on_address():
     assert response.headers["location"].endswith("/setup/address")
 
 
-def test_name_step_creates_property_with_name_only():
+def test_name_step_refuses_a_name_without_an_operator():
+    """0088: the wizard no longer creates a name-only property."""
     client = _session_client("wizard-name-only")
     client.post("/setup/welcome", follow_redirects=False)
     response = client.post(
@@ -53,12 +70,51 @@ def test_name_step_creates_property_with_name_only():
         data={"internal_name": "Studio Karlín", "active": "1"},
         follow_redirects=False,
     )
+    assert response.status_code == 400
+    assert "Add an operator to continue." in response.text
+    assert 'value="Studio Karlín"' in response.text
+    assert db.query_one(
+        "SELECT id FROM apartment WHERE internal_name = ?", ("Studio Karlín",)
+    ) is None
+
+
+def test_name_step_creates_property_with_name_and_operator():
+    client = _session_client("wizard-name-operator")
+    entity_id = _add_entity(client.owner_id)
+    page = client.get("/setup/name")
+    assert page.text.count('name="legal_entity_id"') == 1
+    assert f'<option value="{entity_id}" selected>' in page.text
+    response = client.post(
+        "/setup/name",
+        data={"internal_name": "Studio Karlín 2", "legal_entity_id": str(entity_id), "active": "0"},
+        follow_redirects=False,
+    )
     assert response.status_code == 303
     row = db.query_one(
-        "SELECT * FROM apartment WHERE internal_name = ?", ("Studio Karlín",)
+        "SELECT * FROM apartment WHERE internal_name = ?", ("Studio Karlín 2",)
     )
     assert row
     assert row["active"] == 1
+    assert row["legal_entity_id"] == entity_id
+    assert row["data_controller_entity_id"] is None
+    assert row["automation_mode"] == "manual"
+
+
+def test_name_step_refuses_a_foreign_operator():
+    other = _session_client("wizard-name-foreign-owner")
+    foreign_entity = _add_entity(other.owner_id, "Foreign s.r.o.")
+    client = _session_client("wizard-name-foreign")
+    _add_entity(client.owner_id, "Mine A")
+    _add_entity(client.owner_id, "Mine B")
+    response = client.post(
+        "/setup/name",
+        data={"internal_name": "Foreign flat", "legal_entity_id": str(foreign_entity)},
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "Choose the operator for this property." in response.text
+    assert "Foreign s.r.o." not in response.text
+    assert db.query_one("SELECT id FROM apartment WHERE internal_name = ?", ("Foreign flat",)) is None
 
 
 _ADDR_FIELDS = {

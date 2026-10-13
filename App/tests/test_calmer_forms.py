@@ -130,7 +130,10 @@ def test_one_operator_posts_legal_entity_and_saves(host):
     page = host.get("/apartments/new?lang=en").text
     assert 'name="legal_entity_id"' in page
     assert "Only Operator" in page
-    assert 'type="hidden" name="legal_entity_id"' in page
+    # 0088: one visible control, the sole operator chosen, no empty choice.
+    assert page.count('name="legal_entity_id"') == 1
+    assert f'<option value="{entity_id}" selected>' in page
+    assert '(none)' not in page
     response = host.post(
         "/apartments",
         data=_new_payload(legal_entity_id=str(entity_id)),
@@ -162,8 +165,19 @@ def test_two_operators_show_the_entity_select(host):
     assert "operator-only-line" not in page
 
 
+def _operator_id():
+    return db.insert(
+        "legal_entity",
+        {"name": "Message Operator", "owner_user_id": _owner_id(), "created_at": db.utcnow()},
+    )
+
+
 def test_create_with_blank_guest_message_stores_default(host):
-    response = host.post("/apartments", data=_new_payload(guest_message=""), follow_redirects=False)
+    response = host.post(
+        "/apartments",
+        data=_new_payload(guest_message="", legal_entity_id=str(_operator_id())),
+        follow_redirects=False,
+    )
     assert response.status_code == 303
     row = db.query_one(
         "SELECT guest_message FROM apartment WHERE owner_user_id = ? ORDER BY id DESC LIMIT 1",
@@ -173,12 +187,17 @@ def test_create_with_blank_guest_message_stores_default(host):
 
 
 def test_update_with_blank_guest_message_stores_blank(host):
-    created = host.post("/apartments", data=_new_payload(guest_message="Keep me"), follow_redirects=False)
+    operator = str(_operator_id())
+    created = host.post(
+        "/apartments",
+        data=_new_payload(guest_message="Keep me", legal_entity_id=operator),
+        follow_redirects=False,
+    )
     path = urlparse(created.headers["location"]).path
     apartment_id = int(path.rstrip("/").split("/")[-1])
     host.post(
         f"/apartments/{apartment_id}",
-        data=_new_payload(guest_message="", internal_name="Calmer Flat"),
+        data=_new_payload(guest_message="", internal_name="Calmer Flat", legal_entity_id=operator),
         follow_redirects=False,
     )
     row = db.query_one("SELECT guest_message FROM apartment WHERE id = ?", (apartment_id,))

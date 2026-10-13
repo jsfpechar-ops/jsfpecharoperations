@@ -1,0 +1,36 @@
+{#- 0088: the one operator control of a property form.
+    Inputs: entities (the host's non-archived operators), operator_current (the
+    stored, submitted or copied id), operator_error (an i18n key or none).
+    One entity is chosen for the host; several need a deliberate choice; none
+    blocks the form until business details exist. No form tag, no hidden copy. -#}
+{%- set op_error = operator_error if operator_error and operator_error.startswith('apartment.form.operator.') else none -%}
+{%- set op_ids = entities | map(attribute='id') | list -%}
+{%- if operator_current and operator_current in op_ids -%}
+  {%- set op_selected = operator_current -%}
+{%- elif entities | length == 1 -%}
+  {%- set op_selected = entities[0].id -%}
+{%- else -%}
+  {%- set op_selected = none -%}
+{%- endif %}
+<div class="field property-operator" id="operator-picker">
+  <label for="legal_entity_id">{{ t('apartment.form.entity.label') }}</label>
+  <select id="legal_entity_id" name="legal_entity_id" required
+          {%- if op_error or not entities %} aria-describedby="operator-message"{% endif %}
+          {%- if op_error %} aria-invalid="true"{% endif %}>
+    {% if not op_selected %}<option value="" disabled selected>{{ t('apartment.form.operator.choose') }}</option>{% endif %}
+    {% for entity in entities %}
+    <option value="{{ entity.id }}" {% if entity.id == op_selected %}selected{% endif %}>{{ entity.name }}</option>
+    {% endfor %}
+  </select>
+  {% if not entities %}
+  <div class="property-operator-empty" id="operator-message">
+    <p class="err-text"{% if op_error %} role="alert"{% endif %}>{{ t('apartment.form.operator.add_first') }}</p>
+    <div class="actions">
+      <a class="btn small" href="/entities" target="_blank" rel="noopener">{{ t('apartment.form.operator.add_business') }}</a>
+      <button class="btn small ghost" type="submit" name="operator_refresh" value="1" formnovalidate>{{ t('apartment.form.operator.check_again') }}</button>
+    </div>
+  </div>
+  {% elif op_error %}
+  <p class="err-text" id="operator-message" role="alert">{{ t(op_error) }}</p>
+  {% endif %}
+</div>

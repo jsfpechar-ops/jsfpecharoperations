@@ -89,7 +89,7 @@ def flat():
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     slug = guest_slug.ensure(apartment)
     try:
-        yield {"id": apartment_id, "stay": stay, "slug": slug, "owner": owner}
+        yield {"id": apartment_id, "stay": stay, "slug": slug, "owner": owner, "entity": entity}
     finally:
         _cleanup()
 
@@ -317,7 +317,7 @@ def test_the_host_renames_the_readable_part_and_keeps_the_code(flat):
     assert 'value="vinohrady-studio-zizkov"' in form
     response = client.post(
         f"/apartments/{flat['id']}",
-        data={"internal_name": "Vinohrady Studio – Žižkov", "guest_link_name": "Zahradní Loft"},
+        data={"internal_name": "Vinohrady Studio – Žižkov", "legal_entity_id": str(flat["entity"]), "guest_link_name": "Zahradní Loft"},
         follow_redirects=False,
     )
     assert response.status_code == 303
@@ -331,7 +331,7 @@ def test_the_host_cannot_pick_a_reserved_or_empty_name(flat):
     for value, key in (("Claim", "flash.error.link_name_reserved"), ("★★", "flash.error.link_name_empty")):
         response = client.post(
             f"/apartments/{flat['id']}",
-            data={"internal_name": "Vinohrady Studio – Žižkov", "guest_link_name": value},
+            data={"internal_name": "Vinohrady Studio – Žižkov", "legal_entity_id": str(flat["entity"]), "guest_link_name": value},
             follow_redirects=False,
         )
         assert response.status_code == 303

@@ -78,6 +78,14 @@ def _payload(**overrides):
         "permalink_reachback_days": "30",
         "active": "on",
     }
+    # 0088: a property always has an operator; use this host's only one.
+    entity = db.query_one(
+        "SELECT id FROM legal_entity WHERE owner_user_id = "
+        "(SELECT id FROM user_account WHERE username = ?) ORDER BY id LIMIT 1",
+        (USERNAME,),
+    )
+    if entity:
+        data["legal_entity_id"] = str(entity["id"])
     data.update(overrides)
     return data
 
@@ -101,6 +109,16 @@ def host():
     )
     if not existing:
         auth.create_account(f"{USERNAME}@example.test", "Default Host", username=USERNAME)
+    db.insert(
+        "legal_entity",
+        {
+            "name": "Default Operator",
+            "owner_user_id": db.query_one(
+                "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+            )["id"],
+            "created_at": db.utcnow(),
+        },
+    )
     client = TestClient(app)
     response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text

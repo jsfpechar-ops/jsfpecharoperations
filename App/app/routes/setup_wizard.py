@@ -14,6 +14,8 @@ from ..templating import render
 from .admin import (
     _apartment_payload,
     _feed_already_added,
+    _form_int,
+    _property_operator_error,
     _save_address_only,
 )
 from .admin_helpers import form_str as _form_str
@@ -37,6 +39,10 @@ def _wizard_apartment(request: Request):
 
 
 def _step_context(request: Request, step: str, **extra: Any) -> Dict[str, Any]:
+    if step == "name":
+        # 0088: the name step creates the property, so it carries the same
+        # required operator field as the full form.
+        extra.setdefault("entities", access.entities(request))
     return {
         "nav": "dashboard",
         "show_nav": False,
@@ -137,23 +143,39 @@ async def setup_post(step: str, request: Request):
 
     if step == "name":
         name = _form_str(form, "internal_name").strip()
+        submitted = {"internal_name": name, "legal_entity_id": _form_int(form, "legal_entity_id")}
+        if "operator_refresh" in form:
+            return render(
+                request,
+                "setup/name.html",
+                _step_context(request, step, draft=submitted),
+            )
         if not name:
             return render(
                 request,
                 "setup/name.html",
-                _step_context(request, step, name_error=True),
+                _step_context(request, step, name_error=True, draft=submitted),
+                status_code=400,
+            )
+        payload = _apartment_payload(form)
+        operator_error = _property_operator_error(request, form, payload)
+        if operator_error:
+            return render(
+                request,
+                "setup/name.html",
+                _step_context(request, step, operator_error=operator_error, draft=submitted),
                 status_code=400,
             )
         if apartment:
             db.execute(
-                "UPDATE apartment SET internal_name = ? WHERE id = ?",
-                (name, apartment["id"]),
+                "UPDATE apartment SET internal_name = ?, legal_entity_id = ? WHERE id = ?",
+                (name, payload["legal_entity_id"], apartment["id"]),
             )
             apartment_id = apartment["id"]
         else:
-            payload = _apartment_payload(form)
             payload["internal_name"] = name
             payload["active"] = 1
+            payload["data_controller_entity_id"] = None
             payload["permalink_token"] = auth.new_permalink_token()
             payload["permalink_pin"] = auth.new_permalink_pin()
             payload["created_at"] = db.utcnow()

@@ -16,6 +16,7 @@
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, onboarding_banner, nav_icon, source_badge with context %}
 {% set property_prefill = property_prefill or {} %}
+{% set draft = draft or {} %}
 {% set copy_property_peers = copy_property_peers or [] %}
 <style>
   .property-address-grid .field > label { min-height: 2.9em; }
@@ -131,77 +132,31 @@
   <details class="panel property-section" id="basics" {% if not editing or copied_from_name %}open{% endif %}>
     <summary>{{ t('apartment.form.basics.title') }}</summary>
     <div class="grid two">
-      {{ text_field('internal_name', t('apartment.form.internal_name.label'), apartment.internal_name if editing else '',
+      {{ text_field('internal_name', t('apartment.form.internal_name.label'), apartment.internal_name if editing else draft.internal_name,
          t('apartment.form.internal_name.hint')) }}
-      {{ text_field('city_en', t('apartment.form.city_en.label'), apartment.city_en if editing else '',
+      {{ text_field('city_en', t('apartment.form.city_en.label'), apartment.city_en if editing else draft.city_en,
          t('apartment.form.city_en.hint'), true) }}
     </div>
-    {% if not editing and entities|length == 1 %}
-      {% set operator_line = t('apartment.form.operator_only', name=entities[0].name).split(' · ', 1) %}
-      <input type="hidden" name="legal_entity_id" value="{{ entities[0].id }}" id="legal_entity_id">
-      <p class="operator-only-line" id="operator-picker">
-        <span>{{ operator_line[0] }}</span>
-        {% if operator_line|length > 1 %}
-          · <details class="operator-change">
-            <summary>{{ operator_line[1] }}</summary>
-            <div class="field" style="max-width:420px;margin-top:10px">
-              <label for="legal_entity_id_select">{{ t('apartment.form.entity.label') }}</label>
-              <select id="legal_entity_id_select" name="legal_entity_id">
-                <option value="">{{ t('common.none') }}</option>
-                {% for entity in entities %}
-                  <option value="{{ entity.id }}" {% if entity.id == entities[0].id %}selected{% endif %}>{{ entity.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </details>
-        {% endif %}
-      </p>
-      <div class="hint">{{ t('apartment.form.entity.hint') }} <a href="/entities">{{ t('host.business') }} →</a></div>
-    {% else %}
-      <div class="field" style="max-width:420px">
-        <label for="legal_entity_id">{{ t('apartment.form.entity.label') }}</label>
-        <select id="legal_entity_id" name="legal_entity_id">
-          <option value="">{{ t('common.none') }}</option>
-          {% for entity in entities %}
-            <option value="{{ entity.id }}"
-              {% if (editing and apartment.legal_entity_id == entity.id)
-                 or (not editing and selected_entity_id == entity.id)
-                 or (not editing and property_prefill.get('legal_entity_id') == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
-          {% endfor %}
-        </select>
-        <div class="hint">{{ t('apartment.form.entity.hint') }} {% if editing and apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}">{{ t('host.business') }} →</a>{% else %}<a href="/entities">{{ t('host.business') }} →</a>{% endif %}</div>
-      </div>
+    {% set operator_current = apartment.legal_entity_id if editing else (draft.legal_entity_id or selected_entity_id or property_prefill.get('legal_entity_id')) %}
+    {% include "_property_operator.html" %}
+    {% if entities %}<div class="hint property-operator-hint">{{ t('apartment.form.entity.hint') }} <a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if editing and apartment.legal_entity_id else '' }}">{{ t('host.business') }} →</a></div>{% endif %}
+    {% set controller_current = apartment.data_controller_entity_id if editing else property_prefill.get('data_controller_entity_id') %}
+    {% if editing or controller_current %}
+    <div class="field" style="max-width:420px" id="alternate-controller">
+      <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
+      <select id="data_controller_entity_id" name="data_controller_entity_id"{% if operator_error == 'flash.error.no_such_controller' %} aria-describedby="controller-message" aria-invalid="true"{% endif %}>
+        <option value="">{{ t('apartment.form.controller.same_as_operator') }}</option>
+        {% for entity in entities %}
+        <option value="{{ entity.id }}" {% if controller_current == entity.id %}selected{% endif %}>{{ entity.name }}</option>
+        {% endfor %}
+      </select>
+      {% if operator_error == 'flash.error.no_such_controller' %}<p class="err-text" id="controller-message" role="alert">{{ t(operator_error) }}</p>{% endif %}
+    </div>
     {% endif %}
+    {% if not editing %}
     <details class="more-options" id="property-more-options" {% if more_open %}open{% endif %}>
       <summary>{{ t('apartment.form.more_options') }}</summary>
       <div class="more-options-body">
-        <div class="field" style="max-width:620px">
-          <label class="checkline" for="controller_is_operator">
-            <input type="checkbox" id="controller_is_operator"
-                   data-controller-same-toggle data-controller-target="alternate-controller"
-                   {% if (not editing and not property_prefill.get('data_controller_entity_id')) or (editing and not apartment.data_controller_entity_id) %}checked{% endif %}>
-            <span>
-              {{ t('apartment.form.controller.same_label') }}
-              <small>{{ t('apartment.form.controller.same_hint') }}</small>
-            </span>
-          </label>
-        </div>
-        <div class="field" id="alternate-controller" style="max-width:420px"
-             {% if (not editing and not property_prefill.get('data_controller_entity_id')) or (editing and not apartment.data_controller_entity_id) %}hidden{% endif %}>
-          <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
-          <select id="data_controller_entity_id" name="data_controller_entity_id">
-            <option value="">{{ t('apartment.form.controller.choose') }}</option>
-            {% for entity in entities %}
-              <option value="{{ entity.id }}"
-                {% if (editing and apartment.data_controller_entity_id == entity.id) or (not editing and property_prefill.get('data_controller_entity_id') == entity.id) %}selected{% endif %}>{{ entity.name }}</option>
-            {% endfor %}
-          </select>
-          <div class="hint">
-            {{ t('apartment.form.controller.alternate_hint') }}
-            <a href="/entities">{{ t('apartment.form.controller.manage_entities') }}</a>
-          </div>
-        </div>
-        {% if not editing %}
         <p class="small muted" style="margin-top:-4px">
           {{ t('apartment.form.automation.new_lede') }}
         </p>
@@ -233,33 +188,28 @@
           </select>
           <div class="hint">{{ t('apartment.form.automation.purpose_hint') }}</div>
         </div>
-        {% endif %}
       </div>
     </details>
-    <div class="checkline" style="margin-top:6px">
-      <input type="checkbox" id="active" name="active" value="1"
-             {% if not editing or apartment.active %}checked{% endif %}>
-      <label for="active">{{ t('apartment.form.active.label') }}</label>
-    </div>
+    {% endif %}
   </details>
 
   <details class="panel property-section" id="address" {% if not editing %}open{% endif %}>
     <summary>{{ t('apartment.form.address.title') }}</summary>
     <div class="grid property-address-grid">
-      {{ text_field('addr_okres', t('apartment.form.addr.okres'), apartment.addr_okres if editing else '',
+      {{ text_field('addr_okres', t('apartment.form.addr.okres'), apartment.addr_okres if editing else draft.addr_okres,
          t('apartment.form.addr.okres_hint'), false, 32) }}
-      {{ text_field('addr_obec', t('apartment.form.addr.obec'), apartment.addr_obec if editing else '', '', false, 48,
+      {{ text_field('addr_obec', t('apartment.form.addr.obec'), apartment.addr_obec if editing else draft.addr_obec, '', false, 48,
          none) }}
-      {{ text_field('addr_obec_cast', t('apartment.form.addr.obec_cast'), apartment.addr_obec_cast if editing else '',
+      {{ text_field('addr_obec_cast', t('apartment.form.addr.obec_cast'), apartment.addr_obec_cast if editing else draft.addr_obec_cast,
          '', true, 48) }}
     </div>
     <div class="grid property-address-grid">
-      {{ text_field('addr_street', t('apartment.form.addr.street'), apartment.addr_street if editing else '', '', true, 48) }}
-      {{ text_field('addr_house_no', t('apartment.form.addr.house_no'), apartment.addr_house_no if editing else '',
+      {{ text_field('addr_street', t('apartment.form.addr.street'), apartment.addr_street if editing else draft.addr_street, '', true, 48) }}
+      {{ text_field('addr_house_no', t('apartment.form.addr.house_no'), apartment.addr_house_no if editing else draft.addr_house_no,
          t('apartment.form.addr.house_no_hint'), false, 5, none) }}
-      {{ text_field('addr_orient_no', t('apartment.form.addr.orient_no'), apartment.addr_orient_no if editing else '',
+      {{ text_field('addr_orient_no', t('apartment.form.addr.orient_no'), apartment.addr_orient_no if editing else draft.addr_orient_no,
          t('apartment.form.addr.orient_no_hint'), true, 4) }}
-      {{ text_field('addr_zip', t('apartment.form.addr.zip'), apartment.addr_zip if editing else '', t('apartment.form.addr.zip_hint'), false, 6, none) }}
+      {{ text_field('addr_zip', t('apartment.form.addr.zip'), apartment.addr_zip if editing else draft.addr_zip, t('apartment.form.addr.zip_hint'), false, 6, none) }}
     </div>
   </details>
 
@@ -270,11 +220,11 @@
       <a href="/guide#ubyport-credentials">{{ t('apartment.form.ubyport.credentials_help_heading') }}</a>
     </p>
     <div class="grid">
-      {{ text_field('uby_idub', 'IDUB', apartment.uby_idub if editing else '',
+      {{ text_field('uby_idub', 'IDUB', apartment.uby_idub if editing else draft.uby_idub,
          t('apartment.form.ubyport.idub_hint'), false, 14, none) }}
     </div>
     <div class="grid two">
-      {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user if editing else '',
+      {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user if editing else draft.uby_ws_user,
          t('apartment.form.ubyport.login_hint'), false, none, none) }}
       <div class="field">
         <label for="uby_ws_password">{{ t('automation.password') }}</label>
@@ -290,11 +240,11 @@
       </div>
     </div>
     <div class="grid">
-      {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark if editing else '', '', false, 6, none) }}
+      {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark if editing else draft.uby_mark, '', false, 6, none) }}
     </div>
     <div class="grid two">
-      {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name if editing else '', '', false, 35, none) }}
-      {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact if editing else '', '', true, 50) }}
+      {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name if editing else draft.uby_name, '', false, 35, none) }}
+      {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact if editing else draft.uby_contact, '', true, 50) }}
     </div>
     {% if editing %}
     <details class="panel property-section" id="ws-request-letter"{% if not apartment.uby_ws_user %} open{% endif %}>
@@ -375,7 +325,7 @@
     <div class="field">
       <label for="guest_message">{{ t('apartment.form.guest_message.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
       <textarea id="guest_message" name="guest_message" maxlength="1000"
-                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ (apartment.guest_message or '') if editing else t('apartment.form.guest_message.default') }}</textarea>
+                placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ (apartment.guest_message or '') if editing else (draft.guest_message or t('apartment.form.guest_message.default')) }}</textarea>
       <div class="hint">{{ t('apartment.form.guest_message.hint') }}</div>
     </div>
     {% if editing %}
@@ -591,7 +541,7 @@
     <h2 style="margin-top:0">{{ t('apartment.form.notes.title') }}</h2>
     <div class="field">
       <label for="notes">{{ t('apartment.form.notes.label') }}</label>
-      <textarea id="notes" name="notes">{{ (apartment.notes or '') if editing else '' }}</textarea>
+      <textarea id="notes" name="notes">{{ (apartment.notes or '') if editing else (draft.notes or '') }}</textarea>
       <div class="hint">{{ t('apartment.form.notes.hint') }}</div>
     </div>
   </div>

@@ -41,6 +41,17 @@ def _apartment():
     )
 
 
+def _operator_id() -> str:
+    """0088: the host's operator, created on first use."""
+    owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
+    if not owner:
+        return ""
+    row = db.query_one("SELECT id FROM legal_entity WHERE owner_user_id = ? ORDER BY id LIMIT 1", (owner["id"],))
+    if row:
+        return str(row["id"])
+    return str(db.insert("legal_entity", {"name": "Form Operator", "owner_user_id": owner["id"], "created_at": db.utcnow()}))
+
+
 def _payload(**overrides):
     """The property form as a browser posts it."""
     data = {
@@ -54,7 +65,7 @@ def _payload(**overrides):
         "uby_ws_user": "UBY-WSform",
         "permalink_window_days": "2",
         "permalink_reachback_days": "30",
-        "active": "on",
+        "legal_entity_id": _operator_id(),
     }
     data.update(overrides)
     return data

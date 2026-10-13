@@ -210,7 +210,8 @@ def test_test_connection_still_available_on_property_page(host):
 def test_entities_reachable_from_property_and_settings(host):
     client, apartment_id = host
     property_page = client.get(f"/apartments/{apartment_id}").text
-    assert 'href="/entities"' in property_page
+    # 0088: the operator link opens that operator's business details.
+    assert 'href="/entities' in property_page
     settings = client.get("/settings").text
     assert 'href="/entities"' in settings
 
