@@ -1,0 +1,363 @@
+[
+ {
+  "locale": "en",
+  "width": 360,
+  "sidebar": "expanded",
+  "lane": 330,
+  "docScroll": 360,
+  "viewScroll": 330,
+  "mode": "card",
+  "rowHeights": [
+   168,
+   169,
+   221,
+   169,
+   221,
+   169,
+   221,
+   167
+  ]
+ },
+ {
+  "locale": "en",
+  "width": 390,
+  "sidebar": "expanded",
+  "lane": 360,
+  "docScroll": 390,
+  "viewScroll": 360,
+  "mode": "card",
+  "rowHeights": [
+   168,
+   155,
+   169,
+   155,
+   155,
+   155,
+   169,
+   167
+  ]
+ },
+ {
+  "locale": "en",
+  "width": 760,
+  "sidebar": "expanded",
+  "lane": 718,
+  "docScroll": 760,
+  "viewScroll": 718,
+  "mode": "card",
+  "rowHeights": [
+   153,
+   155,
+   155,
+   155,
+   155,
+   155,
+   155,
+   152
+  ]
+ },
+ {
+  "locale": "en",
+  "width": 1024,
+  "sidebar": "expanded",
+  "lane": 758,
+  "docScroll": 1024,
+  "viewScroll": 758,
+  "mode": "card",
+  "rowHeights": [
+   151,
+   153,
+   153,
+   153,
+   153,
+   153,
+   153,
+   150
+  ]
+ },
+ {
+  "locale": "en",
+  "width": 1280,
+  "sidebar": "expanded",
+  "lane": 994,
+  "docScroll": 1280,
+  "viewScroll": 994,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   78,
+   66,
+   65
+  ]
+ },
+ {
+  "locale": "en",
+  "width": 1440,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1440,
+  "viewScroll": 1078,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   65
+  ]
+ },
+ {
+  "locale": "en",
+  "width": 1680,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1680,
+  "viewScroll": 1078,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   65
+  ]
+ },
+ {
+  "locale": "en",
+  "width": 1920,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1920,
+  "viewScroll": 1078,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   65
+  ]
+ },
+ {
+  "locale": "en",
+  "width": 2048,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 2048,
+  "viewScroll": 1078,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   66,
+   65
+  ]
+ },
+ {
+  "locale": "en",
+  "width": 1024,
+  "sidebar": "collapsed",
+  "lane": 884,
+  "docScroll": 1024,
+  "viewScroll": 884,
+  "mode": "card",
+  "rowHeights": [
+   151,
+   153,
+   153,
+   153,
+   153,
+   153,
+   153,
+   150
+  ]
+ },
+ {
+  "locale": "cs",
+  "width": 360,
+  "sidebar": "expanded",
+  "lane": 330,
+  "docScroll": 360,
+  "viewScroll": 330,
+  "mode": "card",
+  "rowHeights": [
+   168,
+   155,
+   221,
+   169,
+   221,
+   169,
+   242,
+   167
+  ]
+ },
+ {
+  "locale": "cs",
+  "width": 390,
+  "sidebar": "expanded",
+  "lane": 360,
+  "docScroll": 390,
+  "viewScroll": 360,
+  "mode": "card",
+  "rowHeights": [
+   153,
+   155,
+   221,
+   155,
+   207,
+   155,
+   221,
+   152
+  ]
+ },
+ {
+  "locale": "cs",
+  "width": 760,
+  "sidebar": "expanded",
+  "lane": 718,
+  "docScroll": 760,
+  "viewScroll": 718,
+  "mode": "card",
+  "rowHeights": [
+   153,
+   155,
+   155,
+   155,
+   155,
+   155,
+   155,
+   152
+  ]
+ },
+ {
+  "locale": "cs",
+  "width": 1024,
+  "sidebar": "expanded",
+  "lane": 892,
+  "docScroll": 1024,
+  "viewScroll": 892,
+  "mode": "card",
+  "rowHeights": [
+   151,
+   153,
+   153,
+   153,
+   153,
+   153,
+   153,
+   150
+  ]
+ },
+ {
+  "locale": "cs",
+  "width": 1280,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1280,
+  "viewScroll": 1078,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
+ },
+ {
+  "locale": "cs",
+  "width": 1440,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1440,
+  "viewScroll": 1078,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
+ },
+ {
+  "locale": "cs",
+  "width": 1680,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1680,
+  "viewScroll": 1078,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
+ },
+ {
+  "locale": "cs",
+  "width": 1920,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1920,
+  "viewScroll": 1078,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
+ },
+ {
+  "locale": "cs",
+  "width": 2048,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 2048,
+  "viewScroll": 1078,
+  "mode": "row",
+  "rowHeights": [
+   66,
+   66,
+   109,
+   66,
+   109,
+   66,
+   109,
+   65
+  ]
+ }
+]
