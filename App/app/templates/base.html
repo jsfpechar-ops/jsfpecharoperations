@@ -219,6 +219,18 @@
   </form>
 </dialog>
 
+{# 0084 O1: opened by app.js when an in-app link would leave a form with unsaved changes. #}
+<dialog id="unsaved-dialog" class="admin-dialog unsaved-dialog" aria-labelledby="unsaved-dialog-title">
+  <div class="admin-dialog-form">
+    <h2 id="unsaved-dialog-title" class="unsaved-dialog-title">{{ t('unsaved.title') }}</h2>
+    <div class="actions unsaved-dialog-actions">
+      <button class="btn" type="button" data-unsaved-stay>{{ t('unsaved.stay') }}</button>
+      <button class="btn" type="button" data-unsaved-discard>{{ t('unsaved.discard') }}</button>
+      <button class="btn primary" type="button" data-unsaved-save>{{ t('unsaved.save') }}</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="csv-export-dialog" class="csv-export-dialog">
   <form id="csv-export-form">
     <h2 style="margin-top:0">{{ t('data.export_csv_title') }}</h2>

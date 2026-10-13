@@ -398,48 +398,59 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         page.goto(f"{url}?lang=en#no-such-section")
         assert page.evaluate(_STATE_JS)["visibleViews"] == ["overview"]
 
-        # Tabs switch in place: no reload, history follows, drafts survive.
+        # Tabs switch in place: no reload, history follows. A Settings draft
+        # survives group switches and Back/Forward; a tab out of Settings asks
+        # first (0084 O1: Save / Discard / Stay, see test_host_unsaved_changes_browser).
+        dialogs = []
+
+        def _on_dialog(dialog):
+            dialogs.append(dialog.type)
+            dialog.accept()
+
+        page.on("dialog", _on_dialog)
         page.goto(f"{url}?lang=en")
         page.evaluate("() => { window.__navMarker = 'same-document'; }")
         page.locator('.property-tabs a[data-property-tab="settings"]').click()
         assert page.evaluate(_STATE_JS)["visibleViews"] == ["settings"]
+        page.locator('.property-tabs a[data-property-tab="bookings"]').click()
+        assert "view=bookings" in page.url  # clean: no question
+        page.locator('.property-tabs a[data-property-tab="settings"]').click()
         page.fill("#internal_name", "Draft Name Kept")
         page.locator('[data-property-section-link="guests"]').click()
         page.fill("#guest_message", "Draft message kept")
         page.locator('.property-tabs a[data-property-tab="bookings"]').click()
-        assert "view=bookings" in page.url
-        page.locator('.property-tabs a[data-property-tab="settings"]').click()
-        page.go_back()
-        assert page.evaluate(_STATE_JS)["visibleViews"] == ["bookings"]
-        page.go_back()
+        assert page.evaluate("() => document.getElementById('unsaved-dialog').open")
+        page.locator("#unsaved-dialog [data-unsaved-stay]").click()
         state = page.evaluate(_STATE_JS)
         assert state["visibleViews"] == ["settings"] and state["visibleGroups"] == ["guests"], state
-        page.go_forward()
+        page.go_back()
+        assert page.evaluate(_STATE_JS)["visibleViews"] == ["settings"]
+        page.go_back()
         assert page.evaluate(_STATE_JS)["visibleViews"] == ["bookings"]
+        page.go_forward()
+        state = page.evaluate(_STATE_JS)
+        assert state["visibleViews"] == ["settings"] and state["visibleGroups"] == ["guests"], state
         assert page.evaluate(_STATE_JS)["marker"] == "same-document"
         assert page.locator("#internal_name").input_value() == "Draft Name Kept"
         assert page.locator("#guest_message").input_value() == "Draft message kept"
-        # Overview card opens its exact editor in place.
-        page.locator('.property-tabs a[data-property-tab="overview"]').click()
+        # Overview card opens its exact editor in place, draft kept.
+        for _ in range(3):
+            page.go_back()
+        assert page.evaluate(_STATE_JS)["visibleViews"] == ["overview"]
         page.locator(".host-property-card", has_text="Police reporting").click()
         page.locator("#ubyport").wait_for(state="visible")
         state = page.evaluate(_STATE_JS)
         assert state["visibleGroups"] == ["reporting"], state
         assert state["marker"] == "same-document", "the card reloaded the page"
         assert page.evaluate("() => document.querySelector('[data-property-return]').value").endswith("section=reporting")
+        assert page.locator("#internal_name").input_value() == "Draft Name Kept"
 
-        # Leaving with unsaved settings asks first.
-        dialogs = []
-
-        def _on_dialog(dialog):
-            dialogs.append(dialog.type)
-            # Stay the first time; afterwards let the test navigate on.
-            dialog.dismiss() if len(dialogs) == 1 else dialog.accept()
-
-        page.on("dialog", _on_dialog)
+        # Leaving with unsaved settings by an in-app link asks first, in the page.
         page.locator('.sidebar-nav a[href="/reservations"]').first.click()
+        assert page.evaluate("() => document.getElementById('unsaved-dialog').open")
+        page.locator("#unsaved-dialog [data-unsaved-stay]").click()
         page.wait_for_timeout(300)
-        assert dialogs == ["beforeunload"]
+        assert dialogs == []
         assert "/apartments/" in page.url
         assert page.locator("#internal_name").input_value() == "Draft Name Kept"
 

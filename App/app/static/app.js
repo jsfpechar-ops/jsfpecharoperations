@@ -1842,7 +1842,6 @@
     var form = root.querySelector("[data-property-settings-form]");
     var returnInput = form && form.querySelector("[data-property-return]");
     var connect = root.querySelector("[data-calendar-connect]");
-    var dirty = false;
 
     function hashTarget(hash) {
       if (!hash || hash.length < 2) return null;
@@ -1925,6 +1924,9 @@
       if (lang && !url.searchParams.get("lang")) url.searchParams.set("lang", lang);
       url.searchParams.delete("created");
       window.history.pushState({ propertyView: true }, "", url.pathname + url.search + url.hash);
+      // skeleton.js saw a link click and armed its "page is loading" blank;
+      // this one stays in the page, so disarm it (0084 O1 finding).
+      if (window.ubyhostSkeleton) window.ubyhostSkeleton.hide();
       reveal(url, true);
     });
 
@@ -1947,14 +1949,8 @@
         var group = event.target.closest && event.target.closest("[data-settings-group]");
         activate("settings", group ? group.getAttribute("data-settings-group") : null);
       }, true);
-      form.addEventListener("input", function () { dirty = true; });
-      form.addEventListener("change", function () { dirty = true; });
-      form.addEventListener("submit", function () { dirty = false; });
-      window.addEventListener("beforeunload", function (event) {
-        if (!dirty) return;
-        event.preventDefault();
-        event.returnValue = "";
-      });
+      // Unsaved changes: the form carries data-unsaved-guard, so
+      // initUnsavedForms (browser prompt) and initUnsavedDialog (0084 O1) own it.
     }
 
     // A switch says "Not saved yet" until the form is saved; never "Enabled".
@@ -1999,9 +1995,148 @@
     });
   }
 
+  /* ---- 0084 O1: unsaved changes, in-app Save / Discard / Stay ----------------
+     A form with data-unsaved-guard that holds changes (data-dirty, set by
+     initUnsavedForms) asks before an in-app link leaves it:
+       Save    submits that form as usual; the server validates and returns the
+               host where the form's return_to / next says (no chained jump: a
+               refused save must stay on its error page).
+       Discard restores the loaded values, then follows the link.
+       Stay    (also Esc) keeps the edits and returns focus to the link.
+     Links that keep the draft on screen (property Settings sub-nav, cards and
+     anchors into Settings, in-page #anchors) do not ask. Tab close, reload and
+     other sites keep the browser's own prompt. Without JavaScript nothing here
+     runs and the forms post as before. */
+  function initUnsavedDialog() {
+    var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
+    var dialog = document.getElementById("unsaved-dialog");
+    if (!forms.length) return;
+    var property = document.querySelector("[data-property-views]");
+    var propertyBase = property && property.getAttribute("data-property-base");
+    var SETTINGS_SECTIONS = ["property", "guests", "reporting", "automation"];
+    var pendingLink = null;
+
+    function isDirty(form) { return form.getAttribute("data-dirty") === "1"; }
+    function dirtyForms() { return forms.filter(isDirty); }
+
+    // The "Discard changes" button beside Save shows only while its form is dirty.
+    function syncResetButtons() {
+      forms.forEach(function (form) {
+        form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
+          button.hidden = !isDirty(form);
+        });
+      });
+    }
+
+    // Back to the loaded values. Switch labels and dependent fields listen for
+    // "change", so tell them; then the form is clean again.
+    function discard(form) {
+      form.reset();
+      form.querySelectorAll("select, input[type=checkbox], input[type=radio]").forEach(function (el) {
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      form.removeAttribute("data-dirty");
+    }
+
+    // True when following this link keeps the draft on screen.
+    function keepsDraft(url) {
+      var here = window.location;
+      if (property && propertyBase && url.pathname === propertyBase) {
+        var target = null;
+        if (url.hash.length > 1) {
+          try { target = document.getElementById(decodeURIComponent(url.hash.slice(1))); } catch (_) { target = null; }
+        }
+        var panel = target && target.closest("[data-property-view]");
+        if (panel) return panel.getAttribute("data-property-view") === "settings";
+        var view = url.searchParams.get("view");
+        if (view) return view === "settings";
+        if (SETTINGS_SECTIONS.indexOf(url.searchParams.get("section")) >= 0) return true;
+        return url.search === here.search && !!url.hash;
+      }
+      return url.pathname === here.pathname && url.search === here.search && !!url.hash;
+    }
+
+    forms.forEach(function (form) {
+      form.addEventListener("input", syncResetButtons);
+      form.addEventListener("change", syncResetButtons);
+      form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          discard(form);
+          syncResetButtons();
+          var save = form.querySelector(".host-property-save [type=submit]") || form.querySelector(".actions [type=submit]");
+          if (save) save.focus();
+        });
+      });
+    });
+    syncResetButtons();
+    // Back/Forward may restore typed values without input events.
+    window.addEventListener("pageshow", syncResetButtons);
+
+    if (!dialog || typeof dialog.showModal !== "function") return;
+    var stay = dialog.querySelector("[data-unsaved-stay]");
+    var discardBtn = dialog.querySelector("[data-unsaved-discard]");
+    var save = dialog.querySelector("[data-unsaved-save]");
+
+    function close(returnFocus) {
+      if (dialog.open) dialog.close();
+      var link = pendingLink;
+      pendingLink = null;
+      if (returnFocus && link) link.focus();
+      return link;
+    }
+
+    document.addEventListener("click", function (event) {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      var link = event.target.closest && event.target.closest("a[href]");
+      if (!link || dialog.contains(link)) return;
+      if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return;
+      if (!dirtyForms().length) return;
+      var url;
+      try { url = new URL(link.href, window.location.href); } catch (_) { return; }
+      if (url.origin !== window.location.origin || keepsDraft(url)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      pendingLink = link;
+      dialog.showModal();
+      stay.focus();
+    }, true);
+
+    stay.addEventListener("click", function () { close(true); });
+    // Esc is Stay.
+    dialog.addEventListener("cancel", function (event) {
+      event.preventDefault();
+      close(true);
+    });
+    discardBtn.addEventListener("click", function () {
+      dirtyForms().forEach(discard);
+      syncResetButtons();
+      var link = close(false);
+      if (link) link.click();
+    });
+    save.addEventListener("click", function () {
+      var form = dirtyForms()[0];
+      close(false);
+      if (!form) return;
+      if (form.requestSubmit) form.requestSubmit();
+      else form.submit();
+    });
+    // Keep Tab inside the dialog.
+    dialog.addEventListener("keydown", function (event) {
+      if (event.key !== "Tab") return;
+      var buttons = [stay, discardBtn, save];
+      var at = buttons.indexOf(document.activeElement);
+      var next = event.shiftKey ? (at <= 0 ? buttons.length - 1 : at - 1) : (at < 0 || at === buttons.length - 1 ? 0 : at + 1);
+      event.preventDefault();
+      buttons[next].focus();
+    });
+  }
+  /* ---- end 0084 O1 ---------------------------------------------------------- */
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
     initUnsavedForms();
+    initUnsavedDialog();
     initHelpTips();
     initBirthDateInputs();
     initRowMenus();

@@ -49,7 +49,7 @@
   {% endfor %}
 </nav>
 
-<form method="post" action="{{ base_url }}" class="property-settings-form" id="property-settings-form" data-property-settings-form>
+<form method="post" action="{{ base_url }}" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard>
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
   {% if fee_return_to %}<input type="hidden" name="fee_return_to" value="{{ fee_return_to }}">{% endif %}
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -384,6 +384,7 @@
 
   <div class="actions host-property-save">
     <button class="btn primary" type="submit">{{ t('common.save_changes') }}</button>
+    <button class="btn" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
     <a class="btn" href="/apartments">{{ t('apartment.form.back_list') }}</a>
   </div>
 </form>

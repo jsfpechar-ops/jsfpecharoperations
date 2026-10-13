@@ -6271,6 +6271,26 @@ _HELP_0093_STRINGS = {
 for _lang, _strings in _HELP_0093_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0084 O1: in-app Save / Discard / Stay for a form with unsaved changes.
+_UNSAVED_O1_STRINGS = {
+    "en": {
+        "unsaved.title": "You have unsaved changes",
+        "unsaved.save": "Save",
+        "unsaved.discard": "Discard",
+        "unsaved.stay": "Stay",
+        "unsaved.discard_changes": "Discard changes",
+    },
+    "cs": {
+        "unsaved.title": "Máte neuložené změny",
+        "unsaved.save": "Uložit",
+        "unsaved.discard": "Zahodit",
+        "unsaved.stay": "Zůstat",
+        "unsaved.discard_changes": "Zahodit změny",
+    },
+}
+for _lang, _strings in _UNSAVED_O1_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

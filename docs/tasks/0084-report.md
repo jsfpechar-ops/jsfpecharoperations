@@ -29,7 +29,7 @@ Status: review. Executor: Claude (owner-authorized to implement and verify). Mat
 
 ## Open (not fixed; need a brief or a decision)
 
-- **O1** Dirty property settings: only the browser's native Leave/Stay prompt. Plan maintainability §5 requires a Save / Discard / Stay choice and a Discard control; neither exists. Drafts do survive in-page tab/group switches and Back/Forward. Needs a scoped `app.js`/template brief.
+- **O1** fixed: in-app Save / Discard / Stay `<dialog>` for `data-unsaved-guard` forms (property Settings, business editor) plus a save-bar "Discard changes" button; `initUnsavedDialog` in `app.js`, test `test_host_unsaved_changes_browser.py`, screenshots `0084-evidence/o1-*.png`.
 - **O2** List tables (Properties, Businesses, Invoices, Stay fees, Reports) scroll sideways inside their panel at 760–1024 px. Row actions are reachable only after scrolling the table. No page overflow. Combined plan §4.9 makes only Stays cards. Owner/orchestrator decision.
 - **O3** Pre-existing: most other host POST forms (account settings, archive/restore menus, smart-lock forms) depend on `csrf.js` and do not work with JavaScript off. Rule 6 covers auth forms only; noted, not changed.
 - Carried over from task reports: the invoice-details lookup-only IČO (0076 decision 1); the Technical/2FA/passkey disclosures kept on Settings (0083); `#file-by-hand` stays a `<details>` (0080).
@@ -55,7 +55,7 @@ python3 scripts/context_lint.py                                      → context
 - [ ] Full suite + coverage and current-head CI: coordinator.
 - [x] EN/CS, all widths, rail states, long content, keyboard and focus measured.
 - [x] Synthetic screenshots and measurements.
-- [ ] No outstanding defect: O1 and O2 are open for review.
+- [ ] No outstanding defect: O2 is open for review (O1 fixed).
 
 ## Limitations
 
