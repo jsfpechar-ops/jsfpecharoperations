@@ -401,7 +401,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                     assert confirm.get_attribute("open") is None
                     assert page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["ready"]}"]').count() == 1
 
-                if width in (360, 390, 1280, 1920):
+                if os.environ.get("UBYHOST_CAPTURE_0041") == "1" and width in (360, 390, 1280, 1920):
                     evidence_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "generated_images", "0041-evidence")
                     os.makedirs(evidence_dir, exist_ok=True)
                     row.locator(".dashboard-row-actions").screenshot(path=os.path.join(evidence_dir, f"dashboard-actions-{locale}-{width}.png"))
