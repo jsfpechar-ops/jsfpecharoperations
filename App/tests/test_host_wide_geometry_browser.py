@@ -48,7 +48,8 @@ CAPTURE_ROUTES = {
     "fee-detail": ("/stay-fees/{configured_apartment}", ".stay-fee-detail, .panel"),
     "invoice-new-picker": ("/invoices/new", ".panel"),
     "invoice-new-selected": ("/invoices/new?entity={entity_id}&reservation_id={reservation_id}", ".invoice-workspace, .invoice-stay-picker"),
-    "invoice-settings": ("/invoices/settings?entity={entity_id}", ".invoice-settings-form"),
+    # 0076: the legacy URL opens the business editor; its panel is the result lane.
+    "invoice-settings": ("/invoices/settings?entity={entity_id}", ".entity-form"),
     "invoice-detail": ("/invoices/{invoice_id}", ".invoice-workspace"),
     "property-new": ("/apartments/new", ".property-create-lane"),  # 0092: form + follow-up panel
     "stay-detail": ("/reservations/{reservation_id}", ".reservation-detail, .panel"),

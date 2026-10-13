@@ -297,7 +297,7 @@ def test_overview_cards_point_at_the_canonical_editors(host):
     overview = html[html.index('data-property-view="overview"'):html.index('data-property-view="bookings"')]
     base = f"/apartments/{host['apartment']}"
     for href in (f"{base}?view=bookings#calendars", f"{base}?view=settings&amp;section=guests#communication",
-                 f"{base}?view=settings&amp;section=reporting#ubyport", f"/entities?edit={host['entities'][0]}",
+                 f"{base}?view=settings&amp;section=reporting#ubyport", f"/entities?edit={host['entities'][0]}&amp;next={base}",  # 0076: returns here
                  f"{base}?view=settings&amp;section=reporting#stay-fee-settings",
                  f"{base}?view=settings&amp;section=property#address", f"{base}?view=settings&amp;section=guests#door-code"):
         assert f'href="{href}"' in overview, href

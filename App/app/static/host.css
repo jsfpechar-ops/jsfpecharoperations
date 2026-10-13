@@ -1121,3 +1121,15 @@ body.host-workspace {
 
 .host-workspace .host-setup-complete { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
 .host-workspace .host-setup-complete p { margin: 0; color: var(--ok); }
+
+/* 0076 */
+/* One business editor: who uses it, then Business details and Invoice details under header bars. */
+.entity-linked { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 18px; font-size: 14px; }
+.entity-linked-label { font-weight: 650; color: var(--ink); }
+.entity-linked-list { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; }
+.entity-linked-list a { overflow-wrap: anywhere; }
+.entity-section { scroll-margin-top: 24px; min-width: 0; }
+.entity-section + .entity-section { margin-top: 26px; }
+.entity-section-head { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 14px; }
+.entity-section-title { margin: 0 0 14px; padding: 8px 14px; font-size: 15px; background: var(--brand-soft); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
+.entity-section-head .entity-section-title { margin: 0; flex: 1 1 auto; }

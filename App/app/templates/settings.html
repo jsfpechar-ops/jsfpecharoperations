@@ -41,7 +41,8 @@
             <strong>{{ t('settings.business.title') }}</strong>
             <small>{{ t('settings.business.help') }}</small>
           </div>
-          <a class="btn small" href="/entities">{{ t('settings.business.action') }}</a>
+          {#- 0076: one business opens its editor directly; several open the list. -#}
+          <a class="btn small" href="{{ ('/entities?edit=' ~ business_entities[0].id ~ '&next=/settings') if business_entities and business_entities | length == 1 else '/entities' }}">{{ t('settings.business.action') }}</a>
         </div>
         {% if onboarding_emails is not none %}
           <form method="post" action="/account/onboarding-emails" class="settings-action-row" id="settings-onboarding-emails">

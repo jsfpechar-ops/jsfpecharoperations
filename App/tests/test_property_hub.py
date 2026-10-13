@@ -213,7 +213,8 @@ def test_entities_reachable_from_property_and_settings(host):
     # 0088: the operator link opens that operator's business details.
     assert 'href="/entities' in property_page
     settings = client.get("/settings").text
-    assert 'href="/entities"' in settings
+    # 0076: with one business, Account settings opens its editor directly.
+    assert re.search(r'href="/entities(\?edit=\d+&amp;next=/settings)?"', settings)
 
 
 def test_templates_do_not_link_to_removed_pages(host):

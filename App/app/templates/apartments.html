@@ -36,7 +36,7 @@
           {% if not apartment.active %}<span class="pill grey">{{ t('apartments.inactive') }}</span>{% endif %}
           {% if apartment.uby_name %}<div class="small muted">{{ apartment.uby_name }}</div>{% endif %}
         </td>
-        <td data-label="{{ t('apartments.table.entity') }}">{% if apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}">{{ row.apartment.entity_name or '—' }}</a>{% else %}—{% endif %}</td>
+        <td data-label="{{ t('apartments.table.entity') }}">{% if apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}&amp;next=/apartments">{{ row.apartment.entity_name or '—' }}</a>{% else %}—{% endif %}</td>
         <td class="num" data-label="{{ t('apartments.table.calendars') }}">{{ apartment.feeds }}</td>
         <td class="num" data-label="{{ t('apartments.table.stays') }}">{{ apartment.reservations }}</td>
         <td data-label="{{ t('apartments.table.setup') }}">

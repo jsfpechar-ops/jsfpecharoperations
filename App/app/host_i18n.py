@@ -6193,6 +6193,26 @@ _SETUP_COMPLETE_STRINGS = {
 for _lang, _strings in _SETUP_COMPLETE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0076: the one business editor (Business details + Invoice details).
+_ENTITY_EDITOR_0076_STRINGS = {
+    "en": {
+        "entities.section.business": "Business details",
+        "entities.section.invoice": "Invoice details",
+        "entities.linked.label": "Used by",
+        "entities.linked.none": "No property yet",
+        "entities.linked.help": "Changes here apply to every property listed. To use a different business for a property, change it in that property's Settings.",
+    },
+    "cs": {
+        "entities.section.business": "Firemní údaje",
+        "entities.section.invoice": "Údaje pro faktury",
+        "entities.linked.label": "Používá",
+        "entities.linked.none": "Zatím žádné ubytování",
+        "entities.linked.help": "Změny platí pro všechna uvedená ubytování. Jinou firmu pro ubytování vyberete v jeho Nastavení.",
+    },
+}
+for _lang, _strings in _ENTITY_EDITOR_0076_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

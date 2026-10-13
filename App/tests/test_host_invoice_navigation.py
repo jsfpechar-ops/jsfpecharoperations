@@ -94,7 +94,9 @@ def test_builder_shows_stay_and_unfolds_options_without_changing_fields(world):
     assert 'id="invoice-items-help"' in html
     for name in ("lang", "note", "buyer_name", "stay_price", "_csrf", "reservation_id", "legal_entity_id"):
         assert f'name="{name}"' in html, name
-    assert f"/invoices/settings?entity={world['entity']}&amp;next=" in html
+    # 0076: supplier details open the shared business editor's Invoice details.
+    assert f"/entities?edit={world['entity']}&amp;next=" in html
+    assert "#entity-invoice" in html
 
 
 def test_detail_links_stay_settings_and_payment_fact(world):

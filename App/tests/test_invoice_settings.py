@@ -73,7 +73,9 @@ def test_the_builder_shows_a_supplier_summary_with_the_details_link(host):
     stay_id = make_stay(_owner())
     page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}")
     assert page.status_code == 200
-    assert f"/invoices/settings?entity={entity_id}" in page.text
+    # 0076: the link opens the business editor at Invoice details and returns here.
+    assert f"/entities?edit={entity_id}&amp;next=" in page.text
+    assert "#entity-invoice" in page.text
     assert "Details s.r.o." in page.text
     assert "IČO 04656679" in page.text
     assert "Edit invoice details" in page.text
