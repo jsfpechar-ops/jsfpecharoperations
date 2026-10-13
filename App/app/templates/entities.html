@@ -2,72 +2,9 @@
 {% set nav = 'entities' %}
 {% block title %}{{ t('entities.title') }}{% endblock %}
 
-{% macro operator_fields(prefix, entity) %}
-  <div class="field">
-    <label for="{{ prefix }}name">{{ t('entities.name') }}</label>
-    <input type="text" id="{{ prefix }}name" name="name" required
-           value="{{ (entity.name if entity else '') }}"
-           placeholder="{{ t('entities.name_placeholder') }}">
-  </div>
-  <div class="field">
-    <label for="{{ prefix }}seat">{{ t('entities.seat') }}</label>
-    <input type="text" id="{{ prefix }}seat" name="seat" required
-           value="{{ (entity.seat or '') if entity else '' }}"
-           placeholder="{{ t('entities.seat_placeholder') }}">
-  </div>
-  <div class="grid">
-    <div class="field">
-      <label for="{{ prefix }}ico">{{ t('entities.ico') }}</label>
-      <div class="action-group" style="align-items:flex-end">
-        <input type="text" id="{{ prefix }}ico" name="ico" inputmode="numeric" required
-               value="{{ (entity.ico or '') if entity else '' }}">
-        <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
-      </div>
-    </div>
-    <div class="field">
-      <label for="{{ prefix }}dic">{{ t('entities.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
-      <input type="text" id="{{ prefix }}dic" name="dic" value="{{ (entity.dic or '') if entity else '' }}">
-    </div>
-  </div>
-  <div class="grid">
-    <div class="field">
-      <label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>
-      <input type="email" id="{{ prefix }}contact_email" name="contact_email" required
-             value="{{ (entity.contact_email or '') if entity else '' }}">
-      <div class="hint">{{ t('entities.email_hint') }}</div>
-    </div>
-    <div class="field">
-      <label for="{{ prefix }}contact_phone">{{ t('entities.phone') }} <span class="opt">{{ t('common.optional') }}</span></label>
-      <input type="text" id="{{ prefix }}contact_phone" name="contact_phone"
-             value="{{ (entity.contact_phone or '') if entity else '' }}">
-    </div>
-  </div>
-{% endmacro %}
-
-{% macro signature_fields(prefix, entity, preview='') %}
-  <fieldset class="signature-block" data-host-signature>
-    <legend>{{ t('entity.signature.heading') }}</legend>
-    <p class="small">{{ t('entity.signature.scope') }}</p>
-    <canvas id="{{ prefix }}sig-canvas" class="host-signature-pad" tabindex="0"></canvas>
-    <input type="hidden" id="{{ prefix }}signature" name="signature_drawn" value="{{ preview }}">
-    <div class="action-group">
-      <button class="btn" type="button" data-signature-clear>{{ t('entity.signature.clear') }}</button>
-      <label class="btn" for="{{ prefix }}signature_file">{{ t('entity.signature.upload') }}</label>
-      <input class="sr-only" type="file" id="{{ prefix }}signature_file" name="signature_file" accept="image/png,image/jpeg">
-    </div>
-    {% if preview %}
-    <label class="check"><input type="checkbox" name="signature_remove" value="1"> {{ t('entity.signature_remove') }}</label>
-    {% endif %}
-    <div class="field">
-      <label for="{{ prefix }}signature_name">{{ t('entity.signature_name_label') }}</label>
-      <input type="text" id="{{ prefix }}signature_name" name="signature_name" maxlength="80"
-             value="{{ (entity.signature_name or '') if entity else '' }}">
-    </div>
-  </fieldset>
-{% endmacro %}
-
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb, onboarding_banner, row_menu_begin, row_menu_end with context %}
+{% from "_entity_business_fields.html" import business_form_body with context %}
 <style>
   .entities-page tbody tr .row-actions > * { opacity: 1; }
   .entities-page .row-menu-item[aria-disabled="true"] { color: var(--muted); cursor: not-allowed; }
@@ -87,10 +24,7 @@
     <a class="btn small ghost" href="/entities">{{ t('common.close') }}</a>
   </div>
   <form method="post" action="/entities/{{ edit_entity.id }}" enctype="multipart/form-data">
-    {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
-    {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
-    {{ operator_fields('edit_', edit_entity) }}
-    {{ signature_fields('edit_', edit_entity, signature_preview) }}
+    {{ business_form_body('edit_', edit_entity, signature_preview, ares_error, ares_note) }}
     <div class="actions"><button class="btn primary" type="submit">{{ t('entities.save') }}</button></div>
   </form>
 </div>
@@ -179,10 +113,7 @@
 <div class="panel entity-add" id="entity-add">
   <h2 style="margin-top:0">{{ t('entities.add') }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
-    {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
-    {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
-    {{ operator_fields('new_', new_entity or none) }}
-    {{ signature_fields('new_', none) }}
+    {{ business_form_body('new_', new_entity or none, '', ares_error, ares_note) }}
     <div class="actions"><button class="btn primary" type="submit">{{ t('entities.add_action') }}</button></div>
   </form>
 </div>
