@@ -1,0 +1,173 @@
+[
+ {
+  "locale": "en",
+  "width": 360,
+  "sidebar": "expanded",
+  "lane": 330,
+  "docScroll": 360,
+  "viewScroll": 330,
+  "cards": true
+ },
+ {
+  "locale": "en",
+  "width": 390,
+  "sidebar": "expanded",
+  "lane": 360,
+  "docScroll": 390,
+  "viewScroll": 360,
+  "cards": true
+ },
+ {
+  "locale": "en",
+  "width": 760,
+  "sidebar": "expanded",
+  "lane": 718,
+  "docScroll": 760,
+  "viewScroll": 718,
+  "cards": true
+ },
+ {
+  "locale": "en",
+  "width": 1024,
+  "sidebar": "expanded",
+  "lane": 758,
+  "docScroll": 1024,
+  "viewScroll": 758,
+  "cards": true
+ },
+ {
+  "locale": "en",
+  "width": 1280,
+  "sidebar": "expanded",
+  "lane": 994,
+  "docScroll": 1280,
+  "viewScroll": 994,
+  "cards": true
+ },
+ {
+  "locale": "en",
+  "width": 1440,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1440,
+  "viewScroll": 1078,
+  "cards": true
+ },
+ {
+  "locale": "en",
+  "width": 1680,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1680,
+  "viewScroll": 1078,
+  "cards": true
+ },
+ {
+  "locale": "en",
+  "width": 1920,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1920,
+  "viewScroll": 1078,
+  "cards": true
+ },
+ {
+  "locale": "en",
+  "width": 2048,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 2048,
+  "viewScroll": 1078,
+  "cards": true
+ },
+ {
+  "locale": "en",
+  "width": 1024,
+  "sidebar": "collapsed",
+  "lane": 884,
+  "docScroll": 1024,
+  "viewScroll": 884,
+  "cards": true
+ },
+ {
+  "locale": "cs",
+  "width": 360,
+  "sidebar": "expanded",
+  "lane": 330,
+  "docScroll": 360,
+  "viewScroll": 330,
+  "cards": true
+ },
+ {
+  "locale": "cs",
+  "width": 390,
+  "sidebar": "expanded",
+  "lane": 360,
+  "docScroll": 390,
+  "viewScroll": 360,
+  "cards": true
+ },
+ {
+  "locale": "cs",
+  "width": 760,
+  "sidebar": "expanded",
+  "lane": 718,
+  "docScroll": 760,
+  "viewScroll": 718,
+  "cards": true
+ },
+ {
+  "locale": "cs",
+  "width": 1024,
+  "sidebar": "expanded",
+  "lane": 892,
+  "docScroll": 1024,
+  "viewScroll": 892,
+  "cards": true
+ },
+ {
+  "locale": "cs",
+  "width": 1280,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1280,
+  "viewScroll": 1078,
+  "cards": true
+ },
+ {
+  "locale": "cs",
+  "width": 1440,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1440,
+  "viewScroll": 1078,
+  "cards": true
+ },
+ {
+  "locale": "cs",
+  "width": 1680,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1680,
+  "viewScroll": 1078,
+  "cards": true
+ },
+ {
+  "locale": "cs",
+  "width": 1920,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 1920,
+  "viewScroll": 1078,
+  "cards": true
+ },
+ {
+  "locale": "cs",
+  "width": 2048,
+  "sidebar": "expanded",
+  "lane": 1078,
+  "docScroll": 2048,
+  "viewScroll": 1078,
+  "cards": true
+ }
+]

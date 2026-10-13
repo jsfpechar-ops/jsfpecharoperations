@@ -648,6 +648,8 @@ body.host-workspace {
   .host-workspace .stays-view .row-menu-trigger { flex-basis: 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
   .host-workspace .stays-view .row-action-send,
   .host-workspace .stays-view .stay-col-actions [data-copy] { height: auto; min-height: 44px; }
+  /* The open menu panel is moved to <body>, so it cannot be scoped to .host-workspace. */
+  .row-menu-panel .row-menu-item { min-height: 44px; display: flex; align-items: center; }
 }
 .host-workspace .invoice-form .invoice-actions {
   position: static;

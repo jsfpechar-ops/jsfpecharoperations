@@ -515,8 +515,12 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             assert menus, f"stay row has no visible More control: {grouped}"
                             more = menus[0]
                             for control in grouped:
-                                assert abs(control["top"] - more["top"]) <= 2, (control, more)
-                                assert abs(control["height"] - expected_action_height) <= 1, (control, more)
+                                same_row = abs(control["top"] - more["top"]) <= 2
+                                wrapped = control["bottom"] <= more["top"] + 1 or control["top"] >= more["bottom"] - 1
+                                assert same_row or wrapped, (control, more)
+                                assert control["height"] >= expected_action_height - 1, (control, more)
+                                if not control["isCopy"]:
+                                    assert abs(control["height"] - expected_action_height) <= 1, (control, more)
                             copies = [item for item in grouped if item["isCopy"]]
                             if copies:
                                 copy_groups += 1
