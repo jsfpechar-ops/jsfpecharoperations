@@ -1,6 +1,6 @@
 # 0080: Stay detail with next action and inline guest facts
 
-Status: todo — combined staging lane, run in the order and mode of [the combined plan](../plans/host-ux-combined-staging.md) §2–§3.
+Status: review
 
 Depends on: 0079 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0080-stay-detail-organization | PR base: task/production-host-ux-integration
 
