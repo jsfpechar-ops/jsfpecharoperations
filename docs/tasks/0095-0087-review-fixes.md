@@ -12,7 +12,7 @@ Fix the issues from the review of PR #381: the password field says the same sent
 
 Owner-approved UX rules for this brief (2026-10-13):
 
-- **Password:** one visible sentence under the field, no placeholder. A placeholder disappears when you type and is not a reliable label, so the hint carries the message. Saved: "Password saved. Leave blank to keep it." Not saved: "Password from your police letter." (unchanged).
+- **Password:** one visible sentence under the field. Saved: "Password saved. Leave blank to keep it." Not saved: "Password from your police letter." (unchanged). When a password is saved, the empty box shows eight dark dots (`••••••••`) as its placeholder, so the host sees something is in there. The dots are a fixed placeholder: the real password (or its length) is never sent to the page, and the input value stays empty, so saving without typing keeps the stored password through the existing blank-keeps logic. No placeholder when no password is saved.
 - **Guest message:** the box shows exactly what guests see. New property: the box is prefilled with the default (create already stores the default when blank). Edit: the box shows the stored value, blank if blank. Clearing the message on edit stays allowed (`App/tests/test_calmer_forms.py::test_update_with_blank_guest_message_stores_blank`). Guest pages show no message when it is blank (`App/app/templates/guest/form.html:53` `{% if apartment.guest_message %}`).
 
 Anchors (at the base commit). If one is not found verbatim, STOP (§8).
@@ -75,9 +75,17 @@ No other file may change.
 
    ```jinja2
            <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
-                  aria-describedby="uby_ws_password-hint">
+                  {% if editing and has_password %}placeholder="••••••••" {% endif %}aria-describedby="uby_ws_password-hint">
            <div class="hint" id="uby_ws_password-hint">
    ```
+
+   In the existing `<style>` block at the top of `apartment_form.html`, after the `.property-address-grid .field > label { min-height: 2.9em; }` line, add:
+
+   ```css
+     #uby_ws_password::placeholder { color: inherit; opacity: 1; letter-spacing: .12em; }
+   ```
+
+   The input keeps no `value` attribute.
 
    Keep the `{% if editing and has_password %}` hint branch below it unchanged. In `host_i18n.py` change the two `password_edit_hint` values:
    - EN: `"Password saved. Leave blank to keep it."`
@@ -108,7 +116,7 @@ No other file may change.
      Before deleting each key, run `git grep -n "<key>" -- App` and confirm the only hits are the two locale lines. Keep any key with another hit (`derived_summary` and `housebook.legal_title` are used by tests: keep them).
    - Leave `validation.split_czech_address` and its helpers alone.
 5. **Tests and evidence.** Add these tests to `test_host_copy_corrections.py`:
-   - `test_password_field_has_one_sentence`: on the edit page of a property with a saved password, the EN page contains "Password saved. Leave blank to keep it." exactly once, the `uby_ws_password` input has no `placeholder` attribute, and the input has `aria-describedby="uby_ws_password-hint"`. On `/apartments/new?lang=en`, "Password from your police letter." appears once.
+   - `test_password_field_has_one_sentence`: on the edit page of a property with a saved password, the EN page contains "Password saved. Leave blank to keep it." exactly once, the `uby_ws_password` input has `placeholder="••••••••"`, has no `value` attribute, does not contain the stored password text anywhere in the page, and has `aria-describedby="uby_ws_password-hint"`. Posting the edit form with `uby_ws_password` empty keeps `uby_ws_password_enc` unchanged. On `/apartments/new?lang=en`, the input has no `placeholder` and "Password from your police letter." appears once.
    - `test_edit_shows_stored_guest_message_exactly`: insert a property with `guest_message=""`. The edit page's `<textarea id="guest_message"` content is empty and does not contain the EN default.
 
    Then extend the browser test:
@@ -147,7 +155,7 @@ Expected: the focused run passes with 0 skipped. The full run has no failures be
 
 ## 7. Acceptance
 
-- [ ] Edit page with a saved password shows "Password saved. Leave blank to keep it." once, and the input has no placeholder. The CS page shows the CS sentence once.
+- [ ] Edit page with a saved password shows eight dots in the empty password box and "Password saved. Leave blank to keep it." once; the stored password is not in the HTML; saving without typing keeps it. No dots when no password is saved. The CS page shows the CS sentence once.
 - [ ] Edit page of a property with a blank message shows an empty box. A new property shows the default. Clearing still saves blank.
 - [ ] A required-browser run without `UBYHOST_CAPTURE_0087` writes no files (`git status --short` clean after it).
 - [ ] `_append_query_param`, `_address_preview` and the listed unused keys are gone; ruff is clean.
