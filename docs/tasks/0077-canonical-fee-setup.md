@@ -1,6 +1,6 @@
 # 0077: Canonical fee setup and compatibility adapters
 
-Status: todo — combined staging lane, run in the order and mode of [the combined plan](../plans/host-ux-combined-staging.md) §2–§3.
+Status: review — implemented in the combined staging lane; see [report](0077-report.md).
 
 Depends on: 0076 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0077-canonical-fee-setup | PR base: task/production-host-ux-integration
 
