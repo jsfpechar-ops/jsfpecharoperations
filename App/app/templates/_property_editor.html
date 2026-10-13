@@ -239,7 +239,8 @@
   <div class="property-settings-group{% if settings_section == 'reporting' %} is-active{% endif %}" data-settings-group="reporting" id="settings-reporting">
     <h2 class="property-group-title">{{ t('property_nav.group.reporting') }}</h2>
     <section class="panel property-section" id="ubyport">
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('host.reporting') }}</h3>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}</div>
+      <div class="field-label-row police-section-head"><h3 class="property-section-title">{{ t('host.reporting') }}</h3>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
+        <a class="btn small police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
       <p class="small"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} →</a></p>
       <div class="grid">
         {{ text_field('uby_idub', 'IDUB', apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
@@ -247,9 +248,9 @@
       <div class="grid two">
         {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user, t('apartment.form.ubyport.login_hint')) }}
         <div class="field">
-          <label for="uby_ws_password">{{ t('automation.password') }}</label>
+          {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help')) }}
           <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
-                 {% if has_password %}placeholder="••••••••" {% endif %}aria-describedby="uby_ws_password-hint">
+                 {% if has_password %}placeholder="••••••••" {% endif %}aria-describedby="uby_ws_password-help uby_ws_password-hint">
           <div class="hint" id="uby_ws_password-hint">
             {% if has_password %}
             {{ t('apartment.form.ubyport.password_edit_hint') }}
@@ -259,12 +260,14 @@
           </div>
         </div>
       </div>
+      <p class="small muted police-no-credentials" id="ws-request-letter">{{ t('apartment.form.ubyport.no_credentials') }}
+        <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.no_credentials_link') }}</a></p>
       <div class="grid">
-        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, '', false, 6) }}
+        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}
       </div>
       <div class="grid two">
-        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name, '', false, 35) }}
-        {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact, '', true, 50) }}
+        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name, t('apartment.form.ubyport.name_hint'), false, 35) }}
+        {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
       </div>
       <div class="actions">
         <button class="btn" type="submit" formaction="{{ base_url }}/test-connection"
@@ -277,30 +280,6 @@
           {% else %}{{ t('apartment.form.codelists_bundled') }}{% endif %}
         </span>
       </div>
-      <section class="property-subsection" id="ws-request-letter">
-        <div class="field-label-row"><h4 class="property-subsection-title">{{ t('apartment.form.ubyport.ws_request.summary') }}</h4>{{ help_tip('ws-request-help', t('apartment.form.ubyport.ws_request.intro_1') ~ ' ' ~ t('apartment.form.ubyport.ws_request.intro_2')) }}</div>
-        {% if apartment.uby_ws_user %}
-        {# Login already saved: the letter is only a download away, not a page-long block. #}
-        <p class="small"><a href="{{ base_url }}/ws-request.txt">{{ t('apartment.form.ubyport.ws_request.download') }}</a></p>
-        {% else %}
-        <p class="small">{{ t('apartment.form.ubyport.ws_request.recipient') }}<br>
-          {{ t('apartment.form.ubyport.ws_request.address_street') }}<br>
-          {{ t('apartment.form.ubyport.ws_request.address_city') }}<br>
-          {{ t('apartment.form.ubyport.ws_request.databox') }}</p>
-        <p class="small">
-          {{ t('apartment.form.ubyport.ws_request.subject_label') }}:
-          {{ ws_request.subject }}
-          {{ copy_inline('ws-request-subject', ws_request.subject, t('common.copy')) }}
-        </p>
-        <div class="field">
-          <textarea id="ws-request-body" readonly rows="4" aria-label="{{ t('apartment.form.ubyport.ws_request.summary') }}">{{ ws_request.body }}</textarea>
-          <div class="actions">
-            {{ copy_button('ws-request-body') }}
-            <a class="btn small" href="{{ base_url }}/ws-request.txt">{{ t('apartment.form.ubyport.ws_request.download') }}</a>
-          </div>
-        </div>
-        {% endif %}
-      </section>
     </section>
 
     <section class="panel property-section" id="stay-fee-settings">

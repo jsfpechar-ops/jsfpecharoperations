@@ -273,39 +273,6 @@ def _readiness(
     }
 
 
-_WS_REQUEST_IDUB_PLACEHOLDER = "[doplňte IDUB]"
-_WS_REQUEST_OPERATOR_PLACEHOLDER = "[jméno provozovatele]"
-
-
-def _ws_request_letter(apartment, entities) -> Dict[str, str]:
-    """Czech data-box text for hosts who still need UbyPort web-service credentials."""
-    idub = (apartment["uby_idub"] or "").strip() or _WS_REQUEST_IDUB_PLACEHOLDER
-    entity = next((e for e in entities if e["id"] == apartment["legal_entity_id"]), None)
-    operator_name = (
-        (entity["name"] if entity else "").strip() or _WS_REQUEST_OPERATOR_PLACEHOLDER
-    )
-    body = host_i18n.translate(
-        "cs",
-        "apartment.form.ubyport.ws_request.body",
-        idub=idub,
-        operator_name=operator_name,
-    )
-    subject = host_i18n.translate("cs", "apartment.form.ubyport.ws_request.subject")
-    # The file the host downloads is the Czech request, with the public
-    # recipient the Foreign Police publish for electronic delivery.
-    header = "\n".join([
-        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.recipient"),
-        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.address_street"),
-        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.address_city"),
-        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.databox"),
-        "",
-        f"{host_i18n.translate('cs', 'apartment.form.ubyport.ws_request.subject_label')}: {subject}",
-        "",
-        body,
-    ])
-    return {"body": body, "subject": subject, "download": header}
-
-
 def _missing_report_labels(request: Request, issues) -> List[str]:
     """The names of the reporting fields this property still lacks.
 
@@ -1474,15 +1441,17 @@ def _apartment_payload(form) -> Dict[str, Any]:
 
 
 def _apply_police_defaults(payload: Dict[str, Any], entities: List[Dict[str, Any]]) -> None:
-    """Fill empty police header fields from data the host already entered."""
+    """Fill empty police header fields from data the host already entered.
+
+    Only the abbreviation (from the web-service login) and the contact (from
+    the operator e-mail) are derived. The facility name is never guessed: it
+    must match the "Ubytovací zařízení" line of the police letter, and a
+    property or listing name gets reports rejected (0097).
+    """
     if not (payload.get("uby_mark") or "").strip():
         mark = validation.mark_from_ws_user(payload.get("uby_ws_user") or "")
         if mark:
             payload["uby_mark"] = mark
-    if not (payload.get("uby_name") or "").strip():
-        internal = (payload.get("internal_name") or "").strip()
-        if internal:
-            payload["uby_name"] = internal[:35].strip()
     if not (payload.get("uby_contact") or "").strip():
         entity_id = payload.get("legal_entity_id")
         if entity_id:
@@ -1674,7 +1643,6 @@ def _render_apartment_detail(
                 if peer["id"] != apartment["id"]
                 and int(peer["stay_fee_rate_czk"] or 0) > 0
             ],
-            "ws_request": _ws_request_letter(apartment, entities),
             **copy_ctx,
             "apartment": apartment,
             "operator_error": operator_error,
@@ -1793,21 +1761,14 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
 
 @router.get("/apartments/{apartment_id}/ws-request.txt")
 def apartment_ws_request_download(apartment_id: int, request: Request):
+    """0097: the request-letter generator is gone; an old link lands on Police reporting."""
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
+    if not access.apartment(request, apartment_id):
         return Response("Not found.", status_code=404)
-    entities = access.entities(request)
-    letter = _ws_request_letter(apartment, entities)
-    return Response(
-        letter["download"].encode("utf-8"),
-        media_type="text/plain; charset=utf-8",
-        headers={
-            "Cache-Control": "no-store",
-            "Content-Disposition": 'attachment; filename="ubyport-ws-zadost.txt"',
-        },
+    return RedirectResponse(
+        f"/apartments/{apartment_id}?view=settings&section=reporting#ubyport", status_code=303
     )
 
 

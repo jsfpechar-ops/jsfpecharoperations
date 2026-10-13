@@ -314,7 +314,7 @@ def test_password_field_has_one_sentence(host):
     tag = password_input.group(0)
     assert 'placeholder="••••••••"' in tag
     assert 'value="' not in tag
-    assert 'aria-describedby="uby_ws_password-hint"' in tag
+    assert 'aria-describedby="uby_ws_password-help uby_ws_password-hint"' in tag  # 0097: ? help + state
     assert stored not in edit
     updated = client.post(
         f"/apartments/{apartment_id}",
