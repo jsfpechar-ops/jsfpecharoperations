@@ -6193,6 +6193,14 @@ _SETUP_COMPLETE_STRINGS = {
 for _lang, _strings in _SETUP_COMPLETE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0077: one fee editor; the way back to the fee report it was opened from.
+_FEE_SETUP_0077_STRINGS = {
+    "en": {"stay_fees.setup.back_to_report": "Back to stay fees"},
+    "cs": {"stay_fees.setup.back_to_report": "Zpět na poplatky"},
+}
+for _lang, _strings in _FEE_SETUP_0077_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

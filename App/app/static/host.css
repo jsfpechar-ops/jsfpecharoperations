@@ -1121,3 +1121,9 @@ body.host-workspace {
 
 .host-workspace .host-setup-complete { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
 .host-workspace .host-setup-complete p { margin: 0; color: var(--ok); }
+
+/* 0077 */
+.fee-setup-section { margin-top: 16px; }
+.fee-setup-section + .fee-setup-section { padding-top: 16px; border-top: 1px solid var(--line); }
+.fee-setup-section > .property-subsection-title { margin-bottom: 8px; }
+.fee-return-note { margin: 4px 0 0; }

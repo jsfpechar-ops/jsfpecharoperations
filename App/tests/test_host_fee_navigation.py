@@ -112,8 +112,13 @@ def test_list_has_status_column_and_open_report_link(fee_host):
     assert "2 of 3 properties set up" in page
     assert f'href="/stay-fees/{fee_host["full"]}?month={MONTH}"' in page
     assert "Open report" in page
-    # Not set up shows a state and an action instead of blank totals; setup stays one link.
-    assert f'href="/stay-fees/{fee_host["off"]}/setup"' in page
+    # Not set up shows a state and an action instead of blank totals; setup stays one
+    # link, now straight to the one fee editor with the way back to this list (0077).
+    assert (
+        f'href="/apartments/{fee_host["off"]}?view=settings&amp;section=reporting'
+        f'&amp;return_to=%2Fstay-fees%3Fmonth%3D{MONTH}#stay-fee-settings"'
+    ) in page
+    assert "/setup" not in page
     assert page.count("Not set up") >= 1
 
 
@@ -121,7 +126,10 @@ def test_blockers_come_right_after_totals_and_keep_fix_link(fee_host):
     incomplete = fee_host["incomplete"]
     page = fee_host["client"].get(f"/stay-fees/{incomplete}?month={MONTH}").text
     assert 'id="fee-blockers"' in page
-    assert f'href="/apartments/{incomplete}#stay-fee-settings"' in page
+    assert (
+        f'href="/apartments/{incomplete}?view=settings&amp;section=reporting'
+        f'&amp;return_to=%2Fstay-fees%2F{incomplete}%3Fmonth%3D{MONTH}#stay-fee-settings"'
+    ) in page
     assert page.index('class="stay-metrics') < page.index('id="fee-blockers"') < page.index('id="guests"')
     assert page.index('id="guests"') < page.index('id="fee-adjust"')
     # Save stays disabled while blocked; the adjustment and decision forms keep their action and CSRF.

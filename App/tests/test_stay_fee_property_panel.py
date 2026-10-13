@@ -1,8 +1,6 @@
 """Host-only stay-fee property settings."""
 from __future__ import annotations
 
-from urllib.parse import unquote
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -183,11 +181,15 @@ def test_account_is_normalised_and_invalid_account_saves_nothing(host):
         ),
         follow_redirects=False,
     )
-    assert invalid.status_code == 303
-    assert "#stay-fee-settings" in invalid.headers["location"]
-    assert "Enter a valid Czech bank account or IBAN." in unquote(
-        invalid.headers["location"]
-    )
+    # 0077: the refused save shows the one fee editor again, with the typed
+    # values and the error, instead of a redirect that dropped them.
+    assert invalid.status_code == 400
+    assert "Enter a valid Czech bank account or IBAN." in invalid.text
+    assert 'id="stay-fee-account-error"' in invalid.text
+    assert 'id="stay-fee-settings"' in invalid.text
+    assert 'data-settings-group="reporting"' in invalid.text
+    assert 'value="Changed office"' in invalid.text
+    assert 'value="9876"' in invalid.text
     unchanged = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     assert unchanged["internal_name"] == "Panel Test Flat"
     assert unchanged["stay_fee_rate_czk"] == 25

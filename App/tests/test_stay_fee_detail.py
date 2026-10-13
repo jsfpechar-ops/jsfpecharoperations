@@ -497,7 +497,10 @@ def test_a_blocked_report_has_no_primary_button(host):
     assert response.status_code == 200
     assert "btn accent primary" not in response.text
     assert "Add the variable symbol the council gave you." in response.text
-    assert f'href="/apartments/{apartment_id}#stay-fee-settings"' in response.text
+    assert (
+        f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting'
+        f'&amp;return_to=%2Fstay-fees%2F{apartment_id}%3Fmonth%3D2026-08#stay-fee-settings"'
+    ) in response.text
 
 
 def test_the_page_renders_no_placeholder_or_raw_key(host):

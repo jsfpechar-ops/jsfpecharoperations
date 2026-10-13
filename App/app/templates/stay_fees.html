@@ -44,14 +44,14 @@
         </td>
         {% if fee_list.all_unset %}
         <td data-label="{{ t('filter.status') }}"><span class="pill grey no-dot">{{ t('stay_fees.status.not_setup') }}</span></td>
-        <td class="nowrap row-actions" data-label=""><a class="btn small primary" href="/stay-fees/{{ apartment.id }}/setup">{{ t('stay_fees.setup.action') }}</a></td>
+        <td class="nowrap row-actions" data-label=""><a class="btn small primary" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
         {% else %}
         <td data-label="{{ t('stay_fees.col.period') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.liable') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.total') }}">—</td>
         <td data-label="{{ t('filter.status') }}"><span class="pill grey no-dot">{{ t('stay_fees.status.not_setup') }}</span></td>
-        <td class="nowrap row-actions" data-label=""><a class="btn small primary" href="/stay-fees/{{ apartment.id }}/setup">{{ t('stay_fees.setup.action') }}</a></td>
+        <td class="nowrap row-actions" data-label=""><a class="btn small primary" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
         {% endif %}
       </tr>
       {% else %}

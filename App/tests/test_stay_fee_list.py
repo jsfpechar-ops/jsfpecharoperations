@@ -123,14 +123,18 @@ def test_login_is_required():
 
 def test_no_active_property_shows_empty_state_without_primary_button(host):
     client, owner_id, entity_id = host
-    _property(owner_id, entity_id, "Disabled Demo", rate=0)
+    apartment_id = _property(owner_id, entity_id, "Disabled Demo", rate=0)
 
     response = client.get("/stay-fees?month=2026-08")
 
     assert response.status_code == 200
     assert "Disabled Demo" in response.text
     assert "Not set up" in response.text
-    assert "/setup" in response.text
+    # 0077: Set up opens the one fee editor and comes back to this month.
+    assert (
+        f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting'
+        '&amp;return_to=%2Fstay-fees%3Fmonth%3D2026-08#stay-fee-settings"'
+    ) in response.text
     assert "btn accent primary" not in response.text
 
 
