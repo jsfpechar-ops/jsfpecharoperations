@@ -176,7 +176,7 @@ def test_typed_neutral_flash_preserves_legacy_redirect_and_renders_info(host):
 
 def test_real_property_creation_renders_green_and_plain_query_stays_info(host):
     response = host.post(
-        "/apartments", data={"internal_name": "Flash property", "legal_entity_id": host.operator_id}, follow_redirects=False
+        "/apartments", data={"internal_name": "Flash property", "legal_entity_id": host.operator_id, "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"}, follow_redirects=False
     )
     assert response.status_code == 303
     values = _attrs(response.headers["location"])
@@ -196,13 +196,13 @@ def test_real_property_creation_renders_green_and_plain_query_stays_info(host):
 def test_browser_renders_saved_warning_as_sticky_amber(host, browser_base):
     created = host.post(
         "/apartments",
-        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id},
+        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id, "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
         follow_redirects=False,
     )
     apartment_path = urlparse(created.headers["location"]).path
     saved = host.post(
         apartment_path,
-        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id},
+        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id, "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
         follow_redirects=False,
     )
     assert saved.status_code == 303

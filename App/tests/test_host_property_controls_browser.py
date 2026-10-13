@@ -340,6 +340,9 @@ def test_required_operator_controls_in_browser(host, base):
             many.set_viewport_size({"width": 1280, "height": 1000})
             many.goto(f"{base}/apartments/new?lang=en")
             many.fill("#internal_name", "Browser Operator Flat")
+            many.fill("#addr_obec", "Praha")
+            many.fill("#addr_house_no", "12")
+            many.fill("#addr_zip", "11000")
             assert not many.locator("#legal_entity_id").evaluate("el => el.checkValidity()")
             # A forged blank operator (validation bypassed) comes back with the draft and an error.
             many.evaluate("() => { document.querySelector('#legal_entity_id').required = false; }")
