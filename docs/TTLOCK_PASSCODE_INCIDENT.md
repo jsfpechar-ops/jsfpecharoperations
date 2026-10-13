@@ -17,7 +17,18 @@ Related facts: [TTLOCK.md](TTLOCK.md) (24 h first-use, lock clock, record fields
 | Failed attempts | ~15:24 and ~15:26 on 2026-10-13 |
 | App still shows end | `2026-10-15 12:00` (end date alone does **not** prove the code still works) |
 
-Likely cause: type-3 period code never used before start+24h, so TTLock invalidated it. Confirm with the calls below.
+**Findings (owner ran §1 on production, 2026-10-13):** Confirmed.
+
+| Check | Result |
+|---|---|
+| A `past_first_use_deadline` | `True` (deadline local 15:00; attempts after) |
+| B `isCustom` | `0` — never successfully typed on the lock |
+| B API still lists code | `status: 1`, endDate still 2026-10-15 — **list does not mark first-use void** |
+| C lock clock | drift 2 s — not the cause |
+| D records | two `UH-1` / `1454***` with `success: 0`; wrong guesses as raw usernames; later success with named code `1` |
+| E key row | admin OK, battery 100%, `timezoneRawOffset` 7200000 (= CEST, correct in October) |
+
+Cause: type-3 code `1454006` (`UH-1`) was first tried only after start+24h, so the lock refused it. TTLock’s passcode list and app end date still look “valid”; unlock records + `isCustom: 0` are what prove it.
 
 ## 0. Prep
 
