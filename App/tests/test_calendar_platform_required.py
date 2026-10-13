@@ -286,7 +286,7 @@ def test_wizard_stores_the_readable_platform(calls):
     host = _wizard_host()
     # 0092: the legacy page now opens the property's own calendar form.
     legacy = host["client"].get("/setup/bookings?source=vrbo", follow_redirects=False)
-    assert legacy.headers["location"] == f"/apartments/{host['apartment']}#calendars"
+    assert legacy.headers["location"] == f"/apartments/{host['apartment']}?view=bookings#calendars"
     page = host["client"].get(legacy.headers["location"]).text
     assert '<option value="vrbo"' in page
     response = host["client"].post(

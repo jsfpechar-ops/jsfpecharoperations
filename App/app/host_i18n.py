@@ -6092,6 +6092,57 @@ _PROPERTY_CREATE_0092_STRINGS = {
 for _lang, _strings in _PROPERTY_CREATE_0092_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+
+# 0094: property tabs, Settings groups and the door-code switch.
+_PROPERTY_NAV_0094_STRINGS = {
+    "en": {
+        "property_nav.tabs_aria": "Property",
+        "property_nav.overview": "Overview",
+        "property_nav.bookings": "Bookings & calendars",
+        "property_nav.settings": "Settings",
+        "property_nav.settings_aria": "Settings sections",
+        "property_nav.group.property": "Property information",
+        "property_nav.group.guests": "Guest experience",
+        "property_nav.group.reporting": "Reporting & fees",
+        "property_nav.group.automation": "Automation",
+        "property_nav.guest_link": "Guest link",
+        "property_nav.door_switch": "Automatic door codes",
+        "property_nav.switch_enabled": "Enabled",
+        "property_nav.switch_off": "Off",
+        "property_nav.switch_unsaved": "Not saved yet",
+        "property_nav.add_calendar": "Add calendar",
+        "property_nav.report_ready": "Ready to report",
+        "property_nav.report_missing.one": "%(count)s detail missing",
+        "property_nav.report_missing.few": "%(count)s details missing",
+        "property_nav.report_missing": "%(count)s details missing",
+        "property_nav.address_missing": "Address not added yet",
+    },
+    "cs": {
+        "property_nav.tabs_aria": "Ubytování",
+        "property_nav.overview": "Přehled",
+        "property_nav.bookings": "Rezervace a kalendáře",
+        "property_nav.settings": "Nastavení",
+        "property_nav.settings_aria": "Části nastavení",
+        "property_nav.group.property": "Údaje o ubytování",
+        "property_nav.group.guests": "Pro hosty",
+        "property_nav.group.reporting": "Hlášení a poplatky",
+        "property_nav.group.automation": "Automatizace",
+        "property_nav.guest_link": "Odkaz pro hosty",
+        "property_nav.door_switch": "Automatické kódy ke dveřím",
+        "property_nav.switch_enabled": "Zapnuto",
+        "property_nav.switch_off": "Vypnuto",
+        "property_nav.switch_unsaved": "Zatím neuloženo",
+        "property_nav.add_calendar": "Přidat kalendář",
+        "property_nav.report_ready": "Připraveno k hlášení",
+        "property_nav.report_missing.one": "Chybí %(count)s údaj",
+        "property_nav.report_missing.few": "Chybí %(count)s údaje",
+        "property_nav.report_missing": "Chybí %(count)s údajů",
+        "property_nav.address_missing": "Adresa zatím chybí",
+    },
+}
+for _lang, _strings in _PROPERTY_NAV_0094_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

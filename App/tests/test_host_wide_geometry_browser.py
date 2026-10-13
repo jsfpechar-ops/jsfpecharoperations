@@ -58,8 +58,9 @@ CAPTURE_ROUTES = {
     "housebook": ("/housebook?apartment={unconfigured_apartment}&from={today}&to={housebook_end}", ".housebook-page, .panel"),
     "submissions": ("/submissions", ".panel.tight.scroll-x, .panel.empty"),
     "submission-detail": ("/submissions/{submission_id}", ".submission-detail, .panel"),
-    "guest-links": ("/apartments/{property_id}", "#communication"),
-    "automation": ("/apartments/{property_id}", "#automation"),
+    # 0094: both now live in property Settings; the lane is the tab content.
+    "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views"),
+    "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views"),
     "archive": ("/settings/archived", ".panel"),
     "settings": ("/settings", ".host-property-grid"),
     "smart-locks": ("/smart-locks", ".panel"),

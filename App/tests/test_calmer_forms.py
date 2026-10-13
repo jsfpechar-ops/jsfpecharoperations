@@ -112,8 +112,12 @@ def test_more_options_open_when_controller_still_missing(host):
             "created_at": db.utcnow(),
         },
     )
+    # 0094: guest-link settings are always visible; a missing controller is a
+    # visible Setup checklist item linking to the field that answers it.
     page = host.get(f"/apartments/{apartment_id}?lang=en").text
-    assert '<details class="more-options" open>' in page
+    assert '<details class="more-options"' not in page
+    assert 'id="permalink_window_days"' in page
+    assert '<a href="#basics">' in page
 
 
 def test_one_operator_posts_legal_entity_and_saves(host):

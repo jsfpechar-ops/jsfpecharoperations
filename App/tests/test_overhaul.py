@@ -507,7 +507,7 @@ def test_filtered_stays_return_path_and_guest_links_workspace():
         slug = guest_slug.current(apartment_id)
         assert f"/l/{slug}" in links.text
         assert f"/l/{slug}/{stays[0]}" not in links.text
-        assert "Suggested portal message" in links.text
+        assert "Suggested portal message" not in links.text  # 0094: removed by owner correction
     finally:
         _cleanup()
 

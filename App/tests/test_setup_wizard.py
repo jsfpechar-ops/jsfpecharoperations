@@ -77,8 +77,9 @@ def test_legacy_setup_pages_redirect_to_their_canonical_home():
     expected = {
         "welcome": f"/apartments/{apartment_id}",
         "name": f"/apartments/{apartment_id}",
-        "address": f"/apartments/{apartment_id}#address",
-        "bookings": f"/apartments/{apartment_id}#calendars",
+        # 0094: the query opens the right tab without JavaScript.
+        "address": f"/apartments/{apartment_id}?view=settings&section=property#address",
+        "bookings": f"/apartments/{apartment_id}?view=bookings#calendars",
     }
     for step, target in expected.items():
         response = client.get(f"/setup/{step}?edit=1", follow_redirects=False)
@@ -126,7 +127,7 @@ def test_name_step_creates_property_with_name_and_operator():
     created_id = db.query_one(
         "SELECT id FROM apartment WHERE internal_name = ?", ("Studio Karlín 2",)
     )["id"]
-    assert response.headers["location"] == f"/apartments/{created_id}?created=1"
+    assert response.headers["location"] == f"/apartments/{created_id}?view=bookings&created=1#calendar-connect"
     row = db.query_one(
         "SELECT * FROM apartment WHERE internal_name = ?", ("Studio Karlín 2",)
     )
@@ -211,7 +212,7 @@ def test_setup_address_save_leaves_other_property_fields_intact():
         follow_redirects=False,
     )
     assert response.status_code == 303
-    assert response.headers["location"] == f"/apartments/{apartment_id}#address"
+    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=property#address"
     after = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     assert after["addr_street"] == "New street"
     assert after["addr_house_no"] == "99"
@@ -352,7 +353,7 @@ def test_legacy_setup_targets_work_without_javascript():
     for path in ("/setup/name?edit=1", "/setup/address", "/setup/bookings"):
         page = client.get(path)
         assert page.status_code == 200
-        assert str(page.url).split("#")[0].endswith(f"/apartments/{apartment_id}")
+        assert str(page.url).split("?")[0].split("#")[0].endswith(f"/apartments/{apartment_id}")
         assert f'action="/apartments/{apartment_id}"' in page.text
         assert f'action="/apartments/{apartment_id}/feeds"' in page.text
 
@@ -362,7 +363,7 @@ def test_legacy_bookings_post_returns_to_the_property_calendars(monkeypatch):
     apartment_id = _walk_to_address(client)
     choose = client.post("/setup/bookings", data={"source": "airbnb"}, follow_redirects=False)
     assert choose.status_code == 303
-    assert choose.headers["location"] == f"/apartments/{apartment_id}#calendars"
+    assert choose.headers["location"] == f"/apartments/{apartment_id}?view=bookings#calendars"
     finish = client.post("/setup/bookings", data={"action": "finish"}, follow_redirects=False)
     assert finish.headers["location"] == f"/apartments/{apartment_id}"
     manual = client.post("/setup/bookings", data={"source": "myself"}, follow_redirects=False)
@@ -380,7 +381,7 @@ def test_legacy_bookings_post_returns_to_the_property_calendars(monkeypatch):
             )
     assert added.status_code == 303
     location = added.headers["location"]
-    assert location.startswith(f"/apartments/{apartment_id}?msg=")
+    assert location.startswith(f"/apartments/{apartment_id}?view=bookings&msg=")
     assert location.endswith("#calendars")
     feed = db.query_one("SELECT label FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
     assert feed["label"] == "Booking.com"

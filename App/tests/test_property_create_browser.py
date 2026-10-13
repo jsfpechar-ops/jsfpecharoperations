@@ -113,7 +113,8 @@ def test_one_operator_is_chosen_and_one_submit_creates_a_manual_property():
     )
     assert response.status_code == 303
     (row,) = _rows(host["owner"])
-    assert response.headers["location"].startswith(f"/apartments/{row['id']}?created=1")
+    assert response.headers["location"].startswith(f"/apartments/{row['id']}?view=bookings&created=1")
+    assert response.headers["location"].endswith("#calendar-connect")
     assert row["internal_name"] == "Synthetic Loft" and row["city_en"] == "Brno"
     assert row["legal_entity_id"] == host["entities"][0]
     assert row["data_controller_entity_id"] is None
@@ -125,7 +126,7 @@ def test_one_operator_is_chosen_and_one_submit_creates_a_manual_property():
     detail = host["client"].get(response.headers["location"]).text
     assert 'class="panel property-first-use"' in detail
     assert f'href="/reservations?new=1&amp;apartment={row["id"]}#add-stay-panel"' in detail
-    assert 'href="#calendars"' in detail
+    assert f'href="/apartments/{row["id"]}?view=bookings#calendar-connect"' in detail
     assert 'class="panel property-first-use"' not in host["client"].get(f"/apartments/{row['id']}").text
 
 

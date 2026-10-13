@@ -7,12 +7,11 @@ language, and the ⋯ menu offers the English half on its own.
 """
 from __future__ import annotations
 
-import html
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, guest_slug, host_i18n
+from app import auth, db, host_i18n
 from app.main import app
 from tests.conftest import login_as
 
@@ -94,106 +93,17 @@ def host():
         _cleanup()
 
 
-def _message_block(text: str, element_id: str) -> str:
-    """The text inside the <pre> with this id."""
-    marker = f'id="{element_id}"'
-    assert marker in text, f"no element with {marker}"
-    body = text.split(marker, 1)[1].split(">", 1)[1]
-    return html.unescape(body.split("</pre>", 1)[0])
-
-
-def test_a_czech_host_still_gets_the_english_half(host):
-    """The whole point: the Czech host's message must be readable by a foreign guest."""
+def test_the_property_page_drops_the_suggested_portal_message(host):
+    """0094 (owner correction): no Suggested portal message on the property
+    page; the guest link, PIN with Copy and Preview stay at the top of Guest links."""
     apartment_id = _apartment_id()
-
-    page = host.get(f"/apartments/{apartment_id}?lang=cs")
-
-    assert page.status_code == 200
-    message = _message_block(page.text, f"message-{apartment_id}")
-    assert EN_OPENING in message, "the message a Czech host copies has no English half"
-    assert CS_OPENING in message
-    assert message.index(EN_OPENING) < message.index(CS_OPENING), "Czech came first"
-
-
-def test_an_english_host_gets_the_same_bilingual_message(host):
-    apartment_id = _apartment_id()
-
-    page = host.get(f"/apartments/{apartment_id}?lang=en")
-
-    message = _message_block(page.text, f"message-{apartment_id}")
-    assert EN_OPENING in message and CS_OPENING in message
-    assert message.index(EN_OPENING) < message.index(CS_OPENING)
-
-
-def test_the_message_carries_the_link_and_the_pin(host):
-    """Both halves have to be usable on their own, so both carry link and PIN."""
-    apartment_id = _apartment_id()
-
-    page = host.get(f"/apartments/{apartment_id}?lang=cs")
-
-    message = _message_block(page.text, f"message-{apartment_id}")
-    english, czech = message.split(CS_OPENING, 1)
-    slug = guest_slug.current(apartment_id)
-    assert slug and f"/l/{slug}" in english
-    assert PIN in english
-    assert f"/l/{slug}" in czech
-    assert PIN in czech
-
-
-def test_the_menu_offers_the_english_half_on_its_own(host):
-    apartment_id = _apartment_id()
-
-    page = host.get(f"/apartments/{apartment_id}?lang=en")
-
-    assert "Copy English only" in page.text
-    assert f'data-copy="message-en-{apartment_id}"' in page.text
-    assert _message_block(page.text, f"message-en-{apartment_id}").startswith(EN_OPENING)
-
-
-def test_the_english_only_block_holds_no_czech(host):
-    apartment_id = _apartment_id()
-
-    page = host.get(f"/apartments/{apartment_id}?lang=cs")
-
-    english = _message_block(page.text, f"message-en-{apartment_id}")
-    assert EN_OPENING in english
-    assert CS_OPENING not in english
-
-
-def test_the_menu_item_is_in_the_page_language(host):
-    apartment_id = _apartment_id()
-
-    page = host.get(f"/apartments/{apartment_id}?lang=cs")
-
-    assert "Kopírovat jen anglicky" in page.text
-    assert f'data-copy="message-en-{apartment_id}"' in page.text
-
-
-def test_the_lede_says_the_form_opens_in_the_guest_language(host):
-    apartment_id = _apartment_id()
-
-    page = host.get(f"/apartments/{apartment_id}?lang=en")
-
-    assert "Guests from abroad read the English part" in page.text
-
-
-def test_the_lede_is_in_czech_too(host):
-    apartment_id = _apartment_id()
-
-    page = host.get(f"/apartments/{apartment_id}?lang=cs")
-
-    assert "Zahraniční hosté si přečtou anglickou část" in page.text
-
-
-def test_the_property_page_shows_the_same_bilingual_message(host):
-    apartment_id = _apartment_id()
-
-    page = host.get(f"/apartments/{apartment_id}?lang=en")
-
-    assert page.status_code == 200
-    body = html.unescape(page.text)
-    assert EN_OPENING in body and CS_OPENING in body
-    assert body.index(EN_OPENING) < body.index(CS_OPENING)
+    for lang in ("en", "cs"):
+        page = host.get(f"/apartments/{apartment_id}?lang={lang}").text
+        assert host_i18n.STRINGS[lang]["guest_links.message_title"] not in page
+        assert host_i18n.STRINGS[lang]["guest_links.copy_message_en"] not in page
+        assert 'class="message-template"' not in page
+        assert 'id="permalink"' in page and 'id="permalink_pin"' in page
+        assert host_i18n.STRINGS[lang]["guest_links.preview"] in page
 
 
 def test_the_helper_puts_english_first():

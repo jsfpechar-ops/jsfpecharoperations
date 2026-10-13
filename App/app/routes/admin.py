@@ -490,11 +490,16 @@ def guide_view(request: Request):
 
 # --- guest communication ------------------------------------------------
 
+# 0094: old hub URLs open the right Settings group, not only an anchor.
+_HUB_SECTIONS = {"communication": "guests", "automation": "automation"}
+
+
 def _property_hub_redirect(request: Request, anchor: str) -> RedirectResponse:
     apartments = access.apartments(request)
     if len(apartments) == 1:
+        section = _HUB_SECTIONS.get(anchor, "property")
         return RedirectResponse(
-            f"/apartments/{apartments[0]['id']}#{anchor}",
+            f"/apartments/{apartments[0]['id']}?view=settings&section={section}#{anchor}",
             status_code=303,
         )
     return RedirectResponse("/apartments", status_code=303)
@@ -1411,7 +1416,7 @@ async def apartment_create(request: Request):
     # 0092: the first-use choice (calendar, manual stay, overview) opens on the
     # new property itself, never a numbered wizard.
     return _back(
-        f"/apartments/{apartment_id}?created=1",
+        f"/apartments/{apartment_id}?view=bookings&created=1#calendar-connect",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -1432,6 +1437,26 @@ def apartment_detail(apartment_id: int, request: Request):
     if not_found:
         return not_found
     return _render_apartment_detail(request, copy_ctx["apartment"], copy_ctx)
+
+
+# 0094: GET-only presentation choice of the property page; never a data endpoint.
+PROPERTY_VIEWS = ("overview", "bookings", "settings")
+PROPERTY_SETTINGS_SECTIONS = ("property", "guests", "reporting", "automation")
+
+
+def _property_view_state(request: Request, extra: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    extra = extra or {}
+    view = extra.get("property_view") or request.query_params.get("view") or ""
+    section = extra.get("settings_section") or request.query_params.get("section") or ""
+    if section not in PROPERTY_SETTINGS_SECTIONS:
+        section = ""
+    if view not in PROPERTY_VIEWS:
+        view = "settings" if section else "overview"
+    return {
+        "property_view": view,
+        "settings_section": section or "property",
+        "add_calendar": request.query_params.get("add_calendar") == "1",
+    }
 
 
 def _render_apartment_detail(
@@ -1533,6 +1558,7 @@ def _render_apartment_detail(
             "calendar_platforms": CALENDAR_PLATFORMS,
             "just_created": request.query_params.get("created") == "1",
             **(extra or {}),
+            **_property_view_state(request, extra),
         },
         status_code=status_code,
     )
@@ -1587,6 +1613,7 @@ def _refuse_apartment_save(
         draft,
         copy_ctx,
         operator_error=operator_error,
+        extra={"property_view": "settings", "settings_section": "property"},
         status_code=400 if operator_error else 200,
     )
 
@@ -2078,7 +2105,7 @@ async def add_feed(apartment_id: int, request: Request):
         return _render_property_detail(
             apartment_id,
             request,
-            extra={"feed_draft": draft, "feed_errors": feed_errors},
+            extra={"feed_draft": draft, "feed_errors": feed_errors, "property_view": "bookings"},
             status_code=400,
         )
     db.insert(
@@ -2095,11 +2122,11 @@ async def add_feed(apartment_id: int, request: Request):
     totals = await run_in_threadpool(icalsync.sync_all, apartment_id)
     if totals["errors"]:
         return _back(
-            f"/apartments/{apartment_id}#calendars",
+            f"/apartments/{apartment_id}?view=bookings#calendars",
             err=_flash(request, "flash.error.feed_added_unreadable"),
         )
     return _back(
-        f"/apartments/{apartment_id}#calendars",
+        f"/apartments/{apartment_id}?view=bookings#calendars",
         msg=_flash_plural(request, "flash.feeds.added", totals["created"]),
     )
 
@@ -2113,7 +2140,10 @@ def delete_feed(feed_id: int, request: Request):
     if not feed:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_calendar"))
     db.execute("DELETE FROM ical_feed WHERE id = ?", (feed_id,))
-    return _back(f"/apartments/{feed['apartment_id']}", msg=_flash(request, "flash.feeds.removed"))
+    return _back(
+        f"/apartments/{feed['apartment_id']}?view=bookings#calendars",
+        msg=_flash(request, "flash.feeds.removed"),
+    )
 
 
 @router.post("/sync")

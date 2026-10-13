@@ -201,4 +201,4 @@ def test_automation_redirects_to_property_timing(authed_client):
     client, apartment_id = authed_client
     response = client.get("/automation", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == f"/apartments/{apartment_id}#automation"
+    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=automation#automation"

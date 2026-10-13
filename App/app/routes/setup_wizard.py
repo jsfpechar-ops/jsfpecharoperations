@@ -73,10 +73,14 @@ def _canonical_entry(request: Request, anchor: str = "") -> str:
     apartment = _wizard_apartment(request)
     if not apartment:
         return "/apartments/new"
-    return f"/apartments/{apartment['id']}" + (f"#{anchor}" if anchor else "")
+    return f"/apartments/{apartment['id']}" + (
+        f"{_ANCHOR_VIEWS.get(anchor, '')}#{anchor}" if anchor else ""
+    )
 
 
 _LEGACY_STEP_ANCHORS = {"welcome": "", "name": "", "address": "address", "bookings": "calendars"}
+# 0094: the query picks the property tab without JavaScript; the hash scrolls.
+_ANCHOR_VIEWS = {"address": "?view=settings&section=property", "calendars": "?view=bookings", "basics": "?view=settings&section=property"}
 
 
 @router.get("/setup")
@@ -158,8 +162,12 @@ async def setup_post(step: str, request: Request):
                 db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
             )
             db.audit("apartment_created", f"id={apartment_id}")
-            return RedirectResponse(f"/apartments/{apartment_id}?created=1", status_code=303)
-        return RedirectResponse(f"/apartments/{apartment_id}#basics", status_code=303)
+            return RedirectResponse(
+                f"/apartments/{apartment_id}?view=bookings&created=1#calendar-connect", status_code=303
+            )
+        return RedirectResponse(
+            f"/apartments/{apartment_id}?view=settings&section=property#basics", status_code=303
+        )
 
     if step == "address":
         if not apartment:
@@ -167,12 +175,14 @@ async def setup_post(step: str, request: Request):
         rejected = _save_address_only(apartment["id"], request, form)
         if rejected:
             return rejected
-        return RedirectResponse(f"/apartments/{apartment['id']}#address", status_code=303)
+        return RedirectResponse(
+            f"/apartments/{apartment['id']}?view=settings&section=property#address", status_code=303
+        )
 
     if step == "bookings":
         if not apartment:
             return RedirectResponse("/apartments/new", status_code=303)
-        calendars_url = f"/apartments/{apartment['id']}#calendars"
+        calendars_url = f"/apartments/{apartment['id']}?view=bookings#calendars"
         if _form_str(form, "action") == "finish":
             return RedirectResponse(f"/apartments/{apartment['id']}", status_code=303)
         source = _form_str(form, "source") or _form_str(form, "chosen_source")

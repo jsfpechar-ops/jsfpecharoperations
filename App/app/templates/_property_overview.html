@@ -1,0 +1,65 @@
+{#- 0094: Overview tab. Read-only: shortcut cards with a real summary and one link
+    to the canonical editor, plus the setup status lists. No form, no field. -#}
+{%- from "_components.html" import nav_icon, copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
+{%- set base_url = '/apartments/' ~ apartment.id -%}
+{%- set operator = (entities | selectattr('id', 'equalto', apartment.legal_entity_id) | list | first) -%}
+{%- set feed_errors_count = feeds | selectattr('last_status', 'equalto', 'error') | list | length -%}
+{%- set report_missing = (readiness.report | rejectattr('done') | list | length) if readiness else 0 -%}
+{%- set address_text = [((apartment.addr_street or '') ~ ' ' ~ (apartment.addr_house_no or '')) | trim, apartment.addr_obec or ''] | select | join(', ') -%}
+<div class="host-property-grid">
+  <a class="host-property-card" href="{{ base_url }}?view=bookings#calendars">{{ nav_icon('calendar') }}<div><strong>{{ t('host.bookings') }}</strong>
+    <small>{{ tp('apartment.form.calendars_count', feeds | length) }}{% if feed_errors_count %} · {{ t('apartment.form.feed.status.error') }}{% endif %}</small></div><span aria-hidden="true">→</span></a>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ nav_icon('link') }}<div><strong>{{ t('nav.guest_links') }}</strong>
+    <small class="mono">/l/{{ link_key }}</small></div><span aria-hidden="true">→</span></a>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#ubyport">{{ nav_icon('report') }}<div><strong>{{ t('host.reporting') }}</strong>
+    <small>{{ t('property_nav.report_ready') if not report_missing else tp('property_nav.report_missing', report_missing) }}</small></div><span aria-hidden="true">→</span></a>
+  <a class="host-property-card" href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ nav_icon('entity') }}<div><strong>{{ t('host.business') }}</strong>
+    {% if operator %}<small>{{ operator.name }}</small>{% endif %}</div><span aria-hidden="true">→</span></a>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#stay-fee-settings">{{ nav_icon('coins') }}<div><strong>{{ t('host.fee') }}</strong>
+    <small>{{ apartment.stay_fee_rate_czk or 0 }} Kč / {{ t('stay_fees.nights.one', count=1) }}</small></div><span aria-hidden="true">→</span></a>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=property#address">{{ nav_icon('property') }}<div><strong>{{ t('host.property_details') }}</strong>
+    <small>{{ address_text or t('property_nav.address_missing') }}</small></div><span aria-hidden="true">→</span></a>
+  {% if door_code %}
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=guests#door-code">{{ nav_icon('property') }}<div><strong>{{ t('host.door_code') }}</strong>
+    <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div><span aria-hidden="true">→</span></a>
+  {% endif %}
+</div>
+
+{% if readiness %}
+{# Two short lists instead of one red paragraph: what a guest needs, and what
+   the police register needs. Every item links to the field that answers it. #}
+<section class="panel host-checklist" aria-labelledby="property-readiness-title">
+<h2 id="property-readiness-title" class="property-section-title">{{ t('host.setup_details') }}</h2>
+<section class="readiness">
+  <div class="readiness-group">
+    <h3 class="readiness-title">{{ t('apartment.form.readiness.invite_title') }}</h3>
+    <ul class="readiness-list">
+      {% for item in readiness.invite %}
+      <li class="readiness-item{% if item.done %} is-done{% endif %}">
+        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
+        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% if readiness.invite_ready %}
+    <p class="readiness-ready">{{ t('apartment.form.readiness.invite_ready') }}</p>
+    {{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}
+    {% endif %}
+  </div>
+  <div class="readiness-group">
+    <h3 class="readiness-title">{{ t('apartment.form.readiness.report_title') }}</h3>
+    <ul class="readiness-list">
+      {% for item in readiness.report %}
+      <li class="readiness-item{% if item.done %} is-done{% endif %}">
+        <span class="readiness-mark" aria-hidden="true">{{ '✓' if item.done else '✗' }}</span>
+        {% if item.done %}{{ t('apartment.form.readiness.item.' ~ item.key) }}
+        {% else %}<a href="#{{ item.anchor }}">{{ t('apartment.form.readiness.missing') }} {{ t('apartment.form.readiness.item.' ~ item.key) }}</a>
+          {% if item.message %}<span class="readiness-why">{{ validation_message(item.message) }}</span>{% endif %}
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section></section>
+{% endif %}

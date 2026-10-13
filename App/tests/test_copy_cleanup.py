@@ -144,10 +144,15 @@ def test_the_house_book_legal_block_renders_once():
 
 
 def test_each_property_form_explanation_renders_once():
-    template = (TEMPLATES / "apartment_form.html").read_text(encoding="utf-8")
+    # 0094: the property page is composed of partials; each explanation lives
+    # once across them, and the suggested portal message is gone.
+    template = "".join(
+        (TEMPLATES / name).read_text(encoding="utf-8")
+        for name in ("apartment_form.html", "_property_overview.html", "_property_calendars.html", "_property_editor.html")
+    )
     assert template.count("apartment.form.calendars.lede") == 1
     assert template.count("t('guest_links.lede')") == 1
-    assert template.count("t('guest_links.message_lede')") == 1
+    assert template.count("guest_links.message_lede") == 0
     assert not (TEMPLATES / "guest_links.html").exists()
 
 

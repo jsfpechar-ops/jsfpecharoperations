@@ -109,7 +109,7 @@ def test_guest_links_redirects_to_communication_with_one_property(host):
     client, apartment_id = host
     response = client.get("/guest-links", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == f"/apartments/{apartment_id}#communication"
+    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=guests#communication"
 
 
 def test_guest_links_redirects_to_apartments_with_two(two_properties):
@@ -123,7 +123,7 @@ def test_automation_redirects_to_automation_anchor_with_one_property(host):
     client, apartment_id = host
     response = client.get("/automation", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == f"/apartments/{apartment_id}#automation"
+    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=automation#automation"
 
 
 def test_automation_redirects_to_apartments_with_two(two_properties):
@@ -192,7 +192,7 @@ def test_property_save_updates_automation_fields(host):
 def test_property_page_has_editable_automation_controls(host):
     client, apartment_id = host
     text = client.get(f"/apartments/{apartment_id}").text
-    panel = text[text.index('id="automation"') : text.index("</details>", text.index('id="automation"'))]
+    panel = text[text.index('id="automation"') : text.index("</section>", text.index('id="automation"'))]
     assert 'name="automation_mode"' in panel
     assert 'data-automation-mode' in panel
     assert 'name="submit_after_hours"' in panel
