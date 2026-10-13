@@ -6314,7 +6314,7 @@ _SETUP_GUIDE_0096_STRINGS = {
         # The guide's first step says what to do next; the flash only confirms.
         "flash.apartments.created": "Property created.",
         "property_nav.group.lock": "Door lock",
-        "property_nav.lock_intro": "Optional: skip this if you don't use a smart lock. UbyHost currently works only with TTLock locks that have a gateway.",
+        "property_nav.lock_intro": "Optional: skip this if you don't use a smart lock.",
     },
     "cs": {
         "setup_guide.count": "Krok %(n)s z %(total)s",
@@ -6341,7 +6341,7 @@ _SETUP_GUIDE_0096_STRINGS = {
         "flash.setup.complete": "Nastavení je hotové.",
         "flash.apartments.created": "Ubytování bylo vytvořeno.",
         "property_nav.group.lock": "Zámek dveří",
-        "property_nav.lock_intro": "Nepovinné: pokud chytrý zámek nepoužíváte, tuto část přeskočte. UbyHost zatím funguje jen se zámky TTLock, které mají bránu (gateway).",
+        "property_nav.lock_intro": "Nepovinné: pokud chytrý zámek nepoužíváte, tuto část přeskočte.",
     },
 }
 for _lang, _strings in _SETUP_GUIDE_0096_STRINGS.items():
