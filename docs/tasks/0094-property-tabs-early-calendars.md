@@ -1,6 +1,6 @@
 # 0094: Property tabs, one editor and early calendar setup
 
-Status: todo
+Status: review
 Depends on: 0093 reviewed | Initial source: 7b27d09402f9656b0c606c131793310925936526 | Branch: task/0094-property-tabs-early-calendars | PR base: task/production-host-ux-integration
 Executor: Cursor local agent (composer, Kimi or GLM) | One property-navigation session
 
