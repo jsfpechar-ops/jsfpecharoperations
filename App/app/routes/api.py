@@ -42,6 +42,8 @@ def command_palette(request: Request):
         ("nav.guest_links", "/apartments", "invitation guest link pin"),
         ("nav.automation", "/apartments", "automatic reporting timing police"),
         ("host.invoice_settings", "/invoices/settings", "invoice settings faktura"),
+        ("settings.group.security", "/settings#settings-group-security", "passkey 2fa authenticator login password"),
+        ("settings.group.data", "/settings#settings-group-data", "retention backup delete expired export"),
         ("settings.nav.archive", "/settings/archived", "restore archived records"),
         ("nav.privacy_requests", "/privacy-requests", "privacy gdpr"),
         ("nav.guide", "/guide", "help guide support"),
