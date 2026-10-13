@@ -3,7 +3,7 @@
     (reporting, guest links, fees, locks, notes) is set on the property page after
     it exists. Copied settings travel as hidden fields only after the host chose
     "Copy" for a named property. -#}
-{%- from "_components.html" import nav_icon with context -%}
+{%- from "_components.html" import nav_icon, help_tip with context -%}
 {%- set draft = draft or {} -%}
 {%- set property_prefill = property_prefill or {} -%}
 {%- set property_values = draft -%}
@@ -65,8 +65,8 @@
       </section>
 
       <section class="panel property-create-card" id="address" aria-labelledby="property-create-address">
-        <header class="property-create-head">{{ nav_icon('report') }}<div><h2 id="property-create-address">{{ t('property_create.address') }} <span class="opt">{{ t('common.optional') }}</span></h2>
-          <p class="small muted">{{ t('property_create.address_lede') }}</p></div></header>
+        <header class="property-create-head">{{ nav_icon('report') }}<div><div class="heading-with-tip"><h2 id="property-create-address">{{ t('property_create.address') }} <span class="opt">{{ t('common.optional') }}</span></h2>
+          {{ help_tip('property-create-address-help', t('property_create.address_lede')) }}</div></div></header>
         {% include "_property_address_fields.html" %}
       </section>
 

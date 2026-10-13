@@ -49,7 +49,7 @@
           </form>
           {% endif %}
           {% if invoice.reservation_id %}<a class="btn" href="/reservations/{{ invoice.reservation_id }}">{{ t('invoice.context.open_stay') }}</a>{% endif %}
-          <a class="btn ghost" href="/invoices/settings?entity={{ invoice.legal_entity_id }}&amp;next={{ ('/invoices/' ~ invoice.id) | urlencode }}">{{ t('host.invoice_settings') }}</a>
+          <a class="btn ghost" href="/entities?edit={{ invoice.legal_entity_id }}&amp;next={{ ('/invoices/' ~ invoice.id) | urlencode }}#entity-invoice">{{ t('host.invoice_settings') }}</a>
         </div>
       </div>
     </div>

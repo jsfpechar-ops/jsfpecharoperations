@@ -209,3 +209,101 @@ def test_help_tip_target_size_and_no_js_reachability(host, base):
         assert "stay-specific link" in tip.inner_text()
         no_js.close()
         browser.close()
+
+
+# --- 0093 pass: host-wide check over the converted pages -------------------------------
+
+def _host_pages(host):
+    from tests.invoice_stay_helper import make_stay
+
+    owner = host["owner"]
+    entity = db.insert("legal_entity", {
+        "name": "Help s.r.o.", "seat": "Praha 1", "ico": "04656679",
+        "registry_entry": "Fyzická osoba zapsaná v živnostenském rejstříku",
+        "vat_status": "non_payer", "invoice_due_days": 14,
+        "owner_user_id": owner, "created_at": db.utcnow(),
+    })
+    stay = make_stay(owner, entity_id=entity)
+    db.insert("apartment", {
+        "internal_name": "Archived Sample", "owner_user_id": owner, "active": 0,
+        "permalink_token": f"arch{secrets.token_hex(4)}", "archived_at": db.utcnow(),
+        "created_at": db.utcnow(),
+    })
+    pages = [
+        ("property-create", "/apartments/new", "#property-create-address-help"),
+        ("property-guests", f"/apartments/{host['apartment']}?view=settings&section=guests", None),
+        ("stay-detail", f"/reservations/{stay}", "#guest_email-help"),
+        ("invoice-builder", f"/invoices/new?reservation_id={stay}&entity={entity}", "#due_date-help"),
+        ("entities", f"/entities?edit={entity}", None),
+        ("settings", "/settings", None),
+        ("archive", "/settings/archived", "#archive-properties-help"),
+    ]
+    return pages, entity
+
+
+def _drop_host_pages(host, entity):
+    from tests.invoice_stay_helper import drop_stays
+
+    drop_stays(host["owner"])
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ? AND internal_name = ?", (host["owner"], "Archived Sample"))
+    db.execute("DELETE FROM legal_entity WHERE id = ?", (entity,))
+
+
+@pytest.mark.parametrize("width", [360, 390, 1280])
+def test_host_wide_help_tips_are_wired_reachable_and_fit(host, base, width):
+    pages, entity = _host_pages(host)
+    seen = 0
+    try:
+        with sync_api.sync_playwright() as playwright:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+            for lang in ("en", "cs"):
+                context = _context(browser, host, base, width)
+                for name, path, must_have in pages:
+                    page = context.new_page()
+                    sep = "&" if "?" in path else "?"
+                    page.goto(f"{base}{path}{sep}lang={lang}")
+                    ids = page.evaluate("[...document.querySelectorAll('[id]')].map(e => e.id)")
+                    assert len(ids) == len(set(ids)), (name, lang)
+                    if must_have:
+                        assert page.locator(must_have).count() == 1, (name, lang, must_have)
+                    assert page.locator("a.help-link").count() == 0, name
+                    _capture(page, f"{name}-{width}-{lang}")
+                    buttons = page.locator(".help-tip-btn")
+                    for index in range(buttons.count()):
+                        button = buttons.nth(index)
+                        target = button.get_attribute("aria-controls")
+                        assert target and page.locator(f"#{target}.help-tip-body").count() == 1, (name, target)
+                        if not button.is_visible():
+                            continue  # inside a closed menu or a hidden tab
+                        button.scroll_into_view_if_needed()
+                        button.focus()
+                        tip = page.locator(f"#{target}")
+                        tip.wait_for(state="visible")
+                        assert page.evaluate("document.activeElement.getAttribute('aria-controls')") == target
+                        box = tip.bounding_box()
+                        client_width = page.evaluate("document.documentElement.clientWidth")
+                        assert box["x"] >= -0.5 and box["x"] + box["width"] <= client_width + 0.5, (name, lang, width, target)
+                        page.keyboard.press("Escape")
+                        seen += 1
+                    page.close()
+                context.close()
+            browser.close()
+    finally:
+        _drop_host_pages(host, entity)
+    assert seen >= 30
+
+
+def test_converted_hints_are_tips_not_always_visible_text(host):
+    pages, entity = _host_pages(host)
+    try:
+        html = host["client"].get(pages[2][1] + "?lang=en").text
+        for field in ("guest_email", "status"):
+            assert f'aria-describedby="{field}-help"' in html
+        assert 'class="hint">“Not a guest stay”' not in html
+        invoice = host["client"].get(pages[3][1] + "&lang=en").text
+        assert 'aria-describedby="due_date-help"' in invoice and 'id="due_date-help"' in invoice
+        assert 'class="hint">Empty means' not in invoice
+        cs = host["client"].get("/apartments/new?lang=cs").text
+        assert 'id="property-create-address-help"' in cs
+    finally:
+        _drop_host_pages(host, entity)
