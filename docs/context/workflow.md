@@ -13,15 +13,13 @@ This file is the single source of truth for how work is done. When the process c
 
 ## Owner-authorized host design execution
 
-2026-10-10, host design/staging task only: the owner said “you implement it,
-i give you the permission”, then designated Luna as executor and explicitly
-authorized several Luna 6.0 subagents. This replaces the Cursor-only executor,
-search-only subagent and exact override-phrase restrictions for this task.
-Codex remains orchestrator/reviewer; Luna executors implement scoped briefs
-and run app checks with coordinated file ownership. Codex may push the
-reviewed feature branch, create its PR and deploy to staging as requested.
-Never push main, bypass CI, merge for preview, or deploy production. The
-standard roles continue outside this task. See [decision](ui-decisions.md).
+2026-10-10, host design/staging task only: the owner designated Luna 6.0
+subagents as executors, replacing the Cursor-only, search-only subagent and
+override-phrase limits for this task. Codex stays orchestrator/reviewer; Luna
+implements scoped briefs and runs app checks. Codex may push the reviewed
+feature branch, open its PR and deploy staging. Never push main, bypass CI,
+merge for preview or deploy production. See [decision](ui-decisions.md).
+2026-10-13: host UX runs as one staging-only PR ([combined plan](../plans/host-ux-combined-staging.md)).
 
 ## Token budget (every AI, every session)
 

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
-from .. import access, auth, db, guest_slug, icalsync, onboarding, validation
+from .. import access, auth, db, guest_slug, icalsync, onboarding
 from ..feed_url import FeedUrlError, validate_calendar_url
 from ..templating import render
 from .admin import (
@@ -66,26 +66,6 @@ def _next_step(step: str) -> Optional[str]:
     return order[index + 1] if index + 1 < len(order) else None
 
 
-def _address_preview(apartment) -> str:
-    if not apartment:
-        return ""
-    parts = [
-        (apartment["addr_street"] or "").strip(),
-        " ".join(
-            part
-            for part in (
-                (apartment["addr_house_no"] or "").strip(),
-                (apartment["addr_orient_no"] or "").strip(),
-            )
-            if part
-        ).strip(),
-        (apartment["addr_obec_cast"] or "").strip(),
-        (apartment["addr_obec"] or "").strip(),
-        validation.normalise_zip(apartment["addr_zip"] or ""),
-    ]
-    return ", ".join(part for part in parts if part)
-
-
 def _upcoming_stays(apartment_id: int, limit: int = 5) -> List[Dict[str, Any]]:
     today = db.utcnow()[:10]
     return db.query(
@@ -128,9 +108,6 @@ def setup_get(step: str, request: Request):
         return RedirectResponse("/setup/name", status_code=303)
     template = f"setup/{step}.html"
     extra: Dict[str, Any] = {}
-    if step == "address":
-        extra["address_preview"] = _address_preview(apartment)
-        extra["split_address"] = hasattr(validation, "split_czech_address")
     if step == "bookings":
         extra["booking_sources"] = _BOOKING_SOURCES
         extra["selected_source"] = request.query_params.get("source", "")

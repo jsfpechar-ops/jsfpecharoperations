@@ -1,6 +1,6 @@
 # 0087: Remove address parsing and unnecessary host explanations
 
-Status: todo
+Status: review
 Depends on: none; run before the navigation refactor | Initial source baseline: 7b27d09402f9656b0c606c131793310925936526 | Branch: task/0087-host-copy-address-corrections | PR base: task/production-host-ux-integration
 Executor: Cursor local agent (composer, Kimi or GLM) | One scoped executor session
 

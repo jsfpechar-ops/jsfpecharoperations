@@ -1,7 +1,6 @@
 """Police setup defaults: three visible fields, derived header filled on save."""
 from __future__ import annotations
 
-import re
 import secrets
 
 import pytest
@@ -14,13 +13,6 @@ from app.host_i18n import STRINGS
 from tests.conftest import login_as
 
 USERNAME = "police-defaults-host"
-DERIVED_DETAILS_RE = re.compile(r'<details class="police-derived"([^>]*)>', re.I)
-
-
-def _derived_details_open(html: str) -> bool:
-    match = DERIVED_DETAILS_RE.search(html)
-    assert match, "police-derived details block is missing"
-    return "open" in match.group(1)
 
 
 def _cleanup():
@@ -167,16 +159,19 @@ def test_create_applies_defaults_from_login_and_operator(host):
     assert row["uby_contact"] == "operator@police-defaults.test"
 
 
-def test_property_page_keeps_derived_details_closed_when_valid(host):
+def test_property_page_shows_police_header_fields_without_derived_wrapper(host):
     entity_id = _entity()
     apartment_id = db.insert("apartment", _valid_apartment_fields(entity_id))
     page = host.get(f"/apartments/{apartment_id}?lang=en")
     assert page.status_code == 200, page.text
-    assert STRINGS["en"]["apartment.form.ubyport.derived_summary"] in page.text
-    assert not _derived_details_open(page.text)
+    assert 'name="uby_mark"' in page.text
+    assert 'name="uby_name"' in page.text
+    assert 'name="uby_contact"' in page.text
+    assert "police-derived" not in page.text
+    assert STRINGS["en"]["apartment.form.ubyport.credentials_help_heading"] in page.text
 
 
-def test_property_page_opens_derived_details_when_mark_is_missing(host):
+def test_property_page_shows_mark_error_when_abbreviation_missing(host):
     entity_id = _entity()
     apartment_id = db.insert(
         "apartment",
@@ -184,4 +179,5 @@ def test_property_page_opens_derived_details_when_mark_is_missing(host):
     )
     page = host.get(f"/apartments/{apartment_id}?lang=en")
     assert page.status_code == 200, page.text
-    assert _derived_details_open(page.text)
+    assert "The facility abbreviation (zkratka) is required." in page.text
+    assert 'id="uby_mark"' in page.text

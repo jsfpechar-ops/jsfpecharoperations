@@ -844,3 +844,30 @@ body.host-workspace {
   .host-workspace .stay-jump a { min-height: 44px; }
   .host-workspace .guest-facts-stay { margin: 0 15px; padding-bottom: 15px; }
 }
+
+/* 0093 help */
+.field-label-row { position: relative; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.field-label-row > label { margin: 0; }
+.help-tip { display: inline-flex; align-items: center; }
+.help-tip-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--line); background: white; color: var(--ink-secondary);
+  font: 700 12px/1 inherit; cursor: help; position: relative;
+}
+.help-tip-btn::after { content: ""; position: absolute; inset: -11px; } /* 44px hit area */
+.help-tip-btn:hover, .help-tip-btn[aria-expanded="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand-ink); }
+.help-tip-btn:focus-visible { outline: 3px solid var(--brand-ring, var(--brand)); outline-offset: 2px; }
+.help-tip-body {
+  display: none; position: absolute; z-index: 70; left: 0; top: 100%;
+  box-sizing: border-box; width: min(320px, calc(100vw - 16px)); max-width: calc(100vw - 16px);
+  padding: 10px 12px; background: white; color: var(--ink); border: 1px solid var(--line);
+  border-radius: 10px; box-shadow: var(--shadow-popover); font-size: 13px; font-weight: 400;
+  line-height: 1.45; text-align: left; white-space: normal; overflow-wrap: anywhere;
+}
+.help-tip-body a { color: var(--brand-ink); font-weight: 650; }
+/* No JavaScript: hover and keyboard/tap focus still reveal the text. */
+.help-tip:not([data-js]):hover > .help-tip-body,
+.help-tip:not([data-js]):focus-within > .help-tip-body { display: block; }
+.help-tip[data-js] > .help-tip-body { position: fixed; }
+.help-tip.is-open > .help-tip-body { display: block; }

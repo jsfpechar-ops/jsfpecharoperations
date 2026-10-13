@@ -89,6 +89,14 @@
       </ol>
       <p class="small muted">{{ t('guide.reporting.manual_filing_correction') }}</p>
       <p>{{ t('guide.reporting.manual_filing_duty') }}</p>
+      <h3 id="ubyport-credentials">{{ t('apartment.form.ubyport.credentials_help_heading') }}</h3>
+      <p class="small muted">{{ t('apartment.form.ubyport.intro') }}</p>
+      <p class="small" style="margin:12px 0">
+        <a class="btn small" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">
+          {{ t('automation.sample_pdf') }}</a>
+        <span class="muted">{{ t('apartment.form.ubyport.sample_help') }}</span>
+      </p>
+      <p class="small muted">{{ t('apartment.form.ubyport.mismatch_help') }}</p>
     </section>
 
     <section class="guide-section panel" id="filters">
@@ -102,7 +110,12 @@
     <section class="guide-section panel" id="housebook">
       <h2>{{ t('guide.nav.housebook') }}</h2>
       <p>{{ t('guide.housebook.body') }}</p>
-      <p class="small muted">{{ t('housebook.legal_footnote') }}</p>
+      <p class="small muted">{{ t('housebook.legal_body') }}</p>
+      <ul class="legal-list small">
+        <li>{{ t('housebook.legal_paper') }}</li>
+        <li>{{ t('housebook.legal_inspection') }}</li>
+      </ul>
+      <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
     </section>
 
     <section class="guide-section panel" id="stay_fee">

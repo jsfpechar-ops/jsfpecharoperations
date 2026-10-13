@@ -1,6 +1,6 @@
 # 0084: Verify the integrated host navigation candidate
 
-Status: blocked — depends on reviewed 0083 and every preceding implementation report.
+Status: todo — combined staging lane step 18, after 0083; see [the combined plan](../plans/host-ux-combined-staging.md).
 Depends on: 0075–0083 and 0087–0094 reviewed | Branch: task/0084-host-navigation-integration-acceptance | PR base: task/production-host-ux-integration
 Patch status: ready — verification/report only; no application patch
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
