@@ -459,8 +459,11 @@
       });
       var index = candidates.indexOf(trigger);
       var next = candidates[index + (backwards ? -1 : 1)];
-      if (next) next.focus();
+      if (next) { next.focus(); return true; }
+      return false;
     }
+
+    var lastOpenAt = 0;
 
     function closeAll() {
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
@@ -475,6 +478,7 @@
         var wasOpen = panel.classList.contains("is-open");
         closeAll();
         if (!wasOpen) {
+          lastOpenAt = Date.now();
           positionRowMenu(trigger, panel);
           trigger.setAttribute("aria-expanded", "true");
           var firstItem = panel.querySelector('[role="menuitem"]');
@@ -499,9 +503,10 @@
           closeRowMenu(panel);
           if (currentTrigger) currentTrigger.focus();
         } else if (event.key === "Tab" && currentTrigger) {
-          event.preventDefault();
           closeRowMenu(panel);
-          focusOutsideMenu(currentTrigger, event.shiftKey);
+          event.preventDefault();
+          // Nothing follows the trigger: keep focus on it rather than dropping it to the body.
+          if (!focusOutsideMenu(currentTrigger, event.shiftKey)) currentTrigger.focus();
         }
       });
     });
@@ -515,7 +520,16 @@
       if (event.key === "Escape") closeAll();
     });
     window.addEventListener("resize", closeAll);
-    window.addEventListener("scroll", closeAll, true);
+    window.addEventListener("scroll", function () {
+      // Opening a menu can scroll the page (focus, scroll-into-view); keep it open and follow the trigger.
+      if (Date.now() - lastOpenAt < 400) {
+        var open = document.querySelector(".row-menu-panel.is-open");
+        var openTrigger = open ? rowMenuTrigger(open) : null;
+        if (openTrigger) positionRowMenu(openTrigger, open);
+        return;
+      }
+      closeAll();
+    }, true);
   }
 
   function syncAutomationHours(select) {

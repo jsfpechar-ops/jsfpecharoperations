@@ -949,3 +949,53 @@ body.host-workspace {
 .settings-email-form .field { max-width: 420px; }
 .settings-groups .settings-action-row .btn { white-space: normal; }
 @media (max-width: 640px) { .settings-groups { gap: 22px; } }
+
+/* 0079 — Dashboard and Stays share one action pair: Open, then an adjacent More
+   (a square, action-height trigger). Same height and min width in both lists. */
+.host-workspace .dashboard-row-actions .btn.dashboard-open,
+.host-workspace .stays-view .btn.row-open {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 0 12px;
+  height: var(--action-height);
+  min-height: var(--action-height);
+  justify-content: center;
+  white-space: nowrap;
+}
+.host-workspace .dashboard-row-actions .row-menu-trigger,
+.host-workspace .stays-view .row-menu-trigger {
+  flex: 0 0 var(--action-height);
+  width: var(--action-height);
+  min-width: var(--action-height);
+  height: var(--action-height);
+  min-height: var(--action-height);
+  padding: 0;
+}
+.host-workspace .stays-view .row-action-pair { display: inline-flex; flex: 0 0 auto; gap: 8px; align-items: center; }
+.host-workspace .stays-view .btn.row-open { flex: 0 0 auto; }
+@container stays-list (max-width: 599.98px) {
+  /* Copy (wraps its label), Open and More share one line; Send, when present, takes its own line above. */
+  .host-workspace .stays-view td.row-actions > .row-action-pair { flex: 0 0 auto; }
+  .host-workspace .stays-view td.row-actions > [data-copy] { flex: 1 1 110px; }
+  .host-workspace .stays-view td.row-actions > .row-action-form { flex: 1 1 100%; }
+}
+/* 0079 polish: one subgrid so every row shares the same tracks; the actions track
+   is as wide as its widest content; pills and deadlines stay on one line. */
+.host-workspace .dashboard-row-actions { grid-template-columns: auto var(--action-height); }
+@container stays-list (min-width: 900px) {
+  .host-workspace .stays-view table {
+    display: grid;
+    grid-template-columns: minmax(172px, 1.3fr) minmax(135px, 1.3fr) max-content max-content max-content minmax(300px, max-content);
+    column-gap: 8px;
+  }
+  .host-workspace .stays-view thead,
+  .host-workspace .stays-view tbody { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; }
+  .host-workspace .stays-view tr { grid-column: 1 / -1; grid-template-columns: subgrid; column-gap: 8px; padding-left: 10px; padding-right: 10px; }
+  .host-workspace .stays-view thead tr { background: var(--canvas-subtle); border-radius: 8px 8px 0 0; }
+  .host-workspace .stays-view th { background: transparent; padding: 0; }
+  .host-workspace .stays-view th { white-space: nowrap; }
+  .host-workspace .stays-view .stay-col-reporting .pill,
+  .host-workspace .stays-view .stay-col-deadline,
+  .host-workspace .stays-view .stay-col-deadline .deadline { white-space: nowrap; }
+}
+.host-workspace .stays-view .stay-col-deadline .deadline.overdue { max-width: none; }
