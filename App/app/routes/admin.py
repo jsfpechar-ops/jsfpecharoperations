@@ -57,6 +57,7 @@ from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
 from . import passkeys as passkey_routes
 from . import signup as signup_routes
+from . import stay_fees as stay_fee_routes
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import flash_plural as _flash_plural
@@ -1312,39 +1313,8 @@ def _apartment_payload(form) -> Dict[str, Any]:
         policy if policy in ("off", "required_foreign") else "off"
     )
     if "stay_fee_rate_czk" in form:
-        payload["stay_fee_rate_czk"] = stay_fee.clamp_rate(
-            _form_str(form, "stay_fee_rate_czk", "0")
-        )
-        cadence = _form_str(form, "stay_fee_cadence", "monthly")
-        payload["stay_fee_cadence"] = (
-            cadence if cadence in stay_fee.CADENCES else "monthly"
-        )
-        payload["stay_fee_vs"] = (
-            "".join(ch for ch in _form_str(form, "stay_fee_vs") if ch.isdigit())[:10]
-            or None
-        )
-        for key, limit in (
-            ("stay_fee_authority_name", 200),
-            ("stay_fee_authority_address", 200),
-            ("stay_fee_authority_contact", 200),
-            ("stay_fee_payee", 60),
-            ("stay_fee_instruction", 500),
-        ):
-            payload[key] = _form_str(form, key)[:limit].strip() or None
-        payload["stay_fee_authority_databox"] = (
-            validation.normalise_databox(_form_str(form, "stay_fee_authority_databox")) or None
-        )
-        if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
-            prefix = _form_str(form, "account_prefix")
-            number = _form_str(form, "account_number")
-            bank = _form_str(form, "account_bank")
-            existing = _form_str(form, "_stay_fee_account_existing")
-            if not payments.preserve_iban_only_account(existing, prefix, number, bank):
-                payload["_stay_fee_account_raw"] = payments.compose_czech_account(
-                    prefix, number, bank
-                )
-        else:
-            payload["_stay_fee_account_raw"] = _form_str(form, "stay_fee_council_account")
+        # 0077: the one fee normaliser, shared with the legacy setup POST.
+        payload.update(stay_fee_routes.fee_form_values(form))
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
     # 0088: no activity switch. A submitted "active" value means nothing; only
@@ -1545,6 +1515,9 @@ def _render_apartment_detail(
             "has_password": bool(apartment["uby_ws_password_enc"]),
             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
             "account": payments.czech_account_parts(apartment["stay_fee_council_account"] or ""),
+            "fee_return_to": stay_fee_routes.fee_return_path(
+                request.query_params.get("return_to"), apartment["id"]
+            ),
             "fee_template_peers": [
                 peer
                 for peer in access.apartments(request)
@@ -1618,6 +1591,48 @@ def _refuse_apartment_save(
     )
 
 
+def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
+    """0077: show the one fee editor again with what the host typed and the error.
+
+    Used by the property save and the legacy fee setup POST; nothing is written.
+    """
+    draft = dict(apartment)
+    submitted = _property_draft(form)
+    for field in APARTMENT_TEXT_FIELDS:
+        if field in form:
+            draft[field] = submitted[field]
+    for key in ("legal_entity_id", "data_controller_entity_id"):
+        if key in form:
+            draft[key] = submitted[key]
+    fee_draft = stay_fee_routes.fee_form_values(form)
+    fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
+    draft.update(fee_draft)
+    copy_ctx = {
+        "copy_property_peers": [
+            row for row in access.apartments(request) if row["id"] != apartment["id"]
+        ],
+        "copy_from_id": None,
+        "property_prefill": {},
+        "copied_from_name": None,
+    }
+    return _render_apartment_detail(
+        request,
+        draft,
+        copy_ctx,
+        extra={
+            "property_view": "settings",
+            "settings_section": "reporting",
+            "account": stay_fee_routes.fee_account_draft(form),
+            "fee_account_error": True,
+            "flash_error": _flash(request, "flash.stay_fees.account_invalid"),
+            "fee_return_to": stay_fee_routes.fee_return_path(
+                _form_str(form, "fee_return_to"), apartment["id"]
+            ),
+        },
+        status_code=400,
+    )
+
+
 @router.get("/apartments/{apartment_id}/ws-request.txt")
 def apartment_ws_request_download(apartment_id: int, request: Request):
     guard = auth.require_login(request)
@@ -1657,6 +1672,9 @@ async def apartment_update(apartment_id: int, request: Request):
         msg = _flash(request, "flash.apartments.saved", fields=", ".join(missing))
     else:
         msg = _flash(request, "flash.apartments.saved_ready")
+    fee_back = stay_fee_routes.fee_return_after_save(apartment, _form_str(form, "fee_return_to"))
+    if fee_back:
+        return _back(fee_back, msg=_flash(request, "flash.stay_fees.saved"))
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
     return _back(return_to, msg=msg)
 
@@ -1757,22 +1775,10 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
                 f"/apartments/{apartment_id}#communication",
                 err=_flash(request, f"flash.error.link_name_{link_error}"),
             ), False
-    raw_account = payload.pop("_stay_fee_account_raw", None)
-    if raw_account is not None:
-        if raw_account.strip():
-            try:
-                (
-                    payload["stay_fee_council_account"],
-                    payload["stay_fee_council_iban"],
-                ) = payments.normalise_account(raw_account)
-            except ValueError:
-                return _back(
-                    f"/apartments/{apartment_id}#stay-fee-settings",
-                    err=_flash(request, "flash.stay_fees.account_invalid"),
-                ), False
-        else:
-            payload["stay_fee_council_account"] = None
-            payload["stay_fee_council_iban"] = None
+    try:
+        stay_fee_routes.apply_fee_account(payload)
+    except ValueError:
+        return refuse_fee_save(request, apartment, form), False
     # AR-18: the refused-login pause exists so the police account is not
     # hammered every ten minutes. Only replacing the credentials may lift it;
     # renaming the property or moving the PIN must not resume the retries.

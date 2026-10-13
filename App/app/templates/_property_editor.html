@@ -51,6 +51,7 @@
 
 <form method="post" action="{{ base_url }}" class="property-settings-form" id="property-settings-form" data-property-settings-form>
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
+  {% if fee_return_to %}<input type="hidden" name="fee_return_to" value="{{ fee_return_to }}">{% endif %}
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   {# The first submit button is the one Enter activates. Without this, Enter in
      any field posted to the credentials test and dropped every edit. #}
@@ -304,6 +305,9 @@
 
     <section class="panel property-section" id="stay-fee-settings">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}</h3>{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</div>
+      {% if fee_return_to %}
+      <p class="small fee-return-note"><a href="{{ fee_return_to }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.setup.back_to_report') }}</a></p>
+      {% endif %}
       {% if fee_template_peers %}
       <div class="field">
         {{ field_label('fee-copy-source', t('apartment.form.stay_fee.copy_label'), t('apartment.form.stay_fee.copy_hint')) }}

@@ -4,6 +4,7 @@ from __future__ import annotations
 import sqlite3
 import unicodedata
 from datetime import date
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
@@ -157,6 +158,7 @@ def stay_fees_list(request: Request):
         "periods": rows,
         "selected_month": selected_month,
         "has_properties": bool(apartments),
+        **_fee_links(_list_return(request)),
         **list_filter.context(
             view,
             action="/stay-fees",
@@ -168,7 +170,18 @@ def stay_fees_list(request: Request):
     })
 
 
-def _fee_values(form) -> dict:
+# 0077: the one normaliser for the stay-fee fields of _stay_fee_fields.html.
+# The property save (admin._apartment_payload) and the legacy setup POST both
+# use it, so a field cannot be read two different ways.
+FEE_ACCOUNT_RAW = "_stay_fee_account_raw"
+
+
+def fee_form_values(form) -> dict:
+    """Normalised fee fields. The account is left raw under FEE_ACCOUNT_RAW.
+
+    The raw key is absent when an all-empty domestic form would otherwise
+    wipe a stored IBAN-only account: the stored account is then kept.
+    """
     rate = stay_fee.clamp_rate(_form_str(form, "stay_fee_rate_czk", "0"))
     cadence = _form_str(form, "stay_fee_cadence", "monthly")
     values = {
@@ -177,54 +190,142 @@ def _fee_values(form) -> dict:
         "stay_fee_vs": (
             "".join(ch for ch in _form_str(form, "stay_fee_vs") if ch.isdigit())[:10] or None
         ),
-        "stay_fee_authority_name": _form_str(form, "stay_fee_authority_name")[:200].strip() or None,
-        "stay_fee_authority_address": _form_str(form, "stay_fee_authority_address")[:200].strip() or None,
-        "stay_fee_authority_contact": _form_str(form, "stay_fee_authority_contact")[:200].strip() or None,
-        "stay_fee_authority_databox": (
-            validation.normalise_databox(_form_str(form, "stay_fee_authority_databox")) or None
-        ),
-        "stay_fee_payee": _form_str(form, "stay_fee_payee")[:60].strip() or None,
-        "stay_fee_instruction": _form_str(form, "stay_fee_instruction")[:500].strip() or None,
     }
-    raw = None
+    for key, limit in (
+        ("stay_fee_authority_name", 200),
+        ("stay_fee_authority_address", 200),
+        ("stay_fee_authority_contact", 200),
+        ("stay_fee_payee", 60),
+        ("stay_fee_instruction", 500),
+    ):
+        values[key] = _form_str(form, key)[:limit].strip() or None
+    values["stay_fee_authority_databox"] = (
+        validation.normalise_databox(_form_str(form, "stay_fee_authority_databox")) or None
+    )
     if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
         prefix = _form_str(form, "account_prefix")
         number = _form_str(form, "account_number")
         bank = _form_str(form, "account_bank")
         existing = _form_str(form, "_stay_fee_account_existing")
-        if payments.preserve_iban_only_account(existing, prefix, number, bank):
-            return values
-        raw = payments.compose_czech_account(prefix, number, bank)
+        if not payments.preserve_iban_only_account(existing, prefix, number, bank):
+            values[FEE_ACCOUNT_RAW] = payments.compose_czech_account(prefix, number, bank)
     else:
-        raw = _form_str(form, "stay_fee_council_account")
-    if raw is not None:
-        if raw.strip():
-            account, iban = payments.normalise_account(raw)
-            values["stay_fee_council_account"] = account
-            values["stay_fee_council_iban"] = iban
-        else:
-            values["stay_fee_council_account"] = None
-            values["stay_fee_council_iban"] = None
+        values[FEE_ACCOUNT_RAW] = _form_str(form, "stay_fee_council_account")
     return values
+
+
+def apply_fee_account(values: dict) -> None:
+    """Turn the raw account into stored account/IBAN. Raise ValueError when invalid."""
+    raw = values.pop(FEE_ACCOUNT_RAW, None)
+    if raw is None:
+        return
+    if raw.strip():
+        values["stay_fee_council_account"], values["stay_fee_council_iban"] = (
+            payments.normalise_account(raw)
+        )
+    else:
+        values["stay_fee_council_account"] = None
+        values["stay_fee_council_iban"] = None
+
+
+def fee_account_draft(form) -> dict:
+    """The account fields as typed, for the editor after a refused save."""
+    return {
+        "prefix": _form_str(form, "account_prefix"),
+        "number": _form_str(form, "account_number"),
+        "bank": _form_str(form, "account_bank"),
+        "iban": "",
+    }
+
+
+def _fee_values(form) -> dict:
+    values = fee_form_values(form)
+    apply_fee_account(values)
+    return values
+
+
+def fee_return_path(raw, apartment_id: int) -> str:
+    """A validated way back to the fee list or this property's fee report, or ''."""
+    path = security.safe_local_path(raw, "") if raw else ""
+    if not path:
+        return ""
+    if path.split("?", 1)[0] in ("/stay-fees", f"/stay-fees/{apartment_id}"):
+        return path
+    return ""
+
+
+def fee_settings_url(apartment_id: int, return_to: str = "") -> str:
+    """The canonical fee editor: property Settings -> Reporting & fees -> Stay fee."""
+    url = f"/apartments/{apartment_id}?view=settings&section=reporting"
+    back = fee_return_path(return_to, apartment_id)
+    if back:
+        url += "&return_to=" + quote(back, safe="")
+    return url + "#stay-fee-settings"
+
+
+def fee_operator_url(apartment, return_to: str = "") -> str:
+    """Where a missing payer is fixed: the assigned business, else the property's operator choice."""
+    if apartment["legal_entity_id"]:
+        return f"/entities?edit={apartment['legal_entity_id']}"
+    url = f"/apartments/{apartment['id']}?view=settings&section=property"
+    back = fee_return_path(return_to, apartment["id"])
+    if back:
+        url += "&return_to=" + quote(back, safe="")
+    return url + "#settings-property"
+
+
+def _list_return(request: Request) -> str:
+    """This fee list with its period and filters (a one-off ?lang= is not kept)."""
+    query = urlencode([(k, v) for k, v in request.query_params.multi_items() if k != "lang"])
+    return "/stay-fees" + (f"?{query}" if query else "")
+
+
+def _fee_links(return_to: str) -> dict:
+    return {
+        "fee_return": return_to,
+        "fee_settings_url": fee_settings_url,
+        "fee_operator_url": fee_operator_url,
+    }
+
+
+def fee_return_after_save(apartment, return_to: str) -> str:
+    """Where a save that came from a fee page lands, or ''.
+
+    A property whose rate is now 0 has no report to open, so its report
+    link falls back to the fee list of the same month.
+    """
+    back = fee_return_path(return_to, apartment["id"])
+    if not back:
+        return ""
+    split = urlsplit(back)
+    if split.path != "/stay-fees" and not stay_fee.is_active(apartment):
+        month = stay_fee.parse_month(dict(parse_qsl(split.query)).get("month"))
+        return f"/stay-fees?month={stay_fee.month_key(month)}" if month else "/stay-fees"
+    return back
 
 
 @router.get("/stay-fees/{apartment_id}/setup")
 def stay_fee_setup(apartment_id: int, request: Request):
+    """Legacy setup URL: lands on the one fee editor, keeping the way back."""
     guard = auth.require_login(request)
     if guard:
         return guard
     apartment = access.apartment(request, apartment_id)
     if not apartment or apartment["archived_at"] or not apartment["active"]:
         return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
-    return render(request, "stay_fee_setup.html", {
-        "nav": "stay_fees",
-        "apartment": apartment,
-        "account": payments.czech_account_parts(apartment["stay_fee_council_account"] or ""),
-    })
+    back = fee_return_path(request.query_params.get("return_to"), apartment_id)
+    if not back:
+        today = claim.prague_today()
+        month = stay_fee.parse_month(request.query_params.get("month"))
+        if month is None or month > today.replace(day=1):
+            month = _default_month(today)
+        back = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    return RedirectResponse(fee_settings_url(apartment_id, back), status_code=303)
 
 
 @router.post("/stay-fees/{apartment_id}/setup")
 async def stay_fee_setup_save(apartment_id: int, request: Request):
+    """Legacy setup POST: the same fee-only save, never the whole property saver."""
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -235,19 +336,21 @@ async def stay_fee_setup_save(apartment_id: int, request: Request):
     try:
         values = _fee_values(form)
     except ValueError:
-        return _back(
-            f"/stay-fees/{apartment_id}/setup",
-            err=_flash(request, "flash.stay_fees.account_invalid"),
-        )
+        from .admin import refuse_fee_save
+
+        return refuse_fee_save(request, apartment, form)
     db.update("apartment", apartment_id, values)
     db.audit("stay_fee_setup", f"apartment_id={apartment_id}")
+    saved = _flash(request, "flash.stay_fees.saved")
+    back = fee_return_after_save(
+        {**dict(apartment), **values}, _form_str(form, "fee_return_to")
+    )
+    if back:
+        return _back(back, msg=saved)
     month = stay_fee.month_key(_default_month(claim.prague_today()))
     if values["stay_fee_rate_czk"] <= 0:
-        return _back("/stay-fees", msg=_flash(request, "flash.stay_fees.saved"))
-    return _back(
-        f"/stay-fees/{apartment_id}?month={month}",
-        msg=_flash(request, "flash.stay_fees.saved"),
-    )
+        return _back("/stay-fees", msg=saved)
+    return _back(f"/stay-fees/{apartment_id}?month={month}", msg=saved)
 
 
 @router.get("/stay-fees/{apartment_id}")
@@ -317,6 +420,7 @@ def stay_fee_detail(apartment_id: int, request: Request):
         "filing_version": period.get("version") if period else None,
         "exempt_categories": stay_fee.EXEMPT_CATEGORIES,
         "send_panel": send_panel,
+        **_fee_links(f"/stay-fees/{apartment_id}?month={stay_fee.month_key(selected_month)}"),
     })
 
 

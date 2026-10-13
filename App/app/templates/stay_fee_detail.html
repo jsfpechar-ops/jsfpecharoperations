@@ -78,9 +78,9 @@
   <li class="warn-text small">
     {{ t(issue) }}
     {% if issue == 'stay_fees.issue.no_vs' or issue == 'stay_fees.issue.no_authority' %}
-      <a href="/apartments/{{ apartment.id }}#stay-fee-settings">{{ t('host.fix_details') }}</a>
+      <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('host.fix_details') }}</a>
     {% elif issue == 'stay_fees.issue.no_payer' %}
-      <a href="/entities">{{ t('nav.entities') }}</a>
+      <a href="{{ fee_operator_url(apartment, fee_return) }}">{{ t('nav.entities') }}</a>
     {% endif %}
   </li>
 {% endfor %}
@@ -119,7 +119,7 @@
       {{ copy_button('fee-send-recipient') }}
     </div>
     {% if not send_panel.databox %}
-    <p class="small warn-text">{{ t('stay_fees.send.missing_databox') }} <a href="/apartments/{{ apartment.id }}#stay-fee-settings">{{ t('stay_fees.send.add_databox') }}</a></p>
+    <p class="small warn-text">{{ t('stay_fees.send.missing_databox') }} <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.send.add_databox') }}</a></p>
     {% else %}
     <div class="field">
       <label for="fee-send-databox">{{ t('stay_fees.send.databox') }}</label>

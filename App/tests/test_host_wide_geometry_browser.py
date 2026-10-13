@@ -44,7 +44,8 @@ CAPTURE_ROUTES = {
     "invoices": ("/invoices", ".panel.tight.scroll-x, .panel.empty"),
     "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
-    "fee-setup": ("/stay-fees/{unconfigured_apartment}/setup", ".panel"),
+    # 0077: the legacy URL redirects to property Settings -> Reporting & fees -> Stay fee.
+    "fee-setup": ("/stay-fees/{unconfigured_apartment}/setup", ".property-settings"),
     "fee-detail": ("/stay-fees/{configured_apartment}", ".stay-fee-detail, .panel"),
     "invoice-new-picker": ("/invoices/new", ".panel"),
     "invoice-new-selected": ("/invoices/new?entity={entity_id}&reservation_id={reservation_id}", ".invoice-workspace, .invoice-stay-picker"),
@@ -601,13 +602,17 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
 
 
 def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
-    """The fee setup/detail back links share the centered header lane."""
+    """The fee detail back link shares the centered header lane.
+
+    0077: the setup page is gone; its URL lands on the property fee editor,
+    whose header and Stay fee section are checked here instead.
+    """
     output_dir = Path("/workspace/generated_images/host-wide-audit/after")
     output_dir.mkdir(parents=True, exist_ok=True)
     routes = (
-        f"/stay-fees/{wide_host['unconfigured_apartment']}/setup",
         f"/stay-fees/{wide_host['configured_apartment']}",
     )
+    setup = f"/stay-fees/{wide_host['unconfigured_apartment']}/setup"
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = browser.new_context(viewport={"width": 1920, "height": 1000})
@@ -633,6 +638,15 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
                     page.screenshot(path=str(output_dir / (
                         f"after-fee-backlink-{lang}-{width}-{index}.png"
                     )))
+                response = page.goto(f"{wide_base}{setup}?lang={lang}")
+                assert response and response.status == 200
+                page.wait_for_load_state("networkidle")
+                assert f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting" in page.url
+                header = page.locator(".page-header").first.bounding_box()
+                section = page.locator("#stay-fee-settings").bounding_box()
+                assert header and section and section["width"] > 0
+                assert section["x"] >= header["x"] - 2
+                assert section["x"] + section["width"] <= header["x"] + header["width"] + 2
         context.close()
         browser.close()
 
