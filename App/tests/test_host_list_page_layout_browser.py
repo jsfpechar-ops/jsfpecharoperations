@@ -181,7 +181,9 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
         assert "<button" not in nav.group(1) and "<form" not in nav.group(1), path
     # Two businesses: Business & legal details opens the list, never one record.
     assert '<a class="sub-tab" href="/entities">' in client.get("/apartments").text
-    assert 'href="/invoices/settings"' in client.get("/invoices").text
+    # 0101: Invoice settings with two businesses opens the list to pick one.
+    invoices = client.get("/invoices").text
+    assert '<a class="sub-tab" href="/entities">' in invoices and "/invoices/settings" not in invoices
     # Stay fees has no sub-pages (fee settings live in each property).
     assert "data-sub-tabs" not in client.get("/stay-fees").text
     # Property pages keep their own local tabs, not the section tabs.

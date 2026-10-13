@@ -210,7 +210,8 @@ def test_the_empty_state_still_shows_one_primary_button(empty_host):
 
 def test_the_header_cta_is_hidden_while_the_list_is_empty(empty_host):
     """The empty state already names the one first step, so the header stays quiet."""
-    assert 'href="/apartments/new"' not in empty_host.get("/apartments?lang=en").text
+    # 0101: the setup banner may link the create page itself; the header CTA may not.
+    assert 'class="btn primary sync-btn" href="/apartments/new"' not in empty_host.get("/apartments?lang=en").text
 
 
 def test_the_header_cta_is_back_once_there_is_a_property(host):

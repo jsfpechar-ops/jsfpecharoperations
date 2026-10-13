@@ -1893,7 +1893,7 @@
   /* 0094: property Overview / Bookings & calendars / Settings.
      Every view and settings group is already in the page; switching only shows
      another one, so the one settings form keeps whatever the host typed. Links
-     and old #hashes keep working, history follows, and a dirty form asks before
+     carry ?view=&section= (plus a #hash to scroll), history follows, and a dirty form asks before
      the page is left. Without JavaScript the same links reload with ?view=. */
   function initPropertyViews() {
     var root = document.querySelector("[data-property-views]");
@@ -1902,14 +1902,6 @@
     var base = root.getAttribute("data-property-base");
     var VIEWS = ["overview", "bookings", "settings"];
     var SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
-    // 0096: Door lock is its own group; old #door-code links land there.
-    var HASHES = {
-      basics: ["settings", "property"], address: ["settings", "property"],
-      communication: ["settings", "guests"], "door-code": ["settings", "lock"],
-      ubyport: ["settings", "reporting"], "ws-request-letter": ["settings", "reporting"],
-      "stay-fee-settings": ["settings", "reporting"], automation: ["settings", "automation"],
-      calendars: ["bookings"], "calendar-connect": ["bookings"]
-    };
     var form = root.querySelector("[data-property-settings-form]");
     var returnInput = form && form.querySelector("[data-property-return]");
     var connect = root.querySelector("[data-calendar-connect]");
@@ -1922,10 +1914,9 @@
       try { return document.getElementById(decodeURIComponent(hash.slice(1))); } catch (_) { return null; }
     }
 
-    // Where a URL points: [view, section] from the hash first, then ?view/?section.
+    // Where a URL points: [view, section] of the element the hash names in
+    // this page, else ?view/?section (0101: no table of old hashes).
     function destination(url) {
-      var hash = url.hash ? url.hash.slice(1) : "";
-      if (HASHES[hash]) return HASHES[hash];
       var target = hashTarget(url.hash);
       if (target && root.contains(target)) {
         var panel = target.closest("[data-property-view]");

@@ -197,7 +197,7 @@ def test_another_hosts_guest_is_never_used(host):
 def test_settings_save_derives_bic_but_keeps_a_typed_one(host):
     entity_id = _add_entity(bic=None)
     host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={
             "legal_entity_id": str(entity_id),
             "bank_account": "19-2000781379/0800",
@@ -209,7 +209,7 @@ def test_settings_save_derives_bic_but_keeps_a_typed_one(host):
     assert row["bic"] == "GIBACZPX"
 
     host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={
             "legal_entity_id": str(entity_id),
             "bank_account": "19-2000781379/0800",

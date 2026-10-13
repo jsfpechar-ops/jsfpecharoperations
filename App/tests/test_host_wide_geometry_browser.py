@@ -44,13 +44,13 @@ CAPTURE_ROUTES = {
     "invoices": ("/invoices", ".panel.tight.scroll-x, .panel.empty"),
     "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
-    # 0077: the legacy URL redirects to property Settings -> Reporting & fees -> Stay fee.
-    "fee-setup": ("/stay-fees/{unconfigured_apartment}/setup", ".property-settings"),
+    # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
+    "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=reporting", ".property-settings"),
     "fee-detail": ("/stay-fees/{configured_apartment}", ".stay-fee-detail, .panel"),
     "invoice-new-picker": ("/invoices/new", ".panel"),
     "invoice-new-selected": ("/invoices/new?entity={entity_id}&reservation_id={reservation_id}", ".invoice-workspace, .invoice-stay-picker"),
-    # 0076: the legacy URL opens the business editor; its panel is the result lane.
-    "invoice-settings": ("/invoices/settings?entity={entity_id}", ".entity-form"),
+    # 0076/0101: Invoice settings is the business editor; its panel is the result lane.
+    "invoice-settings": ("/entities?edit={entity_id}&next=/invoices", ".entity-form"),
     "invoice-detail": ("/invoices/{invoice_id}", ".invoice-workspace"),
     "property-new": ("/apartments/new", ".property-create-lane"),  # 0092: form + follow-up panel
     "stay-detail": ("/reservations/{reservation_id}", ".reservation-detail, .panel"),
@@ -605,15 +605,15 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
 def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
     """The fee detail back link shares the centered header lane.
 
-    0077: the setup page is gone; its URL lands on the property fee editor,
-    whose header and Stay fee section are checked here instead.
+    0077: the setup page is gone (0101: so is its URL); the property fee
+    editor's header and Stay fee section are checked here instead.
     """
     output_dir = Path("/workspace/generated_images/host-wide-audit/after")
     output_dir.mkdir(parents=True, exist_ok=True)
     routes = (
         f"/stay-fees/{wide_host['configured_apartment']}",
     )
-    setup = f"/stay-fees/{wide_host['unconfigured_apartment']}/setup"
+    setup = f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting"
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = browser.new_context(viewport={"width": 1920, "height": 1000})
@@ -639,7 +639,7 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
                     page.screenshot(path=str(output_dir / (
                         f"after-fee-backlink-{lang}-{width}-{index}.png"
                     )))
-                response = page.goto(f"{wide_base}{setup}?lang={lang}")
+                response = page.goto(f"{wide_base}{setup}&lang={lang}")
                 assert response and response.status == 200
                 page.wait_for_load_state("networkidle")
                 assert f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting" in page.url

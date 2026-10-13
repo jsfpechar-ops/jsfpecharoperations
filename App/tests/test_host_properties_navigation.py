@@ -188,9 +188,10 @@ def test_lock_account_link_only_when_connected(host):
 # --- legacy hub URLs and Search ----------------------------------------------------
 
 def test_hub_redirects_for_none_one_and_many(host):
-    for path in ("/guest-links", "/automation"):
-        response = host.get(path, follow_redirects=False)
-        assert response.headers["location"] == "/apartments#property-summaries"
+    # 0101: /guest-links stays for e-mails already sent; /automation is gone.
+    response = host.get("/guest-links", follow_redirects=False)
+    assert response.headers["location"] == "/apartments#property-summaries"
+    assert host.get("/automation", follow_redirects=False).status_code == 404
     entity_id = _entity()
     first = _property("Byt Alfa", entity_id)
     assert host.get("/guest-links", follow_redirects=False).headers["location"] == (
@@ -200,12 +201,12 @@ def test_hub_redirects_for_none_one_and_many(host):
     assert f"/apartments/{first}?view=settings&section=guests#communication" in urls
     assert f"/apartments/{first}?view=settings&section=automation#automation" in urls
     _property("Chata Beta", entity_id)
-    assert host.get("/automation", follow_redirects=False).headers["location"] == (
+    assert host.get("/guest-links", follow_redirects=False).headers["location"] == (
         "/apartments#property-summaries")
     urls = {item.get("url") for item in host.get("/api/command-palette").json()["items"]}
     assert "/apartments#property-summaries" in urls
-    assert {"/apartments", "/entities", "/invoices/settings"} <= urls
-    assert "/guest-links" not in urls and "/automation" not in urls
+    assert {"/apartments", "/entities", f"/entities?edit={entity_id}&next=/invoices#entity-invoice"} <= urls
+    assert not {"/guest-links", "/automation", "/invoices/settings"} & urls
 
 
 # --- browser: list and summary fit 360-2048, EN and CS -----------------------------

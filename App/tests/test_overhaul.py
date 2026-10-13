@@ -330,7 +330,7 @@ def test_reservation_detail_shows_direct_guest_link():
         assert "Edit stay details" in page.text
         assert 'class="panel stay-command-panel"' in page.text
         assert page.text.count('name="expected_guests_override"') == 1
-        assert f'href="/apartments/{apartment_id}#communication"' in page.text
+        assert f'href="/apartments/{apartment_id}?view=settings&amp;section=guests#communication"' in page.text
     finally:
         _cleanup()
 

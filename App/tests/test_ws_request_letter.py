@@ -93,14 +93,12 @@ def letter_world():
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 
-def test_old_download_url_lands_on_police_reporting(letter_world):
+def test_old_download_url_is_gone(letter_world):
+    """0101: the 0097 redirect was removed with the other old links."""
     client = letter_world["client_a"]
     apartment_id = letter_world["apartment_id"]
     response = client.get(f"/apartments/{apartment_id}/ws-request.txt", follow_redirects=False)
-    assert response.status_code == 303
-    assert response.headers["location"] == (
-        f"/apartments/{apartment_id}?view=settings&section=reporting#ubyport"
-    )
+    assert response.status_code == 404
 
 
 def test_old_download_url_is_not_found_for_other_owner(letter_world):
@@ -126,11 +124,13 @@ def test_section_has_one_fine_print_line_and_no_letter(letter_world, ws_user, la
         assert gone not in text, gone
     # One fine-print line under the credential fields, linking the police page.
     assert section.count(POLICE_PAGE) == 1
-    line = section.split('id="ws-request-letter"', 1)[1].split("</p>", 1)[0]
+    line = section.split('class="small muted police-no-credentials"', 1)[1].split("</p>", 1)[0]
     assert POLICE_PAGE in line and 'target="_blank"' in line and 'rel="noopener"' in line
     assert STRINGS[lang]["apartment.form.ubyport.no_credentials"] in line
     # It sits after the password field and before the abbreviation.
-    assert section.index('id="uby_ws_password"') < section.index('id="ws-request-letter"') < section.index('id="uby_mark"')
+    assert 'id="ws-request-letter"' not in text
+    marker = 'class="small muted police-no-credentials"'
+    assert section.index('id="uby_ws_password"') < section.index(marker) < section.index('id="uby_mark"')
     db.update("apartment", apartment_id, {"uby_ws_user": ""})
 
 

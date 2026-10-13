@@ -146,7 +146,7 @@ The main path is **Add property → connect booking calendar or add a stay manua
 
 ### Global guest links and automation
 
-`/guest-links` and `/automation` remain working overviews for multi-property management and old links. They are reached from overview links on the Properties landing page and Search. Each row links to the property's exact setting, so edits occur in context. Keep PIN, resend, automation, test connection, and error details as supported today. Avoid a global “on/off” appearance if settings are per property. Preserve shared-lock account setup, contextual property links and return navigation.
+0101: `/automation` is removed; `/guest-links` stays only as a redirect for lifecycle e-mails already sent. The cross-property overview is the Properties summary (`/apartments#property-summaries`), reached from the Properties landing page and Search. Each row links to the property's exact setting, so edits occur in context. Keep PIN, resend, automation, test connection, and error details as supported today. Avoid a global “on/off” appearance if settings are per property. Preserve shared-lock account setup, contextual property links and return navigation.
 
 ## 7. Invoices
 

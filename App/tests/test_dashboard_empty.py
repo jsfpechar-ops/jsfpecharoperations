@@ -101,7 +101,7 @@ def test_without_a_calendar_the_empty_state_asks_for_one(host):
         "No stays yet. Connect a booking calendar so arrivals appear here automatically."
         in page.text
     )
-    assert f'href="/apartments/{apartment_id}#calendars"' in page.text
+    assert f'href="/apartments/{apartment_id}?view=bookings#calendars"' in page.text
     assert "Connect a calendar" in page.text
 
 

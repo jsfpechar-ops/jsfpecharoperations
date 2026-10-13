@@ -120,19 +120,10 @@ def test_guest_links_redirects_to_apartments_with_two(two_properties):
     assert response.headers["location"] == "/apartments#property-summaries"
 
 
-def test_automation_redirects_to_automation_anchor_with_one_property(host):
-    client, apartment_id = host
-    response = client.get("/automation", follow_redirects=False)
-    assert response.status_code == 303
-    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=automation#automation"
-
-
-def test_automation_redirects_to_apartments_with_two(two_properties):
+def test_the_old_automation_hub_is_gone(two_properties):
+    """0101: /automation was removed (no e-mail links it, unlike /guest-links)."""
     client, _first, _second = two_properties
-    response = client.get("/automation", follow_redirects=False)
-    assert response.status_code == 303
-    # 0078: several properties land on the Properties summary, not a record.
-    assert response.headers["location"] == "/apartments#property-summaries"
+    assert client.get("/automation", follow_redirects=False).status_code == 404
 
 
 def test_property_save_without_automation_fields_preserves_timing(host):

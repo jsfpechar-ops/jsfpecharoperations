@@ -170,7 +170,7 @@ def test_lock_setup_flow_keeps_its_place(world):
         for lang in ("en", "cs"):
             _reset(world)
             context, page = _page(browser, world, 1280)
-            page.goto(f"{base}/apartments/{apartment}?lang={lang}#door-code")
+            page.goto(f"{base}/apartments/{apartment}?view=settings&section=lock&lang={lang}#door-code")
             _settle(page)
             assert page.locator("#door-code").is_visible()  # 0094: Settings → Guest experience, no fold
             _in_view(page, "#door-code")

@@ -421,7 +421,7 @@ def _template_section_tabs(request: Request, section: str, current: str = "") ->
     elif section == "invoices":
         items = [
             ("invoices", "/invoices", "nav.invoices"),
-            ("settings", "/invoices/settings", "host.invoice_settings"),
+            ("settings", access.invoice_details_url(request), "host.invoice_settings"),
         ]
     elif section == "settings":
         items = [
