@@ -466,8 +466,11 @@ def test_the_invoice_settings_form_keeps_its_contract(host):
     page = host.get(f"/invoices/settings?entity={entity_id}&lang=en").text
     form = _form_body(page, f'<form method="post" action="/entities/{entity_id}/invoice" data-unsaved-guard>')
     assert 'name="_csrf"' in form and f'name="legal_entity_id" value="{entity_id}"' in form
+    # One IČO per business: the lookup sends the saved Business details value
+    # (hidden), never a second editable IČO box.
+    assert 'id="lookup_ico"' not in form
     ico = _tag(form, "ico")
-    assert 'id="lookup_ico"' in ico and 'maxlength="8"' in ico and " required" not in ico
+    assert 'type="hidden"' in ico
     assert 'name="fill_from_register" value="1" formnovalidate' in form
     for name, needle in (("account_prefix", 'maxlength="6"'), ("account_number", 'maxlength="10"'),
                          ("account_bank", 'maxlength="4"'), ("bic", 'type="text"'),

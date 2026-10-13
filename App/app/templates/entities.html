@@ -4,7 +4,7 @@
 
 {% block content %}
 {% from "_components.html" import page_header, breadcrumb, onboarding_banner, row_menu_begin, row_menu_end, help_tip with context %}
-{% from "_entity_business_fields.html" import business_form_body, ico_field, register_messages with context %}
+{% from "_entity_business_fields.html" import business_form_body, ico_field, register_messages, register_lookup_saved with context %}
 {% from "_entity_invoice_fields.html" import invoice_fields with context %}
 <style>
   .entities-page tbody tr .row-actions > * { opacity: 1; }
@@ -63,9 +63,7 @@
       <input type="hidden" name="legal_entity_id" value="{{ edit_entity.id }}">
       {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
       <input type="hidden" name="_invoice_account_existing" value="{{ invoice_entity.bank_account or invoice_entity.iban or '' }}">
-      {% call ico_field('lookup_ico', invoice_entity.ico, 'lookup') %}
-        {{ register_messages(invoice.ares_error, invoice.ares_note, invoice.ares_vat_found) }}
-      {% endcall %}
+      {{ register_lookup_saved(edit_entity.ico, invoice.ares_error, invoice.ares_note, invoice.ares_vat_found) }}
       {{ invoice_fields(invoice_entity, invoice.bank_parts, invoice.bic_from_bank, invoice.account_error) }}
       <div class="actions"><button class="btn primary" type="submit">{{ t('common.save') }}</button></div>
     </form>

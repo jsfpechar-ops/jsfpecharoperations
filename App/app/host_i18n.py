@@ -6245,6 +6245,20 @@ _PROPERTIES_0078_STRINGS = {
 for _lang, _strings in _PROPERTIES_0078_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# Coordinator: one IČO per business in the editor (register lookup uses it).
+_REGISTER_LOOKUP_STRINGS = {
+    "en": {
+        "entities.register_lookup.uses": "Register lookup uses IČO %(ico)s from Business details.",
+        "entities.register_lookup.needs_ico": "To fill invoice details from the register, add the IČO in",
+    },
+    "cs": {
+        "entities.register_lookup.uses": "Vyhledání v registru použije IČO %(ico)s z firemních údajů.",
+        "entities.register_lookup.needs_ico": "Pro doplnění fakturačních údajů z registru vyplňte IČO v sekci",
+    },
+}
+for _lang, _strings in _REGISTER_LOOKUP_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

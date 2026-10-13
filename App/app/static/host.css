@@ -1151,3 +1151,6 @@ body.host-workspace {
 .property-summaries-head { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 12px; }
 .property-summaries-title { flex: 1 1 0; min-width: 0; margin: 0; padding: 8px 14px; font-size: 15px; background: var(--brand-soft); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); }
 .property-summary-link { overflow-wrap: anywhere; }
+
+.host-workspace .entity-register-lookup { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.host-workspace .entity-register-lookup > p { margin: 0; }

@@ -90,3 +90,19 @@
   {{ business_fields(prefix, entity) }}
   {{ signature_fields(prefix, entity, preview) }}
 {% endmacro %}
+
+
+{#- Invoice details lookup: one IČO per business, so the lookup sends the saved
+    Business details value instead of offering a second IČO box. -#}
+{% macro register_lookup_saved(ico, ares_error=none, ares_note=none, ares_vat_found=false) %}
+  <div class="field entity-register-lookup">
+    {% if ico %}
+    <input type="hidden" name="ico" value="{{ ico }}">
+    <p class="small">{{ t('entities.register_lookup.uses', ico=ico) }}</p>
+    <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
+    {% else %}
+    <p class="small muted">{{ t('entities.register_lookup.needs_ico') }} <a href="#entity-business">{{ t('entities.section.business') }} →</a></p>
+    {% endif %}
+    {{ register_messages(ares_error, ares_note, ares_vat_found) }}
+  </div>
+{% endmacro %}
