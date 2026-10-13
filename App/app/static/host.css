@@ -521,24 +521,80 @@ body.host-workspace {
 .host-workspace .range-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
 .host-workspace .range-draft-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .host-workspace .range-draft-fields .field { min-width: 0; margin: 0; }
-@media (min-width: 961px) {
-  .host-workspace .stays-view table {
-    width: 100%;
-    table-layout: fixed;
-  }
-  .host-workspace .stays-view .stay-col-stay { width: 13.5%; }
-  .host-workspace .stays-view .stay-col-property { width: 15.5%; }
-  .host-workspace .stays-view .stay-col-source { width: 11.5%; }
-  .host-workspace .stays-view .stay-col-guests { width: 7%; }
-  .host-workspace .stays-view .stay-col-reporting { width: 14%; }
-  .host-workspace .stays-view .stay-col-deadline { width: 11.5%; }
-  .host-workspace .stays-view .stay-col-actions { width: 27%; }
+/* 0091 — stays fit the content lane, not the viewport. .stays-view is a named
+   inline-size container: the sidebar (expanded/collapsed) changes the lane, so
+   labelled cards replace the seven-column table once the lane is <= 1100px. */
+.host-workspace .stays-view {
+  container-name: stays-list;
+  container-type: inline-size;
+  min-width: 0;
+  overflow: visible;
 }
-@media (min-width: 721px) and (max-width: 1100px) {
-  /* Switch this dense operational table to labeled cards before the page
-     lane becomes too narrow for its seven desktop columns. */
-  .host-workspace .stays-view { overflow: visible; }
-  .host-workspace .stays-view table { display: block; width: 100%; min-width: 0; }
+.host-workspace .stays-view table { width: 100%; min-width: 0; table-layout: fixed; }
+.host-workspace .stays-view .stay-col-stay { width: 13.5%; }
+.host-workspace .stays-view .stay-col-property { width: 15.5%; }
+.host-workspace .stays-view .stay-col-source { width: 11.5%; }
+.host-workspace .stays-view .stay-col-guests { width: 7%; }
+.host-workspace .stays-view .stay-col-reporting { width: 14%; }
+.host-workspace .stays-view .stay-col-deadline { width: 11.5%; }
+.host-workspace .stays-view .stay-col-actions { width: 27%; }
+.host-workspace .stays-view td,
+.host-workspace .stays-view .stay-col-stay,
+.host-workspace .stays-view .stay-col-stay .row-primary-link,
+.host-workspace .stays-view .stay-col-deadline { white-space: normal; overflow-wrap: anywhere; }
+.host-workspace .stay-portal-link { white-space: nowrap; }
+.host-workspace .stays-view .stay-col-reporting .pill {
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+}
+.host-workspace .stays-view .stay-col-deadline .deadline {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+}
+.host-workspace .stays-view .stay-col-deadline .deadline.overdue {
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+/* Row actions wrap as whole controls; nothing is clipped or squeezed. */
+.host-workspace .stays-view td.stay-col-actions {
+  white-space: normal;
+  overflow-wrap: normal;
+  min-width: 0;
+}
+.host-workspace .stays-view td.row-actions > * { vertical-align: middle; margin: 0 8px 8px 0; }
+.host-workspace .stays-view td.row-actions > .row-menu { margin-right: 0; }
+.host-workspace .stays-view .stay-col-actions [data-copy] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--action-height);
+  height: auto;
+  padding: 4px 10px;
+  line-height: 1.15;
+  white-space: normal;
+  text-align: center;
+}
+.host-workspace .stays-view .stay-col-actions .row-menu { white-space: normal; }
+.host-workspace .stays-view .row-menu-trigger {
+  flex: 0 0 34px;
+  width: 34px;
+  min-width: 34px;
+  height: var(--action-height);
+  min-height: var(--action-height);
+  padding: 0;
+}
+.host-workspace .stays-view .row-action-send {
+  height: var(--action-height);
+  min-height: var(--action-height);
+}
+@container stays-list (max-width: 1100px) {
+  .host-workspace .stays-view table { display: block; table-layout: auto; }
   .host-workspace .stays-view thead { display: none; }
   .host-workspace .stays-view tbody { display: block; }
   .host-workspace .stays-view tbody tr {
@@ -569,85 +625,29 @@ body.host-workspace {
     letter-spacing: .05em;
     text-transform: uppercase;
   }
+  .host-workspace .stays-view td[data-label=""]::before { display: none; }
   .host-workspace .stays-view td:first-child,
   .host-workspace .stays-view td.row-actions { grid-column: 1 / -1; }
   .host-workspace .stays-view td.num { text-align: left; }
-  .host-workspace .stays-view td.row-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: nowrap; gap: 8px; }
-  .host-workspace .stays-view td.row-actions > * + * { margin-left: 0; }
-  .host-workspace .stays-view td.row-actions [data-copy] { flex: 0 1 220px; width: min(220px, calc(100% - 42px)); max-width: 220px; min-width: 0; }
-  .host-workspace .stays-view td.row-actions .row-menu { flex: 0 0 34px; }
-}
-.host-workspace .stay-portal-link { white-space: nowrap; }
-.host-workspace .stays-view .stay-col-reporting .pill {
-  max-width: 100%;
-  box-sizing: border-box;
-  white-space: normal;
-}
-.host-workspace .stays-view .stay-col-deadline .deadline {
-  display: inline-block;
-  max-width: 100%;
-  box-sizing: border-box;
-  white-space: normal;
-}
-.host-workspace .stays-view .stay-col-deadline .deadline.overdue {
-  border-radius: 8px;
-  padding: 4px 8px;
-}
-.host-workspace .stays-view .stay-col-actions {
-  white-space: normal;
-  overflow-wrap: normal;
-}
-@media (min-width: 1101px) {
-  .host-workspace .stays-view .stay-col-stay,
-  .host-workspace .stays-view .stay-col-stay .row-primary-link { white-space: normal; }
-  .host-workspace .stays-view .stay-col-deadline { white-space: normal; }
-  .host-workspace .stays-view td.stay-col-actions { white-space: nowrap; }
-  .host-workspace .stays-view td.stay-col-actions button[data-copy] {
-    width: calc(100% - 86px);
-    max-width: calc(100% - 86px);
-  }
-}
-.host-workspace .stays-view .stay-col-actions [data-copy] {
-  display: inline-flex;
-  width: calc(100% - 46px);
-  max-width: calc(100% - 46px);
-  min-height: var(--action-height);
-  height: var(--action-height);
-  padding: 4px 8px;
-  line-height: 1.15;
-  white-space: normal;
-  text-align: center;
-}
-.host-workspace .stays-view .stay-col-actions .row-menu { white-space: normal; }
-.host-workspace .stays-view .row-menu-trigger {
-  width: 34px;
-  min-width: 34px;
-  height: var(--action-height);
-  min-height: var(--action-height);
-  padding: 0;
-}
-.host-workspace .stays-view .row-action-send {
-  height: var(--action-height);
-  min-height: var(--action-height);
-}
-@media (max-width: 720px) {
   .host-workspace .stays-view td.row-actions {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    flex-wrap: nowrap;
+    justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 8px;
   }
-  .host-workspace .stays-view td.row-actions > * + * { margin-left: 0; }
-  .host-workspace .stays-view td.row-actions [data-copy] {
-    flex: 0 1 220px;
-    width: min(220px, calc(100% - 42px));
-    max-width: 220px;
-    min-width: 0;
-  }
-  .host-workspace .stays-view td.row-actions .row-menu { flex: 0 0 44px; }
-  .host-workspace .stays-view .row-menu-trigger { width: 44px; min-width: 44px; }
-  .host-workspace .stays-view .row-action-send { height: 44px; min-height: 44px; }
+  .host-workspace .stays-view td.row-actions > * { margin: 0; }
+  .host-workspace .stays-view td.row-actions > .row-action-form { flex: 0 0 auto; }
+  .host-workspace .stays-view td.row-actions [data-copy] { flex: 0 1 auto; }
+  .host-workspace .stays-view td.row-actions .row-menu { flex: 0 0 auto; }
+}
+@container stays-list (max-width: 600px) {
+  .host-workspace .stays-view tbody tr { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .host-workspace .stays-view .row-menu-trigger { flex-basis: 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+  .host-workspace .stays-view .row-action-send,
+  .host-workspace .stays-view .stay-col-actions [data-copy] { height: auto; min-height: 44px; }
 }
 .host-workspace .invoice-form .invoice-actions {
   position: static;
