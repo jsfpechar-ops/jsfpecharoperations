@@ -48,6 +48,8 @@
             <button class="btn" type="submit" data-confirm data-confirm-message="{{ t('invoice.send_confirm', email=invoice.buyer_email) }}">{{ t('invoice.send') }}</button>
           </form>
           {% endif %}
+          {% if invoice.reservation_id %}<a class="btn" href="/reservations/{{ invoice.reservation_id }}">{{ t('invoice.context.open_stay') }}</a>{% endif %}
+          <a class="btn ghost" href="/invoices/settings?entity={{ invoice.legal_entity_id }}&amp;next={{ ('/invoices/' ~ invoice.id) | urlencode }}">{{ t('host.invoice_settings') }}</a>
         </div>
       </div>
     </div>
@@ -68,6 +70,12 @@
         <div class="metric-label">{{ t('invoices.col.kind') }}</div>
         <div class="metric-value small-value">{{ t('invoice.kind.' ~ invoice.kind) }}</div>
       </div>
+      {% if invoice.kind == 'invoice' and (invoice.paid_on or invoice.marked_paid_at) %}
+      <div class="detail-metric">
+        <div class="metric-label">{{ t('invoice.detail.paid_recorded') }}</div>
+        <div class="metric-value small-value">{{ (invoice.paid_on or invoice.marked_paid_at[:10]) | date_cz }}</div>
+      </div>
+      {% endif %}
     </div>
   </section>
 

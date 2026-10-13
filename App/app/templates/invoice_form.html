@@ -2,7 +2,7 @@
 {% set nav = 'invoices' %}
 {% block title %}{{ t('invoice.new') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header with context %}
+{% from "_components.html" import page_header, help_tip with context %}
 {{ page_header(t('invoice.new'), t('invoices.lede'), '/invoices', t('nav.invoices')) }}
 
 {% if errors %}
@@ -25,6 +25,13 @@
   <div class="invoice-workspace">
   <div class="invoice-document">
 
+  {% if stay %}
+  <p class="invoice-stay-context">
+    <span class="muted small">{{ t('invoice.context.stay') }}</span>
+    <strong>{{ stay_label }}</strong>
+    <a class="small" href="/reservations/{{ stay.reservation.id }}">{{ t('invoice.context.open_stay') }}</a>
+  </p>
+  {% endif %}
   <div class="panel invoice-supplier">
     <div class="invoice-supplier-row">
       <div class="field invoice-supplier-picker">
@@ -103,8 +110,10 @@
   </div>
 
   <div class="panel">
-    <h2 style="margin-top:0">{{ t('invoice.section.items') }}</h2>
-    <p class="small muted" style="margin-top:-4px">{{ t('invoice.items_help') }}</p>
+    <div class="field-label-row invoice-items-heading">
+      <h2 style="margin-top:0">{{ t('invoice.section.items') }}</h2>
+      {{ help_tip('invoice-items-help', t('invoice.items_help')) }}
+    </div>
     <style>
       /* Keep invoice-item geometry inside the form so the shared host table
          rules and viewport width cannot change the price/action tracks. */
@@ -329,8 +338,7 @@
       </div>
       <div class="field invoice-paid-duzp-clone" hidden></div>
     </div>
-    <details class="invoice-more">
-      <summary>{{ t('invoice.more_options') }}</summary>
+    <div class="invoice-more">
       <div class="invoice-more-body">
         <div class="field">
           <label for="lang">{{ t('invoice.section.language') }}</label>
@@ -344,7 +352,7 @@
           <input type="text" id="note" name="note" maxlength="300" value="{{ values.get('note', '') }}">
         </div>
       </div>
-    </details>
+    </div>
     <p class="warn-text small" data-bank-warning data-has-iban="{{ 1 if entity.iban else 0 }}" hidden>
       {{ t('invoice.warn_no_iban') }}
     </p>
