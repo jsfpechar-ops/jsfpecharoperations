@@ -1169,14 +1169,6 @@ def _property_copy_form_context(
     }
 
 
-def _append_query_param(path: str, name: str, value: str) -> str:
-    if not value:
-        return path
-    parsed = urlsplit(path)
-    query = urlencode([*parse_qsl(parsed.query, keep_blank_values=True), (name, value)])
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query, parsed.fragment))
-
-
 def _apartment_payload(form) -> Dict[str, Any]:
     payload: Dict[str, Any] = {field: _form_str(form, field) for field in APARTMENT_TEXT_FIELDS}
     payload["guest_message"] = payload["guest_message"][:1000]

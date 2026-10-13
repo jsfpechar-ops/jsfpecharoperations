@@ -1,6 +1,7 @@
 """0087 host copy and address corrections: route and browser regressions."""
 from __future__ import annotations
 
+import json
 import os
 import secrets
 import socket
@@ -24,7 +25,42 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 
 USERNAME = "copy-corrections-host"
-EVIDENCE = Path("/workspace/docs/tasks/0087-evidence")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+MEASURE_WIDTHS = (760, 1024, 1440, 1680, 1920, 2048)
+SHOT_WIDTHS = (360, 390, 1280)
+
+_OVERFLOW_JS = """(selector) => {
+  const vw = window.innerWidth;
+  const root = selector ? document.querySelector(selector) : document.documentElement;
+  const offenders = [];
+  const scope = selector ? root : document.body;
+  for (const el of scope.querySelectorAll('input, textarea, select, button, .field')) {
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    if (r.right > vw + 1 || r.left < -1) {
+      offenders.push({id: el.id || '', tag: el.tagName, right: Math.round(r.right), vw});
+    }
+  }
+  return {
+    scrollWidth: document.documentElement.scrollWidth,
+    vw,
+    offenders: offenders.slice(0, 8),
+  };
+}"""
+
+
+def _evidence_dir() -> Path | None:
+    if os.environ.get("UBYHOST_CAPTURE_0087") != "1":
+        return None
+    target = REPO_ROOT / "docs" / "tasks" / "0087-evidence"
+    target.mkdir(parents=True, exist_ok=True)
+    return target
+
+
+def _maybe_shot(page, name: str) -> None:
+    folder = _evidence_dir()
+    if folder:
+        page.screenshot(path=str(folder / name), full_page=True)
 
 
 def _cleanup():
@@ -270,6 +306,31 @@ def _free_port():
         return sock.getsockname()[1]
 
 
+def _set_sidebar(page, collapsed: bool) -> None:
+    page.evaluate(
+        """(wantCollapsed) => {
+          const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+          if (wantCollapsed === isCollapsed) return;
+          const btn = document.querySelector('button[data-sidebar-collapse]');
+          if (btn && btn.offsetParent !== null) {
+            btn.click();
+            return;
+          }
+          document.body.classList.toggle('sidebar-collapsed', wantCollapsed);
+        }""",
+        collapsed,
+    )
+    page.wait_for_function(
+        f"() => document.body.classList.contains('sidebar-collapsed') === {str(collapsed).lower()}"
+    )
+
+
+def _assert_lane_fits(page, section: str) -> None:
+    result = page.evaluate(_OVERFLOW_JS, section)
+    assert result["scrollWidth"] <= result["vw"] + 1, result
+    assert not result["offenders"], result
+
+
 @pytest.fixture
 def browser_base(host):
     port = _free_port()
@@ -289,10 +350,25 @@ def browser_base(host):
 
 @pytest.mark.skipif(not REQUIRE_BROWSER, reason="browser checks required when UBYHOST_REQUIRE_BROWSER=1")
 def test_copy_correction_pages_browser_evidence(browser_base):
-    EVIDENCE.mkdir(parents=True, exist_ok=True)
     base = browser_base["url"]
     cookie = browser_base["cookie"]
     host = browser_base["host"]
+    client = host["client"]
+    client.post("/setup/welcome", follow_redirects=False)
+    client.post("/setup/name", data={"internal_name": "Wizard error flat", "active": "1"}, follow_redirects=False)
+    wizard_id = db.query_one(
+        "SELECT id FROM apartment WHERE internal_name = ?", ("Wizard error flat",)
+    )["id"]
+    db.update(
+        "apartment",
+        wizard_id,
+        {
+            "addr_street": "Keep me",
+            "addr_house_no": "5",
+            "addr_zip": "12000",
+            "addr_obec": "Praha",
+        },
+    )
     apartment_id = db.insert(
         "apartment",
         {
@@ -302,33 +378,112 @@ def test_copy_correction_pages_browser_evidence(browser_base):
             "addr_obec": "Praha",
             "addr_house_no": "1",
             "addr_zip": "11000",
+            "addr_street": "Evidence Street",
+            "uby_idub": "123456789012",
+            "uby_mark": "EVID01",
+            "uby_name": "Evidence facility",
+            "uby_contact": "evidence@example.test",
             "guest_message": "Evidence custom message",
+            "stay_fee_rate_czk": 50,
+            "stay_fee_authority_name": "Synthetic council",
             "permalink_token": f"ev{secrets.token_hex(4)}",
             "permalink_pin": "123456",
             "active": 1,
             "created_at": db.utcnow(),
         },
     )
-    widths = (360, 390, 760, 1024, 1280, 1440, 1680, 1920, 2048)
+    measurements: list[dict] = []
+
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         for lang in ("en", "cs"):
-            context = browser.new_context(
-                viewport={"width": 1280, "height": 1000},
-                has_touch=True,
-            )
+            context = browser.new_context(viewport={"width": 1280, "height": 1000}, has_touch=True)
             context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
             page = context.new_page()
-            for width in widths:
+
+            for width in SHOT_WIDTHS:
                 page.set_viewport_size({"width": width, "height": 900})
                 page.goto(f"{base}/apartments/new?lang={lang}")
                 assert page.locator('input[name="address_line"]').count() == 0
-                page.screenshot(path=str(EVIDENCE / f"property-new-{width}-{lang}.png"), full_page=True)
-                page.goto(f"{base}/apartments/{apartment_id}?lang={lang}#address")
+                _assert_lane_fits(page, "#address")
+                _maybe_shot(page, f"property-new-{width}-{lang}.png")
+
+                page.goto(f"{base}/apartments/{apartment_id}?lang={lang}#communication")
+                assert page.locator('input[name="address_line"]').count() == 0
                 assert page.locator(".property-address-police").count() == 0
+                assert page.locator(".police-derived").count() == 0
+                _assert_lane_fits(page, "#address")
+                _assert_lane_fits(page, "#ubyport")
+                _maybe_shot(page, f"property-edit-{width}-{lang}.png")
+
                 page.goto(f"{base}/housebook?lang={lang}")
                 assert page.locator("#housebook-legal-details").count() == 0
-                if width in (360, 390, 1280):
-                    page.screenshot(path=str(EVIDENCE / f"housebook-{width}-{lang}.png"), full_page=True)
+                _assert_lane_fits(page, "main.wrap")
+                _maybe_shot(page, f"housebook-{width}-{lang}.png")
+
+                page.goto(f"{base}/stay-fees/{apartment_id}?month=2026-08&lang={lang}")
+                assert page.locator('a[href*="mojedatovaschranka"]').count() == 0
+                _assert_lane_fits(page, "main.wrap")
+                _maybe_shot(page, f"stay-fee-{width}-{lang}.png")
+
+            page.goto(f"{base}/setup/address?lang={lang}")
+            page.evaluate("document.querySelector('.wizard-form')?.setAttribute('novalidate', 'novalidate')")
+            page.locator("#addr_street").fill("Broken")
+            page.locator("#addr_house_no").fill("")
+            page.locator("#addr_zip").fill("")
+            page.locator("button.wizard-continue").click()
+            page.wait_for_selector(".wizard-error", state="visible")
+            assert page.locator(".wizard-error").count() == 1
+            assert page.locator("#addr_street").input_value() == "Broken"
+            _assert_lane_fits(page, ".wizard-form")
+            _maybe_shot(page, f"setup-address-error-{lang}.png")
+
+            for width in MEASURE_WIDTHS:
+                for collapsed in (False, True):
+                    page.set_viewport_size({"width": width, "height": 900})
+                    _set_sidebar(page, collapsed)
+                    page.goto(f"{base}/apartments/{apartment_id}?lang={lang}#address")
+                    fit = page.evaluate(_OVERFLOW_JS, "#address")
+                    main = page.evaluate(
+                        """() => {
+                          const m = document.querySelector('main.wrap.with-sidebar');
+                          if (!m) return null;
+                          const r = m.getBoundingClientRect();
+                          return {left: r.left, right: r.right, width: r.width, clientWidth: m.clientWidth};
+                        }"""
+                    )
+                    measurements.append(
+                        {
+                            "lang": lang,
+                            "width": width,
+                            "sidebar": "collapsed" if collapsed else "expanded",
+                            "address": fit,
+                            "main": main,
+                        }
+                    )
+                    assert fit["scrollWidth"] <= fit["vw"] + 1, fit
+                    assert not fit["offenders"], fit
+
             context.close()
         browser.close()
+
+    folder = _evidence_dir()
+    if folder:
+        (folder / "measurements.json").write_text(json.dumps(measurements, indent=2), encoding="utf-8")
+
+
+def test_integration_head_browser_failures_recorded():
+    """Evidence file captured on integration HEAD before 0087 (see report)."""
+    log_path = REPO_ROOT / "docs" / "tasks" / "0087-evidence" / "integration-head-browser-failures.txt"
+    assert log_path.is_file(), "missing baseline browser failure log"
+    text = log_path.read_text(encoding="utf-8")
+    for needle in (
+        "test_host_feedback_browser.py::test_host_copy_feedback_truth_and_geometry",
+        "test_host_quiet_dashboard_browser.py::test_dashboard_geometry_locales_and_screenshots",
+        "test_host_stay_actions_browser.py::test_stays_guest_link_copy_is_status_independent_and_token_guarded",
+        "test_host_wide_geometry_browser.py::test_host_wide_lanes_align",
+        "test_host_wide_geometry_browser.py::test_stay_row_actions_fit_midwidth_lanes",
+        "test_host_wide_geometry_browser.py::test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned",
+    ):
+        assert needle in text
+    assert "6 failed" in text or text.count("FAILED") >= 6

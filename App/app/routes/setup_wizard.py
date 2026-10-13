@@ -66,26 +66,6 @@ def _next_step(step: str) -> Optional[str]:
     return order[index + 1] if index + 1 < len(order) else None
 
 
-def _address_preview(apartment) -> str:
-    if not apartment:
-        return ""
-    parts = [
-        (apartment["addr_street"] or "").strip(),
-        " ".join(
-            part
-            for part in (
-                (apartment["addr_house_no"] or "").strip(),
-                (apartment["addr_orient_no"] or "").strip(),
-            )
-            if part
-        ).strip(),
-        (apartment["addr_obec_cast"] or "").strip(),
-        (apartment["addr_obec"] or "").strip(),
-        validation.normalise_zip(apartment["addr_zip"] or ""),
-    ]
-    return ", ".join(part for part in parts if part)
-
-
 def _upcoming_stays(apartment_id: int, limit: int = 5) -> List[Dict[str, Any]]:
     today = db.utcnow()[:10]
     return db.query(

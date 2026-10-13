@@ -169,4 +169,15 @@ def test_property_page_shows_police_header_fields_without_derived_wrapper(host):
     assert 'name="uby_contact"' in page.text
     assert "police-derived" not in page.text
     assert STRINGS["en"]["apartment.form.ubyport.credentials_help_heading"] in page.text
-    assert STRINGS["en"]["apartment.form.ubyport.derived_summary"] not in page.text
+
+
+def test_property_page_shows_mark_error_when_abbreviation_missing(host):
+    entity_id = _entity()
+    apartment_id = db.insert(
+        "apartment",
+        _valid_apartment_fields(entity_id, uby_mark="", uby_ws_user="uby-tws1ab45"),
+    )
+    page = host.get(f"/apartments/{apartment_id}?lang=en")
+    assert page.status_code == 200, page.text
+    assert "facility abbreviation" in page.text.lower()
+    assert 'id="uby_mark"' in page.text
