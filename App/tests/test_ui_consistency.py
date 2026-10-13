@@ -51,6 +51,9 @@ def host(client):
         data={
             "internal_name": APARTMENT_NAME,
             "city_en": "Prague",
+            "addr_obec": "Praha",
+            "addr_house_no": "12",
+            "addr_zip": "11000",
             "uby_name": REGISTERED_NAME,
             "legal_entity_id": str(operator),
         },
