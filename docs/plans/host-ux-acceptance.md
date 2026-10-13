@@ -59,7 +59,7 @@ New `test_every_page_family_fits_every_width_language_and_rail_state`: 26 famili
 |---|---|
 | Before fixes | 3 failures: Guide at 360 EN/CS (`scrollWidth` 380: the UbyPort URL in the manual-filing step), Stay fees at 760 CS (773: sr-only actions header escaping the scrolling panel) |
 | After D2/D3 | 0 failures, 0 skipped |
-| Controls inside an in-panel sideways table scroll | Properties, Businesses (list under the editor), Invoices, Stay fees, Reports at 760 and 1024 (some only in CS); House book at 760/1024 (intentional register). No page overflow; row actions need a sideways scroll of the table. Open item O2 |
+| Controls inside an in-panel sideways table scroll | House book at 760/1024 (intentional register). Properties, Businesses, Invoices, Stay fees and Reports no longer scroll: cards under a 1000 px panel (O2 fixed, `test_host_list_cards_browser.py`) |
 
 Existing width suites that also pass on this head: `test_host_wide_geometry_browser`, `test_host_fit_browser`, `test_host_list_layouts_browser`, `test_property_navigation_browser::test_property_views_fit_every_width_and_sidebar`, `test_entity_editor_navigation::test_editor_fits_every_width_and_both_languages`, `test_host_properties_navigation::test_properties_page_fits_every_width_and_both_languages`, `test_host_fee_navigation::test_fee_pages_fit_and_keep_one_lane`, `test_host_account_navigation::test_settings_geometry_and_help_at_widths`.
 
@@ -76,5 +76,5 @@ Existing width suites that also pass on this head: `test_host_wide_geometry_brow
 | D3 | Stay fees list widened the page at 760 px CS (sr-only header outside its scroll panel) | fixed: `.panel.fee-periods { position: relative }` (same pattern as the house book); sweep test |
 | — | `host.css` cache key bumped to `20261013-0084` in `base.html` so staging browsers fetch the fixes | done |
 | O1 | No Save / Discard / Stay dialog for dirty property settings and no Discard control; only the browser's Leave/Stay prompt (plan maintainability §5) | open: needs a scoped app.js/template brief |
-| O2 | List tables (Properties, Businesses, Invoices, Fees, Reports) scroll sideways inside their panel at 760–1024 px instead of wrapping actions or becoming cards (combined plan §4 rule 9 names Stays only) | open: owner/orchestrator decision |
+| O2 | List tables (Properties, Businesses, Invoices, Fees, Reports) scroll sideways inside their panel at 760–1024 px instead of wrapping actions or becoming cards (combined plan §4 rule 9 names Stays only) | fixed: container-query cards under a 1000 px panel, no inner scroll; `tests/test_host_list_cards_browser.py` |
 | O3 | Host POST forms outside property/calendar/create/entity/invoice-details/auth still rely on `csrf.js` (account settings, archive/restore row menus, smart-lock forms): not usable with JavaScript off. Pre-existing, outside rule 6 (auth forms only) | open: note only |

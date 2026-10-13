@@ -30,7 +30,7 @@ Status: review. Executor: Claude (owner-authorized to implement and verify). Mat
 ## Open (not fixed; need a brief or a decision)
 
 - **O1** Dirty property settings: only the browser's native Leave/Stay prompt. Plan maintainability §5 requires a Save / Discard / Stay choice and a Discard control; neither exists. Drafts do survive in-page tab/group switches and Back/Forward. Needs a scoped `app.js`/template brief.
-- **O2** List tables (Properties, Businesses, Invoices, Stay fees, Reports) scroll sideways inside their panel at 760–1024 px. Row actions are reachable only after scrolling the table. No page overflow. Combined plan §4.9 makes only Stays cards. Owner/orchestrator decision.
+- **O2** FIXED ("0084 O2"): Properties, Businesses, Invoices, Stay fees and Reports lists are compact labelled cards when their panel is under 1000 px (container query, `/* O2 list cards */` in host.css), table above; no inner sideways scroll, actions visible. Test: `tests/test_host_list_cards_browser.py`; screenshots `0084-evidence/o2-*.png`.
 - **O3** Pre-existing: most other host POST forms (account settings, archive/restore menus, smart-lock forms) depend on `csrf.js` and do not work with JavaScript off. Rule 6 covers auth forms only; noted, not changed.
 - Carried over from task reports: the invoice-details lookup-only IČO (0076 decision 1); the Technical/2FA/passkey disclosures kept on Settings (0083); `#file-by-hand` stays a `<details>` (0080).
 
