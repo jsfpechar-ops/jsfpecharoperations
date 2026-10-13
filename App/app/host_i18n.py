@@ -5920,6 +5920,20 @@ _PASSKEY_STRINGS = {
 for _lang, _strings in _PASSKEY_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0080: stay detail grouping and in-page navigation.
+_STAY_DETAIL_0080_STRINGS = {
+    "en": {
+        "stay.detail.nav.label": "On this stay",
+        "stay.detail.property": "Property",
+    },
+    "cs": {
+        "stay.detail.nav.label": "Na tomto pobytu",
+        "stay.detail.property": "Ubytování",
+    },
+}
+for _lang, _strings in _STAY_DETAIL_0080_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

@@ -2,6 +2,13 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
 {% block content %}
+{# 0080: local primitive (the shared _components.html belongs to another lane).
+   In-page jump links so the four groups are reachable without folding any. #}
+{% macro stay_jump_nav(items) %}
+<nav class="stay-jump" aria-label="{{ t('stay.detail.nav.label') }}">
+  {% for href, label in items %}<a href="{{ href }}">{{ label }}</a>{% endfor %}
+</nav>
+{% endmacro %}
 {% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge, source_badge with context %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {% set stay_lede %}{{ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz) ~ ' · ' ~ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) ~ ' · ' }}{{ source_badge(reservation.source, source_label(reservation)) }}{% endset %}
@@ -14,6 +21,14 @@
 ) }}
 
 {% set stay_inactive = reservation.status != 'active' or reservation.archived_at %}
+<p class="stay-property-line"><span class="muted">{{ t('stay.detail.property') }}</span>
+  <a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a></p>
+{{ stay_jump_nav([
+  ('#now', t('stay.detail.next_step')),
+  ('#guests', t('stay.detail.guests.title')),
+  ('#reports', t('host.reporting')),
+  ('#stay-quick-edit', t('stay.detail.settings.title')),
+]) }}
 {% if reservation.status == 'cancelled' %}
 <div class="banner critical">
   <div class="grow">{{ t('stay.detail.banner.cancelled') }}</div>
@@ -214,7 +229,7 @@
         </div>
       </div>
 
-      <dl class="guest-facts">
+      <dl class="guest-facts guest-facts-identity">
         <div>
           <dt>{{ t('stay.detail.guests.born') }}</dt>
           <dd>{{ format_birth_date(guest.birth_date) or '—' }}</dd>
@@ -232,6 +247,8 @@
           <dt>{{ t('stay.detail.guests.purpose') }}</dt>
           <dd>{{ purpose_label(guest.purpose or '', lang) or '—' }}</dd>
         </div>
+      </dl>
+      <dl class="guest-facts guest-facts-stay">
         <div class="fact-wide">
           <dt>{{ t('stay.detail.guests.residence') }}</dt>
           <dd>
@@ -287,8 +304,8 @@
           <h3>{{ t('stay.detail.guests.placeholder', n=n) }}</h3>
         </div>
         <div class="guest-card-state">
-          <button class="btn small" type="button" data-copy="stay-link"
-                  data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
+          {% if not stay_inactive %}<button class="btn small" type="button" data-copy="stay-link"
+                  data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>{% endif %}
           <a class="btn small" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
           {% if not stay_inactive and progress.expected > 1 %}
           <form method="post" action="/reservations/{{ reservation.id }}/remove-empty-slot" data-confirm data-confirm-title="{{ t('host.remove_slot') }}" data-confirm-message="{{ t('host.remove_slot_confirm') }}">
@@ -409,8 +426,8 @@
 {# One panel owns both the quick edit and the full settings form, so the
    #stay-quick-edit anchor keeps working and the page ends on a single
    collapsed group instead of two stacked ones. #}
-<details class="panel stay-settings" id="stay-quick-edit" {% if reservation.status != 'active' %}open{% endif %}>
-  <summary><strong>{{ t('stay.detail.settings.title') }}</strong></summary>
+<section class="panel stay-settings" id="stay-quick-edit">
+  <div class="section-heading"><h2>{{ t('stay.detail.settings.title') }}</h2></div>
   <p class="small muted">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
   <h3 class="inline-edit-title">{{ t('stay.detail.inline.title') }}</h3>
   <form class="inline-edit-bar" method="post" action="/reservations/{{ reservation.id }}/quick-edit"
@@ -450,5 +467,5 @@
     </div>
     <div class="actions settings-actions"><button class="btn primary" type="submit">{{ t('common.save') }}</button></div>
   </form>
-</details>
+</section>
 {% endblock %}
