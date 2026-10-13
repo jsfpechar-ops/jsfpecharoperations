@@ -135,8 +135,8 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
             assert page.locator("#addr_house_no").get_attribute("name") == "addr_house_no"
             assert page.locator('input[name="address_line"]').count() == 0
             assert page.locator(".property-address-police").count() == 0
-            guest_default = page.locator("#guest_message").input_value()
-            assert "Welcome!" in guest_default or "Vítejte!" in guest_default
+            # 0092: the guest message is set on the property page; create stores the default.
+            assert page.locator("#guest_message").count() == 0
             labels = page.locator("#address .property-address-grid").first.locator("label")
             assert labels.count() == 3
             first_row = page.locator("#address .property-address-grid").first
@@ -344,13 +344,13 @@ def test_required_operator_controls_in_browser(host, base):
             assert not many.locator("#legal_entity_id").evaluate("el => el.checkValidity()")
             # A forged blank operator (validation bypassed) comes back with the draft and an error.
             many.evaluate("() => { document.querySelector('#legal_entity_id').required = false; }")
-            many.locator(".host-property-save button[type=submit]").click()
+            many.locator(".property-create-actions button[type=submit]").click()
             many.wait_for_load_state()
             assert many.locator("#operator-message[role=alert]").is_visible()
             assert many.locator("#internal_name").input_value() == "Browser Operator Flat"
             _shot_0088(many, "new-error-1280-en")
             many.select_option("#legal_entity_id", str(host["free"]))
-            many.locator(".host-property-save button[type=submit]").click()
+            many.locator(".property-create-actions button[type=submit]").click()
             many.wait_for_load_state()
             created = db.query_one(
                 "SELECT * FROM apartment WHERE internal_name = ? AND owner_user_id = ?",

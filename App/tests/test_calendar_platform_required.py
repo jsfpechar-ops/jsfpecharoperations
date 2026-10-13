@@ -284,8 +284,11 @@ def test_wizard_other_needs_a_name_and_myself_is_never_a_calendar(calls):
 
 def test_wizard_stores_the_readable_platform(calls):
     host = _wizard_host()
-    page = host["client"].get("/setup/bookings?source=vrbo").text
-    assert 'name="chosen_source" value="vrbo"' in page
+    # 0092: the legacy page now opens the property's own calendar form.
+    legacy = host["client"].get("/setup/bookings?source=vrbo", follow_redirects=False)
+    assert legacy.headers["location"] == f"/apartments/{host['apartment']}#calendars"
+    page = host["client"].get(legacy.headers["location"]).text
+    assert '<option value="vrbo"' in page
     response = host["client"].post(
         "/setup/bookings",
         data={"chosen_source": "vrbo", "action": "add", "url": URL},

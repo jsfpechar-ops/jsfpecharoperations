@@ -21,9 +21,12 @@ def set_dismissed(owner_user_id: int, dismissed: bool) -> None:
     db.set_setting(_dismissed_key(owner_user_id), "1" if dismissed else "0")
 
 
+# 0092: the numbered wizard is gone. These names survive as legacy /setup/<step>
+# URLs and as a readiness indicator (wizard_step) for other callers; nothing
+# forces a host through them. The step count is no longer shown as progress.
 WIZARD_STEPS = ("welcome", "name", "address", "bookings")
 WIZARD_STEP_NUMBERS = {"welcome": 1, "name": 2, "address": 3, "bookings": 4}
-WIZARD_TOTAL_STEPS = 5
+WIZARD_TOTAL_STEPS = len(WIZARD_STEPS)
 
 
 def first_apartment(owner_user_id: int):

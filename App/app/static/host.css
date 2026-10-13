@@ -937,3 +937,48 @@ body.host-workspace {
 /* 0090: contextual ? link to the full Guide steps */
 .help-link { display: inline-flex; align-items: center; justify-content: center; width: 1.5em; height: 1.5em; margin-left: 6px; border: 1px solid var(--border-strong, #ccc); border-radius: 50%; font-size: 14px; font-weight: 700; text-decoration: none; vertical-align: middle; }
 .help-link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* 0092 */
+/* Labels with a ? sit in a row; keep the label-to-input spacing of a plain label. */
+.host-workspace .field > .field-label-row { margin-bottom: 6px; min-height: 22px; }
+/* Address rows: inputs line up even when one label wraps. */
+.host-workspace .property-address-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0 16px; }
+.host-workspace .property-address-grid .field { display: flex; flex-direction: column; }
+.host-workspace .property-address-grid .field > .field-label-row { flex: 1 0 auto; align-items: flex-end; }
+#uby_ws_password::placeholder { color: inherit; opacity: 1; letter-spacing: .12em; }
+.property-create-lane { container-name: property-create; container-type: inline-size; }
+.property-create { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); gap: 20px; align-items: start; }
+.property-create-main { min-width: 0; display: grid; gap: 16px; }
+.property-create-form { display: grid; gap: 16px; min-width: 0; }
+.host-workspace .property-create-card { margin: 0; min-width: 0; }
+.property-create-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.property-create-head h2 { margin: 0; font-size: 18px; }
+.property-create-head p { margin: 2px 0 0; }
+.host-workspace .property-create-head > .nav-icon,
+.host-workspace .property-create-next-list .nav-icon { flex: none; width: 34px; height: 34px; padding: 8px; border-radius: 50%; background: var(--brand-soft); color: var(--brand-ink); box-sizing: border-box; }
+.property-create-operator-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 16px; }
+.property-create-operator-row .property-operator { flex: 1 1 260px; min-width: 0; margin-bottom: 0; }
+.property-create-manage { padding-bottom: 12px; font-weight: 600; }
+.property-create-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 0; }
+.host-workspace .property-create-copied { margin: 0; }
+.host-workspace .property-create-next { position: sticky; top: 16px; min-width: 0; margin: 0; }
+.property-create-next h2 { margin: 0 0 8px; font-size: 18px; }
+.property-create-next-list { list-style: none; margin: 0; padding: 0; }
+.property-create-next-list li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.property-create-next-list strong { display: block; font-size: 14px; }
+.property-create-next-list small { display: block; margin-top: 2px; color: var(--muted); }
+.property-create-lock { margin: 12px 0 0; }
+.property-create-copy { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.property-create-copy .copyrow { flex-wrap: wrap; }
+.property-create-copy select { flex: 1 1 160px; min-width: 0; }
+.host-workspace .property-first-use { margin-bottom: 16px; border-left: 4px solid var(--brand); }
+.property-first-use h2 { margin: 0 0 10px; font-size: 17px; }
+.property-first-use .actions { flex-wrap: wrap; }
+/* Follow-ups move below the form when the content lane (not only the viewport) is narrow. */
+@container property-create (max-width: 900px) {
+  .property-create { grid-template-columns: minmax(0, 1fr); }
+  .host-workspace .property-create-next { position: static; }
+}
+@media (max-width: 700px) {
+  .host-workspace .property-address-grid .field > .field-label-row { flex: none; }
+}

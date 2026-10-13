@@ -1093,6 +1093,7 @@ def _render_apartment_new(
     *,
     draft: Optional[Dict[str, Any]] = None,
     operator_error: Optional[str] = None,
+    extra: Optional[Dict[str, Any]] = None,
     status_code: int = 200,
 ):
     prefill = copy_ctx["property_prefill"]
@@ -1110,27 +1111,44 @@ def _render_apartment_new(
             **copy_ctx,
             "draft": draft or {},
             "operator_error": operator_error,
+            **(extra or {}),
         },
         status_code=status_code,
     )
 
 
-def _refuse_apartment_create(request: Request, form, operator_error: Optional[str]):
-    """Render the new-property form again with what the host typed."""
+def _refuse_apartment_create(
+    request: Request,
+    form,
+    operator_error: Optional[str],
+    *,
+    name_error: bool = False,
+    address_errors: Optional[Dict[str, str]] = None,
+):
+    """Render the new-property form again with what the host typed.
+
+    0092: settings copied from another property travel as hidden fields; a
+    refusal keeps them (and names their source) so a retry still copies them.
+    """
     draft = _property_draft(form)
     prefill: Dict[str, Any] = {}
-    for key in ("automation_mode", "submit_after_hours", "default_purpose"):
+    for key in _COPY_PROPERTY_KEYS:
+        if key in ("legal_entity_id", "data_controller_entity_id"):
+            continue
         if key in form:
             prefill[key] = _form_str(form, key)
     if draft["data_controller_entity_id"]:
         prefill["data_controller_entity_id"] = draft["data_controller_entity_id"]
+    copy_from_id = _form_int(form, "copy_from")
+    source = access.apartment(request, copy_from_id) if copy_from_id else None
     copy_ctx = {
         "copy_property_peers": access.apartments(request),
-        "copy_from_id": None,
+        "copy_from_id": source["id"] if source else None,
         "property_prefill": prefill,
-        "copied_from_name": None,
+        "copied_from_name": source["internal_name"] if source else None,
         "apartment": None,
     }
+    refused = bool(operator_error or name_error or address_errors)
     return _render_apartment_new(
         request,
         access.entities(request),
@@ -1138,8 +1156,21 @@ def _refuse_apartment_create(request: Request, form, operator_error: Optional[st
         copy_ctx,
         draft=draft,
         operator_error=operator_error,
-        status_code=400 if operator_error else 200,
+        extra={"name_error": name_error, "address_errors": address_errors or {}},
+        status_code=400 if refused else 200,
     )
+
+
+def _create_address_errors(payload: Dict[str, Any]) -> Dict[str, str]:
+    """0092: the address is optional at create. A blank or partly filled
+    address is incomplete setup (readiness keeps reporting blocked until the
+    required parts exist). A component the host did type must pass the same
+    per-field check as the property editor before anything is written."""
+    errors: Dict[str, str] = {}
+    for issue in validation.errors_only(validation.validate_apartment(dict(payload))):
+        if issue.field in _ADDRESS_ONLY_FIELDS and (payload.get(issue.field) or "").strip():
+            errors.setdefault(issue.field, issue.message)
+    return errors
 
 
 APARTMENT_TEXT_FIELDS = (
@@ -1348,11 +1379,19 @@ async def apartment_create(request: Request):
         # "Check again" after adding business details in another tab: show the
         # same draft with the new operator list; nothing is written.
         return _refuse_apartment_create(request, form, None)
-    if not payload["internal_name"]:
-        return _back("/apartments/new", err=_flash(request, "flash.error.name_required"))
+    # 0092: name, operator and a typed address are all checked before any
+    # write; a refusal keeps every typed value on the page.
+    name_error = not payload["internal_name"].strip()
     operator_error = _property_operator_error(request, form, payload)
-    if operator_error:
-        return _refuse_apartment_create(request, form, operator_error)
+    address_errors = _create_address_errors(payload)
+    if name_error or operator_error or address_errors:
+        return _refuse_apartment_create(
+            request,
+            form,
+            operator_error,
+            name_error=name_error,
+            address_errors=address_errors,
+        )
     _apply_police_defaults(payload, access.entities(request))
     payload.pop("_stay_fee_account_raw", None)
     if not payload["guest_message"].strip():
@@ -1369,8 +1408,10 @@ async def apartment_create(request: Request):
     apartment_id = db.insert("apartment", payload)
     guest_slug.ensure(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_created", f"id={apartment_id}")
+    # 0092: the first-use choice (calendar, manual stay, overview) opens on the
+    # new property itself, never a numbered wizard.
     return _back(
-        f"/apartments/{apartment_id}#calendars",
+        f"/apartments/{apartment_id}?created=1",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -1490,6 +1531,7 @@ def _render_apartment_detail(
             "apartment": apartment,
             "operator_error": operator_error,
             "calendar_platforms": CALENDAR_PLATFORMS,
+            "just_created": request.query_params.get("created") == "1",
             **(extra or {}),
         },
         status_code=status_code,

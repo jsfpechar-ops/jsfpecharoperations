@@ -1,8 +1,15 @@
-"""First-flat setup wizard: welcome, name, address and calendar booking source."""
+"""Legacy first-flat setup URLs.
+
+0092: there is no numbered wizard any more. ``/setup`` and the old step pages
+send the host to the short Add property page, or to the property itself. The
+old POST handlers stay as guarded adapters (same login, ownership, operator,
+address and calendar rules) so a form that was open in a tab still saves, and
+then returns to the property page.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
@@ -20,6 +27,8 @@ from .admin import (
     _property_operator_error,
     _save_address_only,
 )
+from .admin_helpers import back as _back
+from .admin_helpers import flash_plural as _flash_plural
 from .admin_helpers import form_str as _form_str
 from .admin_helpers import host_text as _host_text
 
@@ -58,32 +67,16 @@ def _step_context(request: Request, step: str, **extra: Any) -> Dict[str, Any]:
     }
 
 
-def _prev_step(step: str) -> Optional[str]:
-    order = list(onboarding.WIZARD_STEPS)
-    try:
-        index = order.index(step)
-    except ValueError:
-        return None
-    return order[index - 1] if index > 0 else None
+def _canonical_entry(request: Request, anchor: str = "") -> str:
+    """Where a legacy setup URL leads: create when there is no property yet,
+    otherwise the host's first property (with the step's section anchor)."""
+    apartment = _wizard_apartment(request)
+    if not apartment:
+        return "/apartments/new"
+    return f"/apartments/{apartment['id']}" + (f"#{anchor}" if anchor else "")
 
 
-def _next_step(step: str) -> Optional[str]:
-    order = list(onboarding.WIZARD_STEPS)
-    try:
-        index = order.index(step)
-    except ValueError:
-        return None
-    return order[index + 1] if index + 1 < len(order) else None
-
-
-def _upcoming_stays(apartment_id: int, limit: int = 5) -> List[Dict[str, Any]]:
-    today = db.utcnow()[:10]
-    return db.query(
-        "SELECT date_from, date_to FROM reservation "
-        "WHERE apartment_id = ? AND status = 'active' AND date_to >= ? "
-        "ORDER BY date_from LIMIT ?",
-        (apartment_id, today, limit),
-    )
+_LEGACY_STEP_ANCHORS = {"welcome": "", "name": "", "address": "address", "bookings": "calendars"}
 
 
 @router.get("/setup")
@@ -91,17 +84,7 @@ def setup_entry(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    owner_user_id = access.owner_id(request)
-    step = onboarding.wizard_step(owner_user_id)
-    if step == "complete":
-        apartment = onboarding.first_apartment(owner_user_id)
-        if apartment:
-            return RedirectResponse(
-                f"/apartments/{apartment['id']}#ubyport",
-                status_code=303,
-            )
-        return RedirectResponse("/setup/welcome", status_code=303)
-    return RedirectResponse(f"/setup/{step}", status_code=303)
+    return RedirectResponse(_canonical_entry(request), status_code=303)
 
 
 @router.get("/setup/{step}")
@@ -111,24 +94,9 @@ def setup_get(step: str, request: Request):
         return guard
     if step not in onboarding.WIZARD_STEPS:
         return RedirectResponse("/setup", status_code=303)
-    apartment = _wizard_apartment(request)
-    if step == "name" and apartment and request.query_params.get("edit") != "1":
-        return RedirectResponse("/setup/address", status_code=303)
-    if step in ("address", "bookings") and not apartment:
-        return RedirectResponse("/setup/name", status_code=303)
-    template = f"setup/{step}.html"
-    extra: Dict[str, Any] = {}
-    if step == "bookings":
-        extra["booking_sources"] = _booking_sources(request)
-        source = request.query_params.get("source", "")
-        extra["selected_source"] = source if source in {key for key, _ in CALENDAR_PLATFORMS} else ""
-        extra["sync_result"] = request.query_params.get("result") == "1"
-        extra["stay_count"] = int(request.query_params.get("count") or "0")
-        extra["upcoming_stays"] = (
-            _upcoming_stays(apartment["id"]) if apartment and extra["sync_result"] else []
-        )
-        extra["sync_error"] = request.query_params.get("sync_error") == "1"
-    return render(request, template, _step_context(request, step, **extra))
+    return RedirectResponse(
+        _canonical_entry(request, _LEGACY_STEP_ANCHORS[step]), status_code=303
+    )
 
 
 @router.post("/setup/{step}")
@@ -143,8 +111,7 @@ async def setup_post(step: str, request: Request):
     apartment = _wizard_apartment(request)
 
     if step == "welcome":
-        nxt = _next_step(step) or "name"
-        return RedirectResponse(f"/setup/{nxt}", status_code=303)
+        return RedirectResponse(_canonical_entry(request), status_code=303)
 
     if step == "name":
         name = _form_str(form, "internal_name").strip()
@@ -191,24 +158,23 @@ async def setup_post(step: str, request: Request):
                 db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
             )
             db.audit("apartment_created", f"id={apartment_id}")
-        return RedirectResponse("/setup/address", status_code=303)
+            return RedirectResponse(f"/apartments/{apartment_id}?created=1", status_code=303)
+        return RedirectResponse(f"/apartments/{apartment_id}#basics", status_code=303)
 
     if step == "address":
         if not apartment:
-            return RedirectResponse("/setup/name", status_code=303)
+            return RedirectResponse("/apartments/new", status_code=303)
         rejected = _save_address_only(apartment["id"], request, form)
         if rejected:
             return rejected
-        return RedirectResponse("/setup/bookings", status_code=303)
+        return RedirectResponse(f"/apartments/{apartment['id']}#address", status_code=303)
 
     if step == "bookings":
         if not apartment:
-            return RedirectResponse("/setup/name", status_code=303)
+            return RedirectResponse("/apartments/new", status_code=303)
+        calendars_url = f"/apartments/{apartment['id']}#calendars"
         if _form_str(form, "action") == "finish":
-            return RedirectResponse(
-                f"/apartments/{apartment['id']}#ubyport",
-                status_code=303,
-            )
+            return RedirectResponse(f"/apartments/{apartment['id']}", status_code=303)
         source = _form_str(form, "source") or _form_str(form, "chosen_source")
         url = _form_str(form, "url").strip()
         other = _form_str(form, "label_other")
@@ -217,14 +183,13 @@ async def setup_post(step: str, request: Request):
         if source == "myself":
             # A manual stay, never a calendar row.
             return RedirectResponse(
-                "/reservations?new=1&return_to=/setup#add-stay-panel",
+                f"/reservations?new=1&apartment={apartment['id']}#add-stay-panel",
                 status_code=303,
             )
         if source and choosing:
-            return RedirectResponse(
-                f"/setup/bookings?source={source}",
-                status_code=303,
-            )
+            # Choosing a platform no longer opens a wizard page: the property's
+            # own calendar form takes the platform and the link together.
+            return RedirectResponse(calendars_url, status_code=303)
         values, platform_errors = _calendar_platform(source, other, "")
 
         def _refuse(**errors):
@@ -281,15 +246,9 @@ async def setup_post(step: str, request: Request):
                 ),
                 status_code=400,
             )
-        stay_count = int(
-            db.query_one(
-                "SELECT COUNT(*) AS n FROM reservation WHERE apartment_id = ? AND status = 'active'",
-                (apartment["id"],),
-            )["n"]
-        )
-        return RedirectResponse(
-            f"/setup/bookings?result=1&count={stay_count}",
-            status_code=303,
+        return _back(
+            calendars_url,
+            msg=_flash_plural(request, "flash.feeds.added", totals["created"]),
         )
 
     return RedirectResponse("/setup", status_code=303)

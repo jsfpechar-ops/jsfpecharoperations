@@ -107,15 +107,15 @@ def test_the_automation_panel_does_not_link_away(host):
     assert "/automation" not in _automation_panel(page)
 
 
-def test_the_new_property_form_keeps_its_own_nav_labels(host):
-    """Creating a property is a different journey; its nav was already correct."""
+def test_the_new_property_form_has_no_numbered_nav(host):
+    """0092: creating a property is one short page, not a numbered tour."""
     client, _apartment_id = host
 
-    nav = _nav(client.get("/apartments/new?lang=en").text)
+    page = client.get("/apartments/new?lang=en").text
 
-    assert '<a href="#ubyport">3. UbyPort</a>' in nav
-    assert 'href="#automation"' not in nav
-    assert '<a href="#communication">5. Guest link</a>' in nav
+    assert '<nav class="section-nav"' not in page
+    assert "3. UbyPort" not in page and "5. Guest link" not in page
+    assert 'name="uby_idub"' not in page
 
 
 def test_the_audited_copy_is_in_both_dictionaries():

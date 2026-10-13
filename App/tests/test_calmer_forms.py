@@ -79,11 +79,12 @@ def _more_options_tag(page: str) -> str:
     return match.group(0)
 
 
-def test_new_property_more_options_closed_by_default(host):
+def test_new_property_form_has_no_folded_options(host):
+    """0092: nothing on the short create page is hidden behind More options."""
     page = host.get("/apartments/new?lang=en").text
-    tag = _more_options_tag(page)
-    assert "open" not in tag
-    assert 'id="automation_mode"' in page
+    assert '<details class="more-options"' not in page
+    assert 'id="automation_mode"' not in page
+    assert 'id="internal_name"' in page and 'id="addr_zip"' in page
 
 
 def test_more_options_open_when_controller_still_missing(host):

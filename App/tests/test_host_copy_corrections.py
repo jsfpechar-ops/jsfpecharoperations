@@ -245,8 +245,19 @@ def test_invalid_address_keeps_draft_on_setup_error(host):
 def test_guest_message_default_is_editable_and_custom_survives(host):
     client = host["client"]
     default_en = host_i18n.STRINGS["en"]["apartment.form.guest_message.default"]
+    # 0092: the short create page has no message field; the server stores the
+    # editable default, and the property page shows it for editing.
     page = client.get("/apartments/new?lang=en").text
-    assert default_en in page
+    assert 'name="guest_message"' not in page
+    plain = client.post(
+        "/apartments",
+        data=_apartment_payload(host["entity"], internal_name="Default Message Flat", guest_message=""),
+        follow_redirects=False,
+    )
+    assert plain.status_code == 303
+    plain_id = db.query_one("SELECT id FROM apartment WHERE internal_name = ?", ("Default Message Flat",))["id"]
+    assert db.query_one("SELECT guest_message FROM apartment WHERE id = ?", (plain_id,))["guest_message"] == default_en
+    assert default_en in client.get(f"/apartments/{plain_id}?lang=en").text
     custom = "Keep this exact custom greeting."
     created = client.post(
         "/apartments",
@@ -316,12 +327,18 @@ def test_password_field_has_one_sentence(host):
     ]
     assert after_enc == before_enc
 
+    # 0092: credentials are entered on the property page, never at create.
     new_page = client.get("/apartments/new?lang=en").text
-    new_input = re.search(r'<input[^>]*id="uby_ws_password"[^>]*>', new_page)
-    assert new_input
-    assert "placeholder=" not in new_input.group(0)
+    assert re.search(r'<input[^>]*id="uby_ws_password"[^>]*>', new_page) is None
+    blank_id = db.insert("apartment", {
+        "internal_name": "No Password Flat", "owner_user_id": host["owner"], "legal_entity_id": host["entity"],
+        "permalink_token": "nopasswordtok1", "permalink_pin": "123456", "active": 1, "created_at": db.utcnow(),
+    })
+    blank_page = client.get(f"/apartments/{blank_id}?lang=en").text
+    blank_input = re.search(r'<input[^>]*id="uby_ws_password"[^>]*>', blank_page)
+    assert blank_input and "placeholder=" not in blank_input.group(0)
     new_hint = host_i18n.STRINGS["en"]["apartment.form.ubyport.password_new_hint"]
-    assert new_page.count(new_hint) == 1
+    assert blank_page.count(new_hint) == 1
 
 
 def test_edit_shows_stored_guest_message_exactly(host):
@@ -512,16 +529,18 @@ def test_copy_correction_pages_browser_evidence(browser_base):
                 _assert_lane_fits(page, "main.wrap")
                 _maybe_shot(page, f"stay-fee-{width}-{lang}.png")
 
-            page.goto(f"{base}/setup/address?lang={lang}")
-            page.evaluate("document.querySelector('.wizard-form')?.setAttribute('novalidate', 'novalidate')")
+            # 0092: the legacy /setup/address page now opens the property; the
+            # address error state lives on the canonical create form.
+            page.goto(f"{base}/apartments/new?lang={lang}")
+            page.evaluate("document.querySelector('#property-create-form').setAttribute('novalidate', 'novalidate')")
+            page.locator("#internal_name").fill("Broken address flat")
             page.locator("#addr_street").fill("Broken")
-            page.locator("#addr_house_no").fill("")
-            page.locator("#addr_zip").fill("")
-            page.locator("button.wizard-continue").click()
-            page.wait_for_selector(".wizard-error", state="visible")
-            assert page.locator(".wizard-error").count() == 1
+            page.locator("#addr_zip").fill("1")
+            page.locator(".property-create-actions .btn.primary").click()
+            page.wait_for_selector("#addr_zip-error", state="visible")
+            assert page.locator("#addr_zip-error").count() == 1
             assert page.locator("#addr_street").input_value() == "Broken"
-            _assert_lane_fits(page, ".wizard-form")
+            _assert_lane_fits(page, "#address")
             _maybe_shot(page, f"setup-address-error-{lang}.png")
 
             for width in MEASURE_WIDTHS:
