@@ -201,7 +201,7 @@ def test_06_calendar_import_creates_the_stay_and_skips_the_block(host, feed_url)
     apartment = db.query_one("SELECT * FROM apartment")
     response = host.post(
         f"/apartments/{apartment['id']}/feeds",
-        data={"url": url, "label": "Airbnb", "own_name": "Airbnb"},
+        data={"url": url, "label": "airbnb", "own_name": "Airbnb"},
         follow_redirects=False,
     )
     assert response.status_code == 303, response.text

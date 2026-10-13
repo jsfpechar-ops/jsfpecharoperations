@@ -136,3 +136,42 @@ def test_production_cannot_enable_private_calendar_targets(monkeypatch):
 
     with pytest.raises(FeedUrlError):
         validate_calendar_url("http://127.0.0.1/calendar.ics")
+
+
+def test_the_add_calendar_route_still_refuses_an_internal_target(monkeypatch):
+    """0089: platform is checked too, but the SSRF guard still runs before any write."""
+    import secrets
+
+    from fastapi.testclient import TestClient
+
+    from app import auth, db, icalsync
+    from app.main import app
+    from tests.conftest import login_as
+
+    db.init_db()
+    synced = []
+    monkeypatch.setattr(icalsync, "sync_all", lambda apartment_id: synced.append(apartment_id))
+    username = f"ssrf-route-{secrets.token_hex(4)}"
+    owner_id = auth.create_account(f"{username}@example.test", "SSRF Host", role="host", username=username)
+    apartment_id = db.insert("apartment", {
+        "internal_name": "SSRF flat", "owner_user_id": owner_id,
+        "permalink_token": f"ssrf{secrets.token_hex(5)}", "permalink_pin": "123456",
+        "active": 1, "created_at": db.utcnow(),
+    })
+    try:
+        client = TestClient(app)
+        login_as(client, username, url="/login?lang=en", follow_redirects=False)
+        response = client.post(
+            f"/apartments/{apartment_id}/feeds",
+            data={"label": "airbnb", "url": "http://127.0.0.1/calendar.ics"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 400
+        assert db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apartment_id,)) == []
+        assert synced == []
+    finally:
+        db.execute("DELETE FROM apartment_slug WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+        db.execute("DELETE FROM alert WHERE owner_user_id = ?", (owner_id,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
+        db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))

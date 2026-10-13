@@ -831,3 +831,8 @@ body.host-workspace {
 .property-operator-hint { margin: -6px 0 16px; }
 .property-operator-empty .err-text { margin: 8px 0; }
 .property-operator-empty .actions { flex-wrap: wrap; }
+
+/* 0089: calendar platform first; the name field shows only for Other */
+.calendar-add-form:has(#label option[value="other"]:not(:checked)) .calendar-other-platform { display: none; }
+.calendar-add-form { min-width: 0; }
+.calendar-add-form select { width: 100%; min-width: 0; }

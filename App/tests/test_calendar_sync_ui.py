@@ -104,6 +104,14 @@ def test_sync_reports_a_failed_feed_in_the_redirect_and_alerts(monkeypatch):
     ]
     assert len(feed_alerts) == 1
     assert feed_alerts[0]["apartment_id"] == apartment_id
+    # 0089: the unlabeled old feed reads "Calendar" / "Other", never a dash,
+    # and its real failure stays visible.
+    page = client.get(f"/apartments/{apartment_id}?lang=en").text
+    table = page[page.index("feed-table") : page.index("</table>", page.index("feed-table"))]
+    assert "<strong>Calendar</strong>" in table
+    assert "Other" in table
+    assert "—" not in table
+    assert 'class="pill red"' in table
     db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
     db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
 

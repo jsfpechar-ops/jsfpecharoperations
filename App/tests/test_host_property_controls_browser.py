@@ -388,3 +388,69 @@ def test_required_operator_controls_in_browser(host, base):
         )
         _drop_host(none_owner)
         _drop_host(one_owner)
+
+
+# --- 0089: calendar platform first, required with the link ------------------
+
+_EVIDENCE_0089 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0089-evidence"
+
+
+def _shot_0089(page, name):
+    if os.environ.get("UBYHOST_CAPTURE_0089") == "1":
+        _EVIDENCE_0089.mkdir(parents=True, exist_ok=True)
+        page.locator("#calendar-add").scroll_into_view_if_needed()
+        page.screenshot(path=str(_EVIDENCE_0089 / f"{name}.png"), full_page=True)
+
+
+def test_calendar_platform_controls_in_browser(host, base):
+    apartment = host["apartment"]
+    db.insert("ical_feed", {
+        "apartment_id": apartment, "url": "https://admin.booking.com/hotel/ical.html?t=synthetic",
+        "label": "", "own_name": "", "active": 1, "created_at": db.utcnow(),
+    })
+    try:
+        with sync_api.sync_playwright() as playwright:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+            context = browser.new_context(viewport={"width": 1280, "height": 1000})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+            page = context.new_page()
+            for width in (360, 390, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                for lang in ("en", "cs"):
+                    page.goto(f"{base}/apartments/{apartment}?lang={lang}#calendars")
+                    form = page.locator("#calendar-add")
+                    platform = form.locator("#label")
+                    assert platform.is_visible()
+                    assert form.locator("details").count() == 0
+                    top_platform = platform.bounding_box()["y"]
+                    assert top_platform < form.locator("#url").bounding_box()["y"]
+                    assert platform.evaluate("el => el.required && el.value === ''")
+                    assert not form.locator("#label_other").is_visible()
+                    assert form.locator("#own_name").is_visible()
+                    table = page.locator(".feed-table")
+                    assert "Booking.com" in table.inner_text()
+                    assert "—" not in table.inner_text()
+                    fit = page.evaluate(_FIT_JS, "#calendar-add, #calendar-add select, #calendar-add input, #calendar-add .btn")
+                    assert fit["scroll"] <= fit["vw"] + 1 and not fit["offenders"], fit
+                    _shot_0089(page, f"calendar-add-{width}-{lang}")
+                    platform.select_option("other")
+                    assert form.locator("#label_other").is_visible()
+                    _shot_0089(page, f"calendar-other-{width}-{lang}")
+
+            # Validation bypassed in the browser: the server still refuses, keeps the draft, focuses the error.
+            page.set_viewport_size({"width": 1280, "height": 1000})
+            page.goto(f"{base}/apartments/{apartment}?lang=en#calendars")
+            page.evaluate("() => document.querySelectorAll('#calendar-add [required]').forEach(el => el.required = false)")
+            page.fill("#calendar-add #url", "https://example.invalid/synthetic.ics")
+            page.fill("#calendar-add #own_name", "Garden")
+            page.locator("#calendar-add button[type=submit]").click()
+            page.wait_for_load_state()
+            assert page.locator("#label-error[role=alert]").is_visible()
+            assert page.locator("#calendar-add #url").input_value() == "https://example.invalid/synthetic.ics"
+            assert page.locator("#calendar-add #own_name").input_value() == "Garden"
+            assert page.evaluate("() => document.activeElement && document.activeElement.id") == "label"
+            assert db.query("SELECT id FROM ical_feed WHERE apartment_id = ? AND url LIKE '%example.invalid%'", (apartment,)) == []
+            _shot_0089(page, "calendar-error-1280-en")
+            browser.close()
+    finally:
+        db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment,))

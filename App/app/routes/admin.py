@@ -1396,10 +1396,14 @@ def _render_apartment_detail(
     copy_ctx: Dict[str, Any],
     *,
     operator_error: Optional[str] = None,
+    extra: Optional[Dict[str, Any]] = None,
     status_code: int = 200,
 ):
     apartment_id = apartment["id"]
-    feeds = db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
+    feeds = [
+        _feed_display(dict(feed), request)
+        for feed in db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
+    ]
     entities = access.entities(request)
     issues = list(_apartment_issues(apartment))
     # A connected calendar or a hand-typed stay both mean guests are on their
@@ -1482,8 +1486,34 @@ def _render_apartment_detail(
             **copy_ctx,
             "apartment": apartment,
             "operator_error": operator_error,
+            "calendar_platforms": CALENDAR_PLATFORMS,
+            **(extra or {}),
         },
         status_code=status_code,
+    )
+
+
+def _render_property_detail(
+    apartment_id: int,
+    request: Request,
+    *,
+    extra: Optional[Dict[str, Any]] = None,
+    status_code: int = 200,
+):
+    """The property page with extra context (0089: a refused calendar draft)."""
+    apartment = _ensure_apartment_pin(access.apartment(request, apartment_id))
+    if not apartment:
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+    copy_ctx = {
+        "copy_property_peers": [
+            row for row in access.apartments(request) if row["id"] != apartment_id
+        ],
+        "copy_from_id": None,
+        "property_prefill": {},
+        "copied_from_name": None,
+    }
+    return _render_apartment_detail(
+        request, apartment, copy_ctx, extra=extra, status_code=status_code
     )
 
 
@@ -1894,6 +1924,85 @@ def _feed_already_added(apartment_id: int, url: str) -> str:
 
 
 
+# 0089: a calendar always names its platform. One allowlist, shared with the
+# setup wizard; the stored label is the readable platform, never a logo key.
+CALENDAR_PLATFORMS = (
+    ("booking", "Booking.com"),
+    ("airbnb", "Airbnb"),
+    ("vrbo", "Vrbo"),
+    ("agoda", "Agoda"),
+    ("echalupy", "e-chalupy"),
+    ("other", ""),
+)
+_PLATFORM_NAMES = {key: name for key, name in CALENDAR_PLATFORMS if name}
+# Readable names for platforms recognised from an old feed's URL (display only).
+_DETECTED_PLATFORM_NAMES = {
+    **_PLATFORM_NAMES,
+    "expedia": "Expedia",
+    "tripadvisor": "Tripadvisor",
+    "trip": "Trip.com",
+    "google": "Google Calendar",
+    "apple": "iCloud",
+}
+_PLATFORM_OTHER_MAX = 80
+_FEED_NAME_MAX = 100
+
+
+def _has_control_chars(value: str) -> bool:
+    return any(ord(ch) < 32 or 127 <= ord(ch) < 160 for ch in value)
+
+
+def _calendar_platform(platform: str, other: str, own_name: str) -> tuple[Dict[str, str], Dict[str, str]]:
+    """Validate the chosen platform and optional name.
+
+    Returns ``({"label", "own_name"}, errors)`` where errors maps a form field
+    to an i18n key. Nothing is guessed from the URL: the host chooses.
+    """
+    errors: Dict[str, str] = {}
+    platform = (platform or "").strip()
+    other = (other or "").strip()
+    own_name = (own_name or "").strip()
+    label = ""
+    if platform == "other":
+        if not other:
+            errors["label_other"] = "calendar.error.other_required"
+        elif len(other) > _PLATFORM_OTHER_MAX or _has_control_chars(other):
+            errors["label_other"] = "calendar.error.other_invalid"
+        else:
+            label = other
+    elif platform in _PLATFORM_NAMES:
+        label = _PLATFORM_NAMES[platform]
+    else:
+        errors["label"] = "calendar.error.platform_required"
+    if own_name and (len(own_name) > _FEED_NAME_MAX or _has_control_chars(own_name)):
+        errors["own_name"] = "calendar.error.name_invalid"
+    return {"label": label, "own_name": own_name or label}, errors
+
+
+def _feed_display(feed: Dict[str, Any], request: Request) -> Dict[str, Any]:
+    """Readable name and portal for a stored feed, old unlabeled rows included."""
+    label = (feed.get("label") or "").strip()
+    detected = _DETECTED_PLATFORM_NAMES.get(icalsync.platform_of(feed.get("url") or ""), "")
+    shown = dict(feed)
+    shown["display_name"] = (
+        (feed.get("own_name") or "").strip()
+        or label
+        or detected
+        or _host_text(request, "calendar.fallback_name")
+    )
+    shown["display_portal"] = label or detected or _host_text(request, "calendar.platform.other")
+    return shown
+
+
+def _feed_form_draft(form) -> Dict[str, str]:
+    return {
+        "label": _form_str(form, "label"),
+        "label_other": _form_str(form, "label_other"),
+        "own_name": _form_str(form, "own_name"),
+        "url": _form_str(form, "url"),
+    }
+
+
 @router.post("/apartments/{apartment_id}/feeds")
 async def add_feed(apartment_id: int, request: Request):
     guard = auth.require_login(request)
@@ -1902,35 +2011,50 @@ async def add_feed(apartment_id: int, request: Request):
     if not access.apartment(request, apartment_id):
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     form = await request.form()
-    url = _form_str(form, "url")
-    try:
+    draft = _feed_form_draft(form)
+    values, errors = _calendar_platform(draft["label"], draft["label_other"], draft["own_name"])
+    url = draft["url"].strip()
+    if not url:
+        errors["url"] = "calendar.error.url_required"
+    elif not errors:
+        # The DNS-resolving safety check runs only once the platform is valid.
         from ..feed_url import FeedUrlError, validate_calendar_url
 
-        url = validate_calendar_url(url)
-    except FeedUrlError as exc:
-        return _back(f"/apartments/{apartment_id}", err=_flash(request, exc.key))
-    already = _feed_already_added(apartment_id, url)
-    if already:
-        return _back(
-            f"/apartments/{apartment_id}",
-            err=_flash(request, "flash.error.feed_duplicate", property=already),
+        try:
+            url = validate_calendar_url(url)
+        except FeedUrlError as exc:
+            errors["url"] = exc.key
+    feed_errors = {field: _host_text(request, key) for field, key in errors.items()}
+    if not errors:
+        already = _feed_already_added(apartment_id, url)
+        if already:
+            feed_errors["url"] = _host_text(request, "flash.error.feed_duplicate", property=already)
+    if feed_errors:
+        return _render_property_detail(
+            apartment_id,
+            request,
+            extra={"feed_draft": draft, "feed_errors": feed_errors},
+            status_code=400,
         )
     db.insert(
         "ical_feed",
         {
             "apartment_id": apartment_id,
             "url": url,
-            "label": _form_str(form, "label"),
-            "own_name": _form_str(form, "own_name"),
+            "label": values["label"],
+            "own_name": values["own_name"],
             "active": 1,
             "created_at": db.utcnow(),
         },
     )
     totals = await run_in_threadpool(icalsync.sync_all, apartment_id)
     if totals["errors"]:
-        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.feed_added_unreadable"))
+        return _back(
+            f"/apartments/{apartment_id}#calendars",
+            err=_flash(request, "flash.error.feed_added_unreadable"),
+        )
     return _back(
-        f"/apartments/{apartment_id}",
+        f"/apartments/{apartment_id}#calendars",
         msg=_flash_plural(request, "flash.feeds.added", totals["created"]),
     )
 

@@ -5939,6 +5939,37 @@ _PROPERTY_OPERATOR_STRINGS = {
 for _lang, _strings in _PROPERTY_OPERATOR_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+
+# 0089: a calendar needs a platform and a link.
+_CALENDAR_PLATFORM_STRINGS = {
+    "en": {
+        "calendar.platform_label": "Platform",
+        "calendar.choose_platform": "Choose platform",
+        "calendar.platform.other": "Other",
+        "calendar.other_label": "Platform name",
+        "calendar.fallback_name": "Calendar",
+        "calendar.error.platform_required": "Choose the platform this calendar comes from.",
+        "calendar.error.other_required": "Type the platform name.",
+        "calendar.error.other_invalid": "Use up to 80 ordinary characters.",
+        "calendar.error.name_invalid": "Use up to 100 ordinary characters.",
+        "calendar.error.url_required": "Paste the calendar link.",
+    },
+    "cs": {
+        "calendar.platform_label": "Platforma",
+        "calendar.choose_platform": "Vyberte platformu",
+        "calendar.platform.other": "Jiný",
+        "calendar.other_label": "Název platformy",
+        "calendar.fallback_name": "Kalendář",
+        "calendar.error.platform_required": "Vyberte platformu, ze které kalendář pochází.",
+        "calendar.error.other_required": "Napište název platformy.",
+        "calendar.error.other_invalid": "Použijte nejvýše 80 běžných znaků.",
+        "calendar.error.name_invalid": "Použijte nejvýše 100 běžných znaků.",
+        "calendar.error.url_required": "Vložte odkaz na kalendář.",
+    },
+}
+for _lang, _strings in _CALENDAR_PLATFORM_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE
