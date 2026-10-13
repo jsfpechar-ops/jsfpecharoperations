@@ -5934,6 +5934,24 @@ _STAY_DETAIL_0080_STRINGS = {
 for _lang, _strings in _STAY_DETAIL_0080_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0082: fee list and report detail under the shared host layout.
+_FEE_0082_STRINGS = {
+    "en": {
+        "stay_fees.list.summary": "%(period)s: %(set_up)s of %(count)s properties set up.",
+        "stay_fees.open_report": "Open report",
+        "stay_fees.blockers.title": "Fix before saving",
+        "stay_fees.send.marks_title": "Your records",
+    },
+    "cs": {
+        "stay_fees.list.summary": "%(period)s: nastaveno %(set_up)s z %(count)s ubytování.",
+        "stay_fees.open_report": "Otevřít hlášení",
+        "stay_fees.blockers.title": "Opravte před uložením",
+        "stay_fees.send.marks_title": "Vaše záznamy",
+    },
+}
+for _lang, _strings in _FEE_0082_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

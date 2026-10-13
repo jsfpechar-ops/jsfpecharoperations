@@ -2,7 +2,28 @@
 {% set nav = 'stay_fees' %}
 {% block title %}{{ apartment.internal_name }} ({{ ui_period }}){% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, copy_button with context %}
+{% from "_components.html" import page_header, copy_button, field_label with context %}
+{% macro decision_form(line, review) %}
+  <form method="post" action="/stay-fees/guest-decision" class="fee-decision">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="guest_id" value="{{ line.guest_id }}">
+    <input type="hidden" name="apartment_id" value="{{ apartment.id }}">
+    <input type="hidden" name="month" value="{{ month_key }}">
+    <select name="reason" aria-label="{{ t('stay_fees.decision.reason_label') }}"{% if review %} required{% endif %}>
+      <option value="">{{ t('stay_fees.decision.reason_placeholder') }}</option>
+      {% for code in exempt_categories %}
+      <option value="{{ code }}" {% if line.reason == code %}selected{% endif %}>{{ t('stay_fees.exempt.' ~ code) }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="reason_reference" maxlength="200"
+           placeholder="{{ t('stay_fees.decision.reference_placeholder') }}"
+           aria-label="{{ t('stay_fees.decision.reference_label') }}">
+    <button class="btn small" type="submit" name="decision" value="exempt">{{ t('stay_fees.decision.exempt') }}</button>
+    <button class="btn small" type="submit" name="decision" value="charge">{{ t('stay_fees.decision.charge') }}</button>
+    {% if line.decision %}<button class="btn small" type="submit" name="decision" value="">{{ t('stay_fees.decision.auto') }}</button>{% endif %}
+  </form>
+{% endmacro %}
+
 <a class="back-link" href="/stay-fees?month={{ month_key }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.back') }}</a>
 {% include "_list_filter.html" %}
 {% set actions %}
@@ -28,97 +49,6 @@
 {% endset %}
 {{ page_header(apartment.internal_name ~ ' (' ~ ui_period ~ ')', '', '', '', t('nav.stay_fees'), actions) }}
 
-{% if not frozen %}
-<section class="panel" id="fee-adjust">
-  <h2>{{ t('stay_fees.adjust.title') }}</h2>
-  <p class="small">{{ t('stay_fees.adjust.warning') }}</p>
-  <form method="post" action="/stay-fees/{{ apartment.id }}/adjustment" class="fee-adjust-form">
-    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <input type="hidden" name="month" value="{{ month_key }}">
-    {% if correcting %}<input type="hidden" name="correct" value="1">{% endif %}
-    <div class="fee-adjust-grid">
-      <div class="field">
-        <label for="adjust-direction">{{ t('stay_fees.adjust.direction') }}</label>
-        <select id="adjust-direction" name="direction">
-          <option value="add">{{ t('stay_fees.adjust.add') }}</option>
-          <option value="remove">{{ t('stay_fees.adjust.remove') }}</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="adjust-mode">{{ t('stay_fees.adjust.mode') }}</label>
-        <select id="adjust-mode" name="mode">
-          <option value="people">{{ t('stay_fees.adjust.people') }}</option>
-          <option value="bed_days">{{ t('stay_fees.adjust.bed_days') }}</option>
-        </select>
-      </div>
-      <div class="field" data-adjust-people>
-        <label for="adjust-people">{{ t('stay_fees.adjust.count') }}</label>
-        <input id="adjust-people" name="people" type="number" min="1" max="99" value="1">
-      </div>
-      <div class="field" data-adjust-people>
-        <label for="adjust-nights">{{ t('stay_fees.adjust.nights') }}</label>
-        <input id="adjust-nights" name="nights" type="number" min="1" max="366" value="1">
-      </div>
-      <div class="field" data-adjust-days hidden>
-        <label for="adjust-days">{{ t('stay_fees.adjust.bed_days') }}</label>
-        <input id="adjust-days" name="bed_days" type="number" min="1" max="9999" value="1">
-      </div>
-      <div class="field fee-adjust-reason">
-        <label for="adjust-reason">{{ t('stay_fees.adjust.reason') }}</label>
-        <input id="adjust-reason" name="reason" required minlength="3" maxlength="200">
-      </div>
-    </div>
-    <div class="action-group"><button class="btn primary" type="submit">{{ t('stay_fees.adjust.save') }}</button></div>
-  </form>
-  {% if period.adjustments %}
-  <ul class="fee-adjust-list">
-    {% for row in period.adjustments %}
-    <li>
-      <span>{{ row.delta }} {{ t('stay_fees.adjust.bed_days') }}{% if row.reason %} ({{ row.reason }}){% endif %}</span>
-      {% if not row.filing_id %}
-      <form method="post" action="/stay-fees/{{ apartment.id }}/adjustment/{{ row.id }}/undo">
-        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <input type="hidden" name="month" value="{{ month_key }}">
-        <button class="btn small" type="submit">{{ t('stay_fees.adjust.undo') }}</button>
-      </form>
-      {% endif %}
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-</section>
-{% endif %}
-
-{% if 'stay_fees.issue.scope_ruling' in issues %}
-<form method="post" action="/stay-fees/{{ apartment.id }}/scope-ruling" class="filters panel">
-  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="month" value="{{ month_key }}">
-  <div class="field">
-    <label for="scope-rule">{{ t('stay_fees.scope.rule') }}</label>
-    <select id="scope-rule" name="rule" required>
-      <option value="calendar_days">{{ t('stay_fees.scope.calendar_days') }}</option>
-      <option value="nights">{{ t('stay_fees.scope.nights') }}</option>
-    </select>
-  </div>
-  <div class="field">
-    <label for="scope-reference">{{ t('stay_fees.scope.reference') }}</label>
-    <input type="text" id="scope-reference" name="reference" maxlength="200" required
-           placeholder="{{ t('stay_fees.scope.reference_placeholder') }}">
-  </div>
-  <button class="btn accent primary" type="submit">{{ t('stay_fees.scope.save') }}</button>
-</form>
-{% endif %}
-{% for issue in issues %}
-  <p class="warn-text small">
-    {{ t(issue) }}
-    {% if issue == 'stay_fees.issue.no_vs' or issue == 'stay_fees.issue.no_authority' %}
-      <a href="/apartments/{{ apartment.id }}#stay-fee-settings">{{ t('host.fix_details') }}</a>
-    {% elif issue == 'stay_fees.issue.no_payer' %}
-      <a href="/entities">{{ t('nav.entities') }}</a>
-    {% endif %}
-  </p>
-{% endfor %}
-
 <div class="panel tight">
   <div class="stay-metrics detail-hero">
     <div class="detail-metric">
@@ -139,6 +69,44 @@
     </div>
   </div>
 </div>
+
+{% if issues %}
+<section class="panel fee-blockers" id="fee-blockers" aria-labelledby="fee-blockers-title">
+  <h2 id="fee-blockers-title">{{ t('stay_fees.blockers.title') }}</h2>
+<ul class="fee-issues">
+{% for issue in issues %}
+  <li class="warn-text small">
+    {{ t(issue) }}
+    {% if issue == 'stay_fees.issue.no_vs' or issue == 'stay_fees.issue.no_authority' %}
+      <a href="/apartments/{{ apartment.id }}#stay-fee-settings">{{ t('host.fix_details') }}</a>
+    {% elif issue == 'stay_fees.issue.no_payer' %}
+      <a href="/entities">{{ t('nav.entities') }}</a>
+    {% endif %}
+  </li>
+{% endfor %}
+</ul>
+
+{% if 'stay_fees.issue.scope_ruling' in issues %}
+<form method="post" action="/stay-fees/{{ apartment.id }}/scope-ruling" class="filters fee-scope-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="month" value="{{ month_key }}">
+  <div class="field">
+    <label for="scope-rule">{{ t('stay_fees.scope.rule') }}</label>
+    <select id="scope-rule" name="rule" required>
+      <option value="calendar_days">{{ t('stay_fees.scope.calendar_days') }}</option>
+      <option value="nights">{{ t('stay_fees.scope.nights') }}</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="scope-reference">{{ t('stay_fees.scope.reference') }}</label>
+    <input type="text" id="scope-reference" name="reference" maxlength="200" required
+           placeholder="{{ t('stay_fees.scope.reference_placeholder') }}">
+  </div>
+  <button class="btn accent primary" type="submit">{{ t('stay_fees.scope.save') }}</button>
+</form>
+{% endif %}
+</section>
+{% endif %}
 
 {% if frozen and send_panel %}
 <section class="panel" id="fee-send">
@@ -179,6 +147,7 @@
   <div class="action-group">
     <a class="btn accent primary" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_key }}" download>{{ t('stay_fees.download_pdf') }}</a>
   </div>
+  <h3 class="fee-send-marks-title">{{ t('stay_fees.send.marks_title') }}</h3>
   <div class="fee-send-marks">
     {% if send_panel.sent_at %}
     <p class="small">{{ t('stay_fees.send.sent_on', date=send_panel.sent_at | date_cz) }}{% if send_panel.sent_message_id %} · {{ t('stay_fees.send.message_id', id=send_panel.sent_message_id) }}{% endif %}</p>
@@ -244,19 +213,18 @@
         </div>
       </div>
       <div class="field">
-        <label for="fee-vs">{{ t('stay_fees.payment.vs') }}</label>
+        {{ field_label('fee-vs', t('stay_fees.payment.vs'), t('stay_fees.payment.vs_hint')) }}
         <div class="copyrow">
-          <input type="text" id="fee-vs" readonly value="{{ pay.vs }}">
+          <input type="text" id="fee-vs" readonly value="{{ pay.vs }}" aria-describedby="fee-vs-help">
           {{ copy_button('fee-vs') }}
         </div>
-        <div class="hint">{{ t('stay_fees.payment.vs_hint') }}</div>
       </div>
       {% if pay.qr %}
         <div class="fee-qr">
           <img src="{{ pay.qr }}" width="176" height="176" alt="{{ t('stay_fees.payment.qr_alt') }}">
           <div>
             <strong>QR Platba</strong>
-            <p class="small muted" style="margin-top:6px">{{ t('stay_fees.payment.qr_help', amount=total_display) }}</p>
+            <p class="small muted fee-qr-help">{{ t('stay_fees.payment.qr_help', amount=total_display) }}</p>
             <p class="small muted mono">{{ pay.spayd }}</p>
           </div>
         </div>
@@ -285,48 +253,7 @@
             <div class="small muted fee-hint">{{ t('stay_fees.hint.local_resident') }}</div>
           {% endif %}
           {% if line.status != 'not_subject' %}
-            {% if line.review %}
-              <form method="post" action="/stay-fees/guest-decision" class="fee-decision">
-                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-                <input type="hidden" name="guest_id" value="{{ line.guest_id }}">
-                <input type="hidden" name="apartment_id" value="{{ apartment.id }}">
-                <input type="hidden" name="month" value="{{ month_key }}">
-                <select name="reason" aria-label="{{ t('stay_fees.decision.reason_label') }}" required>
-                  <option value="">{{ t('stay_fees.decision.reason_placeholder') }}</option>
-                  {% for code in exempt_categories %}
-                  <option value="{{ code }}" {% if line.reason == code %}selected{% endif %}>{{ t('stay_fees.exempt.' ~ code) }}</option>
-                  {% endfor %}
-                </select>
-                <input type="text" name="reason_reference" maxlength="200"
-                       placeholder="{{ t('stay_fees.decision.reference_placeholder') }}"
-                       aria-label="{{ t('stay_fees.decision.reference_label') }}">
-                <button class="btn small" type="submit" name="decision" value="exempt">{{ t('stay_fees.decision.exempt') }}</button>
-                <button class="btn small" type="submit" name="decision" value="charge">{{ t('stay_fees.decision.charge') }}</button>
-                {% if line.decision %}<button class="btn small" type="submit" name="decision" value="">{{ t('stay_fees.decision.auto') }}</button>{% endif %}
-              </form>
-            {% else %}
-              <details>
-                <summary class="small">{{ t('stay_fees.decision.change') }}</summary>
-                <form method="post" action="/stay-fees/guest-decision" class="fee-decision">
-                  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-                  <input type="hidden" name="guest_id" value="{{ line.guest_id }}">
-                  <input type="hidden" name="apartment_id" value="{{ apartment.id }}">
-                  <input type="hidden" name="month" value="{{ month_key }}">
-                  <select name="reason" aria-label="{{ t('stay_fees.decision.reason_label') }}">
-                    <option value="">{{ t('stay_fees.decision.reason_placeholder') }}</option>
-                    {% for code in exempt_categories %}
-                    <option value="{{ code }}" {% if line.reason == code %}selected{% endif %}>{{ t('stay_fees.exempt.' ~ code) }}</option>
-                    {% endfor %}
-                  </select>
-                  <input type="text" name="reason_reference" maxlength="200"
-                         placeholder="{{ t('stay_fees.decision.reference_placeholder') }}"
-                         aria-label="{{ t('stay_fees.decision.reference_label') }}">
-                  <button class="btn small" type="submit" name="decision" value="exempt">{{ t('stay_fees.decision.exempt') }}</button>
-                  <button class="btn small" type="submit" name="decision" value="charge">{{ t('stay_fees.decision.charge') }}</button>
-                  {% if line.decision %}<button class="btn small" type="submit" name="decision" value="">{{ t('stay_fees.decision.auto') }}</button>{% endif %}
-                </form>
-              </details>
-            {% endif %}
+            {{ decision_form(line, line.review) }}
           {% endif %}
         </li>
         {% endfor %}
@@ -336,4 +263,65 @@
     {% endif %}
   </div>
 </section>
+{% if not frozen %}
+<section class="panel" id="fee-adjust">
+  <h2>{{ t('stay_fees.adjust.title') }}</h2>
+  <p class="small">{{ t('stay_fees.adjust.warning') }}</p>
+  <form method="post" action="/stay-fees/{{ apartment.id }}/adjustment" class="fee-adjust-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="month" value="{{ month_key }}">
+    {% if correcting %}<input type="hidden" name="correct" value="1">{% endif %}
+    <div class="fee-adjust-grid">
+      <div class="field">
+        <label for="adjust-direction">{{ t('stay_fees.adjust.direction') }}</label>
+        <select id="adjust-direction" name="direction">
+          <option value="add">{{ t('stay_fees.adjust.add') }}</option>
+          <option value="remove">{{ t('stay_fees.adjust.remove') }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="adjust-mode">{{ t('stay_fees.adjust.mode') }}</label>
+        <select id="adjust-mode" name="mode">
+          <option value="people">{{ t('stay_fees.adjust.people') }}</option>
+          <option value="bed_days">{{ t('stay_fees.adjust.bed_days') }}</option>
+        </select>
+      </div>
+      <div class="field" data-adjust-people>
+        <label for="adjust-people">{{ t('stay_fees.adjust.count') }}</label>
+        <input id="adjust-people" name="people" type="number" min="1" max="99" value="1">
+      </div>
+      <div class="field" data-adjust-people>
+        <label for="adjust-nights">{{ t('stay_fees.adjust.nights') }}</label>
+        <input id="adjust-nights" name="nights" type="number" min="1" max="366" value="1">
+      </div>
+      <div class="field" data-adjust-days hidden>
+        <label for="adjust-days">{{ t('stay_fees.adjust.bed_days') }}</label>
+        <input id="adjust-days" name="bed_days" type="number" min="1" max="9999" value="1">
+      </div>
+      <div class="field fee-adjust-reason">
+        <label for="adjust-reason">{{ t('stay_fees.adjust.reason') }}</label>
+        <input id="adjust-reason" name="reason" required minlength="3" maxlength="200">
+      </div>
+    </div>
+    <div class="action-group"><button class="btn primary" type="submit">{{ t('stay_fees.adjust.save') }}</button></div>
+  </form>
+  {% if period.adjustments %}
+  <ul class="fee-adjust-list">
+    {% for row in period.adjustments %}
+    <li>
+      <span>{{ row.delta }} {{ t('stay_fees.adjust.bed_days') }}{% if row.reason %} ({{ row.reason }}){% endif %}</span>
+      {% if not row.filing_id %}
+      <form method="post" action="/stay-fees/{{ apartment.id }}/adjustment/{{ row.id }}/undo">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <input type="hidden" name="month" value="{{ month_key }}">
+        <button class="btn small" type="submit">{{ t('stay_fees.adjust.undo') }}</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endif %}
+
 {% endblock %}

@@ -871,3 +871,25 @@ body.host-workspace {
 .help-tip:not([data-js]):focus-within > .help-tip-body { display: block; }
 .help-tip[data-js] > .help-tip-body { position: fixed; }
 .help-tip.is-open > .help-tip-body { display: block; }
+
+/* 0082 */
+.host-workspace .fee-list-summary { margin: 0 0 10px; }
+.host-workspace .fee-periods td.row-actions { text-align: right; }
+.host-workspace .fee-blockers { border-left: 4px solid var(--status-critical-border); }
+.host-workspace .fee-blockers h2 { margin: 0 0 8px; font-size: 16px; }
+.host-workspace .fee-issues { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.host-workspace .fee-issues a { margin-left: 6px; font-weight: 650; }
+.host-workspace .fee-scope-form { margin-top: 10px; }
+.host-workspace .fee-send-marks-title { margin: 18px 0 8px; font-size: 14px; }
+.host-workspace .fee-send-marks { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 24px; }
+.host-workspace .fee-send-marks > * { min-width: 0; }
+.host-workspace .fee-qr-help { margin-top: 6px; }
+.host-workspace .fee-qr .mono, .host-workspace .fee-line a, .host-workspace .page-header h1 { overflow-wrap: anywhere; }
+.host-workspace .fee-line > div:first-child { flex: 1 1 220px; min-width: 0; }
+.host-workspace .fee-decision { align-items: center; }
+.host-workspace .fee-decision select { flex: 1 1 220px; min-width: 0; }
+@media (max-width: 720px) {
+  .host-workspace .fee-qr { flex-direction: column; }
+  .host-workspace .fee-send-marks > form, .host-workspace .fee-send-marks > p { flex: 1 1 100%; }
+  .host-workspace .fee-periods td.row-actions { text-align: left; }
+}
