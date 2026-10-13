@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-13. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047, 0062, 0054. Main CI green.
+Updated: 2026-10-13 (host UX candidate). Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047, 0062, 0054. Main CI green.
 
 ## Production
 
@@ -16,7 +16,7 @@ Updated: 2026-10-13. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047
 
 ## Next
 
-- Host UX: one staging-only PR, [combined plan](../plans/host-ux-combined-staging.md); 0095 half done.
+- Host UX: all of 0087–0095 and 0075–0084 implemented on draft #382 (staging only): [acceptance](../plans/host-ux-acceptance.md). Next: owner deploys #382 to Render staging (0085).
 
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
 - Merged 0067 (#371) and 0068 (#372). TTLock answered all questions ([TTLOCK](../TTLOCK.md#what-ttlock-support-confirmed-2026-10-12)). Next: [0069](../tasks/0069-same-period-shared-pin.md), same-hours rebooking must not reuse a PIN (K-D04).
