@@ -408,18 +408,15 @@ def test_one_shared_entity_editor_owns_business_and_invoice_fields(acc):
 
 def test_one_many_no_and_archived_properties_on_hubs_and_search(acc):
     many = acc["client"]
-    for path in ("/guest-links", "/automation"):
-        assert many.get(path, follow_redirects=False).headers["location"] == "/apartments#property-summaries"
+    # 0101: /guest-links stays (lifecycle e-mails link it); /automation is gone.
+    assert many.get("/guest-links", follow_redirects=False).headers["location"] == "/apartments#property-summaries"
     one = _client(acc["one"]["username"])
     # The archived second property does not count: one active property opens its group.
     pid = acc["one"]["property"]
     assert one.get("/guest-links", follow_redirects=False).headers["location"] == \
         f"/apartments/{pid}?view=settings&section=guests#communication"
-    assert one.get("/automation", follow_redirects=False).headers["location"] == \
-        f"/apartments/{pid}?view=settings&section=automation#automation"
     none = _client(acc["none"]["username"])
-    for path in ("/guest-links", "/automation"):
-        assert none.get(path, follow_redirects=False).headers["location"] == "/apartments#property-summaries"
+    assert none.get("/guest-links", follow_redirects=False).headers["location"] == "/apartments#property-summaries"
     # Search follows the same rule and never lists an archived property.
     def palette(client):
         return client.get("/api/command-palette").json()["items"]
@@ -448,35 +445,25 @@ def test_one_many_no_and_archived_properties_on_hubs_and_search(acc):
     assert archived.status_code == 200 and f"/apartments/{acc['p3']}/unarchive" in archived.text
 
 
-def test_legacy_adapters_land_on_the_canonical_homes(acc):
+def test_removed_old_links_are_gone_and_write_nothing(acc):
+    """0101 (owner, 2026-10-13): the old adapters are removed, not redirected."""
     client, p1, e1 = acc["client"], acc["p1"], acc["e1"]
-
-    def loc(path):
-        response = client.get(path, follow_redirects=False)
-        assert response.status_code in (302, 303, 307), (path, response.status_code)
-        return response.headers["location"]
-
-    assert loc(f"/invoices/settings?entity={e1}").startswith(f"/entities?edit={e1}&next=")
-    assert loc(f"/invoices/settings?entity={e1}").endswith("#entity-invoice")
-    assert loc("/invoices/settings").startswith("/entities")  # two businesses: never an arbitrary one
-    fee = loc(f"/stay-fees/{p1}/setup?month={acc['month']}")
-    assert fee.startswith(f"/apartments/{p1}?view=settings&section=reporting") and fee.endswith("#stay-fee-settings")
-    assert f"stay-fees%2F{p1}%3Fmonth%3D{acc['month']}" in fee or f"/stay-fees/{p1}?month={acc['month']}" in fee
-    assert loc("/setup").startswith(f"/apartments")
-    assert loc(f"/setup/address?apartment={p1}").startswith("/apartments")
-    # Legacy POST adapters run the canonical save path (no redirect that drops input).
-    before = db.query_one("SELECT * FROM legal_entity WHERE id = ?", (e1,))
+    for path in (
+        f"/invoices/settings?entity={e1}", "/invoices/settings", f"/stay-fees/{p1}/setup?month={acc['month']}",
+        "/setup", f"/setup/address?apartment={p1}", "/automation", f"/apartments/{p1}/ws-request.txt",
+    ):
+        assert client.get(path, follow_redirects=False).status_code == 404, path
+    before = dict(db.query_one("SELECT * FROM legal_entity WHERE id = ?", (e1,)))
     refused = client.post("/invoices/settings", data={
         "legal_entity_id": str(e1), "account_prefix": "", "account_number": "not-an-account",
         "account_bank": "0100", "invoice_prefix": "ZZ", "_invoice_account_existing": "",
     }, follow_redirects=False)
-    assert refused.status_code == 422 and 'value="ZZ"' in refused.text
-    assert dict(db.query_one("SELECT * FROM legal_entity WHERE id = ?", (e1,))) == dict(before)
+    assert refused.status_code in (404, 405)
+    assert dict(db.query_one("SELECT * FROM legal_entity WHERE id = ?", (e1,))) == before
     fee_refused = client.post(f"/stay-fees/{p1}/setup", data={
-        "stay_fee_rate_czk": "40", "stay_fee_cadence": "monthly", "account_prefix": "",
-        "account_number": "bad", "account_bank": "0100", "_stay_fee_account_existing": "",
+        "stay_fee_rate_czk": "40", "stay_fee_cadence": "monthly",
     }, follow_redirects=False)
-    assert fee_refused.status_code == 400 and 'value="40"' in fee_refused.text
+    assert fee_refused.status_code in (404, 405)
     row = db.query_one("SELECT stay_fee_rate_czk, stay_fee_council_iban FROM apartment WHERE id = ?", (p1,))
     assert row["stay_fee_rate_czk"] == 30 and row["stay_fee_council_iban"] == "CZ6508000000192000145399"
 
@@ -765,7 +752,8 @@ def test_without_javascript_tabs_reload_and_the_shared_editors_save(acc, base):
         page.locator('.property-tabs a[data-property-tab="settings"]').click()
         page.wait_for_url(re.compile(r"view=settings"))
         assert page.locator("#internal_name").is_visible()
-        page.goto(f"{base}/apartments/{p1}?lang=en#ubyport")
+        # 0101: links carry ?view=&section=; the hash only scrolls.
+        page.goto(f"{base}/apartments/{p1}?view=settings&section=reporting&lang=en#ubyport")
         assert page.locator("#ubyport").is_visible()
         # The business editor saves without JavaScript and returns to the property.
         page.goto(f"{base}/entities?edit={e1}&next=/apartments/{p1}&lang=en")

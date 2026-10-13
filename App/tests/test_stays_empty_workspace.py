@@ -207,7 +207,7 @@ def test_a_host_with_no_calendar_is_sent_to_connect_one(host_with_property):
 
     assert page.status_code == 200
     assert _primary_links(panel) == [
-        (f"/apartments/{_property_id()}#calendars", CONNECT_CALENDAR["en"])
+        (f"/apartments/{_property_id()}?view=bookings#calendars", CONNECT_CALENDAR["en"])
     ]
     assert STRINGS["en"]["stays.empty.go_apartments"] not in page.text
 
@@ -218,7 +218,7 @@ def test_with_a_calendar_the_empty_state_keeps_its_quiet_link(host_with_property
     page = host_with_property.get("/reservations")
     panel = _empty_panel(page.text)
 
-    assert f'href="/apartments/{_property_id()}#calendars"' not in page.text
+    assert f'href="/apartments/{_property_id()}?view=bookings#calendars"' not in page.text
     assert _primary_links(panel) == []
     assert (
         f'<a class="btn" href="/apartments">'
@@ -266,7 +266,7 @@ def test_the_empty_state_asks_for_a_calendar_in_czech(host_with_property):
     panel = _empty_panel(page.text)
 
     assert _primary_links(panel) == [
-        (f"/apartments/{_property_id()}#calendars", CONNECT_CALENDAR["cs"])
+        (f"/apartments/{_property_id()}?view=bookings#calendars", CONNECT_CALENDAR["cs"])
     ]
     assert CONNECT_CALENDAR["en"] not in page.text
 

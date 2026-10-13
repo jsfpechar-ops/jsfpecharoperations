@@ -137,7 +137,7 @@ def test_the_banner_lists_missing_report_fields_in_readiness_order(host):
         }
     ]
     assert present.index("IDUB") < present.index("Facility abbreviation") < present.index("Password")
-    assert f'href="/apartments/{apartment_id}#ubyport"' in banner
+    assert f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting#ubyport"' in banner
 
 
 def test_the_banner_is_absent_when_reporting_is_ready(host):

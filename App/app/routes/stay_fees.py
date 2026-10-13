@@ -171,8 +171,8 @@ def stay_fees_list(request: Request):
 
 
 # 0077: the one normaliser for the stay-fee fields of _stay_fee_fields.html.
-# The property save (admin._apartment_payload) and the legacy setup POST both
-# use it, so a field cannot be read two different ways.
+# The property save (admin._apartment_payload) uses it, so a field cannot be
+# read two different ways.
 FEE_ACCOUNT_RAW = "_stay_fee_account_raw"
 
 
@@ -238,12 +238,6 @@ def fee_account_draft(form) -> dict:
     }
 
 
-def _fee_values(form) -> dict:
-    values = fee_form_values(form)
-    apply_fee_account(values)
-    return values
-
-
 def fee_return_path(raw, apartment_id: int) -> str:
     """A validated way back to the fee list or this property's fee report, or ''."""
     path = security.safe_local_path(raw, "") if raw else ""
@@ -302,55 +296,6 @@ def fee_return_after_save(apartment, return_to: str) -> str:
         month = stay_fee.parse_month(dict(parse_qsl(split.query)).get("month"))
         return f"/stay-fees?month={stay_fee.month_key(month)}" if month else "/stay-fees"
     return back
-
-
-@router.get("/stay-fees/{apartment_id}/setup")
-def stay_fee_setup(apartment_id: int, request: Request):
-    """Legacy setup URL: lands on the one fee editor, keeping the way back."""
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment or apartment["archived_at"] or not apartment["active"]:
-        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
-    back = fee_return_path(request.query_params.get("return_to"), apartment_id)
-    if not back:
-        today = claim.prague_today()
-        month = stay_fee.parse_month(request.query_params.get("month"))
-        if month is None or month > today.replace(day=1):
-            month = _default_month(today)
-        back = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
-    return RedirectResponse(fee_settings_url(apartment_id, back), status_code=303)
-
-
-@router.post("/stay-fees/{apartment_id}/setup")
-async def stay_fee_setup_save(apartment_id: int, request: Request):
-    """Legacy setup POST: the same fee-only save, never the whole property saver."""
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
-    form = await request.form()
-    try:
-        values = _fee_values(form)
-    except ValueError:
-        from .admin import refuse_fee_save
-
-        return refuse_fee_save(request, apartment, form)
-    db.update("apartment", apartment_id, values)
-    db.audit("stay_fee_setup", f"apartment_id={apartment_id}")
-    saved = _flash(request, "flash.stay_fees.saved")
-    back = fee_return_after_save(
-        {**dict(apartment), **values}, _form_str(form, "fee_return_to")
-    )
-    if back:
-        return _back(back, msg=saved)
-    month = stay_fee.month_key(_default_month(claim.prague_today()))
-    if values["stay_fee_rate_czk"] <= 0:
-        return _back("/stay-fees", msg=saved)
-    return _back(f"/stay-fees/{apartment_id}?month={month}", msg=saved)
 
 
 @router.get("/stay-fees/{apartment_id}")

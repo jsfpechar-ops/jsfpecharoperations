@@ -1,7 +1,7 @@
 """Task 0075: one owner for each business and invoice-default field.
 
-The entity editor (``/entities``) and the invoice settings page
-(``/invoices/settings``) share field markup and normalisation. These tests pin
+The business editor (``/entities``) saves identity fields and, in its Invoice
+details section (``POST /entities/{id}/invoice``), invoice defaults. These tests pin
 the stored result of both handlers for the same input, the explicit policy
 differences between them, and the rendered contract (names, types,
 requiredness, upload encoding and action targets). No network: ARES is mocked.
@@ -118,7 +118,7 @@ def _post_entity(host, entity_id, data, **kwargs):
 
 def _post_settings(host, entity_id, data, follow_redirects=False):
     body = {"legal_entity_id": str(entity_id), "next": f"/invoices/new?entity={entity_id}", **data}
-    return host.post("/invoices/settings?lang=en", data=body, follow_redirects=follow_redirects)
+    return host.post(f"/entities/{entity_id}/invoice?lang=en", data=body, follow_redirects=follow_redirects)
 
 
 # --- normalisation equivalence: the same detail input stores the same value ---
@@ -215,7 +215,7 @@ def test_empty_account_parts_clear_a_domestic_account(host):
 def test_empty_account_parts_keep_an_iban_only_account(host):
     iban = "CZ6508000000192000145399"
     entity_id = _entity(bank_account=iban, iban=iban)
-    page = host.get(f"/invoices/settings?entity={entity_id}&lang=en")
+    page = host.get(f"/entities?edit={entity_id}&lang=en")
     assert f"IBAN {iban}" in page.text
     _post_settings(host, entity_id, {"account_prefix": "", "account_number": "",
                                      "account_bank": "", "invoice_due_days": "30"})
@@ -249,12 +249,12 @@ def test_bic_derivation_is_an_invoice_settings_policy_only(host):
 
 def test_the_derived_bic_is_labelled_on_the_settings_page(host):
     entity_id = _entity(bank_account="19-2000781379/0800", bic="GIBACZPX")
-    page = host.get(f"/invoices/settings?entity={entity_id}&lang=en").text
+    page = host.get(f"/entities?edit={entity_id}&lang=en").text
     assert 'name="bic"' in page and 'value="GIBACZPX"' in page
     hint = host_i18n.translate("en", "invoice.fill_guest.bic_filled")
     assert hint in page
     other = _entity(name="Pole II s.r.o.", bank_account="19-2000781379/0800", bic="KOMBCZPP")
-    assert hint not in host.get(f"/invoices/settings?entity={other}&lang=en").text
+    assert hint not in host.get(f"/entities?edit={other}&lang=en").text
 
 
 def test_an_invalid_account_keeps_the_stored_value_and_every_typed_value(host):
@@ -461,9 +461,9 @@ def test_the_entity_forms_keep_their_contract(host):
 
 def test_the_invoice_settings_form_keeps_its_contract(host):
     entity_id = _entity()
-    # 0076: the legacy URL opens the business editor; Invoice details is its own
+    # 0076: Invoice details is the business editor's own
     # urlencoded form (no enctype) with the same fields and guards.
-    page = host.get(f"/invoices/settings?entity={entity_id}&lang=en").text
+    page = host.get(f"/entities?edit={entity_id}&lang=en").text
     form = _form_body(page, f'<form method="post" action="/entities/{entity_id}/invoice" data-unsaved-guard>')
     assert 'name="_csrf"' in form and f'name="legal_entity_id" value="{entity_id}"' in form
     # One IČO per business: the lookup sends the saved Business details value
@@ -529,7 +529,7 @@ def test_pages_and_saves_never_call_the_register(host):
     entity_id = _entity()
     with patch("app.ares.requests.get") as mock_get:
         host.get(f"/entities?edit={entity_id}&lang=en")
-        host.get(f"/invoices/settings?entity={entity_id}&lang=en")
+        host.get(f"/entities?edit={entity_id}&lang=en")
         _post_entity(host, entity_id, {"ico": ICO})
         _post_settings(host, entity_id, {"ico": ICO, "registry_entry": ""})
     assert not mock_get.called
@@ -664,8 +664,8 @@ def test_entity_and_invoice_editors_fit_every_width(browser_host, live_base):
     pages = (
         ("entity-edit", f"/entities?edit={entity_id}", "#entity-business form"),
         ("entity-add", "/entities", "#entity-add form"),
-        # 0076: the legacy URL lands on the editor's Invoice details form.
-        ("invoice-settings", f"/invoices/settings?entity={entity_id}",
+        # 0101: Invoice details of the business editor.
+        ("invoice-settings", f"/entities?edit={entity_id}#entity-invoice",
          "#entity-invoice form"),
     )
     capture = os.environ.get("UBYHOST_CAPTURE_0075") == "1"

@@ -64,9 +64,9 @@ def host():
         _cleanup()
 
 
-def test_automation_redirects_to_property_timing(host):
+def test_the_old_automation_hub_is_gone(host):
+    """0101: /automation was removed; the property's Settings → Automation is the home."""
     client, apartment_id = host
-    response = client.get("/automation?lang=en", follow_redirects=False)
-    assert response.status_code == 303
-    # 0094: the query opens the Settings → Automation group, the hash scrolls.
-    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=automation#automation"
+    assert client.get("/automation?lang=en", follow_redirects=False).status_code == 404
+    page = client.get(f"/apartments/{apartment_id}?view=settings&section=automation&lang=en")
+    assert page.status_code == 200 and 'id="automation"' in page.text

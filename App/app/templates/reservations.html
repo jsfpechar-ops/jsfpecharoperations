@@ -230,7 +230,7 @@
   {% if feed_count %}
     {{ empty_state('', t('stays.empty.none'), '/apartments', t('stays.empty.go_apartments'), primary=false) }}
   {% else %}
-    {{ empty_state('', t('stays.empty.none'), '/apartments/' ~ apartments[0].id ~ '#calendars', t('dashboard.empty.connect_calendar')) }}
+    {{ empty_state('', t('stays.empty.none'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', t('dashboard.empty.connect_calendar')) }}
   {% endif %}
 {% elif demo_available %}
   {#- Practice mode only: the demo loader is the page-specific extra. -#}

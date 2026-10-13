@@ -49,7 +49,7 @@ def command_palette(request: Request):
         ("host.business", "/entities", "business operator company billing firma"),
         ("nav.guest_links", hub_url("guests", "communication"), "invitation guest link pin"),
         ("nav.automation", hub_url("automation", "automation"), "automatic reporting timing police"),
-        ("host.invoice_settings", "/invoices/settings", "invoice settings faktura"),
+        ("host.invoice_settings", access.invoice_details_url(request), "invoice settings faktura"),
         ("settings.group.security", "/settings#settings-group-security", "passkey 2fa authenticator login password"),
         ("settings.group.data", "/settings#settings-group-data", "retention backup delete expired export"),
         ("settings.nav.archive", "/settings/archived", "restore archived records"),

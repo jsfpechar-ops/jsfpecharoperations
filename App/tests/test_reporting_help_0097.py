@@ -118,7 +118,7 @@ _PAGE_JS = """() => {
     overflow: document.documentElement.scrollWidth > vw + 1, vw,
     police: r(police), title: r(police.querySelector('.property-section-title')),
     sample: r(document.querySelector('#police-sample-link')),
-    fine: r(document.querySelector('#ws-request-letter')),
+    fine: r(document.querySelector('.police-no-credentials')),
     fee: r(document.querySelector('#stay-fee-settings')),
   };
 }"""

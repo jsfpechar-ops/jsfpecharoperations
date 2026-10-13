@@ -1,4 +1,4 @@
-"""0077: one fee editor, the legacy setup URL as an adapter, one normaliser."""
+"""0077: one fee editor and one normaliser (0101: the old setup URL is gone)."""
 from __future__ import annotations
 
 import os
@@ -8,7 +8,7 @@ import socket
 import threading
 import time
 from pathlib import Path
-from urllib.parse import quote, unquote
+from urllib.parse import quote
 
 import pytest
 
@@ -142,35 +142,36 @@ def _canonical(apartment_id: int, back: str) -> str:
     )
 
 
-# --- legacy GET adapter ---------------------------------------------------
-
-
-def test_legacy_setup_url_lands_on_the_one_fee_editor_with_the_way_back(host):
-    client, owner_id, entity_id = host
-    apartment_id = _property(owner_id, entity_id)
-
-    plain = client.get(f"/stay-fees/{apartment_id}/setup", follow_redirects=False)
-    assert plain.status_code == 303
-    location = plain.headers["location"]
-    assert location.startswith(f"/apartments/{apartment_id}?view=settings&section=reporting&return_to=")
-    assert location.endswith("#stay-fee-settings")
-    assert re.search(r"return_to=%2Fstay-fees%2F\d+%3Fmonth%3D\d{4}-\d{2}#", location)
-
-    month = client.get(f"/stay-fees/{apartment_id}/setup?month=2026-07", follow_redirects=False)
-    assert month.headers["location"] == _canonical(apartment_id, f"/stay-fees/{apartment_id}?month=2026-07")
-
-    listed = client.get(
-        f"/stay-fees/{apartment_id}/setup?return_to="
-        + quote("/stay-fees?month=2026-06&status=not_setup", safe=""),
+def _save_property(client, apartment_id: int, entity_id: int, form: dict, **extra):
+    return client.post(
+        f"/apartments/{apartment_id}",
+        data={**{k: str(v) for k, v in NON_FEE.items() if k != "permalink_pin"},
+              "legal_entity_id": str(entity_id), **form, **extra},
         follow_redirects=False,
     )
-    assert listed.headers["location"] == _canonical(apartment_id, "/stay-fees?month=2026-06&status=not_setup")
 
-    page = client.get(f"/stay-fees/{apartment_id}/setup?month=2026-07&lang=en")
+
+# --- 0101: the old setup URL is gone; the editor keeps the way back --------
+
+
+def test_the_old_setup_url_is_gone(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id)
+    assert client.get(f"/stay-fees/{apartment_id}/setup", follow_redirects=False).status_code == 404
+    posted = client.post(f"/stay-fees/{apartment_id}/setup", data=_fee_form(), follow_redirects=False)
+    assert posted.status_code in (404, 405)
+    assert _row(apartment_id)["stay_fee_rate_czk"] in (None, 0)
+
+
+def test_the_fee_editor_keeps_the_way_back(host):
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id)
+    back = f"/stay-fees/{apartment_id}?month=2026-07"
+    page = client.get(_canonical(apartment_id, back).split("#", 1)[0] + "&lang=en")
     assert page.status_code == 200
     assert 'id="stay-fee-settings"' in page.text
-    assert f'name="fee_return_to" value="/stay-fees/{apartment_id}?month=2026-07"' in page.text
-    assert f'href="/stay-fees/{apartment_id}?month=2026-07"' in page.text
+    assert f'name="fee_return_to" value="{back}"' in page.text
+    assert f'href="{back}"' in page.text
     assert "Back to stay fees" in page.text
 
 
@@ -180,32 +181,11 @@ def test_legacy_setup_url_lands_on_the_one_fee_editor_with_the_way_back(host):
 def test_unsafe_or_foreign_return_is_dropped(host, unsafe):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id)
-
-    response = client.get(
-        f"/stay-fees/{apartment_id}/setup?return_to={quote(unsafe, safe='')}", follow_redirects=False
-    )
-    back = unquote(response.headers["location"].split("return_to=", 1)[1].split("#", 1)[0])
-    assert back.startswith(f"/stay-fees/{apartment_id}?month=")
-
     page = client.get(f"/apartments/{apartment_id}?view=settings&return_to={quote(unsafe, safe='')}")
     assert 'name="fee_return_to"' not in page.text
 
 
-def test_legacy_setup_keeps_its_guards(host):
-    client, owner_id, entity_id = host
-    archived = _property(owner_id, entity_id, archived_at=db.utcnow(), active=0)
-    foreign = _property(_owner(OTHER), None)
-    for apartment_id in (archived, foreign, 999999):
-        response = client.get(f"/stay-fees/{apartment_id}/setup", follow_redirects=False)
-        assert response.status_code == 303
-        assert response.headers["location"].startswith("/stay-fees?")
-        assert "err=" in response.headers["location"]
-    posted = client.post(f"/stay-fees/{foreign}/setup", data=_fee_form(), follow_redirects=False)
-    assert posted.status_code == 303 and "err=" in posted.headers["location"]
-    assert _row(foreign)["stay_fee_rate_czk"] in (None, 0)
-
-
-# --- one normaliser, two entry points ------------------------------------
+# --- the one normaliser behind the property save --------------------------
 
 
 @pytest.mark.parametrize("form", [
@@ -214,48 +194,33 @@ def test_legacy_setup_keeps_its_guards(host):
     _fee_form(stay_fee_rate_czk="0", account_prefix="", account_number="", account_bank=""),
     _fee_form(stay_fee_authority_name="", stay_fee_payee="  Obec  ", stay_fee_instruction="x" * 600),
 ])
-def test_property_save_and_legacy_post_store_identical_fee_values(host, form):
+def test_property_save_stores_the_normalised_fee_values(host, form):
     client, owner_id, entity_id = host
-    via_property = _property(owner_id, entity_id, stay_fee_rate_czk=10, stay_fee_vs="1")
-    via_legacy = _property(owner_id, entity_id, stay_fee_rate_czk=10, stay_fee_vs="1")
-    property_form = {
-        **{key: str(value) for key, value in NON_FEE.items() if key != "permalink_pin"},
-        "legal_entity_id": str(entity_id),
-        **form,
-    }
+    apartment_id = _property(owner_id, entity_id, stay_fee_rate_czk=10, stay_fee_vs="1")
 
-    first = client.post(f"/apartments/{via_property}", data=property_form, follow_redirects=False)
-    second = client.post(f"/stay-fees/{via_legacy}/setup", data=form, follow_redirects=False)
+    response = _save_property(client, apartment_id, entity_id, form)
 
-    assert first.status_code == second.status_code == 303
-    assert _fee(_row(via_property)) == _fee(_row(via_legacy))
-    expected = stay_fee_routes._fee_values(form)
-    assert {key: _row(via_legacy)[key] for key in expected} == expected
+    assert response.status_code == 303
+    expected = stay_fee_routes.fee_form_values(form)
+    stay_fee_routes.apply_fee_account(expected)
+    assert {key: _row(apartment_id)[key] for key in expected} == expected
 
 
-def test_iban_only_account_survives_an_unrelated_fee_save_on_both_paths(host):
+def test_iban_only_account_survives_an_unrelated_fee_save(host):
     client, owner_id, entity_id = host
     iban = "CZ6508000000192000145399"
     stored = {"stay_fee_rate_czk": 20, "stay_fee_council_account": iban, "stay_fee_council_iban": iban}
-    via_property = _property(owner_id, entity_id, **stored)
-    via_legacy = _property(owner_id, entity_id, **stored)
+    apartment_id = _property(owner_id, entity_id, **stored)
     form = _fee_form(_stay_fee_account_existing=iban, account_prefix="", account_number="", account_bank="")
 
-    client.post(
-        f"/apartments/{via_property}",
-        data={**{k: str(v) for k, v in NON_FEE.items() if k != "permalink_pin"},
-              "legal_entity_id": str(entity_id), **form},
-        follow_redirects=False,
-    )
-    client.post(f"/stay-fees/{via_legacy}/setup", data=form, follow_redirects=False)
+    _save_property(client, apartment_id, entity_id, form)
 
-    for apartment_id in (via_property, via_legacy):
-        row = _row(apartment_id)
-        assert (row["stay_fee_council_account"], row["stay_fee_council_iban"]) == (iban, iban)
-        assert row["stay_fee_authority_name"] == "Council office"
+    row = _row(apartment_id)
+    assert (row["stay_fee_council_account"], row["stay_fee_council_iban"]) == (iban, iban)
+    assert row["stay_fee_authority_name"] == "Council office"
 
 
-def test_blank_account_clears_on_both_paths(host):
+def test_blank_account_clears(host):
     client, owner_id, entity_id = host
     stored = {
         "stay_fee_rate_czk": 20,
@@ -267,27 +232,9 @@ def test_blank_account_clears_on_both_paths(host):
         _stay_fee_account_existing="19-2000781379/0800",
         account_prefix="", account_number="", account_bank="",
     )
-    client.post(f"/stay-fees/{apartment_id}/setup", data=form, follow_redirects=False)
+    _save_property(client, apartment_id, entity_id, form)
     row = _row(apartment_id)
     assert row["stay_fee_council_account"] is None and row["stay_fee_council_iban"] is None
-
-
-def test_legacy_post_is_fee_only_and_leaves_every_other_field(host):
-    client, owner_id, entity_id = host
-    apartment_id = _property(owner_id, entity_id)
-    before = _row(apartment_id)
-
-    response = client.post(f"/stay-fees/{apartment_id}/setup", data=_fee_form(), follow_redirects=False)
-
-    assert response.status_code == 303
-    after = _row(apartment_id)
-    for key, value in before.items():
-        if key not in FEE_COLUMNS:
-            assert after[key] == value, key
-    assert after["stay_fee_rate_czk"] == 25
-    assert after["stay_fee_vs"] == "1234"
-    audit = db.query("SELECT action FROM audit WHERE owner_user_id = ? ORDER BY id", (owner_id,))
-    assert [row["action"] for row in audit][-1:] == ["stay_fee_setup"]
 
 
 # --- the way back after save and after a refusal --------------------------
@@ -297,28 +244,14 @@ def test_save_returns_to_the_exact_report_period(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id)
     back = f"/stay-fees/{apartment_id}?month=2026-07"
+    settings = f"/apartments/{apartment_id}?view=settings&section=reporting"
 
-    legacy = client.post(
-        f"/stay-fees/{apartment_id}/setup",
-        data=_fee_form(fee_return_to=back),
-        follow_redirects=False,
-    )
-    assert legacy.headers["location"].startswith(back + "&msg=")
-
-    full = client.post(
-        f"/apartments/{apartment_id}",
-        data={**{k: str(v) for k, v in NON_FEE.items() if k != "permalink_pin"},
-              "legal_entity_id": str(entity_id), **_fee_form(), "fee_return_to": back,
-              "return_to": f"/apartments/{apartment_id}?view=settings&section=reporting"},
-        follow_redirects=False,
-    )
+    full = _save_property(client, apartment_id, entity_id, _fee_form(), fee_return_to=back, return_to=settings)
     assert full.headers["location"].startswith(back + "&msg=")
-    assert "&msg=" in full.headers["location"]
 
-    listed = client.post(
-        f"/stay-fees/{apartment_id}/setup",
-        data=_fee_form(fee_return_to="/stay-fees?month=2026-06&status=ready"),
-        follow_redirects=False,
+    listed = _save_property(
+        client, apartment_id, entity_id,
+        _fee_form(), fee_return_to="/stay-fees?month=2026-06&status=ready", return_to=settings,
     )
     assert listed.headers["location"].startswith("/stay-fees?month=2026-06&status=ready&msg=")
 
@@ -326,41 +259,25 @@ def test_save_returns_to_the_exact_report_period(host):
 def test_rate_zero_returns_to_the_list_of_the_same_month(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, stay_fee_rate_czk=20)
-    response = client.post(
-        f"/stay-fees/{apartment_id}/setup",
-        data=_fee_form(stay_fee_rate_czk="0", fee_return_to=f"/stay-fees/{apartment_id}?month=2026-07"),
-        follow_redirects=False,
+    response = _save_property(
+        client, apartment_id, entity_id,
+        _fee_form(stay_fee_rate_czk="0"), fee_return_to=f"/stay-fees/{apartment_id}?month=2026-07",
     )
     assert response.headers["location"].startswith("/stay-fees?month=2026-07&msg=")
     assert _row(apartment_id)["stay_fee_rate_czk"] == 0
 
 
-def test_legacy_post_without_return_keeps_its_old_landing(host):
-    client, owner_id, entity_id = host
-    apartment_id = _property(owner_id, entity_id)
-    on = client.post(f"/stay-fees/{apartment_id}/setup", data=_fee_form(), follow_redirects=False)
-    assert re.match(rf"/stay-fees/{apartment_id}\?month=\d{{4}}-\d{{2}}&msg=", on.headers["location"])
-    off = client.post(
-        f"/stay-fees/{apartment_id}/setup", data=_fee_form(stay_fee_rate_czk="0"), follow_redirects=False
-    )
-    assert off.headers["location"].startswith("/stay-fees?msg=")
-
-
-@pytest.mark.parametrize("path", ["legacy", "property"])
-def test_invalid_account_saves_nothing_and_keeps_what_was_typed(host, path):
+def test_invalid_account_saves_nothing_and_keeps_what_was_typed(host):
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id, stay_fee_rate_czk=20, stay_fee_vs="1")
     before = _row(apartment_id)
     back = f"/stay-fees/{apartment_id}?month=2026-07"
     form = _fee_form(account_number="1234567890", stay_fee_vs="777", fee_return_to=back)
-    if path == "legacy":
-        response = client.post(f"/stay-fees/{apartment_id}/setup?lang=en", data=form)
-    else:
-        response = client.post(
-            f"/apartments/{apartment_id}?lang=en",
-            data={**{k: str(v) for k, v in NON_FEE.items() if k != "permalink_pin"},
-                  "internal_name": "Typed name", "legal_entity_id": str(entity_id), **form},
-        )
+    response = client.post(
+        f"/apartments/{apartment_id}?lang=en",
+        data={**{k: str(v) for k, v in NON_FEE.items() if k != "permalink_pin"},
+              "internal_name": "Typed name", "legal_entity_id": str(entity_id), **form},
+    )
 
     assert response.status_code == 400
     assert _row(apartment_id) == before
@@ -372,8 +289,7 @@ def test_invalid_account_saves_nothing_and_keeps_what_was_typed(host, path):
     assert f'name="fee_return_to" value="{back}"' in text
     assert re.search(r'data-settings-group="reporting"[^>]*>|is-active" data-settings-group="reporting"', text)
     assert text.count('action="/apartments/') >= 1
-    if path == "property":
-        assert 'value="Typed name"' in text
+    assert 'value="Typed name"' in text
 
 
 # --- markup: one editor, nothing folded -----------------------------------

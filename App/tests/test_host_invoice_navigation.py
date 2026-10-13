@@ -76,13 +76,16 @@ def _issue(world, paid=True, stay=None):
 def test_list_and_picker_link_to_settings(world):
     client = world["client"]
     _issue(world)
+    # 0101: no /invoices/settings; the one business opens at Invoice details.
+    details = f'href="/entities?edit={world['entity']}&amp;next=/invoices#entity-invoice"'
     listing = client.get("/invoices").text
-    assert 'href="/invoices/settings"' in listing
+    assert "/invoices/settings" not in listing
+    assert details in listing
     assert 'href="/invoices/new"' in listing
     picker = client.get("/invoices/new").text
     assert 'aria-describedby="reservation_id-help"' in picker
     assert 'id="reservation_id-help"' in picker
-    assert 'href="/invoices/settings"' in picker
+    assert details in picker
 
 
 def test_builder_shows_stay_and_unfolds_options_without_changing_fields(world):

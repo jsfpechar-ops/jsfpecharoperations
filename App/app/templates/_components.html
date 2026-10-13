@@ -428,7 +428,7 @@
 {% macro onboarding_banner(onboarding) %}
   {% if onboarding and not onboarding.wizard_complete and not onboarding.dismissed %}
     <aside class="onboarding-banner onboarding-banner-setup" aria-label="{{ t('setup.banner.aria') }}">
-      <a class="onboarding-banner-setup-link" href="/setup">
+      <a class="onboarding-banner-setup-link" href="{{ onboarding.setup_url }}">
         {{ t('setup.banner.line', step=onboarding.wizard_step_number, total=onboarding.wizard_total_steps) }}
       </a>
       <form method="post" action="/onboarding/dismiss">

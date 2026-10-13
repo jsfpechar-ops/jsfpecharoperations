@@ -158,90 +158,6 @@ def test_legacy_address_line_submission_is_ignored(host):
     assert row["addr_obec"] == "Praha"
 
 
-def test_address_only_save_preserves_credentials_and_automation(host):
-    client = host["client"]
-    client.post("/setup/welcome", follow_redirects=False)
-    client.post(
-        "/setup/name",
-        data={"internal_name": "Wizard Preserve", "legal_entity_id": str(host["entity"])},
-        follow_redirects=False,
-    )
-    apartment_id = db.query_one(
-        "SELECT id FROM apartment WHERE internal_name = ?", ("Wizard Preserve",)
-    )["id"]
-    db.update(
-        "apartment",
-        apartment_id,
-        {
-            "uby_idub": "123456789012",
-            "uby_ws_user": "UBY-WSabcdef",
-            "uby_ws_password_enc": db.encrypt_secret("secret-pass"),
-            "guest_message": "Custom welcome",
-            "automation_mode": "scheduled",
-            "submit_after_hours": 12,
-            "addr_street": "Old",
-            "addr_house_no": "1",
-            "addr_zip": "11000",
-            "addr_obec": "Praha",
-        },
-    )
-    before = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
-    response = client.post(
-        "/setup/address",
-        data={
-            "internal_name": before["internal_name"],
-            "active": "1",
-            "addr_street": "New lane",
-            "addr_house_no": "22",
-            "addr_zip": "12000",
-            "addr_obec": "Praha",
-            "return_to": "/setup/bookings",
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 303
-    after = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
-    assert after["addr_street"] == "New lane"
-    assert after["uby_ws_user"] == before["uby_ws_user"]
-    assert after["guest_message"] == before["guest_message"]
-    assert after["automation_mode"] == before["automation_mode"]
-
-
-def test_invalid_address_keeps_draft_on_setup_error(host):
-    client = host["client"]
-    client.post("/setup/welcome", follow_redirects=False)
-    client.post("/setup/name", data={"internal_name": "Draft flat", "legal_entity_id": str(host["entity"])}, follow_redirects=False)
-    apartment_id = db.query_one(
-        "SELECT id FROM apartment WHERE internal_name = ?", ("Draft flat",)
-    )["id"]
-    db.update(
-        "apartment",
-        apartment_id,
-        {
-            "addr_street": "Keep me",
-            "addr_house_no": "5",
-            "addr_zip": "12000",
-            "addr_obec": "Praha",
-        },
-    )
-    response = client.post(
-        "/setup/address",
-        data={
-            "internal_name": "Draft flat",
-            "active": "1",
-            "addr_street": "Broken",
-            "addr_house_no": "",
-            "addr_zip": "",
-            "addr_obec": "Praha",
-            "return_to": "/setup/bookings",
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 400
-    assert 'value="Broken"' in response.text
-    assert 'name="address_line"' not in response.text
-
-
 def test_guest_message_default_is_editable_and_custom_survives(host):
     client = host["client"]
     default_en = host_i18n.STRINGS["en"]["apartment.form.guest_message.default"]
@@ -455,22 +371,6 @@ def test_copy_correction_pages_browser_evidence(browser_base):
     base = browser_base["url"]
     cookie = browser_base["cookie"]
     host = browser_base["host"]
-    client = host["client"]
-    client.post("/setup/welcome", follow_redirects=False)
-    client.post("/setup/name", data={"internal_name": "Wizard error flat", "legal_entity_id": str(host["entity"])}, follow_redirects=False)
-    wizard_id = db.query_one(
-        "SELECT id FROM apartment WHERE internal_name = ?", ("Wizard error flat",)
-    )["id"]
-    db.update(
-        "apartment",
-        wizard_id,
-        {
-            "addr_street": "Keep me",
-            "addr_house_no": "5",
-            "addr_zip": "12000",
-            "addr_obec": "Praha",
-        },
-    )
     apartment_id = db.insert(
         "apartment",
         {
@@ -529,8 +429,8 @@ def test_copy_correction_pages_browser_evidence(browser_base):
                 _assert_lane_fits(page, "main.wrap")
                 _maybe_shot(page, f"stay-fee-{width}-{lang}.png")
 
-            # 0092: the legacy /setup/address page now opens the property; the
-            # address error state lives on the canonical create form.
+            # The address error state lives on the canonical create form; the
+            # 0092 wizard page that showed it is gone (0101).
             page.goto(f"{base}/apartments/new?lang={lang}")
             page.evaluate("document.querySelector('#property-create-form').setAttribute('novalidate', 'novalidate')")
             page.locator("#internal_name").fill("Broken address flat")
@@ -545,7 +445,7 @@ def test_copy_correction_pages_browser_evidence(browser_base):
 
             for width in MEASURE_WIDTHS:
                 page.set_viewport_size({"width": width, "height": 900})
-                page.goto(f"{base}/apartments/{apartment_id}?lang={lang}#address")
+                page.goto(f"{base}/apartments/{apartment_id}?view=settings&section=property&lang={lang}#address")
                 _open_property_reporting_sections(page)
                 for collapsed in (False, True):
                     _set_sidebar(page, collapsed)

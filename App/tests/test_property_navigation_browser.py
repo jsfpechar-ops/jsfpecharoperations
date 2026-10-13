@@ -28,14 +28,18 @@ from tests.conftest import login_as
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0094-evidence"
 LOCK = {"lock_id": "70940001", "alias": "Synthetic Door", "battery": 90, "tz_offset_ms": 3600000}
+# 0101: every link carries ?view=&section=; the hash only scrolls to the section.
 HASHES = {
     "basics": ("settings", "property"), "address": ("settings", "property"),
-    # 0096: Door lock is its own Settings group; old #door-code links land there.
     "communication": ("settings", "guests"), "door-code": ("settings", "lock"),
-    "ubyport": ("settings", "reporting"), "ws-request-letter": ("settings", "reporting"),
+    "ubyport": ("settings", "reporting"),
     "stay-fee-settings": ("settings", "reporting"), "automation": ("settings", "automation"),
     "calendars": ("bookings", None), "calendar-connect": ("bookings", None),
 }
+
+
+def _canonical_query(view, group):
+    return f"view={view}" + (f"&section={group}" if group else "")
 # The successful controls of the one property form, by name.
 SETTINGS_NAMES = {
     "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
@@ -287,11 +291,11 @@ def test_bookings_view_with_no_one_and_many_feeds(host):
     assert removed.headers["location"].startswith(f"/apartments/{host['apartment']}?view=bookings")
 
 
-def test_old_hub_links_open_their_settings_group(host):
+def test_the_kept_e_mail_link_opens_its_settings_group(host):
+    # 0101: /guest-links stays only for lifecycle e-mails already sent; /automation is gone.
     links = host["client"].get("/guest-links", follow_redirects=False)
     assert links.headers["location"] == f"/apartments/{host['apartment']}?view=settings&section=guests#communication"
-    automation = host["client"].get("/automation", follow_redirects=False)
-    assert automation.headers["location"] == f"/apartments/{host['apartment']}?view=settings&section=automation#automation"
+    assert host["client"].get("/automation", follow_redirects=False).status_code == 404
 
 
 def test_overview_cards_point_at_the_canonical_editors(host):
@@ -388,9 +392,9 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         page = _context(browser, base, host).new_page()
 
-        # Every old hash opens its view and group, then shows the target.
+        # Every canonical link opens its view and group, then shows the target.
         for anchor, (view, group) in HASHES.items():
-            page.goto(f"{url}?lang=en#{anchor}")
+            page.goto(f"{url}?{_canonical_query(view, group)}&lang=en#{anchor}")
             page.wait_for_timeout(30)
             state = page.evaluate(_STATE_JS)
             assert state["visibleViews"] == [view], (anchor, state)
@@ -534,7 +538,7 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
         page = _context(no_js_browser, base, host, java_script_enabled=False).new_page()
         url = f"{base}/apartments/{host['apartment']}"
         for anchor, (view, group) in HASHES.items():
-            page.goto(f"{url}?lang=cs#{anchor}")
+            page.goto(f"{url}?{_canonical_query(view, group)}&lang=cs#{anchor}")
             assert page.locator(f"#{anchor}").is_visible(), anchor
             assert page.locator(f'[data-property-view="{view}"]').is_visible()
             if group:

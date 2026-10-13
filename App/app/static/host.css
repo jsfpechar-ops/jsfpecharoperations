@@ -1060,7 +1060,8 @@ body.host-workspace {
 /* One view and one Settings group show at a time; hidden ones still submit. */
 .property-views { container-name: property-lane; container-type: inline-size; }
 .property-view:not(.is-active), .property-settings-group:not(.is-active) { display: none; }
-/* Without JavaScript an old #hash still opens its view and group. */
+/* Without JavaScript an in-page #fragment (the Overview readiness links)
+   still opens the view and group that hold its target. */
 .property-views:not([data-js]) .property-view:has(:target),
 .property-views:not([data-js]) .property-settings-group:has(:target) { display: block; }
 .property-views:not([data-js]):has(:target) .property-view.is-active:not(:has(:target)),

@@ -1,8 +1,7 @@
 """Task 0076: one business editor with Business details and Invoice details.
 
-Every business and invoice-settings link lands on ``/entities?edit={id}``;
-the old ``/invoices/settings`` GET redirects there and its POST runs the same
-save, validation and rerender. Which business a property uses stays a
+Every business and invoice-settings link lands on ``/entities?edit={id}``
+(0101: the old ``/invoices/settings`` URL is gone). Which business a property uses stays a
 property setting, and issued invoices never change. ARES is never called.
 """
 from __future__ import annotations
@@ -15,7 +14,6 @@ import threading
 import time
 from pathlib import Path
 from unittest.mock import patch
-from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import uvicorn
@@ -116,47 +114,22 @@ def _section(page, anchor):
     return page[start:page.index("</section>", start)]
 
 
-# --- legacy entry URLs --------------------------------------------------------
+# --- 0101: the old entry URL is gone ------------------------------------------
 
-def test_legacy_get_opens_the_right_entity_at_invoice_details(host):
-    first = _entity(name="A s.r.o.")
-    second = _entity(name="B s.r.o.")
-    location = _location(host.get(f"/invoices/settings?entity={second}", follow_redirects=False))
-    split = urlsplit(location)
-    assert split.path == "/entities" and split.fragment == "entity-invoice"
-    query = parse_qs(split.query)
-    assert query["edit"] == [str(second)]
-    # The old default return (the invoice builder of that operator) is kept.
-    assert query["next"] == [f"/invoices/new?entity={second}"]
-    nexted = _location(host.get(f"/invoices/settings?entity={first}&next=/invoices/77",
-                                follow_redirects=False))
-    assert parse_qs(urlsplit(nexted).query)["next"] == ["/invoices/77"]
+def test_the_old_invoice_settings_url_is_gone(host):
+    entity_id = _entity()
+    before = _row(entity_id)
+    for path in ("/invoices/settings", f"/invoices/settings?entity={entity_id}"):
+        assert host.get(path, follow_redirects=False).status_code == 404, path
+    posted = host.post("/invoices/settings", data={
+        "legal_entity_id": str(entity_id), "invoice_prefix": "OLD"}, follow_redirects=False)
+    assert posted.status_code in (404, 405)
+    assert _row(entity_id) == before
 
 
-def test_legacy_get_never_picks_an_arbitrary_or_foreign_record(host):
-    _entity(name="A s.r.o.")
-    _entity(name="B s.r.o.")
-    foreign = _entity(owner=_owner(OTHER), name="Cizí s.r.o.")
-    assert _location(host.get("/invoices/settings", follow_redirects=False)) == "/entities"
-    assert _location(host.get(f"/invoices/settings?entity={foreign}",
-                              follow_redirects=False)) == "/entities"
-    outside = _location(host.get("/invoices/settings?entity=x&next=https://evil.test/",
-                                 follow_redirects=False))
-    assert "evil" not in outside
-
-
-def test_legacy_get_with_one_entity_and_with_none(host):
-    assert _location(host.get("/invoices/settings", follow_redirects=False)).startswith("/invoices/new?err=")
-    only = _entity()
-    location = _location(host.get("/invoices/settings", follow_redirects=False))
-    assert parse_qs(urlsplit(location).query)["edit"] == [str(only)]
-    external = _location(host.get("/invoices/settings?next=//evil.test/x", follow_redirects=False))
-    assert parse_qs(urlsplit(external).query)["next"] == [f"/invoices/new?entity={only}"]
-
-
-def test_legacy_post_saves_through_the_same_implementation(host):
+def test_invoice_details_post_saves_with_its_return_path(host):
     entity_id = _entity(bic=None)
-    response = host.post("/invoices/settings", data={
+    response = host.post(f"/entities/{entity_id}/invoice", data={
         "legal_entity_id": str(entity_id), "bank_account": "19-2000781379/0800",
         "next": "/invoices/12"}, follow_redirects=False)
     assert _location(response).startswith("/invoices/12?msg=")
@@ -164,11 +137,11 @@ def test_legacy_post_saves_through_the_same_implementation(host):
     assert row["bank_account"] == "19-2000781379/0800" and row["bic"] == "GIBACZPX"
 
 
-def test_legacy_post_refuses_a_foreign_entity_without_saving(host):
+def test_invoice_details_post_refuses_a_foreign_entity_without_saving(host):
     own = _entity()
     foreign = _entity(owner=_owner(OTHER), name="Cizí s.r.o.")
     before_own, before_foreign = _row(own), _row(foreign)
-    response = host.post("/invoices/settings", data={
+    response = host.post(f"/entities/{foreign}/invoice", data={
         "legal_entity_id": str(foreign), "invoice_prefix": "HACK"}, follow_redirects=False)
     assert _location(response).startswith("/entities?err=")
     assert _row(own) == before_own and _row(foreign) == before_foreign
@@ -473,13 +446,12 @@ def test_editor_fits_every_width_and_both_languages(browser_host, live_base):
                         EVIDENCE.mkdir(parents=True, exist_ok=True)
                         page.locator("#entity-edit").screenshot(
                             path=str(EVIDENCE / f"entity-editor-{width}-{lang}.png"))
-                # The legacy URL lands on Invoice details, scrolled into view.
-                page.goto(f"{live_base}/invoices/settings?entity={entity_id}&lang=en")
-                assert page.url.endswith("#entity-invoice")
+                # The Invoice settings link lands on Invoice details, scrolled into view.
+                page.goto(f"{live_base}/entities?edit={entity_id}&lang=en#entity-invoice")
                 box = page.locator("#entity-invoice").bounding_box()
                 assert box and box["y"] < 900, box
                 if capture and width == 1280:
-                    page.screenshot(path=str(EVIDENCE / "legacy-invoice-settings-1280-en.png"))
+                    page.screenshot(path=str(EVIDENCE / "invoice-details-1280-en.png"))
                 context.close()
         finally:
             browser.close()

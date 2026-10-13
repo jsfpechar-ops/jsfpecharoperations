@@ -326,11 +326,11 @@ def test_required_operator_controls_in_browser(host, base):
                     _shot_0088(none, f"new-none-{width}-{lang}")
 
                     one = contexts["one"]
-                    one.goto(f"{base}/setup/name?lang={lang}")
+                    one.goto(f"{base}/apartments/new?lang={lang}")
                     assert one.locator("#legal_entity_id").input_value() != ""
                     assert one.locator("#legal_entity_id option:checked").inner_text().strip() == "Sole Operator s.r.o."
                     _assert_operator_fits(one)
-                    _shot_0088(one, f"wizard-one-{width}-{lang}")
+                    _shot_0088(one, f"new-one-{width}-{lang}")
 
                     many.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=property&lang={lang}")
                     controller = many.locator("#data_controller_entity_id")
