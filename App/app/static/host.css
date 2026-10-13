@@ -1159,3 +1159,10 @@ body.host-workspace {
 .heading-with-tip { position: relative; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; }
 .heading-with-tip > h2 { margin: 0; }
 .smart-locks-steps-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+/* 0084 acceptance fixes */
+/* A long URL in a Guide step (manual filing) widened the page at 360 px. */
+.host-workspace .guide-section li, .host-workspace .guide-section p { overflow-wrap: anywhere; }
+/* As for the house book: the sr-only actions header must not widen the page
+   while the fee table scrolls inside its panel (CS at 760 px). */
+.host-workspace .panel.fee-periods { position: relative; }
