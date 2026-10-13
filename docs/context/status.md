@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-12. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047, 0062, 0054. Main CI green.
+Updated: 2026-10-13. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047, 0062, 0054. Main CI green.
 
 ## Production
 
@@ -16,6 +16,7 @@ Updated: 2026-10-12. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047
 
 ## Next
 
+- Host UX: #381 (0087) reviewed: fix round [0095](../tasks/0095-0087-review-fixes.md) runs on the same branch before 0088.
 - Host UX: [corrections/prompt](../plans/production-host-ux-corrections.md), 0087–0094 first (0072–0074 replaced); then released 0075–0086. Planning only; integration → staging → approval → production.
 
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
