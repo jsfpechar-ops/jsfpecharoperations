@@ -310,33 +310,50 @@ def test_the_guest_links_page_and_stay_page_copy_the_slug(flat):
     assert f"/l/{flat['slug']}/{flat['stay']}" in listing
 
 
-def test_the_host_renames_the_readable_part_and_keeps_the_code(flat):
+def test_the_readable_part_follows_the_property_name_and_keeps_the_code(flat):
+    # 0096: no separate "readable part" field; a name change renames the link.
     client = _host_client()
     form = client.get(f"/apartments/{flat['id']}?lang=en").text
-    assert 'name="guest_link_name"' in form
-    assert 'value="vinohrady-studio-zizkov"' in form
+    assert 'name="guest_link_name"' not in form
     response = client.post(
         f"/apartments/{flat['id']}",
-        data={"internal_name": "Vinohrady Studio – Žižkov", "legal_entity_id": str(flat["entity"]), "guest_link_name": "Zahradní Loft"},
+        data={"internal_name": "Zahradní Loft", "legal_entity_id": str(flat["entity"])},
         follow_redirects=False,
     )
     assert response.status_code == 303
     current = guest_slug.current(flat["id"])
     assert current == "zahradni-loft-" + guest_slug.code_of(flat["slug"])
     assert guest_slug.lookup(flat["slug"])["is_current"] == 0
+    # The link the guests already have keeps working: it redirects to the new one.
+    guest = TestClient(app)
+    old = guest.get(f"/l/{flat['slug']}?lang=en", follow_redirects=False)
+    assert old.status_code == 301
+    assert old.headers["location"] == f"/l/{current}?lang=en"
+    assert guest.get(f"/l/{current}?lang=en", follow_redirects=False).status_code == 200
+    assert f"/l/{current}" in client.get(f"/apartments/{flat['id']}?lang=en").text
 
 
-def test_the_host_cannot_pick_a_reserved_or_empty_name(flat):
+def test_an_unchanged_name_or_a_posted_link_name_never_renames(flat):
     client = _host_client()
-    for value, key in (("Claim", "flash.error.link_name_reserved"), ("★★", "flash.error.link_name_empty")):
-        response = client.post(
-            f"/apartments/{flat['id']}",
-            data={"internal_name": "Vinohrady Studio – Žižkov", "legal_entity_id": str(flat["entity"]), "guest_link_name": value},
-            follow_redirects=False,
-        )
-        assert response.status_code == 303
-        assert "err=" in response.headers["location"]
+    for data in (
+        {"internal_name": "Vinohrady Studio – Žižkov", "legal_entity_id": str(flat["entity"])},
+        # The old field is gone; a hand-made post with it changes nothing.
+        {"internal_name": "Vinohrady Studio – Žižkov", "legal_entity_id": str(flat["entity"]), "guest_link_name": "Other"},
+    ):
+        response = client.post(f"/apartments/{flat['id']}", data=data, follow_redirects=False)
+        assert response.status_code == 303 and "err=" not in response.headers["location"]
         assert guest_slug.current(flat["id"]) == flat["slug"]
+
+
+def test_a_name_with_only_a_reserved_word_falls_back_to_the_safe_word(flat):
+    client = _host_client()
+    response = client.post(
+        f"/apartments/{flat['id']}",
+        data={"internal_name": "Claim", "legal_entity_id": str(flat["entity"])},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert guest_slug.current(flat["id"]) == "stay-" + guest_slug.code_of(flat["slug"])
 
 
 def test_a_new_link_retires_every_slug(flat):

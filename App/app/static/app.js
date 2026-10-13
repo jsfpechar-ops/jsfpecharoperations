@@ -1831,10 +1831,11 @@
     root.setAttribute("data-js", "1");
     var base = root.getAttribute("data-property-base");
     var VIEWS = ["overview", "bookings", "settings"];
-    var SECTIONS = ["property", "guests", "reporting", "automation"];
+    var SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
+    // 0096: Door lock is its own group; old #door-code links land there.
     var HASHES = {
       basics: ["settings", "property"], address: ["settings", "property"],
-      communication: ["settings", "guests"], "door-code": ["settings", "guests"],
+      communication: ["settings", "guests"], "door-code": ["settings", "lock"],
       ubyport: ["settings", "reporting"], "ws-request-letter": ["settings", "reporting"],
       "stay-fee-settings": ["settings", "reporting"], automation: ["settings", "automation"],
       calendars: ["bookings"], "calendar-connect": ["bookings"]
@@ -1842,6 +1843,9 @@
     var form = root.querySelector("[data-property-settings-form]");
     var returnInput = form && form.querySelector("[data-property-return]");
     var connect = root.querySelector("[data-calendar-connect]");
+    // 0096: the setup guide's Continue shows only away from the step's place.
+    var guide = document.querySelector("[data-setup-guide]");
+    var guideContinue = guide && guide.querySelector("[data-setup-continue]");
 
     function hashTarget(hash) {
       if (!hash || hash.length < 2) return null;
@@ -1892,6 +1896,11 @@
         returnInput.value = view === "settings"
           ? base + "?view=settings&section=" + activeSection()
           : base + "?view=" + view;
+      }
+      if (guideContinue) {
+        var stepSection = guide.getAttribute("data-setup-section");
+        guideContinue.hidden = view === guide.getAttribute("data-setup-view")
+          && (!stepSection || (view === "settings" && activeSection() === stepSection));
       }
     }
 
@@ -2013,7 +2022,7 @@
     if (!forms.length) return;
     var property = document.querySelector("[data-property-views]");
     var propertyBase = property && property.getAttribute("data-property-base");
-    var SETTINGS_SECTIONS = ["property", "guests", "reporting", "automation"];
+    var SETTINGS_SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
     var pendingLink = null;
 
     function isDirty(form) { return form.getAttribute("data-dirty") === "1"; }

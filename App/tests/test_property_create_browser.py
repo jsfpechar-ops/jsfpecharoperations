@@ -122,12 +122,13 @@ def test_one_operator_is_chosen_and_one_submit_creates_a_manual_property():
     assert row["guest_message"] == host_i18n.translate("en", "apartment.form.guest_message.default")
     assert row["lock_provider"] is None and not row["uby_ws_password_enc"]
     assert not any(row[f] for f in ("addr_obec", "addr_house_no", "addr_zip"))
-    # The first-use choice is optional and appears only right after create.
+    # 0096: the setup guide opens on its calendar step (the open connect form
+    # and one quiet skip); the old "What next?" box is gone.
     detail = host["client"].get(response.headers["location"]).text
-    assert 'class="panel property-first-use"' in detail
-    assert f'href="/reservations?new=1&amp;apartment={row["id"]}#add-stay-panel"' in detail
-    assert f'href="/apartments/{row["id"]}?view=bookings#calendar-connect"' in detail
-    assert 'class="panel property-first-use"' not in host["client"].get(f"/apartments/{row['id']}").text
+    assert 'class="panel property-first-use"' not in detail
+    assert 'data-setup-guide data-setup-view="bookings"' in detail
+    assert 'class="calendar-connect" id="calendar-connect"' in detail
+    assert f'action="/apartments/{row["id"]}/setup" class="property-setup-skip"' in detail
 
 
 def test_several_operators_need_a_choice_and_keep_the_draft():
@@ -404,11 +405,11 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         page.locator(".property-create-actions .btn.primary").click()
         page.wait_for_load_state()
         assert "created=1" in page.url
-        assert page.locator(".property-first-use").is_visible()
+        assert page.locator("#property-setup").is_visible()  # 0096 setup guide
         _shot(page, "created-1280-en")
         page.set_viewport_size({"width": 390, "height": 900})
         page.reload()
-        assert page.locator(".property-first-use .btn").count() == 3
+        assert page.locator(".property-setup-skip .link-button").count() == 1
         _shot(page, "created-390-en")
         browser.close()
 

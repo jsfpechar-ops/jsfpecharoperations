@@ -276,6 +276,8 @@ def test_save_bar_discard_changes_button(browser, base, host, lang, width, heigh
     loaded_message = page.input_value("#guest_message")
     assert not reset.is_visible()
     page.fill("#guest_message", "Typed welcome to discard")
+    # 0096: the door-code switch lives in its own Door lock group.
+    page.locator('[data-property-section-link="lock"]').click()
     page.locator("#door_codes").click()
     assert status.inner_text() != loaded_status
     assert reset.is_visible()

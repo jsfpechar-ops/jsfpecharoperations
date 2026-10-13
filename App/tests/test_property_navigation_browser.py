@@ -30,7 +30,8 @@ EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0094-eviden
 LOCK = {"lock_id": "70940001", "alias": "Synthetic Door", "battery": 90, "tz_offset_ms": 3600000}
 HASHES = {
     "basics": ("settings", "property"), "address": ("settings", "property"),
-    "communication": ("settings", "guests"), "door-code": ("settings", "guests"),
+    # 0096: Door lock is its own Settings group; old #door-code links land there.
+    "communication": ("settings", "guests"), "door-code": ("settings", "lock"),
     "ubyport": ("settings", "reporting"), "ws-request-letter": ("settings", "reporting"),
     "stay-fee-settings": ("settings", "reporting"), "automation": ("settings", "automation"),
     "calendars": ("bookings", None), "calendar-connect": ("bookings", None),
@@ -39,7 +40,7 @@ HASHES = {
 SETTINGS_NAMES = {
     "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
-    "notes", "permalink_pin", "guest_link_name", "guest_message", "permalink_window_days",
+    "notes", "permalink_pin", "guest_message", "permalink_window_days",
     "permalink_reachback_days", "passport_photo_policy", "door_code_section", "door_codes_fields", "door_codes",
     "lock_id", "checkin_hour", "checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark",
     "uby_name", "uby_contact", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "account_prefix",
@@ -168,7 +169,7 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     html = _page(host, "?lang=en")
     for label in ("Overview", "Bookings &amp; calendars", "Settings"):
         assert f">{label}</a>" in html
-    for label in ("Property information", "Guest experience", "Reporting &amp; fees", "Automation"):
+    for label in ("Property information", "Guest experience", "Reporting &amp; fees", "Door lock", "Automation"):
         assert f'<h2 class="property-group-title">{label}</h2>' in html
     parsed = _forms(html)
     assert not parsed.nested, "a form is nested inside another"
@@ -207,15 +208,16 @@ def test_view_and_section_are_sanitized_presentation_choices(host):
 
 def test_placement_of_guest_link_actions_archive_and_switch(host):
     html = _page(host, "?lang=en")
-    guests = html[html.index('id="settings-guests"'):html.index('id="settings-reporting"')]
-    communication = guests[guests.index('id="communication"'):guests.index('id="door-code"')]
+    guests = html[html.index('id="settings-guests"'):html.index('id="settings-lock"')]
+    communication = guests[guests.index('id="communication"'):]
     assert communication.index("/regenerate-pin") < communication.index('name="guest_message"')
     assert communication.index("/regenerate-link") < communication.index('name="guest_message"')
     assert communication.index('id="permalink_pin"') < communication.index("/regenerate-pin")
     prop = html[html.index('id="settings-property"'):html.index('id="settings-guests"')]
     assert "/archive" in prop and "/archive" not in guests
     assert html.index('id="archive"') < html.index('class="actions host-property-save"')
-    door = guests[guests.index('id="door-code"'):]
+    door = html[html.index('id="settings-lock"'):html.index('id="settings-reporting"')]
+    assert 'id="door-code"' in door and 'id="door-code"' not in guests
     assert 'role="switch"' in door and "Automatic door codes" in door
     assert ">Enabled</span>" in door
     assert door.count('href="/guide#door-codes"') == 1
@@ -299,7 +301,7 @@ def test_overview_cards_point_at_the_canonical_editors(host):
     for href in (f"{base}?view=bookings#calendars", f"{base}?view=settings&amp;section=guests#communication",
                  f"{base}?view=settings&amp;section=reporting#ubyport", f"/entities?edit={host['entities'][0]}&amp;next={base}",  # 0076: returns here
                  f"{base}?view=settings&amp;section=reporting#stay-fee-settings",
-                 f"{base}?view=settings&amp;section=property#address", f"{base}?view=settings&amp;section=guests#door-code"):
+                 f"{base}?view=settings&amp;section=property#address", f"{base}?view=settings&amp;section=lock#door-code"):
         assert f'href="{href}"' in overview, href
     assert "Ready to report" in overview
 
@@ -486,7 +488,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         assert page.evaluate(_STATE_JS)["visibleGroups"] == ["reporting"], page.url
 
         # The door-code switch says "Not saved yet" until it is saved.
-        page.goto(f"{url}?view=settings&section=guests&lang=en")
+        page.goto(f"{url}?view=settings&section=lock&lang=en")
         status = page.locator("#door_codes-status")
         assert status.inner_text() == "Enabled"
         page.locator("#door_codes").click()
@@ -503,17 +505,25 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
         page.goto(f"{base}/apartments/new?lang=en")
         page.fill("#internal_name", "Synthetic Early Calendar Flat")
         page.select_option("#legal_entity_id", str(host["entities"][0]))
+        for field, value in (("addr_obec", "Brno"), ("addr_house_no", "12"), ("addr_zip", "602 00")):
+            page.fill(f"#{field}", value)
         page.locator(".property-create-actions .btn.primary").click()
         page.wait_for_load_state()
         assert "view=bookings" in page.url and page.url.endswith("#calendar-connect")
-        assert page.locator(".property-first-use").is_visible()
+        # 0096: the setup guide's first step is only the calendar form, with one
+        # quiet way past it; no "What next?" box.
+        assert not page.locator(".property-first-use").count()
+        assert page.locator("#property-setup").is_visible()
         assert page.locator("#calendar-add #label").is_visible()
         assert page.locator("#calendar-add #url").is_visible()
         assert page.evaluate(_STATE_JS)["visibleViews"] == ["bookings"]
         _shot(page, "created-bookings-1280-en")
-        page.locator(".property-first-use a", has_text="Continue to overview").click()
+        page.locator(".property-setup-skip .link-button").click()
+        page.wait_for_load_state()
         assert page.evaluate(_STATE_JS)["visibleViews"] == ["overview"]
-        manual = page.locator(".property-first-use a", has_text="Add stay manually")
+        # Adding a stay by hand stays one tab away once the calendar step is done.
+        page.locator('.property-tabs a[data-property-tab="bookings"]').click()
+        manual = page.locator(".property-view.is-active a", has_text="Add stay manually")
         assert "/reservations?new=1" in manual.get_attribute("href")
         browser.close()
 

@@ -6286,6 +6286,67 @@ _UNSAVED_O1_STRINGS = {
 for _lang, _strings in _UNSAVED_O1_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0096: guided setup of a new property, and Door lock as its own Settings group.
+_SETUP_GUIDE_0096_STRINGS = {
+    "en": {
+        "setup_guide.count": "Step %(n)s of %(total)s",
+        "setup_guide.continue": "Continue",
+        "setup_guide.skip": "Skip",
+        "setup_guide.calendar.title": "Connect your calendar",
+        "setup_guide.calendar.text": "Paste the calendar link from Airbnb, Booking.com or another platform, and your stays appear here by themselves.",
+        "setup_guide.calendar.skip": "Skip — I'll add stays manually",
+        "setup_guide.guest_links.title": "Send guests your link",
+        "setup_guide.guest_links.text": "Paste it into your platform's automated message; guests need the PIN to open the form.",
+        "setup_guide.guest_links.snippet": "Guest registration: %(url)s · PIN: %(pin)s",
+        "setup_guide.guest_links.copy": "Copy link and PIN",
+        "setup_guide.guest_links.done": "Done, I've added it",
+        "setup_guide.reporting.title": "Police reporting",
+        "setup_guide.reporting.text": "Fill in your Ubyport details, so UbyHost can report your guests to the police.",
+        "setup_guide.fee.title": "Stay fee",
+        "setup_guide.fee.text": "Optional. Set it up if your town charges a stay fee.",
+        "setup_guide.lock.title": "Door lock",
+        "setup_guide.lock.text": "Optional. Guests get their own door code for each stay.",
+        "setup_guide.automation.title": "Automation",
+        "setup_guide.automation.text": "Choose when UbyHost sends your guests to the police.",
+        "setup_guide.automation.keep_manual": "Keep manual sending",
+        "setup_guide.automation.keep_current": "Keep this setting",
+        "flash.setup.complete": "Setup complete.",
+        # The guide's first step says what to do next; the flash only confirms.
+        "flash.apartments.created": "Property created.",
+        "property_nav.group.lock": "Door lock",
+        "property_nav.lock_intro": "Optional: skip this if you don't use a smart lock. UbyHost currently works only with TTLock locks that have a gateway.",
+    },
+    "cs": {
+        "setup_guide.count": "Krok %(n)s z %(total)s",
+        "setup_guide.continue": "Pokračovat",
+        "setup_guide.skip": "Přeskočit",
+        "setup_guide.calendar.title": "Připojte kalendář",
+        "setup_guide.calendar.text": "Vložte odkaz na kalendář z Airbnb, Booking.com nebo jiné platformy a pobyty se tu objeví samy.",
+        "setup_guide.calendar.skip": "Přeskočit – pobyty zadám ručně",
+        "setup_guide.guest_links.title": "Pošlete hostům odkaz",
+        "setup_guide.guest_links.text": "Vložte ho do automatické zprávy na své platformě; hosté potřebují PIN, aby formulář otevřeli.",
+        "setup_guide.guest_links.snippet": "Registrace hostů: %(url)s · PIN: %(pin)s",
+        "setup_guide.guest_links.copy": "Zkopírovat odkaz a PIN",
+        "setup_guide.guest_links.done": "Hotovo, vloženo",
+        "setup_guide.reporting.title": "Hlášení policii",
+        "setup_guide.reporting.text": "Vyplňte údaje z Ubyportu, aby UbyHost mohl hlásit vaše hosty policii.",
+        "setup_guide.fee.title": "Poplatek z pobytu",
+        "setup_guide.fee.text": "Nepovinné. Nastavte ho, pokud vaše obec vybírá poplatek z pobytu.",
+        "setup_guide.lock.title": "Zámek dveří",
+        "setup_guide.lock.text": "Nepovinné. Hosté dostanou ke každému pobytu vlastní kód ke dveřím.",
+        "setup_guide.automation.title": "Automatizace",
+        "setup_guide.automation.text": "Zvolte, kdy UbyHost odešle vaše hosty policii.",
+        "setup_guide.automation.keep_manual": "Ponechat ruční odesílání",
+        "setup_guide.automation.keep_current": "Ponechat toto nastavení",
+        "flash.setup.complete": "Nastavení je hotové.",
+        "flash.apartments.created": "Ubytování bylo vytvořeno.",
+        "property_nav.group.lock": "Zámek dveří",
+        "property_nav.lock_intro": "Nepovinné: pokud chytrý zámek nepoužíváte, tuto část přeskočte. UbyHost zatím funguje jen se zámky TTLock, které mají bránu (gateway).",
+    },
+}
+for _lang, _strings in _SETUP_GUIDE_0096_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

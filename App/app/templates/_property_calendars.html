@@ -6,19 +6,12 @@
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set feed_draft = feed_draft or {} -%}
 {%- set feed_errors = feed_errors or {} -%}
-{%- set connect_open = (not feeds) or feed_errors or just_created or add_calendar -%}
-{% if just_created %}
-{# 0092/0094: optional first-use choice after Add property; nothing here is required. #}
-<section class="panel property-first-use" aria-labelledby="property-first-use-title">
-  <h2 id="property-first-use-title">{{ t('property_create.created_title') }}</h2>
-  <div class="actions">
-    <a class="btn primary" href="{{ base_url }}?view=bookings#calendar-connect">{{ t('property_create.next_calendar') }}</a>
-    <a class="btn" href="/reservations?new=1&amp;apartment={{ apartment.id }}#add-stay-panel">{{ t('property_create.created_manual') }}</a>
-    <a class="btn ghost" href="{{ base_url }}?view=overview">{{ t('property_create.created_continue') }}</a>
-  </div>
-</section>
-{% endif %}
-
+{%- set setup_calendar = setup_guide and setup_guide.key == 'calendar' -%}
+{%- set connect_open = (not feeds) or feed_errors or just_created or add_calendar or setup_calendar -%}
+{#- 0096: during the setup guide's calendar step this view is only the connect
+    form and one quiet way past it; the feed list and the manual-stay button
+    come back once the step is done. -#}
+{% if not setup_calendar %}
 <div class="property-view-head">
   <div class="field-label-row"><h2 id="calendars">{{ t('apartments.table.calendars') }}</h2>{{ help_tip('calendars-help', t('apartment.form.calendars.lede')) }}</div>
   <div class="actions">
@@ -27,8 +20,10 @@
     {% if feeds %}{{ sync_calendars_button(base_url ~ '?view=bookings') }}{% endif %}
   </div>
 </div>
+{% endif %}
 
-<div class="property-bookings{% if not connect_open %} is-list-only{% endif %}">
+<div class="property-bookings{% if not connect_open %} is-list-only{% endif %}{% if setup_calendar %} is-setup{% endif %}">
+  {% if not setup_calendar %}
   <div class="property-feeds">
     {% if feeds %}
     <div class="panel tight scroll-x">
@@ -66,6 +61,7 @@
       <div class="panel empty">{{ t('apartment.form.calendars.empty') }}</div>
     {% endif %}
   </div>
+  {% endif %}
 
   {% set first_feed_error = (['label', 'label_other', 'url', 'own_name'] | select('in', feed_errors) | list | first) %}
   <div class="calendar-connect{% if not connect_open %} is-collapsed{% endif %}" id="calendar-connect" data-calendar-connect>
@@ -99,7 +95,14 @@
              placeholder="{{ t('apartment.form.calendars.own_name_ph') }}"{% if feed_errors.own_name %} aria-invalid="true" aria-describedby="own-name-error"{% endif %}{% if first_feed_error == 'own_name' %} autofocus{% endif %}>
       {% if feed_errors.own_name %}<p class="err-text" id="own-name-error" role="alert">{{ feed_errors.own_name }}</p>{% endif %}
     </div>
-    <div class="actions"><button class="btn primary" type="submit">{{ t('apartment.form.calendars.add_sync') }}</button></div>
+    <div class="actions"><button class="btn primary" type="submit">{{ t('property_nav.add_calendar') }}</button></div>
   </form>
+  {% if setup_calendar %}
+  <form method="post" action="{{ base_url }}/setup" class="property-setup-skip">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="step" value="calendar">
+    <button class="link-button" type="submit" name="action" value="skip">{{ t('setup_guide.calendar.skip') }}</button>
+  </form>
+  {% endif %}
   </div>
 </div>

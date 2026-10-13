@@ -1,0 +1,46 @@
+{#- 0096: guided setup of a new property. One step at a time, one primary action:
+    the step's own control (Add calendar, Save changes) when the step's place is
+    on screen, otherwise this panel's Continue / Done. Skip only for optional
+    steps. Plain links and forms, so it works without JavaScript. -#}
+{%- set guide = setup_guide -%}
+{%- set at_step = property_view == guide.view and (not guide.section or settings_section == guide.section) -%}
+<section class="panel property-setup" id="property-setup" aria-labelledby="property-setup-title"
+         data-setup-guide data-setup-view="{{ guide.view }}" data-setup-section="{{ guide.section or '' }}">
+  <ol class="property-setup-progress" aria-hidden="true">
+    {% for n in range(1, guide.total + 1) %}<li class="{{ 'is-done' if n < guide.number else ('is-current' if n == guide.number else '') }}"></li>{% endfor %}
+  </ol>
+  <h2 id="property-setup-title">{{ t('setup_guide.count', n=guide.number, total=guide.total) }} · {{ t('setup_guide.' ~ guide.key ~ '.title') }}</h2>
+  <p class="property-setup-text">{{ t('setup_guide.' ~ guide.key ~ '.text') }}</p>
+  {% if guide.key == 'guest_links' %}
+  <div class="property-setup-snippet">
+    <label class="sr-only" for="setup-guest-snippet">{{ t('setup_guide.guest_links.title') }}</label>
+    <textarea id="setup-guest-snippet" readonly rows="3">{{ t('setup_guide.guest_links.snippet', url=permalink, pin=pin) }}</textarea>
+  </div>
+  <div class="actions property-setup-actions">
+    <button class="btn" type="button" data-copy="setup-guest-snippet"
+            data-copy-label="{{ t('setup_guide.guest_links.copy') }}" data-copied-label="{{ t('common.copied') }}">{{ t('setup_guide.guest_links.copy') }}</button>
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="step" value="guest_links">
+      <button class="btn primary" type="submit" name="action" value="done">{{ t('setup_guide.guest_links.done') }}</button>
+    </form>
+  </div>
+  {% else %}
+  <div class="actions property-setup-actions">
+    <a class="btn primary" href="{{ guide.url }}" data-setup-continue{% if at_step %} hidden{% endif %}>{{ t('setup_guide.continue') }}</a>
+    {% if guide.optional %}
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="step" value="{{ guide.key }}">
+      <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('setup_guide.skip') }}</button>
+    </form>
+    {% elif guide.key == 'automation' %}
+    <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="step" value="automation">
+      <button class="btn" type="submit" name="action" value="keep">{{ t('setup_guide.automation.keep_manual' if apartment.automation_mode == 'manual' else 'setup_guide.automation.keep_current') }}</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
