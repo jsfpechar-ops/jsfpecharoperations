@@ -2348,7 +2348,7 @@ async def add_feed(apartment_id: int, request: Request):
     # 0096: during the guided setup the next step follows the first calendar.
     guide, _finished = _setup_guide_for(request, apartment_id)
     return _back(
-        guide["url"] if guide else f"/apartments/{apartment_id}?view=bookings#calendars",
+        guide["url"] if guide and not guide["legacy"] else f"/apartments/{apartment_id}?view=bookings#calendars",
         msg=_flash_plural(request, "flash.feeds.added", totals["created"]),
     )
 
