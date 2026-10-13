@@ -3,7 +3,9 @@
 Properties, Businesses, Invoices, Stay fees and Reports lists: at 760-1440 px,
 rail expanded and collapsed, EN/CS, the list panel never scrolls sideways and
 every row action sits inside the panel, visible without scrolling. The switch
-follows the panel (container) width: table at >= 1000 px, cards below.
+follows the panel (container) width per list. At 1280 and 1440 px, rail
+expanded or collapsed, EN/CS, every list is a table (long names included); at 760 px
+every list is cards.
 
 Screenshots: ``UBYHOST_CAPTURE_O2=1`` writes docs/tasks/0084-evidence/o2-*.png.
 """
@@ -26,7 +28,8 @@ LISTS = {
     "fees": "/stay-fees",
     "reports": "/submissions",
 }
-THRESHOLD = 1000
+# Per-list switch point (measured min-content width + ~40 px), in panel px.
+THRESHOLDS = {"properties": 800, "businesses": 950, "invoices": 830, "fees": 940, "reports": 850}
 
 _LIST_JS = """() => {
   const panel = document.querySelector('.panel.list-cards');
@@ -67,7 +70,7 @@ def test_list_panels_never_scroll_sideways_and_actions_stay_visible(acc, base):
                     continue
                 if result["scrollWidth"] > result["clientWidth"] + 1:
                     failures.append((label, "inner horizontal scroll", result["scrollWidth"], result["clientWidth"]))
-                if result["cards"] != (result["panelWidth"] < THRESHOLD):
+                if result["cards"] != (result["panelWidth"] < THRESHOLDS[name]):
                     failures.append((label, "layout does not follow the panel width", result["panelWidth"], result["cards"]))
                 if not result["acts"]:
                     failures.append((label, "no visible row action"))
@@ -76,6 +79,10 @@ def test_list_panels_never_scroll_sideways_and_actions_stay_visible(acc, base):
                         failures.append((label, "action outside panel", act))
                     if act["right"] > width + 1:
                         failures.append((label, "action past viewport", act))
+                if width >= 1280 and result["cards"]:
+                    failures.append((label, "desktop width must keep the table", result["panelWidth"]))
+                if width == 760 and not result["cards"]:
+                    failures.append((label, "760 px must be cards", result["panelWidth"]))
                 if result["cards"]:
                     seen_cards += 1
                     if not any(text not in ('none', 'normal', '""') for text in result["labels"]):
