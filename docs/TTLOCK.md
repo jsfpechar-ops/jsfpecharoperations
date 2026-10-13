@@ -82,7 +82,7 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 
 - `POST /v3/keyboardPwd/get` with `clientId`, `accessToken`, `lockId`, `keyboardPwdType`, optional `keyboardPwdName`, `startDate` (required), optional `endDate`, `date` [EU].
 - No `keyboardPwdVersion` on the EU page [EU]. [X] lists it as required, but [X] is the older doc. UbyHost does not send it.
-- Type `3` (period) must be used at least once within 24 h after the start time, or it is invalidated [EU].
+- Type `3` (period) must be used at least once within 24 h after the start time, or it is invalidated [EU]. When a guest’s code fails after that window, owner investigation steps: [TTLOCK_PASSCODE_INCIDENT](TTLOCK_PASSCODE_INCIDENT.md).
 - The code is made by a cloud algorithm. No gateway is needed. It cannot be customised. Length is 6 to 9 digits and depends on the period [EU].
 - Validity is accurate to the hour. 19:20 becomes 19:00. Send whole hours. Over one year, the period must be whole months [EU].
 - Response `{"keyboardPwd": "0563456", "keyboardPwdId": 10236}`. The code is a string and can start with 0 [EU].

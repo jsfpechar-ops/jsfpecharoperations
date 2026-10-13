@@ -90,6 +90,7 @@ Status: open, unverified, decision, accepted.
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same hours rebooked while a cancelled code is undeleted: `get` returns the old PIN to the new guest | [0069](../tasks/0069-same-period-shared-pin.md) |
+| K-D05 | Med decision | door_codes / TTLock type-3 | After start+24h with no first use, code is void; guest was told, host gets no mail and app still shows the end date. Incident check: [TTLOCK_PASSCODE_INCIDENT](../TTLOCK_PASSCODE_INCIDENT.md). Safeguard options listed there §7 | plan item 6 |
 | K-U14 | Med unverified | Settings | Verify form/save ownership (0071) | [plan](../plans/host-navigation-maintainability.md) |
 
 | K-U15 | High open | Host forms/navigation | Clipping, forms/defaults, hidden PIN/actions, clutter, locks/onboarding; source audit done, fixes pending | [0087–0094](../plans/production-host-ux-corrections.md) |
