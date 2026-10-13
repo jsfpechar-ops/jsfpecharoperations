@@ -46,6 +46,7 @@ _SUCCESS_FLASH_KEYS = frozenset({
     "flash.guests.saved",
     "flash.guests.saved_plain",
     "flash.housebook.restored",
+    "flash.setup.complete",  # 0096
 })
 
 _STICKY_WARNING_FLASH_KEYS = frozenset({

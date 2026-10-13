@@ -58,7 +58,7 @@ LOCK = {"lock_id": "70840001", "alias": "Synthetic Acceptance Door", "battery": 
 PROPERTY_SETTINGS = {
     "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
-    "notes", "permalink_pin", "guest_link_name", "guest_message", "permalink_window_days",
+    "notes", "permalink_pin", "guest_message", "permalink_window_days",
     "permalink_reachback_days", "passport_photo_policy", "door_codes", "lock_id", "checkin_hour",
     "checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark", "uby_name", "uby_contact",
     "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "account_prefix", "account_number",
@@ -69,7 +69,7 @@ PROPERTY_SETTINGS = {
 # The create page legitimately asks for these (creation, not a second editor).
 CREATE_FIELDS = {"internal_name", "city_en", "legal_entity_id", "addr_okres", "addr_obec", "addr_obec_cast",
                  "addr_street", "addr_house_no", "addr_orient_no", "addr_zip"}
-GUEST_LINK_AND_AUTOMATION = {"permalink_pin", "guest_link_name", "guest_message", "permalink_window_days",
+GUEST_LINK_AND_AUTOMATION = {"permalink_pin", "guest_message", "permalink_window_days",
                              "permalink_reachback_days", "passport_photo_policy", "automation_mode",
                              "submit_after_hours", "default_purpose"}
 FEE_FIELDS = {n for n in PROPERTY_SETTINGS if n.startswith("stay_fee_")}
@@ -712,8 +712,26 @@ def test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus(acc, base):
         assert {"/", "/reservations", "/apartments", "/invoices", "/stay-fees"} <= seen, seen
         for view in ("overview", "bookings", "settings"):
             assert f"/apartments/{acc['p1']}?view={view}" in seen, (view, seen)
-        assert {"permalink_pin", "guest_message", "door_codes"} <= seen, seen
+        assert {"permalink_pin", "guest_message"} <= seen, seen
         assert not unseen_focus, unseen_focus[:5]
+        # 0096: the door-code switch is in its own Door lock group, one sub-nav link away.
+        assert f"/apartments/{acc['p1']}?view=settings&section=lock" in seen, seen
+        page.goto(f"{base}/apartments/{acc['p1']}?view=settings&section=lock&lang=cs")
+        _settle(page)
+        _dismiss_prompt(page)
+        page.add_style_tag(content="*, *::before, *::after { transition: none !important; }")
+        page.evaluate("() => { document.activeElement && document.activeElement.blur(); window.scrollTo(0, 0); }")
+        reached = None
+        for _ in range(60):
+            page.keyboard.press("Tab")
+            info = page.evaluate("""() => { const el = document.activeElement; const r = el.getBoundingClientRect();
+              const cs = getComputedStyle(el);
+              return {id: el.id, tag: el.tagName, ring: (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || cs.boxShadow !== 'none',
+                      inView: r.bottom > 0 && r.top < innerHeight}; }""")
+            if info["id"] == "door_codes" or info["tag"] == "BODY":
+                reached = info
+                break
+        assert reached and reached["id"] == "door_codes" and reached["inView"] and reached["ring"], reached
         # Search opens from the keyboard and Escape returns focus to the trigger.
         page.locator(".command-trigger").focus()
         page.keyboard.press("Enter")

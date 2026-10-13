@@ -1,7 +1,8 @@
 {#- 0094: Settings tab. The one full property form (POST /apartments/<id>), moved
     here once and grouped under visible sub-headers: Property information, Guest
     experience, Reporting & fees, Automation. A group that is not selected is only
-    hidden from view; its controls stay enabled and are always submitted. -#}
+    hidden from view; its controls stay enabled and are always submitted.
+    0096: Door lock is its own group (only where door codes exist). -#}
 {%- from "_components.html" import nav_icon, copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set property_values = apartment -%}
@@ -17,6 +18,7 @@
   ('property', t('property_nav.group.property')),
   ('guests', t('property_nav.group.guests')),
   ('reporting', t('property_nav.group.reporting')),
+] + ([('lock', t('property_nav.group.lock'))] if door_code else []) + [
   ('automation', t('property_nav.group.automation')),
 ] %}
 
@@ -53,6 +55,7 @@
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
   {% if fee_return_to %}<input type="hidden" name="fee_return_to" value="{{ fee_return_to }}">{% endif %}
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {% if setup_guide %}<input type="hidden" name="setup_step" value="{{ setup_guide.key }}">{% endif %}
   {# The first submit button is the one Enter activates. Without this, Enter in
      any field posted to the credentials test and dropped every edit. #}
   <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
@@ -153,18 +156,6 @@
           </span>
         </div>
       </div>
-      {% if link_code %}
-      <div class="field" style="max-width:520px">
-        {{ field_label('guest_link_name', t('apartment.form.guest_link.name_label'), t('apartment.form.guest_link.name_hint')) }}
-        <div style="display:flex;align-items:center;gap:4px">
-          <span class="small muted mono" aria-hidden="true">/l/</span>
-          <input type="text" id="guest_link_name" name="guest_link_name" value="{{ link_readable }}"
-                 class="mono" maxlength="80" autocomplete="off" autocapitalize="off" spellcheck="false"
-                 aria-describedby="guest_link_name-help">
-          <span class="small muted mono" aria-hidden="true">-{{ link_code }}</span>
-        </div>
-      </div>
-      {% endif %}
       <div class="field">
         {{ field_label('guest_message', t('apartment.form.guest_message.label'), t('apartment.form.guest_message.hint'), true) }}
         <textarea id="guest_message" name="guest_message" maxlength="1000" aria-describedby="guest_message-help"
@@ -191,7 +182,13 @@
       </div>
     </section>
 
-    {% if door_code %}
+  </div>
+
+  {# ---- Door lock (0096: its own group; optional) ---------------------- #}
+  {% if door_code %}
+  <div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock">
+    <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
+    <p class="property-group-intro">{{ t('property_nav.lock_intro') }}</p>
     <section class="panel property-section" id="door-code">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.margin', hours=door_code.buffer) ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
       <input type="hidden" name="door_code_section" value="1">
@@ -232,8 +229,8 @@
         {% if door_code.overlap %}<p class="small"><strong>{{ t('apartment.form.door_code.overlap') }}</strong></p>{% endif %}
       {% endif %}
     </section>
-    {% endif %}
   </div>
+  {% endif %}
 
   {# ---- Reporting & fees ---------------------------------------------- #}
   <div class="property-settings-group{% if settings_section == 'reporting' %} is-active{% endif %}" data-settings-group="reporting" id="settings-reporting">

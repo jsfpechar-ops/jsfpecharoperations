@@ -21,12 +21,17 @@
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=property#address">{{ nav_icon('property') }}<div><strong>{{ t('host.property_details') }}</strong>
     <small>{{ address_text or t('property_nav.address_missing') }}</small></div><span aria-hidden="true">→</span></a>
   {% if door_code %}
-  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=guests#door-code">{{ nav_icon('lock') }}<div><strong>{{ t('host.door_code') }}</strong>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=lock#door-code">{{ nav_icon('lock') }}<div><strong>{{ t('host.door_code') }}</strong>
     <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div><span aria-hidden="true">→</span></a>
   {% endif %}
 </div>
 
-{% if readiness and readiness.invite_ready and report_missing == 0 %}
+{#- 0096: the guide replaces the checklist while it runs. Once it is finished,
+    a skipped calendar (stays added by hand) does not hold back the compact line. -#}
+{%- set invite_open = (readiness.invite | rejectattr('done') | map(attribute='key') | list) if readiness else [] -%}
+{%- set invite_ok = readiness and (readiness.invite_ready or (setup_finished and invite_open == ['stays'])) -%}
+{% if setup_guide %}
+{% elif readiness and invite_ok and report_missing == 0 %}
 <section class="panel host-setup-complete" aria-label="{{ t('host.setup_details') }}">
   <p class="small"><span class="readiness-mark" aria-hidden="true">✓</span> {{ t('property_nav.setup_complete') }} {{ t('apartment.form.readiness.invite_ready') }}</p>
   {{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}
