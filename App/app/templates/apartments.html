@@ -86,7 +86,7 @@
           <td class="property-inline-link" data-label="{{ t('property_nav.guest_link') }}">
             {% if row.link_url %}
             <div class="property-inline-value">
-              <code class="mono property-inline-url" id="guest-url-{{ apartment.id }}">{{ row.link_url }}</code>
+              <code class="mono property-inline-url" id="guest-url-{{ apartment.id }}" title="{{ row.link_url }}">{{ row.link_url }}</code>
               <span class="property-inline-icons">
                 <button class="btn-icon" type="button" data-copy="guest-url-{{ apartment.id }}"
                         data-copied-label="{{ t('common.copied') }}" aria-label="{{ t('common.copy_link') }}">{{ copy_icon() }}<span class="sr-only">{{ t('common.copy_link') }}</span></button>
@@ -119,7 +119,7 @@
               <label class="sr-only" for="timing-mode-{{ apartment.id }}">{{ t('automation.timing_label') }}: {{ apartment.internal_name }}</label>
               <select id="timing-mode-{{ apartment.id }}" name="automation_mode" data-timing-mode>
                 {% for value in ('manual', 'scheduled', 'immediate') %}
-                <option value="{{ value }}"{% if mode == value %} selected{% endif %}>{{ t('automation.mode.' ~ value) }}</option>
+                <option value="{{ value }}"{% if mode == value %} selected{% endif %}>{{ t('automation.mode_short.' ~ value) }}</option>
                 {% endfor %}
               </select>
               <span class="property-timing-hours" data-timing-hours>

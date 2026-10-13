@@ -147,7 +147,7 @@ def test_summary_is_visible_read_only_and_links_to_each_editor(host):
     token = db.query_one("SELECT permalink_token FROM apartment WHERE id = ?", (first,))["permalink_token"]
     assert f"/l/{token}" in summary
     assert '<option value="manual" selected>Only when I press send' in summary
-    assert '<option value="scheduled" selected>Automatically after a delay from completion' in summary
+    assert '<option value="scheduled" selected>Automatically, after a delay' in summary
     assert 'value="6" data-timing-hours-input' in summary
     assert "Starý byt" not in summary
     # The archived property keeps its own list with Restore.

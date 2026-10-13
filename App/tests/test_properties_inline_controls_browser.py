@@ -190,7 +190,7 @@ def test_full_url_pin_and_icon_actions_render(host):
     row = _row(first)
     summary = _summary(client.get("/apartments?lang=en").text)
     url = f"{config.PUBLIC_BASE_URL}/l/{_link_key(first)}"
-    assert f'id="guest-url-{first}">{url}</code>' in summary
+    assert f'id="guest-url-{first}" title="{url}">{url}</code>' in summary
     assert f'id="guest-pin-{first}">{row["permalink_pin"]}</code>' in summary
     for label in ("Copy link", "Preview as a guest", "Copy PIN", "Generate a new PIN"):
         assert f'aria-label="{label}"' in summary and f'<span class="sr-only">{label}</span>' in summary

@@ -1484,7 +1484,7 @@ body.host-workspace {
 .host-workspace .property-summary-table td:first-child { min-width: 10rem; overflow-wrap: break-word; }
 .host-workspace .property-summary-table td.property-inline-timing { min-width: 20.5rem; }
 .host-workspace .property-inline-value { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.host-workspace .property-inline-url { flex: 1 1 auto; min-width: 0; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; word-break: break-all; }
+.host-workspace .property-inline-url { flex: 1 1 auto; min-width: 0; font-size: 13px; line-height: 1.35; overflow-wrap: anywhere; }
 .host-workspace .property-inline-pin-value { font-size: 14px; letter-spacing: 0.04em; white-space: nowrap; }
 .host-workspace .property-inline-icons { display: inline-flex; flex: none; align-items: center; gap: 4px; }
 .host-workspace .property-inline-icons .btn-icon { width: 44px; height: 44px; }

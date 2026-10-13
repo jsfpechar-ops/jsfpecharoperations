@@ -6395,6 +6395,23 @@ _LIST_LAYOUT_0099_STRINGS = {
 for _lang, _strings in _LIST_LAYOUT_0099_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# Coordinator: short timing labels for the compact Properties row (the
+# Automation page keeps the full sentences).
+_TIMING_SHORT_STRINGS = {
+    "en": {
+        "automation.mode_short.manual": "Only when I press send",
+        "automation.mode_short.scheduled": "Automatically, after a delay",
+        "automation.mode_short.immediate": "As soon as forms are complete",
+    },
+    "cs": {
+        "automation.mode_short.manual": "Jen po stisknutí Odeslat",
+        "automation.mode_short.scheduled": "Automaticky, s prodlevou",
+        "automation.mode_short.immediate": "Hned po vyplnění formulářů",
+    },
+}
+for _lang, _strings in _TIMING_SHORT_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE
