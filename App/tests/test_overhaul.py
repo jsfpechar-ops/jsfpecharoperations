@@ -312,7 +312,8 @@ def test_reservation_rows_are_full_click_targets():
         assert page.status_code == 200
         assert f'data-href="/reservations/{stays[0]}?return_to=' in page.text
         assert 'class="clickable-row"' in page.text
-        assert ">Open</a>" not in page.text
+        # 0079: rows keep the full-row target and also show a visible Open next to More.
+        assert 'class="btn row-open"' in page.text
     finally:
         _cleanup()
 

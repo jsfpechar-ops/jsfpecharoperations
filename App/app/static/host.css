@@ -937,3 +937,37 @@ body.host-workspace {
 /* 0090: contextual ? link to the full Guide steps */
 .help-link { display: inline-flex; align-items: center; justify-content: center; width: 1.5em; height: 1.5em; margin-left: 6px; border: 1px solid var(--border-strong, #ccc); border-radius: 50%; font-size: 14px; font-weight: 700; text-decoration: none; vertical-align: middle; }
 .help-link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+/* 0079 — Dashboard and Stays share one action pair: Open, then an adjacent More
+   (a square, action-height trigger). Same height and min width in both lists. */
+.host-workspace .dashboard-row-actions .btn.dashboard-open,
+.host-workspace .stays-view .btn.row-open {
+  box-sizing: border-box;
+  min-width: 94px;
+  height: var(--action-height);
+  min-height: var(--action-height);
+  justify-content: center;
+  white-space: nowrap;
+}
+.host-workspace .dashboard-row-actions .row-menu-trigger,
+.host-workspace .stays-view .row-menu-trigger {
+  flex: 0 0 var(--action-height);
+  width: var(--action-height);
+  min-width: var(--action-height);
+  height: var(--action-height);
+  min-height: var(--action-height);
+  padding: 0;
+}
+.host-workspace .stays-view .row-action-pair { display: inline-flex; flex: 0 0 auto; gap: 8px; align-items: center; }
+.host-workspace .stays-view .btn.row-open { flex: 0 0 auto; }
+@container stays-list (min-width: 900px) {
+  .host-workspace .stays-view tr { grid-template-columns: minmax(160px, 1.25fr) minmax(110px, 1.7fr) 52px minmax(100px, 1fr) minmax(90px, 1fr) 332px; }
+}
+@container stays-list (max-width: 599.98px) {
+  /* Copy (wraps its label), Open and More share one line; Send, when present, takes its own line above. */
+  .host-workspace .stays-view td.row-actions > .row-action-pair { flex: 0 0 auto; }
+  .host-workspace .stays-view td.row-actions > [data-copy] { flex: 1 1 110px; }
+  .host-workspace .stays-view td.row-actions > .row-action-form { flex: 1 1 100%; }
+}
+@container stays-list (min-width: 1040px) {
+  .host-workspace .stays-view tr { grid-template-columns: minmax(160px, 1.2fr) minmax(110px, 1.5fr) 52px minmax(100px, .9fr) minmax(90px, .9fr) 430px; }
+}
