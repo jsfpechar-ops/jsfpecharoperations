@@ -190,7 +190,7 @@ def test_full_url_pin_and_icon_actions_render(host):
     row = _row(first)
     summary = _summary(client.get("/apartments?lang=en").text)
     url = f"{config.PUBLIC_BASE_URL}/l/{_link_key(first)}"
-    assert f'id="guest-url-{first}">{url}</code>' in summary
+    assert f'id="guest-url-{first}" title="{url}">{url}</code>' in summary
     assert f'id="guest-pin-{first}">{row["permalink_pin"]}</code>' in summary
     for label in ("Copy link", "Preview as a guest", "Copy PIN", "Generate a new PIN"):
         assert f'aria-label="{label}"' in summary and f'<span class="sr-only">{label}</span>' in summary
@@ -200,7 +200,8 @@ def test_full_url_pin_and_icon_actions_render(host):
     assert "data-confirm" in pin_form and "The old PIN stops working for guests" in pin_form
     assert 'name="return_to" value="/apartments#property-summaries"' in summary
     # Header: a plain section heading with its "?", same table design as above.
-    assert 'class="heading-with-tip property-summaries-head"' in summary
+    # 0099: the shared secondary-section heading (plain h2 plus "?").
+    assert 'class="heading-with-tip list-section-heading property-summaries-head"' in summary
     assert 'class="panel tight scroll-x list-cards lc-properties property-summary-panel"' in summary
     assert re.search(r'<a class="row-primary-link" href="/apartments/%d">\s*<span class="property-identity">' % first, summary)
     cs = _summary(client.get("/apartments?lang=cs").text)

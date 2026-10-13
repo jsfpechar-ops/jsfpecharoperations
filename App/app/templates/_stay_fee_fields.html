@@ -1,6 +1,5 @@
 {#- The one set of stay-fee fields (0077). Rendered only inside property
-    Settings -> Reporting & fees -> Stay fee; the legacy setup URL redirects
-    there. Every section is visible: nothing is folded away. -#}
+    Settings -> Reporting & fees -> Stay fee. Every section is visible: nothing is folded away. -#}
 {%- from "_components.html" import field_label, help_tip with context -%}
 <input type="hidden" name="_stay_fee_account_existing" value="{{ apartment.stay_fee_council_account or apartment.stay_fee_council_iban or '' }}">
 <div class="fee-setup-section">

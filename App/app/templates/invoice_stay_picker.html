@@ -24,6 +24,6 @@
   <p>{{ t('invoice.picker.empty') }}</p>
   {% endif %}
   <p class="small muted"><a href="/reservations">{{ t('invoice.picker.add_stay') }}</a>
-    · <a href="/invoices/settings">{{ t('host.invoice_settings') }}</a></p>
+    · <a href="{{ invoice_details_url }}">{{ t('host.invoice_settings') }}</a></p>
 </div>
 {% endblock %}

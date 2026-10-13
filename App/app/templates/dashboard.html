@@ -9,7 +9,10 @@
 <div class="dashboard-row-list">
 {% for row in items %}
   {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
-  <article class="dashboard-row {{ 'is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}">
+  {#- 0099: the whole row opens the stay, as on every list (shared clickable-row). -#}
+  <article class="dashboard-row clickable-row {{ 'is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}"
+           data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
+           aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
     <div class="dashboard-row-copy">
       <p class="dashboard-row-dates">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}
         {% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}<span>{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}</span>{% endif %}
@@ -127,12 +130,14 @@
       <div class="notification-link">
         <span class="notification-icon" aria-hidden="true">!</span>
         <span class="grow">
+          {# 0101: every link names its tab and group; the hash only scrolls. #}
+          {% set anchor_query = {'basics': 'view=settings&section=property', 'address': 'view=settings&section=property', 'ubyport': 'view=settings&section=reporting', 'calendars': 'view=bookings'} %}
           {% for row in missing_report_display %}
           <p class="dashboard-missing-line">
             <strong>{{ property_identity(row.apartment.id, row.apartment.internal_name, true) }}</strong>:
             {{ t('dashboard.missing_banner.missing') }}
             {% for item in row.missing %}
-            <a href="/apartments/{{ row.apartment.id }}#{{ item.anchor }}">{{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% if not loop.last %}, {% endif %}
+            <a href="/apartments/{{ row.apartment.id }}?{{ anchor_query.get(item.anchor, 'view=settings') }}#{{ item.anchor }}">{{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% if not loop.last %}, {% endif %}
             {% endfor %}
           </p>
           {% endfor %}
@@ -150,7 +155,7 @@
   {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
   {{ onboarding_banner(onboarding) }}
   {% if not rows and feed_count %}<div class="panel empty"><p>{{ t('dashboard.empty.no_stays') }}</p>{{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}</div>
-  {% elif not rows %}<div class="panel empty"><p>{{ t('dashboard.empty.no_feed') }}</p><div class="actions"><a class="btn primary" href="/apartments/{{ apartments[0].id }}#calendars">{{ t('dashboard.empty.connect_calendar') }}</a></div></div>
+  {% elif not rows %}<div class="panel empty"><p>{{ t('dashboard.empty.no_feed') }}</p><div class="actions"><a class="btn primary" href="/apartments/{{ apartments[0].id }}?view=bookings#calendars">{{ t('dashboard.empty.connect_calendar') }}</a></div></div>
   {% endif %}
   {% if queue_groups.current or not rows %}<section id="current"><div class="section-heading"><h2>{{ t('dashboard.section.current') }}</h2><a href="/reservations">{{ t('dashboard.section.view_stays') }}</a></div>{{ dashboard_rows(queue_groups.current, 'dashboard.queue.empty.waiting') }}</section>{% endif %}
   {% if finish_card_showing and not focus_is_urgent %}{{ onboarding_finish(onboarding) }}{% endif %}

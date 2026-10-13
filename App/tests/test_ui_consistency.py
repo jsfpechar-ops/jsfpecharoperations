@@ -87,7 +87,7 @@ def test_no_shell_template_hardcodes_a_demo_date():
 
 def test_properties_and_search_are_on_every_host_page(host):
     """It is part of the sidebar, so no page may depend on a route passing it."""
-    for path in ("/", "/reservations", "/housebook", "/guest-links", "/automation"):
+    for path in ("/", "/reservations", "/housebook", "/apartments", "/entities", "/invoices", "/stay-fees"):
         page = host.get(path)
 
         assert page.status_code == 200, path

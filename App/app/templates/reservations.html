@@ -2,8 +2,7 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ t('stays.title') }}{% endblock %}
 {% block content %}
-<div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
-{% from "_components.html" import page_header, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count, deadline_badge, source_badge with context %}
+{% from "_components.html" import list_page_header, list_toolbar, empty_state, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count, deadline_badge, source_badge with context %}
 {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
 {% set view_query = 'range=' ~ date_range ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
 {% if apartments %}
@@ -15,11 +14,7 @@
 {# Nothing to send and nothing to add to yet, so the header stays out of the way. #}
 {% set header_actions = '' %}
 {% endif %}
-{{ page_header(
-  t('stays.title'),
-  '',
-  actions=header_actions
-) }}
+{{ list_page_header(t('stays.title'), actions=header_actions) }}
 
 {% if apartments %}
 <div id="add-stay-panel" class="action-panel hidden">
@@ -72,28 +67,17 @@
 {# With no property there is nothing to filter, switch views over, export or send,
    so the page shows the empty state's one next step and nothing above it. #}
 {% if apartments %}
-<div class="stays-toolbar">
-  <div class="chips">
-    {% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('past', 'stays.chip.past'), ('all', 'stays.chip.all'), ('archive', 'stays.chip.archive')] %}
-      <a class="chip {{ 'on' if date_range == value or (value == 'archive' and show_archive) }}"
-         href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
-    {% endfor %}
-  </div>
-</div>
-
-{% if show_archive %}
-<p class="small muted">{{ t('stays.archive_note') }}</p>
-{% endif %}
-
 {% set stay_property = namespace(label=t('host.filter.all_properties')) %}
 {% for property in apartments %}
   {% if apartment_id and property.id|string == apartment_id|string %}{% set stay_property.label = property.internal_name %}{% endif %}
 {% endfor %}
-<div class="filter-toolbar" data-filter-toolbar>
-  <button class="btn filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="stays-filter-panel" hidden>
-    {{ t('host.filter.filters') }}
-  </button>
-  <p class="filter-applied-summary" data-filter-summary>
+{% set stay_chips %}
+    {% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('past', 'stays.chip.past'), ('all', 'stays.chip.all'), ('archive', 'stays.chip.archive')] %}
+      <a class="chip {{ 'on' if date_range == value or (value == 'archive' and show_archive) }}"
+         href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
+    {% endfor %}
+{% endset %}
+{% set stay_summary %}
     <span>{{ stay_property.label }}</span><span aria-hidden="true"> · </span><span>{{ t('stays.filter.state.' ~ status) }}</span>
     {% if date_range == 'custom' and (date_from or date_to) %}
       <span aria-hidden="true"> · </span>
@@ -101,12 +85,17 @@
       {% elif date_from %}{{ t('host.filter.range_from', date=date_from | date_cz) }}
       {% else %}{{ t('host.filter.range_until', date=date_to | date_cz) }}{% endif %}
     {% endif %}
-  </p>
-  <div class="filter-toolbar-actions">
+{% endset %}
+{% set stay_list_actions %}
     <button class="btn ghost" type="button" data-save-view data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
     {{ csv_actions_menu(csv_export_params, true, scope_label=stay_property.label) }}
-  </div>
-</div>
+{% endset %}
+{{ list_toolbar(stay_summary, chips=stay_chips, panel_id='stays-filter-panel', actions=stay_list_actions) }}
+<div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
+
+{% if show_archive %}
+<p class="small muted">{{ t('stays.archive_note') }}</p>
+{% endif %}
 <form id="stays-filter-panel" method="get" action="/reservations" class="filters panel host-filter-panel" data-filter-panel data-filter-route="stays" data-original-range="{{ date_range }}">
   <div class="filter-fields">
     <div class="field">
@@ -234,35 +223,24 @@
   </nav>
 {% endif %}
 {% elif show_archive %}
-  <div class="panel empty">{{ t('stays.empty.archive') }}</div>
+  {{ empty_state('', t('stays.empty.archive')) }}
 {% elif has_any %}
-  <div class="panel empty">
-    <p>{{ t('stays.empty.filter') }}</p>
-    <a class="btn" href="/reservations?range=all">{{ t('stays.empty.show_all') }}</a>
-  </div>
+  {{ empty_state('', t('stays.empty.filter'), '/reservations?range=all', t('stays.empty.show_all'), primary=false) }}
 {% elif apartments %}
-  <div class="panel empty">
-    <p>{{ t('stays.empty.none') }}</p>
-    {% if feed_count %}
-      <a class="btn" href="/apartments">{{ t('stays.empty.go_apartments') }}</a>
-    {% else %}
-      <a class="btn primary" href="/apartments/{{ apartments[0].id }}#calendars">{{ t('dashboard.empty.connect_calendar') }}</a>
-    {% endif %}
-  </div>
+  {% if feed_count %}
+    {{ empty_state('', t('stays.empty.none'), '/apartments', t('stays.empty.go_apartments'), primary=false) }}
+  {% else %}
+    {{ empty_state('', t('stays.empty.none'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', t('dashboard.empty.connect_calendar')) }}
+  {% endif %}
+{% elif demo_available %}
+  {#- Practice mode only: the demo loader is the page-specific extra. -#}
+  {% call empty_state('', t('stays.empty.no_apartments'), '/apartments/new', t('stays.empty.add_first')) %}
+    <form method="post" action="/demo" class="empty-state-extra">
+      <button class="btn" type="submit">{{ t('demo.load') }}</button>
+      <p class="small muted">{{ t('demo.load_detail') }}</p>
+    </form>
+  {% endcall %}
 {% else %}
-  <div class="panel empty">
-    <p>{{ t('stays.empty.no_apartments') }}</p>
-    <div class="actions" style="justify-content:center;margin-top:14px">
-      <a class="btn primary" href="/apartments/new">{{ t('stays.empty.add_first') }}</a>
-      {% if demo_available %}
-        <form method="post" action="/demo" class="inline">
-          <button class="btn" type="submit">{{ t('demo.load') }}</button>
-        </form>
-      {% endif %}
-    </div>
-    {% if demo_available %}
-      <p class="small muted" style="margin-top:12px">{{ t('demo.load_detail') }}</p>
-    {% endif %}
-  </div>
+  {{ empty_state('', t('stays.empty.no_apartments'), '/apartments/new', t('stays.empty.add_first')) }}
 {% endif %}
 {% endblock %}

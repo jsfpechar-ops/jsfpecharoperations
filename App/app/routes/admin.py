@@ -160,14 +160,14 @@ def _smart_locks_section(form, has_locks: bool) -> str:
 
 
 def _lock_property_return(request: Request, return_to: str) -> Optional[str]:
-    """``/apartments/{id}#door-code`` when return_to names the host's own property."""
+    """The property's Door lock settings when return_to names the host's own property."""
     match = re.fullmatch(r"/apartments/(\d+)", return_to.split("?", 1)[0])
     if not match:
         return None
     apartment_id = int(match.group(1))
     if not access.apartment(request, apartment_id):
         return None
-    return f"/apartments/{apartment_id}#door-code"
+    return f"/apartments/{apartment_id}?view=settings&section=lock#door-code"
 
 
 def _apartment_with_secret(apartment) -> Dict[str, Any]:
@@ -458,16 +458,13 @@ def guide_view(request: Request):
 
 # --- guest communication ------------------------------------------------
 
-# 0094: old hub URLs open the right Settings group, not only an anchor.
-_HUB_SECTIONS = {"communication": "guests", "automation": "automation"}
-
-
-def _property_hub_redirect(request: Request, anchor: str) -> RedirectResponse:
+# /guest-links is kept only because lifecycle e-mails already sent link it
+# (0101); it opens the right Settings group, not only an anchor.
+def _property_hub_redirect(request: Request) -> RedirectResponse:
     apartments = access.apartments(request)
     if len(apartments) == 1:
-        section = _HUB_SECTIONS.get(anchor, "property")
         return RedirectResponse(
-            f"/apartments/{apartments[0]['id']}?view=settings&section={section}#{anchor}",
+            f"/apartments/{apartments[0]['id']}?view=settings&section=guests#communication",
             status_code=303,
         )
     # 0078: several (or no) properties land on the Properties summary, never
@@ -483,7 +480,7 @@ def guest_links(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    return _property_hub_redirect(request, "communication")
+    return _property_hub_redirect(request)
 
 
 @router.get("/smart-locks")
@@ -725,7 +722,7 @@ def _entities_page(
 
 
 def _invoice_details_response(request: Request, form, entity: Dict[str, Any], *, default_next: str):
-    """Save or look up Invoice details; the canonical and the legacy POST both land here."""
+    """Save or look up Invoice details from the business editor."""
     next_path = _entity_next(_form_str(form, "next"))
     if form.get("fill_from_register"):
         state = invoice_routes.lookup_invoice_details(request, form, entity)
@@ -749,56 +746,6 @@ async def entity_invoice_details(entity_id: int, request: Request):
     form = await request.form()
     return _invoice_details_response(
         request, form, dict(entity), default_next=entity_editor_url(entity_id, section="invoice")
-    )
-
-
-def _legacy_invoice_entity(request: Request, wanted: str):
-    """(entity, entities) for the old invoice-settings URLs; a named id must be the host's."""
-    entities = access.entities(request)
-    if wanted:
-        return invoice_routes.owned_entity(entities, wanted), entities
-    return (entities[0] if len(entities) == 1 else None), entities
-
-
-@router.get("/invoices/settings")
-def invoice_settings_legacy(request: Request):
-    """Old bookmark: open the business editor at Invoice details of the right operator.
-
-    Registered on this router (included before invoices.router), so
-    "settings" is never read as an invoice number.
-    """
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    entity, entities = _legacy_invoice_entity(request, request.query_params.get("entity") or "")
-    if not entities:
-        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    if not entity:
-        # Several operators and none (or not one of the host's) named: the list
-        # is the picker; never open an arbitrary record.
-        return RedirectResponse("/entities", status_code=303)
-    next_path = _entity_next(request.query_params.get("next"))
-    target = entity_editor_url(
-        entity["id"], next_path or invoice_routes.builder_path(entity["id"]), section="invoice"
-    )
-    return RedirectResponse(target, status_code=303)
-
-
-@router.post("/invoices/settings")
-async def invoice_settings_legacy_save(request: Request):
-    """Old form posts: the same save, validation and rerender as the editor; no redirect."""
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    form = await request.form()
-    wanted = _form_str(form, "legal_entity_id") or (request.query_params.get("entity") or "")
-    entity, entities = _legacy_invoice_entity(request, wanted)
-    if not entities:
-        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    if not entity:
-        return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
-    return _invoice_details_response(
-        request, form, dict(entity), default_next=invoice_routes.builder_path(entity["id"])
     )
 
 
@@ -844,7 +791,7 @@ def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
                 host_i18n.lang_from_request(request), "entities.ico.invalid"
             ),
         )
-    # 0075: the invoice defaults share one normaliser with /invoices/settings.
+    # 0075: the invoice defaults share one normaliser with the Invoice details editor.
     # Entity-editor policy: no three-part account and no BIC derivation.
     detail = invoice_routes.invoice_detail_payload(form)
     if not invoice_routes.apply_account_payload(detail, form, accept_parts=False):
@@ -1446,7 +1393,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
         policy if policy in ("off", "required_foreign") else "off"
     )
     if "stay_fee_rate_czk" in form:
-        # 0077: the one fee normaliser, shared with the legacy setup POST.
+        # 0077: the one fee normaliser (routes/stay_fees.py).
         payload.update(stay_fee_routes.fee_form_values(form))
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
@@ -1848,7 +1795,7 @@ def _refuse_apartment_save(
 def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
     """0077: show the one fee editor again with what the host typed and the error.
 
-    Used by the property save and the legacy fee setup POST; nothing is written.
+    Used by the property save; nothing is written.
     """
     draft = dict(apartment)
     submitted = _property_draft(form)
@@ -1884,19 +1831,6 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
             ),
         },
         status_code=400,
-    )
-
-
-@router.get("/apartments/{apartment_id}/ws-request.txt")
-def apartment_ws_request_download(apartment_id: int, request: Request):
-    """0097: the request-letter generator is gone; an old link lands on Police reporting."""
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    if not access.apartment(request, apartment_id):
-        return Response("Not found.", status_code=404)
-    return RedirectResponse(
-        f"/apartments/{apartment_id}?view=settings&section=reporting#ubyport", status_code=303
     )
 
 
@@ -1965,47 +1899,6 @@ _ADDRESS_ONLY_FIELDS = (
     "addr_orient_no",
     "addr_zip",
 )
-
-
-def _save_address_only(apartment_id: int, request: Request, form) -> Optional[Response]:
-    """Persist only police address fields (setup wizard address step)."""
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return _back("/setup/name", err=_flash(request, "flash.error.no_such_apartment"))
-    payload: Dict[str, Any] = {
-        field: _form_str(form, field) for field in _ADDRESS_ONLY_FIELDS
-    }
-    payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
-    merged = dict(apartment)
-    merged.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS})
-    address_issues = [
-        issue
-        for issue in validation.errors_only(validation.validate_apartment(_apartment_with_secret(merged)))
-        if issue.field in _ADDRESS_ONLY_FIELDS
-    ]
-    if address_issues:
-        from .setup_wizard import _step_context
-
-        draft_apartment = dict(apartment)
-        draft_apartment.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS})
-        return render(
-            request,
-            "setup/address.html",
-            _step_context(
-                request,
-                "address",
-                address_error=address_issues[0].message,
-                apartment=draft_apartment,
-            ),
-            status_code=400,
-        )
-    db.update(
-        "apartment",
-        apartment_id,
-        {field: payload[field] for field in _ADDRESS_ONLY_FIELDS},
-    )
-    db.audit("apartment_updated", f"id={apartment_id}")
-    return None
 
 
 def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Optional[Response], bool]:
@@ -2080,7 +1973,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             lock_id = _form_str(form, "lock_id")
             if lock_id not in allowed_ids:
                 return _back(
-                    f"/apartments/{apartment_id}#door-code",
+                    f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
                     err=_flash(request, "flash.error.door_code_lock"),
                 ), False
             newly_chosen = (
@@ -2088,7 +1981,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             )
             if newly_chosen and _properties_using_lock(owner_id, lock_id, apartment_id):
                 return _back(
-                    f"/apartments/{apartment_id}#door-code",
+                    f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
                     err=_flash(request, "flash.error.door_code_lock_taken"),
                 ), False
             try:
@@ -2096,12 +1989,12 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
                 cout = int(_form_str(form, "checkout_hour"))
             except ValueError:
                 return _back(
-                    f"/apartments/{apartment_id}#door-code",
+                    f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
                     err=_flash(request, "flash.error.door_code_hours"),
                 ), False
             if not (0 <= cin <= 23 and 0 <= cout <= 23):
                 return _back(
-                    f"/apartments/{apartment_id}#door-code",
+                    f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
                     err=_flash(request, "flash.error.door_code_hours"),
                 ), False
             payload.update(
@@ -2158,7 +2051,7 @@ async def regenerate_pin(apartment_id: int, request: Request):
     db.audit("pin_rotated", f"apartment={apartment_id}")
     # The PIN itself stays out of the flash: ?msg= lands in browser history and
     # access logs, and the guest link card already shows the new PIN.
-    return_to = _form_return_to(form, f"/apartments/{apartment_id}#communication")
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}?view=settings&section=guests#communication")
     if return_to == "/apartments":
         # 0098: New PIN on the Properties summary row; safe_local_path drops
         # the fragment, so land back on that row's section.
@@ -2237,7 +2130,7 @@ async def regenerate_link(apartment_id: int, request: Request):
     guest_slug.rotate(apartment_id)
     db.audit("permalink_rotated", f"apartment={apartment_id}")
     return _back(
-        _form_return_to(form, f"/apartments/{apartment_id}#communication"),
+        _form_return_to(form, f"/apartments/{apartment_id}?view=settings&section=guests#communication"),
         msg=_flash(request, "flash.apartments.guest_link"),
     )
 
@@ -2258,14 +2151,6 @@ UBYPORT_CREDENTIAL_FIELDS = UBYPORT_TEXT_FIELDS + ("uby_ws_password",)
 
 def _posted_credentials(form) -> bool:
     return any(_form_str(form, field) for field in UBYPORT_CREDENTIAL_FIELDS)
-
-
-@router.get("/automation")
-def automation_view(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    return _property_hub_redirect(request, "automation")
 
 
 @router.post("/apartments/{apartment_id}/archive")

@@ -385,7 +385,13 @@ def invoice_new(request: Request):
     raw_stay = request.query_params.get("reservation_id")
     if not raw_stay:
         return render(
-            request, "invoice_stay_picker.html", {"nav": "invoices", "stays": _stay_options(request)}
+            request,
+            "invoice_stay_picker.html",
+            {
+                "nav": "invoices",
+                "stays": _stay_options(request),
+                "invoice_details_url": access.invoice_details_url(request),
+            },
         )
     stay = _stay_for(request, raw_stay)
     if not stay:
@@ -414,8 +420,7 @@ def invoice_new(request: Request):
 
 # --- 0076: invoice details of one operator -------------------------------
 # The canonical editor is the shared business editor (/entities?edit={id},
-# Invoice details), rendered by routes/admin.py. That module also keeps the
-# legacy GET/POST /invoices/settings adapters. The save, lookup and
+# Invoice details), rendered by routes/admin.py. The save, lookup and
 # normalisation live here, so admin imports invoices and never the reverse.
 
 
@@ -561,7 +566,7 @@ def _buyer_ares_fill(request: Request, form, values: Dict[str, Any]) -> Dict[str
 
 
 # --- 0075: invoice-default normalisation and register lookup -------------
-# The one implementation behind both /invoices/settings and the entity editor
+# The one implementation behind the entity editor's Invoice details
 # (routes/admin.py). Each caller states its policy explicitly: only invoice
 # settings composes the three account fields and derives a missing BIC.
 
@@ -785,7 +790,7 @@ def invoice_pdf_download(invoice_id: int, request: Request):
     )
 
 
-@router.get("/invoices/{invoice_id}")
+@router.get("/invoices/{invoice_id:int}")  # 0101: a non-number path is a 404, not a 422
 def invoice_detail(invoice_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:

@@ -72,7 +72,7 @@
         {% for message in header_messages %}<li>{{ message }}</li>{% endfor %}
       </ul>
       <p class="small muted">{{ t('reports.detail.header_help') }}
-        <a href="/apartments/{{ submission.apartment_id }}#ubyport">{{ t('reports.detail.header_help_link') }}</a>
+        <a href="/apartments/{{ submission.apartment_id }}?view=settings&amp;section=reporting#ubyport">{{ t('reports.detail.header_help_link') }}</a>
       </p>
     </div>
   {% endif %}

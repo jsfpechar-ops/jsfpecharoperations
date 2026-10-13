@@ -4,6 +4,8 @@
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
   var NAV_BREAKPOINT = 960;
   var manualCopyFormId = 0;
+  /* 0099: every clickable list row, table or dashboard card. */
+  var ROW_SELECTOR = "tr[data-href], .clickable-row[data-href]";
 
   document.documentElement.classList.add("has-js");
 
@@ -727,14 +729,20 @@
   }
 
   function initClickableRows() {
-    document.querySelectorAll("tr[data-href]").forEach(function (row) {
+    /* 0099: one behaviour for every list row (table rows and dashboard stay
+       rows): click or Enter/Space opens it; controls inside keep their own
+       action, and selecting text in a row does not navigate. */
+    document.querySelectorAll(ROW_SELECTOR).forEach(function (row) {
       function openRow() {
         if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
         window.location.assign(row.getAttribute("data-href"));
       }
 
       row.addEventListener("click", function (event) {
-        if (event.target.closest("a, button, input, select, textarea, label, form, .row-menu, .row-actions")) return;
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.target.closest("a, button, input, select, textarea, label, form, summary, details, dialog, .row-menu, .row-actions, .dashboard-row-actions")) return;
+        var selection = window.getSelection ? String(window.getSelection()) : "";
+        if (selection && row.contains(window.getSelection().anchorNode)) return;
         openRow();
       });
 
@@ -1694,7 +1702,7 @@
         }
         return;
       }
-      var rows = Array.prototype.slice.call(document.querySelectorAll("tr[data-href]"));
+      var rows = Array.prototype.slice.call(document.querySelectorAll(ROW_SELECTOR));
       if (!rows.length) return;
       var current = rows.findIndex(function (row) { return row.classList.contains("row-selected"); });
       if (event.key === "j" || event.key === "k") {
@@ -1885,7 +1893,7 @@
   /* 0094: property Overview / Bookings & calendars / Settings.
      Every view and settings group is already in the page; switching only shows
      another one, so the one settings form keeps whatever the host typed. Links
-     and old #hashes keep working, history follows, and a dirty form asks before
+     carry ?view=&section= (plus a #hash to scroll), history follows, and a dirty form asks before
      the page is left. Without JavaScript the same links reload with ?view=. */
   function initPropertyViews() {
     var root = document.querySelector("[data-property-views]");
@@ -1894,14 +1902,6 @@
     var base = root.getAttribute("data-property-base");
     var VIEWS = ["overview", "bookings", "settings"];
     var SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
-    // 0096: Door lock is its own group; old #door-code links land there.
-    var HASHES = {
-      basics: ["settings", "property"], address: ["settings", "property"],
-      communication: ["settings", "guests"], "door-code": ["settings", "lock"],
-      ubyport: ["settings", "reporting"], "ws-request-letter": ["settings", "reporting"],
-      "stay-fee-settings": ["settings", "reporting"], automation: ["settings", "automation"],
-      calendars: ["bookings"], "calendar-connect": ["bookings"]
-    };
     var form = root.querySelector("[data-property-settings-form]");
     var returnInput = form && form.querySelector("[data-property-return]");
     var connect = root.querySelector("[data-calendar-connect]");
@@ -1914,10 +1914,9 @@
       try { return document.getElementById(decodeURIComponent(hash.slice(1))); } catch (_) { return null; }
     }
 
-    // Where a URL points: [view, section] from the hash first, then ?view/?section.
+    // Where a URL points: [view, section] of the element the hash names in
+    // this page, else ?view/?section (0101: no table of old hashes).
     function destination(url) {
-      var hash = url.hash ? url.hash.slice(1) : "";
-      if (HASHES[hash]) return HASHES[hash];
       var target = hashTarget(url.hash);
       if (target && root.contains(target)) {
         var panel = target.closest("[data-property-view]");

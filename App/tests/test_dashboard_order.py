@@ -140,7 +140,7 @@ def test_the_one_line_finish_card_still_reaches_the_guest_link(host):
 
     page = host.get("/?lang=en")
 
-    assert f'href="/apartments/{apartment_id}#communication"' in page.text
+    assert f'href="/apartments/{apartment_id}?view=settings&amp;section=guests#communication"' in page.text
 
 
 def test_the_finish_card_keeps_its_room_when_nothing_is_overdue(host):

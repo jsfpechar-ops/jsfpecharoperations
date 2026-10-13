@@ -10,7 +10,6 @@ from fastapi.testclient import TestClient
 from app import auth, db, feed_url, icalsync
 from app.main import app
 from app.routes import admin as admin_routes
-from app.routes import setup_wizard as wizard_routes
 from tests.conftest import login_as
 
 PREFIX = "cal-platform-"
@@ -64,7 +63,6 @@ def calls(monkeypatch):
         return {"created": 0, "updated": 0, "errors": seen.get("sync_errors", 0)}
 
     monkeypatch.setattr(feed_url, "validate_calendar_url", validate)
-    monkeypatch.setattr(wizard_routes, "validate_calendar_url", validate)
     monkeypatch.setattr(icalsync, "sync_all", sync)
     db.init_db()
     _cleanup()
@@ -240,60 +238,3 @@ def test_helper_rejects_control_characters_in_the_custom_name():
     assert errors == {"own_name": "calendar.error.name_invalid"}
     values, errors = admin_routes._calendar_platform("airbnb", "", "")
     assert values == {"label": "Airbnb", "own_name": "Airbnb"} and not errors
-
-
-# --- wizard -----------------------------------------------------------------
-
-
-def _wizard_host():
-    host = _make_host()
-    db.update("apartment", host["apartment"], {
-        "addr_street": "Synthetic", "addr_house_no": "1", "addr_zip": "11000", "addr_obec": "Praha",
-    })
-    return host
-
-
-def test_wizard_requires_a_known_platform_and_keeps_the_link(calls):
-    host = _wizard_host()
-    response = host["client"].post(
-        "/setup/bookings", data={"action": "add", "url": URL}, follow_redirects=False
-    )
-    assert response.status_code == 400
-    assert "Choose the platform this calendar comes from." in response.text
-    assert _feeds(host["apartment"]) == []
-    assert calls["sync"] == []
-
-
-def test_wizard_other_needs_a_name_and_myself_is_never_a_calendar(calls):
-    host = _wizard_host()
-    response = host["client"].post(
-        "/setup/bookings",
-        data={"chosen_source": "other", "action": "add", "url": URL, "label_other": ""},
-        follow_redirects=False,
-    )
-    assert response.status_code == 400
-    assert "Type the platform name." in response.text
-    assert f'value="{URL}"' in response.text.replace("&amp;", "&")
-    manual = host["client"].post(
-        "/setup/bookings", data={"source": "myself", "url": URL}, follow_redirects=False
-    )
-    assert manual.status_code == 303
-    assert "/reservations?new=1" in manual.headers["location"]
-    assert _feeds(host["apartment"]) == []
-
-
-def test_wizard_stores_the_readable_platform(calls):
-    host = _wizard_host()
-    # 0092: the legacy page now opens the property's own calendar form.
-    legacy = host["client"].get("/setup/bookings?source=vrbo", follow_redirects=False)
-    assert legacy.headers["location"] == f"/apartments/{host['apartment']}?view=bookings#calendars"
-    page = host["client"].get(legacy.headers["location"]).text
-    assert '<option value="vrbo"' in page
-    response = host["client"].post(
-        "/setup/bookings",
-        data={"chosen_source": "vrbo", "action": "add", "url": URL},
-        follow_redirects=False,
-    )
-    assert response.status_code == 303
-    feed = _feeds(host["apartment"])[0]
-    assert (feed["label"], feed["own_name"]) == ("Vrbo", "Vrbo")

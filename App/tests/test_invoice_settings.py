@@ -94,7 +94,7 @@ def test_bare_inputs_inherit_the_standard_field_styling(host):
     assert "input:not([type])" in css
 
     entity_id = _add_entity()
-    settings_page = host.get(f"/invoices/settings?entity={entity_id}")
+    settings_page = host.get(f"/entities?edit={entity_id}")
     assert settings_page.status_code == 200
     for field in ("account_prefix", "account_number", "account_bank"):
         marker = f'name="{field}"'
@@ -103,17 +103,19 @@ def test_bare_inputs_inherit_the_standard_field_styling(host):
         assert "type=" not in tag, f"{field} unexpectedly has a type attribute"
 
 
-def test_the_settings_route_is_not_eaten_by_the_dynamic_invoice_route(host):
+def test_the_old_settings_url_is_gone_and_not_read_as_an_invoice(host):
+    """0101: /invoices/settings was removed; it is a plain 404, never an invoice id."""
     entity_id = _add_entity()
-    page = host.get(f"/invoices/settings?entity={entity_id}")
-    assert page.status_code == 200
-    assert 'name="account_number"' in page.text
+    page = host.get(f"/invoices/settings?entity={entity_id}", follow_redirects=False)
+    assert page.status_code == 404
+    posted = host.post("/invoices/settings", data={"legal_entity_id": str(entity_id)}, follow_redirects=False)
+    assert posted.status_code in (404, 405)
 
 
 def test_settings_save_normalises_the_bank_and_keeps_absent_fields(host):
     entity_id = _add_entity(registry_entry=None)
     response = host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={"legal_entity_id": str(entity_id), "bank_account": "19-2000781379/0800",
               "next": f"/invoices/new?entity={entity_id}"},
         follow_redirects=False,
@@ -130,10 +132,10 @@ def test_settings_save_normalises_the_bank_and_keeps_absent_fields(host):
 
 def test_saving_other_fields_does_not_wipe_an_iban_only_account(host):
     entity_id = _add_entity(bank_account="CZ9106000000000000000123", iban="CZ9106000000000000000123")
-    page = host.get(f"/invoices/settings?entity={entity_id}")
+    page = host.get(f"/entities?edit={entity_id}")
     token = page.text.split('name="csrf-token" content="', 1)[1].split('"', 1)[0]
     host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={
             "_csrf": token,
             "legal_entity_id": str(entity_id),
@@ -154,7 +156,7 @@ def test_saving_other_fields_does_not_wipe_an_iban_only_account(host):
 def test_a_sent_blank_clears_the_field(host):
     entity_id = _add_entity()
     host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={"legal_entity_id": str(entity_id), "bank_account": "", "bic": "  ",
               "next": f"/invoices/new?entity={entity_id}"},
         follow_redirects=False,
@@ -167,7 +169,7 @@ def test_a_sent_blank_clears_the_field(host):
 def test_a_bad_bank_number_keeps_the_old_value(host):
     entity_id = _add_entity()
     response = host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={"legal_entity_id": str(entity_id), "bank_account": "not-an-account",
               "next": f"/invoices/new?entity={entity_id}"},
         follow_redirects=True,

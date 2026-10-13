@@ -91,7 +91,9 @@ def _summary(page):
 def test_no_business_and_no_property_states_stay_distinct(host):
     empty = host.get("/apartments?lang=en").text
     assert 'id="property-summaries"' not in empty
-    assert 'class="properties-shared"' not in empty
+    # 0099: the shared records are the Properties sub-page tabs; with no
+    # business there is no Business & legal details tab yet.
+    assert 'href="/entities?edit=' not in empty
     assert "Add operator" in empty
     entity_id = _entity()
     ready = host.get("/apartments?lang=en").text
@@ -122,7 +124,7 @@ def test_list_rows_show_location_setup_calendars_and_an_aligned_open(host):
     assert "#ubyport\" role=\"menuitem\"" not in table
     # Two businesses: the shared link opens the list, never an arbitrary one.
     _entity(name="Druhá s.r.o.")
-    assert '<a class="properties-shared-link" href="/entities">' in host.get("/apartments").text
+    assert '<a class="sub-tab" href="/entities">Business &amp; legal details</a>' in host.get("/apartments").text
 
 
 def test_summary_is_visible_read_only_and_links_to_each_editor(host):
@@ -132,7 +134,7 @@ def test_summary_is_visible_read_only_and_links_to_each_editor(host):
     archived = _property("Starý byt", entity_id, archived_at=db.utcnow())
     page = host.get("/apartments?lang=en").text
     summary = _summary(page)
-    assert "<details" not in page[page.index('class="properties-shared"'):]
+    assert "<details" not in page[page.index('data-sub-tabs'):]
     assert "Guest links and reporting timing" in summary
     # 0098 (owner): the summary now carries the inline timing control and the
     # New PIN form; it posts only to the scoped timing route and regenerate-pin.
@@ -145,11 +147,14 @@ def test_summary_is_visible_read_only_and_links_to_each_editor(host):
     token = db.query_one("SELECT permalink_token FROM apartment WHERE id = ?", (first,))["permalink_token"]
     assert f"/l/{token}" in summary
     assert '<option value="manual" selected>Only when I press send' in summary
-    assert '<option value="scheduled" selected>Automatically after a delay from completion' in summary
+    assert '<option value="scheduled" selected>Automatically, after a delay' in summary
     assert 'value="6" data-timing-hours-input' in summary
     assert "Starý byt" not in summary
-    # The archived property keeps its own list with Restore.
-    assert f'action="/apartments/{archived}/unarchive"' in page
+    # Archived properties are off the working list; Restore lives in
+    # Settings › Data & archive › Archived (owner, 2026-10-13).
+    assert f'action="/apartments/{archived}/unarchive"' not in page
+    archive = host.get("/settings/archived?lang=en").text
+    assert f'action="/apartments/{archived}/unarchive"' in archive
 
 
 def test_listing_never_creates_a_guest_link_slug(host):
@@ -186,9 +191,10 @@ def test_lock_account_link_only_when_connected(host):
 # --- legacy hub URLs and Search ----------------------------------------------------
 
 def test_hub_redirects_for_none_one_and_many(host):
-    for path in ("/guest-links", "/automation"):
-        response = host.get(path, follow_redirects=False)
-        assert response.headers["location"] == "/apartments#property-summaries"
+    # 0101: /guest-links stays for e-mails already sent; /automation is gone.
+    response = host.get("/guest-links", follow_redirects=False)
+    assert response.headers["location"] == "/apartments#property-summaries"
+    assert host.get("/automation", follow_redirects=False).status_code == 404
     entity_id = _entity()
     first = _property("Byt Alfa", entity_id)
     assert host.get("/guest-links", follow_redirects=False).headers["location"] == (
@@ -198,12 +204,12 @@ def test_hub_redirects_for_none_one_and_many(host):
     assert f"/apartments/{first}?view=settings&section=guests#communication" in urls
     assert f"/apartments/{first}?view=settings&section=automation#automation" in urls
     _property("Chata Beta", entity_id)
-    assert host.get("/automation", follow_redirects=False).headers["location"] == (
+    assert host.get("/guest-links", follow_redirects=False).headers["location"] == (
         "/apartments#property-summaries")
     urls = {item.get("url") for item in host.get("/api/command-palette").json()["items"]}
     assert "/apartments#property-summaries" in urls
-    assert {"/apartments", "/entities", "/invoices/settings"} <= urls
-    assert "/guest-links" not in urls and "/automation" not in urls
+    assert {"/apartments", "/entities", f"/entities?edit={entity_id}&next=/invoices#entity-invoice"} <= urls
+    assert not {"/guest-links", "/automation", "/invoices/settings"} & urls
 
 
 # --- browser: list and summary fit 360-2048, EN and CS -----------------------------
@@ -251,7 +257,7 @@ def live_base(browser_host):
 _FIT_JS = """() => {
   const vw = document.documentElement.clientWidth;
   const bad = [];
-  const sel = '.properties-shared a, .properties-table a, .properties-table button, '
+  const sel = '.sub-tabs a, .properties-table a, .properties-table button, '
     + '.property-summaries a, .property-summaries h2, .property-summaries button';
   for (const el of document.querySelectorAll(sel)) {
     const r = el.getBoundingClientRect();

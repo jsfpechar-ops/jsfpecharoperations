@@ -208,8 +208,6 @@ def test_apartment_form_links_to_sample_pdf(authed_client):
     assert "Filled from your operator contact e-mail when left blank" not in page.text
 
 
-def test_automation_redirects_to_property_timing(authed_client):
-    client, apartment_id = authed_client
-    response = client.get("/automation", follow_redirects=False)
-    assert response.status_code == 303
-    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=automation#automation"
+def test_the_old_automation_hub_is_gone(authed_client):
+    client, _apartment_id = authed_client
+    assert client.get("/automation", follow_redirects=False).status_code == 404

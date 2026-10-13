@@ -34,7 +34,6 @@ PRIVATE_PREFIXES = (
     "/admin/",
     "/api/",
     "/apartments",
-    "/automation",
     "/entities",
     "/guest-links",
     "/guests/",

@@ -2,8 +2,10 @@
 {% set nav = 'stay_fees' %}
 {% block title %}{{ t('stay_fees.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header with context %}
-{{ page_header(t('stay_fees.title'), '', '', '', '', '') }}
+{% from "_components.html" import list_page_header, empty_state with context %}
+{#- 0099: no sub-page tabs: fee settings live per property (Settings,
+    Reporting & fees); there is no one fee-settings page to link. -#}
+{{ list_page_header(t('stay_fees.title')) }}
 {% include "_list_filter.html" %}
 {% if periods %}
 {% set fee_list = namespace(all_unset=true) %}
@@ -37,7 +39,7 @@
     {% for period in periods %}
       {% set apartment = period.apartment %}
       {% if period.unset %}
-      <tr>
+      <tr class="clickable-row" data-href="{{ fee_settings_url(apartment.id, fee_return) }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('stay_fees.col.property') }}">
           <span class="row-primary-link">{{ apartment.internal_name }}</span>
           <div class="small muted">{{ apartment.addr_obec or '' }}</div>
@@ -55,7 +57,7 @@
         {% endif %}
       </tr>
       {% else %}
-      <tr class="clickable-row" data-href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" tabindex="0" role="link">
+      <tr class="clickable-row" data-href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('stay_fees.col.property') }}">
           <span class="row-primary-link">{{ apartment.internal_name }}</span>
           <div class="small muted">{{ apartment.addr_obec or '' }} · {{ t('stay_fees.rate_line', rate=period.rate_czk) }}</div>
@@ -93,14 +95,10 @@
   </table>
 </div>
 {% else %}
-<div class="panel empty">
-  {% if filter_active and has_properties %}
-  <h2>{{ t('filter.no_results') }}</h2>
-  <a class="btn" href="{{ filter_reset_href }}">{{ t('filter.reset') }}</a>
-  {% else %}
-  <h2>{{ t('stay_fees.empty_title') }}</h2>
-  <a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a>
-  {% endif %}
-</div>
+{% if filter_active and has_properties %}
+{{ empty_state(t('filter.no_results'), '', filter_reset_href, t('filter.reset'), primary=false) }}
+{% else %}
+{{ empty_state(t('stay_fees.empty_title'), '', '/apartments/new', t('apartments.add')) }}
+{% endif %}
 {% endif %}
 {% endblock %}

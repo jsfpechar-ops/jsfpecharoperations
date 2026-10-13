@@ -118,7 +118,8 @@ def test_list_has_status_column_and_open_report_link(fee_host):
         f'href="/apartments/{fee_host["off"]}?view=settings&amp;section=reporting'
         f'&amp;return_to=%2Fstay-fees%3Fmonth%3D{MONTH}#stay-fee-settings"'
     ) in page
-    assert "/setup" not in page
+    # No old fee-setup URL (0101: the route is gone).
+    assert not re.search(r"/stay-fees/\d+/setup", page)
     assert page.count("Not set up") >= 1
 
 

@@ -214,10 +214,14 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
 
         page.set_viewport_size({"width": 1280, "height": 1000})
         page.goto(f"{base}/apartments?lang=en")
-        assert page.locator(".host-local-nav").count() == 0
+        # 0099: the list shows the Properties section tabs (one component),
+        # with the list itself as the open tab; property pages show none.
+        assert page.locator(".host-local-nav").count() == 1
+        assert page.locator('.sub-tabs a[aria-current="page"]').inner_text() == "Properties"
         assert page.locator(".host-tools").count() == 0
         page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
         assert page.locator(".host-tools").count() == 0
+        assert page.locator(".host-local-nav").count() == 0
         assert page.locator('a[href$="#communication"]').count() > 0
         browser.close()
 
@@ -322,11 +326,11 @@ def test_required_operator_controls_in_browser(host, base):
                     _shot_0088(none, f"new-none-{width}-{lang}")
 
                     one = contexts["one"]
-                    one.goto(f"{base}/setup/name?lang={lang}")
+                    one.goto(f"{base}/apartments/new?lang={lang}")
                     assert one.locator("#legal_entity_id").input_value() != ""
                     assert one.locator("#legal_entity_id option:checked").inner_text().strip() == "Sole Operator s.r.o."
                     _assert_operator_fits(one)
-                    _shot_0088(one, f"wizard-one-{width}-{lang}")
+                    _shot_0088(one, f"new-one-{width}-{lang}")
 
                     many.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=property&lang={lang}")
                     controller = many.locator("#data_controller_entity_id")

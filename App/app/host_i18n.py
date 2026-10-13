@@ -348,38 +348,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.demo_hint": "Available only in mock/demo environments. Clear it whenever you are done.",
         "setup.banner.aria": "First-flat setup",
         "setup.banner.line": "Setup: step %(step)s of %(total)s · Continue →",
-        "setup.frame.title": "Setup · step %(step)s of %(total)s",
-        "setup.frame.step_of": "Step %(step)s of %(total)s",
-        "setup.frame.back": "Back",
-        "setup.frame.continue": "Continue",
-        "setup.frame.later": "Do this later",
-        "setup.welcome.title": "Let's set up your first flat",
-        "setup.welcome.lede": "5 short steps, about 10 minutes. We save as you go.",
-        "setup.welcome.prepare": (
-            "Have ready: your Airbnb or Booking login · the police letter, if you have one · your IČO, if you have one."
-        ),
-        "setup.welcome.start": "Start",
-        "setup.name.title": "Name your flat",
-        "setup.name.label": "What do you call this flat?",
-        "setup.name.placeholder": "e.g. Flat Vinohrady",
-        "setup.name.error": "Enter a name for this flat.",
-        "setup.address.title": "Where is it?",
-        "setup.bookings.title": "Where do your guests book?",
-        "setup.bookings.source.airbnb": "Airbnb",
-        "setup.bookings.source.booking": "Booking.com",
-        "setup.bookings.source.echalupy": "e-chalupy",
-        "setup.bookings.source.other": "Other website",
-        "setup.bookings.source.myself": "I take bookings myself",
-        "setup.bookings.paste_label": "Paste the calendar link",
-        "setup.bookings.how_title": "Show me how",
-        "setup.bookings.how_body": "Open your listing calendar settings and copy the private iCal export link.",
-        "setup.bookings.url_error": "Paste a calendar link to continue.",
-        "setup.bookings.found_title": "We found %(count)s upcoming stays",
-        "setup.bookings.found_empty": "No upcoming stays yet. You can add one by hand later.",
-        "setup.bookings.error_title": "We could not read that calendar",
-        "setup.bookings.error_body": "Check the link is the private iCal export, not the public booking page.",
-        "setup.bookings.try_again": "Try again",
-        "setup.bookings.next_ubyport": "Next: police details",
         "demo.load": "Explore with demo data",
         "demo.load_detail": "Two sample properties. Nothing is sent to the police.",
         "demo.clear": "Clear demo data",
@@ -1949,38 +1917,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "onboarding.demo_hint": "Jen pro ukázkové/mock prostředí. Po dokončení je můžete kdykoli smazat.",
         "setup.banner.aria": "Nastavení prvního ubytování",
         "setup.banner.line": "Nastavení: krok %(step)s z %(total)s · Pokračovat →",
-        "setup.frame.title": "Nastavení · krok %(step)s z %(total)s",
-        "setup.frame.step_of": "Krok %(step)s z %(total)s",
-        "setup.frame.back": "Zpět",
-        "setup.frame.continue": "Pokračovat",
-        "setup.frame.later": "Udělám to později",
-        "setup.welcome.title": "Nastavme vaše první ubytování",
-        "setup.welcome.lede": "5 krátkých kroků, asi 10 minut. Ukládáme průběžně.",
-        "setup.welcome.prepare": (
-            "Mějte po ruce: přihlášení do Airbnb nebo Booking · dopis od policie, pokud ho máte · IČO, pokud ho máte."
-        ),
-        "setup.welcome.start": "Začít",
-        "setup.name.title": "Pojmenujte ubytování",
-        "setup.name.label": "Jak to ubytování nazýváte?",
-        "setup.name.placeholder": "např. Byt Vinohrady",
-        "setup.name.error": "Zadejte název ubytování.",
-        "setup.address.title": "Kde to je?",
-        "setup.bookings.title": "Kde si hosté rezervují?",
-        "setup.bookings.source.airbnb": "Airbnb",
-        "setup.bookings.source.booking": "Booking.com",
-        "setup.bookings.source.echalupy": "e-chalupy",
-        "setup.bookings.source.other": "Jiný web",
-        "setup.bookings.source.myself": "Rezervace beru sám/sama",
-        "setup.bookings.paste_label": "Vložte odkaz na kalendář",
-        "setup.bookings.how_title": "Ukažte mi jak",
-        "setup.bookings.how_body": "V nastavení kalendáře u inzerátu zkopírujte soukromý exportní odkaz iCal.",
-        "setup.bookings.url_error": "Vložte odkaz na kalendář, abyste mohli pokračovat.",
-        "setup.bookings.found_title": "Našli jsme %(count)s nadcházejících pobytů",
-        "setup.bookings.found_empty": "Zatím žádné nadcházející pobyty. Později můžete přidat ručně.",
-        "setup.bookings.error_title": "Kalendář se nepodařilo načíst",
-        "setup.bookings.error_body": "Zkontrolujte, že jde o soukromý export iCal, ne o veřejnou rezervační stránku.",
-        "setup.bookings.try_again": "Zkusit znovu",
-        "setup.bookings.next_ubyport": "Další: údaje pro policii",
         "demo.load": "Prohlédnout s ukázkovými daty",
         "demo.load_detail": "Dvě ukázková ubytování. Na policii se nic neodešle.",
         "demo.clear": "Smazat ukázková data",
@@ -6465,6 +6401,43 @@ _SETUP_GUIDE_0100_STRINGS = {
     },
 }
 for _lang, _strings in _SETUP_GUIDE_0100_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0099: shared list-page layout (sub-page tabs, toolbar summary).
+_LIST_LAYOUT_0099_STRINGS = {
+    "en": {
+        "tabs.stays.reports": "Police reports",
+        "tabs.stays.register": "Guest register",
+        "properties.list.count": "%(count)s properties",
+        "properties.list.count.one": "%(count)s property",
+        "properties.list.count.few": "%(count)s properties",
+    },
+    "cs": {
+        "tabs.stays.reports": "Hlášení policii",
+        "tabs.stays.register": "Domovní kniha",
+        "properties.list.count": "%(count)s ubytování",
+        "properties.list.count.one": "%(count)s ubytování",
+        "properties.list.count.few": "%(count)s ubytování",
+    },
+}
+for _lang, _strings in _LIST_LAYOUT_0099_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# Coordinator: short timing labels for the compact Properties row (the
+# Automation page keeps the full sentences).
+_TIMING_SHORT_STRINGS = {
+    "en": {
+        "automation.mode_short.manual": "Only when I press send",
+        "automation.mode_short.scheduled": "Automatically, after a delay",
+        "automation.mode_short.immediate": "As soon as forms are complete",
+    },
+    "cs": {
+        "automation.mode_short.manual": "Jen po stisknutí Odeslat",
+        "automation.mode_short.scheduled": "Automaticky, s prodlevou",
+        "automation.mode_short.immediate": "Hned po vyplnění formulářů",
+    },
+}
+for _lang, _strings in _TIMING_SHORT_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 def normalise_language(value: str | None) -> str:
