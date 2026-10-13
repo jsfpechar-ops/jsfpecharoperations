@@ -46,10 +46,14 @@ def _cleanup():
 def host():
     db.init_db()
     _cleanup()
-    auth.create_account(f"{USERNAME}@example.test", "Flash Host", username=USERNAME)
+    owner_id = auth.create_account(f"{USERNAME}@example.test", "Flash Host", username=USERNAME)
+    operator = db.insert(
+        "legal_entity", {"name": "Flash Operator", "owner_user_id": owner_id, "created_at": db.utcnow()}
+    )
     client = TestClient(app)
     assert login_as(client, USERNAME, follow_redirects=False).status_code == 303
     client.cookies.set(host_i18n.LANG_COOKIE, "en")
+    client.operator_id = str(operator)
     try:
         yield client
     finally:
@@ -172,7 +176,7 @@ def test_typed_neutral_flash_preserves_legacy_redirect_and_renders_info(host):
 
 def test_real_property_creation_renders_green_and_plain_query_stays_info(host):
     response = host.post(
-        "/apartments", data={"internal_name": "Flash property"}, follow_redirects=False
+        "/apartments", data={"internal_name": "Flash property", "legal_entity_id": host.operator_id}, follow_redirects=False
     )
     assert response.status_code == 303
     values = _attrs(response.headers["location"])
@@ -191,11 +195,15 @@ def test_real_property_creation_renders_green_and_plain_query_stays_info(host):
 
 def test_browser_renders_saved_warning_as_sticky_amber(host, browser_base):
     created = host.post(
-        "/apartments", data={"internal_name": "Warning property"}, follow_redirects=False
+        "/apartments",
+        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id},
+        follow_redirects=False,
     )
     apartment_path = urlparse(created.headers["location"]).path
     saved = host.post(
-        apartment_path, data={"internal_name": "Warning property"}, follow_redirects=False
+        apartment_path,
+        data={"internal_name": "Warning property", "legal_entity_id": host.operator_id},
+        follow_redirects=False,
     )
     assert saved.status_code == 303
     assert _attrs(saved.headers["location"])["toast_kind"] == ["warning"]

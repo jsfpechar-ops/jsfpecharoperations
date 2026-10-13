@@ -69,7 +69,7 @@ def _add(username, apartment_id, url=URL):
     login_as(client, username, url="/login?lang=en", follow_redirects=False)
     return client.post(
         f"/apartments/{apartment_id}/feeds",
-        data={"url": url, "label": "Airbnb", "own_name": "Airbnb"},
+        data={"url": url, "label": "airbnb", "own_name": "Airbnb"},
         follow_redirects=False,
     )
 
@@ -82,8 +82,9 @@ def test_the_same_link_on_a_second_property_of_the_same_host_is_refused(homes):
     flat_a, flat_b = homes["dupfeed-a"]
     assert _add("dupfeed-a", flat_a).status_code == 303
     response = _add("dupfeed-a", flat_b)
-    assert response.status_code == 303
-    assert "already added to Flat A" in unquote(response.headers["location"])
+    # 0089: the refusal renders the calendar form again with the typed link.
+    assert response.status_code == 400
+    assert "already added to Flat A" in response.text
     assert _count(flat_a) == 1
     assert _count(flat_b) == 0
 
@@ -92,7 +93,8 @@ def test_the_same_link_twice_on_one_property_is_refused(homes):
     flat_a, _ = homes["dupfeed-a"]
     _add("dupfeed-a", flat_a)
     response = _add("dupfeed-a", flat_a)
-    assert "already added to Flat A" in unquote(response.headers["location"])
+    assert response.status_code == 400
+    assert "already added to Flat A" in response.text
     assert _count(flat_a) == 1
 
 
@@ -100,6 +102,7 @@ def test_another_host_may_use_the_same_link(homes):
     _add("dupfeed-a", homes["dupfeed-a"][0])
     other = homes["dupfeed-b"][0]
     response = _add("dupfeed-b", other)
+    assert response.status_code == 303
     assert "already added" not in unquote(response.headers["location"])
     assert _count(other) == 1
 

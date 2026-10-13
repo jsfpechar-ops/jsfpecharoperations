@@ -26,6 +26,17 @@ def _cleanup() -> None:
     db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
 
 
+def _operator_id() -> str:
+    """0088: the host's operator, created on first use."""
+    owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
+    if not owner:
+        return ""
+    row = db.query_one("SELECT id FROM legal_entity WHERE owner_user_id = ? ORDER BY id LIMIT 1", (owner["id"],))
+    if row:
+        return str(row["id"])
+    return str(db.insert("legal_entity", {"name": "Panel Operator", "owner_user_id": owner["id"], "created_at": db.utcnow()}))
+
+
 def _form_data(**overrides):
     data = {
         "internal_name": "Panel Test Flat",
@@ -44,7 +55,7 @@ def _form_data(**overrides):
         "uby_ws_user": "",
         "guest_message": "",
         "notes": "",
-        "legal_entity_id": "",
+        "legal_entity_id": _operator_id(),
         "data_controller_entity_id": "",
         "permalink_window_days": "2",
         "permalink_reachback_days": "365",

@@ -12,21 +12,27 @@ from .. import access, auth, db, guest_slug, icalsync, onboarding
 from ..feed_url import FeedUrlError, validate_calendar_url
 from ..templating import render
 from .admin import (
+    CALENDAR_PLATFORMS,
     _apartment_payload,
+    _calendar_platform,
     _feed_already_added,
+    _form_int,
+    _property_operator_error,
     _save_address_only,
 )
 from .admin_helpers import form_str as _form_str
+from .admin_helpers import host_text as _host_text
 
 router = APIRouter()
 
-_BOOKING_SOURCES = (
-    ("airbnb", "setup.bookings.source.airbnb"),
-    ("booking", "setup.bookings.source.booking"),
-    ("echalupy", "setup.bookings.source.echalupy"),
-    ("other", "setup.bookings.source.other"),
-    ("myself", "setup.bookings.source.myself"),
-)
+def _booking_sources(request: Request):
+    """0089: the calendar platforms (one shared allowlist) plus "I take bookings myself"."""
+    sources = [
+        (key, name or _host_text(request, "setup.bookings.source.other"))
+        for key, name in CALENDAR_PLATFORMS
+    ]
+    sources.append(("myself", _host_text(request, "setup.bookings.source.myself")))
+    return sources
 
 
 def _wizard_apartment(request: Request):
@@ -37,6 +43,10 @@ def _wizard_apartment(request: Request):
 
 
 def _step_context(request: Request, step: str, **extra: Any) -> Dict[str, Any]:
+    if step == "name":
+        # 0088: the name step creates the property, so it carries the same
+        # required operator field as the full form.
+        extra.setdefault("entities", access.entities(request))
     return {
         "nav": "dashboard",
         "show_nav": False,
@@ -109,8 +119,9 @@ def setup_get(step: str, request: Request):
     template = f"setup/{step}.html"
     extra: Dict[str, Any] = {}
     if step == "bookings":
-        extra["booking_sources"] = _BOOKING_SOURCES
-        extra["selected_source"] = request.query_params.get("source", "")
+        extra["booking_sources"] = _booking_sources(request)
+        source = request.query_params.get("source", "")
+        extra["selected_source"] = source if source in {key for key, _ in CALENDAR_PLATFORMS} else ""
         extra["sync_result"] = request.query_params.get("result") == "1"
         extra["stay_count"] = int(request.query_params.get("count") or "0")
         extra["upcoming_stays"] = (
@@ -137,23 +148,39 @@ async def setup_post(step: str, request: Request):
 
     if step == "name":
         name = _form_str(form, "internal_name").strip()
+        submitted = {"internal_name": name, "legal_entity_id": _form_int(form, "legal_entity_id")}
+        if "operator_refresh" in form:
+            return render(
+                request,
+                "setup/name.html",
+                _step_context(request, step, draft=submitted),
+            )
         if not name:
             return render(
                 request,
                 "setup/name.html",
-                _step_context(request, step, name_error=True),
+                _step_context(request, step, name_error=True, draft=submitted),
+                status_code=400,
+            )
+        payload = _apartment_payload(form)
+        operator_error = _property_operator_error(request, form, payload)
+        if operator_error:
+            return render(
+                request,
+                "setup/name.html",
+                _step_context(request, step, operator_error=operator_error, draft=submitted),
                 status_code=400,
             )
         if apartment:
             db.execute(
-                "UPDATE apartment SET internal_name = ? WHERE id = ?",
-                (name, apartment["id"]),
+                "UPDATE apartment SET internal_name = ?, legal_entity_id = ? WHERE id = ?",
+                (name, payload["legal_entity_id"], apartment["id"]),
             )
             apartment_id = apartment["id"]
         else:
-            payload = _apartment_payload(form)
             payload["internal_name"] = name
             payload["active"] = 1
+            payload["data_controller_entity_id"] = None
             payload["permalink_token"] = auth.new_permalink_token()
             payload["permalink_pin"] = auth.new_permalink_pin()
             payload["created_at"] = db.utcnow()
@@ -182,68 +209,57 @@ async def setup_post(step: str, request: Request):
                 f"/apartments/{apartment['id']}#ubyport",
                 status_code=303,
             )
-        source = _form_str(form, "source")
+        source = _form_str(form, "source") or _form_str(form, "chosen_source")
         url = _form_str(form, "url").strip()
-        if source and not url:
-            if source == "myself":
-                return RedirectResponse(
-                    "/reservations?new=1&return_to=/setup#add-stay-panel",
-                    status_code=303,
-                )
+        other = _form_str(form, "label_other")
+        # A platform button with no link yet only opens the link field.
+        choosing = _form_str(form, "action") != "add" and not url
+        if source == "myself":
+            # A manual stay, never a calendar row.
+            return RedirectResponse(
+                "/reservations?new=1&return_to=/setup#add-stay-panel",
+                status_code=303,
+            )
+        if source and choosing:
             return RedirectResponse(
                 f"/setup/bookings?source={source}",
                 status_code=303,
             )
-        if not url:
+        values, platform_errors = _calendar_platform(source, other, "")
+
+        def _refuse(**errors):
             return render(
                 request,
                 "setup/bookings.html",
                 _step_context(
                     request,
                     step,
-                    booking_sources=_BOOKING_SOURCES,
-                    selected_source=source,
-                    url_error=True,
+                    booking_sources=_booking_sources(request),
+                    selected_source=source if source in {key for key, _ in CALENDAR_PLATFORMS} else "",
+                    feed_draft={"url": url, "label_other": other},
+                    **errors,
                 ),
                 status_code=400,
             )
+
+        if platform_errors:
+            return _refuse(platform_error_key=next(iter(platform_errors.values())))
+        if not url:
+            return _refuse(url_error=True)
         try:
             url = validate_calendar_url(url)
         except FeedUrlError as exc:
-            return render(
-                request,
-                "setup/bookings.html",
-                _step_context(
-                    request,
-                    step,
-                    booking_sources=_BOOKING_SOURCES,
-                    selected_source=source,
-                    url_error=True,
-                    feed_error_key=exc.key,
-                ),
-                status_code=400,
-            )
+            return _refuse(url_error=True, feed_error_key=exc.key)
         already = _feed_already_added(apartment["id"], url)
         if already:
-            return render(
-                request,
-                "setup/bookings.html",
-                _step_context(
-                    request,
-                    step,
-                    booking_sources=_BOOKING_SOURCES,
-                    selected_source=source,
-                    feed_duplicate=already,
-                ),
-                status_code=400,
-            )
+            return _refuse(feed_duplicate=already)
         db.insert(
             "ical_feed",
             {
                 "apartment_id": apartment["id"],
                 "url": url,
-                "label": source or "other",
-                "own_name": source or "other",
+                "label": values["label"],
+                "own_name": values["own_name"],
                 "active": 1,
                 "created_at": db.utcnow(),
             },
@@ -260,7 +276,7 @@ async def setup_post(step: str, request: Request):
                 _step_context(
                     request,
                     step,
-                    booking_sources=_BOOKING_SOURCES,
+                    booking_sources=_booking_sources(request),
                     sync_error=True,
                 ),
                 status_code=400,

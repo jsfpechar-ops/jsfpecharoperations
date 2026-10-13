@@ -42,13 +42,17 @@ def host(client):
         account = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
     response = login_as(client, USERNAME, follow_redirects=False)
     assert response.status_code == 303
+    operator = db.insert(
+        "legal_entity",
+        {"name": "UI Operator", "owner_user_id": account["id"], "created_at": db.utcnow()},
+    )
     created = client.post(
         "/apartments",
         data={
             "internal_name": APARTMENT_NAME,
             "city_en": "Prague",
             "uby_name": REGISTERED_NAME,
-            "active": "1",
+            "legal_entity_id": str(operator),
         },
         follow_redirects=False,
     )

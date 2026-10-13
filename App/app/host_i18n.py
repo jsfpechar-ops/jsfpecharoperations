@@ -3752,7 +3752,7 @@ _INTERFACE_STRINGS = {
         "smart_locks.how2": "In the TTLock app you add UbyHost as an Authorized Admin of your lock. We show you every tap.",
         "smart_locks.how3": "From then on every guest gets their own entry code automatically, once everyone has registered.",
         "smart_locks.setup_title": "Connect your digital door lock",
-        "smart_locks.name_label": "Your UbyHost name. Copy it, you paste it in step 6:",
+        "smart_locks.name_label": "Your UbyHost name. Copy it, you paste it in TTLock:",
         "smart_locks.warn_owner": "Only the owner of the lock can do this. A lock that someone else shared with you will not work.",
         "smart_locks.steps_title": "Do this in the TTLock app",
         "smart_locks.s1": "Copy your UbyHost name above. Tap the copy button next to it.",
@@ -4590,7 +4590,7 @@ _INTERFACE_STRINGS = {
         "smart_locks.how2": "V aplikaci TTLock přidáte UbyHost jako Autorizovaného správce svého zámku. Ukážeme vám každé klepnutí.",
         "smart_locks.how3": "Od té chvíle každý host automaticky dostane vlastní vstupní kód, jakmile jsou všichni zaregistrováni.",
         "smart_locks.setup_title": "Připojte svůj digitální zámek",
-        "smart_locks.name_label": "Váš název UbyHost. Zkopírujte ho, vložíte ho v kroku 6:",
+        "smart_locks.name_label": "Váš název UbyHost. Zkopírujte ho, vložíte ho v TTLock:",
         "smart_locks.warn_owner": "Může to udělat jen vlastník zámku. Zámek, který vám někdo jen nasdílel, nebude fungovat.",
         "smart_locks.steps_title": "Udělejte to v aplikaci TTLock",
         "smart_locks.s1": "Zkopírujte svůj název UbyHost výše. Klepněte na tlačítko kopírovat vedle něj.",
@@ -5966,6 +5966,77 @@ _FEE_0082_STRINGS = {
     },
 }
 for _lang, _strings in _FEE_0082_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0088: required property operator, controller defaults to the operator.
+_PROPERTY_OPERATOR_STRINGS = {
+    "en": {
+        "apartment.form.operator.choose": "Choose operator",
+        "apartment.form.operator.required": "Choose the operator for this property.",
+        "apartment.form.operator.add_first": "Add an operator to continue.",
+        "apartment.form.operator.add_business": "Add business details",
+        "apartment.form.operator.check_again": "Check again",
+        "apartment.form.controller.same_as_operator": "Same as operator",
+    },
+    "cs": {
+        "apartment.form.operator.choose": "Vyberte provozovatele",
+        "apartment.form.operator.required": "Vyberte provozovatele tohoto ubytování.",
+        "apartment.form.operator.add_first": "Nejprve přidejte provozovatele.",
+        "apartment.form.operator.add_business": "Přidat firemní údaje",
+        "apartment.form.operator.check_again": "Zkontrolovat znovu",
+        "apartment.form.controller.same_as_operator": "Stejný jako provozovatel",
+    },
+}
+for _lang, _strings in _PROPERTY_OPERATOR_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0089: a calendar needs a platform and a link.
+_CALENDAR_PLATFORM_STRINGS = {
+    "en": {
+        "calendar.platform_label": "Platform",
+        "calendar.choose_platform": "Choose platform",
+        "calendar.platform.other": "Other",
+        "calendar.other_label": "Platform name",
+        "calendar.fallback_name": "Calendar",
+        "calendar.error.platform_required": "Choose the platform this calendar comes from.",
+        "calendar.error.other_required": "Type the platform name.",
+        "calendar.error.other_invalid": "Use up to 80 ordinary characters.",
+        "calendar.error.name_invalid": "Use up to 100 ordinary characters.",
+        "calendar.error.url_required": "Paste the calendar link.",
+    },
+    "cs": {
+        "calendar.platform_label": "Platforma",
+        "calendar.choose_platform": "Vyberte platformu",
+        "calendar.platform.other": "Jiný",
+        "calendar.other_label": "Název platformy",
+        "calendar.fallback_name": "Kalendář",
+        "calendar.error.platform_required": "Vyberte platformu, ze které kalendář pochází.",
+        "calendar.error.other_required": "Napište název platformy.",
+        "calendar.error.other_invalid": "Použijte nejvýše 80 běžných znaků.",
+        "calendar.error.name_invalid": "Použijte nejvýše 100 běžných znaků.",
+        "calendar.error.url_required": "Vložte odkaz na kalendář.",
+    },
+}
+for _lang, _strings in _CALENDAR_PLATFORM_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0090: three lock-sharing essentials; the full TTLock steps live in the Guide.
+_LOCK_ESSENTIAL_STRINGS = {
+    "en": {
+        "smart_locks.essential1": "Open your lock in TTLock.",
+        "smart_locks.essential2": "Share administrator access with the account above.",
+        "smart_locks.essential3": "Return here and check for locks.",
+    },
+    "cs": {
+        "smart_locks.essential1": "Otevřete svůj zámek v TTLock.",
+        "smart_locks.essential2": "Sdílejte přístup správce s účtem uvedeným výše.",
+        "smart_locks.essential3": "Vraťte se sem a vyhledejte zámky.",
+    },
+}
+for _lang, _strings in _LOCK_ESSENTIAL_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 def normalise_language(value: str | None) -> str:

@@ -122,8 +122,17 @@ def _label_list(lang: str) -> str:
     )
 
 
+def _operator_id() -> str:
+    """0088: a property needs an operator; give the host one."""
+    owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
+    row = db.query_one("SELECT id FROM legal_entity WHERE owner_user_id = ? ORDER BY id LIMIT 1", (owner,))
+    if row:
+        return str(row["id"])
+    return str(db.insert("legal_entity", {"name": "Flash Operator", "owner_user_id": owner, "created_at": db.utcnow()}))
+
+
 def _create_property(client, **overrides) -> int:
-    data = {"internal_name": "Flash Flat", "active": "on"}
+    data = {"internal_name": "Flash Flat", "legal_entity_id": _operator_id()}
     data.update(overrides)
     response = client.post("/apartments", data=data, follow_redirects=False)
     assert response.status_code == 303, response.text
@@ -136,7 +145,7 @@ def _create_property(client, **overrides) -> int:
 
 
 def _save_property(client, apartment_id: int, **overrides) -> str:
-    data = {"internal_name": "Flash Flat", "active": "on"}
+    data = {"internal_name": "Flash Flat", "legal_entity_id": _operator_id()}
     data.update(overrides)
     response = client.post(
         f"/apartments/{apartment_id}", data=data, follow_redirects=False

@@ -237,7 +237,9 @@ def test_the_saved_operator_is_named_in_the_property_form(host):
     assert page.status_code == 200, page.text
     assert f">{ENTITY_NAME}</option>" in page.text
     assert "Property manager / operator" in page.text
-    assert "Manage operators" in page.text
+    # 0088: the sole operator is chosen; its business details stay one link away.
+    assert f'selected>{ENTITY_NAME}</option>' in page.text
+    assert 'href="/entities"' in page.text
 
 
 def test_the_onboarding_banner_asks_for_an_operator(host):

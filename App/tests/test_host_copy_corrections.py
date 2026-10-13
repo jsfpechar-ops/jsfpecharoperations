@@ -163,7 +163,7 @@ def test_address_only_save_preserves_credentials_and_automation(host):
     client.post("/setup/welcome", follow_redirects=False)
     client.post(
         "/setup/name",
-        data={"internal_name": "Wizard Preserve", "active": "1"},
+        data={"internal_name": "Wizard Preserve", "legal_entity_id": str(host["entity"])},
         follow_redirects=False,
     )
     apartment_id = db.query_one(
@@ -210,7 +210,7 @@ def test_address_only_save_preserves_credentials_and_automation(host):
 def test_invalid_address_keeps_draft_on_setup_error(host):
     client = host["client"]
     client.post("/setup/welcome", follow_redirects=False)
-    client.post("/setup/name", data={"internal_name": "Draft flat", "active": "1"}, follow_redirects=False)
+    client.post("/setup/name", data={"internal_name": "Draft flat", "legal_entity_id": str(host["entity"])}, follow_redirects=False)
     apartment_id = db.query_one(
         "SELECT id FROM apartment WHERE internal_name = ?", ("Draft flat",)
     )["id"]
@@ -440,7 +440,7 @@ def test_copy_correction_pages_browser_evidence(browser_base):
     host = browser_base["host"]
     client = host["client"]
     client.post("/setup/welcome", follow_redirects=False)
-    client.post("/setup/name", data={"internal_name": "Wizard error flat", "active": "1"}, follow_redirects=False)
+    client.post("/setup/name", data={"internal_name": "Wizard error flat", "legal_entity_id": str(host["entity"])}, follow_redirects=False)
     wizard_id = db.query_one(
         "SELECT id FROM apartment WHERE internal_name = ?", ("Wizard error flat",)
     )["id"]

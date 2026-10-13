@@ -922,3 +922,18 @@ body.host-workspace {
   .host-workspace .fee-send-marks > form, .host-workspace .fee-send-marks > p { flex: 1 1 100%; }
   .host-workspace .fee-periods td.row-actions { text-align: left; }
 }
+
+/* 0088: required operator field */
+.property-section .property-operator { max-width: 420px; }
+.property-operator-hint { margin: -6px 0 16px; }
+.property-operator-empty .err-text { margin: 8px 0; }
+.property-operator-empty .actions { flex-wrap: wrap; }
+
+/* 0089: calendar platform first; the name field shows only for Other */
+.calendar-add-form:has(#label option[value="other"]:not(:checked)) .calendar-other-platform { display: none; }
+.calendar-add-form { min-width: 0; }
+.calendar-add-form select { width: 100%; min-width: 0; }
+
+/* 0090: contextual ? link to the full Guide steps */
+.help-link { display: inline-flex; align-items: center; justify-content: center; width: 1.5em; height: 1.5em; margin-left: 6px; border: 1px solid var(--border-strong, #ccc); border-radius: 50%; font-size: 14px; font-weight: 700; text-decoration: none; vertical-align: middle; }
+.help-link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

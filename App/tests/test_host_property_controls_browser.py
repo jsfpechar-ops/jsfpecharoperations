@@ -220,3 +220,237 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
         assert page.locator(".host-tools").count() == 0
         assert page.locator('a[href="#communication"]').count() > 0
         browser.close()
+
+
+# --- 0088: required operator, no activity switch ---------------------------
+
+_EVIDENCE_0088 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0088-evidence"
+
+_FIT_JS = """(selector) => {
+  const vw = document.documentElement.clientWidth;
+  const offenders = [];
+  for (const el of document.querySelectorAll(selector)) {
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    if (r.right > vw + 1 || r.left < -1) offenders.push({id: el.id, right: Math.round(r.right), vw});
+  }
+  return {scroll: document.documentElement.scrollWidth, vw, offenders};
+}"""
+
+
+def _shot_0088(page, name):
+    if os.environ.get("UBYHOST_CAPTURE_0088") == "1":
+        _EVIDENCE_0088.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(_EVIDENCE_0088 / f"{name}.png"), full_page=True)
+
+
+def _assert_operator_fits(page):
+    result = page.evaluate(_FIT_JS, "#operator-picker, #operator-picker select, #operator-picker .btn, #alternate-controller select")
+    assert result["scroll"] <= result["vw"] + 1, result
+    assert not result["offenders"], result
+
+
+def _sidebar(page, collapsed):
+    page.evaluate(
+        """(want) => {
+          const now = document.body.classList.contains('sidebar-collapsed');
+          if (want === now) return;
+          const btn = document.querySelector('button[data-sidebar-collapse]');
+          if (btn && btn.offsetParent !== null) { btn.click(); return; }
+          document.body.classList.toggle('sidebar-collapsed', want);
+        }""",
+        collapsed,
+    )
+
+
+def _extra_host(entities):
+    username = f"property-controls-{secrets.token_hex(4)}"
+    owner_id = auth.create_account(f"{username}@example.test", "Operator Evidence", role="host", username=username)
+    for index in range(entities):
+        db.insert("legal_entity", {
+            "name": "Sole Operator s.r.o." if index == 0 else f"Operator {index}",
+            "owner_user_id": owner_id,
+            "created_at": db.utcnow(),
+        })
+    client = TestClient(app)
+    assert login_as(client, username, url="/login?lang=en", follow_redirects=False).status_code == 303
+    return owner_id, client.cookies.get(auth.SESSION_COOKIE)
+
+
+def _drop_host(owner_id):
+    db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner_id,))
+    db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (owner_id,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
+
+
+def test_required_operator_controls_in_browser(host, base):
+    """Zero, one and several operators; no active switch; visible controller."""
+    none_owner, none_cookie = _extra_host(0)
+    one_owner, one_cookie = _extra_host(1)
+    try:
+        with sync_api.sync_playwright() as playwright:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+            contexts = {}
+            for key, cookie in (("many", _session_cookie(host)), ("none", none_cookie), ("one", one_cookie)):
+                context = browser.new_context(viewport={"width": 1280, "height": 1000})
+                context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
+                contexts[key] = context.new_page()
+
+            many = contexts["many"]
+            for width in (360, 390, 1280):
+                for page in contexts.values():
+                    page.set_viewport_size({"width": width, "height": 900})
+                for lang in ("en", "cs"):
+                    many.goto(f"{base}/apartments/new?lang={lang}")
+                    select = many.locator("#legal_entity_id")
+                    assert select.is_visible()
+                    assert many.locator('[name="legal_entity_id"]').count() == 1
+                    assert select.evaluate("el => el.required && el.value === ''")
+                    assert many.locator("#active, #controller_is_operator").count() == 0
+                    _assert_operator_fits(many)
+                    _shot_0088(many, f"new-many-{width}-{lang}")
+
+                    none = contexts["none"]
+                    none.goto(f"{base}/apartments/new?lang={lang}")
+                    message = none.locator("#operator-message")
+                    assert message.is_visible()
+                    assert none.locator('#operator-message a[href="/entities"]').is_visible()
+                    assert none.locator('button[name="operator_refresh"]').is_visible()
+                    assert not none.locator("#legal_entity_id").evaluate("el => el.checkValidity()")
+                    _assert_operator_fits(none)
+                    _shot_0088(none, f"new-none-{width}-{lang}")
+
+                    one = contexts["one"]
+                    one.goto(f"{base}/setup/name?lang={lang}")
+                    assert one.locator("#legal_entity_id").input_value() != ""
+                    assert one.locator("#legal_entity_id option:checked").inner_text().strip() == "Sole Operator s.r.o."
+                    _assert_operator_fits(one)
+                    _shot_0088(one, f"wizard-one-{width}-{lang}")
+
+                    many.goto(f"{base}/apartments/{host['apartment']}?lang={lang}")
+                    many.evaluate("() => { const d = document.querySelector('#basics'); if (d) d.open = true; }")
+                    controller = many.locator("#data_controller_entity_id")
+                    assert controller.is_visible()
+                    assert controller.locator("option").first.inner_text().strip() in ("Same as operator", "Stejný jako provozovatel")
+                    assert many.locator("#active").count() == 0
+                    _assert_operator_fits(many)
+                    _shot_0088(many, f"edit-{width}-{lang}")
+
+            # The browser itself refuses a blank choice; no JS needed.
+            many.set_viewport_size({"width": 1280, "height": 1000})
+            many.goto(f"{base}/apartments/new?lang=en")
+            many.fill("#internal_name", "Browser Operator Flat")
+            assert not many.locator("#legal_entity_id").evaluate("el => el.checkValidity()")
+            # A forged blank operator (validation bypassed) comes back with the draft and an error.
+            many.evaluate("() => { document.querySelector('#legal_entity_id').required = false; }")
+            many.locator(".host-property-save button[type=submit]").click()
+            many.wait_for_load_state()
+            assert many.locator("#operator-message[role=alert]").is_visible()
+            assert many.locator("#internal_name").input_value() == "Browser Operator Flat"
+            _shot_0088(many, "new-error-1280-en")
+            many.select_option("#legal_entity_id", str(host["free"]))
+            many.locator(".host-property-save button[type=submit]").click()
+            many.wait_for_load_state()
+            created = db.query_one(
+                "SELECT * FROM apartment WHERE internal_name = ? AND owner_user_id = ?",
+                ("Browser Operator Flat", host["owner"]),
+            )
+            assert created and created["legal_entity_id"] == host["free"] and created["active"] == 1
+
+            # Zero operators: "Check again" keeps the typed name after one is added.
+            none = contexts["none"]
+            none.set_viewport_size({"width": 1280, "height": 1000})
+            none.goto(f"{base}/apartments/new?lang=en")
+            none.fill("#internal_name", "Detour Flat")
+            db.insert("legal_entity", {"name": "Added Later", "owner_user_id": none_owner, "created_at": db.utcnow()})
+            none.locator('button[name="operator_refresh"]').click()
+            none.wait_for_load_state()
+            assert none.locator("#internal_name").input_value() == "Detour Flat"
+            assert none.locator("#legal_entity_id option:checked").inner_text().strip() == "Added Later"
+            _shot_0088(none, "new-detour-1280-en")
+
+            # Geometry across wider lanes, sidebar expanded and collapsed.
+            for width in (760, 1024, 1440, 1680, 1920, 2048):
+                many.set_viewport_size({"width": width, "height": 900})
+                for path in ("/apartments/new?lang=cs", f"/apartments/{host['apartment']}?lang=cs"):
+                    many.goto(base + path)
+                    many.evaluate("() => { const d = document.querySelector('#basics'); if (d) d.open = true; }")
+                    for collapsed in (False, True):
+                        _sidebar(many, collapsed)
+                        _assert_operator_fits(many)
+                _sidebar(many, False)
+            browser.close()
+    finally:
+        db.execute(
+            "DELETE FROM apartment WHERE internal_name = ? AND owner_user_id = ?",
+            ("Browser Operator Flat", host["owner"]),
+        )
+        _drop_host(none_owner)
+        _drop_host(one_owner)
+
+
+# --- 0089: calendar platform first, required with the link ------------------
+
+_EVIDENCE_0089 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0089-evidence"
+
+
+def _shot_0089(page, name):
+    if os.environ.get("UBYHOST_CAPTURE_0089") == "1":
+        _EVIDENCE_0089.mkdir(parents=True, exist_ok=True)
+        page.locator("#calendar-add").scroll_into_view_if_needed()
+        page.screenshot(path=str(_EVIDENCE_0089 / f"{name}.png"), full_page=True)
+
+
+def test_calendar_platform_controls_in_browser(host, base):
+    apartment = host["apartment"]
+    db.insert("ical_feed", {
+        "apartment_id": apartment, "url": "https://admin.booking.com/hotel/ical.html?t=synthetic",
+        "label": "", "own_name": "", "active": 1, "created_at": db.utcnow(),
+    })
+    try:
+        with sync_api.sync_playwright() as playwright:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+            context = browser.new_context(viewport={"width": 1280, "height": 1000})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": _session_cookie(host), "url": base + "/"}])
+            page = context.new_page()
+            for width in (360, 390, 1280):
+                page.set_viewport_size({"width": width, "height": 900})
+                for lang in ("en", "cs"):
+                    page.goto(f"{base}/apartments/{apartment}?lang={lang}#calendars")
+                    form = page.locator("#calendar-add")
+                    platform = form.locator("#label")
+                    assert platform.is_visible()
+                    assert form.locator("details").count() == 0
+                    top_platform = platform.bounding_box()["y"]
+                    assert top_platform < form.locator("#url").bounding_box()["y"]
+                    assert platform.evaluate("el => el.required && el.value === ''")
+                    assert not form.locator("#label_other").is_visible()
+                    assert form.locator("#own_name").is_visible()
+                    table = page.locator(".feed-table")
+                    assert "Booking.com" in table.inner_text()
+                    assert "—" not in table.inner_text()
+                    fit = page.evaluate(_FIT_JS, "#calendar-add, #calendar-add select, #calendar-add input, #calendar-add .btn")
+                    assert fit["scroll"] <= fit["vw"] + 1 and not fit["offenders"], fit
+                    _shot_0089(page, f"calendar-add-{width}-{lang}")
+                    platform.select_option("other")
+                    assert form.locator("#label_other").is_visible()
+                    _shot_0089(page, f"calendar-other-{width}-{lang}")
+
+            # Validation bypassed in the browser: the server still refuses, keeps the draft, focuses the error.
+            page.set_viewport_size({"width": 1280, "height": 1000})
+            page.goto(f"{base}/apartments/{apartment}?lang=en#calendars")
+            page.evaluate("() => document.querySelectorAll('#calendar-add [required]').forEach(el => el.required = false)")
+            page.fill("#calendar-add #url", "https://example.invalid/synthetic.ics")
+            page.fill("#calendar-add #own_name", "Garden")
+            page.locator("#calendar-add button[type=submit]").click()
+            page.wait_for_load_state()
+            assert page.locator("#label-error[role=alert]").is_visible()
+            assert page.locator("#calendar-add #url").input_value() == "https://example.invalid/synthetic.ics"
+            assert page.locator("#calendar-add #own_name").input_value() == "Garden"
+            assert page.evaluate("() => document.activeElement && document.activeElement.id") == "label"
+            assert db.query("SELECT id FROM ical_feed WHERE apartment_id = ? AND url LIKE '%example.invalid%'", (apartment,)) == []
+            _shot_0089(page, "calendar-error-1280-en")
+            browser.close()
+    finally:
+        db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment,))

@@ -1,6 +1,6 @@
 # 0088: Require an operator and remove the property active switch
 
-Status: todo
+Status: review
 Depends on: 0087 reviewed on the correction integration branch | Initial source baseline: 7b27d09402f9656b0c606c131793310925936526 | Branch: task/0088-property-operator-defaults | PR base: task/production-host-ux-integration
 Executor: Cursor local agent (composer, Kimi or GLM) | One scoped executor session
 
