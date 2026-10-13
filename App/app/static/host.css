@@ -1007,6 +1007,9 @@ body.host-workspace {
 .host-workspace .property-address-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0 16px; }
 .host-workspace .property-address-grid .field { display: flex; flex-direction: column; }
 .host-workspace .property-address-grid .field > .field-label-row { flex: 1 0 auto; align-items: flex-end; }
+.host-workspace .property-address-grid .field > .field-label-row { flex-wrap: nowrap; }
+.host-workspace .property-address-grid .field > .field-label-row > label { min-width: 0; }
+.host-workspace .property-address-grid .field > .field-label-row > .help-tip { flex: none; align-self: flex-end; }
 #uby_ws_password::placeholder { color: inherit; opacity: 1; letter-spacing: .12em; }
 .property-create-lane { container-name: property-create; container-type: inline-size; }
 .property-create { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); gap: 20px; align-items: start; }
@@ -1115,3 +1118,6 @@ body.host-workspace {
 .calendar-connect.is-collapsed { display: none; }
 .calendar-connect.is-collapsed:target { display: block; }
 .host-workspace .property-first-use { margin-bottom: 16px; }
+
+.host-workspace .host-setup-complete { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.host-workspace .host-setup-complete p { margin: 0; color: var(--ok); }

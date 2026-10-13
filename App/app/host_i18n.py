@@ -6067,7 +6067,7 @@ _SETTINGS_GROUP_STRINGS = {
         "settings.group.privacy": "Soukromí",
         "settings.group.technical": "Technické",
         "settings.group.help": "Nápověda",
-        "settings.business.title": "Firemní a právní údaje",
+        "settings.business.title": "Firma a právní údaje",
         "settings.business.help": "Názvy, adresy a fakturační údaje podnikatelů, za které hlásíte a fakturujete.",
         "settings.business.action": "Otevřít firemní údaje",
         "settings.account.incidents_help": "Přehled bezpečnostních incidentů napříč účty.",
@@ -6183,6 +6183,14 @@ _PROPERTY_NAV_0094_STRINGS = {
     },
 }
 for _lang, _strings in _PROPERTY_NAV_0094_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# Coordinator: compact setup status once a property is fully set up.
+_SETUP_COMPLETE_STRINGS = {
+    "en": {"property_nav.setup_complete": "Set up: ready to invite guests and to report to the police."},
+    "cs": {"property_nav.setup_complete": "Nastaveno: můžete zvát hosty i hlásit policii."},
+}
+for _lang, _strings in _SETUP_COMPLETE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 def normalise_language(value: str | None) -> str:
