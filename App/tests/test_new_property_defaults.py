@@ -128,14 +128,31 @@ def host():
         _cleanup()
 
 
+def _create_and_open(host, name, **overrides):
+    created = host.post("/apartments", data=_payload(internal_name=name, **overrides), follow_redirects=False)
+    assert created.status_code == 303, created.text
+    apartment_id = db.query_one(
+        "SELECT id FROM apartment WHERE internal_name = ? AND owner_user_id = "
+        "(SELECT id FROM user_account WHERE username = ?)",
+        (name, USERNAME),
+    )["id"]
+    return host.get(f"/apartments/{apartment_id}")
+
+
 def test_a_new_property_starts_on_manual(host):
+    """0092: the short create page carries no reporting choice at all, so a
+    property can only start on Manual; its page then shows Manual selected."""
     page = host.get("/apartments/new")
     assert page.status_code == 200, page.text
-    assert _selected_mode(page.text) == "manual"
+    assert 'name="automation_mode"' not in page.text
+    assert 'name="submit_after_hours"' not in page.text
+    assert '<select id="default_purpose"' not in page.text
+    detail = _create_and_open(host, "Starts Manual Flat")
+    assert _selected_mode(detail.text) == "manual"
 
 
 def test_the_timing_select_still_offers_every_mode(host):
-    page = host.get("/apartments/new")
+    page = _create_and_open(host, "Every Mode Flat")
     values = [
         value
         for value, _ in OPTION_RE.findall(SELECT_RE.search(page.text).group(0))
@@ -143,14 +160,20 @@ def test_the_timing_select_still_offers_every_mode(host):
     assert values == ["manual", "scheduled", "immediate"]
 
 
-def test_the_new_property_form_states_what_the_choice_means(host):
+def test_the_new_property_form_leaves_the_choice_to_the_property_page(host):
     page = host.get("/apartments/new?lang=en")
-    assert LEDE_EN in page.text
+    assert LEDE_EN not in page.text
+    assert OLD_LEDE_EN not in page.text
+    detail = _create_and_open(host, "Choice Later Flat")
+    assert 'id="automation"' in detail.text
+    assert host_i18n.STRINGS["en"]["automation.timing_help"] in detail.text
 
 
-def test_the_new_property_form_states_it_in_czech_too(host):
+def test_the_czech_create_page_leaves_it_too(host):
     page = host.get("/apartments/new?lang=cs")
-    assert LEDE_CS in page.text
+    assert LEDE_CS not in page.text
+    assert OLD_LEDE_CS not in page.text
+    assert 'name="automation_mode"' not in page.text
 
 
 def test_the_lede_is_pinned_in_both_languages():

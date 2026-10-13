@@ -68,4 +68,5 @@ def test_automation_redirects_to_property_timing(host):
     client, apartment_id = host
     response = client.get("/automation?lang=en", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == f"/apartments/{apartment_id}#automation"
+    # 0094: the query opens the Settings → Automation group, the hash scrolls.
+    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=automation#automation"

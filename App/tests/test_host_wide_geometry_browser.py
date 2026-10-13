@@ -50,7 +50,7 @@ CAPTURE_ROUTES = {
     "invoice-new-selected": ("/invoices/new?entity={entity_id}&reservation_id={reservation_id}", ".invoice-workspace, .invoice-stay-picker"),
     "invoice-settings": ("/invoices/settings?entity={entity_id}", ".invoice-settings-form"),
     "invoice-detail": ("/invoices/{invoice_id}", ".invoice-workspace"),
-    "property-new": ("/apartments/new", "form[action='/apartments']"),
+    "property-new": ("/apartments/new", ".property-create-lane"),  # 0092: form + follow-up panel
     "stay-detail": ("/reservations/{reservation_id}", ".reservation-detail, .panel"),
     "stays-archive": ("/reservations?range=archive", ".stays-view, .panel.empty"),
     "property-detail": ("/apartments/{property_id}", ".property-detail, .panel"),
@@ -58,8 +58,9 @@ CAPTURE_ROUTES = {
     "housebook": ("/housebook?apartment={unconfigured_apartment}&from={today}&to={housebook_end}", ".housebook-page, .panel"),
     "submissions": ("/submissions", ".panel.tight.scroll-x, .panel.empty"),
     "submission-detail": ("/submissions/{submission_id}", ".submission-detail, .panel"),
-    "guest-links": ("/apartments/{property_id}", "#communication"),
-    "automation": ("/apartments/{property_id}", "#automation"),
+    # 0094: both now live in property Settings; the lane is the tab content.
+    "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views"),
+    "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views"),
     "archive": ("/settings/archived", ".panel"),
     "settings": ("/settings", ".host-property-grid"),
     "smart-locks": ("/smart-locks", ".panel"),
@@ -658,7 +659,7 @@ def test_mobile_property_save_bar_does_not_cover_focused_address_field(wide_host
                 field.evaluate("(element) => element.scrollIntoView({block:'end', behavior:'instant'})")
                 field.focus()
                 field_box = field.bounding_box()
-                save_box = page.locator(".host-property-save").bounding_box()
+                save_box = page.locator(".property-create-actions").bounding_box()  # 0092 create footer
                 assert field_box and save_box
                 overlap_height = min(field_box["y"] + field_box["height"], save_box["y"] + save_box["height"]) - max(
                     field_box["y"], save_box["y"]

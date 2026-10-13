@@ -999,3 +999,119 @@ body.host-workspace {
   .host-workspace .stays-view .stay-col-deadline .deadline { white-space: nowrap; }
 }
 .host-workspace .stays-view .stay-col-deadline .deadline.overdue { max-width: none; }
+
+/* 0092 */
+/* Labels with a ? sit in a row; keep the label-to-input spacing of a plain label. */
+.host-workspace .field > .field-label-row { margin-bottom: 6px; min-height: 22px; }
+/* Address rows: inputs line up even when one label wraps. */
+.host-workspace .property-address-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0 16px; }
+.host-workspace .property-address-grid .field { display: flex; flex-direction: column; }
+.host-workspace .property-address-grid .field > .field-label-row { flex: 1 0 auto; align-items: flex-end; }
+#uby_ws_password::placeholder { color: inherit; opacity: 1; letter-spacing: .12em; }
+.property-create-lane { container-name: property-create; container-type: inline-size; }
+.property-create { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); gap: 20px; align-items: start; }
+.property-create-main { min-width: 0; display: grid; gap: 16px; }
+.property-create-form { display: grid; gap: 16px; min-width: 0; }
+.host-workspace .property-create-card { margin: 0; min-width: 0; }
+.property-create-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.property-create-head h2 { margin: 0; font-size: 18px; }
+.property-create-head p { margin: 2px 0 0; }
+.host-workspace .property-create-head > .nav-icon,
+.host-workspace .property-create-next-list .nav-icon { flex: none; width: 34px; height: 34px; padding: 8px; border-radius: 50%; background: var(--brand-soft); color: var(--brand-ink); box-sizing: border-box; }
+.property-create-operator-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 16px; }
+.property-create-operator-row .property-operator { flex: 1 1 260px; min-width: 0; margin-bottom: 0; }
+.property-create-manage { padding-bottom: 12px; font-weight: 600; }
+.property-create-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 0; }
+.host-workspace .property-create-copied { margin: 0; }
+.host-workspace .property-create-next { position: sticky; top: 16px; min-width: 0; margin: 0; }
+.property-create-next h2 { margin: 0 0 8px; font-size: 18px; }
+.property-create-next-list { list-style: none; margin: 0; padding: 0; }
+.property-create-next-list li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.property-create-next-list strong { display: block; font-size: 14px; }
+.property-create-next-list small { display: block; margin-top: 2px; color: var(--muted); }
+.property-create-lock { margin: 12px 0 0; }
+.property-create-copy { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.property-create-copy .copyrow { flex-wrap: wrap; }
+.property-create-copy select { flex: 1 1 160px; min-width: 0; }
+.host-workspace .property-first-use { margin-bottom: 16px; border-left: 4px solid var(--brand); }
+.property-first-use h2 { margin: 0 0 10px; font-size: 17px; }
+.property-first-use .actions { flex-wrap: wrap; }
+/* Follow-ups move below the form when the content lane (not only the viewport) is narrow. */
+@container property-create (max-width: 900px) {
+  .property-create { grid-template-columns: minmax(0, 1fr); }
+  .host-workspace .property-create-next { position: static; }
+}
+@media (max-width: 700px) {
+  .host-workspace .property-address-grid .field > .field-label-row { flex: none; }
+}
+
+/* 0094 */
+/* Local tabs: wrapping labels, never a sideways-scrolling rail. */
+.property-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 20px; padding: 0 0 12px; border-bottom: 1px solid var(--line); }
+.property-tabs a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: white; color: var(--ink-secondary); font-size: 14px; font-weight: 650; text-decoration: none; }
+.property-tabs a:hover { border-color: var(--border-strong); color: var(--ink); }
+.property-tabs a[aria-current] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand-ink); }
+.property-tabs a:focus-visible, .property-settings-nav a:focus-visible { outline: 3px solid var(--brand-ring, var(--brand)); outline-offset: 2px; }
+/* One view and one Settings group show at a time; hidden ones still submit. */
+.property-views { container-name: property-lane; container-type: inline-size; }
+.property-view:not(.is-active), .property-settings-group:not(.is-active) { display: none; }
+/* Without JavaScript an old #hash still opens its view and group. */
+.property-views:not([data-js]) .property-view:has(:target),
+.property-views:not([data-js]) .property-settings-group:has(:target) { display: block; }
+.property-views:not([data-js]):has(:target) .property-view.is-active:not(:has(:target)),
+.property-views:not([data-js]) .property-settings-form:has(:target) .property-settings-group.is-active:not(:has(:target)) { display: none; }
+.property-section-title, .property-group-title { margin: 0; }
+.host-workspace .property-section { margin-bottom: 16px; }
+.host-workspace .property-section > .property-section-title,
+.host-workspace .property-section > .field-label-row { margin-bottom: 16px; }
+.property-section-title { font-size: 17px; font-weight: 700; }
+.property-group-title { font-size: 20px; margin-bottom: 14px; }
+.property-subsection { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.property-subsection-title { margin: 0; font-size: 15px; }
+.property-view-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 14px; }
+.property-view-head h2 { margin: 0; }
+.property-view-head .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+.property-view-head .sync-cta { margin: 0; }
+.host-workspace .host-checklist { margin-top: 0; }
+.host-checklist .property-section-title { margin-bottom: 14px; }
+/* Settings: a section rail beside the form on wide lanes, wrapping chips above it on narrow ones. */
+.property-settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.property-settings-nav { display: flex; flex-wrap: wrap; gap: 6px; align-self: start; }
+.property-settings-nav a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: white; color: var(--ink-secondary); font-size: 14px; font-weight: 600; text-decoration: none; }
+.property-settings-nav a[aria-current] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand-ink); }
+.property-settings-form { min-width: 0; }
+@container property-lane (min-width: 860px) {
+  .property-settings { grid-template-columns: 200px minmax(0, 1fr); align-items: start; }
+  .property-settings-nav { flex-direction: column; flex-wrap: nowrap; position: sticky; top: 16px; }
+  .property-settings-nav a { width: 100%; box-sizing: border-box; }
+}
+.host-workspace .copy-property-form { margin-bottom: 16px; }
+/* Guest links: URL, PIN and the link/PIN actions first. */
+.guest-link-top { display: grid; gap: 4px 16px; grid-template-columns: minmax(0, 1fr); margin-bottom: 8px; }
+.guest-link-top .copyrow { flex-wrap: wrap; }
+.guest-link-top .copyrow input { flex: 1 1 200px; min-width: 0; }
+.guest-link-top .copyrow > .btn, .guest-link-top .copyrow > button { flex: none; width: auto; }
+.guest-link-pin { max-width: 320px; }
+.guest-link-actions { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-bottom: 18px; }
+.guest-link-action { display: inline-flex; align-items: center; gap: 6px; }
+.host-workspace .guest-link-windows { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+/* Archive sits apart from the Save bar. */
+.host-workspace .property-archive { border-style: dashed; }
+.property-archive .setup-item { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; border: 0; padding: 0; }
+/* Feature switch with its saved state. */
+.feature-switch-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 16px; }
+.feature-switch { margin: 0; font-size: 15px; font-weight: 650; color: var(--ink); cursor: pointer; }
+.switch-status { display: inline-flex; align-items: center; min-height: 26px; padding: 0 10px; border-radius: 999px; background: var(--surface-2, #f4efec); color: var(--ink-secondary); font-size: 13px; font-weight: 650; }
+.switch-status.is-on { background: var(--status-done-bg, #e6f4ea); color: var(--status-done-ink, #1e6b3a); }
+.switch-status.is-unsaved { background: var(--status-warning-bg, #fff4d6); color: var(--status-warning-ink, #7a5300); }
+/* Bookings: list and connection form side by side when there is room. */
+.property-bookings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+@container property-lane (min-width: 900px) {
+  .property-bookings { grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); }
+  .property-bookings.is-list-only { grid-template-columns: minmax(0, 1fr); }
+}
+.property-feeds { min-width: 0; }
+.calendar-connect { min-width: 0; scroll-margin-top: 24px; }
+.calendar-connect.is-collapsed { display: none; }
+.calendar-connect.is-collapsed:target { display: block; }
+.host-workspace .property-first-use { margin-bottom: 16px; }

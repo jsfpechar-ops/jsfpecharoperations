@@ -135,8 +135,8 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
             assert page.locator("#addr_house_no").get_attribute("name") == "addr_house_no"
             assert page.locator('input[name="address_line"]').count() == 0
             assert page.locator(".property-address-police").count() == 0
-            guest_default = page.locator("#guest_message").input_value()
-            assert "Welcome!" in guest_default or "Vítejte!" in guest_default
+            # 0092: the guest message is set on the property page; create stores the default.
+            assert page.locator("#guest_message").count() == 0
             labels = page.locator("#address .property-address-grid").first.locator("label")
             assert labels.count() == 3
             first_row = page.locator("#address .property-address-grid").first
@@ -218,7 +218,7 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
         assert page.locator(".host-tools").count() == 0
         page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
         assert page.locator(".host-tools").count() == 0
-        assert page.locator('a[href="#communication"]').count() > 0
+        assert page.locator('a[href$="#communication"]').count() > 0
         browser.close()
 
 
@@ -328,8 +328,7 @@ def test_required_operator_controls_in_browser(host, base):
                     _assert_operator_fits(one)
                     _shot_0088(one, f"wizard-one-{width}-{lang}")
 
-                    many.goto(f"{base}/apartments/{host['apartment']}?lang={lang}")
-                    many.evaluate("() => { const d = document.querySelector('#basics'); if (d) d.open = true; }")
+                    many.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=property&lang={lang}")
                     controller = many.locator("#data_controller_entity_id")
                     assert controller.is_visible()
                     assert controller.locator("option").first.inner_text().strip() in ("Same as operator", "Stejný jako provozovatel")
@@ -344,13 +343,13 @@ def test_required_operator_controls_in_browser(host, base):
             assert not many.locator("#legal_entity_id").evaluate("el => el.checkValidity()")
             # A forged blank operator (validation bypassed) comes back with the draft and an error.
             many.evaluate("() => { document.querySelector('#legal_entity_id').required = false; }")
-            many.locator(".host-property-save button[type=submit]").click()
+            many.locator(".property-create-actions button[type=submit]").click()
             many.wait_for_load_state()
             assert many.locator("#operator-message[role=alert]").is_visible()
             assert many.locator("#internal_name").input_value() == "Browser Operator Flat"
             _shot_0088(many, "new-error-1280-en")
             many.select_option("#legal_entity_id", str(host["free"]))
-            many.locator(".host-property-save button[type=submit]").click()
+            many.locator(".property-create-actions button[type=submit]").click()
             many.wait_for_load_state()
             created = db.query_one(
                 "SELECT * FROM apartment WHERE internal_name = ? AND owner_user_id = ?",
@@ -373,7 +372,7 @@ def test_required_operator_controls_in_browser(host, base):
             # Geometry across wider lanes, sidebar expanded and collapsed.
             for width in (760, 1024, 1440, 1680, 1920, 2048):
                 many.set_viewport_size({"width": width, "height": 900})
-                for path in ("/apartments/new?lang=cs", f"/apartments/{host['apartment']}?lang=cs"):
+                for path in ("/apartments/new?lang=cs", f"/apartments/{host['apartment']}?view=settings&lang=cs"):
                     many.goto(base + path)
                     many.evaluate("() => { const d = document.querySelector('#basics'); if (d) d.open = true; }")
                     for collapsed in (False, True):
@@ -417,7 +416,7 @@ def test_calendar_platform_controls_in_browser(host, base):
             for width in (360, 390, 1280):
                 page.set_viewport_size({"width": width, "height": 900})
                 for lang in ("en", "cs"):
-                    page.goto(f"{base}/apartments/{apartment}?lang={lang}#calendars")
+                    page.goto(f"{base}/apartments/{apartment}?lang={lang}#calendar-connect")
                     form = page.locator("#calendar-add")
                     platform = form.locator("#label")
                     assert platform.is_visible()
@@ -439,7 +438,7 @@ def test_calendar_platform_controls_in_browser(host, base):
 
             # Validation bypassed in the browser: the server still refuses, keeps the draft, focuses the error.
             page.set_viewport_size({"width": 1280, "height": 1000})
-            page.goto(f"{base}/apartments/{apartment}?lang=en#calendars")
+            page.goto(f"{base}/apartments/{apartment}?lang=en#calendar-connect")
             page.evaluate("() => document.querySelectorAll('#calendar-add [required]').forEach(el => el.required = false)")
             page.fill("#calendar-add #url", "https://example.invalid/synthetic.ics")
             page.fill("#calendar-add #own_name", "Garden")

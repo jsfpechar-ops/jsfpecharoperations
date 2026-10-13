@@ -6081,6 +6081,110 @@ _SETTINGS_GROUP_STRINGS = {
 for _lang, _strings in _SETTINGS_GROUP_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+
+# 0092: one short Add property page; no numbered setup wizard.
+_PROPERTY_CREATE_0092_STRINGS = {
+    "en": {
+        "property_create.title": "Add property",
+        "property_create.lede": "Start with the basics. Connect services when you need them.",
+        "property_create.details": "Property details",
+        "property_create.managed_by": "Managed by",
+        "property_create.manage_business": "Manage business details",
+        "property_create.address": "Address",
+        "property_create.address_lede": "Needed before police reporting.",
+        "property_create.cancel": "Cancel",
+        "property_create.submit": "Create property",
+        "property_create.next_title": "After you create it",
+        "property_create.next_calendar": "Connect a calendar",
+        "property_create.next_calendar_body": "Choose Airbnb, Booking.com or another platform.",
+        "property_create.next_guests": "Share the guest form",
+        "property_create.next_guests_body": "Collect guest details.",
+        "property_create.next_reporting": "Set up reporting",
+        "property_create.next_reporting_body": "Add the required reporting details.",
+        "property_create.copy_clear": "Start without copying",
+        "property_create.created_title": "Property created. What next?",
+        "property_create.created_manual": "Add stay manually",
+        "property_create.created_continue": "Continue to overview",
+        "setup.banner.line": "Continue setup →",
+    },
+    "cs": {
+        "property_create.title": "Přidat ubytování",
+        "property_create.lede": "Začněte základními údaji. Další služby připojíte, až je budete potřebovat.",
+        "property_create.details": "Údaje o ubytování",
+        "property_create.managed_by": "Provozovatel",
+        "property_create.manage_business": "Spravovat firemní údaje",
+        "property_create.address": "Adresa",
+        "property_create.address_lede": "Potřebná před hlášením cizinecké policii.",
+        "property_create.cancel": "Zrušit",
+        "property_create.submit": "Vytvořit ubytování",
+        "property_create.next_title": "Po vytvoření",
+        "property_create.next_calendar": "Připojit kalendář",
+        "property_create.next_calendar_body": "Vyberte Airbnb, Booking.com nebo jinou platformu.",
+        "property_create.next_guests": "Sdílet formulář pro hosty",
+        "property_create.next_guests_body": "Získejte údaje o hostech.",
+        "property_create.next_reporting": "Nastavit hlášení",
+        "property_create.next_reporting_body": "Doplňte údaje potřebné pro hlášení.",
+        "property_create.copy_clear": "Začít bez kopírování",
+        "property_create.created_title": "Ubytování je vytvořené. Co dál?",
+        "property_create.created_manual": "Přidat pobyt ručně",
+        "property_create.created_continue": "Pokračovat na přehled",
+        "setup.banner.line": "Pokračovat v nastavení →",
+    },
+}
+for _lang, _strings in _PROPERTY_CREATE_0092_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0094: property tabs, Settings groups and the door-code switch.
+_PROPERTY_NAV_0094_STRINGS = {
+    "en": {
+        "property_nav.tabs_aria": "Property",
+        "property_nav.overview": "Overview",
+        "property_nav.bookings": "Bookings & calendars",
+        "property_nav.settings": "Settings",
+        "property_nav.settings_aria": "Settings sections",
+        "property_nav.group.property": "Property information",
+        "property_nav.group.guests": "Guest experience",
+        "property_nav.group.reporting": "Reporting & fees",
+        "property_nav.group.automation": "Automation",
+        "property_nav.guest_link": "Guest link",
+        "property_nav.door_switch": "Automatic door codes",
+        "property_nav.switch_enabled": "Enabled",
+        "property_nav.switch_off": "Off",
+        "property_nav.switch_unsaved": "Not saved yet",
+        "property_nav.add_calendar": "Add calendar",
+        "property_nav.report_ready": "Ready to report",
+        "property_nav.report_missing.one": "%(count)s detail missing",
+        "property_nav.report_missing.few": "%(count)s details missing",
+        "property_nav.report_missing": "%(count)s details missing",
+        "property_nav.address_missing": "Address not added yet",
+    },
+    "cs": {
+        "property_nav.tabs_aria": "Ubytování",
+        "property_nav.overview": "Přehled",
+        "property_nav.bookings": "Rezervace a kalendáře",
+        "property_nav.settings": "Nastavení",
+        "property_nav.settings_aria": "Části nastavení",
+        "property_nav.group.property": "Údaje o ubytování",
+        "property_nav.group.guests": "Pro hosty",
+        "property_nav.group.reporting": "Hlášení a poplatky",
+        "property_nav.group.automation": "Automatizace",
+        "property_nav.guest_link": "Odkaz pro hosty",
+        "property_nav.door_switch": "Automatické kódy ke dveřím",
+        "property_nav.switch_enabled": "Zapnuto",
+        "property_nav.switch_off": "Vypnuto",
+        "property_nav.switch_unsaved": "Zatím neuloženo",
+        "property_nav.add_calendar": "Přidat kalendář",
+        "property_nav.report_ready": "Připraveno k hlášení",
+        "property_nav.report_missing.one": "Chybí %(count)s údaj",
+        "property_nav.report_missing.few": "Chybí %(count)s údaje",
+        "property_nav.report_missing": "Chybí %(count)s údajů",
+        "property_nav.address_missing": "Adresa zatím chybí",
+    },
+}
+for _lang, _strings in _PROPERTY_NAV_0094_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
     return value if value in LANGUAGES else DEFAULT_LANGUAGE

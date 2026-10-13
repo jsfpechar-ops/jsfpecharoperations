@@ -171,7 +171,7 @@ def test_lock_setup_flow_keeps_its_place(world):
             context, page = _page(browser, world, 1280)
             page.goto(f"{base}/apartments/{apartment}?lang={lang}#door-code")
             _settle(page)
-            assert page.locator("details#door-code").evaluate("d => d.open")
+            assert page.locator("#door-code").is_visible()  # 0094: Settings → Guest experience, no fold
             _in_view(page, "#door-code")
             page.locator("#door-code a.btn").click()
             _settle(page)
@@ -200,7 +200,7 @@ def test_lock_setup_flow_keeps_its_place(world):
             page.locator("#smart-locks-share button[type=submit]").click()
             _settle(page)
             assert f"/apartments/{apartment}" in page.url and page.url.endswith("#door-code")
-            assert page.locator("details#door-code").evaluate("d => d.open")
+            assert page.locator("#door-code").is_visible()  # 0094: Settings → Guest experience, no fold
             _in_view(page, "#door-code")
             row = db.query_one("SELECT lock_provider FROM apartment WHERE id = ?", (apartment,))
             assert row["lock_provider"] is None  # nothing assigned or switched on

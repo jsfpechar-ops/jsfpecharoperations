@@ -1,7 +1,6 @@
 """UbyPort web-service credential request letter on the property form."""
 from __future__ import annotations
 
-import re
 import secrets
 
 import pytest
@@ -127,7 +126,9 @@ def test_form_block_open_without_ws_user(letter_world):
     assert page.status_code == 200
     assert "ws-request-letter" in page.text
     assert SUMMARY_EN in page.text
-    assert f'id="ws-request-letter" open' in page.text.replace("\n", " ")
+    # 0094: a visible sub-section (no fold) while the login is still missing.
+    assert '<section class="property-subsection" id="ws-request-letter">' in page.text
+    assert 'id="ws-request-body"' in page.text
     assert f"/apartments/{apartment_id}/ws-request.txt" in page.text
     assert "ybndqw9" in page.text
     assert "Olšanská 2" in page.text
@@ -141,7 +142,9 @@ def test_form_block_closed_when_ws_user_set(letter_world):
     assert page.status_code == 200
     assert "ws-request-letter" in page.text, "ws-request block missing from apartment form"
     assert SUMMARY_EN in page.text
-    block = re.search(r'<details[^>]*id="ws-request-letter"([^>]*)>', page.text)
-    assert block is not None
-    assert "open" not in block.group(1)
+    # 0094: with a saved login only the download link stays; nothing is folded.
+    block = page.text.split('id="ws-request-letter"', 1)[1].split("</section>", 1)[0]
+    assert "<details" not in block
+    assert 'id="ws-request-body"' not in block
+    assert f"/apartments/{apartment_id}/ws-request.txt" in block
     db.update("apartment", apartment_id, {"uby_ws_user": ""})

@@ -1,0 +1,103 @@
+{#- 0092: the short Add property page. One POST /apartments form: name, optional
+    city, required operator and an optional structured address. Everything else
+    (reporting, guest links, fees, locks, notes) is set on the property page after
+    it exists. Copied settings travel as hidden fields only after the host chose
+    "Copy" for a named property. -#}
+{%- from "_components.html" import nav_icon with context -%}
+{%- set draft = draft or {} -%}
+{%- set property_prefill = property_prefill or {} -%}
+{%- set property_values = draft -%}
+<div class="property-create-lane"><div class="property-create">
+  <div class="property-create-main">
+    {% if copied_from_name %}
+    <p class="panel property-create-copied" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}
+      <a href="/apartments/new">{{ t('property_create.copy_clear') }}</a>
+      {% if property_prefill.get('stay_fee_rate_czk') %}<br><span class="small muted">{{ t('apartment.form.copy_from.vs_hint') }}</span>{% endif %}</p>
+    {% endif %}
+    <form method="post" action="/apartments" class="property-create-form" id="property-create-form">
+      {# Enter in any field creates the property, never "Check again". #}
+      <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
+      {# Works without JavaScript too: csrf.js would add the same token. #}
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      {# Existing default: new properties report purpose 10 (tourism) unless copied. #}
+      <input type="hidden" name="default_purpose" value="{{ property_prefill.get('default_purpose') or '10' }}">
+      {% if copied_from_name %}
+      <input type="hidden" name="copy_from" value="{{ copy_from_id }}">
+      {%- for key in ('automation_mode', 'submit_after_hours', 'permalink_window_days', 'permalink_reachback_days') %}
+      {%- if property_prefill.get(key) is not none %}
+      <input type="hidden" name="{{ key }}" value="{{ property_prefill.get(key) }}">
+      {%- endif %}
+      {%- endfor %}
+      {%- if property_prefill.get('stay_fee_rate_czk') %}
+      {%- for key in ('stay_fee_rate_czk', 'stay_fee_cadence', 'stay_fee_authority_name', 'stay_fee_authority_address', 'stay_fee_authority_contact', 'stay_fee_payee', 'stay_fee_instruction', 'stay_fee_council_account') %}
+      {%- if property_prefill.get(key) is not none %}
+      <input type="hidden" name="{{ key }}" value="{{ property_prefill.get(key) }}">
+      {%- endif %}
+      {%- endfor %}
+      {%- endif %}
+      {% endif %}
+
+      <section class="panel property-create-card" id="basics" aria-labelledby="property-create-details">
+        <header class="property-create-head">{{ nav_icon('property') }}<h2 id="property-create-details">{{ t('property_create.details') }}</h2></header>
+        {% include "_property_identity_fields.html" %}
+      </section>
+
+      <section class="panel property-create-card" aria-labelledby="property-create-operator">
+        <header class="property-create-head">{{ nav_icon('entity') }}<h2 id="property-create-operator">{{ t('property_create.managed_by') }}</h2></header>
+        {% set operator_current = draft.legal_entity_id or selected_entity_id or property_prefill.get('legal_entity_id') %}
+        <div class="property-create-operator-row">
+          {% include "_property_operator.html" %}
+          {% if entities %}<a class="property-create-manage" href="/entities">{{ t('property_create.manage_business') }} →</a>{% endif %}
+        </div>
+        {% set controller_current = draft.data_controller_entity_id or property_prefill.get('data_controller_entity_id') %}
+        {% if controller_current %}
+        <div class="field" style="max-width:420px" id="alternate-controller">
+          <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
+          <select id="data_controller_entity_id" name="data_controller_entity_id"{% if operator_error == 'flash.error.no_such_controller' %} aria-describedby="controller-message" aria-invalid="true"{% endif %}>
+            <option value="">{{ t('apartment.form.controller.same_as_operator') }}</option>
+            {% for entity in entities %}
+            <option value="{{ entity.id }}" {% if controller_current == entity.id %}selected{% endif %}>{{ entity.name }}</option>
+            {% endfor %}
+          </select>
+          {% if operator_error == 'flash.error.no_such_controller' %}<p class="err-text" id="controller-message" role="alert">{{ t(operator_error) }}</p>{% endif %}
+        </div>
+        {% endif %}
+      </section>
+
+      <section class="panel property-create-card" id="address" aria-labelledby="property-create-address">
+        <header class="property-create-head">{{ nav_icon('report') }}<div><h2 id="property-create-address">{{ t('property_create.address') }} <span class="opt">{{ t('common.optional') }}</span></h2>
+          <p class="small muted">{{ t('property_create.address_lede') }}</p></div></header>
+        {% include "_property_address_fields.html" %}
+      </section>
+
+      <div class="actions property-create-actions">
+        <a class="btn" href="/apartments">{{ t('property_create.cancel') }}</a>
+        <button class="btn primary" type="submit">{{ t('property_create.submit') }}</button>
+      </div>
+    </form>
+  </div>
+
+  <aside class="panel property-create-next" aria-labelledby="property-create-next-title">
+    <h2 id="property-create-next-title">{{ t('property_create.next_title') }}</h2>
+    <ul class="property-create-next-list">
+      <li>{{ nav_icon('calendar') }}<div><strong>{{ t('property_create.next_calendar') }}</strong><small>{{ t('property_create.next_calendar_body') }}</small></div></li>
+      <li>{{ nav_icon('link') }}<div><strong>{{ t('property_create.next_guests') }}</strong><small>{{ t('property_create.next_guests_body') }}</small></div></li>
+      <li>{{ nav_icon('report') }}<div><strong>{{ t('property_create.next_reporting') }}</strong><small>{{ t('property_create.next_reporting_body') }}</small></div></li>
+    </ul>
+    <p class="small property-create-lock"><a href="/guide#door-codes">{{ t('host.door_code') }}</a> · {{ t('common.optional') }}</p>
+    {% if copy_property_peers %}
+    <form method="get" action="/apartments/new" class="property-create-copy">
+      <label for="copy_from">{{ t('apartment.form.copy_from.label') }}</label>
+      <div class="copyrow">
+        <select id="copy_from" name="copy_from" required>
+          <option value="" disabled {% if not copy_from_id %}selected{% endif %}>{{ t('apartment.form.copy_from.choose') }}</option>
+          {% for peer in copy_property_peers %}
+          <option value="{{ peer.id }}" {% if copy_from_id == peer.id %}selected{% endif %}>{{ peer.internal_name }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn small" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
+      </div>
+    </form>
+    {% endif %}
+  </aside>
+</div></div>

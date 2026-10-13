@@ -490,11 +490,16 @@ def guide_view(request: Request):
 
 # --- guest communication ------------------------------------------------
 
+# 0094: old hub URLs open the right Settings group, not only an anchor.
+_HUB_SECTIONS = {"communication": "guests", "automation": "automation"}
+
+
 def _property_hub_redirect(request: Request, anchor: str) -> RedirectResponse:
     apartments = access.apartments(request)
     if len(apartments) == 1:
+        section = _HUB_SECTIONS.get(anchor, "property")
         return RedirectResponse(
-            f"/apartments/{apartments[0]['id']}#{anchor}",
+            f"/apartments/{apartments[0]['id']}?view=settings&section={section}#{anchor}",
             status_code=303,
         )
     return RedirectResponse("/apartments", status_code=303)
@@ -1093,6 +1098,7 @@ def _render_apartment_new(
     *,
     draft: Optional[Dict[str, Any]] = None,
     operator_error: Optional[str] = None,
+    extra: Optional[Dict[str, Any]] = None,
     status_code: int = 200,
 ):
     prefill = copy_ctx["property_prefill"]
@@ -1110,27 +1116,44 @@ def _render_apartment_new(
             **copy_ctx,
             "draft": draft or {},
             "operator_error": operator_error,
+            **(extra or {}),
         },
         status_code=status_code,
     )
 
 
-def _refuse_apartment_create(request: Request, form, operator_error: Optional[str]):
-    """Render the new-property form again with what the host typed."""
+def _refuse_apartment_create(
+    request: Request,
+    form,
+    operator_error: Optional[str],
+    *,
+    name_error: bool = False,
+    address_errors: Optional[Dict[str, str]] = None,
+):
+    """Render the new-property form again with what the host typed.
+
+    0092: settings copied from another property travel as hidden fields; a
+    refusal keeps them (and names their source) so a retry still copies them.
+    """
     draft = _property_draft(form)
     prefill: Dict[str, Any] = {}
-    for key in ("automation_mode", "submit_after_hours", "default_purpose"):
+    for key in _COPY_PROPERTY_KEYS:
+        if key in ("legal_entity_id", "data_controller_entity_id"):
+            continue
         if key in form:
             prefill[key] = _form_str(form, key)
     if draft["data_controller_entity_id"]:
         prefill["data_controller_entity_id"] = draft["data_controller_entity_id"]
+    copy_from_id = _form_int(form, "copy_from")
+    source = access.apartment(request, copy_from_id) if copy_from_id else None
     copy_ctx = {
         "copy_property_peers": access.apartments(request),
-        "copy_from_id": None,
+        "copy_from_id": source["id"] if source else None,
         "property_prefill": prefill,
-        "copied_from_name": None,
+        "copied_from_name": source["internal_name"] if source else None,
         "apartment": None,
     }
+    refused = bool(operator_error or name_error or address_errors)
     return _render_apartment_new(
         request,
         access.entities(request),
@@ -1138,8 +1161,21 @@ def _refuse_apartment_create(request: Request, form, operator_error: Optional[st
         copy_ctx,
         draft=draft,
         operator_error=operator_error,
-        status_code=400 if operator_error else 200,
+        extra={"name_error": name_error, "address_errors": address_errors or {}},
+        status_code=400 if refused else 200,
     )
+
+
+def _create_address_errors(payload: Dict[str, Any]) -> Dict[str, str]:
+    """0092: the address is optional at create. A blank or partly filled
+    address is incomplete setup (readiness keeps reporting blocked until the
+    required parts exist). A component the host did type must pass the same
+    per-field check as the property editor before anything is written."""
+    errors: Dict[str, str] = {}
+    for issue in validation.errors_only(validation.validate_apartment(dict(payload))):
+        if issue.field in _ADDRESS_ONLY_FIELDS and (payload.get(issue.field) or "").strip():
+            errors.setdefault(issue.field, issue.message)
+    return errors
 
 
 APARTMENT_TEXT_FIELDS = (
@@ -1348,11 +1384,19 @@ async def apartment_create(request: Request):
         # "Check again" after adding business details in another tab: show the
         # same draft with the new operator list; nothing is written.
         return _refuse_apartment_create(request, form, None)
-    if not payload["internal_name"]:
-        return _back("/apartments/new", err=_flash(request, "flash.error.name_required"))
+    # 0092: name, operator and a typed address are all checked before any
+    # write; a refusal keeps every typed value on the page.
+    name_error = not payload["internal_name"].strip()
     operator_error = _property_operator_error(request, form, payload)
-    if operator_error:
-        return _refuse_apartment_create(request, form, operator_error)
+    address_errors = _create_address_errors(payload)
+    if name_error or operator_error or address_errors:
+        return _refuse_apartment_create(
+            request,
+            form,
+            operator_error,
+            name_error=name_error,
+            address_errors=address_errors,
+        )
     _apply_police_defaults(payload, access.entities(request))
     payload.pop("_stay_fee_account_raw", None)
     if not payload["guest_message"].strip():
@@ -1369,8 +1413,10 @@ async def apartment_create(request: Request):
     apartment_id = db.insert("apartment", payload)
     guest_slug.ensure(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_created", f"id={apartment_id}")
+    # 0092: the first-use choice (calendar, manual stay, overview) opens on the
+    # new property itself, never a numbered wizard.
     return _back(
-        f"/apartments/{apartment_id}#calendars",
+        f"/apartments/{apartment_id}?view=bookings&created=1#calendar-connect",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -1391,6 +1437,26 @@ def apartment_detail(apartment_id: int, request: Request):
     if not_found:
         return not_found
     return _render_apartment_detail(request, copy_ctx["apartment"], copy_ctx)
+
+
+# 0094: GET-only presentation choice of the property page; never a data endpoint.
+PROPERTY_VIEWS = ("overview", "bookings", "settings")
+PROPERTY_SETTINGS_SECTIONS = ("property", "guests", "reporting", "automation")
+
+
+def _property_view_state(request: Request, extra: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    extra = extra or {}
+    view = extra.get("property_view") or request.query_params.get("view") or ""
+    section = extra.get("settings_section") or request.query_params.get("section") or ""
+    if section not in PROPERTY_SETTINGS_SECTIONS:
+        section = ""
+    if view not in PROPERTY_VIEWS:
+        view = "settings" if section else "overview"
+    return {
+        "property_view": view,
+        "settings_section": section or "property",
+        "add_calendar": request.query_params.get("add_calendar") == "1",
+    }
 
 
 def _render_apartment_detail(
@@ -1490,7 +1556,9 @@ def _render_apartment_detail(
             "apartment": apartment,
             "operator_error": operator_error,
             "calendar_platforms": CALENDAR_PLATFORMS,
+            "just_created": request.query_params.get("created") == "1",
             **(extra or {}),
+            **_property_view_state(request, extra),
         },
         status_code=status_code,
     )
@@ -1545,6 +1613,7 @@ def _refuse_apartment_save(
         draft,
         copy_ctx,
         operator_error=operator_error,
+        extra={"property_view": "settings", "settings_section": "property"},
         status_code=400 if operator_error else 200,
     )
 
@@ -2036,7 +2105,7 @@ async def add_feed(apartment_id: int, request: Request):
         return _render_property_detail(
             apartment_id,
             request,
-            extra={"feed_draft": draft, "feed_errors": feed_errors},
+            extra={"feed_draft": draft, "feed_errors": feed_errors, "property_view": "bookings"},
             status_code=400,
         )
     db.insert(
@@ -2053,11 +2122,11 @@ async def add_feed(apartment_id: int, request: Request):
     totals = await run_in_threadpool(icalsync.sync_all, apartment_id)
     if totals["errors"]:
         return _back(
-            f"/apartments/{apartment_id}#calendars",
+            f"/apartments/{apartment_id}?view=bookings#calendars",
             err=_flash(request, "flash.error.feed_added_unreadable"),
         )
     return _back(
-        f"/apartments/{apartment_id}#calendars",
+        f"/apartments/{apartment_id}?view=bookings#calendars",
         msg=_flash_plural(request, "flash.feeds.added", totals["created"]),
     )
 
@@ -2071,7 +2140,10 @@ def delete_feed(feed_id: int, request: Request):
     if not feed:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_calendar"))
     db.execute("DELETE FROM ical_feed WHERE id = ?", (feed_id,))
-    return _back(f"/apartments/{feed['apartment_id']}", msg=_flash(request, "flash.feeds.removed"))
+    return _back(
+        f"/apartments/{feed['apartment_id']}?view=bookings#calendars",
+        msg=_flash(request, "flash.feeds.removed"),
+    )
 
 
 @router.post("/sync")

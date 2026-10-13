@@ -83,7 +83,7 @@ def _context(browser, host, base, width, **kwargs):
 
 def _open_page(context, base, host, lang):
     page = context.new_page()
-    page.goto(f"{base}/apartments/{host['apartment']}?lang={lang}")
+    page.goto(f"{base}/apartments/{host['apartment']}?view=settings&section=guests&lang={lang}")  # 0094
     page.evaluate(
         "(() => { let d = document.querySelector('#permalink_window_days').closest('details');"
         " while (d) { d.open = true; d = d.parentElement.closest('details'); } })()"
@@ -196,7 +196,7 @@ def test_help_tip_target_size_and_no_js_reachability(host, base):
         assert hit[0] >= 44 and hit[1] >= 44
         touch.close()
 
-        html = host["client"].get(f"/apartments/{host['apartment']}?lang=en").text
+        html = host["client"].get(f"/apartments/{host['apartment']}?view=settings&section=guests&lang=en").text
         html = re.sub(r"<details", "<details open", html)
         html = html.replace("<head>", f'<head><base href="{base}/">', 1)
         no_js = browser.new_context(java_script_enabled=False, viewport={"width": 390, "height": 800})

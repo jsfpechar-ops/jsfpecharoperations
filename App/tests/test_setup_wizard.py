@@ -53,12 +53,44 @@ def _walk_to_address(client: TestClient, name: str = "Flat Vinohrady") -> int:
     return apartment["id"]
 
 
-def test_setup_resume_after_name_lands_on_address():
+def test_setup_entry_goes_to_create_then_to_the_property():
+    """0092: /setup is no longer a numbered wizard."""
     client = _session_client("wizard-resume")
-    _walk_to_address(client)
     response = client.get("/setup", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/setup/address")
+    assert response.headers["location"] == "/apartments/new"
+    apartment_id = _walk_to_address(client)
+    response = client.get("/setup", follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/apartments/{apartment_id}"
+
+
+def test_legacy_setup_pages_redirect_to_their_canonical_home():
+    client = _session_client("wizard-legacy-get")
+    for step in ("welcome", "name", "address", "bookings"):
+        response = client.get(f"/setup/{step}", follow_redirects=False)
+        assert response.status_code == 303, step
+        assert response.headers["location"] == "/apartments/new", step
+    unknown = client.get("/setup/fees", follow_redirects=False)
+    assert unknown.headers["location"] == "/setup"
+    apartment_id = _walk_to_address(client)
+    expected = {
+        "welcome": f"/apartments/{apartment_id}",
+        "name": f"/apartments/{apartment_id}",
+        # 0094: the query opens the right tab without JavaScript.
+        "address": f"/apartments/{apartment_id}?view=settings&section=property#address",
+        "bookings": f"/apartments/{apartment_id}?view=bookings#calendars",
+    }
+    for step, target in expected.items():
+        response = client.get(f"/setup/{step}?edit=1", follow_redirects=False)
+        assert response.status_code == 303, step
+        assert response.headers["location"] == target, step
+
+
+def test_legacy_setup_needs_login():
+    response = TestClient(app).get("/setup/name", follow_redirects=False)
+    assert response.status_code in (302, 303)
+    assert "/login" in response.headers["location"]
 
 
 def test_name_step_refuses_a_name_without_an_operator():
@@ -82,6 +114,8 @@ def test_name_step_creates_property_with_name_and_operator():
     client = _session_client("wizard-name-operator")
     entity_id = _add_entity(client.owner_id)
     page = client.get("/setup/name")
+    # The legacy GET lands on the canonical create page, with one operator control.
+    assert str(page.url).endswith("/apartments/new")
     assert page.text.count('name="legal_entity_id"') == 1
     assert f'<option value="{entity_id}" selected>' in page.text
     response = client.post(
@@ -90,6 +124,10 @@ def test_name_step_creates_property_with_name_and_operator():
         follow_redirects=False,
     )
     assert response.status_code == 303
+    created_id = db.query_one(
+        "SELECT id FROM apartment WHERE internal_name = ?", ("Studio Karlín 2",)
+    )["id"]
+    assert response.headers["location"] == f"/apartments/{created_id}?view=bookings&created=1#calendar-connect"
     row = db.query_one(
         "SELECT * FROM apartment WHERE internal_name = ?", ("Studio Karlín 2",)
     )
@@ -174,6 +212,7 @@ def test_setup_address_save_leaves_other_property_fields_intact():
         follow_redirects=False,
     )
     assert response.status_code == 303
+    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=property#address"
     after = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     assert after["addr_street"] == "New street"
     assert after["addr_house_no"] == "99"
@@ -242,7 +281,14 @@ def test_another_owner_cannot_reach_foreign_property_wizard():
     owner_b = _session_client("wizard-owner-b")
     response = owner_b.get("/setup/address", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/setup/name")
+    assert response.headers["location"] == "/apartments/new"
+    posted = owner_b.post(
+        "/setup/address",
+        data={"addr_obec": "Praha", "addr_house_no": "1", "addr_zip": "11000"},
+        follow_redirects=False,
+    )
+    assert posted.status_code == 303
+    assert posted.headers["location"] == "/apartments/new"
     row = db.query_one("SELECT internal_name FROM apartment WHERE internal_name = ?", ("Owner A flat",))
     assert row
     assert db.query_one(
@@ -280,27 +326,95 @@ def test_sync_failure_shows_friendly_error_and_removes_feed(monkeypatch):
     assert feeds == []
 
 
-def test_setup_address_page_has_structured_fields_only():
+def test_address_refusal_and_create_page_have_structured_fields_only():
     client = _session_client("wizard-structured-address")
+    create = client.get("/apartments/new")
+    assert 'name="address_line"' not in create.text
+    for field in ("addr_okres", "addr_obec", "addr_obec_cast", "addr_street",
+                  "addr_house_no", "addr_orient_no", "addr_zip"):
+        assert create.text.count(f'id="{field}"') == 1
     _walk_to_address(client)
-    page = client.get("/setup/address")
-    assert page.status_code == 200
-    assert 'name="address_line"' not in page.text
-    assert 'id="addr_obec"' in page.text
-    assert "wizard-preview" not in page.text
+    refused = client.post(
+        "/setup/address", data={"addr_obec": "Praha", "addr_zip": "1"}, follow_redirects=False
+    )
+    assert refused.status_code == 400
+    assert 'name="address_line"' not in refused.text
+    assert 'id="addr_obec"' in refused.text
+    assert "wizard-preview" not in refused.text
 
 
-def test_wizard_screens_work_without_javascript():
+def test_legacy_setup_targets_work_without_javascript():
+    """Every legacy entry ends on an ordinary server-rendered POST form."""
     client = _session_client("wizard-no-js")
-    for path in ("/setup/welcome",):
-        page = client.get(path)
-        assert page.status_code == 200
-        assert 'method="post"' in page.text
-    _walk_to_address(client)
+    page = client.get("/setup/welcome")
+    assert page.status_code == 200
+    assert 'method="post" action="/apartments"' in page.text
+    apartment_id = _walk_to_address(client)
     for path in ("/setup/name?edit=1", "/setup/address", "/setup/bookings"):
         page = client.get(path)
         assert page.status_code == 200
-        assert "<form" in page.text
+        assert str(page.url).split("?")[0].split("#")[0].endswith(f"/apartments/{apartment_id}")
+        assert f'action="/apartments/{apartment_id}"' in page.text
+        assert f'action="/apartments/{apartment_id}/feeds"' in page.text
+
+
+def test_legacy_bookings_post_returns_to_the_property_calendars(monkeypatch):
+    client = _session_client("wizard-bookings-canonical")
+    apartment_id = _walk_to_address(client)
+    choose = client.post("/setup/bookings", data={"source": "airbnb"}, follow_redirects=False)
+    assert choose.status_code == 303
+    assert choose.headers["location"] == f"/apartments/{apartment_id}?view=bookings#calendars"
+    finish = client.post("/setup/bookings", data={"action": "finish"}, follow_redirects=False)
+    assert finish.headers["location"] == f"/apartments/{apartment_id}"
+    manual = client.post("/setup/bookings", data={"source": "myself"}, follow_redirects=False)
+    assert manual.headers["location"] == f"/reservations?new=1&apartment={apartment_id}#add-stay-panel"
+
+    def _ok_sync(_apartment_id):
+        return {"created": 2, "updated": 0, "errors": 0}
+
+    with patch("app.routes.setup_wizard.validate_calendar_url", lambda url: url):
+        with patch("app.routes.setup_wizard.icalsync.sync_all", _ok_sync):
+            added = client.post(
+                "/setup/bookings",
+                data={"chosen_source": "booking", "action": "add", "url": "https://example.test/b.ics"},
+                follow_redirects=False,
+            )
+    assert added.status_code == 303
+    location = added.headers["location"]
+    assert location.startswith(f"/apartments/{apartment_id}?view=bookings&msg=")
+    assert location.endswith("#calendars")
+    feed = db.query_one("SELECT label FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
+    assert feed["label"] == "Booking.com"
+
+
+def test_onboarding_no_longer_counts_wizard_steps():
+    owner_id = auth.create_account("wizard-banner@example.test", "", role="host", username="wizard-banner")
+    progress = onboarding.progress(owner_id)
+    assert progress["wizard_complete"] is False
+    property_step = next(step for step in progress["steps"] if step["id"] == "property")
+    assert property_step["url"] in ("/apartments/new", "/entities")
+    db.insert(
+        "apartment",
+        {
+            "owner_user_id": owner_id,
+            "internal_name": "Banner flat",
+            "permalink_token": "tokbanner01",
+            "permalink_pin": "123456",
+            "automation_mode": "manual",
+            "submit_after_hours": 24,
+            "active": 1,
+            "created_at": db.utcnow(),
+        },
+    )
+    progress = onboarding.progress(owner_id)
+    # wizard_step stays a readiness indicator; the banner names no step count.
+    assert progress["wizard_step"] == "address"
+    assert progress["wizard_total_steps"] == len(onboarding.WIZARD_STEPS)
+    from app import host_i18n
+
+    for lang in ("en", "cs"):
+        line = host_i18n.translate(lang, "setup.banner.line", step=1, total=5)
+        assert "5" not in line and "1" not in line
 
 
 def test_wizard_step_progress():

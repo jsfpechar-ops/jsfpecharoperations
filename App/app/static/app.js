@@ -1820,6 +1820,161 @@
     window.addEventListener("scroll", reflow, true);
   }
 
+  /* 0094: property Overview / Bookings & calendars / Settings.
+     Every view and settings group is already in the page; switching only shows
+     another one, so the one settings form keeps whatever the host typed. Links
+     and old #hashes keep working, history follows, and a dirty form asks before
+     the page is left. Without JavaScript the same links reload with ?view=. */
+  function initPropertyViews() {
+    var root = document.querySelector("[data-property-views]");
+    if (!root) return;
+    root.setAttribute("data-js", "1");
+    var base = root.getAttribute("data-property-base");
+    var VIEWS = ["overview", "bookings", "settings"];
+    var SECTIONS = ["property", "guests", "reporting", "automation"];
+    var HASHES = {
+      basics: ["settings", "property"], address: ["settings", "property"],
+      communication: ["settings", "guests"], "door-code": ["settings", "guests"],
+      ubyport: ["settings", "reporting"], "ws-request-letter": ["settings", "reporting"],
+      "stay-fee-settings": ["settings", "reporting"], automation: ["settings", "automation"],
+      calendars: ["bookings"], "calendar-connect": ["bookings"]
+    };
+    var form = root.querySelector("[data-property-settings-form]");
+    var returnInput = form && form.querySelector("[data-property-return]");
+    var connect = root.querySelector("[data-calendar-connect]");
+    var dirty = false;
+
+    function hashTarget(hash) {
+      if (!hash || hash.length < 2) return null;
+      try { return document.getElementById(decodeURIComponent(hash.slice(1))); } catch (_) { return null; }
+    }
+
+    // Where a URL points: [view, section] from the hash first, then ?view/?section.
+    function destination(url) {
+      var hash = url.hash ? url.hash.slice(1) : "";
+      if (HASHES[hash]) return HASHES[hash];
+      var target = hashTarget(url.hash);
+      if (target && root.contains(target)) {
+        var panel = target.closest("[data-property-view]");
+        var group = target.closest("[data-settings-group]");
+        if (panel) return [panel.getAttribute("data-property-view"), group ? group.getAttribute("data-settings-group") : null];
+      }
+      var view = url.searchParams.get("view");
+      var section = url.searchParams.get("section");
+      if (VIEWS.indexOf(view) < 0) view = SECTIONS.indexOf(section) >= 0 ? "settings" : null;
+      if (!view) return null;
+      return [view, SECTIONS.indexOf(section) >= 0 ? section : null];
+    }
+
+    function activeSection() {
+      var group = root.querySelector("[data-settings-group].is-active");
+      return group ? group.getAttribute("data-settings-group") : "property";
+    }
+
+    function activate(view, section) {
+      if (VIEWS.indexOf(view) < 0) view = "overview";
+      root.querySelectorAll("[data-property-view]").forEach(function (panel) {
+        panel.classList.toggle("is-active", panel.getAttribute("data-property-view") === view);
+      });
+      document.querySelectorAll("[data-property-tab]").forEach(function (tab) {
+        if (tab.getAttribute("data-property-tab") === view) tab.setAttribute("aria-current", "page");
+        else tab.removeAttribute("aria-current");
+      });
+      if (section && SECTIONS.indexOf(section) >= 0) {
+        root.querySelectorAll("[data-settings-group]").forEach(function (group) {
+          group.classList.toggle("is-active", group.getAttribute("data-settings-group") === section);
+        });
+        root.querySelectorAll("[data-property-section-link]").forEach(function (link) {
+          if (link.getAttribute("data-property-section-link") === section) link.setAttribute("aria-current", "true");
+          else link.removeAttribute("aria-current");
+        });
+      }
+      if (returnInput) {
+        returnInput.value = view === "settings"
+          ? base + "?view=settings&section=" + activeSection()
+          : base + "?view=" + view;
+      }
+    }
+
+    function reveal(url, scroll) {
+      var dest = destination(url);
+      if (!dest) return false;
+      activate(dest[0], dest[1]);
+      var target = hashTarget(url.hash);
+      if (target && connect && (target === connect || connect.contains(target))) connect.classList.remove("is-collapsed");
+      if (url.searchParams.get("add_calendar") === "1" && connect) connect.classList.remove("is-collapsed");
+      if (scroll) {
+        var into = target && root.contains(target) ? target : root;
+        window.requestAnimationFrame(function () { into.scrollIntoView({ block: "start", behavior: "auto" }); });
+      }
+      return true;
+    }
+
+    document.addEventListener("click", function (event) {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      var link = event.target.closest && event.target.closest("a[href]");
+      if (!link || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
+      var url;
+      try { url = new URL(link.href, window.location.href); } catch (_) { return; }
+      if (url.origin !== window.location.origin || url.pathname !== base) return;
+      if (!url.search && !url.hash) url.searchParams.set("view", "overview");
+      if (!destination(url)) return;
+      event.preventDefault();
+      var lang = new URLSearchParams(window.location.search).get("lang");
+      if (lang && !url.searchParams.get("lang")) url.searchParams.set("lang", lang);
+      url.searchParams.delete("created");
+      window.history.pushState({ propertyView: true }, "", url.pathname + url.search + url.hash);
+      reveal(url, true);
+    });
+
+    window.addEventListener("popstate", function () {
+      var url = new URL(window.location.href);
+      if (!reveal(url, false)) activate("overview", null);
+    });
+    window.addEventListener("hashchange", function () {
+      reveal(new URL(window.location.href), true);
+    });
+
+    if (form) {
+      // A field the browser refuses may sit in a hidden group: show that group
+      // first, so the browser can focus the field and say what is wrong.
+      var revealing = false;
+      form.addEventListener("invalid", function (event) {
+        if (revealing) return;
+        revealing = true;
+        window.setTimeout(function () { revealing = false; }, 0);
+        var group = event.target.closest && event.target.closest("[data-settings-group]");
+        activate("settings", group ? group.getAttribute("data-settings-group") : null);
+      }, true);
+      form.addEventListener("input", function () { dirty = true; });
+      form.addEventListener("change", function () { dirty = true; });
+      form.addEventListener("submit", function () { dirty = false; });
+      window.addEventListener("beforeunload", function (event) {
+        if (!dirty) return;
+        event.preventDefault();
+        event.returnValue = "";
+      });
+    }
+
+    // A switch says "Not saved yet" until the form is saved; never "Enabled".
+    root.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
+      var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
+      if (!status) return;
+      input.addEventListener("change", function () {
+        var saved = input.getAttribute("data-switch-saved") === "1";
+        var text = input.checked === saved
+          ? status.getAttribute(input.checked ? "data-on" : "data-off")
+          : status.getAttribute("data-unsaved");
+        status.textContent = text;
+        status.classList.toggle("is-on", input.checked && input.checked === saved);
+        status.classList.toggle("is-unsaved", input.checked !== saved);
+      });
+    });
+
+    reveal(new URL(window.location.href), false);
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
     initHelpTips();
@@ -1830,6 +1985,7 @@
     initTogglePanels();
     initDismissBanners();
     initNotifications();
+    initPropertyViews();
     initDetailsLinks();
     initAutomationFields();
     initControllerFields();
