@@ -23,7 +23,7 @@
     <button class="btn setup-wizard-copy" type="button" data-copy="wizard-guest-message" data-copy-label="{{ t('wizard.guest_link.copy_message') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_message') }}</button>
     {{ help_tip('wizard-message-help', t('wizard.guest_link.message_help')) }}
   </header>
-  <textarea id="wizard-guest-message" readonly rows="14" aria-labelledby="wizard-message-title">{{ t('wizard.guest_link.message_template', url=permalink, pin=pin, operator_first_name=message_operator_first_name) }}</textarea>
+  <textarea id="wizard-guest-message" readonly rows="14" aria-labelledby="wizard-message-title">{{ t('wizard.guest_link.message_template', url=permalink, pin=pin, operator_first_name=message_operator_first_name, property_name=apartment.internal_name) }}</textarea>
 </section>
 {% endblock %}
 {% block wizard_actions %}

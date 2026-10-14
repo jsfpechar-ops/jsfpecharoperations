@@ -158,9 +158,7 @@
           {{ property_identity(reservation.apartment_id, reservation.internal_name, true) }}
           <div class="small stay-col-source">
             {{ source_badge(reservation.source, source_label(reservation)) }}
-            {% if reservation.reservation_url %}
-              <a class="small stay-portal-link" href="{{ reservation.reservation_url }}" target="_blank" rel="noopener">{{ t('stays.table.portal') }}</a>
-            {% endif %}
+            
           </div>
         </td>
         <td class="num stay-col-guests" data-label="{{ t('stays.table.guests') }}">{{ guest_count(progress, placeholder=true) }}</td>
@@ -175,14 +173,14 @@
         </td>
         <td class="nowrap row-actions stay-col-actions" data-label="">
           {{ row_reporting_actions(reservation, row.controls, return_to) }}
-          {% if reservation.permalink_token %}
+          <span class="row-action-pair">
+          {{ row_menu_begin() }}
+            <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}" role="menuitem">{{ t('common.open') }}</a>
+            {% if reservation.permalink_token %}
             {{ copy_inline('stay-link-' ~ reservation.id,
                 public_base_url ~ '/l/' ~ (reservation.permalink_slug or reservation.permalink_token) ~ '/' ~ reservation.id,
-                t('host.copy_guest_form_link')) }}
-          {% endif %}
-          <span class="row-action-pair">
-          <a class="btn row-open" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ t('dashboard.row.open_stay') }}</a>
-          {{ row_menu_begin() }}
+                t('host.copy_guest_form_link'), 'menuitem') }}
+            {% endif %}
             <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('stays.row.add_guest') }}</a>
             {% if reservation.permalink_token %}
             <a class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('stays.row.open_guest_form') }}</a>

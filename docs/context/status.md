@@ -10,7 +10,7 @@ Updated: 2026-10-13 (host UX candidate). Merged 0043, 0045, 0044, 0046, 0055, 00
 
 ## Now
 
-- #389 wizard polish: [report](../tasks/0102-fix-3-report.md); CI in PR checks.
+- #389 wizard polish: [report](../tasks/0102-fix-4-report.md); CI in PR checks.
 
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.

@@ -118,6 +118,20 @@
     });
   }
 
+  document.querySelectorAll('[data-phone-country-code]').forEach(function (input) {
+    function digits(value) { return value.replace(/\D/g, '').slice(0, 3); }
+    input.addEventListener('input', function () { input.value = digits(input.value); });
+    input.addEventListener('paste', function (event) {
+      if (!event.clipboardData) return;
+      event.preventDefault();
+      input.value = digits(event.clipboardData.getData('text'));
+      input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    input.addEventListener('keydown', function (event) {
+      if (event.key === '+') event.preventDefault();
+    });
+  });
+
   var adjustMode = document.getElementById('adjust-mode');
   if (adjustMode) {
     var syncAdjust = function () {

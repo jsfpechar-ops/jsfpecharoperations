@@ -312,8 +312,9 @@ def test_reservation_rows_are_full_click_targets():
         assert page.status_code == 200
         assert f'data-href="/reservations/{stays[0]}?return_to=' in page.text
         assert 'class="clickable-row"' in page.text
-        # 0079: rows keep the full-row target and also show a visible Open next to More.
-        assert 'class="btn row-open"' in page.text
+        # Open remains in the menu and native date link; the row has no duplicate button.
+        assert 'class="btn row-open"' not in page.text
+        assert 'class="row-menu-item" href="/reservations/' in page.text
     finally:
         _cleanup()
 
@@ -388,7 +389,8 @@ def test_a_live_stay_keeps_its_deadline_and_copy_link():
         assert "This stay is cancelled" not in page.text
         assert "Marked as not a guest stay" not in page.text
         assert "Archived and hidden from your daily work." not in page.text
-        assert COPY_LINK_PRIMARY in page.text
+        assert COPY_LINK_PRIMARY not in page.text
+        assert 'class="row-menu-item" type="button" role="menuitem" data-copy="stay-link"' in page.text
         assert "Reporting deadline" in page.text
         assert 'class="stay-metrics detail-hero inactive"' not in page.text
     finally:

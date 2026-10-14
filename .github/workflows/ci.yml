@@ -214,7 +214,9 @@ jobs:
         run: >-
           python -m pytest tests/test_guest_browser_e2e.py tests/test_host_geometry.py
           tests/test_onboarding_wizard_browser.py tests/test_onboarding_wizard_survival.py
-          tests/test_download_skeleton_browser.py -q -rs --junitxml=/tmp/ubyhost-tests.xml
+          tests/test_download_skeleton_browser.py tests/test_onboarding_followup_browser.py
+          tests/test_host_stay_actions_browser.py tests/test_host_stay_detail_layout_browser.py
+          tests/test_host_quiet_dashboard_browser.py tests/test_host_list_layouts_browser.py -q -rs --junitxml=/tmp/ubyhost-tests.xml
 
 
       - name: Annotate failed tests

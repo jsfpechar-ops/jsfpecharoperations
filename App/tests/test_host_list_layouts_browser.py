@@ -1,4 +1,4 @@
-"""0079: Dashboard and Stays rows share one Open + adjacent More action pair."""
+"""0102: Dashboard and Stays use one compact menu, with Open inside it."""
 from __future__ import annotations
 
 import os
@@ -21,9 +21,10 @@ PAIRS = """(selector) => [...document.querySelectorAll(selector)].map(row => {
   const open = [...row.querySelectorAll('a.btn')].find(
     a => !a.closest('.row-menu-panel') && (a.classList.contains('dashboard-open') || a.classList.contains('row-open')));
   const more = row.querySelector('.row-menu-trigger');
+  const menuOpen = row.querySelector('.row-menu-panel a[role=menuitem]');
   const rect = el => { const r = el.getBoundingClientRect(); return {l: r.left, r: r.right, t: r.top, b: r.bottom, w: r.width, h: r.height}; };
   const rr = row.getBoundingClientRect();
-  return {open: open ? rect(open) : null, more: more ? rect(more) : null, openText: open ? open.textContent.trim() : '',
+  return {open: open ? rect(open) : null, more: more ? rect(more) : null, openText: menuOpen ? menuOpen.textContent.trim() : '',
           row: {l: rr.left, r: rr.right}};
 })"""
 
@@ -31,18 +32,14 @@ PAIRS = """(selector) => [...document.querySelectorAll(selector)].map(row => {
 def _check_pairs(pairs, label, locale):
     assert len(pairs) >= 3, label
     for pair in pairs:
-        assert pair["open"] and pair["more"], label
+        assert not pair["open"] and pair["more"], label
         assert pair["openText"] == OPEN_LABEL[locale], (label, pair["openText"])
-        o, m = pair["open"], pair["more"]
-        assert abs(o["h"] - m["h"]) <= 1, (label, o, m)
+        m = pair["more"]
         assert abs(m["w"] - m["h"]) <= 1, (label, m)
-        assert 50 <= o["w"] <= 90, (label, o)
-        assert m["l"] >= o["r"] - 1 and m["l"] - o["r"] <= 14, ("More not adjacent to Open", label, o, m)
-        assert abs(o["t"] - m["t"]) <= 2, (label, o, m)
-        assert o["l"] >= pair["row"]["l"] - 1 and m["r"] <= pair["row"]["r"] + 1, ("clipped", label, pair)
+        assert m["l"] >= pair["row"]["l"] - 1 and m["r"] <= pair["row"]["r"] + 1, ("clipped", label, pair)
 
 
-def test_dashboard_and_stays_share_open_more_pair(
+def test_dashboard_and_stays_share_compact_row_menu(
     dashboard_rich_host, base, stay_actions_host, stay_actions_base,
 ):
     dash_cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
@@ -69,7 +66,7 @@ def test_dashboard_and_stays_share_open_more_pair(
                     assert page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 1, label
                     pairs = page.evaluate(PAIRS, selector)
                     _check_pairs(pairs, label, locale)
-                    heights.setdefault((locale, width), {})[name] = round(pairs[0]["open"]["h"])
+                    heights.setdefault((locale, width), {})[name] = round(pairs[0]["more"]["h"])
                     if CAPTURE and width in (360, 390, 1280, 1440):
                         EVIDENCE.mkdir(parents=True, exist_ok=True)
                         page.evaluate("window.scrollTo(0, 0)")

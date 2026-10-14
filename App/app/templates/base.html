@@ -13,8 +13,8 @@
   <link rel="stylesheet" href="/static/app.css?v=20261006a">
   <link rel="stylesheet" href="/static/components.css?v=20261014-0102c">
   {% if show_nav | default(true) %}
-  <link rel="stylesheet" href="/static/host.css?v=20261014-0102c">
-  <link rel="stylesheet" href="/static/host-controls.css?v=20261010-host-design-0033">
+  <link rel="stylesheet" href="/static/host.css?v=20261014-0102d">
+  <link rel="stylesheet" href="/static/host-controls.css?v=20261014-0102d">
   {% endif %}
   <link rel="stylesheet" href="/static/skeleton.css?v=20261014-0102c">
 </head>
@@ -72,10 +72,9 @@
   <div class="host-rail-bottom">
     <a class="host-help" href="/guide">{{ nav_icon('book') }}{{ t('nav.guide') }}</a>
     <details class="host-account" data-host-account>
-      <summary>
+      <summary aria-label="{{ t('nav.account') }}: {{ workspace_user.display_name or workspace_user.username }}">
         <span class="sidebar-user-avatar" aria-hidden="true">{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</span>
         <span class="host-account-name">{{ workspace_user.display_name or workspace_user.username }}<small>{{ t('nav.account') }}</small></span>
-        <span aria-hidden="true">⌃</span>
       </summary>
       <div class="host-account-menu">
         <a href="/settings">{{ t('nav.settings') }}</a>
@@ -320,7 +319,7 @@
 <script src="/static/csrf.js?v=20260915a"></script>
 <script src="/static/skeleton.js?v=20261014-0102c"></script>
 <script src="/static/app.js?v=20261014-0102d"></script>
-{% if show_nav | default(true) %}<script src="/static/host.js?v=20261014-0102b" defer></script>{% endif %}
+{% if show_nav | default(true) %}<script src="/static/host.js?v=20261014-0102d" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261006a" defer></script>{% endif %}
 </body>
 </html>

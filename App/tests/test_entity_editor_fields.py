@@ -435,7 +435,7 @@ def test_the_entity_forms_keep_their_contract(host):
         "name": ('type="text"', True), "seat": ('type="text"', True),
         "ico": ('type="text"', True), "dic": ('type="text"', False),
         "contact_email": ('type="email"', True), "contact_phone": ('type="tel"', False),
-        "contact_phone_country_code": ('type="tel"', False),
+        "contact_phone_country_code": ('type="text"', False),
         "signature_name": ('type="text"', False), "signature_file": ('type="file"', False),
         "signature_drawn": ('type="hidden"', False),
     }
@@ -574,7 +574,7 @@ def test_entity_lookup_keeps_typed_identity(host):
     for typed in ('value="Typed name"', 'value="typed@example.test"',
                   'value="Typed signer"', 'value="CZ04656679"', "Václavské náměstí"):
         assert typed in page, typed
-    assert 'value="+420"' in _tag(page, "contact_phone_country_code")
+    assert 'value="420"' in _tag(page, "contact_phone_country_code")
     assert 'value="1"' in _tag(page, "contact_phone")
     assert _row(entity_id)["name"] == "Pole s.r.o."
 

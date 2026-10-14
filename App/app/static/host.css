@@ -633,7 +633,7 @@ body.host-workspace {
 /* Wide lane: one row per stay. */
 @container stays-list (min-width: 900px) {
   .host-workspace .stays-view tr {
-    grid-template-columns: minmax(160px, 1.25fr) minmax(110px, 1.7fr) 52px minmax(100px, 1fr) minmax(90px, 1fr) 310px;
+    grid-template-columns: minmax(160px, 1.25fr) minmax(110px, 1.7fr) 52px minmax(100px, 1fr) minmax(90px, 1fr) max-content;
     column-gap: 10px;
     padding: 8px 14px;
     min-height: 56px;
@@ -849,8 +849,8 @@ body.host-workspace {
 .host-workspace .signature-block .action-group > label.btn { margin: 0; }
 
 /* 0080 */
-.host-workspace .stay-property-line { margin: -4px 0 10px; font-size: 14px; overflow-wrap: anywhere; }
-.host-workspace .stay-jump { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0 0 18px; }
+.host-workspace .stay-property-line { margin: -4px auto 10px; font-size: 14px; overflow-wrap: anywhere; }
+.host-workspace .stay-jump { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0 auto 18px; }
 .host-workspace .stay-jump a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: white; color: var(--ink); font-size: 13px; font-weight: 600; text-decoration: none; }
 .host-workspace .stay-jump a:hover, .host-workspace .stay-jump a:focus-visible { border-color: var(--brand); }
 .host-workspace .section-heading .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
@@ -981,11 +981,11 @@ body.host-workspace {
 }
 /* 0079 polish: one subgrid so every row shares the same tracks; the actions track
    is as wide as its widest content; pills and deadlines stay on one line. */
-.host-workspace .dashboard-row-actions { grid-template-columns: auto var(--action-height); }
+.host-workspace .dashboard-row-actions { grid-template-columns: var(--action-height); }
 @container stays-list (min-width: 900px) {
   .host-workspace .stays-view table {
     display: grid;
-    grid-template-columns: minmax(172px, 1.3fr) minmax(135px, 1.3fr) max-content max-content max-content minmax(300px, max-content);
+    grid-template-columns: minmax(172px, 1.3fr) minmax(135px, 1.3fr) max-content max-content max-content max-content;
     column-gap: 8px;
   }
   .host-workspace .stays-view thead,
@@ -1496,8 +1496,10 @@ body.host-workspace {
 /* end 0100 */
 
 /* 0102 */
-.operator-phone { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.host-workspace .operator-phone input.operator-phone-code[type="tel"] { width: 96px; flex: 0 0 96px; border-radius: 999px; text-align: center; font-weight: 700; background: var(--canvas-subtle); }
+.operator-phone { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
+.operator-phone-prefix { display: inline-flex; align-items: center; flex: 0 0 80px; width: 80px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--surface); padding: 0 10px; gap: 2px; box-sizing: border-box; font-weight: 650; color: var(--ink); }
+.operator-phone-prefix:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px var(--focus-ring); }
+.host-workspace .operator-phone-prefix input.operator-phone-code[type="text"] { width: 100%; min-width: 0; min-height: 42px; flex: 1; padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; text-align: center; box-shadow: none; outline: none; }
 .operator-phone-number { min-width: 0; flex: 1 1 0; }
 .entity-register-note { color: var(--ink); font-size: 14px; font-weight: 600; }
 .host-workspace .onboarding-banner-setup { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface); border-color: var(--line); }
@@ -1683,3 +1685,30 @@ body.host-workspace {
   .setup-demo-bubble { padding: 18px; }
   .setup-demo-stay > div { min-width: 100%; }
 }
+
+/* 0102: static setup status is visually separate from the navigation cards. */
+.host-workspace .host-checklist[data-setup-status] { margin-top: 28px; background: var(--canvas-subtle); border-style: dashed; }
+.setup-status-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.setup-status-head h2 { margin: 0; }
+.setup-status-head p { margin: 5px 0 0; color: var(--ink); font-weight: 600; }
+.setup-status-grid { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; margin: 0; gap: 12px; }
+.setup-status-tile { display: flex; align-items: flex-start; gap: 12px; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); cursor: default; }
+.setup-status-icon { color: var(--ink-muted); display: inline-flex; flex: 0 0 auto; padding-top: 2px; }
+.setup-status-tile.is-done .setup-status-icon { color: var(--green); }
+.setup-status-tile.is-waiting .setup-status-icon { color: var(--amber); }
+.setup-status-copy { min-width: 0; }
+.setup-status-copy > .pill { margin-top: 8px; white-space: normal; }
+.setup-status-label { display: flex; align-items: center; gap: 8px; }
+.setup-status-label strong { overflow-wrap: anywhere; }
+.setup-demo-property strong, .setup-demo-stay strong { overflow-wrap: anywhere; }
+.host-account > summary { min-height: 44px; box-sizing: border-box; }
+.host-workspace .host-account > summary .sidebar-user-avatar { flex: 0 0 32px; }
+@media (min-width: 961px) {
+  body.host-workspace.sidebar-collapsed .host-account > summary { justify-content: center; gap: 0; padding: 6px; min-height: 44px; }
+}
+@media (max-width: 599px) { .setup-status-grid { grid-template-columns: 1fr; } }
+
+.setup-readiness-help { margin-top: 18px; }
+.setup-readiness-help > summary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink); font-weight: 650; cursor: pointer; list-style: none; }
+.setup-readiness-help > summary::before, .setup-readiness-help > summary::-webkit-details-marker { display: none; }
+.setup-readiness-help > summary > span { display: inline-grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); }

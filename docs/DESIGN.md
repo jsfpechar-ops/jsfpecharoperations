@@ -708,3 +708,22 @@ links and labels. Native selection indicators and keyboard arrow navigation
 remain functional. The setup demo shows the property, stay dates and full
 sample message; its new-tab link teaches PIN entry with the existing PIN
 validation, and remains accessible only to that property's signed-in owner.
+
+## Host list and setup refinement, 2026-10-14
+
+The owner removed duplicate Open buttons from record lists. The whole row,
+its native name/date link, and Open in the three-dot menu are entry points.
+Copy guest form link belongs in that menu; purposeful Send, Download and Setup
+actions remain available. Do not make opening a record depend on hover.
+
+Hover/focus tint is painted on the row, with transparent cells, so grid gaps
+and cells form one surface. Stay property context and jump links share the
+centered content lane. Collapsed account disclosure shows a centered initial
+with no detached arrow, retaining its accessible account name and keyboard menu.
+
+The phone country code is a plain three-digit text box in a pill, with a fixed
+plus sign and no dropdown. Messages use the property's current name. The demo
+message is labeled as an example; actual platform messages/timing depend on
+what the host configures in their booking platform. Property overview setup
+uses static status tiles on a tinted panel, distinct from navigation shortcuts;
+detailed readiness requirements remain behind a question-mark disclosure.

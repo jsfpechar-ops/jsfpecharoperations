@@ -208,9 +208,10 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         page.set_viewport_size({"width": 1280, "height": 900})
         page.goto(f"{base}/apartments?lang=en")
         row = page.locator(".clickable-row").first
-        before = row.locator("td").first.evaluate("el => getComputedStyle(el).backgroundColor")
+        before = row.evaluate("el => getComputedStyle(el).backgroundColor")
         row.hover()
-        after = row.locator("td").first.evaluate("el => getComputedStyle(el).backgroundColor")
+        page.wait_for_timeout(180)
+        after = row.evaluate("el => getComputedStyle(el).backgroundColor")
         assert before != after
         row.focus()
         assert row.evaluate("el => getComputedStyle(el).outlineStyle") != "none"

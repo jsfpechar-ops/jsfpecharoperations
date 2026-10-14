@@ -42,8 +42,8 @@
           {% else %}<span class="pill green">{{ t('apartments.setup.ready') }}</span>{% endif %}
         </td>
         <td class="nowrap row-actions" data-label="">
-          <a class="btn small" href="{{ base_url }}">{{ t('properties.open') }}</a>
           {{ row_menu_begin() }}
+            <a class="row-menu-item" href="{{ base_url }}" role="menuitem">{{ t('common.open') }}</a>
             <a class="row-menu-item" href="{{ base_url }}?view=settings&amp;section=property#basics" role="menuitem">{{ t('apartments.row.edit') }}</a>
             <a class="row-menu-item" href="{{ base_url }}?view=settings&amp;section=guests#communication" role="menuitem">{{ t('nav.guest_links') }}</a>
             <a class="row-menu-item" href="{{ base_url }}?view=settings&amp;section=automation#automation" role="menuitem">{{ t('nav.automation') }}</a>

@@ -56,13 +56,13 @@
       <label for="{{ prefix }}contact_phone">{{ t('entities.phone') }} <span class="opt">{{ t('common.optional') }}</span></label>
       {% set phone = phone_form_parts((entity.contact_phone or '') if entity else '') %}
       <div class="operator-phone">
-        <input type="tel" class="operator-phone-code" id="{{ prefix }}contact_phone_country_code"
-               name="contact_phone_country_code" value="{{ phone.code }}" inputmode="tel"
-               autocomplete="tel-country-code" maxlength="5" pattern="[+]?[1-9][0-9]{0,3}"
-               aria-label="{{ t('entities.phone_country_code') }}" list="{{ prefix }}phone-codes">
-        <datalist id="{{ prefix }}phone-codes">
-          {% for code in ['+420', '+421', '+49', '+43', '+48', '+44', '+33', '+1'] %}<option value="{{ code }}">{{ code }}</option>{% endfor %}
-        </datalist>
+        <span class="operator-phone-prefix">
+          <span aria-hidden="true">+</span>
+          <input type="text" class="operator-phone-code" id="{{ prefix }}contact_phone_country_code"
+                 name="contact_phone_country_code" value="{{ phone.code | replace('+', '') }}" inputmode="numeric"
+                 autocomplete="tel-country-code" maxlength="3" pattern="[1-9][0-9]{0,2}"
+                 aria-label="{{ t('entities.phone_country_code') }}" data-phone-country-code>
+        </span>
         <input type="tel" class="operator-phone-number" id="{{ prefix }}contact_phone" name="contact_phone"
                autocomplete="tel-national" inputmode="tel" value="{{ phone.number }}">
       </div>

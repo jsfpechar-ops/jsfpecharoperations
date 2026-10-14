@@ -1396,12 +1396,17 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         phone_form = page.locator(f'form[action="/entities/{host["entity"]}"]')
         code = phone_form.locator('[name="contact_phone_country_code"]')
         number = phone_form.locator('[name="contact_phone"]')
-        assert code.input_value() == "+420"
+        assert code.input_value() == "420"
+        assert code.get_attribute("type") == "text"
+        assert code.get_attribute("maxlength") == "3"
+        assert code.get_attribute("list") is None
+        assert phone_form.locator(".operator-phone-prefix > span").inner_text() == "+"
+        assert page.locator('form[action="/entities"] [data-phone-country-code]').input_value() == ""
         assert number.input_value() == "777000111"
         assert code.get_attribute("aria-label") == _t(lang, "entities.phone_country_code")
-        code.fill("+49")
+        code.fill("49")
         number.fill("15123456789")
-        code_box, number_box = code.bounding_box(), number.bounding_box()
+        code_box, number_box = phone_form.locator(".operator-phone-prefix").bounding_box(), number.bounding_box()
         assert code_box and number_box
         assert abs(code_box["y"] - number_box["y"]) <= 1
         assert abs(code_box["height"] - number_box["height"]) <= 1
@@ -1439,7 +1444,8 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         guest_link = page.locator("#wizard-guest-url").inner_text()
         guest_pin = page.locator("#wizard-guest-pin").inner_text()
         assert guest_link in message and guest_pin in message
-        assert "[FIRST_NAME]" in message and "[PROPERTY_NAME]" in message
+        assert "[FIRST_NAME]" in message and flat["internal_name"] in message
+        assert "[PROPERTY_NAME]" not in message
         assert message.rstrip().endswith("Alex")
         assert ("[Example:" if lang == "en" else "[Příklad:") in message
         assert buttons.nth(2).inner_text() == _t(lang, "wizard.guest_link.copy_message")

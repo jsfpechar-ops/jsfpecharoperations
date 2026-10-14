@@ -1656,11 +1656,14 @@ def _setup_guide_bundle(
     }
 
 
-def _setup_progress(apartment, feeds, readiness, lock_available: bool) -> Optional[Dict[str, Any]]:
+def _setup_progress(
+    apartment, feeds, readiness, lock_available: bool, *, bundle: Optional[Dict[str, Any]] = None
+) -> Optional[Dict[str, Any]]:
     """0102: compact setup progress for the property Overview card."""
-    bundle = _setup_guide_bundle(
-        apartment, feeds=feeds, lock_available=lock_available
-    )
+    if bundle is None:
+        bundle = _setup_guide_bundle(
+            apartment, feeds=feeds, lock_available=lock_available
+        )
     state = bundle["state"]
     facts_payload = bundle["facts_payload"]
     if not state or state["finished"]:
@@ -1746,13 +1749,17 @@ def _render_apartment_detail(
     link_key = guest_slug.link_key(apartment)
     has_stays = any(feed["active"] for feed in feeds) or bool(
         db.query_one(
-            "SELECT 1 AS present FROM reservation WHERE apartment_id = ? LIMIT 1",
+            "SELECT 1 AS present FROM reservation WHERE apartment_id = ? "
+            "AND COALESCE(source, '') != 'demo' LIMIT 1",
             (apartment_id,),
         )
     )
     door_code = _door_code_context(apartment, apartment_id)
     readiness = _readiness(apartment, entities, issues, has_stays)
-    setup_progress = _setup_progress(apartment, feeds, readiness, door_code is not None)
+    setup_bundle = _setup_guide_bundle(apartment, feeds=feeds, lock_available=door_code is not None)
+    setup_progress = _setup_progress(
+        apartment, feeds, readiness, door_code is not None, bundle=setup_bundle
+    )
     setup_stored = property_setup.load(apartment_id)
     return render(
         request,
@@ -1788,6 +1795,10 @@ def _render_apartment_detail(
             "calendar_platforms": CALENDAR_PLATFORMS,
             "just_created": request.query_params.get("created") == "1",
             "setup_progress": setup_progress,
+            "setup_checklist": property_setup.checklist(
+                setup_bundle["state"] or property_setup.legacy_state(), apartment,
+                setup_bundle["facts_payload"], lock_available=door_code is not None,
+            ),
             "setup_finished": bool(setup_stored and setup_stored.get("finished")),
             "setup_hidden": bool(setup_progress and setup_progress.get("hidden")),
             **(extra or {}),

@@ -204,19 +204,18 @@ def test_dashboard_geometry_locales_and_screenshots(dashboard_host, base):
                 assert own_row.count() == 1
                 assert page.evaluate("() => document.documentElement.scrollWidth - innerWidth") <= 1
 
-                open_action = own_row.get_by_role("link", name="Open" if locale == "en" else "Otevřít", exact=True)
+                assert own_row.locator(".dashboard-open").count() == 0
                 more_action = own_row.locator(".row-menu-trigger")
                 assert more_action.get_attribute("aria-label") == ("More actions" if locale == "en" else "Další akce")
                 assert more_action.inner_text() == ""
-                open_box, more_box = open_action.bounding_box(), more_action.bounding_box()
-                assert abs(open_box["y"] - more_box["y"]) <= 2
-                assert open_box["x"] + open_box["width"] <= more_box["x"] + 1
+                more_box = more_action.bounding_box()
                 more_action.click()
                 panel = page.locator(".row-menu-panel.is-open")
                 assert panel.is_visible(), (
                     f"menu did not open: expanded={more_action.get_attribute('aria-expanded')}, "
                     f"scrollY={page.evaluate('window.scrollY')}, menu={own_row.locator('.row-menu').inner_html()}"
                 )
+                assert panel.get_by_role("menuitem", name="Open" if locale == "en" else "Otevřít", exact=True).is_visible()
                 assert panel.get_by_role("menuitem", name="Add a guest" if locale == "en" else "Přidat hosta").is_visible()
                 assert panel.get_by_role("menuitem", name="Open guest form" if locale == "en" else "Otevřít formulář hosta").is_visible()
                 assert panel.locator('button[data-copy][role="menuitem"]').count() == 1
@@ -224,7 +223,7 @@ def test_dashboard_geometry_locales_and_screenshots(dashboard_host, base):
                 copy_source = page.locator(f"#{copy_source_id}")
                 assert copy_source.count() == 1 and copy_source.get_attribute("tabindex") == "-1"
                 if width <= 390:
-                    touch_targets = [open_action, more_action]
+                    touch_targets = [more_action]
                     touch_targets.extend(panel.locator('[role="menuitem"]').all())
                     assert len(touch_targets) >= 6
                     for target in touch_targets:
@@ -233,7 +232,6 @@ def test_dashboard_geometry_locales_and_screenshots(dashboard_host, base):
                             f"touch target is only {target_box['height']}px high in {locale}/{width}"
                         )
                 else:
-                    assert abs(open_box["height"] - 42) <= 1
                     assert abs(more_box["height"] - 42) <= 1
 
                 page.keyboard.press("Escape")
@@ -347,27 +345,24 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                     page.screenshot(path=os.path.join(shots, f"dashboard-{locale}-{width}.png"), full_page=True)
 
                 row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["ready"]}"]')
-                open_action = row.get_by_role("link", name="Open" if locale == "en" else "Otevřít", exact=True)
+                assert row.locator(".dashboard-open").count() == 0
+                primary_link = row.locator(".dashboard-row-property")
                 more_action = row.locator(".row-menu-trigger")
-                open_box, more_box = open_action.bounding_box(), more_action.bounding_box()
-                assert abs(open_box["y"] - more_box["y"]) <= 2
-                assert open_box["x"] + open_box["width"] <= more_box["x"] + 1
+                more_box = more_action.bounding_box()
                 assert more_action.inner_text() == ""
-                assert abs(open_box["height"] - (44 if width <= 760 else 42)) <= 1
                 assert abs(more_box["height"] - (44 if width <= 760 else 42)) <= 1
 
-                before_hover = open_action.evaluate("el => getComputedStyle(el).backgroundColor")
-                open_action.hover()
+                before_hover = row.evaluate("el => getComputedStyle(el).backgroundColor")
+                row.hover()
                 page.wait_for_timeout(350)
-                after_hover = open_action.evaluate("el => getComputedStyle(el).backgroundColor")
-                assert before_hover != after_hover, f"Open link hover did not change in {locale}/{width}"
+                after_hover = row.evaluate("el => getComputedStyle(el).backgroundColor")
+                assert before_hover != after_hover, f"Row hover did not change in {locale}/{width}"
                 if shots:
                     page.screenshot(path=os.path.join(shots, f"dashboard-hover-{locale}-{width}.png"), full_page=True)
 
-                more_action.focus()
-                page.keyboard.press("Shift+Tab")
-                assert open_action.evaluate("el => el === document.activeElement")
-                assert open_action.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
+                primary_link.focus()
+                assert primary_link.evaluate("el => el === document.activeElement")
+                assert primary_link.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
                 if shots:
                     page.screenshot(path=os.path.join(shots, f"dashboard-focus-{locale}-{width}.png"), full_page=True)
 

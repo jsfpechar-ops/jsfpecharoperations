@@ -44,19 +44,30 @@
   {% endif %}
 </div>
 
-{%- set invite_open = (readiness.invite | rejectattr('done') | map(attribute='key') | list) if readiness else [] -%}
-{%- set invite_ok = readiness and (readiness.invite_ready or (setup_finished and invite_open == ['stays'])) -%}
 {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
-{% if setup_finished and readiness and invite_ok and report_missing == 0 %}
-<section class="panel host-setup-complete" aria-label="{{ t('host.setup_details') }}">
-  <p class="small"><span class="readiness-mark" aria-hidden="true">✓</span> {{ t('property_nav.setup_complete') }} {{ t('apartment.form.readiness.invite_ready') }}</p>
-  {{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}
-</section>
-{% endif %}
 {% if readiness and not wizard_active %}
-<section class="panel host-checklist" aria-labelledby="property-readiness-title">
-<h2 id="property-readiness-title" class="property-section-title">{{ t('host.setup_details') }}</h2>
-<section class="readiness">
+<section class="panel host-checklist" data-setup-status aria-labelledby="property-readiness-title">
+  <header class="setup-status-head">
+    <div><h2 id="property-readiness-title">{{ t('host.setup_details') }}</h2><p>{{ t('wizard.overview.status_note') }}</p></div>
+    <span class="pill {{ 'green' if readiness.invite_ready else 'grey' }}">{{ t('apartment.form.readiness.invite_ready') if readiness.invite_ready else t('wizard.overview.invite_pending') }}</span>
+  </header>
+  {% set icons = {'property': 'property', 'calendar': 'calendar', 'guest_link': 'link', 'try_it': 'users', 'police': 'report', 'stay_fee': 'coins', 'door_lock': 'lock', 'automation': 'automation'} %}
+    <ul class="setup-status-grid">
+    {% for row in setup_checklist %}
+    {% set status = row.status if row.status in ['done', 'skipped', 'waiting'] else 'todo' %}
+    <li class="setup-status-tile is-{{ status }}" data-overview-setup-step="{{ row.key }}">
+      <span class="setup-status-icon" aria-hidden="true">{{ nav_icon(icons[row.key]) }}</span>
+      <div class="setup-status-copy">
+        <div class="setup-status-label"><strong>{{ t('wizard.summary.' ~ row.key) if row.key in ['calendar', 'try_it'] else t('wizard.step.' ~ row.key) }}</strong>
+        </div>
+        <span class="pill {{ 'green' if status == 'done' else 'amber' if status == 'waiting' else 'grey' }}">{{ t('wizard.summary.status.' ~ status) }}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  <details class="setup-readiness-help">
+    <summary><span aria-hidden="true">?</span> {{ t('wizard.overview.details') }}</summary>
+    <section class="readiness">
   <div class="readiness-group">
     <h3 class="readiness-title">{{ t('apartment.form.readiness.invite_title') }}</h3>
     <ul class="readiness-list">
@@ -87,5 +98,7 @@
       {% endfor %}
     </ul>
   </div>
-</section></section>
+</section>
+  </details>
+</section>
 {% endif %}

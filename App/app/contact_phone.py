@@ -11,7 +11,7 @@ _TWO_DIGIT_CODES = frozenset(
 
 
 def form_parts(value: str) -> Dict[str, str]:
-    """Split international numbers; suggest +420 for a blank or Czech local number."""
+    """Split international numbers; suggest +420 for a Czech local number."""
     raw = (value or "").strip()
     compact = re.sub(r"[\s().-]", "", raw)
     if compact.startswith("00"):
@@ -21,7 +21,9 @@ def form_parts(value: str) -> Dict[str, str]:
         size = 1 if digits[:1] in ("1", "7") else 2 if digits[:2] in _TWO_DIGIT_CODES else 3
         if len(digits) > size:
             return {"code": "+" + digits[:size], "number": digits[size:]}
-    if not raw or (compact.isdigit() and len(compact) == 9):
+    if not raw:
+        return {"code": "", "number": ""}
+    if compact.isdigit() and len(compact) == 9:
         return {"code": "+420", "number": compact}
     # Keep unusual legacy formats intact rather than guessing their country.
     return {"code": "", "number": raw}
@@ -40,6 +42,6 @@ def with_country_code(code: str, number: str) -> str:
     prefix = (code or "").strip()
     if prefix and not prefix.startswith("+"):
         prefix = "+" + prefix
-    if re.fullmatch(r"\+[1-9][0-9]{0,3}", prefix) and compact.isdigit():
+    if re.fullmatch(r"\+[1-9][0-9]{0,2}", prefix) and compact.isdigit():
         return prefix + compact
     return raw

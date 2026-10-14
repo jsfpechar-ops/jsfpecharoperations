@@ -24,9 +24,10 @@
   </div>
 </section>
 <section class="setup-demo-message" aria-labelledby="demo-message-heading">
-  <header><span class="setup-demo-mark" aria-hidden="true">{{ message_operator_first_name[:1] }}</span><div><h2 id="demo-message-heading">{{ t('wizard.try_it.message') }}</h2><strong>{{ message_operator_first_name }}</strong></div>{{ help_tip('demo-message-help', t('wizard.try_it.message_help')) }}</header>
+  <header><span class="setup-demo-mark" aria-hidden="true">{{ message_operator_first_name[:1] }}</span><div><h2 id="demo-message-heading">{{ t('wizard.try_it.message') }} <span class="pill grey">{{ t('wizard.try_it.preview') }}</span></h2><strong>{{ message_operator_first_name }}</strong></div>{{ help_tip('demo-message-help', t('wizard.try_it.message_help')) }}</header>
+  <p class="setup-wizard-instruction setup-demo-disclaimer">{{ t('wizard.try_it.model_note') }}</p>
   {% set message_url = permalink %}
-  {% set message_text = t('wizard.guest_link.message_template', url=message_url, pin=pin, operator_first_name=message_operator_first_name) %}
+  {% set message_text = t('wizard.guest_link.message_template', url=message_url, pin=pin, operator_first_name=message_operator_first_name, property_name=apartment.internal_name) %}
   <div class="setup-demo-bubble">{% for part in message_text.split(message_url) %}{{ part }}{% if not loop.last %}{% if demo_state == 'none' %}<button class="setup-demo-message-link" type="submit" form="setup-create-demo">{{ message_url }}</button>{% else %}<a href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ message_url }}</a>{% endif %}{% endif %}{% endfor %}</div>
   <p class="setup-wizard-instruction">{{ t('wizard.try_it.instructions') }}</p>
 </section>

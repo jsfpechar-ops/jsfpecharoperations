@@ -108,6 +108,9 @@ Upcoming/current and Past available as views. Default collapsed summary:
 range, using one **Stay dates** control in the panel. Keep existing status,
 property, archive, list/timeline and saved filters. A row shows arrival date,
 property or booking label, stay range, guest count, and only a meaningful status.
+Owner direction, 2026-10-14: keep Open and Copy guest form link inside the
+three-dot menu, with the native date/property link available. Remove the portal
+shortcut. Paint hover and focus across the whole row, including grid gaps.
 “Add stay” opens a short path: property → dates → expected guests → save.
 Calendar import, manual creation and sync remain available. Empty states
 distinguish no property, no calendar, no matching filter and no stays.
@@ -136,7 +139,7 @@ Local Stays tab “Guest register”. Preserve filter, archival, retention, lega
 
 ### Property list and detail
 
-Property list cards/rows show name, location, one truthful setup state, and a clear Open action. Owner decision 2026-10-10: remove the duplicate Property tools menu inside individual property pages. The Properties landing page provides useful cross-property overview links, also reachable through Search. Business details are a local tab or section of Properties, because they are used by properties and invoices. Do not duplicate a legal entity just to make the UI appear property-specific; show the assigned entity on each property and provide a direct link to its shared record.
+Property list cards/rows show name, location and one truthful setup state. Owner direction, 2026-10-14: click the row or its native text link to open it, or choose Open from its three-dot menu. Do not repeat an Open button beside that menu. Owner decision 2026-10-10: remove the duplicate Property tools menu inside individual property pages. The Properties landing page provides useful cross-property overview links, also reachable through Search. Business details are a local tab or section of Properties, because they are used by properties and invoices. Do not duplicate a legal entity just to make the UI appear property-specific; show the assigned entity on each property and provide a direct link to its shared record.
 
 Property detail groups existing sections into readable cards: **Bookings** (feeds/sync), **Guest link** (copy URL, PIN, regenerate with warning), **Police reporting** (UbyPort credentials, test connection, code lists, automation; the example police letter is linked beside the heading, each field has a `?` naming its line on the police letter, and the facility name is never prefilled, 0097), **Business details** (assigned entity, contact), **Stay fee** (optional, rate and council/payment inputs). Keep advanced technical fields in their section, not on the landing view. Section links or anchored tabs should be stable across failed submissions.
 

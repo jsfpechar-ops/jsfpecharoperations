@@ -123,9 +123,6 @@
         {% else %}
           <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
         {% endif %}
-      {% elif not stay_inactive %}
-        <button class="btn primary" type="button" data-copy="stay-link"
-                data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
       {% endif %}
       {% if stay_invoice %}
         <a class="btn" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>
@@ -315,8 +312,7 @@
           <h3>{{ t('stay.detail.guests.placeholder', n=n) }}</h3>
         </div>
         <div class="guest-card-state">
-          {% if not stay_inactive %}<button class="btn small" type="button" data-copy="stay-link"
-                  data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>{% endif %}
+          
           <a class="btn small" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
           {% if not stay_inactive and progress.expected > 1 %}
           <form method="post" action="/reservations/{{ reservation.id }}/remove-empty-slot" data-confirm data-confirm-title="{{ t('host.remove_slot') }}" data-confirm-message="{{ t('host.remove_slot_confirm') }}">
