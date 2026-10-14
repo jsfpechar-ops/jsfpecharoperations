@@ -333,6 +333,27 @@ def _send_code_mail(door_code_id: int) -> None:
     mail.drain(limit=4)
 
 
+def _period_code_held_by_other(
+    lock_id: str,
+    code_id: str,
+    start_ms: int,
+    end_ms: int,
+    door_code_id: int,
+) -> bool:
+    """True when another stay already stores this TTLock period code.
+
+    Type-3 ``get`` for a period whose earlier code was never deleted returns
+    that same code (TTLock support, 2026-10-12). The new stay must not adopt it.
+    """
+    return bool(
+        db.query_one(
+            "SELECT id FROM door_code WHERE lock_id = ? AND provider_code_id = ? "
+            "AND valid_from = ? AND valid_to = ? AND id != ?",
+            (lock_id, str(code_id), _ms_to_iso(start_ms), _ms_to_iso(end_ms), door_code_id),
+        )
+    )
+
+
 def _create_random(
     account_id: int,
     lock_id: str,
@@ -343,12 +364,7 @@ def _create_random(
     door_code_id: int,
 ) -> Tuple[str, str]:
     pin, code_id = ttlock.create_period_code(account_id, lock_id, start_ms, end_ms, name, priority)
-    other = db.query_one(
-        "SELECT id FROM door_code WHERE lock_id = ? AND provider_code_id = ? "
-        "AND valid_from = ? AND valid_to = ? AND id != ?",
-        (lock_id, str(code_id), _ms_to_iso(start_ms), _ms_to_iso(end_ms), door_code_id),
-    )
-    if other:
+    if _period_code_held_by_other(lock_id, code_id, start_ms, end_ms, door_code_id):
         raise ttlock.TTLockError("period already has an undeleted code", kind=PERIOD_SHARED)
     return pin, code_id
 
@@ -428,8 +444,31 @@ def issue(door_code_id: int, *, allow_gateway: bool = False) -> bool:
                 int(account["id"]), row["lock_id"], name, start_ms, end_ms
             )
             if found:
-                pin, code_id = found
-                kind = "custom" if taken else "random"
+                found_pin, found_id = found
+                if _period_code_held_by_other(
+                    row["lock_id"], found_id, start_ms, end_ms, door_code_id
+                ):
+                    # ``get`` names the returned period code UH-<id>. A retry
+                    # then finds it by that name and would hand the cancelled
+                    # stay's PIN to the new guest. Skip it; the custom-code
+                    # path below issues a code of this stay's own.
+                    log.error(
+                        "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s",
+                        PERIOD_SHARED,
+                        reservation["id"],
+                        door_code_id,
+                    )
+                    mail_notify.door_code_notice(door_code_id, PERIOD_SHARED)
+                    mail.drain(limit=4)
+                    if not taken:
+                        taken = True
+                        db.execute(
+                            "UPDATE door_code SET last_error = ? WHERE id = ?",
+                            ("period_taken:shared", door_code_id),
+                        )
+                else:
+                    pin, code_id = found_pin, found_id
+                    kind = "custom" if taken else "random"
         if pin is None:
             if taken and allow_gateway:
                 via_add = True

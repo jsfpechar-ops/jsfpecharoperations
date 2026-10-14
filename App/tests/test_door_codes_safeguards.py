@@ -1061,6 +1061,44 @@ def test_a_bad_window_delayed_mail_does_not_promise_retries():
     assert "keeps trying" not in body
 
 
+def test_registration_retry_does_not_adopt_a_shared_period_code(monkeypatch):
+    """Guest registration issues without the gateway, so the worker retries.
+
+    TTLock ``get`` names the existing period code UH-<new id>. ``find_code_by_name``
+    would then adopt that PIN on the second attempt and hand the cancelled
+    stay's code to the new guest.
+    """
+
+    def offline(*args, **kwargs):
+        raise ttlock.TTLockError("gateway offline", code=-2012, kind="offline")
+
+    monkeypatch.setattr(ttlock, "create_period_code", lambda *a, **k: ("4821937", "rand-1"))
+    monkeypatch.setattr(ttlock, "add_custom_code", lambda *a, **k: ("7654321", "add-1"))
+    monkeypatch.setattr(ttlock, "delete_code", offline)
+    _, _, first = _stay(registered_minutes_ago=1)
+    door_codes.reconcile()
+    db.execute(
+        "UPDATE reservation SET status = 'cancelled', updated_at = ? WHERE id = ?",
+        (db.utcnow(), first),
+    )
+    door_codes.reconcile()
+
+    _, _, second = _stay(registered_minutes_ago=1)
+    row_id = door_codes.ensure_row(second)
+    assert door_codes.issue(row_id) is False
+    monkeypatch.setattr(ttlock, "find_code_by_name", lambda *a, **k: ("4821937", "rand-1"))
+    db.execute(
+        "UPDATE door_code SET next_attempt_at = NULL, claimed_at = NULL WHERE id = ?",
+        (row_id,),
+    )
+    assert door_codes.issue(row_id, allow_gateway=True) is True
+    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (second,))
+    assert row["state"] == door_codes.ISSUED
+    assert row["provider_code_id"] == "add-1"
+    assert row["code_kind"] == "custom"
+    assert db.decrypt_field(row["pin_enc"]) == "7654321"
+
+
 def test_the_monthly_limit_error_counts_as_budget():
     assert ttlock.ERROR_KINDS[30007] == "budget"
 
