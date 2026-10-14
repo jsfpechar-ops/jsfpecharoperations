@@ -4,7 +4,7 @@
 <p class="setup-wizard-lede">{{ t('setup_guide.automation.text') }}</p>
 <form method="post" action="/apartments/{{ apartment.id }}/automation-timing" class="setup-wizard-form" id="automation-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/done">
+  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
   <input type="hidden" name="setup_step" value="automation">
   <div class="setup-wizard-radios">
     <label class="setup-wizard-radio-card">

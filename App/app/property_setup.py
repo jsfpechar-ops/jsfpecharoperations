@@ -27,6 +27,40 @@ SKIPPABLE = frozenset({"calendar", "try_it", "stay_fee", "door_lock"})
 TEACHING = frozenset({"guest_link", "try_it"})
 MARKS = ("done", "skipped", "waiting")
 
+# Columns each wizard save may write. Hidden passthrough fields on a step form are
+# not listed here, so a partial post cannot blank another step's data.
+STEP_FIELDS: Dict[str, tuple] = {
+    "property": (
+        "internal_name",
+        "city_en",
+        "legal_entity_id",
+        "data_controller_entity_id",
+        "default_purpose",
+        "addr_okres",
+        "addr_obec",
+        "addr_obec_cast",
+        "addr_street",
+        "addr_house_no",
+        "addr_orient_no",
+        "addr_zip",
+    ),
+    "police": ("uby_idub", "uby_mark", "uby_name", "uby_contact", "uby_ws_user"),
+    "stay_fee": (
+        "stay_fee_rate_czk",
+        "stay_fee_cadence",
+        "stay_fee_vs",
+        "stay_fee_authority_name",
+        "stay_fee_authority_address",
+        "stay_fee_authority_contact",
+        "stay_fee_authority_databox",
+        "stay_fee_payee",
+        "stay_fee_instruction",
+        "stay_fee_council_account",
+    ),
+    "door_lock": ("lock_provider", "lock_id", "checkin_hour", "checkout_hour"),
+    "automation": ("automation_mode", "submit_after_hours"),
+}
+
 # Stored JSON from 0096/0100 used older step ids; map them on read.
 _LEGACY_STEP_ALIASES = {
     "guest_links": "guest_link",
@@ -154,6 +188,23 @@ def step_applicable(step: str, apartment, *, lock_available: bool) -> bool:
     if step == "door_lock" and not lock_available:
         return False
     return step in STEPS
+
+
+def next_applicable_step(
+    step: str,
+    apartment,
+    *,
+    lock_available: bool,
+) -> Optional[str]:
+    """Next wizard step that exists for this property, or ``done`` after the last."""
+    step = _normalise_step(step)
+    if step not in STEPS:
+        return None
+    index = STEPS.index(step)
+    for nxt in STEPS[index + 1 :]:
+        if step_applicable(nxt, apartment, lock_available=lock_available):
+            return nxt
+    return "done"
 
 
 def prev_applicable_step(

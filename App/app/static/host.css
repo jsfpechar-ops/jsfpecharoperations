@@ -1513,6 +1513,7 @@ body.host-workspace {
 .setup-wizard-foot .btn.primary { margin-left: auto; }
 .setup-wizard-skip { margin-right: auto; }
 .setup-wizard-skip .link-button { min-height: 44px; }
+.setup-wizard-lock-field { max-width: 320px; }
 .setup-wizard-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
 @media (max-width: 599px) { .setup-wizard-cards { grid-template-columns: 1fr; } }
 .setup-wizard-card { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
@@ -1532,6 +1533,7 @@ body.host-workspace {
 .setup-wizard-checklist li.is-waiting { color: var(--amber, #b7791f); }
 .setup-continue-card .actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 10px; }
 .host-property-card-static { cursor: default; text-decoration: none; color: inherit; }
+.host-property-card-actions { margin-top: 8px; }
 /* end 0102 */
 
 /* 0098 */

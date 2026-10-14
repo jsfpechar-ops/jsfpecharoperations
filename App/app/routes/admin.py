@@ -287,7 +287,7 @@ def _missing_report_labels(request: Request, issues) -> List[str]:
     ]
 
 
-def _form_return_to(form, default: str) -> str:
+def _form_return_to(form, default: str, *, keep_fragment: bool = False) -> str:
     raw = _form_str(form, "return_to")
     if not raw:
         return default
@@ -298,7 +298,7 @@ def _form_return_to(form, default: str) -> str:
         path = security.safe_local_path(unquote(raw), "")
     if not path:
         return default
-    if fragment and re.fullmatch(r"[\w-]+", fragment):
+    if keep_fragment and fragment and re.fullmatch(r"[\w-]+", fragment):
         return f"{path}#{fragment}"
     return path
 
@@ -1363,6 +1363,39 @@ def _property_copy_form_context(
     }
 
 
+def _wizard_setup_step(form) -> str:
+    step = _form_str(form, "setup_step")
+    return step if step in property_setup.STEPS else ""
+
+
+def _wizard_step_payload(form, step: str) -> Dict[str, Any]:
+    """Only the columns this wizard step owns."""
+    from . import stay_fees as stay_fee_routes
+
+    payload: Dict[str, Any] = {}
+    if step == "property":
+        for field in property_setup.STEP_FIELDS["property"]:
+            if field in APARTMENT_TEXT_FIELDS:
+                payload[field] = _form_str(form, field)
+        if "addr_zip" in payload:
+            payload["addr_zip"] = validation.normalise_zip(payload.get("addr_zip", ""))
+        payload["legal_entity_id"] = _form_int(form, "legal_entity_id")
+        payload["data_controller_entity_id"] = _form_int(form, "data_controller_entity_id")
+        purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
+        payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
+    elif step == "police":
+        for field in property_setup.STEP_FIELDS["police"]:
+            payload[field] = _form_str(form, field)
+        payload["uby_mark"] = payload["uby_mark"].upper()
+    elif step == "stay_fee":
+        payload.update(stay_fee_routes.fee_form_values(form))
+    elif step == "door_lock":
+        pass
+    elif step == "automation":
+        payload.update(_automation_timing_values(form))
+    return payload
+
+
 def _automation_timing_values(form) -> Dict[str, Any]:
     """The one normaliser for "When to send to UbyPort" (mode + delay hours).
 
@@ -1562,21 +1595,67 @@ def _setup_state(apartment, *, feeds: int, report_complete: bool, stays: int) ->
     return property_setup.legacy_state()
 
 
+def _setup_guide_bundle(
+    apartment,
+    *,
+    feeds: Optional[List[Any]] = None,
+    lock_available: Optional[bool] = None,
+) -> Dict[str, Any]:
+    """Feeds, facts, stored state and the current guide — one load per request."""
+    apt_id = apartment["id"]
+    if feeds is None:
+        feeds = db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apt_id,))
+    feed_count = len(feeds)
+    issues = _apartment_issues(apartment)
+    report_complete = all(
+        item["done"]
+        for item in _readiness(apartment, [], issues, bool(feeds), invite=False)["report"]
+    )
+    facts_row = _setup_facts(apt_id)
+    facts_payload = {
+        "feeds": feed_count,
+        "stays": facts_row["stays"],
+        "guests_registered": facts_row["guests_registered"],
+        "report_complete": report_complete,
+    }
+    state = _setup_state(
+        apartment, feeds=feed_count, report_complete=report_complete, stays=facts_row["stays"]
+    )
+    if lock_available is None:
+        lock_available = ttlock.allowed_for(apartment["owner_user_id"])
+    guide = None
+    if state and not state.get("finished"):
+        guide = property_setup.current(
+            apartment,
+            state,
+            feeds=feed_count,
+            report_complete=report_complete,
+            lock_available=lock_available,
+            stays=facts_row["stays"],
+            guests_registered=facts_row["guests_registered"],
+        )
+    return {
+        "feeds": feeds,
+        "feed_count": feed_count,
+        "facts_payload": facts_payload,
+        "facts_row": facts_row,
+        "state": state,
+        "guide": guide,
+        "report_complete": report_complete,
+        "lock_available": lock_available,
+    }
+
+
 def _setup_progress(apartment, feeds, readiness, lock_available: bool) -> Optional[Dict[str, Any]]:
     """0102: compact setup progress for the property Overview card."""
     report_complete = all(item["done"] for item in readiness["report"])
-    facts = _setup_facts(apartment["id"])
-    state = _setup_state(
-        apartment, feeds=len(feeds), report_complete=report_complete, stays=facts["stays"]
+    bundle = _setup_guide_bundle(
+        apartment, feeds=feeds, lock_available=lock_available
     )
+    state = bundle["state"]
+    facts_payload = bundle["facts_payload"]
     if not state or state["finished"]:
         return None
-    facts_payload = {
-        "feeds": len(feeds),
-        "stays": facts["stays"],
-        "guests_registered": facts["guests_registered"],
-        "report_complete": report_complete,
-    }
     if state.get("hidden"):
         return {
             "hidden": True,
@@ -1586,15 +1665,7 @@ def _setup_progress(apartment, feeds, readiness, lock_available: bool) -> Option
             "total": property_setup.TOTAL_STEPS,
             "continue_url": property_setup.wizard_url(apartment["id"], "calendar"),
         }
-    guide = property_setup.current(
-        apartment,
-        state,
-        feeds=len(feeds),
-        report_complete=report_complete,
-        lock_available=lock_available,
-        stays=facts["stays"],
-        guests_registered=facts["guests_registered"],
-    )
+    guide = bundle["guide"]
     if guide is None and not state["finished"] and property_setup.load(apartment["id"]):
         property_setup.finish(apartment["id"])
         return None
@@ -1949,20 +2020,13 @@ def _setup_after_save(
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return None
-    feeds = db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
+    bundle = _setup_guide_bundle(apartment)
+    facts_payload = bundle["facts_payload"]
+    facts_row = bundle["facts_row"]
+    report_complete = bundle["report_complete"]
+    lock_available = bundle["lock_available"]
+    feeds = bundle["feeds"]
     issues = _apartment_issues(apartment)
-    report_complete = all(
-        item["done"]
-        for item in _readiness(apartment, [], issues, bool(feeds), invite=False)["report"]
-    )
-    facts_row = _setup_facts(apartment_id)
-    lock_available = ttlock.allowed_for(apartment["owner_user_id"])
-    facts_payload = {
-        "feeds": len(feeds),
-        "stays": facts_row["stays"],
-        "guests_registered": facts_row["guests_registered"],
-        "report_complete": report_complete,
-    }
     if step == "property" and property_setup.property_details_complete(apartment):
         property_setup.mark(apartment_id, step, "done")
     elif step == "police" and report_complete:
@@ -2032,29 +2096,54 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
-    payload = _apartment_payload(form)
-    # 0088: an ordinary save never switches a property off; archived stays off.
-    payload["active"] = 0 if apartment["archived_at"] else 1
-    if "automation_mode" not in form:
-        for key in ("automation_mode", "submit_after_hours", "default_purpose"):
-            payload.pop(key, None)
+    setup_step = _wizard_setup_step(form)
+    if setup_step:
+        payload = _wizard_step_payload(form, setup_step)
+    else:
+        payload = _apartment_payload(form)
+        # 0088: an ordinary save never switches a property off; archived stays off.
+        payload["active"] = 0 if apartment["archived_at"] else 1
+        if "automation_mode" not in form:
+            for key in ("automation_mode", "submit_after_hours", "default_purpose"):
+                payload.pop(key, None)
     if "operator_refresh" in form:
         return _refuse_apartment_save(request, apartment, form, None), False
-    operator_error = _property_operator_error(request, form, payload)
-    if operator_error:
-        return _refuse_apartment_save(request, apartment, form, operator_error), False
-    if "data_controller_entity_id" not in form:
-        # A form without the controller selector must not clear an override.
-        payload.pop("data_controller_entity_id", None)
-    elif payload["data_controller_entity_id"] == payload["legal_entity_id"]:
-        payload["data_controller_entity_id"] = None
-    _apply_police_defaults(payload, access.entities(request))
+    if not setup_step or setup_step == "property":
+        operator_error = _property_operator_error(request, form, payload)
+        if operator_error:
+            return _refuse_apartment_save(request, apartment, form, operator_error), False
+        if "data_controller_entity_id" not in form:
+            # A form without the controller selector must not clear an override.
+            payload.pop("data_controller_entity_id", None)
+        elif payload.get("data_controller_entity_id") == payload.get("legal_entity_id"):
+            payload["data_controller_entity_id"] = None
+    elif "legal_entity_id" in form:
+        probe = dict(apartment)
+        raw_entity = _form_str(form, "legal_entity_id")
+        try:
+            probe["legal_entity_id"] = int(raw_entity) if raw_entity else apartment.get("legal_entity_id")
+        except (TypeError, ValueError):
+            probe["legal_entity_id"] = None
+        operator_error = _property_operator_error(request, form, probe)
+        if operator_error:
+            from .onboarding_wizard import refuse_setup_save
+
+            refused = refuse_setup_save(request, apartment, form, operator_error=operator_error)
+            if refused:
+                return refused, False
+    if setup_step == "police":
+        _apply_police_defaults(payload, access.entities(request))
+    elif not setup_step:
+        _apply_police_defaults(payload, access.entities(request))
     address_mismatch = False
-    for field in _ADDRESS_ONLY_FIELDS:
-        if field not in form:
-            # A section form without address inputs must not blank the address.
-            payload.pop(field, None)
-    if any(field in form for field in _ADDRESS_ONLY_FIELDS):
+    if not setup_step:
+        for field in _ADDRESS_ONLY_FIELDS:
+            if field not in form:
+                # A section form without address inputs must not blank the address.
+                payload.pop(field, None)
+    if setup_step == "property" or (
+        not setup_step and any(field in form for field in _ADDRESS_ONLY_FIELDS)
+    ):
         # The address stays complete once the property exists: a Settings save
         # that clears or breaks it is refused with the typed values kept.
         merged = dict(apartment)
@@ -2063,7 +2152,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         if address_errors:
             return _refuse_apartment_save(request, apartment, form, None, address_errors), False
     password = _form_str(form, "uby_ws_password")
-    if _form_str(form, "setup_step") == "police":
+    if setup_step == "police":
         police_errors = _wizard_police_format_errors(apartment, payload, password)
         if police_errors:
             from .onboarding_wizard import refuse_setup_save
@@ -2073,28 +2162,36 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             )
             if refused:
                 return refused, False
-    if password:
+    if password and (not setup_step or setup_step == "police"):
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
     pin_raw = _form_str(form, "permalink_pin")
-    if pin_raw:
+    if pin_raw and not setup_step:
         pin = auth.normalise_permalink_pin(pin_raw)
         if not pin or len(pin) != 6:
             return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits")), False
         payload["permalink_pin"] = pin
-    try:
-        stay_fee_routes.apply_fee_account(payload)
-    except ValueError:
-        return refuse_fee_save(request, apartment, form), False
+    if setup_step in ("", "stay_fee"):
+        try:
+            stay_fee_routes.apply_fee_account(payload)
+        except ValueError:
+            return refuse_fee_save(request, apartment, form), False
     # AR-18: the refused-login pause exists so the police account is not
     # hammered every ten minutes. Only replacing the credentials may lift it;
     # renaming the property or moving the PIN must not resume the retries.
-    credentials_changed = bool(password) or (
-        (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
-    )
+    credentials_changed = False
+    if setup_step == "police":
+        credentials_changed = bool(password) or (
+            (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
+        )
+    elif not setup_step:
+        credentials_changed = bool(password) or (
+            (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
+        )
     prior_lock_provider = apartment["lock_provider"]
     if (
         _form_str(form, "door_code_section") == "1"
         and ttlock.allowed_for(apartment["owner_user_id"])
+        and (not setup_step or setup_step == "door_lock")
     ):
         owner_id = apartment["owner_user_id"]
         if _form_str(form, "door_codes") == "1":
@@ -2247,7 +2344,7 @@ async def automation_timing_save(apartment_id: int, request: Request):
     message = _flash(request, "flash.properties.timing_saved")
     if as_json:
         return JSONResponse({"ok": True, "message": str(message), **values})
-    return_to = _form_return_to(form, _PROPERTY_SUMMARIES)
+    return_to = _form_return_to(form, _PROPERTY_SUMMARIES, keep_fragment=True)
     wizard_response = _setup_after_save(
         request, apartment_id, form, return_to, saved_message=message
     )
@@ -2501,9 +2598,17 @@ async def add_feed(apartment_id: int, request: Request):
     )
     totals = await run_in_threadpool(icalsync.sync_all, apartment_id)
     if totals["errors"]:
+        from .onboarding_wizard import wizard_setup_prefix
+
+        err = _flash(request, "flash.error.feed_added_unreadable")
+        if return_to.startswith(wizard_setup_prefix(apartment_id)):
+            step = _wizard_setup_step(form) or "calendar"
+            if step not in property_setup.STEPS:
+                step = "calendar"
+            return _back(property_setup.wizard_url(apartment_id, step), err=err)
         return _back(
             f"/apartments/{apartment_id}?view=bookings#calendars",
-            err=_flash(request, "flash.error.feed_added_unreadable"),
+            err=err,
         )
     return _back(
         return_to,

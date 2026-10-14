@@ -79,9 +79,8 @@
     if (!root) return;
     var target = root.querySelector(kind === "error" || kind === "warning" ? "[data-feedback-alert]" : "[data-feedback-live]");
     if (!target) return;
-    // Set the text in this turn. A delayed write left the live region empty
-    // for the copy confirmation the host (and the tests) read immediately.
-    target.textContent = message;
+    target.textContent = "";
+    window.setTimeout(function () { target.textContent = message; }, 20);
   }
 
   function toastKind(toast) {

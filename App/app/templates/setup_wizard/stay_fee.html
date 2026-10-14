@@ -7,7 +7,7 @@
 <p class="setup-wizard-lede">{{ t('setup_guide.fee.text') }}</p>
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="stay-fee-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/door_lock">
+  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
   <input type="hidden" name="setup_step" value="stay_fee">
   <input type="hidden" name="internal_name" value="{{ apartment.internal_name }}">
   <input type="hidden" name="legal_entity_id" value="{{ apartment.legal_entity_id }}">

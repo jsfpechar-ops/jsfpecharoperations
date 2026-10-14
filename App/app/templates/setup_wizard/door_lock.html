@@ -5,7 +5,7 @@
 {% if door_code %}
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="door-lock-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/automation">
+  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
   <input type="hidden" name="setup_step" value="door_lock">
   <input type="hidden" name="door_code_section" value="1">
   <input type="hidden" name="internal_name" value="{{ apartment.internal_name }}">
@@ -26,7 +26,7 @@
       <span>{{ t('property_nav.door_switch') }}</span>
     </label>
   </div>
-  <div class="field" style="max-width:320px"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
+  <div class="field setup-wizard-lock-field"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
     <select id="lock_id" name="lock_id"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
       {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and lock.lock_id == door_code.default_lock_id) %}selected{% endif %}>{{ lock.alias }}</option>{% endfor %}
     </select>

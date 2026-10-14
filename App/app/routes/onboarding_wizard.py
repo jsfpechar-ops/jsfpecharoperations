@@ -24,10 +24,6 @@ _SETUP_ACTIONS = {
 _SETUP_MARKS = {"skip": "skipped", "wait": "waiting"}
 
 
-def _wizard_step_path(apartment_id: int, step: str) -> str:
-    return property_setup.wizard_url(apartment_id, step)
-
-
 def wizard_return_to(apartment_id: int, step: str) -> str:
     """The return_to target after a wizard step save."""
     return property_setup.wizard_url(apartment_id, step)
@@ -80,27 +76,14 @@ def _wizard_context(
         invite=False,
     )
     report_complete = all(item["done"] for item in readiness["report"])
-    facts = admin_routes._setup_facts(apartment_id)
-    facts_payload = {
-        "feeds": len(feeds),
-        "stays": facts["stays"],
-        "guests_registered": facts["guests_registered"],
-        "report_complete": report_complete,
-    }
-    state = admin_routes._setup_state(
-        apartment, feeds=len(feeds), report_complete=report_complete, stays=facts["stays"]
-    )
     door_code = _door_code_context(apartment, apartment_id)
     lock_available = door_code is not None
-    guide = property_setup.current(
-        apartment,
-        state,
-        feeds=len(feeds),
-        report_complete=report_complete,
-        lock_available=lock_available,
-        stays=facts["stays"],
-        guests_registered=facts["guests_registered"],
+    bundle = admin_routes._setup_guide_bundle(
+        apartment, feeds=feeds, lock_available=lock_available
     )
+    facts_payload = bundle["facts_payload"]
+    state = bundle["state"]
+    guide = bundle["guide"]
     link_key = guest_slug.link_key(apartment)
     lang = host_i18n.lang_from_request(request)
     setup_demo = None
@@ -152,6 +135,11 @@ def _wizard_context(
             step, apartment, lock_available=lock_available
         ),
         "next_step": property_setup.next_step(step),
+        "wizard_next_return_to": property_setup.wizard_url(
+            apartment_id,
+            property_setup.next_applicable_step(step, apartment, lock_available=lock_available)
+            or "done",
+        ),
         "entities": access.entities(request),
         "nav": "apartments",
         "show_nav": True,
@@ -201,33 +189,38 @@ def refuse_setup_save(
     step = _posted_setup_step(form)
     if not step:
         return None
+    admin_routes = _admin_helpers()
+    owned = set(property_setup.STEP_FIELDS.get(step, ()))
     draft = dict(apartment)
-    for key in form.keys():
-        if key in draft or key.startswith(
-            (
-                "uby_",
-                "addr_",
-                "stay_fee",
-                "account_",
-                "automation",
-                "door_",
-                "lock",
-                "checkin",
-                "checkout",
-                "internal_name",
-                "legal_entity",
-                "city_en",
-                "default_purpose",
-            )
-        ):
-            if key == "legal_entity_id":
-                raw = _form_str(form, key)
-                try:
-                    draft[key] = int(raw) if raw else apartment.get("legal_entity_id")
-                except (TypeError, ValueError):
-                    draft[key] = None
-            else:
+    for field in admin_routes.APARTMENT_TEXT_FIELDS:
+        if field in owned and field in form:
+            draft[field] = _form_str(form, field)
+    if "legal_entity_id" in owned and "legal_entity_id" in form:
+        raw = _form_str(form, "legal_entity_id")
+        try:
+            draft["legal_entity_id"] = int(raw) if raw else apartment.get("legal_entity_id")
+        except (TypeError, ValueError):
+            draft["legal_entity_id"] = None
+    if "data_controller_entity_id" in owned and "data_controller_entity_id" in form:
+        draft["data_controller_entity_id"] = _form_str(form, "data_controller_entity_id")
+    if "default_purpose" in owned and "default_purpose" in form:
+        draft["default_purpose"] = _form_str(form, "default_purpose")
+    if step == "stay_fee":
+        from . import stay_fees as stay_fee_routes
+
+        for key, value in stay_fee_routes.fee_form_values(form).items():
+            if key != stay_fee_routes.FEE_ACCOUNT_RAW:
+                draft[key] = value
+        for key in ("account_prefix", "account_number", "account_bank"):
+            if key in form:
                 draft[key] = _form_str(form, key)
+    if step == "automation":
+        draft["automation_mode"] = _form_str(form, "automation_mode")
+        draft["submit_after_hours"] = _form_str(form, "submit_after_hours")
+    if "guest_message" in owned and "guest_message" in form:
+        draft["guest_message"] = _form_str(form, "guest_message")
+    if "notes" in owned and "notes" in form:
+        draft["notes"] = _form_str(form, "notes")
     extra = {
         "draft": draft,
         "police_errors": police_errors or {},
@@ -311,7 +304,7 @@ async def setup_action(apartment_id: int, request: Request):
     if step == "try_it" and action == "demo":
         demo.create_demo_stay(apartment_id)
         db.audit("property_setup_step", f"apartment={apartment_id} step=try_it action=demo")
-        return _back(_wizard_step_path(apartment_id, "try_it"))
+        return _back(wizard_return_to(apartment_id, "try_it"))
     if step == "try_it" and action == "done" and not (stay and reporting.reservation_progress(stay)["filled"] >= 1):
         return _back(guide["url"])
     if action == "keep_demo":
@@ -322,11 +315,11 @@ async def setup_action(apartment_id: int, request: Request):
             return _back(nxt["url"])
         property_setup.finish(apartment_id)
         return _back(
-            _wizard_step_path(apartment_id, "done"),
+            wizard_return_to(apartment_id, "done"),
             msg=_flash(request, "flash.setup.complete"),
         )
     deleted = False
-    if step == "try_it" and action == "done" and stay:
+    if step == "try_it" and action in ("done", "skip") and stay:
         deleted = demo.delete_demo_stay(stay["id"], apartment_id)
     if action == "wait" and step == "police":
         property_setup.mark(apartment_id, step, "waiting")
@@ -341,6 +334,6 @@ async def setup_action(apartment_id: int, request: Request):
         )
     property_setup.finish(apartment_id)
     return _back(
-        _wizard_step_path(apartment_id, "done"),
+        wizard_return_to(apartment_id, "done"),
         msg=_flash(request, "flash.setup.complete"),
     )

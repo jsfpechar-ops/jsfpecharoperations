@@ -21,7 +21,7 @@
 <p class="setup-wizard-lede">{{ t('setup_guide.reporting.text') }}</p>
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="police-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/stay_fee">
+  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
   <input type="hidden" name="setup_step" value="police">
   <input type="hidden" name="internal_name" value="{{ values.internal_name }}">
   <input type="hidden" name="legal_entity_id" value="{{ values.legal_entity_id }}">

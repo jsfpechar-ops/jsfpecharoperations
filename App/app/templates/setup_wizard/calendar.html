@@ -7,7 +7,7 @@
 {% set first_feed_error = (['label', 'label_other', 'url', 'own_name'] | select('in', feed_errors) | list | first) %}
 <form method="post" action="/apartments/{{ apartment.id }}/feeds" class="setup-wizard-form" id="calendar-add">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/guest_link">
+  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
   <input type="hidden" name="setup_step" value="calendar">
   <div class="field">
     <label for="label">{{ t('calendar.platform_label') }}</label>

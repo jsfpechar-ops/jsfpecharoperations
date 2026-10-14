@@ -1,13 +1,14 @@
 {% extends "setup_wizard/_layout.html" %}
 {% from "_components.html" import field_label, help_tip with context %}
 {% set apartment = draft if draft is defined else apartment %}
+{% set property_values = apartment %}
 {% set address_errors = address_errors or {} %}
 {% set operator_current = apartment.legal_entity_id %}
 {% block wizard_content %}
 <p class="setup-wizard-lede">{{ t('apartment.form.basics.title') }}</p>
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="property-details-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/calendar">
+  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
   <input type="hidden" name="setup_step" value="property">
   <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
   {% include "_property_identity_fields.html" %}
