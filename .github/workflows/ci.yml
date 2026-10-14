@@ -70,11 +70,14 @@ jobs:
           --junitxml=/tmp/ubyhost-tests.xml
 
       - name: Annotate failed tests
+        id: test_failures
         if: failure()
         run: |
           python - <<'PY'
           from pathlib import Path
+          import os
           import xml.etree.ElementTree as ET
+          failures = []
           report = Path("/tmp/ubyhost-tests.xml")
           if report.exists():
               for case in ET.parse(report).iter("testcase"):
@@ -86,7 +89,43 @@ jobs:
                       detail = (failure.text or failure.get("message", ""))[-6000:]
                       detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
                       print(f"::error title={title}::{detail}")
+                      failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              for index, detail in enumerate(failures[:8], 1):
+                  output.write(f"failure_{index}={detail}\n")
           PY
+
+      - name: ${{ steps.test_failures.outputs.failure_1 || 'Test failure detail 1' }}
+        if: failure() && steps.test_failures.outputs.failure_1 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_2 || 'Test failure detail 2' }}
+        if: failure() && steps.test_failures.outputs.failure_2 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_3 || 'Test failure detail 3' }}
+        if: failure() && steps.test_failures.outputs.failure_3 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_4 || 'Test failure detail 4' }}
+        if: failure() && steps.test_failures.outputs.failure_4 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_5 || 'Test failure detail 5' }}
+        if: failure() && steps.test_failures.outputs.failure_5 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_6 || 'Test failure detail 6' }}
+        if: failure() && steps.test_failures.outputs.failure_6 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_7 || 'Test failure detail 7' }}
+        if: failure() && steps.test_failures.outputs.failure_7 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_8 || 'Test failure detail 8' }}
+        if: failure() && steps.test_failures.outputs.failure_8 != ''
+        run: 'true'
 
   smoke:
     runs-on: ubuntu-latest
@@ -179,11 +218,14 @@ jobs:
 
 
       - name: Annotate failed tests
+        id: test_failures
         if: failure()
         run: |
           python - <<'PY'
           from pathlib import Path
+          import os
           import xml.etree.ElementTree as ET
+          failures = []
           report = Path("/tmp/ubyhost-tests.xml")
           if report.exists():
               for case in ET.parse(report).iter("testcase"):
@@ -195,7 +237,43 @@ jobs:
                       detail = (failure.text or failure.get("message", ""))[-6000:]
                       detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
                       print(f"::error title={title}::{detail}")
+                      failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              for index, detail in enumerate(failures[:8], 1):
+                  output.write(f"failure_{index}={detail}\n")
           PY
+
+      - name: ${{ steps.test_failures.outputs.failure_1 || 'Test failure detail 1' }}
+        if: failure() && steps.test_failures.outputs.failure_1 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_2 || 'Test failure detail 2' }}
+        if: failure() && steps.test_failures.outputs.failure_2 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_3 || 'Test failure detail 3' }}
+        if: failure() && steps.test_failures.outputs.failure_3 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_4 || 'Test failure detail 4' }}
+        if: failure() && steps.test_failures.outputs.failure_4 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_5 || 'Test failure detail 5' }}
+        if: failure() && steps.test_failures.outputs.failure_5 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_6 || 'Test failure detail 6' }}
+        if: failure() && steps.test_failures.outputs.failure_6 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_7 || 'Test failure detail 7' }}
+        if: failure() && steps.test_failures.outputs.failure_7 != ''
+        run: 'true'
+
+      - name: ${{ steps.test_failures.outputs.failure_8 || 'Test failure detail 8' }}
+        if: failure() && steps.test_failures.outputs.failure_8 != ''
+        run: 'true'
 
       - name: Upload onboarding screenshots
         if: always()

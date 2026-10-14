@@ -369,7 +369,7 @@ def _register_a_group_of_three(live_server, browser, width, token, readable, lan
         assert page.locator(".g-host-message, .g-arrival-message").count() == 0
         why = page.locator(".g-why")
         assert not why.evaluate("el => el.open")
-        assert why.bounding_box()["y"] >= page.locator("form[data-guest-wizard]").evaluate("el => el.getBoundingClientRect().bottom + window.scrollY")
+        assert why.evaluate("el => el.getBoundingClientRect().top") >= page.locator("form[data-guest-wizard]").evaluate("el => el.getBoundingClientRect().bottom")
         assert page.locator(".g-why-summary").evaluate("el => getComputedStyle(el, '::after').content") == '"?"'
         why.locator("summary").click()
         assert why.evaluate("el => el.open")

@@ -1071,7 +1071,7 @@
         var caption = range.querySelector("[data-range-caption]");
         if (!caption) return;
         var formatter = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { day: "numeric", month: "short", year: "numeric" });
-        caption.textContent = draftFrom && draftUntil ? formatter.format(parse(draftFrom)) + " – " + formatter.format(parse(draftUntil)) : draftFrom ? formatter.format(parse(draftFrom)) + " →" : draftUntil ? "← " + formatter.format(parse(draftUntil)) : trigger.dataset.allDates || "";
+        caption.textContent = draftFrom && draftUntil ? formatter.format(parse(draftFrom)) + " – " + formatter.format(parse(draftUntil)) : draftFrom ? formatter.format(parse(draftFrom)) + " – …" : draftUntil ? "… – " + formatter.format(parse(draftUntil)) : trigger.dataset.allDates || "";
       };
       var render = function () {
         var formatter = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { month: "long", year: "numeric" });

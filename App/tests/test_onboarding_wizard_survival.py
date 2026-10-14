@@ -586,7 +586,7 @@ def test_reopen_setup_finishes_a_previously_blocked_police_wait(host, monkeypatc
     assert 'class="is-waiting"' in page.text
 
 
-def test_demo_action_opens_the_guest_form_and_reuses_its_stay(host):
+def test_demo_action_teaches_pin_then_opens_the_guest_form_and_reuses_its_stay(host):
     from urllib.parse import urlparse
     from app import guest_slug
 
@@ -599,12 +599,21 @@ def test_demo_action_opens_the_guest_form_and_reuses_its_stay(host):
     first = client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     stay = demo.demo_stay_for(apt_id)
     assert stay is not None
-    expected = f"/l/{guest_slug.link_key(flat)}/{stay['id']}"
+    expected = f"/l/{guest_slug.link_key(flat)}/demo/{stay['id']}"
+    form_path = f"/l/{guest_slug.link_key(flat)}/{stay['id']}"
     assert first.status_code == 303
     assert urlparse(first.headers["location"]).path == expected
     opened = client.get(first.headers["location"], follow_redirects=False)
+    assert opened.status_code == 200
+    assert 'id="pin"' in opened.text
+    verified = client.post(
+        f"/l/{guest_slug.link_key(flat)}/pin",
+        data={"pin": flat["permalink_pin"], "return_to": form_path}, follow_redirects=False,
+    )
+    assert verified.status_code == 303
+    opened = client.get(verified.headers["location"], follow_redirects=False)
     assert opened.status_code == 303
-    assert urlparse(opened.headers["location"]).path == expected + "/new"
+    assert urlparse(opened.headers["location"]).path == form_path + "/new"
     again = client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     assert urlparse(again.headers["location"]).path == expected
     assert demo.demo_stay_for(apt_id)["id"] == stay["id"]
