@@ -137,7 +137,9 @@ def _browser(playwright):
 
 def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_actions_host, stay_actions_base):
     shots = Path(__file__).resolve().parents[2] / "generated_images" / "0041-evidence"
-    shots.mkdir(parents=True, exist_ok=True)
+    capture = os.environ.get("UBYHOST_CAPTURE_0041") == "1"
+    if capture:
+        shots.mkdir(parents=True, exist_ok=True)
     cookie = stay_actions_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
     valid_ids = {key: value for key, value in stay_actions_host["ids"].items() if key != "missing-token"}
@@ -190,23 +192,34 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 copy = ready_row.locator('button[data-copy]')
                 trigger = ready_row.locator(".row-menu-trigger")
                 assert send.is_visible()
-                boxes = [control.bounding_box() for control in (send, copy, trigger)]
+                assert copy.is_hidden()
+                assert ready_row.locator(".row-open").count() == 0
+                boxes = [control.bounding_box() for control in (send, trigger)]
                 expected_height = 44 if width <= 390 else 42
-                assert all(abs(box["height"] - expected_height) <= 1 for box in boxes), boxes
-                assert max(box["y"] for box in boxes) - min(box["y"] for box in boxes) <= 2, boxes
+                assert all(box["height"] >= expected_height - 1 for box in boxes), boxes
+                assert all(abs(box["height"] - expected_height) <= 1 for box in (boxes[0], boxes[1])), boxes
+                # 0091: actions wrap as whole controls when the lane is narrow, so
+                # they share a row or sit on distinct rows; they never overlap.
+                for i, a in enumerate(boxes):
+                    for b in boxes[i + 1:]:
+                        separate = (a["x"] + a["width"] <= b["x"] + 1 or b["x"] + b["width"] <= a["x"] + 1
+                                    or a["y"] + a["height"] <= b["y"] + 1 or b["y"] + b["height"] <= a["y"] + 1)
+                        assert separate, boxes
                 assert all(box["x"] >= -1 and box["x"] + box["width"] <= width + 1 for box in boxes), boxes
-                for left, right in zip(boxes, boxes[1:]):
-                    assert left["x"] + left["width"] <= right["x"] + 1, boxes
                 if locale == "en" and width == 360:
                     ready_source = page.locator(f"#{copy.get_attribute('data-copy')}")
                     ready_link = ready_row.locator('a[href^="/l/"][target="_blank"]').get_attribute("href")
                     page.evaluate("window.scrollTo(0, 0)")
-                    copy.click()
+                    expected_copy = ready_source.input_value()
+                    trigger.click()
+                    menu = page.locator(".row-menu-panel.is-open")
+                    menu.locator("button[data-copy]").click()
                     page.wait_for_function("window.__copyWrites.length === 1")
-                    assert page.evaluate("window.__copyWrites[0]") == ready_source.input_value()
+                    assert page.evaluate("window.__copyWrites[0]") == expected_copy
                     assert page.evaluate("window.__copyWrites[0]").endswith(ready_link)
                     page.locator("body").click(position={"x": 20, "y": 20})
 
-                ready_row.locator("td.row-actions").screenshot(path=str(shots / f"stays-actions-{locale}-{width}.png"))
+                if capture:
+                    ready_row.locator("td.row-actions").screenshot(path=str(shots / f"stays-actions-{locale}-{width}.png"))
         context.close()
         browser.close()

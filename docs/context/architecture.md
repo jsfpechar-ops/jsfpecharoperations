@@ -23,7 +23,7 @@
 
 | Area | Files |
 |---|---|
-| App + routes | `App/app/main.py` (routers), `App/app/routes/` (guest, admin, admin_accounts, invoices, stay_fees, exports, signup, legal, privacy_requests, onboarding, setup_wizard, api, mail_unsubscribe) |
+| App + routes | `App/app/main.py` (routers), `App/app/routes/` (guest, admin, admin_accounts, invoices, stay_fees, exports, signup, legal, privacy_requests, onboarding, onboarding_wizard, api, mail_unsubscribe) |
 | Police filing | `App/app/ubyport/` (SOAP client, errors), `App/app/reporting.py` (batches, sweep, state), `App/app/deadlines.py`, `App/app/filing_watchdog.py` |
 | Stays and guests | `App/app/icalsync.py` (feeds), `App/app/claim.py` (guest claim), `App/app/housebook.py`, `App/app/validation.py`, `App/app/passport_photos.py` |
 | Auth and security | `App/app/auth.py` (accounts, sessions, TOTP), `App/app/login_link.py` (e-mail login links), `App/app/passkeys.py` (WebAuthn), `App/app/security.py`, `App/app/access.py`, `App/app/rate_limit.py`, `App/app/turnstile.py`, `App/app/client_ip.py`, `App/app/env_guard.py` |
@@ -32,13 +32,13 @@
 | Mail | `App/app/mail.py` (SES and outbox), `App/app/mail_notify.py`, `App/app/lifecycle_mail.py` |
 | Scheduler | `App/app/scheduler.py`, `App/app/worker.py`, `App/app/alerts.py` |
 | Copy (i18n) | `App/app/i18n.py` (guest), `App/app/host_i18n.py` (host, 357 KB: grep it, never read it whole), `App/app/landing_i18n.py`, and the legal `*_i18n.py` files |
-| UI | `App/app/templates/` (`guest/` = guest pages; `_list_filter.html`/`_date_range.html` = shared host filters), `App/app/static/` (`app.css`, `guest.css`, `tokens.css`, `host.css`, `host-controls.css`; `app.js` = host controls/feedback) |
+| UI | `App/app/contact_phone.py` (operator phone form/format), `App/app/templates/` (`guest/` = guest pages; `_list_filter.html`/`_date_range.html` = shared host filters), `App/app/static/` (`app.css`, `guest.css`, `tokens.css`, `skeleton.css`, `host.css`, `host-controls.css`; `app.js` = host controls/feedback) |
 
 **Large files** (grep, then read ranges only): `App/app/routes/admin.py` (116 KB), `App/app/reporting.py` (100 KB), `App/app/db.py` (69 KB), `App/app/mail_notify.py` (69 KB), `App/app/routes/guest.py` (77 KB).
 
-**Host property hub** (brief 0066): guest links and police send timing are anchored sections on the property form (`#communication`, `#automation`, `#ubyport` in `apartment_form.html`). Legacy `GET /guest-links` and `GET /automation` redirect through `_property_hub_redirect` in `admin.py`.
+**Host property hub:** `apartment_form.html` uses `?view=overview|bookings|settings`; settings select `section=property|guests|reporting|automation|lock`. Guest links and timing are per property; `/apartments#property-summaries` is the cross-property summary.
 
-**First-flat wizard** (brief 0054): `routes/setup_wizard.py` serves `GET/POST /setup/{welcome|name|address|bookings}`; `GET /setup` resumes using `onboarding.wizard_step()`.
+**Property setup:** `routes/onboarding_wizard.py` serves the eight-step `/apartments/{id}/setup` wizard (0102). Brief 0101 removed the older `/setup*`, `routes/setup_wizard.py`, `/automation` and old settings adapters; `/guest-links` remains for sent lifecycle e-mails.
 
 **Tests:** `App/tests/` (about 240 files). Key guards:
 

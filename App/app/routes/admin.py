@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import secrets
 import time
 from datetime import date, timedelta
@@ -29,6 +30,7 @@ from .. import (
     celebrations,
     codelists,
     config,
+    contact_phone,
     db,
     deadlines,
     demo,
@@ -42,6 +44,7 @@ from .. import (
     passkeys,
     passport_photos,
     payments,
+    property_setup,
     rate_limit,
     reporting,
     claim,
@@ -56,6 +59,7 @@ from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
 from . import passkeys as passkey_routes
 from . import signup as signup_routes
+from . import stay_fees as stay_fee_routes
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
 from .admin_helpers import flash_plural as _flash_plural
@@ -132,6 +136,41 @@ def _smart_locks_return_to(value: str) -> str:
     return "/smart-locks"
 
 
+# 0090: lock feedback lands on the section it is about, not the page top.
+# Forms post a constrained section name; never a path or hash from the client.
+_SMART_LOCK_SECTIONS = {
+    "how": "smart-locks-how",
+    "share": "smart-locks-share",
+    "add-more": "smart-locks-add-more",
+    "list": "smart-locks-list",
+}
+
+
+def _smart_locks_url(return_to: str, section: str) -> str:
+    """The lock page, keeping the sanitized return path, at a real section."""
+    anchor = _SMART_LOCK_SECTIONS.get(section, "smart-locks-how")
+    return f"/smart-locks?return_to={quote(return_to, safe='')}#{anchor}"
+
+
+def _smart_locks_section(form, has_locks: bool) -> str:
+    """Where a refresh came from: the posted section if it is a known one."""
+    section = _form_str(form, "section")
+    if section in ("share", "add-more", "list"):
+        return section
+    return "list" if has_locks else "share"
+
+
+def _lock_property_return(request: Request, return_to: str) -> Optional[str]:
+    """The property's Door lock settings when return_to names the host's own property."""
+    match = re.fullmatch(r"/apartments/(\d+)", return_to.split("?", 1)[0])
+    if not match:
+        return None
+    apartment_id = int(match.group(1))
+    if not access.apartment(request, apartment_id):
+        return None
+    return f"/apartments/{apartment_id}?view=settings&section=lock#door-code"
+
+
 def _apartment_with_secret(apartment) -> Dict[str, Any]:
     data = dict(apartment)
     data["uby_ws_password"] = db.decrypt_secret(apartment["uby_ws_password_enc"])
@@ -162,7 +201,6 @@ _MORE_OPTIONS_FIELDS = frozenset(
         "automation_mode",
         "submit_after_hours",
         "default_purpose",
-        "guest_link_name",
         "permalink_pin",
         "permalink_window_days",
         "permalink_reachback_days",
@@ -236,39 +274,6 @@ def _readiness(
     }
 
 
-_WS_REQUEST_IDUB_PLACEHOLDER = "[doplňte IDUB]"
-_WS_REQUEST_OPERATOR_PLACEHOLDER = "[jméno provozovatele]"
-
-
-def _ws_request_letter(apartment, entities) -> Dict[str, str]:
-    """Czech data-box text for hosts who still need UbyPort web-service credentials."""
-    idub = (apartment["uby_idub"] or "").strip() or _WS_REQUEST_IDUB_PLACEHOLDER
-    entity = next((e for e in entities if e["id"] == apartment["legal_entity_id"]), None)
-    operator_name = (
-        (entity["name"] if entity else "").strip() or _WS_REQUEST_OPERATOR_PLACEHOLDER
-    )
-    body = host_i18n.translate(
-        "cs",
-        "apartment.form.ubyport.ws_request.body",
-        idub=idub,
-        operator_name=operator_name,
-    )
-    subject = host_i18n.translate("cs", "apartment.form.ubyport.ws_request.subject")
-    # The file the host downloads is the Czech request, with the public
-    # recipient the Foreign Police publish for electronic delivery.
-    header = "\n".join([
-        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.recipient"),
-        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.address_street"),
-        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.address_city"),
-        host_i18n.translate("cs", "apartment.form.ubyport.ws_request.databox"),
-        "",
-        f"{host_i18n.translate('cs', 'apartment.form.ubyport.ws_request.subject_label')}: {subject}",
-        "",
-        body,
-    ])
-    return {"body": body, "subject": subject, "download": header}
-
-
 def _missing_report_labels(request: Request, issues) -> List[str]:
     """The names of the reporting fields this property still lacks.
 
@@ -283,16 +288,20 @@ def _missing_report_labels(request: Request, issues) -> List[str]:
     ]
 
 
-def _form_return_to(form, default: str) -> str:
+def _form_return_to(form, default: str, *, keep_fragment: bool = False) -> str:
     raw = _form_str(form, "return_to")
     if not raw:
         return default
+    fragment = urlsplit(raw).fragment
     path = security.safe_local_path(raw, "")
-    if path:
-        return path
-    # Stays list used to quote return_to for use in links; archive posts still work.
-    path = security.safe_local_path(unquote(raw), "")
-    return path if path else default
+    if not path:
+        # Stays list used to quote return_to for use in links; archive posts still work.
+        path = security.safe_local_path(unquote(raw), "")
+    if not path:
+        return default
+    if keep_fragment and fragment and re.fullmatch(r"[\w-]+", fragment):
+        return f"{path}#{fragment}"
+    return path
 
 
 def _redirect_path_from_referer(request: Request, default: str = "/") -> str:
@@ -332,6 +341,43 @@ def _form_int(form, key: str) -> Optional[int]:
         return int(raw) if raw else None
     except ValueError:
         return None
+
+
+def _valid_property_operator(request: Request, entity_id: Optional[int]) -> bool:
+    if not entity_id:
+        return False
+    entity = access.entity(request, entity_id)
+    return bool(entity and not entity["archived_at"])
+
+
+def _property_operator_error(request: Request, form, payload: Dict[str, Any]) -> Optional[str]:
+    """The i18n key that rejects the submitted operator/controller, or None.
+
+    A property always has an operator (0088). Missing, malformed, archived and
+    another host's IDs all read the same: the host has to choose one of theirs.
+    A separate guest data controller, when submitted, passes the same check.
+    """
+    if not _valid_property_operator(request, payload.get("legal_entity_id")):
+        if not access.entities(request):
+            return "apartment.form.operator.add_first"
+        return "apartment.form.operator.required"
+    raw_controller = _form_str(form, "data_controller_entity_id")
+    if raw_controller:
+        controller_id = payload.get("data_controller_entity_id")
+        if not _valid_property_operator(request, controller_id):
+            return "flash.error.no_such_controller"
+    return None
+
+
+def _property_draft(form) -> Dict[str, Any]:
+    """What the host typed, to render again when a save is refused.
+
+    Passwords are never echoed back into the page.
+    """
+    draft: Dict[str, Any] = {field: _form_str(form, field) for field in APARTMENT_TEXT_FIELDS}
+    draft["legal_entity_id"] = _form_int(form, "legal_entity_id")
+    draft["data_controller_entity_id"] = _form_int(form, "data_controller_entity_id")
+    return draft
 
 
 # --- dashboard -----------------------------------------------------------
@@ -417,14 +463,21 @@ def guide_view(request: Request):
 
 # --- guest communication ------------------------------------------------
 
-def _property_hub_redirect(request: Request, anchor: str) -> RedirectResponse:
+# /guest-links is kept only because lifecycle e-mails already sent link it
+# (0101); it opens the right Settings group, not only an anchor.
+def _property_hub_redirect(request: Request) -> RedirectResponse:
     apartments = access.apartments(request)
     if len(apartments) == 1:
         return RedirectResponse(
-            f"/apartments/{apartments[0]['id']}#{anchor}",
+            f"/apartments/{apartments[0]['id']}?view=settings&section=guests#communication",
             status_code=303,
         )
-    return RedirectResponse("/apartments", status_code=303)
+    # 0078: several (or no) properties land on the Properties summary, never
+    # on an arbitrary record.
+    return RedirectResponse(f"/apartments#{PROPERTY_SUMMARIES_ANCHOR}", status_code=303)
+
+
+PROPERTY_SUMMARIES_ANCHOR = "property-summaries"
 
 
 @router.get("/guest-links")
@@ -432,7 +485,7 @@ def guest_links(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    return _property_hub_redirect(request, "communication")
+    return _property_hub_redirect(request)
 
 
 @router.get("/smart-locks")
@@ -480,22 +533,23 @@ async def smart_locks_setup(request: Request):
         return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
     form = await request.form()
     return_to = _smart_locks_return_to(_form_return_to(form, "/smart-locks"))
+    setup_page = _smart_locks_url(return_to, "how")
     if _form_str(form, "terms") != "1":
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_terms"))
+        return _back(setup_page, err=_flash(request, "flash.error.smart_locks_terms"))
     owner_id = access.owner_id(request)
     if rate_limit.blocked("ttlock_setup", f"user:{owner_id}", 5):
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_rate_limited"))
+        return _back(setup_page, err=_flash(request, "flash.error.smart_locks_rate_limited"))
     rate_limit.record("ttlock_setup", f"user:{owner_id}")
     try:
         ttlock.create_account(owner_id)
     except ttlock.TTLockError:
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_failed"))
+        return _back(setup_page, err=_flash(request, "flash.error.smart_locks_failed"))
     db.audit(
         "door_code_terms_accepted",
         f"version={ttlock.DOOR_CODE_TERMS_VERSION}",
     )
     return _back(
-        f"/smart-locks?return_to={quote(return_to, safe='')}",
+        _smart_locks_url(return_to, "share"),
         msg=_flash(request, "flash.ok.smart_locks_ready"),
     )
 
@@ -512,24 +566,30 @@ async def smart_locks_refresh(request: Request):
     owner_id = access.owner_id(request)
     account = ttlock.account_for(owner_id)
     if not account:
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_missing_account"))
+        return _back(
+            _smart_locks_url(return_to, "how"),
+            err=_flash(request, "flash.error.smart_locks_missing_account"),
+        )
+    # Failures stay on the section the host acted in, with the real error.
+    here = _smart_locks_url(return_to, _smart_locks_section(form, bool(ttlock.locks_of(account))))
     try:
         locks, plain_keys = ttlock.check_locks(int(account["id"]))
     except ttlock.TTLockError as exc:
         if exc.kind == "budget":
-            return _back(return_to, err=_flash(request, "flash.error.smart_locks_budget"))
+            return _back(here, err=_flash(request, "flash.error.smart_locks_budget"))
         if exc.kind == "reauth":
-            return _back(return_to, err=_flash(request, "flash.error.smart_locks_reauth"))
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_failed"))
+            return _back(here, err=_flash(request, "flash.error.smart_locks_reauth"))
+        return _back(here, err=_flash(request, "flash.error.smart_locks_failed"))
+    # No usable lock now means the page shows the sharing steps again.
+    share = _smart_locks_url(return_to, "share")
     if not locks and plain_keys:
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_plain_key"))
+        return _back(share, err=_flash(request, "flash.error.smart_locks_plain_key"))
     if not locks:
-        return _back(return_to, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
+        return _back(share, msg=_flash(request, "flash.ok.smart_locks_none_yet"))
     count = len(locks)
-    if return_to.startswith("/apartments/"):
-        target = return_to
-    else:
-        target = f"/smart-locks?return_to={quote(return_to, safe='')}"
+    # Found from a property: back to that property's lock section to choose
+    # one. Nothing is assigned or switched on here.
+    target = _lock_property_return(request, return_to) or _smart_locks_url(return_to, "list")
     return _back(
         target,
         msg=_flash_plural(request, "flash.ok.smart_locks_found", count, count=count),
@@ -548,7 +608,10 @@ async def smart_locks_remove(request: Request):
     owner_id = access.owner_id(request)
     account = ttlock.account_for(owner_id)
     if not account:
-        return _back(return_to, err=_flash(request, "flash.error.smart_locks_missing_account"))
+        return _back(
+            _smart_locks_url(return_to, "how"),
+            err=_flash(request, "flash.error.smart_locks_missing_account"),
+        )
     local_only = False
     with db.cursor():
         db.execute(
@@ -562,48 +625,132 @@ async def smart_locks_remove(request: Request):
         local_only = True
     db.audit("smart_locks_removed", "")
     key = "flash.ok.smart_locks_removed_local" if local_only else "flash.ok.smart_locks_removed"
-    return _back(f"/smart-locks?return_to={quote(return_to, safe='')}", msg=_flash(request, key))
+    return _back(_smart_locks_url(return_to, "how"), msg=_flash(request, key))
 
 
 # --- legal entities ------------------------------------------------------
+
+# 0075: invoice-default normalisation and the ARES lookup live with the
+# invoice settings route; the entity editor calls the same functions.
+from . import invoices as invoice_routes  # noqa: E402
 
 @router.get("/entities")
 def entities(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    owner_user_id = access.owner_id(request)
-    rows = db.query(
-        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
-        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
-        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NULL ORDER BY e.name",
-        (owner_user_id,),
-    )
-    archived = db.query(
-        "SELECT e.*, (SELECT COUNT(*) FROM apartment a WHERE "
-        "a.legal_entity_id = e.id OR a.data_controller_entity_id = e.id) AS apartments "
-        f"FROM legal_entity e WHERE {db.null_safe_eq('e.owner_user_id')} AND e.archived_at IS NOT NULL "
-        "ORDER BY e.archived_at DESC",
-        (owner_user_id,),
-    )
     edit_entity = None
     edit_id = request.query_params.get("edit")
     if edit_id and edit_id.isdigit():
         edit_entity = access.entity(request, int(edit_id))
-    signature_preview = (
-        db.decrypt_field(edit_entity["signature_png_enc"])
-        if edit_entity and edit_entity["signature_png_enc"]
-        else ""
-    )
-    return render(
+    return _entities_page(
         request,
-        "entities.html",
+        edit_entity=dict(edit_entity) if edit_entity else None,
+        next_path=_entity_next(request.query_params.get("next")),
+    )
+
+
+# --- 0076: the one business editor (Business details + Invoice details) ----
+
+ENTITY_INVOICE_ANCHOR = "entity-invoice"
+
+
+def _entity_next(raw: Optional[str]) -> str:
+    """A safe same-site return path from ``next``, or "" (never an outside URL)."""
+    return security.safe_local_path(raw or "", "")
+
+
+def entity_editor_url(entity_id: int, next_path: str = "", section: str = "") -> str:
+    """The canonical editor of one business; ``section="invoice"`` opens Invoice details."""
+    query: Dict[str, Any] = {"edit": entity_id}
+    if next_path:
+        query["next"] = next_path
+    url = "/entities?" + urlencode(query, safe="/")
+    return url + (f"#{ENTITY_INVOICE_ANCHOR}" if section == "invoice" else "")
+
+
+def _entity_linked_properties(request: Request, entity_id: int) -> List[Dict[str, Any]]:
+    """The host's active properties that use this business (operator or controller)."""
+    return db.query(
+        "SELECT id, internal_name FROM apartment WHERE "
+        "(legal_entity_id = ? OR data_controller_entity_id = ?) AND archived_at IS NULL "
+        f"AND {db.null_safe_eq('owner_user_id')} ORDER BY internal_name",
+        (entity_id, entity_id, access.owner_id(request)),
+    )
+
+
+def _entities_page(
+    request: Request,
+    *,
+    edit_entity: Optional[Dict[str, Any]] = None,
+    new_entity: Optional[Dict[str, Any]] = None,
+    signature_preview: Optional[str] = None,
+    ares_error: Optional[str] = None,
+    ares_note: Optional[str] = None,
+    invoice: Optional[Dict[str, Any]] = None,
+    next_path: str = "",
+    status_code: int = 200,
+):
+    """The one renderer of entities.html: GET, both ARES rerenders and 422s.
+
+    ``invoice`` is the Invoice details state of a rerender (typed values,
+    messages); without it the stored values of ``edit_entity`` are shown.
+    """
+    context = _entities_list_context(request, access.owner_id(request))
+    if signature_preview is None:
+        signature_preview = (
+            db.decrypt_field(edit_entity["signature_png_enc"])
+            if edit_entity and edit_entity.get("signature_png_enc")
+            else ""
+        )
+    invoice_state = None
+    if edit_entity and not edit_entity.get("archived_at"):
+        invoice_state = invoice or {
+            "entity": edit_entity,
+            **invoice_routes.invoice_bank_view(edit_entity),
+        }
+    context.update(
         {
-            "entities": rows,
-            "archived_entities": archived,
             "edit_entity": edit_entity,
+            "new_entity": new_entity,
             "signature_preview": signature_preview,
-        },
+            "ares_error": ares_error,
+            "ares_note": ares_note,
+            "invoice": invoice_state,
+            "linked_properties": (
+                _entity_linked_properties(request, edit_entity["id"]) if edit_entity else []
+            ),
+            "next_path": next_path,
+        }
+    )
+    return render(request, "entities.html", context, status_code=status_code)
+
+
+def _invoice_details_response(request: Request, form, entity: Dict[str, Any], *, default_next: str):
+    """Save or look up Invoice details from the business editor."""
+    next_path = _entity_next(_form_str(form, "next"))
+    if form.get("fill_from_register"):
+        state = invoice_routes.lookup_invoice_details(request, form, entity)
+        return _entities_page(request, edit_entity=entity, invoice=state, next_path=next_path)
+    refused = invoice_routes.save_invoice_details(request, form, entity)
+    if refused:
+        return _entities_page(
+            request, edit_entity=entity, invoice=refused, next_path=next_path, status_code=422
+        )
+    return _back(next_path or default_next, msg=_flash(request, "flash.entities.saved"))
+
+
+@router.post("/entities/{entity_id}/invoice")
+async def entity_invoice_details(entity_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    entity = access.entity(request, entity_id)
+    if not entity or entity["archived_at"]:
+        return _back("/entities", err=_flash(request, "flash.error.no_such_entity"))
+    form = await request.form()
+    return _invoice_details_response(
+        request, form, dict(entity), default_next=entity_editor_url(entity_id, section="invoice")
     )
 
 
@@ -620,7 +767,6 @@ ENTITY_FIELDS = (
     "invoice_prefix",
 )
 
-VAT_STATUSES = ("non_payer", "identified", "payer")
 ENTITY_SIGNATURE_MAX_BYTES = 300 * 1024
 
 
@@ -632,7 +778,12 @@ def _entity_post_payload(form) -> Dict[str, Any]:
     stored bank, VAT, registry and numbering values untouched. A value the
     browser posted empty still clears the field, as callers expect.
     """
-    return {field: _form_str(form, field) for field in ENTITY_FIELDS if field in form}
+    payload = {field: _form_str(form, field) for field in ENTITY_FIELDS if field in form}
+    if "contact_phone" in form and "contact_phone_country_code" in form:
+        payload["contact_phone"] = contact_phone.with_country_code(
+            _form_str(form, "contact_phone_country_code"), payload["contact_phone"]
+        )
+    return payload
 
 
 def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
@@ -650,47 +801,17 @@ def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
                 host_i18n.lang_from_request(request), "entities.ico.invalid"
             ),
         )
-    if "bank_account" in form:
-        account = _form_str(form, "bank_account")
-        if account:
-            try:
-                payload["bank_account"], payload["iban"] = payments.normalise_account(
-                    account
-                )
-            except ValueError:
-                return _back(
-                    "/entities",
-                    err=host_i18n.translate(
-                        host_i18n.lang_from_request(request), "entities.bank.invalid"
-                    ),
-                )
-        else:
-            payload["bank_account"] = None
-            payload["iban"] = None
-    if "bic" in form:
-        payload["bic"] = _form_str(form, "bic").replace(" ", "").upper() or None
-    if "registry_entry" in form:
-        payload["registry_entry"] = _form_str(form, "registry_entry") or None
-    if "vat_status" in form:
-        vat = _form_str(form, "vat_status")
-        payload["vat_status"] = vat if vat in VAT_STATUSES else "non_payer"
-    if "invoice_prefix" in form:
-        prefix = (
-            "".join(ch for ch in _form_str(form, "invoice_prefix").upper() if ch.isalnum())
-        )[:6]
-        payload["invoice_prefix"] = prefix or None
-    if "invoice_next_number" in form:
-        next_no = _form_str(form, "invoice_next_number").strip()
-        if next_no.isdigit() and int(next_no) > 0:
-            payload["invoice_next_number"] = int(next_no)
-            payload["invoice_next_number_year"] = date.today().year
-        else:
-            payload["invoice_next_number"] = None
-            payload["invoice_next_number_year"] = None
-    if "invoice_due_days" in form:
-        due_raw = _form_str(form, "invoice_due_days")
-        due = int(due_raw) if due_raw.isdigit() else 14
-        payload["invoice_due_days"] = max(0, min(due, 365))
+    # 0075: the invoice defaults share one normaliser with the Invoice details editor.
+    # Entity-editor policy: no three-part account and no BIC derivation.
+    detail = invoice_routes.invoice_detail_payload(form)
+    if not invoice_routes.apply_account_payload(detail, form, accept_parts=False):
+        return _back(
+            "/entities",
+            err=host_i18n.translate(
+                host_i18n.lang_from_request(request), "entities.bank.invalid"
+            ),
+        )
+    payload.update(detail)
     return None
 
 
@@ -737,11 +858,11 @@ def _entity_form_values(form, base: Optional[Dict[str, Any]] = None) -> Dict[str
             values[field] = base.get(field) or ""
         else:
             values[field] = ""
+    if "contact_phone" in form and "contact_phone_country_code" in form:
+        values["contact_phone"] = contact_phone.with_country_code(
+            _form_str(form, "contact_phone_country_code"), values["contact_phone"]
+        )
     return values
-
-
-def _ares_field_labels(lang: str, fields: List[str]) -> str:
-    return ", ".join(host_i18n.translate(lang, f"ares.field.{field}") for field in fields)
 
 
 def _entities_list_context(request: Request, owner_user_id: int) -> Dict[str, Any]:
@@ -770,24 +891,12 @@ async def _entities_ares_rerender(
     owner_user_id = access.owner_id(request)
     lang = host_i18n.lang_from_request(request)
     values = _entity_form_values(form, edit_entity)
-    ares_error = None
     ares_note = None
     ico = (values.get("ico") or "").strip()
-    if ares.rate_limited(owner_user_id):
-        ares_error = host_i18n.translate(lang, "ares.rate_limited")
-    elif not validation.ico_ok(ico):
-        ares_error = host_i18n.translate(lang, "ares.failure")
-    else:
-        ares.record_lookup(owner_user_id)
-        data = ares.lookup(ico)
-        if not data:
-            ares_error = host_i18n.translate(lang, "ares.failure")
-        else:
-            filled = ares.merge_blank(values, data, _ENTITY_ARES_FIELDS)
-            if filled:
-                ares_note = host_i18n.translate(
-                    lang, "ares.filled", fields=_ares_field_labels(lang, filled)
-                )
+    data, ares_error = invoice_routes.register_lookup(owner_user_id, lang, ico)
+    if data:
+        filled = ares.merge_blank(values, data, _ENTITY_ARES_FIELDS)
+        ares_note = invoice_routes.register_filled_note(lang, filled)
     signature_preview = _form_str(form, "signature_drawn")
     if not signature_preview and edit_entity and edit_entity.get("signature_png_enc"):
         signature_preview = db.decrypt_field(edit_entity["signature_png_enc"])
@@ -798,17 +907,15 @@ async def _entities_ares_rerender(
         merged_edit.update(values)
     else:
         new_entity = values
-    context = _entities_list_context(request, owner_user_id)
-    context.update(
-        {
-            "edit_entity": merged_edit,
-            "new_entity": new_entity,
-            "signature_preview": signature_preview,
-            "ares_error": ares_error,
-            "ares_note": ares_note,
-        }
+    return _entities_page(
+        request,
+        edit_entity=merged_edit,
+        new_entity=new_entity,
+        signature_preview=signature_preview,
+        ares_error=ares_error,
+        ares_note=ares_note,
+        next_path=_entity_next(_form_str(form, "next")),
     )
-    return render(request, "entities.html", context)
 
 
 async def _signature_payload(form) -> Optional[Dict[str, Any]]:
@@ -912,7 +1019,9 @@ async def update_entity(entity_id: int, request: Request):
     payload.update(signature)
     db.update("legal_entity", entity_id, payload)
     _resolve_controller_alerts(entity_id)
-    return _back("/entities", msg=_flash(request, "flash.entities.saved"))
+    # 0076: back to where the editor was opened from (property, invoice), if any.
+    next_path = _entity_next(_form_str(form, "next"))
+    return _back(next_path or "/entities", msg=_flash(request, "flash.entities.saved"))
 
 
 @router.post("/entities/{entity_id}/archive")
@@ -1007,12 +1116,26 @@ def apartments_list(request: Request):
         f"WHERE a.archived_at IS NOT NULL AND {db.null_safe_eq('a.owner_user_id')} ORDER BY a.archived_at DESC",
         (access.owner_id(request),),
     )
+    # 0078: the read-only guest-link summary shows the link the host copies,
+    # read without creating a slug (guest_slug.current, never ensure, on GET).
     enriched = [
-        {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in rows
+        {
+            "apartment": row,
+            "issues": validation.errors_only(_apartment_issues(row)),
+            "link_key": guest_slug.current(int(row["id"])) or (row["permalink_token"] or ""),
+        }
+        for row in rows
     ]
+    # 0098: the full URL the host copies (as Settings → Guest links shows it).
+    for item in enriched:
+        item["link_url"] = (
+            f"{config.PUBLIC_BASE_URL}/l/{item['link_key']}" if item["link_key"] else ""
+        )
     archived_rows = [
         {"apartment": row, "issues": validation.errors_only(_apartment_issues(row))} for row in archived
     ]
+    entities = access.entities(request)
+    owner_id = access.owner_id(request)
     return render(
         request,
         "apartments.html",
@@ -1021,7 +1144,13 @@ def apartments_list(request: Request):
             "archived_rows": archived_rows,
             # With no operator there is nothing the property form can attach to,
             # so the empty state names the operator as the first step instead.
-            "has_operator": bool(access.entities(request)),
+            "has_operator": bool(entities),
+            # 0078: shared records reached once from Properties, in their own scope.
+            "business_href": (
+                entity_editor_url(entities[0]["id"], "/apartments") if len(entities) == 1
+                else "/entities"
+            ) if entities else "",
+            "lock_account": bool(ttlock.enabled() and ttlock.account_for(owner_id)),
             "last_sync": db.get_setting("last_ical_sync"),
         },
     )
@@ -1042,6 +1171,21 @@ def apartment_new(request: Request):
     prefill = copy_ctx["property_prefill"]
     if not selected_entity_id and prefill.get("legal_entity_id"):
         selected_entity_id = prefill["legal_entity_id"]
+    return _render_apartment_new(request, entities, selected_entity_id, copy_ctx)
+
+
+def _render_apartment_new(
+    request: Request,
+    entities: List[Dict[str, Any]],
+    selected_entity_id: Optional[int],
+    copy_ctx: Dict[str, Any],
+    *,
+    draft: Optional[Dict[str, Any]] = None,
+    operator_error: Optional[str] = None,
+    extra: Optional[Dict[str, Any]] = None,
+    status_code: int = 200,
+):
+    prefill = copy_ctx["property_prefill"]
     account = payments.czech_account_parts(prefill.get("stay_fee_council_account") or "")
     return render(
         request,
@@ -1051,13 +1195,71 @@ def apartment_new(request: Request):
             "entities": entities,
             "selected_entity_id": selected_entity_id,
             "purposes": codelists.purpose_options("en"),
-            "address_line": "",
-            "address_details_open": True,
             "account": account,
             "more_options_open": _more_options_open(request, []),
             **copy_ctx,
+            "draft": draft or {},
+            "operator_error": operator_error,
+            **(extra or {}),
         },
+        status_code=status_code,
     )
+
+
+def _refuse_apartment_create(
+    request: Request,
+    form,
+    operator_error: Optional[str],
+    *,
+    name_error: bool = False,
+    address_errors: Optional[Dict[str, str]] = None,
+):
+    """Render the new-property form again with what the host typed.
+
+    0092: settings copied from another property travel as hidden fields; a
+    refusal keeps them (and names their source) so a retry still copies them.
+    """
+    draft = _property_draft(form)
+    prefill: Dict[str, Any] = {}
+    for key in _COPY_PROPERTY_KEYS:
+        if key in ("legal_entity_id", "data_controller_entity_id"):
+            continue
+        if key in form:
+            prefill[key] = _form_str(form, key)
+    if draft["data_controller_entity_id"]:
+        prefill["data_controller_entity_id"] = draft["data_controller_entity_id"]
+    copy_from_id = _form_int(form, "copy_from")
+    source = access.apartment(request, copy_from_id) if copy_from_id else None
+    copy_ctx = {
+        "copy_property_peers": access.apartments(request),
+        "copy_from_id": source["id"] if source else None,
+        "property_prefill": prefill,
+        "copied_from_name": source["internal_name"] if source else None,
+        "apartment": None,
+    }
+    refused = bool(operator_error or name_error or address_errors)
+    return _render_apartment_new(
+        request,
+        access.entities(request),
+        draft["legal_entity_id"],
+        copy_ctx,
+        draft=draft,
+        operator_error=operator_error,
+        extra={"name_error": name_error, "address_errors": address_errors or {}},
+        status_code=400 if refused else 200,
+    )
+
+
+def _create_address_errors(payload: Dict[str, Any]) -> Dict[str, str]:
+    """The police address is required: at create and on every Settings save
+    (owner, 2026-10-13). Municipality, house number and postcode must be
+    present and every typed component must pass the per-field check before
+    anything is written. Saved exactly as typed."""
+    errors: Dict[str, str] = {}
+    for issue in validation.errors_only(validation.validate_apartment(dict(payload))):
+        if issue.field in _ADDRESS_ONLY_FIELDS:
+            errors.setdefault(issue.field, issue.message)
+    return errors
 
 
 APARTMENT_TEXT_FIELDS = (
@@ -1171,23 +1373,52 @@ def _property_copy_form_context(
     }
 
 
-def _apply_address_line_from_form(form, payload: Dict[str, Any]) -> bool:
-    """Parse ``address_line`` into empty addr_* fields. Return True when details conflict."""
-    line = _form_str(form, "address_line").strip()
-    if not line:
-        return False
-    split = validation.split_czech_address(line)
-    if not split:
-        return False
-    return validation.merge_split_address_fields(payload, split)
+def _wizard_setup_step(form) -> str:
+    step = _form_str(form, "setup_step")
+    return step if step in property_setup.STEPS else ""
 
 
-def _append_query_param(path: str, name: str, value: str) -> str:
-    if not value:
-        return path
-    parsed = urlsplit(path)
-    query = urlencode([*parse_qsl(parsed.query, keep_blank_values=True), (name, value)])
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query, parsed.fragment))
+def _wizard_step_payload(form, step: str) -> Dict[str, Any]:
+    """Only the columns this wizard step owns."""
+    from . import stay_fees as stay_fee_routes
+
+    payload: Dict[str, Any] = {}
+    if step == "property":
+        for field in property_setup.STEP_FIELDS["property"]:
+            if field in APARTMENT_TEXT_FIELDS:
+                payload[field] = _form_str(form, field)
+        if "addr_zip" in payload:
+            payload["addr_zip"] = validation.normalise_zip(payload.get("addr_zip", ""))
+        payload["legal_entity_id"] = _form_int(form, "legal_entity_id")
+        payload["data_controller_entity_id"] = _form_int(form, "data_controller_entity_id")
+        purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
+        payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
+    elif step == "police":
+        for field in property_setup.STEP_FIELDS["police"]:
+            payload[field] = _form_str(form, field)
+        payload["uby_mark"] = payload["uby_mark"].upper()
+    elif step == "stay_fee":
+        payload.update(stay_fee_routes.fee_form_values(form))
+    elif step == "door_lock":
+        pass
+    elif step == "automation":
+        payload.update(_automation_timing_values(form))
+    return payload
+
+
+def _automation_timing_values(form) -> Dict[str, Any]:
+    """The one normaliser for "When to send to UbyPort" (mode + delay hours).
+
+    0098: shared by the Settings → Automation save (via _apartment_payload) and
+    the inline timing control on Properties, so both store identical values.
+    """
+    # A brand-new property starts on Manual: a first-time host should see one
+    # send themselves before anything leaves for the police.
+    mode = _form_str(form, "automation_mode", "manual")
+    return {
+        "automation_mode": mode if mode in reporting.AUTOMATION_MODES else "manual",
+        "submit_after_hours": min(_form_int(form, "submit_after_hours") or 24, 48),
+    }
 
 
 def _apartment_payload(form) -> Dict[str, Any]:
@@ -1199,11 +1430,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["data_controller_entity_id"] = _form_int(
         form, "data_controller_entity_id"
     )
-    # A brand-new property starts on Manual: a first-time host should see one
-    # send themselves before anything leaves for the police.
-    mode = _form_str(form, "automation_mode", "manual")
-    payload["automation_mode"] = mode if mode in reporting.AUTOMATION_MODES else "manual"
-    payload["submit_after_hours"] = min(_form_int(form, "submit_after_hours") or 24, 48)
+    payload.update(_automation_timing_values(form))
     payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
     payload["permalink_reachback_days"] = validation.normalise_reachback_days(
         _form_int(form, "permalink_reachback_days")
@@ -1213,55 +1440,28 @@ def _apartment_payload(form) -> Dict[str, Any]:
         policy if policy in ("off", "required_foreign") else "off"
     )
     if "stay_fee_rate_czk" in form:
-        payload["stay_fee_rate_czk"] = stay_fee.clamp_rate(
-            _form_str(form, "stay_fee_rate_czk", "0")
-        )
-        cadence = _form_str(form, "stay_fee_cadence", "monthly")
-        payload["stay_fee_cadence"] = (
-            cadence if cadence in stay_fee.CADENCES else "monthly"
-        )
-        payload["stay_fee_vs"] = (
-            "".join(ch for ch in _form_str(form, "stay_fee_vs") if ch.isdigit())[:10]
-            or None
-        )
-        for key, limit in (
-            ("stay_fee_authority_name", 200),
-            ("stay_fee_authority_address", 200),
-            ("stay_fee_authority_contact", 200),
-            ("stay_fee_payee", 60),
-            ("stay_fee_instruction", 500),
-        ):
-            payload[key] = _form_str(form, key)[:limit].strip() or None
-        payload["stay_fee_authority_databox"] = (
-            validation.normalise_databox(_form_str(form, "stay_fee_authority_databox")) or None
-        )
-        if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
-            prefix = _form_str(form, "account_prefix")
-            number = _form_str(form, "account_number")
-            bank = _form_str(form, "account_bank")
-            existing = _form_str(form, "_stay_fee_account_existing")
-            if not payments.preserve_iban_only_account(existing, prefix, number, bank):
-                payload["_stay_fee_account_raw"] = payments.compose_czech_account(
-                    prefix, number, bank
-                )
-        else:
-            payload["_stay_fee_account_raw"] = _form_str(form, "stay_fee_council_account")
+        # 0077: the one fee normaliser (routes/stay_fees.py).
+        payload.update(stay_fee_routes.fee_form_values(form))
     purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
     payload["default_purpose"] = purpose if purpose in validation.PURPOSE_CODES else "10"
-    payload["active"] = 1 if form.get("active") else 0
+    # 0088: no activity switch. A submitted "active" value means nothing; only
+    # archiving stops a property (_save_apartment_form keeps archived ones off).
+    payload["active"] = 1
     return payload
 
 
 def _apply_police_defaults(payload: Dict[str, Any], entities: List[Dict[str, Any]]) -> None:
-    """Fill empty police header fields from data the host already entered."""
+    """Fill empty police header fields from data the host already entered.
+
+    Only the abbreviation (from the web-service login) and the contact (from
+    the operator e-mail) are derived. The facility name is never guessed: it
+    must match the "Ubytovací zařízení" line of the police letter, and a
+    property or listing name gets reports rejected (0097).
+    """
     if not (payload.get("uby_mark") or "").strip():
         mark = validation.mark_from_ws_user(payload.get("uby_ws_user") or "")
         if mark:
             payload["uby_mark"] = mark
-    if not (payload.get("uby_name") or "").strip():
-        internal = (payload.get("internal_name") or "").strip()
-        if internal:
-            payload["uby_name"] = internal[:35].strip()
     if not (payload.get("uby_contact") or "").strip():
         entity_id = payload.get("legal_entity_id")
         if entity_id:
@@ -1279,23 +1479,32 @@ async def apartment_create(request: Request):
         return guard
     form = await request.form()
     payload = _apartment_payload(form)
+    if "operator_refresh" in form:
+        # "Check again" after adding business details in another tab: show the
+        # same draft with the new operator list; nothing is written.
+        return _refuse_apartment_create(request, form, None)
+    # 0092: name, operator and a typed address are all checked before any
+    # write; a refusal keeps every typed value on the page.
+    name_error = not payload["internal_name"].strip()
+    operator_error = _property_operator_error(request, form, payload)
+    address_errors = _create_address_errors(payload)
+    if name_error or operator_error or address_errors:
+        return _refuse_apartment_create(
+            request,
+            form,
+            operator_error,
+            name_error=name_error,
+            address_errors=address_errors,
+        )
     _apply_police_defaults(payload, access.entities(request))
-    _apply_address_line_from_form(form, payload)
     payload.pop("_stay_fee_account_raw", None)
-    if not payload["internal_name"]:
-        return _back("/apartments/new", err=_flash(request, "flash.error.name_required"))
     if not payload["guest_message"].strip():
         payload["guest_message"] = _host_text(request, "apartment.form.guest_message.default")
     payload["permalink_token"] = auth.new_permalink_token()
     payload["permalink_pin"] = auth.new_permalink_pin()
     payload["created_at"] = db.utcnow()
     payload["owner_user_id"] = access.owner_id(request)
-    if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
-        return _back("/apartments/new", err=_flash(request, "flash.error.no_such_entity"))
-    if payload["data_controller_entity_id"] and not access.entity(
-        request, payload["data_controller_entity_id"]
-    ):
-        return _back("/apartments/new", err=_flash(request, "flash.error.no_such_controller"))
+    payload["active"] = 1
     if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
         payload["data_controller_entity_id"] = None
     password = _form_str(form, "uby_ws_password")
@@ -1303,8 +1512,10 @@ async def apartment_create(request: Request):
     apartment_id = db.insert("apartment", payload)
     guest_slug.ensure(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_created", f"id={apartment_id}")
+    # 0096: a new property starts its guided setup at the calendar.
+    property_setup.start(apartment_id)
     return _back(
-        f"/apartments/{apartment_id}#calendars",
+        f"/apartments/{apartment_id}/setup/calendar",
         msg=_flash(request, "flash.apartments.created"),
     )
 
@@ -1324,73 +1535,232 @@ def apartment_detail(apartment_id: int, request: Request):
     )
     if not_found:
         return not_found
-    apartment = copy_ctx["apartment"]
-    feeds = db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
+    return _render_apartment_detail(request, copy_ctx["apartment"], copy_ctx)
+
+
+# 0094: GET-only presentation choice of the property page; never a data endpoint.
+PROPERTY_VIEWS = ("overview", "bookings", "settings")
+# 0096: Door lock is its own group, between Reporting & fees and Automation.
+PROPERTY_SETTINGS_SECTIONS = ("property", "guests", "reporting", "lock", "automation")
+
+
+def _property_view_state(
+    request: Request,
+    extra: Optional[Dict[str, Any]],
+    *,
+    lock_available: bool = True,
+) -> Dict[str, Any]:
+    extra = extra or {}
+    view = extra.get("property_view") or request.query_params.get("view") or ""
+    section = extra.get("settings_section") or request.query_params.get("section") or ""
+    if section not in PROPERTY_SETTINGS_SECTIONS or (section == "lock" and not lock_available):
+        section = ""
+    if view not in PROPERTY_VIEWS:
+        view = "settings" if section else "overview"
+    return {
+        "property_view": view,
+        "settings_section": section or "property",
+        "add_calendar": request.query_params.get("add_calendar") == "1",
+    }
+
+
+def _setup_facts(apartment_id: int) -> Dict[str, Any]:
+    """0100: what the record already says about the setup steps.
+
+    Stays and registered guests count only outside the guide's own demo stay.
+    """
+    stays = db.query_one(
+        "SELECT COUNT(*) AS n FROM reservation r WHERE r.apartment_id = ? "
+        f"AND r.archived_at IS NULL AND {demo.NOT_DEMO_STAY_SQL}",
+        (apartment_id,),
+    )["n"]
+    registered = db.query_one(
+        "SELECT 1 AS n FROM guest g JOIN reservation r ON r.id = g.reservation_id "
+        "WHERE r.apartment_id = ? AND g.entered_by = 'guest' "
+        f"AND {demo.NOT_DEMO_STAY_SQL} LIMIT 1",
+        (apartment_id,),
+    )
+    return {"stays": int(stays or 0), "guests_registered": bool(registered)}
+
+
+def _setup_state(apartment, *, feeds: int, report_complete: bool, stays: int) -> Optional[Dict[str, Any]]:
+    """0100: the stored guide, or the guide of a property made before it.
+
+    A property with no stored guide gets one unless it is already set up:
+    police details complete and stays on the way. Archived, switched-off and
+    built-in demo properties get none.
+    """
+    state = property_setup.load(apartment["id"])
+    set_up = report_complete and (feeds or stays)
+    if state:
+        if state["legacy"] and set_up and not state["finished"]:
+            # The same bar as an unstored one: Fee and Door lock are optional.
+            property_setup.finish(apartment["id"])
+            return property_setup.load(apartment["id"])
+        return state
+    if apartment["archived_at"] or not apartment["active"] or demo.is_demo_apartment(apartment):
+        return None
+    if set_up:
+        return None
+    return property_setup.legacy_state()
+
+
+def _setup_guide_bundle(
+    apartment,
+    *,
+    feeds: Optional[List[Any]] = None,
+    lock_available: Optional[bool] = None,
+) -> Dict[str, Any]:
+    """Feeds, facts, stored state and the current guide — one load per request."""
+    apt_id = apartment["id"]
+    if feeds is None:
+        feeds = db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apt_id,))
+    feed_count = len(feeds)
+    issues = _apartment_issues(apartment)
+    report_complete = all(
+        item["done"]
+        for item in _readiness(apartment, [], issues, bool(feeds), invite=False)["report"]
+    )
+    facts_row = _setup_facts(apt_id)
+    facts_payload = {
+        "feeds": feed_count,
+        "stays": facts_row["stays"],
+        "guests_registered": facts_row["guests_registered"],
+        "report_complete": report_complete,
+    }
+    state = _setup_state(
+        apartment, feeds=feed_count, report_complete=report_complete, stays=facts_row["stays"]
+    )
+    if lock_available is None:
+        lock_available = ttlock.allowed_for(apartment["owner_user_id"])
+    guide = None
+    if state and not state.get("finished"):
+        guide = property_setup.current(
+            apartment,
+            state,
+            feeds=feed_count,
+            report_complete=report_complete,
+            lock_available=lock_available,
+            stays=facts_row["stays"],
+            guests_registered=facts_row["guests_registered"],
+        )
+    return {
+        "feeds": feeds,
+        "feed_count": feed_count,
+        "facts_payload": facts_payload,
+        "facts_row": facts_row,
+        "state": state,
+        "guide": guide,
+        "report_complete": report_complete,
+        "lock_available": lock_available,
+    }
+
+
+def _setup_progress(
+    apartment, feeds, readiness, lock_available: bool, *, bundle: Optional[Dict[str, Any]] = None
+) -> Optional[Dict[str, Any]]:
+    """0102: compact setup progress for the property Overview card."""
+    if bundle is None:
+        bundle = _setup_guide_bundle(
+            apartment, feeds=feeds, lock_available=lock_available
+        )
+    state = bundle["state"]
+    facts_payload = bundle["facts_payload"]
+    if not state or state["finished"]:
+        return None
+    if state.get("hidden"):
+        return {
+            "hidden": True,
+            "done": property_setup.done_count(
+                state, apartment, facts_payload, lock_available=lock_available
+            ),
+            "total": property_setup.TOTAL_STEPS,
+            "continue_url": property_setup.wizard_url(apartment["id"], "calendar"),
+        }
+    guide = bundle["guide"]
+    if guide is None and not state["finished"] and property_setup.load(apartment["id"]):
+        property_setup.finish(apartment["id"])
+        return None
+    if not guide:
+        return None
+    return {
+        "done": guide["done_count"],
+        "total": guide["total"],
+        "continue_url": guide["url"],
+        "reporting_waiting": guide.get("reporting_waiting"),
+        "hidden": False,
+    }
+
+
+def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]:
+    """Lock editor context for the property page and the setup wizard. One copy."""
+    if not ttlock.allowed_for(apartment["owner_user_id"]):
+        return None
+    account = ttlock.account_for(apartment["owner_user_id"])
+    locks = [
+        {
+            **lock,
+            "used_by": ", ".join(
+                _properties_using_lock(
+                    apartment["owner_user_id"], lock["lock_id"], apartment_id
+                )
+            ),
+        }
+        for lock in (ttlock.locks_of(account) if account else [])
+    ]
+    free_locks = [lock for lock in locks if not lock["used_by"]]
+    selected = next((lock for lock in locks if lock["lock_id"] == apartment["lock_id"]), None)
+    cin, cout = apartment["checkin_hour"], apartment["checkout_hour"]
+    return {
+        "account": account,
+        "locks": locks,
+        "enabled": apartment["lock_provider"] == "ttlock",
+        "lock_id": apartment["lock_id"],
+        "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
+        "checkin_hour": cin,
+        "checkout_hour": cout,
+        "tz_warning": bool(
+            selected and selected["tz_offset_ms"] not in (None, *_PRAGUE_TZ_OFFSETS_MS)
+        ),
+        "overlap": _door_code_hours_overlap(cin, cout),
+        "buffer": config.DOOR_CODE_BUFFER_HOURS,
+        "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
+    }
+
+
+def _render_apartment_detail(
+    request: Request,
+    apartment: Dict[str, Any],
+    copy_ctx: Dict[str, Any],
+    *,
+    operator_error: Optional[str] = None,
+    extra: Optional[Dict[str, Any]] = None,
+    status_code: int = 200,
+):
+    apartment_id = apartment["id"]
+    feeds = [
+        _feed_display(dict(feed), request)
+        for feed in db.query("SELECT * FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,))
+    ]
     entities = access.entities(request)
     issues = list(_apartment_issues(apartment))
-    if request.query_params.get("address_line_mismatch") == "1":
-        issues.append(
-            validation.Issue(
-                "address_line",
-                _host_text(request, "apartment.form.address.line_details_mismatch"),
-                "warning",
-            )
-        )
-    address_line = (request.query_params.get("address_line") or "").strip() or validation.compose_czech_address_line(
-        apartment
-    )
-    address_details_open = (
-        request.query_params.get("address_line_mismatch") == "1"
-        or any(
-            issue.is_error and issue.field in ("addr_house_no", "addr_zip", "addr_obec")
-            for issue in issues
-        )
-    )
     # A connected calendar or a hand-typed stay both mean guests are on their
     # way, which is all the "Ready to invite guests" list asks about.
     link_key = guest_slug.link_key(apartment)
     has_stays = any(feed["active"] for feed in feeds) or bool(
         db.query_one(
-            "SELECT 1 AS present FROM reservation WHERE apartment_id = ? LIMIT 1",
+            "SELECT 1 AS present FROM reservation WHERE apartment_id = ? "
+            "AND COALESCE(source, '') != 'demo' LIMIT 1",
             (apartment_id,),
         )
     )
-    door_code = None
-    if ttlock.allowed_for(apartment["owner_user_id"]):
-        account = ttlock.account_for(apartment["owner_user_id"])
-        locks = [
-            {
-                **lock,
-                "used_by": ", ".join(
-                    _properties_using_lock(
-                        apartment["owner_user_id"], lock["lock_id"], apartment_id
-                    )
-                ),
-            }
-            for lock in (ttlock.locks_of(account) if account else [])
-        ]
-        free_locks = [lock for lock in locks if not lock["used_by"]]
-        selected = next((lock for lock in locks if lock["lock_id"] == apartment["lock_id"]), None)
-        cin, cout = apartment["checkin_hour"], apartment["checkout_hour"]
-        door_code = {
-            "account": account,
-            "locks": locks,
-            "enabled": apartment["lock_provider"] == "ttlock",
-            "lock_id": apartment["lock_id"],
-            # Offered without a saved choice only when it is the one lock no other
-            # property uses; a lock must never look attached to every property.
-            "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
-            "checkin_hour": cin,
-            "checkout_hour": cout,
-            "tz_warning": bool(
-                selected
-                and selected["tz_offset_ms"] not in (None, *_PRAGUE_TZ_OFFSETS_MS)
-            ),
-            "overlap": _door_code_hours_overlap(cin, cout),
-            "buffer": config.DOOR_CODE_BUFFER_HOURS,
-            "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
-        }
+    door_code = _door_code_context(apartment, apartment_id)
     readiness = _readiness(apartment, entities, issues, has_stays)
+    setup_bundle = _setup_guide_bundle(apartment, feeds=feeds, lock_available=door_code is not None)
+    setup_progress = _setup_progress(
+        apartment, feeds, readiness, door_code is not None, bundle=setup_bundle
+    )
+    setup_stored = property_setup.load(apartment_id)
     return render(
         request,
         "apartment_form.html",
@@ -1400,53 +1770,172 @@ def apartment_detail(apartment_id: int, request: Request):
             "entities": entities,
             "feeds": feeds,
             "issues": issues,
-            "address_line": address_line,
-            "address_details_open": address_details_open,
             "readiness": readiness,
             "more_options_open": _more_options_open(request, issues, readiness),
             "purposes": codelists.purpose_options("en"),
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
             "link_key": link_key,
             "link_base": f"{config.PUBLIC_BASE_URL}/l/",
-            "link_readable": (
-                guest_slug.readable_of(link_key) if link_key != apartment["permalink_token"] else ""
-            ),
-            "link_code": (
-                guest_slug.code_of(link_key) if link_key != apartment["permalink_token"] else ""
-            ),
             "pin": apartment["permalink_pin"] or "",
             "has_password": bool(apartment["uby_ws_password_enc"]),
             "codelist_fetched": codelists.last_fetched(codelists.KIND_COUNTRIES),
             "account": payments.czech_account_parts(apartment["stay_fee_council_account"] or ""),
+            "fee_return_to": stay_fee_routes.fee_return_path(
+                request.query_params.get("return_to"), apartment["id"]
+            ),
             "fee_template_peers": [
                 peer
                 for peer in access.apartments(request)
                 if peer["id"] != apartment["id"]
                 and int(peer["stay_fee_rate_czk"] or 0) > 0
             ],
-            "ws_request": _ws_request_letter(apartment, entities),
             **copy_ctx,
+            "apartment": apartment,
+            "operator_error": operator_error,
+            "calendar_platforms": CALENDAR_PLATFORMS,
+            "just_created": request.query_params.get("created") == "1",
+            "setup_progress": setup_progress,
+            "setup_checklist": property_setup.checklist(
+                setup_bundle["state"] or property_setup.legacy_state(), apartment,
+                setup_bundle["facts_payload"], lock_available=door_code is not None,
+            ),
+            "setup_finished": bool(setup_stored and setup_stored.get("finished")),
+            "setup_hidden": bool(setup_progress and setup_progress.get("hidden")),
+            **(extra or {}),
+            **_property_view_state(request, extra, lock_available=door_code is not None),
         },
+        status_code=status_code,
     )
 
 
-@router.get("/apartments/{apartment_id}/ws-request.txt")
-def apartment_ws_request_download(apartment_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment = access.apartment(request, apartment_id)
+def _render_property_detail(
+    apartment_id: int,
+    request: Request,
+    *,
+    extra: Optional[Dict[str, Any]] = None,
+    status_code: int = 200,
+):
+    """The property page with extra context (0089: a refused calendar draft)."""
+    apartment = _ensure_apartment_pin(access.apartment(request, apartment_id))
     if not apartment:
-        return Response("Not found.", status_code=404)
-    entities = access.entities(request)
-    letter = _ws_request_letter(apartment, entities)
-    return Response(
-        letter["download"].encode("utf-8"),
-        media_type="text/plain; charset=utf-8",
-        headers={
-            "Cache-Control": "no-store",
-            "Content-Disposition": 'attachment; filename="ubyport-ws-zadost.txt"',
+        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
+    copy_ctx = {
+        "copy_property_peers": [
+            row for row in access.apartments(request) if row["id"] != apartment_id
+        ],
+        "copy_from_id": None,
+        "property_prefill": {},
+        "copied_from_name": None,
+    }
+    return _render_apartment_detail(
+        request, apartment, copy_ctx, extra=extra, status_code=status_code
+    )
+
+
+def _refuse_apartment_save(
+    request: Request,
+    apartment: Dict[str, Any],
+    form,
+    operator_error: Optional[str],
+    address_errors: Optional[Dict[str, str]] = None,
+):
+    """Render the property page again with the host's unsaved values."""
+    draft = dict(apartment)
+    submitted = _property_draft(form)
+    for field in APARTMENT_TEXT_FIELDS:
+        if field in form:
+            draft[field] = submitted[field]
+    draft["legal_entity_id"] = submitted["legal_entity_id"]
+    if "data_controller_entity_id" in form:
+        draft["data_controller_entity_id"] = submitted["data_controller_entity_id"]
+    copy_ctx = {
+        "copy_property_peers": [
+            row for row in access.apartments(request) if row["id"] != apartment["id"]
+        ],
+        "copy_from_id": None,
+        "property_prefill": {},
+        "copied_from_name": None,
+    }
+    from .onboarding_wizard import refuse_setup_save
+
+    wizard = refuse_setup_save(
+        request,
+        apartment,
+        form,
+        address_errors=address_errors or {},
+        operator_error=operator_error,
+    )
+    if wizard:
+        return wizard
+    return _render_apartment_detail(
+        request,
+        draft,
+        copy_ctx,
+        operator_error=operator_error,
+        extra={
+            "property_view": "settings",
+            "settings_section": "property",
+            "address_errors": address_errors or {},
         },
+        status_code=400 if (operator_error or address_errors) else 200,
+    )
+
+
+def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
+    """0077: show the one fee editor again with what the host typed and the error.
+
+    Used by the property save; nothing is written.
+    """
+    from .onboarding_wizard import render_wizard, wizard_setup_prefix
+
+    draft = dict(apartment)
+    submitted = _property_draft(form)
+    for field in APARTMENT_TEXT_FIELDS:
+        if field in form:
+            draft[field] = submitted[field]
+    for key in ("legal_entity_id", "data_controller_entity_id"):
+        if key in form:
+            draft[key] = submitted[key]
+    fee_draft = stay_fee_routes.fee_form_values(form)
+    fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
+    account_draft = stay_fee_routes.fee_account_draft(form)
+    draft.update(fee_draft)
+    return_to = _form_str(form, "return_to")
+    if return_to.startswith(wizard_setup_prefix(apartment["id"])):
+        return render_wizard(
+            request,
+            apartment["id"],
+            "stay_fee",
+            extra={
+                "draft": draft,
+                "fee_account": account_draft,
+                "fee_account_error": True,
+            },
+            status_code=400,
+        )
+    copy_ctx = {
+        "copy_property_peers": [
+            row for row in access.apartments(request) if row["id"] != apartment["id"]
+        ],
+        "copy_from_id": None,
+        "property_prefill": {},
+        "copied_from_name": None,
+    }
+    return _render_apartment_detail(
+        request,
+        draft,
+        copy_ctx,
+        extra={
+            "property_view": "settings",
+            "settings_section": "reporting",
+            "account": account_draft,
+            "fee_account_error": True,
+            "flash_error": _flash(request, "flash.stay_fees.account_invalid"),
+            "fee_return_to": stay_fee_routes.fee_return_path(
+                _form_str(form, "fee_return_to"), apartment["id"]
+            ),
+        },
+        status_code=400,
     )
 
 
@@ -1456,7 +1945,7 @@ async def apartment_update(apartment_id: int, request: Request):
     if guard:
         return guard
     form = await request.form()
-    rejected, address_mismatch = _save_apartment_form(apartment_id, request, form)
+    rejected, _address_mismatch = _save_apartment_form(apartment_id, request, form)
     if rejected:
         return rejected
     # "Saved." said nothing about whether the property can actually report, so
@@ -1469,10 +1958,142 @@ async def apartment_update(apartment_id: int, request: Request):
         msg = _flash(request, "flash.apartments.saved", fields=", ".join(missing))
     else:
         msg = _flash(request, "flash.apartments.saved_ready")
+    fee_back = stay_fee_routes.fee_return_after_save(apartment, _form_str(form, "fee_return_to"))
+    if fee_back:
+        return _back(fee_back, msg=_flash(request, "flash.stay_fees.saved"))
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
-    if address_mismatch:
-        return_to = _append_query_param(return_to, "address_line_mismatch", "1")
+    wizard_response = _setup_after_save(
+        request, apartment_id, form, return_to, saved_message=msg
+    )
+    if wizard_response is not None:
+        return wizard_response
     return _back(return_to, msg=msg)
+
+
+def _lock_section_refusal(request: Request, apartment_id: int, form, error_key: str):
+    """A door-lock save that cannot be stored. The wizard stays on its step."""
+    if _form_str(form, "setup_step") == "door_lock":
+        return _wizard_rerender(
+            request,
+            apartment_id,
+            "door_lock",
+            notice=_flash(request, error_key),
+            status_code=400,
+        ), False
+    return _back(
+        f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
+        err=_flash(request, error_key),
+    ), False
+
+
+def _wizard_police_format_errors(apartment, payload, password: str) -> Dict[str, str]:
+    """Non-empty police fields that fail the format check. Empty ones stay 'still missing'."""
+    probe = dict(apartment)
+    for field in ("uby_idub", "uby_mark", "uby_name", "uby_contact", "uby_ws_user"):
+        if field in payload:
+            probe[field] = payload[field]
+    probe["uby_ws_password"] = password or (
+        db.decrypt_secret(apartment["uby_ws_password_enc"]) if apartment["uby_ws_password_enc"] else ""
+    )
+    errors: Dict[str, str] = {}
+    for issue in validation.errors_only(validation.validate_apartment(probe)):
+        if issue.field not in ("uby_idub", "uby_mark", "uby_name", "uby_contact"):
+            continue
+        if not (probe.get(issue.field) or "").strip():
+            continue
+        errors.setdefault(issue.field, issue.message)
+    return errors
+
+
+def _wizard_rerender(request: Request, apartment_id: int, step: str, *, notice: str = "", status_code: int = 200, extra=None):
+    from .onboarding_wizard import render_wizard
+
+    payload = dict(extra or {})
+    if notice:
+        payload["setup_notice"] = notice
+    return render_wizard(request, apartment_id, step, extra=payload, status_code=status_code)
+
+
+def _setup_after_save(
+    request: Request,
+    apartment_id: int,
+    form,
+    return_to: str,
+    *,
+    saved_message: str = "",
+) -> Optional[Response]:
+    """A wizard save advances only when that step is actually resolved.
+
+    An unresolved step is rendered again with the missing-fields message on the
+    page. Finishing (/done) happens only when no required step is still open.
+    """
+    from .onboarding_wizard import wizard_return_to, wizard_setup_prefix
+
+    if not str(return_to).startswith(wizard_setup_prefix(apartment_id)):
+        return None
+    stored = property_setup.load(apartment_id)
+    step = _form_str(form, "setup_step")
+    if stored and (stored["finished"] or stored["hidden"]):
+        return _back(return_to, msg=saved_message)
+    if step not in property_setup.STEPS:
+        return _back(return_to, msg=saved_message)
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return None
+    bundle = _setup_guide_bundle(apartment)
+    facts_payload = bundle["facts_payload"]
+    facts_row = bundle["facts_row"]
+    report_complete = bundle["report_complete"]
+    lock_available = bundle["lock_available"]
+    feeds = bundle["feeds"]
+    issues = _apartment_issues(apartment)
+    if step == "property" and property_setup.property_details_complete(apartment):
+        property_setup.mark(apartment_id, step, "done")
+    elif step == "police" and report_complete:
+        property_setup.mark(apartment_id, step, "done")
+    elif step == "stay_fee" and int(apartment["stay_fee_rate_czk"] or 0) > 0:
+        property_setup.mark(apartment_id, step, "done")
+    elif step == "door_lock" and apartment["lock_provider"] == "ttlock":
+        property_setup.mark(apartment_id, step, "done")
+    elif step == "automation":
+        property_setup.mark(apartment_id, step, "done")
+    state = property_setup.load(apartment_id) or property_setup.legacy_state()
+    path = return_to.split("?", 1)[0].rstrip("/")
+    if path.endswith("/done") or step == "automation":
+        if property_setup.wizard_unresolved(
+            apartment, state, facts_payload, lock_available=lock_available
+        ):
+            guide = property_setup.current(
+                apartment,
+                state,
+                feeds=len(feeds),
+                report_complete=report_complete,
+                lock_available=lock_available,
+                stays=facts_row["stays"],
+                guests_registered=facts_row["guests_registered"],
+            )
+            target = guide["url"] if guide else wizard_return_to(apartment_id, "police")
+            return _back(target)
+        property_setup.finish(apartment_id)
+        return _back(
+            wizard_return_to(apartment_id, "done"),
+            msg=_flash(request, "flash.setup.complete"),
+        )
+    status = property_setup.step_status(step, state, apartment, facts_payload)
+    if status not in ("done", "skipped"):
+        missing = _missing_report_labels(request, issues)
+        if step == "door_lock":
+            notice = _flash(request, "flash.error.door_code_lock")
+        elif missing:
+            notice = _flash(request, "flash.apartments.saved", fields=", ".join(missing))
+        else:
+            notice = _flash(
+                request,
+                "flash.apartments.saved",
+                fields=_host_text(request, f"wizard.step.{step}"),
+            )
+        return _wizard_rerender(request, apartment_id, step, notice=notice)
+    return _back(return_to, msg=saved_message)
 
 
 _ADDRESS_ONLY_FIELDS = (
@@ -1486,47 +2107,6 @@ _ADDRESS_ONLY_FIELDS = (
 )
 
 
-def _save_address_only(apartment_id: int, request: Request, form) -> Optional[Response]:
-    """Persist only police address fields (setup wizard address step)."""
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return _back("/setup/name", err=_flash(request, "flash.error.no_such_apartment"))
-    payload: Dict[str, Any] = {
-        field: _form_str(form, field) for field in _ADDRESS_ONLY_FIELDS
-    }
-    payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
-    _apply_address_line_from_form(form, payload)
-    merged = dict(apartment)
-    merged.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS})
-    address_issues = [
-        issue
-        for issue in validation.errors_only(validation.validate_apartment(_apartment_with_secret(merged)))
-        if issue.field in _ADDRESS_ONLY_FIELDS
-    ]
-    if address_issues:
-        from .setup_wizard import _address_preview, _step_context
-
-        return render(
-            request,
-            "setup/address.html",
-            _step_context(
-                request,
-                "address",
-                address_error=address_issues[0].message,
-                address_preview=_address_preview(apartment),
-                split_address=hasattr(validation, "split_czech_address"),
-            ),
-            status_code=400,
-        )
-    db.update(
-        "apartment",
-        apartment_id,
-        {field: payload[field] for field in _ADDRESS_ONLY_FIELDS},
-    )
-    db.audit("apartment_updated", f"id={apartment_id}")
-    return None
-
-
 def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Optional[Response], bool]:
     """Persist the property form, or return the redirect that rejects it.
 
@@ -1536,70 +2116,102 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
-    payload = _apartment_payload(form)
-    if "automation_mode" not in form:
-        for key in ("automation_mode", "submit_after_hours", "default_purpose"):
-            payload.pop(key, None)
-    _apply_police_defaults(payload, access.entities(request))
-    address_mismatch = _apply_address_line_from_form(form, payload)
-    if payload["legal_entity_id"] and not access.entity(request, payload["legal_entity_id"]):
-        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_entity")), False
-    if payload["data_controller_entity_id"] and not access.entity(
-        request, payload["data_controller_entity_id"]
+    setup_step = _wizard_setup_step(form)
+    if setup_step:
+        payload = _wizard_step_payload(form, setup_step)
+    else:
+        payload = _apartment_payload(form)
+        # 0088: an ordinary save never switches a property off; archived stays off.
+        payload["active"] = 0 if apartment["archived_at"] else 1
+        if "automation_mode" not in form:
+            for key in ("automation_mode", "submit_after_hours", "default_purpose"):
+                payload.pop(key, None)
+    if "operator_refresh" in form:
+        return _refuse_apartment_save(request, apartment, form, None), False
+    if not setup_step or setup_step == "property":
+        operator_error = _property_operator_error(request, form, payload)
+        if operator_error:
+            return _refuse_apartment_save(request, apartment, form, operator_error), False
+        if "data_controller_entity_id" not in form:
+            # A form without the controller selector must not clear an override.
+            payload.pop("data_controller_entity_id", None)
+        elif payload.get("data_controller_entity_id") == payload.get("legal_entity_id"):
+            payload["data_controller_entity_id"] = None
+    elif "legal_entity_id" in form:
+        probe = dict(apartment)
+        raw_entity = _form_str(form, "legal_entity_id")
+        try:
+            probe["legal_entity_id"] = int(raw_entity) if raw_entity else apartment.get("legal_entity_id")
+        except (TypeError, ValueError):
+            probe["legal_entity_id"] = None
+        operator_error = _property_operator_error(request, form, probe)
+        if operator_error:
+            from .onboarding_wizard import refuse_setup_save
+
+            refused = refuse_setup_save(request, apartment, form, operator_error=operator_error)
+            if refused:
+                return refused, False
+    if setup_step == "police":
+        _apply_police_defaults(payload, access.entities(request))
+    elif not setup_step:
+        _apply_police_defaults(payload, access.entities(request))
+    address_mismatch = False
+    if not setup_step:
+        for field in _ADDRESS_ONLY_FIELDS:
+            if field not in form:
+                # A section form without address inputs must not blank the address.
+                payload.pop(field, None)
+    if setup_step == "property" or (
+        not setup_step and any(field in form for field in _ADDRESS_ONLY_FIELDS)
     ):
-        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.no_such_controller")), False
-    if payload["data_controller_entity_id"] == payload["legal_entity_id"]:
-        payload["data_controller_entity_id"] = None
+        # The address stays complete once the property exists: a Settings save
+        # that clears or breaks it is refused with the typed values kept.
+        merged = dict(apartment)
+        merged.update({field: payload[field] for field in _ADDRESS_ONLY_FIELDS if field in payload})
+        address_errors = _create_address_errors(merged)
+        if address_errors:
+            return _refuse_apartment_save(request, apartment, form, None, address_errors), False
     password = _form_str(form, "uby_ws_password")
-    if password:
+    if setup_step == "police":
+        police_errors = _wizard_police_format_errors(apartment, payload, password)
+        if police_errors:
+            from .onboarding_wizard import refuse_setup_save
+
+            refused = refuse_setup_save(
+                request, apartment, form, police_errors=police_errors
+            )
+            if refused:
+                return refused, False
+    if password and (not setup_step or setup_step == "police"):
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
     pin_raw = _form_str(form, "permalink_pin")
-    if pin_raw:
+    if pin_raw and not setup_step:
         pin = auth.normalise_permalink_pin(pin_raw)
         if not pin or len(pin) != 6:
             return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.pin_six_digits")), False
         payload["permalink_pin"] = pin
-    link_readable = None
-    if "guest_link_name" in form:
-        link_readable, link_error = guest_slug.validate_readable(_form_str(form, "guest_link_name"))
-        if link_error:
-            return _back(
-                f"/apartments/{apartment_id}#communication",
-                err=_flash(request, f"flash.error.link_name_{link_error}"),
-            ), False
-    raw_account = payload.pop("_stay_fee_account_raw", None)
-    if raw_account is not None:
-        if raw_account.strip():
-            try:
-                (
-                    payload["stay_fee_council_account"],
-                    payload["stay_fee_council_iban"],
-                ) = payments.normalise_account(raw_account)
-            except ValueError:
-                return _back(
-                    f"/apartments/{apartment_id}#stay-fee-settings",
-                    err=_flash(request, "flash.stay_fees.account_invalid"),
-                ), False
-        else:
-            payload["stay_fee_council_account"] = None
-            payload["stay_fee_council_iban"] = None
+    if setup_step in ("", "stay_fee"):
+        try:
+            stay_fee_routes.apply_fee_account(payload)
+        except ValueError:
+            return refuse_fee_save(request, apartment, form), False
     # AR-18: the refused-login pause exists so the police account is not
     # hammered every ten minutes. Only replacing the credentials may lift it;
     # renaming the property or moving the PIN must not resume the retries.
-    credentials_changed = bool(password) or (
-        (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
-    )
-    if link_readable:
-        guest_slug.ensure(apartment)
-        if guest_slug.rename(apartment_id, link_readable) is None:
-            return _back(
-                f"/apartments/{apartment_id}#communication",
-                err=_flash(request, "flash.error.link_name_taken"),
-            ), False
+    credentials_changed = False
+    if setup_step == "police":
+        credentials_changed = bool(password) or (
+            (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
+        )
+    elif not setup_step:
+        credentials_changed = bool(password) or (
+            (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
+        )
     prior_lock_provider = apartment["lock_provider"]
     if (
         _form_str(form, "door_code_section") == "1"
         and ttlock.allowed_for(apartment["owner_user_id"])
+        and (not setup_step or setup_step == "door_lock")
     ):
         owner_id = apartment["owner_user_id"]
         if _form_str(form, "door_codes") == "1":
@@ -1609,31 +2221,27 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             ]
             lock_id = _form_str(form, "lock_id")
             if lock_id not in allowed_ids:
-                return _back(
-                    f"/apartments/{apartment_id}#door-code",
-                    err=_flash(request, "flash.error.door_code_lock"),
-                ), False
+                return _lock_section_refusal(
+                    request, apartment_id, form, "flash.error.door_code_lock"
+                )
             newly_chosen = (
                 apartment["lock_provider"] != "ttlock" or apartment["lock_id"] != lock_id
             )
             if newly_chosen and _properties_using_lock(owner_id, lock_id, apartment_id):
-                return _back(
-                    f"/apartments/{apartment_id}#door-code",
-                    err=_flash(request, "flash.error.door_code_lock_taken"),
-                ), False
+                return _lock_section_refusal(
+                    request, apartment_id, form, "flash.error.door_code_lock_taken"
+                )
             try:
                 cin = int(_form_str(form, "checkin_hour"))
                 cout = int(_form_str(form, "checkout_hour"))
             except ValueError:
-                return _back(
-                    f"/apartments/{apartment_id}#door-code",
-                    err=_flash(request, "flash.error.door_code_hours"),
-                ), False
+                return _lock_section_refusal(
+                    request, apartment_id, form, "flash.error.door_code_hours"
+                )
             if not (0 <= cin <= 23 and 0 <= cout <= 23):
-                return _back(
-                    f"/apartments/{apartment_id}#door-code",
-                    err=_flash(request, "flash.error.door_code_hours"),
-                ), False
+                return _lock_section_refusal(
+                    request, apartment_id, form, "flash.error.door_code_hours"
+                )
             payload.update(
                 {
                     "lock_provider": "ttlock",
@@ -1662,6 +2270,10 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     db.update("apartment", apartment_id, payload)
     if credentials_changed:
         alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
+    if (payload.get("internal_name") or "") != (apartment["internal_name"] or ""):
+        # 0096: the readable part of the guest link follows the name; every
+        # earlier link keeps redirecting to the current one.
+        guest_slug.follow_name(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     db.audit("apartment_updated", f"id={apartment_id}")
     if "lock_provider" in payload and payload["lock_provider"] != prior_lock_provider:
         if payload["lock_provider"] == "ttlock":
@@ -1684,10 +2296,81 @@ async def regenerate_pin(apartment_id: int, request: Request):
     db.audit("pin_rotated", f"apartment={apartment_id}")
     # The PIN itself stays out of the flash: ?msg= lands in browser history and
     # access logs, and the guest link card already shows the new PIN.
-    return _back(
-        _form_return_to(form, f"/apartments/{apartment_id}#communication"),
-        msg=_flash(request, "flash.apartments.pin_rotated"),
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}?view=settings&section=guests#communication")
+    if return_to == "/apartments":
+        # 0098: New PIN on the Properties summary row; safe_local_path drops
+        # the fragment, so land back on that row's section.
+        return_to = _PROPERTY_SUMMARIES
+    return _back(return_to, msg=_flash(request, "flash.apartments.pin_rotated"))
+
+
+_PROPERTY_SUMMARIES = "/apartments#property-summaries"
+
+
+def _wants_json(request: Request) -> bool:
+    return "application/json" in (request.headers.get("accept") or "").lower()
+
+
+@router.post("/apartments/{apartment_id}/automation-timing")
+async def automation_timing_save(apartment_id: int, request: Request):
+    """0098: inline "When to send to UbyPort" on Properties.
+
+    A scoped entry point to the Automation save: it writes only the two timing
+    columns, through the same normaliser (_automation_timing_values) the
+    Settings → Automation form uses. Default purpose and every other field are
+    untouched. Same login, CSRF and ownership checks as the property save.
+    """
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    form = await request.form()
+    as_json = _wants_json(request)
+    apartment = access.apartment(request, apartment_id)
+
+    def refuse(key: str, status: int):
+        message = _flash(request, key)
+        if as_json:
+            return JSONResponse({"ok": False, "error": str(message)}, status_code=status)
+        if _form_str(form, "setup_step") == "automation":
+            return _wizard_rerender(
+                request,
+                apartment_id,
+                "automation",
+                notice=message,
+                status_code=status,
+                extra={
+                    "draft": {
+                        "automation_mode": _form_str(form, "automation_mode"),
+                        "submit_after_hours": _form_str(form, "submit_after_hours"),
+                    }
+                },
+            )
+        return _back(_PROPERTY_SUMMARIES, err=message)
+
+    if not apartment:
+        return refuse("flash.error.no_such_apartment", 404)
+    mode = _form_str(form, "automation_mode")
+    if mode not in reporting.AUTOMATION_MODES:
+        return refuse("flash.properties.timing_invalid", 400)
+    if mode == "scheduled":
+        # The Automation editor clamps silently; an inline save that would
+        # store something other than what was typed is refused instead.
+        hours = _form_int(form, "submit_after_hours")
+        if hours is None or not 1 <= hours <= 48:
+            return refuse("flash.properties.timing_hours", 400)
+    values = _automation_timing_values(form)
+    db.update("apartment", apartment_id, values)
+    db.audit("apartment_updated", f"id={apartment_id}")
+    message = _flash(request, "flash.properties.timing_saved")
+    if as_json:
+        return JSONResponse({"ok": True, "message": str(message), **values})
+    return_to = _form_return_to(form, _PROPERTY_SUMMARIES, keep_fragment=True)
+    wizard_response = _setup_after_save(
+        request, apartment_id, form, return_to, saved_message=message
     )
+    if wizard_response is not None:
+        return wizard_response
+    return _back(return_to, msg=message)
 
 
 @router.post("/apartments/{apartment_id}/regenerate-link")
@@ -1712,7 +2395,7 @@ async def regenerate_link(apartment_id: int, request: Request):
     guest_slug.rotate(apartment_id)
     db.audit("permalink_rotated", f"apartment={apartment_id}")
     return _back(
-        _form_return_to(form, f"/apartments/{apartment_id}#communication"),
+        _form_return_to(form, f"/apartments/{apartment_id}?view=settings&section=guests#communication"),
         msg=_flash(request, "flash.apartments.guest_link"),
     )
 
@@ -1733,14 +2416,6 @@ UBYPORT_CREDENTIAL_FIELDS = UBYPORT_TEXT_FIELDS + ("uby_ws_password",)
 
 def _posted_credentials(form) -> bool:
     return any(_form_str(form, field) for field in UBYPORT_CREDENTIAL_FIELDS)
-
-
-@router.get("/automation")
-def automation_view(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    return _property_hub_redirect(request, "automation")
 
 
 @router.post("/apartments/{apartment_id}/archive")
@@ -1806,6 +2481,85 @@ def _feed_already_added(apartment_id: int, url: str) -> str:
 
 
 
+# 0089: a calendar always names its platform. One allowlist, shared with the
+# setup wizard; the stored label is the readable platform, never a logo key.
+CALENDAR_PLATFORMS = (
+    ("booking", "Booking.com"),
+    ("airbnb", "Airbnb"),
+    ("vrbo", "Vrbo"),
+    ("agoda", "Agoda"),
+    ("echalupy", "e-chalupy"),
+    ("other", ""),
+)
+_PLATFORM_NAMES = {key: name for key, name in CALENDAR_PLATFORMS if name}
+# Readable names for platforms recognised from an old feed's URL (display only).
+_DETECTED_PLATFORM_NAMES = {
+    **_PLATFORM_NAMES,
+    "expedia": "Expedia",
+    "tripadvisor": "Tripadvisor",
+    "trip": "Trip.com",
+    "google": "Google Calendar",
+    "apple": "iCloud",
+}
+_PLATFORM_OTHER_MAX = 80
+_FEED_NAME_MAX = 100
+
+
+def _has_control_chars(value: str) -> bool:
+    return any(ord(ch) < 32 or 127 <= ord(ch) < 160 for ch in value)
+
+
+def _calendar_platform(platform: str, other: str, own_name: str) -> tuple[Dict[str, str], Dict[str, str]]:
+    """Validate the chosen platform and optional name.
+
+    Returns ``({"label", "own_name"}, errors)`` where errors maps a form field
+    to an i18n key. Nothing is guessed from the URL: the host chooses.
+    """
+    errors: Dict[str, str] = {}
+    platform = (platform or "").strip()
+    other = (other or "").strip()
+    own_name = (own_name or "").strip()
+    label = ""
+    if platform == "other":
+        if not other:
+            errors["label_other"] = "calendar.error.other_required"
+        elif len(other) > _PLATFORM_OTHER_MAX or _has_control_chars(other):
+            errors["label_other"] = "calendar.error.other_invalid"
+        else:
+            label = other
+    elif platform in _PLATFORM_NAMES:
+        label = _PLATFORM_NAMES[platform]
+    else:
+        errors["label"] = "calendar.error.platform_required"
+    if own_name and (len(own_name) > _FEED_NAME_MAX or _has_control_chars(own_name)):
+        errors["own_name"] = "calendar.error.name_invalid"
+    return {"label": label, "own_name": own_name or label}, errors
+
+
+def _feed_display(feed: Dict[str, Any], request: Request) -> Dict[str, Any]:
+    """Readable name and portal for a stored feed, old unlabeled rows included."""
+    label = (feed.get("label") or "").strip()
+    detected = _DETECTED_PLATFORM_NAMES.get(icalsync.platform_of(feed.get("url") or ""), "")
+    shown = dict(feed)
+    shown["display_name"] = (
+        (feed.get("own_name") or "").strip()
+        or label
+        or detected
+        or _host_text(request, "calendar.fallback_name")
+    )
+    shown["display_portal"] = label or detected or _host_text(request, "calendar.platform.other")
+    return shown
+
+
+def _feed_form_draft(form) -> Dict[str, str]:
+    return {
+        "label": _form_str(form, "label"),
+        "label_other": _form_str(form, "label_other"),
+        "own_name": _form_str(form, "own_name"),
+        "url": _form_str(form, "url"),
+    }
+
+
 @router.post("/apartments/{apartment_id}/feeds")
 async def add_feed(apartment_id: int, request: Request):
     guard = auth.require_login(request)
@@ -1814,35 +2568,70 @@ async def add_feed(apartment_id: int, request: Request):
     if not access.apartment(request, apartment_id):
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
     form = await request.form()
-    url = _form_str(form, "url")
-    try:
+    draft = _feed_form_draft(form)
+    values, errors = _calendar_platform(draft["label"], draft["label_other"], draft["own_name"])
+    url = draft["url"].strip()
+    if not url:
+        errors["url"] = "calendar.error.url_required"
+    elif not errors:
+        # The DNS-resolving safety check runs only once the platform is valid.
         from ..feed_url import FeedUrlError, validate_calendar_url
 
-        url = validate_calendar_url(url)
-    except FeedUrlError as exc:
-        return _back(f"/apartments/{apartment_id}", err=_flash(request, exc.key))
-    already = _feed_already_added(apartment_id, url)
-    if already:
-        return _back(
-            f"/apartments/{apartment_id}",
-            err=_flash(request, "flash.error.feed_duplicate", property=already),
+        try:
+            url = validate_calendar_url(url)
+        except FeedUrlError as exc:
+            errors["url"] = exc.key
+    feed_errors = {field: _host_text(request, key) for field, key in errors.items()}
+    if not errors:
+        already = _feed_already_added(apartment_id, url)
+        if already:
+            feed_errors["url"] = _host_text(request, "flash.error.feed_duplicate", property=already)
+    return_to = _form_return_to(form, f"/apartments/{apartment_id}?view=bookings#calendars")
+    if feed_errors:
+        from .onboarding_wizard import render_wizard, wizard_setup_prefix
+
+        if return_to.startswith(wizard_setup_prefix(apartment_id)):
+
+            return render_wizard(
+                request,
+                apartment_id,
+                "calendar",
+                extra={"feed_draft": draft, "feed_errors": feed_errors},
+                status_code=400,
+            )
+        return _render_property_detail(
+            apartment_id,
+            request,
+            extra={"feed_draft": draft, "feed_errors": feed_errors, "property_view": "bookings"},
+            status_code=400,
         )
     db.insert(
         "ical_feed",
         {
             "apartment_id": apartment_id,
             "url": url,
-            "label": _form_str(form, "label"),
-            "own_name": _form_str(form, "own_name"),
+            "label": values["label"],
+            "own_name": values["own_name"],
             "active": 1,
             "created_at": db.utcnow(),
         },
     )
     totals = await run_in_threadpool(icalsync.sync_all, apartment_id)
     if totals["errors"]:
-        return _back(f"/apartments/{apartment_id}", err=_flash(request, "flash.error.feed_added_unreadable"))
+        from .onboarding_wizard import wizard_setup_prefix
+
+        err = _flash(request, "flash.error.feed_added_unreadable")
+        if return_to.startswith(wizard_setup_prefix(apartment_id)):
+            step = _wizard_setup_step(form) or "calendar"
+            if step not in property_setup.STEPS:
+                step = "calendar"
+            return _back(property_setup.wizard_url(apartment_id, step), err=err)
+        return _back(
+            f"/apartments/{apartment_id}?view=bookings#calendars",
+            err=err,
+        )
     return _back(
-        f"/apartments/{apartment_id}",
+        return_to,
         msg=_flash_plural(request, "flash.feeds.added", totals["created"]),
     )
 
@@ -1856,7 +2645,10 @@ def delete_feed(feed_id: int, request: Request):
     if not feed:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_calendar"))
     db.execute("DELETE FROM ical_feed WHERE id = ?", (feed_id,))
-    return _back(f"/apartments/{feed['apartment_id']}", msg=_flash(request, "flash.feeds.removed"))
+    return _back(
+        f"/apartments/{feed['apartment_id']}?view=bookings#calendars",
+        msg=_flash(request, "flash.feeds.removed"),
+    )
 
 
 @router.post("/sync")
@@ -2292,7 +3084,12 @@ def reservation_detail(reservation_id: int, request: Request):
                 f"/{reservation_id}"
             ),
             "stay_claim": claim.ensure_row(reservation_id),
-            "hand_filing": reporting.hand_filing_view(progress),
+            "is_demo_stay": demo.is_demo_stay(reservation),
+            "hand_filing": (
+                {"count": 0, "candidates": 0}
+                if demo.is_demo_stay(reservation)
+                else reporting.hand_filing_view(progress)
+            ),
             "stay_invoice": invoices.active_invoice_for_stay(reservation_id),
             "door_code": (
                 door_codes.view(reservation, apartment)
@@ -2407,6 +3204,20 @@ async def reservation_quick_edit(reservation_id: int, request: Request):
     )
 
 
+@router.post("/reservations/{reservation_id}/delete-demo")
+async def reservation_delete_demo(reservation_id: int, request: Request):
+    """0100: delete the setup guide's demo stay. A real stay is never deleted here."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation or not demo.is_demo_stay(reservation):
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+    demo.delete_demo_stay(reservation_id, reservation["apartment_id"])
+    db.audit("demo_stay_deleted", f"id={reservation_id}")
+    return _back("/reservations", msg=_flash(request, "flash.setup.demo_deleted"))
+
+
 @router.post("/reservations/{reservation_id}/archive")
 async def reservation_archive(reservation_id: int, request: Request):
     guard = auth.require_login(request)
@@ -2480,6 +3291,9 @@ async def reservation_filed_by_hand(reservation_id: int, request: Request):
     if not reservation:
         return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
     back = f"/reservations/{reservation_id}#reports"
+    if demo.is_demo_stay(reservation):
+        # 0100: a demo stay is not reported at all, by UbyHost or by hand.
+        return _back(back, err=_flash(request, "hint.demo_stay"))
     form = await request.form()
     filed_at = reporting.parse_manual_filed_at(_form_str(form, "filed_at") or "")
     if not filed_at:
@@ -3386,6 +4200,8 @@ def settings_view(request: Request):
                 "(contact_email IS NULL OR TRIM(contact_email) = '') ORDER BY name",
                 (access.owner_id(request),),
             ),
+            # 0076: Account settings opens the one business editor when there is one.
+            "business_entities": access.entities(request),
             "apartments_without_entity": db.query(
                 "SELECT id, internal_name FROM apartment "
                 f"WHERE {db.null_safe_eq('owner_user_id')} AND legal_entity_id IS NULL AND active = 1 "

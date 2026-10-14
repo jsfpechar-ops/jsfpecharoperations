@@ -1,17 +1,25 @@
-"""UbyPort web-service credential request letter on the property form."""
+"""0097: the web-service request-letter generator is replaced by one line of fine print.
+
+The property Police reporting section links the official Foreign Police page
+instead of drafting a letter; the old download URL lands on that section.
+"""
 from __future__ import annotations
 
-import re
 import secrets
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app import auth, db
+from app.host_i18n import STRINGS
 from app.main import app
 from tests.conftest import login_as
 
 SUMMARY_EN = "I don&#39;t have web-service credentials yet"
+POLICE_PAGE = (
+    "https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/"
+    "jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport"
+)
 IDUB = "20998877665544"
 ENTITY_NAME = "Pension U Karla"
 
@@ -85,63 +93,47 @@ def letter_world():
         db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
 
 
-def test_download_contains_idub_and_operator(letter_world):
+def test_old_download_url_is_gone(letter_world):
+    """0101: the 0097 redirect was removed with the other old links."""
     client = letter_world["client_a"]
     apartment_id = letter_world["apartment_id"]
-    response = client.get(f"/apartments/{apartment_id}/ws-request.txt")
-    assert response.status_code == 200
-    assert response.headers.get("content-type", "").startswith("text/plain")
-    assert 'filename="ubyport-ws-zadost.txt"' in response.headers.get("content-disposition", "")
-    text = response.content.decode("utf-8")
-    assert IDUB in text
-    assert ENTITY_NAME in text
-    assert "robotické zasílání" in text
-    assert "ybndqw9" in text
-    assert "Olšanská 2" in text
-    assert "130 51 Praha 3" in text
+    response = client.get(f"/apartments/{apartment_id}/ws-request.txt", follow_redirects=False)
+    assert response.status_code == 404
 
 
-def test_download_uses_idub_placeholder_when_empty(letter_world):
-    client = letter_world["client_a"]
-    apartment_id = letter_world["apartment_id"]
-    db.update("apartment", apartment_id, {"uby_idub": ""})
-    response = client.get(f"/apartments/{apartment_id}/ws-request.txt")
-    assert response.status_code == 200
-    text = response.content.decode("utf-8")
-    assert "[doplňte IDUB]" in text
-    assert IDUB not in text
-    db.update("apartment", apartment_id, {"uby_idub": IDUB})
-
-
-def test_download_forbidden_for_other_owner(letter_world):
+def test_old_download_url_is_not_found_for_other_owner(letter_world):
     client = letter_world["client_b"]
     apartment_id = letter_world["apartment_id"]
-    assert client.get(f"/apartments/{apartment_id}/ws-request.txt").status_code == 404
+    response = client.get(f"/apartments/{apartment_id}/ws-request.txt", follow_redirects=False)
+    assert response.status_code == 404
 
 
-def test_form_block_open_without_ws_user(letter_world):
+@pytest.mark.parametrize("ws_user", ["", "UBY-WS_demo12"])
+@pytest.mark.parametrize("lang", ["en", "cs"])
+def test_section_has_one_fine_print_line_and_no_letter(letter_world, ws_user, lang):
     client = letter_world["client_a"]
     apartment_id = letter_world["apartment_id"]
-    db.update("apartment", apartment_id, {"uby_ws_user": ""})
-    page = client.get(f"/apartments/{apartment_id}?lang=en")
+    db.update("apartment", apartment_id, {"uby_ws_user": ws_user})
+    page = client.get(f"/apartments/{apartment_id}?lang={lang}")
     assert page.status_code == 200
-    assert "ws-request-letter" in page.text
-    assert SUMMARY_EN in page.text
-    assert f'id="ws-request-letter" open' in page.text.replace("\n", " ")
-    assert f"/apartments/{apartment_id}/ws-request.txt" in page.text
-    assert "ybndqw9" in page.text
-    assert "Olšanská 2" in page.text
+    text = page.text
+    section = text.split('id="ubyport"', 1)[1].split("</section>", 1)[0]
+    # The generator is gone in every state: no summary, recipient, body or download.
+    assert SUMMARY_EN not in text
+    for gone in ('id="ws-request-body"', "ws-request.txt", "ybndqw9", "Olšanská 2", "robotické zasílání"):
+        assert gone not in text, gone
+    # One fine-print line under the credential fields, linking the police page.
+    assert section.count(POLICE_PAGE) == 1
+    line = section.split('class="small muted police-no-credentials"', 1)[1].split("</p>", 1)[0]
+    assert POLICE_PAGE in line and 'target="_blank"' in line and 'rel="noopener"' in line
+    assert STRINGS[lang]["apartment.form.ubyport.no_credentials"] in line
+    # It sits after the password field and before the abbreviation.
+    assert 'id="ws-request-letter"' not in text
+    marker = 'class="small muted police-no-credentials"'
+    assert section.index('id="uby_ws_password"') < section.index(marker) < section.index('id="uby_mark"')
+    db.update("apartment", apartment_id, {"uby_ws_user": ""})
 
 
-def test_form_block_closed_when_ws_user_set(letter_world):
-    client = letter_world["client_a"]
-    apartment_id = letter_world["apartment_id"]
-    db.update("apartment", apartment_id, {"uby_ws_user": "UBY-WS_demo12"})
-    page = client.get(f"/apartments/{apartment_id}?lang=en")
-    assert page.status_code == 200
-    assert "ws-request-letter" in page.text, "ws-request block missing from apartment form"
-    assert SUMMARY_EN in page.text
-    block = re.search(r'<details[^>]*id="ws-request-letter"([^>]*)>', page.text)
-    assert block is not None
-    assert "open" not in block.group(1)
-    db.update("apartment", apartment_id, {"uby_ws_user": ""})
+def test_letter_strings_are_gone():
+    for lang in ("en", "cs"):
+        assert not [key for key in STRINGS[lang] if ".ws_request." in key]

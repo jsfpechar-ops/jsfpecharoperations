@@ -126,12 +126,13 @@ def test_issue_is_the_only_coral_primary_in_the_builder(host):
     assert 'data-total' in page  # the live total mirrors the Decimal sum
 
 
-def test_language_and_note_hide_behind_more_options(host):
+def test_language_and_note_are_visible_not_folded(host):
     entity_id = _add_entity()
     stay_id = make_stay(_owner())
     page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}").text
-    assert '<details class="invoice-more">' in page
-    more = page.split('<details class="invoice-more">')[1].split("</details>")[0]
+    assert '<div class="invoice-more">' in page
+    assert '<details class="invoice-more">' not in page
+    more = page.split('<div class="invoice-more">')[1].split("data-bank-warning")[0]
     assert 'id="lang"' in more
     assert 'id="note"' in more
 

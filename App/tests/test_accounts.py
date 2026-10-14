@@ -222,7 +222,11 @@ def test_hosts_cannot_set_new_four_digit_pins():
             f"/apartments/{apartment_id}",
             data={
                 "internal_name": "PIN flat",
-                "active": "1",
+                "legal_entity_id": str(
+                    db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (apartment_id,))[
+                        "legal_entity_id"
+                    ]
+                ),
                 "permalink_pin": "1234",
             },
             follow_redirects=False,

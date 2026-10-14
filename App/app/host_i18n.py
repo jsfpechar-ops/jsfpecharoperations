@@ -26,6 +26,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "lang.cs": "CS",
         "lang.switch": "Language",
         "nav.guide": "Help",
+        "help.tip.label": "Help",
+        "help.tip.more": "Read more",
         "nav.operations": "Operations",
         "nav.records": "Records",
         "nav.setup": "Setup",
@@ -185,7 +187,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay_fees.send.add_databox": "Fee settings",
         "stay_fees.send.subject": "Subject (Czech, for the municipality)",
         "stay_fees.send.body": "Message text (Czech)",
-        "stay_fees.send.open_databox": "Open your data box",
         "stay_fees.send.mark_sent": "Mark as sent",
         "stay_fees.send.mark_paid": "Mark as paid",
         "stay_fees.send.message_id_label": "Message ID",
@@ -346,42 +347,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "onboarding.demo_hint": "Available only in mock/demo environments. Clear it whenever you are done.",
         "setup.banner.aria": "First-flat setup",
-        "setup.banner.line": "Setup: step %(step)s of %(total)s · Continue →",
-        "setup.frame.title": "Setup · step %(step)s of %(total)s",
-        "setup.frame.step_of": "Step %(step)s of %(total)s",
-        "setup.frame.back": "Back",
-        "setup.frame.continue": "Continue",
-        "setup.frame.later": "Do this later",
-        "setup.welcome.title": "Let's set up your first flat",
-        "setup.welcome.lede": "5 short steps, about 10 minutes. We save as you go.",
-        "setup.welcome.prepare": (
-            "Have ready: your Airbnb or Booking login · the police letter, if you have one · your IČO, if you have one."
-        ),
-        "setup.welcome.start": "Start",
-        "setup.name.title": "Name your flat",
-        "setup.name.label": "What do you call this flat?",
-        "setup.name.placeholder": "e.g. Flat Vinohrady",
-        "setup.name.error": "Enter a name for this flat.",
-        "setup.address.title": "Where is it?",
-        "setup.address.line_placeholder": "e.g. Vinohradská 1234/12, 120 00 Praha 2",
-        "setup.address.preview_label": "We'll send it to the police like this:",
-        "setup.address.preview_empty": "Fill in the address above.",
-        "setup.bookings.title": "Where do your guests book?",
-        "setup.bookings.source.airbnb": "Airbnb",
-        "setup.bookings.source.booking": "Booking.com",
-        "setup.bookings.source.echalupy": "e-chalupy",
-        "setup.bookings.source.other": "Other website",
-        "setup.bookings.source.myself": "I take bookings myself",
-        "setup.bookings.paste_label": "Paste the calendar link",
-        "setup.bookings.how_title": "Show me how",
-        "setup.bookings.how_body": "Open your listing calendar settings and copy the private iCal export link.",
-        "setup.bookings.url_error": "Paste a calendar link to continue.",
-        "setup.bookings.found_title": "We found %(count)s upcoming stays",
-        "setup.bookings.found_empty": "No upcoming stays yet. You can add one by hand later.",
-        "setup.bookings.error_title": "We could not read that calendar",
-        "setup.bookings.error_body": "Check the link is the private iCal export, not the public booking page.",
-        "setup.bookings.try_again": "Try again",
-        "setup.bookings.next_ubyport": "Next: police details",
+        "setup.banner.line": "Setup: step %(step)s of %(total)s · Continue",
         "demo.load": "Explore with demo data",
         "demo.load_detail": "Two sample properties. Nothing is sent to the police.",
         "demo.clear": "Clear demo data",
@@ -1261,15 +1227,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stays.table.nights.one": "%(count)s night",
         "stays.table.nights.few": "%(count)s nights",
         "stays.table.in_house": "In house",
-        "stays.table.portal": "portal →",
+        "stays.table.portal": "portal",
         "stays.row.open": "Open stay",
         "stays.row.add_guest": "Add a guest",
         "stays.row.open_guest_form": "Open guest form",
         "stays.row.restore": "Restore",
         "stays.pagination.showing": "Showing %(from)s–%(to)s of %(total)s stay.",
         "stays.pagination.showing_plural": "Showing %(from)s–%(to)s of %(total)s stays.",
-        "stays.pagination.prev": "← Previous",
-        "stays.pagination.next": "Next →",
+        "stays.pagination.prev": "Previous",
+        "stays.pagination.next": "Next",
         "stays.pagination.label": "Page %(page)s of %(pages)s",
         "stays.empty.archive": "No archived stays. Archive mistakes from any stay row.",
         "stays.empty.filter": "No stay matches this filter.",
@@ -1413,7 +1379,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "invoice.err.extras_cap": "Extras together can't cost more than the accommodation.",
         "invoice.err.other_cap": "Other can be at most 30 % of the accommodation.",
         "invoice.preview": "Preview",
-        "invoice.more_options": "More invoice options",
         "invoice.total_live": "Total",
         "invoice.issue": "Issue invoice",
         "invoice.next_number": "Next number: %(number)s",
@@ -1789,7 +1754,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay_fees.send.add_databox": "Nastavení poplatku",
         "stay_fees.send.subject": "Předmět (česky, pro úřad)",
         "stay_fees.send.body": "Text zprávy (česky)",
-        "stay_fees.send.open_databox": "Otevřít datovou schránku",
         "stay_fees.send.mark_sent": "Označit jako odeslané",
         "stay_fees.send.mark_paid": "Označit jako zaplacené",
         "stay_fees.send.message_id_label": "ID zprávy",
@@ -1952,42 +1916,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "onboarding.demo_hint": "Jen pro ukázkové/mock prostředí. Po dokončení je můžete kdykoli smazat.",
         "setup.banner.aria": "Nastavení prvního ubytování",
-        "setup.banner.line": "Nastavení: krok %(step)s z %(total)s · Pokračovat →",
-        "setup.frame.title": "Nastavení · krok %(step)s z %(total)s",
-        "setup.frame.step_of": "Krok %(step)s z %(total)s",
-        "setup.frame.back": "Zpět",
-        "setup.frame.continue": "Pokračovat",
-        "setup.frame.later": "Udělám to později",
-        "setup.welcome.title": "Nastavme vaše první ubytování",
-        "setup.welcome.lede": "5 krátkých kroků, asi 10 minut. Ukládáme průběžně.",
-        "setup.welcome.prepare": (
-            "Mějte po ruce: přihlášení do Airbnb nebo Booking · dopis od policie, pokud ho máte · IČO, pokud ho máte."
-        ),
-        "setup.welcome.start": "Začít",
-        "setup.name.title": "Pojmenujte ubytování",
-        "setup.name.label": "Jak to ubytování nazýváte?",
-        "setup.name.placeholder": "např. Byt Vinohrady",
-        "setup.name.error": "Zadejte název ubytování.",
-        "setup.address.title": "Kde to je?",
-        "setup.address.line_placeholder": "např. Vinohradská 1234/12, 120 00 Praha 2",
-        "setup.address.preview_label": "Na policii to pošleme takto:",
-        "setup.address.preview_empty": "Vyplňte adresu výše.",
-        "setup.bookings.title": "Kde si hosté rezervují?",
-        "setup.bookings.source.airbnb": "Airbnb",
-        "setup.bookings.source.booking": "Booking.com",
-        "setup.bookings.source.echalupy": "e-chalupy",
-        "setup.bookings.source.other": "Jiný web",
-        "setup.bookings.source.myself": "Rezervace beru sám/sama",
-        "setup.bookings.paste_label": "Vložte odkaz na kalendář",
-        "setup.bookings.how_title": "Ukažte mi jak",
-        "setup.bookings.how_body": "V nastavení kalendáře u inzerátu zkopírujte soukromý exportní odkaz iCal.",
-        "setup.bookings.url_error": "Vložte odkaz na kalendář, abyste mohli pokračovat.",
-        "setup.bookings.found_title": "Našli jsme %(count)s nadcházejících pobytů",
-        "setup.bookings.found_empty": "Zatím žádné nadcházející pobyty. Později můžete přidat ručně.",
-        "setup.bookings.error_title": "Kalendář se nepodařilo načíst",
-        "setup.bookings.error_body": "Zkontrolujte, že jde o soukromý export iCal, ne o veřejnou rezervační stránku.",
-        "setup.bookings.try_again": "Zkusit znovu",
-        "setup.bookings.next_ubyport": "Další: údaje pro policii",
+        "setup.banner.line": "Nastavení: krok %(step)s z %(total)s · Pokračovat",
         "demo.load": "Prohlédnout s ukázkovými daty",
         "demo.load_detail": "Dvě ukázková ubytování. Na policii se nic neodešle.",
         "demo.clear": "Smazat ukázková data",
@@ -2094,6 +2023,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "housebook.legal_footnote": "Správcem údajů hostů jste vy. UbyHost poskytuje jen software: nejde o právní poradenství a neodpovídá za údaje zadané vámi nebo hosty ani za způsob jeho použití.",
         "nav.guide": "Nápověda",
+        "help.tip.label": "Nápověda",
+        "help.tip.more": "Číst více",
         "send.this_stay": "Odeslat tento pobyt",
         "send.all_ready": "Odeslat všechny připravené",
         "send.all_ready_hint": "Odešle každý pobyt, který je kompletní a čeká na vaše potvrzení",
@@ -2857,15 +2788,15 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stays.table.nights.one": "%(count)s noc",
         "stays.table.nights.few": "%(count)s noci",
         "stays.table.in_house": "Ubytováni",
-        "stays.table.portal": "portál →",
+        "stays.table.portal": "portál",
         "stays.row.open": "Otevřít pobyt",
         "stays.row.add_guest": "Přidat hosta",
         "stays.row.open_guest_form": "Otevřít formulář hosta",
         "stays.row.restore": "Obnovit",
         "stays.pagination.showing": "Zobrazen %(from)s–%(to)s z %(total)s pobytu.",
         "stays.pagination.showing_plural": "Zobrazeno %(from)s–%(to)s z %(total)s pobytů.",
-        "stays.pagination.prev": "← Předchozí",
-        "stays.pagination.next": "Další →",
+        "stays.pagination.prev": "Předchozí",
+        "stays.pagination.next": "Další",
         "stays.pagination.label": "Strana %(page)s z %(pages)s",
         "stays.empty.archive": "Žádné archivované pobyty. Chyby archivujte z řádku pobytu.",
         "stays.empty.filter": "Žádný pobyt neodpovídá filtru.",
@@ -3006,7 +2937,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "invoice.err.extras_cap": "Další položky dohromady nesmí stát víc než ubytování.",
         "invoice.err.other_cap": "Položka Jiné smí být nejvýš 30 % ceny ubytování.",
         "invoice.preview": "Náhled",
-        "invoice.more_options": "Další možnosti faktury",
         "invoice.total_live": "Celkem",
         "invoice.issue": "Vystavit fakturu",
         "invoice.next_number": "Další číslo: %(number)s",
@@ -3227,10 +3157,6 @@ _INTERFACE_STRINGS = {
         "common.all": "All",
         "common.filter": "Filter",
         "housebook.title": "House book",
-        "housebook.lede": (
-            "Every guest record and stay date. Keep this register for six years after "
-            "the last entry and produce it during a police inspection."
-        ),
         "housebook.apartment": "Property",
         "housebook.from": "Stays from",
         "housebook.until": "Stays until",
@@ -3276,9 +3202,6 @@ _INTERFACE_STRINGS = {
         "automation.contact": "Contact at registration",
         "automation.login": "Web-service login",
         "automation.password": "Web-service password",
-        "automation.password_saved": "Saved. Not shown again.",
-        "automation.password_keep": "Leave empty to keep the saved password",
-        "automation.password_paste": "Paste from the police letter",
         "automation.password_replace": "Fill this only when replacing the police-issued password. Otherwise leave it empty.",
         "automation.password_new": "Required once; encrypted at rest and never shown again after save.",
         "automation.save": "Save %(property)s",
@@ -3298,11 +3221,6 @@ _INTERFACE_STRINGS = {
         "apartment.form.addr.street": 'Street',
         "apartment.form.addr.zip": 'Postcode',
         "apartment.form.addr.zip_hint": '5 digits.',
-        "apartment.form.address.lede": 'Type the address once. UbyHost splits it for the police register; you can still edit the parts below.',
-        "apartment.form.address.line_details_mismatch": 'The address line and the details differ. We kept the details.',
-        "apartment.form.address.line_label": 'Address',
-        "apartment.form.address.line_placeholder": 'Vinohradská 1234/12, 120 00 Praha 2',
-        "apartment.form.address.police_details_title": 'Address as sent to the police',
         "apartment.form.address.title": 'Address of the accommodation facility',
         "apartment.form.archive_help": 'Hide it without deleting records. Useful for duplicate or unused apartments.',
         "apartment.form.archive_title": 'Archive this property',
@@ -3328,7 +3246,7 @@ _INTERFACE_STRINGS = {
         "apartment.form.calendars.own_name_label": 'Your name for it',
         "apartment.form.calendars.own_name_ph": 'Airbnb – Vinohrady',
         "apartment.form.calendars.portal_ph": 'Airbnb / Booking.com / Agoda / Vrbo',
-        "apartment.form.calendars.url_hint": 'Airbnb: Calendar → Availability → Connect calendars. Booking.com: Rates & Availability → Sync calendars. Paste the whole link.',
+        "apartment.form.calendars.url_hint": 'Airbnb: Calendar / Availability / Connect calendars. Booking.com: Rates & Availability / Sync calendars. Paste the whole link.',
         "apartment.form.calendars.url_label": 'iCal export URL',
         "apartment.form.calendars.url_ph": 'https://www.airbnb.com/calendar/ical/…',
         "apartment.form.city_en.hint": 'Shown to guests next to the apartment name, e.g. "Prague".',
@@ -3373,9 +3291,8 @@ _INTERFACE_STRINGS = {
         "apartment.form.guest_link.window_hint": 'Only stays whose check-in date falls in this window are listed on the apartment link. A past stay keeps working through its own stay-specific link for the number of days set below.',
         "apartment.form.guest_link.window_label": 'Show stays starting within (days)',
         "apartment.form.guest_message.default": (
-            "Hello, before you arrive please fill in the short check-in form at the link below. "
-            "It takes about 2 minutes per person and is required by Czech law. "
-            "Thank you and see you soon!"
+            "Welcome! Please complete the guest registration form before your stay. "
+            "If you have any questions, please contact your host. Thank you!"
         ),
         "apartment.form.guest_message.hint": "Shown on the guest form. Do not include access codes or other secrets.",
         "apartment.form.guest_message.label": 'Custom message for guests',
@@ -3451,42 +3368,18 @@ _INTERFACE_STRINGS = {
         "apartment.form.refresh_codelists": 'Refresh code lists from UbyPort',
         "apartment.form.test_connection": 'Save and test connection',
         "apartment.form.title_new": 'New apartment',
-        "apartment.form.ubyport.contact_hint": "E-mail or phone from your original UbyPort registration; often not on the web-service PDF. A wrong value can get reports rejected.",
-        "apartment.form.ubyport.derived_contact_hint": "Filled from your operator contact e-mail when left blank; edit if the police register lists something else.",
-        "apartment.form.ubyport.derived_mark_hint": "Filled from the characters after UBY-WS_ in your web-service login when left blank; edit if your zkratka differs.",
-        "apartment.form.ubyport.derived_name_hint": "Filled from your property name (first 35 characters) when left blank; edit to match the police register.",
-        "apartment.form.ubyport.derived_summary": "Details sent to the police (filled for you)",
-        "apartment.form.ubyport.idub_hint": "PDF line “IDUB:”, 12–14 digits, character for character.",
+        "apartment.form.ubyport.contact_hint": "An e-mail or phone where the police can reach you about your reports, as given when you registered in UbyPort. The web-service letter often does not show it.",
+        "apartment.form.ubyport.idub_hint": "The police number of your accommodation (12–14 numbers). On the police letter it is the line “IDUB:”. Copy it exactly.",
         "apartment.form.ubyport.intro": "These are not your normal UbyPort portal login (ub…). Use the separate letter titled “Výpis z databáze přihlašovacích údajů” (web-service / robotické vkládání), usually a PDF whose filename contains your IDUB and UBY-WS.",
-        "apartment.form.ubyport.login_hint": "PDF “Přihlašovací jméno:”. Copy exactly (including _ or digits).",
-        "apartment.form.ubyport.mark_hint": "Five letters on file with the police (some accounts have six, with digits), usually the part after UBY-WS_ in your login (UBY-WS_DEMO1 → DEMO1). Check the UbyPort portal if unsure.",
+        "apartment.form.ubyport.login_hint": "The user name UbyHost uses to send reports for you. It starts with UBY-WS. On the web-service letter it is the line “Přihlašovací jméno:”. It is not your normal UbyPort portal login. Copy it exactly, including _ and numbers.",
+        "apartment.form.ubyport.mark_hint": "A short code (5 or 6 letters or numbers) the police gave your accommodation. On the police letter it is the line “Zkratka ubytovacího zařízení”. If your web-service letter has no such line, it is the part after UBY-WS_ in your login (UBY-WS_DEMO1 / DEMO1).",
         "apartment.form.ubyport.mark_label": 'Facility abbreviation (zkratka)',
         "apartment.form.ubyport.mismatch_help": "UbyPort compares IDUB, zkratka, name, address, and contact to the register. A typo or an Airbnb listing name fails even when the web-service login works. You often only see that on the first real submission.",
-        "apartment.form.ubyport.name_hint": "PDF “Ubytovací zařízení:”. First line only, not your listing title; max 35 characters.",
-        "apartment.form.ubyport.password_edit_hint": 'Only type here if the Foreign Police sent you a new password. Saving the rest of this form without touching this field keeps the password you already stored.',
-        "apartment.form.ubyport.password_new_hint": 'Enter it once when you first set up reporting. It is encrypted before it is written to disk and is never displayed again after save.',
-        "apartment.form.ubyport.password_saved": "Saved. UbyHost keeps it encrypted and does not show it again.",
+        "apartment.form.ubyport.name_hint": "The name the police have for your accommodation. On the police letter it is the line “Ubytovací zařízení:”: copy only its first line, at most 35 characters. Not your property or listing name: a different name gets reports rejected.",
+        "apartment.form.ubyport.password_edit_hint": "Password saved. Leave blank to keep it.",
+        "apartment.form.ubyport.password_new_hint": "Password from your police letter.",
+        "apartment.form.ubyport.credentials_help_heading": "Where to find your credentials",
         "apartment.form.ubyport.sample_help": "A fictional police letter with SAMPLE watermarks. It shows every value to copy into UbyHost, including zkratka and contact that real WS PDFs often omit.",
-        "apartment.form.ubyport.ws_request.address_city": "130 51 Praha 3",
-        "apartment.form.ubyport.ws_request.address_street": "Olšanská 2",
-        "apartment.form.ubyport.ws_request.body": (
-            "Dobrý den, pro ubytovací zařízení s IDUB %(idub)s žádám o vytvoření účtu pro robotické "
-            "zasílání dat (webové služby UbyPort) pro aplikaci UbyHost. Děkuji. %(operator_name)s"
-        ),
-        "apartment.form.ubyport.ws_request.databox": "Data box: ybndqw9",
-        "apartment.form.ubyport.ws_request.download": "Download .txt",
-        "apartment.form.ubyport.ws_request.intro_1": (
-            "Copy this request into your data box to ask the Foreign Police for web-service login details."
-        ),
-        "apartment.form.ubyport.ws_request.intro_2": (
-            "The message below is in Czech because it goes to the Czech Police."
-        ),
-        "apartment.form.ubyport.ws_request.recipient": "Recipient: Foreign Police Directorate",
-        "apartment.form.ubyport.ws_request.subject": (
-            "Žádost o zřízení účtu pro robotické zasílání dat (UbyPort webové služby)"
-        ),
-        "apartment.form.ubyport.ws_request.subject_label": "Subject",
-        "apartment.form.ubyport.ws_request.summary": "I don't have web-service credentials yet",
         "common.none": "(none)",
         "common.remove": 'Remove',
         "common.save_changes": 'Save changes',
@@ -3775,7 +3668,7 @@ _INTERFACE_STRINGS = {
         "smart_locks.how2": "In the TTLock app you add UbyHost as an Authorized Admin of your lock. We show you every tap.",
         "smart_locks.how3": "From then on every guest gets their own entry code automatically, once everyone has registered.",
         "smart_locks.setup_title": "Connect your digital door lock",
-        "smart_locks.name_label": "Your UbyHost name. Copy it, you paste it in step 6:",
+        "smart_locks.name_label": "Your UbyHost name. Copy it, you paste it in TTLock:",
         "smart_locks.warn_owner": "Only the owner of the lock can do this. A lock that someone else shared with you will not work.",
         "smart_locks.steps_title": "Do this in the TTLock app",
         "smart_locks.s1": "Copy your UbyHost name above. Tap the copy button next to it.",
@@ -4082,10 +3975,6 @@ _INTERFACE_STRINGS = {
         "common.all": "Vše",
         "common.filter": "Filtrovat",
         "housebook.title": "Domovní kniha",
-        "housebook.lede": (
-            "Každý záznam hosta a termín pobytu. Evidenci uchovávejte šest let od "
-            "posledního zápisu a předložte ji při policejní kontrole."
-        ),
         "housebook.apartment": "Ubytování",
         "housebook.from": "Pobyty od",
         "housebook.until": "Pobyty do",
@@ -4131,9 +4020,6 @@ _INTERFACE_STRINGS = {
         "automation.contact": "Kontaktní osoba při registraci",
         "automation.login": "Přihlášení webové služby",
         "automation.password": "Heslo webové služby",
-        "automation.password_saved": "Uloženo. Znovu se nezobrazuje.",
-        "automation.password_keep": "Prázdné pole zachová uložené heslo",
-        "automation.password_paste": "Vložte heslo z dopisu policie",
         "automation.password_replace": "Vyplňte jen při výměně hesla vydaného policií. Jinak ponechte prázdné.",
         "automation.password_new": "Vyžaduje se jednou; ukládá se šifrovaně a po uložení se nezobrazuje.",
         "automation.save": "Uložit %(property)s",
@@ -4153,11 +4039,6 @@ _INTERFACE_STRINGS = {
         "apartment.form.addr.street": 'Ulice',
         "apartment.form.addr.zip": 'PSČ',
         "apartment.form.addr.zip_hint": '5 číslic.',
-        "apartment.form.address.lede": 'Adresu zadejte jednou. UbyHost ji rozloží pro policejní registr; části níže můžete upravit.',
-        "apartment.form.address.line_details_mismatch": 'Řádková adresa a detaily se liší. Ponechali jsme detaily.',
-        "apartment.form.address.line_label": 'Adresa',
-        "apartment.form.address.line_placeholder": 'Vinohradská 1234/12, 120 00 Praha 2',
-        "apartment.form.address.police_details_title": 'Adresa pro policii',
         "apartment.form.address.title": 'Adresa ubytovacího zařízení',
         "apartment.form.archive_help": 'Skrýt bez smazání záznamů. Užitečné pro duplicity nebo nevyužité ubytování.',
         "apartment.form.archive_title": 'Archivovat toto ubytování',
@@ -4183,7 +4064,7 @@ _INTERFACE_STRINGS = {
         "apartment.form.calendars.own_name_label": 'Váš název',
         "apartment.form.calendars.own_name_ph": 'Airbnb – Vinohrady',
         "apartment.form.calendars.portal_ph": 'Airbnb / Booking.com / Agoda / Vrbo',
-        "apartment.form.calendars.url_hint": 'Airbnb: Kalendář → Dostupnost → Propojit kalendáře. Booking.com: Ceny a dostupnost → Synchronizace. Vložte celý odkaz.',
+        "apartment.form.calendars.url_hint": 'Airbnb: Kalendář / Dostupnost / Propojit kalendáře. Booking.com: Ceny a dostupnost / Synchronizace. Vložte celý odkaz.',
         "apartment.form.calendars.url_label": 'URL exportu iCal',
         "apartment.form.calendars.url_ph": 'https://www.airbnb.com/calendar/ical/…',
         "apartment.form.city_en.hint": 'Zobrazí se hostům vedle názvu ubytování, např. "Prague".',
@@ -4228,9 +4109,8 @@ _INTERFACE_STRINGS = {
         "apartment.form.guest_link.window_hint": 'Na odkazu bytu se zobrazí jen pobyty, jejichž datum příjezdu spadá do tohoto okna. Minulý pobyt zůstává dostupný přes odkaz konkrétního pobytu po počet dní nastavený níže.',
         "apartment.form.guest_link.window_label": 'Zobrazit pobyty začínající do (dní)',
         "apartment.form.guest_message.default": (
-            "Dobrý den, před příjezdem prosím vyplňte krátký registrační formulář na odkazu níže. "
-            "Na osobu to zabere asi 2 minuty a zákon to vyžaduje. "
-            "Děkujeme a těšíme se na vás!"
+            "Vítejte! Před pobytem prosím vyplňte registrační formulář hostů. "
+            "Pokud máte jakékoli dotazy, obraťte se na svého hostitele. Děkujeme!"
         ),
         "apartment.form.guest_message.hint": "Zobrazí se ve formuláři hostů. Nevkládejte přístupové kódy ani jiná tajná data.",
         "apartment.form.guest_message.label": 'Vlastní zpráva pro hosty',
@@ -4306,42 +4186,18 @@ _INTERFACE_STRINGS = {
         "apartment.form.refresh_codelists": 'Obnovit číselníky z UbyPortu',
         "apartment.form.test_connection": 'Uložit a otestovat spojení',
         "apartment.form.title_new": 'Nové ubytování',
-        "apartment.form.ubyport.contact_hint": "E-mail nebo telefon z původní registrace v UbyPortu; na PDF webové služby často chybí. Špatná hodnota může vést k odmítnutí hlášení.",
-        "apartment.form.ubyport.derived_contact_hint": "Při prázdném poli doplněno z kontaktního e-mailu provozovatele; upravte, pokud je v registru policie jiná hodnota.",
-        "apartment.form.ubyport.derived_mark_hint": "Při prázdném poli doplněno ze znaků za UBY-WS_ v přihlášení webové služby; upravte, pokud se zkratka liší.",
-        "apartment.form.ubyport.derived_name_hint": "Při prázdném poli doplněno z názvu ubytování (prvních 35 znaků); upravte podle registru policie.",
-        "apartment.form.ubyport.derived_summary": "Údaje odesílané policii (doplněné za vás)",
-        "apartment.form.ubyport.idub_hint": "Řádek „IDUB:“ v PDF, 12–14 číslic znak po znaku.",
+        "apartment.form.ubyport.contact_hint": "E-mail nebo telefon, na kterém vás policie zastihne kvůli hlášením, jak jste ho uvedli při registraci v UbyPortu. Dopis k webové službě ho často neobsahuje.",
+        "apartment.form.ubyport.idub_hint": "Policejní číslo vašeho ubytování (12–14 číslic). V dopise od policie je to řádek „IDUB:“. Opište ho přesně.",
         "apartment.form.ubyport.intro": "Nejde o běžné přihlášení do portálu UbyPort (ub…). Použijte samostatný dopis „Výpis z databáze přihlašovacích údajů“ (webová služba / robotické vkládání), obvykle PDF, v jehož názvu je IDUB a UBY-WS.",
-        "apartment.form.ubyport.login_hint": "„Přihlašovací jméno:“ v PDF. Kopírujte přesně (včetně _ nebo číslic).",
-        "apartment.form.ubyport.mark_hint": "Pět písmen (někdy šest, i s číslicemi) v evidenci policie, obvykle část za UBY-WS_ v přihlášení (UBY-WS_DEMO1 → DEMO1). Při nejistotě ověřte v portálu UbyPort.",
+        "apartment.form.ubyport.login_hint": "Uživatelské jméno, kterým UbyHost odesílá hlášení za vás. Začíná na UBY-WS. V dopise k webové službě je to řádek „Přihlašovací jméno:“. Nejde o běžné přihlášení do portálu UbyPort. Opište ho přesně, včetně _ a číslic.",
+        "apartment.form.ubyport.mark_hint": "Krátký kód (5 nebo 6 písmen či číslic), který policie přidělila vašemu ubytování. V dopise od policie je to řádek „Zkratka ubytovacího zařízení“. Pokud ho dopis k webové službě nemá, je to část za UBY-WS_ v přihlašovacím jménu (UBY-WS_DEMO1 / DEMO1).",
         "apartment.form.ubyport.mark_label": 'Zkratka ubytovacího zařízení',
         "apartment.form.ubyport.mismatch_help": "UbyPort porovnává IDUB, zkratku, název, adresu a kontakt s registrem. Překlep nebo název z Airbnb selže i když přihlášení webové služby funguje. Často to vidíte při prvním skutečném odeslání.",
-        "apartment.form.ubyport.name_hint": "„Ubytovací zařízení:“ v PDF. Jen první řádek, ne název inzerátu; max. 35 znaků.",
-        "apartment.form.ubyport.password_edit_hint": 'Pište sem jen pokud policie cizinců poslala nové heslo. Uložení zbytku formuláře bez změny tohoto pole ponechá uložené heslo.',
-        "apartment.form.ubyport.password_new_hint": 'Zadejte jednou při prvním nastavení hlášení. Před zápisem na disk se šifruje a po uložení se nezobrazuje.',
-        "apartment.form.ubyport.password_saved": "Uloženo. UbyHost ho drží šifrovaně a znovu nezobrazuje.",
+        "apartment.form.ubyport.name_hint": "Název, pod kterým policie vaše ubytování vede. V dopise od policie je to řádek „Ubytovací zařízení:“: opište jen jeho první řádek, nejvýše 35 znaků. Nejde o název ubytování ani inzerátu: jiný název vede k odmítnutí hlášení.",
+        "apartment.form.ubyport.password_edit_hint": "Heslo je uložené. Pro jeho zachování nechte pole prázdné.",
+        "apartment.form.ubyport.password_new_hint": "Heslo z dopisu od policie.",
+        "apartment.form.ubyport.credentials_help_heading": "Kde najdete přihlašovací údaje",
         "apartment.form.ubyport.sample_help": "Ukázkový dopis policie s vodoznaky SAMPLE. Ukazuje každou hodnotu pro UbyHost, včetně zkratky a kontaktu, které reálná PDF často neobsahují.",
-        "apartment.form.ubyport.ws_request.address_city": "130 51 Praha 3",
-        "apartment.form.ubyport.ws_request.address_street": "Olšanská 2",
-        "apartment.form.ubyport.ws_request.body": (
-            "Dobrý den, pro ubytovací zařízení s IDUB %(idub)s žádám o vytvoření účtu pro robotické "
-            "zasílání dat (webové služby UbyPort) pro aplikaci UbyHost. Děkuji. %(operator_name)s"
-        ),
-        "apartment.form.ubyport.ws_request.databox": "Datová schránka: ybndqw9",
-        "apartment.form.ubyport.ws_request.download": "Stáhnout .txt",
-        "apartment.form.ubyport.ws_request.intro_1": (
-            "Zkopírujte tuto žádost do datové schránky a požádejte cizineckou policii o přihlašovací údaje webové služby."
-        ),
-        "apartment.form.ubyport.ws_request.intro_2": (
-            "Text žádosti je v češtině, protože jde policii."
-        ),
-        "apartment.form.ubyport.ws_request.recipient": "Příjemce: Ředitelství služby cizinecké policie",
-        "apartment.form.ubyport.ws_request.subject": (
-            "Žádost o zřízení účtu pro robotické zasílání dat (UbyPort webové služby)"
-        ),
-        "apartment.form.ubyport.ws_request.subject_label": "Předmět",
-        "apartment.form.ubyport.ws_request.summary": "Zatím nemám přihlašovací údaje webové služby",
         "common.none": "(žádná)",
         "common.remove": 'Odebrat',
         "common.save_changes": 'Uložit změny',
@@ -4630,7 +4486,7 @@ _INTERFACE_STRINGS = {
         "smart_locks.how2": "V aplikaci TTLock přidáte UbyHost jako Autorizovaného správce svého zámku. Ukážeme vám každé klepnutí.",
         "smart_locks.how3": "Od té chvíle každý host automaticky dostane vlastní vstupní kód, jakmile jsou všichni zaregistrováni.",
         "smart_locks.setup_title": "Připojte svůj digitální zámek",
-        "smart_locks.name_label": "Váš název UbyHost. Zkopírujte ho, vložíte ho v kroku 6:",
+        "smart_locks.name_label": "Váš název UbyHost. Zkopírujte ho, vložíte ho v TTLock:",
         "smart_locks.warn_owner": "Může to udělat jen vlastník zámku. Zámek, který vám někdo jen nasdílel, nebude fungovat.",
         "smart_locks.steps_title": "Udělejte to v aplikaci TTLock",
         "smart_locks.s1": "Zkopírujte svůj název UbyHost výše. Klepněte na tlačítko kopírovat vedle něj.",
@@ -5956,6 +5812,772 @@ _PASSKEY_STRINGS = {
     },
 }
 for _lang, _strings in _PASSKEY_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0080: stay detail grouping and in-page navigation.
+_STAY_DETAIL_0080_STRINGS = {
+    "en": {
+        "stay.detail.nav.label": "On this stay",
+        "stay.detail.property": "Property",
+    },
+    "cs": {
+        "stay.detail.nav.label": "Na tomto pobytu",
+        "stay.detail.property": "Ubytování",
+    },
+}
+for _lang, _strings in _STAY_DETAIL_0080_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0081: invoice navigation context and picker help.
+_INVOICE_0081_STRINGS = {
+    "en": {
+        "invoice.context.stay": "Stay",
+        "invoice.context.open_stay": "Open stay",
+        "invoice.picker.help": "Stays from the last 400 days and the next year. The invoice is issued for the stay you pick.",
+        "invoice.detail.paid_recorded": "Paid on",
+    },
+    "cs": {
+        "invoice.context.stay": "Pobyt",
+        "invoice.context.open_stay": "Otevřít pobyt",
+        "invoice.picker.help": "Pobyty za posledních 400 dní a na příští rok. Faktura se vystaví k vybranému pobytu.",
+        "invoice.detail.paid_recorded": "Zaplaceno dne",
+    },
+}
+for _lang, _strings in _INVOICE_0081_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0082: fee list and report detail under the shared host layout.
+_FEE_0082_STRINGS = {
+    "en": {
+        "stay_fees.list.summary": "%(period)s: %(set_up)s of %(count)s properties set up.",
+        "stay_fees.open_report": "Open report",
+        "stay_fees.blockers.title": "Fix before saving",
+        "stay_fees.send.marks_title": "Your records",
+    },
+    "cs": {
+        "stay_fees.list.summary": "%(period)s: nastaveno %(set_up)s z %(count)s ubytování.",
+        "stay_fees.open_report": "Otevřít hlášení",
+        "stay_fees.blockers.title": "Opravte před uložením",
+        "stay_fees.send.marks_title": "Vaše záznamy",
+    },
+}
+for _lang, _strings in _FEE_0082_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0088: required property operator, controller defaults to the operator.
+_PROPERTY_OPERATOR_STRINGS = {
+    "en": {
+        "apartment.form.operator.choose": "Choose operator",
+        "apartment.form.operator.required": "Choose the operator for this property.",
+        "apartment.form.operator.add_first": "Add an operator to continue.",
+        "apartment.form.operator.add_business": "Add business details",
+        "apartment.form.operator.check_again": "Check again",
+        "apartment.form.controller.same_as_operator": "Same as operator",
+    },
+    "cs": {
+        "apartment.form.operator.choose": "Vyberte provozovatele",
+        "apartment.form.operator.required": "Vyberte provozovatele tohoto ubytování.",
+        "apartment.form.operator.add_first": "Nejprve přidejte provozovatele.",
+        "apartment.form.operator.add_business": "Přidat firemní údaje",
+        "apartment.form.operator.check_again": "Zkontrolovat znovu",
+        "apartment.form.controller.same_as_operator": "Stejný jako provozovatel",
+    },
+}
+for _lang, _strings in _PROPERTY_OPERATOR_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0089: a calendar needs a platform and a link.
+_CALENDAR_PLATFORM_STRINGS = {
+    "en": {
+        "calendar.platform_label": "Platform",
+        "calendar.choose_platform": "Choose platform",
+        "calendar.platform.other": "Other",
+        "calendar.other_label": "Platform name",
+        "calendar.fallback_name": "Calendar",
+        "calendar.error.platform_required": "Choose the platform this calendar comes from.",
+        "calendar.error.other_required": "Type the platform name.",
+        "calendar.error.other_invalid": "Use up to 80 ordinary characters.",
+        "calendar.error.name_invalid": "Use up to 100 ordinary characters.",
+        "calendar.error.url_required": "Paste the calendar link.",
+    },
+    "cs": {
+        "calendar.platform_label": "Platforma",
+        "calendar.choose_platform": "Vyberte platformu",
+        "calendar.platform.other": "Jiný",
+        "calendar.other_label": "Název platformy",
+        "calendar.fallback_name": "Kalendář",
+        "calendar.error.platform_required": "Vyberte platformu, ze které kalendář pochází.",
+        "calendar.error.other_required": "Napište název platformy.",
+        "calendar.error.other_invalid": "Použijte nejvýše 80 běžných znaků.",
+        "calendar.error.name_invalid": "Použijte nejvýše 100 běžných znaků.",
+        "calendar.error.url_required": "Vložte odkaz na kalendář.",
+    },
+}
+for _lang, _strings in _CALENDAR_PLATFORM_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0090: three lock-sharing essentials; the full TTLock steps live in the Guide.
+_LOCK_ESSENTIAL_STRINGS = {
+    "en": {
+        "smart_locks.essential1": "Open your lock in TTLock.",
+        "smart_locks.essential2": "Share administrator access with the account above.",
+        "smart_locks.essential3": "Return here and check for locks.",
+    },
+    "cs": {
+        "smart_locks.essential1": "Otevřete svůj zámek v TTLock.",
+        "smart_locks.essential2": "Sdílejte přístup správce s účtem uvedeným výše.",
+        "smart_locks.essential3": "Vraťte se sem a vyhledejte zámky.",
+    },
+}
+for _lang, _strings in _LOCK_ESSENTIAL_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0083: Settings groups: Account, Security, Data & archive, Privacy, Technical, Help.
+_SETTINGS_GROUP_STRINGS = {
+    "en": {
+        "settings.index_label": "Settings sections",
+        "settings.group.account": "Account",
+        "settings.group.security": "Security",
+        "settings.group.data": "Data & archive",
+        "settings.group.privacy": "Privacy",
+        "settings.group.technical": "Technical",
+        "settings.group.help": "Help",
+        "settings.business.title": "Business & legal details",
+        "settings.business.help": "Names, addresses and invoice details of the businesses you report and invoice under.",
+        "settings.business.action": "Open business details",
+        "settings.account.incidents_help": "Review security incidents across workspaces.",
+        "settings.account.incidents_action": "View incidents",
+        "settings.privacy.requests_help": "Requests from guests about their data, and their deadlines.",
+        "settings.privacy.requests_action": "Open requests",
+        "settings.help.guide_help": "Step-by-step guides, and how to reach support.",
+        "settings.help.guide_action": "Open Help",
+    },
+    "cs": {
+        "settings.index_label": "Sekce nastavení",
+        "settings.group.account": "Účet",
+        "settings.group.security": "Zabezpečení",
+        "settings.group.data": "Data a archiv",
+        "settings.group.privacy": "Soukromí",
+        "settings.group.technical": "Technické",
+        "settings.group.help": "Nápověda",
+        "settings.business.title": "Firma a právní údaje",
+        "settings.business.help": "Názvy, adresy a fakturační údaje podnikatelů, za které hlásíte a fakturujete.",
+        "settings.business.action": "Otevřít firemní údaje",
+        "settings.account.incidents_help": "Přehled bezpečnostních incidentů napříč účty.",
+        "settings.account.incidents_action": "Zobrazit incidenty",
+        "settings.privacy.requests_help": "Žádosti hostů o jejich údaje a jejich lhůty.",
+        "settings.privacy.requests_action": "Otevřít žádosti",
+        "settings.help.guide_help": "Návody krok za krokem a kontakt na podporu.",
+        "settings.help.guide_action": "Otevřít nápovědu",
+    },
+}
+for _lang, _strings in _SETTINGS_GROUP_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0092: one short Add property page; no numbered setup wizard.
+_PROPERTY_CREATE_0092_STRINGS = {
+    "en": {
+        "property_create.title": "Add property",
+        "property_create.lede": "Start with the basics. Connect services when you need them.",
+        "property_create.details": "Property details",
+        "property_create.managed_by": "Managed by",
+        "property_create.manage_business": "Manage business details",
+        "property_create.address": "Address",
+        "property_create.address_lede": "Required for police reporting. Municipality, house number and postcode are needed.",
+        "property_create.cancel": "Cancel",
+        "property_create.submit": "Create property",
+        "property_create.next_title": "After you create it",
+        "property_create.next_calendar": "Connect a calendar",
+        "property_create.next_calendar_body": "Choose Airbnb, Booking.com or another platform.",
+        "property_create.next_guests": "Share the guest form",
+        "property_create.next_guests_body": "Collect guest details.",
+        "property_create.next_reporting": "Set up reporting",
+        "property_create.next_reporting_body": "Add the required reporting details.",
+        "property_create.next_lock_body": "Automatic door codes for each stay.",
+        "property_create.copy_clear": "Start without copying",
+        "property_create.created_title": "Property created. What next?",
+        "property_create.created_manual": "Add stay manually",
+        "property_create.created_continue": "Continue to overview",
+        "setup.banner.line": "Continue setup",
+    },
+    "cs": {
+        "property_create.title": "Přidat ubytování",
+        "property_create.lede": "Začněte základními údaji. Další služby připojíte, až je budete potřebovat.",
+        "property_create.details": "Údaje o ubytování",
+        "property_create.managed_by": "Provozovatel",
+        "property_create.manage_business": "Spravovat firemní údaje",
+        "property_create.address": "Adresa",
+        "property_create.address_lede": "Povinná pro hlášení cizinecké policii. Vyplňte obec, číslo popisné a PSČ.",
+        "property_create.cancel": "Zrušit",
+        "property_create.submit": "Vytvořit ubytování",
+        "property_create.next_title": "Po vytvoření",
+        "property_create.next_calendar": "Připojit kalendář",
+        "property_create.next_calendar_body": "Vyberte Airbnb, Booking.com nebo jinou platformu.",
+        "property_create.next_guests": "Sdílet formulář pro hosty",
+        "property_create.next_guests_body": "Získejte údaje o hostech.",
+        "property_create.next_reporting": "Nastavit hlášení",
+        "property_create.next_reporting_body": "Doplňte údaje potřebné pro hlášení.",
+        "property_create.next_lock_body": "Automatické kódy ke dveřím pro každý pobyt.",
+        "property_create.copy_clear": "Začít bez kopírování",
+        "property_create.created_title": "Ubytování je vytvořené. Co dál?",
+        "property_create.created_manual": "Přidat pobyt ručně",
+        "property_create.created_continue": "Pokračovat na přehled",
+        "setup.banner.line": "Pokračovat v nastavení",
+    },
+}
+for _lang, _strings in _PROPERTY_CREATE_0092_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0094: property tabs, Settings groups and the door-code switch.
+_PROPERTY_NAV_0094_STRINGS = {
+    "en": {
+        "property_nav.tabs_aria": "Property",
+        "property_nav.overview": "Overview",
+        "property_nav.bookings": "Bookings & calendars",
+        "property_nav.settings": "Settings",
+        "property_nav.settings_aria": "Settings sections",
+        "property_nav.group.property": "Property information",
+        "property_nav.group.guests": "Guest experience",
+        "property_nav.group.reporting": "Reporting & fees",
+        "property_nav.group.automation": "Automation",
+        "property_nav.guest_link": "Guest link",
+        "property_nav.door_switch": "Automatic door codes",
+        "property_nav.switch_enabled": "Enabled",
+        "property_nav.switch_off": "Off",
+        "property_nav.switch_unsaved": "Not saved yet",
+        "property_nav.add_calendar": "Add calendar",
+        "property_nav.report_ready": "Ready to report",
+        "property_nav.report_missing.one": "%(count)s detail missing",
+        "property_nav.report_missing.few": "%(count)s details missing",
+        "property_nav.report_missing": "%(count)s details missing",
+        "property_nav.address_missing": "Address not added yet",
+    },
+    "cs": {
+        "property_nav.tabs_aria": "Ubytování",
+        "property_nav.overview": "Přehled",
+        "property_nav.bookings": "Rezervace a kalendáře",
+        "property_nav.settings": "Nastavení",
+        "property_nav.settings_aria": "Části nastavení",
+        "property_nav.group.property": "Údaje o ubytování",
+        "property_nav.group.guests": "Pro hosty",
+        "property_nav.group.reporting": "Hlášení a poplatky",
+        "property_nav.group.automation": "Automatizace",
+        "property_nav.guest_link": "Odkaz pro hosty",
+        "property_nav.door_switch": "Automatické kódy ke dveřím",
+        "property_nav.switch_enabled": "Zapnuto",
+        "property_nav.switch_off": "Vypnuto",
+        "property_nav.switch_unsaved": "Zatím neuloženo",
+        "property_nav.add_calendar": "Přidat kalendář",
+        "property_nav.report_ready": "Připraveno k hlášení",
+        "property_nav.report_missing.one": "Chybí %(count)s údaj",
+        "property_nav.report_missing.few": "Chybí %(count)s údaje",
+        "property_nav.report_missing": "Chybí %(count)s údajů",
+        "property_nav.address_missing": "Adresa zatím chybí",
+    },
+}
+for _lang, _strings in _PROPERTY_NAV_0094_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# Coordinator: compact setup status once a property is fully set up.
+_SETUP_COMPLETE_STRINGS = {
+    "en": {"property_nav.setup_complete": "Set up: ready to invite guests and to report to the police."},
+    "cs": {"property_nav.setup_complete": "Nastaveno: můžete zvát hosty i hlásit policii."},
+}
+for _lang, _strings in _SETUP_COMPLETE_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0097: Police reporting and Stay fee help in plain words; the police letter
+# sample next to the section; one line instead of the request-letter generator.
+_REPORTING_HELP_0097_STRINGS = {
+    "en": {
+        "apartment.form.ubyport.sample_link": "See an example police letter (what is what)",
+        "apartment.form.ubyport.no_credentials": "No web-service credentials yet? The Foreign Police explain how to request them:",
+        "apartment.form.ubyport.no_credentials_link": "UbyPort data sending options (policie.gov.cz)",
+        "apartment.form.ubyport.password_help": "The password that belongs to the web-service login. On the web-service letter it is the line “Přístupové heslo:”. Copy it exactly.",
+        "apartment.form.stay_fee.rate_help": "The amount per guest per night set in your municipality's stay-fee decree (obecně závazná vyhláška o místním poplatku z pobytu), usually on the municipality website. At most 50 Kč. 0 turns the stay fee off.",
+        "apartment.form.stay_fee.cadence_help": "How often your municipality wants the report and the payment, as its decree says: every month or every quarter.",
+        "apartment.form.stay_fee.vs_help": "The number the municipality gave you for paying the stay fee, usually in its registration confirmation or letter. Up to 10 numbers. Properties with the same operator and the same symbol share one report.",
+        "apartment.form.stay_fee.account_help": "The municipality bank account for the stay fee, from its website or letter. Czech format: prefix (if any), account number, bank code. Used for the payment QR code.",
+        "apartment.form.stay_fee.authority_name_help": "The office that collects the stay fee, as it names itself on its letter or website, for example “Úřad městské části Praha 3”. Printed on the report.",
+        "apartment.form.stay_fee.authority_address_help": "The department that handles the stay fee and its postal address, as on the office's letter. Printed on the report.",
+        "apartment.form.stay_fee.authority_contact_help": "Phone, e-mail or account line of the office, written as the office gives it. Printed on the report.",
+    },
+    "cs": {
+        "apartment.form.ubyport.sample_link": "Ukázka dopisu od policie (co je co)",
+        "apartment.form.ubyport.no_credentials": "Ještě nemáte přihlašovací údaje k webové službě? Cizinecká policie popisuje, jak o ně požádat:",
+        "apartment.form.ubyport.no_credentials_link": "Možnosti zasílání dat aplikací UbyPort (policie.gov.cz)",
+        "apartment.form.ubyport.password_help": "Heslo k přihlašovacímu jménu webové služby. V dopise k webové službě je to řádek „Přístupové heslo:“. Opište ho přesně.",
+        "apartment.form.stay_fee.rate_help": "Částka za hosta a noc podle obecně závazné vyhlášky vaší obce o místním poplatku z pobytu, obvykle na webu obce. Nejvýše 50 Kč. 0 poplatek vypne.",
+        "apartment.form.stay_fee.cadence_help": "Jak často obec chce hlášení a platbu, podle její vyhlášky: každý měsíc, nebo každé čtvrtletí.",
+        "apartment.form.stay_fee.vs_help": "Číslo, které vám obec přidělila pro placení poplatku, obvykle v potvrzení registrace nebo v dopise. Až 10 číslic. Ubytování se stejným provozovatelem a stejným symbolem mají jedno společné hlášení.",
+        "apartment.form.stay_fee.account_help": "Bankovní účet obce pro poplatek z pobytu, z jejího webu nebo dopisu. Český formát: předčíslí (je-li), číslo účtu, kód banky. Použije se pro platební QR kód.",
+        "apartment.form.stay_fee.authority_name_help": "Úřad, který poplatek vybírá, jak se sám uvádí v dopise nebo na webu, například „Úřad městské části Praha 3“. Vytiskne se na hlášení.",
+        "apartment.form.stay_fee.authority_address_help": "Odbor, který poplatek spravuje, a jeho poštovní adresa podle dopisu úřadu. Vytiskne se na hlášení.",
+        "apartment.form.stay_fee.authority_contact_help": "Telefon, e-mail nebo účet úřadu tak, jak je úřad uvádí. Vytiskne se na hlášení.",
+    },
+}
+for _lang, _strings in _REPORTING_HELP_0097_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0077: one fee editor; the way back to the fee report it was opened from.
+_FEE_SETUP_0077_STRINGS = {
+    "en": {"stay_fees.setup.back_to_report": "Back to stay fees"},
+    "cs": {"stay_fees.setup.back_to_report": "Zpět na poplatky"},
+}
+for _lang, _strings in _FEE_SETUP_0077_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0076: the one business editor (Business details + Invoice details).
+_ENTITY_EDITOR_0076_STRINGS = {
+    "en": {
+        "entities.section.business": "Business details",
+        "entities.section.invoice": "Invoice details",
+        "entities.linked.label": "Used by",
+        "entities.linked.none": "No property yet",
+        "entities.linked.help": "Changes here apply to every property listed. To use a different business for a property, change it in that property's Settings.",
+    },
+    "cs": {
+        "entities.section.business": "Firemní údaje",
+        "entities.section.invoice": "Údaje pro faktury",
+        "entities.linked.label": "Používá",
+        "entities.linked.none": "Zatím žádné ubytování",
+        "entities.linked.help": "Změny platí pro všechna uvedená ubytování. Jinou firmu pro ubytování vyberete v jeho Nastavení.",
+    },
+}
+for _lang, _strings in _ENTITY_EDITOR_0076_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0078: Properties list, shared-record links and the read-only summary.
+_PROPERTIES_0078_STRINGS = {
+    "en": {
+        "properties.shared.aria": "Shared across your properties",
+        "properties.shared.lock": "Door lock account",
+        "properties.choose_business": "Choose business",
+        "properties.open": "Open",
+        "properties.summary.title": "Guest links and reporting timing",
+        "properties.summary.help": "Copy each guest link and PIN, or change when stays are sent to UbyPort. Everything else is in each property's Settings.",
+        "properties.summary.hours": "%(hours)s h",
+    },
+    "cs": {
+        "properties.shared.aria": "Společné pro všechna ubytování",
+        "properties.shared.lock": "Účet digitálního zámku",
+        "properties.choose_business": "Vybrat firmu",
+        "properties.open": "Otevřít",
+        "properties.summary.title": "Odkazy pro hosty a načasování hlášení",
+        "properties.summary.help": "Zkopírujte odkaz a PIN pro hosty nebo změňte, kdy se pobyty odesílají do UbyPortu. Vše ostatní je v Nastavení každého ubytování.",
+        "properties.summary.hours": "%(hours)s h",
+    },
+}
+for _lang, _strings in _PROPERTIES_0078_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# Coordinator: one IČO per business in the editor (register lookup uses it).
+_REGISTER_LOOKUP_STRINGS = {
+    "en": {
+        "entities.register_lookup.uses": "Register lookup uses IČO %(ico)s from Business details.",
+        "entities.register_lookup.needs_ico": "To fill invoice details from the register, add the IČO in",
+    },
+    "cs": {
+        "entities.register_lookup.uses": "Vyhledání v registru použije IČO %(ico)s z firemních údajů.",
+        "entities.register_lookup.needs_ico": "Pro doplnění fakturačních údajů z registru vyplňte IČO v sekci",
+    },
+}
+for _lang, _strings in _REGISTER_LOOKUP_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0093 pass: help text for the lock steps title (replaces a title-only "?" link).
+_HELP_0093_STRINGS = {
+    "en": {
+        "smart_locks.steps_help": "These are the three essentials. Every TTLock tap is in the Guide.",
+    },
+    "cs": {
+        "smart_locks.steps_help": "Tady jsou jen tři podstatné kroky. Každé klepnutí v TTLocku najdete v Návodu.",
+    },
+}
+for _lang, _strings in _HELP_0093_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0084 O1: in-app Save / Discard / Stay for a form with unsaved changes.
+_UNSAVED_O1_STRINGS = {
+    "en": {
+        "unsaved.title": "You have unsaved changes",
+        "unsaved.save": "Save",
+        "unsaved.discard": "Discard",
+        "unsaved.stay": "Stay",
+        "unsaved.discard_changes": "Discard changes",
+    },
+    "cs": {
+        "unsaved.title": "Máte neuložené změny",
+        "unsaved.save": "Uložit",
+        "unsaved.discard": "Zahodit",
+        "unsaved.stay": "Zůstat",
+        "unsaved.discard_changes": "Zahodit změny",
+    },
+}
+for _lang, _strings in _UNSAVED_O1_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0096: guided setup of a new property, and Door lock as its own Settings group.
+_SETUP_GUIDE_0096_STRINGS = {
+    "en": {
+        "setup_guide.count": "Step %(n)s of %(total)s",
+        "setup_guide.continue": "Continue",
+        "setup_guide.skip": "Skip",
+        "setup_guide.calendar.title": "Connect your calendar",
+        "setup_guide.calendar.text": "Paste the calendar link from Airbnb, Booking.com or another platform, and your stays appear here by themselves.",
+        "setup_guide.calendar.skip": "Skip: I'll add stays manually",
+        "setup_guide.guest_links.title": "Send guests your link",
+        "setup_guide.guest_links.text": "Paste it into your platform's automated message; guests need the PIN to open the form.",
+        "setup_guide.guest_links.snippet": "Guest registration: %(url)s · PIN: %(pin)s",
+        "setup_guide.guest_links.copy": "Copy link and PIN",
+        "setup_guide.guest_links.done": "Done, I've added it",
+        "setup_guide.reporting.title": "Police reporting",
+        "setup_guide.reporting.text": "Fill in your Ubyport details, so UbyHost can report your guests to the police.",
+        "setup_guide.fee.title": "Stay fee",
+        "setup_guide.fee.text": "Optional. Set it up if your town charges a stay fee.",
+        "setup_guide.lock.title": "Door lock",
+        "setup_guide.lock.text": "Optional. Guests get their own door code for each stay.",
+        "setup_guide.automation.title": "Automation",
+        "setup_guide.automation.text": "Choose when UbyHost sends your guests to the police.",
+        "setup_guide.automation.keep_manual": "Keep manual sending",
+        "setup_guide.automation.keep_current": "Keep this setting",
+        "flash.setup.complete": "Setup complete.",
+        # The guide's first step says what to do next; the flash only confirms.
+        "flash.apartments.created": "Property created.",
+        "property_nav.group.lock": "Door lock",
+        "property_nav.lock_intro": "Optional: skip this if you don't use a smart lock.",
+    },
+    "cs": {
+        "setup_guide.count": "Krok %(n)s z %(total)s",
+        "setup_guide.continue": "Pokračovat",
+        "setup_guide.skip": "Přeskočit",
+        "setup_guide.calendar.title": "Připojte kalendář",
+        "setup_guide.calendar.text": "Vložte odkaz na kalendář z Airbnb, Booking.com nebo jiné platformy a pobyty se tu objeví samy.",
+        "setup_guide.calendar.skip": "Přeskočit: pobyty zadám ručně",
+        "setup_guide.guest_links.title": "Pošlete hostům odkaz",
+        "setup_guide.guest_links.text": "Vložte ho do automatické zprávy na své platformě; hosté potřebují PIN, aby formulář otevřeli.",
+        "setup_guide.guest_links.snippet": "Registrace hostů: %(url)s · PIN: %(pin)s",
+        "setup_guide.guest_links.copy": "Zkopírovat odkaz a PIN",
+        "setup_guide.guest_links.done": "Hotovo, vloženo",
+        "setup_guide.reporting.title": "Hlášení policii",
+        "setup_guide.reporting.text": "Vyplňte údaje z Ubyportu, aby UbyHost mohl hlásit vaše hosty policii.",
+        "setup_guide.fee.title": "Poplatek z pobytu",
+        "setup_guide.fee.text": "Nepovinné. Nastavte ho, pokud vaše obec vybírá poplatek z pobytu.",
+        "setup_guide.lock.title": "Zámek dveří",
+        "setup_guide.lock.text": "Nepovinné. Hosté dostanou ke každému pobytu vlastní kód ke dveřím.",
+        "setup_guide.automation.title": "Automatizace",
+        "setup_guide.automation.text": "Zvolte, kdy UbyHost odešle vaše hosty policii.",
+        "setup_guide.automation.keep_manual": "Ponechat ruční odesílání",
+        "setup_guide.automation.keep_current": "Ponechat toto nastavení",
+        "flash.setup.complete": "Nastavení je hotové.",
+        "flash.apartments.created": "Ubytování bylo vytvořeno.",
+        "property_nav.group.lock": "Zámek dveří",
+        "property_nav.lock_intro": "Nepovinné: pokud chytrý zámek nepoužíváte, tuto část přeskočte.",
+    },
+}
+for _lang, _strings in _SETUP_GUIDE_0096_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0098: inline guest link, PIN and reporting timing on Properties.
+_PROPERTIES_0098_STRINGS = {
+    "en": {
+        "properties.inline.copy_pin": "Copy PIN",
+        "properties.inline.new_pin_confirm": "Generate a new PIN for %(name)s? The old PIN stops working for guests at once; update your portal messages.",
+        "properties.inline.hours_unit": "h",
+        "properties.inline.saving": "Saving…",
+        "properties.inline.saved": "Saved",
+        "properties.inline.save_failed": "Could not save. Check your connection and try again.",
+        "flash.properties.timing_saved": "Reporting timing saved.",
+        "flash.properties.timing_hours": "Enter the delay in whole hours, from 1 to 48. Nothing was saved.",
+        "flash.properties.timing_invalid": "Choose when to send to UbyPort. Nothing was saved.",
+    },
+    "cs": {
+        "properties.inline.copy_pin": "Kopírovat PIN",
+        "properties.inline.new_pin_confirm": "Vygenerovat nový PIN pro %(name)s? Starý PIN hostům okamžitě přestane fungovat; upravte zprávy na portálech.",
+        "properties.inline.hours_unit": "h",
+        "properties.inline.saving": "Ukládám…",
+        "properties.inline.saved": "Uloženo",
+        "properties.inline.save_failed": "Nepodařilo se uložit. Zkontrolujte připojení a zkuste to znovu.",
+        "flash.properties.timing_saved": "Načasování hlášení je uložené.",
+        "flash.properties.timing_hours": "Zadejte prodlevu v celých hodinách, od 1 do 48. Nic se neuložilo.",
+        "flash.properties.timing_invalid": "Vyberte, kdy odesílat do UbyPortu. Nic se neuložilo.",
+    },
+}
+for _lang, _strings in _PROPERTIES_0098_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0100: the setup guide teaches the app (guest link, PIN, a demo stay), lets a
+# host go on while the police login is on its way, and can be hidden.
+# The waiting copy matches reporting.py: without a complete login nothing is
+# sent (submit_for_apartment stops at "not_configured"); afterwards the sweep
+# every SUBMIT_SWEEP_MINUTES sends every finished registration that is due,
+# late ones included (due_for_automatic_send has no cut-off after the
+# deadline), and a manual property waits for the host's Send.
+_SETUP_GUIDE_0100_STRINGS = {
+    "en": {
+        "setup_guide.guest_links.title": "This is your guest link",
+        "setup_guide.guest_links.text": "Guests open it to register before they arrive. Paste it into your platform's automated message, for example the one sent after booking.",
+        "setup_guide.pin.title": "This is your PIN",
+        "setup_guide.pin.text": "The guest form is private. Guests type this PIN to open it, so send it together with the link.",
+        "setup_guide.pin.label": "PIN",
+        "setup_guide.pin.done": "Got it",
+        "setup_guide.try.title": "Try it out",
+        "setup_guide.try.text": "Make a demo stay and fill in the guest form yourself, as a guest would. Use made-up details.",
+        "setup_guide.try.help": "A demo stay is never sent to the police. It is left out of stay fees, invoices and the house book.",
+        "setup_guide.try.create": "Create a demo stay",
+        "setup_guide.try.open_text": "Your demo stay is ready. Open the guest form in a new tab, fill it in and send it, then come back here.",
+        "setup_guide.try.open": "Open the guest form",
+        "setup_guide.try.check": "I've sent the form",
+        "setup_guide.try.registered_title": "This is what you see when a guest registers",
+        "setup_guide.try.registered_text": "The stay now shows its status and its guests, here and in Stays.",
+        "setup_guide.try.open_stay": "Open the demo stay",
+        "setup_guide.try.delete": "Delete demo stay",
+        "setup_guide.reporting.text": "Add your Ubyport login, and UbyHost reports your foreign guests to the police for you.",
+        "setup_guide.reporting.wait": "I'm still waiting for my police login",
+        "setup_guide.reporting.wait_now": "You can keep setting up, and guests can register as usual. Nothing goes to the police until your login is saved.",
+        "setup_guide.reporting.wait_then_manual": "Then finished stays wait in Stays as “Ready to report” until you press Send to UbyPort.",
+        "setup_guide.reporting.wait_then_auto": "Then UbyHost sends every finished registration by itself: stays that are already due go out within about %(minutes)s minutes, late ones too.",
+        "setup_guide.reporting.wait_deadline": "The legal deadline still applies: report foreign guests within 3 working days of arrival.",
+        "setup_guide.reporting.wait_by_hand": "If your login won't come in time, report them by hand",
+        "setup_guide.reporting.waiting_item": "Police reporting: waiting for login",
+        "setup_guide.reporting.add_login": "Add police login",
+        "setup_guide.fee.text": "Optional. If your town charges a stay fee, UbyHost counts it for each stay and prepares the report for the town.",
+        "setup_guide.lock.text": "Optional. Guests get their own door code for each stay when they finish registering.",
+        "setup_guide.automation.text": "Choose whether UbyHost sends your guests to the police by itself or waits for you.",
+        "setup_guide.hide": "Hide setup guide",
+        "setup_guide.show": "Show setup guide",
+        "flash.setup.hidden": "Setup guide hidden.",
+        "flash.setup.demo_deleted": "Demo stay deleted.",
+        "stays.source.demo": "Demo",
+        "hint.demo_stay": "This is a demo stay. It is never sent to the police.",
+        "stay.detail.banner.demo": "Demo stay from the setup guide: left out of stay fees, invoices and the house book.",
+        "invoice.err.demo_stay": "A demo stay can't be invoiced.",
+        "confirm.delete_demo_stay": "Delete the demo stay and its made-up guests?",
+    },
+    "cs": {
+        "setup_guide.guest_links.title": "Toto je váš odkaz pro hosty",
+        "setup_guide.guest_links.text": "Hosté přes něj vyplní registraci před příjezdem. Vložte ho do automatické zprávy na své platformě, třeba do té, která chodí po rezervaci.",
+        "setup_guide.pin.title": "Toto je váš PIN",
+        "setup_guide.pin.text": "Formulář pro hosty je soukromý. Hosté ho otevřou tímto PINem, proto ho posílejte spolu s odkazem.",
+        "setup_guide.pin.label": "PIN",
+        "setup_guide.pin.done": "Rozumím",
+        "setup_guide.try.title": "Vyzkoušejte si to",
+        "setup_guide.try.text": "Vytvořte ukázkový pobyt a vyplňte formulář sami, jako host. Použijte smyšlené údaje.",
+        "setup_guide.try.help": "Ukázkový pobyt se nikdy neodešle policii. Nepočítá se do poplatků z pobytu, faktur ani domovní knihy.",
+        "setup_guide.try.create": "Vytvořit ukázkový pobyt",
+        "setup_guide.try.open_text": "Ukázkový pobyt je připravený. Otevřete formulář v nové záložce, vyplňte ho a odešlete, pak se vraťte sem.",
+        "setup_guide.try.open": "Otevřít formulář pro hosty",
+        "setup_guide.try.check": "Formulář jsem odeslal(a)",
+        "setup_guide.try.registered_title": "Takhle to vypadá, když se host zaregistruje",
+        "setup_guide.try.registered_text": "Pobyt teď ukazuje svůj stav a hosty, tady i v Pobytech.",
+        "setup_guide.try.open_stay": "Otevřít ukázkový pobyt",
+        "setup_guide.try.delete": "Smazat ukázkový pobyt",
+        "setup_guide.reporting.text": "Doplňte přihlašovací údaje k Ubyportu a UbyHost bude cizince hlásit policii za vás.",
+        "setup_guide.reporting.wait": "Na přihlašovací údaje od policie ještě čekám",
+        "setup_guide.reporting.wait_now": "Nastavení můžete dokončit a hosté se mohou registrovat jako obvykle. Policii se nic neodešle, dokud přihlašovací údaje neuložíte.",
+        "setup_guide.reporting.wait_then_manual": "Pak dokončené pobyty čekají v Pobytech jako „Připraveno k hlášení“, dokud nestisknete Odeslat do UbyPortu.",
+        "setup_guide.reporting.wait_then_auto": "Pak UbyHost sám odešle každou dokončenou registraci: pobyty, které už jsou na řadě, odejdou zhruba do %(minutes)s minut, i ty po termínu.",
+        "setup_guide.reporting.wait_deadline": "Zákonná lhůta ale platí dál: cizince nahlaste do 3 pracovních dnů od příjezdu.",
+        "setup_guide.reporting.wait_by_hand": "Pokud údaje nepřijdou včas, nahlaste je ručně",
+        "setup_guide.reporting.waiting_item": "Hlášení policii: čeká na přihlašovací údaje",
+        "setup_guide.reporting.add_login": "Doplnit přihlašovací údaje",
+        "setup_guide.fee.text": "Nepovinné. Pokud obec vybírá poplatek z pobytu, UbyHost ho spočítá u každého pobytu a připraví hlášení pro obec.",
+        "setup_guide.lock.text": "Nepovinné. Hosté dostanou ke každému pobytu vlastní kód ke dveřím, jakmile dokončí registraci.",
+        "setup_guide.automation.text": "Zvolte, jestli UbyHost odešle hosty policii sám, nebo počká na vás.",
+        "setup_guide.hide": "Skrýt průvodce nastavením",
+        "setup_guide.show": "Zobrazit průvodce nastavením",
+        "flash.setup.hidden": "Průvodce nastavením je skrytý.",
+        "flash.setup.demo_deleted": "Ukázkový pobyt byl smazán.",
+        "stays.source.demo": "Ukázka",
+        "hint.demo_stay": "Toto je ukázkový pobyt. Policii se nikdy neodešle.",
+        "stay.detail.banner.demo": "Ukázkový pobyt z průvodce nastavením: nepočítá se do poplatků z pobytu, faktur ani domovní knihy.",
+        "invoice.err.demo_stay": "Ukázkový pobyt nelze fakturovat.",
+        "confirm.delete_demo_stay": "Smazat ukázkový pobyt i se smyšlenými hosty?",
+    },
+}
+for _lang, _strings in _SETUP_GUIDE_0100_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0102: onboarding wizard — one focused page per step.
+_WIZARD_0102_STRINGS = {
+    "en": {
+        "wizard.title": "Set up %(name)s",
+        "wizard.count": "Step %(n)s of %(total)s · %(step)s",
+        "wizard.exit": "Exit setup",
+        "wizard.back": "Back",
+        "wizard.skip": "Skip this step",
+        "wizard.save_continue": "Save and continue",
+        "wizard.continue": "Continue",
+        "wizard.continue_card": "Continue setup · %(done)s of %(total)s done",
+        "wizard.continue_card_aria": "Property setup",
+        "wizard.calendar.add": "Add calendar",
+        "wizard.guest_link.link_title": "Your guest link",
+        "wizard.guest_link.pin_title": "Your PIN",
+        "wizard.guest_link.pin_why": "Guests enter this PIN to open their registration form. It adds an extra check against unwanted access: the link alone is not enough. Share the link and PIN only with your guests.",
+        "wizard.guest_link.message_title": "Your automated guest message",
+        "wizard.guest_link.copy_message": "Copy this message",
+        "wizard.guest_link.done": "I've added it to my message",
+        "wizard.guest_link.ready": "Ready",
+        "wizard.guest_link.copy_link": "Copy link",
+        "wizard.try_it.waiting": "Waiting for your demo registration…",
+        "wizard.try_it.property": "Your property",
+        "wizard.try_it.stay": "Your demo stay",
+        "wizard.try_it.message": "Example guest message",
+        "wizard.try_it.model_note": "This is a demo example. The message your guests receive and when it is sent depend on your automated message settings in Airbnb, Booking.com or your booking platform.",
+        "wizard.try_it.instructions": "Open the link in this message, enter the PIN, and register as a guest. Then return here to see the result.",
+        "wizard.try_it.preview": "Demo preview",
+        "wizard.try_it.guest": "Example guest",
+        "wizard.try_it.dates": "Stay dates",
+        "wizard.try_it.message_help": "These are example arrival instructions. Replace the bracketed sections before sending a message to real guests.",
+        "wizard.try_it.check_again": "Check again",
+        "wizard.try_it.demo_pin": "Demo PIN: %(pin)s",
+        "wizard.try_it.delete_continue": "Delete demo stay and continue",
+        "wizard.try_it.keep": "Keep it for now",
+        "wizard.try_it.skip": "Skip the demo",
+        "wizard.door_lock.intro": "Optional: connect your digital lock.",
+        "wizard.door_lock.unavailable": "Door codes are not enabled on this deployment.",
+        "wizard.automation.manual_detail": "You press Send when a stay is ready to report.",
+        "wizard.automation.scheduled_detail": "UbyHost sends after a delay you choose.",
+        "wizard.automation.immediate_detail": "UbyHost sends as soon as guest forms are complete.",
+        "wizard.automation.finish": "Finish setup",
+        "wizard.done.title": "Setup summary",
+        "wizard.done.go": "Go to my property",
+        "wizard.summary.calendar": "Bookings & calendars",
+        "wizard.summary.try_it": "Guest form demo",
+        "wizard.summary.status.done": "Set up",
+        "wizard.summary.status.skipped": "Skipped",
+        "wizard.summary.status.waiting": "Waiting for login",
+        "wizard.summary.status.todo": "Not set up",
+        "wizard.overview.calendars": "Connected calendars",
+        "wizard.overview.status_note": "Your setup at a glance.",
+        "wizard.overview.details": "Checklist details",
+        "wizard.overview.invite_pending": "Guest registration needs attention",
+        "wizard.step.property": "Property details",
+        "wizard.step.calendar": "Connect your calendar",
+        "wizard.step.guest_link": "Guest link and PIN",
+        "wizard.step.try_it": "Try it yourself",
+        "wizard.step.police": "Police reporting",
+        "wizard.step.stay_fee": "Stay fee",
+        "wizard.step.door_lock": "Door lock",
+        "wizard.step.automation": "Automation",
+        "entities.phone_country_code": "Country calling code",
+        "wizard.guest_link.share_lede": "Send guests the link and PIN with their check-in instructions.",
+        "wizard.guest_link.copy_pin": "Copy PIN",
+        "wizard.guest_link.message_help": "Replace the bracketed examples with your own key collection, directions and quiet hours before sending.",
+        "wizard.guest_link.operator_placeholder": "[Your first name]",
+        "wizard.guest_link.message_template": "Hi [FIRST_NAME],\n\nWe're looking forward to welcoming you to %(property_name)s! 👋\n\n1. Complete your online registration (about 2 minutes)\nPlease fill in the guest form before you arrive. Czech law requires foreign guests to be registered with the police. Completing the form also helps us prepare a smooth check-in.\n%(url)s\nPIN: %(pin)s\nPlease keep the link and PIN private.\n\n2. Collect your keys\n[Example: collect your keys from the key safe at the entrance. Replace this with your own collection instructions.]\n\n3. Find your apartment\n[Example: use the main entrance and follow the signs to your apartment. Replace this with your own directions.]\n\n4. Quiet hours\n[Add your quiet hours, e.g. 22:00–06:00.] Please keep noise down in the apartment and shared areas. No parties or loud music. Thank you for being considerate of our neighbours.\n\nWhat time do you expect to arrive? If anything is unclear, just send us a message.\n\nWe look forward to hosting you!\n\nBest regards,\n%(operator_first_name)s",
+    },
+    "cs": {
+        "wizard.title": "Nastavení: %(name)s",
+        "wizard.count": "Krok %(n)s z %(total)s · %(step)s",
+        "wizard.exit": "Ukončit nastavení",
+        "wizard.back": "Zpět",
+        "wizard.skip": "Přeskočit tento krok",
+        "wizard.save_continue": "Uložit a pokračovat",
+        "wizard.continue": "Pokračovat",
+        "wizard.continue_card": "Pokračovat v nastavení · %(done)s z %(total)s hotovo",
+        "wizard.continue_card_aria": "Nastavení ubytování",
+        "wizard.calendar.add": "Přidat kalendář",
+        "wizard.guest_link.link_title": "Váš odkaz pro hosty",
+        "wizard.guest_link.pin_title": "Váš PIN",
+        "wizard.guest_link.pin_why": "Hosté zadáním PINu otevřou registrační formulář. PIN přidává ochranu před nechtěným přístupem: samotný odkaz nestačí. Odkaz a PIN sdílejte jen se svými hosty.",
+        "wizard.guest_link.message_title": "Vaše automatická zpráva pro hosty",
+        "wizard.guest_link.copy_message": "Zkopírovat tuto zprávu",
+        "wizard.guest_link.done": "Vložil(a) jsem to do zprávy",
+        "wizard.guest_link.ready": "Připraveno",
+        "wizard.guest_link.copy_link": "Kopírovat odkaz",
+        "wizard.try_it.waiting": "Čeká se na vaši ukázkovou registraci…",
+        "wizard.try_it.property": "Vaše ubytování",
+        "wizard.try_it.stay": "Váš ukázkový pobyt",
+        "wizard.try_it.message": "Vzorová zpráva pro hosty",
+        "wizard.try_it.model_note": "Toto je ukázkový příklad. Zpráva, kterou hosté dostanou, i čas jejího odeslání závisí na vašem nastavení automatických zpráv v Airbnb, Booking.com nebo jiné rezervační platformě.",
+        "wizard.try_it.instructions": "Otevřete odkaz ve zprávě, zadejte PIN a zaregistrujte se jako host. Pak se sem vraťte a podívejte se na výsledek.",
+        "wizard.try_it.preview": "Ukázka",
+        "wizard.try_it.guest": "Ukázkový host",
+        "wizard.try_it.dates": "Termín pobytu",
+        "wizard.try_it.message_help": "Toto jsou vzorové pokyny k příjezdu. Než zprávu pošlete skutečným hostům, nahraďte části v hranatých závorkách.",
+        "wizard.try_it.check_again": "Zkontrolovat znovu",
+        "wizard.try_it.demo_pin": "PIN ukázky: %(pin)s",
+        "wizard.try_it.delete_continue": "Smazat ukázkový pobyt a pokračovat",
+        "wizard.try_it.keep": "Nechat zatím",
+        "wizard.try_it.skip": "Přeskočit ukázku",
+        "wizard.door_lock.intro": "Nepovinné: připojte svůj digitální zámek.",
+        "wizard.door_lock.unavailable": "Kódy ke dveřím na tomto prostředí nejsou zapnuté.",
+        "wizard.automation.manual_detail": "Odeslání spustíte tlačítkem Send, až je pobyt připraven.",
+        "wizard.automation.scheduled_detail": "UbyHost odešle po zvoleném zpoždění.",
+        "wizard.automation.immediate_detail": "UbyHost odešle hned po dokončení formulářů hostů.",
+        "wizard.automation.finish": "Dokončit nastavení",
+        "wizard.done.title": "Shrnutí nastavení",
+        "wizard.done.go": "Přejít na ubytování",
+        "wizard.summary.calendar": "Pobyty a kalendáře",
+        "wizard.summary.try_it": "Ukázka formuláře pro hosty",
+        "wizard.summary.status.done": "Nastaveno",
+        "wizard.summary.status.skipped": "Přeskočeno",
+        "wizard.summary.status.waiting": "Čeká na přihlašovací údaje",
+        "wizard.summary.status.todo": "Nenastaveno",
+        "wizard.overview.calendars": "Připojené kalendáře",
+        "wizard.overview.status_note": "Přehled vašeho nastavení.",
+        "wizard.overview.details": "Podrobnosti kontrolního seznamu",
+        "wizard.overview.invite_pending": "Registrace hostů vyžaduje pozornost",
+        "wizard.step.property": "Údaje o ubytování",
+        "wizard.step.calendar": "Připojte kalendář",
+        "wizard.step.guest_link": "Odkaz a PIN pro hosty",
+        "wizard.step.try_it": "Vyzkoušejte si to",
+        "wizard.step.police": "Hlášení policii",
+        "wizard.step.stay_fee": "Poplatek z pobytu",
+        "wizard.step.door_lock": "Zámek dveří",
+        "wizard.step.automation": "Automatizace",
+        "entities.phone_country_code": "Mezinárodní telefonní předvolba",
+        "wizard.guest_link.share_lede": "Pošlete hostům odkaz a PIN spolu s pokyny k příjezdu.",
+        "wizard.guest_link.copy_pin": "Kopírovat PIN",
+        "wizard.guest_link.message_help": "Před odesláním nahraďte příklady v hranatých závorkách vlastním předáním klíčů, pokyny k cestě a dobou nočního klidu.",
+        "wizard.guest_link.operator_placeholder": "[Vaše křestní jméno]",
+        "wizard.guest_link.message_template": "Dobrý den, [FIRST_NAME],\n\ntěšíme se na vás v ubytování %(property_name)s! 👋\n\n1. Vyplňte online registraci (asi 2 minuty)\nProsíme o vyplnění formuláře pro hosty ještě před příjezdem. Český zákon vyžaduje přihlášení cizinců k pobytu na policii. Vyplnění formuláře nám také pomůže připravit hladké ubytování.\n%(url)s\nPIN: %(pin)s\nOdkaz a PIN si prosím ponechte v soukromí.\n\n2. Vyzvedněte si klíče\n[Příklad: klíče si vyzvednete ze schránky u vchodu. Nahraďte vlastními pokyny k předání klíčů.]\n\n3. Najděte svůj apartmán\n[Příklad: použijte hlavní vchod a pokračujte podle označení apartmánu. Nahraďte vlastními pokyny k cestě.]\n\n4. Noční klid\n[Doplňte dobu nočního klidu, např. 22:00–06:00.] Prosíme o ticho v apartmánu i společných prostorách. Večírky a hlasitá hudba nejsou povoleny. Děkujeme za ohleduplnost k sousedům.\n\nV kolik hodin plánujete přijet? Pokud je něco nejasné, napište nám.\n\nTěšíme se na vás!\n\nS pozdravem\n%(operator_first_name)s",
+    },
+}
+for _lang, _strings in _WIZARD_0102_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0099: shared list-page layout (sub-page tabs, toolbar summary).
+_LIST_LAYOUT_0099_STRINGS = {
+    "en": {
+        "tabs.stays.reports": "Police reports",
+        "tabs.stays.register": "Guest register",
+        "properties.list.count": "%(count)s properties",
+        "properties.list.count.one": "%(count)s property",
+        "properties.list.count.few": "%(count)s properties",
+    },
+    "cs": {
+        "tabs.stays.reports": "Hlášení policii",
+        "tabs.stays.register": "Domovní kniha",
+        "properties.list.count": "%(count)s ubytování",
+        "properties.list.count.one": "%(count)s ubytování",
+        "properties.list.count.few": "%(count)s ubytování",
+    },
+}
+for _lang, _strings in _LIST_LAYOUT_0099_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# Coordinator: short timing labels for the compact Properties row (the
+# Automation page keeps the full sentences).
+_TIMING_SHORT_STRINGS = {
+    "en": {
+        "automation.mode_short.manual": "Only when I press send",
+        "automation.mode_short.scheduled": "Automatically, after a delay",
+        "automation.mode_short.immediate": "As soon as forms are complete",
+    },
+    "cs": {
+        "automation.mode_short.manual": "Jen po stisknutí Odeslat",
+        "automation.mode_short.scheduled": "Automaticky, s prodlevou",
+        "automation.mode_short.immediate": "Hned po vyplnění formulářů",
+    },
+}
+for _lang, _strings in _TIMING_SHORT_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 def normalise_language(value: str | None) -> str:

@@ -40,8 +40,8 @@ Do **not** render property shortcuts or saved views in the default rail. Propert
 |---|---|---|
 | Stays landing | **Stays · Police reports · Guest register** | Records tied to stays remain discoverable in one place. `/submissions` and `/housebook` are both one click from Stays. |
 | Stay detail | Guests · Police report, with a direct Invoice action | Guest facts and report state live with the stay. The unused `#money` anchor should not create an empty visual panel. |
-| Properties landing | **Properties**; **Business & legal details** at `/entities` (also from Settings) | Entities may be shared across properties. Guest links and police timing are per property, not a separate global page. |
-| Property detail | **Calendars** (`#calendars`) · **Guest link** (`#communication`) · **Police reporting** (`#ubyport`, including the web-service credential request) · **Send timing** (`#automation`) · business basics · optional stay fee · address | Settings are grouped by the property they affect. The row menu and Search jump to `#communication` or `#ubyport` on the chosen property. |
+| Properties landing | **Properties**; **Business & legal details** at `/entities`; guest-link and timing summary at `/apartments#property-summaries` | Entities may be shared. Edit guest links and reporting timing in the selected property's settings. |
+| Property detail | **Overview · Bookings & calendars · Settings**; Settings groups property, guest links, reporting, automation and door lock | Shortcut cards and Search use `?view=&section=` with the relevant anchor. Keep editing within the selected property. |
 | Invoices | All invoices · Invoice settings | Creation remains a prominent action; settings are one click away. |
 | Stay fees | Period selector; property/group report details | This feature is independent of stay detail and is enabled per property. |
 
@@ -108,6 +108,9 @@ Upcoming/current and Past available as views. Default collapsed summary:
 range, using one **Stay dates** control in the panel. Keep existing status,
 property, archive, list/timeline and saved filters. A row shows arrival date,
 property or booking label, stay range, guest count, and only a meaningful status.
+Owner direction, 2026-10-14: keep Open and Copy guest form link inside the
+three-dot menu, with the native date/property link available. Remove the portal
+shortcut. Paint hover and focus across the whole row, including grid gaps.
 “Add stay” opens a short path: property → dates → expected guests → save.
 Calendar import, manual creation and sync remain available. Empty states
 distinguish no property, no calendar, no matching filter and no stays.
@@ -136,21 +139,17 @@ Local Stays tab “Guest register”. Preserve filter, archival, retention, lega
 
 ### Property list and detail
 
-Property list cards/rows show name, location, one truthful setup state, and a clear Open action. Owner decision 2026-10-10: remove the duplicate Property tools menu inside individual property pages. The Properties landing page provides useful cross-property overview links, also reachable through Search. Business details are a local tab or section of Properties, because they are used by properties and invoices. Do not duplicate a legal entity just to make the UI appear property-specific; show the assigned entity on each property and provide a direct link to its shared record.
+Property list cards/rows show name, location and one truthful setup state. Owner direction, 2026-10-14: click the row or its native text link to open it, or choose Open from its three-dot menu. Do not repeat an Open button beside that menu. Owner decision 2026-10-10: remove the duplicate Property tools menu inside individual property pages. The Properties landing page provides useful cross-property overview links, also reachable through Search. Business details are a local tab or section of Properties, because they are used by properties and invoices. Do not duplicate a legal entity just to make the UI appear property-specific; show the assigned entity on each property and provide a direct link to its shared record.
 
-Property detail groups existing sections into readable cards: **Bookings** (feeds/sync), **Guest link** (copy URL, PIN, regenerate with warning), **Police reporting** (UbyPort credentials, test connection, code lists, automation), **Business details** (assigned entity, contact), **Stay fee** (optional, rate and council/payment inputs). Keep advanced technical fields in their section, not on the landing view. Section links or anchored tabs should be stable across failed submissions.
+Property detail groups existing sections into readable cards: **Bookings** (feeds/sync), **Guest link** (copy URL, PIN, regenerate with warning), **Police reporting** (UbyPort credentials, test connection, code lists, automation; the example police letter is linked beside the heading, each field has a `?` naming its line on the police letter, and the facility name is never prefilled, 0097), **Business details** (assigned entity, contact), **Stay fee** (optional, rate and council/payment inputs). Keep advanced technical fields in their section, not on the landing view. Section links or anchored tabs should be stable across failed submissions.
 
 ### First setup and onboarding
 
 The main path is **Add property → connect booking calendar or add a stay manually → prepare guest link → check reporting details → use the app**. Each step has one task, a visible Skip/Later when optional, and a return route. Do not require invoices or stay fees before a first stay. Existing demo-load/reset may remain in onboarding with a conspicuous demo label. A host can return to any setup card from Properties, without losing work or encountering a dead-end success screen.
 
-For the host's first flat, **`/setup`** runs a five-step wizard (`welcome` → `name` → `address` → `bookings`; step 5 is completion). `GET /setup` resumes at the first unfinished step (`onboarding.wizard_step()` in `App/app/onboarding.py`). The dashboard onboarding banner links there. Finishing bookings (an active calendar feed or a manual stay) sends the host to that property's police reporting block (`#ubyport`). The address step saves only `addr_*` via `_save_address_only` so a partial wizard POST does not wipe other property fields.
-
 ### Guest links, automation, and legacy URLs
 
-Guest links (permalink, PIN, bilingual message, regenerate) live on each property at **`#communication`**. Police send timing lives at **`#automation`**; UbyPort credentials and the optional web-service credential request letter sit under **`#ubyport`** (hosts can download `GET /apartments/{id}/ws-request.txt`; the Czech letter names data box `ybndqw9`).
-
-**`/guest-links`** and **`/automation`** remain bookmarkable: they 303 to `/apartments/{id}#communication` or `#automation` when the workspace has exactly one property, otherwise to `/apartments`. The old standalone overview templates are removed (brief 0066). Smart locks stay at `/smart-locks`. Keep PIN, regenerate warnings, test connection, and per-property automation as today; there is no global on/off for reporting or guest links.
+0101: `/automation` is removed; `/guest-links` stays only as a redirect for lifecycle e-mails already sent. The cross-property overview is the Properties summary (`/apartments#property-summaries`), reached from the Properties landing page and Search. Each row links to the property's exact setting, so edits occur in context. Keep PIN, resend, automation, test connection, and error details as supported today. Avoid a global “on/off” appearance if settings are per property. Preserve shared-lock account setup, contextual property links and return navigation.
 
 ## 7. Invoices
 

@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% block title %}{{ t('setup.frame.title', step=wizard_step_number, total=wizard_total_steps) }}{% endblock %}
-{% block content %}
-<section class="wizard">
-  <p class="wizard-kicker">{{ t('setup.frame.step_of', step=wizard_step_number, total=wizard_total_steps) }}</p>
-  {% block wizard_body %}{% endblock %}
-  <p class="wizard-later"><a href="/">{{ t('setup.frame.later') }}</a></p>
-</section>
-{% endblock %}

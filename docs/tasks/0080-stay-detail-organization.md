@@ -1,10 +1,10 @@
 # 0080: Stay detail with next action and inline guest facts
 
-Status: blocked — depends on reviewed 0079; exact patch must be released against that integration revision.
+Status: review
 
 Depends on: 0079 done | Source baseline: c4c8f979319e53341833065b2a8790c30159581f | Branch: task/0080-stay-detail-organization | PR base: task/production-host-ux-integration
 
-Patch status: pending — rebase against reviewed 0094/correction predecessors and release the exact patch; acceptance contract only; not executable until the orchestrator adds exact code/diffs and the reviewed base SHA.
+Patch status: lifted 2026-10-13 — implement against the current integration branch per the combined plan §2.
 
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

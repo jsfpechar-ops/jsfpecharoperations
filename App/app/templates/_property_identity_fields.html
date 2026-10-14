@@ -1,0 +1,18 @@
+{#- 0092: property name and guest-facing city, once per document.
+    Inputs: property_values (the stored property, or the create draft),
+    name_error (true when a create was refused for a blank name).
+    No form tag and no save route: the including form owns both. -#}
+{%- from "_components.html" import field_label with context -%}
+{%- set pv = property_values or {} %}
+<div class="grid two property-identity-fields">
+  <div class="field">
+    {{ field_label('internal_name', t('apartment.form.internal_name.label'), t('apartment.form.internal_name.hint')) }}
+    <input type="text" id="internal_name" name="internal_name" value="{{ pv.internal_name or '' }}" required
+           aria-describedby="internal_name-help{% if name_error %} internal_name-error{% endif %}"{% if name_error %} aria-invalid="true" autofocus{% endif %}>
+    {% if name_error %}<p class="err-text" id="internal_name-error" role="alert">{{ t('flash.error.name_required') }}</p>{% endif %}
+  </div>
+  <div class="field">
+    {{ field_label('city_en', t('apartment.form.city_en.label'), t('apartment.form.city_en.hint'), true) }}
+    <input type="text" id="city_en" name="city_en" value="{{ pv.city_en or '' }}" aria-describedby="city_en-help">
+  </div>
+</div>

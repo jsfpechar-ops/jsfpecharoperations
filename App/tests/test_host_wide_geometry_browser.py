@@ -44,13 +44,15 @@ CAPTURE_ROUTES = {
     "invoices": ("/invoices", ".panel.tight.scroll-x, .panel.empty"),
     "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
-    "fee-setup": ("/stay-fees/{unconfigured_apartment}/setup", ".panel"),
+    # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
+    "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=reporting", ".property-settings"),
     "fee-detail": ("/stay-fees/{configured_apartment}", ".stay-fee-detail, .panel"),
     "invoice-new-picker": ("/invoices/new", ".panel"),
     "invoice-new-selected": ("/invoices/new?entity={entity_id}&reservation_id={reservation_id}", ".invoice-workspace, .invoice-stay-picker"),
-    "invoice-settings": ("/invoices/settings?entity={entity_id}", ".invoice-settings-form"),
+    # 0076/0101: Invoice settings is the business editor; its panel is the result lane.
+    "invoice-settings": ("/entities?edit={entity_id}&next=/invoices", ".entity-form"),
     "invoice-detail": ("/invoices/{invoice_id}", ".invoice-workspace"),
-    "property-new": ("/apartments/new", "form[action='/apartments']"),
+    "property-new": ("/apartments/new", ".property-create-lane"),  # 0092: form + follow-up panel
     "stay-detail": ("/reservations/{reservation_id}", ".reservation-detail, .panel"),
     "stays-archive": ("/reservations?range=archive", ".stays-view, .panel.empty"),
     "property-detail": ("/apartments/{property_id}", ".property-detail, .panel"),
@@ -58,8 +60,9 @@ CAPTURE_ROUTES = {
     "housebook": ("/housebook?apartment={unconfigured_apartment}&from={today}&to={housebook_end}", ".housebook-page, .panel"),
     "submissions": ("/submissions", ".panel.tight.scroll-x, .panel.empty"),
     "submission-detail": ("/submissions/{submission_id}", ".submission-detail, .panel"),
-    "guest-links": ("/apartments/{property_id}", "#communication"),
-    "automation": ("/apartments/{property_id}", "#automation"),
+    # 0094: both now live in property Settings; the lane is the tab content.
+    "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views"),
+    "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views"),
     "archive": ("/settings/archived", ".panel"),
     "settings": ("/settings", ".host-property-grid"),
     "smart-locks": ("/smart-locks", ".panel"),
@@ -515,8 +518,12 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             assert menus, f"stay row has no visible More control: {grouped}"
                             more = menus[0]
                             for control in grouped:
-                                assert abs(control["top"] - more["top"]) <= 2, (control, more)
-                                assert abs(control["height"] - expected_action_height) <= 1, (control, more)
+                                same_row = abs(control["top"] - more["top"]) <= 2
+                                wrapped = control["bottom"] <= more["top"] + 1 or control["top"] >= more["bottom"] - 1
+                                assert same_row or wrapped, (control, more)
+                                assert control["height"] >= expected_action_height - 1, (control, more)
+                                if not control["isCopy"]:
+                                    assert abs(control["height"] - expected_action_height) <= 1, (control, more)
                             copies = [item for item in grouped if item["isCopy"]]
                             if copies:
                                 copy_groups += 1
@@ -575,8 +582,12 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                     grouped = [item for item in visible_actions if item["rowGroup"] == group]
                     more = next(item for item in grouped if item["isMenu"])
                     for control in grouped:
-                        assert abs(control["top"] - more["top"]) <= 2, (control, more)
-                        assert abs(control["height"] - 42) <= 1, (control, more)
+                        same_row = abs(control["top"] - more["top"]) <= 2
+                        wrapped = control["bottom"] <= more["top"] + 1 or control["top"] >= more["bottom"] - 1
+                        assert same_row or wrapped, (control, more)
+                        assert control["height"] >= 41, (control, more)
+                        if not control["isCopy"]:
+                            assert abs(control["height"] - 42) <= 1, (control, more)
                     copies = [item for item in grouped if item["isCopy"]]
                     if copies:
                         copy_groups += 1
@@ -592,13 +603,17 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
 
 
 def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
-    """The fee setup/detail back links share the centered header lane."""
+    """The fee detail back link shares the centered header lane.
+
+    0077: the setup page is gone (0101: so is its URL); the property fee
+    editor's header and Stay fee section are checked here instead.
+    """
     output_dir = Path("/workspace/generated_images/host-wide-audit/after")
     output_dir.mkdir(parents=True, exist_ok=True)
     routes = (
-        f"/stay-fees/{wide_host['unconfigured_apartment']}/setup",
         f"/stay-fees/{wide_host['configured_apartment']}",
     )
+    setup = f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting"
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = browser.new_context(viewport={"width": 1920, "height": 1000})
@@ -624,6 +639,15 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
                     page.screenshot(path=str(output_dir / (
                         f"after-fee-backlink-{lang}-{width}-{index}.png"
                     )))
+                response = page.goto(f"{wide_base}{setup}&lang={lang}")
+                assert response and response.status == 200
+                page.wait_for_load_state("networkidle")
+                assert f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting" in page.url
+                header = page.locator(".page-header").first.bounding_box()
+                section = page.locator("#stay-fee-settings").bounding_box()
+                assert header and section and section["width"] > 0
+                assert section["x"] >= header["x"] - 2
+                assert section["x"] + section["width"] <= header["x"] + header["width"] + 2
         context.close()
         browser.close()
 
@@ -650,7 +674,7 @@ def test_mobile_property_save_bar_does_not_cover_focused_address_field(wide_host
                 field.evaluate("(element) => element.scrollIntoView({block:'end', behavior:'instant'})")
                 field.focus()
                 field_box = field.bounding_box()
-                save_box = page.locator(".host-property-save").bounding_box()
+                save_box = page.locator(".property-create-actions").bounding_box()  # 0092 create footer
                 assert field_box and save_box
                 overlap_height = min(field_box["y"] + field_box["height"], save_box["y"] + save_box["height"]) - max(
                     field_box["y"], save_box["y"]

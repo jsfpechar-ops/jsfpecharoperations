@@ -1,6 +1,6 @@
 # 0093: Visible host controls and contextual question-mark help
 
-Status: todo
+Status: review
 Depends on: 0092 reviewed | Initial source: 7b27d09402f9656b0c606c131793310925936526 | Branch: task/0093-visible-controls-contextual-help | PR base: task/production-host-ux-integration
 Executor: Cursor local agent (composer, Kimi or GLM) | One host-presentation session; separate independently found bugs before release
 

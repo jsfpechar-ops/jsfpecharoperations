@@ -1052,7 +1052,9 @@ def workspace_deletion(owner_user_id: int, due_at: str, stage: str) -> int:
 LIFECYCLE_ACTIONS = {
     "lifecycle_no_property": "/apartments/new",
     "lifecycle_no_calendar": "/apartments",
-    "lifecycle_no_guest": "/guest-links",
+    # 0101: the canonical home. /guest-links stays as a redirect only because
+    # tips already sent link it.
+    "lifecycle_no_guest": "/apartments#property-summaries",
 }
 
 

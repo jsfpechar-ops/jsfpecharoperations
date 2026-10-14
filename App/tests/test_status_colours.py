@@ -14,7 +14,7 @@ from datetime import date, timedelta
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, host_i18n, reporting
+from app import auth, db, host_i18n, property_setup, reporting
 from app.main import app
 from tests.conftest import login_as
 
@@ -84,6 +84,8 @@ def _seed(*, rejected: bool = False) -> tuple[TestClient, int, int]:
             "created_at": now,
         },
     )
+    property_setup.start(apartment_id)
+    property_setup.finish(apartment_id)
     reservation_id = db.insert(
         "reservation",
         {

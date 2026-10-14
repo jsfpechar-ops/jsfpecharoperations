@@ -1,55 +1,61 @@
+{#- The one set of stay-fee fields (0077). Rendered only inside property
+    Settings -> Reporting & fees -> Stay fee. Every section is visible: nothing is folded away. -#}
+{%- from "_components.html" import field_label, help_tip with context -%}
 <input type="hidden" name="_stay_fee_account_existing" value="{{ apartment.stay_fee_council_account or apartment.stay_fee_council_iban or '' }}">
 <div class="fee-setup-section">
-  <h2>1. {{ t('stay_fees.setup.calculation') }}</h2>
+  <h4 class="property-subsection-title">1. {{ t('stay_fees.setup.calculation') }}</h4>
   <div class="grid two">
     <div class="field">
-      <label for="stay_fee_rate_czk">{{ t('apartment.form.stay_fee.rate_label') }}</label>
-      <input type="number" id="stay_fee_rate_czk" name="stay_fee_rate_czk" min="0" max="50" step="1"
+      {{ field_label('stay_fee_rate_czk', t('apartment.form.stay_fee.rate_label'), t('apartment.form.stay_fee.rate_help')) }}
+      <input type="number" id="stay_fee_rate_czk" name="stay_fee_rate_czk" aria-describedby="stay_fee_rate_czk-help" min="0" max="50" step="1"
              value="{{ apartment.stay_fee_rate_czk or 0 }}">
     </div>
     <div class="field">
-      <label for="stay_fee_cadence">{{ t('apartment.form.stay_fee.cadence_label') }}</label>
-      <select id="stay_fee_cadence" name="stay_fee_cadence">
+      {{ field_label('stay_fee_cadence', t('apartment.form.stay_fee.cadence_label'), t('apartment.form.stay_fee.cadence_help')) }}
+      <select id="stay_fee_cadence" name="stay_fee_cadence" aria-describedby="stay_fee_cadence-help">
         <option value="monthly" {% if apartment.stay_fee_cadence != 'quarterly' %}selected{% endif %}>{{ t('apartment.form.stay_fee.cadence.monthly') }}</option>
         <option value="quarterly" {% if apartment.stay_fee_cadence == 'quarterly' %}selected{% endif %}>{{ t('apartment.form.stay_fee.cadence.quarterly') }}</option>
       </select>
     </div>
   </div>
 </div>
-<div class="fee-setup-section">
-  <h2>2. {{ t('stay_fees.setup.payment') }}</h2>
+<div class="fee-setup-section" id="stay-fee-payment">
+  <h4 class="property-subsection-title">2. {{ t('stay_fees.setup.payment') }}</h4>
   <div class="field">
-    <label for="stay_fee_vs">{{ t('apartment.form.stay_fee.vs_label') }}</label>
-    <input type="text" id="stay_fee_vs" name="stay_fee_vs" inputmode="numeric" maxlength="10" value="{{ apartment.stay_fee_vs or '' }}">
+    {{ field_label('stay_fee_vs', t('apartment.form.stay_fee.vs_label'), t('apartment.form.stay_fee.vs_help')) }}
+    <input type="text" id="stay_fee_vs" name="stay_fee_vs" aria-describedby="stay_fee_vs-help" inputmode="numeric" maxlength="10" value="{{ apartment.stay_fee_vs or '' }}">
   </div>
+  {% if fee_account_error %}
+  <p class="err-text small" id="stay-fee-account-error" role="alert">{{ t('flash.stay_fees.account_invalid') }}</p>
+  {% endif %}
+  <div class="field-label-row fee-account-label"><span class="field-group-label" id="stay-fee-account-label">{{ t('apartment.form.stay_fee.account_label') }}</span>{{ help_tip('stay-fee-account-help', t('apartment.form.stay_fee.account_help')) }}</div>
   {% set prefix = '' %}
   {% include "_account_parts.html" %}
 </div>
-<details class="fee-setup-section">
-  <summary>{{ t('stay_fees.setup.council') }}</summary>
+<div class="fee-setup-section" id="stay-fee-council">
+  <h4 class="property-subsection-title">3. {{ t('stay_fees.setup.council') }}</h4>
   <div class="field">
-    <label for="stay_fee_authority_name">{{ t('apartment.form.stay_fee.authority_name_label') }}</label>
-    <input id="stay_fee_authority_name" name="stay_fee_authority_name" maxlength="200" value="{{ apartment.stay_fee_authority_name or '' }}">
+    {{ field_label('stay_fee_authority_name', t('apartment.form.stay_fee.authority_name_label'), t('apartment.form.stay_fee.authority_name_help')) }}
+    <input id="stay_fee_authority_name" name="stay_fee_authority_name" aria-describedby="stay_fee_authority_name-help" maxlength="200" value="{{ apartment.stay_fee_authority_name or '' }}">
   </div>
   <div class="field">
-    <label for="stay_fee_authority_address">{{ t('apartment.form.stay_fee.authority_address_label') }}</label>
-    <input id="stay_fee_authority_address" name="stay_fee_authority_address" maxlength="200" value="{{ apartment.stay_fee_authority_address or '' }}">
+    {{ field_label('stay_fee_authority_address', t('apartment.form.stay_fee.authority_address_label'), t('apartment.form.stay_fee.authority_address_help')) }}
+    <input id="stay_fee_authority_address" name="stay_fee_authority_address" aria-describedby="stay_fee_authority_address-help" maxlength="200" value="{{ apartment.stay_fee_authority_address or '' }}">
   </div>
   <div class="field">
-    <label for="stay_fee_authority_contact">{{ t('apartment.form.stay_fee.authority_contact_label') }}</label>
-    <input id="stay_fee_authority_contact" name="stay_fee_authority_contact" maxlength="200" value="{{ apartment.stay_fee_authority_contact or '' }}">
+    {{ field_label('stay_fee_authority_contact', t('apartment.form.stay_fee.authority_contact_label'), t('apartment.form.stay_fee.authority_contact_help')) }}
+    <input id="stay_fee_authority_contact" name="stay_fee_authority_contact" aria-describedby="stay_fee_authority_contact-help" maxlength="200" value="{{ apartment.stay_fee_authority_contact or '' }}">
   </div>
   <div class="field">
-    <label for="stay_fee_authority_databox">{{ t('apartment.form.stay_fee.authority_databox_label') }}</label>
-    <input id="stay_fee_authority_databox" name="stay_fee_authority_databox" maxlength="7" autocapitalize="off" spellcheck="false" value="{{ apartment.stay_fee_authority_databox or '' }}">
-    <div class="hint">{{ t('apartment.form.stay_fee.authority_databox_hint') }}</div>
+    {{ field_label('stay_fee_authority_databox', t('apartment.form.stay_fee.authority_databox_label'), t('apartment.form.stay_fee.authority_databox_hint')) }}
+    <input id="stay_fee_authority_databox" name="stay_fee_authority_databox" maxlength="7" autocapitalize="off" spellcheck="false" aria-describedby="stay_fee_authority_databox-help" value="{{ apartment.stay_fee_authority_databox or '' }}">
   </div>
   <div class="field">
-    <label for="stay_fee_payee">{{ t('apartment.form.stay_fee.payee_label') }} <span class="opt">{{ t('common.optional') }}</span></label>
-    <input id="stay_fee_payee" name="stay_fee_payee" maxlength="60" value="{{ apartment.stay_fee_payee or '' }}" placeholder="{{ apartment.stay_fee_authority_name or '' }}">
+    {{ field_label('stay_fee_payee', t('apartment.form.stay_fee.payee_label'), t('apartment.form.stay_fee.payee_hint'), true) }}
+    <input id="stay_fee_payee" name="stay_fee_payee" aria-describedby="stay_fee_payee-help" maxlength="60" value="{{ apartment.stay_fee_payee or '' }}" placeholder="{{ apartment.stay_fee_authority_name or '' }}">
   </div>
   <div class="field">
-    <label for="stay_fee_instruction">{{ t('apartment.form.stay_fee.instruction_label') }} <span class="opt">{{ t('common.optional') }}</span></label>
-    <textarea id="stay_fee_instruction" name="stay_fee_instruction" rows="2" maxlength="500">{{ apartment.stay_fee_instruction or '' }}</textarea>
+    {{ field_label('stay_fee_instruction', t('apartment.form.stay_fee.instruction_label'), t('apartment.form.stay_fee.instruction_hint')) }}
+    <textarea id="stay_fee_instruction" name="stay_fee_instruction" aria-describedby="stay_fee_instruction-help" rows="2" maxlength="500">{{ apartment.stay_fee_instruction or '' }}</textarea>
   </div>
-</details>
+</div>

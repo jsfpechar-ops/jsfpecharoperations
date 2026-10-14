@@ -21,6 +21,7 @@ from . import (
     analytics,
     auth,
     config,
+    contact_phone,
     db,
     deadlines,
     host_i18n,
@@ -218,7 +219,7 @@ _PORTAL_LABELS = {
     "google": "Google Calendar",
     "apple": "Apple Calendar",
 }
-_SOURCE_KEYS = {"manual": "stays.source.manual", "ical": "stays.source.ical"}
+_SOURCE_KEYS = {"manual": "stays.source.manual", "ical": "stays.source.ical", "demo": "stays.source.demo"}
 _PLATFORM_LOGO_DIR = config.BASE_DIR / "static" / "platforms"
 # Owner filenames in static/platforms/ (slug -> basename). Checked once at import.
 _PLATFORM_LOGO_FILES = {
@@ -389,7 +390,88 @@ def _template_door_codes_enabled() -> bool:
     return ttlock.enabled()
 
 
+def _template_section_tabs(request: Request, section: str, current: str = "") -> list:
+    """0099: the sub-page tabs of one rail section, as (href, label key, current).
+
+    One list for every page of the section, so the tabs read the same on the
+    list page and on its sibling pages. ``current`` names the open tab; an
+    empty value marks none. Only hrefs are computed here (no data change).
+    """
+    if section == "stays":
+        items = [
+            ("stays", "/reservations", "nav.stays"),
+            ("reports", "/submissions", "tabs.stays.reports"),
+            ("register", "/housebook", "tabs.stays.register"),
+        ]
+    elif section == "properties":
+        items = [("properties", "/apartments", "nav.properties")]
+        entities = access.entities(request)
+        if entities:
+            business = (
+                f"/entities?edit={entities[0]['id']}&next=/apartments" if len(entities) == 1
+                else "/entities"
+            )
+            items.append(("business", business, "host.business"))
+        from . import ttlock
+
+        owner = access.owner_id(request)
+        # As before on Properties: the lock account tab only once the host has
+        # one (and on its own page, so the open page is always a tab).
+        if ttlock.enabled() and (current == "lock" or (owner and ttlock.account_for(owner))):
+            items.append(("lock", "/smart-locks", "properties.shared.lock"))
+    elif section == "invoices":
+        items = [
+            ("invoices", "/invoices", "nav.invoices"),
+            ("settings", access.invoice_details_url(request), "host.invoice_settings"),
+        ]
+    elif section == "settings":
+        items = [
+            ("settings", "/settings", "nav.settings"),
+            ("archive", "/settings/archived", "settings.nav.archive"),
+            ("privacy", "/privacy-requests", "nav.privacy_requests"),
+        ]
+    else:
+        return []
+    return [(href, key, name == current) for name, href, key in items]
+
+
+@pass_context
+def _template_page_tabs(context) -> list:
+    """0099: the tabs a page header shows, from the page's ``nav`` (none: [])."""
+    request = context.get("request")
+    if request is None:
+        return []
+    nav = context.get("nav") or ""
+    path = request.url.path
+    if nav in ("reservations", "submissions", "housebook"):
+        current = {"reservations": "stays", "submissions": "reports", "housebook": "register"}[nav]
+        return _template_section_tabs(request, "stays", current)
+    if nav == "invoices":
+        return _template_section_tabs(request, "invoices", "invoices")
+    if nav == "apartments" and path == "/apartments":
+        return _template_section_tabs(request, "properties", "properties")
+    if nav == "entities":
+        # The one business editor serves two sections: opened from Invoices
+        # (Invoice settings) it keeps the Invoices tabs, otherwise Properties.
+        if str(context.get("next_path") or "").startswith("/invoices"):
+            return _template_section_tabs(request, "invoices", "settings")
+        return _template_section_tabs(request, "properties", "business")
+    if nav == "smart_locks":
+        return _template_section_tabs(request, "properties", "lock")
+    if nav in ("settings", "privacy_requests", "users", "incidents", "operations", "funnel"):
+        current = (
+            "settings" if nav == "settings" and path == "/settings"
+            else "archive" if path == "/settings/archived"
+            else "privacy" if nav == "privacy_requests"
+            else ""
+        )
+        return _template_section_tabs(request, "settings", current)
+    return []
+
+
 templates.env.globals["t"] = _template_translate
+templates.env.globals["section_tabs"] = _template_section_tabs
+templates.env.globals["page_tabs"] = _template_page_tabs
 templates.env.globals["passkeys_enabled"] = _template_passkeys_enabled
 templates.env.globals["door_codes_enabled"] = _template_door_codes_enabled
 templates.env.globals["legal_effective"] = _template_legal_effective
@@ -414,6 +496,7 @@ templates.env.globals.update(
     deadline_cell=reporting.deadline_cell,
     purpose_label=validation.purpose_label,
     country_name=validation.country_name,
+    phone_form_parts=contact_phone.form_parts,
     format_birth_date=validation.format_birth_date,
     display_birth_date=validation.display_birth_date,
     compose_residence=validation.compose_residence,

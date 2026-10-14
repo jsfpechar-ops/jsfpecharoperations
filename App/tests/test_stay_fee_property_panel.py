@@ -1,8 +1,6 @@
 """Host-only stay-fee property settings."""
 from __future__ import annotations
 
-from urllib.parse import unquote
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -26,17 +24,28 @@ def _cleanup() -> None:
     db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
 
 
+def _operator_id() -> str:
+    """0088: the host's operator, created on first use."""
+    owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
+    if not owner:
+        return ""
+    row = db.query_one("SELECT id FROM legal_entity WHERE owner_user_id = ? ORDER BY id LIMIT 1", (owner["id"],))
+    if row:
+        return str(row["id"])
+    return str(db.insert("legal_entity", {"name": "Panel Operator", "owner_user_id": owner["id"], "created_at": db.utcnow()}))
+
+
 def _form_data(**overrides):
     data = {
         "internal_name": "Panel Test Flat",
         "city_en": "",
         "addr_okres": "",
-        "addr_obec": "",
+        "addr_obec": "Praha",
         "addr_obec_cast": "",
         "addr_street": "",
-        "addr_house_no": "",
+        "addr_house_no": "12",
         "addr_orient_no": "",
-        "addr_zip": "",
+        "addr_zip": "11000",
         "uby_idub": "",
         "uby_mark": "",
         "uby_name": "",
@@ -44,7 +53,7 @@ def _form_data(**overrides):
         "uby_ws_user": "",
         "guest_message": "",
         "notes": "",
-        "legal_entity_id": "",
+        "legal_entity_id": _operator_id(),
         "data_controller_entity_id": "",
         "permalink_window_days": "2",
         "permalink_reachback_days": "365",
@@ -104,12 +113,13 @@ def test_edit_page_has_stay_fee_panel_and_create_page_does_not(host):
     create = client.get("/apartments/new?lang=en")
 
     assert edit.status_code == 200
-    assert '<details class="panel property-section" id="stay-fee-settings"' in edit.text
-    assert 'href="#stay-fee-settings"' in edit.text
+    # 0094: an ordinary visible section in Settings → Reporting & fees.
+    assert '<section class="panel property-section" id="stay-fee-settings"' in edit.text
+    assert '#stay-fee-settings"' in edit.text
     assert 'Optional stay fee' in edit.text
     assert create.status_code == 200
     assert 'id="stay-fee-settings"' not in create.text
-    assert 'href="#stay-fee-settings"' not in create.text
+    assert '#stay-fee-settings"' not in create.text
 
 
 @pytest.mark.parametrize(("raw_rate", "expected_rate"), [("75", 50), ("abc", 0)])
@@ -171,11 +181,15 @@ def test_account_is_normalised_and_invalid_account_saves_nothing(host):
         ),
         follow_redirects=False,
     )
-    assert invalid.status_code == 303
-    assert "#stay-fee-settings" in invalid.headers["location"]
-    assert "Enter a valid Czech bank account or IBAN." in unquote(
-        invalid.headers["location"]
-    )
+    # 0077: the refused save shows the one fee editor again, with the typed
+    # values and the error, instead of a redirect that dropped them.
+    assert invalid.status_code == 400
+    assert "Enter a valid Czech bank account or IBAN." in invalid.text
+    assert 'id="stay-fee-account-error"' in invalid.text
+    assert 'id="stay-fee-settings"' in invalid.text
+    assert 'data-settings-group="reporting"' in invalid.text
+    assert 'value="Changed office"' in invalid.text
+    assert 'value="9876"' in invalid.text
     unchanged = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
     assert unchanged["internal_name"] == "Panel Test Flat"
     assert unchanged["stay_fee_rate_czk"] == 25

@@ -7,7 +7,7 @@
   outline-offset: 2px;
 }
 
-.host-workspace tbody tr.clickable-row:focus-within > td {
+.host-workspace tbody tr.clickable-row:focus-within {
   background: var(--surface-hover);
 }
 
@@ -22,7 +22,7 @@
 }
 
 @media (hover: hover) {
-  .host-workspace tbody tr.clickable-row:hover > td {
+  .host-workspace tbody tr.clickable-row:hover {
     background: var(--surface-hover);
   }
 
@@ -36,6 +36,9 @@
     background: var(--surface-hover);
   }
 }
+
+.host-workspace .clickable-row { transition: background-color var(--motion-fast) var(--ease-standard); }
+.host-workspace tbody tr.clickable-row > td { background: transparent; }
 
 /* Table actions remain discoverable without a hover-only reveal, including
    when the user is navigating rows with touch or a keyboard. */

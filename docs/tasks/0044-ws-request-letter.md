@@ -1,6 +1,6 @@
 # 0044: "I don't have web-service credentials yet" letter
 
-Status: done
+Status: done; superseded by [0097](0097-reporting-help.md) (generator removed, one line links the Foreign Police page)
 Depends on: 0043 merged | Branch: task/0044-ws-request-letter
 Executor: Cursor local agent | Fits one session
 

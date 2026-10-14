@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-12. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047, 0062, 0054. Main CI green.
+Updated: 2026-10-14. #382 includes #389 and current main: [merge-readiness report](../tasks/0086-pr-382-integration-report.md).
 
 ## Production
 
@@ -10,13 +10,15 @@ Updated: 2026-10-12. Merged 0043, 0045, 0044, 0046, 0055, 0061, 0048, 0051, 0047
 
 ## Now
 
+- #389 wizard polish: [report](../tasks/0102-fix-4-report.md); CI in PR checks.
+
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
 - Optional: deploy #280+#281 (admin preview) when you want it on production.
 
 ## Next
 
-- Host UX: [corrections/prompt](../plans/production-host-ux-corrections.md), 0087–0094 first (0072–0074 replaced); then released 0075–0086. Planning only; integration → staging → approval → production.
+- Host UX: owner merged #389 into #382; current main is integrated for final CI before the owner merges #382. [Report](../tasks/0086-pr-382-integration-report.md).
 
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
 - Merged 0067 (#371) and 0068 (#372). TTLock answered all questions ([TTLOCK](../TTLOCK.md#what-ttlock-support-confirmed-2026-10-12)). Next: [0069](../tasks/0069-same-period-shared-pin.md), same-hours rebooking must not reuse a PIN (K-D04).

@@ -285,9 +285,18 @@ def main(url=None):
         "/housebook",
         "/housebook?apartment=oops&from=oops",
         "/settings",
-        "/automation",
+        f"/apartments/{apartment_id}?view=settings&section=automation",
     ):
         check(host, path)
+    # 0101: the old adapters are removed, not redirected.
+    for path in (
+        "/automation",
+        "/invoices/settings",
+        "/setup",
+        f"/stay-fees/{apartment_id}/setup",
+        f"/apartments/{apartment_id}/ws-request.txt",
+    ):
+        check(host, path, expect=(404,), label=f"{path} (removed)")
 
     check(
         host,
@@ -310,14 +319,18 @@ def main(url=None):
         must_not_contain=["/login", "row-arrow"],
     )
     check(host, "/housebook?lang=en", must_contain=["data-csv-export"])
+    # 0101: /guest-links is kept only because lifecycle e-mails already sent link it.
     legacy_guest_links = host.get("/guest-links?lang=en", follow_redirects=False)
     if legacy_guest_links.status_code not in (302, 303):
         FAILURES.append(
             f"/guest-links?lang=en: HTTP {legacy_guest_links.status_code}, expected redirect"
         )
-    elif f"/apartments/{apartment_id}#communication" not in (
-        legacy_guest_links.headers.get("location") or ""
+    elif not (
+        (legacy_guest_links.headers.get("location") or "").startswith(f"/apartments/{apartment_id}")
+        and (legacy_guest_links.headers.get("location") or "").endswith("#communication")
     ):
+        # 0094: the property page has tabs, so the redirect carries
+        # ?view=settings&section=guests before the legacy #communication anchor.
         FAILURES.append(
             "/guest-links?lang=en: location missing property #communication anchor"
         )
@@ -327,7 +340,8 @@ def main(url=None):
         must_contain=[
             host_i18n.STRINGS["en"]["guest_links.pin"],
             host_i18n.STRINGS["en"]["guest_links.new_pin"],
-            f'name="return_to" value="/apartments/{apartment_id}"',
+            # 0094: saves return to the same property tab (?view=settings&section=...).
+            f'name="return_to" value="/apartments/{apartment_id}?view=settings',
             f'action="/apartments/{apartment_id}/regenerate-pin"',
         ],
     )

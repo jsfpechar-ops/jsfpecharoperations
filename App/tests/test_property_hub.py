@@ -109,28 +109,21 @@ def test_guest_links_redirects_to_communication_with_one_property(host):
     client, apartment_id = host
     response = client.get("/guest-links", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == f"/apartments/{apartment_id}#communication"
+    assert response.headers["location"] == f"/apartments/{apartment_id}?view=settings&section=guests#communication"
 
 
 def test_guest_links_redirects_to_apartments_with_two(two_properties):
     client, _first, _second = two_properties
     response = client.get("/guest-links", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == "/apartments"
+    # 0078: several properties land on the Properties summary, not a record.
+    assert response.headers["location"] == "/apartments#property-summaries"
 
 
-def test_automation_redirects_to_automation_anchor_with_one_property(host):
-    client, apartment_id = host
-    response = client.get("/automation", follow_redirects=False)
-    assert response.status_code == 303
-    assert response.headers["location"] == f"/apartments/{apartment_id}#automation"
-
-
-def test_automation_redirects_to_apartments_with_two(two_properties):
+def test_the_old_automation_hub_is_gone(two_properties):
+    """0101: /automation was removed (no e-mail links it, unlike /guest-links)."""
     client, _first, _second = two_properties
-    response = client.get("/automation", follow_redirects=False)
-    assert response.status_code == 303
-    assert response.headers["location"] == "/apartments"
+    assert client.get("/automation", follow_redirects=False).status_code == 404
 
 
 def test_property_save_without_automation_fields_preserves_timing(host):
@@ -192,7 +185,7 @@ def test_property_save_updates_automation_fields(host):
 def test_property_page_has_editable_automation_controls(host):
     client, apartment_id = host
     text = client.get(f"/apartments/{apartment_id}").text
-    panel = text[text.index('id="automation"') : text.index("</details>", text.index('id="automation"'))]
+    panel = text[text.index('id="automation"') : text.index("</section>", text.index('id="automation"'))]
     assert 'name="automation_mode"' in panel
     assert 'data-automation-mode' in panel
     assert 'name="submit_after_hours"' in panel
@@ -210,14 +203,17 @@ def test_test_connection_still_available_on_property_page(host):
 def test_entities_reachable_from_property_and_settings(host):
     client, apartment_id = host
     property_page = client.get(f"/apartments/{apartment_id}").text
-    assert 'href="/entities"' in property_page
+    # 0088: the operator link opens that operator's business details.
+    assert 'href="/entities' in property_page
     settings = client.get("/settings").text
-    assert 'href="/entities"' in settings
+    # 0076: with one business, Account settings opens its editor directly.
+    assert re.search(r'href="/entities(\?edit=\d+&amp;next=/settings)?"', settings)
 
 
 def test_templates_do_not_link_to_removed_pages(host):
     client, apartment_id = host
     for path in ("/apartments", f"/apartments/{apartment_id}", "/settings", "/entities"):
         text = client.get(path).text
-        assert "/automation" not in text
+        # The removed /automation page (0098's /apartments/<id>/automation-timing is not it).
+        assert not re.search(r'"/automation["?#]', text)
         assert "/guest-links" not in text

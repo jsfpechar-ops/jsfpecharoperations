@@ -4,6 +4,8 @@
   var SIDEBAR_KEY = "ubyhost-sidebar-collapsed";
   var NAV_BREAKPOINT = 960;
   var manualCopyFormId = 0;
+  /* 0099: every clickable list row, table or dashboard card. */
+  var ROW_SELECTOR = "tr[data-href], .clickable-row[data-href]";
 
   document.documentElement.classList.add("has-js");
 
@@ -459,8 +461,11 @@
       });
       var index = candidates.indexOf(trigger);
       var next = candidates[index + (backwards ? -1 : 1)];
-      if (next) next.focus();
+      if (next) { next.focus(); return true; }
+      return false;
     }
+
+    var lastOpenAt = 0;
 
     function closeAll() {
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
@@ -475,6 +480,7 @@
         var wasOpen = panel.classList.contains("is-open");
         closeAll();
         if (!wasOpen) {
+          lastOpenAt = Date.now();
           positionRowMenu(trigger, panel);
           trigger.setAttribute("aria-expanded", "true");
           var firstItem = panel.querySelector('[role="menuitem"]');
@@ -499,9 +505,10 @@
           closeRowMenu(panel);
           if (currentTrigger) currentTrigger.focus();
         } else if (event.key === "Tab" && currentTrigger) {
-          event.preventDefault();
           closeRowMenu(panel);
-          focusOutsideMenu(currentTrigger, event.shiftKey);
+          event.preventDefault();
+          // Nothing follows the trigger: keep focus on it rather than dropping it to the body.
+          if (!focusOutsideMenu(currentTrigger, event.shiftKey)) currentTrigger.focus();
         }
       });
     });
@@ -515,7 +522,16 @@
       if (event.key === "Escape") closeAll();
     });
     window.addEventListener("resize", closeAll);
-    window.addEventListener("scroll", closeAll, true);
+    window.addEventListener("scroll", function () {
+      // Opening a menu can scroll the page (focus, scroll-into-view); keep it open and follow the trigger.
+      if (Date.now() - lastOpenAt < 400) {
+        var open = document.querySelector(".row-menu-panel.is-open");
+        var openTrigger = open ? rowMenuTrigger(open) : null;
+        if (openTrigger) positionRowMenu(openTrigger, open);
+        return;
+      }
+      closeAll();
+    }, true);
   }
 
   function syncAutomationHours(select) {
@@ -535,6 +551,68 @@
       select.addEventListener("change", function () { syncAutomationHours(select); });
     });
   }
+
+  /* ---- 0098 inline reporting timing (Properties summary) ------------------- */
+  // Saves on change (debounced for the hours box) through the same POST the
+  // visible Save button sends without JS; shows "Saved" or the server's error.
+  function initInlineTiming() {
+    document.querySelectorAll("form[data-inline-timing]").forEach(function (form) {
+      if (!window.fetch || !window.FormData) return;
+      var select = form.querySelector("[data-timing-mode]");
+      var hours = form.querySelector("[data-timing-hours-input]");
+      var status = form.querySelector("[data-timing-status]");
+      var timer = null;
+      var seq = 0;
+      form.classList.add("is-live");
+
+      function show(text, kind) {
+        if (!status) return;
+        status.textContent = text;
+        status.classList.toggle("is-error", kind === "error");
+        status.classList.toggle("is-saved", kind === "saved");
+      }
+
+      function save() {
+        window.clearTimeout(timer);
+        timer = null;
+        var mine = ++seq;
+        show(form.getAttribute("data-saving") || "", "");
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        var headers = { "Accept": "application/json" };
+        if (meta) headers["X-CSRF-Token"] = meta.getAttribute("content") || "";
+        fetch(form.getAttribute("action"), {
+          method: "POST",
+          body: new FormData(form),
+          headers: headers,
+          credentials: "same-origin"
+        }).then(function (response) {
+          return response.json().catch(function () { return { ok: false }; });
+        }).then(function (data) {
+          if (mine !== seq) return;
+          if (data && data.ok) show(form.getAttribute("data-saved") || "", "saved");
+          else show((data && data.error) || form.getAttribute("data-failed") || "", "error");
+        }).catch(function () {
+          if (mine === seq) show(form.getAttribute("data-failed") || "", "error");
+        });
+      }
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        save();
+      });
+      if (select) select.addEventListener("change", save);
+      if (hours) {
+        hours.addEventListener("input", function () {
+          window.clearTimeout(timer);
+          timer = window.setTimeout(save, 700);
+        });
+        hours.addEventListener("change", function () {
+          if (timer) save();
+        });
+      }
+    });
+  }
+  /* ---- end 0098 ------------------------------------------------------------- */
 
   function initControllerFields() {
     document.querySelectorAll("[data-controller-same-toggle]").forEach(function (checkbox) {
@@ -651,14 +729,20 @@
   }
 
   function initClickableRows() {
-    document.querySelectorAll("tr[data-href]").forEach(function (row) {
+    /* 0099: one behaviour for every list row (table rows and dashboard stay
+       rows): click or Enter/Space opens it; controls inside keep their own
+       action, and selecting text in a row does not navigate. */
+    document.querySelectorAll(ROW_SELECTOR).forEach(function (row) {
       function openRow() {
         if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
         window.location.assign(row.getAttribute("data-href"));
       }
 
       row.addEventListener("click", function (event) {
-        if (event.target.closest("a, button, input, select, textarea, label, form, .row-menu, .row-actions")) return;
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.target.closest("a, button, input, select, textarea, label, form, summary, details, dialog, .row-menu, .row-actions, .dashboard-row-actions")) return;
+        var selection = window.getSelection ? String(window.getSelection()) : "";
+        if (selection && row.contains(window.getSelection().anchorNode)) return;
         openRow();
       });
 
@@ -781,14 +865,27 @@
   }
 
   function initDetailsLinks() {
+    // 0090: open every <details> around the target (not only the target),
+    // then bring it into view, so a returned section is never folded away.
     function openTarget(hash) {
       if (!hash || hash.charAt(0) !== "#") return;
-      var target = document.getElementById(hash.slice(1));
-      if (target && target.tagName === "DETAILS") target.open = true;
+      var id;
+      try { id = decodeURIComponent(hash.slice(1)); } catch (_) { return; }
+      var target = document.getElementById(id);
+      if (!target) return;
+      var node = target;
+      while (node) {
+        if (node.tagName === "DETAILS") node.open = true;
+        node = node.parentElement;
+      }
+      window.requestAnimationFrame(function () {
+        target.scrollIntoView({ block: "start", behavior: "auto" });
+      });
     }
     document.querySelectorAll("[data-open-details]").forEach(function (link) {
       link.addEventListener("click", function () { openTarget(link.hash); });
     });
+    window.addEventListener("hashchange", function () { openTarget(window.location.hash); });
     openTarget(window.location.hash);
   }
 
@@ -974,7 +1071,7 @@
         var caption = range.querySelector("[data-range-caption]");
         if (!caption) return;
         var formatter = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { day: "numeric", month: "short", year: "numeric" });
-        caption.textContent = draftFrom && draftUntil ? formatter.format(parse(draftFrom)) + " – " + formatter.format(parse(draftUntil)) : draftFrom ? formatter.format(parse(draftFrom)) + " →" : draftUntil ? "← " + formatter.format(parse(draftUntil)) : trigger.dataset.allDates || "";
+        caption.textContent = draftFrom && draftUntil ? formatter.format(parse(draftFrom)) + " – " + formatter.format(parse(draftUntil)) : draftFrom ? formatter.format(parse(draftFrom)) + " – …" : draftUntil ? "… – " + formatter.format(parse(draftUntil)) : trigger.dataset.allDates || "";
       };
       var render = function () {
         var formatter = new Intl.DateTimeFormat(document.documentElement.lang || undefined, { month: "long", year: "numeric" });
@@ -1605,7 +1702,7 @@
         }
         return;
       }
-      var rows = Array.prototype.slice.call(document.querySelectorAll("tr[data-href]"));
+      var rows = Array.prototype.slice.call(document.querySelectorAll(ROW_SELECTOR));
       if (!rows.length) return;
       var current = rows.findIndex(function (row) { return row.classList.contains("row-selected"); });
       if (event.key === "j" || event.key === "k") {
@@ -1711,8 +1808,406 @@
     });
   }
 
+  /* 0093 help: contextual "?" tips (macro help_tip). Hover/focus/tap open, Esc and outside click close. */
+  function initHelpTips() {
+    var tips = Array.prototype.slice.call(document.querySelectorAll("[data-help-tip]"));
+    if (!tips.length) return;
+    var current = null;
+    var timer = null;
+
+    function place(tip) {
+      var btn = tip.querySelector(".help-tip-btn");
+      var body = tip.querySelector(".help-tip-body");
+      var margin = 8;
+      var vw = document.documentElement.clientWidth;
+      var vh = window.innerHeight;
+      body.style.width = Math.min(320, vw - 2 * margin) + "px";
+      var r = btn.getBoundingClientRect();
+      var w = body.offsetWidth;
+      var h = body.offsetHeight;
+      var left = Math.max(margin, Math.min(r.left, vw - w - margin));
+      var top = r.bottom + 6;
+      if (top + h > vh - margin && r.top - 6 - h >= margin) top = r.top - 6 - h;
+      top = Math.max(margin, Math.min(top, vh - h - margin));
+      body.style.left = left + "px";
+      body.style.top = top + "px";
+    }
+    function close(tip) {
+      tip.classList.remove("is-open");
+      tip.removeAttribute("data-pinned");
+      tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "false");
+      if (current === tip) current = null;
+    }
+    function open(tip, pinned) {
+      if (current && current !== tip) close(current);
+      window.clearTimeout(timer);
+      current = tip;
+      tip.classList.add("is-open");
+      tip.querySelector(".help-tip-btn").setAttribute("aria-expanded", "true");
+      if (pinned) tip.setAttribute("data-pinned", "1");
+      place(tip);
+    }
+    function closeSoon(tip) {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(function () {
+        if (!tip.hasAttribute("data-pinned") && !tip.contains(document.activeElement)) close(tip);
+      }, 150);
+    }
+
+    tips.forEach(function (tip) {
+      var btn = tip.querySelector(".help-tip-btn");
+      tip.setAttribute("data-js", "1");
+      tip.addEventListener("pointerenter", function (e) {
+        if (e.pointerType === "mouse") open(tip, false);
+      });
+      tip.addEventListener("pointerleave", function (e) {
+        if (e.pointerType === "mouse") closeSoon(tip);
+      });
+      btn.addEventListener("focus", function () {
+        if (btn.matches(":focus-visible")) open(tip, false);
+      });
+      tip.addEventListener("focusout", function (e) {
+        if (!tip.contains(e.relatedTarget)) close(tip);
+      });
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (tip.classList.contains("is-open") && tip.hasAttribute("data-pinned")) close(tip);
+        else open(tip, true);
+      });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape" || !current) return;
+      var tip = current;
+      close(tip);
+      tip.querySelector(".help-tip-btn").focus();
+    });
+    document.addEventListener("click", function (e) {
+      if (current && !current.contains(e.target)) close(current);
+    });
+    function reflow() { if (current) place(current); }
+    window.addEventListener("resize", reflow);
+    window.addEventListener("scroll", reflow, true);
+  }
+
+  /* 0094: property Overview / Bookings & calendars / Settings.
+     Every view and settings group is already in the page; switching only shows
+     another one, so the one settings form keeps whatever the host typed. Links
+     carry ?view=&section= (plus a #hash to scroll), history follows, and a dirty form asks before
+     the page is left. Without JavaScript the same links reload with ?view=. */
+  function initPropertyViews() {
+    var root = document.querySelector("[data-property-views]");
+    if (!root) return;
+    root.setAttribute("data-js", "1");
+    var base = root.getAttribute("data-property-base");
+    var VIEWS = ["overview", "bookings", "settings"];
+    var SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
+    var form = root.querySelector("[data-property-settings-form]");
+    var returnInput = form && form.querySelector("[data-property-return]");
+    var connect = root.querySelector("[data-calendar-connect]");
+    // 0096: the setup guide's Continue shows only away from the step's place.
+    var guide = document.querySelector("[data-setup-guide]");
+    var guideContinue = guide && guide.querySelector("[data-setup-continue]");
+
+    function hashTarget(hash) {
+      if (!hash || hash.length < 2) return null;
+      try { return document.getElementById(decodeURIComponent(hash.slice(1))); } catch (_) { return null; }
+    }
+
+    // Where a URL points: [view, section] of the element the hash names in
+    // this page, else ?view/?section (0101: no table of old hashes).
+    function destination(url) {
+      var target = hashTarget(url.hash);
+      if (target && root.contains(target)) {
+        var panel = target.closest("[data-property-view]");
+        var group = target.closest("[data-settings-group]");
+        if (panel) return [panel.getAttribute("data-property-view"), group ? group.getAttribute("data-settings-group") : null];
+      }
+      var view = url.searchParams.get("view");
+      var section = url.searchParams.get("section");
+      if (VIEWS.indexOf(view) < 0) view = SECTIONS.indexOf(section) >= 0 ? "settings" : null;
+      if (!view) return null;
+      return [view, SECTIONS.indexOf(section) >= 0 ? section : null];
+    }
+
+    function activeSection() {
+      var group = root.querySelector("[data-settings-group].is-active");
+      return group ? group.getAttribute("data-settings-group") : "property";
+    }
+
+    function activate(view, section) {
+      if (VIEWS.indexOf(view) < 0) view = "overview";
+      root.querySelectorAll("[data-property-view]").forEach(function (panel) {
+        panel.classList.toggle("is-active", panel.getAttribute("data-property-view") === view);
+      });
+      document.querySelectorAll("[data-property-tab]").forEach(function (tab) {
+        if (tab.getAttribute("data-property-tab") === view) tab.setAttribute("aria-current", "page");
+        else tab.removeAttribute("aria-current");
+      });
+      if (section && SECTIONS.indexOf(section) >= 0) {
+        root.querySelectorAll("[data-settings-group]").forEach(function (group) {
+          group.classList.toggle("is-active", group.getAttribute("data-settings-group") === section);
+        });
+        root.querySelectorAll("[data-property-section-link]").forEach(function (link) {
+          if (link.getAttribute("data-property-section-link") === section) link.setAttribute("aria-current", "true");
+          else link.removeAttribute("aria-current");
+        });
+      }
+      if (returnInput) {
+        returnInput.value = view === "settings"
+          ? base + "?view=settings&section=" + activeSection()
+          : base + "?view=" + view;
+      }
+      if (guideContinue) {
+        var stepSection = guide.getAttribute("data-setup-section");
+        guideContinue.hidden = view === guide.getAttribute("data-setup-view")
+          && (!stepSection || (view === "settings" && activeSection() === stepSection));
+      }
+    }
+
+    function reveal(url, scroll) {
+      var dest = destination(url);
+      if (!dest) return false;
+      activate(dest[0], dest[1]);
+      var target = hashTarget(url.hash);
+      if (target && connect && (target === connect || connect.contains(target))) connect.classList.remove("is-collapsed");
+      if (url.searchParams.get("add_calendar") === "1" && connect) connect.classList.remove("is-collapsed");
+      if (scroll) {
+        var into = target && root.contains(target) ? target : root;
+        window.requestAnimationFrame(function () { into.scrollIntoView({ block: "start", behavior: "auto" }); });
+      }
+      return true;
+    }
+
+    document.addEventListener("click", function (event) {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      var link = event.target.closest && event.target.closest("a[href]");
+      if (!link || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
+      var url;
+      try { url = new URL(link.href, window.location.href); } catch (_) { return; }
+      if (url.origin !== window.location.origin || url.pathname !== base) return;
+      if (!url.search && !url.hash) url.searchParams.set("view", "overview");
+      if (!destination(url)) return;
+      event.preventDefault();
+      var lang = new URLSearchParams(window.location.search).get("lang");
+      if (lang && !url.searchParams.get("lang")) url.searchParams.set("lang", lang);
+      url.searchParams.delete("created");
+      window.history.pushState({ propertyView: true }, "", url.pathname + url.search + url.hash);
+      // skeleton.js saw a link click and armed its "page is loading" blank;
+      // this one stays in the page, so disarm it (0084 O1 finding).
+      if (window.ubyhostSkeleton) window.ubyhostSkeleton.hide();
+      reveal(url, true);
+    });
+
+    window.addEventListener("popstate", function () {
+      var url = new URL(window.location.href);
+      if (!reveal(url, false)) activate("overview", null);
+    });
+    window.addEventListener("hashchange", function () {
+      reveal(new URL(window.location.href), true);
+    });
+
+    if (form) {
+      // A field the browser refuses may sit in a hidden group: show that group
+      // first, so the browser can focus the field and say what is wrong.
+      var revealing = false;
+      form.addEventListener("invalid", function (event) {
+        if (revealing) return;
+        revealing = true;
+        window.setTimeout(function () { revealing = false; }, 0);
+        var group = event.target.closest && event.target.closest("[data-settings-group]");
+        activate("settings", group ? group.getAttribute("data-settings-group") : null);
+      }, true);
+      // Unsaved changes: the form carries data-unsaved-guard, so
+      // initUnsavedForms (browser prompt) and initUnsavedDialog (0084 O1) own it.
+    }
+
+    // A switch says "Not saved yet" until the form is saved; never "Enabled".
+    root.querySelectorAll("input[data-switch-saved]").forEach(function (input) {
+      var status = document.getElementById((input.getAttribute("aria-describedby") || "").split(" ")[0]);
+      if (!status) return;
+      input.addEventListener("change", function () {
+        var saved = input.getAttribute("data-switch-saved") === "1";
+        var text = input.checked === saved
+          ? status.getAttribute(input.checked ? "data-on" : "data-off")
+          : status.getAttribute("data-unsaved");
+        status.textContent = text;
+        status.classList.toggle("is-on", input.checked && input.checked === saved);
+        status.classList.toggle("is-unsaved", input.checked !== saved);
+      });
+    });
+
+    reveal(new URL(window.location.href), false);
+  }
+
+  /* 0076: a page with several independent forms (the business editor's
+     Business details and Invoice details). Saving one form, or leaving the
+     page, asks first when another of them holds unsaved changes. */
+  function initUnsavedForms() {
+    var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
+    if (!forms.length) return;
+    var submitting = null;
+    forms.forEach(function (form) {
+      var mark = function () { form.setAttribute("data-dirty", "1"); };
+      form.addEventListener("input", mark);
+      form.addEventListener("change", mark);
+      form.addEventListener("submit", function () { submitting = form; });
+    });
+    window.addEventListener("beforeunload", function (event) {
+      var unsaved = forms.some(function (form) {
+        return form !== submitting && form.getAttribute("data-dirty") === "1";
+      });
+      submitting = null;
+      if (!unsaved) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+  }
+
+  /* ---- 0084 O1: unsaved changes, in-app Save / Discard / Stay ----------------
+     A form with data-unsaved-guard that holds changes (data-dirty, set by
+     initUnsavedForms) asks before an in-app link leaves it:
+       Save    submits that form as usual; the server validates and returns the
+               host where the form's return_to / next says (no chained jump: a
+               refused save must stay on its error page).
+       Discard restores the loaded values, then follows the link.
+       Stay    (also Esc) keeps the edits and returns focus to the link.
+     Links that keep the draft on screen (property Settings sub-nav, cards and
+     anchors into Settings, in-page #anchors) do not ask. Tab close, reload and
+     other sites keep the browser's own prompt. Without JavaScript nothing here
+     runs and the forms post as before. */
+  function initUnsavedDialog() {
+    var forms = Array.prototype.slice.call(document.querySelectorAll("form[data-unsaved-guard]"));
+    var dialog = document.getElementById("unsaved-dialog");
+    if (!forms.length) return;
+    var property = document.querySelector("[data-property-views]");
+    var propertyBase = property && property.getAttribute("data-property-base");
+    var SETTINGS_SECTIONS = ["property", "guests", "reporting", "lock", "automation"];
+    var pendingLink = null;
+
+    function isDirty(form) { return form.getAttribute("data-dirty") === "1"; }
+    function dirtyForms() { return forms.filter(isDirty); }
+
+    // The "Discard changes" button beside Save shows only while its form is dirty.
+    function syncResetButtons() {
+      forms.forEach(function (form) {
+        form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
+          button.hidden = !isDirty(form);
+        });
+      });
+    }
+
+    // Back to the loaded values. Switch labels and dependent fields listen for
+    // "change", so tell them; then the form is clean again.
+    function discard(form) {
+      form.reset();
+      form.querySelectorAll("select, input[type=checkbox], input[type=radio]").forEach(function (el) {
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      form.removeAttribute("data-dirty");
+    }
+
+    // True when following this link keeps the draft on screen.
+    function keepsDraft(url) {
+      var here = window.location;
+      if (property && propertyBase && url.pathname === propertyBase) {
+        var target = null;
+        if (url.hash.length > 1) {
+          try { target = document.getElementById(decodeURIComponent(url.hash.slice(1))); } catch (_) { target = null; }
+        }
+        var panel = target && target.closest("[data-property-view]");
+        if (panel) return panel.getAttribute("data-property-view") === "settings";
+        var view = url.searchParams.get("view");
+        if (view) return view === "settings";
+        if (SETTINGS_SECTIONS.indexOf(url.searchParams.get("section")) >= 0) return true;
+        return url.search === here.search && !!url.hash;
+      }
+      return url.pathname === here.pathname && url.search === here.search && !!url.hash;
+    }
+
+    forms.forEach(function (form) {
+      form.addEventListener("input", syncResetButtons);
+      form.addEventListener("change", syncResetButtons);
+      form.querySelectorAll("[data-unsaved-reset]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          discard(form);
+          syncResetButtons();
+          var save = form.querySelector(".host-property-save [type=submit]") || form.querySelector(".actions [type=submit]");
+          if (save) save.focus();
+        });
+      });
+    });
+    syncResetButtons();
+    // Back/Forward may restore typed values without input events.
+    window.addEventListener("pageshow", syncResetButtons);
+
+    if (!dialog || typeof dialog.showModal !== "function") return;
+    var stay = dialog.querySelector("[data-unsaved-stay]");
+    var discardBtn = dialog.querySelector("[data-unsaved-discard]");
+    var save = dialog.querySelector("[data-unsaved-save]");
+
+    function close(returnFocus) {
+      if (dialog.open) dialog.close();
+      var link = pendingLink;
+      pendingLink = null;
+      if (returnFocus && link) link.focus();
+      return link;
+    }
+
+    document.addEventListener("click", function (event) {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      var link = event.target.closest && event.target.closest("a[href]");
+      if (!link || dialog.contains(link)) return;
+      if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return;
+      if (!dirtyForms().length) return;
+      var url;
+      try { url = new URL(link.href, window.location.href); } catch (_) { return; }
+      if (url.origin !== window.location.origin || keepsDraft(url)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      pendingLink = link;
+      dialog.showModal();
+      stay.focus();
+    }, true);
+
+    stay.addEventListener("click", function () { close(true); });
+    // Esc is Stay.
+    dialog.addEventListener("cancel", function (event) {
+      event.preventDefault();
+      close(true);
+    });
+    discardBtn.addEventListener("click", function () {
+      dirtyForms().forEach(discard);
+      syncResetButtons();
+      var link = close(false);
+      if (link) link.click();
+    });
+    save.addEventListener("click", function () {
+      var form = dirtyForms()[0];
+      close(false);
+      if (!form) return;
+      if (form.requestSubmit) form.requestSubmit();
+      else form.submit();
+    });
+    // Keep Tab inside the dialog.
+    dialog.addEventListener("keydown", function (event) {
+      if (event.key !== "Tab") return;
+      var buttons = [stay, discardBtn, save];
+      var at = buttons.indexOf(document.activeElement);
+      var next = event.shiftKey ? (at <= 0 ? buttons.length - 1 : at - 1) : (at < 0 || at === buttons.length - 1 ? 0 : at + 1);
+      event.preventDefault();
+      buttons[next].focus();
+    });
+  }
+  /* ---- end 0084 O1 ---------------------------------------------------------- */
+
   document.addEventListener("DOMContentLoaded", function () {
     initCopy();
+    initUnsavedForms();
+    initUnsavedDialog();
+    initHelpTips();
     initBirthDateInputs();
     initRowMenus();
     initClickableRows();
@@ -1720,8 +2215,10 @@
     initTogglePanels();
     initDismissBanners();
     initNotifications();
+    initPropertyViews();
     initDetailsLinks();
     initAutomationFields();
+    initInlineTiming();
     initControllerFields();
     initFeeTemplateCopy();
     initCsvExport();

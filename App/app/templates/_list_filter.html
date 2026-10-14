@@ -13,19 +13,16 @@
 {% for value, label_key in filter_statuses %}
   {% if view.status == value %}{% set status_ns.label = t(label_key) %}{% endif %}
 {% endfor %}
-<div class="filter-toolbar" data-filter-toolbar>
-  <button class="btn filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="list-filter-panel" hidden>
-    {{ t('host.filter.filters') }}
-  </button>
-  <p class="filter-applied-summary" data-filter-summary>
+{% from "_components.html" import list_toolbar with context %}
+{% set list_summary %}
     <span>{{ period_summary }}</span>
     {% if filter_properties or filter_statuses or view.q %}
       <span aria-hidden="true"> · </span><span>{{ property_ns.label }}</span>
       {% if filter_statuses and view.status %}<span aria-hidden="true"> · </span><span>{{ status_ns.label }}</span>{% endif %}
       {% if view.q %}<span aria-hidden="true"> · </span><span>{{ view.q }}</span>{% endif %}
     {% endif %}
-  </p>
-</div>
+{% endset %}
+{{ list_toolbar(list_summary, panel_id='list-filter-panel', actions=list_filter_actions | default('')) }}
 <form id="list-filter-panel" method="get" action="{{ filter_action }}" class="filters panel list-filter host-filter-panel" data-filter-panel data-filter-route="month" role="search">
   <div class="filter-fields">
     <div class="field list-filter-period" data-month-picker data-month-optional="{{ 'true' if filter_month_optional else 'false' }}"

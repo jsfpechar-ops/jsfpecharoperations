@@ -1,6 +1,6 @@
 # 0092: Create properties through one polished short form
 
-Status: todo
+Status: review
 Depends on: 0091 reviewed on the correction integration branch | Initial source baseline: 7b27d09402f9656b0c606c131793310925936526 | Branch: task/0092-simple-property-onboarding | PR base: task/production-host-ux-integration
 Executor: Cursor local agent (composer, Kimi or GLM) | One scoped executor session
 

@@ -222,7 +222,7 @@ def test_invoice_settings_fill_registry(host):
             },
         )
         response = host.post(
-            f"/invoices/settings?lang=en&entity={entity_id}",
+            f"/entities/{entity_id}/invoice?lang=en",
             data={
                 "legal_entity_id": str(entity_id),
                 "ico": ICO,

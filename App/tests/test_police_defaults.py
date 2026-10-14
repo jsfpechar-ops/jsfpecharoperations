@@ -1,26 +1,18 @@
 """Police setup defaults: three visible fields, derived header filled on save."""
 from __future__ import annotations
 
-import re
 import secrets
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, validation
+from app import auth, db, property_setup, validation
 from app.main import app
 from app.routes import admin as admin_routes
 from app.host_i18n import STRINGS
 from tests.conftest import login_as
 
 USERNAME = "police-defaults-host"
-DERIVED_DETAILS_RE = re.compile(r'<details class="police-derived"([^>]*)>', re.I)
-
-
-def _derived_details_open(html: str) -> bool:
-    match = DERIVED_DETAILS_RE.search(html)
-    assert match, "police-derived details block is missing"
-    return "open" in match.group(1)
 
 
 def _cleanup():
@@ -52,6 +44,11 @@ def _entity(**overrides):
     }
     data.update(overrides)
     return db.insert("legal_entity", data)
+
+
+def _finish_setup(apartment_id: int) -> None:
+    property_setup.start(apartment_id)
+    property_setup.finish(apartment_id)
 
 
 def _valid_apartment_fields(entity_id: int, **overrides):
@@ -107,11 +104,15 @@ def test_mark_from_ws_user_ignores_test_login():
     assert validation.mark_from_ws_user("uby-tws1ab45") == ""
 
 
-def test_name_default_truncates_internal_name_to_35():
-    long_name = "A" * 40
-    payload = {"internal_name": long_name, "uby_name": ""}
+def test_facility_name_is_never_filled_from_the_property_name():
+    # 0097: the police name comes from the letter ("Ubytovací zařízení"), never
+    # from the property or listing name.
+    payload = {"internal_name": "A" * 40, "uby_name": ""}
     admin_routes._apply_police_defaults(payload, [])
-    assert payload["uby_name"] == "A" * 35
+    assert payload["uby_name"] == ""
+    payload = {"internal_name": "Flat", "uby_name": None}
+    admin_routes._apply_police_defaults(payload, [])
+    assert payload["uby_name"] is None
 
 
 def test_contact_default_uses_operator_email(host):
@@ -163,25 +164,63 @@ def test_create_applies_defaults_from_login_and_operator(host):
         ("Defaults On Create",),
     )
     assert row["uby_mark"] == "AB12CD"
-    assert row["uby_name"] == "Defaults On Create"
+    assert not row["uby_name"]
     assert row["uby_contact"] == "operator@police-defaults.test"
 
 
-def test_property_page_keeps_derived_details_closed_when_valid(host):
+def test_readiness_still_requires_the_facility_name(host):
+    entity_id = _entity()
+    apartment_id = db.insert("apartment", _valid_apartment_fields(entity_id, uby_name=""))
+    _finish_setup(apartment_id)
+    page = host.get(f"/apartments/{apartment_id}?lang=en")
+    assert page.status_code == 200, page.text
+    assert 'name="uby_name" value=""' in page.text
+    issues = validation.errors_only(validation.validate_apartment(
+        dict(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
+    ))
+    assert any(issue.field == "uby_name" for issue in issues)
+
+
+def test_save_keeps_a_stored_facility_name_and_does_not_fill_a_blank_one(host):
+    entity_id = _entity()
+    kept = db.insert("apartment", _valid_apartment_fields(entity_id, uby_name="Penzion Z Dopisu"))
+    blank = db.insert("apartment", _valid_apartment_fields(
+        entity_id, internal_name="Blank Name Flat", uby_name="",
+        permalink_token=f"pd{secrets.token_hex(5)}"))
+    for apartment_id in (kept, blank):
+        row = db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,))
+        page = host.get(f"/apartments/{apartment_id}?lang=en")
+        token = page.text.split('name="_csrf" value="', 1)[1].split('"', 1)[0]
+        form = {key: (row[key] or "") for key in (
+            "internal_name", "uby_idub", "uby_mark", "uby_name", "uby_contact", "uby_ws_user",
+            "addr_house_no", "addr_zip", "addr_obec")}
+        form.update({"_csrf": token, "legal_entity_id": str(entity_id)})
+        response = host.post(f"/apartments/{apartment_id}", data=form, follow_redirects=False)
+        assert response.status_code == 303, response.text
+    assert db.query_one("SELECT uby_name FROM apartment WHERE id = ?", (kept,))["uby_name"] == "Penzion Z Dopisu"
+    assert not db.query_one("SELECT uby_name FROM apartment WHERE id = ?", (blank,))["uby_name"]
+
+
+def test_property_page_shows_police_header_fields_without_derived_wrapper(host):
     entity_id = _entity()
     apartment_id = db.insert("apartment", _valid_apartment_fields(entity_id))
     page = host.get(f"/apartments/{apartment_id}?lang=en")
     assert page.status_code == 200, page.text
-    assert STRINGS["en"]["apartment.form.ubyport.derived_summary"] in page.text
-    assert not _derived_details_open(page.text)
+    assert 'name="uby_mark"' in page.text
+    assert 'name="uby_name"' in page.text
+    assert 'name="uby_contact"' in page.text
+    assert "police-derived" not in page.text
+    assert STRINGS["en"]["apartment.form.ubyport.credentials_help_heading"] in page.text
 
 
-def test_property_page_opens_derived_details_when_mark_is_missing(host):
+def test_property_page_shows_mark_error_when_abbreviation_missing(host):
     entity_id = _entity()
     apartment_id = db.insert(
         "apartment",
         _valid_apartment_fields(entity_id, uby_mark="", uby_ws_user="uby-tws1ab45"),
     )
+    _finish_setup(apartment_id)
     page = host.get(f"/apartments/{apartment_id}?lang=en")
     assert page.status_code == 200, page.text
-    assert _derived_details_open(page.text)
+    assert "The facility abbreviation (zkratka) is required." in page.text
+    assert 'id="uby_mark"' in page.text

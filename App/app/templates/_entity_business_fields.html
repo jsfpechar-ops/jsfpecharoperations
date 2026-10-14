@@ -1,0 +1,118 @@
+{% from "_components.html" import help_tip with context %}
+{#- Task 0075: the one definition of a business's identity, contact and
+    signature fields, used by the entity editor (create and edit) and, for the
+    IČO lookup only, by invoice settings. Import "with context".
+
+    Context is explicit: ``ico_field(..., context='business')`` is the saved,
+    required IČO of the entity form; ``context='lookup'`` is the invoice
+    settings IČO, which only feeds the register lookup and is never saved. -#}
+
+{% macro register_messages(ares_error=none, ares_note=none, ares_vat_found=false) %}
+  {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
+  {% if ares_note %}<p class="entity-register-note">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
+  {% if ares_vat_found %}<p class="hint">{{ t('ares.vat_found') }}</p>{% endif %}
+{% endmacro %}
+
+{% macro ico_field(input_id, value, context='business') %}
+  <div class="field">
+    <label for="{{ input_id }}">{{ t('entities.ico') }}</label>
+    <div class="action-group" style="align-items:flex-end">
+      <input type="text" id="{{ input_id }}" name="ico" inputmode="numeric"
+             {%- if context == 'lookup' %} maxlength="8"{% else %} required{% endif %}
+             value="{{ value or '' }}">
+      <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
+    </div>
+    {% if caller is defined %}{{ caller() }}{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro business_fields(prefix, entity) %}
+  <div class="field">
+    <label for="{{ prefix }}name">{{ t('entities.name') }}</label>
+    <input type="text" id="{{ prefix }}name" name="name" required
+           value="{{ (entity.name if entity else '') }}"
+           placeholder="{{ t('entities.name_placeholder') }}">
+  </div>
+  <div class="field">
+    <label for="{{ prefix }}seat">{{ t('entities.seat') }}</label>
+    <input type="text" id="{{ prefix }}seat" name="seat" required
+           value="{{ (entity.seat or '') if entity else '' }}"
+           placeholder="{{ t('entities.seat_placeholder') }}">
+  </div>
+  <div class="grid">
+    {{ ico_field(prefix ~ 'ico', entity.ico if entity else '', 'business') }}
+    <div class="field">
+      <label for="{{ prefix }}dic">{{ t('entities.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <input type="text" id="{{ prefix }}dic" name="dic" value="{{ (entity.dic or '') if entity else '' }}">
+    </div>
+  </div>
+  <div class="grid">
+    <div class="field">
+      <div class="field-label-row"><label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>{{ help_tip(prefix ~ 'contact-email-help', t('entities.email_hint')) }}</div>
+      <input type="email" id="{{ prefix }}contact_email" name="contact_email" required
+             value="{{ (entity.contact_email or '') if entity else '' }}">
+    </div>
+    <div class="field">
+      <label for="{{ prefix }}contact_phone">{{ t('entities.phone') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      {% set phone = phone_form_parts((entity.contact_phone or '') if entity else '') %}
+      <div class="operator-phone">
+        <span class="operator-phone-prefix">
+          <span aria-hidden="true">+</span>
+          <input type="text" class="operator-phone-code" id="{{ prefix }}contact_phone_country_code"
+                 name="contact_phone_country_code" value="{{ phone.code | replace('+', '') }}" inputmode="numeric"
+                 autocomplete="tel-country-code" maxlength="3" pattern="[1-9][0-9]{0,2}"
+                 aria-label="{{ t('entities.phone_country_code') }}" data-phone-country-code>
+        </span>
+        <input type="tel" class="operator-phone-number" id="{{ prefix }}contact_phone" name="contact_phone"
+               autocomplete="tel-national" inputmode="tel" value="{{ phone.number }}">
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro signature_fields(prefix, entity, preview='') %}
+  <fieldset class="signature-block" data-host-signature>
+    <legend>{{ t('entity.signature.heading') }}</legend>
+    <p class="small">{{ t('entity.signature.scope') }}</p>
+    <canvas id="{{ prefix }}sig-canvas" class="host-signature-pad" tabindex="0"></canvas>
+    <input type="hidden" id="{{ prefix }}signature" name="signature_drawn" value="{{ preview }}">
+    <div class="action-group">
+      <button class="btn" type="button" data-signature-clear>{{ t('entity.signature.clear') }}</button>
+      <label class="btn" for="{{ prefix }}signature_file">{{ t('entity.signature.upload') }}</label>
+      <input class="sr-only" type="file" id="{{ prefix }}signature_file" name="signature_file" accept="image/png,image/jpeg">
+    </div>
+    {% if preview %}
+    <label class="check"><input type="checkbox" name="signature_remove" value="1"> {{ t('entity.signature_remove') }}</label>
+    {% endif %}
+    <div class="field">
+      <label for="{{ prefix }}signature_name">{{ t('entity.signature_name_label') }}</label>
+      <input type="text" id="{{ prefix }}signature_name" name="signature_name" maxlength="80"
+             value="{{ (entity.signature_name or '') if entity else '' }}">
+    </div>
+  </fieldset>
+{% endmacro %}
+
+{#- The whole business form body: identity, contact, signature. Create and
+    edit post different targets; the caller owns the <form> element, its
+    action and the multipart encoding the signature upload needs. -#}
+{% macro business_form_body(prefix, entity, preview='', ares_error=none, ares_note=none) %}
+  {{ register_messages(ares_error, ares_note) }}
+  {{ business_fields(prefix, entity) }}
+  {{ signature_fields(prefix, entity, preview) }}
+{% endmacro %}
+
+
+{#- Invoice details lookup: one IČO per business, so the lookup sends the saved
+    Business details value instead of offering a second IČO box. -#}
+{% macro register_lookup_saved(ico, ares_error=none, ares_note=none, ares_vat_found=false) %}
+  <div class="field entity-register-lookup">
+    {% if ico %}
+    <input type="hidden" name="ico" value="{{ ico }}">
+    <p class="small">{{ t('entities.register_lookup.uses', ico=ico) }}</p>
+    <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
+    {% else %}
+    <p class="small muted">{{ t('entities.register_lookup.needs_ico') }} <a href="#entity-business">{{ t('entities.section.business') }} </a></p>
+    {% endif %}
+    {{ register_messages(ares_error, ares_note, ares_vat_found) }}
+  </div>
+{% endmacro %}

@@ -357,23 +357,12 @@ a { color: var(--g-accent); text-underline-offset: 2px; }
 }
 .g-arrival-message {
   margin-top: 18px;
-  /* The summary is a 44px tap target now, so the padding that used to sit
-     between the rule and the text has moved inside the summary. */
-  padding-top: 2px;
+  padding-top: 16px;
   border-top: 1px solid color-mix(in srgb, var(--g-accent) 18%, var(--g-line));
-  color: var(--g-muted);
-  font-size: 14px;
-}
-/* A guest taps this to read the host's note, so it needs to be thumb-sized
-   even though it is only one line of 14px text. The padding is what centres
-   the label; the min-height is the guarantee. */
-.g-arrival-message summary {
-  cursor: pointer;
   color: var(--g-ink);
-  font-weight: 650;
-  min-height: 44px;
-  padding: 12px 0;
+  font-size: 16px;
 }
+.g-arrival-message h3 { margin: 0 0 10px; font-size: 17px; font-weight: 700; }
 .g-arrival-message p { white-space: pre-wrap; overflow-wrap: anywhere; }
 .g-arrival-choice { margin-top: 24px; }
 .g-arrival-choice .g-section { margin-bottom: 5px; font-size: 23px; letter-spacing: -0.025em; }
@@ -1010,12 +999,17 @@ details.g-why > summary.g-why-summary {
 }
 details.g-why > summary.g-why-summary::-webkit-details-marker { display: none; }
 details.g-why > summary.g-why-summary::after {
-  content: "▾";
-  float: right;
-  color: var(--g-muted);
-  font-weight: 400;
+  content: "?";
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 8px;
+  border: 1px solid var(--g-line);
+  border-radius: 50%;
+  color: var(--g-ink);
+  font-weight: 700;
 }
-details.g-why[open] > summary.g-why-summary::after { content: "▴"; }
 details.g-why[open] > summary.g-why-summary {
   border-bottom: 1px solid var(--g-line);
 }
@@ -1054,16 +1048,14 @@ details.g-why .g-details {
 }
 .g-fold > summary::-webkit-details-marker { display: none; }
 .g-fold > summary::before {
-  content: "";
-  flex: 0 0 auto;
-  width: 6px;
-  height: 6px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(-45deg);
-  transition: transform 0.16s var(--g-ease);
+  content: "?";
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 26px;
+  height: 26px;
+  border: 1px solid var(--g-line);
+  border-radius: 50%;
 }
-.g-fold[open] > summary::before { transform: rotate(45deg); }
 .g-fold[open] > summary { margin-bottom: 11px; }
 
 /* On the form the explainer keeps .g-fold's single-line shape. The caret is

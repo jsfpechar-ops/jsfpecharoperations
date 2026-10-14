@@ -29,13 +29,14 @@ SIGNATURE = "data:image/png;base64," + base64.b64encode(
 ).decode()
 
 # Readiness-checklist reporting fields still missing on a bare save (facility name
-# is filled from the property name when left blank).
+# is filled from the property name when left blank; the address is required at
+# create, so it is never missing here).
 REPORT_FIELD_KEYS = (
     "idub",
     "mark",
-    "house_no",
-    "zip",
-    "obec",
+    # 0097: the UbyPort facility name is no longer copied from the property
+    # name, so a fresh property lists it as missing until the host types it.
+    "facility_name",
     "ws_user",
     "password",
 )
@@ -122,8 +123,23 @@ def _label_list(lang: str) -> str:
     )
 
 
+def _operator_id() -> str:
+    """0088: a property needs an operator; give the host one."""
+    owner = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"]
+    row = db.query_one("SELECT id FROM legal_entity WHERE owner_user_id = ? ORDER BY id LIMIT 1", (owner,))
+    if row:
+        return str(row["id"])
+    return str(db.insert("legal_entity", {"name": "Flash Operator", "owner_user_id": owner, "created_at": db.utcnow()}))
+
+
 def _create_property(client, **overrides) -> int:
-    data = {"internal_name": "Flash Flat", "active": "on"}
+    data = {
+        "internal_name": "Flash Flat",
+        "legal_entity_id": _operator_id(),
+        "addr_obec": "Praha",
+        "addr_house_no": "12",
+        "addr_zip": "11000",
+    }
     data.update(overrides)
     response = client.post("/apartments", data=data, follow_redirects=False)
     assert response.status_code == 303, response.text
@@ -136,7 +152,7 @@ def _create_property(client, **overrides) -> int:
 
 
 def _save_property(client, apartment_id: int, **overrides) -> str:
-    data = {"internal_name": "Flash Flat", "active": "on"}
+    data = {"internal_name": "Flash Flat", "legal_entity_id": _operator_id()}
     data.update(overrides)
     response = client.post(
         f"/apartments/{apartment_id}", data=data, follow_redirects=False
@@ -245,7 +261,7 @@ def test_the_property_confirmation_lists_only_the_missing_fields(host):
     location = _save_property(host, apartment_id, uby_idub="123456789012")
     message = _flash(location)
     assert "IDUB" not in message, "a filled field must not be listed"
-    assert "Postcode" in message
+    assert "Postcode" not in message, "the address is required at create"
     assert "Password" in message
 
 

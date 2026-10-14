@@ -2,7 +2,14 @@
 {% set nav = 'reservations' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge, source_badge with context %}
+{# 0080: local primitive (the shared _components.html belongs to another lane).
+   In-page jump links so the four groups are reachable without folding any. #}
+{% macro stay_jump_nav(items) %}
+<nav class="stay-jump" aria-label="{{ t('stay.detail.nav.label') }}">
+  {% for href, label in items %}<a href="{{ href }}">{{ label }}</a>{% endfor %}
+</nav>
+{% endmacro %}
+{% from "_components.html" import page_header, field_label, help_tip, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge, source_badge with context %}
 <input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {% set stay_lede %}{{ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz) ~ ' · ' ~ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) ~ ' · ' }}{{ source_badge(reservation.source, source_label(reservation)) }}{% endset %}
 {{ page_header(
@@ -14,6 +21,14 @@
 ) }}
 
 {% set stay_inactive = reservation.status != 'active' or reservation.archived_at %}
+<p class="stay-property-line"><span class="muted">{{ t('stay.detail.property') }}</span>
+  <a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a></p>
+{{ stay_jump_nav([
+  ('#now', t('stay.detail.next_step')),
+  ('#guests', t('stay.detail.guests.title')),
+  ('#reports', t('host.reporting')),
+  ('#stay-quick-edit', t('stay.detail.settings.title')),
+]) }}
 {% if reservation.status == 'cancelled' %}
 <div class="banner critical">
   <div class="grow">{{ t('stay.detail.banner.cancelled') }}</div>
@@ -26,6 +41,17 @@
 {% if reservation.archived_at %}
 <div class="banner warning">
   <div class="grow">{{ t('stay.detail.banner.archived') }}</div>
+</div>
+{% endif %}
+{% if is_demo_stay %}
+{#- 0100: the setup guide's demo stay. Never reported; left out of fees, invoices and the house book. -#}
+<div class="banner info stay-demo-banner" id="demo-stay">
+  <div class="grow">{{ t('stay.detail.banner.demo') }}</div>
+  <form method="post" action="/reservations/{{ reservation.id }}/delete-demo" class="inline"
+        data-confirm data-confirm-message="{{ t('confirm.delete_demo_stay') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button class="btn small" type="submit">{{ t('setup_guide.try.delete') }}</button>
+  </form>
 </div>
 {% endif %}
 
@@ -97,9 +123,6 @@
         {% else %}
           <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
         {% endif %}
-      {% elif not stay_inactive %}
-        <button class="btn primary" type="button" data-copy="stay-link"
-                data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
       {% endif %}
       {% if stay_invoice %}
         <a class="btn" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>
@@ -124,7 +147,7 @@
             <button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
           </form>
         {% endif %}
-        <a class="row-menu-item" href="/apartments/{{ reservation.apartment_id }}#communication" role="menuitem">{{ t('stay.detail.menu.guest_links') }}</a>
+        <a class="row-menu-item" href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication" role="menuitem">{{ t('stay.detail.menu.guest_links') }}</a>
       {{ row_menu_end() }}
     </div>
   </div>
@@ -214,7 +237,7 @@
         </div>
       </div>
 
-      <dl class="guest-facts">
+      <dl class="guest-facts guest-facts-identity">
         <div>
           <dt>{{ t('stay.detail.guests.born') }}</dt>
           <dd>{{ format_birth_date(guest.birth_date) or '—' }}</dd>
@@ -232,6 +255,8 @@
           <dt>{{ t('stay.detail.guests.purpose') }}</dt>
           <dd>{{ purpose_label(guest.purpose or '', lang) or '—' }}</dd>
         </div>
+      </dl>
+      <dl class="guest-facts guest-facts-stay">
         <div class="fact-wide">
           <dt>{{ t('stay.detail.guests.residence') }}</dt>
           <dd>
@@ -287,8 +312,7 @@
           <h3>{{ t('stay.detail.guests.placeholder', n=n) }}</h3>
         </div>
         <div class="guest-card-state">
-          <button class="btn small" type="button" data-copy="stay-link"
-                  data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
+          
           <a class="btn small" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
           {% if not stay_inactive and progress.expected > 1 %}
           <form method="post" action="/reservations/{{ reservation.id }}/remove-empty-slot" data-confirm data-confirm-title="{{ t('host.remove_slot') }}" data-confirm-message="{{ t('host.remove_slot_confirm') }}">
@@ -341,7 +365,7 @@
       <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
       {# A cancelled or archived stay sends nothing, so "Waiting for guest"
          would contradict the banner above; show the stay's own state. #}
-      <div class="metric-value small-value">{% if stay_inactive %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% endif %}</div>
+      <div class="metric-value small-value">{% if stay_inactive %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=is_demo_stay) }}{% endif %}</div>
 
     </div>
   </div>
@@ -370,9 +394,8 @@
         <input type="datetime-local" id="hand_filed_at" name="filed_at" value="{{ hand_filing.default_filed_at }}" max="{{ hand_filing.default_filed_at }}" required>
       </div>
       <div class="field">
-        <label for="hand_reference">{{ t('stay.hand_filing.reference') }}</label>
-        <input type="text" id="hand_reference" name="reference" maxlength="200" autocomplete="off">
-        <div class="hint">{{ t('stay.hand_filing.reference_hint') }}</div>
+        {{ field_label('hand_reference', t('stay.hand_filing.reference'), t('stay.hand_filing.reference_hint')) }}
+        <input type="text" id="hand_reference" name="reference" maxlength="200" autocomplete="off" aria-describedby="hand_reference-help">
       </div>
       <p class="small muted">{{ t('stay.hand_filing.covers', count=hand_filing.candidates) }}</p>
       <div class="actions settings-actions"><button class="btn primary" type="submit">{{ t('stay.hand_filing.confirm') }}</button></div>
@@ -409,9 +432,9 @@
 {# One panel owns both the quick edit and the full settings form, so the
    #stay-quick-edit anchor keeps working and the page ends on a single
    collapsed group instead of two stacked ones. #}
-<details class="panel stay-settings" id="stay-quick-edit" {% if reservation.status != 'active' %}open{% endif %}>
-  <summary><strong>{{ t('stay.detail.settings.title') }}</strong></summary>
-  <p class="small muted">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
+<section class="panel stay-settings" id="stay-quick-edit">
+  <div class="section-heading"><h2>{{ t('stay.detail.settings.title') }}</h2></div>
+  <p class="small muted">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
   <h3 class="inline-edit-title">{{ t('stay.detail.inline.title') }}</h3>
   <form class="inline-edit-bar" method="post" action="/reservations/{{ reservation.id }}/quick-edit"
         data-inline-edit data-saved="{{ t('stay.detail.inline.saved') }}"
@@ -431,18 +454,19 @@
   </form>
   <form method="post" action="/reservations/{{ reservation.id }}" class="settings-grid">
     <div class="field">
-      <label for="guest_email">{{ t('stay.detail.settings.email') }} <span class="opt">{{ t('stay.detail.settings.host_only') }}</span></label>
-      <input type="email" id="guest_email" name="guest_email" value="{{ reservation.guest_email or '' }}">
-      <div class="hint">{{ t('stay.detail.settings.email_hint') }}</div>
+      <div class="field-label-row">
+        <label for="guest_email">{{ t('stay.detail.settings.email') }} <span class="opt">{{ t('stay.detail.settings.host_only') }}</span></label>
+        {{ help_tip('guest_email-help', t('stay.detail.settings.email_hint')) }}
+      </div>
+      <input type="email" id="guest_email" name="guest_email" value="{{ reservation.guest_email or '' }}" aria-describedby="guest_email-help">
     </div>
     <div class="field">
-      <label for="status">{{ t('stay.detail.settings.state') }}</label>
-      <select id="status" name="status">
+      {{ field_label('status', t('stay.detail.settings.state'), t('stay.detail.settings.state_hint')) }}
+      <select id="status" name="status" aria-describedby="status-help">
         <option value="active" {% if reservation.status == 'active' %}selected{% endif %}>{{ t('stay.detail.settings.state.active') }}</option>
         <option value="cancelled" {% if reservation.status == 'cancelled' %}selected{% endif %}>{{ t('stay.detail.settings.state.cancelled') }}</option>
         <option value="ignored" {% if reservation.status == 'ignored' %}selected{% endif %}>{{ t('stay.detail.settings.state.ignored') }}</option>
       </select>
-      <div class="hint">{{ t('stay.detail.settings.state_hint') }}</div>
     </div>
     <div class="field">
       <label for="host_note">{{ t('stay.detail.settings.note') }}</label>
@@ -450,5 +474,5 @@
     </div>
     <div class="actions settings-actions"><button class="btn primary" type="submit">{{ t('common.save') }}</button></div>
   </form>
-</details>
+</section>
 {% endblock %}

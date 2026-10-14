@@ -1,0 +1,59 @@
+{#- Task 0075: the one definition of a business's invoice defaults (bank
+    account, BIC, VAT mode, registry entry, numbering and due days). Import
+    "with context". These values seed new invoices only; issued invoices keep
+    their own snapshot. Normalisation lives in routes/invoices.py
+    (``invoice_detail_payload`` and ``apply_account_payload``). -#}
+
+{% macro invoice_fields(entity, bank_parts, bic_from_bank=false, account_error=none) %}
+    <div class="field">
+      <span class="label">{{ t('entities.bank.label') }}</span>
+      {% if account_error %}<p class="alert">{{ account_error }}</p>{% endif %}
+      {% set account = bank_parts %}
+      {% set prefix = 'invoice_' %}
+      {% include "_account_parts.html" %}
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="bic">{{ t('entities.bic.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <input type="text" id="bic" name="bic" value="{{ entity.bic or '' }}">
+        {% if bic_from_bank %}
+        <div class="hint">{{ t('invoice.fill_guest.bic_filled') }}</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="vat_status">{{ t('entities.vat_status.label') }}</label>
+        <select id="vat_status" name="vat_status">
+          <option value="non_payer" {% if (entity.vat_status or 'non_payer') == 'non_payer' %}selected{% endif %}>{{ t('entities.vat_status.non_payer') }}</option>
+          <option value="identified" {% if entity.vat_status == 'identified' %}selected{% endif %}>{{ t('entities.vat_status.identified') }}</option>
+          <option value="payer" {% if entity.vat_status == 'payer' %}selected{% endif %}>{{ t('entities.vat_status.payer') }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="registry_entry">{{ t('entities.registry.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <input type="text" id="registry_entry" name="registry_entry"
+               value="{{ entity.registry_entry or '' }}"
+               placeholder="{{ t('entities.registry.trade') }}">
+      </div>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="invoice_prefix">{{ t('entities.invoice_prefix.label') }}</label>
+        <input type="text" id="invoice_prefix" name="invoice_prefix" maxlength="6"
+               value="{{ entity.invoice_prefix or '' }}">
+      </div>
+      <div class="field">
+        <label for="invoice_next_number">{{ t('entities.invoice_next.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <input type="number" id="invoice_next_number" name="invoice_next_number" min="1" inputmode="numeric"
+               value="{{ entity.invoice_next_number if entity.invoice_next_number else '' }}">
+        <div class="hint">{{ t('entities.invoice_next.hint') }}</div>
+      </div>
+      <div class="field">
+        <label for="invoice_due_days">{{ t('entities.invoice_due.label') }}</label>
+        <input type="number" id="invoice_due_days" name="invoice_due_days" min="0" max="365" inputmode="numeric"
+               value="{{ entity.invoice_due_days if entity.invoice_due_days is not none else 14 }}">
+      </div>
+    </div>
+    <p class="hint">{{ t('entities.invoice.snapshot_hint') }}</p>
+{% endmacro %}

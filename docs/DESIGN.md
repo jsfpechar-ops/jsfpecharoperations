@@ -71,6 +71,16 @@ and update this section in the same change.
 - Focus design effort on hierarchy, density, motion, accessibility, and EN/CS
   copy—not alternate themes.
 
+## Setup clarity and loading feedback
+
+Owner direction, 2026-10-14: setup instructions use bold, dark, readable
+text. Supplementary explanations belong in the existing question-mark
+help, while deadlines and essential actions remain visible. Guest link/PIN
+copy controls share a baseline and size. Operator phone fields include an
+editable country code, saved in the existing phone value. Navigation uses
+the supplied avatar-and-bars shimmer in the current light skeleton colors (shared `skeleton.css`);
+pause it in hidden tabs and disable animation for reduced-motion users.
+
 ## Action geometry
 
 Controls that sit in the same action group share one height (`--action-height`, 42px), one gap (`--action-gap`, 8px), and the same baseline. Primary and secondary treatment may change color, never the control's height or padding. Use `.action-group` for a row, `.action-group-equal` when neighbors should share width, and `.action-group-stack` so the row becomes equal full-width controls below 760px. Do not size one button from a timestamp or a second line of meta; put that meta under the group. A future screen that places two actions together and gives them different heights is a defect, not a local exception.
@@ -690,3 +700,30 @@ that adding one is a deliberate, compliant change.
 - **Re-prompt** after 6–13 months or on a material change (counsel).
 - **MK-1 must be updated in the same PR**: its cookie allow-list and exact-CSP
   assertion are the guardrail that a new tag cannot slip in unreviewed.
+
+Owner direction, 2026-10-14, guest flow: show the host message in full on the
+arrival/date picker only. Put the closed “Why you are filling this in ?”
+explanation below the registration form. Remove decorative text arrows from
+links and labels. Native selection indicators and keyboard arrow navigation
+remain functional. The setup demo shows the property, stay dates and full
+sample message; its new-tab link teaches PIN entry with the existing PIN
+validation, and remains accessible only to that property's signed-in owner.
+
+## Host list and setup refinement, 2026-10-14
+
+The owner removed duplicate Open buttons from record lists. The whole row,
+its native name/date link, and Open in the three-dot menu are entry points.
+Copy guest form link belongs in that menu; purposeful Send, Download and Setup
+actions remain available. Do not make opening a record depend on hover.
+
+Hover/focus tint is painted on the row, with transparent cells, so grid gaps
+and cells form one surface. Stay property context and jump links share the
+centered content lane. Collapsed account disclosure shows a centered initial
+with no detached arrow, retaining its accessible account name and keyboard menu.
+
+The phone country code is a plain three-digit text box in a pill, with a fixed
+plus sign and no dropdown. Messages use the property's current name. The demo
+message is labeled as an example; actual platform messages/timing depend on
+what the host configures in their booking platform. Property overview setup
+uses static status tiles on a tinted panel, distinct from navigation shortcuts;
+detailed readiness requirements remain behind a question-mark disclosure.

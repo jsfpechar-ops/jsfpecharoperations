@@ -1,6 +1,6 @@
 # 0091: Eliminate cramped stays and audit all host layout families
 
-Status: todo
+Status: review
 Depends on: 0090 reviewed on the correction integration branch | Initial source baseline: 7b27d09402f9656b0c606c131793310925936526 | Branch: task/0091-host-fit-audit | PR base: task/production-host-ux-integration
 Executor: Cursor local agent (composer, Kimi or GLM) | One scoped executor session
 

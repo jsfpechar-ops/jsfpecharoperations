@@ -466,7 +466,9 @@ def _open_link(request: Request, key: str, lang: str):
     return apartment, link, None
 
 
-def _pin_page(request: Request, token: str, lang: str, error: str = ""):
+def _pin_page(
+    request: Request, token: str, lang: str, error: str = "", *, return_to: Optional[str] = None
+):
     apartment = _apartment_for_key(token)
     lock_token = apartment["permalink_token"] if apartment else token
     failures = rate_limit.pin_failure_count(rate_limit.client_key(request, lock_token))
@@ -475,8 +477,8 @@ def _pin_page(request: Request, token: str, lang: str, error: str = ""):
         {
             "error": error,
             "require_turnstile": failures >= 3 or _link_challenged(apartment),
-            "return_to": request.url.path
-            + (("?" + str(request.url.query)) if request.url.query else ""),
+            "return_to": return_to or (request.url.path
+            + (("?" + str(request.url.query)) if request.url.query else "")),
         }
     )
     return _with_lang(render_guest(request, "guest/pin.html", context), lang)
@@ -530,6 +532,9 @@ def _visible_reservations(apartment) -> List[Any]:
         "LEFT JOIN reservation_claim c ON c.reservation_id = r.id "
         "WHERE r.apartment_id = ? AND r.status = 'active' "
         "AND r.archived_at IS NULL "
+        # 0100: a real guest must never pick the setup guide's demo stay, or
+        # their record would sit in a stay that is never reported.
+        "AND COALESCE(r.source, '') != 'demo' "
         "AND r.date_from >= ? AND r.date_from <= ? "
         "AND c.guest_access_locked_at IS NULL "
         "ORDER BY r.date_from",
@@ -573,6 +578,13 @@ def _reservation_for_guest(apartment, reservation_id: int, request: Optional[Req
     )
     if not reservation:
         return None
+    if reservation["source"] == "demo":
+        # 0100: only the signed-in host opens their own demo stay. It is left
+        # out of the picker, so for the host it answers like a listed stay.
+        if not (request and _host_owns_apartment(request, apartment)):
+            return None
+        demo_row = claim.ensure_row(reservation["id"])
+        return reservation if claim.guest_access_open(reservation, demo_row) else None
     reachback = validation.normalise_reachback_days(apartment["permalink_reachback_days"])
     cutoff = (claim.prague_today() - timedelta(days=reachback)).isoformat()
     if (reservation["date_to"] or "") < cutoff:
@@ -597,7 +609,8 @@ def _claimable_reservation(apartment, reservation_id: int):
     """
     reservation = db.query_one(
         "SELECT * FROM reservation WHERE id = ? AND apartment_id = ? "
-        "AND status = 'active' AND archived_at IS NULL",
+        "AND status = 'active' AND archived_at IS NULL "
+        "AND COALESCE(source, '') != 'demo'",  # 0100: a demo stay is never claimed
         (reservation_id, apartment["id"]),
     )
     if not reservation:
@@ -923,6 +936,11 @@ async def verify_pin(token: str, request: Request):
     if early:
         return early
     form = await request.form()
+    return_to = _safe_return_to(form.get("return_to"), token, lang)
+
+    def pin_error(message):
+        return _pin_page(request, token, lang, error=message, return_to=return_to)
+
     entered = (form.get("pin") or "").strip()
     expected = apartment["permalink_pin"] or ""
     # Keyed on the permanent token, never on the slug in the URL (WP19).
@@ -931,25 +949,13 @@ async def verify_pin(token: str, request: Request):
     pin_lock_key = f"{lock_token}:{auth.pin_fingerprint(lock_token, expected)}"
     link_locked = rate_limit.pin_token_blocked(pin_lock_key)
     if link_locked and not turnstile.required():
-        return _pin_page(
-            request,
-            token,
-            lang,
-            error=i18n.translator(lang)("pin_locked_out"),
-        )
+        return pin_error(i18n.translator(lang)("pin_locked_out"))
     if (link_locked or rate_limit.pin_failure_count(pin_key) >= 3) and not turnstile.verify(
         request, form.get("cf-turnstile-response"), "guest_pin"
     ):
-        return _pin_page(
-            request, token, lang, error=i18n.translator(lang)("security_check_failed")
-        )
+        return pin_error(i18n.translator(lang)("security_check_failed"))
     if rate_limit.pin_blocked(pin_key):
-        return _pin_page(
-            request,
-            token,
-            lang,
-            error=i18n.translator(lang)("pin_rate_limited"),
-        )
+        return pin_error(i18n.translator(lang)("pin_rate_limited"))
     if not auth.pin_matches(lock_token, entered, expected):
         rate_limit.record_pin_failure(pin_key, pin_lock_key)
         # A lockout spread over many addresses is invisible in the per-IP count,
@@ -1007,8 +1013,7 @@ async def verify_pin(token: str, request: Request):
             )
         if failures > 0:
             await asyncio.sleep(min(2.0, 0.15 * failures))
-        return _pin_page(request, token, lang, error=i18n.translator(lang)("pin_wrong"))
-    return_to = _safe_return_to(form.get("return_to"), token, lang)
+        return pin_error(i18n.translator(lang)("pin_wrong"))
     response = RedirectResponse(return_to, status_code=303)
     auth.attach_pin_session(response, lock_token, expected)
     return _with_lang(response, lang)
@@ -1085,6 +1090,24 @@ def pick_stay(token: str, request: Request):
     context = _shared(request, token, lang, apartment)
     context.update({"apartment": apartment, "rows": rows})
     return _with_lang(render_guest(request, "guest/pick.html", context), lang)
+
+
+@router.get("/l/{token}/demo/{reservation_id}")
+def demo_pin_preview(token: str, reservation_id: int, request: Request):
+    """Teach the PIN step without exposing demo stays to guests or other hosts."""
+    lang = _language(request)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
+    if not _host_owns_apartment(request, apartment):
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
+    if not reservation or reservation["source"] != "demo":
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    return _pin_page(
+        request, token, lang,
+        return_to=_guest_link(token, reservation_id) + _lang_q(lang),
+    )
 
 
 @router.get("/l/{token}/{reservation_id}")

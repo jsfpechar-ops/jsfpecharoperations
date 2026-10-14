@@ -1,0 +1,64 @@
+{% extends "setup_wizard/_layout.html" %}
+{% set values = draft if draft is defined else apartment %}
+{% from "_components.html" import field_label, help_tip with context %}
+{% macro text_field(name, label, value, help='', optional=false, maxlength=none) %}
+  <div class="field">
+    {{ field_label(name, label, help, optional) }}
+    <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
+           {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}>
+  </div>
+{% endmacro %}
+{% set police_errors = police_errors or {} %}
+{% block wizard_content %}
+{% if operator_error %}<p class="err-text" role="alert">{{ t(operator_error) }}</p>{% endif %}
+{% for field, message in police_errors.items() %}
+<p class="err-text" id="{{ field }}-error" role="alert">{{ validation_message(message) }}</p>
+{% endfor %}
+<div class="field-label-row police-section-head">
+  <h2 class="setup-wizard-section-title">{{ t('setup_guide.reporting.title') }}</h2>
+  {{ help_tip('wizard-police-credentials-help', t('apartment.form.ubyport.no_credentials'), 'https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport') }}
+  <a class="btn small police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a>
+</div>
+<p class="setup-wizard-lede">{{ t('setup_guide.reporting.text') }}</p>
+<form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="police-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
+  <input type="hidden" name="setup_step" value="police">
+  <input type="hidden" name="internal_name" value="{{ values.internal_name }}">
+  <input type="hidden" name="legal_entity_id" value="{{ values.legal_entity_id }}">
+  <input type="hidden" name="city_en" value="{{ values.city_en or '' }}">
+  <input type="hidden" name="default_purpose" value="{{ values.default_purpose or '10' }}">
+  <div class="grid">{{ text_field('uby_idub', 'IDUB', values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
+  </div>
+  <div class="grid two">
+    {{ text_field('uby_ws_user', t('automation.login'), values.uby_ws_user, t('apartment.form.ubyport.login_hint')) }}
+    <div class="field">
+      {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help')) }}
+      <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"{% if has_password %} placeholder="••••••••"{% endif %}>
+    </div>
+  </div>
+  <div class="grid">{{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), values.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}</div>
+  <div class="grid two">
+    {{ text_field('uby_name', t('automation.facility_name'), values.uby_name, t('apartment.form.ubyport.name_hint'), false, 35) }}
+    {{ text_field('uby_contact', t('automation.contact'), values.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
+  </div>
+</form>
+{% endblock %}
+{% block wizard_actions %}
+<div class="setup-wizard-actions">
+  <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline" id="police-wait-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="step" value="police">
+    <button class="btn setup-wizard-wait" type="submit" name="action" value="wait" formnovalidate>{{ t('setup_guide.reporting.wait') }}</button>
+  </form>
+  <button class="btn primary" type="submit" form="police-form">{{ t('wizard.save_continue') }}</button>
+</div>
+{% endblock %}
+{% block wizard_notes %}
+<div class="setup-wizard-note-box setup-wizard-police-notes">
+  <p class="setup-wizard-instruction">{{ t('setup_guide.reporting.wait_now') }}
+    {{ help_tip('wizard-police-wait-help', t('setup_guide.reporting.wait_then_manual' if apartment.automation_mode == 'manual' else 'setup_guide.reporting.wait_then_auto', minutes=setup_sweep_minutes)) }}</p>
+  <p class="setup-wizard-instruction">{{ t('setup_guide.reporting.wait_deadline') }}
+    <a href="/guide#manual-filing">{{ t('setup_guide.reporting.wait_by_hand') }}</a></p>
+</div>
+{% endblock %}

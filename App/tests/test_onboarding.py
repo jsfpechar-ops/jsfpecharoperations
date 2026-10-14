@@ -65,7 +65,7 @@ def test_onboarding_advances_after_entity_and_property():
     apartment_id = _apartment(owner_id, entity_id)
     progress = onboarding.progress(owner_id)
     assert progress["current"]["id"] == "calendars"
-    assert f"/apartments/{apartment_id}#calendars" in progress["current"]["url"]
+    assert f"/apartments/{apartment_id}?view=bookings#calendars" in progress["current"]["url"]
     assert progress["percent"] == 40
 
 
@@ -234,7 +234,7 @@ def test_finished_onboarding_shows_guest_link_and_pin_handoff():
     # The copied link is the readable one (WP19); the token behind it is unchanged.
     assert progress["finish"]["permalink"].endswith(f"/l/{guest_slug.current(apartment_id)}")
     assert progress["finish"]["link_key"].startswith("ready-studio-")
-    assert progress["finish"]["communication_url"] == f"/apartments/{apartment_id}#communication"
+    assert progress["finish"]["communication_url"] == f"/apartments/{apartment_id}?view=settings&section=guests#communication"
 
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner_id,))
     client = TestClient(app)
@@ -251,7 +251,7 @@ def test_finished_onboarding_shows_guest_link_and_pin_handoff():
     assert "246810" in dashboard.text
     assert "edit host message" in dashboard.text
     assert "Open communication settings" in dashboard.text
-    assert f'href="/apartments/{apartment_id}#communication"' in dashboard.text
+    assert f'href="/apartments/{apartment_id}?view=settings&amp;section=guests#communication"' in dashboard.text
     assert "Skip setup guidance" in dashboard.text
 
     checklist = client.get("/onboarding")
@@ -427,7 +427,7 @@ def test_the_police_reporting_step_points_at_the_property_page():
     step = progress["steps"][3]
 
     assert step["id"] == "automation"
-    assert step["url"] == f"/apartments/{apartment_id}#ubyport"
+    assert step["url"] == f"/apartments/{apartment_id}?view=settings&section=reporting#ubyport"
 
 
 def test_the_police_reporting_step_is_named_for_what_it_asks_for():

@@ -160,7 +160,7 @@ def test_the_header_help_points_at_the_property_that_owns_the_report(
         page = host.get(f"/submissions/{sent['submission_id']}{EN}").text
         block = _header_help(page)
         assert OPEN_PROPERTY in block
-        assert f'href="/apartments/{apartment["id"]}#ubyport"' in block
+        assert f'href="/apartments/{apartment["id"]}?view=settings&amp;section=reporting#ubyport"' in block
     finally:
         _erase(apartment["id"])
 
@@ -172,7 +172,7 @@ def test_the_czech_header_help_says_the_same(host, monkeypatch):
         db.update("submission", sent["submission_id"], {"header_errors": ";12;"})
         page = host.get(f"/submissions/{sent['submission_id']}{CS}").text
         assert OPEN_PROPERTY_CS in page
-        assert f'href="/apartments/{apartment["id"]}#ubyport"' in page
+        assert f'href="/apartments/{apartment["id"]}?view=settings&amp;section=reporting#ubyport"' in page
     finally:
         _erase(apartment["id"])
 

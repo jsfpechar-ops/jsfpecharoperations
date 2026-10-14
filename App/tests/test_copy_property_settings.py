@@ -171,10 +171,13 @@ def test_new_property_form_shows_copy_select_and_prefills_automation(host_pair):
     assert 'name="copy_from"' in page.text
     assert f'<option value="{source_id}"' in page.text
     assert f'<option value="{entity_id}"' in page.text
-    assert 'value="scheduled"' in page.text or "scheduled" in page.text
-    assert 'name="submit_after_hours"' in page.text
-    assert 'value="12"' in page.text
-    assert 'id="stay-fee-settings"' in page.text
+    # 0092: copied settings travel as hidden values of the short create form
+    # (the host chose Copy), and the page names where they come from.
+    assert '<input type="hidden" name="automation_mode" value="scheduled">' in page.text
+    assert '<input type="hidden" name="submit_after_hours" value="12">' in page.text
+    assert f'<input type="hidden" name="copy_from" value="{source_id}">' in page.text
+    assert 'name="stay_fee_rate_czk"' in page.text
+    assert "Copied from" in page.text
 
 
 def test_foreign_copy_from_returns_404(host_pair):

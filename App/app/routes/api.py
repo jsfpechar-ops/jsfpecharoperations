@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from .. import access, auth, config, db, guest_slug, host_i18n
+from .. import access, auth, config, db, guest_slug, host_i18n, ttlock
 
 router = APIRouter()
 
@@ -36,16 +36,28 @@ def command_palette(request: Request):
         {"label": t("dashboard.sync_calendars"), "group": t("command.group.actions"), "url": "/sync", "method": "post", "keywords": "ical refresh"},
         {"label": t("stays.add_stay"), "group": t("command.group.actions"), "url": "/reservations?new=1", "keywords": "booking reservation"},
     ]
+    apartments = access.apartments(request)
+
+    def hub_url(section: str, anchor: str) -> str:
+        """0078: one property opens its Settings group; several, the Properties summary."""
+        if len(apartments) == 1:
+            return f"/apartments/{apartments[0]['id']}?view=settings&section={section}#{anchor}"
+        return "/apartments#property-summaries"
+
     destinations = [
         ("nav.properties", "/apartments", "property apartment ubytovani"),
         ("host.business", "/entities", "business operator company billing firma"),
-        ("nav.guest_links", "/apartments", "invitation guest link pin"),
-        ("nav.automation", "/apartments", "automatic reporting timing police"),
-        ("host.invoice_settings", "/invoices/settings", "invoice settings faktura"),
+        ("nav.guest_links", hub_url("guests", "communication"), "invitation guest link pin"),
+        ("nav.automation", hub_url("automation", "automation"), "automatic reporting timing police"),
+        ("host.invoice_settings", access.invoice_details_url(request), "invoice settings faktura"),
+        ("settings.group.security", "/settings#settings-group-security", "passkey 2fa authenticator login password"),
+        ("settings.group.data", "/settings#settings-group-data", "retention backup delete expired export"),
         ("settings.nav.archive", "/settings/archived", "restore archived records"),
         ("nav.privacy_requests", "/privacy-requests", "privacy gdpr"),
         ("nav.guide", "/guide", "help guide support"),
     ]
+    if ttlock.enabled() and ttlock.account_for(owner_user_id):
+        destinations.append(("properties.shared.lock", "/smart-locks", "ttlock door lock code"))
     if auth.current_user(request)["role"] == "admin":
         destinations.extend([
             ("nav.users", "/admin/users", "team accounts roles"),
@@ -53,7 +65,6 @@ def command_palette(request: Request):
         ])
     items.extend({"label": t(key), "group": t("command.group.pages"), "url": url,
                   "keywords": keywords} for key, url, keywords in destinations)
-    apartments = access.apartments(request)
     for apartment in apartments:
         items.append({
             "label": apartment["internal_name"],

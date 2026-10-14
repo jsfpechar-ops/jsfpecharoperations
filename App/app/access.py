@@ -152,3 +152,12 @@ def entities(request: Request, include_archived: bool = False):
         sql += " AND archived_at IS NULL"
     sql += " ORDER BY name"
     return db.query(sql, (owner_id(request),))
+
+
+def invoice_details_url(request: Request) -> str:
+    """Where "Invoice settings" opens: the one business's Invoice details, else
+    the business list to pick from (0101)."""
+    rows = entities(request)
+    if len(rows) == 1:
+        return f"/entities?edit={rows[0]['id']}&next=/invoices#entity-invoice"
+    return "/entities"

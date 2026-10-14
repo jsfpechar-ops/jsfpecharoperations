@@ -21,9 +21,12 @@ def set_dismissed(owner_user_id: int, dismissed: bool) -> None:
     db.set_setting(_dismissed_key(owner_user_id), "1" if dismissed else "0")
 
 
+# 0092: the numbered wizard is gone (0101: so are its /setup URLs). These names
+# survive as a readiness indicator (wizard_step) for the setup banner; nothing
+# forces a host through them.
 WIZARD_STEPS = ("welcome", "name", "address", "bookings")
 WIZARD_STEP_NUMBERS = {"welcome": 1, "name": 2, "address": 3, "bookings": 4}
-WIZARD_TOTAL_STEPS = 5
+WIZARD_TOTAL_STEPS = len(WIZARD_STEPS)
 
 
 def first_apartment(owner_user_id: int):
@@ -72,6 +75,18 @@ def wizard_step(owner_user_id: int) -> str:
     if not _bookings_complete(owner_user_id, apartment):
         return "bookings"
     return "complete"
+
+
+def setup_url(step: str, apartment) -> str:
+    """Where the setup banner leads for the first unfinished step (0101)."""
+    if not apartment:
+        return "/apartments/new"
+    base = f"/apartments/{apartment['id']}"
+    if step == "address":
+        return f"{base}?view=settings&section=property#address"
+    if step == "bookings":
+        return f"{base}?view=bookings#calendars"
+    return base
 
 
 def wizard_step_number(step: str) -> int:
@@ -155,7 +170,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         {
             "id": "calendars",
             "done": has_stays,
-            "url": f"/apartments/{first_apartment['id']}#calendars" if first_apartment else "/apartments/new",
+            "url": f"/apartments/{first_apartment['id']}?view=bookings#calendars" if first_apartment else "/apartments/new",
             "manual_url": "/reservations#add-stay-panel",
             "learn_url": "/guide#stays",
         },
@@ -165,7 +180,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
             # The credentials and the address both live on the property page, so
             # this is the one place the step can actually be finished.
             "url": (
-                f"/apartments/{first_apartment['id']}#ubyport"
+                f"/apartments/{first_apartment['id']}?view=settings&section=reporting#ubyport"
                 if first_apartment
                 else "/apartments/new"
             ),
@@ -179,7 +194,7 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
                 and not setup_issues
             ),
             "url": (
-                f"/apartments/{first_apartment['id']}#communication"
+                f"/apartments/{first_apartment['id']}?view=settings&section=guests#communication"
                 if first_apartment
                 else "/apartments"
             ),
@@ -202,7 +217,9 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
             "link_key": token,
             "pin": first_apartment["permalink_pin"] or "",
             "passport_policy": policy,
-            "communication_url": f"/apartments/{first_apartment['id']}#communication",
+            "communication_url": (
+                f"/apartments/{first_apartment['id']}?view=settings&section=guests#communication"
+            ),
             "property_url": f"/apartments/{first_apartment['id']}",
         }
     wstep = wizard_step(owner_user_id)
@@ -220,5 +237,6 @@ def progress(owner_user_id: int) -> Dict[str, Any]:
         "wizard_step": wstep,
         "wizard_step_number": wizard_step_number(wstep),
         "wizard_total_steps": WIZARD_TOTAL_STEPS,
+        "setup_url": setup_url(wstep, first_apartment),
         "wizard_complete": wstep == "complete",
     }

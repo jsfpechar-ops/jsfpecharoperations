@@ -1,0 +1,42 @@
+{% extends "setup_wizard/_layout.html" %}
+{% from "_components.html" import help_tip with context %}
+{% block wizard_content %}
+{% set values = draft if draft is defined and draft else apartment %}
+<p class="setup-wizard-lede">{{ t('setup_guide.automation.text') }}</p>
+<form method="post" action="/apartments/{{ apartment.id }}/automation-timing" class="setup-wizard-form" id="automation-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
+  <input type="hidden" name="setup_step" value="automation">
+  <div class="setup-wizard-radios">
+    <div class="setup-wizard-radio-card">
+      <label class="setup-wizard-radio-choice">
+        <input type="radio" name="automation_mode" value="manual" {% if values.automation_mode == 'manual' %}checked{% endif %}>
+        <strong>{{ t('automation.mode.manual') }}</strong>
+      </label>
+      {{ help_tip('wizard-manual-help', t('wizard.automation.manual_detail')) }}
+    </div>
+    <div class="setup-wizard-radio-card">
+      <label class="setup-wizard-radio-choice">
+        <input type="radio" name="automation_mode" value="scheduled" {% if values.automation_mode == 'scheduled' %}checked{% endif %}>
+        <strong>{{ t('automation.mode.scheduled') }}</strong>
+      </label>
+      {{ help_tip('wizard-scheduled-help', t('wizard.automation.scheduled_detail')) }}
+      <div class="field inline-hours">
+        <label for="submit_after_hours">{{ t('automation.hours') }}</label>
+        <input type="number" id="submit_after_hours" name="submit_after_hours" min="1" max="48" value="{{ values.submit_after_hours if values.submit_after_hours is not none else 2 }}">
+      </div>
+    </div>
+    <div class="setup-wizard-radio-card">
+      <label class="setup-wizard-radio-choice">
+        <input type="radio" name="automation_mode" value="immediate" {% if values.automation_mode == 'immediate' %}checked{% endif %}>
+        <strong>{{ t('automation.mode.immediate') }}</strong>
+      </label>
+      {{ help_tip('wizard-immediate-help', t('wizard.automation.immediate_detail')) }}
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block wizard_actions %}
+<span></span>
+<button class="btn primary" type="submit" form="automation-form">{{ t('wizard.automation.finish') }}</button>
+{% endblock %}

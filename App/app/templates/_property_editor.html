@@ -1,0 +1,367 @@
+{#- 0094: Settings tab. The one full property form (POST /apartments/<id>), moved
+    here once and grouped under visible sub-headers: Property information, Guest
+    experience, Reporting & fees, Automation. A group that is not selected is only
+    hidden from view; its controls stay enabled and are always submitted.
+    0096: Door lock is its own group (only where door codes exist). -#}
+{%- from "_components.html" import nav_icon, copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
+{%- set base_url = '/apartments/' ~ apartment.id -%}
+{%- set property_values = apartment -%}
+{% macro text_field(name, label, value, help='', optional=false, maxlength=none) %}
+  <div class="field">
+    {{ field_label(name, label, help, optional) }}
+    <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
+           {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+           {%- if help %} aria-describedby="{{ name }}-help"{% endif %}>
+  </div>
+{% endmacro %}
+{% set groups = [
+  ('property', t('property_nav.group.property')),
+  ('guests', t('property_nav.group.guests')),
+  ('reporting', t('property_nav.group.reporting')),
+] + ([('lock', t('property_nav.group.lock'))] if door_code else []) + [
+  ('automation', t('property_nav.group.automation')),
+] %}
+
+{% if copy_property_peers %}
+<form method="get" action="{{ base_url }}" class="panel copy-property-form">
+  <input type="hidden" name="view" value="settings">
+  <div class="copyrow">
+    <div class="field grow">
+      <label for="copy_from">{{ t('apartment.form.copy_from.label') }}</label>
+      <select id="copy_from" name="copy_from" required>
+        <option value="" disabled {% if not copy_from_id %}selected{% endif %}>{{ t('apartment.form.copy_from.choose') }}</option>
+        {% for peer in copy_property_peers %}
+        <option value="{{ peer.id }}" {% if copy_from_id == peer.id %}selected{% endif %}>{{ peer.internal_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
+  </div>
+  {% if copied_from_name %}
+  <p class="small" style="margin:10px 0 0" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}</p>
+  <p class="small muted" style="margin:4px 0 0">{{ t('apartment.form.copy_from.vs_hint') }}</p>
+  {% endif %}
+</form>
+{% endif %}
+
+<div class="property-settings">
+<nav class="property-settings-nav" aria-label="{{ t('property_nav.settings_aria') }}">
+  {% for key, label in groups %}
+  <a href="{{ base_url }}?view=settings&amp;section={{ key }}" data-property-section-link="{{ key }}"{% if key == settings_section %} aria-current="true"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<form method="post" action="{{ base_url }}" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard>
+  <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
+  {% if fee_return_to %}<input type="hidden" name="fee_return_to" value="{{ fee_return_to }}">{% endif %}
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {% if setup_guide and not setup_guide.legacy %}<input type="hidden" name="setup_step" value="{{ setup_guide.key }}">{% endif %}
+  {# The first submit button is the one Enter activates. Without this, Enter in
+     any field posted to the credentials test and dropped every edit. #}
+  <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
+
+  {# ---- Property information ---------------------------------------- #}
+  <div class="property-settings-group{% if settings_section == 'property' %} is-active{% endif %}" data-settings-group="property" id="settings-property">
+    <h2 class="property-group-title">{{ t('property_nav.group.property') }}</h2>
+    <section class="panel property-section" id="basics">
+      <h3 class="property-section-title">{{ t('apartment.form.basics.title') }}</h3>
+      {% include "_property_identity_fields.html" %}
+      {% set operator_current = apartment.legal_entity_id %}
+      {% include "_property_operator.html" %}
+      {% if entities %}<div class="hint property-operator-hint"><a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
+      {% set controller_current = apartment.data_controller_entity_id %}
+      <div class="field" style="max-width:420px" id="alternate-controller">
+        <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
+        <select id="data_controller_entity_id" name="data_controller_entity_id"{% if operator_error == 'flash.error.no_such_controller' %} aria-describedby="controller-message" aria-invalid="true"{% endif %}>
+          <option value="">{{ t('apartment.form.controller.same_as_operator') }}</option>
+          {% for entity in entities %}
+          <option value="{{ entity.id }}" {% if controller_current == entity.id %}selected{% endif %}>{{ entity.name }}</option>
+          {% endfor %}
+        </select>
+        {% if operator_error == 'flash.error.no_such_controller' %}<p class="err-text" id="controller-message" role="alert">{{ t(operator_error) }}</p>{% endif %}
+      </div>
+    </section>
+
+    <section class="panel property-section" id="address">
+      <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
+      {% include "_property_address_fields.html" %}
+    </section>
+
+    <section class="panel property-section" id="notes-section">
+      <h3 class="property-section-title">{{ t('apartment.form.notes.title') }}</h3>
+      <div class="field">
+        {{ field_label('notes', t('apartment.form.notes.label'), t('apartment.form.notes.hint')) }}
+        <textarea id="notes" name="notes" aria-describedby="notes-help">{{ apartment.notes or '' }}</textarea>
+      </div>
+    </section>
+
+    <section class="panel property-section property-archive" id="archive">
+      {% if apartment.archived_at %}
+      <div class="setup-item">
+        <div class="grow">
+          <strong>{{ t('apartments.archived.when') }} {{ apartment.archived_at[:10] }}</strong>
+          <div class="small muted">{{ t('apartment.form.archived_help') }}</div>
+        </div>
+        <button class="btn small" type="submit" formmethod="post" formnovalidate
+                formaction="{{ base_url }}/unarchive">{{ t('common.restore') }}</button>
+      </div>
+      {% else %}
+      <div class="setup-item">
+        <div class="grow">
+          <strong>{{ t('apartment.form.archive_title') }}</strong>
+          <div class="small muted">{{ t('apartment.form.archive_help') }}</div>
+        </div>
+        <button class="btn small" type="submit" formmethod="post" formnovalidate
+                formaction="{{ base_url }}/archive"
+                data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">{{ t('common.archive') }}</button>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ---- Guest experience ---------------------------------------------- #}
+  <div class="property-settings-group{% if settings_section == 'guests' %} is-active{% endif %}" data-settings-group="guests" id="settings-guests">
+    <h2 class="property-group-title">{{ t('property_nav.group.guests') }}</h2>
+    <section class="panel property-section" id="communication">
+      <div class="field-label-row"><h3 class="property-section-title">{{ t('nav.guest_links') }}</h3>{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</div>
+      <div class="guest-link-top">
+        <div class="field guest-link-url">
+          <label for="permalink">{{ t('property_nav.guest_link') }}</label>
+          <div class="copyrow">
+            <input type="text" id="permalink" readonly value="{{ permalink }}">
+            {{ copy_button('permalink') }}
+            <a class="btn small ghost" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+          </div>
+        </div>
+        <div class="field guest-link-pin">
+          {{ field_label('permalink_pin', t('guest_links.pin'), t('apartment.form.guest_link.pin_hint')) }}
+          <div class="copyrow pin-row">
+            <input type="text" id="permalink_pin" name="permalink_pin" value="{{ pin }}" class="mono" aria-describedby="permalink_pin-help"
+                   inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="{{ t('apartment.form.guest_link.pin_ph') }}" required>
+            {{ copy_button('permalink_pin') }}
+          </div>
+        </div>
+        <div class="guest-link-actions">
+          <span class="guest-link-action">
+            <button class="btn small" type="submit" formmethod="post" formnovalidate
+                    formaction="{{ base_url }}/regenerate-pin"
+                    data-confirm data-confirm-message="{{ t('confirm.regenerate_pin') }}">{{ t('guest_links.new_pin') }}</button>
+            {{ help_tip('regenerate-pin-help', t('apartment.form.guest_link.regenerate_pin_help')) }}
+          </span>
+          <span class="guest-link-action">
+            <button class="btn small" type="submit" formmethod="post" formnovalidate
+                    formaction="{{ base_url }}/regenerate-link"
+                    data-confirm data-confirm-message="{{ t('confirm.regenerate_link') }}">{{ t('apartment.form.guest_link.regenerate_link') }}</button>
+            {{ help_tip('regenerate-link-help', t('apartment.form.guest_link.regenerate_link_help')) }}
+          </span>
+        </div>
+      </div>
+      <div class="field">
+        {{ field_label('guest_message', t('apartment.form.guest_message.label'), t('apartment.form.guest_message.hint'), true) }}
+        <textarea id="guest_message" name="guest_message" maxlength="1000" aria-describedby="guest_message-help"
+                  placeholder="{{ t('apartment.form.guest_message.placeholder') }}">{{ apartment.guest_message or '' }}</textarea>
+      </div>
+      <div class="grid guest-link-windows">
+        <div class="field">
+          {{ field_label('permalink_window_days', t('apartment.form.guest_link.window_label'), t('apartment.form.guest_link.window_hint')) }}
+          <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30" aria-describedby="permalink_window_days-help"
+                 value="{{ apartment.permalink_window_days }}">
+        </div>
+        <div class="field">
+          {{ field_label('permalink_reachback_days', t('apartment.form.guest_link.reachback_label'), t('apartment.form.guest_link.reachback_hint')) }}
+          <input type="number" id="permalink_reachback_days" name="permalink_reachback_days" min="1" max="3650" aria-describedby="permalink_reachback_days-help"
+                 value="{{ apartment.permalink_reachback_days or 365 }}">
+        </div>
+        <div class="field">
+          {{ field_label('passport_photo_policy', t('apartment.form.passport_policy.label'), t('apartment.form.passport_policy.hint')) }}
+          <select id="passport_photo_policy" name="passport_photo_policy" aria-describedby="passport_photo_policy-help">
+            <option value="off" {% if apartment.passport_photo_policy != 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.off') }}</option>
+            <option value="required_foreign" {% if apartment.passport_photo_policy == 'required_foreign' %}selected{% endif %}>{{ t('apartment.form.passport_policy.required') }}</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  {# ---- Door lock (0096: its own group; optional) ---------------------- #}
+  {% if door_code %}
+  <div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock">
+    <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
+    <p class="property-group-intro">{{ t('property_nav.lock_intro') }}</p>
+    <section class="panel property-section" id="door-code">
+      <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.margin', hours=door_code.buffer) ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
+      <input type="hidden" name="door_code_section" value="1">
+      {% if not door_code.account %}
+        <p class="small muted">{{ t('apartment.form.door_code.connect_first') }}</p>
+        <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
+      {% elif not door_code.locks %}
+        <p class="small muted">{{ t('apartment.form.door_code.no_locks') }}</p>
+        <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-share">{{ t('smart_locks.title') }}</a>
+      {% else %}
+        {% if door_code.test_mode %}<p class="small"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
+        <input type="hidden" name="door_codes_fields" value="1">
+        <div class="feature-switch-row">
+          <label class="switch feature-switch" for="door_codes">
+            <input type="checkbox" role="switch" id="door_codes" name="door_codes" value="1" {% if door_code.enabled %}checked{% endif %}
+                   data-switch-saved="{{ '1' if door_code.enabled else '0' }}" aria-describedby="door_codes-status">
+            <span>{{ t('property_nav.door_switch') }}</span>
+          </label>
+          <span class="switch-status{% if door_code.enabled %} is-on{% endif %}" id="door_codes-status" aria-live="polite"
+                data-on="{{ t('property_nav.switch_enabled') }}" data-off="{{ t('property_nav.switch_off') }}"
+                data-unsaved="{{ t('property_nav.switch_unsaved') }}">{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</span>
+        </div>
+        <div class="field" style="max-width:320px"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
+          <select id="lock_id" name="lock_id"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+            {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.used_by and lock.lock_id != door_code.lock_id %}disabled{% endif %} {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and lock.lock_id == door_code.default_lock_id) %}selected{% endif %}>{{ lock.alias }} ({{ t('smart_locks.lock_id', id=lock.lock_id) }}){% if lock.used_by %} · {{ t('apartment.form.door_code.in_use', property=lock.used_by) }}{% endif %}</option>{% endfor %}
+          </select>
+          {% if door_code.tz_warning %}<div class="hint"><strong>{{ t('smart_locks.timezone_warning') }}</strong></div>{% endif %}
+        </div>
+        <div class="grid two">
+          {% for name, value, label in [('checkin_hour', door_code.checkin_hour, 'apartment.form.door_code.checkin'), ('checkout_hour', door_code.checkout_hour, 'apartment.form.door_code.checkout')] %}
+          <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
+            <select id="{{ name }}" name="{{ name }}"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+              {% for h in range(24) %}<option value="{{ h }}" {% if value == h %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
+            </select></div>
+          {% endfor %}
+        </div>
+        <p class="small">{{ t('apartment.form.door_code.first_use') }}</p>
+        {% if door_code.overlap %}<p class="small"><strong>{{ t('apartment.form.door_code.overlap') }}</strong></p>{% endif %}
+      {% endif %}
+    </section>
+  </div>
+  {% endif %}
+
+  {# ---- Reporting & fees ---------------------------------------------- #}
+  <div class="property-settings-group{% if settings_section == 'reporting' %} is-active{% endif %}" data-settings-group="reporting" id="settings-reporting">
+    <h2 class="property-group-title">{{ t('property_nav.group.reporting') }}</h2>
+    <section class="panel property-section" id="ubyport">
+      <div class="field-label-row police-section-head"><h3 class="property-section-title">{{ t('host.reporting') }}</h3>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
+        <a class="btn small police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
+      <p class="small"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
+      <div class="grid">
+        {{ text_field('uby_idub', 'IDUB', apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
+      </div>
+      <div class="grid two">
+        {{ text_field('uby_ws_user', t('automation.login'), apartment.uby_ws_user, t('apartment.form.ubyport.login_hint')) }}
+        <div class="field">
+          {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help')) }}
+          <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"
+                 {% if has_password %}placeholder="••••••••" {% endif %}aria-describedby="uby_ws_password-help uby_ws_password-hint">
+          <div class="hint" id="uby_ws_password-hint">
+            {% if has_password %}
+            {{ t('apartment.form.ubyport.password_edit_hint') }}
+            {% else %}
+            {{ t('apartment.form.ubyport.password_new_hint') }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <p class="small muted police-no-credentials">{{ t('apartment.form.ubyport.no_credentials') }}
+        <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.no_credentials_link') }}</a></p>
+      <div class="grid">
+        {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}
+      </div>
+      <div class="grid two">
+        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name, t('apartment.form.ubyport.name_hint'), false, 35) }}
+        {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
+      </div>
+      <div class="actions">
+        <button class="btn" type="submit" formaction="{{ base_url }}/test-connection"
+                formmethod="post" formnovalidate>{{ t('apartment.form.test_connection') }}</button>
+        <button class="btn" type="submit" formaction="{{ base_url }}/refresh-codelists"
+                formmethod="post" formnovalidate>{{ t('apartment.form.refresh_codelists') }}</button>
+        <span class="small muted">
+          {{ t('apartment.form.credentials_actions_help') }}
+          {% if codelist_fetched %}{{ t('apartment.form.codelists_cached', date=codelist_fetched[:10]) }}
+          {% else %}{{ t('apartment.form.codelists_bundled') }}{% endif %}
+        </span>
+      </div>
+    </section>
+
+    <section class="panel property-section" id="stay-fee-settings">
+      <div class="field-label-row"><h3 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}</h3>{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</div>
+      {% if fee_return_to %}
+      <p class="small fee-return-note"><a href="{{ fee_return_to }}"> {{ t('stay_fees.setup.back_to_report') }}</a></p>
+      {% endif %}
+      {% if fee_template_peers %}
+      <div class="field">
+        {{ field_label('fee-copy-source', t('apartment.form.stay_fee.copy_label'), t('apartment.form.stay_fee.copy_hint')) }}
+        <div class="copyrow">
+          <select id="fee-copy-source" aria-describedby="fee-copy-source-help">
+            {% for peer in fee_template_peers %}
+            <option value="{{ peer.id }}"
+                    data-rate="{{ peer.stay_fee_rate_czk or 0 }}"
+                    data-cadence="{{ peer.stay_fee_cadence or 'monthly' }}"
+                    data-vs="{{ peer.stay_fee_vs or '' }}"
+                    data-account="{{ peer.stay_fee_council_account or '' }}"
+                    data-authority-name="{{ peer.stay_fee_authority_name or '' }}"
+                    data-authority-address="{{ peer.stay_fee_authority_address or '' }}"
+                    data-authority-contact="{{ peer.stay_fee_authority_contact or '' }}"
+                    data-payee="{{ peer.stay_fee_payee or '' }}"
+                    data-instruction="{{ peer.stay_fee_instruction or '' }}">{{ peer.internal_name }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn small" type="button" id="fee-copy-apply">
+            {{ t('apartment.form.stay_fee.copy_button') }}
+          </button>
+        </div>
+      </div>
+      {% endif %}
+      {% include "_stay_fee_fields.html" %}
+      {% if apartment.stay_fee_rate_czk > 0 %}
+        {% if not (apartment.stay_fee_vs or '').strip()
+              or not (apartment.stay_fee_council_account or '').strip()
+              or not (apartment.stay_fee_authority_name or '').strip() %}
+        <p class="small warn-text">{{ t('apartment.form.stay_fee.missing_warn') }}</p>
+        {% endif %}
+        <p class="small">
+          <a href="/stay-fees/{{ apartment.id }}">{{ t('apartment.form.stay_fee.open_overview') }} </a>
+        </p>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ---- Automation ---------------------------------------------------- #}
+  <div class="property-settings-group{% if settings_section == 'automation' %} is-active{% endif %}" data-settings-group="automation" id="settings-automation">
+    <h2 class="property-group-title">{{ t('property_nav.group.automation') }}</h2>
+    <section class="panel property-section" id="automation">
+      <div class="field-label-row"><h3 class="property-section-title">{{ t('automation.timing_title') }}</h3>{{ help_tip('automation-help', t('automation.timing_help'), '/guide#reporting') }}</div>
+      <div class="grid two">
+        <div class="field">
+          <label for="automation_mode">{{ t('automation.timing_label') }}</label>
+          <select id="automation_mode" name="automation_mode"
+                  data-automation-mode data-hours-target="submit_after_hours">
+            <option value="manual" {% if apartment.automation_mode == 'manual' %}selected{% endif %}>
+              {{ t('automation.mode.manual') }}</option>
+            <option value="scheduled" {% if apartment.automation_mode == 'scheduled' %}selected{% endif %}>
+              {{ t('automation.mode.scheduled') }}</option>
+            <option value="immediate" {% if apartment.automation_mode == 'immediate' %}selected{% endif %}>
+              {{ t('automation.mode.immediate') }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="submit_after_hours">{{ t('automation.hours') }}</label>
+          <input type="number" id="submit_after_hours" name="submit_after_hours"
+                 min="0" max="48" value="{{ apartment.submit_after_hours }}">
+        </div>
+      </div>
+      <div class="field" style="max-width:320px">
+        <label for="default_purpose">{{ t('automation.default_purpose') }}</label>
+        <select id="default_purpose" name="default_purpose">
+          {% for purpose in purposes %}
+            <option value="{{ purpose.code }}"
+              {% if apartment.default_purpose == purpose.code %}selected{% endif %}>{{ purpose.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </section>
+  </div>
+
+  <div class="actions host-property-save">
+    <button class="btn primary" type="submit">{{ t('common.save_changes') }}</button>
+    <button class="btn" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
+    <a class="btn" href="/apartments">{{ t('apartment.form.back_list') }}</a>
+  </div>
+</form>
+</div>
