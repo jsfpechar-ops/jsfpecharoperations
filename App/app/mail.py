@@ -286,7 +286,11 @@ def _with_door_code(value: str, payload: Dict[str, Any]) -> str:
     token = payload.get(DOOR_CODE_KEY)
     if not token:
         raise db.DecryptionError("outbox payload has a door code with no secret")
-    return value.replace(DOOR_CODE_MARKER, db.decrypt_field(token))
+    from . import door_codes
+
+    return value.replace(
+        DOOR_CODE_MARKER, door_codes.guest_pin_display(db.decrypt_field(token))
+    )
 
 
 def stored_body(payload: Dict[str, Any]) -> str:

@@ -40,8 +40,8 @@ Do **not** render property shortcuts or saved views in the default rail. Propert
 |---|---|---|
 | Stays landing | **Stays · Police reports · Guest register** | Records tied to stays remain discoverable in one place. `/submissions` and `/housebook` are both one click from Stays. |
 | Stay detail | Guests · Police report, with a direct Invoice action | Guest facts and report state live with the stay. The unused `#money` anchor should not create an empty visual panel. |
-| Properties landing | **Properties · Business & legal details · Guest links · Automation & UbyPort** cross-property links | Business entities may be shared across properties. Each property shows its assigned entity and links to edit it. |
-| Property detail | Bookings · Guest link · Police reporting · Business details · Optional stay fee | Settings are grouped by the property they affect. Technical fields appear only in the relevant section. |
+| Properties landing | **Properties**; **Business & legal details** at `/entities`; guest-link and timing summary at `/apartments#property-summaries` | Entities may be shared. Edit guest links and reporting timing in the selected property's settings. |
+| Property detail | **Overview · Bookings & calendars · Settings**; Settings groups property, guest links, reporting, automation and door lock | Shortcut cards and Search use `?view=&section=` with the relevant anchor. Keep editing within the selected property. |
 | Invoices | All invoices · Invoice settings | Creation remains a prominent action; settings are one click away. |
 | Stay fees | Period selector; property/group report details | This feature is independent of stay detail and is enabled per property. |
 
@@ -147,7 +147,7 @@ Property detail groups existing sections into readable cards: **Bookings** (feed
 
 The main path is **Add property → connect booking calendar or add a stay manually → prepare guest link → check reporting details → use the app**. Each step has one task, a visible Skip/Later when optional, and a return route. Do not require invoices or stay fees before a first stay. Existing demo-load/reset may remain in onboarding with a conspicuous demo label. A host can return to any setup card from Properties, without losing work or encountering a dead-end success screen.
 
-### Global guest links and automation
+### Guest links, automation, and legacy URLs
 
 0101: `/automation` is removed; `/guest-links` stays only as a redirect for lifecycle e-mails already sent. The cross-property overview is the Properties summary (`/apartments#property-summaries`), reached from the Properties landing page and Search. Each row links to the property's exact setting, so edits occur in context. Keep PIN, resend, automation, test connection, and error details as supported today. Avoid a global “on/off” appearance if settings are per property. Preserve shared-lock account setup, contextual property links and return navigation.
 
