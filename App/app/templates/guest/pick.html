@@ -5,14 +5,12 @@
   <h2 id="arrival-welcome">{{ property_name }}</h2>
   {% if apartment.city_en %}<p class="g-arrival-location">{{ apartment.city_en }}</p>{% endif %}
   {% if apartment.guest_message %}
-    <details class="g-arrival-message">
-      <summary>{{ t('message_from_host') }}</summary>
+    <section class="g-arrival-message" aria-labelledby="host-message-title">
+      <h3 id="host-message-title">{{ t('message_from_host') }}</h3>
       <p>{{ apartment.guest_message }}</p>
-    </details>
+    </section>
   {% endif %}
 </section>
-
-{% include "guest/_why.html" %}
 
 <section class="g-arrival-choice" aria-labelledby="arrival-question">
   <h2 class="g-section" id="arrival-question">{{ t('arrival_question') }}</h2>
@@ -24,7 +22,7 @@
        href="/l/{{ token }}/{{ reservation.id }}?lang={{ lang }}">
       <span class="g-range-cue" aria-hidden="true"><i></i></span>
       <span class="dates">
-        <strong>{{ reservation.date_from | date_cz }} <span aria-hidden="true">&rarr;</span> {{ reservation.date_to | date_cz }}</strong>
+        <strong>{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</strong>
         <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
         {% if row.yours %}
           <span class="g-lane-status">{{ t('your_stay_badge') }}</span>
@@ -36,9 +34,10 @@
           <span class="g-lane-status quiet">{{ t('stay_not_started') }}</span>
         {% endif %}
       </span>
-      <span class="g-lane-action">{{ t('arrival_cta') }} <span aria-hidden="true">&rarr;</span></span>
+      <span class="g-lane-action">{{ t('arrival_cta') }}</span>
     </a>
   {% endfor %}
   </div>
 </section>
+{% include "guest/_why.html" %}
 {% endblock %}

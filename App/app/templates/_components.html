@@ -19,7 +19,7 @@
   <header class="page-header{{ ' has-tabs' if header_tabs }}">
     <div class="page-header-main">
       {% if back_url %}
-        <a class="back-link" href="{{ back_url }}"><span aria-hidden="true">&larr;</span> {{ back_label or t('common.back') }}</a>
+        <a class="back-link" href="{{ back_url }}"> {{ back_label or t('common.back') }}</a>
       {% endif %}
       {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
       <h1>{{ title }}</h1>
@@ -428,12 +428,12 @@
 {% macro onboarding_banner(onboarding) %}
   {% if onboarding and not onboarding.wizard_complete and not onboarding.dismissed %}
     <aside class="onboarding-banner onboarding-banner-setup" aria-label="{{ t('setup.banner.aria') }}">
-      <a class="onboarding-banner-setup-link" href="{{ onboarding.setup_url }}">
+      <a class="btn primary onboarding-banner-setup-link" href="{{ onboarding.setup_url }}">
         {{ t('setup.banner.line', step=onboarding.wizard_step_number, total=onboarding.wizard_total_steps) }}
       </a>
       <form method="post" action="/onboarding/dismiss">
         <input type="hidden" name="return_to" value="{{ request.url.path }}">
-        <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
+        <button class="btn ghost" type="submit">{{ t('onboarding.skip') }}</button>
       </form>
     </aside>
   {% endif %}
@@ -490,7 +490,7 @@
             <a class="small" href="{{ onboarding.current.manual_url }}">
               {{ t('onboarding.' ~ onboarding.current.id ~ '.manual') }}</a>
           {% endif %}
-          <a class="small" href="{{ onboarding.current.learn_url }}">{{ t('onboarding.learn') }} →</a>
+          <a class="small" href="{{ onboarding.current.learn_url }}">{{ t('onboarding.learn') }} </a>
         </div>
       </div>
     {% endif %}
@@ -522,7 +522,7 @@
             <details>
               <summary>{{ t('onboarding.learn') }}</summary>
               <p>{{ t('onboarding.' ~ step.id ~ '.why') }}</p>
-              <a href="{{ step.learn_url }}">{{ t('nav.guide') }} →</a>
+              <a href="{{ step.learn_url }}">{{ t('nav.guide') }} </a>
             </details>
           {% endif %}
         </article>

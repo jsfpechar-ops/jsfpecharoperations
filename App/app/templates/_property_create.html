@@ -47,7 +47,7 @@
         {% set operator_current = draft.legal_entity_id or selected_entity_id or property_prefill.get('legal_entity_id') %}
         <div class="property-create-operator-row">
           {% include "_property_operator.html" %}
-          {% if entities %}<a class="property-create-manage" href="/entities">{{ t('property_create.manage_business') }} →</a>{% endif %}
+          {% if entities %}<a class="property-create-manage" href="/entities">{{ t('property_create.manage_business') }} </a>{% endif %}
         </div>
         {% set controller_current = draft.data_controller_entity_id or property_prefill.get('data_controller_entity_id') %}
         {% if controller_current %}

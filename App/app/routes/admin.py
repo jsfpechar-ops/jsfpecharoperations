@@ -30,6 +30,7 @@ from .. import (
     celebrations,
     codelists,
     config,
+    contact_phone,
     db,
     deadlines,
     demo,
@@ -777,7 +778,12 @@ def _entity_post_payload(form) -> Dict[str, Any]:
     stored bank, VAT, registry and numbering values untouched. A value the
     browser posted empty still clears the field, as callers expect.
     """
-    return {field: _form_str(form, field) for field in ENTITY_FIELDS if field in form}
+    payload = {field: _form_str(form, field) for field in ENTITY_FIELDS if field in form}
+    if "contact_phone" in form and "contact_phone_country_code" in form:
+        payload["contact_phone"] = contact_phone.with_country_code(
+            _form_str(form, "contact_phone_country_code"), payload["contact_phone"]
+        )
+    return payload
 
 
 def _entity_details_payload(request: Request, payload: Dict[str, Any], form):
@@ -852,6 +858,10 @@ def _entity_form_values(form, base: Optional[Dict[str, Any]] = None) -> Dict[str
             values[field] = base.get(field) or ""
         else:
             values[field] = ""
+    if "contact_phone" in form and "contact_phone_country_code" in form:
+        values["contact_phone"] = contact_phone.with_country_code(
+            _form_str(form, "contact_phone_country_code"), values["contact_phone"]
+        )
     return values
 
 

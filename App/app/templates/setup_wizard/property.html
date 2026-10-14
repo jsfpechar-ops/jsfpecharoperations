@@ -13,7 +13,7 @@
   <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
   {% include "_property_identity_fields.html" %}
   {% include "_property_operator.html" %}
-  {% if entities %}<div class="hint property-operator-hint"><a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ t('host.business') }} →</a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
+  {% if entities %}<div class="setup-wizard-instruction property-operator-hint"><a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
   <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
   {% include "_property_address_fields.html" %}
 </form>

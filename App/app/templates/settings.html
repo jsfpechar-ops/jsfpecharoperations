@@ -8,7 +8,7 @@
 {# 0083: one index, six visible groups. Each specialized action keeps its own form and endpoint. #}
 <nav class="host-property-grid" aria-label="{{ t('settings.index_label') }}">
   {% for href, key in [('#settings-group-account', 'settings.group.account'), ('#settings-group-security', 'settings.group.security'), ('#settings-group-data', 'settings.group.data'), ('#settings-group-privacy', 'settings.group.privacy'), ('#settings-technical', 'settings.group.technical'), ('#settings-group-help', 'settings.group.help')] %}
-    <a class="host-property-card" href="{{ href }}"><strong>{{ t(key) }}</strong><span aria-hidden="true">→</span></a>
+    <a class="host-property-card" href="{{ href }}"><strong>{{ t(key) }}</strong></a>
   {% endfor %}
 </nav>
 
@@ -428,10 +428,10 @@
       </dl>
       <p class="small muted">{{ t('legal.support_help') }}</p>
       <nav class="document-links" aria-label="{{ t('legal.settings_title') }}">
-        <a href="/legal"><span>{{ t('legal.footer_link') }}</span><span aria-hidden="true">→</span></a>
-        <a href="/terms"><span>{{ t('terms.footer_link') }}</span><span aria-hidden="true">→</span></a>
-        <a href="/privacy"><span>{{ t('privacy.footer_link') }}</span><span aria-hidden="true">→</span></a>
-        <a href="/dpa"><span>{{ t('dpa.footer_link') }}</span><span aria-hidden="true">→</span></a>
+        <a href="/legal"><span>{{ t('legal.footer_link') }}</span></a>
+        <a href="/terms"><span>{{ t('terms.footer_link') }}</span></a>
+        <a href="/privacy"><span>{{ t('privacy.footer_link') }}</span></a>
+        <a href="/dpa"><span>{{ t('dpa.footer_link') }}</span></a>
       </nav>
     </div>
 

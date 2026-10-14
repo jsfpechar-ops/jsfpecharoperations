@@ -67,6 +67,26 @@ jobs:
           --cov=app
           --cov-report=term-missing
           --cov-fail-under=86
+          --junitxml=/tmp/ubyhost-tests.xml
+
+      - name: Annotate failed tests
+        if: failure()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          report = Path("/tmp/ubyhost-tests.xml")
+          if report.exists():
+              for case in ET.parse(report).iter("testcase"):
+                  failure = case.find("failure")
+                  if failure is None:
+                      failure = case.find("error")
+                  if failure is not None:
+                      title = (case.get("classname", "") + "." + case.get("name", ""))[:200]
+                      detail = (failure.text or failure.get("message", ""))[-6000:]
+                      detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+                      print(f"::error title={title}::{detail}")
+          PY
 
   smoke:
     runs-on: ubuntu-latest
@@ -154,7 +174,28 @@ jobs:
         # REQUIRE_BROWSER turns "Chromium is missing" from a skip into a failure.
         run: >-
           python -m pytest tests/test_guest_browser_e2e.py tests/test_host_geometry.py
-          tests/test_onboarding_wizard_browser.py tests/test_onboarding_wizard_survival.py -q -rs
+          tests/test_onboarding_wizard_browser.py tests/test_onboarding_wizard_survival.py
+          tests/test_download_skeleton_browser.py -q -rs --junitxml=/tmp/ubyhost-tests.xml
+
+
+      - name: Annotate failed tests
+        if: failure()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          report = Path("/tmp/ubyhost-tests.xml")
+          if report.exists():
+              for case in ET.parse(report).iter("testcase"):
+                  failure = case.find("failure")
+                  if failure is None:
+                      failure = case.find("error")
+                  if failure is not None:
+                      title = (case.get("classname", "") + "." + case.get("name", ""))[:200]
+                      detail = (failure.text or failure.get("message", ""))[-6000:]
+                      detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+                      print(f"::error title={title}::{detail}")
+          PY
 
       - name: Upload onboarding screenshots
         if: always()

@@ -30,7 +30,7 @@
   </div>
   <footer class="setup-wizard-foot">
     {% if prev_step %}
-    <a class="btn ghost setup-wizard-back" href="{{ base_setup }}/{{ prev_step }}"><span aria-hidden="true">←</span> {{ t('wizard.back') }}</a>
+    <a class="btn ghost setup-wizard-back" href="{{ base_setup }}/{{ prev_step }}"> {{ t('wizard.back') }}</a>
     {% else %}
     <span></span>
     {% endif %}

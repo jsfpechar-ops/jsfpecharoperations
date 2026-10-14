@@ -46,8 +46,7 @@ html:not(.has-js) .row-menu-panel[hidden] {
   box-shadow:none;
 }
 html:not(.has-js) .row-menu-item { width:auto;padding:5px 7px;text-decoration:underline }
-/* Placeholders for content on its way. Static on purpose: DESIGN.md
-   allows no looping animation, so there is no shimmer. */
+/* Owner-selected shimmer: existing light surfaces, static with reduced motion. */
 .skeleton { display:block;min-height:12px;border-radius:var(--radius-xs);background:var(--surface-active) }
 .skeleton-line { height:12px;margin:10px 0 }
 .skeleton-line.short { width:40% }

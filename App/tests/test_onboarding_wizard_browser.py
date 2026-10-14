@@ -1301,9 +1301,19 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         assert feed["label"] == "Booking.com"
         page.locator("button[value=done]").click()
         page.wait_for_url("**/setup/try_it**")
+        assert page.locator(".setup-demo-property strong").inner_text() == flat["internal_name"]
+        assert page.locator(".setup-demo-stay").is_visible()
+        assert page.locator(".setup-demo-bubble").inner_text().count("PIN:") == 1
+        assert "[Example:" in page.locator(".setup-demo-bubble").inner_text() if lang == "en" else "[Příklad:" in page.locator(".setup-demo-bubble").inner_text()
+        assert page.evaluate(_overflow_js())
+        _shot(page, f"35-demo-walkthrough-{tag}.png")
         with context.expect_page() as demo_tab:
-            page.locator("button[value=demo]").click()
+            page.locator(".setup-demo-message-link").click()
         guest_page = demo_tab.value
+        guest_page.locator("#pin").wait_for()
+        _shot(guest_page, f"34-demo-pin-{tag}.png")
+        guest_page.fill("#pin", flat["permalink_pin"])
+        guest_page.locator("form button[type=submit]").first.click()
         guest_page.wait_for_url(lambda url: "/l/" in url and "/new" in url)
         assert "/setup/try_it" in page.url
         _shot(guest_page, f"23-demo-new-tab-{tag}.png")
@@ -1358,3 +1368,182 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         assert page.evaluate(_overflow_js())
         _shot(page, f"26-overview-cards-{tag}.png")
         browser.close()
+
+
+
+@pytest.mark.parametrize("lang", ["en", "cs"])
+@pytest.mark.parametrize("width", [360, 390, 1280])
+@pytest.mark.parametrize("javascript", [False, True])
+def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width, javascript):
+    """International contact, aligned copy controls, safe message and clear setup actions."""
+    if not REQUIRE_BROWSER:
+        pytest.skip("browser not required")
+    db.update("legal_entity", host["entity"], {
+        "name": "Alex Example", "ico": "04656679", "contact_phone": "777000111",
+        "signature_name": None,
+    })
+    session = host["client"].cookies.get(auth.SESSION_COOKIE)
+    with sync_api.sync_playwright() as p:
+        browser = p.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(
+            viewport={"width": width, "height": 950}, locale=lang, java_script_enabled=javascript,
+            permissions=["clipboard-read", "clipboard-write"],
+        )
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": session, "url": base_url + "/"}])
+        page = context.new_page()
+        tag = f"{lang}-{width}-{'js' if javascript else 'no-js'}"
+        page.goto(f"{base_url}/entities?edit={host['entity']}&lang={lang}")
+        phone_form = page.locator(f'form[action="/entities/{host["entity"]}"]')
+        code = phone_form.locator('[name="contact_phone_country_code"]')
+        number = phone_form.locator('[name="contact_phone"]')
+        assert code.input_value() == "+420"
+        assert number.input_value() == "777000111"
+        assert code.get_attribute("aria-label") == _t(lang, "entities.phone_country_code")
+        code.fill("+49")
+        number.fill("15123456789")
+        code_box, number_box = code.bounding_box(), number.bounding_box()
+        assert code_box and number_box
+        assert abs(code_box["y"] - number_box["y"]) <= 1
+        assert abs(code_box["height"] - number_box["height"]) <= 1
+        assert page.evaluate(_overflow_js())
+        _shot(page, f"27-operator-phone-{tag}.png")
+        phone_form.locator('button[type=submit]').filter(
+            has_text=_t(lang, "entities.save")
+        ).click()
+        page.wait_for_load_state("domcontentloaded")
+        stored = db.query_one("SELECT contact_phone FROM legal_entity WHERE id = ?", (host["entity"],))
+        assert stored["contact_phone"] == "+4915123456789"
+        page.goto(f"{base_url}/apartments?lang={lang}")
+        continue_button = page.locator(".onboarding-banner-setup-link")
+        assert continue_button.is_visible()
+        assert "primary" in continue_button.get_attribute("class").split()
+        assert continue_button.get_attribute("href") != "/onboarding/dismiss"
+        assert continue_button.evaluate("(el) => getComputedStyle(el).backgroundColor") != "rgba(0, 0, 0, 0)"
+        _shot(page, f"28-continue-setup-{tag}.png")
+        flat = _create(host)
+        base = f"{base_url}/apartments/{flat['id']}/setup"
+        host["client"].post(
+            f"/apartments/{flat['id']}/setup", data={"step": "calendar", "action": "skip"},
+            follow_redirects=False,
+        )
+        page.goto(f"{base}/guest_link?lang={lang}")
+        buttons = page.locator(".setup-wizard-copy")
+        assert buttons.count() == 3
+        boxes = [button.bounding_box() for button in buttons.all()]
+        assert all(boxes)
+        assert max(box["height"] for box in boxes) - min(box["height"] for box in boxes) <= 1
+        assert max(box["width"] for box in boxes) - min(box["width"] for box in boxes) <= 1
+        if width == 1280:
+            assert abs(boxes[0]["y"] - boxes[1]["y"]) <= 1
+        message = page.locator("#wizard-guest-message").input_value()
+        guest_link = page.locator("#wizard-guest-url").inner_text()
+        guest_pin = page.locator("#wizard-guest-pin").inner_text()
+        assert guest_link in message and guest_pin in message
+        assert "[FIRST_NAME]" in message and "[PROPERTY_NAME]" in message
+        assert message.rstrip().endswith("Alex")
+        assert ("[Example:" if lang == "en" else "[Příklad:") in message
+        assert buttons.nth(2).inner_text() == _t(lang, "wizard.guest_link.copy_message")
+        assert page.evaluate(_overflow_js())
+        if javascript:
+            for target, expected in (
+                ("wizard-guest-url", guest_link), ("wizard-guest-pin", guest_pin),
+                ("wizard-guest-message", message),
+            ):
+                page.locator(f'button[data-copy="{target}"]').click()
+                page.wait_for_function(
+                    "async expected => await navigator.clipboard.readText() === expected",
+                    arg=expected,
+                )
+            page.locator('[aria-controls="wizard-pin-help"]').click()
+            assert page.locator("#wizard-pin-help").is_visible()
+            page.keyboard.press("Escape")
+        _shot(page, f"29-guest-sharing-{tag}.png")
+        page.locator("button[value=done]").click()
+        page.wait_for_url("**/setup/try_it**")
+        assert page.get_by_role("button", name=_t(lang, "wizard.try_it.skip"), exact=True).is_visible()
+        lede = page.locator(".setup-wizard-lede").first
+        assert int(lede.evaluate("(el) => getComputedStyle(el).fontWeight")) >= 700
+        assert lede.evaluate("(el) => getComputedStyle(el).color") == page.locator(
+            ".setup-wizard-head h1"
+        ).evaluate("(el) => getComputedStyle(el).color")
+        page.locator("button[value=skip]").click()
+        page.wait_for_url("**/setup/police**")
+        page.locator(".setup-wizard-wait").click()
+        page.wait_for_url("**/setup/stay_fee**")
+        page.locator(".setup-wizard-skip button").click()
+        page.wait_for_url("**/setup/door_lock**")
+        assert page.locator(".setup-wizard-foot button[value=skip]").count() == 1
+        assert page.locator('[aria-controls="wizard-lock-help"]').is_visible()
+        assert page.locator(".setup-wizard-body p.small.muted").count() == 0
+        _shot(page, f"30-lock-instructions-{tag}.png")
+        page.locator(".setup-wizard-foot button[value=skip]").click()
+        page.wait_for_url("**/setup/automation**")
+        assert page.locator(".setup-wizard-radio-card .help-tip").count() == 3
+        page.locator('input[value="manual"]').check()
+        _shot(page, f"31-automation-help-{tag}.png")
+        if javascript:
+            page.evaluate("window.ubyhostSkeleton.start()")
+            skeleton = page.locator("[data-page-skeleton]")
+            skeleton.wait_for(state="visible")
+            bones = skeleton.locator(".c05-skel__bone")
+            assert bones.count() == 6
+            assert bones.first.evaluate(
+                "(el) => getComputedStyle(el, '::after').animationName"
+            ) == "c05-skel-sweep"
+            assert page.evaluate(_overflow_js())
+            _shot(page, f"32-warm-skeleton-{tag}.png")
+            page.evaluate("""() => {
+                Object.defineProperty(document, 'hidden', {configurable: true, value: true});
+                document.dispatchEvent(new Event('visibilitychange'));
+            }""")
+            assert bones.first.evaluate(
+                "(el) => getComputedStyle(el, '::after').animationPlayState"
+            ) == "paused"
+            page.evaluate("""() => {
+                delete document.hidden;
+                document.dispatchEvent(new Event('visibilitychange'));
+            }""")
+            page.emulate_media(reduced_motion="reduce")
+            assert bones.first.evaluate(
+                "(el) => getComputedStyle(el, '::after').animationName"
+            ) == "none"
+            _shot(page, f"33-static-skeleton-{tag}.png")
+            page.evaluate("window.ubyhostSkeleton.hide()")
+            assert skeleton.is_hidden()
+        browser.close()
+
+
+def test_demo_preview_pin_is_private_and_validated(host, monkeypatch):
+    """The teaching PIN screen never opens a demo to strangers or another host."""
+    from app import demo, guest_slug
+
+    monkeypatch.setattr(config, "GUEST_PIN_REQUIRED", True)
+    flat = _create(host)
+    stay_id = demo.create_demo_stay(flat["id"])
+    key = guest_slug.link_key(flat)
+    preview = f"/l/{key}/demo/{stay_id}?lang=en"
+    client = host["client"]
+    # Even the signed-in owner with a PIN cookie sees the practice PIN screen.
+    page = client.get(preview)
+    assert page.status_code == 200
+    assert 'id="pin"' in page.text
+    return_to = f"/l/{key}/{stay_id}?lang=en"
+    assert return_to in page.text
+    wrong = client.post(f"/l/{key}/pin?lang=en", data={"pin": "000000" if flat["permalink_pin"] != "000000" else "111111", "return_to": return_to})
+    assert 'id="pin-error"' in wrong.text
+    assert f'value="{return_to}"' in wrong.text
+    assert 'id="first_name"' not in wrong.text
+    correct = client.post(f"/l/{key}/pin?lang=en", data={"pin": flat["permalink_pin"], "return_to": return_to})
+    assert correct.status_code == 200
+    assert 'id="first_name"' in correct.text
+    assert client.get(preview).text.count('id="pin"') == 1
+    stranger = TestClient(app)
+    refused = stranger.get(preview)
+    assert refused.status_code == 404
+    other_username = f"preview-other-{secrets.token_hex(4)}"
+    auth.create_account(f"{other_username}@example.test", "Other host", role="host", username=other_username)
+    other = TestClient(app)
+    assert login_as(other, other_username, url="/login?lang=en", follow_redirects=False).status_code == 303
+    assert other.get(preview).status_code == 404
+    # No reservation is created or changed by viewing the preview.
+    assert db.query_one("SELECT source FROM reservation WHERE id = ?", (stay_id,))["source"] == "demo"

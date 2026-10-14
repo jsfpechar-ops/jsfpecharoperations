@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any, Dict, Optional, Tuple
 
 from fastapi import APIRouter, Depends, Request
 
-from .. import access, auth, config, db, demo, guest_slug, host_i18n, payments, property_setup, reporting, security
+from .. import access, auth, claim, config, db, demo, guest_slug, host_i18n, payments, property_setup, reporting, security
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -86,6 +87,17 @@ def _wizard_context(
     guide = bundle["guide"]
     link_key = guest_slug.link_key(apartment)
     lang = host_i18n.lang_from_request(request)
+    entities = access.entities(request)
+    entity = next((row for row in entities if row["id"] == apartment["legal_entity_id"]), None)
+    signatory = (entity["signature_name"] or "") if entity else ""
+    if not signatory and entity:
+        name = (entity["name"] or "").strip()
+        company_words = name.lower().replace(".", "").replace(",", "").split()
+        if not any(word in {"sro", "as", "ltd", "limited", "llc", "gmbh", "inc"} for word in company_words):
+            signatory = name
+    operator_first_name = signatory.split()[0] if signatory.strip() else host_i18n.translate(
+        lang, "wizard.guest_link.operator_placeholder"
+    )
     setup_demo = None
     if step == "try_it":
         stay = demo.demo_stay_for(apartment_id)
@@ -95,11 +107,14 @@ def _wizard_context(
                 "state": "registered" if progress["filled"] >= 1 else "open",
                 "reservation": stay,
                 "progress": progress,
-                "guest_url": f"/l/{link_key}/{stay['id']}?lang={lang}",
+                "guest_url": f"/l/{link_key}/demo/{stay['id']}?lang={lang}",
                 "pin": apartment["permalink_pin"],
             }
         else:
             setup_demo = {"state": "none"}
+        today = claim.prague_today()
+        setup_demo["date_from"] = stay["date_from"] if stay else today.isoformat()
+        setup_demo["date_to"] = stay["date_to"] if stay else (today + timedelta(days=1)).isoformat()
     ctx = {
         "apartment": apartment,
         "wizard_step": step,
@@ -140,7 +155,8 @@ def _wizard_context(
             property_setup.next_applicable_step(step, apartment, lock_available=lock_available)
             or "done",
         ),
-        "entities": access.entities(request),
+        "entities": entities,
+        "message_operator_first_name": operator_first_name,
         "nav": "apartments",
         "show_nav": True,
     }
@@ -311,7 +327,7 @@ async def setup_action(apartment_id: int, request: Request):
         stay_id = demo.create_demo_stay(apartment_id)
         db.audit("property_setup_step", f"apartment={apartment_id} step=try_it action=demo")
         lang = host_i18n.lang_from_request(request)
-        return _back(f"/l/{ctx['link_key']}/{stay_id}?lang={lang}")
+        return _back(f"/l/{ctx['link_key']}/demo/{stay_id}?lang={lang}")
     if step == "try_it" and action == "done" and not (stay and reporting.reservation_progress(stay)["filled"] >= 1):
         return _back(guide["url"])
     if action == "keep_demo":

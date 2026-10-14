@@ -1,22 +1,29 @@
 {% extends "setup_wizard/_layout.html" %}
+{% from "_components.html" import help_tip with context %}
 {% block wizard_content %}
-<p class="setup-wizard-lede">{{ t('wizard.guest_link.pin_why') }}</p>
+<p class="setup-wizard-lede">{{ t('wizard.guest_link.share_lede') }}</p>
 <div class="setup-wizard-cards">
-  <div class="setup-wizard-card">
-    <h2>{{ t('wizard.guest_link.link_title') }}</h2>
-    <p class="mono setup-wizard-url" id="wizard-guest-url">{{ permalink }}</p>
-    <button class="btn small" type="button" data-copy="wizard-guest-url" data-copy-label="{{ t('common.copy') }}" data-copied-label="{{ t('common.copied') }}">{{ t('common.copy') }}</button>
-  </div>
-  <div class="setup-wizard-card">
-    <h2>{{ t('wizard.guest_link.pin_title') }}</h2>
-    <p class="setup-wizard-pin mono" id="wizard-guest-pin">{{ pin }}</p>
-    <button class="btn small" type="button" data-copy="wizard-guest-pin" data-copy-label="{{ t('common.copy') }}" data-copied-label="{{ t('common.copied') }}">{{ t('common.copy') }}</button>
-  </div>
+  <section class="setup-wizard-card" aria-labelledby="wizard-link-title">
+    <h2 id="wizard-link-title">{{ t('wizard.guest_link.link_title') }}</h2>
+    <p class="setup-wizard-url" id="wizard-guest-url">{{ permalink }}</p>
+    <button class="btn setup-wizard-copy" type="button" data-copy="wizard-guest-url" data-copy-label="{{ t('wizard.guest_link.copy_link') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_link') }}</button>
+  </section>
+  <section class="setup-wizard-card" aria-labelledby="wizard-pin-title">
+    <div class="field-label-row">
+      <h2 id="wizard-pin-title">{{ t('wizard.guest_link.pin_title') }}</h2>
+      {{ help_tip('wizard-pin-help', t('wizard.guest_link.pin_why')) }}
+    </div>
+    <p class="setup-wizard-pin" id="wizard-guest-pin">{{ pin }}</p>
+    <button class="btn setup-wizard-copy" type="button" data-copy="wizard-guest-pin" data-copy-label="{{ t('wizard.guest_link.copy_pin') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_pin') }}</button>
+  </section>
 </div>
-<section class="setup-wizard-message">
-  <h3>{{ t('wizard.guest_link.message_title') }}</h3>
-  <textarea id="wizard-guest-message" readonly rows="3">{{ t('setup_guide.guest_links.snippet', url=permalink, pin=pin) }}</textarea>
-  <button class="btn small" type="button" data-copy="wizard-guest-message" data-copy-label="{{ t('wizard.guest_link.copy_message') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_message') }}</button>
+<section class="setup-wizard-message" aria-labelledby="wizard-message-title">
+  <header class="setup-wizard-message-head">
+    <h3 id="wizard-message-title">{{ t('wizard.guest_link.message_title') }}</h3>
+    <button class="btn setup-wizard-copy" type="button" data-copy="wizard-guest-message" data-copy-label="{{ t('wizard.guest_link.copy_message') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_message') }}</button>
+    {{ help_tip('wizard-message-help', t('wizard.guest_link.message_help')) }}
+  </header>
+  <textarea id="wizard-guest-message" readonly rows="14" aria-labelledby="wizard-message-title">{{ t('wizard.guest_link.message_template', url=permalink, pin=pin, operator_first_name=message_operator_first_name) }}</textarea>
 </section>
 {% endblock %}
 {% block wizard_actions %}

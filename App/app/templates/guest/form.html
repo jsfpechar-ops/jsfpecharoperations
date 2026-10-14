@@ -32,9 +32,9 @@
 
 <div class="g-checkin-main">
 {% if back_url %}
-  <a class="g-back" href="{{ back_url }}">&larr; {{ t('wrong_dates') if can_pick_other and not guest else t('back') }}</a>
+  <a class="g-back" href="{{ back_url }}">{{ t('wrong_dates') if can_pick_other and not guest else t('back') }}</a>
 {% elif can_pick_other %}
-  <a class="g-back" href="{{ pick_url }}">&larr; {{ t('wrong_dates') }}</a>
+  <a class="g-back" href="{{ pick_url }}">{{ t('wrong_dates') }}</a>
 {% endif %}
 
 {% if issues | selectattr('is_error') | list %}
@@ -46,15 +46,6 @@
       {% for issue in issues if issue.is_error %}<li><a href="#{{ issue.field }}">{{ issue.message }}</a></li>{% endfor %}
     </ul>
   </div>
-{% endif %}
-
-{% with why_classes = 'g-card g-why g-fold' %}{% include "guest/_why.html" %}{% endwith %}
-
-{% if apartment.guest_message %}
-<details class="g-card g-host-message g-fold">
-  <summary>{{ t('message_from_host') }}</summary>
-  <p>{{ apartment.guest_message }}</p>
-</details>
 {% endif %}
 
 <form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
@@ -292,6 +283,7 @@
     <button class="g-btn" type="submit">{{ t('submit') }}</button>
   </div>
 </form>
+{% include "guest/_why.html" %}
 </div>
 {% if require_passport %}
 <script>

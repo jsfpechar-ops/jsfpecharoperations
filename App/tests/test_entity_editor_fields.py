@@ -434,7 +434,8 @@ def test_the_entity_forms_keep_their_contract(host):
     expected = {
         "name": ('type="text"', True), "seat": ('type="text"', True),
         "ico": ('type="text"', True), "dic": ('type="text"', False),
-        "contact_email": ('type="email"', True), "contact_phone": ('type="text"', False),
+        "contact_email": ('type="email"', True), "contact_phone": ('type="tel"', False),
+        "contact_phone_country_code": ('type="tel"', False),
         "signature_name": ('type="text"', False), "signature_file": ('type="file"', False),
         "signature_drawn": ('type="hidden"', False),
     }
@@ -570,9 +571,11 @@ def test_entity_lookup_keeps_typed_identity(host):
         })
     page = response.text
     assert response.status_code == 200
-    for typed in ('value="Typed name"', 'value="typed@example.test"', 'value="+420 1"',
+    for typed in ('value="Typed name"', 'value="typed@example.test"',
                   'value="Typed signer"', 'value="CZ04656679"', "Václavské náměstí"):
         assert typed in page, typed
+    assert 'value="+420"' in _tag(page, "contact_phone_country_code")
+    assert 'value="1"' in _tag(page, "contact_phone")
     assert _row(entity_id)["name"] == "Pole s.r.o."
 
 
@@ -694,3 +697,38 @@ def test_entity_and_invoice_editors_fit_every_width(browser_host, live_base):
                 context.close()
         finally:
             browser.close()
+
+
+@pytest.mark.parametrize(
+    "prefix,number,expected",
+    [("+420", "777 000 111", "+420777000111"),
+     ("+49", "15123456789", "+4915123456789"),
+     ("+420", "+44 7700 900123", "+447700900123"),
+     ("+420", "0044 7700 900123", "+447700900123"),
+     ("+420", "", "")],
+)
+def test_country_code_is_saved_in_the_existing_operator_phone(host, prefix, number, expected):
+    entity_id = _entity()
+    response = _post_entity(host, entity_id, {
+        "contact_phone": number, "contact_phone_country_code": prefix,
+    })
+    assert response.status_code == 303
+    assert _row(entity_id)["contact_phone"] == expected
+    if expected:
+        page = host.get(f"/entities?edit={entity_id}&lang=en").text
+        assert 'name="contact_phone_country_code"' in page
+
+
+def test_country_code_create_and_partial_post_preserve_other_fields(host):
+    response = host.post("/entities", data={
+        "name": "Prefix Operator", "seat": "Sample City", "ico": ICO,
+        "contact_email": "prefix@example.test",
+        "contact_phone_country_code": "+421", "contact_phone": "901 234 567",
+    }, follow_redirects=False)
+    assert response.status_code == 303
+    row = db.query_one("SELECT * FROM legal_entity WHERE owner_user_id = ? AND name = ?",
+                       (_owner(), "Prefix Operator"))
+    assert row["contact_phone"] == "+421901234567"
+    response = _post_entity(host, row["id"], {"seat": "Updated city"})
+    assert response.status_code == 303
+    assert _row(row["id"])["contact_phone"] == "+421901234567"

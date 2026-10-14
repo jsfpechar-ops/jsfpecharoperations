@@ -1,6 +1,6 @@
 {% extends "setup_wizard/_layout.html" %}
 {% set values = draft if draft is defined else apartment %}
-{% from "_components.html" import field_label with context %}
+{% from "_components.html" import field_label, help_tip with context %}
 {% macro text_field(name, label, value, help='', optional=false, maxlength=none) %}
   <div class="field">
     {{ field_label(name, label, help, optional) }}
@@ -16,6 +16,7 @@
 {% endfor %}
 <div class="field-label-row police-section-head">
   <h2 class="setup-wizard-section-title">{{ t('setup_guide.reporting.title') }}</h2>
+  {{ help_tip('wizard-police-credentials-help', t('apartment.form.ubyport.no_credentials'), 'https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport') }}
   <a class="btn small police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a>
 </div>
 <p class="setup-wizard-lede">{{ t('setup_guide.reporting.text') }}</p>
@@ -36,8 +37,6 @@
       <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"{% if has_password %} placeholder="••••••••"{% endif %}>
     </div>
   </div>
-  <p class="small muted police-no-credentials">{{ t('apartment.form.ubyport.no_credentials') }}
-    <a href="https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.no_credentials_link') }}</a></p>
   <div class="grid">{{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), values.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}</div>
   <div class="grid two">
     {{ text_field('uby_name', t('automation.facility_name'), values.uby_name, t('apartment.form.ubyport.name_hint'), false, 35) }}
@@ -57,9 +56,9 @@
 {% endblock %}
 {% block wizard_notes %}
 <div class="setup-wizard-note-box setup-wizard-police-notes">
-  <p class="small">{{ t('setup_guide.reporting.wait_now') }}
-    {{ t('setup_guide.reporting.wait_then_manual' if apartment.automation_mode == 'manual' else 'setup_guide.reporting.wait_then_auto', minutes=setup_sweep_minutes) }}</p>
-  <p class="small">{{ t('setup_guide.reporting.wait_deadline') }}
+  <p class="setup-wizard-instruction">{{ t('setup_guide.reporting.wait_now') }}
+    {{ help_tip('wizard-police-wait-help', t('setup_guide.reporting.wait_then_manual' if apartment.automation_mode == 'manual' else 'setup_guide.reporting.wait_then_auto', minutes=setup_sweep_minutes)) }}</p>
+  <p class="setup-wizard-instruction">{{ t('setup_guide.reporting.wait_deadline') }}
     <a href="/guide#manual-filing">{{ t('setup_guide.reporting.wait_by_hand') }}</a></p>
 </div>
 {% endblock %}
