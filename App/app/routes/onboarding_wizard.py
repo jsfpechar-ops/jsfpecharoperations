@@ -245,6 +245,12 @@ def setup_entry(apartment_id: int, request: Request):
         return _back(guide["url"])
     if state and state.get("finished"):
         return _back(f"/apartments/{apartment_id}?view=overview")
+    if state and not state.get("hidden") and not property_setup.wizard_unresolved(
+        ctx["apartment"], state, ctx["wizard_facts"], lock_available=ctx["lock_available"]
+    ):
+        # Recover a wizard left unfinished by the former police-waiting gate.
+        property_setup.finish(apartment_id)
+        return _back(wizard_return_to(apartment_id, "done"))
     return _back(f"/apartments/{apartment_id}/setup/calendar")
 
 

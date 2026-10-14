@@ -552,3 +552,35 @@ def test_waiting_for_police_does_not_skip_other_required_steps(host, monkeypatch
     assert response.status_code == 303
     assert urlparse(response.headers["location"]).path == f"{base}/{missing_step}"
     assert property_setup.load(apt_id)["finished"] is False
+
+
+def test_reopen_setup_finishes_a_previously_blocked_police_wait(host, monkeypatch):
+    """Recover saved state from before waiting was accepted at completion."""
+    from urllib.parse import urlparse
+
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
+    flat = _full_apartment(host)
+    apt_id = flat["id"]
+    db.execute(
+        "UPDATE apartment SET uby_idub = '', uby_ws_password_enc = NULL WHERE id = ?",
+        (apt_id,),
+    )
+    for step, mark in (
+        ("calendar", "skipped"),
+        ("guest_link", "done"),
+        ("try_it", "skipped"),
+        ("police", "waiting"),
+        ("automation", "done"),
+    ):
+        property_setup.mark(apt_id, step, mark)
+    assert property_setup.load(apt_id)["finished"] is False
+    base = f"/apartments/{apt_id}/setup"
+    response = host["client"].get(base, follow_redirects=False)
+    assert response.status_code == 303
+    assert urlparse(response.headers["location"]).path == f"{base}/done"
+    state = property_setup.load(apt_id)
+    assert state["finished"] is True
+    assert state["steps"]["police"] == "waiting"
+    assert not _report_complete(apt_id)
+    page = host["client"].get(response.headers["location"])
+    assert 'class="is-waiting"' in page.text

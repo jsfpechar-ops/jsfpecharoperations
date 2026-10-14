@@ -12,7 +12,8 @@ Both completion blockers are corrected: waiting no longer makes
 wizard_unresolved true, and current no longer selects police again after
 all other steps are answered. Missing credentials without an explicit
 waiting choice still block completion. Reporting readiness and the waiting
-checklist status remain unchanged.
+checklist status remain unchanged. Reopening an already answered wizard left
+unfinished by the former gate now persists completion and shows Done.
 
 ## Verification
 Local execution is unavailable: the managed workspace failed to start
@@ -38,6 +39,7 @@ runs. No merge or production deployment has been performed.
 
 ## Files
 - App/app/property_setup.py
+- App/app/routes/onboarding_wizard.py
 - App/app/templates/setup_wizard/_layout.html
 - App/app/templates/setup_wizard/calendar.html
 - App/app/templates/setup_wizard/try_it.html
