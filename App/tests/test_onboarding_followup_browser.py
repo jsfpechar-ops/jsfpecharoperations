@@ -16,6 +16,13 @@ def _t(lang, key):
     return host_i18n.translate(lang, key)
 
 
+def _ready(page):
+    page.wait_for_load_state("networkidle")
+    later = page.locator("#security-prompt [data-security-prompt-later]")
+    if later.is_visible():
+        later.click()
+
+
 def _fits(page):
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
 
@@ -32,6 +39,7 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": host["client"].cookies.get(auth.SESSION_COOKIE), "url": base + "/"}])
         page = context.new_page()
         page.goto(f"{base}/reservations?range=all&lang={lang}")
+        _ready(page)
         row = page.locator(f'tr[data-href^="/reservations/{stay_id}?"]')
         assert row.locator(".row-open, .stay-portal-link").count() == 0
         assert row.locator('.row-actions > button[data-copy]').count() == 0
@@ -63,15 +71,20 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         _shot(page, f"37-centered-stay-detail-{lang}-{width}.png")
 
         page.goto(f"{base}/reservations?range=all&lang={lang}")
+
+        _ready(page)
         row = page.locator(f'tr[data-href^="/reservations/{stay_id}?"]')
         row.focus()
         page.keyboard.press("Enter")
         page.wait_for_url(f"**/reservations/{stay_id}?**")
         page.goto(f"{base}/reservations?range=all&lang={lang}")
+        _ready(page)
         page.locator(f'tr[data-href^="/reservations/{stay_id}?"] .stay-col-guests').click()
         page.wait_for_url(f"**/reservations/{stay_id}?**")
 
         page.goto(f"{base}/apartments?lang={lang}")
+
+        _ready(page)
         property_row = page.locator(".properties-table tbody .clickable-row").first
         assert property_row.locator(".row-actions > a.btn").count() == 0
         property_row.locator(".row-menu-trigger").click()
@@ -82,6 +95,8 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         page.wait_for_url("**/apartments/*")
 
         page.goto(f"{base}/?lang={lang}")
+
+        _ready(page)
         dashboard_row = page.locator(".dashboard-row").first
         assert dashboard_row.is_visible()
         assert dashboard_row.locator(".dashboard-open").count() == 0
@@ -130,16 +145,19 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         page = context.new_page()
         base = f"{wizard_base}/apartments/{apartment_id}"
         page.goto(f"{base}/setup/guest_link?lang={lang}")
+        _ready(page)
         message = page.locator("#wizard-guest-message").input_value()
         assert current_name in message and "[PROPERTY_NAME]" not in message
         assert "%(" not in message
         page.goto(f"{base}/setup/try_it?lang={lang}")
+        _ready(page)
         assert current_name in page.locator(".setup-demo-bubble").inner_text()
         assert page.locator(".setup-demo-disclaimer").inner_text() == _t(lang, "wizard.try_it.model_note")
         assert page.locator("#demo-message-heading .pill").is_visible()
         _shot(page, f"39-labeled-demo-message-{lang}-{width}.png")
         property_setup.finish(apartment_id)
         page.goto(f"{base}?view=overview&lang={lang}")
+        _ready(page)
         status = page.locator("[data-setup-status]")
         assert status.is_visible()
         assert status.locator(".setup-status-tile").count() == 8
@@ -174,9 +192,11 @@ def test_native_record_links_still_work_without_javascript(stay_actions_host, st
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": host["client"].cookies.get(auth.SESSION_COOKIE), "url": base + "/"}])
         page = context.new_page()
         page.goto(f"{base}/reservations?range=all&lang=en")
+        _ready(page)
         page.locator(f'tr[data-href^="/reservations/{stay_id}?"] .row-primary-link').click()
         page.wait_for_url(f"**/reservations/{stay_id}?**")
         page.goto(f"{base}/apartments?lang=en")
+        _ready(page)
         page.locator(".properties-table .row-primary-link").first.click()
         page.wait_for_url("**/apartments/*")
         context.close()

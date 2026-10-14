@@ -211,7 +211,8 @@ def test_a_complete_property_says_you_can_send_the_guest_link(host):
     page = client.get(f"/apartments/{apartment_id}?lang=en")
 
     assert "You can send the guest link now." in page.text
-    assert "Copy guest link" in page.text
+    assert 'data-copy="overview-guest-url"' in page.text
+    assert ">Copy link</button>" in page.text
     assert "Missing:" not in page.text
 
 

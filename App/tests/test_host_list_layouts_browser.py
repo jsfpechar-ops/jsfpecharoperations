@@ -101,7 +101,7 @@ def test_stays_pills_and_deadlines_stay_on_one_line(stay_actions_host, stay_acti
                 assert len(rows) >= 7
                 for row in rows:
                     assert row["pill"] and row["deadline"], (locale, width, row)
-                    if row["name"] <= 24 and not row["send"] and not (locale == "cs" and width == 1280):  # wrap is allowed where the lane cannot hold Send, the long Czech Copy label, Open and More
+                    if row["name"] <= 24 and not row["send"]:  # short rows stay compact after secondary actions move into the menu
                         assert row["height"] <= 72, (locale, width, row)
                 context.close()
         browser.close()
