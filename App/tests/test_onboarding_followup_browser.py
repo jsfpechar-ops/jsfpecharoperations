@@ -44,6 +44,7 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         assert row.locator(".row-open, .stay-portal-link").count() == 0
         assert row.locator('.row-actions > button[data-copy]').count() == 0
         assert row.locator('button[data-copy]').is_hidden()
+        row.scroll_into_view_if_needed()
         before = row.bounding_box()
         initial = row.evaluate("el => getComputedStyle(el).backgroundColor")
         row.hover()
@@ -51,7 +52,7 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         assert row.evaluate("el => getComputedStyle(el).backgroundColor") != initial
         assert row.locator("td").evaluate_all("cells => cells.every(el => getComputedStyle(el).backgroundColor === 'rgba(0, 0, 0, 0)')")
         after = row.bounding_box()
-        assert all(abs(before[key] - after[key]) <= 1 for key in ("x", "y", "width", "height"))
+        assert all(abs(before[key] - after[key]) <= 1 for key in ("x", "y", "width", "height")), (before, after)
         _fits(page)
         _shot(page, f"36-uniform-stays-hover-{lang}-{width}.png")
 

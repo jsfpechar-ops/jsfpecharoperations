@@ -360,7 +360,8 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 if shots:
                     page.screenshot(path=os.path.join(shots, f"dashboard-hover-{locale}-{width}.png"), full_page=True)
 
-                primary_link.focus()
+                more_action.focus()
+                page.keyboard.press("Shift+Tab")
                 assert primary_link.evaluate("el => el === document.activeElement")
                 assert primary_link.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
                 if shots:
