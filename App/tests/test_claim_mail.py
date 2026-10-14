@@ -146,9 +146,13 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
         assert form.status_code == 200
         assert "Your host" in form.text
         assert "host@claim.test" in form.text
-        assert "A message from your host" in form.text
-        assert "Welcome to Claim Facility." in form.text
-        assert "Please complete this before arrival." in form.text
+        assert "A message from your host" not in form.text
+        assert "Welcome to Claim Facility." not in form.text
+        arrival = browser.get(f"/l/{TOKEN}")
+        assert "A message from your host" in arrival.text
+        assert "Welcome to Claim Facility." in arrival.text
+        assert "Please complete this before arrival." in arrival.text
+        assert '<section class="g-arrival-message"' in arrival.text
         assert "mailto:support@ubyhost.com" not in form.text
     finally:
         _cleanup()
