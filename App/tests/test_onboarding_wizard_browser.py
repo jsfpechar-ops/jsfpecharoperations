@@ -1068,8 +1068,7 @@ def test_full_wizard_clickthrough_keeps_police_and_guest_settings(host, base_url
         page.locator("button[value='done']").click()
         page.wait_for_url("**/setup/try_it**")
         page.locator("form.setup-wizard-skip button[value=skip]").click()
-        page.wait_for_url("**/setup/police**")
-        page.locator('button[form="police-form"]').click()
+        # Police details are already stored, so the wizard moves to the next open step.
         page.wait_for_url("**/setup/stay_fee**")
         page.locator(".setup-wizard-foot form.setup-wizard-skip button").click()
         page.wait_for_url("**/setup/door_lock**")
@@ -1079,13 +1078,88 @@ def test_full_wizard_clickthrough_keeps_police_and_guest_settings(host, base_url
         page.wait_for_url("**/setup/done**")
         page.goto(f"{base_url}/apartments/{apt_id}?view=overview&lang=en")
         overview = page.content()
-        assert POLICE["uby_name"] in overview
-        assert POLICE["uby_mark"] in overview
-        assert "Journey welcome text" in overview or "5" in overview
+        assert _t("en", "property_nav.report_ready") in overview
         stored = db.query_one("SELECT * FROM apartment WHERE id = ?", (apt_id,))
         assert stored["guest_message"] == "Journey welcome text"
         assert stored["passport_photo_policy"] == "required_foreign"
         assert stored["permalink_window_days"] == 5
         assert stored["uby_name"] == POLICE["uby_name"]
         _shot(page, "14-overview-after-journey-en-1280.png")
+        browser.close()
+
+
+def test_wizard_round_screenshots(host, base_url, monkeypatch):
+    """Evidence for the fix round: stored property values, calendar sync error, try_it after Skip."""
+    if not REQUIRE_BROWSER:
+        pytest.skip("browser not required")
+    from app import demo
+
+    bare = db.insert(
+        "apartment",
+        {
+            "internal_name": "Named but no ZIP",
+            "owner_user_id": host["owner"],
+            "legal_entity_id": host["entity"],
+            "city_en": "Brno",
+            "addr_obec": "Brno",
+            "addr_house_no": "9",
+            "addr_street": "Masarykova",
+            "permalink_token": auth.new_permalink_token(),
+            "permalink_pin": auth.new_permalink_pin(),
+            "active": 1,
+            "created_at": db.utcnow(),
+        },
+    )
+    property_setup.start(bare)
+    tried = _create(host)
+    host["client"].post(
+        f"/apartments/{tried['id']}/setup",
+        data={"step": "calendar", "action": "skip"},
+        follow_redirects=False,
+    )
+    host["client"].post(
+        f"/apartments/{tried['id']}/setup",
+        data={"step": "guest_link", "action": "done"},
+        follow_redirects=False,
+    )
+    calendar = _create(host, name="Calendar error flat")
+    monkeypatch.setattr(
+        icalsync,
+        "sync_all",
+        lambda apartment_id=None, owner_user_id=None: {
+            "feeds": 1,
+            "created": 0,
+            "updated": 0,
+            "cancelled": 0,
+            "errors": 1,
+            "not_modified": 0,
+            "unchanged": 0,
+            "changed": 0,
+        },
+    )
+    session = host["client"].cookies.get(auth.SESSION_COOKIE)
+    with sync_api.sync_playwright() as p:
+        browser = p.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(viewport={"width": 1280, "height": 900}, locale="en")
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": session, "url": base_url + "/"}])
+        page = context.new_page()
+        page.goto(f"{base_url}/apartments/{bare}/setup/property?lang=en")
+        assert page.locator("#internal_name").input_value() == "Named but no ZIP"
+        assert page.locator("#addr_street").input_value() == "Masarykova"
+        _shot(page, "15-property-stored-values-en-1280.png")
+        page.goto(f"{base_url}/apartments/{tried['id']}/setup/try_it?lang=en")
+        page.locator("button[value=demo]").click()
+        page.wait_for_url("**/setup/try_it**")
+        assert demo.demo_stay_for(tried["id"])
+        page.locator("form.setup-wizard-skip button[value=skip]").click()
+        page.wait_for_url("**/setup/police**")
+        assert demo.demo_stay_for(tried["id"]) is None
+        _shot(page, "17-try-it-after-skip-en-1280.png")
+        page.goto(f"{base_url}/apartments/{calendar['id']}/setup/calendar?lang=en")
+        page.select_option("#label", "airbnb")
+        page.fill("#url", "https://example.test/calendar.ics")
+        page.locator('button[form="calendar-add"]').click()
+        page.wait_for_url("**/setup/calendar**")
+        assert page.locator("[data-toast-kind=error]").is_visible()
+        _shot(page, "16-calendar-sync-error-en-1280.png")
         browser.close()

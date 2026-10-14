@@ -5,7 +5,7 @@ import secrets
 
 import pytest
 
-from app import auth, config, db, demo, feed_url, host_i18n, icalsync, property_setup, reporting
+from app import auth, config, db, demo, feed_url, icalsync, property_setup
 from app.main import app
 from app.routes import admin as admin_routes
 from tests.conftest import login_as
@@ -77,10 +77,6 @@ STEP_OWNERS = {
     "guest_link": (),
     "try_it": (),
 }
-
-
-def _t(lang, key, **kwargs):
-    return host_i18n.translate(lang, key, **kwargs)
 
 
 @pytest.fixture
@@ -189,7 +185,6 @@ def test_cross_step_guarded_fields_survive_each_wizard_post(host):
     apt_id = flat["id"]
     client = host["client"]
     base = f"/apartments/{apt_id}/setup"
-    baseline = _snapshot(flat)
     assert _report_complete(apt_id)
 
     identity = {

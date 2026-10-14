@@ -1648,7 +1648,6 @@ def _setup_guide_bundle(
 
 def _setup_progress(apartment, feeds, readiness, lock_available: bool) -> Optional[Dict[str, Any]]:
     """0102: compact setup progress for the property Overview card."""
-    report_complete = all(item["done"] for item in readiness["report"])
     bundle = _setup_guide_bundle(
         apartment, feeds=feeds, lock_available=lock_available
     )

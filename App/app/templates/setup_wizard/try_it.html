@@ -22,17 +22,12 @@
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
+  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.delete_continue') }}</button>
 </form>
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="link-button" type="submit" name="action" value="keep_demo" formnovalidate>{{ t('wizard.try_it.keep') }}</button>
-</form>
-<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
-  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="step" value="try_it">
-  <button class="btn primary" type="submit" name="action" value="done">{{ t('wizard.try_it.delete_continue') }}</button>
+  <button class="btn primary" type="submit" name="action" value="keep_demo" formnovalidate>{{ t('wizard.try_it.keep') }}</button>
 </form>
 {% elif demo_state == 'open' %}
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
