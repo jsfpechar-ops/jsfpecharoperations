@@ -325,12 +325,12 @@ def wizard_unresolved(
     *,
     lock_available: bool,
 ) -> bool:
-    """True while a required setup step is still open (police waiting counts)."""
+    """True while a setup step still needs an answer; police may be deferred."""
     for step in STEPS:
         if not step_applicable(step, apartment, lock_available=lock_available):
             continue
         status = step_status(step, state, apartment, facts)
-        if status in ("todo", "current", "waiting"):
+        if status in ("todo", "current"):
             return True
     return False
 
@@ -372,9 +372,6 @@ def current(
             progress.append({"key": step, "state": "current"})
         else:
             progress.append({"key": step, "state": "todo"})
-    if chosen is None and waiting:
-        chosen = STEPS.index("police")
-        progress[chosen] = {"key": "police", "state": "current"}
     if chosen is None:
         return None
     step = STEPS[chosen]

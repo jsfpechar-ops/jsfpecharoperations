@@ -44,21 +44,22 @@
     {{ text_field('uby_contact', t('automation.contact'), values.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
   </div>
 </form>
-<div class="setup-wizard-police-notes">
+{% endblock %}
+{% block wizard_actions %}
+<div class="setup-wizard-actions">
   <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline" id="police-wait-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="hidden" name="step" value="police">
-    <button class="btn ghost setup-wizard-wait" type="submit" name="action" value="wait" formnovalidate>{{ t('setup_guide.reporting.wait') }}</button>
+    <button class="btn setup-wizard-wait" type="submit" name="action" value="wait" formnovalidate>{{ t('setup_guide.reporting.wait') }}</button>
   </form>
-  <div class="setup-wizard-note-box">
-    <p class="small">{{ t('setup_guide.reporting.wait_now') }}
-      {{ t('setup_guide.reporting.wait_then_manual' if apartment.automation_mode == 'manual' else 'setup_guide.reporting.wait_then_auto', minutes=setup_sweep_minutes) }}</p>
-    <p class="small">{{ t('setup_guide.reporting.wait_deadline') }}
-      <a href="/guide#manual-filing">{{ t('setup_guide.reporting.wait_by_hand') }}</a></p>
-  </div>
+  <button class="btn primary" type="submit" form="police-form">{{ t('wizard.save_continue') }}</button>
 </div>
 {% endblock %}
-{% block wizard_actions %}
-<span></span>
-<button class="btn primary" type="submit" form="police-form">{{ t('wizard.save_continue') }}</button>
+{% block wizard_notes %}
+<div class="setup-wizard-note-box setup-wizard-police-notes">
+  <p class="small">{{ t('setup_guide.reporting.wait_now') }}
+    {{ t('setup_guide.reporting.wait_then_manual' if apartment.automation_mode == 'manual' else 'setup_guide.reporting.wait_then_auto', minutes=setup_sweep_minutes) }}</p>
+  <p class="small">{{ t('setup_guide.reporting.wait_deadline') }}
+    <a href="/guide#manual-filing">{{ t('setup_guide.reporting.wait_by_hand') }}</a></p>
+</div>
 {% endblock %}

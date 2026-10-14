@@ -470,3 +470,85 @@ def test_form_return_to_drops_fragment_by_default(host):
         assert urlparse(response.headers["location"]).path == "/smart-locks"
         assert "#" not in response.headers["location"]
 
+
+@pytest.mark.parametrize("lock_available", [False, True])
+@pytest.mark.parametrize("mode", ["manual", "scheduled"])
+@pytest.mark.parametrize("defer_police", [False, True])
+def test_finish_setup_with_police_credentials_deferred(host, monkeypatch, lock_available, mode, defer_police):
+    """Waiting is an explicit answer, while unacknowledged missing credentials block."""
+    from urllib.parse import urlparse
+
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", lock_available)
+    flat = _full_apartment(host)
+    apt_id = flat["id"]
+    db.execute(
+        "UPDATE apartment SET uby_idub = '', uby_ws_user = '', uby_mark = '', "
+        "uby_name = '', uby_ws_password_enc = NULL WHERE id = ?",
+        (apt_id,),
+    )
+    client = host["client"]
+    base = f"/apartments/{apt_id}/setup"
+    actions = [("calendar", "skip"), ("guest_link", "done"), ("try_it", "skip")]
+    if defer_police:
+        actions.extend([("police", "wait"), ("stay_fee", "skip")])
+        if lock_available:
+            actions.append(("door_lock", "skip"))
+    for step, action in actions:
+        response = client.post(base, data={"step": step, "action": action}, follow_redirects=False)
+        assert response.status_code == 303
+    saved = client.post(
+        f"/apartments/{apt_id}/automation-timing",
+        data={
+            "automation_mode": mode,
+            "submit_after_hours": "24",
+            "setup_step": "automation",
+            "return_to": f"{base}/done",
+        },
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    target = urlparse(saved.headers["location"]).path
+    assert target == f"{base}/{'done' if defer_police else 'police'}"
+    assert property_setup.load(apt_id)["finished"] is defer_police
+    assert not _report_complete(apt_id)
+    if defer_police:
+        page = client.get(f"{base}/done?lang=en")
+        assert page.status_code == 200
+        assert 'class="is-waiting"' in page.text
+        assert f'href="{base}/police"' in page.text
+        assert property_setup.load(apt_id)["steps"]["police"] == "waiting"
+        entry = client.get(base, follow_redirects=False)
+        assert urlparse(entry.headers["location"]).path == f"/apartments/{apt_id}"
+        assert client.get(f"{base}/police").status_code == 200
+        assert property_setup.load(apt_id)["finished"] is True
+
+
+@pytest.mark.parametrize("missing_step", ["calendar", "guest_link", "try_it"])
+def test_waiting_for_police_does_not_skip_other_required_steps(host, monkeypatch, missing_step):
+    from urllib.parse import urlparse
+
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
+    flat = _full_apartment(host)
+    apt_id = flat["id"]
+    db.execute(
+        "UPDATE apartment SET uby_idub = '', uby_ws_password_enc = NULL WHERE id = ?",
+        (apt_id,),
+    )
+    for step, mark in (("calendar", "skipped"), ("guest_link", "done"),
+                       ("try_it", "skipped"), ("police", "waiting")):
+        if step != missing_step:
+            property_setup.mark(apt_id, step, mark)
+    base = f"/apartments/{apt_id}/setup"
+    response = host["client"].post(
+        f"/apartments/{apt_id}/automation-timing",
+        data={
+            "automation_mode": "manual",
+            "submit_after_hours": "24",
+            "setup_step": "automation",
+            "return_to": f"{base}/done",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert urlparse(response.headers["location"]).path == f"{base}/{missing_step}"
+    assert property_setup.load(apt_id)["finished"] is False

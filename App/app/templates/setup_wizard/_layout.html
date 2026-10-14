@@ -21,7 +21,7 @@
     {% endif %}
     <form method="post" action="{{ base_setup }}" class="setup-wizard-exit">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <button class="link-button" type="submit" name="action" value="hide" formnovalidate>{{ t('wizard.exit') }}</button>
+      <button class="btn small" type="submit" name="action" value="hide" formnovalidate>{{ t('wizard.exit') }}</button>
     </form>
   </header>
   <div class="setup-wizard-body">
@@ -30,11 +30,12 @@
   </div>
   <footer class="setup-wizard-foot">
     {% if prev_step %}
-    <a class="setup-wizard-back" href="{{ base_setup }}/{{ prev_step }}"><span aria-hidden="true">←</span> {{ t('wizard.back') }}</a>
+    <a class="btn ghost setup-wizard-back" href="{{ base_setup }}/{{ prev_step }}"><span aria-hidden="true">←</span> {{ t('wizard.back') }}</a>
     {% else %}
     <span></span>
     {% endif %}
     {% block wizard_actions %}{% endblock %}
   </footer>
+  {% block wizard_notes %}{% endblock %}
 </div>
 {% endblock %}

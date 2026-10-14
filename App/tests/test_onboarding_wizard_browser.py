@@ -264,8 +264,8 @@ def test_back_from_later_step_reaches_earlier_page(host):
     assert 'data-setup-step="try_it"' in back.text
 
 
-def test_police_waiting_cannot_finish_setup_via_automation(host):
-    """Fix 3: waiting on police must block finish even when automation posts to /done."""
+def test_police_waiting_can_finish_setup_via_automation(host):
+    """An explicit police deferral permits completion without reporting readiness."""
     flat = _create(host)
     client = host["client"]
     base = f"/apartments/{flat['id']}/setup"
@@ -289,9 +289,13 @@ def test_police_waiting_cannot_finish_setup_via_automation(host):
     from urllib.parse import urlparse
 
     path = urlparse(saved.headers["location"]).path
-    assert path.endswith("/setup/police")
+    assert path.endswith("/setup/done")
     state = property_setup.load(flat["id"])
-    assert state and not state["finished"]
+    assert state and state["finished"]
+    assert state["steps"]["police"] == "waiting"
+    page = client.get(saved.headers["location"])
+    assert 'class="is-waiting"' in page.text
+    assert f'href="{base}/police"' in page.text
 
 
 def test_overview_checklist_when_guide_hidden(host):
@@ -1162,4 +1166,87 @@ def test_wizard_round_screenshots(host, base_url, monkeypatch):
         page.wait_for_url("**/setup/calendar**")
         assert page.locator("[data-toast-kind=error]").is_visible()
         _shot(page, "16-calendar-sync-error-en-1280.png")
+        browser.close()
+
+
+@pytest.mark.parametrize("lang", ["en", "cs"])
+@pytest.mark.parametrize("width", [360, 390, 1280])
+def test_deferred_police_journey_without_javascript(host, base_url, monkeypatch, lang, width):
+    """Shared controls fit on phones; waiting finishes and remains visible after reload."""
+    if not REQUIRE_BROWSER:
+        pytest.skip("browser not required")
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
+    flat = _create(host)
+    base = f"{base_url}/apartments/{flat['id']}/setup"
+    session = host["client"].cookies.get(auth.SESSION_COOKIE)
+    with sync_api.sync_playwright() as p:
+        browser = p.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(
+            viewport={"width": width, "height": 900}, locale=lang, java_script_enabled=False
+        )
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": session, "url": base_url + "/"}])
+        page = context.new_page()
+        tag = f"deferred-{lang}-{width}"
+
+        def check_controls():
+            assert page.evaluate(_overflow_js())
+            header = page.locator(".setup-wizard-head h1").bounding_box()
+            exit_button = page.locator(".setup-wizard-exit button").bounding_box()
+            assert header and exit_button
+            assert header["x"] + header["width"] <= exit_button["x"] + 1
+            radius = page.locator(".setup-wizard-foot .btn.primary").evaluate(
+                "(el) => getComputedStyle(el).borderRadius"
+            )
+            controls = page.locator(".setup-wizard-exit button, .setup-wizard-foot .btn")
+            for control in controls.all():
+                assert control.evaluate("(el) => el.classList.contains('btn')")
+                assert control.evaluate("(el) => getComputedStyle(el).borderRadius") == radius
+                box = control.bounding_box()
+                assert box and box["width"] > 0 and box["height"] >= 36
+                assert box["x"] >= 0 and box["x"] + box["width"] <= width + 1
+
+        page.goto(f"{base}/calendar?lang={lang}")
+        check_controls()
+        _shot(page, f"18-calendar-{tag}.png")
+        page.locator(".setup-wizard-skip button").click()
+        page.wait_for_url("**/setup/guest_link**")
+        check_controls()
+        page.locator("button[value=done]").click()
+        page.wait_for_url("**/setup/try_it**")
+        check_controls()
+        _shot(page, f"19-try-it-{tag}.png")
+        page.locator(".setup-wizard-skip button").click()
+        page.wait_for_url("**/setup/police**")
+        check_controls()
+        wait = page.locator(".setup-wizard-foot .setup-wizard-wait")
+        save = page.locator('button[form="police-form"]')
+        assert wait.is_visible() and save.is_visible()
+        wait_box, save_box = wait.bounding_box(), save.bounding_box()
+        assert wait_box and save_box
+        if width == 1280:
+            assert abs(wait_box["y"] - save_box["y"]) <= 1
+            assert wait_box["x"] + wait_box["width"] <= save_box["x"]
+        notes = page.locator(".setup-wizard-police-notes").bounding_box()
+        assert notes and notes["y"] >= save_box["y"] + save_box["height"]
+        _shot(page, f"20-police-{tag}.png")
+        wait.click()
+        page.wait_for_url("**/setup/stay_fee**")
+        check_controls()
+        page.locator(".setup-wizard-skip button").click()
+        page.wait_for_url("**/setup/automation**")
+        check_controls()
+        page.locator('input[value="manual"]').check()
+        page.locator('button[form="automation-form"]').click()
+        page.wait_for_url("**/setup/done**")
+        page.reload()
+        check_controls()
+        assert property_setup.load(flat["id"])["finished"] is True
+        waiting = page.locator(".setup-wizard-checklist .is-waiting")
+        assert waiting.is_visible()
+        assert waiting.locator("a").get_attribute("href") == f"/apartments/{flat['id']}/setup/police"
+        assert _t(lang, "setup_guide.reporting.waiting_item") in page.content()
+        _shot(page, f"21-done-{tag}.png")
+        waiting.locator("a").click()
+        page.wait_for_url("**/setup/police**")
+        assert page.locator("#uby_ws_user").is_visible()
         browser.close()

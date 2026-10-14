@@ -49,7 +49,7 @@
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="door_lock">
-  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.skip') }}</button>
+  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.skip') }}</button>
 </form>
 {% if door_code and door_code.locks %}
 <button class="btn primary" type="submit" form="door-lock-form">{{ t('wizard.save_continue') }}</button>

@@ -22,7 +22,7 @@
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.delete_continue') }}</button>
+  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.delete_continue') }}</button>
 </form>
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -33,17 +33,17 @@
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
+  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
 </form>
 <form method="get" action="/apartments/{{ apartment.id }}/setup/try_it" class="inline">
-  <button class="link-button" type="submit">{{ t('wizard.try_it.check_again') }}</button>
+  <button class="btn" type="submit">{{ t('wizard.try_it.check_again') }}</button>
 </form>
 <a class="btn primary" href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ t('setup_guide.try.open') }}</a>
 {% else %}
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
+  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
 </form>
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">

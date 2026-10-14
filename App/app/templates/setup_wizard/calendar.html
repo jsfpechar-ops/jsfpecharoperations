@@ -38,7 +38,7 @@
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="calendar">
-  <button class="link-button" type="submit" name="action" value="skip" formnovalidate>{{ t('setup_guide.calendar.skip') }}</button>
+  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('setup_guide.calendar.skip') }}</button>
 </form>
 <button class="btn primary" type="submit" form="calendar-add">{{ t('wizard.calendar.add') }}</button>
 {% endblock %}

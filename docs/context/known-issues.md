@@ -93,3 +93,4 @@ Status: open, unverified, decision, accepted.
 
 | K-U15 | Med review | Host forms/navigation | Fixed on staging PR; 0084 (incl. old K-U14 ownership) + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests | [0080](../tasks/0080-report.md) |
+| K-U16 | Review | Wizard | #389 fixes await CI | 0102 |
