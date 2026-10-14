@@ -308,9 +308,10 @@ async def setup_action(apartment_id: int, request: Request):
         return _back(guide["url"] if guide else overview)
     stay = demo.demo_stay_for(apartment_id)
     if step == "try_it" and action == "demo":
-        demo.create_demo_stay(apartment_id)
+        stay_id = demo.create_demo_stay(apartment_id)
         db.audit("property_setup_step", f"apartment={apartment_id} step=try_it action=demo")
-        return _back(wizard_return_to(apartment_id, "try_it"))
+        lang = host_i18n.lang_from_request(request)
+        return _back(f"/l/{ctx['link_key']}/{stay_id}?lang={lang}")
     if step == "try_it" and action == "done" and not (stay and reporting.reservation_progress(stay)["filled"] >= 1):
         return _back(guide["url"])
     if action == "keep_demo":

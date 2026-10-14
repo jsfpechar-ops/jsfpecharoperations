@@ -45,10 +45,11 @@
   <input type="hidden" name="step" value="try_it">
   <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
 </form>
-<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline" target="_blank" rel="noopener" data-wizard-demo>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
   <button class="btn primary" type="submit" name="action" value="demo">{{ t('setup_guide.try.create') }}</button>
 </form>
+<noscript><a class="btn" href="/apartments/{{ apartment.id }}/setup/try_it">{{ t('wizard.try_it.check_again') }}</a></noscript>
 {% endif %}
 {% endblock %}

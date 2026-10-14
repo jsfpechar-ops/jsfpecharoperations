@@ -898,7 +898,7 @@ def test_waiting_hide_show_and_demo_exclusion(host):
     client.post(setup, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
     client.post(setup, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
     opened = client.post(setup, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
-    assert "/setup/try_it" in opened.headers["location"]
+    assert "/l/" in opened.headers["location"]
     from app import demo
 
     assert demo.demo_stay_for(flat["id"])
@@ -1152,7 +1152,13 @@ def test_wizard_round_screenshots(host, base_url, monkeypatch):
         assert page.locator("#addr_street").input_value() == "Masarykova"
         _shot(page, "15-property-stored-values-en-1280.png")
         page.goto(f"{base_url}/apartments/{tried['id']}/setup/try_it?lang=en")
-        page.locator("button[value=demo]").click()
+        with context.expect_page() as demo_tab:
+            page.locator("button[value=demo]").click()
+        demo_page = demo_tab.value
+        demo_page.wait_for_url("**/l/**")
+        demo_page.close()
+        page.bring_to_front()
+        page.reload()
         page.wait_for_url("**/setup/try_it**")
         assert demo.demo_stay_for(tried["id"])
         page.locator("form.setup-wizard-skip button[value=skip]").click()
@@ -1244,9 +1250,111 @@ def test_deferred_police_journey_without_javascript(host, base_url, monkeypatch,
         waiting = page.locator(".setup-wizard-checklist .is-waiting")
         assert waiting.is_visible()
         assert waiting.locator("a").get_attribute("href") == f"/apartments/{flat['id']}/setup/police"
-        assert _t(lang, "setup_guide.reporting.waiting_item") in page.content()
+        assert _t(lang, "wizard.summary.status.waiting") in page.content()
         _shot(page, f"21-done-{tag}.png")
         waiting.locator("a").click()
         page.wait_for_url("**/setup/police**")
         assert page.locator("#uby_ws_user").is_visible()
+        browser.close()
+
+
+
+@pytest.mark.parametrize("lang", ["en", "cs"])
+@pytest.mark.parametrize("width", [360, 390, 1280])
+@pytest.mark.parametrize("javascript", [False, True])
+def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, width, javascript):
+    """Conditional calendar fields, one-click demo, typography and truthful summary cards."""
+    if not REQUIRE_BROWSER:
+        pytest.skip("browser not required")
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
+    flat = _create(host)
+    base = f"{base_url}/apartments/{flat['id']}/setup"
+    session = host["client"].cookies.get(auth.SESSION_COOKIE)
+    with sync_api.sync_playwright() as p:
+        browser = p.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(
+            viewport={"width": width, "height": 900}, locale=lang, java_script_enabled=javascript
+        )
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": session, "url": base_url + "/"}])
+        page = context.new_page()
+        tag = f"{lang}-{width}-{'js' if javascript else 'no-js'}"
+        page.goto(f"{base}/calendar?lang={lang}")
+        other = page.locator("#label_other")
+        assert other.is_hidden()
+        for platform in ("booking", "airbnb", "vrbo", "agoda", "echalupy"):
+            page.select_option("#label", platform)
+            assert other.is_hidden()
+        page.select_option("#label", "other")
+        assert other.is_visible()
+        page.fill("#url", "https://example.test/calendar.ics")
+        page.locator('button[form="calendar-add"]').click()
+        page.locator("#label-other-error").wait_for(state="visible")
+        assert page.locator("#label").input_value() == "other"
+        assert other.is_visible()
+        other.fill("Custom platform")
+        page.select_option("#label", "booking")
+        assert other.is_hidden()
+        _shot(page, f"22-calendar-platform-{tag}.png")
+        page.locator('button[form="calendar-add"]').click()
+        page.wait_for_url("**/setup/guest_link**")
+        feed = db.query_one("SELECT label FROM ical_feed WHERE apartment_id = ?", (flat["id"],))
+        assert feed["label"] == "Booking.com"
+        page.locator("button[value=done]").click()
+        page.wait_for_url("**/setup/try_it**")
+        with context.expect_page() as demo_tab:
+            page.locator("button[value=demo]").click()
+        guest_page = demo_tab.value
+        guest_page.wait_for_url(lambda url: "/l/" in url and "/new" in url)
+        assert "/setup/try_it" in page.url
+        _shot(guest_page, f"23-demo-new-tab-{tag}.png")
+        # Reload the original tab while the guest tab is still open; it stays
+        # on the wizard and shows the demo's current state.
+        page.reload()
+        assert page.locator("form.setup-wizard-skip button[value=skip]").is_visible()
+        assert page.get_by_role("button", name=_t(lang, "wizard.try_it.check_again"), exact=True).is_visible()
+        guest_page.close()
+        page.locator("form.setup-wizard-skip button[value=skip]").click()
+        page.wait_for_url("**/setup/police**")
+        page.locator(".setup-wizard-wait").click()
+        page.wait_for_url("**/setup/stay_fee**")
+        typography = """el => {
+            const s = getComputedStyle(el);
+            return [s.fontFamily, s.fontSize, s.fontWeight, s.lineHeight, s.letterSpacing, s.color];
+        }"""
+        assert page.locator(".setup-wizard-fee-intro").evaluate(typography) == page.locator(
+            ".setup-wizard-head h1"
+        ).evaluate(typography)
+        assert page.evaluate(_overflow_js())
+        _shot(page, f"24-fee-intro-{tag}.png")
+        page.locator(".setup-wizard-skip button").click()
+        page.wait_for_url("**/setup/automation**")
+        page.locator('input[value="manual"]').check()
+        page.locator('button[form="automation-form"]').click()
+        page.wait_for_url("**/setup/done**")
+        cards = page.locator(".setup-wizard-checklist .host-property-card")
+        assert cards.count() == TOTAL
+        assert page.locator(".setup-wizard-checklist .pill.green").count() == 4
+        assert page.locator(".setup-wizard-checklist .pill.grey").count() == 3
+        police = page.locator('[data-setup-summary-step="police"]')
+        assert police.locator(".pill.amber").inner_text() == _t(lang, "wizard.summary.status.waiting")
+        assert police.locator(".pill.green").count() == 0
+        assert police.locator("a").is_visible()
+        assert page.evaluate(_overflow_js())
+        _shot(page, f"25-summary-cards-{tag}.png")
+        page.locator(".setup-wizard-foot .btn.primary").click()
+        page.wait_for_url("**/apartments/*?view=overview**")
+        overview = page.locator(".host-property-grid").first
+        assert overview.get_by_text(_t(lang, "wizard.overview.calendars"), exact=True).is_visible()
+        heights = overview.locator(".host-property-card").evaluate_all(
+            "cards => cards.map(card => card.getBoundingClientRect().height)"
+        )
+        assert max(heights) - min(heights) <= 1, heights
+        guest_card = overview.locator(".host-property-card-static")
+        assert guest_card.locator("button[data-copy]").is_visible()
+        label_box = guest_card.locator("strong").bounding_box()
+        copy_box = guest_card.locator("button[data-copy]").bounding_box()
+        assert label_box and copy_box
+        assert label_box["x"] + label_box["width"] <= copy_box["x"]
+        assert page.evaluate(_overflow_js())
+        _shot(page, f"26-overview-cards-{tag}.png")
         browser.close()

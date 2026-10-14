@@ -584,3 +584,28 @@ def test_reopen_setup_finishes_a_previously_blocked_police_wait(host, monkeypatc
     assert not _report_complete(apt_id)
     page = host["client"].get(response.headers["location"])
     assert 'class="is-waiting"' in page.text
+
+
+def test_demo_action_opens_the_guest_form_and_reuses_its_stay(host):
+    from urllib.parse import urlparse
+    from app import guest_slug
+
+    flat = _full_apartment(host)
+    apt_id = flat["id"]
+    client = host["client"]
+    base = f"/apartments/{apt_id}/setup"
+    client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
+    client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
+    first = client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
+    stay = demo.demo_stay_for(apt_id)
+    assert stay is not None
+    expected = f"/l/{guest_slug.link_key(flat)}/{stay['id']}"
+    assert first.status_code == 303
+    assert urlparse(first.headers["location"]).path == expected
+    opened = client.get(first.headers["location"], follow_redirects=False)
+    assert opened.status_code == 303
+    assert urlparse(opened.headers["location"]).path == expected + "/new"
+    again = client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
+    assert urlparse(again.headers["location"]).path == expected
+    assert demo.demo_stay_for(apt_id)["id"] == stay["id"]
+    assert "try_it" not in property_setup.load(apt_id)["steps"]

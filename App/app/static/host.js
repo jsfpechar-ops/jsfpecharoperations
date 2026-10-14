@@ -101,6 +101,23 @@
     if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
   });
 
+  // The demo form opens its POST response in a new tab. Refresh this step
+  // when the host comes back so the registration result is visible.
+  var wizardDemo = document.querySelector('[data-wizard-demo]');
+  if (wizardDemo) {
+    var demoOpened = false;
+    wizardDemo.addEventListener('submit', function () { demoOpened = true; });
+    function refreshDemo() {
+      if (!demoOpened) return;
+      demoOpened = false;
+      window.location.reload();
+    }
+    window.addEventListener('focus', refreshDemo);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') refreshDemo();
+    });
+  }
+
   var adjustMode = document.getElementById('adjust-mode');
   if (adjustMode) {
     var syncAdjust = function () {

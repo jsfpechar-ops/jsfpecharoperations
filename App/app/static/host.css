@@ -118,7 +118,7 @@
 .host-workspace .guest-card.placeholder { background: #fafbf8; border-style: dashed; }
 .host-workspace .guest-card.placeholder .guest-card-head { border: 0; padding-bottom: 16px; }
 .host-workspace .guest-card-note, .host-workspace .guest-card-action { margin: 12px 20px; }
-.host-property-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
+.host-property-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); grid-auto-rows: 1fr; gap: 12px; margin-bottom: 24px; }
 .host-property-card { background: white; padding: 20px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); text-decoration: none; display: flex; gap: 14px; align-items: center; }
 .host-property-card:hover { border-color: var(--border-strong); background: #fdf6f2; }
 .host-property-card strong { display: block; font-size: 15px; }
@@ -1498,7 +1498,8 @@ body.host-workspace {
 /* 0102 */
 .setup-wizard { max-width: 720px; margin: 0 auto 32px; padding: 0 16px; overflow-x: clip; box-sizing: border-box; width: 100%; }
 .setup-wizard-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 0 12px; margin-bottom: 20px; }
-.setup-wizard-head h1 { grid-column: 1; min-width: 0; margin: 0 0 4px; font-size: 22px; overflow-wrap: anywhere; }
+.setup-wizard-head h1 { grid-column: 1; min-width: 0; margin: 0 0 4px; overflow-wrap: anywhere; }
+.setup-wizard-head h1, .setup-wizard-fee-intro { font-size: 22px; line-height: 1.16; letter-spacing: -.05em; font-weight: 800; color: var(--ink); }
 .setup-wizard-subline { grid-column: 1 / -1; margin: 0 0 10px; color: var(--ink-secondary); }
 .setup-wizard-exit { grid-column: 2; grid-row: 1; margin: 0; }
 .setup-wizard-progress { grid-column: 1 / -1; display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
@@ -1509,6 +1510,9 @@ body.host-workspace {
 .setup-wizard-progress li.is-skipped { background: var(--line); opacity: 0.55; }
 .setup-wizard-body { max-width: 640px; margin: 0 auto; }
 .setup-wizard-lede { margin: 0 0 16px; color: var(--ink-secondary); }
+.setup-wizard-lede.setup-wizard-fee-intro { color: var(--ink); }
+.setup-wizard-form .calendar-other-platform { display: none; }
+.setup-wizard-form:has(select[name="label"] option[value="other"]:checked) .calendar-other-platform { display: block; }
 .setup-wizard-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 24px; max-width: 640px; margin-left: auto; margin-right: auto; }
 .setup-wizard-foot .btn.primary { margin-left: auto; }
 .setup-wizard-skip { margin-right: auto; }
@@ -1532,12 +1536,20 @@ body.host-workspace {
 .setup-wizard-radio-card strong { display: block; }
 .setup-wizard-radio-card small { display: block; color: var(--ink-secondary); margin-top: 4px; }
 .setup-wizard-note-box { margin-top: 12px; padding: 12px; border-radius: 8px; background: var(--surface-alt, #f3f3f0); }
-.setup-wizard-checklist { list-style: none; padding: 0; margin: 0; }
-.setup-wizard-checklist li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.setup-wizard-checklist li.is-waiting { color: var(--amber, #b7791f); }
+.setup-wizard-checklist { list-style: none; padding: 0; margin: 16px 0 0; }
+.setup-wizard-checklist li { min-width: 0; }
+.setup-summary-card { height: 100%; box-sizing: border-box; padding: 16px; gap: 12px; align-items: flex-start; }
+.setup-summary-icon { display: inline-flex; flex: 0 0 auto; color: var(--ink-muted); margin-top: 2px; }
+.setup-summary-icon .nav-icon { color: inherit; }
+.setup-summary-copy { min-width: 0; }
+.setup-summary-copy .pill { margin-top: 8px; white-space: normal; }
+.setup-summary-action { display: block; margin-top: 8px; font-size: 12px; font-weight: 650; }
+.setup-wizard-checklist .is-done .setup-summary-icon { color: var(--status-done-ink); }
+.setup-wizard-checklist .is-waiting .setup-summary-icon { color: var(--amber); }
 .setup-continue-card .actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 10px; }
 .host-property-card-static { cursor: default; text-decoration: none; color: inherit; }
-.host-property-card-actions { margin-top: 8px; }
+.host-property-card-static > div:not(.host-property-card-actions) { min-width: 0; }
+.host-property-card-static > .host-property-card-actions { margin: 0 0 0 auto; flex: 0 0 auto; }
 /* end 0102 */
 
 /* 0098 */

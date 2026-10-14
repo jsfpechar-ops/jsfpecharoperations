@@ -1,20 +1,28 @@
 {% extends "setup_wizard/_layout.html" %}
+{% from "_components.html" import nav_icon with context %}
 {% block wizard_content %}
 <h2 class="setup-wizard-section-title">{{ t('wizard.done.title') }}</h2>
-<ul class="setup-wizard-checklist">
+{% set icons = {'property': 'property', 'calendar': 'calendar', 'guest_link': 'link', 'try_it': 'users', 'police': 'report', 'stay_fee': 'coins', 'door_lock': 'lock', 'automation': 'automation'} %}
+<ul class="setup-wizard-checklist host-property-grid">
   {% for row in checklist %}
-  <li class="is-{{ row.status }}">
-    <span class="setup-wizard-check-mark" aria-hidden="true">{% if row.status == 'done' %}✓{% elif row.status == 'skipped' %}–{% elif row.status == 'waiting' %}…{% else %}○{% endif %}</span>
-    <span>{{ t('wizard.step.' ~ row.key) }}</span>
-    {% if row.status == 'waiting' %}
-    <a href="/apartments/{{ apartment.id }}/setup/police">{{ t('setup_guide.reporting.add_login') }}</a>
-    {% endif %}
+  {% set status = row.status if row.status in ['done', 'skipped', 'waiting'] else 'todo' %}
+  <li class="is-{{ row.status }}" data-setup-summary-step="{{ row.key }}">
+    <div class="host-property-card host-property-card-static setup-summary-card">
+      <span class="setup-summary-icon">{{ nav_icon(icons[row.key]) }}</span>
+      <div class="setup-summary-copy">
+        <strong>{{ t('wizard.summary.' ~ row.key) if row.key in ['calendar', 'try_it'] else t('wizard.step.' ~ row.key) }}</strong>
+        <span class="pill {{ 'green' if status == 'done' else 'amber' if status == 'waiting' else 'grey' }}">
+          {% if status == 'done' %}<span aria-hidden="true">✓</span>{% endif %}
+          {{ t('wizard.summary.status.' ~ status) }}
+        </span>
+        {% if row.status == 'waiting' %}
+        <a class="setup-summary-action" href="/apartments/{{ apartment.id }}/setup/police">{{ t('setup_guide.reporting.add_login') }}</a>
+        {% endif %}
+      </div>
+    </div>
   </li>
   {% endfor %}
 </ul>
-{% if reporting_waiting %}
-<p class="setup-wizard-waiting"><span class="pill amber">{{ t('setup_guide.reporting.waiting_item') }}</span></p>
-{% endif %}
 {% endblock %}
 {% block wizard_actions %}
 <span></span>
