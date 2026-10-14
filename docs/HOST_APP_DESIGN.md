@@ -40,8 +40,8 @@ Do **not** render property shortcuts or saved views in the default rail. Propert
 |---|---|---|
 | Stays landing | **Stays · Police reports · Guest register** | Records tied to stays remain discoverable in one place. `/submissions` and `/housebook` are both one click from Stays. |
 | Stay detail | Guests · Police report, with a direct Invoice action | Guest facts and report state live with the stay. The unused `#money` anchor should not create an empty visual panel. |
-| Properties landing | **Properties · Business & legal details · Guest links · Automation & UbyPort** cross-property links | Business entities may be shared across properties. Each property shows its assigned entity and links to edit it. |
-| Property detail | Bookings · Guest link · Police reporting · Business details · Optional stay fee | Settings are grouped by the property they affect. Technical fields appear only in the relevant section. |
+| Properties landing | **Properties**; **Business & legal details** at `/entities` (also from Settings) | Entities may be shared across properties. Guest links and police timing are per property, not a separate global page. |
+| Property detail | **Calendars** (`#calendars`) · **Guest link** (`#communication`) · **Police reporting** (`#ubyport`, including the web-service credential request) · **Send timing** (`#automation`) · business basics · optional stay fee · address | Settings are grouped by the property they affect. The row menu and Search jump to `#communication` or `#ubyport` on the chosen property. |
 | Invoices | All invoices · Invoice settings | Creation remains a prominent action; settings are one click away. |
 | Stay fees | Period selector; property/group report details | This feature is independent of stay detail and is enabled per property. |
 
@@ -144,9 +144,13 @@ Property detail groups existing sections into readable cards: **Bookings** (feed
 
 The main path is **Add property → connect booking calendar or add a stay manually → prepare guest link → check reporting details → use the app**. Each step has one task, a visible Skip/Later when optional, and a return route. Do not require invoices or stay fees before a first stay. Existing demo-load/reset may remain in onboarding with a conspicuous demo label. A host can return to any setup card from Properties, without losing work or encountering a dead-end success screen.
 
-### Global guest links and automation
+For the host's first flat, **`/setup`** runs a five-step wizard (`welcome` → `name` → `address` → `bookings`; step 5 is completion). `GET /setup` resumes at the first unfinished step (`onboarding.wizard_step()` in `App/app/onboarding.py`). The dashboard onboarding banner links there. Finishing bookings (an active calendar feed or a manual stay) sends the host to that property's police reporting block (`#ubyport`). The address step saves only `addr_*` via `_save_address_only` so a partial wizard POST does not wipe other property fields.
 
-`/guest-links` and `/automation` remain working overviews for multi-property management and old links. They are reached from overview links on the Properties landing page and Search. Each row links to the property's exact setting, so edits occur in context. Keep PIN, resend, automation, test connection, and error details as supported today. Avoid a global “on/off” appearance if settings are per property. Preserve shared-lock account setup, contextual property links and return navigation.
+### Guest links, automation, and legacy URLs
+
+Guest links (permalink, PIN, bilingual message, regenerate) live on each property at **`#communication`**. Police send timing lives at **`#automation`**; UbyPort credentials and the optional web-service credential request letter sit under **`#ubyport`** (hosts can download `GET /apartments/{id}/ws-request.txt`; the Czech letter names data box `ybndqw9`).
+
+**`/guest-links`** and **`/automation`** remain bookmarkable: they 303 to `/apartments/{id}#communication` or `#automation` when the workspace has exactly one property, otherwise to `/apartments`. The old standalone overview templates are removed (brief 0066). Smart locks stay at `/smart-locks`. Keep PIN, regenerate warnings, test connection, and per-property automation as today; there is no global on/off for reporting or guest links.
 
 ## 7. Invoices
 
