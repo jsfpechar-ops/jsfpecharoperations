@@ -352,6 +352,7 @@ def checklist(
     rows: List[Dict[str, str]] = []
     for step in STEPS:
         if step == "door_lock" and not lock_available:
+            rows.append({"key": step, "status": "skipped"})
             continue
         rows.append({"key": step, "status": step_status(step, state, apartment, facts)})
     return rows

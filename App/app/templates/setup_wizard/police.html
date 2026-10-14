@@ -10,6 +10,10 @@
 {% endmacro %}
 {% set police_errors = police_errors or {} %}
 {% block wizard_content %}
+{% if operator_error %}<p class="err-text" role="alert">{{ t(operator_error) }}</p>{% endif %}
+{% for field, message in police_errors.items() %}
+<p class="err-text" id="{{ field }}-error" role="alert">{{ validation_message(message) }}</p>
+{% endfor %}
 <div class="field-label-row police-section-head">
   <h2 class="setup-wizard-section-title">{{ t('setup_guide.reporting.title') }}</h2>
   <a class="btn small police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a>
@@ -24,7 +28,6 @@
   <input type="hidden" name="city_en" value="{{ values.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ values.default_purpose or '10' }}">
   <div class="grid">{{ text_field('uby_idub', 'IDUB', values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
-    {% if police_errors.get('uby_idub') %}<p class="err-text" id="uby_idub-error" role="alert">{{ validation_message(police_errors.uby_idub) }}</p>{% endif %}
   </div>
   <div class="grid two">
     {{ text_field('uby_ws_user', t('automation.login'), values.uby_ws_user, t('apartment.form.ubyport.login_hint')) }}

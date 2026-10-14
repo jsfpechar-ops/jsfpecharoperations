@@ -27,7 +27,7 @@
 <div class="host-property-grid">
   <a class="host-property-card" href="{{ base_url }}?view=bookings#calendars">{{ nav_icon('calendar') }}<div><strong>{{ t('host.bookings') }}</strong>
     <small>{{ tp('apartment.form.calendars_count', feeds | length) }}{% if feed_errors_count %} · {{ t('apartment.form.feed.status.error') }}{% endif %}</small></div><span aria-hidden="true">→</span></a>
-  <div class="host-property-card host-property-card-static">{{ nav_icon('link') }}<div><strong>{{ t('nav.guest_links') }}</strong>
+  <div class="host-property-card host-property-card-static">{{ nav_icon('link') }}<div><strong><a href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ t('nav.guest_links') }}</a></strong>
     <small>{{ t('wizard.guest_link.ready') }}</small>
     <div class="actions" style="margin-top:8px">
       <button class="btn small" type="button" data-copy="overview-guest-url" data-copy-label="{{ t('wizard.guest_link.copy_link') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_link') }}</button>
@@ -49,12 +49,14 @@
 
 {%- set invite_open = (readiness.invite | rejectattr('done') | map(attribute='key') | list) if readiness else [] -%}
 {%- set invite_ok = readiness and (readiness.invite_ready or (setup_finished and invite_open == ['stays'])) -%}
+{%- set wizard_active = setup_progress and not setup_progress.hidden -%}
 {% if setup_finished and readiness and invite_ok and report_missing == 0 %}
 <section class="panel host-setup-complete" aria-label="{{ t('host.setup_details') }}">
   <p class="small"><span class="readiness-mark" aria-hidden="true">✓</span> {{ t('property_nav.setup_complete') }} {{ t('apartment.form.readiness.invite_ready') }}</p>
   {{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}
 </section>
-{% elif setup_finished and readiness %}
+{% endif %}
+{% if readiness and not wizard_active %}
 <section class="panel host-checklist" aria-labelledby="property-readiness-title">
 <h2 id="property-readiness-title" class="property-section-title">{{ t('host.setup_details') }}</h2>
 <section class="readiness">
@@ -71,7 +73,7 @@
     </ul>
     {% if readiness.invite_ready %}
     <p class="readiness-ready">{{ t('apartment.form.readiness.invite_ready') }}</p>
-    {{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}
+    {% if not setup_finished %}{{ copy_inline('readiness-permalink', permalink, t('apartment.form.readiness.copy_link')) }}{% endif %}
     {% endif %}
   </div>
   <div class="readiness-group">

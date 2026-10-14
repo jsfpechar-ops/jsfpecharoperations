@@ -71,7 +71,7 @@ def test_the_nav_numbers_run_one_to_five_without_a_gap(host):
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
     targets = re.findall(r'href="[^"#]*#([^"]+)"', nav)
     # 0094: the business card opens the shared entity editor, not a property anchor.
-    assert targets == ['calendars', 'ubyport', 'stay-fee-settings', 'address']
+    assert targets == ['calendars', 'communication', 'ubyport', 'stay-fee-settings', 'address']
     assert 'href="/entities' in nav
 
 

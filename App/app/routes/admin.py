@@ -1609,6 +1609,42 @@ def _setup_progress(apartment, feeds, readiness, lock_available: bool) -> Option
     }
 
 
+def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]:
+    """Lock editor context for the property page and the setup wizard. One copy."""
+    if not ttlock.allowed_for(apartment["owner_user_id"]):
+        return None
+    account = ttlock.account_for(apartment["owner_user_id"])
+    locks = [
+        {
+            **lock,
+            "used_by": ", ".join(
+                _properties_using_lock(
+                    apartment["owner_user_id"], lock["lock_id"], apartment_id
+                )
+            ),
+        }
+        for lock in (ttlock.locks_of(account) if account else [])
+    ]
+    free_locks = [lock for lock in locks if not lock["used_by"]]
+    selected = next((lock for lock in locks if lock["lock_id"] == apartment["lock_id"]), None)
+    cin, cout = apartment["checkin_hour"], apartment["checkout_hour"]
+    return {
+        "account": account,
+        "locks": locks,
+        "enabled": apartment["lock_provider"] == "ttlock",
+        "lock_id": apartment["lock_id"],
+        "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
+        "checkin_hour": cin,
+        "checkout_hour": cout,
+        "tz_warning": bool(
+            selected and selected["tz_offset_ms"] not in (None, *_PRAGUE_TZ_OFFSETS_MS)
+        ),
+        "overlap": _door_code_hours_overlap(cin, cout),
+        "buffer": config.DOOR_CODE_BUFFER_HOURS,
+        "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
+    }
+
+
 def _render_apartment_detail(
     request: Request,
     apartment: Dict[str, Any],
@@ -1634,41 +1670,7 @@ def _render_apartment_detail(
             (apartment_id,),
         )
     )
-    door_code = None
-    if ttlock.allowed_for(apartment["owner_user_id"]):
-        account = ttlock.account_for(apartment["owner_user_id"])
-        locks = [
-            {
-                **lock,
-                "used_by": ", ".join(
-                    _properties_using_lock(
-                        apartment["owner_user_id"], lock["lock_id"], apartment_id
-                    )
-                ),
-            }
-            for lock in (ttlock.locks_of(account) if account else [])
-        ]
-        free_locks = [lock for lock in locks if not lock["used_by"]]
-        selected = next((lock for lock in locks if lock["lock_id"] == apartment["lock_id"]), None)
-        cin, cout = apartment["checkin_hour"], apartment["checkout_hour"]
-        door_code = {
-            "account": account,
-            "locks": locks,
-            "enabled": apartment["lock_provider"] == "ttlock",
-            "lock_id": apartment["lock_id"],
-            # Offered without a saved choice only when it is the one lock no other
-            # property uses; a lock must never look attached to every property.
-            "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
-            "checkin_hour": cin,
-            "checkout_hour": cout,
-            "tz_warning": bool(
-                selected
-                and selected["tz_offset_ms"] not in (None, *_PRAGUE_TZ_OFFSETS_MS)
-            ),
-            "overlap": _door_code_hours_overlap(cin, cout),
-            "buffer": config.DOOR_CODE_BUFFER_HOURS,
-            "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
-        }
+    door_code = _door_code_context(apartment, apartment_id)
     readiness = _readiness(apartment, entities, issues, has_stays)
     setup_progress = _setup_progress(apartment, feeds, readiness, door_code is not None)
     setup_stored = property_setup.load(apartment_id)
@@ -1706,9 +1708,7 @@ def _render_apartment_detail(
             "calendar_platforms": CALENDAR_PLATFORMS,
             "just_created": request.query_params.get("created") == "1",
             "setup_progress": setup_progress,
-            "setup_finished": not (
-                setup_progress and not setup_progress.get("hidden")
-            ),
+            "setup_finished": bool(setup_stored and setup_stored.get("finished")),
             "setup_hidden": bool(setup_progress and setup_progress.get("hidden")),
             **(extra or {}),
             **_property_view_state(request, extra, lock_available=door_code is not None),
@@ -1795,7 +1795,7 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
 
     Used by the property save; nothing is written.
     """
-    from .onboarding_wizard import render_wizard, wizard_return_to
+    from .onboarding_wizard import render_wizard, wizard_setup_prefix
 
     draft = dict(apartment)
     submitted = _property_draft(form)
@@ -1807,16 +1807,17 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
             draft[key] = submitted[key]
     fee_draft = stay_fee_routes.fee_form_values(form)
     fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
+    account_draft = stay_fee_routes.fee_account_draft(form)
     draft.update(fee_draft)
     return_to = _form_str(form, "return_to")
-    if return_to.startswith(f"/apartments/{apartment['id']}/setup/"):
+    if return_to.startswith(wizard_setup_prefix(apartment["id"])):
         return render_wizard(
             request,
             apartment["id"],
             "stay_fee",
             extra={
                 "draft": draft,
-                "fee_account": stay_fee_routes.fee_account_draft(form),
+                "fee_account": account_draft,
                 "fee_account_error": True,
             },
             status_code=400,
@@ -1836,7 +1837,7 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
         extra={
             "property_view": "settings",
             "settings_section": "reporting",
-            "account": stay_fee_routes.fee_account_draft(form),
+            "account": account_draft,
             "fee_account_error": True,
             "flash_error": _flash(request, "flash.stay_fees.account_invalid"),
             "fee_return_to": stay_fee_routes.fee_return_path(
@@ -1870,58 +1871,111 @@ async def apartment_update(apartment_id: int, request: Request):
     if fee_back:
         return _back(fee_back, msg=_flash(request, "flash.stay_fees.saved"))
     return_to = _form_return_to(form, f"/apartments/{apartment_id}")
-    setup_next = _setup_after_save(request, apartment_id, form, return_to)
-    if setup_next:
-        return _back(setup_next[0], msg=setup_next[1] or msg)
+    wizard_response = _setup_after_save(
+        request, apartment_id, form, return_to, saved_message=msg
+    )
+    if wizard_response is not None:
+        return wizard_response
     return _back(return_to, msg=msg)
 
 
-def _wizard_return_to(apartment_id: int, step: str) -> str:
-    from .onboarding_wizard import wizard_return_to
+def _lock_section_refusal(request: Request, apartment_id: int, form, error_key: str):
+    """A door-lock save that cannot be stored. The wizard stays on its step."""
+    if _form_str(form, "setup_step") == "door_lock":
+        return _wizard_rerender(
+            request,
+            apartment_id,
+            "door_lock",
+            notice=_flash(request, error_key),
+            status_code=400,
+        ), False
+    return _back(
+        f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
+        err=_flash(request, error_key),
+    ), False
 
-    return wizard_return_to(apartment_id, step)
+
+def _wizard_police_format_errors(apartment, payload, password: str) -> Dict[str, str]:
+    """Non-empty police fields that fail the format check. Empty ones stay 'still missing'."""
+    probe = dict(apartment)
+    for field in ("uby_idub", "uby_mark", "uby_name", "uby_contact", "uby_ws_user"):
+        if field in payload:
+            probe[field] = payload[field]
+    probe["uby_ws_password"] = password or (
+        db.decrypt_secret(apartment["uby_ws_password_enc"]) if apartment["uby_ws_password_enc"] else ""
+    )
+    errors: Dict[str, str] = {}
+    for issue in validation.errors_only(validation.validate_apartment(probe)):
+        if issue.field not in ("uby_idub", "uby_mark", "uby_name", "uby_contact"):
+            continue
+        if not (probe.get(issue.field) or "").strip():
+            continue
+        errors.setdefault(issue.field, issue.message)
+    return errors
 
 
-def _setup_after_save(request: Request, apartment_id: int, form, return_to: str) -> Optional[tuple[str, str]]:
-    """0102: a wizard save marks its step and returns to the next setup page."""
-    wizard_prefix = f"/apartments/{apartment_id}/setup"
-    step = _form_str(form, "setup_step")
-    if not return_to.startswith(wizard_prefix):
+def _wizard_rerender(request: Request, apartment_id: int, step: str, *, notice: str = "", status_code: int = 200, extra=None):
+    from .onboarding_wizard import render_wizard
+
+    payload = dict(extra or {})
+    if notice:
+        payload["setup_notice"] = notice
+    return render_wizard(request, apartment_id, step, extra=payload, status_code=status_code)
+
+
+def _setup_after_save(
+    request: Request,
+    apartment_id: int,
+    form,
+    return_to: str,
+    *,
+    saved_message: str = "",
+) -> Optional[Response]:
+    """A wizard save advances only when that step is actually resolved.
+
+    An unresolved step is rendered again with the missing-fields message on the
+    page. Finishing (/done) happens only when no required step is still open.
+    """
+    from .onboarding_wizard import wizard_return_to, wizard_setup_prefix
+
+    if not str(return_to).startswith(wizard_setup_prefix(apartment_id)):
         return None
     stored = property_setup.load(apartment_id)
+    step = _form_str(form, "setup_step")
     if stored and (stored["finished"] or stored["hidden"]):
-        return return_to, ""
+        return _back(return_to, msg=saved_message)
     if step not in property_setup.STEPS:
-        return return_to, ""
+        return _back(return_to, msg=saved_message)
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return None
     feeds = db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
+    issues = _apartment_issues(apartment)
     report_complete = all(
         item["done"]
-        for item in _readiness(
-            apartment, [], _apartment_issues(apartment), bool(feeds), invite=False
-        )["report"]
+        for item in _readiness(apartment, [], issues, bool(feeds), invite=False)["report"]
     )
+    facts_row = _setup_facts(apartment_id)
+    lock_available = ttlock.allowed_for(apartment["owner_user_id"])
+    facts_payload = {
+        "feeds": len(feeds),
+        "stays": facts_row["stays"],
+        "guests_registered": facts_row["guests_registered"],
+        "report_complete": report_complete,
+    }
     if step == "property" and property_setup.property_details_complete(apartment):
         property_setup.mark(apartment_id, step, "done")
     elif step == "police" and report_complete:
         property_setup.mark(apartment_id, step, "done")
-    elif step in ("stay_fee", "door_lock"):
+    elif step == "stay_fee" and int(apartment["stay_fee_rate_czk"] or 0) > 0:
         property_setup.mark(apartment_id, step, "done")
-    if return_to.endswith("/done"):
-        property_setup.mark(apartment_id, "automation", "done")
-        facts_row = _setup_facts(apartment_id)
-        state = _setup_state(
-            apartment, feeds=len(feeds), report_complete=report_complete, stays=facts_row["stays"]
-        ) or property_setup.legacy_state()
-        lock_available = ttlock.allowed_for(apartment["owner_user_id"])
-        facts_payload = {
-            "feeds": len(feeds),
-            "stays": facts_row["stays"],
-            "guests_registered": facts_row["guests_registered"],
-            "report_complete": report_complete,
-        }
+    elif step == "door_lock" and apartment["lock_provider"] == "ttlock":
+        property_setup.mark(apartment_id, step, "done")
+    elif step == "automation":
+        property_setup.mark(apartment_id, step, "done")
+    state = property_setup.load(apartment_id) or property_setup.legacy_state()
+    path = return_to.split("?", 1)[0].rstrip("/")
+    if path.endswith("/done") or step == "automation":
         if property_setup.wizard_unresolved(
             apartment, state, facts_payload, lock_available=lock_available
         ):
@@ -1934,12 +1988,28 @@ def _setup_after_save(request: Request, apartment_id: int, form, return_to: str)
                 stays=facts_row["stays"],
                 guests_registered=facts_row["guests_registered"],
             )
-            if guide:
-                return guide["url"], ""
-            return _wizard_return_to(apartment_id, "police"), ""
+            target = guide["url"] if guide else wizard_return_to(apartment_id, "police")
+            return _back(target)
         property_setup.finish(apartment_id)
-        return return_to, _flash(request, "flash.setup.complete")
-    return return_to, ""
+        return _back(
+            wizard_return_to(apartment_id, "done"),
+            msg=_flash(request, "flash.setup.complete"),
+        )
+    status = property_setup.step_status(step, state, apartment, facts_payload)
+    if status not in ("done", "skipped"):
+        missing = _missing_report_labels(request, issues)
+        if step == "door_lock":
+            notice = _flash(request, "flash.error.door_code_lock")
+        elif missing:
+            notice = _flash(request, "flash.apartments.saved", fields=", ".join(missing))
+        else:
+            notice = _flash(
+                request,
+                "flash.apartments.saved",
+                fields=_host_text(request, f"wizard.step.{step}"),
+            )
+        return _wizard_rerender(request, apartment_id, step, notice=notice)
+    return _back(return_to, msg=saved_message)
 
 
 _ADDRESS_ONLY_FIELDS = (
@@ -1993,6 +2063,16 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         if address_errors:
             return _refuse_apartment_save(request, apartment, form, None, address_errors), False
     password = _form_str(form, "uby_ws_password")
+    if _form_str(form, "setup_step") == "police":
+        police_errors = _wizard_police_format_errors(apartment, payload, password)
+        if police_errors:
+            from .onboarding_wizard import refuse_setup_save
+
+            refused = refuse_setup_save(
+                request, apartment, form, police_errors=police_errors
+            )
+            if refused:
+                return refused, False
     if password:
         payload["uby_ws_password_enc"] = db.encrypt_secret(password)
     pin_raw = _form_str(form, "permalink_pin")
@@ -2024,31 +2104,27 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             ]
             lock_id = _form_str(form, "lock_id")
             if lock_id not in allowed_ids:
-                return _back(
-                    f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
-                    err=_flash(request, "flash.error.door_code_lock"),
-                ), False
+                return _lock_section_refusal(
+                    request, apartment_id, form, "flash.error.door_code_lock"
+                )
             newly_chosen = (
                 apartment["lock_provider"] != "ttlock" or apartment["lock_id"] != lock_id
             )
             if newly_chosen and _properties_using_lock(owner_id, lock_id, apartment_id):
-                return _back(
-                    f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
-                    err=_flash(request, "flash.error.door_code_lock_taken"),
-                ), False
+                return _lock_section_refusal(
+                    request, apartment_id, form, "flash.error.door_code_lock_taken"
+                )
             try:
                 cin = int(_form_str(form, "checkin_hour"))
                 cout = int(_form_str(form, "checkout_hour"))
             except ValueError:
-                return _back(
-                    f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
-                    err=_flash(request, "flash.error.door_code_hours"),
-                ), False
+                return _lock_section_refusal(
+                    request, apartment_id, form, "flash.error.door_code_hours"
+                )
             if not (0 <= cin <= 23 and 0 <= cout <= 23):
-                return _back(
-                    f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
-                    err=_flash(request, "flash.error.door_code_hours"),
-                ), False
+                return _lock_section_refusal(
+                    request, apartment_id, form, "flash.error.door_code_hours"
+                )
             payload.update(
                 {
                     "lock_provider": "ttlock",
@@ -2138,6 +2214,20 @@ async def automation_timing_save(apartment_id: int, request: Request):
         message = _flash(request, key)
         if as_json:
             return JSONResponse({"ok": False, "error": str(message)}, status_code=status)
+        if _form_str(form, "setup_step") == "automation":
+            return _wizard_rerender(
+                request,
+                apartment_id,
+                "automation",
+                notice=message,
+                status_code=status,
+                extra={
+                    "draft": {
+                        "automation_mode": _form_str(form, "automation_mode"),
+                        "submit_after_hours": _form_str(form, "submit_after_hours"),
+                    }
+                },
+            )
         return _back(_PROPERTY_SUMMARIES, err=message)
 
     if not apartment:
@@ -2158,9 +2248,11 @@ async def automation_timing_save(apartment_id: int, request: Request):
     if as_json:
         return JSONResponse({"ok": True, "message": str(message), **values})
     return_to = _form_return_to(form, _PROPERTY_SUMMARIES)
-    setup_next = _setup_after_save(request, apartment_id, form, return_to)
-    if setup_next:
-        return _back(setup_next[0], msg=setup_next[1] or message)
+    wizard_response = _setup_after_save(
+        request, apartment_id, form, return_to, saved_message=message
+    )
+    if wizard_response is not None:
+        return wizard_response
     return _back(return_to, msg=message)
 
 
@@ -2379,8 +2471,9 @@ async def add_feed(apartment_id: int, request: Request):
             feed_errors["url"] = _host_text(request, "flash.error.feed_duplicate", property=already)
     return_to = _form_return_to(form, f"/apartments/{apartment_id}?view=bookings#calendars")
     if feed_errors:
-        if return_to.startswith(f"/apartments/{apartment_id}/setup/"):
-            from .onboarding_wizard import render_wizard
+        from .onboarding_wizard import render_wizard, wizard_setup_prefix
+
+        if return_to.startswith(wizard_setup_prefix(apartment_id)):
 
             return render_wizard(
                 request,

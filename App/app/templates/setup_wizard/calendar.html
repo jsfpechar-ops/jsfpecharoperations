@@ -8,6 +8,7 @@
 <form method="post" action="/apartments/{{ apartment.id }}/feeds" class="setup-wizard-form" id="calendar-add">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="/apartments/{{ apartment.id }}/setup/guest_link">
+  <input type="hidden" name="setup_step" value="calendar">
   <div class="field">
     <label for="label">{{ t('calendar.platform_label') }}</label>
     <select id="label" name="label" required{% if feed_errors.label %} aria-invalid="true"{% endif %}>
