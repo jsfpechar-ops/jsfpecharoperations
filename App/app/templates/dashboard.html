@@ -29,8 +29,8 @@
       </p>
     </div>
     <div class="dashboard-row-actions">
-      <a class="btn dashboard-open" href="/reservations/{{ reservation.id }}?return_to=/">{{ t('dashboard.row.open_stay') }}</a>
       {{ row_menu_begin() }}
+        <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('common.open') }}</a>
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
         {% if reservation.permalink_token %}
         <a class="row-menu-item" href="/l/{{ reservation.permalink_slug or reservation.permalink_token }}/{{ reservation.id }}" target="_blank" rel="noopener" role="menuitem">{{ t('dashboard.row.open_guest_form') }}</a>
@@ -53,7 +53,7 @@
 .host-workspace .host-today-head h1 { margin:3px 0 0; }
 .host-workspace .dashboard-stat { --stat-color:var(--ink-muted); display:flex; align-items:center; gap:12px; min-height:70px; padding:12px 15px; border:1px solid var(--line); border-radius:11px; box-shadow:inset 3px 0 var(--stat-color); color:inherit; background:#fff; text-decoration:none; }
 .host-workspace .dashboard-stat:hover { background:var(--surface-hover); }
-.host-workspace .dashboard-stat:focus-visible, .host-workspace .dashboard-row-property:focus-visible, .host-workspace .dashboard-open:focus-visible, .host-workspace .dashboard-row-actions .row-menu-trigger:focus-visible { outline:3px solid var(--focus-ring); outline-offset:2px; }
+.host-workspace .dashboard-stat:focus-visible, .host-workspace .dashboard-row-property:focus-visible, .host-workspace .dashboard-row-actions .row-menu-trigger:focus-visible { outline:3px solid var(--focus-ring); outline-offset:2px; }
 .host-workspace .dashboard-stat strong { font-size:23px; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
 .host-workspace .dashboard-stat span { font-size:13px; line-height:1.25; font-weight:650; }
 .host-workspace .dashboard-stat::before { content:""; flex:0 0 9px; width:9px; height:9px; border-radius:50%; background:var(--stat-color); }
@@ -71,8 +71,7 @@
 .host-workspace .dashboard-row-property { display:inline-block; margin-top:3px; color:var(--ink); font-size:15px; font-weight:700; text-decoration:none; border-radius:3px; }
 .host-workspace .dashboard-row-task { margin-top:3px; }
 .host-workspace .dashboard-row-task .pill.teal { background:var(--brown-bg); color:var(--brown); border-color:var(--border-strong); }
-.host-workspace .dashboard-row-actions { display:grid; grid-template-columns:auto 42px; justify-content:end; gap:8px; align-items:center; }
-.host-workspace .dashboard-open { width:100%; min-height:42px; justify-content:center; white-space:nowrap; }
+.host-workspace .dashboard-row-actions { display:grid; grid-template-columns:42px; justify-content:end; gap:8px; align-items:center; }
 .host-workspace .dashboard-row-actions .row-menu { width:42px; }
 .host-workspace .dashboard-row-actions .row-menu-trigger { width:42px; min-width:42px; height:42px; min-height:42px; padding:0; }
 @media (max-width:760px) {
@@ -80,13 +79,12 @@
   .host-workspace .dashboard-stat { min-height:62px; padding:10px 11px; gap:9px; }
   .host-workspace .dashboard-stat strong { font-size:21px; }
   .host-workspace .dashboard-row { grid-template-columns:minmax(0,1fr); gap:10px; padding:12px; }
-  .host-workspace .dashboard-row-actions { grid-template-columns:auto 44px; justify-content:end; }
-  .host-workspace .dashboard-open { min-height:44px; }
+  .host-workspace .dashboard-row-actions { grid-template-columns:44px; justify-content:end; }
   .host-workspace .dashboard-row-actions .row-menu { width:44px; }
   .host-workspace .dashboard-row-actions .row-menu-trigger { width:44px; min-width:44px; height:44px; min-height:44px; }
 }
 @media (max-width:380px) {
-  .host-workspace .dashboard-row-actions { grid-template-columns:auto 44px; }
+  .host-workspace .dashboard-row-actions { grid-template-columns:44px; }
   .host-workspace .dashboard-row-dates { gap:5px; }
 }
 </style>

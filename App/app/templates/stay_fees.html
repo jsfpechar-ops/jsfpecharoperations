@@ -2,7 +2,7 @@
 {% set nav = 'stay_fees' %}
 {% block title %}{{ t('stay_fees.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import list_page_header, empty_state with context %}
+{% from "_components.html" import row_menu_begin, row_menu_end, list_page_header, empty_state with context %}
 {#- 0099: no sub-page tabs: fee settings live per property (Settings,
     Reporting & fees); there is no one fee-settings page to link. -#}
 {{ list_page_header(t('stay_fees.title')) }}
@@ -41,7 +41,7 @@
       {% if period.unset %}
       <tr class="clickable-row" data-href="{{ fee_settings_url(apartment.id, fee_return) }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('stay_fees.col.property') }}">
-          <span class="row-primary-link">{{ apartment.internal_name }}</span>
+          <a class="row-primary-link" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ apartment.internal_name }}</a>
           <div class="small muted">{{ apartment.addr_obec or '' }}</div>
         </td>
         {% if fee_list.all_unset %}
@@ -59,7 +59,7 @@
       {% else %}
       <tr class="clickable-row" data-href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('stay_fees.col.property') }}">
-          <span class="row-primary-link">{{ apartment.internal_name }}</span>
+          <a class="row-primary-link" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}">{{ apartment.internal_name }}</a>
           <div class="small muted">{{ apartment.addr_obec or '' }} · {{ t('stay_fees.rate_line', rate=period.rate_czk) }}</div>
         </td>
         <td class="nowrap" data-label="{{ t('stay_fees.col.period') }}">
@@ -87,7 +87,7 @@
             <span class="pill blue">{{ t('stay_fees.status.ready') }}</span>
           {% endif %}
         </td>
-        <td class="nowrap row-actions" data-label=""><a class="btn small" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" aria-label="{{ t('stay_fees.open_report') }}: {{ apartment.internal_name }}">{{ t('stay_fees.open_report') }}</a></td>
+        <td class="nowrap row-actions" data-label="">{{ row_menu_begin() }}<a class="row-menu-item" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" role="menuitem">{{ t('stay_fees.open_report') }}</a>{{ row_menu_end() }}</td>
       </tr>
       {% endif %}
     {% endfor %}

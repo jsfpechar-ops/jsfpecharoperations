@@ -11,7 +11,8 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261003a">
-  <link rel="stylesheet" href="/static/guest.css?v=20261008a">
+  <link rel="stylesheet" href="/static/guest.css?v=20261014-0102c">
+  <link rel="stylesheet" href="/static/skeleton.css?v=20261014-0102c">
 </head>
 <body>
 <a class="skip-link" href="#g-main">{{ t('skip_to_form') }}</a>
@@ -48,12 +49,11 @@
     {% include "guest/_host.html" %}
     <div class="g-page-skeleton" data-page-skeleton role="status" hidden>
       <span class="g-sr-only">{{ t('loading') }}</span>
-      <div aria-hidden="true">
-        <span class="g-skeleton medium"></span>
-        <span class="g-skeleton short"></span>
-        <span class="g-skeleton block"></span>
-        <span class="g-skeleton"></span>
-        <span class="g-skeleton medium"></span>
+      <div class="c05-skel" aria-hidden="true">
+        <div class="c05-skel__row"><span class="c05-skel__bone c05-skel__avatar"></span><div class="c05-skel__lines"><span class="c05-skel__bone c05-skel__line"></span><span class="c05-skel__bone c05-skel__line c05-skel__line--sm"></span></div></div>
+        <span class="c05-skel__bone c05-skel__block c05-skel__block--w95"></span>
+        <span class="c05-skel__bone c05-skel__block c05-skel__block--w80"></span>
+        <span class="c05-skel__bone c05-skel__block c05-skel__block--w60"></span>
       </div>
     </div>
   </main>
@@ -64,7 +64,7 @@
     {% if privacy_url %}<p><a href="{{ privacy_url }}">{{ t('privacy_link') }}</a></p>{% endif %}
   </div>
 </div>
-<script src="/static/skeleton.js?v=20261006a"></script>
+<script src="/static/skeleton.js?v=20261014-0102c"></script>
 {# WP07: signature.js (signature pad, wizard, date of birth, PIN return) runs
    only on the form and the PIN page; those set load_signature_js. #}
 {% if load_signature_js %}<script src="/static/signature.js?v=20261004b"></script>{% endif %}

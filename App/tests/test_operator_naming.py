@@ -291,14 +291,15 @@ def test_the_optional_fields_stay_optional(host):
 
 def test_the_contact_email_explains_where_it_shows(host):
     page = host.get("/entities?lang=en")
-    assert '<div class="hint">Shown to guests as your contact.</div>' in page.text
+    assert 'aria-controls="new_contact-email-help"' in page.text
+    assert 'id="new_contact-email-help" role="tooltip">Shown to guests as your contact.</span>' in page.text
+    assert '<div class="hint">Shown to guests as your contact.</div>' not in page.text
 
 
 def test_the_contact_email_explains_itself_in_czech(host):
     page = host.get("/entities?lang=cs")
-    assert (
-        '<div class="hint">Hostům se zobrazí jako váš kontakt.</div>' in page.text
-    )
+    assert 'aria-controls="new_contact-email-help"' in page.text
+    assert 'id="new_contact-email-help" role="tooltip">Hostům se zobrazí jako váš kontakt.</span>' in page.text
 
 
 def test_the_edit_form_asks_for_the_same_required_fields(host):

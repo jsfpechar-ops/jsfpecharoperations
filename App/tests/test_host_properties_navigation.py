@@ -103,7 +103,7 @@ def test_no_business_and_no_property_states_stay_distinct(host):
     assert ready.count(f'href="/entities?edit={entity_id}&amp;next=/apartments"') == 1
 
 
-def test_list_rows_show_location_setup_calendars_and_an_aligned_open(host):
+def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
     entity_id = _entity()
     first = _property("Byt Alfa", entity_id, addr_obec="Brno", uby_name="UBY-FACILITY",
                       uby_idub="123456789012", uby_mark="UBYX", uby_ws_user="ws-login-x")
@@ -111,7 +111,8 @@ def test_list_rows_show_location_setup_calendars_and_an_aligned_open(host):
     page = host.get("/apartments?lang=en").text
     table = page[page.index('class="table-cards properties-table"'):page.index("</table>")]
     for apartment_id in (first, second):
-        assert f'<a class="btn small" href="/apartments/{apartment_id}">Open</a>' in table
+        assert f'<a class="btn small" href="/apartments/{apartment_id}">Open</a>' not in table
+        assert f'<a class="row-menu-item" href="/apartments/{apartment_id}" role="menuitem">Open</a>' in table
         assert f'href="/apartments/{apartment_id}?view=settings&amp;section=guests#communication"' in table
         assert f'href="/apartments/{apartment_id}?view=settings&amp;section=automation#automation"' in table
     # 0098 (owner): no police/UbyPort value under the name (address, facility

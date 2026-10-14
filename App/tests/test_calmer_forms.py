@@ -117,7 +117,7 @@ def test_more_options_open_when_controller_still_missing(host):
     page = host.get(f"/apartments/{apartment_id}?lang=en").text
     assert '<details class="more-options"' not in page
     assert 'id="permalink_window_days"' in page
-    assert '<a href="#basics">' in page
+    assert "setup-continue-card" in page or '<a href="#basics">' in page
 
 
 def test_one_operator_posts_legal_entity_and_saves(host):
@@ -199,7 +199,7 @@ def test_update_with_blank_guest_message_stores_blank(host):
         follow_redirects=False,
     )
     path = urlparse(created.headers["location"]).path
-    apartment_id = int(path.rstrip("/").split("/")[-1])
+    apartment_id = int(path.strip("/").split("/")[1])
     host.post(
         f"/apartments/{apartment_id}",
         data=_new_payload(guest_message="", internal_name="Calmer Flat", legal_entity_id=operator),

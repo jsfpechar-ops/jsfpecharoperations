@@ -192,10 +192,12 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 copy = ready_row.locator('button[data-copy]')
                 trigger = ready_row.locator(".row-menu-trigger")
                 assert send.is_visible()
-                boxes = [control.bounding_box() for control in (send, copy, trigger)]
+                assert copy.is_hidden()
+                assert ready_row.locator(".row-open").count() == 0
+                boxes = [control.bounding_box() for control in (send, trigger)]
                 expected_height = 44 if width <= 390 else 42
                 assert all(box["height"] >= expected_height - 1 for box in boxes), boxes
-                assert all(abs(box["height"] - expected_height) <= 1 for box in (boxes[0], boxes[2])), boxes
+                assert all(abs(box["height"] - expected_height) <= 1 for box in (boxes[0], boxes[1])), boxes
                 # 0091: actions wrap as whole controls when the lane is narrow, so
                 # they share a row or sit on distinct rows; they never overlap.
                 for i, a in enumerate(boxes):
@@ -208,9 +210,12 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                     ready_source = page.locator(f"#{copy.get_attribute('data-copy')}")
                     ready_link = ready_row.locator('a[href^="/l/"][target="_blank"]').get_attribute("href")
                     page.evaluate("window.scrollTo(0, 0)")
-                    copy.click()
+                    expected_copy = ready_source.input_value()
+                    trigger.click()
+                    menu = page.locator(".row-menu-panel.is-open")
+                    menu.locator("button[data-copy]").click()
                     page.wait_for_function("window.__copyWrites.length === 1")
-                    assert page.evaluate("window.__copyWrites[0]") == ready_source.input_value()
+                    assert page.evaluate("window.__copyWrites[0]") == expected_copy
                     assert page.evaluate("window.__copyWrites[0]").endswith(ready_link)
                     page.locator("body").click(position={"x": 20, "y": 20})
 

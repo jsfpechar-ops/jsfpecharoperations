@@ -127,7 +127,7 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
     client = host["client"]
     reservation_url = f"/reservations/{host['reservation']}"
     detail = client.get(reservation_url + "?lang=en").text
-    assert detail.count("Copy guest form link") >= 2
+    assert detail.count("Copy guest form link") == 1
     assert "Copy guest link for this stay" not in detail
     assert 'data-confirm-message="This item will move to Archived."' in detail
     assert "stay.detail.menu.archive" not in detail
@@ -208,9 +208,10 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         page.set_viewport_size({"width": 1280, "height": 900})
         page.goto(f"{base}/apartments?lang=en")
         row = page.locator(".clickable-row").first
-        before = row.locator("td").first.evaluate("el => getComputedStyle(el).backgroundColor")
+        before = row.evaluate("el => getComputedStyle(el).backgroundColor")
         row.hover()
-        after = row.locator("td").first.evaluate("el => getComputedStyle(el).backgroundColor")
+        page.wait_for_timeout(180)
+        after = row.evaluate("el => getComputedStyle(el).backgroundColor")
         assert before != after
         row.focus()
         assert row.evaluate("el => getComputedStyle(el).outlineStyle") != "none"

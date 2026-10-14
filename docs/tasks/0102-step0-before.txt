@@ -1,0 +1,359 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+___________ test_cross_step_guarded_fields_survive_each_wizard_post ____________
+
+host = {'client': <starlette.testclient.TestClient object at 0x7f5e610a90d0>, 'owner': 1, 'entity': 1}
+
+    def test_cross_step_guarded_fields_survive_each_wizard_post(host):
+        """0A: every wizard post leaves other columns untouched; police stays complete."""
+        flat = _full_apartment(host)
+        apt_id = flat["id"]
+        client = host["client"]
+        base = f"/apartments/{apt_id}/setup"
+        baseline = _snapshot(flat)
+        assert _report_complete(apt_id)
+    
+        identity = {
+            "internal_name": flat["internal_name"],
+            "legal_entity_id": str(host["entity"]),
+            "city_en": flat["city_en"],
+            "default_purpose": flat["default_purpose"],
+        }
+    
+        steps = [
+            (
+                "property",
+                lambda: client.post(
+                    f"/apartments/{apt_id}",
+                    data={
+                        **identity,
+                        **ADDRESS,
+                        "setup_step": "property",
+                        "return_to": f"{base}/calendar",
+                    },
+                    follow_redirects=False,
+                ),
+            ),
+            (
+                "calendar",
+                lambda: client.post(
+                    base,
+                    data={"step": "calendar", "action": "skip"},
+                    follow_redirects=False,
+                ),
+            ),
+            (
+                "guest_link",
+                lambda: client.post(
+                    base,
+                    data={"step": "guest_link", "action": "done"},
+                    follow_redirects=False,
+                ),
+            ),
+            (
+                "try_it",
+                lambda: client.post(
+                    base,
+                    data={"step": "try_it", "action": "skip"},
+                    follow_redirects=False,
+                ),
+            ),
+            (
+                "police",
+                lambda: client.post(
+                    f"/apartments/{apt_id}",
+                    data={
+                        **identity,
+                        "setup_step": "police",
+                        "return_to": f"{base}/stay_fee",
+                        **{k: v for k, v in POLICE.items() if k != "uby_ws_password"},
+                    },
+                    follow_redirects=False,
+                ),
+            ),
+            (
+                "stay_fee",
+                lambda: client.post(
+                    f"/apartments/{apt_id}",
+                    data={
+                        **identity,
+                        "setup_step": "stay_fee",
+                        "return_to": f"{base}/door_lock",
+                        "stay_fee_rate_czk": "50",
+                        "stay_fee_cadence": "monthly",
+                    },
+                    follow_redirects=False,
+                ),
+            ),
+            (
+                "door_lock",
+                lambda: client.post(
+                    f"/apartments/{apt_id}",
+                    data={
+                        **identity,
+                        "setup_step": "door_lock",
+                        "return_to": f"{base}/automation",
+                        "door_code_section": "1",
+                        "door_codes_fields": "1",
+                    },
+                    follow_redirects=False,
+                ),
+            ),
+            (
+                "automation",
+                lambda: client.post(
+                    f"/apartments/{apt_id}/automation-timing",
+                    data={
+                        "automation_mode": "scheduled",
+                        "submit_after_hours": "6",
+                        "setup_step": "automation",
+                        "return_to": f"{base}/done",
+                    },
+                    follow_redirects=False,
+                ),
+            ),
+        ]
+    
+        for step, action in steps:
+            before = _snapshot(db.query_one("SELECT * FROM apartment WHERE id = ?", (apt_id,)))
+            response = action()
+            assert response.status_code in (200, 303, 400), (step, response.status_code)
+            after = _snapshot(db.query_one("SELECT * FROM apartment WHERE id = ?", (apt_id,)))
+>           _assert_unchanged(before, after, step)
+
+tests/test_onboarding_wizard_survival.py:301: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+before = {'uby_idub': '123456789012', 'uby_ws_user': 'UBY-WSsynth', 'uby_name': 'Synthetic Garden', 'uby_mark': 'SYNTH', ...}
+after = {'uby_idub': '', 'uby_ws_user': '', 'uby_name': '', 'uby_mark': '', ...}
+step = 'property'
+
+    def _assert_unchanged(before: dict, after: dict, step: str):
+        owned = set(STEP_OWNERS[step])
+        for key, value in before.items():
+            if key in owned:
+                continue
+>           assert after[key] == value, f"{step} overwrote {key}: {after[key]!r} != {value!r}"
+E           AssertionError: property overwrote uby_idub: '' != '123456789012'
+E           assert '' == '123456789012'
+E             
+E             - 123456789012
+
+tests/test_onboarding_wizard_survival.py:183: AssertionError
+___________ test_property_step_shows_stored_values_and_refused_save ____________
+
+host = {'client': <starlette.testclient.TestClient object at 0x7f5e615c6c00>, 'owner': 2, 'entity': 2}
+
+    def test_property_step_shows_stored_values_and_refused_save(host):
+        """0B: GET shows stored name/address; refused save keeps typed values."""
+        apt_id = db.insert(
+            "apartment",
+            {
+                "internal_name": "Named but no ZIP",
+                "owner_user_id": host["owner"],
+                "legal_entity_id": host["entity"],
+                "city_en": "Brno",
+                "addr_obec": "Brno",
+                "addr_house_no": "9",
+                "addr_street": "Masarykova",
+                "permalink_token": auth.new_permalink_token(),
+                "permalink_pin": auth.new_permalink_pin(),
+                "active": 1,
+                "created_at": db.utcnow(),
+            },
+        )
+        property_setup.start(apt_id)
+        client = host["client"]
+        page = client.get(f"/apartments/{apt_id}/setup/property?lang=en")
+        assert page.status_code == 200
+>       assert 'value="Named but no ZIP"' in page.text
+E       assert 'value="Named but no ZIP"' in '<!doctype html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-wi...tatic/app.js?v=20261013-0100"></script>\n<script src="/static/host.js?v=20261001d" defer></script>\n\n</body>\n</html>'
+E        +  where '<!doctype html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n  <meta name="viewport" content="width=device-wi...tatic/app.js?v=20261013-0100"></script>\n<script src="/static/host.js?v=20261001d" defer></script>\n\n</body>\n</html>' = <Response [200 OK]>.text
+
+tests/test_onboarding_wizard_survival.py:328: AssertionError
+__________________ test_calendar_sync_failure_stays_in_wizard __________________
+
+host = {'client': <starlette.testclient.TestClient object at 0x7f5e5f776ea0>, 'owner': 3, 'entity': 3}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5e5f7771d0>
+
+    def test_calendar_sync_failure_stays_in_wizard(host, monkeypatch):
+        """0C: a failed first sync returns to the wizard calendar step with the error."""
+        flat = _full_apartment(host)
+        apt_id = flat["id"]
+        monkeypatch.setattr(
+            icalsync,
+            "sync_all",
+            lambda apartment_id=None, owner_user_id=None: {
+                "feeds": 1,
+                "created": 0,
+                "updated": 0,
+                "cancelled": 0,
+                "errors": 1,
+                "not_modified": 0,
+                "unchanged": 0,
+                "changed": 0,
+            },
+        )
+        response = host["client"].post(
+            f"/apartments/{apt_id}/feeds",
+            data={
+                "label": "airbnb",
+                "url": "https://example.test/calendar.ics",
+                "return_to": f"/apartments/{apt_id}/setup/guest_link",
+                "setup_step": "calendar",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+>       assert f"/apartments/{apt_id}/setup/" in response.headers["location"]
+E       AssertionError: assert '/apartments/3/setup/' in '/apartments/3?view=bookings&err=Calendar%20added%2C%20but%20it%20couldn%27t%20be%20read.%20See%20the%20alert%20above.#calendars'
+
+tests/test_onboarding_wizard_survival.py:378: AssertionError
+_____________ test_stay_fee_save_skips_door_lock_when_unavailable ______________
+
+host = {'client': <starlette.testclient.TestClient object at 0x7f5e5f7c0f80>, 'owner': 4, 'entity': 4}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5e5f7c1220>
+
+    def test_stay_fee_save_skips_door_lock_when_unavailable(host, monkeypatch):
+        """0D: stay_fee save lands on automation with one redirect when door lock does not apply."""
+        monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
+        flat = _full_apartment(host)
+        apt_id = flat["id"]
+        client = host["client"]
+        base = f"/apartments/{apt_id}/setup"
+        for step, action in (
+            ("calendar", "skip"),
+            ("guest_link", "done"),
+            ("try_it", "skip"),
+            ("police", "wait"),
+        ):
+            client.post(base, data={"step": step, "action": action}, follow_redirects=False)
+        client.post(
+            f"/apartments/{apt_id}",
+            data={
+                "internal_name": flat["internal_name"],
+                "legal_entity_id": str(host["entity"]),
+                "city_en": flat["city_en"],
+                "default_purpose": "10",
+                "setup_step": "police",
+                "return_to": f"{base}/stay_fee",
+                **{k: v for k, v in POLICE.items() if k != "uby_ws_password"},
+            },
+            follow_redirects=False,
+        )
+        saved = client.post(
+            f"/apartments/{apt_id}",
+            data={
+                "internal_name": flat["internal_name"],
+                "legal_entity_id": str(host["entity"]),
+                "city_en": flat["city_en"],
+                "default_purpose": "10",
+                "setup_step": "stay_fee",
+                "return_to": property_setup.wizard_url(apt_id, "automation"),
+                "stay_fee_rate_czk": "50",
+                "stay_fee_cadence": "monthly",
+            },
+            follow_redirects=False,
+        )
+        assert saved.status_code == 303
+        location = saved.headers["location"]
+>       assert location.endswith("/setup/automation")
+E       AssertionError: assert False
+E        +  where False = <built-in method endswith of str object at 0x7f5e60968530>('/setup/automation')
+E        +    where <built-in method endswith of str object at 0x7f5e60968530> = '/apartments/4/setup/automation?msg=Saved.%20Still%20missing%20for%20police%20reporting%3A%20IDUB%2C%20Facility%20abbreviation%2C%20Facility%20name%2C%20Web-service%20login.&toast_kind=warning&toast_sticky=1'.endswith
+
+tests/test_onboarding_wizard_survival.py:429: AssertionError
+______________________ test_try_it_skip_deletes_demo_stay ______________________
+
+host = {'client': <starlette.testclient.TestClient object at 0x7f5e5f75f1d0>, 'owner': 5, 'entity': 5}
+
+    def test_try_it_skip_deletes_demo_stay(host):
+        """0E: Skip removes an open demo stay instead of leaving it behind."""
+        flat = _full_apartment(host)
+        apt_id = flat["id"]
+        client = host["client"]
+        base = f"/apartments/{apt_id}/setup"
+        client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
+        client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
+        client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
+        stay = demo.demo_stay_for(apt_id)
+        assert stay is not None
+        skipped = client.post(base, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
+        assert skipped.status_code == 303
+>       assert demo.demo_stay_for(apt_id) is None
+E       assert <sqlite3.Row object at 0x7f5e5f76a350> is None
+E        +  where <sqlite3.Row object at 0x7f5e5f76a350> = <function demo_stay_for at 0x7f5e61b2fb00>(5)
+E        +    where <function demo_stay_for at 0x7f5e61b2fb00> = demo.demo_stay_for
+
+tests/test_onboarding_wizard_survival.py:449: AssertionError
+___________________ test_refuse_setup_save_ignores_posted_id ___________________
+
+host = {'client': <starlette.testclient.TestClient object at 0x7f5e5f75c440>, 'owner': 6, 'entity': 6}
+
+    def test_refuse_setup_save_ignores_posted_id(host):
+        flat = _full_apartment(host)
+        response = host["client"].post(
+            f"/apartments/{flat['id']}",
+            data={
+                "id": "999",
+                "internal_name": flat["internal_name"],
+                "legal_entity_id": str(host["entity"]),
+                "city_en": flat["city_en"],
+                "setup_step": "police",
+                "return_to": f"/apartments/{flat['id']}/setup/stay_fee",
+                "uby_idub": "12",
+                "uby_ws_user": "x",
+                "uby_mark": "BAD",
+                "uby_name": "Bad",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 400
+>       assert f'value="{flat["id"]}"' not in response.text
+E       assert 'value="6"' not in '<!doctype h...dy>\n</html>'
+E         
+E         'value="6"' is contained here:
+E           ntity_id" value="6">
+E             <input type="hidden" name="city_en" value="Brno">
+E             <input type="hidden" name="default_purpose" value="10">
+E             <div class="grid">
+E             <div class="field">...
+E         
+E         ...Full output truncated (246 lines hidden), use '-vv' to show
+
+tests/test_onboarding_wizard_survival.py:471: AssertionError
+________________ test_form_return_to_drops_fragment_by_default _________________
+
+host = {'client': <starlette.testclient.TestClient object at 0x7f5e5f7c18e0>, 'owner': 7, 'entity': 7}
+
+    def test_form_return_to_drops_fragment_by_default(host):
+        flat = _full_apartment(host)
+        response = host["client"].post(
+            f"/apartments/{flat['id']}/archive",
+            data={"return_to": "/smart-locks#smart-locks-how"},
+            follow_redirects=False,
+        )
+        assert response.status_code in (303, 400, 404)
+        if response.status_code == 303:
+>           assert response.headers["location"] == "/smart-locks"
+E           AssertionError: assert '/smart-locks...art-locks-how' == '/smart-locks'
+E             
+E             - /smart-locks
+E             + /smart-locks?msg=%E2%80%9CGuarded%20Flat%E2%80%9D%20moved%20to%20Archived.%20Its%20history%20is%20kept.#smart-locks-how
+
+tests/test_onboarding_wizard_survival.py:484: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/App/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_onboarding_wizard_survival.py::test_cross_step_guarded_fields_survive_each_wizard_post
+FAILED tests/test_onboarding_wizard_survival.py::test_property_step_shows_stored_values_and_refused_save
+FAILED tests/test_onboarding_wizard_survival.py::test_calendar_sync_failure_stays_in_wizard
+FAILED tests/test_onboarding_wizard_survival.py::test_stay_fee_save_skips_door_lock_when_unavailable
+FAILED tests/test_onboarding_wizard_survival.py::test_try_it_skip_deletes_demo_stay
+FAILED tests/test_onboarding_wizard_survival.py::test_refuse_setup_save_ignores_posted_id
+FAILED tests/test_onboarding_wizard_survival.py::test_form_return_to_drops_fragment_by_default
+7 failed, 1 warning in 1.52s

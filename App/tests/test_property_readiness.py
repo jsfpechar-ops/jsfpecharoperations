@@ -15,7 +15,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, host_i18n
+from app import auth, db, host_i18n, property_setup
 from app.main import app
 from tests.conftest import login_as
 
@@ -138,6 +138,8 @@ def host():
             "created_at": db.utcnow(),
         },
     )
+    property_setup.start(apartment_id)
+    property_setup.finish(apartment_id)
     client = TestClient(app)
     response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
@@ -209,7 +211,8 @@ def test_a_complete_property_says_you_can_send_the_guest_link(host):
     page = client.get(f"/apartments/{apartment_id}?lang=en")
 
     assert "You can send the guest link now." in page.text
-    assert "Copy guest link" in page.text
+    assert 'data-copy="overview-guest-url"' in page.text
+    assert ">Copy link</button>" in page.text
     assert "Missing:" not in page.text
 
 

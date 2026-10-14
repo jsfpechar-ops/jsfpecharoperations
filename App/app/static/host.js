@@ -101,6 +101,37 @@
     if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
   });
 
+  // The demo form opens its POST response in a new tab. Refresh this step
+  // when the host comes back so the registration result is visible.
+  var wizardDemo = document.querySelector('[data-wizard-demo]');
+  if (wizardDemo) {
+    var demoOpened = false;
+    wizardDemo.addEventListener('submit', function () { demoOpened = true; });
+    function refreshDemo() {
+      if (!demoOpened) return;
+      demoOpened = false;
+      window.location.reload();
+    }
+    window.addEventListener('focus', refreshDemo);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') refreshDemo();
+    });
+  }
+
+  document.querySelectorAll('[data-phone-country-code]').forEach(function (input) {
+    function digits(value) { return value.replace(/\D/g, '').slice(0, 3); }
+    input.addEventListener('input', function () { input.value = digits(input.value); });
+    input.addEventListener('paste', function (event) {
+      if (!event.clipboardData) return;
+      event.preventDefault();
+      input.value = digits(event.clipboardData.getData('text'));
+      input.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+    input.addEventListener('keydown', function (event) {
+      if (event.key === '+') event.preventDefault();
+    });
+  });
+
   var adjustMode = document.getElementById('adjust-mode');
   if (adjustMode) {
     var syncAdjust = function () {

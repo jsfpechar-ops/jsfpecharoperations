@@ -2,8 +2,8 @@
    UbyHost is server-rendered: every page arrives complete, so nothing here
    renders content. The only wait a user feels is the gap between a click and
    the next page (a feed sync, a police send, a slow filter). If that gap
-   passes DELAY_MS, the current page's main content is swapped for static
-   placeholder blocks so the click visibly "took". Fast navigations never
+   passes DELAY_MS, the current page's main content is swapped for
+   placeholder cards so the click visibly "took". Fast navigations never
    show it. Opt a link or form out with data-no-skeleton. */
 (function () {
   "use strict";
@@ -84,6 +84,15 @@
     if (isDownload(action)) return;
     start();
   });
+
+  function pauseShimmer() {
+    document.documentElement.classList.toggle("skeleton-paused", document.hidden);
+    document.querySelectorAll(".c05-skel").forEach(function (card) {
+      card.classList.toggle("paused", document.hidden);
+    });
+  }
+  document.addEventListener("visibilitychange", pauseShimmer);
+  pauseShimmer();
 
   // The back button restores this page from the cache with the placeholder
   // still showing, so always start clean.

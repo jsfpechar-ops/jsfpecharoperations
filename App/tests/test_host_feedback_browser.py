@@ -130,7 +130,16 @@ def test_host_copy_feedback_truth_and_geometry(base):
             assert after["y"] + after_scroll == pytest.approx(before_document_y, abs=1), {"before": before, "after": after, "scroll": (before_scroll, after_scroll)}
             assert button.get_attribute("aria-label") == ("Copied" if locale == "en" else "Zkopírováno")
             assert page.locator("[data-feedback-rail] [data-toast]").count() == 0
-            assert page.locator("[data-feedback-live]").inner_text() == ("Copied" if locale == "en" else "Zkopírováno")
+            page.wait_for_function(
+                """() => {
+                  const live = document.querySelector('[data-feedback-live]');
+                  const want = document.documentElement.lang === 'cs' ? 'Zkopírováno' : 'Copied';
+                  return live && live.textContent.trim() === want;
+                }"""
+            )
+            assert page.locator("[data-feedback-live]").inner_text() == (
+                "Copied" if locale == "en" else "Zkopírováno"
+            )
             assert page.evaluate("document.activeElement.id") == "feedback-copy"
             for width in (360, 390, 471, 1280):
                 page.set_viewport_size({"width": width, "height": 900})

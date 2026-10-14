@@ -1,28 +1,8 @@
-"""0096/0100: the guided setup of a property, one step at a time.
+"""0096/0100/0102: guided property setup — wizard pages, one step at a time.
 
-Calendar -> Guest link -> PIN -> Try it out (a demo stay) -> Police reporting
--> Stay fee (optional) -> Door lock (optional, only where door codes exist)
--> Automation.
-
-No schema change: the state is one key in the existing ``settings`` key/value
-table per property, ``property_setup:<id>``, holding JSON
+State lives in ``settings`` key ``property_setup:<id>`` as JSON
 ``{"steps": {"<step>": "done" | "skipped" | "waiting"}, "finished": false,
-"hidden": false, "legacy": false}``. It holds no personal data.
-
-- A new property writes the key on create.
-- 0100: a property without the key (made before 0096) gets the guide too,
-  unless it is already set up (police details complete and stays on the way);
-  the caller decides that from the record and passes ``legacy_state()``.
-  ``legacy`` keeps such a property's Automation counted as done: its sending
-  mode was chosen before the guide existed.
-- A finished guide never returns. ``hidden`` is the host's "Hide setup guide".
-- Police reporting can be marked ``waiting`` (the host is still waiting for the
-  police login). The guide then moves on, but reporting stays unfinished and
-  the guide cannot finish until the police details are complete.
-
-Several steps finish themselves from the real record (a calendar or a stay
-exists, a guest registered through the link, police details are complete, a
-fee rate or a lock is set); the others need the host's own click.
+"hidden": false, "legacy": false}``. No personal data.
 """
 from __future__ import annotations
 
@@ -31,33 +11,73 @@ from typing import Any, Dict, List, Optional
 
 from . import db
 
-STEPS = ("calendar", "guest_links", "pin", "try", "reporting", "fee", "lock", "automation")
-OPTIONAL = frozenset({"fee", "lock"})
-# The calendar has no "Skip" button but a quiet "I'll add stays manually" link;
-# "Try it out" has a quiet "Skip".
-SKIPPABLE = frozenset({"calendar", "try", "fee", "lock"})
-# Steps that teach how the app works. A guest who registered through the link
-# proves the host already did each of them.
-TEACHING = frozenset({"guest_links", "pin", "try"})
-# A Settings save marks these steps done when it was made from the step's own
-# section (the form's return_to says which section was on screen).
-SAVE_SECTIONS = {"fee": "reporting", "lock": "lock", "automation": "automation"}
-# Where each step happens: (view, settings section, anchor).
-LOCATIONS = {
-    "calendar": ("bookings", None, "calendar-connect"),
-    "guest_links": ("overview", None, "property-setup"),
-    "pin": ("overview", None, "property-setup"),
-    "try": ("overview", None, "property-setup"),
-    "reporting": ("settings", "reporting", "ubyport"),
-    "fee": ("settings", "reporting", "stay-fee-settings"),
-    "lock": ("settings", "lock", "door-code"),
-    "automation": ("settings", "automation", "automation"),
-}
+STEPS = (
+    "property",
+    "calendar",
+    "guest_link",
+    "try_it",
+    "police",
+    "stay_fee",
+    "door_lock",
+    "automation",
+)
+TOTAL_STEPS = len(STEPS)
+OPTIONAL = frozenset({"stay_fee", "door_lock"})
+SKIPPABLE = frozenset({"calendar", "try_it", "stay_fee", "door_lock"})
+TEACHING = frozenset({"guest_link", "try_it"})
 MARKS = ("done", "skipped", "waiting")
+
+# Columns each wizard save may write. Hidden passthrough fields on a step form are
+# not listed here, so a partial post cannot blank another step's data.
+STEP_FIELDS: Dict[str, tuple] = {
+    "property": (
+        "internal_name",
+        "city_en",
+        "legal_entity_id",
+        "data_controller_entity_id",
+        "default_purpose",
+        "addr_okres",
+        "addr_obec",
+        "addr_obec_cast",
+        "addr_street",
+        "addr_house_no",
+        "addr_orient_no",
+        "addr_zip",
+    ),
+    "police": ("uby_idub", "uby_mark", "uby_name", "uby_contact", "uby_ws_user"),
+    "stay_fee": (
+        "stay_fee_rate_czk",
+        "stay_fee_cadence",
+        "stay_fee_vs",
+        "stay_fee_authority_name",
+        "stay_fee_authority_address",
+        "stay_fee_authority_contact",
+        "stay_fee_authority_databox",
+        "stay_fee_payee",
+        "stay_fee_instruction",
+        "stay_fee_council_account",
+    ),
+    "door_lock": ("lock_provider", "lock_id", "checkin_hour", "checkout_hour"),
+    "automation": ("automation_mode", "submit_after_hours"),
+}
+
+# Stored JSON from 0096/0100 used older step ids; map them on read.
+_LEGACY_STEP_ALIASES = {
+    "guest_links": "guest_link",
+    "pin": "guest_link",
+    "try": "try_it",
+    "reporting": "police",
+    "fee": "stay_fee",
+    "lock": "door_lock",
+}
 
 
 def _key(apartment_id: int) -> str:
     return f"property_setup:{int(apartment_id)}"
+
+
+def _normalise_step(step: str) -> str:
+    return _LEGACY_STEP_ALIASES.get(step, step)
 
 
 def load(apartment_id: int) -> Optional[Dict[str, Any]]:
@@ -71,12 +91,17 @@ def load(apartment_id: int) -> Optional[Dict[str, Any]]:
     if not isinstance(state, dict):
         return None
     steps = state.get("steps")
+    normalised: Dict[str, str] = {}
+    if isinstance(steps, dict):
+        for key, value in steps.items():
+            step = _normalise_step(key)
+            if step not in STEPS or value not in MARKS:
+                continue
+            if value == "waiting" and step != "police":
+                continue
+            normalised[step] = value
     return {
-        "steps": {
-            key: value
-            for key, value in (steps.items() if isinstance(steps, dict) else [])
-            if key in STEPS and value in MARKS and (value != "waiting" or key == "reporting")
-        },
+        "steps": normalised,
         "finished": bool(state.get("finished")),
         "hidden": bool(state.get("hidden")),
         "legacy": bool(state.get("legacy")),
@@ -84,7 +109,6 @@ def load(apartment_id: int) -> Optional[Dict[str, Any]]:
 
 
 def legacy_state() -> Dict[str, Any]:
-    """The state of a property made before the guide, until it is first saved."""
     return {"steps": {}, "finished": False, "hidden": False, "legacy": True}
 
 
@@ -104,16 +128,15 @@ def _save(apartment_id: int, state: Dict[str, Any]) -> None:
 
 
 def start(apartment_id: int) -> None:
-    """A new property: the guide starts at the calendar."""
     _save(apartment_id, {"steps": {}, "finished": False})
 
 
 def mark(apartment_id: int, step: str, value: str) -> None:
-    """Record a step. The caller has checked the guide is on that step."""
+    step = _normalise_step(step)
     state = load(apartment_id) or legacy_state()
     if state["finished"] or step not in STEPS or value not in MARKS:
         return
-    if value == "waiting" and step != "reporting":
+    if value == "waiting" and step != "police":
         return
     state["steps"][step] = value
     _save(apartment_id, state)
@@ -134,29 +157,182 @@ def finish(apartment_id: int) -> None:
         _save(apartment_id, state)
 
 
-def url(apartment_id: int, step: str) -> str:
-    view, section, anchor = LOCATIONS[step]
-    query = f"view={view}" + (f"&section={section}" if section else "")
-    return f"/apartments/{int(apartment_id)}?{query}#{anchor}"
+def wizard_url(apartment_id: int, step: str) -> str:
+    return f"/apartments/{int(apartment_id)}/setup/{step}"
+
+
+def next_step(step: str) -> Optional[str]:
+    step = _normalise_step(step)
+    if step not in STEPS:
+        return None
+    index = STEPS.index(step)
+    if index + 1 >= len(STEPS):
+        return "done"
+    return STEPS[index + 1]
+
+
+def prev_step(step: str) -> Optional[str]:
+    step = _normalise_step(step)
+    if step not in STEPS:
+        return None
+    index = STEPS.index(step)
+    if index <= 0:
+        return None
+    return STEPS[index - 1]
+
+
+def step_applicable(step: str, apartment, *, lock_available: bool) -> bool:
+    step = _normalise_step(step)
+    if step == "property" and property_details_complete(apartment):
+        return False
+    if step == "door_lock" and not lock_available:
+        return False
+    return step in STEPS
+
+
+def next_applicable_step(
+    step: str,
+    apartment,
+    *,
+    lock_available: bool,
+) -> Optional[str]:
+    """Next wizard step that exists for this property, or ``done`` after the last."""
+    step = _normalise_step(step)
+    if step not in STEPS:
+        return None
+    index = STEPS.index(step)
+    for nxt in STEPS[index + 1 :]:
+        if step_applicable(nxt, apartment, lock_available=lock_available):
+            return nxt
+    return "done"
+
+
+def prev_applicable_step(
+    step: str,
+    apartment,
+    *,
+    lock_available: bool,
+) -> Optional[str]:
+    """Previous wizard step that exists for this property (for Back links)."""
+    step = _normalise_step(step)
+    if step not in STEPS:
+        return None
+    index = STEPS.index(step)
+    for prior in reversed(STEPS[:index]):
+        if step_applicable(prior, apartment, lock_available=lock_available):
+            return prior
+    return None
+
+
+def may_view_step(
+    step: str,
+    guide: Optional[Dict[str, Any]],
+    state: Dict[str, Any],
+    apartment,
+    facts: Dict[str, Any],
+    *,
+    lock_available: bool,
+) -> bool:
+    """Whether GET /setup/{step} may render (Back, or revisiting a done step)."""
+    step = _normalise_step(step)
+    if step not in STEPS:
+        return False
+    if not step_applicable(step, apartment, lock_available=lock_available):
+        return False
+    if not guide:
+        return True
+    current = guide["key"]
+    current_idx = STEPS.index(current)
+    step_idx = STEPS.index(step)
+    if step_idx < current_idx:
+        return True
+    if step_idx > current_idx:
+        return False
+    if step_status(step, state, apartment, facts) in ("done", "skipped", "waiting"):
+        return True
+    return step == current
+
+
+def property_details_complete(apartment) -> bool:
+    return bool(
+        (apartment["internal_name"] or "").strip()
+        and apartment["legal_entity_id"]
+        and (apartment["addr_obec"] or "").strip()
+        and (apartment["addr_house_no"] or "").strip()
+        and (apartment["addr_zip"] or "").strip()
+    )
 
 
 def _resolved(step: str, state: Dict[str, Any], apartment, facts: Dict[str, Any]) -> bool:
     marks = state["steps"]
+    if step == "property":
+        return property_details_complete(apartment) or step in marks
     if step == "calendar":
         return facts["feeds"] > 0 or facts["stays"] > 0 or step in marks
     if step in TEACHING:
-        return step in marks or bool(facts["guests_registered"])
-    if step == "reporting":
-        # Only complete police details finish it. "Waiting" moves the guide
-        # on but never counts as done.
+        if facts.get("guests_registered"):
+            return True
+        return step in marks
+    if step == "police":
         return bool(facts["report_complete"])
-    if step == "fee":
+    if step == "stay_fee":
         return step in marks or int(apartment["stay_fee_rate_czk"] or 0) > 0
-    if step == "lock":
+    if step == "door_lock":
         return step in marks or apartment["lock_provider"] == "ttlock"
     if step == "automation":
         return step in marks or bool(state.get("legacy"))
     return step in marks
+
+
+def step_status(
+    step: str,
+    state: Dict[str, Any],
+    apartment,
+    facts: Dict[str, Any],
+) -> str:
+    """done | skipped | waiting | todo | current — for checklist and progress."""
+    marks = state["steps"]
+    if step == "police" and marks.get("police") == "waiting" and not facts["report_complete"]:
+        return "waiting"
+    if marks.get(step) == "skipped":
+        return "skipped"
+    if _resolved(step, state, apartment, facts):
+        return "done"
+    return "todo"
+
+
+def done_count(
+    state: Dict[str, Any],
+    apartment,
+    facts: Dict[str, Any],
+    *,
+    lock_available: bool = True,
+) -> int:
+    total = 0
+    for step in STEPS:
+        if step == "door_lock" and not lock_available:
+            total += 1
+            continue
+        if step_status(step, state, apartment, facts) in ("done", "skipped"):
+            total += 1
+    return total
+
+
+def wizard_unresolved(
+    apartment,
+    state: Dict[str, Any],
+    facts: Dict[str, Any],
+    *,
+    lock_available: bool,
+) -> bool:
+    """True while a setup step still needs an answer; police may be deferred."""
+    for step in STEPS:
+        if not step_applicable(step, apartment, lock_available=lock_available):
+            continue
+        status = step_status(step, state, apartment, facts)
+        if status in ("todo", "current"):
+            return True
+    return False
 
 
 def current(
@@ -169,52 +345,62 @@ def current(
     stays: int = 0,
     guests_registered: bool = False,
 ) -> Optional[Dict[str, Any]]:
-    """The step the host is on, or ``None`` when there is no guide to show."""
+    """The wizard step the host should see, or None when setup is complete."""
     if not state or state["finished"] or state.get("hidden"):
         return None
-    steps = [step for step in STEPS if step != "lock" or lock_available]
     facts = {
         "feeds": feeds,
         "stays": stays,
         "guests_registered": guests_registered,
         "report_complete": report_complete,
     }
-    waiting = state["steps"].get("reporting") == "waiting" and not report_complete
+    waiting = state["steps"].get("police") == "waiting" and not report_complete
     progress: List[Dict[str, str]] = []
     chosen: Optional[int] = None
-    for index, step in enumerate(steps):
-        if _resolved(step, state, apartment, facts):
-            progress.append({"key": step, "state": "done"})
-        elif step == "reporting" and waiting:
+    for index, step in enumerate(STEPS):
+        if step == "door_lock" and not lock_available:
+            progress.append({"key": step, "state": "done" if _resolved(step, state, apartment, facts) else "skipped"})
+            continue
+        status = step_status(step, state, apartment, facts)
+        if status in ("done", "skipped"):
+            progress.append({"key": step, "state": "done" if status == "done" else "skipped"})
+        elif step == "police" and waiting:
             progress.append({"key": step, "state": "waiting"})
+            continue
         elif chosen is None:
             chosen = index
             progress.append({"key": step, "state": "current"})
         else:
             progress.append({"key": step, "state": "todo"})
-    if chosen is None and waiting:
-        # Everything else is done: the guide comes back to the police login.
-        chosen = steps.index("reporting")
-        progress[chosen]["state"] = "current"
     if chosen is None:
         return None
-    step = steps[chosen]
-    view, section, anchor = LOCATIONS[step]
+    step = STEPS[chosen]
     return {
         "key": step,
         "number": chosen + 1,
-        "total": len(steps),
+        "total": TOTAL_STEPS,
         "optional": step in OPTIONAL,
         "skippable": step in SKIPPABLE,
-        "view": view,
-        "section": section,
-        "anchor": anchor,
-        "url": url(apartment["id"], step),
+        "url": wizard_url(apartment["id"], step),
         "progress": progress,
-        # Police reporting was put off: shown at the top of the guide until done.
         "reporting_waiting": waiting,
-        "reporting_url": url(apartment["id"], "reporting"),
-        # A property from before the guide keeps opening on Overview, with its
-        # checklist; only a new property opens on the step it is on.
+        "police_url": wizard_url(apartment["id"], "police"),
         "legacy": bool(state.get("legacy")),
+        "done_count": done_count(state, apartment, facts, lock_available=lock_available),
     }
+
+
+def checklist(
+    state: Dict[str, Any],
+    apartment,
+    facts: Dict[str, Any],
+    *,
+    lock_available: bool,
+) -> List[Dict[str, str]]:
+    rows: List[Dict[str, str]] = []
+    for step in STEPS:
+        if step == "door_lock" and not lock_available:
+            rows.append({"key": step, "status": "skipped"})
+            continue
+        rows.append({"key": step, "status": step_status(step, state, apartment, facts)})
+    return rows

@@ -24,10 +24,13 @@ def test_host_loading_copy_in_both_languages():
     assert host_i18n.translate("cs", "a11y.loading") == "Načítá se…"
 
 
-def test_skeleton_styles_do_not_loop():
-    css = (APP_DIR / "static" / "components.css").read_text(encoding="utf-8")
+def test_requested_skeleton_has_motion_and_accessibility_guards():
+    css = (APP_DIR / "static" / "skeleton.css").read_text(encoding="utf-8")
     assert ".page-skeleton" in css
-    assert "infinite" not in css
+    assert ".c05-skel__bone" in css
+    assert "prefers-reduced-motion:reduce" in css
+    assert "animation:none!important" in css
+    assert "animation-play-state:paused" in css
 
 
 def test_skeleton_script_is_served():

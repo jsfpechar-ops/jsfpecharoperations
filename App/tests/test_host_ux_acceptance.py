@@ -761,7 +761,7 @@ def test_without_javascript_tabs_reload_and_the_shared_editors_save(acc, base):
         page.locator('#entity-business button[type="submit"]').last.click()
         page.wait_for_load_state()
         assert f"/apartments/{p1}" in page.url, page.url
-        assert db.query_one("SELECT contact_phone FROM legal_entity WHERE id = ?", (e1,))["contact_phone"] == "+420 600 084 084"
+        assert db.query_one("SELECT contact_phone FROM legal_entity WHERE id = ?", (e1,))["contact_phone"] == "+420600084084"
         # Invoice details too.
         page.goto(f"{base}/entities?edit={e1}&next=/apartments/{p1}&lang=en")
         page.locator('#entity-invoice input[name="invoice_due_days"]').fill("21")

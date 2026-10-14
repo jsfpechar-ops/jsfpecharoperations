@@ -1,3 +1,4 @@
+{% from "_components.html" import help_tip with context %}
 {#- Task 0075: the one definition of a business's identity, contact and
     signature fields, used by the entity editor (create and edit) and, for the
     IČO lookup only, by invoice settings. Import "with context".
@@ -8,7 +9,7 @@
 
 {% macro register_messages(ares_error=none, ares_note=none, ares_vat_found=false) %}
   {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
-  {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
+  {% if ares_note %}<p class="entity-register-note">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
   {% if ares_vat_found %}<p class="hint">{{ t('ares.vat_found') }}</p>{% endif %}
 {% endmacro %}
 
@@ -47,15 +48,24 @@
   </div>
   <div class="grid">
     <div class="field">
-      <label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>
+      <div class="field-label-row"><label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>{{ help_tip(prefix ~ 'contact-email-help', t('entities.email_hint')) }}</div>
       <input type="email" id="{{ prefix }}contact_email" name="contact_email" required
              value="{{ (entity.contact_email or '') if entity else '' }}">
-      <div class="hint">{{ t('entities.email_hint') }}</div>
     </div>
     <div class="field">
       <label for="{{ prefix }}contact_phone">{{ t('entities.phone') }} <span class="opt">{{ t('common.optional') }}</span></label>
-      <input type="text" id="{{ prefix }}contact_phone" name="contact_phone"
-             value="{{ (entity.contact_phone or '') if entity else '' }}">
+      {% set phone = phone_form_parts((entity.contact_phone or '') if entity else '') %}
+      <div class="operator-phone">
+        <span class="operator-phone-prefix">
+          <span aria-hidden="true">+</span>
+          <input type="text" class="operator-phone-code" id="{{ prefix }}contact_phone_country_code"
+                 name="contact_phone_country_code" value="{{ phone.code | replace('+', '') }}" inputmode="numeric"
+                 autocomplete="tel-country-code" maxlength="3" pattern="[1-9][0-9]{0,2}"
+                 aria-label="{{ t('entities.phone_country_code') }}" data-phone-country-code>
+        </span>
+        <input type="tel" class="operator-phone-number" id="{{ prefix }}contact_phone" name="contact_phone"
+               autocomplete="tel-national" inputmode="tel" value="{{ phone.number }}">
+      </div>
     </div>
   </div>
 {% endmacro %}
@@ -101,7 +111,7 @@
     <p class="small">{{ t('entities.register_lookup.uses', ico=ico) }}</p>
     <button class="btn" type="submit" name="fill_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
     {% else %}
-    <p class="small muted">{{ t('entities.register_lookup.needs_ico') }} <a href="#entity-business">{{ t('entities.section.business') }} →</a></p>
+    <p class="small muted">{{ t('entities.register_lookup.needs_ico') }} <a href="#entity-business">{{ t('entities.section.business') }} </a></p>
     {% endif %}
     {{ register_messages(ares_error, ares_note, ares_vat_found) }}
   </div>

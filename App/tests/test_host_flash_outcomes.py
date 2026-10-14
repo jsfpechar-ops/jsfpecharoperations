@@ -199,9 +199,10 @@ def test_browser_renders_saved_warning_as_sticky_amber(host, browser_base):
         data={"internal_name": "Warning property", "legal_entity_id": host.operator_id, "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
         follow_redirects=False,
     )
-    apartment_path = urlparse(created.headers["location"]).path
+    created_path = urlparse(created.headers["location"]).path
+    apartment_id = int(created_path.split("/")[2])
     saved = host.post(
-        apartment_path,
+        f"/apartments/{apartment_id}",
         data={"internal_name": "Warning property", "legal_entity_id": host.operator_id, "addr_obec": "Praha", "addr_house_no": "12", "addr_zip": "11000"},
         follow_redirects=False,
     )

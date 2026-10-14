@@ -21,7 +21,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth, config, db
+from app import auth, config, db, property_setup
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
@@ -149,6 +149,8 @@ def host(monkeypatch):
         "lock_provider": "ttlock", "lock_id": LOCK["lock_id"], "checkin_hour": 15, "checkout_hour": 10,
         "active": 1, "created_at": now,
     })
+    property_setup.start(apartment)
+    property_setup.finish(apartment)
     db.insert("lock_account", {"owner_user_id": owner, "provider": "ttlock", "username": "synthetic_nav",
                                "status": "ok", "locks_json": json.dumps([LOCK]), "created_at": now, "updated_at": now})
     client = TestClient(app)
@@ -194,7 +196,7 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     assert "<details" not in content.replace('<details class="fee-setup-section">', "")
     assert "message-template" not in content and "copy_message" not in content
     overview = content[content.index('data-property-view="overview"'):content.index('data-property-view="bookings"')]
-    assert "<form" not in overview and "<input" not in overview.replace('id="readiness-permalink"', "")
+    assert "property-settings-form" not in overview and 'id="calendar-add"' not in overview
 
 
 def test_view_and_section_are_sanitized_presentation_choices(host):
@@ -302,7 +304,7 @@ def test_overview_cards_point_at_the_canonical_editors(host):
     html = _page(host, "?lang=en")
     overview = html[html.index('data-property-view="overview"'):html.index('data-property-view="bookings"')]
     base = f"/apartments/{host['apartment']}"
-    for href in (f"{base}?view=bookings#calendars", f"{base}?view=settings&amp;section=guests#communication",
+    for href in (f"{base}?view=bookings#calendars",
                  f"{base}?view=settings&amp;section=reporting#ubyport", f"/entities?edit={host['entities'][0]}&amp;next={base}",  # 0076: returns here
                  f"{base}?view=settings&amp;section=reporting#stay-fee-settings",
                  f"{base}?view=settings&amp;section=property#address", f"{base}?view=settings&amp;section=lock#door-code"):
@@ -516,18 +518,22 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
             page.fill(f"#{field}", value)
         page.locator(".property-create-actions .btn.primary").click()
         page.wait_for_load_state()
-        assert "view=bookings" in page.url and page.url.endswith("#calendar-connect")
-        # 0096: the setup guide's first step is only the calendar form, with one
-        # quiet way past it; no "What next?" box.
+        assert "/setup/calendar" in page.url
         assert not page.locator(".property-first-use").count()
-        assert page.locator("#property-setup").is_visible()
+        assert page.locator("[data-setup-wizard]").is_visible()
         assert page.locator("#calendar-add #label").is_visible()
         assert page.locator("#calendar-add #url").is_visible()
-        assert page.evaluate(_STATE_JS)["visibleViews"] == ["bookings"]
-        _shot(page, "created-bookings-1280-en")
-        page.locator(".property-setup-skip .link-button").click()
+        _shot(page, "created-wizard-calendar-1280-en")
+        page.locator(".setup-wizard-skip .link-button").click()
+        page.wait_for_url("**/setup/guest_link**")
+        page.locator("button[value='done']").click()
+        page.wait_for_url("**/setup/try_it**")
+        page.locator("button[value='skip']").click()
+        import re
+
+        aid = re.search(r"/apartments/(\d+)/", page.url).group(1)
+        page.goto(f"{base}/apartments/{aid}?view=bookings&lang=en")
         page.wait_for_load_state()
-        assert page.evaluate(_STATE_JS)["visibleViews"] == ["overview"]
         # Adding a stay by hand stays one tab away once the calendar step is done.
         page.locator('.property-tabs a[data-property-tab="bookings"]').click()
         manual = page.locator(".property-view.is-active a", has_text="Add stay manually")

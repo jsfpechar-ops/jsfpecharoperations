@@ -24,7 +24,7 @@
   </form>
 {% endmacro %}
 
-<a class="back-link" href="/stay-fees?month={{ month_key }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.back') }}</a>
+<a class="back-link" href="/stay-fees?month={{ month_key }}"> {{ t('stay_fees.back') }}</a>
 {% include "_list_filter.html" %}
 {% set actions %}
   {% if frozen %}

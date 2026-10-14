@@ -6,7 +6,7 @@ import secrets
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, validation
+from app import auth, db, property_setup, validation
 from app.main import app
 from app.routes import admin as admin_routes
 from app.host_i18n import STRINGS
@@ -44,6 +44,11 @@ def _entity(**overrides):
     }
     data.update(overrides)
     return db.insert("legal_entity", data)
+
+
+def _finish_setup(apartment_id: int) -> None:
+    property_setup.start(apartment_id)
+    property_setup.finish(apartment_id)
 
 
 def _valid_apartment_fields(entity_id: int, **overrides):
@@ -166,6 +171,7 @@ def test_create_applies_defaults_from_login_and_operator(host):
 def test_readiness_still_requires_the_facility_name(host):
     entity_id = _entity()
     apartment_id = db.insert("apartment", _valid_apartment_fields(entity_id, uby_name=""))
+    _finish_setup(apartment_id)
     page = host.get(f"/apartments/{apartment_id}?lang=en")
     assert page.status_code == 200, page.text
     assert 'name="uby_name" value=""' in page.text
@@ -213,6 +219,7 @@ def test_property_page_shows_mark_error_when_abbreviation_missing(host):
         "apartment",
         _valid_apartment_fields(entity_id, uby_mark="", uby_ws_user="uby-tws1ab45"),
     )
+    _finish_setup(apartment_id)
     page = host.get(f"/apartments/{apartment_id}?lang=en")
     assert page.status_code == 200, page.text
     assert "The facility abbreviation (zkratka) is required." in page.text

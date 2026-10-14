@@ -180,9 +180,11 @@ def test_the_wizard_script_reads_the_step_title_from_the_step():
     assert ": progressText;" in source
 
 
-def test_the_explainer_is_folded_on_the_form():
+def test_the_explainer_is_closed_below_the_form():
     page = _form("en")
-    assert 'class="g-card g-why g-fold"' in page
+    assert '<details class="g-card g-why">' in page
+    assert page.index('<details class="g-card g-why">') > page.index("</form>")
+    assert '<details class="g-card g-why" open' not in page
 
 
 def test_the_other_guest_pages_keep_the_full_explainer():
@@ -196,15 +198,18 @@ def test_the_other_guest_pages_keep_the_full_explainer():
     assert 'class="g-card g-why g-fold"' not in page.text
 
 
-def test_the_host_message_is_a_closed_disclosure_that_still_shows_the_message():
+def test_the_host_message_is_full_on_arrival_and_absent_while_filling():
     page = _form("en")
-    assert '<details class="g-card g-host-message g-fold">' in page
-    assert '<details class="g-card g-host-message g-fold" open' not in page
-    assert "A message from your host" in page
-    assert "Park in bay 4." in page
-    assert "Keys are in the lockbox." in page
-    # It is no longer an always-open card with an ALL-CAPS kicker.
-    assert '<p class="g-question-kicker">A message from your host</p>' not in page
+    assert "g-host-message" not in page
+    assert "Park in bay 4." not in page
+    browser = TestClient(app)
+    arrival = browser.get(f"/l/{TOKEN}?lang=en")
+    assert arrival.status_code == 200
+    assert '<section class="g-arrival-message"' in arrival.text
+    assert '<h3 id="host-message-title">A message from your host</h3>' in arrival.text
+    assert "Park in bay 4." in arrival.text
+    assert "Keys are in the lockbox." in arrival.text
+    assert '<details class="g-arrival-message"' not in arrival.text
 
 
 def test_a_host_without_a_message_gets_no_empty_fold():
