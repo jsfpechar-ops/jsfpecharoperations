@@ -1580,7 +1580,9 @@ def _setup_progress(apartment, feeds, readiness, lock_available: bool) -> Option
     if state.get("hidden"):
         return {
             "hidden": True,
-            "done": property_setup.done_count(state, apartment, facts_payload),
+            "done": property_setup.done_count(
+                state, apartment, facts_payload, lock_available=lock_available
+            ),
             "total": property_setup.TOTAL_STEPS,
             "continue_url": property_setup.wizard_url(apartment["id"], "calendar"),
         }
@@ -1605,17 +1607,6 @@ def _setup_progress(apartment, feeds, readiness, lock_available: bool) -> Option
         "reporting_waiting": guide.get("reporting_waiting"),
         "hidden": False,
     }
-
-
-def _setup_progress_for(request: Request, apartment_id: int) -> Optional[Dict[str, Any]]:
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return None
-    feeds = db.query(
-        "SELECT id FROM ical_feed WHERE apartment_id = ? ORDER BY id", (apartment_id,)
-    )
-    readiness = _readiness(apartment, [], _apartment_issues(apartment), False, invite=False)
-    return _setup_progress(apartment, feeds, readiness, ttlock.allowed_for(apartment["owner_user_id"]))
 
 
 def _render_apartment_detail(
@@ -1715,7 +1706,9 @@ def _render_apartment_detail(
             "calendar_platforms": CALENDAR_PLATFORMS,
             "just_created": request.query_params.get("created") == "1",
             "setup_progress": setup_progress,
-            "setup_finished": setup_progress is None and bool(setup_stored and setup_stored.get("finished")),
+            "setup_finished": not (
+                setup_progress and not setup_progress.get("hidden")
+            ),
             "setup_hidden": bool(setup_progress and setup_progress.get("hidden")),
             **(extra or {}),
             **_property_view_state(request, extra, lock_available=door_code is not None),
@@ -1774,7 +1767,13 @@ def _refuse_apartment_save(
     }
     from .onboarding_wizard import refuse_setup_save
 
-    wizard = refuse_setup_save(request, apartment, form, address_errors=address_errors or {})
+    wizard = refuse_setup_save(
+        request,
+        apartment,
+        form,
+        address_errors=address_errors or {},
+        operator_error=operator_error,
+    )
     if wizard:
         return wizard
     return _render_apartment_detail(
@@ -1796,6 +1795,8 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
 
     Used by the property save; nothing is written.
     """
+    from .onboarding_wizard import render_wizard, wizard_return_to
+
     draft = dict(apartment)
     submitted = _property_draft(form)
     for field in APARTMENT_TEXT_FIELDS:
@@ -1807,20 +1808,14 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
     fee_draft = stay_fee_routes.fee_form_values(form)
     fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
     draft.update(fee_draft)
-    from .onboarding_wizard import render_wizard
-
     return_to = _form_str(form, "return_to")
     if return_to.startswith(f"/apartments/{apartment['id']}/setup/"):
-        fee_draft = stay_fee_routes.fee_form_values(form)
-        fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
-        merged = dict(apartment)
-        merged.update(fee_draft)
         return render_wizard(
             request,
             apartment["id"],
             "stay_fee",
             extra={
-                "draft": merged,
+                "draft": draft,
                 "fee_account": stay_fee_routes.fee_account_draft(form),
                 "fee_account_error": True,
             },
@@ -1881,6 +1876,12 @@ async def apartment_update(apartment_id: int, request: Request):
     return _back(return_to, msg=msg)
 
 
+def _wizard_return_to(apartment_id: int, step: str) -> str:
+    from .onboarding_wizard import wizard_return_to
+
+    return wizard_return_to(apartment_id, step)
+
+
 def _setup_after_save(request: Request, apartment_id: int, form, return_to: str) -> Optional[tuple[str, str]]:
     """0102: a wizard save marks its step and returns to the next setup page."""
     wizard_prefix = f"/apartments/{apartment_id}/setup"
@@ -1896,14 +1897,46 @@ def _setup_after_save(request: Request, apartment_id: int, form, return_to: str)
     if not apartment:
         return None
     feeds = db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
-    readiness = _readiness(apartment, [], _apartment_issues(apartment), bool(feeds), invite=False)
-    report_complete = all(item["done"] for item in readiness["report"])
-    if step == "police" and report_complete:
+    report_complete = all(
+        item["done"]
+        for item in _readiness(
+            apartment, [], _apartment_issues(apartment), bool(feeds), invite=False
+        )["report"]
+    )
+    if step == "property" and property_setup.property_details_complete(apartment):
+        property_setup.mark(apartment_id, step, "done")
+    elif step == "police" and report_complete:
         property_setup.mark(apartment_id, step, "done")
     elif step in ("stay_fee", "door_lock"):
         property_setup.mark(apartment_id, step, "done")
     if return_to.endswith("/done"):
         property_setup.mark(apartment_id, "automation", "done")
+        facts_row = _setup_facts(apartment_id)
+        state = _setup_state(
+            apartment, feeds=len(feeds), report_complete=report_complete, stays=facts_row["stays"]
+        ) or property_setup.legacy_state()
+        lock_available = ttlock.allowed_for(apartment["owner_user_id"])
+        facts_payload = {
+            "feeds": len(feeds),
+            "stays": facts_row["stays"],
+            "guests_registered": facts_row["guests_registered"],
+            "report_complete": report_complete,
+        }
+        if property_setup.wizard_unresolved(
+            apartment, state, facts_payload, lock_available=lock_available
+        ):
+            guide = property_setup.current(
+                apartment,
+                state,
+                feeds=len(feeds),
+                report_complete=report_complete,
+                lock_available=lock_available,
+                stays=facts_row["stays"],
+                guests_registered=facts_row["guests_registered"],
+            )
+            if guide:
+                return guide["url"], ""
+            return _wizard_return_to(apartment_id, "police"), ""
         property_setup.finish(apartment_id)
         return return_to, _flash(request, "flash.setup.complete")
     return return_to, ""

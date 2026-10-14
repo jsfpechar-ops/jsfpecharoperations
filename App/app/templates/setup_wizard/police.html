@@ -8,6 +8,7 @@
            {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}>
   </div>
 {% endmacro %}
+{% set police_errors = police_errors or {} %}
 {% block wizard_content %}
 <div class="field-label-row police-section-head">
   <h2 class="setup-wizard-section-title">{{ t('setup_guide.reporting.title') }}</h2>
@@ -22,7 +23,9 @@
   <input type="hidden" name="legal_entity_id" value="{{ values.legal_entity_id }}">
   <input type="hidden" name="city_en" value="{{ values.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ values.default_purpose or '10' }}">
-  <div class="grid">{{ text_field('uby_idub', 'IDUB', values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}</div>
+  <div class="grid">{{ text_field('uby_idub', 'IDUB', values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
+    {% if police_errors.get('uby_idub') %}<p class="err-text" id="uby_idub-error" role="alert">{{ validation_message(police_errors.uby_idub) }}</p>{% endif %}
+  </div>
   <div class="grid two">
     {{ text_field('uby_ws_user', t('automation.login'), values.uby_ws_user, t('apartment.form.ubyport.login_hint')) }}
     <div class="field">

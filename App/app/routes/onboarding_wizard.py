@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, Request
 
@@ -17,7 +18,6 @@ router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 _SETUP_ACTIONS = {
     "skip": property_setup.SKIPPABLE,
     "done": property_setup.TEACHING,
-    "keep": frozenset({"automation"}),
     "wait": frozenset({"police"}),
     "demo": frozenset({"try_it"}),
     "keep_demo": frozenset({"try_it"}),
@@ -26,6 +26,11 @@ _SETUP_MARKS = {"skip": "skipped", "wait": "waiting"}
 
 
 def _wizard_step_path(apartment_id: int, step: str) -> str:
+    return property_setup.wizard_url(apartment_id, step)
+
+
+def wizard_return_to(apartment_id: int, step: str) -> str:
+    """The return_to target after a wizard step save."""
     return property_setup.wizard_url(apartment_id, step)
 
 
@@ -71,7 +76,9 @@ def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]
     }
 
 
-def _wizard_context(request: Request, apartment_id: int, step: str, extra: Optional[Dict[str, Any]] = None):
+def _wizard_context(
+    request: Request, apartment_id: int, step: str, extra: Optional[Dict[str, Any]] = None
+) -> Tuple[Optional[Dict[str, Any]], Optional[Any]]:
     admin_routes = _admin_helpers()
     apartment = admin_routes._ensure_apartment_pin(access.apartment(request, apartment_id))
     if not apartment:
@@ -86,6 +93,12 @@ def _wizard_context(request: Request, apartment_id: int, step: str, extra: Optio
     )
     report_complete = all(item["done"] for item in readiness["report"])
     facts = admin_routes._setup_facts(apartment_id)
+    facts_payload = {
+        "feeds": len(feeds),
+        "stays": facts["stays"],
+        "guests_registered": facts["guests_registered"],
+        "report_complete": report_complete,
+    }
     state = admin_routes._setup_state(
         apartment, feeds=len(feeds), report_complete=report_complete, stays=facts["stays"]
     )
@@ -136,14 +149,20 @@ def _wizard_context(request: Request, apartment_id: int, step: str, extra: Optio
         "reporting_waiting": bool(
             state and state["steps"].get("police") == "waiting" and not report_complete
         ),
-        "checklist": property_setup.checklist(state or property_setup.legacy_state(), apartment, {
-            "feeds": len(feeds),
-            "stays": facts["stays"],
-            "guests_registered": facts["guests_registered"],
-            "report_complete": report_complete,
-        }, lock_available=lock_available) if step == "done" else [],
-        "prev_step": property_setup.prev_step(step),
+        "wizard_facts": facts_payload,
+        "checklist": property_setup.checklist(
+            state or property_setup.legacy_state(),
+            apartment,
+            facts_payload,
+            lock_available=lock_available,
+        )
+        if step == "done"
+        else [],
+        "prev_step": property_setup.prev_applicable_step(
+            step, apartment, lock_available=lock_available
+        ),
         "next_step": property_setup.next_step(step),
+        "entities": access.entities(request),
         "nav": "apartments",
         "show_nav": True,
     }
@@ -167,6 +186,13 @@ def render_wizard(
     return render(request, template, ctx, status_code=status_code)
 
 
+def _step_from_wizard_return_to(return_to: str) -> str:
+    path = urlsplit(return_to or "").path
+    if "/setup/" not in path:
+        return ""
+    return path.rstrip("/").split("/")[-1]
+
+
 def refuse_setup_save(
     request: Request,
     apartment: Dict[str, Any],
@@ -175,18 +201,45 @@ def refuse_setup_save(
     police_errors: Optional[Dict[str, str]] = None,
     address_errors: Optional[Dict[str, str]] = None,
     fee_account_error: bool = False,
+    operator_error: Optional[str] = None,
 ):
-    return_to = _form_str(form, "return_to")
-    step = ""
-    if "/setup/" in return_to:
-        step = return_to.rstrip("/").split("/")[-1]
+    step = _step_from_wizard_return_to(_form_str(form, "return_to"))
     if step not in property_setup.STEPS:
         return None
     draft = dict(apartment)
     for key in form.keys():
-        if key in draft or key.startswith(("uby_", "addr_", "stay_fee", "account_", "automation", "door_", "lock", "checkin", "checkout", "internal_name", "legal_entity", "city_en", "default_purpose")):
-            draft[key] = _form_str(form, key) if key != "legal_entity_id" else int(_form_str(form, key) or 0) or apartment.get("legal_entity_id")
-    extra = {"draft": draft, "police_errors": police_errors or {}, "address_errors": address_errors or {}, "fee_account_error": fee_account_error}
+        if key in draft or key.startswith(
+            (
+                "uby_",
+                "addr_",
+                "stay_fee",
+                "account_",
+                "automation",
+                "door_",
+                "lock",
+                "checkin",
+                "checkout",
+                "internal_name",
+                "legal_entity",
+                "city_en",
+                "default_purpose",
+            )
+        ):
+            if key == "legal_entity_id":
+                raw = _form_str(form, key)
+                try:
+                    draft[key] = int(raw) if raw else apartment.get("legal_entity_id")
+                except (TypeError, ValueError):
+                    draft[key] = None
+            else:
+                draft[key] = _form_str(form, key)
+    extra = {
+        "draft": draft,
+        "police_errors": police_errors or {},
+        "address_errors": address_errors or {},
+        "fee_account_error": fee_account_error,
+        "operator_error": operator_error,
+    }
     return render_wizard(request, apartment["id"], step, extra=extra, status_code=400)
 
 
@@ -195,33 +248,11 @@ def setup_entry(apartment_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment"))
-    admin_routes = _admin_helpers()
-    feeds = db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
-    readiness = admin_routes._readiness(
-        apartment,
-        access.entities(request),
-        list(admin_routes._apartment_issues(apartment)),
-        bool(feeds),
-        invite=False,
-    )
-    report_complete = all(item["done"] for item in readiness["report"])
-    facts = admin_routes._setup_facts(apartment_id)
-    state = admin_routes._setup_state(
-        apartment, feeds=len(feeds), report_complete=report_complete, stays=facts["stays"]
-    )
-    door_code = _door_code_context(apartment, apartment_id)
-    guide = property_setup.current(
-        apartment,
-        state,
-        feeds=len(feeds),
-        report_complete=report_complete,
-        lock_available=door_code is not None,
-        stays=facts["stays"],
-        guests_registered=facts["guests_registered"],
-    )
+    ctx, redirect = _wizard_context(request, apartment_id, "calendar")
+    if redirect:
+        return redirect
+    guide = ctx["guide"]
+    state = ctx["setup_state"]
     if guide:
         return _back(guide["url"])
     if state and state.get("finished"):
@@ -242,9 +273,18 @@ def setup_step(apartment_id: int, step: str, request: Request):
     if redirect:
         return redirect
     guide = ctx["guide"]
+    state = ctx["setup_state"] or property_setup.legacy_state()
     if guide and guide["key"] != step and step != "done":
-        return _back(guide["url"])
-    return render_wizard(request, apartment_id, step)
+        if not property_setup.may_view_step(
+            step,
+            guide,
+            state,
+            ctx["apartment"],
+            ctx["wizard_facts"],
+            lock_available=ctx["lock_available"],
+        ):
+            return _back(guide["url"])
+    return render(request, f"setup_wizard/{step}.html", ctx)
 
 
 @router.post("/apartments/{apartment_id}/setup")
@@ -294,10 +334,7 @@ async def setup_action(apartment_id: int, request: Request):
     deleted = False
     if step == "try_it" and action == "done" and stay:
         deleted = demo.delete_demo_stay(stay["id"], apartment_id)
-    if action == "keep":
-        property_setup.mark(apartment_id, step, "done")
-    else:
-        property_setup.mark(apartment_id, step, _SETUP_MARKS.get(action, "done"))
+    property_setup.mark(apartment_id, step, _SETUP_MARKS.get(action, "done"))
     db.audit("property_setup_step", f"apartment={apartment_id} step={step} action={action}")
     ctx, _ = _wizard_context(request, apartment_id, step)
     guide = ctx["guide"] if ctx else None

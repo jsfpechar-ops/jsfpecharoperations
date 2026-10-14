@@ -25,12 +25,6 @@ TOTAL_STEPS = len(STEPS)
 OPTIONAL = frozenset({"stay_fee", "door_lock"})
 SKIPPABLE = frozenset({"calendar", "try_it", "stay_fee", "door_lock"})
 TEACHING = frozenset({"guest_link", "try_it"})
-SAVE_SECTIONS = {
-    "police": "reporting",
-    "stay_fee": "reporting",
-    "door_lock": "lock",
-    "automation": "automation",
-}
 MARKS = ("done", "skipped", "waiting")
 
 # Stored JSON from 0096/0100 used older step ids; map them on read.
@@ -153,6 +147,61 @@ def prev_step(step: str) -> Optional[str]:
     return STEPS[index - 1]
 
 
+def step_applicable(step: str, apartment, *, lock_available: bool) -> bool:
+    step = _normalise_step(step)
+    if step == "property" and property_details_complete(apartment):
+        return False
+    if step == "door_lock" and not lock_available:
+        return False
+    return step in STEPS
+
+
+def prev_applicable_step(
+    step: str,
+    apartment,
+    *,
+    lock_available: bool,
+) -> Optional[str]:
+    """Previous wizard step that exists for this property (for Back links)."""
+    step = _normalise_step(step)
+    if step not in STEPS:
+        return None
+    index = STEPS.index(step)
+    for prior in reversed(STEPS[:index]):
+        if step_applicable(prior, apartment, lock_available=lock_available):
+            return prior
+    return None
+
+
+def may_view_step(
+    step: str,
+    guide: Optional[Dict[str, Any]],
+    state: Dict[str, Any],
+    apartment,
+    facts: Dict[str, Any],
+    *,
+    lock_available: bool,
+) -> bool:
+    """Whether GET /setup/{step} may render (Back, or revisiting a done step)."""
+    step = _normalise_step(step)
+    if step not in STEPS:
+        return False
+    if not step_applicable(step, apartment, lock_available=lock_available):
+        return False
+    if not guide:
+        return True
+    current = guide["key"]
+    current_idx = STEPS.index(current)
+    step_idx = STEPS.index(step)
+    if step_idx < current_idx:
+        return True
+    if step_idx > current_idx:
+        return False
+    if step_status(step, state, apartment, facts) in ("done", "skipped", "waiting"):
+        return True
+    return step == current
+
+
 def property_details_complete(apartment) -> bool:
     return bool(
         (apartment["internal_name"] or "").strip()
@@ -170,6 +219,8 @@ def _resolved(step: str, state: Dict[str, Any], apartment, facts: Dict[str, Any]
     if step == "calendar":
         return facts["feeds"] > 0 or facts["stays"] > 0 or step in marks
     if step in TEACHING:
+        if facts.get("guests_registered"):
+            return True
         return step in marks
     if step == "police":
         return bool(facts["report_complete"])
@@ -203,12 +254,34 @@ def done_count(
     state: Dict[str, Any],
     apartment,
     facts: Dict[str, Any],
+    *,
+    lock_available: bool = True,
 ) -> int:
-    return sum(
-        1
-        for step in STEPS
-        if step_status(step, state, apartment, facts) in ("done", "skipped")
-    )
+    total = 0
+    for step in STEPS:
+        if step == "door_lock" and not lock_available:
+            total += 1
+            continue
+        if step_status(step, state, apartment, facts) in ("done", "skipped"):
+            total += 1
+    return total
+
+
+def wizard_unresolved(
+    apartment,
+    state: Dict[str, Any],
+    facts: Dict[str, Any],
+    *,
+    lock_available: bool,
+) -> bool:
+    """True while a required setup step is still open (police waiting counts)."""
+    for step in STEPS:
+        if not step_applicable(step, apartment, lock_available=lock_available):
+            continue
+        status = step_status(step, state, apartment, facts)
+        if status in ("todo", "current", "waiting"):
+            return True
+    return False
 
 
 def current(
@@ -265,7 +338,7 @@ def current(
         "reporting_waiting": waiting,
         "police_url": wizard_url(apartment["id"], "police"),
         "legacy": bool(state.get("legacy")),
-        "done_count": done_count(state, apartment, facts),
+        "done_count": done_count(state, apartment, facts, lock_available=lock_available),
     }
 
 

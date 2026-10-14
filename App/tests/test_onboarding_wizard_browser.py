@@ -19,7 +19,9 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth, config, db, feed_url, host_i18n, icalsync, property_setup
+from datetime import date, datetime, timedelta, timezone
+
+from app import auth, config, db, feed_url, host_i18n, icalsync, property_setup, reporting
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
@@ -183,7 +185,12 @@ def test_wizard_journey_and_geometry(host, base_url, lang, width):
         page.wait_for_url("**/setup/police**")
         _shot(page, f"04-police-{tag}.png")
         assert page.locator("button.setup-wizard-wait").is_visible()
-        page.locator("button.setup-wizard-wait").click()
+        page.fill("#uby_idub", POLICE["uby_idub"])
+        page.fill("#uby_ws_user", POLICE["uby_ws_user"])
+        page.fill("#uby_ws_password", POLICE["uby_ws_password"])
+        page.fill("#uby_mark", POLICE["uby_mark"])
+        page.fill("#uby_name", POLICE["uby_name"])
+        page.locator('button[form="police-form"]').click()
         page.wait_for_url("**/setup/stay_fee**")
         _shot(page, f"05-stay-fee-{tag}.png")
         page.locator(".setup-wizard-foot form.setup-wizard-skip button").click()
@@ -194,7 +201,7 @@ def test_wizard_journey_and_geometry(host, base_url, lang, width):
         page.locator('button[form="automation-form"]').click()
         page.wait_for_url("**/setup/done**")
         _shot(page, f"07-done-{tag}.png")
-        assert _t(lang, "setup_guide.reporting.waiting_item") in page.content()
+        assert _t(lang, "wizard.done.title") in page.content()
         browser.close()
 
 
@@ -216,6 +223,242 @@ def test_wizard_geometry(host, base_url, width):
         )
         assert sizes["sw"] <= sizes["vw"] + 2, sizes
         browser.close()
+
+
+def test_property_step_renders_when_address_missing(host):
+    """Fix 1: incomplete property details must not 500 on the property step."""
+    apt_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "No address yet",
+            "owner_user_id": host["owner"],
+            "legal_entity_id": host["entity"],
+            "permalink_token": auth.new_permalink_token(),
+            "permalink_pin": auth.new_permalink_pin(),
+            "active": 1,
+            "created_at": db.utcnow(),
+        },
+    )
+    property_setup.start(apt_id)
+    response = host["client"].get(f"/apartments/{apt_id}/setup/property?lang=en")
+    assert response.status_code == 200
+    assert "data-setup-wizard" in response.text
+    assert 'id="addr_obec"' in response.text
+    walked = host["client"].get(f"/apartments/{apt_id}/setup?lang=en", follow_redirects=False)
+    assert walked.status_code == 303
+    assert "/setup/property" in walked.headers["location"]
+
+
+def test_back_from_later_step_reaches_earlier_page(host):
+    """Fix 2: Back must open an earlier step, not bounce to the current one."""
+    flat = _create(host)
+    client = host["client"]
+    base = f"/apartments/{flat['id']}/setup"
+    client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
+    client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
+    client.post(base, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
+    at_police = client.get(f"{base}/police?lang=en")
+    assert at_police.status_code == 200
+    back = client.get(f"{base}/try_it?lang=en", follow_redirects=False)
+    assert back.status_code == 200
+    assert 'data-setup-step="try_it"' in back.text
+
+
+def test_police_waiting_cannot_finish_setup_via_automation(host):
+    """Fix 3: waiting on police must block finish even when automation posts to /done."""
+    flat = _create(host)
+    client = host["client"]
+    base = f"/apartments/{flat['id']}/setup"
+    client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
+    client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
+    client.post(base, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
+    client.post(base, data={"step": "police", "action": "wait"}, follow_redirects=False)
+    client.post(base, data={"step": "stay_fee", "action": "skip"}, follow_redirects=False)
+    client.post(base, data={"step": "door_lock", "action": "skip"}, follow_redirects=False)
+    saved = client.post(
+        f"/apartments/{flat['id']}/automation-timing",
+        data={
+            "automation_mode": "manual",
+            "submit_after_hours": "24",
+            "return_to": f"/apartments/{flat['id']}/setup/done",
+            "setup_step": "automation",
+        },
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    from urllib.parse import urlparse
+
+    path = urlparse(saved.headers["location"]).path
+    assert path.endswith("/setup/police") or path.endswith("/setup/stay_fee")
+    state = property_setup.load(flat["id"])
+    assert state and not state["finished"]
+
+
+def test_overview_checklist_when_guide_hidden(host):
+    flat = _create(host)
+    client = host["client"]
+    client.post(
+        f"/apartments/{flat['id']}/setup",
+        data={"action": "hide"},
+        follow_redirects=False,
+    )
+    page = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
+    assert "setup-continue-card" not in page
+    assert 'class="panel host-checklist"' in page or 'class="readiness"' in page
+
+
+def test_overview_checklist_without_stored_setup_state(host):
+    apt_id = db.insert(
+        "apartment",
+        {
+            "internal_name": "Legacy complete",
+            "owner_user_id": host["owner"],
+            "legal_entity_id": host["entity"],
+            "addr_obec": "Brno",
+            "addr_house_no": "12",
+            "addr_zip": "60200",
+            "uby_idub": "123456789012",
+            "uby_mark": "LEGACY",
+            "uby_name": "Legacy Flat",
+            "uby_ws_user": "ws-user",
+            "uby_ws_password_enc": db.encrypt_secret("secret"),
+            "permalink_token": auth.new_permalink_token(),
+            "permalink_pin": auth.new_permalink_pin(),
+            "active": 1,
+            "created_at": db.utcnow(),
+        },
+    )
+    db.insert(
+        "ical_feed",
+        {
+            "apartment_id": apt_id,
+            "url": "https://example.test/cal.ics",
+            "label": "airbnb",
+            "active": 1,
+            "created_at": db.utcnow(),
+        },
+    )
+    page = host["client"].get(f"/apartments/{apt_id}?view=overview&lang=en").text
+    assert (
+        'class="panel host-checklist"' in page
+        or 'class="panel host-setup-complete"' in page
+        or 'class="readiness"' in page
+    )
+
+
+def test_guests_registered_skips_teaching_steps(host, monkeypatch):
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
+    flat = _create(host)
+    host["client"].post(
+        f"/apartments/{flat['id']}/setup",
+        data={"step": "calendar", "action": "skip"},
+        follow_redirects=False,
+    )
+    now = db.utcnow()
+    day = date.today()
+    res_id = db.insert(
+        "reservation",
+        {
+            "apartment_id": flat["id"],
+            "source": "manual",
+            "uid": f"manual-{secrets.token_hex(4)}",
+            "date_from": day.isoformat(),
+            "date_to": (day + timedelta(days=2)).isoformat(),
+            "status": "active",
+            "registration_completed_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    db.insert(
+        "guest",
+        {
+            "reservation_id": res_id,
+            "surname": "Guest",
+            "first_name": "Ada",
+            "birth_date": "01011990",
+            "nationality": "GBR",
+            "doc_number": "P1234567",
+            "res_street": "Street 1",
+            "res_city": "London",
+            "res_country": "GBR",
+            "purpose": "10",
+            "is_lead": 1,
+            "entered_by": "guest",
+            "submit_state": reporting.PENDING,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    property_setup.start(flat["id"])
+    entry = host["client"].get(f"/apartments/{flat['id']}/setup", follow_redirects=False)
+    assert "/setup/guest_link" not in entry.headers["location"]
+    assert "/setup/try_it" not in entry.headers["location"]
+
+
+def test_refuse_setup_save_parses_return_to_and_legal_entity(host):
+    flat = _create(host)
+    client = host["client"]
+    response = client.post(
+        f"/apartments/{flat['id']}",
+        data={
+            "internal_name": flat["internal_name"],
+            "legal_entity_id": "abc",
+            "city_en": "Brno",
+            "default_purpose": "10",
+            "return_to": f"/apartments/{flat['id']}/setup/stay_fee#x",
+            "setup_step": "stay_fee",
+            "stay_fee_rate_czk": "5",
+            "stay_fee_cadence": "monthly",
+            "account_prefix": "123456",
+            "account_number": "1234567890",
+            "account_bank": "0100",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert _t("en", "wizard.step.stay_fee") in response.text
+
+
+def test_fee_refusal_shows_error_on_wizard(host):
+    flat = _create(host)
+    response = host["client"].post(
+        f"/apartments/{flat['id']}",
+        data={
+            "internal_name": flat["internal_name"],
+            "legal_entity_id": str(host["entity"]),
+            "city_en": "Brno",
+            "default_purpose": "10",
+            **ADDRESS,
+            "return_to": f"/apartments/{flat['id']}/setup/stay_fee",
+            "setup_step": "stay_fee",
+            "stay_fee_rate_czk": "5",
+            "stay_fee_cadence": "monthly",
+            "account_prefix": "bad",
+            "account_number": "x",
+            "account_bank": "0100",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "stay-fee-account-error" in response.text or "account_invalid" in response.text.lower()
+
+
+def test_done_count_includes_skipped_door_lock_when_unavailable(host, monkeypatch):
+    monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
+    flat = _create(host)
+    client = host["client"]
+    base = f"/apartments/{flat['id']}/setup"
+    for step, action in (
+        ("calendar", "skip"),
+        ("guest_link", "done"),
+        ("try_it", "skip"),
+        ("police", "wait"),
+        ("stay_fee", "skip"),
+    ):
+        client.post(base, data={"step": step, "action": action}, follow_redirects=False)
+    overview = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
+    assert "6 of 8" in overview
 
 
 def test_no_js_calendar_skip(host):
