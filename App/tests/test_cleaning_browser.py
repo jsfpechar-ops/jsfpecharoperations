@@ -61,7 +61,7 @@ def browser_context(playwright, ws, origin, width=1280, js=True, signed_in=True)
 
 
 def loaded(page):
-    page.wait_for_function("document.querySelector('[data-cal-body]').getAttribute('aria-busy') === 'false'")
+    page.wait_for_function("() => document.querySelector('[data-cal-body]').getAttribute('aria-busy') === 'false'")
     page.wait_for_selector(".cal-gantt-row")
 
 
@@ -88,11 +88,11 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         assert page.locator("#cleaning-list").bounding_box()["y"] > page.locator("#calendar").bounding_box()["y"]
         assert page.locator(".cleaning-instructions").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 18
         assert page.locator(".cleaning-pin").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 24
-        assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+        assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
         assert page.locator('.sidebar-nav a[href="/cleaning"] svg').count() == 1
         shot(page, f"host-{lang}-{width}")
         page.locator("[data-cal-property]").select_option(str(workspace["homes"][1]))
-        page.wait_for_function("document.querySelectorAll('.cleaning-card').length === 1")
+        page.wait_for_function("() => document.querySelectorAll('.cleaning-card').length === 1")
         assert "Garden / 2" in page.locator(".cleaning-card").inner_text()
         assert not page.locator(".cleaning-pin").count()
         assert not errors
@@ -160,7 +160,7 @@ def test_external_dual_view_and_no_javascript_list(workspace, origin):
             assert page.locator(".cleaning-pin").first.inner_text() == "001234"
             assert page.locator(".cleaning-card-actions").count() == 0
             assert "Garden / 2" not in page.locator("body").inner_text()
-            assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+            assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
             if js:
                 page.locator("dialog[open] [data-cal-close]").click()
             shot(page, f"shared-cs-390-{'js' if js else 'nojs'}")

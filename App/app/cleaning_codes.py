@@ -175,6 +175,25 @@ def process_queue() -> int:
         row = dict(raw)
         revoking = row["state"] == "revoke_pending"
         expected = row["state"]
+        if not revoking:
+            binding = db.query_one(
+                "SELECT a.id FROM apartment a JOIN lock_account la ON la.id = ? "
+                "WHERE a.id = ? AND a.active = 1 AND a.archived_at IS NULL "
+                "AND a.lock_provider = 'ttlock' AND a.lock_id = ? AND la.owner_user_id = a.owner_user_id",
+                (row["lock_account_id"], row["apartment_id"], row["lock_id"]),
+            )
+            if not binding:
+                # Never program a previously mapped lock. An uncertain earlier
+                # attempt still needs exact-operation reconciliation/revocation.
+                attempted = row["attempts"] > 0
+                if db.update_if("cleaning_code", row["id"], {
+                    "state": "revoke_pending" if attempted else "revoked",
+                    "pin_enc": row["pin_enc"] if attempted else None,
+                    "attempts": 0, "next_attempt_at": now, "claimed_at": None, "updated_at": now,
+                }, {"state": expected, "attempts": row["attempts"]}):
+                    db.execute("UPDATE cleaning_property SET pending_code_id = NULL WHERE pending_code_id = ?", (row["id"],))
+                    processed += 1
+                continue
         attempts = row["attempts"] + 1
         if not db.update_if("cleaning_code", row["id"], {
             "state": "revoking" if revoking else "issuing", "claimed_at": now,

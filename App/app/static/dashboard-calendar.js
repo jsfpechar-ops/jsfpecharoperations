@@ -25,7 +25,7 @@
     let cleaningLane = null;
     events.filter(event => overlap(event, start, end)).slice().sort((a, b) =>
       Number(a.kind === "cleaning") - Number(b.kind === "cleaning") ||
-      a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || String(a.id).localeCompare(String(b.id))
+      a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || (Number.isFinite(a.id) && Number.isFinite(b.id) ? a.id - b.id : String(a.id).localeCompare(String(b.id)))
     ).forEach(event => {
       const left = event.start < start ? start : event.start;
       const right = event.end > end ? end : event.end;

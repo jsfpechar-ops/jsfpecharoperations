@@ -376,3 +376,14 @@ def test_active_permanent_code_is_hidden_and_revoked_after_lock_mapping_changes(
     assert cleaning_codes.process_queue() == 1
     assert deleted[0][1] == "123"
     assert db.query_one("SELECT state FROM cleaning_code WHERE id = ?", (job,))["state"] == "revoked"
+
+
+def test_pending_code_is_not_programmed_after_property_lock_is_changed(workspace, monkeypatch):
+    ws = workspace
+    _, home = lock_setup(ws, monkeypatch)
+    job = cleaning_codes.queue_permanent(home, ws["owner"])
+    db.update("apartment", ws["home"], {"lock_id": "456"})
+    monkeypatch.setattr(ttlock, "add_permanent_code", lambda *args: pytest.fail("Old lock must not be programmed"))
+    assert cleaning_codes.process_queue() == 1
+    row = db.query_one("SELECT * FROM cleaning_code WHERE id = ?", (job,))
+    assert row["state"] == "revoked" and row["pin_enc"] is None
