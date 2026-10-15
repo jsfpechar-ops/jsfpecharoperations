@@ -23,13 +23,13 @@ Only view/display preferences enter the declared functional browser storage.
 
 ## Verification
 - JavaScript syntax, date/layout checks and DOM render probes passed.
-- [Focused Chromium/API run](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38771202882):
-  **39 passed, 0 failed, 0 skipped**, on 92c5265ab04cec0980bf1133004d129b347106e2.
+- [Focused Chromium/API run](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38804382620):
+  **39 passed, 0 failed, 0 skipped**, on compact candidate 77be3147da055ef98406a6b0cc3e656af2c21769.
 - Covers tenant boundaries, archives/cancellations, checkout/date limits, real
   manual creation/CSRF, overlap confirmation, long stays, Auto/manual preference,
   pointer/keyboard selection, forward and reverse dragging, save/details, retry,
   EN/CS and widths 360/390/760/1024/1280/1440/1680/1920/2048 with collapsed rail.
-- [Synthetic screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38771202882/artifacts/11990614482).
+- [Synthetic screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38804382620/artifacts/12006130910).
 - Compact refinement adds busy-week screenshots, overflow access, placeholder/color
   assertions, separate month/year navigation, summary/calendar/queue order and lane
   alignment, maximum desktop week/widget/pill heights and visible settings icons.
