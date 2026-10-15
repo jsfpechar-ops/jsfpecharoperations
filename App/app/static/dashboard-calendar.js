@@ -387,7 +387,7 @@
     });
     if (selection) $("[data-cal-selection]").textContent = format("selection", { start: shortDate(selection.start), end: shortDate(addDays(selection.end, 1)) });
   }
-  function cancelSelection() { selection = null; keyboardAnchor = null; $("[data-date].is-selected").forEach(node => node.classList.remove("is-selected")); $("[data-cal-selection]").textContent = ""; }
+  function cancelSelection() { selection = null; keyboardAnchor = null; $$("[data-date].is-selected").forEach(node => node.classList.remove("is-selected")); $("[data-cal-selection]").textContent = ""; }
   root.addEventListener("pointerdown", event => {
     if (event.pointerType === "touch" || event.button !== 0 || state.loading || !lastLoadedRange ||
       event.target.closest("[data-cal-event], [data-cal-more], dialog")) return;

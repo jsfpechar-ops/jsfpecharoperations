@@ -32,6 +32,9 @@ Explicit owner-scoped payload, exclusive checkout, warm existing design tokens.
 - Isolated review exposed a fresh-database test-order dependency; added explicit
   schema setup and a standalone dashboard render assertion. Startup failures now
   record visible-page and script/API diagnostics with synthetic fixtures.
+- Isolated Chromium found a selection-reset selector using a single element
+  where a collection was required; corrected it and passed a JavaScript DOM
+  render probe. Final Chromium and full CI results remain authoritative below.
 - Final browser/geometry result: see current [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/395/checks).
   Synthetic screenshots are uploaded as calendar-feature-review and dashboard-calendar-review.
 - Browser suite includes actual drag/save/details, keyboard/overlap, Auto/manual
