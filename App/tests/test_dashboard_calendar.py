@@ -87,8 +87,7 @@ def test_leap_year_and_prague_dst_are_date_only():
     assert (dashboard_calendar.parse_range("2026-10-24", "2026-10-27")[1] - date(2026, 10, 24)).days == 3
 
 
-def test_anonymous_calendar_requires_login():
-    db.init_db()
+def test_anonymous_calendar_requires_login(calendar_workspace):
     response = TestClient(app).get("/dashboard/calendar?from=2026-10-01&to=2026-11-01", follow_redirects=False)
     assert response.status_code == 303
     assert "/login" in response.headers["location"]
