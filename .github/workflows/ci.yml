@@ -441,7 +441,7 @@ jobs:
                       failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
           with open(os.environ["GITHUB_OUTPUT"], "a") as output:
               for index, detail in enumerate(failures[:4], 1):
-                  output.write(f"failure_{index}={detail}\\n")
+                  output.write(f"failure_{index}={detail}\n")
           PY
       - name: ${{ steps.calendar_failures.outputs.failure_1 || 'Calendar failure detail 1' }}
         if: failure() && steps.calendar_failures.outputs.failure_1 != ''
