@@ -395,12 +395,13 @@
     if (!cell || !body.contains(cell)) return;
     event.preventDefault();
     const focusable = cell.matches("[data-cal-day]") ? cell : cell.querySelector("[data-cal-day]");
-    if (focusable) focusable.focus();
-    selection = { anchor: cell.dataset.date, start: cell.dataset.date, end: cell.dataset.date, property: cell.dataset.property || state.property };
+    if (focusable) focusable.focus({ preventScroll: true });
+    selection = { anchor: cell.dataset.date, start: cell.dataset.date, end: cell.dataset.date, property: cell.dataset.property || state.property, lastX: event.clientX };
     root.setPointerCapture(event.pointerId); paintSelection();
   });
   root.addEventListener("pointermove", event => {
     if (!selection) return;
+    const movementX = event.clientX - selection.lastX; selection.lastX = event.clientX;
     const target = document.elementFromPoint(event.clientX, event.clientY);
     const cell = target && target.closest("[data-date]");
     if (cell && body.contains(cell) && (!selection.property || !cell.dataset.property || cell.dataset.property === selection.property)) {
@@ -410,8 +411,8 @@
     const scroll = $("[data-cal-body] .cal-gantt-scroll");
     if (scroll) {
       const box = scroll.getBoundingClientRect();
-      if (event.clientX > box.right - 32) scroll.scrollLeft += 18;
-      else if (event.clientX < box.left + 180) scroll.scrollLeft -= 18;
+      if (movementX > 0 && event.clientX > box.right - 32) scroll.scrollLeft += 18;
+      else if (movementX < 0 && event.clientX < box.left + 180) scroll.scrollLeft -= 18;
     }
   });
   root.addEventListener("pointerup", event => {
