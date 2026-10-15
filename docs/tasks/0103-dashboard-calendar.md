@@ -54,7 +54,8 @@ that truncated date horizon. Manual creation remains POST /reservations.
 5. Remove Waiting for guests summary; keep real urgency, three compact indicators,
    onboarding, and a useful no-JavaScript stay-list fallback.
 6. Add policy/auth/creation and real browser interaction/geometry checks. Include
-   calendar browser tests in required CI and retain synthetic screenshot artifacts.
+   calendar browser tests in required CI and a parallel feature check, enforce zero
+   skips and retain synthetic screenshot artifacts.
 7. Keep draft PR off main. Render staging requires reviewed green revision and
    verification of the deployed SHA. Never deploy production for this task.
 

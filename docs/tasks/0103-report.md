@@ -22,7 +22,15 @@ Explicit owner-scoped payload, exclusive checkout, warm existing design tokens.
 - First CI run: context, secret scan, shellcheck, dependency audit, runtime lint
   and type check passed. Full tests found an undeclared calendar preference key;
   fixed by adding the functional storage inventory row (all published languages).
-- Required browser/geometry and screenshot evidence: pending rerun.
+- Second CI: full Python/coverage, lint/type/audit, context, secrets, shell,
+  smoke and Docker passed. Chromium drag/create/save/details passed.
+- Four browser tests stopped at polling expressions blocked by the existing CSP.
+  Replaced expression waits with function predicates; CSP is unchanged.
+- Added reverse Gantt selection, fresh-visit preference persistence, larger mobile
+  targets and explicit target-size checks. A parallel calendar review job provides
+  fast feedback; the full required browser suite still runs with zero-skip gates.
+- Final browser/geometry result: see current [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/395/checks).
+  Synthetic screenshots are uploaded as calendar-feature-review and dashboard-calendar-review.
 - Browser suite includes actual drag/save/details, keyboard/overlap, Auto/manual
   preference, retry, EN/CS geometry and synthetic screenshots in CI artifacts.
 

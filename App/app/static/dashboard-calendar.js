@@ -386,13 +386,15 @@
     });
     if (selection) $("[data-cal-selection]").textContent = format("selection", { start: shortDate(selection.start), end: shortDate(addDays(selection.end, 1)) });
   }
-  function cancelSelection() { selection = null; keyboardAnchor = null; $$("[data-date].is-selected").forEach(node => node.classList.remove("is-selected")); }
+  function cancelSelection() { selection = null; keyboardAnchor = null; $("[data-date].is-selected").forEach(node => node.classList.remove("is-selected")); $("[data-cal-selection]").textContent = ""; }
   root.addEventListener("pointerdown", event => {
     if (event.pointerType === "touch" || event.button !== 0 || state.loading || !lastLoadedRange ||
       event.target.closest("[data-cal-event], [data-cal-more], dialog")) return;
     const cell = event.target.closest("[data-date]");
     if (!cell || !body.contains(cell)) return;
     event.preventDefault();
+    const focusable = cell.matches("[data-cal-day]") ? cell : cell.querySelector("[data-cal-day]");
+    if (focusable) focusable.focus();
     selection = { anchor: cell.dataset.date, start: cell.dataset.date, end: cell.dataset.date, property: cell.dataset.property || state.property };
     root.setPointerCapture(event.pointerId); paintSelection();
   });

@@ -57,7 +57,7 @@ def open_page(browser, ws, origin, width=1280, locale="en", touch=False):
     page = context.new_page()
     page.goto(f"{origin}/?lang={locale}&cal_date=2026-10-01")
     page.wait_for_selector(".cal-gantt-row")
-    page.wait_for_function("document.querySelector('[data-cal-body]').getAttribute('aria-busy') === 'false'")
+    page.wait_for_function("() => document.querySelector('[data-cal-body]').getAttribute('aria-busy') === 'false'")
     later = page.locator("#security-prompt [data-security-prompt-later]")
     if later.is_visible():
         later.click()
@@ -65,7 +65,7 @@ def open_page(browser, ws, origin, width=1280, locale="en", touch=False):
 
 
 def wait_loaded(page):
-    page.wait_for_function("document.querySelector('[data-cal-body]').getAttribute('aria-busy') === 'false'")
+    page.wait_for_function("() => document.querySelector('[data-cal-body]').getAttribute('aria-busy') === 'false'")
     assert not page.locator("[data-cal-message]").is_visible() or page.locator("[data-cal-message]").inner_text() == "Stay created"
 
 
@@ -88,10 +88,14 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.wait_for_selector(".cal-gantt-row")
         assert page.locator(".cal-gantt-row").count() == 1
         page.locator("[data-cal-property]").select_option("")
-        page.wait_for_function("document.querySelectorAll('.cal-gantt-row').length === 3")
+        page.wait_for_function("() => document.querySelectorAll('.cal-gantt-row').length === 3")
         page.locator("[data-cal-view='calendar']").click()
         page.wait_for_selector(".cal-week")
         page.reload()
+        page.wait_for_selector(".cal-week")
+        assert page.locator("[data-cal-view='calendar']").get_attribute("aria-pressed") == "true"
+        # A new visit without a view in the URL must still honor the manual choice.
+        page.goto(f"{calendar_origin}/?lang=en&cal_date=2026-10-01")
         page.wait_for_selector(".cal-week")
         assert page.locator("[data-cal-view='calendar']").get_attribute("aria-pressed") == "true"
         page.locator("[data-cal-settings]").click()
@@ -103,11 +107,11 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.locator("[data-cal-month]").fill("2028-02")
         page.wait_for_selector('[data-cal-day="2028-02-29"]')
         page.locator("[data-cal-scale='year']").click()
-        page.wait_for_function("document.querySelectorAll('.cal-mini-title').length === 12")
+        page.wait_for_function("() => document.querySelectorAll('.cal-mini-title').length === 12")
         page.locator(".cal-mini-title").nth(1).click()
         page.wait_for_selector('[data-cal-day="2028-02-29"]')
         page.locator("[data-cal-scale='week']").click()
-        page.wait_for_function("document.querySelectorAll('.cal-week').length === 1")
+        page.wait_for_function("() => document.querySelectorAll('.cal-week').length === 1")
         context.close()
         browser.close()
 
@@ -175,7 +179,7 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         page.locator('[data-cal-day="2026-10-05"]').click()
         assert page.locator("[data-cal-overlap]").is_visible()
         page.locator("[data-cal-save]").click()
-        page.wait_for_function("document.querySelector('[data-cal-save-error]').textContent.length > 0")
+        page.wait_for_function("() => document.querySelector('[data-cal-save-error]').textContent.length > 0")
         assert page.locator("[data-cal-create]").is_visible()
         page.locator('input[name="allow_overlap"]').check()
         with page.expect_response(lambda response: response.url.endswith("/reservations") and response.request.method == "POST") as saved:
@@ -187,13 +191,39 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         browser.close()
 
 
+def test_reverse_gantt_drag_prefills_the_property_without_saving(calendar_workspace, calendar_origin):
+    ws = calendar_workspace
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, ws, calendar_origin)
+        property_id = ws["properties"][2]
+        first = page.locator(f'.cal-gantt-slot[data-property="{property_id}"][data-date="2026-10-23"]')
+        last = page.locator(f'.cal-gantt-slot[data-property="{property_id}"][data-date="2026-10-21"]')
+        first.scroll_into_view_if_needed()
+        last.scroll_into_view_if_needed()
+        a, b = first.bounding_box(), last.bounding_box()
+        before = db.query_one("SELECT COUNT(*) AS n FROM reservation WHERE apartment_id = ?", (property_id,))["n"]
+        page.mouse.move(a["x"] + a["width"] / 2, a["y"] + a["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(b["x"] + b["width"] / 2, b["y"] + b["height"] / 2, steps=12)
+        page.mouse.up()
+        assert page.locator("[data-cal-create]").is_visible()
+        assert page.locator("#cal-property").input_value() == str(property_id)
+        assert page.locator("#cal-arrival").input_value() == "2026-10-21"
+        assert page.locator("#cal-departure").input_value() == "2026-10-24"
+        page.keyboard.press("Escape")
+        assert db.query_one("SELECT COUNT(*) AS n FROM reservation WHERE apartment_id = ?", (property_id,))["n"] == before
+        context.close()
+        browser.close()
+
+
 def test_failed_load_preserves_view_and_can_retry(calendar_workspace, calendar_origin):
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, calendar_workspace, calendar_origin)
         page.route("**/dashboard/calendar?*", lambda route: route.abort())
         page.locator("[data-cal-next]").click()
-        page.wait_for_function("document.querySelector('[data-cal-message]').textContent.includes('Try again')")
+        page.wait_for_function("() => document.querySelector('[data-cal-message]').textContent.includes('Try again')")
         assert page.locator(".cal-gantt-row").count() == 3
         page.unroute("**/dashboard/calendar?*")
         page.locator("[data-cal-message] button").click()
@@ -215,6 +245,10 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                     page.locator(f'[data-cal-view="{mode}"]').click()
                     page.wait_for_selector(".cal-gantt-row" if mode == "gantt" else ".cal-week")
                     wait_loaded(page)
+                    if width <= 390:
+                        target = page.locator(".cal-day-number" if mode == "calendar" else ".cal-gantt-slot").first
+                        box = target.bounding_box()
+                        assert box["width"] >= 43.9 and box["height"] >= 44, box
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
                     shot(page, f"{mode}-{locale}-{width}")
                 page.locator('[data-cal-day="2026-10-15"]').click()
