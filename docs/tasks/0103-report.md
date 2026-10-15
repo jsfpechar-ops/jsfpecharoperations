@@ -1,48 +1,50 @@
 # 0103: Dashboard calendar implementation report
 
 Status: review
-Base: 2662f404a40dc29dac3dcb888e83cf8e5b636f9d
 Branch: feature/dashboard-interactive-calendar-20261015
+Base: 2662f404a40dc29dac3dcb888e83cf8e5b636f9d
 
-## Changes
-Interactive Month/Week/Year and property Gantt below the action queue; pointer/
-keyboard night selection, persisted manual creation through POST /reservations,
-overlap confirmation, booking details, native stay links, scoped loading/retry.
-Auto uses Month for 1–2 visible properties and Gantt for 3+; manual view choice
-and harmless display preferences persist. Removed the Waiting for guests tile.
-Explicit owner-scoped payload, exclusive checkout, warm existing design tokens.
+## Result
+Replaced the routine dashboard list with Month/Week/Year calendar and property
+Gantt beneath the urgent queue. Drag nights to prefill a manual stay; save uses
+the canonical protected POST /reservations. Checkout is exclusive. Overlaps
+stack and require explicit confirmation. Booking details link to the full stay.
+Auto uses Month for 1–2 visible properties and Gantt for 3+; manual choices and
+display preferences persist. Waiting for guests was removed from the summary.
+The calendar uses existing warm tokens, a bounded owner-scoped endpoint and no
+new application dependency or schema. Long manual stays remain valid across years.
+Only view/display preferences enter the declared functional browser storage.
 
 ## Verification
-- JavaScript syntax: passed via the available V8 runtime.
-- Pure JavaScript date/layout checks: passed (DST date arithmetic, leap day,
-  Monday start, October grid, 2/3-property Auto boundary, manual override,
-  stacked overlap and adjacent-stay lane reuse).
-- Local Python/pytest/ruff/browser/context commands: not run. No shell tool is
-  available in this chat, despite the environment reporting running.
-- First CI run: context, secret scan, shellcheck, dependency audit, runtime lint
-  and type check passed. Full tests found an undeclared calendar preference key;
-  fixed by adding the functional storage inventory row (all published languages).
-- Second CI: full Python/coverage, lint/type/audit, context, secrets, shell,
-  smoke and Docker passed. Chromium drag/create/save/details passed.
-- Four browser tests stopped at polling expressions blocked by the existing CSP.
-  Replaced expression waits with function predicates; CSP is unchanged.
-- Added reverse Gantt selection, fresh-visit preference persistence, larger mobile
-  targets and explicit target-size checks. A parallel calendar review job provides
-  fast feedback; the full required browser suite still runs with zero-skip gates.
-- Isolated review exposed a fresh-database test-order dependency; added explicit
-  schema setup and a standalone dashboard render assertion. Startup failures now
-  record visible-page and script/API diagnostics with synthetic fixtures.
-- Isolated Chromium found a selection-reset selector using a single element
-  where a collection was required; corrected it and passed a JavaScript DOM
-  render probe. Final Chromium and full CI results remain authoritative below.
-- Final browser/geometry result: see current [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/395/checks).
-  Synthetic screenshots are uploaded as calendar-feature-review and dashboard-calendar-review.
-- Browser suite includes actual drag/save/details, keyboard/overlap, Auto/manual
-  preference, retry, EN/CS geometry and synthetic screenshots in CI artifacts.
+- JavaScript syntax, date/layout checks and DOM render probes passed.
+- [Focused Chromium/API run](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38771202882):
+  **39 passed, 0 failed, 0 skipped**, on 92c5265ab04cec0980bf1133004d129b347106e2.
+- Covers tenant boundaries, archives/cancellations, checkout/date limits, real
+  manual creation/CSRF, overlap confirmation, long stays, Auto/manual preference,
+  pointer/keyboard selection, forward and reverse dragging, save/details, retry,
+  EN/CS and widths 360/390/760/1024/1280/1440/1680/1920/2048 with collapsed rail.
+- [Synthetic screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38771202882/artifacts/11990614482).
+- Final keyboard/mouse guard has an additional assertion inside the existing
+  interaction test: toolbar clicks cannot submit a keyboard-selected range.
+- Final gate: every required [PR check](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/395/checks)
+  must be green on the exact candidate SHA. Required browser jobs enforce zero skips.
+- Full Python/coverage, lint/type/audit, context, secrets, shell, smoke and Docker
+  passed on the earlier candidate. Final-head CI remains the promotion authority.
+- Local Python, browser and context commands were unavailable: this chat exposes
+  no shell/browser runner. CI executed those checks.
 
 ## Staging
-Not deployed. Render access is not exposed by the connected tools.
-Review the exact green PR head, select this branch on Render ubyhost-staging,
-Manual Deploy → Deploy latest commit, verify the SHA and signed-in flows.
+Not deployed: Render access is not exposed by the connected tools.
+
+1. Review the exact green PR head and its screenshots. Keep the PR off main.
+2. Render → ubyhost-staging → Settings → Build & Deploy → Branch:
+   feature/dashboard-interactive-calendar-20261015.
+3. Keep staging/mock UbyPort and console mail; use synthetic data.
+4. Manual Deploy → Deploy latest commit. Verify the deployed full SHA equals
+   the reviewed green head and the service is Live.
+5. Verify sign-in, Auto at 2/3 properties, filtering/manual override, dragging,
+   exclusive checkout, overlap confirmation, saved stay/details, EN/CS and mobile.
+6. Record the Render deployment ID/URL/SHA and keep the previous release for rollback.
+
 The separate Lightsail Deploy staging workflow is not a Render deployment.
-No main merge, production deploy, provider calls, credentials or real guest data.
+No main merge or production deployment was performed.

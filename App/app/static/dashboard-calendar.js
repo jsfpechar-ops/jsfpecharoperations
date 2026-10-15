@@ -396,11 +396,11 @@
     event.preventDefault();
     const focusable = cell.matches("[data-cal-day]") ? cell : cell.querySelector("[data-cal-day]");
     if (focusable) focusable.focus({ preventScroll: true });
-    selection = { anchor: cell.dataset.date, start: cell.dataset.date, end: cell.dataset.date, property: cell.dataset.property || state.property, lastX: event.clientX };
+    selection = { anchor: cell.dataset.date, start: cell.dataset.date, end: cell.dataset.date, property: cell.dataset.property || state.property, lastX: event.clientX, pointerId: event.pointerId };
     root.setPointerCapture(event.pointerId); paintSelection();
   });
   root.addEventListener("pointermove", event => {
-    if (!selection) return;
+    if (!selection || selection.pointerId !== event.pointerId) return;
     const movementX = event.clientX - selection.lastX; selection.lastX = event.clientX;
     const target = document.elementFromPoint(event.clientX, event.clientY);
     const cell = target && target.closest("[data-date]");
@@ -416,7 +416,7 @@
     }
   });
   root.addEventListener("pointerup", event => {
-    if (!selection) return;
+    if (!selection || selection.pointerId !== event.pointerId) return;
     const chosen = { ...selection }; cancelSelection(); suppressClickUntil = Date.now() + 400;
     if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
     openCreate(chosen.start, addDays(chosen.end, 1), chosen.property);

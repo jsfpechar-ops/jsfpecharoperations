@@ -75,13 +75,13 @@ The current chat has no shell tool; CI is the execution path. Do not report a
 local application test or screenshot as completed.
 
 ## 7. Acceptance
-- [ ] 1–2 properties default Month, 3+ Gantt; manual selection wins and can reset.
-- [ ] Drag/keyboard selection prefills occupied nights with exclusive checkout.
-- [ ] Save persists a real manual stay via canonical protected POST.
-- [ ] Overlaps are visible and need confirmation for calendar creation.
-- [ ] Booking details and native full-stay links work.
-- [ ] Tenant isolation, archived/cancelled exclusions, date boundaries and >5 stays.
-- [ ] EN/CS at 360/390/760/1024/1280/1440/1680/1920/2048; no document overflow.
+- [x] 1–2 properties default Month, 3+ Gantt; manual selection wins and can reset.
+- [x] Drag/keyboard selection prefills occupied nights with exclusive checkout.
+- [x] Save persists a real manual stay via canonical protected POST.
+- [x] Overlaps are visible and need confirmation for calendar creation.
+- [x] Booking details and native full-stay links work.
+- [x] Tenant isolation, archived/cancelled exclusions, date boundaries and >5 stays.
+- [x] EN/CS at 360/390/760/1024/1280/1440/1680/1920/2048; no document overflow.
 - [ ] CI green, browser/geometry zero skips, synthetic screenshot artifacts.
 - [ ] Exact reviewed revision deployed and verified on Render staging.
 

@@ -200,6 +200,12 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         assert page.locator("#cal-departure").input_value() == "2026-10-15"
         page.keyboard.press("Escape")
         assert not page.locator("[data-cal-create]").is_visible()
+        page.locator('[data-cal-day="2026-10-12"]').focus()
+        page.keyboard.press("Shift+ArrowRight")
+        page.locator("[data-cal-settings]").click()
+        assert page.locator("[data-cal-settings-dialog]").is_visible()
+        assert not page.locator("[data-cal-create]").is_visible()
+        page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
         page.locator('[data-cal-day="2026-10-05"]').click()
         assert page.locator("[data-cal-overlap]").is_visible()
         page.locator("[data-cal-save]").click()
