@@ -61,7 +61,8 @@ def browser_context(playwright, ws, origin, width=1280, js=True, signed_in=True)
 
 
 def loaded(page):
-    page.wait_for_function("() => document.querySelector('[data-cal-body]').getAttribute('aria-busy') === 'false'")
+    page.wait_for_selector("[data-cal-body]", state="attached", timeout=10000)
+    page.wait_for_function("() => document.querySelector('[data-cal-body]')?.getAttribute('aria-busy') === 'false'")
     page.wait_for_selector(".cal-gantt-row")
 
 
