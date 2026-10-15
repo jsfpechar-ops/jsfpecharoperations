@@ -213,14 +213,14 @@ def test_dashboard_status_counts_use_distinct_colours(host_with_property):
         r'<a class="dashboard-stat (action|waiting|ready|overdue)([^"]*)"[^>]*>'
         r'<strong>(\d+)</strong><span>(.*?)</span></a>', page, re.S,
     )
-    assert len(cards) == 4
+    assert len(cards) == 3
     assert {kind for kind, _classes, _count, _label in cards} == {
-        "action", "waiting", "ready", "overdue"
+        "action", "ready", "overdue"
     }
     assert all(count == "0" and "is-positive" not in classes
                for _kind, classes, count, _label in cards)
     assert "Needs action" in page
-    assert "Waiting for guests" in page
+    assert 'class="dashboard-stat waiting' not in page
 
 
 def test_positive_action_count_uses_semantic_color_and_zeros_stay_neutral(host_with_property):
@@ -242,7 +242,7 @@ def test_positive_action_count_uses_semantic_color_and_zeros_stay_neutral(host_w
         by_kind = {kind: (classes, count) for kind, classes, count, _label in cards}
         assert by_kind["action"][1] == "1"
         assert "is-positive" in by_kind["action"][0]
-        for kind in ("waiting", "ready", "overdue"):
+        for kind in ("ready", "overdue"):
             assert by_kind[kind][1] == "0"
             assert "is-positive" not in by_kind[kind][0]
     finally:
@@ -254,7 +254,7 @@ def test_stat_tiles_use_the_status_tokens():
     template = (Path(__file__).resolve().parents[1] / "app" / "templates" / "dashboard.html").read_text()
     assert ".dashboard-stat { --stat-color:var(--ink-muted);" in template
     assert "background:#fff;" in template
-    for name, token in (("action", "status-action-border"), ("waiting", "brown"),
+    for name, token in (("action", "status-action-border"),
                         ("ready", "status-ready-ink"), ("overdue", "status-critical-border")):
         assert f".dashboard-stat.{name}.is-positive {{ --stat-color:var(--{token}); }}" in template
 

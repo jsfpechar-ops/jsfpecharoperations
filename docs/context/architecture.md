@@ -36,6 +36,8 @@
 
 **Large files** (grep, then read ranges only): `App/app/routes/admin.py` (116 KB), `App/app/reporting.py` (100 KB), `App/app/db.py` (69 KB), `App/app/mail_notify.py` (69 KB), `App/app/routes/guest.py` (77 KB).
 
+**Dashboard calendar:** `routes/dashboard_calendar.py` provides bounded, owner-scoped booking data; `_dashboard_calendar.html` and `dashboard-calendar.js`/CSS implement views, selection and dialogs. Manual creation remains in `routes/admin.py`.
+
 **Host property hub:** `apartment_form.html` uses `?view=overview|bookings|settings`; settings select `section=property|guests|reporting|automation|lock`. Guest links and timing are per property; `/apartments#property-summaries` is the cross-property summary.
 
 **Property setup:** `routes/onboarding_wizard.py` serves the eight-step `/apartments/{id}/setup` wizard (0102). Brief 0101 removed the older `/setup*`, `routes/setup_wizard.py`, `/automation` and old settings adapters; `/guest-links` remains for sent lifecycle e-mails.
