@@ -1,8 +1,10 @@
 # Status
 
-Updated: 2026-10-14. #382 includes #389 and current main: [merge-readiness report](../tasks/0086-pr-382-integration-report.md).
+Updated: 2026-10-15. #382 includes #389 and current main: [merge-readiness report](../tasks/0086-pr-382-integration-report.md).
 
 ## Production
+
+- Filing watchdog: owner confirmed the server digest interval changed from 6 to 72 hours on 2026-10-15; repository default is still 6 hours (K-OPS72).
 
 - **Magic-link:** phases 1–2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)); e-mail login, `.env` admin/SES, access log off, properties tested.
 - **112 reconcile:** dry run `guests answered with accepted codes only: 0` — no `--apply` needed (Oct 2026).

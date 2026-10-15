@@ -52,3 +52,4 @@ Append-only.
 - 2026-10-11 | Web-service credential request: data box ybndqw9, Ředitelství služby cizinecké policie, Olšanská 2, 130 51 Praha 3 | owner | [0044](../tasks/0044-ws-request-letter.md)
 - 2026-10-12 | TTLock: -1026 = code made, then deleted (0067); TTLock = host's own provider, no SCCs (0068); undeleted same-period code returns the same PIN, so custom code + host mail, deletes retried to end (0069) | TTLock, owner | [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
+- 2026-10-15 | Filing watchdog operator digest at most every 72 hours while at-risk stays remain; replaces 6 hours in production | owner applied the server change and confirmed it in chat; host warnings and filing unchanged | [OPERATIONS](../OPERATIONS.md)

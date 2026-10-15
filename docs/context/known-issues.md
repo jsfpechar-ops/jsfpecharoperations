@@ -93,4 +93,5 @@ Status: open, unverified, decision, accepted.
 
 | K-U15 | Med review | Host forms/navigation | Fixed on staging PR; 0084 (incl. old K-U14 ownership) + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests | [0080](../tasks/0080-report.md) |
-| K-U16 | Review | Host UI | #389 polish; CI in PR checks | 0102 |
+| K-U16 | Review | Host UI | #389 polish; CI in PR checks | 0102 |\n
+| K-OPS72 | Low open | App/app/filing_watchdog.py DIGEST_INTERVAL | Production uses the owner-confirmed 72-hour digest interval; repository default remains 6 hours. Commit the interval and align its tests before a future deployment replaces the server override. | Owner, 2026-10-15 |
