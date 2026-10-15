@@ -12,12 +12,20 @@ from .. import access, auth, db, demo, reporting
 router = APIRouter()
 
 
-def parse_range(start: str, end: str) -> tuple[date, date]:
-    """Calendar dates describe occupied nights: checkout is exclusive."""
+def parse_dates(start: str, end: str) -> tuple[date, date]:
+    """Stay dates describe occupied nights: checkout is exclusive."""
     if not all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", value or "") for value in (start, end)):
         raise ValueError("invalid dates")
     first, last = date.fromisoformat(start), date.fromisoformat(end)
-    if first.year < 1900 or last.year > 2101 or not 0 < (last - first).days <= 370:
+    if first.year < 1900 or last.year > 2101 or last <= first:
+        raise ValueError("invalid range")
+    return first, last
+
+
+def parse_range(start: str, end: str) -> tuple[date, date]:
+    """Bound data reads without imposing that limit on a manual stay."""
+    first, last = parse_dates(start, end)
+    if (last - first).days > 370:
         raise ValueError("invalid range")
     return first, last
 

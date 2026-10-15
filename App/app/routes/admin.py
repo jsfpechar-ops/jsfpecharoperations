@@ -2932,7 +2932,7 @@ async def reservation_create(request: Request):
     if calendar_json:
         errors = {}
         try:
-            dashboard_calendar.parse_range(date_from, date_to)
+            dashboard_calendar.parse_dates(date_from, date_to)
         except (ValueError, TypeError):
             errors["date_to"] = _flash(request, "flash.error.dates_order")
         apartment = access.apartment(request, apartment_id) if apartment_id else None

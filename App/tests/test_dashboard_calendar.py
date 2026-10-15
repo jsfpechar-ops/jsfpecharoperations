@@ -210,3 +210,14 @@ def test_calendar_payload_is_not_capped_at_five_stays(calendar_workspace):
     ids = {make_stay(ws["properties"][2], f"2027-07-{day:02d}", f"2027-07-{day + 1:02d}") for day in range(1, 15)}
     data = calendar_get(ws["client"], **{"from": "2027-07-01", "to": "2027-08-01"}).json()
     assert ids <= {event["id"] for event in data["events"]}
+
+
+def test_manual_stay_can_cross_years_without_broadening_calendar_reads(calendar_workspace):
+    ws = calendar_workspace
+    response = create(ws["client"], ws["properties"][0], "2029-01-01", "2030-06-01")
+    assert response.status_code == 201
+    stay_id = response.json()["id"]
+    window = calendar_get(ws["client"], **{"from": "2030-05-01", "to": "2030-06-01"})
+    assert stay_id in {event["id"] for event in window.json()["events"]}
+    unbounded = calendar_get(ws["client"], **{"from": "2029-01-01", "to": "2030-06-01"})
+    assert unbounded.status_code == 422
