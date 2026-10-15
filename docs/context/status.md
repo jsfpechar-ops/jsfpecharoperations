@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-15. #382 includes #389 and current main: [merge-readiness report](../tasks/0086-pr-382-integration-report.md).
+Updated: 2026-10-15.
 
 ## Production
 
@@ -12,7 +12,7 @@ Updated: 2026-10-15. #382 includes #389 and current main: [merge-readiness repor
 
 ## Now
 
-- #389 wizard polish: [report](../tasks/0102-fix-4-report.md); CI in PR checks.
+- Calendar 0103: compact layout review; exact-head CI in PR #395, Render staging pending ([brief](../tasks/0103-dashboard-calendar.md)).
 
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
@@ -20,7 +20,7 @@ Updated: 2026-10-15. #382 includes #389 and current main: [merge-readiness repor
 
 ## Next
 
-- Host UX: owner merged #389 into #382; current main is integrated for final CI before the owner merges #382. [Report](../tasks/0086-pr-382-integration-report.md).
+- Host UX #382 is merged into main ([report](../tasks/0086-pr-382-integration-report.md)).
 
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
 - Merged 0067 (#371) and 0068 (#372). TTLock answered all questions ([TTLOCK](../TTLOCK.md#what-ttlock-support-confirmed-2026-10-12)). Next: [0069](../tasks/0069-same-period-shared-pin.md), same-hours rebooking must not reuse a PIN (K-D04).

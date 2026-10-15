@@ -210,14 +210,49 @@ jobs:
           UBYHOST_DEPLOYMENT: staging
           UBYHOST_ENABLE_SCHEDULER: "0"
           UBYHOST_REQUIRE_BROWSER: "1"
+          UBYHOST_SHOTS_DIR: ${{ runner.temp }}/dashboard-calendar-shots
         # REQUIRE_BROWSER turns "Chromium is missing" from a skip into a failure.
         run: >-
           python -m pytest tests/test_guest_browser_e2e.py tests/test_host_geometry.py
           tests/test_onboarding_wizard_browser.py tests/test_onboarding_wizard_survival.py
           tests/test_download_skeleton_browser.py tests/test_onboarding_followup_browser.py
           tests/test_host_stay_actions_browser.py tests/test_host_stay_detail_layout_browser.py
-          tests/test_host_quiet_dashboard_browser.py tests/test_host_list_layouts_browser.py -q -rs --junitxml=/tmp/ubyhost-tests.xml
+          tests/test_host_quiet_dashboard_browser.py tests/test_dashboard_calendar_browser.py tests/test_host_list_layouts_browser.py -q -rs --junitxml=/tmp/ubyhost-tests.xml
 
+
+      - name: Summarize required browser checks
+        if: always()
+        id: browser_summary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import xml.etree.ElementTree as ET
+          report = Path("/tmp/ubyhost-tests.xml")
+          if not report.exists():
+              raise SystemExit("Required browser report is missing")
+          cases = list(ET.parse(report).iter("testcase"))
+          failed = sum(case.find("failure") is not None or case.find("error") is not None for case in cases)
+          skipped = sum(case.find("skipped") is not None for case in cases)
+          summary = f"Browser checks: {len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped"
+          print(summary)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write("summary=" + summary + "\n")
+          if skipped:
+              raise SystemExit("Required browser checks must have zero skips")
+          PY
+
+      - name: ${{ steps.browser_summary.outputs.summary || 'Browser check summary' }}
+        if: always()
+        run: 'true'
+
+      - name: Upload calendar and dashboard review screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-calendar-review
+          path: ${{ runner.temp }}/dashboard-calendar-shots
+          if-no-files-found: warn
 
       - name: Annotate failed tests
         id: test_failures
@@ -328,3 +363,102 @@ jobs:
         run: >-
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2
           detect --source=/repo --redact --log-opts="-n 50"
+
+  calendar-review:
+    # Fast feature feedback runs alongside the full required regression suite.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: App
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            App/requirements.lock
+            App/requirements-dev.txt
+      - name: Install dependencies and Chromium
+        run: |
+          pip install --require-hashes -r requirements.lock && pip install -r requirements-dev.txt
+          pip install playwright==1.63.0
+          python -m playwright install --with-deps chromium
+      - name: Exercise calendar booking interactions and geometry
+        env:
+          UBYHOST_UBYPORT_ENV: mock
+          UBYHOST_DEPLOYMENT: staging
+          UBYHOST_ENABLE_SCHEDULER: "0"
+          UBYHOST_REQUIRE_BROWSER: "1"
+          UBYHOST_SHOTS_DIR: ${{ runner.temp }}/calendar-feature-shots
+        run: >-
+          python -m pytest tests/test_dashboard_calendar.py tests/test_dashboard_calendar_browser.py
+          -x -q -rs --junitxml=/tmp/calendar-review.xml
+      - name: Summarize calendar checks
+        if: always()
+        id: calendar_summary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import xml.etree.ElementTree as ET
+          report = Path("/tmp/calendar-review.xml")
+          if not report.exists():
+              raise SystemExit("Calendar test report is missing")
+          cases = list(ET.parse(report).iter("testcase"))
+          failed = sum(case.find("failure") is not None or case.find("error") is not None for case in cases)
+          skipped = sum(case.find("skipped") is not None for case in cases)
+          summary = f"Calendar checks: {len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped"
+          print(summary)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write("summary=" + summary + "\n")
+          if skipped:
+              raise SystemExit("Calendar checks must have zero skips")
+          PY
+      - name: ${{ steps.calendar_summary.outputs.summary || 'Calendar check summary' }}
+        if: always()
+        run: 'true'
+      - name: Annotate calendar failures
+        if: failure()
+        id: calendar_failures
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import xml.etree.ElementTree as ET
+          failures = []
+          path = Path("/tmp/calendar-review.xml")
+          if path.exists():
+              for case in ET.parse(path).iter("testcase"):
+                  failure = case.find("failure")
+                  if failure is None:
+                      failure = case.find("error")
+                  if failure is not None:
+                      title = (case.get("classname", "") + "." + case.get("name", ""))[:200]
+                      detail = (failure.text or failure.get("message", ""))[-6000:]
+                      detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+                      print(f"::error title={title}::{detail}")
+                      failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              for index, detail in enumerate(failures[:4], 1):
+                  output.write(f"failure_{index}={detail}\n")
+          PY
+      - name: ${{ steps.calendar_failures.outputs.failure_1 || 'Calendar failure detail 1' }}
+        if: failure() && steps.calendar_failures.outputs.failure_1 != ''
+        run: 'true'
+      - name: ${{ steps.calendar_failures.outputs.failure_2 || 'Calendar failure detail 2' }}
+        if: failure() && steps.calendar_failures.outputs.failure_2 != ''
+        run: 'true'
+      - name: ${{ steps.calendar_failures.outputs.failure_3 || 'Calendar failure detail 3' }}
+        if: failure() && steps.calendar_failures.outputs.failure_3 != ''
+        run: 'true'
+      - name: ${{ steps.calendar_failures.outputs.failure_4 || 'Calendar failure detail 4' }}
+        if: failure() && steps.calendar_failures.outputs.failure_4 != ''
+        run: 'true'
+      - name: Upload calendar feature screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: calendar-feature-review
+          path: ${{ runner.temp }}/calendar-feature-shots
+          if-no-files-found: warn

@@ -47,6 +47,7 @@ def dashboard_host():
     reservation_id = db.insert("reservation", {
         "apartment_id": apartment_id, "source": "manual", "uid": f"quiet-{secrets.token_hex(4)}",
         "date_from": today.isoformat(), "date_to": (today + timedelta(days=2)).isoformat(),
+        "expected_guests_override": 1,
         "status": "active", "created_at": db.utcnow(), "updated_at": db.utcnow(),
     })
     client = TestClient(app)
@@ -195,11 +196,11 @@ def test_dashboard_geometry_locales_and_screenshots(dashboard_host, base):
                 assert "has-js" in (page.locator("html").get_attribute("class") or "")
                 assert not page_errors, f"browser script errors: {page_errors}"
 
-                assert page.locator(".dashboard-stats .dashboard-stat").count() == 4
+                assert page.locator(".dashboard-stats .dashboard-stat").count() == 3
                 rows = page.locator(".dashboard-row")
                 assert 1 <= rows.count() <= 5
-                assert page.locator("#current").count() == 1
-                assert page.locator(".dashboard-stat.waiting").get_attribute("href") == "#current"
+                assert page.locator("[data-calendar]").count() == 1
+                assert page.locator(".dashboard-stat.waiting").count() == 0
                 own_row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_host["reservation"]}"]')
                 assert own_row.count() == 1
                 assert page.evaluate("() => document.documentElement.scrollWidth - innerWidth") <= 1
@@ -283,12 +284,12 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 assert not page_errors, f"browser script errors: {page_errors}"
 
                 cards = page.locator(".dashboard-stats .dashboard-stat")
-                assert cards.count() == 4
-                for kind, count in (("action", 6), ("waiting", 1), ("ready", 1), ("overdue", 1)):
+                assert cards.count() == 3
+                for kind, count in (("action", 6), ("ready", 1), ("overdue", 1)):
                     card = page.locator(f".dashboard-stat.{kind}")
                     assert card.locator("strong").inner_text() == str(count)
                     assert "is-positive" in (card.get_attribute("class") or "")
-                    assert card.evaluate("el => getComputedStyle(el).boxShadow") != "none"
+                    assert card.evaluate("el => getComputedStyle(el, \"::before\").backgroundColor") != "rgba(0, 0, 0, 0)"
                 rows = page.locator(".dashboard-row")
                 assert rows.count() == 5
                 shown_ids = [int(value) for value in rows.evaluate_all("nodes => nodes.map(node => node.dataset.stayId)")]
@@ -308,7 +309,8 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 # cap is consumed by actionable work. Do not claim the current
                 # queue is empty or link the count to a nonexistent section.
                 assert page.locator("#current").count() == 0
-                assert page.locator(".dashboard-stat.waiting").get_attribute("href") == "/reservations"
+                assert page.locator(".dashboard-stat.waiting").count() == 0
+                assert page.locator("[data-calendar]").count() == 1
                 assert page.get_by_text("No guest forms are currently outstanding.", exact=True).count() == 0
                 assert page.evaluate("() => document.documentElement.scrollWidth - innerWidth") <= 1
 

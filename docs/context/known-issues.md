@@ -1,10 +1,8 @@
 # Known issues
 
-Grep first; avoid repeated hunts. Fixed: remove and log decision.
-Status: open, unverified, decision, accepted.
-**HR** = HIGH RISK; owner decides.
+Grep. **HR**: owner decides.
 
-**Sources:** [map](known-issue-sources.md); host geometry audit.
+**Sources:** [map](known-issue-sources.md).
 
 
 | ID | Sev/status | Where | Issue | Src |
@@ -86,12 +84,12 @@ Status: open, unverified, decision, accepted.
 | K-ML01 | Low open | App/app/static/app.js | Dead reset-password JS after task 0003 password removal | magic-link HANDOFF |
 | K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
 | K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
-| K-ML04 | Low open | login link limit | Anyone can use up a victim's 3 requests per 15 min. Kept: counting only real accounts would reveal who uses UbyHost | 0006 |
+| K-ML04 | Low open | login link limit | An attacker can spend another address's 3/15 min login budget; account-only limits would reveal account existence. | 0006 |
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
-| K-D04 | High open | door_codes `issue`, `_handle_moves` | Same hours rebooked while a cancelled code is undeleted: `get` returns the old PIN to the new guest | [0069](../tasks/0069-same-period-shared-pin.md) |
+| K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can receive an undeleted cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
 
 | K-U15 | Med review | Host forms/navigation | Fixed on staging PR; 0084 (incl. old K-U14 ownership) + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI in PR checks | 0102 |
-| K-OPS72 | Low open | App/app/filing_watchdog.py DIGEST_INTERVAL | Production uses the owner-confirmed 72-hour digest interval; repository default remains 6 hours. Commit the interval and align its tests before a future deployment replaces the server override. | Owner, 2026-10-15 |
+| K-OPS72 | Low open | App/app/filing_watchdog.py DIGEST_INTERVAL | Server digest 72 h, repository 6 h. Align code/tests before deploying over the server override. | Owner, 2026-10-15 |

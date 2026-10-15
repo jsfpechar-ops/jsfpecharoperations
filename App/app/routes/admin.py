@@ -56,7 +56,7 @@ from .. import (
 )
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
-from . import admin_accounts, api, exports, guest, onboarding, privacy_requests
+from . import admin_accounts, api, dashboard_calendar, exports, guest, onboarding, privacy_requests
 from . import passkeys as passkey_routes
 from . import signup as signup_routes
 from . import stay_fees as stay_fee_routes
@@ -73,6 +73,7 @@ from .admin_helpers import query_int as _query_int
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
+router.include_router(dashboard_calendar.router)
 router.include_router(passkey_routes.router)
 router.include_router(api.router)
 router.include_router(onboarding.router)
@@ -2927,6 +2928,26 @@ async def reservation_create(request: Request):
     apartment_id = _form_int(form, "apartment_id")
     date_from = _form_str(form, "date_from")
     date_to = _form_str(form, "date_to")
+    calendar_json = _form_str(form, "calendar") == "1" and "application/json" in request.headers.get("accept", "")
+    if calendar_json:
+        errors = {}
+        try:
+            dashboard_calendar.parse_dates(date_from, date_to)
+        except (ValueError, TypeError):
+            errors["date_to"] = _flash(request, "flash.error.dates_order")
+        apartment = access.apartment(request, apartment_id) if apartment_id else None
+        if not apartment or not apartment["active"] or apartment["archived_at"]:
+            errors["apartment_id"] = _flash(request, "flash.error.no_such_apartment")
+        guest_value = _form_str(form, "expected_guests")
+        if guest_value and (_form_int(form, "expected_guests") is None or not 1 <= _form_int(form, "expected_guests") <= 60):
+            errors["expected_guests"] = _flash(request, "calendar.guests_error")
+        if errors:
+            return JSONResponse({"errors": errors}, status_code=422, headers={"Cache-Control": "no-store"})
+        if _form_str(form, "allow_overlap") != "1" and dashboard_calendar.overlapping_count(apartment_id, date_from, date_to):
+            return JSONResponse(
+                {"error": _flash(request, "calendar.overlap"), "overlap": True},
+                status_code=409, headers={"Cache-Control": "no-store"},
+            )
     if not (apartment_id and date_from and date_to):
         return _back("/reservations", err=_flash(request, "flash.error.stay_dates_required"))
     if not access.apartment(request, apartment_id):
@@ -2954,6 +2975,11 @@ async def reservation_create(request: Request):
             "updated_at": db.utcnow(),
         },
     )
+    if calendar_json:
+        return JSONResponse(
+            {"id": reservation_id, "url": f"/reservations/{reservation_id}?return_to=/"},
+            status_code=201, headers={"Cache-Control": "no-store"},
+        )
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.created"))
 
 

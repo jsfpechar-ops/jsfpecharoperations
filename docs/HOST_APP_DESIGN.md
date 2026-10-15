@@ -67,8 +67,8 @@ Use the implemented top bar with menu, logo, Search, and environment indicator. 
 
 **Owner selection, 2026-10-10: Quiet overview.** Keep the simple text-first design,
 quiet status colors and consistent hover/keyboard feedback. No property photos
-or decorative details. Show at most **five unique stay rows total** across the
-dashboard. Routine stays are current or arrive within **30 days**, using Prague
+or decorative details. Show at most **five unique actionable stay rows** below the
+calendar. Routine stays are current or arrive within **30 days**, using Prague
 today; real overdue/failed work takes priority even for older stays. Counts
 must be calculated before truncation, with a visible additional-action count
 when necessary and **View all stays** for the full list. See
@@ -76,12 +76,10 @@ when necessary and **View all stays** for the full list. See
 The 30-day window supersedes the earlier 14-day choice.
 
 **Header:** “Dashboard” and the current date. “Add stay” and “Update calendars”
-share action geometry. The owner reaffirmed the four white Quiet overview
-cards: amber Needs action, taupe Waiting for guests, muted blue Ready to send,
-Overdue red only when positive. Small dots and restrained attention lines;
-zero counts stay neutral. Count the full candidate set before the five-row cap.
-Open and the shared three-dot More actions control use consistent columns
-across both row sections.
+share action geometry. Owner update, 2026-10-15: use compact inline count pills
+for Needs action, Ready to send and Overdue, directly above the calendar. Remove Waiting for guests from
+the dashboard summary; routine waiting is not a task. Zero counts stay neutral.
+Count the full action candidate set before the five-row cap.
 Owner's latest wording: label the row button **Open**; label invitation copying
 **Copy guest form link** and copy the guest-facing registration URL. Copy
 availability follows Open guest form link availability across reporting states;
@@ -89,7 +87,22 @@ never create or enable a missing/expired link.
 
 **Needs you now:** compact rows ordered by actual urgency. Each row shows arrival/departure context, property, one task label (“1 guest missing”, “Check police report”, “Property needs setup”), and one action (“Open”, “Check report”, “Finish setup”). A second short line is allowed only if the action would be unclear, for example “No confirmation from UbyPort yet.” Avoid “2 of 3 registered. Share the invitation to finish check-in” when the count and button already say this.
 
-**Current and coming up:** date, property, one meaningful status/task and a row link. Keep receipt access on the stay/report pages; do not add a separate activity feed to this overview. Do not place invoicing or fee work into the dashboard unless the backend can accurately establish a real action; the default place to find invoices and fees is their dedicated section.
+**Reservations calendar (owner, 2026-10-15):** below the summary pills, replace
+the routine list with Month/Week/Year calendar and a property-row Gantt. In
+automatic mode, 1–2 visible active properties use monthly calendar; 3 or more
+use Gantt. An explicit view choice persists and wins until Auto is enabled.
+Drag across occupied nights to prefill manual creation (checkout is exclusive).
+Click a booking for a details dialog and the canonical stay page. Expose overlaps,
+require confirmation before creating an overlap, and preserve the canonical
+creation handler, permissions and CSRF checks. Calendar range loading is separate
+from the action queue's 30-day horizon and five-row cap. Desktop uses compact
+100px week rows, slim rounded property-colored bars, outline calendar/timeline/
+sliders icons and separate month/year selectors. Busy dates open a full stay list;
+mobile retains 44px touch targets. Hide imported Reserved/Booked placeholders and
+routine exclamation marks from bars. Reporting urgency stays in summary, queue and
+details; property colors use existing teal/blue/purple tokens.
+
+ Keep receipt access on the stay/report pages; do not add a separate activity feed to this overview. Do not place invoicing or fee work into the dashboard unless the backend can accurately establish a real action; the default place to find invoices and fees is their dedicated section.
 
 **Empty state:** “Nothing needs you today.” followed by the next known stay or a single Add stay action. Do not show invented “all caught up” statistics.
 
