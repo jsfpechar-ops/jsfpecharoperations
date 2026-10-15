@@ -420,10 +420,13 @@ jobs:
         run: 'true'
       - name: Annotate calendar failures
         if: failure()
+        id: calendar_failures
         run: |
           python - <<'PY'
           from pathlib import Path
+          import os
           import xml.etree.ElementTree as ET
+          failures = []
           path = Path("/tmp/calendar-review.xml")
           if path.exists():
               for case in ET.parse(path).iter("testcase"):
@@ -435,7 +438,23 @@ jobs:
                       detail = (failure.text or failure.get("message", ""))[-6000:]
                       detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
                       print(f"::error title={title}::{detail}")
+                      failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              for index, detail in enumerate(failures[:4], 1):
+                  output.write(f"failure_{index}={detail}\\n")
           PY
+      - name: ${{ steps.calendar_failures.outputs.failure_1 || 'Calendar failure detail 1' }}
+        if: failure() && steps.calendar_failures.outputs.failure_1 != ''
+        run: 'true'
+      - name: ${{ steps.calendar_failures.outputs.failure_2 || 'Calendar failure detail 2' }}
+        if: failure() && steps.calendar_failures.outputs.failure_2 != ''
+        run: 'true'
+      - name: ${{ steps.calendar_failures.outputs.failure_3 || 'Calendar failure detail 3' }}
+        if: failure() && steps.calendar_failures.outputs.failure_3 != ''
+        run: 'true'
+      - name: ${{ steps.calendar_failures.outputs.failure_4 || 'Calendar failure detail 4' }}
+        if: failure() && steps.calendar_failures.outputs.failure_4 != ''
+        run: 'true'
       - name: Upload calendar feature screenshots
         if: always()
         uses: actions/upload-artifact@v4
