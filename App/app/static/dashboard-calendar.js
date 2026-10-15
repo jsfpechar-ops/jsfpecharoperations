@@ -135,7 +135,7 @@
     if (state.display.label && event.label) parts.push(event.label);
     if (state.display.property) parts.push(event.property);
     if (state.display.guests && event.expected !== null) parts.push(String(event.expected));
-    return parts.join(" · ") || event.label || event.property;
+    return parts.join(" · ") || labels.booked;
   }
   function statusFor(event) {
     if (event.preview) return labels.preview;

@@ -29,6 +29,9 @@ Explicit owner-scoped payload, exclusive checkout, warm existing design tokens.
 - Added reverse Gantt selection, fresh-visit preference persistence, larger mobile
   targets and explicit target-size checks. A parallel calendar review job provides
   fast feedback; the full required browser suite still runs with zero-skip gates.
+- Isolated review exposed a fresh-database test-order dependency; added explicit
+  schema setup and a standalone dashboard render assertion. Startup failures now
+  record visible-page and script/API diagnostics with synthetic fixtures.
 - Final browser/geometry result: see current [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/395/checks).
   Synthetic screenshots are uploaded as calendar-feature-review and dashboard-calendar-review.
 - Browser suite includes actual drag/save/details, keyboard/overlap, Auto/manual

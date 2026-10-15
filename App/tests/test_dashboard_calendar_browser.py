@@ -55,8 +55,20 @@ def open_page(browser, ws, origin, width=1280, locale="en", touch=False):
     context = browser.new_context(viewport={"width": width, "height": 1000}, has_touch=touch)
     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": ws["client"].cookies.get(auth.SESSION_COOKIE), "url": origin + "/"}])
     page = context.new_page()
-    page.goto(f"{origin}/?lang={locale}&cal_date=2026-10-01")
-    page.wait_for_selector(".cal-gantt-row")
+    script_errors = []
+    api_responses = []
+    page.on("pageerror", lambda error: script_errors.append(str(error)))
+    page.on("response", lambda response: api_responses.append(response.status) if "/dashboard/calendar?" in response.url else None)
+    response = page.goto(f"{origin}/?lang={locale}&cal_date=2026-10-01")
+    try:
+        page.wait_for_selector(".cal-gantt-row", timeout=10000)
+    except Exception:
+        shot(page, f"open-failed-{locale}-{width}")
+        raise AssertionError(
+            f"Calendar did not start: HTTP {response.status}, URL {page.url}; "
+            f"script errors={script_errors}; API responses={api_responses}; "
+            f"page={page.locator('body').inner_text()[:1800]}"
+        ) from None
     page.wait_for_function("() => document.querySelector('[data-cal-body]').getAttribute('aria-busy') === 'false'")
     later = page.locator("#security-prompt [data-security-prompt-later]")
     if later.is_visible():
@@ -101,6 +113,11 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.locator("[data-cal-settings]").click()
         page.locator("[data-cal-auto]").check()
         page.wait_for_selector(".cal-gantt-row")
+        for field in ("property", "label", "guests"):
+            page.locator(f'[data-cal-display="{field}"]').uncheck()
+        assert page.locator(".cal-event").first.locator("span").last.inner_text() == "Booked"
+        for field in ("property", "label", "guests"):
+            page.locator(f'[data-cal-display="{field}"]').check()
         page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
         page.locator("[data-cal-property]").select_option(str(calendar_workspace["properties"][0]))
         page.wait_for_selector(".cal-week")

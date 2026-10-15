@@ -88,6 +88,7 @@ def test_leap_year_and_prague_dst_are_date_only():
 
 
 def test_anonymous_calendar_requires_login():
+    db.init_db()
     response = TestClient(app).get("/dashboard/calendar?from=2026-10-01&to=2026-11-01", follow_redirects=False)
     assert response.status_code == 303
     assert "/login" in response.headers["location"]
@@ -221,3 +222,10 @@ def test_manual_stay_can_cross_years_without_broadening_calendar_reads(calendar_
     assert stay_id in {event["id"] for event in window.json()["events"]}
     unbounded = calendar_get(ws["client"], **{"from": "2029-01-01", "to": "2030-06-01"})
     assert unbounded.status_code == 422
+
+
+def test_calendar_dashboard_renders_with_only_its_own_fixture(calendar_workspace):
+    response = calendar_workspace["client"].get("/?lang=en")
+    assert response.status_code == 200
+    assert 'data-calendar data-today=' in response.text
+    assert 'data-cal-properties' in response.text
