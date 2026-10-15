@@ -6597,7 +6597,7 @@ _CALENDAR_STRINGS = {
         "calendar.property": "Property",
         "calendar.add": "Add stay",
         "calendar.loading": "Loading stays…",
-        "calendar.load_error": "Stays could not be loaded. Try again.",
+        "calendar.load_error": "Stays could not be loaded.",
         "calendar.retry": "Try again",
         "calendar.empty": "No stays in this period",
         "calendar.empty_properties": "Add an active property to start planning stays.",
@@ -6615,7 +6615,7 @@ _CALENDAR_STRINGS = {
         "calendar.open": "Open stay",
         "calendar.arrival": "Check-in",
         "calendar.departure": "Check-out",
-        "calendar.guests": "Guests registered / expected",
+        "calendar.guests": "Guest forms complete / expected",
         "calendar.unknown": "Not specified",
         "calendar.manual": "Manual booking",
         "calendar.imported": "Calendar import",
@@ -6643,7 +6643,8 @@ _CALENDAR_STRINGS = {
         "calendar.conflict": "Overlapping bookings",
         "calendar.error_dates": "Check-out must be after check-in.",
         "calendar.year_label": "Year",
-        "calendar.month_label": "Month"
+        "calendar.month_label": "Month",
+        "calendar.details_needed": "Guest details needed"
     },
     "cs": {
         "calendar.title": "Přehled pobytů",
@@ -6660,7 +6661,7 @@ _CALENDAR_STRINGS = {
         "calendar.property": "Ubytování",
         "calendar.add": "Přidat pobyt",
         "calendar.loading": "Načítání pobytů…",
-        "calendar.load_error": "Pobyty se nepodařilo načíst. Zkuste to znovu.",
+        "calendar.load_error": "Pobyty se nepodařilo načíst.",
         "calendar.retry": "Zkusit znovu",
         "calendar.empty": "V tomto období nejsou žádné pobyty",
         "calendar.empty_properties": "Pro plánování pobytů přidejte aktivní ubytování.",
@@ -6678,7 +6679,7 @@ _CALENDAR_STRINGS = {
         "calendar.open": "Otevřít pobyt",
         "calendar.arrival": "Příjezd",
         "calendar.departure": "Odjezd",
-        "calendar.guests": "Zaregistrováno / očekáváno hostů",
+        "calendar.guests": "Hotové formuláře / očekáváno hostů",
         "calendar.unknown": "Neuvedeno",
         "calendar.manual": "Ruční rezervace",
         "calendar.imported": "Import z kalendáře",
@@ -6706,7 +6707,8 @@ _CALENDAR_STRINGS = {
         "calendar.conflict": "Překrývající se rezervace",
         "calendar.error_dates": "Odjezd musí být po příjezdu.",
         "calendar.year_label": "Rok",
-        "calendar.month_label": "Měsíc"
+        "calendar.month_label": "Měsíc",
+        "calendar.details_needed": "Chybí údaje hostů"
     }
 }
 for _lang, _strings in _CALENDAR_STRINGS.items():

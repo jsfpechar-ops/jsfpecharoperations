@@ -27,6 +27,7 @@ that truncated date horizon. Manual creation remains POST /reservations.
 - `App/app/static/dashboard-calendar.js`
 - `App/app/static/dashboard-calendar.css`
 - `App/app/host_i18n.py`
+- `App/app/cookie_inventory.py`
 - `App/tests/test_dashboard_calendar.py`
 - `App/tests/test_dashboard_calendar_browser.py`
 - `App/tests/test_host_quiet_dashboard_browser.py`

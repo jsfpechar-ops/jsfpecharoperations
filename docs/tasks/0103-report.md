@@ -19,7 +19,10 @@ Explicit owner-scoped payload, exclusive checkout, warm existing design tokens.
   stacked overlap and adjacent-stay lane reuse).
 - Local Python/pytest/ruff/browser/context commands: not run. No shell tool is
   available in this chat, despite the environment reporting running.
-- Full CI, required browser/geometry, screenshot evidence: pending PR run.
+- First CI run: context, secret scan, shellcheck, dependency audit, runtime lint
+  and type check passed. Full tests found an undeclared calendar preference key;
+  fixed by adding the functional storage inventory row (all published languages).
+- Required browser/geometry and screenshot evidence: pending rerun.
 - Browser suite includes actual drag/save/details, keyboard/overlap, Auto/manual
   preference, retry, EN/CS geometry and synthetic screenshots in CI artifacts.
 

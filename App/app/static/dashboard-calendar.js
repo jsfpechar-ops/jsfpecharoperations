@@ -71,7 +71,8 @@
     display: { property: preferences.property !== false, label: preferences.label !== false, guests: preferences.guests !== false }
   };
   let requestNumber = 0, controller = null, selection = null, suppressClickUntil = 0;
-  let keyboardAnchor = null, dayListDate = null, previousFocus = null, saving = false;
+  let keyboardAnchor = null, dayListDate = null, saving = false;
+  const focusReturn = new WeakMap();
   let lastLoadedRange = null, refreshOnDetailsClose = false;
   detailsDialog.addEventListener("close", () => { if (refreshOnDetailsClose) location.reload(); });
   function el(tag, className, text) {
@@ -305,7 +306,7 @@
     }
   }
   function show(dialog) {
-    previousFocus = document.activeElement;
+    focusReturn.set(dialog, document.activeElement);
     if (!dialog.open) dialog.showModal();
   }
   function close(dialog) {
@@ -314,19 +315,26 @@
   }
   $$("dialog").forEach(dialog => {
     dialog.addEventListener("close", () => {
-      if (previousFocus && previousFocus.isConnected) previousFocus.focus();
-      previousFocus = null;
+      const target = focusReturn.get(dialog); focusReturn.delete(dialog);
+      if ($("dialog[open]")) return;
+      if (target && target.isConnected && !target.closest("dialog:not([open])")) target.focus();
+      else body.focus();
     });
     dialog.addEventListener("cancel", event => { if (dialog === createDialog && saving) event.preventDefault(); });
+    dialog.addEventListener("click", event => {
+      if (event.target !== dialog) return;
+      const box = dialog.getBoundingClientRect();
+      if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close(dialog);
+    });
   });
   function openDetails(event) {
     const container = $("[data-cal-detail-content]"); container.replaceChildren();
     container.append(el("h3", "cal-detail-property", event.property));
     if (event.label) container.append(el("p", "cal-detail-label", event.label));
     const facts = el("dl", "cal-detail-facts");
-    const guestCount = event.expected === null ? String(event.guests) + " / " + labels.unknown : String(event.guests) + " / " + String(event.expected);
+    const guestCount = event.expected === null ? String(event.complete) + " / " + labels.unknown : String(event.complete) + " / " + String(event.expected);
     [[labels.arrival, fullDate(event.start)], [labels.departure, fullDate(event.end)],
-      [labels.guests, guestCount], [labels.report, statusFor(event)],
+      [labels.guests, guestCount], [labels.report, event.status === "awaiting_guest" ? labels.details_needed : statusFor(event)],
       [labels.source, event.source === "manual" ? labels.manual : labels.imported]
     ].forEach(([name, value]) => facts.append(el("dt", "", name), el("dd", "", value)));
     container.append(facts);
@@ -358,7 +366,7 @@
     $("[data-cal-save-error]").textContent = "";
   }
   function openCreate(start, end, property) {
-    if (!state.properties.length || state.loading) return;
+    if (!state.properties.length) return;
     cancelSelection();
     form.reset(); fillProperties(form.elements.apartment_id, false);
     const selected = property || state.property;

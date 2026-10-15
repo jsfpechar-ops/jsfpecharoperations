@@ -116,6 +116,25 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
     },
     {
+        "name": "ubyhost.calendar.display.v1",
+        "set_by": "static/dashboard-calendar.js",
+        "party": "first",
+        "kind": "localStorage",
+        "surface": "host",
+        "purpose": {
+            "en": "Remembers calendar view and display settings; contains no booking or guest data",
+            "cs": "Pamatuje si zobrazení kalendáře; neobsahuje údaje o rezervacích ani hostech",
+            "de": "Speichert Kalenderansicht und Anzeigeoptionen, keine Buchungs- oder Gästedaten",
+            "es": "Recuerda la vista y las opciones del calendario, sin datos de reservas ni huéspedes",
+            "fr": "Mémorise la vue et les options du calendrier, sans données de réservation ni de voyageur",
+        },
+        "lifetime": {
+            "en": "Until you clear it", "cs": "Dokud jej nevymažete",
+            "de": "Bis Sie es löschen", "es": "Hasta que lo borre",
+            "fr": "Jusqu'à ce que vous l'effaciez",
+        },
+    },
+    {
         "name": "ubyhost-saved-stay-views",
         "set_by": "static/app.js",
         "party": "first",
