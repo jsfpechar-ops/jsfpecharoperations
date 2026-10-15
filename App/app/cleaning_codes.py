@@ -40,12 +40,29 @@ def _activate(cur, row: dict) -> None:
     cur.execute("UPDATE cleaning_code SET state = 'active', claimed_at = NULL, updated_at = ? WHERE id = ?",
                 (db.utcnow(), row["id"]))
     if current and current["code_id"] and current["code_id"] != row["id"]:
-        cur.execute(
-            "UPDATE cleaning_code SET state = CASE WHEN source = 'ttlock' THEN 'revoke_pending' ELSE 'revoked' END, "
-            "pin_enc = CASE WHEN source = 'manual' THEN NULL ELSE pin_enc END, attempts = 0, "
-            "next_attempt_at = ?, updated_at = ? WHERE id = ?",
-            (db.utcnow(), db.utcnow(), current["code_id"]),
+        previous = cur.execute("SELECT * FROM cleaning_code WHERE id = ?", (current["code_id"],)).fetchone()
+        if previous["state"] != "active":
+            return
+        # A manual takeover of the same physical TTLock PIN must not delete it.
+        # The UI includes the keypad's final #; it is not part of the API PIN.
+        same_manual_pin = (
+            previous["source"] == "ttlock" and managed["source"] == "manual"
+            and previous["pin_enc"] and managed["pin_enc"]
+            and hmac.compare_digest(db.decrypt_field(previous["pin_enc"]),
+                                    db.decrypt_field(managed["pin_enc"]).removesuffix("#"))
         )
+        if same_manual_pin:
+            cur.execute(
+                "UPDATE cleaning_code SET state = 'detached', pin_enc = NULL, updated_at = ? WHERE id = ?",
+                (db.utcnow(), previous["id"]),
+            )
+        else:
+            cur.execute(
+                "UPDATE cleaning_code SET state = CASE WHEN source = 'ttlock' THEN 'revoke_pending' ELSE 'revoked' END, "
+                "pin_enc = CASE WHEN source = 'manual' THEN NULL ELSE pin_enc END, attempts = 0, "
+                "next_attempt_at = ?, updated_at = ? WHERE id = ?",
+                (db.utcnow(), db.utcnow(), current["code_id"]),
+            )
 
 
 def save_manual(apartment_id: int, value: str) -> None:

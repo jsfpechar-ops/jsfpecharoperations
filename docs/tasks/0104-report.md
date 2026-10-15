@@ -11,6 +11,8 @@ large-type chronological list, host CRUD, persisted automatic checkout events
 with durable overrides/dismissals, static instructions, manual codes, permanent
 TTLock queue with timeout adoption/revocation, and scoped external views.
 Migration 0010; no new dependencies or reservation/filing writes.
+Manual takeover of the same TTLock PIN (including the keypad #) keeps that
+physical code valid; a different replacement explains and confirms revocation.
 Property/lock mapping is checked before provider creation and before activation;
 changed mappings cannot publish a code for the old lock. Codes from a replaced
 binding are hidden and queued for revocation. Provider logs contain error kinds

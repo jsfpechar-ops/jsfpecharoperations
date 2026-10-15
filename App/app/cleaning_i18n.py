@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 WORDS = {
+    "manual_replaces": ["A different manual code replaces the current cleaning code. The previous UbyHost TTLock code will be revoked.", "Jiný ruční kód nahradí současný kód pro úklid. Předchozí kód TTLock vytvořený UbyHost bude zrušen."],
     "test_schedule": ["Test schedule", "Zkušební rozpis"],
     "language": ["Language", "Jazyk"],
     "title": [
@@ -161,8 +162,8 @@ WORDS = {
         "Trvalý kód platí až do odstranění ze zámku. Použijte kód určený pouze pro úklid."
     ],
     "manual_hint": [
-        "Enter an existing static door code. Saving it does not program the lock.",
-        "Zadejte existující stálý kód. Uložení kód do zámku nenahraje."
+        "Enter a static code already working on the door. UbyHost will not create this manual code on the lock.",
+        "Zadejte stálý kód, který už na dveřích funguje. UbyHost tento ruční kód do zámku nenahraje."
     ],
     "code_pending": [
         "TTLock code is being prepared. The current code stays available.",

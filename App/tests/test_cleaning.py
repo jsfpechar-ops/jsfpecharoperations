@@ -400,3 +400,21 @@ def test_shared_link_uses_canonical_https_origin_behind_a_proxy(workspace, monke
     assert response.status_code == 200
     assert "https://cleaning.example.test/cleaning/shared/" in response.text
     assert "http://testserver/cleaning/shared/" not in response.text
+
+
+@pytest.mark.parametrize("keypad_suffix", ["", "#"])
+def test_manual_takeover_of_same_ttlock_pin_keeps_the_physical_code(workspace, monkeypatch, keypad_suffix):
+    ws = workspace
+    _, home = lock_setup(ws, monkeypatch)
+    job = cleaning_codes.queue_permanent(home, ws["owner"])
+    monkeypatch.setattr(ttlock, "add_permanent_code", lambda *args: "12345")
+    cleaning_codes.process_queue()
+    pin = db.decrypt_field(db.query_one("SELECT pin_enc FROM cleaning_code WHERE id = ?", (job,))["pin_enc"])
+    cleaning_codes.save_manual(ws["home"], pin + keypad_suffix)
+    monkeypatch.setattr(ttlock, "delete_code", lambda *args: pytest.fail("The manual code is the same physical PIN"))
+    assert cleaning_codes.process_queue() == 0
+    prop = next(p for p in cleaning.properties(ws["owner"]) if p["id"] == ws["home"])
+    assert cleaning._code(prop)["value"] == pin + keypad_suffix
+    assert cleaning._code(prop)["source"] == "manual"
+    previous = db.query_one("SELECT * FROM cleaning_code WHERE id = ?", (job,))
+    assert previous["state"] == "detached" and previous["pin_enc"] is None
