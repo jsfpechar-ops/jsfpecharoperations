@@ -64,11 +64,16 @@ def open_page(browser, ws, origin, width=1280, locale="en", touch=False):
         page.wait_for_selector(".cal-gantt-row", timeout=10000)
     except Exception:
         shot(page, f"open-failed-{locale}-{width}")
+        widget_state = {
+            "rows": page.locator(".cal-gantt-row").count(),
+            "weeks": page.locator(".cal-week").count(),
+            "busy": page.locator("[data-cal-body]").get_attribute("aria-busy"),
+        }
         raise AssertionError(
             f"Calendar did not start: HTTP {response.status}, URL {page.url}; "
             f"script errors={script_errors}; API responses={api_responses}; "
             f"widget={page.locator('[data-calendar]').inner_text()[:1600]}; "
-            f"state={page.evaluate(\"() => ({rows: document.querySelectorAll('.cal-gantt-row').length, weeks: document.querySelectorAll('.cal-week').length, busy: document.querySelector('[data-cal-body]')?.getAttribute('aria-busy'), parents: Array.from(document.querySelector('[data-cal-body]')?.parentElement?.children || []).map(n => n.tagName + ':' + n.className)})\")}"
+            f"state={widget_state}"
         ) from None
     page.wait_for_function("() => document.querySelector('[data-cal-body]').getAttribute('aria-busy') === 'false'")
     later = page.locator("#security-prompt [data-security-prompt-later]")
