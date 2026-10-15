@@ -32,9 +32,9 @@
 .dashboard-calendar :is(button,a,input,select):focus-visible { outline:3px solid var(--brand); outline-offset:2px; z-index:8; }
 .cal-weekdays { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); background:var(--cal-muted); border-bottom:1px solid var(--cal-line); }
 .cal-weekdays span { padding:5px 2px; text-align:center; font-size:10px; line-height:16px; font-weight:650; text-transform:uppercase; color:var(--ink-muted); }
-.cal-week { position:relative; border-bottom:1px solid var(--cal-line); --event-height:20px; }
+.cal-week { position:relative; border-bottom:1px solid var(--cal-line); --event-height:22px; }
 .cal-week:last-child { border-bottom:0; }
-.cal-week-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); min-height:96px; }
+.cal-week-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); min-height:100px; }
 .cal-day { min-width:0; border-right:1px solid var(--cal-line); background:var(--surface); user-select:none; }
 .cal-day:last-child { border-right:0; }
 .cal-day.is-outside { background:var(--cal-muted); }
@@ -125,7 +125,7 @@
   .host-workspace .dashboard-calendar :is(.cal-heading,.cal-toolbar) .btn,
   .host-workspace .dashboard-calendar :is(.cal-heading,.cal-toolbar) select { min-height:44px; height:44px; }
   .host-workspace .dashboard-calendar .btn.cal-arrow, .host-workspace .dashboard-calendar .btn.cal-settings { width:44px; min-width:44px; }
-  .cal-segment button { min-height:38px; padding:5px 9px; }
+  .cal-segment button { min-height:44px; padding:5px 9px; }
   .cal-toolbar { grid-template-columns:1fr auto; gap:8px; padding:4px; }
   .cal-toolbar h3 { font-size:14px; text-align:right; }
   .cal-toolbar-options { grid-column:1 / -1; display:flex; flex-wrap:wrap; justify-content:flex-start; gap:6px; }

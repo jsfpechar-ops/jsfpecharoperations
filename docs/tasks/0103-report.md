@@ -11,7 +11,7 @@ the canonical protected POST /reservations. Checkout is exclusive. Overlaps
 stack and require explicit confirmation. Booking details link to the full stay.
 Auto uses Month for 1–2 visible properties and Gantt for 3+; manual choices and
 display preferences persist. Waiting for guests was removed from the summary.
-Desktop uses fixed 96px week rows, 20px rounded stay bars and 32px toolbar controls.
+Desktop uses fixed 100px week rows, 22px rounded stay bars and 32px toolbar controls.
 Month/year have separate localized selectors; calendar/timeline/sliders SVG icons
 replace text glyphs. Stable teal/blue/purple property colors distinguish stays from
 weekday and adjacent-month backgrounds. Imported Reserved/Booked placeholders and

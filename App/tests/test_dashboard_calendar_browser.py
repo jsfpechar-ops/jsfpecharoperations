@@ -315,9 +315,13 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                             heights = page.locator(".cal-week").evaluate_all(
                                 "nodes => nodes.map(node => node.getBoundingClientRect().height)"
                             )
-                            assert max(heights) <= 98, heights
-                            assert boxes[1]["height"] <= 700, boxes
+                            assert max(heights) <= 102, heights
+                            assert boxes[1]["height"] <= 725, boxes
                     if width <= 390:
+                        controls = page.locator(".cal-segment button").evaluate_all(
+                            "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
+                        )
+                        assert min(controls) >= 44, controls
                         target = page.locator(".cal-day-number" if mode == "calendar" else ".cal-gantt-slot").first
                         box = target.bounding_box()
                         assert box["width"] >= 43.9 and box["height"] >= 44, box

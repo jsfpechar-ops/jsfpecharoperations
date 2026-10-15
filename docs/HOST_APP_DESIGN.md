@@ -96,7 +96,7 @@ Click a booking for a details dialog and the canonical stay page. Expose overlap
 require confirmation before creating an overlap, and preserve the canonical
 creation handler, permissions and CSRF checks. Calendar range loading is separate
 from the action queue's 30-day horizon and five-row cap. Desktop uses compact
-96px week rows, slim rounded property-colored bars, outline calendar/timeline/
+100px week rows, slim rounded property-colored bars, outline calendar/timeline/
 sliders icons and separate month/year selectors. Busy dates open a full stay list;
 mobile retains 44px touch targets. Hide imported Reserved/Booked placeholders and
 routine exclamation marks from bars. Reporting urgency stays in summary, queue and
