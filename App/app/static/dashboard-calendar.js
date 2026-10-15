@@ -299,6 +299,7 @@
       lastLoadedRange = [from, to]; render(); body.setAttribute("aria-busy", "false"); setMessage(""); rememberURL();
     } catch (error) {
       if (error.name === "AbortError" || number !== requestNumber) return;
+      console.error("Calendar load failed:", error.name, error.message);
       state.loading = false; body.setAttribute("aria-busy", "false");
       setMessage(error.message === "session" ? labels.session_error : labels.load_error, true);
       // Keep the last successful view visible, but disable creating from stale data.

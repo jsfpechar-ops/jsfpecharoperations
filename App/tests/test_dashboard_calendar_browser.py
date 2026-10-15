@@ -58,6 +58,7 @@ def open_page(browser, ws, origin, width=1280, locale="en", touch=False):
     script_errors = []
     api_responses = []
     page.on("pageerror", lambda error: script_errors.append(str(error)))
+    page.on("console", lambda message: script_errors.append(message.text) if message.type == "error" else None)
     page.on("response", lambda response: api_responses.append(response.status) if "/dashboard/calendar?" in response.url else None)
     response = page.goto(f"{origin}/?lang={locale}&cal_date=2026-10-01")
     try:
