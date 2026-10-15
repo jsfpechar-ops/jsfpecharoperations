@@ -141,6 +141,7 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         card.get_by_role("link", name="Edit cleaning", exact=True).click()
         page.locator(".cleaning-remove summary").click()
         page.get_by_role("button", name="Remove cleaning", exact=True).click()
+        page.locator("#confirm-dialog [data-confirm-proceed]").click()
         loaded(page)
         assert page.locator(".cleaning-card").filter(has_text="Mid-stay refresh").count() == 0
         shot(page, "host-after-drag-1280")

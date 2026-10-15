@@ -456,6 +456,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "login_tokens": "expired more than 1 day ago",
         "webauthn_challenges": "expired more than 1 day ago",
         "door_code_pins": "valid_to more than 1 day ago",
+        "cleaning": f"event or link expiry before {(today - timedelta(days=30)).isoformat()}",
         "legal_acceptance": (
             f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
         ),

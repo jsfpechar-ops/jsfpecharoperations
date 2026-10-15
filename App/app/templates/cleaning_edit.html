@@ -17,6 +17,6 @@
 {% if event and event.source_reservation_id %}<p>{{ ct('auto_help') }}</p>{% endif %}
 <div class="cleaning-actions"><button class="btn primary" type="submit">{{ ct('save') }}</button><a class="btn" href="/cleaning">{{ ct('cancel') }}</a></div>
 </form>
-{% if event %}<details class="cleaning-panel cleaning-remove"><summary>{{ ct('delete') }}</summary><p>{{ ct('delete_hint') }}</p><form action="/cleaning/events/{{ event.id }}/delete" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="revision" value="{{ event.revision }}"><button class="btn danger" type="submit">{{ ct('delete') }}</button></form></details>{% endif %}
+{% if event %}<details class="cleaning-panel cleaning-remove"><summary>{{ ct('delete') }}</summary><p>{{ ct('delete_hint') }}</p><form action="/cleaning/events/{{ event.id }}/delete" method="post" data-confirm data-confirm-message="{{ ct('delete_hint') }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="revision" value="{{ event.revision }}"><button class="btn danger" type="submit">{{ ct('delete') }}</button></form></details>{% endif %}
 </div>
 {% endblock %}

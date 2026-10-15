@@ -57,9 +57,10 @@
   const createDialog = $("[data-cal-create]"), form = $("[data-cal-form]");
   const detailsDialog = $("[data-cal-details]"), dayDialog = $("[data-cal-day-dialog]");
   const settingsDialog = $("[data-cal-settings-dialog]");
-  const preferencesKey = cleaningMode ? "ubyhost.cleaning.display.v1" : "ubyhost.calendar.display.v1";
+  const preferencesKey = "ubyhost.calendar.display.v1";
+  const cleaningPreferencesKey = "ubyhost.cleaning.display.v1";
   let preferences = {};
-  try { preferences = JSON.parse(localStorage.getItem(preferencesKey) || "{}"); } catch (_) { /* Storage may be disabled. */ }
+  try { preferences = JSON.parse(localStorage.getItem(cleaningMode ? cleaningPreferencesKey : preferencesKey) || "{}"); } catch (_) { /* Storage may be disabled. */ }
   if (!preferences || typeof preferences !== "object" || Array.isArray(preferences)) preferences = {};
   const properties = JSON.parse($("[data-cal-properties]").textContent);
   const query = new URLSearchParams(location.search);
@@ -88,7 +89,11 @@
     return node;
   }
   function savePreferences() {
-    try { localStorage.setItem(preferencesKey, JSON.stringify({ mode: state.mode, ...state.display })); } catch (_) { /* Optional. */ }
+    try {
+      const displaySettings = JSON.stringify({ mode: state.mode, ...state.display });
+      if (cleaningMode) localStorage.setItem(cleaningPreferencesKey, displaySettings);
+      else localStorage.setItem(preferencesKey, displaySettings);
+    } catch (_) { /* Optional. */ }
   }
   function view() { return autoView(state.mode, state.property ? 1 : state.properties.length); }
   function range() {
