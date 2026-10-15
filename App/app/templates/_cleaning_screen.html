@@ -1,0 +1,22 @@
+<a class="cleaning-skip" href="#cleaning-list">{{ ct('skip') }}</a>
+{% if notice | default('') %}<p class="cleaning-notice" role="status">{{ ct(notice) }}</p>{% endif %}
+{% if not read_only %}
+<form class="cleaning-period" action="/cleaning" method="get">
+  <div class="field"><label for="cleaning-from">{{ ct('from') }}</label><input id="cleaning-from" type="date" name="from" value="{{ payload['from'] }}" required></div>
+  <div class="field"><label for="cleaning-to">{{ ct('to') }}</label><input id="cleaning-to" type="date" name="to" value="{{ payload['to'] }}" required></div>
+  <button class="btn" type="submit">{{ ct('filter') }}</button><a href="/cleaning">{{ ct('reset') }}</a>
+</form>
+{% endif %}
+{% if payload.properties %}
+<div class="cleaning-legend"><span class="cleaning-legend-booking">{{ ct('booking') }}</span><span class="cleaning-legend-event">{{ ct('title') }}</span></div>
+{% include "_dashboard_calendar.html" %}
+{% else %}
+<p class="cleaning-empty">{{ ct('no_properties') }}</p>
+{% endif %}
+<section id="cleaning-list" class="cleaning-list" aria-labelledby="cleaning-list-title" tabindex="-1">
+  <h2 id="cleaning-list-title">{{ ct('list') }}</h2>
+  <p class="cleaning-list-error" data-cleaning-error role="alert" hidden></p>
+  <div data-cleaning-list>{% include "_cleaning_list.html" %}</div>
+</section>
+<script type="application/json" data-cleaning-labels>{{ cleaning_labels | tojson }}</script>
+<script src="/static/cleaning.js?v=20261016a" defer></script>

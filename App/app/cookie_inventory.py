@@ -135,6 +135,16 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         },
     },
     {
+        "name": "ubyhost.cleaning.display.v1",
+        "set_by": "static/dashboard-calendar.js",
+        "party": "first",
+        "kind": "localStorage",
+        "surface": "host",
+        "purpose": {"en": "Remembers cleaning calendar display settings; no codes or schedule data",
+                    "cs": "Pamatuje si zobrazení kalendáře úklidů; bez kódů a údajů rozpisu"},
+        "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevymažete"},
+    },
+    {
         "name": "ubyhost-saved-stay-views",
         "set_by": "static/app.js",
         "party": "first",

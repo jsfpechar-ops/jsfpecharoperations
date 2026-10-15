@@ -324,6 +324,10 @@ def _job_door_codes() -> None:
     started = time.perf_counter()
     try:
         summary = door_codes.reconcile()
+        # All gateway operations stay in this one serial worker.
+        from . import cleaning, cleaning_codes
+        summary["cleaning_events"] = cleaning.reconcile(all_owners=True)
+        summary["cleaning_codes"] = cleaning_codes.process_queue()
         if any(summary.values()):
             log.info("door codes: %s", summary)
     except Exception:

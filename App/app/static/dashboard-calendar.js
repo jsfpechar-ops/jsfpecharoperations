@@ -22,12 +22,15 @@
   function autoView(mode, propertyCount) { return mode === "auto" ? (propertyCount >= 3 ? "gantt" : "calendar") : mode; }
   function lanes(events, start, end) {
     const ends = [], segments = [];
+    let cleaningLane = null;
     events.filter(event => overlap(event, start, end)).slice().sort((a, b) =>
-      a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || a.id - b.id
+      Number(a.kind === "cleaning") - Number(b.kind === "cleaning") ||
+      a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || String(a.id).localeCompare(String(b.id))
     ).forEach(event => {
       const left = event.start < start ? start : event.start;
       const right = event.end > end ? end : event.end;
-      let lane = ends.findIndex(last => last <= left);
+      if (event.kind === "cleaning" && cleaningLane === null) cleaningLane = ends.length;
+      let lane = ends.findIndex((last, index) => last <= left && (event.kind !== "cleaning" || index >= cleaningLane));
       if (lane < 0) lane = ends.length;
       ends[lane] = right;
       segments.push({ event, lane, column: distance(start, left), length: distance(left, right) });
@@ -37,6 +40,9 @@
   // Pure date/layout functions above are also exercised independently in browser tests.
   const root = document.querySelector("[data-calendar]");
   if (!root) return;
+  const cleaningMode = root.dataset.cleaning === "true";
+  const readOnly = root.dataset.readonly === "true";
+  const cleaningLabels = JSON.parse(document.querySelector("[data-cleaning-labels]")?.textContent || "{}");
   const $ = selector => root.querySelector(selector);
   const $$ = selector => Array.from(root.querySelectorAll(selector));
   const labels = JSON.parse($("[data-cal-labels]").textContent);
@@ -51,7 +57,7 @@
   const createDialog = $("[data-cal-create]"), form = $("[data-cal-form]");
   const detailsDialog = $("[data-cal-details]"), dayDialog = $("[data-cal-day-dialog]");
   const settingsDialog = $("[data-cal-settings-dialog]");
-  const preferencesKey = "ubyhost.calendar.display.v1";
+  const preferencesKey = cleaningMode ? "ubyhost.cleaning.display.v1" : "ubyhost.calendar.display.v1";
   let preferences = {};
   try { preferences = JSON.parse(localStorage.getItem(preferencesKey) || "{}"); } catch (_) { /* Storage may be disabled. */ }
   if (!preferences || typeof preferences !== "object" || Array.isArray(preferences)) preferences = {};
@@ -63,9 +69,9 @@
     value >= "1900-01-01" && value <= "2100-12-31" &&
     Number.isFinite(dateValue(value).getTime()) && iso(dateValue(value)) === value;
   const state = {
-    mode: validMode(queryMode) ? queryMode : (validMode(preferences.mode) ? preferences.mode : "auto"),
+    mode: validMode(queryMode) ? queryMode : (validMode(preferences.mode) ? preferences.mode : (cleaningMode ? "gantt" : "auto")),
     scale: ["month", "week", "year"].includes(query.get("cal_scale")) ? query.get("cal_scale") : "month",
-    date: validDate(queryDate) ? queryDate : root.dataset.today,
+    date: validDate(queryDate) ? queryDate : (root.dataset.calendarDate || root.dataset.today),
     property: properties.some(item => String(item.id) === query.get("cal_property")) ? query.get("cal_property") : "",
     properties, events: [], loading: false,
     display: { property: preferences.property !== false, label: preferences.label !== false, guests: preferences.guests !== false }
@@ -86,6 +92,8 @@
   }
   function view() { return autoView(state.mode, state.property ? 1 : state.properties.length); }
   function range() {
+    if (view() === "gantt" && cleaningMode) return [state.date,
+      state.date === root.dataset.rangeFrom && root.dataset.rangeTo ? root.dataset.rangeTo : addDays(state.date, 30)];
     if (view() === "gantt") return [monthStart(state.date), moveMonth(state.date, 1)];
     if (state.scale === "week") { const start = monday(state.date); return [start, addDays(start, 7)]; }
     if (state.scale === "year") return [state.date.slice(0, 4) + "-01-01", String(Number(state.date.slice(0, 4)) + 1) + "-01-01"];
@@ -138,10 +146,12 @@
     $("[data-cal-next]").disabled = state.date >= "2100-12-01";
     $("[data-cal-auto]").checked = state.mode === "auto";
     $$("[data-cal-display]").forEach(input => { input.checked = state.display[input.dataset.calDisplay]; });
+    if (cleaningMode && currentView === "gantt") $("[data-cal-period]").textContent = shortDate(start) + " – " + fullDate(addDays(end, -1));
     fillProperties($("[data-cal-property]"), true);
     $$("[data-calendar-add]").forEach(link => { link.setAttribute("aria-haspopup", "dialog"); });
   }
   function labelFor(event) {
+    if (cleaningMode) return (event.kind === "cleaning" ? cleaningLabels.title : cleaningLabels.booking) + " · " + event.property;
     const parts = [];
     const label = (event.label || "").trim();
     // Imported placeholders are booking state, not a useful stay title.
@@ -160,10 +170,12 @@
   function propertyColor(id) { return ["teal", "blue", "purple"][Math.abs(Number(id)) % 3]; }
   function eventLink(event) {
     const link = el("a", "cal-event is-" + event.tone);
+    link.dataset.eventKind = event.kind || "booking";
+    if (cleaningMode) link.draggable = event.kind === "cleaning" && !readOnly;
     link.href = event.url; link.dataset.calEvent = String(event.id);
     link.dataset.calColor = propertyColor(event.propertyId);
     link.setAttribute("aria-haspopup", "dialog");
-    const status = statusFor(event);
+    const status = cleaningMode ? (event.kind === "cleaning" ? cleaningLabels.title : cleaningLabels.booking) : statusFor(event);
     link.title = labelFor(event) + " · " + fullDate(event.start) + " – " + fullDate(event.end) + " · " + status +
       (event.conflict ? " · " + labels.conflict : "");
     link.setAttribute("aria-label", link.title);
@@ -172,7 +184,7 @@
   }
   function markConflicts() {
     const byProperty = new Map();
-    state.events.forEach(event => { event.conflict = false; const list = byProperty.get(event.propertyId) || []; list.push(event); byProperty.set(event.propertyId, list); });
+    state.events.filter(event => event.kind !== "cleaning").forEach(event => { event.conflict = false; const list = byProperty.get(event.propertyId) || []; list.push(event); byProperty.set(event.propertyId, list); });
     byProperty.forEach(events => {
       const active = [];
       events.slice().sort((a, b) => a.start.localeCompare(b.start)).forEach(event => {
@@ -251,14 +263,15 @@
     body.append(grid);
   }
   function renderGantt() {
-    const start = monthStart(state.date), end = moveMonth(start, 1), number = distance(start, end);
+    const [start, end] = cleaningMode ? range() : [monthStart(state.date), moveMonth(state.date, 1)];
+    const number = distance(start, end);
     const scroll = el("div", "cal-gantt-scroll"), timeline = el("div", "cal-gantt-timeline");
     timeline.style.setProperty("--days", String(number));
     const heading = el("div", "cal-gantt-header");
     heading.append(el("span", "cal-gantt-name", labels.property));
     for (let index = 0; index < number; index++) {
       const day = addDays(start, index), cell = el("span", day === root.dataset.today ? "is-today" : "");
-      cell.append(el("span", "", weekday(day)), el("br"), el("span", "", String(index + 1)));
+      cell.append(el("span", "", weekday(day)), el("br"), el("span", "", String(cleaningMode ? dateValue(day).getUTCDate() : index + 1)));
       heading.append(cell);
     }
     timeline.append(heading);
@@ -301,16 +314,20 @@
     const [from, to] = range(), params = new URLSearchParams({ from, to, lang: root.dataset.lang });
     if (state.property) params.set("property", state.property);
     try {
-      const response = await fetch("/dashboard/calendar?" + params.toString(), { signal: controller.signal, headers: { Accept: "application/json" }, cache: "no-store" });
+      const response = await fetch((root.dataset.source || "/dashboard/calendar") + "?" + params.toString(), { signal: controller.signal, headers: { Accept: "application/json" }, cache: "no-store" });
       if (number !== requestNumber) return;
       if (response.redirected || response.status === 401 || response.status === 403) throw new Error("session");
-      if (!response.ok || !(response.headers.get("content-type") || "").includes("application/json")) throw new Error("load");
+      if (!response.ok || !(response.headers.get("content-type") || "").includes("application/json")) {
+        const error = new Error("load"); error.status = response.status; throw error;
+      }
       const data = await response.json();
       if (number !== requestNumber) return;
       state.properties = data.properties; state.events = data.events; state.loading = false;
       const actualRange = range();
       if (actualRange[0] !== from || actualRange[1] !== to) { await load(); return; }
-      lastLoadedRange = [from, to]; render(); body.setAttribute("aria-busy", "false"); setMessage(""); rememberURL();
+      lastLoadedRange = [from, to]; render(); body.setAttribute("aria-busy", "false"); setMessage("");
+      if (cleaningMode) root.dispatchEvent(new CustomEvent("calendar:loaded", { detail: data }));
+      rememberURL();
     } catch (error) {
       if (error.name === "AbortError" || number !== requestNumber) return;
       console.error("Calendar load failed:", error.name, error.message);
@@ -318,6 +335,7 @@
       setMessage(error.message === "session" ? labels.session_error : labels.load_error, true);
       // Keep the last successful view visible, but disable creating from stale data.
       lastLoadedRange = null;
+      if (cleaningMode) root.dispatchEvent(new CustomEvent("calendar:error", { detail: { status: error.status || 0 } }));
     }
   }
   function show(dialog) {
@@ -344,6 +362,22 @@
   });
   function openDetails(event) {
     const container = $("[data-cal-detail-content]"); container.replaceChildren();
+    if (cleaningMode) {
+      container.append(el("h3", "cal-detail-property", event.property), el("p", "", fullDate(event.start)));
+      if (event.kind === "cleaning") {
+        if (event.startTime) container.append(el("p", "", event.startTime + "–" + event.endTime));
+        const access = el("div", "cleaning-access");
+        access.append(el("span", "", cleaningLabels.code), el("strong", event.code ? "cleaning-pin" : "cleaning-code-missing",
+          event.code ? event.code + (event.codeSource === "ttlock" ? "#" : "") : cleaningLabels.no_code));
+        container.append(access);
+        if (event.conflict) container.append(el("p", "cleaning-warning", cleaningLabels.conflict));
+        [event.notes, event.instructions].filter(Boolean).forEach(text => container.append(el("p", "cleaning-text", text)));
+      } else container.append(el("p", "", cleaningLabels.booking + " · " + fullDate(event.end)));
+      $("[data-cal-open]").href = event.url; $("[data-cal-open]").textContent = cleaningLabels.skip;
+      $("[data-cal-open]").hidden = event.kind !== "cleaning";
+      if (dayDialog.open) close(dayDialog);
+      show(detailsDialog); return;
+    }
     container.append(el("h3", "cal-detail-property", event.property));
     if (event.label) container.append(el("p", "cal-detail-label", event.label));
     const facts = el("dl", "cal-detail-facts");
@@ -381,6 +415,10 @@
     $("[data-cal-save-error]").textContent = "";
   }
   function openCreate(start, end, property) {
+    if (readOnly) { openDay(start); return; }
+    if (cleaningMode) {
+      root.dispatchEvent(new CustomEvent("cleaning:create", { detail: { date: start, property } })); return;
+    }
     if (!state.properties.length) return;
     cancelSelection();
     form.reset(); fillProperties(form.elements.apartment_id, false);
@@ -403,7 +441,7 @@
   }
   function cancelSelection() { selection = null; keyboardAnchor = null; $$("[data-date].is-selected").forEach(node => node.classList.remove("is-selected")); $("[data-cal-selection]").textContent = ""; }
   root.addEventListener("pointerdown", event => {
-    if (event.pointerType === "touch" || event.button !== 0 || state.loading || !lastLoadedRange ||
+    if (readOnly || event.pointerType === "touch" || event.button !== 0 || state.loading || !lastLoadedRange ||
       event.target.closest("[data-cal-event], [data-cal-more], dialog")) return;
     const cell = event.target.closest("[data-date]");
     if (!cell || !body.contains(cell)) return;
@@ -448,7 +486,7 @@
       const candidates = $$("[data-cal-day]").filter(node => node.dataset.calDay === nextDay &&
         (node.dataset.property || "") === (cell.dataset.property || ""));
       if (!candidates.length) return;
-      if (event.shiftKey) {
+      if (event.shiftKey && !readOnly) {
         keyboardAnchor = keyboardAnchor || day;
         selection = { anchor: keyboardAnchor, start: nextDay < keyboardAnchor ? nextDay : keyboardAnchor,
           end: nextDay > keyboardAnchor ? nextDay : keyboardAnchor, property: cell.dataset.property || state.property };
@@ -570,5 +608,10 @@
   $$(".cal-enhanced").forEach(node => { node.hidden = false; });
   $("[data-cal-fallback]").hidden = true;
   fillProperties(form.elements.apartment_id, false);
+  root.addEventListener("calendar:refresh", load);
+  if (cleaningMode) {
+    $("[data-cal-day-add]").hidden = readOnly;
+    root.querySelectorAll("[data-cal-display='guests']").forEach(input => { input.closest("label").hidden = true; });
+  }
   load();
 })();

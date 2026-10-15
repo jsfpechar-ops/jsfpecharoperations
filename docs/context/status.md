@@ -12,6 +12,8 @@ Updated: 2026-10-15.
 
 ## Now
 
+- Cleaning 0104: implementation and browser checks in feature/cleaning-management-staging; CI and exact-SHA staging review pending ([brief](../tasks/0104-cleaning-management.md)).
+
 - Calendar 0103: compact layout review; exact-head CI in PR #395, Render staging pending ([brief](../tasks/0103-dashboard-calendar.md)).
 
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.

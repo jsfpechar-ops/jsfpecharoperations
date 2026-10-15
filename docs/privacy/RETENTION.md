@@ -35,6 +35,21 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Encrypted backups | `/data/backups`, Drive, S3 | snapshot age | 30 days local/off-site (G-D3) | `backup_data.sh` `UBYHOST_BACKUP_RETENTION_DAYS`; S3 lifecycle | Disaster recovery |
 | PostHog person profile | PostHog Cloud EU | host account deleted | until the host account is deleted; the operator deletes the person in PostHog by hand within 30 days — **LAWYER REVIEW** | manual deletion in PostHog (**People**, search the e-mail, **Delete person**) | Legitimate interest — **LAWYER REVIEW** |
 
+## Cleaning operational data
+- `cleaning_event.notes_enc`: encrypted cleaning-only notes; wiped 30 days after
+  the scheduled date by the existing retention runner, including its dry-run
+  behavior. Minimal source IDs/override/dismissal records remain with the
+  reservation so reimport cannot undo a dismissal.
+- `cleaning_property.instructions` and optional turnover times: until changed
+  or the property is deleted. Hosts are told these are shared operational text.
+- `cleaning_code.pin_enc`: permanent property access code, encrypted while
+  configured. Manual removal wipes it; confirmed TTLock revocation wipes it.
+  Uncertain provider operations retain encrypted candidates for reconciliation.
+  The guest PIN expiry step never touches cleaning codes.
+- `cleaning_share`: only token hashes, property scope, expiry/revocation and
+  timestamps. Default expiry 30 days; rows purged 30 days after expiry.
+- No cleaner names, claims, completion records, photos or unlock logs.
+
 ## Copy alignment (pending counsel)
 
 The published copy still says the six-year clock runs "from the last entry" in

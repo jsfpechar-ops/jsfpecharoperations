@@ -406,6 +406,15 @@ def _door_code_pin_step(today: date, dry_run: bool, owner_user_id: Optional[int]
     return count
 
 
+def _cleaning_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Notes: event + 30 days. Shares: expiry + 30 days. Permanent PINs remain
+    while configured; the cleaning-code worker wipes revoked PINs. Property
+    instructions and source suppression records go with their parent records.
+    """
+    from . import cleaning
+    return cleaning.purge(today, dry_run, owner_user_id)
+
+
 # Each step takes (today, dry_run, owner_user_id) and returns the affected count.
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
@@ -421,6 +430,7 @@ STEPS: List[tuple] = [
     ("login_tokens", _login_token_step),
     ("webauthn_challenges", _webauthn_challenge_step),
     ("door_code_pins", _door_code_pin_step),
+    ("cleaning", _cleaning_step),
     ("legal_acceptance", _acceptance_retention_step),
     ("workspaces", _workspace_deletion_step),
 ]

@@ -93,3 +93,4 @@ Grep. **HR**: owner decides.
 | K-T01 | Low open | Tests | Order-dependent tests | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI in PR checks | 0102 |
 | K-OPS72 | Low open | App/app/filing_watchdog.py DIGEST_INTERVAL | Server digest 72 h, repository 6 h. Align code/tests before deploying over the server override. | Owner, 2026-10-15 |
+| K-C01 | Review | Cleaning | Exact-SHA staging review and physical permanent TTLock creation/revocation acceptance pending | [0104](../tasks/0104-cleaning-management.md) |
