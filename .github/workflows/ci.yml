@@ -393,7 +393,7 @@ jobs:
           UBYHOST_SHOTS_DIR: ${{ runner.temp }}/calendar-feature-shots
         run: >-
           python -m pytest tests/test_dashboard_calendar.py tests/test_dashboard_calendar_browser.py
-          -q -rs --junitxml=/tmp/calendar-review.xml
+          -x -q -rs --junitxml=/tmp/calendar-review.xml
       - name: Summarize calendar checks
         if: always()
         id: calendar_summary
