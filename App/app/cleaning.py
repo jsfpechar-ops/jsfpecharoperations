@@ -12,7 +12,7 @@ import secrets
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from . import config, db
+from . import auth, config, db
 
 TIME = re.compile(r"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$")
 DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
@@ -178,7 +178,7 @@ def _hour(property_row: dict, direction: str) -> str | None:
 def _code(property_row: dict) -> dict:
     active = db.query_one("SELECT * FROM cleaning_code WHERE id = ?", (property_row["code_id"],))
     pending = db.query_one("SELECT state FROM cleaning_code WHERE id = ?", (property_row["pending_code_id"],))
-    usable = bool(active and active["state"] == "active" and active["pin_enc"])
+    usable = bool(not auth.staging_no_login() and active and active["state"] == "active" and active["pin_enc"])
     if usable and active["source"] == "ttlock":
         account = db.query_one("SELECT owner_user_id FROM lock_account WHERE id = ?", (active["lock_account_id"],))
         usable = bool(account and account["owner_user_id"] == property_row["owner_user_id"]

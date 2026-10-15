@@ -243,8 +243,13 @@ def test_share_creation_and_safe_staging_gate(workspace, monkeypatch):
     ws = workspace
     response = ws["client"].post("/cleaning/shares", data={"properties": [ws["home"]]})
     assert response.status_code == 200 and "/cleaning/shared/" in response.text
+    cleaning_codes.save_manual(ws["home"], "001234")
     monkeypatch.setattr(auth, "staging_no_login", lambda: True)
     assert ws["client"].post("/cleaning/shares", data={"properties": [ws["home"]]}).status_code == 422
+    with pytest.raises(ValueError, match="login_required"):
+        cleaning_codes.save_manual(ws["home"], "998877")
+    prop = next(p for p in cleaning.properties(ws["owner"]) if p["id"] == ws["home"])
+    assert cleaning._code(prop)["value"] == ""
     with pytest.raises(ValueError, match="login_required"):
         cleaning_codes.queue_permanent(dict(db.query_one("SELECT * FROM apartment WHERE id = ?", (ws["home"],))), ws["owner"])
 

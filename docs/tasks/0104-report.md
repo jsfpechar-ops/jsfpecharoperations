@@ -27,9 +27,11 @@ Required CI is the execution path:
 - Browser checks exercise filtering, late-loading scripts, drag rescheduling,
   create/edit/delete and unchanged reservations. Tokens are tested for property
   isolation, bounds, expiry, revocation and no write authority.
-Feature validation at b02c75335318ca05d917a2c025eb1a13daf6c1b4:
-76 passed, 0 failed, 0 skipped. The final PR revision reruns all required checks;
-current results are linked below.
+Validation at 5b24aac56807fcf35dada74e00d1027a472a009a:
+77 focused checks passed, 0 failed, 0 skipped. Full application tests with
+coverage, Docker, smoke, context, secrets and shellcheck also passed.
+The final PR revision adds the staging no-login secret guard and reruns all
+required checks; current results are linked below.
 Both JavaScript files also parsed with the available V8 runtime.
 [Current results and artifacts](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/396/checks)
 are tied to the exact PR revision; use the calendar-feature-review artifact for
@@ -53,7 +55,8 @@ browser storage except display preferences.
 No production or staging deployment has been performed in this chat.
 1. Verify green required CI for the exact feature revision.
 2. Deploy that revision to Render staging with mock UbyPort and verify its SHA.
-3. Disable staging no-login before real TTLock actions or new company links.
+3. Disable staging no-login before door-code setup or new company links. Both
+   manual/API writes and plaintext cleaning-code display are blocked in that mode.
 4. On a designated test lock, create a permanent cleaning PIN and test it; replace
    or remove it, verify the old PIN stops opening, and check offline recovery.
 5. Review the external link on a phone, revoke it, and verify access is denied.

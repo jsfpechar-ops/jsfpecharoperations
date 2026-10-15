@@ -141,8 +141,8 @@ WORDS = {
         "Kód ke dveřím"
     ],
     "no_code": [
-        "Door code not set. Contact the host.",
-        "Kód ke dveřím není nastavený. Kontaktujte hostitele."
+        "Door code unavailable. Contact the host.",
+        "Kód ke dveřím není dostupný. Kontaktujte hostitele."
     ],
     "manual_code": [
         "Saved manual code",
@@ -261,8 +261,8 @@ WORDS = {
         "Probíhá operace se zámkem. Za chvíli to zkuste znovu."
     ],
     "login_required": [
-        "Turn off staging no-login mode before using TTLock or sharing door codes.",
-        "Před použitím TTLock nebo sdílením kódů vypněte režim stagingu bez přihlášení."
+        "Turn off staging no-login mode before using or sharing door codes.",
+        "Před použitím nebo sdílením kódů ke dveřím vypněte režim stagingu bez přihlášení."
     ],
     "share_intro": [
         "Choose properties for a read-only link. Teams see the next 30 days, including door codes. The link expires after 30 days.",

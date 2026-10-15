@@ -204,6 +204,7 @@ def _settings(request: Request, home: dict, error="", status_code=200, values=No
     )
     return _render(request, "cleaning_settings.html", status_code=status_code, home=home, prop=prop,
                    code=cleaning._code(prop), error=error, failed_revoke=bool(failed_revoke),
+                   codes_disabled=auth.staging_no_login(),
                    homes=cleaning.properties(access.owner_id(request)))
 
 

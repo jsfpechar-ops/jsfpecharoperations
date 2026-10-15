@@ -11,6 +11,7 @@
 <div class="cleaning-form-row"><div class="field"><label for="checkout-time">{{ ct('checkout') }}</label><input id="checkout-time" name="checkout_time" type="time" value="{{ prop.checkout_time or '' }}" placeholder="{{ '%02d:00' | format(home.checkout_hour) if home.checkout_hour is not none else '' }}"></div><div class="field"><label for="checkin-time">{{ ct('arrival') }}</label><input id="checkin-time" name="checkin_time" type="time" value="{{ prop.checkin_time or '' }}" placeholder="{{ '%02d:00' | format(home.checkin_hour) if home.checkin_hour is not none else '' }}"></div></div>
 <button class="btn primary" type="submit">{{ ct('save') }}</button></form>
 <section class="cleaning-panel"><h2>{{ ct('code') }}</h2><p>{{ ct('code_hint') }}</p>
+{% if codes_disabled %}<p class="cleaning-warning" role="status">{{ ct('login_required') }}</p>{% endif %}
 {% if code.value %}<strong class="cleaning-pin" translate="no">{{ code.value }}{{ '#' if code.source == 'ttlock' else '' }}</strong><p>{{ ct('permanent_code') if code.source == 'ttlock' else ct('manual_code') }}</p>{% endif %}
 {% if code.pending %}<p class="cleaning-warning" role="status">{{ ct('code_failed') if code.pending == 'failed' else ct('code_pending') }}</p>{% endif %}
 {% if failed_revoke %}<p class="cleaning-warning" role="alert">{{ ct('revocation_failed') }}</p>{% endif %}

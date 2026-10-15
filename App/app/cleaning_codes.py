@@ -49,6 +49,8 @@ def _activate(cur, row: dict) -> None:
 
 
 def save_manual(apartment_id: int, value: str) -> None:
+    if auth.staging_no_login():
+        raise ValueError("login_required")
     pin = value.strip()
     if not re.fullmatch(r"[A-Za-z0-9*#-]{1,32}", pin):
         raise ValueError("code")
