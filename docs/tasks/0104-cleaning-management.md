@@ -50,9 +50,8 @@ uses required CI. Never claim local pytest, screenshots or a staging deploy.
 - `App/tests/test_cleaning_browser.py`
 - `docs/HOST_APP_DESIGN.md`
 - `docs/context/architecture.md`
-- `docs/context/decisions.md`
-- `docs/context/known-issues.md`
 - `docs/context/status.md`
+- `docs/context/ui-decisions.md`
 - `docs/privacy/RETENTION.md`
 - `docs/privacy/ROPA.md`
 - `docs/tasks/0104-cleaning-management.md`

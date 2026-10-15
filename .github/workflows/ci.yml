@@ -392,8 +392,8 @@ jobs:
           UBYHOST_REQUIRE_BROWSER: "1"
           UBYHOST_SHOTS_DIR: ${{ runner.temp }}/calendar-feature-shots
         run: >-
-          python -m pytest tests/test_dashboard_calendar.py tests/test_dashboard_calendar_browser.py
-          tests/test_cleaning.py tests/test_cleaning_browser.py
+          python -m pytest tests/test_cleaning.py tests/test_cleaning_browser.py
+          tests/test_dashboard_calendar.py tests/test_dashboard_calendar_browser.py
           -x -q -rs --junitxml=/tmp/calendar-review.xml
       - name: Summarize calendar checks
         if: always()

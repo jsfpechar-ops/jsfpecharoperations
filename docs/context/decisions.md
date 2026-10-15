@@ -53,4 +53,3 @@ Append-only.
 - 2026-10-12 | TTLock: -1026 = created/deleted; host provider, no SCCs; same-period reuse needs custom PIN/mail; retry deletion to end (0067–69) | [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
 - 2026-10-15 | Watchdog digest: server 72 h, repo 6 h; host warnings unchanged | owner | [OPERATIONS](../OPERATIONS.md)
-- 2026-10-16 | Cleaning: owner authorizes implementation, broom sidebar entry, calendar plus accessible list; static instructions, no claims/completion, permanent/manual codes and 30-day read-only shares | [0104](../tasks/0104-cleaning-management.md)
