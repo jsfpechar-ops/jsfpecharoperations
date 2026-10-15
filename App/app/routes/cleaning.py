@@ -71,6 +71,11 @@ def _payload(request: Request, first: date, last: date, ids=None, read_only=Fals
     if selected is not None and selected not in {p["id"] for p in allowed}:
         raise HTTPException(404)
     payload = cleaning.schedule(owner, first, last, [selected] if selected else ids)
+    if read_only:
+        for entry in payload["events"]:
+            if entry["kind"] == "booking":
+                entry["start"] = max(entry["start"], first.isoformat())
+                entry["end"] = min(entry["end"], last.isoformat())
     payload["properties"] = [{"id": p["id"], "name": p["internal_name"]} for p in allowed]
     context = _context(request, groups=_groups(payload), read_only=read_only)
     payload["listHtml"] = templating.templates.get_template("_cleaning_list.html").render(context)

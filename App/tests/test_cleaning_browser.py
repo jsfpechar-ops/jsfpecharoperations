@@ -72,7 +72,7 @@ def shot(page, name):
         page.screenshot(path=str(Path(directory) / f"cleaning-{name}.png"), full_page=True)
 
 
-@pytest.mark.parametrize("width", [360, 390, 1280])
+@pytest.mark.parametrize("width", [360, 390, 1024, 1280])
 @pytest.mark.parametrize("lang", ["en", "cs"])
 def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width, lang):
     with sync_api.sync_playwright() as playwright:

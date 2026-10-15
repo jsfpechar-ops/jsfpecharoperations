@@ -2,7 +2,7 @@
 <section class="cleaning-date-group" aria-labelledby="cleaning-date-{{ day }}">
   <h3 id="cleaning-date-{{ day }}"><time datetime="{{ day }}">{{ cleaning_date(day) }}</time></h3>
   {% for item in items %}
-  <article class="cleaning-card" id="cleaning-{{ item.eventId }}" aria-labelledby="cleaning-name-{{ item.eventId }}">
+  <article class="cleaning-card" data-cleaning-color="{{ ('teal','blue','purple')[item.propertyId % 3] }}" id="cleaning-{{ item.eventId }}" aria-labelledby="cleaning-name-{{ item.eventId }}">
     <div class="cleaning-card-heading">
       <h4 id="cleaning-name-{{ item.eventId }}">{{ item.property }}</h4>
       <span class="cleaning-origin">{{ ct('automatic') if item.origin == 'automatic' else ct('manual') }}{% if item.overridden and item.origin == 'automatic' %} · {{ ct('moved') }}{% endif %}</span>

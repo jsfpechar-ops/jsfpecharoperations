@@ -138,6 +138,7 @@ def test_cancelled_and_archived_stays_disappear_but_manual_cleaning_remains(work
 def test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code(workspace):
     ws = workspace
     stay(ws["home"])
+    stay(ws["home"], "2026-10-23", "2026-10-25")
     cleaning.save_settings(ws["home"], {"instructions": "1. Linen\n2. <script>alert(1)</script>",
                                        "checkout_time": "10:30", "checkin_time": "15:30"})
     cleaning_codes.save_manual(ws["home"], "001234")
@@ -344,3 +345,34 @@ def test_date_only_dst_and_catalog_parity():
     assert last - first == timedelta(days=3)
     assert cleaning.parse_date("2028-02-29").day == 29
     assert all(len(pair) == 2 and all(pair) for pair in cleaning_i18n.WORDS.values())
+
+
+def test_lock_change_during_creation_never_publishes_a_code_for_the_old_lock(workspace, monkeypatch):
+    ws = workspace
+    _, home = lock_setup(ws, monkeypatch)
+    job = cleaning_codes.queue_permanent(home, ws["owner"])
+    def provider_success(*args):
+        db.update("apartment", ws["home"], {"lock_id": "456"})
+        return "old-lock-code"
+    monkeypatch.setattr(ttlock, "add_permanent_code", provider_success)
+    assert cleaning_codes.process_queue() == 1
+    row = db.query_one("SELECT * FROM cleaning_code WHERE id = ?", (job,))
+    assert row["state"] == "revoke_pending" and row["provider_code_id"] == "old-lock-code"
+    prop = next(p for p in cleaning.properties(ws["owner"]) if p["id"] == ws["home"])
+    assert not cleaning._code(prop)["value"]
+
+
+def test_active_permanent_code_is_hidden_and_revoked_after_lock_mapping_changes(workspace, monkeypatch):
+    ws = workspace
+    _, home = lock_setup(ws, monkeypatch)
+    job = cleaning_codes.queue_permanent(home, ws["owner"])
+    monkeypatch.setattr(ttlock, "add_permanent_code", lambda *args: "12345")
+    cleaning_codes.process_queue()
+    db.update("apartment", ws["home"], {"lock_id": "456"})
+    prop = next(p for p in cleaning.properties(ws["owner"]) if p["id"] == ws["home"])
+    assert not cleaning._code(prop)["value"]
+    deleted = []
+    monkeypatch.setattr(ttlock, "delete_code", lambda *args: deleted.append(args))
+    assert cleaning_codes.process_queue() == 1
+    assert deleted[0][1] == "123"
+    assert db.query_one("SELECT state FROM cleaning_code WHERE id = ?", (job,))["state"] == "revoked"

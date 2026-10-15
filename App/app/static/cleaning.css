@@ -83,3 +83,6 @@
 @media print { .cleaning-page .dashboard-calendar, .cleaning-actions, .cleaning-card-actions, .cleaning-period, .cleaning-skip { display:none!important; } .cleaning-card { break-inside:avoid; } }
 
 .cleaning-form-page > a:first-child { display:inline-flex; align-items:center; min-height:44px; }
+
+.cleaning-card[data-cleaning-color=blue] { border-left-color:var(--blue); }
+.cleaning-card[data-cleaning-color=purple] { border-left-color:var(--purple); }

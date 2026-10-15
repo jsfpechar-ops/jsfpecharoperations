@@ -15,8 +15,24 @@ from . import auth, cleaning, db, ttlock
 
 def _activate(cur, row: dict) -> None:
     current = cur.execute(
-        "SELECT code_id FROM cleaning_property WHERE apartment_id = ?", (row["apartment_id"],),
+        "SELECT p.code_id, p.pending_code_id, a.active, a.archived_at, a.lock_id, a.lock_provider, a.owner_user_id "
+        "FROM cleaning_property p JOIN apartment a ON a.id = p.apartment_id WHERE p.apartment_id = ?",
+        (row["apartment_id"],),
     ).fetchone()
+    managed = cur.execute("SELECT * FROM cleaning_code WHERE id = ?", (row["id"],)).fetchone()
+    if managed["source"] == "ttlock":
+        account = cur.execute("SELECT owner_user_id FROM lock_account WHERE id = ?",
+                              (managed["lock_account_id"],)).fetchone()
+        if (not current or not current["active"] or current["archived_at"] or
+            current["pending_code_id"] != row["id"] or current["lock_provider"] != "ttlock" or
+            str(current["lock_id"]) != managed["lock_id"] or not account or
+            account["owner_user_id"] != current["owner_user_id"]):
+            cur.execute(
+                "UPDATE cleaning_code SET state = 'revoke_pending', attempts = 0, next_attempt_at = ?, "
+                "claimed_at = NULL, updated_at = ? WHERE id = ?", (db.utcnow(), db.utcnow(), row["id"]),
+            )
+            cur.execute("UPDATE cleaning_property SET pending_code_id = NULL WHERE pending_code_id = ?", (row["id"],))
+            return
     cur.execute(
         "UPDATE cleaning_property SET code_id = ?, pending_code_id = NULL, updated_at = ? "
         "WHERE apartment_id = ?", (row["id"], db.utcnow(), row["apartment_id"]),
@@ -132,6 +148,14 @@ def process_queue() -> int:
     if auth.staging_no_login() or not ttlock.enabled():
         return 0
     now = db.utcnow()
+    db.execute(
+        "UPDATE cleaning_code SET state = 'revoke_pending', attempts = 0, next_attempt_at = ? "
+        "WHERE source = 'ttlock' AND state = 'active' AND NOT EXISTS ("
+        "SELECT 1 FROM apartment a JOIN lock_account la ON la.id = cleaning_code.lock_account_id "
+        "WHERE a.id = cleaning_code.apartment_id AND a.active = 1 AND a.archived_at IS NULL "
+        "AND a.lock_provider = 'ttlock' AND a.lock_id = cleaning_code.lock_id "
+        "AND la.owner_user_id = a.owner_user_id)", (now,),
+    )
     stale = (datetime.now(timezone.utc) - timedelta(minutes=3)).isoformat()
     db.execute(
         "UPDATE cleaning_code SET state = 'retrying', claimed_at = NULL "
@@ -162,7 +186,7 @@ def process_queue() -> int:
             if not row["lock_account_id"]:
                 raise ttlock.TTLockError("connection removed", kind="permission")
             if revoking:
-                code_id = row["provider_code_id"] or _find(row)
+                code_id = _find(row) if attempts > 1 else (row["provider_code_id"] or _find(row))
                 if code_id:
                     ttlock.delete_code(row["lock_account_id"], row["lock_id"], code_id)
                 db.update("cleaning_code", row["id"], {

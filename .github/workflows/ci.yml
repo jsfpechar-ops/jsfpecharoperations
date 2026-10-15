@@ -394,7 +394,7 @@ jobs:
         run: >-
           python -m pytest tests/test_cleaning.py tests/test_cleaning_browser.py
           tests/test_dashboard_calendar.py tests/test_dashboard_calendar_browser.py
-          -x -q -rs --junitxml=/tmp/calendar-review.xml
+          -q -rs --junitxml=/tmp/calendar-review.xml
       - name: Summarize calendar checks
         if: always()
         id: calendar_summary

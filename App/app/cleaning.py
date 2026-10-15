@@ -178,8 +178,14 @@ def _hour(property_row: dict, direction: str) -> str | None:
 def _code(property_row: dict) -> dict:
     active = db.query_one("SELECT * FROM cleaning_code WHERE id = ?", (property_row["code_id"],))
     pending = db.query_one("SELECT state FROM cleaning_code WHERE id = ?", (property_row["pending_code_id"],))
+    usable = bool(active and active["state"] == "active" and active["pin_enc"])
+    if usable and active["source"] == "ttlock":
+        account = db.query_one("SELECT owner_user_id FROM lock_account WHERE id = ?", (active["lock_account_id"],))
+        usable = bool(account and account["owner_user_id"] == property_row["owner_user_id"]
+                      and property_row["lock_provider"] == "ttlock"
+                      and str(property_row["lock_id"]) == active["lock_id"])
     return {
-        "value": db.decrypt_field(active["pin_enc"]) if active and active["state"] == "active" and active["pin_enc"] else "",
+        "value": db.decrypt_field(active["pin_enc"]) if usable else "",
         "source": active["source"] if active else "",
         "pending": pending["state"] if pending else "",
     }
@@ -205,8 +211,7 @@ def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | Non
                 output["events"].append({
                     "id": f"reservation:{stay['id']}", "kind": "booking",
                     "propertyId": home["id"], "property": home["internal_name"],
-                    "start": max(stay["date_from"], first.isoformat()),
-                    "end": min(stay["date_to"], last.isoformat()),
+                    "start": stay["date_from"], "end": stay["date_to"],
                     "label": "", "tone": "neutral", "expected": None, "url": "#cleaning-list",
                 })
         events = db.query(

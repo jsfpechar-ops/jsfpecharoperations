@@ -8,6 +8,6 @@
 <form class="cleaning-panel cleaning-form" method="post" action="/cleaning/shares"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <fieldset><legend>{{ ct('property') }}</legend>{% for home in homes %}<label class="cleaning-share-option"><input type="checkbox" name="properties" value="{{ home.id }}"><span>{{ home.internal_name }}</span></label>{% endfor %}</fieldset>
 <p>{{ ct('share_caution') }}</p><button class="btn primary" type="submit">{{ ct('create_share') }}</button></form>
-{% for share in shares %}<div class="cleaning-panel cleaning-share-row"><div><strong>{{ ct('share_number') }} {{ share.id }}</strong><p>{{ ct('expires') }} {{ share.expires_at[:10] }}</p></div><form action="/cleaning/shares/{{ share.id }}/revoke" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn" type="submit">{{ ct('revoke') }}</button></form></div>{% endfor %}
+{% for share in shares %}<div class="cleaning-panel cleaning-share-row"><div><strong>{{ ct('share_number') }} {{ share.id }}</strong><p>{{ ct('expires') }} {{ share.expires_at | datetime_local }}</p></div><form action="/cleaning/shares/{{ share.id }}/revoke" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn" type="submit">{{ ct('revoke') }}</button></form></div>{% endfor %}
 </div>
 {% endblock %}

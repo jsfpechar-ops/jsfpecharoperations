@@ -178,6 +178,8 @@
     const status = cleaningMode ? (event.kind === "cleaning" ? cleaningLabels.title : cleaningLabels.booking) : statusFor(event);
     link.title = labelFor(event) + " · " + fullDate(event.start) + " – " + fullDate(event.end) + " · " + status +
       (event.conflict ? " · " + labels.conflict : "");
+    if (cleaningMode && event.kind === "cleaning") link.title = labelFor(event) + " · " + fullDate(event.start) +
+      (event.startTime ? " · " + event.startTime + "–" + event.endTime : "") + (event.conflict ? " · " + cleaningLabels.conflict : "");
     link.setAttribute("aria-label", link.title);
     link.append(el("span", "", labelFor(event)));
     return link;
@@ -366,6 +368,12 @@
       container.append(el("h3", "cal-detail-property", event.property), el("p", "", fullDate(event.start)));
       if (event.kind === "cleaning") {
         if (event.startTime) container.append(el("p", "", event.startTime + "–" + event.endTime));
+        const turnover = el("dl", "cal-detail-facts");
+        if (event.checkout) turnover.append(el("dt", "", cleaningLabels.checkout),
+          el("dd", "", fullDate(event.checkout) + " · " + (event.checkoutTime || cleaningLabels.time_missing)));
+        turnover.append(el("dt", "", cleaningLabels.arrival), el("dd", "",
+          event.nextArrival ? fullDate(event.nextArrival) + " · " + (event.checkinTime || cleaningLabels.time_missing) : cleaningLabels.no_arrival));
+        container.append(turnover);
         const access = el("div", "cleaning-access");
         access.append(el("span", "", cleaningLabels.code), el("strong", event.code ? "cleaning-pin" : "cleaning-code-missing",
           event.code ? event.code + (event.codeSource === "ttlock" ? "#" : "") : cleaningLabels.no_code));
@@ -393,7 +401,7 @@
     show(detailsDialog);
   }
   function openDay(day) {
-    dayListDate = day; $("[data-cal-day-dialog] #cal-day-title").textContent = format("day_stays", { date: fullDate(day) });
+    dayListDate = day; $("[data-cal-day-dialog] #cal-day-title").textContent = cleaningMode ? fullDate(day) : format("day_stays", { date: fullDate(day) });
     const list = $("[data-cal-day-list]"); list.replaceChildren(); list.className = "cal-day-list";
     const events = state.events.filter(event => overlap(event, day, addDays(day, 1)));
     events.forEach(event => list.append(eventLink(event)));

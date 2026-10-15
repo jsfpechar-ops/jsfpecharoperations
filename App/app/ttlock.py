@@ -60,6 +60,7 @@ ERROR_KINDS: Dict[int, str] = {
     80000: "clock",
     -2012: "offline",
     -4056: "storage",
+    -3009: "storage",
     90000: "transient",
     1: "transient",
     -3: "bug",
@@ -176,11 +177,11 @@ def _post(path: str, data: Dict[str, Any], priority: str) -> Dict[str, Any]:
         out = _parse_response(resp)
     except TTLockError as exc:
         log.warning(
-            "ttlock path=%s priority=%s errcode=%s errmsg=%s",
+            "ttlock path=%s priority=%s errcode=%s kind=%s",
             path,
             priority,
             exc.code,
-            exc.message[:120],
+            exc.kind,
         )
         raise
     log.info("ttlock path=%s priority=%s errcode=0", path, priority)
