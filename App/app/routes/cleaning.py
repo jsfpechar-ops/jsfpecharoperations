@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from .. import access, auth, cleaning, cleaning_codes, cleaning_i18n, db, host_i18n, security, templating
+from .. import access, auth, cleaning, cleaning_codes, cleaning_i18n, config, db, host_i18n, security, templating
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 PRIVATE = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Robots-Tag": "noindex, nofollow"}
@@ -266,7 +266,10 @@ def _shares(request: Request, token="", error="", status_code=200):
         f"SELECT id, expires_at FROM cleaning_share WHERE {db.null_safe_eq('owner_user_id')} "
         "AND revoked_at IS NULL AND expires_at > ? ORDER BY id DESC", (owner, db.utcnow()),
     )
-    share_url = str(request.url_for("shared_cleaning", token=token)) if token else ""
+    # TLS terminates at the proxy; never derive a credential-bearing link
+    # from an internal HTTP scheme or an untrusted Host header.
+    base_url = (config.PUBLIC_BASE_URL or str(request.base_url)).rstrip("/")
+    share_url = f"{base_url}/cleaning/shared/{token}" if token else ""
     return _render(request, "cleaning_shares.html", status_code=status_code,
                    homes=cleaning.properties(owner), shares=rows, share_url=share_url, error=error)
 

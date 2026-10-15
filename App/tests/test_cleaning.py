@@ -387,3 +387,11 @@ def test_pending_code_is_not_programmed_after_property_lock_is_changed(workspace
     assert cleaning_codes.process_queue() == 1
     row = db.query_one("SELECT * FROM cleaning_code WHERE id = ?", (job,))
     assert row["state"] == "revoked" and row["pin_enc"] is None
+
+
+def test_shared_link_uses_canonical_https_origin_behind_a_proxy(workspace, monkeypatch):
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://cleaning.example.test")
+    response = workspace["client"].post("/cleaning/shares", data={"properties": [workspace["home"]]})
+    assert response.status_code == 200
+    assert "https://cleaning.example.test/cleaning/shared/" in response.text
+    assert "http://testserver/cleaning/shared/" not in response.text
