@@ -191,7 +191,7 @@ needed to identify a stay, and a clear next action. Use readable text, quiet
 surfaces and labelled status indicators; do not make a zero count look urgent.
 
 Limit the routine overview to current stays and arrivals in the next **30 days**.
-Show **at most five actionable stay rows** above the calendar, with
+Show **at most five actionable stay rows** below the calendar, with
 **View all stays** for the full list. Count each actionable stay once.
 Give genuinely overdue or failed work priority even if its stay is older; do
 not hide an unresolved filing problem behind the date window or display cap.
@@ -200,10 +200,10 @@ exceeds the cap. Use quiet, labelled status colors, keeping zero counts neutral.
 This changes presentation only, never filing state, deadlines or automation.
 
 Owner update, 2026-10-15: replace the four cards with a compact three-item
-white strip: Needs action (amber), Ready to send (muted blue), Overdue (red
+inline pills: Needs action (amber), Ready to send (muted blue), Overdue (red
 only when positive). Remove Waiting for guests from dashboard presentation.
-Zero states stay neutral. Below the action queue, show the interactive booking
-calendar/property Gantt; its visible range is independent of queue caps.
+Zero states stay neutral. Place the compact interactive booking calendar/property
+Gantt directly below those pills, then the detailed action queue; its visible range is independent of queue caps.
 Auto chooses Month for 1–2 visible properties and Gantt for 3 or more; manual
 view selection persists. See [dashboard specification](HOST_APP_DESIGN.md#4-dashboard-a-useful-work-queue).
 Row pills use the same color meanings and readable labels. Waiting indicates

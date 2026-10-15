@@ -115,12 +115,23 @@
     });
     if (Array.from(select.options).some(option => option.value === chosen)) select.value = chosen;
   }
+  // Native selects retain platform keyboard navigation and localized month names.
+  for (let month = 1; month <= 12; month++) {
+    const value = String(month).padStart(2, "0");
+    const option = el("option", "", new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(dateValue("2026-" + value + "-01")));
+    option.value = value; $("[data-cal-month]").append(option);
+  }
+  for (let year = 1900; year <= 2100; year++) {
+    const option = el("option", "", String(year)); option.value = String(year); $("[data-cal-year]").append(option);
+  }
   function syncControls() {
     const currentView = view(), [start, end] = range();
     $$("[data-cal-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calView === currentView)));
     $$("[data-cal-scale]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calScale === state.scale)));
     $("[data-cal-scales]").hidden = currentView === "gantt";
-    $("[data-cal-month]").value = state.date.slice(0, 7);
+    $("[data-cal-month]").value = state.date.slice(5, 7);
+    $("[data-cal-month]").hidden = currentView === "calendar" && state.scale === "year";
+    $("[data-cal-year]").value = state.date.slice(0, 4);
     $("[data-cal-period]").textContent = currentView === "calendar" && state.scale === "year" ? state.date.slice(0, 4) :
       currentView === "calendar" && state.scale === "week" ? shortDate(start) + " – " + fullDate(addDays(end, -1)) : monthName(state.date);
     $("[data-cal-prev]").disabled = state.date <= "1900-01-01";
@@ -132,10 +143,13 @@
   }
   function labelFor(event) {
     const parts = [];
-    if (state.display.label && event.label) parts.push(event.label);
+    const label = (event.label || "").trim();
+    // Imported placeholders are booking state, not a useful stay title.
+    const generic = /^(?:[!⚠]\s*)?(?:reserved|booked|reservation|rezervováno|rezervace)$/iu.test(label);
+    if (state.display.label && label && !generic) parts.push(label);
     if (state.display.property) parts.push(event.property);
     if (state.display.guests && event.expected !== null) parts.push(String(event.expected));
-    return parts.join(" · ") || labels.booked;
+    return parts.join(" · ") || shortDate(event.start) + " – " + shortDate(event.end);
   }
   function statusFor(event) {
     if (event.preview) return labels.preview;
@@ -143,17 +157,16 @@
       labels.overdue + " · " + labels.status_failed : labels.overdue;
     return labels["status_" + event.status] || labels.booked;
   }
+  function propertyColor(id) { return ["teal", "blue", "purple"][Math.abs(Number(id)) % 3]; }
   function eventLink(event) {
     const link = el("a", "cal-event is-" + event.tone);
     link.href = event.url; link.dataset.calEvent = String(event.id);
+    link.dataset.calColor = propertyColor(event.propertyId);
     link.setAttribute("aria-haspopup", "dialog");
     const status = statusFor(event);
     link.title = labelFor(event) + " · " + fullDate(event.start) + " – " + fullDate(event.end) + " · " + status +
       (event.conflict ? " · " + labels.conflict : "");
     link.setAttribute("aria-label", link.title);
-    if (event.tone === "overdue" || event.tone === "action" || event.conflict) {
-      const mark = el("span", "cal-event-mark", "!"); mark.setAttribute("aria-hidden", "true"); link.append(mark);
-    }
     link.append(el("span", "", labelFor(event)));
     return link;
   }
@@ -173,7 +186,7 @@
     const [start, end] = range(), weekdays = el("div", "cal-weekdays");
     for (let day = 0; day < 7; day++) weekdays.append(el("span", "", weekday(addDays(start, day))));
     body.append(weekdays);
-    const maximum = matchMedia("(max-width:760px)").matches ? 2 : 3;
+    const maximum = matchMedia("(max-width:760px)").matches ? 1 : 2;
     for (let week = start; week < end; week = addDays(week, 7)) {
       const until = addDays(week, 7), layout = lanes(state.events, week, until);
       const hiddenSegments = layout.segments.filter(segment => segment.lane >= maximum);
@@ -252,7 +265,8 @@
     state.properties.filter(property => !state.property || String(property.id) === state.property).forEach(property => {
       const events = state.events.filter(event => event.propertyId === property.id);
       const layout = lanes(events, start, end), row = el("div", "cal-gantt-row");
-      const name = el("div", "cal-gantt-name"); name.title = property.name; name.append(el("span", "", property.name));
+      const name = el("div", "cal-gantt-name"); name.title = property.name;
+      name.dataset.calColor = propertyColor(property.id); name.append(el("span", "", property.name));
       const track = el("div", "cal-gantt-track"); track.style.setProperty("--lanes", String(Math.max(1, layout.count)));
       const days = el("div", "cal-gantt-days"), overlay = el("div", "cal-gantt-events");
       for (let index = 0; index < number; index++) {
@@ -489,9 +503,12 @@
     if (state.mode === "auto") state.scale = "month";
     load();
   });
-  $("[data-cal-month]").addEventListener("change", event => {
-    const next = event.target.value + "-01"; if (validDate(next)) { state.date = next; load(); }
-  });
+  function changePeriod() {
+    const next = $("[data-cal-year]").value + "-" + $("[data-cal-month]").value + "-01";
+    if (validDate(next)) { state.date = next; load(); }
+  }
+  $("[data-cal-month]").addEventListener("change", changePeriod);
+  $("[data-cal-year]").addEventListener("change", changePeriod);
   $("[data-cal-auto]").addEventListener("change", event => {
     state.mode = event.target.checked ? "auto" : view();
     if (state.mode === "auto") state.scale = "month";

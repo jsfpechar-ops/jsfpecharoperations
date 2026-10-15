@@ -14,6 +14,9 @@ Owner requested staging first, UbyHost warm styling, removal of Waiting for gues
 from the dashboard summary, and Google Calendar style creation/details interactions.
 Owner then authorized Codex implementation and automatic Gantt at a property threshold.
 Chosen threshold is 3 visible active properties; manual view selection persists.
+Owner refinement: compact summary pills, calendar immediately below, detailed action
+queue after it. Match Superhostem density/icons with property colors, separate
+month/year selectors and no redundant Reserved or routine ! prefix.
 Checkout is exclusive. Filing, guest data, deadlines and automation remain canonical.
 Source anchor: dashboard handler uses access.owner_id(request), Prague today, and
 reporting.dashboard_rows(days_ahead=30, overview=True). Calendar reads must not reuse
@@ -82,7 +85,7 @@ local application test or screenshot as completed.
 - [x] Booking details and native full-stay links work.
 - [x] Tenant isolation, archived/cancelled exclusions, date boundaries and >5 stays.
 - [x] EN/CS at 360/390/760/1024/1280/1440/1680/1920/2048; no document overflow.
-- [ ] CI green, browser/geometry zero skips, synthetic screenshot artifacts.
+- [ ] Compact refinement: exact-head CI green, zero skipped browser/geometry checks and synthetic screenshots.
 - [ ] Exact reviewed revision deployed and verified on Render staging.
 
 ## 8. Stop and ask

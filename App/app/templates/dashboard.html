@@ -111,6 +111,7 @@
   <a class="dashboard-stat ready {{ 'is-positive' if counts.ready > 0 }}" href="/reservations"><strong>{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
   <a class="dashboard-stat overdue {{ 'is-positive' if counts.overdue > 0 }}" href="#needs-action"><strong>{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
 </nav>
+{% include "_dashboard_calendar.html" %}
 {% endif %}
 {% endif %}
 
@@ -154,7 +155,6 @@
   {% if not rows and feed_count %}<div class="panel empty"><p>{{ t('dashboard.empty.no_stays') }}</p>{{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}</div>
   {% elif not rows %}<div class="panel empty"><p>{{ t('dashboard.empty.no_feed') }}</p><div class="actions"><a class="btn primary" href="/apartments/{{ apartments[0].id }}?view=bookings#calendars">{{ t('dashboard.empty.connect_calendar') }}</a></div></div>
   {% endif %}
-  {% include "_dashboard_calendar.html" %}
   <noscript>
     {% if queue_groups.current %}<section id="current"><div class="section-heading"><h2>{{ t('dashboard.section.current') }}</h2><a href="/reservations">{{ t('dashboard.section.view_stays') }}</a></div>{{ dashboard_rows(queue_groups.current, 'dashboard.queue.empty.waiting') }}</section>{% endif %}
   </noscript>

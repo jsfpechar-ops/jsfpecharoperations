@@ -27,6 +27,10 @@ def calendar_origin(calendar_workspace):
     for index, property_id in enumerate(calendar_workspace["properties"]):
         make_stay(property_id, "2026-10-03", "2026-10-07",
                   summary=f"October booking {index + 1}", expected_guests_override=2)
+    # Busy weeks must remain compact while every booking stays reachable.
+    for index in range(4):
+        make_stay(calendar_workspace["properties"][index % 3], "2026-10-14", "2026-10-19",
+                  summary="Reserved" if index % 2 == 0 else "! Reserved")
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -117,18 +121,33 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.goto(f"{calendar_origin}/?lang=en&cal_date=2026-10-01")
         page.wait_for_selector(".cal-week")
         assert page.locator("[data-cal-view='calendar']").get_attribute("aria-pressed") == "true"
+        # Imported booking-state placeholders never become visible bar titles.
+        assert page.locator(".cal-week-events").get_by_text("Reserved", exact=False).count() == 0
+        assert page.locator(".cal-event-mark").count() == 0
+        assert len(set(page.locator(".cal-week-events .cal-event").evaluate_all(
+            "nodes => nodes.map(node => getComputedStyle(node).backgroundColor)"
+        ))) >= 2
+        more = page.locator('[data-cal-more="2026-10-14"]')
+        assert more.is_visible()
+        more.click()
+        assert page.locator("[data-cal-day-dialog]").is_visible()
+        assert page.locator("[data-cal-day-list] .cal-event").count() >= 4
+        shot(page, "busy-day-details-en-1280")
+        page.locator("[data-cal-day-dialog] [data-cal-close]").click()
         page.locator("[data-cal-settings]").click()
         page.locator("[data-cal-auto]").check()
         page.wait_for_selector(".cal-gantt-row")
         for field in ("property", "label", "guests"):
             page.locator(f'[data-cal-display="{field}"]').uncheck()
-        assert page.locator(".cal-event").first.locator("span").last.inner_text() == "Booked"
+        assert page.locator(".cal-event").first.locator("span").last.inner_text() == "3 Oct – 7 Oct"
         for field in ("property", "label", "guests"):
             page.locator(f'[data-cal-display="{field}"]').check()
         page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
         page.locator("[data-cal-property]").select_option(str(calendar_workspace["properties"][0]))
         page.wait_for_selector(".cal-week")
-        page.locator("[data-cal-month]").fill("2028-02")
+        page.locator("[data-cal-year]").select_option("2028")
+        page.wait_for_selector('[data-cal-day="2028-10-01"]')
+        page.locator("[data-cal-month]").select_option("02")
         page.wait_for_selector('[data-cal-day="2028-02-29"]')
         page.locator("[data-cal-scale='year']").click()
         page.wait_for_function("() => document.querySelectorAll('.cal-mini-title').length === 12")
@@ -275,6 +294,29 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                     page.locator(f'[data-cal-view="{mode}"]').click()
                     page.wait_for_selector(".cal-gantt-row" if mode == "gantt" else ".cal-week")
                     wait_loaded(page)
+                    # Summary -> calendar -> detailed action queue, in the same lane.
+                    boxes = page.evaluate("""() => ['.dashboard-stats', '#calendar', '#needs-action'].map(selector => {
+                        const r = document.querySelector(selector).getBoundingClientRect();
+                        return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
+                    })""")
+                    assert 0 <= boxes[1]["top"] - boxes[0]["bottom"] <= 16, boxes
+                    assert boxes[2]["top"] >= boxes[1]["bottom"], boxes
+                    for box in boxes[1:]:
+                        assert abs(box["left"] - boxes[0]["left"]) <= 2, boxes
+                        assert abs(box["right"] - boxes[0]["right"]) <= 2, boxes
+                    icon = page.locator("[data-cal-settings] svg").bounding_box()
+                    assert icon["width"] >= 18 and icon["height"] >= 18, icon
+                    if width >= 1024:
+                        pill_heights = page.locator(".dashboard-stat").evaluate_all(
+                            "nodes => nodes.map(node => node.getBoundingClientRect().height)"
+                        )
+                        assert max(pill_heights) <= 40, pill_heights
+                        if mode == "calendar":
+                            heights = page.locator(".cal-week").evaluate_all(
+                                "nodes => nodes.map(node => node.getBoundingClientRect().height)"
+                            )
+                            assert max(heights) <= 98, heights
+                            assert boxes[1]["height"] <= 700, boxes
                     if width <= 390:
                         target = page.locator(".cal-day-number" if mode == "calendar" else ".cal-gantt-slot").first
                         box = target.bounding_box()
