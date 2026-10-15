@@ -328,7 +328,10 @@
       const actualRange = range();
       if (actualRange[0] !== from || actualRange[1] !== to) { await load(); return; }
       lastLoadedRange = [from, to]; render(); body.setAttribute("aria-busy", "false"); setMessage("");
-      if (cleaningMode) root.dispatchEvent(new CustomEvent("calendar:loaded", { detail: data }));
+      if (cleaningMode) {
+        root.cleaningSnapshot = data; // In-memory only; supports late-loading list consumers.
+        root.dispatchEvent(new CustomEvent("calendar:loaded", { detail: data }));
+      }
       rememberURL();
     } catch (error) {
       if (error.name === "AbortError" || number !== requestNumber) return;

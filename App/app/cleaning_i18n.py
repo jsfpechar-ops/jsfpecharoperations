@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 WORDS = {
+    "test_schedule": ["Test schedule", "Zkušební rozpis"],
+    "language": ["Language", "Jazyk"],
     "title": [
         "Cleaning",
         "Úklid"

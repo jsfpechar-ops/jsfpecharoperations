@@ -9,8 +9,7 @@
   const readOnly = root.dataset.readonly === "true";
   let events = new Map(), dragged = null, saving = false;
   function showError(text) { error.textContent = text; error.hidden = !text; }
-  root.addEventListener("calendar:loaded", event => {
-    const data = event.detail;
+  function applySnapshot(data) {
     events = new Map(data.cleanings.map(item => [String(item.eventId), item]));
     // listHtml comes only from the escaped Jinja template at the authorized
     // same-origin endpoint. Codes are never put into browser storage.
@@ -25,7 +24,9 @@
       url.searchParams.set("from", data.from); url.searchParams.set("to", data.to);
       history.replaceState(null, "", url.pathname + url.search + url.hash);
     }
-  });
+  }
+  root.addEventListener("calendar:loaded", event => applySnapshot(event.detail));
+  if (root.cleaningSnapshot) applySnapshot(root.cleaningSnapshot);
   root.addEventListener("calendar:error", event => {
     showError(labels.load_error);
     if (readOnly && [401, 403, 404].includes(event.detail.status)) {

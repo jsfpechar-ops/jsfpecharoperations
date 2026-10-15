@@ -1,32 +1,60 @@
 # 0104 implementation report
 
-Status: implementation prepared; CI execution pending.
 Branch: feature/cleaning-management-staging.
 Base: e9fe5487ee31276aedf0d141c46ca3cbe584085c.
+Review: [PR #396](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/396).
+The exact reviewed revision is the PR head associated with its required CI run.
 
 ## Delivered
-Broom sidebar navigation, shared calendar/Gantt with cleaning lane, complete
+Broom sidebar navigation, shared calendar/Gantt with a cleaning lane, complete
 large-type chronological list, host CRUD, persisted automatic checkout events
 with durable overrides/dismissals, static instructions, manual codes, permanent
-TTLock queue with timeout adoption/revocation, and token-scoped external views.
-New migration 0010; no new dependencies or reservation/filing writes.
+TTLock queue with timeout adoption/revocation, and scoped external views.
+Migration 0010; no new dependencies or reservation/filing writes.
+Property/lock mapping is checked before provider creation and before activation;
+changed mappings cannot publish a code for the old lock. Codes from a replaced
+binding are hidden and queued for revocation. Provider logs contain error kinds
+and numeric codes, not potentially secret response text.
 
 ## Validation
-Both JavaScript files parsed with the available V8 runtime before commit.
-Focused service/API/provider and real Chromium browser tests added.
-Full CI and required screenshot artifacts: pending first feature commit.
-No local shell or Python runtime: workspace startup fails with
+Required CI is the execution path:
+- Feature: python -m pytest tests/test_cleaning.py tests/test_cleaning_browser.py
+  tests/test_dashboard_calendar.py tests/test_dashboard_calendar_browser.py -q -rs
+- Full suite: python -m pytest tests -q --cov=app --cov-fail-under=86
+- Required guest/host/geometry Chromium checks; zero skips.
+- Ruff, dependency audit, smoke, Docker, shellcheck, secrets and context lint.
+- EN/CS captures at 360, 390, 1024 and 1280px; external view with/without JS.
+- Browser checks exercise filtering, late-loading scripts, drag rescheduling,
+  create/edit/delete and unchanged reservations. Tokens are tested for property
+  isolation, bounds, expiry, revocation and no write authority.
+Feature validation at b02c75335318ca05d917a2c025eb1a13daf6c1b4:
+76 passed, 0 failed, 0 skipped. The final PR revision reruns all required checks;
+current results are linked below.
+Both JavaScript files also parsed with the available V8 runtime.
+[Current results and artifacts](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/396/checks)
+are tied to the exact PR revision; use the calendar-feature-review artifact for
+synthetic cleaning screenshots. Initial CI found a markup compatibility anchor,
+documentation caps, a missing next-arrival fixture and CSP-sensitive test waits;
+those were corrected without weakening application policy.
+
+No local shell/Python: workspace startup fails with
 "managed network requirements require sandbox enforcement".
 
-## Deviations
-Reconciliation runs idempotently on schedule reads and the existing minute
-worker. This also picks up imports and date/cancellation changes without changing
-the canonical reservation/filing mutation paths. Automatic creation is eventual
-in background and immediate when the schedule is read.
-Cleaning defaults to a 30-day Gantt; Month/Week/Year remain available.
-No production or staging deployment has been performed.
+## Implementation choices
+Reconciliation runs on schedule reads and the existing minute worker, picking up
+imports and date/cancellation changes without altering canonical reservation or
+filing mutation paths. Generation is eventual in the worker and immediate when
+the schedule is read. Cleaning defaults to a 30-day Gantt; Month/Week/Year remain
+available. List and calendar consume the same authorized snapshot. A delayed list
+script can recover the in-memory calendar snapshot; nothing is persisted in
+browser storage except display preferences.
 
-## Remaining acceptance
-Required CI/browser checks and synthetic captures; exact-SHA Render review;
-permanent-code physical lock creation and revocation. Real codes/team links
-are disabled while staging no-login mode is active.
+## Staging and physical acceptance
+No production or staging deployment has been performed in this chat.
+1. Verify green required CI for the exact feature revision.
+2. Deploy that revision to Render staging with mock UbyPort and verify its SHA.
+3. Disable staging no-login before real TTLock actions or new company links.
+4. On a designated test lock, create a permanent cleaning PIN and test it; replace
+   or remove it, verify the old PIN stops opening, and check offline recovery.
+5. Review the external link on a phone, revoke it, and verify access is denied.
+The repository service configuration alone does not prove current server settings.

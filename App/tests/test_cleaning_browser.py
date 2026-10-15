@@ -106,6 +106,11 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
     with sync_api.sync_playwright() as playwright:
         browser, context = browser_context(playwright, ws, origin)
         page = context.new_page()
+        # The calendar may load before its list consumer on a slow connection.
+        def delayed_list_script(route):
+            time.sleep(.3)
+            route.continue_()
+        page.route("**/static/cleaning.js?*", delayed_list_script)
         page.goto(origin + "/cleaning?lang=en")
         loaded(page)
         first = next(item for item in cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))["cleanings"]
