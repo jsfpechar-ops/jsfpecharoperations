@@ -95,7 +95,11 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         marker_box = marker.bounding_box()
         if width <= 760:
             assert marker_box["height"] >= 44
-            marker.click()
+            # The Oct 19 overflow is a booking summary; the open day dialog also
+            # exposes its scheduled cleaning with the complete property label.
+            day_summary = page.locator('.cal-day-summary[data-cal-more="2026-10-19"]')
+            assert day_summary.count() == 1 and day_summary.bounding_box()["height"] >= 44
+            day_summary.click()
             dialog = page.locator("[data-cal-day-dialog]")
             assert dialog.is_visible()
             dialog_marker = dialog.locator(".cal-day-list .cal-event.is-cleaning-marker")
