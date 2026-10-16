@@ -665,7 +665,7 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                 assert page.locator(".stays-view .stay-portal-link").count() == 0
                 for row_index in range(rows.count()):
                     row = rows.nth(row_index)
-                    date_link = row.locator("td.stay-col-stay a.row-primary-link")
+                    date_link = row.locator("td.stay-col-dates a")
                     assert date_link.is_visible()
                     assert date_link.get_attribute("href").startswith("/reservations/")
                     more = row.locator("button.row-menu-trigger")
