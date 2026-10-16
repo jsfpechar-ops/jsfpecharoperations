@@ -125,32 +125,38 @@ def test_calendar_is_owner_scoped_and_includes_checkout_boundary(calendar_worksp
 
 
 
-def test_dashboard_calendar_exposes_cleaning_marker_without_private_fields(calendar_workspace, monkeypatch):
+def test_dashboard_calendar_excludes_cleanings_without_private_fields(calendar_workspace, monkeypatch):
     ws = calendar_workspace
-    db.update("apartment", ws["properties"][0], {"checkin_hour": 15, "checkout_hour": 11})
-    event_id = cleaning.save_event(ws["properties"][0], {
+    apartment_id = ws["properties"][0]
+    db.update("apartment", apartment_id, {"checkin_hour": 15, "checkout_hour": 11})
+    stay_id = make_stay(apartment_id, "2026-10-20", "2026-10-22", summary="Authorized dashboard stay")
+    cleaning_id = cleaning.save_event(apartment_id, {
         "scheduled_date": "2026-10-20", "notes": "private calendar note sentinel",
     })
-    def private_code_must_not_be_read(_home):
-        raise AssertionError("Dashboard calendar must use the private-data-free cleaning schedule")
-    monkeypatch.setattr(cleaning, "_code", private_code_must_not_be_read)
+
+    def dashboard_must_not_request_cleanings(*args, **kwargs):
+        pytest.fail("Dashboard calendar must not request cleaning.schedule")
+
+    monkeypatch.setattr(cleaning, "schedule", dashboard_must_not_request_cleanings)
     try:
         response = calendar_get(ws["client"])
         assert response.status_code == 200
         assert response.headers["cache-control"] == "no-store"
-        event = next(item for item in response.json()["events"] if item["id"] == f"cleaning:{event_id}")
-        assert event["kind"] == "cleaning"
-        assert event["propertyId"] == ws["properties"][0]
-        assert event["start"] == "2026-10-20"
-        assert event["displayStart"].startswith("2026-10-20T")
-        assert event["displayEnd"].startswith("2026-10-20T")
-        assert event["url"].startswith("/cleaning?")
-        assert set(event) == {"id", "kind", "propertyId", "property", "start", "end", "displayStart", "displayEnd", "timingUnavailable", "checkout", "checkoutTime", "nextArrival", "checkinTime", "conflict", "tone", "url"}
+        events = response.json()["events"]
+        assert all(event.get("kind") != "cleaning" for event in events)
+        assert all(not str(event["id"]).startswith("cleaning:") for event in events)
+        assert all(not any("note" in key.lower() or "code" in key.lower() for key in event) for event in events)
+        stay = next(event for event in events if event["id"] == stay_id)
+        assert stay["propertyId"] == apartment_id
+        assert stay["start"] == "2026-10-20" and stay["end"] == "2026-10-22"
+        assert stay["displayStart"] == "2026-10-20T15:00"
+        assert stay["displayEnd"] == "2026-10-22T11:00"
         assert "private calendar note sentinel" not in response.text
+        assert f"cleaning:{cleaning_id}" not in response.text
     finally:
-        db.execute("DELETE FROM cleaning_event WHERE apartment_id = ?", (ws["properties"][0],))
-        db.execute("DELETE FROM cleaning_property WHERE apartment_id = ?", (ws["properties"][0],))
-        db.update("apartment", ws["properties"][0], {"checkin_hour": None, "checkout_hour": None})
+        db.execute("DELETE FROM cleaning_event WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM cleaning_property WHERE apartment_id = ?", (apartment_id,))
+        db.update("apartment", apartment_id, {"checkin_hour": None, "checkout_hour": None})
 
 
 @pytest.mark.parametrize("which", ["foreign", "inactive", "archived"])

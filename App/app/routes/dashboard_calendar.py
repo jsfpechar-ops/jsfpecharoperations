@@ -7,7 +7,7 @@ from datetime import date
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from .. import access, auth, cleaning, db, demo, reporting
+from .. import access, auth, db, demo, reporting
 
 router = APIRouter()
 
@@ -103,19 +103,6 @@ def events(owner_user_id: int | None, start: date, end: date, apartment_id: int 
             "expected": progress["expected"], "status": status,
             "tone": tone, "preview": preview, "source": stay["source"],
             "url": f"/reservations/{stay['id']}?return_to=/",
-        })
-    cleaning_data = cleaning.schedule(owner_user_id, start, end,
-                                      [apartment_id] if apartment_id is not None else None,
-                                      include_private=False)
-    for item in cleaning_data["cleanings"]:
-        result.append({
-            "id": item["id"], "kind": "cleaning", "propertyId": item["propertyId"],
-            "property": item["property"], "start": item["start"], "end": item["end"],
-            "displayStart": item["displayStart"], "displayEnd": item["displayEnd"],
-            "timingUnavailable": item["timingUnavailable"], "checkout": item["checkout"],
-            "checkoutTime": item["checkoutTime"], "nextArrival": item["nextArrival"],
-            "checkinTime": item["checkinTime"], "conflict": item["conflict"],
-            "tone": "neutral", "url": f"/cleaning?cal_date={item['date']}&property={item['propertyId']}#cleaning-{item['eventId']}",
         })
     return result
 

@@ -439,12 +439,48 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         created_cleaning = result.value.json()
         assert result.value.status == 201
         assert page.evaluate("location.pathname") == pathname
-        marker = page.locator(f'.cal-gantt-events .cal-event[data-cal-event="cleaning:{created_cleaning["id"]}"]')
-        marker.wait_for(state="visible")
-        marker.click()
-        action = page.locator("[data-cal-details] [data-cal-open]")
-        assert action.is_visible() and action.inner_text().strip() == "View cleaning"
-        page.locator("[data-cal-details] [data-cal-close]").click()
+        cleaning_event_id = f"cleaning:{created_cleaning['id']}"
+        saved_cleanings = db.query(
+            "SELECT id, apartment_id, scheduled_date FROM cleaning_event WHERE id = ?",
+            (created_cleaning["id"],),
+        )
+        assert len(saved_cleanings) == 1
+        assert saved_cleanings[0]["apartment_id"] == ws["properties"][0]
+        assert saved_cleanings[0]["scheduled_date"] == "2026-10-27"
+        assert page.locator(f'.cal-gantt-events .cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
+        shot(page, "dashboard-cleaning-absent-gantt-en")
+
+        page.locator('[data-cal-view="calendar"]').click()
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        assert page.locator(f'.cal-week-events .cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
+        page.locator('[data-cal-scale="year"]').click()
+        page.wait_for_function("() => document.querySelectorAll('.cal-mini-title').length === 12")
+        assert page.locator(f'.cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
+        page.locator('[data-cal-scale="month"]').click()
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        busy_day = page.locator('[data-cal-more="2026-10-14"]')
+        assert busy_day.is_visible()
+        busy_day.click()
+        assert page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
+        page.locator("[data-cal-day-dialog] [data-cal-close]").click()
+        shot(page, "dashboard-cleaning-absent-en")
+
+        cleaning_page = context.new_page()
+        cleaning_page.goto(f"{calendar_origin}/cleaning?lang=en&cal_date=2026-10-27")
+        cleaning_page.wait_for_selector("[data-calendar]")
+        wait_loaded(cleaning_page)
+        cleaning_page.locator('[data-cal-view="calendar"]').click()
+        cleaning_page.wait_for_selector(".cal-week")
+        wait_loaded(cleaning_page)
+        cleaning_marker = cleaning_page.locator(
+            f'.cal-week-events .cal-event[data-cal-event="{cleaning_event_id}"]'
+        )
+        cleaning_marker.wait_for(state="visible")
+        assert "Calendar popup" in cleaning_page.locator(".cleaning-card").inner_text()
+        shot(cleaning_page, "cleaning-calendar-created-marker-en")
+        cleaning_page.close()
 
         booking = page.locator(f'.cal-event[data-cal-event="{existing_stay}"]:visible')
         assert booking.count() == 1
