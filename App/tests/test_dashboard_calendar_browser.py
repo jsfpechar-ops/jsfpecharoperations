@@ -478,8 +478,9 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         row.wait_for(state="visible")
         assert "Popup row refresh" in row.inner_text()
         row.locator(".row-menu-trigger").click()
-        menu = page.locator('[role="menu"]:visible').last
-        assert menu.count() == 1 and menu.locator('[role="menuitem"]').count() >= 1
+        menu = page.locator(".row-menu-panel:visible").last
+        menu.wait_for(state="visible")
+        assert menu.locator(".row-menu-item").count() >= 1
         shot(page, "dashboard-calendar-create-refresh-en")
         context.close()
         browser.close()
@@ -552,7 +553,16 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         assert page.locator('[data-cal-message] a').is_visible()
         retry = page.locator("[data-cal-message] button")
         assert retry.is_visible() and len(posts) == 1
-        retry.click()
+        with page.expect_response(lambda response: response.request.method == "GET" and
+                                      response.url.split("?")[0] == calendar_origin + "/" and
+                                      "text/html" in response.request.headers.get("accept", "")) as refreshed:
+            retry.click()
+        fresh_response = refreshed.value
+        fresh_html = fresh_response.text()
+        assert fresh_response.status == 200
+        assert f'data-stay-id="{saved["id"]}"' in fresh_html
+        saved_row = db.query_one("SELECT date_from, date_to, expected_guests_override FROM reservation WHERE id = ?", (saved["id"],))
+        assert saved_row["date_from"] == arrival and saved_row["date_to"] == departure and saved_row["expected_guests_override"] == 2
         page.locator(f'[data-dashboard-refresh="work"] .dashboard-row[data-stay-id="{saved["id"]}"]').wait_for(state="visible")
         assert len(posts) == 1
         assert db.query_one("SELECT COUNT(*) AS n FROM reservation WHERE id = ?", (saved["id"],))["n"] == 1
