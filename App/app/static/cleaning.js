@@ -87,8 +87,10 @@
     const data = new FormData();
     data.set("_csrf", root.querySelector("[name='_csrf']").value);
     data.set("apartment_id", String(item.propertyId)); data.set("scheduled_date", cell.dataset.date);
-    data.set("revision", String(item.revision)); data.set("start_time", item.startTime || "");
-    data.set("end_time", item.endTime || ""); data.set("notes", item.notes);
+    data.set("revision", String(item.revision));
+    if (item.startTime) data.set("start_time", item.startTime);
+    if (item.endTime) data.set("end_time", item.endTime);
+    data.set("notes", item.notes);
     try {
       const response = await fetch("/cleaning/events/" + item.eventId, {
         method: "POST", body: data, headers: { Accept: "application/json" }, cache: "no-store"

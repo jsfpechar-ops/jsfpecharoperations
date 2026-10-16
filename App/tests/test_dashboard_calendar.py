@@ -95,6 +95,8 @@ def test_anonymous_calendar_requires_login(calendar_workspace):
 
 def test_calendar_is_owner_scoped_and_checkout_exclusive(calendar_workspace):
     ws = calendar_workspace
+    db.update("apartment", ws["properties"][0], {"checkin_hour": 15, "checkout_hour": 11})
+    boundary_checkout = make_stay(ws["properties"][0], "2026-09-28", "2026-10-01")
     owned = make_stay(ws["properties"][0], guest_email="never-serialize@example.test", host_note="private note")
     long_stay = make_stay(ws["properties"][1], "2026-09-01", "2026-12-01")
     excluded = [
@@ -102,7 +104,7 @@ def test_calendar_is_owner_scoped_and_checkout_exclusive(calendar_workspace):
         make_stay(ws["properties"][0], status="cancelled"),
         make_stay(ws["properties"][0], status="ignored"),
         make_stay(ws["properties"][0], archived_at=db.utcnow()),
-        make_stay(ws["properties"][0], "2026-09-28", "2026-10-01"),
+        make_stay(ws["properties"][0], "2026-11-01", "2026-11-04"),
         make_stay(ws["properties"][0], "2026-11-01", "2026-11-04"),
     ]
     response = calendar_get(ws["client"])
@@ -110,8 +112,11 @@ def test_calendar_is_owner_scoped_and_checkout_exclusive(calendar_workspace):
     assert response.headers["cache-control"] == "no-store"
     data = response.json()
     ids = {event["id"] for event in data["events"]}
-    assert {owned, long_stay} <= ids
+    assert {owned, long_stay, boundary_checkout} <= ids
     assert not ids.intersection(excluded)
+    boundary_event = next(event for event in data["events"] if event["id"] == boundary_checkout)
+    assert boundary_event["start"] == "2026-09-28" and boundary_event["end"] == "2026-10-01"
+    assert boundary_event["displayEnd"] == "2026-10-01T11:00"
     assert {item["id"] for item in data["properties"]} == set(ws["properties"])
     assert "never-serialize" not in response.text
     assert "private note" not in response.text

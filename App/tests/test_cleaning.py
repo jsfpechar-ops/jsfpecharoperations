@@ -72,11 +72,44 @@ def test_auto_checkout_is_persisted_once_and_has_next_arrival_beyond_loaded_rang
     data = payload(ws).json()
     item = next(x for x in data["cleanings"] if x["date"] == "2026-10-16")
     assert item["checkoutTime"] == "11:00"
+    assert item["displayStart"] == "2026-10-16T11:00"
+    assert item["displayEnd"] == "2026-10-16T15:00"
     assert item["nextArrival"] == "2026-12-01"
     assert item["checkinTime"] == "15:00"
     assert db.query_one("SELECT COUNT(*) AS n FROM cleaning_event WHERE source_reservation_id = ?", (booking,))["n"] == 1
     assert "Private guest" not in str(data)
     assert "private internal note" not in str(data)
+
+
+def test_checkout_turnover_uses_same_day_property_hours_and_keeps_next_arrival_context(workspace):
+    ws = workspace
+    db.update("apartment", ws["home"], {"checkin_hour": 15, "checkout_hour": 11})
+    booking = stay(ws["home"], "2026-10-15", "2026-10-17")
+    stay(ws["home"], "2026-10-20", "2026-10-22")
+    data = payload(ws).json()
+    reservation = next(item for item in data["events"] if item["id"] == f"reservation:{booking}")
+    turnover = next(item for item in data["cleanings"] if item["checkout"] == "2026-10-17")
+    assert reservation["start"] == "2026-10-15" and reservation["end"] == "2026-10-17"
+    assert reservation["displayStart"] == "2026-10-15T15:00"
+    assert reservation["displayEnd"] == "2026-10-17T11:00"
+    assert turnover["date"] == "2026-10-17"
+    assert turnover["displayStart"] == "2026-10-17T11:00"
+    assert turnover["displayEnd"] == "2026-10-17T15:00"
+    assert turnover["nextArrival"] == "2026-10-20"
+    assert db.query_one("SELECT scheduled_date FROM cleaning_event WHERE source_reservation_id = ?", (booking,))["scheduled_date"] == "2026-10-17"
+
+
+def test_invalid_property_window_is_flagged_without_persisting_visual_fallback(workspace):
+    ws = workspace
+    db.update("apartment", ws["home"], {"checkin_hour": 11, "checkout_hour": 11})
+    booking = stay(ws["home"], "2026-10-15", "2026-10-17")
+    item = next(x for x in payload(ws).json()["cleanings"] if x["checkout"] == "2026-10-17")
+    assert item["timingUnavailable"] is True and item["conflict"] is True
+    assert item["displayStart"] == "2026-10-17T12:00"
+    assert item["displayEnd"] == "2026-10-17T13:00"
+    assert item["checkoutTime"] == "11:00" and item["checkinTime"] == "11:00"
+    row = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE source_reservation_id = ?", (booking,))
+    assert row["start_time"] is None and row["end_time"] is None
 
 
 def test_booking_changes_follow_until_host_moves_date_and_stale_edits_fail(workspace):
@@ -95,6 +128,28 @@ def test_booking_changes_follow_until_host_moves_date_and_stale_edits_fail(works
     assert payload(ws).json()["cleanings"][0]["conflict"]
     assert db.decrypt_field(moved["notes_enc"]) == "Fresh towels"
     assert "Fresh towels" not in moved["notes_enc"]
+
+
+def test_notes_edit_preserves_legacy_explicit_times_and_auto_property_defaults(workspace):
+    ws = workspace
+    manual = cleaning.save_event(ws["home"], {"scheduled_date": "2026-10-19", "start_time": "12:30", "end_time": "14:00", "notes": "Legacy override"})
+    row = dict(db.query_one("SELECT * FROM cleaning_event WHERE id = ?", (manual,)))
+    cleaning.save_event(ws["home"], {"scheduled_date": "2026-10-19", "revision": row["revision"], "notes": "Notes only"}, row)
+    saved = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE id = ?", (manual,))
+    assert saved["start_time"] == "12:30" and saved["end_time"] == "14:00"
+    item = next(x for x in payload(ws).json()["cleanings"] if x["eventId"] == manual)
+    assert item["displayStart"] == "2026-10-19T12:30" and item["displayEnd"] == "2026-10-19T14:00"
+
+
+def test_normal_cleaning_editor_has_no_duplicate_time_fields(workspace):
+    ws = workspace
+    booking = stay(ws["home"])
+    item = event(ws, booking)
+    response = ws["client"].get(f"/cleaning/events/{item['id']}/edit")
+    assert response.status_code == 200
+    assert 'name="start_time"' not in response.text
+    assert 'name="end_time"' not in response.text
+    assert "Edit timing in Properties" in response.text
 
 
 def test_notes_edit_preserves_automatic_date_following(workspace):

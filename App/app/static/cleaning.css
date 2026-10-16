@@ -86,3 +86,29 @@
 
 .cleaning-card[data-cleaning-color=blue] { border-left-color:var(--blue); }
 .cleaning-card[data-cleaning-color=purple] { border-left-color:var(--purple); }
+
+/* Compact turnover groups keep the date sequence scannable. */
+.cleaning-date-group { margin:0 0 12px; }
+.cleaning-date-group > h3 { font-size:17px; line-height:1.25; padding:5px 0 7px; margin:0 0 8px; border-bottom:1px solid var(--border); }
+.cleaning-card { padding:12px 14px; margin:0 0 8px; border-radius:6px; }
+.cleaning-card-heading { align-items:center; }
+.cleaning-card h4 { font-size:16px; line-height:1.3; }
+.cleaning-origin { font-size:13px; }
+.cleaning-facts { gap:8px 20px; margin:10px 0; }
+.cleaning-facts dt { font-size:12px; margin-bottom:2px; }
+.cleaning-facts dd { font-size:14px; line-height:1.4; }
+.cleaning-access { padding:9px 12px; }
+.cleaning-pin { font-size:20px; margin:4px 0; }
+.cleaning-instructions { margin-top:10px; font-size:14px; line-height:1.45; }
+.cleaning-instructions h5 { font-size:14px; margin-bottom:4px; }
+.cleaning-instructions p { margin:4px 0 0; }
+.cleaning-card-actions { gap:12px; margin-top:10px; }
+.cleaning-warning { padding:8px 10px; font-size:14px; margin:8px 0; }
+.cleaning-timing-summary { font-size:14px; }
+@media (max-width:760px) {
+  .cleaning-date-group { margin-bottom:10px; }
+  .cleaning-card { padding:10px 12px; }
+  .cleaning-facts { gap:8px; }
+}
+
+body.host-workspace .cleaning-page .cleaning-date-group > h3 { font-size:17px; line-height:1.25; padding:5px 0 7px; margin:0 0 8px; border-bottom:1px solid var(--border); }

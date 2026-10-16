@@ -152,3 +152,52 @@
   .cal-year { grid-template-columns:1fr; }
   .cal-form-dates { grid-template-columns:1fr; gap:0; }
 }
+
+/* Segmented controls return to compact, matched calendar geometry. */
+.cal-segment { box-sizing:border-box; height:36px; padding:2px; }
+.cal-segment button { box-sizing:border-box; height:30px; min-height:30px; padding:0 9px; font-size:12px; line-height:1; }
+.host-workspace .dashboard-calendar .cal-segment { height:36px; }
+.host-workspace .dashboard-calendar .cal-segment button { height:30px; min-height:30px; }
+.host-workspace .dashboard-calendar :is(.cal-heading,.cal-toolbar) .btn,
+.host-workspace .dashboard-calendar :is(.cal-heading,.cal-toolbar) select { height:36px; min-height:36px; box-sizing:border-box; }
+.cleaning-page .dashboard-calendar :is(.cal-heading,.cal-toolbar) .btn,
+.cleaning-page .dashboard-calendar :is(.cal-heading,.cal-toolbar) select { height:36px; min-height:36px; box-sizing:border-box; }
+.cal-toolbar-options { flex-wrap:nowrap; min-width:0; }
+.host-workspace .dashboard-calendar .cal-toolbar-options { flex-wrap:nowrap; min-width:0; }
+@media (max-width:1100px) and (min-width:761px) {
+  .cal-toolbar { grid-template-columns:auto minmax(90px,1fr) auto; align-items:center; }
+  .cal-toolbar h3 { text-align:center; }
+  .cal-toolbar-options { grid-column:auto; justify-content:flex-end; gap:4px; }
+}
+@media (max-width:760px) {
+  .cal-segment { height:44px; padding:1px; }
+  .cal-segment button { height:40px; min-height:40px; padding:0 8px; }
+  .host-workspace .dashboard-calendar .cal-segment { height:44px; }
+  .host-workspace .dashboard-calendar .cal-segment button { height:40px; min-height:40px; }
+  .host-workspace .dashboard-calendar :is(.cal-heading,.cal-toolbar) .btn,
+  .host-workspace .dashboard-calendar :is(.cal-heading,.cal-toolbar) select,
+  .cleaning-page .dashboard-calendar :is(.cal-heading,.cal-toolbar) .btn,
+  .cleaning-page .dashboard-calendar :is(.cal-heading,.cal-toolbar) select { height:44px; min-height:44px; }
+  .cleaning-page .dashboard-calendar .cal-segment { height:44px; }
+  .cleaning-page .dashboard-calendar .cal-segment button { height:40px; min-height:40px; }
+  .cal-toolbar-options { flex-wrap:wrap; }
+  .host-workspace .dashboard-calendar .cal-toolbar-options { flex-wrap:wrap; }
+}
+
+/* Win over the signed-in theme's earlier compact-control aliases. */
+body.host-workspace .dashboard-calendar .cal-toolbar .btn,
+body.host-workspace .dashboard-calendar .cal-heading .btn,
+body.host-workspace .dashboard-calendar .cal-toolbar select,
+body.host-workspace .dashboard-calendar .cal-heading select { height:36px; min-height:36px; }
+body.host-workspace .dashboard-calendar .cal-toolbar .cal-segment button,
+body.host-workspace .dashboard-calendar .cal-heading .cal-segment button { height:30px; min-height:30px; }
+@media (max-width:760px) {
+  body.host-workspace .dashboard-calendar .cal-toolbar .btn,
+  body.host-workspace .dashboard-calendar .cal-heading .btn,
+  body.host-workspace .dashboard-calendar .cal-toolbar select,
+  body.host-workspace .dashboard-calendar .cal-heading select { height:44px; min-height:44px; }
+  body.host-workspace .dashboard-calendar .cal-toolbar .cal-segment,
+  body.host-workspace .dashboard-calendar .cal-heading .cal-segment { height:44px; }
+  body.host-workspace .dashboard-calendar .cal-toolbar .cal-segment button,
+  body.host-workspace .dashboard-calendar .cal-heading .cal-segment button { height:40px; min-height:40px; }
+}

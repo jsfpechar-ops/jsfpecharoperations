@@ -83,15 +83,21 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(f"{origin}/cleaning?lang={lang}")
         loaded(page)
-        assert page.locator("[data-cal-mode-select]").input_value() == "auto"
+        assert page.locator("[data-cal-auto]").count() == 1
         assert page.locator(".cal-week").count() > 0
         assert page.locator(".cal-gantt-row").count() == 0
+        assert page.locator('[data-cal-view="calendar"]').get_attribute("aria-pressed") == "true"
         assert page.locator(".cleaning-card").count() == 3
+        summaries = page.locator(".cal-day-summary")
+        assert summaries.count() >= 1
+        if width <= 760:
+            assert summaries.first.bounding_box()["height"] >= 44
+        assert "Cleaning" in summaries.first.inner_text()
         assert page.locator(".cleaning-pin").first.inner_text() == "001234"
         assert page.locator("#cleaning-list input[type=checkbox]").count() == 0
         assert page.locator("#cleaning-list").bounding_box()["y"] > page.locator("#calendar").bounding_box()["y"]
-        assert page.locator(".cleaning-instructions").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 18
-        assert page.locator(".cleaning-pin").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 24
+        assert page.locator(".cleaning-instructions").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 14
+        assert page.locator(".cleaning-pin").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 20
         assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
         assert page.locator('.sidebar-nav a[href="/cleaning"] svg').count() == 1
         shot(page, f"host-{lang}-{width}")
@@ -100,6 +106,25 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         assert "Garden / 2" in page.locator(".cleaning-card").inner_text()
         assert not page.locator(".cleaning-pin").count()
         assert not errors
+        context.close()
+        browser.close()
+
+
+def test_missing_code_is_omitted_from_host_list_and_calendar_dialog(workspace, origin):
+    ws = workspace
+    db.update("cleaning_property", ws["home"], {"code_id": None})
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin)
+        page = context.new_page()
+        page.goto(origin + "/cleaning?lang=en")
+        loaded(page)
+        assert page.locator(".cleaning-card .cleaning-access").count() == 0
+        assert page.locator(".cleaning-card").get_by_text("Door code unavailable", exact=False).count() == 0
+        block = page.locator('.cal-event[data-event-kind="cleaning"]').first
+        block.click()
+        assert page.locator("[data-cal-details]").is_visible()
+        assert page.locator("[data-cal-detail-content] .cleaning-access").count() == 0
+        assert page.locator("[data-cal-detail-content]").get_by_text("Door code unavailable", exact=False).count() == 0
         context.close()
         browser.close()
 
@@ -117,7 +142,7 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         page.route("**/static/cleaning.js?*", delayed_list_script)
         page.goto(origin + "/cleaning?lang=en")
         loaded(page)
-        page.locator("[data-cal-mode-select]").select_option("gantt")
+        page.locator('[data-cal-view="gantt"]').click()
         page.wait_for_selector(".cal-gantt-row")
         first = next(item for item in cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))["cleanings"]
                      if item["propertyId"] == ws["home"])

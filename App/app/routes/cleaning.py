@@ -76,6 +76,8 @@ def _payload(request: Request, first: date, last: date, ids=None, read_only=Fals
             if entry["kind"] == "booking":
                 entry["start"] = max(entry["start"], first.isoformat())
                 entry["end"] = min(entry["end"], last.isoformat())
+                entry["displayStart"] = max(entry["displayStart"], first.isoformat() + "T00:00")
+                entry["displayEnd"] = min(entry["displayEnd"], last.isoformat() + "T00:00")
     payload["properties"] = [{"id": p["id"], "name": p["internal_name"]} for p in allowed]
     context = _context(request, groups=_groups(payload), read_only=read_only)
     payload["listHtml"] = templating.templates.get_template("_cleaning_list.html").render(context)

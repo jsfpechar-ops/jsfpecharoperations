@@ -121,8 +121,10 @@ def event_for(owner_id: int | None, event_id: int) -> dict | None:
 
 def save_event(apartment_id: int, values: dict, existing: dict | None = None) -> int:
     day = parse_date(str(values.get("scheduled_date", ""))).isoformat()
-    start = parse_time(str(values.get("start_time") or ""))
-    end = parse_time(str(values.get("end_time") or ""))
+    start_value = values.get("start_time", existing.get("start_time") if existing else "")
+    end_value = values.get("end_time", existing.get("end_time") if existing else "")
+    start = parse_time(str(start_value or ""))
+    end = parse_time(str(end_value or ""))
     if bool(start) != bool(end) or (start and end <= start):
         raise ValueError("times")
     notes = str(values.get("notes", "")).strip()
@@ -208,11 +210,14 @@ def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | Non
         code = _code(home)
         checkout_time, checkin_time = _hour(home, "checkout"), _hour(home, "checkin")
         for stay in stays:
-            if stay["date_from"] < last.isoformat() and stay["date_to"] > first.isoformat():
+            if stay["date_from"] < last.isoformat() and stay["date_to"] >= first.isoformat():
                 output["events"].append({
                     "id": f"reservation:{stay['id']}", "kind": "booking",
                     "propertyId": home["id"], "property": home["internal_name"],
                     "start": stay["date_from"], "end": stay["date_to"],
+                    "displayStart": f"{stay['date_from']}T{_hour(home, 'checkin') or '12:00'}",
+                    "displayEnd": f"{stay['date_to']}T{_hour(home, 'checkout') or '12:00'}",
+                    "timingFallback": _hour(home, "checkin") is None or _hour(home, "checkout") is None,
                     "label": "", "tone": "neutral", "expected": None, "url": "#cleaning-list",
                 })
         events = db.query(
@@ -237,12 +242,33 @@ def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | Non
                 warning |= any(r["id"] != source["id"] and r["date_from"] < departure and
                                r["date_to"] > departure for r in stays)
                 warning |= bool(arrival == departure and checkout_time and checkin_time and checkout_time >= checkin_time)
+            default_window_valid = bool(checkout_time and checkin_time and checkout_time < checkin_time)
+            explicit_start = event["start_time"]
+            explicit_end = event["end_time"]
+            try:
+                explicit_start = parse_time(explicit_start or "")
+                explicit_end = parse_time(explicit_end or "")
+            except ValueError:
+                explicit_start = explicit_end = None
+            explicit_window_valid = bool(explicit_start and explicit_end and explicit_end > explicit_start)
+            if explicit_window_valid:
+                visual_start, visual_end = explicit_start, explicit_end
+            elif default_window_valid:
+                visual_start, visual_end = checkout_time, checkin_time
+            else:
+                # Visual-only marker for a missing/invalid default. Never persist
+                # these placeholder hours or present them as confirmed timing.
+                visual_start, visual_end = "12:00", "13:00"
             item = {
                 "id": f"cleaning:{event['id']}", "eventId": event["id"], "kind": "cleaning",
                 "propertyId": home["id"], "property": home["internal_name"],
                 "start": event["scheduled_date"],
                 "end": (date.fromisoformat(event["scheduled_date"]) + timedelta(days=1)).isoformat(),
-                "date": event["scheduled_date"], "startTime": event["start_time"], "endTime": event["end_time"],
+                "displayStart": f"{event['scheduled_date']}T{visual_start}",
+                "displayEnd": f"{event['scheduled_date']}T{visual_end}",
+                "timingUnavailable": not (explicit_window_valid or default_window_valid),
+                "date": event["scheduled_date"], "startTime": event["start_time"] if explicit_window_valid else None,
+                "endTime": event["end_time"] if explicit_window_valid else None,
                 "checkout": departure, "checkoutTime": checkout_time,
                 "nextArrival": arrival, "checkinTime": checkin_time,
                 "notes": db.decrypt_field(event["notes_enc"]) if event["notes_enc"] else "",

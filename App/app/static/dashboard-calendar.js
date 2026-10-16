@@ -18,24 +18,47 @@
     const start = monday(first);
     return [start, addDays(start, Math.ceil(distance(start, last) / 7) * 7)];
   }
-  function overlap(event, start, end) { return event.start < end && event.end > start; }
+  function dayPoint(value) { return distance("1970-01-01", value); }
+  function eventPoint(event, edge) {
+    const actual = edge === "start" ? event.start : event.end;
+    const value = event[edge === "start" ? "displayStart" : "displayEnd"];
+    if (!value || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return dayPoint(actual);
+    const day = value.slice(0, 10), time = value.slice(11);
+    const [hour, minute] = time.split(":").map(Number);
+    return dayPoint(day) + hour / 24 + minute / 1440;
+  }
+  function overlap(event, start, end) {
+    return eventPoint(event, "start") < dayPoint(end) && eventPoint(event, "end") > dayPoint(start);
+  }
   function autoView(mode, propertyCount) { return mode === "auto" ? (propertyCount >= 3 ? "gantt" : "calendar") : mode; }
   function lanes(events, start, end) {
-    const ends = [], segments = [];
-    let cleaningLane = null;
-    events.filter(event => overlap(event, start, end)).slice().sort((a, b) =>
-      Number(a.kind === "cleaning") - Number(b.kind === "cleaning") ||
-      a.start.localeCompare(b.start) || a.end.localeCompare(b.end) || (Number.isFinite(a.id) && Number.isFinite(b.id) ? a.id - b.id : String(a.id).localeCompare(String(b.id)))
-    ).forEach(event => {
-      const left = event.start < start ? start : event.start;
-      const right = event.end > end ? end : event.end;
-      if (event.kind === "cleaning" && cleaningLane === null) cleaningLane = ends.length;
-      let lane = ends.findIndex((last, index) => last <= left && (event.kind !== "cleaning" || index >= cleaningLane));
-      if (lane < 0) lane = ends.length;
-      ends[lane] = right;
-      segments.push({ event, lane, column: distance(start, left), length: distance(left, right) });
-    });
+    const leftEdge = dayPoint(start), rightEdge = dayPoint(end), ends = [], segments = [];
+    events.filter(event => eventPoint(event, "start") < rightEdge && eventPoint(event, "end") > leftEdge)
+      .slice().sort((a, b) => eventPoint(a, "start") - eventPoint(b, "start") ||
+        eventPoint(a, "end") - eventPoint(b, "end") ||
+        (Number.isFinite(a.id) && Number.isFinite(b.id) ? a.id - b.id : String(a.id).localeCompare(String(b.id))))
+      .forEach(event => {
+        const left = Math.max(eventPoint(event, "start"), leftEdge);
+        const right = Math.min(eventPoint(event, "end"), rightEdge);
+        const column = Math.floor(left - leftEdge);
+        const lastColumn = Math.ceil(right - leftEdge);
+        const length = Math.max(1, lastColumn - column);
+        let lane = ends.findIndex(last => last <= left);
+        if (lane < 0) lane = ends.length;
+        ends[lane] = right;
+        const lastDayStart = leftEdge + column + length - 1;
+        segments.push({ event, lane, column, length,
+          startFraction: left - (leftEdge + column),
+          endFraction: Math.max(0, Math.min(1, right - lastDayStart)) });
+      });
     return { segments, count: ends.length };
+  }
+  function placeEvent(link, segment) {
+    link.style.gridColumn = String(segment.column + 1) + " / span " + String(segment.length);
+    link.style.gridRow = String(segment.lane + 1);
+    const width = Math.max(1, segment.length);
+    link.style.marginLeft = "calc(" + (segment.startFraction * 100 / width) + "% + 1px)";
+    link.style.marginRight = "calc(" + ((1 - segment.endFraction) * 100 / width) + "% + 1px)";
   }
   // Pure date/layout functions above are also exercised independently in browser tests.
   const root = document.querySelector("[data-calendar]");
@@ -139,8 +162,8 @@
   }
   function syncControls() {
     const currentView = view(), [start, end] = range();
-    $("[data-cal-mode-select]").value = state.mode;
-    $("[data-cal-scale-select]").value = state.scale;
+    $("[data-cal-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calView === currentView)));
+    $("[data-cal-scale]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calScale === state.scale)));
     $("[data-cal-scales]").hidden = currentView === "gantt";
     $("[data-cal-month]").value = state.date.slice(5, 7);
     $("[data-cal-month]").hidden = currentView === "calendar" && state.scale === "year";
@@ -184,7 +207,9 @@
     link.title = labelFor(event) + " · " + fullDate(event.start) + " – " + fullDate(event.end) + " · " + status +
       (event.conflict ? " · " + labels.conflict : "");
     if (cleaningMode && event.kind === "cleaning") link.title = labelFor(event) + " · " + fullDate(event.start) +
-      (event.startTime ? " · " + event.startTime + "–" + event.endTime : "") + (event.conflict ? " · " + cleaningLabels.conflict : "");
+      (event.startTime ? " · " + event.startTime + "–" + event.endTime : "") +
+      (event.timingUnavailable ? " · " + cleaningLabels.timing_unavailable : "") +
+      (event.conflict && !event.timingUnavailable ? " · " + cleaningLabels.conflict : "");
     link.setAttribute("aria-label", link.title);
     link.append(el("span", "", labelFor(event)));
     return link;
@@ -205,13 +230,16 @@
     const [start, end] = range(), weekdays = el("div", "cal-weekdays");
     for (let day = 0; day < 7; day++) weekdays.append(el("span", "", weekday(addDays(start, day))));
     body.append(weekdays);
-    const maximum = matchMedia("(max-width:760px)").matches ? 1 : 2;
+    const mobile = matchMedia("(max-width:760px)").matches;
+    const bookingBudget = 1;
     for (let week = start; week < end; week = addDays(week, 7)) {
-      const until = addDays(week, 7), layout = lanes(state.events, week, until);
-      const hiddenSegments = layout.segments.filter(segment => segment.lane >= maximum);
-      const visible = layout.segments.filter(segment => segment.lane < maximum);
-      const count = Math.max(1, Math.min(layout.count, maximum) + (hiddenSegments.length ? 1 : 0));
-      const row = el("div", "cal-week"); row.style.setProperty("--lanes", String(count));
+      const until = addDays(week, 7);
+      const bookings = lanes(state.events.filter(event => event.kind !== "cleaning"), week, until);
+      const cleanings = lanes(state.events.filter(event => event.kind === "cleaning"), week, until);
+      const visibleBookings = bookings.segments.filter(segment => segment.lane < bookingBudget);
+      const hiddenBookings = bookings.segments.filter(segment => segment.lane >= bookingBudget);
+      const visibleCleanings = cleanings.segments.filter(segment => segment.lane === 0);
+      const hiddenCleanings = cleanings.segments.filter(segment => segment.lane > 0);
       const days = el("div", "cal-week-days");
       for (let index = 0; index < 7; index++) {
         const date = addDays(week, index), day = el("div", "cal-day");
@@ -221,28 +249,39 @@
         const button = el("button", "cal-day-number", String(dateValue(date).getUTCDate()));
         button.type = "button"; button.dataset.calDay = date;
         button.setAttribute("aria-label", format("select_day", { date: fullDate(date) }));
-        button.title = labels.keyboard;
-        day.append(button); days.append(day);
+        button.title = labels.keyboard; day.append(button); days.append(day);
       }
       const overlay = el("div", "cal-week-events");
-      visible.forEach(segment => {
+      visibleBookings.forEach(segment => {
         const link = eventLink(segment.event);
-        link.style.gridColumn = String(segment.column + 1) + " / span " + String(segment.length);
-        link.style.gridRow = String(segment.lane + 1);
-        if (segment.event.start < week) link.classList.add("continues-start");
-        if (segment.event.end > until) link.classList.add("continues-end");
-        overlay.append(link);
+        segment.lane = 0; placeEvent(link, segment); overlay.append(link);
       });
-      if (hiddenSegments.length) {
-        for (let index = 0; index < 7; index++) {
-          const day = addDays(week, index), hidden = hiddenSegments.filter(segment => overlap(segment.event, day, addDays(day, 1)));
-          if (!hidden.length) continue;
-          const button = el("button", "cal-more", format("more", { count: hidden.length }));
-          button.type = "button"; button.dataset.calMore = day;
-          button.style.gridColumn = String(index + 1); button.style.gridRow = String(Math.min(layout.count, maximum) + 1);
-          overlay.append(button);
-        }
+      visibleCleanings.forEach(segment => {
+        const link = eventLink(segment);
+        segment.lane = Math.min(visibleBookings.length, bookingBudget);
+        placeEvent(link, segment); overlay.append(link);
+      });
+      let summaryCount = 0;
+      for (let index = 0; index < 7; index++) {
+        const day = addDays(week, index), dayEnd = addDays(day, 1);
+        const moreBookings = hiddenBookings.filter(segment => overlap(segment.event, day, dayEnd)).length;
+        const moreCleanings = hiddenCleanings.filter(segment => overlap(segment.event, day, dayEnd)).length;
+        const dayCleanings = visibleCleanings.filter(segment => overlap(segment.event, day, dayEnd)).length;
+        if (!moreBookings && !moreCleanings && !(mobile && dayCleanings)) continue;
+        const parts = [];
+        if (moreBookings) parts.push(cleaningMode ? String(moreBookings) + " " + cleaningLabels.overflow_bookings : format("more", { count: moreBookings }));
+        if (moreCleanings) parts.push(String(moreCleanings) + " " + cleaningLabels.overflow_cleanings);
+        if (mobile && dayCleanings) parts.push(cleaningLabels.cleaning_summary + (dayCleanings > 1 ? " ×" + dayCleanings : ""));
+        const button = el("button", "cal-more cal-day-summary", parts.join(" · "));
+        button.type = "button"; button.dataset.calMore = day;
+        button.setAttribute("aria-label", fullDate(day) + " · " + parts.join(" · "));
+        button.style.gridColumn = String(index + 1);
+        button.style.gridRow = String(bookingBudget + (cleanings.count ? 2 : 1));
+        overlay.append(button); summaryCount++;
       }
+      const visibleCount = Math.min(bookings.count, bookingBudget) + (cleanings.count ? 1 : 0);
+      const lanesShown = Math.max(1, visibleCount + (summaryCount ? 1 : 0));
+      const row = el("div", "cal-week"); row.style.setProperty("--lanes", String(lanesShown));
       row.append(days, overlay); body.append(row);
     }
   }
@@ -299,8 +338,7 @@
       }
       layout.segments.forEach(segment => {
         const link = eventLink(segment.event);
-        link.style.gridColumn = String(segment.column + 1) + " / span " + String(segment.length);
-        link.style.gridRow = String(segment.lane + 1); overlay.append(link);
+        placeEvent(link, segment); overlay.append(link);
       });
       track.append(days, overlay); row.append(name, track); timeline.append(row);
     });
@@ -382,10 +420,12 @@
         turnover.append(el("dt", "", cleaningLabels.arrival), el("dd", "",
           event.nextArrival ? fullDate(event.nextArrival) + " · " + (event.checkinTime || cleaningLabels.time_missing) : cleaningLabels.no_arrival));
         container.append(turnover);
-        const access = el("div", "cleaning-access");
-        access.append(el("span", "", cleaningLabels.code), el("strong", event.code ? "cleaning-pin" : "cleaning-code-missing",
-          event.code ? event.code + (event.codeSource === "ttlock" ? "#" : "") : cleaningLabels.no_code));
-        container.append(access);
+        if (event.code) {
+          const access = el("div", "cleaning-access");
+          access.append(el("span", "", cleaningLabels.code), el("strong", "cleaning-pin",
+            event.code + (event.codeSource === "ttlock" ? "#" : "")));
+          container.append(access);
+        }
         if (event.conflict) container.append(el("p", "cleaning-warning", cleaningLabels.conflict));
         [event.notes, event.instructions].filter(Boolean).forEach(text => container.append(el("p", "cleaning-text", text)));
       } else container.append(el("p", "", cleaningLabels.booking + " · " + fullDate(event.end)));
@@ -559,16 +599,14 @@
   }
   $("[data-cal-month]").addEventListener("change", changePeriod);
   $("[data-cal-year]").addEventListener("change", changePeriod);
-  $("[data-cal-mode-select]").addEventListener("change", event => {
-    state.mode = event.target.value;
-    if (state.mode === "auto") state.scale = "month";
+  $("[data-cal-view]").forEach(button => button.addEventListener("click", () => {
+    state.mode = button.dataset.calView;
     savePreferences(); load();
-  });
-  $("[data-cal-scale-select]").addEventListener("change", event => {
-    state.mode = "calendar";
-    state.scale = event.target.value;
+  }));
+  $("[data-cal-scale]").forEach(button => button.addEventListener("click", () => {
+    state.mode = "calendar"; state.scale = button.dataset.calScale;
     savePreferences(); load();
-  });
+  }));
   $("[data-cal-auto]").addEventListener("change", event => {
     state.mode = event.target.checked ? "auto" : view();
     if (state.mode === "auto") state.scale = "month";

@@ -209,6 +209,13 @@ WORDS = {
         "This cleaning conflicts with the booking window. Check the dates and times.",
         "Úklid koliduje s termínem pobytu. Zkontrolujte datum a čas."
     ],
+    "timing_unavailable": [
+        "Set property checkout before check-in to show a valid cleaning window.",
+        "Pro platné časové okno úklidu nastavte odjezd před příjezdem."
+    ],
+    "overflow_bookings": ["more bookings", "další rezervace"],
+    "overflow_cleanings": ["more cleanings", "další úklidy"],
+    "cleaning_summary": ["Cleaning", "Úklid"],
     "booking": [
         "Reservation",
         "Rezervace"
