@@ -18,14 +18,14 @@ Implement the owner-approved flat-white host workspace proposal in `docs/plans/0
 - Cleaning legacy `checkout_time` / `checkin_time` values are retained without migration but do not override apartment hours. Explicit per-cleaning time/date adjustments remain valid.
 - Manual reservation summary is safe as the stay label only for manual source; imported summaries and guest identities do not become new list content.
 
-## 3. Allowed files
+## 3. Files
 
 Production UI: `App/app/static/host-design0123.css`; `App/app/templates/base.html`; `App/app/templates/dashboard.html`; `App/app/templates/reservations.html`; `App/app/templates/reservation_detail.html`; `App/app/templates/_components.html`; `App/app/templates/_dashboard_calendar.html`; `App/app/static/dashboard-calendar.js`; `App/app/static/dashboard-calendar.css`; `App/app/host_design_i18n.py`.
 Shared timing: `App/app/templates/_property_editor.html`; `App/app/routes/admin.py`; `App/app/templates/cleaning_settings.html`; `App/app/routes/cleaning.py`; `App/app/cleaning.py`; `App/app/cleaning_i18n.py`; `App/app/templates/setup_wizard/property.html`; `App/app/templates/setup_wizard/door_lock.html`; `App/app/property_setup.py`.
 Tests: `App/tests/test_dashboard_calendar_browser.py`; `App/tests/test_cleaning.py`; `App/tests/test_cleaning_browser.py`; `App/tests/test_host_wide_geometry_browser.py`; `App/tests/test_host_list_layouts_browser.py`; `App/tests/test_host_geometry.py`; `App/tests/test_lock_navigation_browser.py`; `App/tests/test_door_codes_safeguards.py`; `App/tests/test_onboarding_wizard_survival.py`; `App/tests/test_property_navigation_browser.py`.
 Docs/CI: `.github/workflows/ci.yml`; `docs/tasks/0123-host-design.md`; `docs/tasks/0123-host-design-report.md`; `docs/plans/0123-rework-proposal/README.md`; `docs/HOST_APP_DESIGN.md`; `docs/DESIGN.md`; `docs/context/status.md`; `docs/context/decisions.md`; `docs/context/known-issues.md`. CI changes are limited to adding an existing browser test if needed.
 
-## 4. Implementation
+## 4. Steps
 
 1. Replace the first-pass theme with a coherent host-only flat-white layer; retain real shell assets and working-lane/card breakpoints.
 2. Flatten dashboard counts/calendar/queue and list/detail/property/cleaning surfaces without losing current controls or data hooks. Stay rows use safe manual label, full date range, property identity, guest/report facts and existing More actions.
@@ -37,7 +37,7 @@ Docs/CI: `.github/workflows/ci.yml`; `docs/tasks/0123-host-design.md`; `docs/tas
 
 No public/guest/auth redesign, new backend search, data migration, dependency, share-policy, filing, permission, credential or TTLock issuance changes. No lock calls, main push, merge or deployment.
 
-## 6. Verification
+## 6. Commands
 
 Run the full test suite and required zero-skip Chromium/geometry jobs through repository CI because the managed shell/browser environment is unavailable. Keep all existing assertions and screenshot uploads. Do not claim local browser results.
 

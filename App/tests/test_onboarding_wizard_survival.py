@@ -243,6 +243,8 @@ def test_cross_step_guarded_fields_survive_each_wizard_post(host):
                     "setup_step": "police",
                     "return_to": f"{base}/stay_fee",
                     **{k: v for k, v in POLICE.items() if k != "uby_ws_password"},
+                    "checkin_hour": "2",
+                    "checkout_hour": "3",
                 },
                 follow_redirects=False,
             ),
@@ -649,12 +651,15 @@ def test_property_step_owns_shared_hours_and_other_steps_preserve_them(host):
         f"/apartments/{apt_id}",
         data={
             "internal_name": flat["internal_name"],
-            "setup_step": "door_lock",
-            "door_code_section": "1",
-            "door_codes_fields": "1",
+            "setup_step": "police",
+            "checkin_hour": "7",
+            "checkout_hour": "19",
             "return_to": f"/apartments/{apt_id}/setup/automation",
         },
         follow_redirects=False,
     )
     after = db.query_one("SELECT checkin_hour, checkout_hour FROM apartment WHERE id = ?", (apt_id,))
     assert (after["checkin_hour"], after["checkout_hour"]) == (16, 10)
+    from app import ttlock
+
+    assert ttlock.stay_window("2026-10-17", "2026-10-20", after["checkin_hour"], after["checkout_hour"], 0) == ttlock.stay_window("2026-10-17", "2026-10-20", 16, 10, 0)

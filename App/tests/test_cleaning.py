@@ -445,8 +445,18 @@ def test_cleaning_availability_uses_property_hours_and_preserves_manual_override
     event = db.query_one("SELECT * FROM cleaning_event WHERE source_reservation_id = ?", (db.query_one("SELECT id FROM reservation WHERE id = ?", (first,))["id"],))
     assert event is not None
     manual_day = "2026-10-21"
-    cleaning.save_event(home_id, {"scheduled_date": manual_day, "start_time": "12:00", "end_time": "14:00", "notes": ""}, existing=dict(event))
+    db.update("apartment", home_id, {"checkout_hour": 12, "checkin_hour": 16})
+    refreshed = cleaning.schedule(ws["owner"], date(2026, 10, 16), date(2026, 10, 24), [home_id])
+    updated_generated = next(item for item in refreshed["cleanings"] if item["checkout"] == "2026-10-20")
+    assert updated_generated["checkoutTime"] == "12:00" and updated_generated["checkinTime"] == "16:00"
+    cleaning.save_event(home_id, {"scheduled_date": manual_day, "start_time": "12:00", "end_time": "14:00", "notes": "", "revision": event["revision"]}, existing=dict(event))
     moved = db.query_one("SELECT scheduled_date, start_time, end_time, overridden FROM cleaning_event WHERE id = ?", (event["id"],))
     assert (moved["scheduled_date"], moved["start_time"], moved["end_time"], moved["overridden"]) == (manual_day, "12:00", "14:00", 1)
     legacy = db.query_one("SELECT checkout_time, checkin_time FROM cleaning_property WHERE apartment_id = ?", (home_id,))
     assert (legacy["checkout_time"], legacy["checkin_time"]) == ("09:30", "18:00")
+    db.update("apartment", home_id, {"checkout_hour": 30, "checkin_hour": -1})
+    invalid_home = cleaning.properties(ws["owner"], [home_id])[0]
+    assert cleaning._hour(invalid_home, "checkout") is None
+    assert cleaning._hour(invalid_home, "checkin") is None
+    response = ws["client"].get(f"/cleaning/properties/{home_id}")
+    assert response.status_code == 200 and "—" in response.text

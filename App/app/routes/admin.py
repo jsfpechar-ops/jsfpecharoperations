@@ -2114,13 +2114,12 @@ _ADDRESS_ONLY_FIELDS = (
 
 
 def _property_hour_changes(form, apartment: Dict[str, Any]) -> tuple[Dict[str, Any], Optional[str]]:
-    """Read the shared arrival/departure defaults only when this form owns them."""
-    names = ("checkin_hour", "checkout_hour")
-    if not any(name in form for name in names):
-        return {}, None
+    """Parse only shared-hour fields actually posted by their owning form."""
     values: Dict[str, Any] = {}
-    for name in names:
-        raw = _form_str(form, name) if name in form else apartment.get(name)
+    for name in ("checkin_hour", "checkout_hour"):
+        if name not in form:
+            continue
+        raw = _form_str(form, name)
         if raw in (None, ""):
             values[name] = None
             continue
@@ -2153,10 +2152,19 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         if "automation_mode" not in form:
             for key in ("automation_mode", "submit_after_hours", "default_purpose"):
                 payload.pop(key, None)
-    hour_values, hour_error = _property_hour_changes(form, apartment)
+    apartment_data = dict(apartment)
+    owns_shared_hours = not setup_step or setup_step == "property" or (
+        setup_step == "door_lock" and any(
+            name in form for name in ("checkin_hour", "checkout_hour")
+        )
+    )
+    hour_values, hour_error = (
+        _property_hour_changes(form, apartment_data) if owns_shared_hours else ({}, None)
+    )
     if hour_error:
         if setup_step:
-            draft = dict(apartment)
+            draft = dict(apartment_data)
+            draft.update(_property_draft(form))
             for field in ("checkin_hour", "checkout_hour"):
                 if field in form:
                     draft[field] = _form_str(form, field)
@@ -2170,26 +2178,34 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     turn_off_codes = "door_codes_fields" in form and _form_str(form, "door_codes") != "1"
     enable_codes = _form_str(form, "door_codes") == "1"
     lock_will_be_enabled = enable_codes or (
-        apartment.get("lock_provider") == "ttlock" and not turn_off_codes
+        apartment_data.get("lock_provider") == "ttlock" and not turn_off_codes
     )
     effective_hours = {
-        name: hour_values[name] if name in hour_values else apartment.get(name)
+        name: hour_values[name] if name in hour_values else apartment_data.get(name)
         for name in ("checkin_hour", "checkout_hour")
     }
-    if lock_will_be_enabled and any(
-        value is None or not 0 <= int(value) <= 23 for value in effective_hours.values()
-    ):
-        if setup_step:
-            draft = dict(apartment)
-            draft.update(effective_hours)
-            return _wizard_rerender(
-                request, apartment_id, "property", notice=_flash(request, "flash.error.door_code_hours"),
-                status_code=400, extra={"draft": draft},
+    should_validate_hours = lock_will_be_enabled and bool(hour_values or enable_codes)
+    if should_validate_hours:
+        valid_pair = True
+        for value in effective_hours.values():
+            try:
+                valid_pair = valid_pair and value is not None and 0 <= int(value) <= 23
+            except (TypeError, ValueError):
+                valid_pair = False
+        if not valid_pair:
+            if setup_step:
+                draft = dict(apartment_data)
+                draft.update(_property_draft(form))
+                draft.update({name: _form_str(form, name) for name in hour_values if name in form})
+                return _wizard_rerender(
+                    request, apartment_id, "property", notice=_flash(request, "flash.error.door_code_hours"),
+                    status_code=400, extra={"draft": draft},
+                ), False
+            return _refuse_apartment_save(
+                request, apartment, form, None, shared_time_error="flash.error.door_code_hours"
             ), False
-        return _refuse_apartment_save(
-            request, apartment, form, None, shared_time_error="flash.error.door_code_hours"
-        ), False
-    payload.update(hour_values)
+    if owns_shared_hours:
+        payload.update(hour_values)
     if "operator_refresh" in form:
         return _refuse_apartment_save(request, apartment, form, None), False
     if not setup_step or setup_step == "property":
