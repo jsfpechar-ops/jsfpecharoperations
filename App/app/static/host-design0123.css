@@ -35,6 +35,7 @@ body.host-workspace .table-cards thead th { color:#62625d; font-size:12px; font-
 body.host-workspace .table-cards tbody tr { border-bottom:1px solid #e6e4e0; }
 body.host-workspace .table-cards tbody tr:hover { background:#faf9f7; }
 body.host-workspace .table-cards td { padding-top:15px; padding-bottom:15px; vertical-align:middle; }
+body.host-workspace .stays-view td { padding-top:0; padding-bottom:0; }
 body.host-workspace .row-primary-link, body.host-workspace .stay-identity-link { color:#20201e; font-size:15px; font-weight:700; text-decoration:none; }
 body.host-workspace .stays-view { border:0; padding:0; overflow:visible; }
 body.host-workspace .stays-view table { width:100%; }

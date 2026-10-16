@@ -31,12 +31,18 @@ PAIRS = """(selector) => [...document.querySelectorAll(selector)].map(row => {
 
 def _check_pairs(pairs, label, locale):
     assert len(pairs) >= 3, label
+    is_dashboard = label.startswith("dashboard/")
+    mobile = int(label.rsplit("/", 1)[-1]) <= 760
     for pair in pairs:
-        assert (bool(pair["open"]) if label == "dashboard" else not pair["open"]) and pair["more"], label
+        assert (bool(pair["open"]) if is_dashboard else not pair["open"]) and pair["more"], label
         assert pair["openText"] == OPEN_LABEL[locale], (label, pair["openText"])
         m = pair["more"]
         assert abs(m["w"] - m["h"]) <= 1, (label, m)
         assert m["l"] >= pair["row"]["l"] - 1 and m["r"] <= pair["row"]["r"] + 1, ("clipped", label, pair)
+        if pair["open"]:
+            opened = pair["open"]
+            assert opened["w"] >= 72 and opened["h"] >= (44 if mobile else 42), (label, opened)
+            assert opened["l"] >= pair["row"]["l"] - 1 and opened["r"] <= pair["row"]["r"] + 1, ("open clipped", label, pair)
 
 
 def test_dashboard_and_stays_share_compact_row_menu(
