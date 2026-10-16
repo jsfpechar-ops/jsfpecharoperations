@@ -143,10 +143,14 @@
     if (state.property) params.set("cal_property", state.property); else params.delete("cal_property");
     history.replaceState(null, "", location.pathname + "?" + params.toString() + location.hash);
   }
-  function setMessage(text, retry = false) {
+  function setMessage(text, retry = false, href = "", linkLabel = labels.open) {
     message.replaceChildren();
     message.hidden = !text;
     if (text) message.append(el("span", "", text));
+    if (href) {
+      const link = el("a", "", linkLabel);
+      link.href = href; message.append(link);
+    }
     if (retry) {
       const button = el("button", "btn", labels.retry);
       button.type = "button"; button.addEventListener("click", typeof retry === "function" ? retry : load); message.append(button);
@@ -476,6 +480,7 @@
   function close(dialog) {
     if (dialog === createDialog && saving) return;
     dialog.close();
+    if (dialog === createDialog) { createAnchor = null; createAnchorDate = ""; }
   }
   $$("dialog").forEach(dialog => {
     dialog.addEventListener("close", () => {
@@ -582,10 +587,18 @@
     });
     if (createKind === "stay") updateNights();
   }
+  let createAnchor = null, createAnchorDate = "";
   function placeCreate(anchor) {
-    if (!createDialog.open || matchMedia("(max-width:760px)").matches) return;
+    if (!createDialog.open) return;
+    if (matchMedia("(max-width:760px)").matches) {
+      createDialog.style.removeProperty("left");
+      createDialog.style.removeProperty("top");
+      return;
+    }
+    const liveAnchor = anchor && anchor.isConnected ? anchor :
+      Array.from(root.querySelectorAll("[data-date]")).find(node => node.dataset.date === createAnchorDate);
     const box = createDialog.getBoundingClientRect();
-    const target = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : null;
+    const target = liveAnchor && liveAnchor.getBoundingClientRect ? liveAnchor.getBoundingClientRect() : null;
     let left = target ? target.left : (innerWidth - box.width) / 2;
     let top = target ? target.bottom + 8 : (innerHeight - box.height) / 2;
     left = Math.max(12, Math.min(left, innerWidth - box.width - 12));
@@ -607,8 +620,9 @@
     $$("[data-cal-error-for]").forEach(node => { node.textContent = ""; });
     setCreateKind(kind);
     if (dayDialog.open) close(dayDialog);
+    createAnchor = anchor; createAnchorDate = start;
     show(createDialog);
-    requestAnimationFrame(() => placeCreate(anchor));
+    requestAnimationFrame(() => placeCreate(createAnchor));
     (createKind === "cleaning" ? form.elements.scheduled_date : form.elements.apartment_id).focus();
   }
   function paintSelection() {
@@ -648,9 +662,12 @@
   });
   root.addEventListener("pointerup", event => {
     if (!selection || selection.pointerId !== event.pointerId) return;
-    const chosen = { ...selection }; cancelSelection(); suppressClickUntil = Date.now() + 400;
+    const chosen = { ...selection };
+    const pointTarget = document.elementFromPoint(event.clientX, event.clientY);
+    const anchor = pointTarget && pointTarget.closest("[data-date]");
+    cancelSelection(); suppressClickUntil = Date.now() + 400;
     if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
-    openCreate(chosen.start, addDays(chosen.end, 1), chosen.property, cleaningMode ? "cleaning" : "stay", root);
+    openCreate(chosen.start, addDays(chosen.end, 1), chosen.property, cleaningMode ? "cleaning" : "stay", anchor);
   });
   root.addEventListener("pointercancel", cancelSelection);
   root.addEventListener("lostpointercapture", cancelSelection);
@@ -749,7 +766,7 @@
     if (!response.ok || response.redirected || !(response.headers.get("content-type") || "").includes("text/html"))
       throw new Error("dashboard-refresh");
     const parsed = new DOMParser().parseFromString(await response.text(), "text/html");
-    for (const key of ["stats", "action"]) {
+    for (const key of ["stats", "work"]) {
       const current = document.querySelector('[data-dashboard-refresh="' + key + '"]');
       const fresh = parsed.querySelector('[data-dashboard-refresh="' + key + '"]');
       if (!current || !fresh) throw new Error("dashboard-refresh");
@@ -762,7 +779,8 @@
     const savedKind = createKind, savedProperty = form.elements.apartment_id.value;
     const savedDate = savedKind === "cleaning" ? form.elements.scheduled_date.value : form.elements.date_from.value;
     const savedEnd = savedKind === "stay" ? form.elements.date_to.value : addDays(savedDate, 1);
-    const action = savedKind === "cleaning" ? "/cleaning/events" : "/reservations";
+    const actionPath = savedKind === "cleaning" ? "/cleaning/events" : "/reservations";
+    const action = actionPath + (root.dataset.lang ? "?lang=" + encodeURIComponent(root.dataset.lang) : "");
     const payload = new FormData(form); // Capture before disabling the type controls.
     const save = $("[data-cal-save]");
     saving = true; save.disabled = true; save.textContent = labels.saving;
@@ -790,22 +808,32 @@
         }
         throw new Error("save");
       }
-      // The POST has committed. Subsequent refresh failures must never invite a duplicate.
+      // The POST has committed. Later refresh failures must never invite a duplicate.
       saving = false; close(createDialog);
       const [rangeStart, rangeEnd] = range();
       if (!displayOverlap({ start: savedDate, end: savedEnd }, rangeStart, rangeEnd)) state.date = savedDate;
       if (state.property && state.property !== savedProperty) state.property = savedProperty;
+      const createdMessage = savedKind === "cleaning" ? labels.cleaning_created : labels.stay_created;
+      const openLabel = savedKind === "cleaning" ? labels.view_cleaning : labels.open;
+      const targetUrl = new URL(data.url, location.href);
+      if (root.dataset.lang) targetUrl.searchParams.set("lang", root.dataset.lang);
+      const openHref = targetUrl.pathname + targetUrl.search + targetUrl.hash;
+      const retryCommittedRefresh = async () => {
+        await load();
+        let refreshed = !!lastLoadedRange;
+        if (refreshed && savedKind === "stay" && !cleaningMode) {
+          try { await refreshDashboardRegions(); } catch (_) { refreshed = false; }
+        }
+        setMessage(refreshed ? createdMessage : createdMessage + " " + labels.dashboard_refresh_failed,
+          refreshed ? false : retryCommittedRefresh, openHref, openLabel);
+      };
       await load();
-      let refreshed = true;
-      if (savedKind === "stay" && !cleaningMode) {
+      let refreshed = !!lastLoadedRange;
+      if (refreshed && savedKind === "stay" && !cleaningMode) {
         try { await refreshDashboardRegions(); } catch (_) { refreshed = false; }
       }
-      const createdMessage = savedKind === "cleaning" ? labels.cleaning_created : labels.stay_created;
-      if (refreshed) setMessage(createdMessage);
-      else setMessage(createdMessage + " " + labels.dashboard_refresh_failed, async () => {
-        try { await refreshDashboardRegions(); setMessage(createdMessage); }
-        catch (_) { setMessage(createdMessage + " " + labels.dashboard_refresh_failed, true); }
-      });
+      setMessage(refreshed ? createdMessage : createdMessage + " " + labels.dashboard_refresh_failed,
+        refreshed ? false : retryCommittedRefresh, openHref, openLabel);
     } catch (error) {
       $("[data-cal-save-error]").textContent = error.message === "session" ? labels.session_error : labels.save_error;
     } finally {
@@ -813,7 +841,10 @@
       $$("[data-cal-type-choice]").forEach(button => { button.disabled = false; });
     }
   });
-  window.addEventListener("resize", () => { if (!state.loading && lastLoadedRange) render(); });
+  window.addEventListener("resize", () => {
+    if (!state.loading && lastLoadedRange) render();
+    if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
+  });
   window.addEventListener("popstate", () => {
     const params = new URLSearchParams(location.search);
     if (validMode(params.get("cal_view"))) state.mode = params.get("cal_view");
