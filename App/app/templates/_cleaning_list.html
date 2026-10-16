@@ -1,0 +1,32 @@
+{% for day, items in groups %}
+<section class="cleaning-date-group" aria-labelledby="cleaning-date-{{ day }}">
+  <h3 id="cleaning-date-{{ day }}"><time datetime="{{ day }}">{{ cleaning_date(day) }}</time></h3>
+  {% for item in items %}
+  <article class="cleaning-card" data-cleaning-color="{{ ('teal','blue','purple')[item.propertyId % 3] }}" id="cleaning-{{ item.eventId }}" aria-labelledby="cleaning-name-{{ item.eventId }}">
+    <div class="cleaning-card-heading">
+      <h4 id="cleaning-name-{{ item.eventId }}">{{ item.property }}</h4>
+      <span class="cleaning-origin">{{ ct('automatic') if item.origin == 'automatic' else ct('manual') }}{% if item.overridden and item.origin == 'automatic' %} · {{ ct('moved') }}{% endif %}</span>
+    </div>
+    {% if item.conflict %}<p class="cleaning-warning" role="note">{{ ct('conflict') }}</p>{% endif %}
+    <dl class="cleaning-facts">
+      <div><dt>{{ ct('cleaning_time') }}</dt><dd>{% if item.startTime %}{{ item.startTime }}–{{ item.endTime }}{% else %}{{ ct('anytime') }}{% endif %}</dd></div>
+      {% if item.checkout %}<div><dt>{{ ct('checkout') }}</dt><dd>{{ cleaning_date(item.checkout) }} · {{ item.checkoutTime or ct('time_missing') }}</dd></div>{% endif %}
+      <div><dt>{{ ct('arrival') }}</dt><dd>{% if item.nextArrival %}{{ cleaning_date(item.nextArrival) }} · {{ item.checkinTime or ct('time_missing') }}{% else %}{{ ct('no_arrival') }}{% endif %}</dd></div>
+    </dl>
+    <div class="cleaning-access"><span>{{ ct('code') }}</span>
+      {% if item.code %}<strong class="cleaning-pin" translate="no">{{ item.code }}{{ '#' if item.codeSource == 'ttlock' else '' }}</strong>
+      <span class="cleaning-code-source">{{ ct('permanent_code') if item.codeSource == 'ttlock' else ct('manual_code') }}</span>
+      {% else %}<strong class="cleaning-code-missing">{{ ct('no_code') }}</strong>{% endif %}
+      {% if item.codePending %}<p>{{ ct('code_failed') if item.codePending == 'failed' else ct('code_pending') }}</p>{% endif %}
+    </div>
+    <div class="cleaning-instructions"><h5>{{ ct('steps') }}</h5>
+      {% if item.notes %}<p class="cleaning-text">{{ item.notes }}</p>{% endif %}
+      {% if item.instructions %}<p class="cleaning-text">{{ item.instructions }}</p>{% elif not item.notes %}<p>{{ ct('no_instructions') }}</p>{% endif %}
+    </div>
+    {% if not read_only %}<div class="cleaning-card-actions"><a class="btn" href="/cleaning/events/{{ item.eventId }}/edit">{{ ct('edit') }}</a><a href="/cleaning/properties/{{ item.propertyId }}">{{ ct('settings') }}</a></div>{% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<p class="cleaning-empty">{{ ct('empty') }}</p>
+{% endfor %}

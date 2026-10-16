@@ -28,7 +28,8 @@ Fixed 208–224 px width when open; collapses to an icon rail using the existing
 2. **Stays** → `/reservations`
 3. **Properties** → `/apartments`
 4. **Invoices** → `/invoices`
-5. **Stay fees** → `/stay-fees`. Unconfigured properties show an accurate Not set up state and setup action. The fee remains optional in property settings and is not a dashboard task or onboarding requirement.
+5. **Cleaning** → `/cleaning`, with a broom icon. Calendar/Gantt above a fully expanded, large-type chronological list; property instructions, codes, host CRUD and scoped read-only team links.
+6. **Stay fees** → `/stay-fees`. Unconfigured properties show an accurate Not set up state and setup action. The fee remains optional in property settings and is not a dashboard task or onboarding requirement.
 
 Bottom: Help, then the account button (name/avatar). Account menu contains Settings, Archived records, Privacy requests, Team (admin), Incidents (admin), language, and Sign out. Environment and impersonation indicators stay visible whenever relevant; do not hide them in the menu. Legal and support links remain available from Help or the bottom of Settings. Search opens the existing command palette and includes all destinations, properties, stays, and records the user is allowed to see.
 
@@ -210,3 +211,12 @@ The shared host shell and primitives cover signed-in destinations. Today, naviga
 The prototype contains sample states and is a visual reference. Production controls use real backend data and existing routes. `IMPLEMENTATION.md` takes precedence over prototype behavior for delivered capabilities. This document governs presentation; current audited fee and security contracts govern legal data and backend behavior.
 
 No database schema migration, dependency update, live filing, real e-mail delivery, public deployment or bank reconciliation is part of this change.
+
+## Cleaning management (2026-10-16)
+The owner authorized implementation and a sidebar Cleaning entry. Reuse the
+0103 calendar/Gantt with typed cleaning blocks in a separate lane. The cleaning
+page defaults to the next 30 days; calendar filters and the full chronological
+list share one server result. List essentials use 18–20px text, 24–28px date/code
+type, high contrast, and no disclosures. Instructions are static text. No claim,
+assignment, completion, photos or comments. Permanent/manual property codes are
+independent of guest PINs. See [0104](tasks/0104-cleaning-management.md).

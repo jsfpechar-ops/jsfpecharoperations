@@ -1,8 +1,8 @@
 {# Calendar data is fetched from an owner-scoped endpoint, never embedded in browser storage. #}
-<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261015b">
-<section id="calendar" class="dashboard-calendar" data-calendar data-today="{{ today.isoformat() }}" data-lang="{{ lang }}" aria-labelledby="calendar-title">
+<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261016-cleaning3">
+<section id="calendar" class="dashboard-calendar" data-calendar data-today="{{ today.isoformat() }}" data-source="{{ calendar_source | default('/dashboard/calendar') }}" data-cleaning="{{ 'true' if calendar_cleaning | default(false) else 'false' }}" data-readonly="{{ 'true' if calendar_readonly | default(false) else 'false' }}" data-calendar-date="{{ calendar_date | default('') }}" data-range-from="{{ calendar_from | default('') }}" data-range-to="{{ calendar_to | default('') }}" data-lang="{{ lang }}" aria-labelledby="calendar-title">
   <div class="cal-heading">
-    <h2 id="calendar-title">{{ t('calendar.title') }}</h2>
+    <h2 id="calendar-title">{{ ct('schedule') if calendar_cleaning | default(false) else t('calendar.title') }}</h2>
     <div class="cal-heading-actions cal-enhanced" hidden>
       <select data-cal-property aria-label="{{ t('calendar.property') }}"><option value="">{{ t('calendar.all_properties') }}</option></select>
       <div class="cal-segment" aria-label="{{ t('calendar.settings') }}">
@@ -29,12 +29,12 @@
   </div>
   <div class="cal-message cal-enhanced" data-cal-message role="status" aria-live="polite" hidden></div>
   <div class="cal-body cal-enhanced" data-cal-body aria-describedby="cal-hint" tabindex="-1" aria-busy="false" hidden></div>
-  <p id="cal-hint" class="cal-hint cal-enhanced" hidden>{{ t('calendar.hint') }}</p>
+  <p id="cal-hint" class="cal-hint cal-enhanced" hidden>{{ ct('read_only') if calendar_readonly | default(false) else (ct('auto_help') if calendar_cleaning | default(false) else t('calendar.hint')) }}</p>
   <p class="cal-selection sr-only" data-cal-selection role="status" aria-live="polite"></p>
-  <div data-cal-fallback><a href="/reservations">{{ t('calendar.view_all') }}</a></div>
+  <div data-cal-fallback><a href="{{ '#cleaning-list' if calendar_cleaning | default(false) else '/reservations' }}">{{ ct('skip') if calendar_cleaning | default(false) else t('calendar.view_all') }}</a></div>
 
   <dialog class="cal-dialog" data-cal-create aria-labelledby="cal-create-title">
-    <form action="/reservations" method="post" data-cal-form>
+    <form action="{{ '/cleaning/read-only' if calendar_cleaning | default(false) else '/reservations' }}" method="post" data-cal-form>
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <input type="hidden" name="calendar" value="1">
       <div class="cal-dialog-heading"><h2 id="cal-create-title">{{ t('calendar.add') }}</h2><button type="button" class="btn cal-close" data-cal-close aria-label="{{ t('calendar.close') }}">×</button></div>
@@ -141,4 +141,4 @@
   <script type="application/json" data-cal-properties>[{% for apartment in apartments if apartment.active %}{{ {'id': apartment.id, 'name': apartment.internal_name} | tojson }}{% if not loop.last %},{% endif %}{% endfor %}]</script>
   <script type="application/json" data-cal-labels>{{ calendar_labels | tojson }}</script>
 </section>
-<script src="/static/dashboard-calendar.js?v=20261015b" defer></script>
+<script src="/static/dashboard-calendar.js?v=20261016-cleaning3" defer></script>

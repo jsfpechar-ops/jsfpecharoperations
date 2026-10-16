@@ -60,6 +60,7 @@ ERROR_KINDS: Dict[int, str] = {
     80000: "clock",
     -2012: "offline",
     -4056: "storage",
+    -3009: "storage",
     90000: "transient",
     1: "transient",
     -3: "bug",
@@ -176,11 +177,11 @@ def _post(path: str, data: Dict[str, Any], priority: str) -> Dict[str, Any]:
         out = _parse_response(resp)
     except TTLockError as exc:
         log.warning(
-            "ttlock path=%s priority=%s errcode=%s errmsg=%s",
+            "ttlock path=%s priority=%s errcode=%s kind=%s",
             path,
             priority,
             exc.code,
-            exc.message[:120],
+            exc.kind,
         )
         raise
     log.info("ttlock path=%s priority=%s errcode=0", path, priority)
@@ -618,3 +619,14 @@ def delete_account(account_id: int) -> None:
     db.execute("DELETE FROM lock_account WHERE id = ?", (account_id,))
     if err:
         raise err
+
+
+def add_permanent_code(account_id: int, lock_id: str, pin: str, name: str) -> str:
+    """Custom permanent PIN via gateway. Caller persists PIN/name for retries."""
+    if not pin.isascii() or not pin.isdigit() or not 4 <= len(pin) <= 9:
+        raise ValueError("invalid permanent PIN")
+    answer = _call(account_id, "/v3/keyboardPwd/add", {
+        "lockId": int(lock_id), "keyboardPwd": pin, "keyboardPwdName": name,
+        "keyboardPwdType": 2, "addType": 2,
+    }, NORMAL)
+    return str(answer["keyboardPwdId"])

@@ -47,3 +47,18 @@ UbyHost is the **controller** for the data below.
   support, and who notifies a breach (see the review's § 7).
 - The controller/processor allocation when an admin impersonates a workspace
   (full read/write).
+## C. Optional cleaning schedule, on host instruction
+Purpose: coordinate property cleaning without cleaner accounts or guest identity.
+Data: property/unit name, checkout and next-arrival dates/times, cleaning dates,
+encrypted event notes, property instructions, and an encrypted dedicated permanent
+door code. Hosts choose exactly which properties a cleaning-company link exposes;
+links store a 256-bit token hash and expiry/revocation metadata, expire after 30
+days, and expose only the next 30 days. No guest names, reservation summaries,
+registration status or contacts are read into this view. Hosts are told that
+anyone holding a link can read its property codes, and link revocation does not
+rotate a previously disclosed permanent code.
+TTLock remains the host's chosen lock provider under the existing documented
+instruction; the permanent-code action sends lock ID, an opaque UH Cleaning
+reference and generated PIN through the existing EU API client. No guest or
+cleaner identity is sent. Codes are not sent by e-mail or to analytics.
+Retention and security: [RETENTION](RETENTION.md), [SECURITY](../SECURITY.md).

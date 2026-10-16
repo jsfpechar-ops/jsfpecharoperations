@@ -66,6 +66,9 @@
         {{ nav_icon(icon) }}<span>{{ t(label) }}</span>
       </a>
     {% endfor %}
+    <a href="/cleaning" title="{{ 'Úklid' if lang == 'cs' else 'Cleaning' }}" aria-label="{{ 'Úklid' if lang == 'cs' else 'Cleaning' }}" class="{{ 'active' if nav == 'cleaning' }}" {% if nav == 'cleaning' %}aria-current="page"{% endif %}>
+      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 3-6 10m-3-1 8 5-4 5-8-5 4-5Zm1 2-3 4m6-2-3 4M18 9v4m-2-2h4"/></svg><span>{{ 'Úklid' if lang == 'cs' else 'Cleaning' }}</span>
+    </a>
     <a href="/stay-fees" title="{{ t('nav.stay_fees') }}" aria-label="{{ t('nav.stay_fees') }}" class="{{ 'active' if nav == 'stay_fees' }}" {% if nav == 'stay_fees' %}aria-current="page"{% endif %}>{{ nav_icon('coins') }}<span>{{ t('nav.stay_fees') }}</span></a>
   </nav>
   {% if current_user %}

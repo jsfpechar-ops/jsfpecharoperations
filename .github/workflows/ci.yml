@@ -217,7 +217,7 @@ jobs:
           tests/test_onboarding_wizard_browser.py tests/test_onboarding_wizard_survival.py
           tests/test_download_skeleton_browser.py tests/test_onboarding_followup_browser.py
           tests/test_host_stay_actions_browser.py tests/test_host_stay_detail_layout_browser.py
-          tests/test_host_quiet_dashboard_browser.py tests/test_dashboard_calendar_browser.py tests/test_host_list_layouts_browser.py -q -rs --junitxml=/tmp/ubyhost-tests.xml
+          tests/test_host_quiet_dashboard_browser.py tests/test_dashboard_calendar_browser.py tests/test_cleaning_browser.py tests/test_host_list_layouts_browser.py -q -rs --junitxml=/tmp/ubyhost-tests.xml
 
 
       - name: Summarize required browser checks
@@ -392,8 +392,9 @@ jobs:
           UBYHOST_REQUIRE_BROWSER: "1"
           UBYHOST_SHOTS_DIR: ${{ runner.temp }}/calendar-feature-shots
         run: >-
-          python -m pytest tests/test_dashboard_calendar.py tests/test_dashboard_calendar_browser.py
-          -x -q -rs --junitxml=/tmp/calendar-review.xml
+          python -m pytest tests/test_cleaning.py tests/test_cleaning_browser.py
+          tests/test_dashboard_calendar.py tests/test_dashboard_calendar_browser.py
+          -q -rs --junitxml=/tmp/calendar-review.xml
       - name: Summarize calendar checks
         if: always()
         id: calendar_summary
