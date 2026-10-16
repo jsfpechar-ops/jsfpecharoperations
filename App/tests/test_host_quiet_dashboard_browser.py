@@ -321,12 +321,16 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
 
                 header_actions = page.locator(".dashboard-actions")
                 assert header_actions.locator('a[href="/reservations?new=1"]').is_visible()
+                assert header_actions.locator(
+                    'a[href="/cleaning/new"][data-calendar-add][data-cal-create-type="cleaning"]'
+                ).is_visible()
                 assert header_actions.locator('form[action="/sync"]').is_visible()
                 assert header_actions.locator('form[action="/demo/reset"]').is_visible()
                 header_buttons = header_actions.locator(
                     ".action-group > .btn, .action-group > form > .btn, .action-group .sync-cta .btn"
                 )
-                assert header_buttons.count() == 3
+                # Add cleaning is the requested fourth header action.
+                assert header_buttons.count() == 4
                 header_boxes = [button.bounding_box() for button in header_buttons.all()]
                 assert all(abs(box["height"] - (44 if width <= 390 else 42)) <= 1 for box in header_boxes)
                 if width > 390:
