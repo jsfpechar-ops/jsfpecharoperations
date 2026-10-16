@@ -245,7 +245,8 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         message.wait_for(state="visible")
         open_link = page.locator("[data-cal-message] a")
         open_link.wait_for(state="visible")
-        assert open_link.get_attribute("href") == f"/reservations/{row_id}"
+        open_href = open_link.get_attribute("href")
+        assert open_href.split("?")[0] == f"/reservations/{row_id}" and "lang=en" in open_href
         row = db.query_one("SELECT date_from, date_to FROM reservation WHERE id = ?", (row_id,))
         assert row["date_from"] == overlap_arrival and row["date_to"] == overlap_departure
         context.close()
