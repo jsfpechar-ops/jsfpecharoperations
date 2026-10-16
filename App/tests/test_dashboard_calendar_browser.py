@@ -417,6 +417,22 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         browser = launch(playwright)
         context, page = open_page(browser, ws, calendar_origin, width=1280)
         pathname = page.evaluate("location.pathname")
+        copy_ready = {"id": None}
+
+        def prepare_copyable_refresh(route):
+            request = route.request
+            if (request.method == "GET" and request.url.split("?")[0] == calendar_origin + "/" and
+                    "text/html" in request.headers.get("accept", "")):
+                created = db.query_one("SELECT id FROM reservation WHERE summary = ?", ("Popup row refresh",))
+                if created:
+                    token = f"refresh-copy-{created['id']}"
+                    db.update("reservation", created["id"], {
+                        "permalink_token": token, "permalink_slug": token
+                    })
+                    copy_ready["id"] = created["id"]
+            route.continue_()
+
+        page.route("**/*", prepare_copyable_refresh)
 
         # The calendar day itself remains a usable entry point to the default Stay form.
         page.locator("[data-cal-day]:visible").first.click()
@@ -474,14 +490,69 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         created_stay = stay_result.value.json()
         assert stay_result.value.status == 201
         assert page.evaluate("location.pathname") == pathname
+        assert copy_ready["id"] == created_stay["id"]
         row = page.locator(f'[data-dashboard-refresh="work"] .dashboard-row[data-stay-id="{created_stay["id"]}"]')
         row.wait_for(state="visible")
         assert "Popup row refresh" in row.inner_text()
+
+        # Re-delivering the scoped update must not double-bind imported controls.
+        page.evaluate("""() => {
+            const root = document.querySelector('[data-dashboard-refresh="work"]');
+            document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
+            document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
+        }""")
         row.locator(".row-menu-trigger").click()
         menu = page.locator(".row-menu-panel:visible").last
         menu.wait_for(state="visible")
         assert menu.locator(".row-menu-item").count() >= 1
+        copy_button = menu.locator("button[data-copy]")
+        assert copy_button.count() == 1
+        copy_button.click()
+        copy_button_id = "refresh-copy-action"
+        copy_button.evaluate("(button, id) => { button.id = id; }", copy_button_id)
+        page.wait_for_function("""id => {
+            const button = document.getElementById(id);
+            return !!button && (button.classList.contains("is-copy-confirmed") ||
+                !!document.querySelector("[data-copy-manual-visible]"));
+        }""", arg=copy_button_id)
+
+        archive_posts = []
+        page.on("request", lambda request: archive_posts.append(request.url)
+               if request.method == "POST" and request.url.split("?")[0].endswith("/archive") else None)
+        archive_form = menu.locator('form[data-confirm][action$="/archive"]')
+        assert archive_form.count() == 1
+        archive_form.locator('button[type="submit"]').click()
+        confirmation = page.locator("#confirm-dialog")
+        confirmation.wait_for(state="visible")
+        confirmation.locator("[data-confirm-cancel]").click()
+        assert not confirmation.is_visible()
+        assert archive_posts == []
+        assert row.is_visible()
+
+        # Dashboard has no dismissible banner in every fixture; exercise the same
+        # scoped binder with a transient banner under the refreshed work region.
+        banner_id = page.evaluate("""() => {
+            const root = document.querySelector('[data-dashboard-refresh="work"]');
+            const banner = document.createElement("aside");
+            banner.className = "dismissible-banner";
+            banner.id = "refresh-dismiss-banner";
+            const button = document.createElement("button");
+            button.type = "button";
+            button.setAttribute("data-dismiss-banner", "");
+            button.textContent = "Dismiss test banner";
+            banner.append(button);
+            root.append(banner);
+            document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
+            return banner.id;
+        }""")
+        page.locator(f'#{banner_id} [data-dismiss-banner]').click()
+        assert page.locator(f"#{banner_id}").count() == 0
+
         shot(page, "dashboard-calendar-create-refresh-en")
+        with page.expect_navigation():
+            row.focus()
+            row.press("Enter")
+        assert page.url.split("?")[0].endswith(f"/reservations/{created_stay['id']}")
         context.close()
         browser.close()
 
@@ -516,9 +587,9 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
             return {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].map(row => ({
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.textContent)
+                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
                 }))
             };
         }""")
@@ -584,9 +655,9 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
             return {
                 stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...doc.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].map(row => ({
+                rows: [...doc.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.textContent)
+                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
                 }))
             };
         }""", fresh_html)
@@ -599,9 +670,9 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
             const actual = {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].map(row => ({
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.textContent)
+                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
                 }))
             };
             return JSON.stringify(actual) === JSON.stringify(expected);
