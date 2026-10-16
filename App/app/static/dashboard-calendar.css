@@ -548,3 +548,55 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
   .dashboard-calendar .cal-cleaning-overflow-label { display:none; }
 }
 .cal-day-list .cal-event.is-cleaning-marker .cal-cleaning-label { display:block; }
+
+
+/* A day-dialog cleaning marker stays a readable row at every viewport. */
+.dashboard-calendar .cal-day-list .cal-event.is-cleaning-marker,
+.cleaning-page .dashboard-calendar .cal-day-list .cal-event.is-cleaning-marker {
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns:18px max-content minmax(0,1fr);
+  align-items:center;
+  justify-content:stretch;
+  align-content:center;
+  height:auto;
+  min-height:44px;
+  max-height:none;
+  padding:7px 10px;
+  white-space:normal;
+}
+.dashboard-calendar .cal-day-list .cal-cleaning-icon,
+.cleaning-page .dashboard-calendar .cal-day-list .cal-cleaning-icon {
+  grid-column:1;
+}
+.dashboard-calendar .cal-day-list .cal-cleaning-label,
+.cleaning-page .dashboard-calendar .cal-day-list .cal-cleaning-label {
+  grid-column:2;
+  display:block;
+  flex:0 0 auto;
+  min-width:max-content;
+  overflow:visible;
+  white-space:normal;
+}
+.dashboard-calendar .cal-day-list .cal-cleaning-property,
+.cleaning-page .dashboard-calendar .cal-day-list .cal-cleaning-property {
+  grid-column:3;
+  display:block;
+  flex:1 1 auto;
+  min-width:0;
+  max-width:none;
+  overflow-wrap:anywhere;
+  white-space:normal;
+}
+.dashboard-calendar .cal-day-list .cal-event.is-cleaning-marker .cal-cleaning-count,
+.cleaning-page .dashboard-calendar .cal-day-list .cal-event.is-cleaning-marker .cal-cleaning-count {
+  display:none;
+}
+@media (max-width:760px) {
+  .dashboard-calendar .cal-week-events .cal-event.is-cleaning-marker:not(.is-gantt-cleaning) .cal-cleaning-label,
+  .cleaning-page .dashboard-calendar .cal-week-events .cal-event.is-cleaning-marker:not(.is-gantt-cleaning) .cal-cleaning-label,
+  .dashboard-calendar .cal-week-events .cal-event.is-cleaning-marker:not(.is-gantt-cleaning) .cal-cleaning-property,
+  .cleaning-page .dashboard-calendar .cal-week-events .cal-event.is-cleaning-marker:not(.is-gantt-cleaning) .cal-cleaning-property {
+    display:none;
+  }
+}
