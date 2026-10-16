@@ -411,28 +411,14 @@ def test_calendar_week_boundary_clips_fractional_checkout_with_continuation_edge
 
 def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calendar_workspace, calendar_origin):
     ws = calendar_workspace
+    # Dashboard copy links use the apartment's authorized public token.
+    db.update("apartment", ws["properties"][0], {"permalink_token": "refresh-copy-test-token"})
     existing_stay = make_stay(ws["properties"][2], "2026-10-21", "2026-10-22",
                               summary="Existing details stay", expected_guests_override=2)
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, ws, calendar_origin, width=1280)
         pathname = page.evaluate("location.pathname")
-        copy_ready = {"id": None}
-
-        def prepare_copyable_refresh(route):
-            request = route.request
-            if (request.method == "GET" and request.url.split("?")[0] == calendar_origin + "/" and
-                    "text/html" in request.headers.get("accept", "")):
-                created = db.query_one("SELECT id FROM reservation WHERE summary = ?", ("Popup row refresh",))
-                if created:
-                    token = f"refresh-copy-{created['id']}"
-                    db.update("reservation", created["id"], {
-                        "permalink_token": token, "permalink_slug": token
-                    })
-                    copy_ready["id"] = created["id"]
-            route.continue_()
-
-        page.route("**/*", prepare_copyable_refresh)
 
         # The calendar day itself remains a usable entry point to the default Stay form.
         page.locator("[data-cal-day]:visible").first.click()
@@ -490,7 +476,6 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         created_stay = stay_result.value.json()
         assert stay_result.value.status == 201
         assert page.evaluate("location.pathname") == pathname
-        assert copy_ready["id"] == created_stay["id"]
         row = page.locator(f'[data-dashboard-refresh="work"] .dashboard-row[data-stay-id="{created_stay["id"]}"]')
         row.wait_for(state="visible")
         assert "Popup row refresh" in row.inner_text()
@@ -516,6 +501,10 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
                 !!document.querySelector("[data-copy-manual-visible]"));
         }""", arg=copy_button_id)
 
+        if not menu.is_visible():
+            row.locator(".row-menu-trigger").click()
+            menu = page.locator(".row-menu-panel:visible").last
+            menu.wait_for(state="visible")
         archive_posts = []
         page.on("request", lambda request: archive_posts.append(request.url)
                if request.method == "POST" and request.url.split("?")[0].endswith("/archive") else None)
