@@ -654,6 +654,8 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                     width:r.width, scrollWidth:e.scrollWidth, clientWidth:e.clientWidth};
                 }).filter(x => x.right > innerWidth + 1 || x.left < -1).slice(0,25)""")
                 assert geometry["viewport"]["scrollWidth"] <= width, (geometry["viewport"], offenders)
+                rows = page.locator(".stays-view tbody tr")
+                assert rows.count() >= 4
                 visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
                 more_controls = [item for item in visible_actions if item["isMenu"]]
                 assert len(more_controls) == rows.count(), geometry["rowActions"]
@@ -661,10 +663,7 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                 assert all(item["fullyVisible"] for item in visible_actions), geometry["rowActions"]
                 assert geometry["portalLinks"] == [], "legacy portal shortcut must stay absent"
                 assert page.locator(".stays-view .stay-portal-link").count() == 0
-                rows = page.locator(".stays-view tbody tr")
-                assert rows.count() >= 4
-                for row_index in range(rows.count()):
-                    row = rows.nth(row_index)
+                for row_index in range(rows.count()):                    row = rows.nth(row_index)
                     date_link = row.locator("td.stay-col-stay a.row-primary-link")
                     assert date_link.is_visible()
                     assert date_link.get_attribute("href").startswith("/reservations/")
