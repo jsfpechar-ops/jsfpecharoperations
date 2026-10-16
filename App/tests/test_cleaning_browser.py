@@ -245,14 +245,14 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         first = next(item for item in cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))["cleanings"]
                      if item["propertyId"] == ws["home"])
         source = page.locator(f'[data-cal-event="cleaning:{first["eventId"]}"]')
-        target = page.locator(f'[data-date="2026-10-28"][data-property="{ws["home"]}"]')
+        target = page.locator(f'[data-date="2026-10-22"][data-property="{ws["home"]}"]')
         with page.expect_response(lambda response: response.url.endswith(f"/cleaning/events/{first['eventId']}") and response.request.method == "POST") as saved:
             source.drag_to(target)
         assert saved.value.status == 200
         persisted_times = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE id = ?", (first["eventId"],))
         assert persisted_times["start_time"] is None and persisted_times["end_time"] is None
         page.wait_for_function(
-            "(id) => document.querySelector('#cleaning-' + id).closest('.cleaning-date-group').querySelector('time').dateTime === '2026-10-28'",
+            "(id) => document.querySelector('#cleaning-' + id).closest('.cleaning-date-group').querySelector('time').dateTime === '2026-10-22'",
             arg=first["eventId"],
         )
         page.get_by_role("link", name="Add cleaning", exact=True).click()
