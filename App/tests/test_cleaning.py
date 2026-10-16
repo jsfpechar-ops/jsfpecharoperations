@@ -255,6 +255,30 @@ def test_host_create_update_delete_json_and_concurrent_change(workspace):
     assert ws["client"].post(endpoint + "/delete", data={"revision": current["revision"]}).status_code == 200
 
 
+
+def test_calendar_json_creation_contract_and_validation(workspace):
+    ws = workspace
+    response = ws["client"].post("/cleaning/events", headers={"Accept": "application/json"}, data={
+        "apartment_id": ws["home"], "scheduled_date": "2026-10-26", "notes": "popup only",
+    })
+    assert response.status_code == 201
+    assert response.headers["cache-control"] == "no-store"
+    created = response.json()
+    assert created["id"] > 0
+    assert created["url"].startswith("/cleaning?cal_date=2026-10-26&property=")
+    row = db.query_one("SELECT scheduled_date, start_time, end_time FROM cleaning_event WHERE id = ?", (created["id"],))
+    assert row["scheduled_date"] == "2026-10-26"
+    assert row["start_time"] is None and row["end_time"] is None
+
+    invalid = ws["client"].post("/cleaning/events", headers={"Accept": "application/json"}, data={
+        "apartment_id": ws["home"], "scheduled_date": "", "notes": "must not save",
+    })
+    assert invalid.status_code == 422
+    assert invalid.json()["errors"]["scheduled_date"]
+    assert db.query_one("SELECT COUNT(*) AS n FROM cleaning_event WHERE apartment_id = ? AND notes_enc IS NOT NULL",
+                        (ws["home"],))["n"] == 1
+
+
 def test_owner_isolation_and_authentication(workspace):
     ws = workspace
     foreign_stay = stay(ws["foreign"])

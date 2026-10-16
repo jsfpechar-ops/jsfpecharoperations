@@ -394,3 +394,84 @@ def test_calendar_week_boundary_clips_fractional_checkout_with_continuation_edge
         shot(page, "checkout-week-boundary-en-1280")
         context.close()
         browser.close()
+
+
+def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calendar_workspace, calendar_origin):
+    ws = calendar_workspace
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, ws, calendar_origin, width=1280)
+        pathname = page.evaluate("location.pathname")
+
+        # The calendar day itself remains a usable entry point to the default Stay form.
+        page.locator("[data-cal-day]").first.click()
+        assert page.locator("[data-cal-create]").is_visible()
+        assert page.locator('[data-cal-type-choice="stay"]').get_attribute("aria-pressed") == "true"
+        page.locator("[data-cal-close]").click()
+
+        page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
+        assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
+        page.locator("#cal-property").select_option(str(ws["properties"][0]))
+        page.locator("#cal-clean-date").fill("2026-10-27")
+        page.locator("#cal-clean-notes").fill("Calendar popup")
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  response.url.split("?")[0].endswith("/cleaning/events")) as result:
+            page.locator("[data-cal-save]").click()
+        created_cleaning = result.value.json()
+        assert result.value.status == 201
+        assert page.evaluate("location.pathname") == pathname
+        marker = page.locator(f'.cal-event[data-cal-event="cleaning:{created_cleaning["id"]}"]')
+        assert marker.is_visible()
+        marker.click()
+        action = page.locator("[data-cal-details] [data-cal-open]")
+        assert action.is_visible() and action.inner_text().strip() == "View cleaning"
+        page.locator("[data-cal-details] [data-cal-close]").click()
+
+        booking = page.locator('.cal-event[data-cal-event^="reservation:"]:visible').first
+        booking.click()
+        action = page.locator("[data-cal-details] [data-cal-open]")
+        assert action.is_visible() and action.inner_text().strip() == "Open"
+        page.locator("[data-cal-details] [data-cal-close]").click()
+
+        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        form = page.locator("[data-cal-form]")
+        form.locator("#cal-property").select_option(str(ws["properties"][0]))
+        form.locator("#cal-arrival").fill("2026-10-29")
+        form.locator("#cal-departure").fill("2026-10-31")
+        form.locator("#cal-label").fill("Popup row refresh")
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  response.url.split("?")[0].endswith("/reservations")) as stay_result:
+            page.locator("[data-cal-save]").click()
+        created_stay = stay_result.value.json()
+        assert stay_result.value.status == 201
+        assert page.evaluate("location.pathname") == pathname
+        row = page.locator(f'[data-dashboard-refresh="work"] .dashboard-row[data-stay-id="{created_stay["id"]}"]')
+        row.wait_for(state="visible")
+        assert "Popup row refresh" in row.inner_text()
+        row.locator(".row-menu-trigger").click()
+        menu = page.locator('[role="menu"]:visible').last
+        assert menu.count() == 1 and menu.locator('[role="menuitem"]').count() >= 1
+        shot(page, "dashboard-calendar-create-refresh-en")
+        context.close()
+        browser.close()
+
+
+@pytest.mark.parametrize("width", [360, 1280])
+def test_create_popover_reclamps_when_switching_to_taller_stay_form(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width)
+        page.locator("[data-cal-day]").last.scroll_into_view_if_needed()
+        page.locator("[data-cal-day]").last.click()
+        dialog = page.locator("[data-cal-create]")
+        assert dialog.is_visible()
+        page.locator('[data-cal-type-choice="cleaning"]').click()
+        page.locator('[data-cal-type-choice="stay"]').click()
+        box = dialog.bounding_box()
+        viewport = page.evaluate("({width: innerWidth, height: innerHeight})")
+        assert box["x"] >= 0 and box["y"] >= 0
+        assert box["x"] + box["width"] <= viewport["width"] + 1
+        assert box["y"] + box["height"] <= viewport["height"] + 1
+        shot(page, f"create-popover-reclamp-{width}")
+        context.close()
+        browser.close()

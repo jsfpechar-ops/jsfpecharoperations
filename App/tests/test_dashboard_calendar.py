@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, onboarding
+from app import auth, cleaning, db, onboarding
 from app.main import app
 from app.routes import dashboard_calendar
 from tests.conftest import login_as
@@ -122,6 +122,30 @@ def test_calendar_is_owner_scoped_and_includes_checkout_boundary(calendar_worksp
     assert "permalink" not in response.text
     filtered = calendar_get(ws["client"], property=ws["properties"][1]).json()["events"]
     assert filtered and {event["propertyId"] for event in filtered} == {ws["properties"][1]}
+
+
+
+def test_dashboard_calendar_exposes_cleaning_marker_without_private_fields(calendar_workspace):
+    ws = calendar_workspace
+    event_id = cleaning.save_event(ws["properties"][0], {
+        "scheduled_date": "2026-10-20", "notes": "private calendar note sentinel",
+    })
+    try:
+        response = calendar_get(ws["client"])
+        assert response.status_code == 200
+        assert response.headers["cache-control"] == "no-store"
+        event = next(item for item in response.json()["events"] if item["id"] == f"cleaning:{event_id}")
+        assert event["kind"] == "cleaning"
+        assert event["propertyId"] == ws["properties"][0]
+        assert event["start"] == "2026-10-20"
+        assert event["displayStart"].startswith("2026-10-20T")
+        assert event["displayEnd"].startswith("2026-10-20T")
+        assert event["url"].startswith("/cleaning?")
+        assert not {"notes", "instructions", "code", "guest", "guest_email", "token"} & set(event)
+        assert "private calendar note sentinel" not in response.text
+    finally:
+        db.execute("DELETE FROM cleaning_event WHERE apartment_id = ?", (ws["properties"][0],))
+        db.execute("DELETE FROM cleaning_property WHERE apartment_id = ?", (ws["properties"][0],))
 
 
 @pytest.mark.parametrize("which", ["foreign", "inactive", "archived"])
