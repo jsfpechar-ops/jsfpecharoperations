@@ -20,6 +20,7 @@
   ''
 ) }}
 
+<div class="host-stay-detail">
 {% set stay_inactive = reservation.status != 'active' or reservation.archived_at %}
 <p class="stay-property-line"><span class="muted">{{ t('stay.detail.property') }}</span>
   <a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a></p>
@@ -475,4 +476,5 @@
     <div class="actions settings-actions"><button class="btn primary" type="submit">{{ t('common.save') }}</button></div>
   </form>
 </section>
+</div>
 {% endblock %}

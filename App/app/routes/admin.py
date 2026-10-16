@@ -2175,8 +2175,13 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         return _refuse_apartment_save(
             request, apartment, form, None, shared_time_error=hour_error
         ), False
-    turn_off_codes = "door_codes_fields" in form and _form_str(form, "door_codes") != "1"
-    enable_codes = _form_str(form, "door_codes") == "1"
+    edits_lock = (
+        _form_str(form, "door_code_section") == "1"
+        and ttlock.allowed_for(apartment_data["owner_user_id"])
+        and (not setup_step or setup_step == "door_lock")
+    )
+    turn_off_codes = edits_lock and "door_codes_fields" in form and _form_str(form, "door_codes") != "1"
+    enable_codes = edits_lock and _form_str(form, "door_codes") == "1"
     lock_will_be_enabled = enable_codes or (
         apartment_data.get("lock_provider") == "ttlock" and not turn_off_codes
     )
@@ -2288,11 +2293,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             (payload.get("uby_ws_user") or "") != (apartment["uby_ws_user"] or "")
         )
     prior_lock_provider = apartment["lock_provider"]
-    if (
-        _form_str(form, "door_code_section") == "1"
-        and ttlock.allowed_for(apartment["owner_user_id"])
-        and (not setup_step or setup_step == "door_lock")
-    ):
+    if edits_lock:
         owner_id = apartment["owner_user_id"]
         if _form_str(form, "door_codes") == "1":
             allowed_ids = [

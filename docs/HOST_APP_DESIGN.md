@@ -2,6 +2,10 @@
 
 **Status:** implemented signed-in host-app direction, 30 September 2026. Source baseline: `ceb1bc5ed34d020b0c6e21cac3c88bada74d1955`. See `docs/archive/plans/host-app-redesign/IMPLEMENTATION.md` for the exact delivered scope and route coverage. It extends the light-mode brand policy in `docs/DESIGN.md`. It does not govern the public site, login, or guest-facing forms.
 
+## 0123 owner-approved update
+
+The owner-approved 0123 direction supersedes the earlier peach-dominant card treatment: signed-in work surfaces are white with near-black hierarchy and neutral separators; the 216px rail stays warm and uses existing UbyHost marks/icons. Dashboard uses an integrated calendar and flat stay-first attention rows. Stays uses Stay / Dates / Property / Guests / Police report / actions. Calendar View and Period selects mirror existing Auto/Calendar/Gantt and Month/Week/Year state. Properties owns the check-in/check-out hour pair used by Cleaning and TTLock; manual cleaning exceptions, TTLock buffers/timezone behavior and all current data/permission rules remain.
+
 ## 1. Product idea
 
 The host should always be able to answer three questions without decoding the interface: **Where am I? What needs me? What happens if I press this?** The app should feel like a tidy working desk. A first-time host can add one property and one stay; an experienced host can reach any record quickly. Simplicity means fewer decisions on each screen, not fewer capabilities.

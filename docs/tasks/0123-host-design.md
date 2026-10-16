@@ -1,6 +1,6 @@
 # 0123: Unified host workspace and property timing
 
-Status: in-progress
+Status: review
 Depends on: none | Base commit: 7835b528cec95a1d7a25798e0002d28c0255f346 | Branch: feature/host-design0123-20261016
 Executor: Luna executor | PR: #397
 Report: docs/tasks/0123-host-design-report.md

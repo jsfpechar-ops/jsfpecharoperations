@@ -42,4 +42,4 @@ Updated: 2026-10-16.
 
 - SES, Turnstile, healthchecks, Better Stack, Cloudflare, autopurge, Render staging, backup drill, 0001 (#281), magic-link/0007 phase 2 (Oct 2026).
 
-- [UI 0041](../tasks/0041-host-stay-actions.md): Paused; #338 CI imports: 0042; UI failures remain.
+- Host design #397: implementation in progress; CI pending.

@@ -70,7 +70,7 @@
     value >= "1900-01-01" && value <= "2100-12-31" &&
     Number.isFinite(dateValue(value).getTime()) && iso(dateValue(value)) === value;
   const state = {
-    mode: validMode(queryMode) ? queryMode : (validMode(preferences.mode) ? preferences.mode : (cleaningMode ? "gantt" : "auto")),
+    mode: validMode(queryMode) ? queryMode : (validMode(preferences.mode) ? preferences.mode : "auto"),
     scale: ["month", "week", "year"].includes(query.get("cal_scale")) ? query.get("cal_scale") : "month",
     date: validDate(queryDate) ? queryDate : (root.dataset.calendarDate || root.dataset.today),
     property: properties.some(item => String(item.id) === query.get("cal_property")) ? query.get("cal_property") : "",
@@ -139,8 +139,8 @@
   }
   function syncControls() {
     const currentView = view(), [start, end] = range();
-    $$("[data-cal-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calView === currentView)));
-    $$("[data-cal-scale]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calScale === state.scale)));
+    $("[data-cal-mode-select]").value = state.mode;
+    $("[data-cal-scale-select]").value = state.scale;
     $("[data-cal-scales]").hidden = currentView === "gantt";
     $("[data-cal-month]").value = state.date.slice(5, 7);
     $("[data-cal-month]").hidden = currentView === "calendar" && state.scale === "year";
@@ -532,10 +532,6 @@
     if (more) { openDay(more.dataset.calMore); return; }
     const month = target.closest("[data-cal-month-open]");
     if (month) { state.date = month.dataset.calMonthOpen; state.mode = "calendar"; state.scale = "month"; savePreferences(); load(); return; }
-    const mode = target.closest("[data-cal-view]");
-    if (mode) { state.mode = mode.dataset.calView; savePreferences(); load(); return; }
-    const scale = target.closest("[data-cal-scale]");
-    if (scale) { state.mode = "calendar"; state.scale = scale.dataset.calScale; savePreferences(); load(); return; }
     if (target.closest("[data-cal-settings]")) { show(settingsDialog); return; }
     if (target.closest("[data-cal-today]")) { state.date = root.dataset.today; load(); return; }
     const movement = target.closest("[data-cal-prev], [data-cal-next]");
@@ -563,6 +559,16 @@
   }
   $("[data-cal-month]").addEventListener("change", changePeriod);
   $("[data-cal-year]").addEventListener("change", changePeriod);
+  $("[data-cal-mode-select]").addEventListener("change", event => {
+    state.mode = event.target.value;
+    if (state.mode === "auto") state.scale = "month";
+    savePreferences(); load();
+  });
+  $("[data-cal-scale-select]").addEventListener("change", event => {
+    state.mode = "calendar";
+    state.scale = event.target.value;
+    savePreferences(); load();
+  });
   $("[data-cal-auto]").addEventListener("change", event => {
     state.mode = event.target.checked ? "auto" : view();
     if (state.mode === "auto") state.scale = "month";

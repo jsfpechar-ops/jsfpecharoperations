@@ -198,6 +198,8 @@ def _settings(request: Request, home: dict, error="", status_code=200, values=No
     prop = cleaning.properties(access.owner_id(request), [home["id"]])[0]
     if values is not None:
         prop.update({"cleaning_instructions": values.get("instructions", "")})
+    prop["effective_checkout_time"] = cleaning._hour(prop, "checkout")
+    prop["effective_checkin_time"] = cleaning._hour(prop, "checkin")
     failed_revoke = db.query_one(
         "SELECT id FROM cleaning_code WHERE apartment_id = ? AND state = 'revoke_failed'", (home["id"],),
     )

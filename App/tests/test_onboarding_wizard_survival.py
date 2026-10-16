@@ -660,6 +660,31 @@ def test_property_step_owns_shared_hours_and_other_steps_preserve_them(host):
     )
     after = db.query_one("SELECT checkin_hour, checkout_hour FROM apartment WHERE id = ?", (apt_id,))
     assert (after["checkin_hour"], after["checkout_hour"]) == (16, 10)
-    from app import ttlock
 
-    assert ttlock.stay_window("2026-10-17", "2026-10-20", after["checkin_hour"], after["checkout_hour"], 0) == ttlock.stay_window("2026-10-17", "2026-10-20", 16, 10, 0)
+
+
+def test_unrelated_wizard_ignores_forged_lock_flags_with_legacy_hours(host):
+    flat = _full_apartment(host)
+    apt_id = flat["id"]
+    db.update(
+        "apartment", apt_id,
+        {"lock_provider": "ttlock", "checkin_hour": None, "checkout_hour": None},
+    )
+    response = host["client"].post(
+        f"/apartments/{apt_id}",
+        data={
+            **POLICE,
+            "setup_step": "police",
+            "door_code_section": "1",
+            "door_codes_fields": "1",
+            "door_codes": "1",
+            "return_to": f"/apartments/{apt_id}/setup/automation",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    saved = db.query_one(
+        "SELECT lock_provider, checkin_hour, checkout_hour FROM apartment WHERE id = ?",
+        (apt_id,),
+    )
+    assert (saved["lock_provider"], saved["checkin_hour"], saved["checkout_hour"]) == ("ttlock", None, None)

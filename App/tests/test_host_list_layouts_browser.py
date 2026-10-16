@@ -32,7 +32,7 @@ PAIRS = """(selector) => [...document.querySelectorAll(selector)].map(row => {
 def _check_pairs(pairs, label, locale):
     assert len(pairs) >= 3, label
     for pair in pairs:
-        assert not pair["open"] and pair["more"], label
+        assert (bool(pair["open"]) if label == "dashboard" else not pair["open"]) and pair["more"], label
         assert pair["openText"] == OPEN_LABEL[locale], (label, pair["openText"])
         m = pair["more"]
         assert abs(m["w"] - m["h"]) <= 1, (label, m)
@@ -80,7 +80,7 @@ def test_dashboard_and_stays_share_compact_row_menu(
 ONE_LINE = """() => [...document.querySelectorAll('.stays-view tbody tr')].map(tr => {
   const one = el => { if (!el) return true; const lh = parseFloat(getComputedStyle(el).lineHeight) || parseFloat(getComputedStyle(el).fontSize) * 1.3;
     const r = el.getBoundingClientRect(); return r.height <= lh * 1.4 + 12; };
-  return {pill: one(tr.querySelector('.stay-col-reporting .pill')), deadline: one(tr.querySelector('.stay-col-deadline .deadline')),
+  return {pill: one(tr.querySelector('.stay-col-reporting .pill')), deadline: one(tr.querySelector('.stay-report-deadline .deadline')),
           height: tr.getBoundingClientRect().height, name: tr.querySelector('.property-identity').textContent.trim().length,
           send: !!tr.querySelector('.row-action-form')};
 })"""

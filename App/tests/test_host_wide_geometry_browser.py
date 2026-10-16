@@ -248,7 +248,7 @@ def _capture_geometry(page, result_selector):
                 && r.right <= panel.right + 1};
           });
           const compactCells = [...document.querySelectorAll(
-            '.stays-view .stay-col-reporting, .stays-view .stay-col-deadline'
+            '.stays-view .stay-col-reporting'
           )].map(cell => {
             const r = cell.getBoundingClientRect();
             const range = document.createRange();
@@ -258,9 +258,9 @@ def _capture_geometry(page, result_selector):
               height: r.height, lineRects: range.getClientRects().length};
           });
           const stayTracks = [...document.querySelectorAll('.stays-view tbody tr')].flatMap((row, rowIndex) =>
-            ['.stay-col-stay .row-primary-link', '.stay-col-property .property-identity',
-             '.stay-col-source .stay-portal-link', '.stay-col-guests',
-             '.stay-col-reporting', '.stay-col-deadline'].flatMap(selector => {
+            ['.stay-col-stay .stay-identity-link', '.stay-col-dates > a',
+             '.stay-col-stay .stay-col-source', '.stay-col-property .property-identity',
+             '.stay-col-guests', '.stay-col-reporting', '.stay-report-deadline'].flatMap(selector => {
               const content = row.querySelector(selector);
               const cell = content?.closest('td');
               if (!content || !cell) return [];
@@ -366,7 +366,7 @@ def _assert_stay_track_content(geometry, *, max_date_lines=None):
             assert rect["left"] >= track["cell"]["left"] - 2 and rect["right"] <= (
                 track["cell"]["right"] + 2
             ), f"stay content escapes {track['selector']} cell: {track}"
-        if track["selector"] == ".stay-col-stay .row-primary-link" and max_date_lines is not None:
+        if track["selector"] == ".stay-col-dates > a" and max_date_lines is not None:
             assert len(track["contentRects"]) <= max_date_lines, (
                 f"stay date broke into too many fragments: {track}"
             )
@@ -575,7 +575,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                         assert stay_rows.count() >= 4
                         for row_index in range(stay_rows.count()):
                             row = stay_rows.nth(row_index)
-                            date_link = row.locator("td.stay-col-stay a.row-primary-link")
+                            date_link = row.locator("td.stay-col-dates a")
                             assert date_link.is_visible()
                             assert date_link.get_attribute("href").startswith("/reservations/")
                             more = row.locator("button.row-menu-trigger")

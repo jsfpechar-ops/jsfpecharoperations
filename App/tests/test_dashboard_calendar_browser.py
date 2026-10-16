@@ -106,21 +106,21 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         assert page.locator(".cal-gantt-row").count() == 3
         page.locator("[data-cal-property]").select_option(str(calendar_workspace["properties"][0]))
         page.wait_for_selector(".cal-week")
-        assert page.locator("[data-cal-scale='month']").get_attribute("aria-pressed") == "true"
-        page.locator("[data-cal-view='gantt']").click()
+        assert page.locator("[data-cal-scale-select]").input_value() == "month"
+        page.locator("[data-cal-mode-select]").select_option("gantt")
         page.wait_for_selector(".cal-gantt-row")
         assert page.locator(".cal-gantt-row").count() == 1
         page.locator("[data-cal-property]").select_option("")
         page.wait_for_function("() => document.querySelectorAll('.cal-gantt-row').length === 3")
-        page.locator("[data-cal-view='calendar']").click()
+        page.locator("[data-cal-mode-select]").select_option("calendar")
         page.wait_for_selector(".cal-week")
         page.reload()
         page.wait_for_selector(".cal-week")
-        assert page.locator("[data-cal-view='calendar']").get_attribute("aria-pressed") == "true"
+        assert page.locator("[data-cal-mode-select]").input_value() == "calendar"
         # A new visit without a view in the URL must still honor the manual choice.
         page.goto(f"{calendar_origin}/?lang=en&cal_date=2026-10-01")
         page.wait_for_selector(".cal-week")
-        assert page.locator("[data-cal-view='calendar']").get_attribute("aria-pressed") == "true"
+        assert page.locator("[data-cal-mode-select]").input_value() == "calendar"
         # Imported booking-state placeholders never become visible bar titles.
         assert page.locator(".cal-week-events").get_by_text("Reserved", exact=False).count() == 0
         assert page.locator(".cal-event-mark").count() == 0
@@ -149,11 +149,11 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.wait_for_selector('[data-cal-day="2028-10-01"]')
         page.locator("[data-cal-month]").select_option("02")
         page.wait_for_selector('[data-cal-day="2028-02-29"]')
-        page.locator("[data-cal-scale='year']").click()
+        page.locator("[data-cal-scale-select]").select_option("year")
         page.wait_for_function("() => document.querySelectorAll('.cal-mini-title').length === 12")
         page.locator(".cal-mini-title").nth(1).click()
         page.wait_for_selector('[data-cal-day="2028-02-29"]')
-        page.locator("[data-cal-scale='week']").click()
+        page.locator("[data-cal-scale-select]").select_option("week")
         page.wait_for_function("() => document.querySelectorAll('.cal-week').length === 1")
         context.close()
         browser.close()
@@ -291,7 +291,7 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                 errors = []
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 for mode in ("gantt", "calendar"):
-                    page.locator(f'[data-cal-view="{mode}"]').click()
+                    page.locator("[data-cal-mode-select]").select_option(mode)
                     page.wait_for_selector(".cal-gantt-row" if mode == "gantt" else ".cal-week")
                     wait_loaded(page)
                     # Summary -> calendar -> detailed action queue, in the same lane.
@@ -318,7 +318,7 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                             assert max(heights) <= 102, heights
                             assert boxes[1]["height"] <= 725, boxes
                     if width <= 390:
-                        controls = page.locator(".cal-segment button").evaluate_all(
+                        controls = page.locator("[data-cal-mode-select], [data-cal-scale-select]").evaluate_all(
                             "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
                         )
                         assert min(controls) >= 44, controls

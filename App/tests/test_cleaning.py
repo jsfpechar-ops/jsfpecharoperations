@@ -459,4 +459,8 @@ def test_cleaning_availability_uses_property_hours_and_preserves_manual_override
     assert cleaning._hour(invalid_home, "checkout") is None
     assert cleaning._hour(invalid_home, "checkin") is None
     response = ws["client"].get(f"/cleaning/properties/{home_id}")
-    assert response.status_code == 200 and "—" in response.text
+    assert response.status_code == 200
+    assert 'id="cleaning-property-times"' in response.text
+    summary = response.text.split('id="cleaning-property-times"', 1)[1].split("</section>", 1)[0]
+    assert "/apartments/" in summary
+    assert "30:00" not in summary and "-1:00" not in summary
