@@ -230,6 +230,8 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
         page.locator('[data-cal-day="2026-10-05"]').click()
         assert page.locator("[data-cal-overlap]").is_visible()
+        overlap_arrival = page.locator("#cal-arrival").input_value()
+        overlap_departure = page.locator("#cal-departure").input_value()
         page.locator("[data-cal-save]").click()
         page.wait_for_function("() => document.querySelector('[data-cal-save-error]').textContent.length > 0")
         assert page.locator("[data-cal-create]").is_visible()
@@ -237,8 +239,15 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         with page.expect_response(lambda response: response.url.split("?")[0].endswith("/reservations") and response.request.method == "POST") as saved:
             page.locator("[data-cal-save]").click()
         assert saved.value.status == 201
-        page.wait_for_selector("[data-cal-details][open]")
-        assert page.locator("[data-cal-detail-content]").get_by_text("Overlapping bookings", exact=True).is_visible()
+        row_id = saved.value.json()["id"]
+        assert page.evaluate("location.pathname") == "/"
+        message = page.locator("[data-cal-message]")
+        message.wait_for(state="visible")
+        open_link = page.locator("[data-cal-message] a")
+        open_link.wait_for(state="visible")
+        assert open_link.get_attribute("href") == f"/reservations/{row_id}"
+        row = db.query_one("SELECT date_from, date_to FROM reservation WHERE id = ?", (row_id,))
+        assert row["date_from"] == overlap_arrival and row["date_to"] == overlap_departure
         context.close()
         browser.close()
 
