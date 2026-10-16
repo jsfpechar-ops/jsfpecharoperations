@@ -52,7 +52,7 @@ body.host-workspace .stay-report-deadline { margin-top:6px; }
 body.host-workspace .stay-col-source { margin-top:5px; }
 body.host-workspace .stay-col-actions .row-action-pair { display:flex; align-items:center; justify-content:flex-end; gap:6px; }
 body.host-workspace .stay-col-actions .row-menu-trigger { min-width:42px; min-height:42px; }
-body.host-workspace .dashboard-stats { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+body.host-workspace .dashboard-stats { display:flex; flex-wrap:wrap; gap:8px; margin:0 auto 12px; }
 body.host-workspace .dashboard-stats .dashboard-stat { --stat-color:var(--ink-muted); display:inline-flex; align-items:center; gap:8px; width:auto; min-height:36px; padding:6px 12px; border:1px solid #e6e4e0; border-radius:99px; box-shadow:none; background:#fff; color:#20201e; }
 body.host-workspace .dashboard-stats .dashboard-stat.action.is-positive { --stat-color:var(--status-action-border); }
 body.host-workspace .dashboard-stats .dashboard-stat.ready.is-positive { --stat-color:var(--status-ready-ink); }
@@ -75,7 +75,7 @@ body.host-workspace .dashboard-row-actions { display:flex; align-items:center; j
 body.host-workspace .dashboard-row-actions .row-menu, body.host-workspace .dashboard-row-actions .row-menu-trigger { width:42px; min-width:42px; }
 body.host-workspace .dashboard-row-actions .row-menu-trigger { height:42px; min-height:42px; padding:0; }
 body.host-workspace .dashboard-row-open { min-width:74px; }
-body.host-workspace .dashboard-calendar { margin:0 0 24px; padding:16px 0; border:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); border-radius:0; background:#fff; }
+body.host-workspace .dashboard-calendar { margin:0 auto 24px; padding:16px 0; border:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); border-radius:0; background:#fff; }
 body.host-workspace .cal-heading { margin-bottom:8px; }
 body.host-workspace .cal-heading h2 { margin:0; font-size:20px; }
 body.host-workspace .cal-heading-actions, body.host-workspace .cal-toolbar-options { gap:8px; }
