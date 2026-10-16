@@ -141,42 +141,155 @@ def _assert_fractional_bar(page, event_id, start_day, start_hour, end_day, end_h
     assert abs(bar["x"] + bar["width"] - expected_right) <= 4, (bar, expected_right)
 
 
-def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin):
+def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile):
+    link = page.locator(f'.cal-event.is-cleaning-marker[data-cal-event="{event_id}"]')
+    assert link.count() == 1 and link.is_visible()
+    box = link.bounding_box()
+    cell = page.locator(f'.cal-day[data-date="{day}"]').bounding_box()
+    assert box["x"] >= cell["x"] and box["x"] + box["width"] <= cell["x"] + cell["width"]
+    assert box["width"] >= cell["width"] - 6
+    details = link.get_attribute("aria-label") or ""
+    expected = "Úklid" if lang == "cs" else "Cleaning"
+    assert expected in details and property_name in details
+    visual = link.evaluate("""element => {
+      const css = getComputedStyle(element);
+      const label = element.querySelector('.cal-cleaning-label');
+      const icon = element.querySelector('svg');
+      const count = element.querySelector('.cal-cleaning-count');
+      const rgb = value => value.match(/[\\d.]+/g).slice(0, 3).map(Number);
+      const linear = channel => (channel / 255 <= .04045 ? channel / 255 / 12.92 : ((channel / 255 + .055) / 1.055) ** 2.4);
+      const luminance = value => {
+        const channels = rgb(value).map(linear);
+        return .2126 * channels[0] + .7152 * channels[1] + .0722 * channels[2];
+      };
+      const a = luminance(css.backgroundColor), b = luminance(css.color);
+      return {
+        background: css.backgroundColor, color: css.color, border: css.borderTopStyle,
+        contrast: (Math.max(a, b) + .05) / (Math.min(a, b) + .05),
+        labelDisplay: label && getComputedStyle(label).display,
+        labelFits: label && label.scrollWidth <= label.clientWidth + 1,
+        labelText: label && label.textContent,
+        iconVisible: !!icon && getComputedStyle(icon).display !== 'none',
+        countVisible: !!count && getComputedStyle(count).display !== 'none'
+      };
+    }""")
+    assert visual["background"] == "rgb(245, 185, 66)"
+    assert visual["color"] == "rgb(32, 32, 30)"
+    assert visual["border"] == "solid"
+    assert visual["contrast"] >= 7
+    assert visual["iconVisible"]
+    if mobile:
+        assert box["height"] >= 44
+        assert visual["countVisible"] and visual["labelDisplay"] == "none"
+    else:
+        assert box["width"] >= 120
+        assert visual["labelDisplay"] != "none" and visual["labelFits"]
+        assert expected in visual["labelText"]
+
+
+@pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs"), (360, "en"), (390, "cs")])
+def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, width, lang):
     ws = workspace
     booking_id = stay(ws["home"], "2026-10-15", "2026-10-17")
+    # A second property checks out the same day, so overflow must name cleaning
+    # and the two date-wide layout footprints cannot collapse into one lane.
+    second_booking_id = stay(ws["homes"][1], "2026-10-15", "2026-10-17")
+    short_jobs = [
+        cleaning.save_event(ws["home"], {"scheduled_date": "2026-10-25", "start_time": "09:00", "end_time": "10:00"}),
+        cleaning.save_event(ws["home"], {"scheduled_date": "2026-10-25", "start_time": "14:00", "end_time": "15:00"}),
+    ]
     scheduled = cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))
     booking_event = f"reservation:{booking_id}"
-    cleaning_event = next(item for item in scheduled["cleanings"] if item["checkout"] == "2026-10-17")
-    assert cleaning_event["displayStart"] == "2026-10-17T11:00"
-    assert cleaning_event["displayEnd"] == "2026-10-17T15:00"
-    for width in (1280, 360):
-        with sync_api.sync_playwright() as playwright:
-            browser, context = browser_context(playwright, ws, origin, width)
-            page = context.new_page()
-            page.goto(origin + "/cleaning?lang=en")
+    day_cleanings = [item for item in scheduled["cleanings"] if item["checkout"] == "2026-10-17"]
+    assert len(day_cleanings) == 2
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang={lang}")
+        loaded(page)
+        shot(page, f"day-marker-{lang}-{width}")
+        visible = [item for item in day_cleanings
+                   if page.locator(f'.cal-event[data-cal-event="{item["id"]}"]').is_visible()]
+        assert len(visible) == 1
+        marker = visible[0]
+        property_name = next(prop["internal_name"] for prop in cleaning.properties(ws["owner"])
+                             if prop["id"] == marker["propertyId"])
+        mobile = width <= 760
+        _assert_cleaning_day_marker(page, marker["id"], "2026-10-17", property_name, lang, mobile)
+        visible_booking_boxes = [
+            page.locator(f'.cal-event[data-cal-event="reservation:{stay_id}"]')
+            for stay_id in (booking_id, second_booking_id)
+        ]
+        visible_booking_boxes = [item.bounding_box() for item in visible_booking_boxes if item.is_visible()]
+        assert visible_booking_boxes
+        marker_box = page.locator(f'.cal-event[data-cal-event="{marker["id"]}"]').bounding_box()
+        assert marker_box["y"] + marker_box["height"] <= min(item["y"] for item in visible_booking_boxes) + 1
+        overflow = page.locator('.cal-day-summary.has-cleaning-overflow[data-cal-more="2026-10-17"]')
+        assert overflow.count() == 1 and overflow.is_visible()
+        overflow_label = overflow.get_attribute("aria-label") or ""
+        assert ("úklid" if lang == "cs" else "cleaning") in overflow_label.casefold()
+        overflow_visual = overflow.evaluate("""element => {
+          const css = getComputedStyle(element);
+          return {
+            background: css.backgroundColor,
+            icon: !!element.querySelector('svg') && getComputedStyle(element.querySelector('svg')).display !== 'none',
+            count: element.querySelector('.cal-cleaning-overflow-count')?.textContent,
+            height: element.getBoundingClientRect().height
+          };
+        }""")
+        assert overflow_visual["background"] == "rgb(245, 185, 66)" and overflow_visual["icon"]
+        assert overflow_visual["count"] == "1"
+        if mobile:
+            assert overflow_visual["height"] >= 44
+        overflow.click()
+        assert page.locator("[data-cal-day-dialog]").is_visible()
+        page.locator("[data-cal-day-dialog] [data-cal-close]").click()
+        single_cleaning_overflow = page.locator('.cal-day-summary.has-cleaning-overflow[data-cal-more="2026-10-19"]')
+        assert single_cleaning_overflow.count() == 0
+        if not mobile:
+            link = page.locator(f'.cal-event[data-cal-event="{marker["id"]}"]')
+            link.focus()
+            link.press("Enter")
+            assert page.locator("[data-cal-details]").is_visible()
+            page.locator("[data-cal-details] [data-cal-close]").click()
+            _assert_fractional_bar(page, booking_event, "2026-10-15", 15, "2026-10-17", 11)
+            page.locator('[data-cal-view="gantt"]').click()
+            page.wait_for_selector(".cal-gantt-row")
+            # Gantt starts on Oct 16; the reservation is clipped at that range edge,
+            # while its checkout and the real cleaning time remain independent.
+            _assert_fractional_bar(page, booking_event, "2026-10-16", 0, "2026-10-17", 11, ws["home"])
+            gantt_marker = page.locator(f'.cal-event.is-gantt-cleaning[data-cal-event="{marker["id"]}"]')
+            slot = page.locator(
+                f'.cal-gantt-slot[data-date="2026-10-17"][data-property="{marker["propertyId"]}"]'
+            ).bounding_box()
+            box = gantt_marker.bounding_box()
+            assert box["x"] >= slot["x"] and box["x"] + box["width"] <= slot["x"] + slot["width"]
+            assert box["width"] >= slot["width"] - 6
+            assert gantt_marker.is_visible() and gantt_marker.get_attribute("aria-label")
+            assert gantt_marker.locator("svg").is_visible()
+            short_markers = [page.locator(f'.cal-event.is-gantt-cleaning[data-cal-event="cleaning:{job_id}"]')
+                             for job_id in short_jobs]
+            assert all(item.is_visible() for item in short_markers)
+            short_boxes = [item.bounding_box() for item in short_markers]
+            assert abs(short_boxes[0]["y"] - short_boxes[1]["y"]) >= 20
+            shot(page, f"day-marker-gantt-{lang}-{width}")
+        _, token = cleaning.new_share(ws["owner"], [marker["propertyId"]])
+        page.goto(f"{origin}/cleaning/shared/{token}?lang={lang}")
+        loaded(page)
+        calendar_mode = page.locator('[data-cal-view="calendar"]')
+        if calendar_mode.count() and calendar_mode.get_attribute("aria-pressed") != "true":
+            calendar_mode.click()
             loaded(page)
-            shot(page, f"fractional-calendar-{width}")
-            if width <= 760:
-                summary = page.locator('.cal-day-summary[data-cal-more="2026-10-17"]')
-                assert summary.count() == 1
-                assert summary.bounding_box()["height"] >= 44
-                assert "Cleaning" in summary.inner_text()
-                summary.click()
-                assert page.locator("[data-cal-day-dialog]").is_visible()
-                page.locator("[data-cal-day-dialog] [data-cal-close]").click()
-            else:
-                _assert_fractional_bar(page, booking_event, "2026-10-15", 15, "2026-10-17", 11)
-                _assert_fractional_bar(page, cleaning_event["id"], "2026-10-17", 11, "2026-10-17", 15)
-                page.locator('[data-cal-view="gantt"]').click()
-                page.wait_for_selector(".cal-gantt-row")
-                # Cleaning Gantt starts at today (Oct 16), so the prior-day check-in
-                # is clipped at the visible range edge while checkout stays fractional.
-                _assert_fractional_bar(page, booking_event, "2026-10-16", 0, "2026-10-17", 11, ws["home"])
-                _assert_fractional_bar(page, cleaning_event["id"], "2026-10-17", 11, "2026-10-17", 15, ws["home"])
-                shot(page, "fractional-gantt-1280")
-            context.close()
-            browser.close()
-
+        shared_marker = page.locator(f'.cal-event.is-cleaning-marker[data-cal-event="{marker["id"]}"]')
+        assert shared_marker.is_visible()
+        shared_box = shared_marker.bounding_box()
+        shared_cell = page.locator('.cal-day[data-date="2026-10-17"]').bounding_box()
+        assert shared_box["width"] >= shared_cell["width"] - 6
+        assert shared_marker.get_attribute("draggable") != "true"
+        _assert_cleaning_day_marker(page, marker["id"], "2026-10-17", property_name, lang, mobile)
+        shot(page, f"day-marker-shared-{lang}-{width}")
+        context.close()
+        browser.close()
 
 def test_three_property_auto_gantt_keeps_cleaning_markers_visible(workspace, origin):
     ws = workspace

@@ -33,18 +33,22 @@
   function displayOverlap(event, start, end) {
     return eventPoint(event, "start") < dayPoint(end) && eventPoint(event, "end") > dayPoint(start);
   }
+  function layoutPoint(event, edge) {
+    if (event.kind !== "cleaning") return eventPoint(event, edge);
+    return dayPoint(event.start) + (edge === "end" ? 1 : 0);
+  }
   function autoView(mode, propertyCount) { return mode === "auto" ? (propertyCount >= 3 ? "gantt" : "calendar") : mode; }
   function lanes(events, start, end) {
     const leftEdge = dayPoint(start), rightEdge = dayPoint(end), ends = [], segments = [];
     let cleaningLane = null;
-    events.filter(event => eventPoint(event, "start") < rightEdge && eventPoint(event, "end") > leftEdge)
+    events.filter(event => layoutPoint(event, "start") < rightEdge && layoutPoint(event, "end") > leftEdge)
       .slice().sort((a, b) => Number(a.kind === "cleaning") - Number(b.kind === "cleaning") ||
-        eventPoint(a, "start") - eventPoint(b, "start") ||
-        eventPoint(a, "end") - eventPoint(b, "end") ||
+        layoutPoint(a, "start") - layoutPoint(b, "start") ||
+        layoutPoint(a, "end") - layoutPoint(b, "end") ||
         (Number.isFinite(a.id) && Number.isFinite(b.id) ? a.id - b.id : String(a.id).localeCompare(String(b.id))))
       .forEach(event => {
-        const left = Math.max(eventPoint(event, "start"), leftEdge);
-        const right = Math.min(eventPoint(event, "end"), rightEdge);
+        const left = Math.max(layoutPoint(event, "start"), leftEdge);
+        const right = Math.min(layoutPoint(event, "end"), rightEdge);
         const column = Math.floor(left - leftEdge);
         const lastColumn = Math.ceil(right - leftEdge);
         const length = Math.max(1, lastColumn - column);
@@ -203,22 +207,45 @@
     return labels["status_" + event.status] || labels.booked;
   }
   function propertyColor(id) { return ["teal", "blue", "purple"][Math.abs(Number(id)) % 3]; }
+  function appendCleaningIcon(node, className) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    svg.setAttribute("class", className || "cal-cleaning-icon");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M15 3l6 6M13 5l6 6M12 10l4 4-8 8H3v-5zM5 17v4M8 15v5M11 13v4");
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "currentColor");
+    path.setAttribute("stroke-width", "1.8");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+    svg.append(path);
+    node.append(svg);
+  }
   function eventLink(event) {
-    const link = el("a", "cal-event is-" + event.tone);
+    const isCleaning = event.kind === "cleaning";
+    const link = el("a", "cal-event is-" + event.tone + (isCleaning ? " is-cleaning-marker" : ""));
     link.dataset.eventKind = event.kind || "booking";
-    if (cleaningMode) link.draggable = event.kind === "cleaning" && !readOnly;
+    if (cleaningMode) link.draggable = isCleaning && !readOnly;
     link.href = event.url; link.dataset.calEvent = String(event.id);
     link.dataset.calColor = propertyColor(event.propertyId);
     link.setAttribute("aria-haspopup", "dialog");
-    const status = cleaningMode ? (event.kind === "cleaning" ? cleaningLabels.title : cleaningLabels.booking) : statusFor(event);
+    const status = cleaningMode ? (isCleaning ? cleaningLabels.title : cleaningLabels.booking) : statusFor(event);
     link.title = labelFor(event) + " · " + fullDate(event.start) + " – " + fullDate(event.end) + " · " + status +
       (event.conflict ? " · " + labels.conflict : "");
-    if (cleaningMode && event.kind === "cleaning") link.title = labelFor(event) + " · " + fullDate(event.start) +
-      (event.startTime ? " · " + event.startTime + "–" + event.endTime : "") +
-      (event.timingUnavailable ? " · " + cleaningLabels.timing_unavailable : "") +
-      (event.conflict && !event.timingUnavailable ? " · " + cleaningLabels.conflict : "");
+    if (isCleaning) link.title = cleaningLabels.title + " · " + event.property + " · " + fullDate(event.start) +
+      (cleaningMode && event.startTime ? " · " + event.startTime + "–" + event.endTime : "") +
+      (cleaningMode && event.timingUnavailable ? " · " + cleaningLabels.timing_unavailable : "") +
+      (cleaningMode && event.conflict ? " · " + cleaningLabels.conflict : "");
     link.setAttribute("aria-label", link.title);
-    link.append(el("span", "", labelFor(event)));
+    if (isCleaning) {
+      appendCleaningIcon(link);
+      link.append(el("span", "cal-cleaning-label", cleaningLabels.title));
+      link.append(el("span", "cal-cleaning-count", "1"));
+    } else {
+      link.append(el("span", "", labelFor(event)));
+    }
     return link;
   }
   function markConflicts() {
@@ -238,15 +265,17 @@
     for (let day = 0; day < 7; day++) weekdays.append(el("span", "", weekday(addDays(start, day))));
     body.append(weekdays);
     const mobile = matchMedia("(max-width:760px)").matches;
-    const bookingBudget = cleaningMode ? 1 : (mobile ? 1 : 2);
+    const bookingBudgetDefault = cleaningMode ? 1 : (mobile ? 1 : 2);
     for (let week = start; week < end; week = addDays(week, 7)) {
       const until = addDays(week, 7);
       const bookings = lanes(state.events.filter(event => event.kind !== "cleaning"), week, until);
       const cleanings = lanes(state.events.filter(event => event.kind === "cleaning"), week, until);
+      const bookingBudget = cleanings.count ? 1 : bookingBudgetDefault;
       const visibleBookings = bookings.segments.filter(segment => segment.lane < bookingBudget);
       const hiddenBookings = bookings.segments.filter(segment => segment.lane >= bookingBudget);
       const visibleCleanings = cleanings.segments.filter(segment => segment.lane === 0);
       const hiddenCleanings = cleanings.segments.filter(segment => segment.lane > 0);
+      const cleaningRows = visibleCleanings.length ? 1 : 0;
       const days = el("div", "cal-week-days");
       for (let index = 0; index < 7; index++) {
         const date = addDays(week, index), day = el("div", "cal-day");
@@ -259,42 +288,74 @@
         button.title = labels.keyboard; day.append(button); days.append(day);
       }
       const overlay = el("div", "cal-week-events");
-      visibleBookings.forEach(segment => {
-        const link = eventLink(segment.event);
-        if (eventPoint(segment.event, "start") < dayPoint(week)) link.classList.add("continues-start");
-        if (eventPoint(segment.event, "end") > dayPoint(until)) link.classList.add("continues-end");
-        placeEvent(link, segment); overlay.append(link);
-      });
-      visibleCleanings.forEach(segment => {
-        const link = eventLink(segment.event);
-        if (eventPoint(segment.event, "start") < dayPoint(week)) link.classList.add("continues-start");
-        if (eventPoint(segment.event, "end") > dayPoint(until)) link.classList.add("continues-end");
-        segment.lane = bookingBudget;
-        placeEvent(link, segment); overlay.append(link);
-      });
+      if (cleaningMode || cleanings.count) {
+        visibleCleanings.forEach(segment => {
+          const link = eventLink(segment.event);
+          if (layoutPoint(segment.event, "start") < dayPoint(week)) link.classList.add("continues-start");
+          if (layoutPoint(segment.event, "end") > dayPoint(until)) link.classList.add("continues-end");
+          segment.lane = 0;
+          placeEvent(link, segment); overlay.append(link);
+        });
+        visibleBookings.forEach(segment => {
+          const link = eventLink(segment.event);
+          if (eventPoint(segment.event, "start") < dayPoint(week)) link.classList.add("continues-start");
+          if (eventPoint(segment.event, "end") > dayPoint(until)) link.classList.add("continues-end");
+          segment.lane += cleaningRows;
+          placeEvent(link, segment); overlay.append(link);
+        });
+      } else {
+        visibleBookings.forEach(segment => {
+          const link = eventLink(segment.event);
+          if (eventPoint(segment.event, "start") < dayPoint(week)) link.classList.add("continues-start");
+          if (eventPoint(segment.event, "end") > dayPoint(until)) link.classList.add("continues-end");
+          placeEvent(link, segment); overlay.append(link);
+        });
+      }
       let summaryCount = 0;
       for (let index = 0; index < 7; index++) {
         const day = addDays(week, index), dayEnd = addDays(day, 1);
         const moreBookings = hiddenBookings.filter(segment => displayOverlap(segment.event, day, dayEnd)).length;
         const moreCleanings = hiddenCleanings.filter(segment => displayOverlap(segment.event, day, dayEnd)).length;
-        const dayCleanings = visibleCleanings.filter(segment => displayOverlap(segment.event, day, dayEnd)).length;
-        if (!moreBookings && !moreCleanings && !(mobile && dayCleanings)) continue;
+        if (!moreBookings && !moreCleanings) continue;
         const parts = [];
-        if (moreBookings) parts.push(cleaningMode ? String(moreBookings) + " " + cleaningLabels.overflow_bookings : format("more", { count: moreBookings }));
         if (moreCleanings) parts.push(String(moreCleanings) + " " + cleaningLabels.overflow_cleanings);
-        if (mobile && dayCleanings) parts.push(cleaningLabels.cleaning_summary + (dayCleanings > 1 ? " ×" + dayCleanings : ""));
-        const button = el("button", "cal-more cal-day-summary", parts.join(" · "));
+        if (moreBookings) parts.push(cleaningMode ? String(moreBookings) + " " + cleaningLabels.overflow_bookings : format("more", { count: moreBookings }));
+        const button = el("button", "cal-more cal-day-summary" + (moreCleanings ? " has-cleaning-overflow" : ""), parts.join(" · "));
         button.type = "button"; button.dataset.calMore = day;
         button.setAttribute("aria-label", fullDate(day) + " · " + parts.join(" · "));
+        button.title = button.getAttribute("aria-label");
+        if (moreCleanings) {
+          button.textContent = "";
+          appendCleaningIcon(button, "cal-cleaning-icon cal-cleaning-overflow-icon");
+          button.append(el("span", "cal-cleaning-overflow-count", String(moreCleanings)));
+          button.append(el("span", "cal-summary-sr-only", parts.join(" · ")));
+        }
         button.style.gridColumn = String(index + 1);
-        const summaryRow = bookingBudget + (cleanings.count ? 2 : 1);
+        const lastEventRow = Math.max(cleaningRows,
+          visibleBookings.reduce((max, segment) => Math.max(max, segment.lane + 1), 0));
+        const summaryRow = lastEventRow + 1;
         button.style.gridRow = String(summaryRow);
         overlay.append(button); summaryCount++;
       }
-      const lastBookingRow = visibleBookings.reduce((max, segment) => Math.max(max, segment.lane + 1), 0);
-      const cleaningRow = cleanings.count ? bookingBudget + 1 : 0;
-      const summaryLane = summaryCount ? bookingBudget + (cleanings.count ? 2 : 1) : 0;
-      const lanesShown = Math.max(1, lastBookingRow, cleaningRow, summaryLane);
+      const bookingRowCount = visibleBookings.reduce(
+        (max, segment) => Math.max(max, segment.lane + 1 - cleaningRows), 0);
+      const lastEventRow = Math.max(cleaningRows,
+        visibleBookings.reduce((max, segment) => Math.max(max, segment.lane + 1), 0));
+      const lanesShown = Math.max(1, lastEventRow + (summaryCount ? 1 : 0));
+      const desktopRows = [
+        ...Array.from({ length: cleaningRows }, () => "28px"),
+        ...Array.from({ length: bookingRowCount }, () => "22px"),
+        ...(summaryCount ? ["18px"] : [])
+      ];
+      const mobileRows = [
+        ...Array.from({ length: cleaningRows }, () => "46px"),
+        ...Array.from({ length: bookingRowCount }, () => "46px"),
+        ...(summaryCount ? ["44px"] : [])
+      ];
+      if (desktopRows.length) {
+        overlay.style.gridTemplateRows = desktopRows.join(" ");
+        overlay.style.setProperty("--mobile-event-rows", mobileRows.join(" "));
+      }
       const row = el("div", "cal-week"); row.style.setProperty("--lanes", String(lanesShown));
       row.append(days, overlay); body.append(row);
     }
@@ -352,6 +413,10 @@
       }
       layout.segments.forEach(segment => {
         const link = eventLink(segment.event);
+        if (segment.event.kind === "cleaning") {
+          link.classList.add("is-gantt-cleaning");
+          if (number > 18) link.classList.add("is-narrow-cleaning");
+        }
         if (eventPoint(segment.event, "start") < dayPoint(start)) link.classList.add("continues-start");
         if (eventPoint(segment.event, "end") > dayPoint(end)) link.classList.add("continues-end");
         placeEvent(link, segment); overlay.append(link);

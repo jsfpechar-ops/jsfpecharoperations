@@ -310,3 +310,168 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
     padding:0;
   }
 }
+/* Cleaning markers represent scheduled work on a date; booking bars remain fractional. */
+.dashboard-calendar .cal-event.is-cleaning-marker,
+.cleaning-page .dashboard-calendar .cal-event.is-cleaning-marker {
+  box-sizing:border-box;
+  height:28px;
+  min-height:28px;
+  max-height:28px;
+  margin:0 1px;
+  padding:0 6px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:5px;
+  overflow:hidden;
+  border:1px solid #674900;
+  border-radius:5px;
+  background:#f5b942;
+  color:#20201e;
+  font-size:12px;
+  font-weight:800;
+  line-height:16px;
+  box-shadow:0 1px 0 rgba(32,32,30,.12);
+}
+.dashboard-calendar .cal-cleaning-icon,
+.cleaning-page .dashboard-calendar .cal-cleaning-icon {
+  display:block;
+  flex:0 0 16px;
+  width:16px;
+  height:16px;
+  color:#20201e;
+}
+.dashboard-calendar .cal-cleaning-label,
+.cleaning-page .dashboard-calendar .cal-cleaning-label {
+  display:block;
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:clip;
+}
+.dashboard-calendar .cal-cleaning-count,
+.cleaning-page .dashboard-calendar .cal-cleaning-count {
+  display:none;
+}
+.dashboard-calendar .cal-event.is-gantt-cleaning {
+  height:24px;
+  min-height:24px;
+  max-height:24px;
+  padding:0 2px;
+  justify-content:center;
+  gap:1px;
+  border-radius:4px;
+}
+.dashboard-calendar .cal-event.is-gantt-cleaning .cal-cleaning-icon {
+  flex-basis:13px;
+  width:13px;
+  height:13px;
+}
+.dashboard-calendar .cal-event.is-gantt-cleaning.is-narrow-cleaning .cal-cleaning-label {
+  display:none;
+}
+.dashboard-calendar .cal-event.is-gantt-cleaning .cal-cleaning-count {
+  display:inline-flex;
+  align-items:center;
+  font-size:10px;
+  line-height:12px;
+}
+.dashboard-calendar .cal-day-summary.has-cleaning-overflow {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  min-width:0;
+  padding:0;
+  border:1px solid #674900;
+  border-radius:4px;
+  background:#f5b942;
+  color:#20201e;
+  font-weight:800;
+  text-align:center;
+}
+.dashboard-calendar .cal-cleaning-overflow-icon {
+  flex:0 0 14px;
+  width:14px;
+  height:14px;
+}
+.dashboard-calendar .cal-cleaning-overflow-count {
+  font-size:11px;
+  line-height:14px;
+}
+.dashboard-calendar .cal-summary-sr-only {
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+.cal-cleaning-legend-swatch {
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  color:#20201e;
+  font-weight:750;
+}
+.cal-cleaning-legend-swatch::before {
+  content:"";
+  display:inline-block;
+  width:18px;
+  height:12px;
+  border:1px solid #674900;
+  border-radius:3px;
+  background:#f5b942;
+}
+.cal-week-events { grid-auto-rows:22px; }
+@media (max-width:760px) {
+  .cal-week-events {
+    grid-template-rows:var(--mobile-event-rows);
+    grid-auto-rows:46px;
+  }
+  .dashboard-calendar .cal-event.is-cleaning-marker,
+  .cleaning-page .dashboard-calendar .cal-event.is-cleaning-marker {
+    height:44px;
+    min-height:44px;
+    max-height:44px;
+    padding:0 2px;
+    justify-content:center;
+    gap:2px;
+  }
+  .dashboard-calendar .cal-event.is-cleaning-marker .cal-cleaning-label,
+  .cleaning-page .dashboard-calendar .cal-event.is-cleaning-marker .cal-cleaning-label,
+  .dashboard-calendar .cal-event.is-gantt-cleaning .cal-cleaning-label {
+    display:none;
+  }
+  .dashboard-calendar .cal-event.is-cleaning-marker .cal-cleaning-count,
+  .cleaning-page .cal-event.is-cleaning-marker .cal-cleaning-count,
+  .dashboard-calendar .cal-event.is-gantt-cleaning .cal-cleaning-count {
+    display:inline-flex;
+    align-items:center;
+    font-size:12px;
+    line-height:16px;
+  }
+  .dashboard-calendar .cal-event.is-gantt-cleaning {
+    height:44px;
+    min-height:44px;
+    max-height:44px;
+  }
+  .dashboard-calendar .cal-event.is-gantt-cleaning .cal-cleaning-icon {
+    flex-basis:16px;
+    width:16px;
+    height:16px;
+  }
+  .dashboard-calendar .cal-day-summary.has-cleaning-overflow {
+    min-height:44px;
+    height:44px;
+    font-size:12px;
+  }
+  .dashboard-calendar .cal-cleaning-overflow-icon {
+    flex-basis:16px;
+    width:16px;
+    height:16px;
+  }
+}

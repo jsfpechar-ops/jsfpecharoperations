@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ home.internal_name }} · {{ ct('title') }}{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/cleaning.css?v=20261016-0123a">
+<link rel="stylesheet" href="/static/cleaning.css?v=20261016-0123b">
 <div class="cleaning-page cleaning-form-page"><a href="/cleaning/properties">{{ ct('settings') }}</a><h1>{{ home.internal_name }}</h1>
 {% if error %}<p class="cleaning-warning" role="alert">{{ ct(error ~ '_error') if error in ('notes','property','code') else ct(error) }}</p>{% endif %}
 {% if request.query_params.get('notice') == 'saved' %}<p role="status">{{ ct('saved') }}</p>{% endif %}
