@@ -38,7 +38,7 @@ body.host-workspace .table-cards td { padding-top:15px; padding-bottom:15px; ver
 body.host-workspace .row-primary-link, body.host-workspace .stay-identity-link { color:#20201e; font-size:15px; font-weight:700; text-decoration:none; }
 body.host-workspace .stays-view { border:0; padding:0; overflow:visible; }
 body.host-workspace .stays-view table { width:100%; }
-@container stays-list (min-width:760px) {
+@container stays-list (min-width:900px) {
   body.host-workspace .stays-view table {
     display:grid;
     grid-template-columns:minmax(110px,1.05fr) minmax(135px,1.3fr) minmax(100px,1fr) minmax(58px,.5fr) minmax(150px,1.4fr) minmax(155px,1.4fr);
