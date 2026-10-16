@@ -512,6 +512,17 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, ws, calendar_origin, width=1280)
+        before = page.evaluate("""() => {
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            return {
+                stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].map(row => ({
+                    id: row.getAttribute("data-stay-id"),
+                    text: normalize(row.textContent)
+                }))
+            };
+        }""")
+        assert before["rows"], "fixture should render work rows before the committed save"
         failed_html = {"done": False}
         posts = []
         def fail_first_dashboard_html(route):
@@ -553,6 +564,13 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         assert page.locator('[data-cal-message] a').is_visible()
         retry = page.locator("[data-cal-message] button")
         assert retry.is_visible() and len(posts) == 1
+
+        # The work list is intentionally capped at five rows. Change an existing visible
+        # synthetic manual label so the successful retry proves it replaced stale HTML.
+        target_id = before["rows"][0]["id"]
+        sentinel = f"Refresh retry sentinel {saved['id']}"
+        assert sentinel not in before["rows"][0]["text"]
+        db.update("reservation", target_id, {"summary": sentinel})
         with page.expect_response(lambda response: response.request.method == "GET" and
                                       response.url.split("?")[0] == calendar_origin + "/" and
                                       "text/html" in response.request.headers.get("accept", "")) as refreshed:
@@ -560,10 +578,34 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         fresh_response = refreshed.value
         fresh_html = fresh_response.text()
         assert fresh_response.status == 200
-        assert f'data-stay-id="{saved["id"]}"' in fresh_html
-        saved_row = db.query_one("SELECT date_from, date_to, expected_guests_override FROM reservation WHERE id = ?", (saved["id"],))
-        assert saved_row["date_from"] == arrival and saved_row["date_to"] == departure and saved_row["expected_guests_override"] == 2
-        page.locator(f'[data-dashboard-refresh="work"] .dashboard-row[data-stay-id="{saved["id"]}"]').wait_for(state="visible")
+        expected = page.evaluate("""html => {
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            doc.querySelectorAll("noscript").forEach(node => node.remove());
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            return {
+                stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
+                rows: [...doc.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].map(row => ({
+                    id: row.getAttribute("data-stay-id"),
+                    text: normalize(row.textContent)
+                }))
+            };
+        }""", fresh_html)
+        assert any(row["id"] == target_id and sentinel in row["text"] for row in expected["rows"])
+        saved_row = db.query_one("SELECT date_from, date_to, expected_guests_override, summary FROM reservation WHERE id = ?", (saved["id"],))
+        assert (saved_row["date_from"], saved_row["date_to"], saved_row["expected_guests_override"], saved_row["summary"]) == (
+            arrival, departure, 2, "Refresh retry stay"
+        )
+        page.wait_for_function("""expected => {
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            const actual = {
+                stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].map(row => ({
+                    id: row.getAttribute("data-stay-id"),
+                    text: normalize(row.textContent)
+                }))
+            };
+            return JSON.stringify(actual) === JSON.stringify(expected);
+        }""", arg=expected)
         assert len(posts) == 1
         assert db.query_one("SELECT COUNT(*) AS n FROM reservation WHERE id = ?", (saved["id"],))["n"] == 1
         shot(page, "dashboard-refresh-retry-en")
