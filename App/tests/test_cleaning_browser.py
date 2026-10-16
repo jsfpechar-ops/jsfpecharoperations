@@ -418,7 +418,7 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         marker.wait_for(state="visible")
         marker.click()
         page.locator("[data-cal-details]").wait_for(state="visible")
-        assert page.locator("[data-cal-details] [data-cal-open]").get_attribute("href").startswith("/cleaning?")
+        assert page.locator("[data-cal-details] [data-cal-open]").get_attribute("href") == f"#cleaning-{created_id}"
         page.locator("[data-cal-details] [data-cal-close]").click()
         card = page.locator(".cleaning-card").filter(has_text="Mid-stay refresh")
         card.wait_for(state="visible")
@@ -508,7 +508,7 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         invalid_date = page.locator("#cal-clean-date")
-        invalid_date.evaluate("(input) => { input.value = ''; input.removeAttribute('required'); }")
+        invalid_date.evaluate("(input) => { input.type = 'text'; input.value = 'not-a-date'; input.removeAttribute('required'); }")
         with page.expect_response(lambda response: response.request.method == "POST" and
                                   response.url.split("?")[0].endswith("/cleaning/events")) as failure:
             page.locator("[data-cal-form]").evaluate("(form) => form.requestSubmit()")

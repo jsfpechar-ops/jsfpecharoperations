@@ -448,7 +448,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         assert booking.count() == 1
         booking.click()
         action = page.locator("[data-cal-details] [data-cal-open]")
-        assert action.is_visible() and action.inner_text().strip() == "Open"
+        assert action.is_visible() and action.inner_text().strip() == "Open stay"
         page.locator("[data-cal-details] [data-cal-close]").click()
 
         page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
