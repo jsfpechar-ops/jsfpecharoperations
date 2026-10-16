@@ -583,9 +583,11 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             assert more.get_attribute("aria-expanded") == "false"
 
                         visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
-                        assert len(visible_actions) >= 7, (
-                            f"stay row actions missing at {lang}/{width}: {geometry['rowActions']}"
+                        more_controls = [item for item in visible_actions if item["isMenu"]]
+                        assert len(more_controls) == stay_rows.count(), (
+                            f"More controls do not match rendered stays at {lang}/{width}: {geometry['rowActions']}"
                         )
+                        assert len(visible_actions) >= stay_rows.count(), geometry["rowActions"]
                         if width >= 1280:
                             hidden = [item for item in visible_actions if not item["fullyVisible"]]
                             assert not hidden, (
@@ -653,7 +655,9 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                 }).filter(x => x.right > innerWidth + 1 || x.left < -1).slice(0,25)""")
                 assert geometry["viewport"]["scrollWidth"] <= width, (geometry["viewport"], offenders)
                 visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
-                assert len(visible_actions) >= 7, geometry["rowActions"]
+                more_controls = [item for item in visible_actions if item["isMenu"]]
+                assert len(more_controls) == rows.count(), geometry["rowActions"]
+                assert len(visible_actions) >= rows.count(), geometry["rowActions"]
                 assert all(item["fullyVisible"] for item in visible_actions), geometry["rowActions"]
                 assert geometry["portalLinks"] == [], "legacy portal shortcut must stay absent"
                 assert page.locator(".stays-view .stay-portal-link").count() == 0
