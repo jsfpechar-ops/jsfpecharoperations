@@ -111,7 +111,12 @@ def _capture(page, name):
     if os.environ.get("UBYHOST_CAPTURE_FILTERS") == "1":
         configured = os.environ.get("UBYHOST_FILTERS_DIR")
         shots = os.environ.get("UBYHOST_SHOTS_DIR")
-        target = Path(configured) if configured else (Path(shots) / "filters" if shots else Path("/workspace/generated_images/host-design-application/filters"))
+        if configured:
+            target = Path(configured)
+        elif shots:
+            target = Path(shots) / "filters"
+        else:
+            target = Path("/workspace/generated_images/host-design-application/filters")
         target.mkdir(parents=True, exist_ok=True)
         page.evaluate("window.scrollTo(0, 0)")
         page.screenshot(path=str(target / f"{name}.png"), full_page=True)

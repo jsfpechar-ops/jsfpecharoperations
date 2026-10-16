@@ -65,7 +65,7 @@ body.host-workspace :is(input:not([type="checkbox"]):not([type="radio"]), select
 
 body.host-workspace :is(.action-group, .page-header .actions) > .btn,
 body.host-workspace :is(.action-group, .page-header .actions) > form > .btn {
-  min-height: 42px;
+  min-height: var(--action-height, 42px);
   border-radius: 8px;
 }
 
@@ -192,7 +192,7 @@ body.host-workspace .clickable-row .row-primary-link:hover {
   color: var(--brand-ink);
 }
 
-body.host-workspace :is(.dashboard-calendar, .dashboard-row, .queue-row) {
+body.host-workspace :is(.dashboard-calendar, .dashboard-row) {
   border-radius: 12px;
 }
 
@@ -220,32 +220,6 @@ body.host-workspace .dashboard-row-task {
 
 body.host-workspace .dashboard-row-actions .row-menu-trigger {
   border-radius: 8px;
-}
-
-body.host-workspace .work-queue {
-  padding-top: 26px;
-}
-
-body.host-workspace .queue-list {
-  gap: 7px;
-}
-
-body.host-workspace .queue-row,
-body.host-workspace .queue-row.urgent {
-  border-color: color-mix(in srgb, var(--border) 85%, white);
-  border-radius: 11px;
-  box-shadow: none;
-}
-
-body.host-workspace .queue-main > strong {
-  font-size: 16px;
-  font-weight: 680;
-}
-
-body.host-workspace .queue-dates,
-body.host-workspace .queue-due {
-  color: var(--ink-muted);
-  font-size: 12px;
 }
 
 body.host-workspace .pill {
@@ -330,7 +304,7 @@ body.host-workspace .dashboard-calendar .cal-event {
   }
 
   body.host-workspace .dashboard-calendar .cal-segment button {
-    min-height: 40px;
+    min-height: 44px;
   }
 }
 
@@ -359,7 +333,8 @@ body.host-workspace .dashboard-stats {
   margin: 0 auto 14px;
 }
 
-body.host-workspace .dashboard-stat {
+body.host-workspace .dashboard-stats .dashboard-stat {
+  display: inline-flex;
   min-height: 40px;
   padding: 6px 12px;
   gap: 8px;
@@ -367,22 +342,45 @@ body.host-workspace .dashboard-stat {
   box-shadow: none;
 }
 
-body.host-workspace .dashboard-stat strong {
+body.host-workspace .dashboard-stats .dashboard-stat strong {
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -.02em;
 }
 
-body.host-workspace .dashboard-stat span {
+body.host-workspace .dashboard-stats .dashboard-stat span {
   font-size: 13px;
   font-weight: 620;
 }
 
 @media (max-width: 760px) {
   body.host-workspace .dashboard-stats { gap: 6px; }
-  body.host-workspace .dashboard-stat {
+  body.host-workspace .dashboard-stats .dashboard-stat {
     min-height: 44px;
     padding-inline: 10px;
   }
-  body.host-workspace .dashboard-stat strong { font-size: 16px; }
+  body.host-workspace .dashboard-stats .dashboard-stat strong { font-size: 16px; }
+}
+
+/* Cleaning has deliberately larger dates and section headings for scanning. */
+body.host-workspace .cleaning-page h2 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+}
+
+body.host-workspace .cleaning-page .cleaning-date-group > h3 {
+  font-size: clamp(1.5rem, 3vw, 1.75rem);
+}
+
+@media (max-width: 760px) {
+  body.host-workspace .filter-toggle,
+  body.host-workspace .filter-panel-actions .btn,
+  body.host-workspace :is(.action-group, .page-header .actions) > .btn,
+  body.host-workspace :is(.action-group, .page-header .actions) > form > .btn {
+    min-height: 44px;
+  }
+
+  body.host-workspace .month-choice {
+    min-height: 44px;
+  }
 }

@@ -2,25 +2,26 @@
 
 ## Result
 
-Implemented the approved host-only visual refresh in `feature/host-design0123-20261016`, based on main commit `dc5f730d63f7183a6f261c5d0e44f0966430addf`.
+Implemented the owner-approved, host-only visual refresh in draft PR [#397](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397), on branch `feature/host-design0123-20261016`, based on main commit `dc5f730d63f7183a6f261c5d0e44f0966430addf`.
 
-The new stylesheet clarifies heading and section hierarchy, quiets white panels and list/table rows, aligns filter controls and summaries, compacts dashboard counts into inline pills, and refines calendar controls and queue rows. It loads only in the signed-in host shell and leaves shared tokens untouched.
+The new stylesheet clarifies page and section hierarchy, softens panel and list/table borders, aligns filter labels and actions, presents the three dashboard counts as compact inline pills, and refines the calendar controls and dashboard action rows. It loads only for the signed-in host shell; shared tokens remain untouched.
 
-The existing host template and CSS already provide the warm canvas, white surfaces, coral actions, 216px rail and centered 1080px work lane. This change improves hierarchy and control treatment while preserving those established geometry rules and existing data/action tracks.
+The existing shell already provides the warm canvas, white surfaces, coral actions, 216px rail and centered 1080px work lane. This implementation builds on that visual base while preserving the existing layout breakpoints and action tracks. Cleaning section and date headings retain their larger readable sizes. A review correction keeps touch controls at least 44px and removes unused prototype queue selectors.
 
 ## Behavior retained
 
-No endpoint, form method, CSRF field, data attribute, JavaScript interaction, permission, sharing rule, filing state, guest-data flow or dependency changed. Calendar creation, view preferences, overlap confirmation, filtering, no-JavaScript GET behavior, exports, saved views, archive/restore, guest facts and cleaning instructions remain on existing implementations.
+No route, endpoint, form method, CSRF field, data attribute, JavaScript interaction, permission, sharing rule, filing state, guest-data flow or dependency changed. Calendar creation and view preferences, overlap confirmation, filters and no-JavaScript GET behavior, exports, saved views, archive/restore, visible guest facts, stay controls, settings and expanded cleaning instructions remain on the current implementations.
 
 ## Files
 
-- `App/app/static/host-design0123.css`: host-scoped visual layer.
+- `App/app/static/host-design0123.css`: host-scoped hierarchy, controls, lists, dashboard and calendar styling.
 - `App/app/templates/base.html`: conditional host-only stylesheet link and cache key.
-- `App/tests/test_host_filter_panels_browser.py`: configurable screenshot destination for CI evidence.
-- `App/tests/test_host_wide_geometry_browser.py`: one configurable output-directory helper for every geometry artifact.
-- `.github/workflows/ci.yml`: required Chromium run includes both existing suites and uploads their screenshots.
-- This brief and report.
+- `App/tests/test_host_filter_panels_browser.py`: configurable screenshot destination.
+- `App/tests/test_host_wide_geometry_browser.py`: shared configurable evidence directory for all test outputs.
+- `.github/workflows/ci.yml`: required Chromium job adds both existing suites and uploads their screenshots.
+- `docs/tasks/0123-host-design.md`: brief and scoped file list.
+- `docs/context/status.md`, `docs/context/decisions.md`, `docs/context/known-issues.md`: review context.
 
 ## Validation
 
-A local browser run was unavailable in the managed environment. Required CI is triggered by the draft PR. It runs the existing full suite and required Chromium suites with browser skips treated as failures, and uploads wide-geometry and filter-panel screenshots under `dashboard-calendar-review`. The report will be updated with the exact CI result after it completes.
+No local browser runner was available in the managed environment. The draft PR runs the existing full suite and required Chromium suites with missing-browser skips treated as failures. Filter and wide-geometry screenshots use the existing `dashboard-calendar-review` upload artifact. The exact check results and screenshot-review outcome will be recorded in the PR body.
