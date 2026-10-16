@@ -546,6 +546,8 @@
     container.append(facts);
     if (event.conflict) container.append(el("p", "cal-overlap", labels.conflict));
     $("[data-cal-open]").href = event.url;
+    $("[data-cal-open]").textContent = labels.open;
+    $("[data-cal-open]").hidden = false;
     if (dayDialog.open) close(dayDialog);
     show(detailsDialog);
   }
@@ -809,7 +811,7 @@
         }
         throw new Error("save");
       }
-      // The POST has committed. Later refresh failures must never invite a duplicate.
+      // The POST has committed. Refresh failures stay in the saved state and never invite a duplicate.
       saving = false; close(createDialog);
       const [rangeStart, rangeEnd] = range();
       if (!displayOverlap({ start: savedDate, end: savedEnd }, rangeStart, rangeEnd)) state.date = savedDate;
@@ -819,27 +821,24 @@
       const targetUrl = new URL(data.url, location.href);
       if (root.dataset.lang) targetUrl.searchParams.set("lang", root.dataset.lang);
       const openHref = targetUrl.pathname + targetUrl.search + targetUrl.hash;
-      const retryCommittedRefresh = async () => {
-        await load();
-        let refreshed = !!lastLoadedRange;
-        if (refreshed && savedKind === "stay" && !cleaningMode) {
-          try { await refreshDashboardRegions(); } catch (_) { refreshed = false; }
+      const refreshCommitted = async () => {
+        let refreshed = false;
+        try {
+          await load();
+          refreshed = !!lastLoadedRange;
+          if (refreshed && savedKind === "stay" && !cleaningMode) await refreshDashboardRegions();
+        } catch (_) {
+          refreshed = false;
         }
         setMessage(refreshed ? createdMessage : createdMessage + " " + labels.refresh_failed,
-          refreshed ? false : retryCommittedRefresh, openHref, openLabel);
+          refreshed ? false : refreshCommitted, openHref, openLabel);
       };
-      await load();
-      let refreshed = !!lastLoadedRange;
-      if (refreshed && savedKind === "stay" && !cleaningMode) {
-        try { await refreshDashboardRegions(); } catch (_) { refreshed = false; }
-      }
-      setMessage(refreshed ? createdMessage : createdMessage + " " + labels.refresh_failed,
-        refreshed ? false : retryCommittedRefresh, openHref, openLabel);
+      await refreshCommitted();
     } catch (error) {
       $("[data-cal-save-error]").textContent = error.message === "session" ? labels.session_error : labels.save_error;
     } finally {
       saving = false; save.disabled = false; save.textContent = createKind === "cleaning" ? labels.create_cleaning : labels.create_stay;
-      $("[data-cal-type-choice]").forEach(button => { button.disabled = false; });
+      $$("[data-cal-type-choice]").forEach(button => { button.disabled = false; });
       if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
     }
   });

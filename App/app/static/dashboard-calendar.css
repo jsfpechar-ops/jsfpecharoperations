@@ -366,6 +366,7 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 .dashboard-calendar .cal-cleaning-label,
 .cleaning-page .dashboard-calendar .cal-cleaning-label {
   display:block;
+  flex:0 0 auto;
   min-width:0;
   overflow:hidden;
   white-space:nowrap;
@@ -399,7 +400,8 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
   width:13px;
   height:13px;
 }
-.dashboard-calendar .cal-event.is-gantt-cleaning.is-narrow-cleaning .cal-cleaning-label {
+.dashboard-calendar .cal-event.is-gantt-cleaning.is-narrow-cleaning .cal-cleaning-label,
+.dashboard-calendar .cal-event.is-gantt-cleaning.is-narrow-cleaning .cal-cleaning-property {
   display:none;
 }
 .dashboard-calendar .cal-event.is-gantt-cleaning .cal-cleaning-count {
