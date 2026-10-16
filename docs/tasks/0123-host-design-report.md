@@ -1,3 +1,5 @@
+> The later calendar/cleaning follow-up supersedes these UI details and contains the final tested application SHA and CI evidence: [0123 calendar and cleaning correction](0123-calendar-cleaning-fix-report.md).
+
 # 0123 implementation report
 
 Status: review

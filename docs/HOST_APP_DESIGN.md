@@ -4,7 +4,7 @@
 
 ## 0123 owner-approved update
 
-The owner-approved 0123 direction supersedes the earlier peach-dominant card treatment: signed-in work surfaces are white with near-black hierarchy and neutral separators; the 216px rail stays warm and uses existing UbyHost marks/icons. Dashboard uses an integrated calendar and flat stay-first attention rows. Stays uses Stay / Dates / Property / Guests / Police report / actions. Calendar View and Period selects mirror existing Auto/Calendar/Gantt and Month/Week/Year state. Properties owns the check-in/check-out hour pair used by Cleaning and TTLock; manual cleaning exceptions, TTLock buffers/timezone behavior and all current data/permission rules remain.
+The owner-approved 0123 direction supersedes the earlier peach-dominant card treatment: signed-in work surfaces are white with near-black hierarchy and neutral separators; the 216px rail stays warm and uses existing UbyHost marks/icons. Dashboard uses an integrated calendar and flat stay-first attention rows. Stays uses Stay / Dates / Property / Guests / Police report / actions. Calendar keeps native property/month/year selectors, Calendar/Gantt and Month/Week/Year segments, with Auto in Settings. Properties owns the check-in/check-out hour pair used by Cleaning and TTLock; manual cleaning exceptions, TTLock buffers/timezone behavior and all current data/permission rules remain.
 
 ## 1. Product idea
 
