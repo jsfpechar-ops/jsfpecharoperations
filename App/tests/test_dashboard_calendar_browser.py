@@ -492,9 +492,9 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         assert menu.locator(".row-menu-item").count() >= 1
         copy_button = menu.locator("button[data-copy]")
         assert copy_button.count() == 1
-        copy_button.click()
         copy_button_id = "refresh-copy-action"
         copy_button.evaluate("(button, id) => { button.id = id; }", copy_button_id)
+        copy_button.click()
         page.wait_for_function("""id => {
             const button = document.getElementById(id);
             return !!button && (button.classList.contains("is-copy-confirmed") ||
