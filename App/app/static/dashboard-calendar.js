@@ -112,10 +112,9 @@
     display: { property: preferences.property !== false, label: preferences.label !== false, guests: preferences.guests !== false }
   };
   let requestNumber = 0, controller = null, selection = null, suppressClickUntil = 0;
-  let keyboardAnchor = null, dayListDate = null, saving = false;
+  let keyboardAnchor = null, dayListDate = null, saving = false, createKind = cleaningMode ? "cleaning" : "stay";
   const focusReturn = new WeakMap();
-  let lastLoadedRange = null, refreshOnDetailsClose = false;
-  detailsDialog.addEventListener("close", () => { if (refreshOnDetailsClose) location.reload(); });
+  let lastLoadedRange = null;
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -150,7 +149,7 @@
     if (text) message.append(el("span", "", text));
     if (retry) {
       const button = el("button", "btn", labels.retry);
-      button.type = "button"; button.addEventListener("click", load); message.append(button);
+      button.type = "button"; button.addEventListener("click", typeof retry === "function" ? retry : load); message.append(button);
     }
   }
   function fillProperties(select, all) {
@@ -190,7 +189,7 @@
     $$("[data-calendar-add]").forEach(link => { link.setAttribute("aria-haspopup", "dialog"); });
   }
   function labelFor(event) {
-    if (cleaningMode) return (event.kind === "cleaning" ? cleaningLabels.title : cleaningLabels.booking) + " · " + event.property;
+    if (cleaningMode) return (event.kind === "cleaning" ? (cleaningLabels.title || labels.cleaning) : cleaningLabels.booking) + " · " + event.property;
     const parts = [];
     const label = (event.label || "").trim();
     // Imported placeholders are booking state, not a useful stay title.
@@ -234,14 +233,15 @@
     const status = cleaningMode ? (isCleaning ? cleaningLabels.title : cleaningLabels.booking) : statusFor(event);
     link.title = labelFor(event) + " · " + fullDate(event.start) + " – " + fullDate(event.end) + " · " + status +
       (event.conflict ? " · " + labels.conflict : "");
-    if (isCleaning) link.title = cleaningLabels.title + " · " + event.property + " · " + fullDate(event.start) +
+    if (isCleaning) link.title = (cleaningLabels.title || labels.cleaning) + " · " + event.property + " · " + fullDate(event.start) +
       (cleaningMode && event.startTime ? " · " + event.startTime + "–" + event.endTime : "") +
       (cleaningMode && event.timingUnavailable ? " · " + cleaningLabels.timing_unavailable : "") +
       (cleaningMode && event.conflict ? " · " + cleaningLabels.conflict : "");
     link.setAttribute("aria-label", link.title);
     if (isCleaning) {
       appendCleaningIcon(link);
-      link.append(el("span", "cal-cleaning-label", cleaningLabels.title));
+      link.append(el("span", "cal-cleaning-label", cleaningLabels.title || labels.cleaning));
+      link.append(el("span", "cal-cleaning-property", event.property || ""));
       link.append(el("span", "cal-cleaning-count", "1"));
     } else {
       link.append(el("span", "", labelFor(event)));
@@ -318,7 +318,7 @@
         const moreCleanings = hiddenCleanings.filter(segment => displayOverlap(segment.event, day, dayEnd)).length;
         if (!moreBookings && !moreCleanings) continue;
         const parts = [];
-        if (moreCleanings) parts.push(String(moreCleanings) + " " + cleaningLabels.overflow_cleanings);
+        if (moreCleanings) parts.push(String(moreCleanings) + " " + (cleaningLabels.overflow_cleanings || labels.more_cleanings));
         if (moreBookings) parts.push(cleaningMode ? String(moreBookings) + " " + cleaningLabels.overflow_bookings : format("more", { count: moreBookings }));
         const button = el("button", "cal-more cal-day-summary" + (moreCleanings ? " has-cleaning-overflow" : ""), parts.join(" · "));
         button.type = "button"; button.dataset.calMore = day;
@@ -327,7 +327,8 @@
         if (moreCleanings) {
           button.textContent = "";
           appendCleaningIcon(button, "cal-cleaning-icon cal-cleaning-overflow-icon");
-          button.append(el("span", "cal-cleaning-overflow-count", String(moreCleanings)));
+          button.append(el("span", "cal-cleaning-overflow-count", "+" + String(moreCleanings)));
+          button.append(el("span", "cal-cleaning-overflow-label", cleaningLabels.overflow_cleanings || labels.more_cleanings));
           button.append(el("span", "cal-summary-sr-only", parts.join(" · ")));
         }
         button.style.gridColumn = String(index + 1);
@@ -353,7 +354,7 @@
         ...(summaryCount ? ["44px"] : [])
       ];
       if (desktopRows.length) {
-        overlay.style.gridTemplateRows = desktopRows.join(" ");
+        overlay.style.setProperty("--desktop-event-rows", desktopRows.join(" "));
         overlay.style.setProperty("--mobile-event-rows", mobileRows.join(" "));
       }
       const row = el("div", "cal-week"); row.style.setProperty("--lanes", String(lanesShown));
@@ -398,7 +399,15 @@
     timeline.append(heading);
     state.properties.filter(property => !state.property || String(property.id) === state.property).forEach(property => {
       const events = state.events.filter(event => event.propertyId === property.id);
-      const layout = lanes(events, start, end), row = el("div", "cal-gantt-row");
+      const bookingLayout = lanes(events.filter(event => event.kind !== "cleaning"), start, end);
+      const cleaningLayout = lanes(events.filter(event => event.kind === "cleaning"), start, end);
+      const cleaningRows = cleaningLayout.count;
+      const segments = [
+        ...cleaningLayout.segments.map(segment => ({ ...segment })),
+        ...bookingLayout.segments.map(segment => ({ ...segment, lane: segment.lane + cleaningRows }))
+      ];
+      const layout = { segments, count: cleaningRows + bookingLayout.count };
+      const row = el("div", "cal-gantt-row");
       const name = el("div", "cal-gantt-name"); name.title = property.name;
       name.dataset.calColor = propertyColor(property.id); name.append(el("span", "", property.name));
       const track = el("div", "cal-gantt-track"); track.style.setProperty("--lanes", String(Math.max(1, layout.count)));
@@ -491,6 +500,18 @@
   });
   function openDetails(event) {
     const container = $("[data-cal-detail-content]"); container.replaceChildren();
+    if (event.kind === "cleaning" && !cleaningMode) {
+      container.append(el("h3", "cal-detail-property", event.property), el("p", "", fullDate(event.start)));
+      if (event.checkout) container.append(el("p", "", labels.checkout + ": " + fullDate(event.checkout) +
+        " · " + (event.checkoutTime || labels.time_missing)));
+      if (event.nextArrival) container.append(el("p", "", labels.next_arrival + ": " + fullDate(event.nextArrival) +
+        " · " + (event.checkinTime || labels.time_missing)));
+      if (event.timingUnavailable) container.append(el("p", "cleaning-warning", labels.cleaning_timing_unavailable));
+      $("[data-cal-open]").href = event.url; $("[data-cal-open]").textContent = labels.view_cleaning;
+      $("[data-cal-open]").hidden = false;
+      if (dayDialog.open) close(dayDialog);
+      show(detailsDialog); return;
+    }
     if (cleaningMode) {
       container.append(el("h3", "cal-detail-property", event.property), el("p", "", fullDate(event.start)));
       if (event.kind === "cleaning") {
@@ -539,6 +560,7 @@
     show(dayDialog);
   }
   function updateNights() {
+    if (createKind !== "stay") return;
     const start = form.elements.date_from.value, end = form.elements.date_to.value;
     form.elements.date_to.min = start && validDate(start) ? addDays(start, 1) : "1900-01-02";
     form.elements.date_to.setCustomValidity(start && end && end <= start ? labels.error_dates : "");
@@ -546,29 +568,55 @@
     const plural = new Intl.PluralRules(locale).select(nights);
     $("[data-cal-nights]").textContent = nights > 0 ? format(plural === "one" ? "nights_one" : plural === "few" ? "nights_few" : "nights_many", { count: nights }) : "";
     const canCheck = lastLoadedRange && start >= lastLoadedRange[0] && end <= lastLoadedRange[1];
-    const conflicts = canCheck && state.events.some(event => String(event.propertyId) === form.elements.apartment_id.value && overlap(event, start, end));
+    const conflicts = canCheck && state.events.some(event => event.kind !== "cleaning" && String(event.propertyId) === form.elements.apartment_id.value && overlap(event, start, end));
     $("[data-cal-overlap]").hidden = !conflicts;
     form.elements.allow_overlap.checked = false;
     $$("[data-cal-error-for]").forEach(node => { node.textContent = ""; });
     $("[data-cal-save-error]").textContent = "";
   }
-  function openCreate(start, end, property) {
+  function setCreateKind(kind) {
+    if (saving || readOnly) return;
+    createKind = kind === "cleaning" ? "cleaning" : "stay";
+    const cleaningFields = $("[data-cal-cleaning-fields]"), stayFields = $("[data-cal-stay-fields]");
+    cleaningFields.hidden = createKind !== "cleaning"; stayFields.hidden = createKind !== "stay";
+    cleaningFields.querySelectorAll("input,select,textarea").forEach(input => { input.disabled = createKind !== "cleaning"; });
+    stayFields.querySelectorAll("input,select,textarea").forEach(input => { input.disabled = createKind !== "stay"; });
+    form.action = createKind === "cleaning" ? "/cleaning/events" : "/reservations";
+    $("[data-cal-create-title]").textContent = createKind === "cleaning" ? labels.add_cleaning : labels.add_stay;
+    $("[data-cal-save]").textContent = createKind === "cleaning" ? labels.create_cleaning : labels.create_stay;
+    $("[data-cal-type-choice]").forEach(button => {
+      button.setAttribute("aria-pressed", String(button.dataset.calTypeChoice === createKind));
+    });
+    if (createKind === "stay") updateNights();
+  }
+  function placeCreate(anchor) {
+    if (!createDialog.open || matchMedia("(max-width:760px)").matches) return;
+    const box = createDialog.getBoundingClientRect();
+    const target = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : null;
+    let left = target ? target.left : (innerWidth - box.width) / 2;
+    let top = target ? target.bottom + 8 : (innerHeight - box.height) / 2;
+    left = Math.max(12, Math.min(left, innerWidth - box.width - 12));
+    if (top + box.height > innerHeight - 12 && target) top = target.top - box.height - 8;
+    top = Math.max(12, Math.min(top, innerHeight - box.height - 12));
+    createDialog.style.left = Math.round(left) + "px";
+    createDialog.style.top = Math.round(top) + "px";
+  }
+  function openCreate(start, end, property, kind = (cleaningMode ? "cleaning" : "stay"), anchor = null) {
     if (readOnly) { openDay(start); return; }
-    if (cleaningMode) {
-      root.dispatchEvent(new CustomEvent("cleaning:create", { detail: { date: start, property } })); return;
-    }
     if (!state.properties.length) return;
     cancelSelection();
     form.reset(); fillProperties(form.elements.apartment_id, false);
     const selected = property || state.property;
     if (selected) form.elements.apartment_id.value = String(selected);
     form.elements.date_from.value = start; form.elements.date_to.value = end;
+    form.elements.scheduled_date.value = start;
     $("[data-cal-save-error]").textContent = "";
-    $$("[data-cal-error-for]").forEach(node => { node.textContent = ""; });
-    updateNights();
+    $("[data-cal-error-for]").forEach(node => { node.textContent = ""; });
+    setCreateKind(kind);
     if (dayDialog.open) close(dayDialog);
     show(createDialog);
-    form.elements.apartment_id.focus();
+    requestAnimationFrame(() => placeCreate(anchor));
+    (createKind === "cleaning" ? form.elements.scheduled_date : form.elements.apartment_id).focus();
   }
   function paintSelection() {
     $$("[data-date]").forEach(node => {
@@ -609,7 +657,7 @@
     if (!selection || selection.pointerId !== event.pointerId) return;
     const chosen = { ...selection }; cancelSelection(); suppressClickUntil = Date.now() + 400;
     if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
-    openCreate(chosen.start, addDays(chosen.end, 1), chosen.property);
+    openCreate(chosen.start, addDays(chosen.end, 1), chosen.property, cleaningMode ? "cleaning" : "stay", root);
   });
   root.addEventListener("pointercancel", cancelSelection);
   root.addEventListener("lostpointercapture", cancelSelection);
@@ -634,7 +682,7 @@
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       const start = selection ? selection.start : day, end = addDays(selection ? selection.end : day, 1);
-      openCreate(start, end, cell.dataset.property || state.property);
+      openCreate(start, end, cell.dataset.property || state.property, cleaningMode ? "cleaning" : "stay", cell);
     }
   });
   root.addEventListener("click", event => {
@@ -648,7 +696,7 @@
     const day = target.closest("[data-cal-day]");
     if (day) {
       if (Date.now() < suppressClickUntil || state.loading || !lastLoadedRange) return;
-      openCreate(day.dataset.calDay, addDays(day.dataset.calDay, 1), day.dataset.property || state.property); return;
+      openCreate(day.dataset.calDay, addDays(day.dataset.calDay, 1), day.dataset.property || state.property, cleaningMode ? "cleaning" : "stay", day); return;
     }
     const more = target.closest("[data-cal-more]");
     if (more) { openDay(more.dataset.calMore); return; }
@@ -664,12 +712,15 @@
       state.date = next < "1900-01-01" ? "1900-01-01" : next > "2100-12-01" ? "2100-12-01" : next;
       load(); return;
     }
-    if (target.closest("[data-cal-day-add]") && dayListDate) openCreate(dayListDate, addDays(dayListDate, 1), state.property);
+    if (target.closest("[data-cal-day-add]") && dayListDate) openCreate(dayListDate, addDays(dayListDate, 1), state.property, cleaningMode ? "cleaning" : "stay", target.closest("[data-cal-day-add]"));
   });
   document.querySelectorAll("[data-calendar-add]").forEach(link => link.addEventListener("click", event => {
-    if (event.ctrlKey || event.metaKey || event.shiftKey || !state.properties.length) return;
-    event.preventDefault(); openCreate(root.dataset.today, addDays(root.dataset.today, 1), state.property);
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0 || !state.properties.length) return;
+    event.preventDefault();
+    openCreate(root.dataset.today, addDays(root.dataset.today, 1), state.property,
+      link.dataset.calCreateType || (cleaningMode ? "cleaning" : "stay"), link);
   }));
+  $("[data-cal-type-choice]").forEach(button => button.addEventListener("click", () => setCreateKind(button.dataset.calTypeChoice)));
   $("[data-cal-property]").addEventListener("change", event => {
     state.property = event.target.value;
     if (state.mode === "auto") state.scale = "month";
@@ -698,17 +749,38 @@
     state.display[input.dataset.calDisplay] = input.checked; savePreferences(); render();
   }));
   ["date_from", "date_to", "apartment_id"].forEach(name => form.elements[name].addEventListener("change", updateNights));
+  async function refreshDashboardRegions() {
+    const response = await fetch(location.pathname + location.search, {
+      credentials: "same-origin", headers: { Accept: "text/html" }, cache: "no-store"
+    });
+    if (!response.ok || response.redirected || !(response.headers.get("content-type") || "").includes("text/html"))
+      throw new Error("dashboard-refresh");
+    const parsed = new DOMParser().parseFromString(await response.text(), "text/html");
+    for (const key of ["stats", "action"]) {
+      const current = document.querySelector('[data-dashboard-refresh="' + key + '"]');
+      const fresh = parsed.querySelector('[data-dashboard-refresh="' + key + '"]');
+      if (!current || !fresh) throw new Error("dashboard-refresh");
+      current.replaceWith(document.importNode(fresh, true));
+    }
+  }
   form.addEventListener("submit", async event => {
-    event.preventDefault(); if (saving || !form.reportValidity()) return;
-    saving = true; const save = $("[data-cal-save]"); save.disabled = true; save.textContent = labels.saving;
+    event.preventDefault();
+    if (saving || !form.reportValidity()) return;
+    const savedKind = createKind, savedProperty = form.elements.apartment_id.value;
+    const savedDate = savedKind === "cleaning" ? form.elements.scheduled_date.value : form.elements.date_from.value;
+    const savedEnd = savedKind === "stay" ? form.elements.date_to.value : addDays(savedDate, 1);
+    const action = savedKind === "cleaning" ? "/cleaning/events" : "/reservations";
+    const payload = new FormData(form); // Capture before disabling the type controls.
+    const save = $("[data-cal-save]");
+    saving = true; save.disabled = true; save.textContent = labels.saving;
+    $$("[data-cal-type-choice]").forEach(button => { button.disabled = true; });
     $("[data-cal-save-error]").textContent = "";
-    const payload = new FormData(form);
     try {
-      const response = await fetch(form.action, { method: "POST", body: payload,
+      const response = await fetch(action, { method: "POST", body: payload,
         headers: { Accept: "application/json", "x-csrf-token": form.elements._csrf.value } });
       if (response.redirected || !(response.headers.get("content-type") || "").includes("application/json")) throw new Error("session");
       const data = await response.json();
-      if (response.status === 409 && data.overlap) {
+      if (response.status === 409 && data.overlap && savedKind === "stay") {
         $("[data-cal-overlap]").hidden = false;
         $("[data-cal-save-error]").textContent = data.error;
         form.elements.allow_overlap.focus(); return;
@@ -719,23 +791,33 @@
             const target = $$("[data-cal-error-for]").find(node => node.dataset.calErrorFor === field);
             if (target) target.textContent = text;
           });
-          const first = Object.keys(data.errors)[0]; if (form.elements[first]) form.elements[first].focus();
+          const first = Object.keys(data.errors)[0];
+          const input = form.elements.namedItem(first); if (input && !input.disabled) input.focus();
           return;
         }
         throw new Error("save");
       }
+      // The POST has committed. Subsequent refresh failures must never invite a duplicate.
       saving = false; close(createDialog);
-      // Show the newly created stay even if its dates lie outside the current view.
-      if (!overlap({ start: form.elements.date_from.value, end: form.elements.date_to.value }, ...range())) state.date = form.elements.date_from.value;
-      if (state.property && state.property !== form.elements.apartment_id.value) state.property = form.elements.apartment_id.value;
+      const [rangeStart, rangeEnd] = range();
+      if (!displayOverlap({ start: savedDate, end: savedEnd }, rangeStart, rangeEnd)) state.date = savedDate;
+      state.property = savedProperty;
       await load();
-      setMessage(labels.created);
-      const saved = state.events.find(item => item.id === data.id);
-      if (saved) { refreshOnDetailsClose = true; openDetails(saved); } else location.assign(data.url);
+      let refreshed = true;
+      if (savedKind === "stay" && !cleaningMode) {
+        try { await refreshDashboardRegions(); } catch (_) { refreshed = false; }
+      }
+      const createdMessage = savedKind === "cleaning" ? labels.cleaning_created : labels.stay_created;
+      if (refreshed) setMessage(createdMessage);
+      else setMessage(createdMessage + " " + labels.dashboard_refresh_failed, async () => {
+        try { await refreshDashboardRegions(); setMessage(createdMessage); }
+        catch (_) { setMessage(createdMessage + " " + labels.dashboard_refresh_failed, true); }
+      });
     } catch (error) {
       $("[data-cal-save-error]").textContent = error.message === "session" ? labels.session_error : labels.save_error;
     } finally {
-      saving = false; save.disabled = false; save.textContent = labels.save;
+      saving = false; save.disabled = false; save.textContent = createKind === "cleaning" ? labels.create_cleaning : labels.create_stay;
+      $$("[data-cal-type-choice]").forEach(button => { button.disabled = false; });
     }
   });
   window.addEventListener("resize", () => { if (!state.loading && lastLoadedRange) render(); });
@@ -750,6 +832,7 @@
   $$(".cal-enhanced").forEach(node => { node.hidden = false; });
   $("[data-cal-fallback]").hidden = true;
   fillProperties(form.elements.apartment_id, false);
+  setCreateKind(cleaningMode ? "cleaning" : "stay");
   root.addEventListener("calendar:refresh", load);
   if (cleaningMode) {
     $("[data-cal-day-add]").hidden = readOnly;

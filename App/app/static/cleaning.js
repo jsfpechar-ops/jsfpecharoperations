@@ -34,12 +34,6 @@
       root.querySelectorAll("dialog").forEach(dialog => { if (dialog.open) dialog.close(); });
     }
   });
-  root.addEventListener("cleaning:create", event => {
-    if (readOnly) return;
-    const params = new URLSearchParams({ date: event.detail.date });
-    if (event.detail.property) params.set("property", event.detail.property);
-    location.assign("/cleaning/new?" + params);
-  });
   root.addEventListener("click", event => {
     const link = event.target.closest("[data-cal-open]");
     if (link && link.getAttribute("href").startsWith("#")) {

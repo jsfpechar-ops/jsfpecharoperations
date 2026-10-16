@@ -64,13 +64,14 @@
 <header class="page-header host-today-head">
   <div><div class="host-today-date">{{ today.isoformat() | date_cz }}</div><h1>{{ t('dashboard.title') }}</h1></div>
   <div class="dashboard-actions"><div class="action-group action-group-stack">
-    <a class="btn primary" href="/reservations?new=1" data-calendar-add>+ {{ t('stays.add_stay') }}</a>
+    <a class="btn primary" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">+ {{ t('stays.add_stay') }}</a>
+    <a class="btn" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ t('calendar.add_cleaning') }}</a>
     {% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}
     {% if demo_loaded %}<form method="post" action="/demo/reset" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}"><button class="btn" type="submit">{{ t('demo.clear') }}</button></form>{% endif %}
   </div>{% if last_sync %}<p class="small muted">{{ t('dashboard.last_synced', when=last_sync | datetime_local) }}</p>{% endif %}</div>
 </header>
 {% if apartments %}
-<nav class="dashboard-stats" aria-label="{{ t('nav.overview') }}">
+<nav class="dashboard-stats" aria-label="{{ t('nav.overview') }}" data-dashboard-refresh="stats">
   <a class="dashboard-stat action {{ 'is-positive' if counts.attention > 0 }}" href="#needs-action"><strong>{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
   <a class="dashboard-stat ready {{ 'is-positive' if counts.ready > 0 }}" href="/reservations"><strong>{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
   <a class="dashboard-stat overdue {{ 'is-positive' if counts.overdue > 0 }}" href="#needs-action"><strong>{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
@@ -109,7 +110,7 @@
     </article>
   </aside>
   {% endif %}
-  <section id="needs-action">
+  <section id="needs-action" data-dashboard-refresh="action">
     <div class="section-heading"><h2>{{ t('dashboard.section.needs_action', count=counts.attention) }}</h2><a href="/reservations">{{ t('dashboard.section.view_stays') }}</a></div>
     {{ dashboard_rows(queue_groups.needs_action, 'dashboard.queue.empty.action') }}
     {% if additional_action_count %}<p class="small"><a href="/reservations">{{ t('dashboard.more_action', count=additional_action_count) }}</a></p>{% endif %}

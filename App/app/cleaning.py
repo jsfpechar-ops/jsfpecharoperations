@@ -200,7 +200,7 @@ def _code(property_row: dict) -> dict:
     }
 
 
-def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | None = None) -> dict:
+def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | None = None, *, include_private: bool = True) -> dict:
     reconcile(owner_id)
     homes = properties(owner_id, ids)
     output = {"properties": [{"id": p["id"], "name": p["internal_name"]} for p in homes],
@@ -213,7 +213,7 @@ def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | Non
             "AND status = 'active' AND archived_at IS NULL AND COALESCE(source, '') <> 'demo' "
             "ORDER BY date_from, date_to, id", (home["id"],),
         )
-        code = _code(home)
+        code = _code(home) if include_private else {"value": "", "source": "", "pending": ""}
         checkout_time, checkin_time = _hour(home, "checkout"), _hour(home, "checkin")
         for stay in stays:
             if stay["date_from"] < last.isoformat() and stay["date_to"] >= first.isoformat():
@@ -277,9 +277,9 @@ def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | Non
                 "endTime": event["end_time"] if explicit_window_valid else None,
                 "checkout": departure, "checkoutTime": checkout_time,
                 "nextArrival": arrival, "checkinTime": checkin_time,
-                "notes": db.decrypt_field(event["notes_enc"]) if event["notes_enc"] else "",
-                "instructions": home["cleaning_instructions"] or "", "code": code["value"],
-                "codeSource": code["source"], "codePending": code["pending"],
+                "notes": (db.decrypt_field(event["notes_enc"]) if event["notes_enc"] else "") if include_private else "",
+                "instructions": (home["cleaning_instructions"] or "") if include_private else "",
+                "code": code["value"], "codeSource": code["source"], "codePending": code["pending"],
                 "origin": "automatic" if source else "manual", "overridden": bool(event["overridden"]),
                 "revision": event["revision"], "conflict": bool(warning), "tone": "neutral",
                 "label": "", "expected": None, "url": f"#cleaning-{event['id']}",

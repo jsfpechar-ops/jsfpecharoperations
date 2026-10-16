@@ -44,6 +44,7 @@
 .cal-day.is-today .cal-day-number { color:var(--teal); font-weight:750; }
 .cal-day.is-outside .cal-day-number { color:var(--ink-muted); opacity:.65; }
 .cal-week-events { position:absolute; left:1px; right:1px; top:28px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); grid-auto-rows:var(--event-height); row-gap:2px; pointer-events:none; }
+.cal-week-events { grid-template-rows:var(--desktop-event-rows); }
 [data-cal-color="teal"] { --cal-ink:var(--teal); --cal-fill:var(--teal-bg); }
 [data-cal-color="blue"] { --cal-ink:var(--blue); --cal-fill:var(--blue-bg); }
 [data-cal-color="purple"] { --cal-ink:var(--purple); --cal-fill:var(--purple-bg); }
@@ -109,6 +110,21 @@
 .cal-day-list { display:grid; gap:8px; }
 .cal-day-list .cal-event { min-height:44px; white-space:normal; margin:0; }
 .cal-day-list .cal-event span:last-child { white-space:normal; }
+.cal-day-list .cal-event.is-cleaning-marker {
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns:18px auto minmax(0,1fr);
+  justify-content:stretch;
+  align-content:center;
+  height:auto;
+  min-height:48px;
+  max-height:none;
+  padding:7px 10px;
+  white-space:normal;
+}
+.cal-day-list .cal-cleaning-label { min-width:max-content; overflow:visible; }
+.cal-day-list .cal-cleaning-property { max-width:none; min-width:0; white-space:normal; overflow-wrap:anywhere; }
+.cal-day-list .cal-event.is-cleaning-marker .cal-cleaning-count { display:none; }
 @media (max-width:1100px) and (min-width:761px) {
   .cal-toolbar { grid-template-columns:1fr auto; gap:8px; }
   .cal-toolbar h3 { text-align:right; }
@@ -135,7 +151,13 @@
   .cal-week { --event-height:44px; }
   .cal-week-days { min-height:calc(48px + var(--lanes,1) * 46px); }
   .cal-day-number { min-height:44px; height:44px; padding:6px; }
-  .cal-week-events { top:46px; }
+  .cal-week-events { top:46px; grid-template-rows:var(--mobile-event-rows); }
+  .dashboard-calendar .cal-event.is-cleaning-marker:not(.is-gantt-cleaning),
+  .cleaning-page .dashboard-calendar .cal-event.is-cleaning-marker:not(.is-gantt-cleaning) { height:46px; min-height:46px; max-height:46px; padding:0 7px; }
+  .dashboard-calendar .cal-cleaning-property { display:none; }
+  .dashboard-calendar .cal-cleaning-label { display:none; }
+  .dashboard-calendar .cal-cleaning-count { display:inline-flex; align-items:center; font-size:10px; line-height:12px; }
+  .dashboard-calendar .cal-event.is-gantt-cleaning .cal-cleaning-property { display:none; }
   .cal-event { font-size:11px; padding:4px; }
   .cal-more { min-height:44px; font-size:10px; }
   .cal-gantt-timeline { min-width:calc(150px + var(--days) * 44px); }
@@ -349,6 +371,16 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
   white-space:nowrap;
   text-overflow:clip;
 }
+.dashboard-calendar .cal-cleaning-property {
+  display:block;
+  flex:0 1 auto;
+  min-width:0;
+  max-width:45%;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-weight:650;
+}
 .dashboard-calendar .cal-cleaning-count,
 .cleaning-page .dashboard-calendar .cal-cleaning-count {
   display:none;
@@ -475,3 +507,44 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
     height:16px;
   }
 }
+
+/* One shared light creation popover for stays and cleanings. */
+.cal-create-popover {
+  position:fixed;
+  margin:0;
+  left:12px;
+  top:12px;
+  width:min(480px,calc(100vw - 24px));
+  max-height:calc(100dvh - 24px);
+  overflow:auto;
+}
+.cal-create-popover .cal-dialog-heading { margin-bottom:10px; }
+.cal-create-types { display:flex; gap:6px; margin:0 0 14px; }
+.cal-create-types .btn { min-height:42px; }
+.cal-create-types .btn[aria-pressed="true"] { border-color:var(--brand-ink); background:var(--brand-soft); color:var(--ink); font-weight:750; }
+.cal-create-popover textarea { box-sizing:border-box; width:100%; min-height:86px; resize:vertical; }
+.cal-create-popover [data-cal-cleaning-fields][hidden],
+.cal-create-popover [data-cal-stay-fields][hidden] { display:none; }
+@media (max-width:760px) {
+  .cal-create-popover {
+    inset:auto 8px 8px;
+    width:auto;
+    max-width:none;
+    max-height:min(78dvh,calc(100dvh - 16px));
+    border-radius:14px;
+  }
+  .cal-create-types .btn { min-height:44px; flex:1 1 0; }
+}
+.dashboard-calendar .cal-cleaning-overflow-label {
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:10px;
+  line-height:14px;
+  font-weight:750;
+}
+@media (max-width:760px) {
+  .dashboard-calendar .cal-cleaning-overflow-label { display:none; }
+}
+.cal-day-list .cal-event.is-cleaning-marker .cal-cleaning-label { display:block; }

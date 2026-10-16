@@ -141,12 +141,25 @@ async def create_event(request: Request):
     if guard:
         return guard
     values = dict(await request.form())
+    wants_json = "application/json" in request.headers.get("accept", "")
     try:
         home = _home(request, int(values.get("apartment_id", 0)))
-        cleaning.save_event(home["id"], values)
+        event_id = cleaning.save_event(home["id"], values)
     except (ValueError, TypeError) as exc:
-        return _editor(request, values, error=str(exc) if str(exc) in {"dates", "times", "notes"} else "property",
-                       status_code=422)
+        error = str(exc) if str(exc) in {"dates", "times", "notes", "property"} else "property"
+        if wants_json:
+            translate = cleaning_i18n.translator(_lang(request))
+            messages = {"dates": translate("dates"), "times": translate("times"),
+                        "notes": translate("notes_error"), "property": translate("property_error")}
+            field = {"dates": "scheduled_date", "times": "scheduled_date", "notes": "notes",
+                     "property": "apartment_id"}[error]
+            return JSONResponse({"errors": {field: messages[error]}}, status_code=422, headers=PRIVATE)
+        return _editor(request, values, error=error, status_code=422)
+    if wants_json:
+        scheduled = values.get("scheduled_date", "")
+        return JSONResponse({"id": event_id,
+                             "url": f"/cleaning?cal_date={scheduled}&property={home['id']}#cleaning-{event_id}"},
+                            status_code=201, headers=PRIVATE)
     return _back()
 
 
