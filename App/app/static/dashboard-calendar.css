@@ -600,3 +600,9 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
     display:none;
   }
 }
+
+/* Keep full day-dialog cleaning identity visible in both host and shared calendars. */
+.cleaning-page .dashboard-calendar .cal-day-list .cal-event.is-cleaning-marker .cal-cleaning-label,
+.cleaning-page .dashboard-calendar .cal-day-list .cal-event.is-cleaning-marker .cal-cleaning-property {
+  display:block;
+}

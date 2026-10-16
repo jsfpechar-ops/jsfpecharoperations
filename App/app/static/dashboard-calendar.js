@@ -586,6 +586,7 @@
       button.setAttribute("aria-pressed", String(button.dataset.calTypeChoice === createKind));
     });
     if (createKind === "stay") updateNights();
+    if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
   }
   let createAnchor = null, createAnchorDate = "";
   function placeCreate(anchor) {
@@ -824,7 +825,7 @@
         if (refreshed && savedKind === "stay" && !cleaningMode) {
           try { await refreshDashboardRegions(); } catch (_) { refreshed = false; }
         }
-        setMessage(refreshed ? createdMessage : createdMessage + " " + labels.dashboard_refresh_failed,
+        setMessage(refreshed ? createdMessage : createdMessage + " " + labels.refresh_failed,
           refreshed ? false : retryCommittedRefresh, openHref, openLabel);
       };
       await load();
@@ -832,13 +833,14 @@
       if (refreshed && savedKind === "stay" && !cleaningMode) {
         try { await refreshDashboardRegions(); } catch (_) { refreshed = false; }
       }
-      setMessage(refreshed ? createdMessage : createdMessage + " " + labels.dashboard_refresh_failed,
+      setMessage(refreshed ? createdMessage : createdMessage + " " + labels.refresh_failed,
         refreshed ? false : retryCommittedRefresh, openHref, openLabel);
     } catch (error) {
       $("[data-cal-save-error]").textContent = error.message === "session" ? labels.session_error : labels.save_error;
     } finally {
       saving = false; save.disabled = false; save.textContent = createKind === "cleaning" ? labels.create_cleaning : labels.create_stay;
-      $$("[data-cal-type-choice]").forEach(button => { button.disabled = false; });
+      $("[data-cal-type-choice]").forEach(button => { button.disabled = false; });
+      if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
     }
   });
   window.addEventListener("resize", () => {
