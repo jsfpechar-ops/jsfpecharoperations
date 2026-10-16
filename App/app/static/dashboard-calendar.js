@@ -36,8 +36,10 @@
   function autoView(mode, propertyCount) { return mode === "auto" ? (propertyCount >= 3 ? "gantt" : "calendar") : mode; }
   function lanes(events, start, end) {
     const leftEdge = dayPoint(start), rightEdge = dayPoint(end), ends = [], segments = [];
+    let cleaningLane = null;
     events.filter(event => eventPoint(event, "start") < rightEdge && eventPoint(event, "end") > leftEdge)
-      .slice().sort((a, b) => eventPoint(a, "start") - eventPoint(b, "start") ||
+      .slice().sort((a, b) => Number(a.kind === "cleaning") - Number(b.kind === "cleaning") ||
+        eventPoint(a, "start") - eventPoint(b, "start") ||
         eventPoint(a, "end") - eventPoint(b, "end") ||
         (Number.isFinite(a.id) && Number.isFinite(b.id) ? a.id - b.id : String(a.id).localeCompare(String(b.id))))
       .forEach(event => {
@@ -46,7 +48,9 @@
         const column = Math.floor(left - leftEdge);
         const lastColumn = Math.ceil(right - leftEdge);
         const length = Math.max(1, lastColumn - column);
-        let lane = ends.findIndex(last => last <= left);
+        if (event.kind === "cleaning" && cleaningLane === null) cleaningLane = ends.length;
+        let lane = ends.findIndex((last, index) => last <= left &&
+          (event.kind !== "cleaning" || index >= cleaningLane));
         if (lane < 0) lane = ends.length;
         ends[lane] = right;
         const lastDayStart = leftEdge + column + length - 1;
