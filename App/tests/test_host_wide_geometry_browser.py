@@ -372,11 +372,19 @@ def _assert_stay_track_content(geometry, *, max_date_lines=None):
             )
 
 
+def _output_dir():
+    configured = os.environ.get("UBYHOST_WIDE_GEOMETRY_DIR")
+    if configured:
+        return Path(configured)
+    shots = os.environ.get("UBYHOST_SHOTS_DIR")
+    if shots:
+        return Path(shots) / "wide"
+    return Path("/workspace/generated_images/host-wide-audit/after")
+
+
 def test_host_wide_lanes_align(wide_host, wide_base):
     """Shared headers, filters and results use the same centered lane."""
-    output_dir = Path(os.environ.get(
-        "UBYHOST_WIDE_GEOMETRY_DIR", "/workspace/generated_images/host-wide-audit/after"
-    ))
+    output_dir = _output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
     cookie = wide_host["cookie"]
     route_map = {
@@ -545,7 +553,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
 
 def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
     """Copy, More, portal, status and deadline content stays visible at mid widths."""
-    output_dir = Path("/workspace/generated_images/host-wide-audit/after")
+    output_dir = _output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
@@ -608,7 +616,7 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
     0077: the setup page is gone (0101: so is its URL); the property fee
     editor's header and Stay fee section are checked here instead.
     """
-    output_dir = Path("/workspace/generated_images/host-wide-audit/after")
+    output_dir = _output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
     routes = (
         f"/stay-fees/{wide_host['configured_apartment']}",
@@ -654,7 +662,7 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
 
 def test_mobile_property_save_bar_does_not_cover_focused_address_field(wide_host, wide_base):
     """The live save bar leaves the focused address input visible and usable."""
-    output_dir = Path("/workspace/generated_images/host-wide-audit/after")
+    output_dir = _output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
     rows = []
     with sync_api.sync_playwright() as playwright:
@@ -700,7 +708,7 @@ def test_mobile_property_save_bar_does_not_cover_focused_address_field(wide_host
 
 def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wide_base):
     """A real sidebar collapse preserves both desktop lanes in EN and CS."""
-    output_dir = Path("/workspace/generated_images/host-wide-audit/after")
+    output_dir = _output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
@@ -753,7 +761,7 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
 
 def test_dashboard_760_header_and_actions_remain_in_the_shared_lane(wide_host, wide_base):
     """The compact dashboard title stays left-aligned and controls stay contained."""
-    output_dir = Path("/workspace/generated_images/host-wide-audit/after")
+    output_dir = _output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())

@@ -1,0 +1,388 @@
+/* Host-only visual refresh for 0123. Keep shared tokens and guest/public
+   surfaces untouched; the established canvas, rail and work lane stay in host.css. */
+body.host-workspace {
+  font-size: 15px;
+  line-height: 1.52;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body.host-workspace h1 {
+  font-size: clamp(29px, 3vw, 36px);
+  font-weight: 740;
+  letter-spacing: -.035em;
+  line-height: 1.18;
+}
+
+body.host-workspace h2 {
+  font-size: 19px;
+  font-weight: 680;
+  letter-spacing: -.02em;
+  line-height: 1.32;
+}
+
+body.host-workspace h3 {
+  font-size: 16px;
+  font-weight: 660;
+  letter-spacing: -.01em;
+  line-height: 1.35;
+}
+
+body.host-workspace .page-header {
+  align-items: flex-end;
+  margin-bottom: 22px;
+}
+
+body.host-workspace .page-header .lede {
+  margin-top: 7px;
+  color: var(--ink-secondary);
+  line-height: 1.55;
+}
+
+body.host-workspace .panel {
+  border-color: color-mix(in srgb, var(--border) 84%, white);
+  border-radius: 13px;
+  background: var(--surface);
+}
+
+body.host-workspace .panel.quiet {
+  background: color-mix(in srgb, var(--canvas) 52%, white);
+}
+
+body.host-workspace .panel.tight {
+  border-radius: 12px;
+}
+
+body.host-workspace :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  border-color: var(--border-strong);
+  border-radius: 8px;
+}
+
+body.host-workspace :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
+  border-color: var(--brand);
+}
+
+body.host-workspace :is(.action-group, .page-header .actions) > .btn,
+body.host-workspace :is(.action-group, .page-header .actions) > form > .btn {
+  min-height: 42px;
+  border-radius: 8px;
+}
+
+body.host-workspace .section-head {
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+body.host-workspace .section-head h2 {
+  margin-bottom: 0;
+}
+
+body.host-workspace .filter-toolbar {
+  align-items: center;
+  gap: 14px 20px;
+  margin-bottom: 12px;
+}
+
+body.host-workspace .list-toolbar-main {
+  min-width: 0;
+  gap: 8px 14px;
+}
+
+body.host-workspace .filter-toggle {
+  min-height: 42px;
+  border-radius: 8px;
+  font-weight: 650;
+}
+
+body.host-workspace .filter-applied-summary {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+body.host-workspace .filters.panel.list-filter,
+body.host-workspace .host-filter-panel {
+  gap: 16px;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+body.host-workspace .filters .filter-fields {
+  align-items: end;
+  gap: 14px;
+}
+
+body.host-workspace .filters .field > label {
+  margin-bottom: 6px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+body.host-workspace .filter-panel-actions {
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+body.host-workspace .filter-panel-actions .btn {
+  min-height: 42px;
+  border-radius: 8px;
+}
+
+body.host-workspace .list-filter-period .month-row {
+  gap: 6px;
+}
+
+body.host-workspace .month-grid-panel {
+  border-color: var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-popover);
+}
+
+body.host-workspace .month-choice {
+  min-height: 40px;
+  border-radius: 8px;
+}
+
+body.host-workspace .month-choice.selected {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-weight: 700;
+}
+
+body.host-workspace table {
+  border-color: var(--border);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+body.host-workspace table thead th {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .025em;
+}
+
+body.host-workspace table tbody tr.clickable-row {
+  transition: background-color 120ms ease;
+}
+
+body.host-workspace table tbody tr.clickable-row > td {
+  border-bottom-color: color-mix(in srgb, var(--border) 78%, white);
+}
+
+body.host-workspace table tbody tr.clickable-row:hover,
+body.host-workspace table tbody tr.clickable-row:focus-within {
+  background: var(--surface-hover);
+}
+
+body.host-workspace .clickable-row .row-primary-link {
+  color: var(--ink);
+  font-weight: 650;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+body.host-workspace .clickable-row .row-primary-link:hover {
+  color: var(--brand-ink);
+}
+
+body.host-workspace :is(.dashboard-calendar, .dashboard-row, .queue-row) {
+  border-radius: 12px;
+}
+
+body.host-workspace .dashboard-row {
+  min-height: 76px;
+  padding: 14px 16px;
+  border-color: color-mix(in srgb, var(--border) 85%, white);
+}
+
+body.host-workspace .dashboard-row-dates {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+body.host-workspace .dashboard-row-property {
+  font-size: 16px;
+  font-weight: 680;
+}
+
+body.host-workspace .dashboard-row-task {
+  margin-top: 5px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+body.host-workspace .dashboard-row-actions .row-menu-trigger {
+  border-radius: 8px;
+}
+
+body.host-workspace .work-queue {
+  padding-top: 26px;
+}
+
+body.host-workspace .queue-list {
+  gap: 7px;
+}
+
+body.host-workspace .queue-row,
+body.host-workspace .queue-row.urgent {
+  border-color: color-mix(in srgb, var(--border) 85%, white);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+body.host-workspace .queue-main > strong {
+  font-size: 16px;
+  font-weight: 680;
+}
+
+body.host-workspace .queue-dates,
+body.host-workspace .queue-due {
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+body.host-workspace .pill {
+  min-height: 26px;
+  font-weight: 650;
+}
+
+body.host-workspace .dashboard-calendar {
+  margin-bottom: 20px;
+  padding: 14px;
+  border-color: color-mix(in srgb, var(--border) 84%, white);
+  border-radius: 13px;
+  box-shadow: none;
+}
+
+body.host-workspace .dashboard-calendar .cal-heading h2 {
+  color: var(--ink-secondary);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+body.host-workspace .dashboard-calendar :is(.cal-heading, .cal-toolbar) .btn,
+body.host-workspace .dashboard-calendar :is(.cal-heading, .cal-toolbar) select {
+  min-height: 38px;
+  height: 38px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+body.host-workspace .dashboard-calendar .cal-segment {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--canvas) 62%, white);
+}
+
+body.host-workspace .dashboard-calendar .cal-segment button {
+  min-height: 34px;
+  padding-inline: 10px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+body.host-workspace .dashboard-calendar .cal-segment button[aria-pressed="true"] {
+  color: var(--brand-ink);
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(54 34 26 / 9%);
+}
+
+body.host-workspace .dashboard-calendar .cal-weekdays,
+body.host-workspace .dashboard-calendar .cal-gantt-header {
+  background: color-mix(in srgb, var(--canvas) 70%, white);
+}
+
+body.host-workspace .dashboard-calendar .cal-event {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  body.host-workspace .page-header {
+    align-items: stretch;
+    margin-bottom: 18px;
+  }
+
+  body.host-workspace .filters.panel.list-filter,
+  body.host-workspace .host-filter-panel {
+    padding: 14px;
+  }
+
+  body.host-workspace .dashboard-row {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  body.host-workspace .dashboard-calendar {
+    padding: 10px;
+  }
+
+  body.host-workspace .dashboard-calendar :is(.cal-heading, .cal-toolbar) .btn,
+  body.host-workspace .dashboard-calendar :is(.cal-heading, .cal-toolbar) select {
+    min-height: 44px;
+    height: 44px;
+  }
+
+  body.host-workspace .dashboard-calendar .cal-segment button {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 390px) {
+  body.host-workspace .filter-toolbar-actions {
+    width: 100%;
+  }
+
+  body.host-workspace .filter-toolbar-actions > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.host-workspace table tbody tr.clickable-row {
+    transition: none;
+  }
+}
+
+/* The three overview counts are quiet inline counters above the calendar. */
+body.host-workspace .dashboard-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 auto 14px;
+}
+
+body.host-workspace .dashboard-stat {
+  min-height: 40px;
+  padding: 6px 12px;
+  gap: 8px;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+body.host-workspace .dashboard-stat strong {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+body.host-workspace .dashboard-stat span {
+  font-size: 13px;
+  font-weight: 620;
+}
+
+@media (max-width: 760px) {
+  body.host-workspace .dashboard-stats { gap: 6px; }
+  body.host-workspace .dashboard-stat {
+    min-height: 44px;
+    padding-inline: 10px;
+  }
+  body.host-workspace .dashboard-stat strong { font-size: 16px; }
+}
