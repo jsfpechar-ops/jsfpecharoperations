@@ -292,6 +292,13 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
     min-height:46px;
     box-sizing:border-box;
   }
+  body.host-workspace .dashboard-calendar .cal-toolbar .cal-segment,
+  body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
+  .cleaning-page .dashboard-calendar .cal-toolbar .cal-segment,
+  .cleaning-page .dashboard-calendar .cal-heading .cal-segment {
+    height:46px;
+    min-height:46px;
+  }
   body.host-workspace .dashboard-calendar .cal-toolbar .cal-arrow,
   body.host-workspace .dashboard-calendar .cal-toolbar .cal-settings,
   body.host-workspace .dashboard-calendar .cal-heading .cal-settings,
