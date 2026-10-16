@@ -103,7 +103,9 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         open_link = dashboard_row.locator(".dashboard-open")
         assert open_link.count() == 1 and open_link.is_visible()
         assert open_link.inner_text() == _t(lang, "common.open")
-        assert open_link.get_attribute("href") == f"/reservations/{stay_id}?return_to=/"
+        dashboard_id = dashboard_row.get_attribute("data-stay-id")
+        assert dashboard_id
+        assert open_link.get_attribute("href") == f"/reservations/{dashboard_id}?return_to=/"
         open_box = open_link.bounding_box()
         assert abs(open_box["height"] - (44 if width <= 760 else 42)) <= 1
         dashboard_row.locator(".row-menu-trigger").click()
