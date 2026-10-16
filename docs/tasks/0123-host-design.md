@@ -66,4 +66,4 @@ Stop if the proposed CSS requires a backend, sharing-policy, route, guest/public
 
 ## 9. Report
 
-The report is at `docs/tasks/0123-host-design-report.md`. Record exact required CI results and screenshot-review evidence in PR #397.
+The report is at `docs/tasks/0123-host-design-report.md`. See [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397/checks) for exact CI results and uploaded screenshots.

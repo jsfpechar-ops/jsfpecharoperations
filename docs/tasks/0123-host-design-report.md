@@ -24,4 +24,4 @@ No route, endpoint, form method, CSRF field, data attribute, JavaScript interact
 
 ## Validation
 
-No local browser runner was available in the managed environment. The draft PR runs the existing full suite and required Chromium suites with missing-browser skips treated as failures. Filter and wide-geometry screenshots use the existing `dashboard-calendar-review` upload artifact. The exact check results and screenshot-review outcome will be recorded in the PR body.
+No local browser runner was available in the managed environment. The draft PR runs the existing full suite and required Chromium suites with missing-browser skips treated as failures. Filter and wide-geometry screenshots use the existing `dashboard-calendar-review` upload artifact. See [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397/checks) for exact results and uploaded screenshots.

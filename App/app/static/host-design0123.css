@@ -294,7 +294,7 @@ body.host-workspace .dashboard-calendar .cal-event {
   }
 
   body.host-workspace .dashboard-calendar {
-    padding: 10px;
+    padding: 6px;
   }
 
   body.host-workspace .dashboard-calendar :is(.cal-heading, .cal-toolbar) .btn,
