@@ -250,14 +250,16 @@ def test_positive_action_count_uses_semantic_color_and_zeros_stay_neutral(host_w
 
 
 def test_stat_tiles_use_the_status_tokens():
-    """Positive lines use semantic tokens; zero cards retain a neutral base."""
-    template = (Path(__file__).resolve().parents[1] / "app" / "templates" / "dashboard.html").read_text()
-    assert ".dashboard-stat { --stat-color:var(--ink-muted);" in template
-    assert "background:#fff;" in template
-    for name, token in (("action", "status-action-border"),
-                        ("ready", "status-ready-ink"), ("overdue", "status-critical-border")):
-        assert f".dashboard-stat.{name}.is-positive {{ --stat-color:var(--{token}); }}" in template
-
+    """Positive counts keep semantic accents; zero counts use a neutral white pill."""
+    layer = (Path(__file__).resolve().parents[1] / "app" / "static" / "host-design0123.css").read_text()
+    assert "--stat-color:var(--ink-muted)" in layer
+    assert "background:#fff;" in layer
+    for selector, token in (
+        ("action.is-positive", "status-action-border"),
+        ("ready.is-positive", "status-ready-ink"),
+        ("overdue.is-positive", "status-critical-border"),
+    ):
+        assert f".dashboard-stat.{selector} {{ --stat-color:var(--{token}); }}" in layer
 
 def test_the_skipped_onboarding_still_gets_the_page_header(empty_host):
     """With the guidance dismissed there is no welcome card, so Overview needs its own h1."""

@@ -91,5 +91,5 @@ Grep. **HR**: owner decides.
 | K-U15 | Med review | Host forms/navigation | Fixed on staging; 0084 incl. K-U14 + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
-| K-OPS72 | Low open | watchdog | Server 72 h vs repo 6 h; align before override | Owner, 2026-10-15 |
-| K-UI01 | Review | Host UI | 44px targets; #397 redesign | PR #397 |
+| K-OPS72 | Low open | filing_watchdog.py | Server 72 h, repo 6 h; align code/tests before server override | Owner, 2026-10-15 |
+| K-UI01 | Fixed | Host UI | 44px targets restored | #397 |

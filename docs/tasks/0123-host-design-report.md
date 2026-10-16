@@ -13,4 +13,4 @@ Properties settings and the Property setup step own the only editable check-in/c
 
 ## Validation
 
-Implementation changes and focused regression coverage are committed on this branch. Required tests, browser geometry, screenshots and context lint are pending the next PR CI run because no local shell/browser environment is available. Check the exact results and uploaded screenshots in [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397/checks). No test pass or screenshot is claimed before CI completes.
+The first full run found two presentation assertions still tied to the prior markup, and calendar review found cleaning browser setup still expected Gantt as the default. This follow-up preserves the date-order and semantic-count assertions, and makes cleaning tests assert Auto's calendar choice before explicitly selecting Gantt for drag coverage. The corrected required run and screenshots are pending; no local shell/browser environment is available. Check exact results and uploaded screenshots in [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397/checks). No pass or screenshot is claimed before CI completes.

@@ -63,7 +63,7 @@ def browser_context(playwright, ws, origin, width=1280, js=True, signed_in=True)
 def loaded(page):
     page.wait_for_selector("[data-cal-body]", state="attached", timeout=10000)
     page.wait_for_function("() => document.querySelector('[data-cal-body]')?.getAttribute('aria-busy') === 'false'")
-    page.wait_for_selector(".cal-gantt-row")
+    page.wait_for_selector(".cal-gantt-row, .cal-week, .cal-year")
 
 
 def shot(page, name):
@@ -83,6 +83,9 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(f"{origin}/cleaning?lang={lang}")
         loaded(page)
+        assert page.locator("[data-cal-mode-select]").input_value() == "auto"
+        assert page.locator(".cal-week").count() > 0
+        assert page.locator(".cal-gantt-row").count() == 0
         assert page.locator(".cleaning-card").count() == 3
         assert page.locator(".cleaning-pin").first.inner_text() == "001234"
         assert page.locator("#cleaning-list input[type=checkbox]").count() == 0
@@ -114,6 +117,8 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         page.route("**/static/cleaning.js?*", delayed_list_script)
         page.goto(origin + "/cleaning?lang=en")
         loaded(page)
+        page.locator("[data-cal-mode-select]").select_option("gantt")
+        page.wait_for_selector(".cal-gantt-row")
         first = next(item for item in cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))["cleanings"]
                      if item["propertyId"] == ws["home"])
         source = page.locator(f'[data-cal-event="cleaning:{first["eventId"]}"]')

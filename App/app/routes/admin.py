@@ -2164,7 +2164,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     if hour_error:
         if setup_step:
             draft = dict(apartment_data)
-            draft.update(_property_draft(form))
+            draft.update({key: value for key, value in _property_draft(form).items() if key in form})
             for field in ("checkin_hour", "checkout_hour"):
                 if field in form:
                     draft[field] = _form_str(form, field)
@@ -2200,7 +2200,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         if not valid_pair:
             if setup_step:
                 draft = dict(apartment_data)
-                draft.update(_property_draft(form))
+                draft.update({key: value for key, value in _property_draft(form).items() if key in form})
                 draft.update({name: _form_str(form, name) for name in hour_values if name in form})
                 return _wizard_rerender(
                     request, apartment_id, "property", notice=_flash(request, "flash.error.door_code_hours"),

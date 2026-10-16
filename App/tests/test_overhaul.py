@@ -179,8 +179,9 @@ def _seed_receipt_for(stay_id: int) -> int:
 
 
 def _stay_dates(html: str) -> list[str]:
+    """Read arrival dates from the dedicated Dates column after the list redesign."""
     return re.findall(
-        r'class="row-primary-link"[^>]*>\s*(\d{2}\.\d{2}\.\d{4}) &ndash;',
+        r'class="stay-date-link"[^>]*>\s*(\d{2}\.\d{2}\.\d{4})',
         html,
     )
 

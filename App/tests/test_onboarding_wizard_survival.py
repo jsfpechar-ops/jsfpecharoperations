@@ -688,3 +688,43 @@ def test_unrelated_wizard_ignores_forged_lock_flags_with_legacy_hours(host):
         (apt_id,),
     )
     assert (saved["lock_provider"], saved["checkin_hour"], saved["checkout_hour"]) == ("ttlock", None, None)
+
+
+def test_property_hour_validation_rerender_keeps_draft_and_selection(host):
+    flat = _full_apartment(host)
+    response = host["client"].post(
+        f"/apartments/{flat['id']}",
+        data={
+            "internal_name": "Draft Flat",
+            "legal_entity_id": str(host["entity"]),
+            "city_en": "Brno",
+            "default_purpose": "10",
+            **ADDRESS,
+            "checkin_hour": "99",
+            "checkout_hour": "10",
+            "setup_step": "property",
+            "return_to": f"/apartments/{flat['id']}/setup/calendar",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "Draft Flat" in response.text and ADDRESS["addr_street"] in response.text
+    checkout = response.text.split('id="checkout_hour"', 1)[1].split("</select>", 1)[0]
+    assert 'option value="10" selected' in checkout
+
+
+def test_missing_property_hours_from_lock_step_keep_saved_property_draft(host, monkeypatch):
+    flat = _full_apartment(host)
+    monkeypatch.setattr(admin_routes.ttlock, "allowed_for", lambda _owner: True)
+    response = host["client"].post(
+        f"/apartments/{flat['id']}",
+        data={
+            "setup_step": "door_lock",
+            "door_code_section": "1",
+            "door_codes": "1",
+            "return_to": f"/apartments/{flat['id']}/setup/automation",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert flat["internal_name"] in response.text and ADDRESS["addr_street"] in response.text

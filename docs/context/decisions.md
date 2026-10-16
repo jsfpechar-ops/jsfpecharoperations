@@ -45,7 +45,7 @@ Append-only.
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
 - 2026-10-10 | UI decisions continue | cap | [UI](ui-decisions.md)
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
-- 2026-10-10 | PostHog replaces Umami; privacy settings live in the snippet | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
+- 2026-10-10 | PostHog replaces Umami; privacy settings live in snippet, not dashboard | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
 - 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; requests lib; 24 h cache; 20/h per user | owner | [0055](../tasks/0055-ares-lookup.md)
 - 2026-10-11 | Facility abbreviation: suffix after UBY-WS_ | owner | [0043](../tasks/0043-police-setup-fewer-fields.md)
@@ -53,4 +53,4 @@ Append-only.
 - 2026-10-12 | TTLock: -1026 = created/deleted; host provider, no SCCs; same-period reuse needs custom PIN/mail; retry deletion to end (0067–69) | [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
 - 2026-10-15 | Watchdog digest: server 72 h, repo 6 h; host warnings unchanged | owner | [OPERATIONS](../OPERATIONS.md)
-- 2026-10-16 | Host #397: flat white, real rail assets, safe stay-first rows, compact calendar; Properties owns hours used by Cleaning/TTLock | owner approved | [PR](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397)
+- 2026-10-16 | Host #397: approved flat-white workspace, safe stay-first rows, compact calendar; Properties owns Cleaning/TTLock hours | [PR](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397)
