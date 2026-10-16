@@ -17,3 +17,7 @@ Automatic cleaning is displayed on the checkout date between property checkout a
 [CI run 38920124400](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38920124400) passed all eight jobs on the tested application SHA. The full test job, smoke, Docker, context, secrets, and shellcheck passed. Calendar review passed **89 tests, 0 failures, 0 skips**; the required browser job passed **169 tests, 0 failures, 0 skips**.
 
 CI uploaded [calendar feature screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38920124400/artifacts/12053864908), [dashboard and calendar review screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38920124400/artifacts/12054434274), and [onboarding screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38920124400/artifacts/12055291824). The managed environment had no local browser or screenshot viewer, so I did not inspect rendered pixels; owner visual review remains.
+
+## Later follow-ups
+
+For the current Render staging hand-off, use [calendar creation report](0123-calendar-create-popup-report.md) and tested commit `a8a3de98db922c3ec1192e9f2d7e2927eec7cb29`. The 807e881 evidence above covers the earlier correction.

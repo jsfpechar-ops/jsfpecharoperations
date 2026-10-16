@@ -18,3 +18,9 @@ Evidence artifacts from the tested SHA:
 - [Onboarding screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38954296289/artifacts/12070648025)
 
 The screenshots were neither downloaded nor inspected locally. The tested application SHA is the Render hand-off. Any subsequent report/context commit is documentation-only; owner staging deployment remains manual. No merge or deployment was performed.
+
+Render staging steps:
+
+1. Open the staging service in Render.
+2. Choose Manual Deploy, then Deploy a specific commit.
+3. Paste the tested application SHA above and deploy.
