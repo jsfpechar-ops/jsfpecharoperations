@@ -419,7 +419,7 @@ def _assert_stay_menu_copy_geometry(page, width, row_index, locale, *, keyboard=
     expected_copy_label = "Copy guest form link" if locale == "en" else "Kopírovat odkaz na formulář hosta"
     assert copy.is_visible() and copy.inner_text().strip() == expected_copy_label
     source_id = copy.get_attribute("data-copy")
-    source = row.locator(f"input#{source_id}")
+    source = menu.locator(f"input#{source_id}")
     assert source.count() == 1
     assert "/l/" in source.input_value()
 
