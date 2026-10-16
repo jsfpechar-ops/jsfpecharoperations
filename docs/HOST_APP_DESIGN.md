@@ -217,10 +217,14 @@ The prototype contains sample states and is a visual reference. Production contr
 No database schema migration, dependency update, live filing, real e-mail delivery, public deployment or bank reconciliation is part of this change.
 
 ## Cleaning management (2026-10-16)
-The owner authorized implementation and a sidebar Cleaning entry. Reuse the
-0103 calendar/Gantt with typed cleaning blocks in a separate lane. The cleaning
-page defaults to the next 30 days; calendar filters and the full chronological
-list share one server result. List essentials use 18–20px text, 24–28px date/code
-type, high contrast, and no disclosures. Instructions are static text. No claim,
-assignment, completion, photos or comments. Permanent/manual property codes are
-independent of guest PINs. See [0104](tasks/0104-cleaning-management.md).
+The 0103 calendar/Gantt uses a distinct cleaning lane. Native property/month/year
+selectors and icon-and-label Calendar/Gantt and Month/Week/Year segments retain
+Auto and manual preferences. Calendar control groups are 36px desktop and 46px
+mobile, with 44px segment buttons. Cleaning uses compact chronological groups
+with 17px date headings and readable 14–16px facts. Automatic turnover is on
+the actual checkout date between Properties check-out and check-in hours; a later
+arrival is context only. Missing or invalid hours show an unavailable warning;
+any fallback is visual only. Explicit legacy event windows remain supported.
+The whole code section is omitted when no usable code exists. Existing sharing,
+demo exclusions and actions remain. See [0123 follow-up](tasks/0123-calendar-cleaning-fix.md)
+and [0104](tasks/0104-cleaning-management.md).
