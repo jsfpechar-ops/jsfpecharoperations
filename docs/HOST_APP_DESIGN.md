@@ -226,5 +226,9 @@ the actual checkout date between Properties check-out and check-in hours; a late
 arrival is context only. Missing or invalid hours show an unavailable warning;
 any fallback is visual only. Explicit legacy event windows remain supported.
 The whole code section is omitted when no usable code exists. Existing sharing,
-demo exclusions and actions remain. See [0123 follow-up](tasks/0123-calendar-cleaning-fix.md)
+demo exclusions and actions remain. Cleaning markers fill the scheduled day as a
+visual cue without replacing the actual property-hour window. Month/week
+prioritizes cleaning; typed Gantt keeps bookings first with a distinct cleaning
+band. Both host calendars support in-page Stay/Cleaning creation, and Dashboard
+refresh binds imported host controls idempotently. See [0123 follow-up](tasks/0123-calendar-cleaning-fix.md)
 and [0104](tasks/0104-cleaning-management.md).
