@@ -75,7 +75,7 @@ body.host-workspace .dashboard-row-task { margin-top:6px; }
 body.host-workspace .dashboard-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; }
 body.host-workspace .dashboard-row-actions .row-menu, body.host-workspace .dashboard-row-actions .row-menu-trigger { width:42px; min-width:42px; }
 body.host-workspace .dashboard-row-actions .row-menu-trigger { height:42px; min-height:42px; padding:0; }
-body.host-workspace .dashboard-row-open { min-width:74px; }
+body.host-workspace .dashboard-row-actions .dashboard-open { min-width:74px; }
 body.host-workspace .dashboard-calendar { margin:0 auto 24px; padding:16px 0; border:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); border-radius:0; background:#fff; }
 body.host-workspace .cal-heading { margin-bottom:8px; }
 body.host-workspace .cal-heading h2 { margin:0; font-size:20px; }
