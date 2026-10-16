@@ -382,6 +382,68 @@ def _output_dir():
     return Path("/workspace/generated_images/host-wide-audit/after")
 
 
+def _assert_stay_menu_copy_geometry(page, width, row_index, locale, *, keyboard=False):
+    """Open a real synthetic stay menu and check its link action remains usable."""
+    row = page.locator(".stays-view tbody tr").nth(row_index)
+    trigger = row.locator("button.row-menu-trigger")
+    assert trigger.is_visible()
+    assert trigger.get_attribute("aria-label")
+    trigger_box = trigger.bounding_box()
+    assert trigger_box and trigger_box["height"] >= (44 if width <= 760 else 41), trigger_box
+
+    if keyboard:
+        trigger.focus()
+        trigger.press("Enter")
+        menu = page.locator(".row-menu-panel.is-open")
+        menu.wait_for(state="visible")
+        items = menu.locator('[role="menuitem"]')
+        assert items.count() >= 2
+        first = items.first
+        assert first.evaluate("(element) => element === document.activeElement")
+        first_label = first.inner_text().strip()
+        page.keyboard.press("ArrowDown")
+        second_label = page.evaluate("document.activeElement.innerText.trim()")
+        assert second_label and second_label != first_label, (first_label, second_label)
+        page.keyboard.press("Escape")
+        assert page.locator(".row-menu-panel.is-open").count() == 0
+        assert trigger.get_attribute("aria-expanded") == "false"
+        assert trigger.evaluate("(element) => element === document.activeElement")
+
+    trigger.click()
+    menu = page.locator(".row-menu-panel.is-open")
+    menu.wait_for(state="visible")
+    assert trigger.get_attribute("aria-expanded") == "true"
+    items = menu.locator('[role="menuitem"]')
+    copy = menu.locator('button[data-copy][role="menuitem"]')
+    assert copy.count() == 1, f"Copy guest form link missing in row {row_index}"
+    expected_copy_label = "Copy guest form link" if locale == "en" else "Kopírovat odkaz na formulář hosta"
+    assert copy.is_visible() and copy.inner_text().strip() == expected_copy_label
+    source_id = copy.get_attribute("data-copy")
+    source = row.locator(f"input#{source_id}")
+    assert source.count() == 1
+    assert "/l/" in source.input_value()
+
+    viewport = page.evaluate("({width: innerWidth, height: innerHeight})")
+    popup = menu.bounding_box()
+    assert popup and popup["x"] >= -1 and popup["y"] >= -1
+    assert popup["x"] + popup["width"] <= viewport["width"] + 1
+    assert popup["y"] + popup["height"] <= viewport["height"] + 1
+    min_item_height = 44 if width <= 390 else 36
+    for index in range(items.count()):
+        item = items.nth(index)
+        assert item.is_visible()
+        box = item.bounding_box()
+        assert box and box["height"] >= min_item_height, (width, row_index, index, box)
+        assert box["x"] >= popup["x"] - 1 and box["x"] + box["width"] <= popup["x"] + popup["width"] + 1
+        assert box["y"] >= popup["y"] - 1 and box["y"] + box["height"] <= popup["y"] + popup["height"] + 1
+        assert box["x"] >= -1 and box["x"] + box["width"] <= viewport["width"] + 1
+        assert box["y"] >= -1 and box["y"] + box["height"] <= viewport["height"] + 1
+
+    page.keyboard.press("Escape")
+    assert page.locator(".row-menu-panel.is-open").count() == 0
+    assert trigger.get_attribute("aria-expanded") == "false"
+
+
 def test_host_wide_lanes_align(wide_host, wide_base):
     """Shared headers, filters and results use the same centered lane."""
     output_dir = _output_dir()
@@ -505,6 +567,21 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                                 f"synthetic rendered stay state {state_label!r} missing at {lang}/{width}: "
                                 f"{status_text}"
                             )
+                        assert geometry["portalLinks"] == [], (
+                            f"legacy portal shortcut must stay absent: {geometry['portalLinks']}"
+                        )
+                        assert page.locator(".stays-view .stay-portal-link").count() == 0
+                        stay_rows = page.locator(".stays-view tbody tr")
+                        assert stay_rows.count() >= 4
+                        for row_index in range(stay_rows.count()):
+                            row = stay_rows.nth(row_index)
+                            date_link = row.locator("td.stay-col-stay a.row-primary-link")
+                            assert date_link.is_visible()
+                            assert date_link.get_attribute("href").startswith("/reservations/")
+                            more = row.locator("button.row-menu-trigger")
+                            assert more.is_visible() and more.get_attribute("aria-label")
+                            assert more.get_attribute("aria-expanded") == "false"
+
                         visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
                         assert len(visible_actions) >= 7, (
                             f"stay row actions missing at {lang}/{width}: {geometry['rowActions']}"
@@ -514,12 +591,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             assert not hidden, (
                                 f"stay row actions clipped by visible list panel at {lang}/{width}: {hidden}"
                             )
-                        for portal in geometry["portalLinks"]:
-                            assert portal["whiteSpace"] == "nowrap" and portal["height"] <= 24, (
-                                f"portal action wrapped at {lang}/{width}: {portal}"
-                            )
                         expected_action_height = 44 if width in MOBILE_WIDTHS else 42
-                        copy_groups = 0
                         for group in {item["rowGroup"] for item in visible_actions}:
                             grouped = [item for item in visible_actions if item["rowGroup"] == group]
                             menus = [item for item in grouped if item["isMenu"]]
@@ -532,10 +604,8 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                                 assert control["height"] >= expected_action_height - 1, (control, more)
                                 if not control["isCopy"]:
                                     assert abs(control["height"] - expected_action_height) <= 1, (control, more)
-                            copies = [item for item in grouped if item["isCopy"]]
-                            if copies:
-                                copy_groups += 1
-                        assert copy_groups >= 2, f"copy actions missing from synthetic incomplete rows: {visible_actions}"
+                        _assert_stay_menu_copy_geometry(page, width, 0, lang, keyboard=True)
+                        _assert_stay_menu_copy_geometry(page, width, 1, lang)
                     visible_text = page.locator("body").inner_text()
                     raw_keys = [line.strip() for line in visible_text.splitlines()
                                 if re.fullmatch(r"(?:common|confirm|host)\.[a-z0-9_.-]+", line.strip(), re.IGNORECASE)]
@@ -552,7 +622,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
 
 
 def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
-    """Copy, More, portal, status and deadline content stays visible at mid widths."""
+    """Native stay links and row-menu actions stay usable at mid widths."""
     output_dir = _output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
     with sync_api.sync_playwright() as playwright:
@@ -585,7 +655,17 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                 visible_actions = [item for item in geometry["rowActions"] if item["visible"]]
                 assert len(visible_actions) >= 7, geometry["rowActions"]
                 assert all(item["fullyVisible"] for item in visible_actions), geometry["rowActions"]
-                copy_groups = 0
+                assert geometry["portalLinks"] == [], "legacy portal shortcut must stay absent"
+                assert page.locator(".stays-view .stay-portal-link").count() == 0
+                rows = page.locator(".stays-view tbody tr")
+                assert rows.count() >= 4
+                for row_index in range(rows.count()):
+                    row = rows.nth(row_index)
+                    date_link = row.locator("td.stay-col-stay a.row-primary-link")
+                    assert date_link.is_visible()
+                    assert date_link.get_attribute("href").startswith("/reservations/")
+                    more = row.locator("button.row-menu-trigger")
+                    assert more.is_visible() and more.get_attribute("aria-label")
                 for group in {item["rowGroup"] for item in visible_actions}:
                     grouped = [item for item in visible_actions if item["rowGroup"] == group]
                     more = next(item for item in grouped if item["isMenu"])
@@ -596,13 +676,8 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                         assert control["height"] >= 41, (control, more)
                         if not control["isCopy"]:
                             assert abs(control["height"] - 42) <= 1, (control, more)
-                    copies = [item for item in grouped if item["isCopy"]]
-                    if copies:
-                        copy_groups += 1
-                assert copy_groups >= 2, geometry["rowActions"]
-                assert len(geometry["portalLinks"]) >= 1, "synthetic Airbnb portal action was not rendered"
-                assert all(item["whiteSpace"] == "nowrap" and item["height"] <= 24
-                           for item in geometry["portalLinks"]), geometry["portalLinks"]
+                _assert_stay_menu_copy_geometry(page, width, 0, lang, keyboard=True)
+                _assert_stay_menu_copy_geometry(page, width, 1, lang)
                 overflow_cells = [cell for cell in geometry["compactCells"]
                                   if cell["scrollWidth"] > cell["clientWidth"] + 1]
                 assert not overflow_cells, overflow_cells

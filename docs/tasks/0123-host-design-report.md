@@ -6,7 +6,7 @@ Implemented the owner-approved, host-only visual refresh in draft PR [#397](http
 
 The new stylesheet clarifies page and section hierarchy, softens panel and list/table borders, aligns filter labels and actions, presents the three dashboard counts as compact inline pills, and refines the calendar controls and dashboard action rows. It loads only for the signed-in host shell; shared tokens remain untouched.
 
-The existing shell already provides the warm canvas, white surfaces, coral actions, 216px rail and centered 1080px work lane. This implementation builds on that visual base while preserving the existing layout breakpoints and action tracks. Cleaning section and date headings retain their larger readable sizes. A review correction keeps touch controls at least 44px and removes unused prototype queue selectors.
+The existing shell already provides the warm canvas, white surfaces, coral actions, 216px rail and centered 1080px work lane. This implementation builds on that visual base while preserving the existing layout breakpoints and action tracks. Cleaning section and date headings retain their larger readable sizes. A review correction keeps touch controls at least 44px and removes unused prototype queue selectors. Desktop calendar controls retain compact geometry for the 1024px height bound.
 
 ## Behavior retained
 
@@ -24,4 +24,4 @@ No route, endpoint, form method, CSRF field, data attribute, JavaScript interact
 
 ## Validation
 
-No local browser runner was available in the managed environment. The draft PR runs the existing full suite and required Chromium suites with missing-browser skips treated as failures. Filter and wide-geometry screenshots use the existing `dashboard-calendar-review` upload artifact. See [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397/checks) for exact results and uploaded screenshots.
+No local browser runner was available in the managed environment. The draft PR runs the existing full suite and required Chromium suites with missing-browser skips treated as failures. The wide-geometry tests retain lane, viewport, text-track and trigger bounds while checking native date links and opening two synthetic stay menus per locale and viewport for the localized Copy guest form link, popup bounds, 44px mobile items and keyboard dismissal; they assert the removed portal shortcut is absent. Filter and wide-geometry screenshots use the existing `dashboard-calendar-review` upload artifact. See [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397/checks) for exact results and uploaded screenshots.

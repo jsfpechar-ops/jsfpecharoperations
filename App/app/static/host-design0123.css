@@ -243,8 +243,8 @@ body.host-workspace .dashboard-calendar .cal-heading h2 {
 
 body.host-workspace .dashboard-calendar :is(.cal-heading, .cal-toolbar) .btn,
 body.host-workspace .dashboard-calendar :is(.cal-heading, .cal-toolbar) select {
-  min-height: 38px;
-  height: 38px;
+  min-height: 32px;
+  height: 32px;
   border-radius: 8px;
   font-size: 13px;
 }
@@ -255,7 +255,7 @@ body.host-workspace .dashboard-calendar .cal-segment {
 }
 
 body.host-workspace .dashboard-calendar .cal-segment button {
-  min-height: 34px;
+  min-height: 26px;
   padding-inline: 10px;
   border-radius: 7px;
   font-size: 13px;

@@ -27,7 +27,7 @@ Adapt the signed-in host workspace to the approved warm canvas, white surfaces, 
 | `App/app/templates/base.html` | Edit | Load the versioned host layer only when signed-in navigation is shown |
 | `.github/workflows/ci.yml` | Edit | Add existing filter/wide geometry suites and evidence destinations to required Chromium job |
 | `App/tests/test_host_filter_panels_browser.py` | Edit | Route opt-in screenshot output through CI evidence directory |
-| `App/tests/test_host_wide_geometry_browser.py` | Edit | Use one configurable screenshot/geometry output directory |
+| `App/tests/test_host_wide_geometry_browser.py` | Edit | Configurable evidence output; geometry checks for current row-menu actions |
 | `docs/tasks/0123-host-design.md` | Add | Numbered implementation brief and scope |
 | `docs/tasks/0123-host-design-report.md` | Add/edit | Numbered report and validation result |
 | `docs/context/status.md` | Edit | Record PR and review state |
