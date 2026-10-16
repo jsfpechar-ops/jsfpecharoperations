@@ -7,6 +7,27 @@
   /* 0099: every clickable list row, table or dashboard card. */
   var ROW_SELECTOR = "tr[data-href], .clickable-row[data-href]";
 
+  function bindHostNodes(selector, attach) {
+    var seen = new WeakSet();
+    function visit(root) {
+      if (!root || !root.querySelectorAll) return;
+      if (root.matches && root.matches(selector) && !seen.has(root)) {
+        seen.add(root);
+        attach(root);
+      }
+      root.querySelectorAll(selector).forEach(function (node) {
+        if (seen.has(node)) return;
+        seen.add(node);
+        attach(node);
+      });
+    }
+    visit(document);
+    document.addEventListener("ubyhost:content-updated", function (event) {
+      var root = event.detail && event.detail.root;
+      if (root && root.isConnected) visit(root);
+    });
+  }
+
   document.documentElement.classList.add("has-js");
 
   function isCompact() {
@@ -350,7 +371,7 @@
   }
 
   function initCopy() {
-    document.querySelectorAll("[data-copy]").forEach(function (button) {
+    bindHostNodes("[data-copy]", function (button) {
       prepareCopyControl(button);
       button.addEventListener("click", function () {
         var target = document.getElementById(button.getAttribute("data-copy"));
@@ -471,7 +492,7 @@
       document.querySelectorAll(".row-menu-panel").forEach(closeRowMenu);
     }
 
-    document.querySelectorAll(".row-menu-trigger").forEach(function (trigger) {
+    bindHostNodes(".row-menu-trigger", function (trigger) {
       var panel = trigger.parentElement.querySelector(".row-menu-panel");
       if (!panel) return;
       trigger.addEventListener("click", function (event) {
@@ -732,7 +753,7 @@
     /* 0099: one behaviour for every list row (table rows and dashboard stay
        rows): click or Enter/Space opens it; controls inside keep their own
        action, and selecting text in a row does not navigate. */
-    document.querySelectorAll(ROW_SELECTOR).forEach(function (row) {
+    bindHostNodes(ROW_SELECTOR, function (row) {
       function openRow() {
         if (window.ubyhostSkeleton) window.ubyhostSkeleton.start();
         window.location.assign(row.getAttribute("data-href"));
@@ -890,7 +911,7 @@
   }
 
   function initDismissBanners() {
-    document.querySelectorAll("[data-dismiss-banner]").forEach(function (button) {
+    bindHostNodes("[data-dismiss-banner]", function (button) {
       button.addEventListener("click", function () {
         var banner = button.closest(".dismissible-banner, .banner");
         if (banner) banner.remove();
@@ -1368,7 +1389,7 @@
       if (typeof dialog.showModal === "function") dialog.showModal();
     }
 
-    document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+    bindHostNodes("form[data-confirm]", function (form) {
       form.addEventListener("submit", function (e) {
         if (form.dataset.confirmBypass === "1") {
           form.dataset.confirmBypass = "";
@@ -1379,7 +1400,7 @@
       });
     });
 
-    document.querySelectorAll("button[data-confirm]").forEach(function (button) {
+    bindHostNodes("button[data-confirm]", function (button) {
       button.addEventListener("click", function (e) {
         if (button.dataset.confirmBypass === "1") {
           button.dataset.confirmBypass = "";

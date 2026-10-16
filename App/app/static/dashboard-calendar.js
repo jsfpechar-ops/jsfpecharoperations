@@ -773,7 +773,11 @@
       const current = document.querySelector('[data-dashboard-refresh="' + key + '"]');
       const fresh = parsed.querySelector('[data-dashboard-refresh="' + key + '"]');
       if (!current || !fresh) throw new Error("dashboard-refresh");
-      current.replaceWith(document.importNode(fresh, true));
+      const imported = document.importNode(fresh, true);
+      current.replaceWith(imported);
+      if (key === "work") {
+        document.dispatchEvent(new CustomEvent("ubyhost:content-updated", { detail: { root: imported } }));
+      }
     }
   }
   form.addEventListener("submit", async event => {
