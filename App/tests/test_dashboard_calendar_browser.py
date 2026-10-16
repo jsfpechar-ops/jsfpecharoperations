@@ -317,8 +317,15 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                             )
                             assert max(heights) <= 102, heights
                             assert boxes[1]["height"] <= 725, boxes
+                    control_heights = page.locator(
+                        ".cal-view-segment, .cal-scale-segment, [data-cal-property], [data-cal-month], "
+                        "[data-cal-year], [data-cal-settings], [data-cal-today], [data-cal-prev], [data-cal-next]"
+                    ).evaluate_all(
+                        "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
+                    )
+                    assert control_heights and max(control_heights) - min(control_heights) <= 1, control_heights
                     if width <= 390:
-                        buttons = page.locator(".cal-view-segment button, .cal-scale-segment button, [data-cal-month], [data-cal-year]").evaluate_all(
+                        buttons = page.locator(".cal-view-segment button, .cal-scale-segment button").evaluate_all(
                             "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
                         )
                         groups = page.locator(".cal-view-segment, .cal-scale-segment, [data-cal-month], [data-cal-year]").evaluate_all(
@@ -346,4 +353,43 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         shot(page, f"collapsed-{locale}-{width}")
                 assert not errors
                 context.close()
+        browser.close()
+
+
+def test_calendar_week_boundary_clips_fractional_checkout_with_continuation_edges(calendar_workspace, calendar_origin, request):
+    ws = calendar_workspace
+    template = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (ws["properties"][0],))
+    apartment_id = db.insert("apartment", {
+        "owner_user_id": ws["owner"], "legal_entity_id": template["legal_entity_id"],
+        "internal_name": "Week boundary fixture", "active": 1, "created_at": db.utcnow(),
+        "automation_mode": "manual", "checkin_hour": 15, "checkout_hour": 11,
+    })
+    def cleanup():
+        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
+    request.addfinalizer(cleanup)
+    stay_id = make_stay(apartment_id, "2026-10-18", "2026-10-20", summary="Boundary booking")
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, ws, calendar_origin, width=1280, locale="en")
+        page.locator("[data-cal-property]").select_option(str(apartment_id))
+        page.wait_for_selector(".cal-week")
+        segments = page.locator(f'.cal-event[data-cal-event="{stay_id}"]')
+        assert segments.count() == 2
+        first, second = segments.nth(0), segments.nth(1)
+        assert first.get_attribute("class").find("continues-end") >= 0
+        assert second.get_attribute("class").find("continues-start") >= 0
+        first_box, second_box = first.bounding_box(), second.bounding_box()
+        sun = page.locator('.cal-day[data-date="2026-10-18"]').bounding_box()
+        mon = page.locator('.cal-day[data-date="2026-10-19"]').last.bounding_box()
+        tue = page.locator('.cal-day[data-date="2026-10-20"]').last.bounding_box()
+        expected_start = sun["x"] + sun["width"] * 15 / 24
+        expected_monday = mon["x"]
+        expected_checkout = tue["x"] + tue["width"] * 11 / 24
+        assert abs(first_box["x"] - expected_start) <= 4, (first_box, expected_start)
+        assert abs(first_box["x"] + first_box["width"] - expected_monday) <= 4, (first_box, expected_monday)
+        assert abs(second_box["x"] - expected_monday) <= 4, (second_box, expected_monday)
+        assert abs(second_box["x"] + second_box["width"] - expected_checkout) <= 4, (second_box, expected_checkout)
+        shot(page, "checkout-week-boundary-en-1280")
+        context.close()
         browser.close()

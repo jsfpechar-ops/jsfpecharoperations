@@ -1,7 +1,7 @@
 # 0123 Calendar and cleaning correction
 
 Status: in-progress
-Base/current head: 261e94a89ca07acaf832fb798e188eaed04be00c
+Base/current head: 4173e8fb8995b75e94bc51d305fa0610f43d60eb
 Branch: feature/host-design0123-20261016 | PR #397
 Executor: Luna executor
 Report: docs/tasks/0123-calendar-cleaning-fix-report.md

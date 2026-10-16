@@ -246,3 +246,60 @@ body.host-workspace .dashboard-calendar :is(.cal-heading,.cal-toolbar) select,
   min-width:0;
   overflow:hidden;
 }
+
+
+/* Align the complete control rectangles, including the icon-only actions. */
+body.host-workspace .dashboard-calendar .cal-toolbar .btn,
+body.host-workspace .dashboard-calendar .cal-heading .btn,
+body.host-workspace .dashboard-calendar .cal-toolbar select,
+body.host-workspace .dashboard-calendar .cal-heading select,
+.cleaning-page .dashboard-calendar .cal-toolbar .btn,
+.cleaning-page .dashboard-calendar .cal-heading .btn,
+.cleaning-page .dashboard-calendar .cal-toolbar select,
+.cleaning-page .dashboard-calendar .cal-heading select {
+  height:36px;
+  min-height:36px;
+  box-sizing:border-box;
+}
+body.host-workspace .dashboard-calendar .cal-toolbar .cal-arrow,
+body.host-workspace .dashboard-calendar .cal-toolbar .cal-settings,
+body.host-workspace .dashboard-calendar .cal-heading .cal-settings,
+.cleaning-page .dashboard-calendar .cal-toolbar .cal-arrow,
+.cleaning-page .dashboard-calendar .cal-toolbar .cal-settings,
+.cleaning-page .dashboard-calendar .cal-heading .cal-settings {
+  width:36px;
+  min-width:36px;
+  padding:0;
+}
+body.host-workspace .dashboard-calendar .cal-toolbar .cal-segment,
+body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
+.cleaning-page .dashboard-calendar .cal-toolbar .cal-segment,
+.cleaning-page .dashboard-calendar .cal-heading .cal-segment {
+  height:36px;
+  min-height:36px;
+  box-sizing:border-box;
+}
+@media (max-width:760px) {
+  body.host-workspace .dashboard-calendar .cal-toolbar .btn,
+  body.host-workspace .dashboard-calendar .cal-heading .btn,
+  body.host-workspace .dashboard-calendar .cal-toolbar select,
+  body.host-workspace .dashboard-calendar .cal-heading select,
+  .cleaning-page .dashboard-calendar .cal-toolbar .btn,
+  .cleaning-page .dashboard-calendar .cal-heading .btn,
+  .cleaning-page .dashboard-calendar .cal-toolbar select,
+  .cleaning-page .dashboard-calendar .cal-heading select {
+    height:46px;
+    min-height:46px;
+    box-sizing:border-box;
+  }
+  body.host-workspace .dashboard-calendar .cal-toolbar .cal-arrow,
+  body.host-workspace .dashboard-calendar .cal-toolbar .cal-settings,
+  body.host-workspace .dashboard-calendar .cal-heading .cal-settings,
+  .cleaning-page .dashboard-calendar .cal-toolbar .cal-arrow,
+  .cleaning-page .dashboard-calendar .cal-toolbar .cal-settings,
+  .cleaning-page .dashboard-calendar .cal-heading .cal-settings {
+    width:46px;
+    min-width:46px;
+    padding:0;
+  }
+}

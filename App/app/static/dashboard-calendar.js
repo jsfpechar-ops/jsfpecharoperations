@@ -257,10 +257,14 @@
       const overlay = el("div", "cal-week-events");
       visibleBookings.forEach(segment => {
         const link = eventLink(segment.event);
+        if (eventPoint(segment.event, "start") < dayPoint(week)) link.classList.add("continues-start");
+        if (eventPoint(segment.event, "end") > dayPoint(until)) link.classList.add("continues-end");
         placeEvent(link, segment); overlay.append(link);
       });
       visibleCleanings.forEach(segment => {
         const link = eventLink(segment.event);
+        if (eventPoint(segment.event, "start") < dayPoint(week)) link.classList.add("continues-start");
+        if (eventPoint(segment.event, "end") > dayPoint(until)) link.classList.add("continues-end");
         segment.lane = bookingBudget;
         placeEvent(link, segment); overlay.append(link);
       });
@@ -344,6 +348,8 @@
       }
       layout.segments.forEach(segment => {
         const link = eventLink(segment.event);
+        if (eventPoint(segment.event, "start") < dayPoint(start)) link.classList.add("continues-start");
+        if (eventPoint(segment.event, "end") > dayPoint(end)) link.classList.add("continues-end");
         placeEvent(link, segment); overlay.append(link);
       });
       track.append(days, overlay); row.append(name, track); timeline.append(row);
@@ -433,7 +439,7 @@
           container.append(access);
         }
         if (event.timingUnavailable) container.append(el("p", "cleaning-warning", cleaningLabels.timing_unavailable));
-        if (event.conflict && !event.timingUnavailable) container.append(el("p", "cleaning-warning", cleaningLabels.conflict));
+        if (event.conflict) container.append(el("p", "cleaning-warning", cleaningLabels.conflict));
         [event.notes, event.instructions].filter(Boolean).forEach(text => container.append(el("p", "cleaning-text", text)));
       } else container.append(el("p", "", cleaningLabels.booking + " · " + fullDate(event.end)));
       $("[data-cal-open]").href = event.url; $("[data-cal-open]").textContent = cleaningLabels.skip;

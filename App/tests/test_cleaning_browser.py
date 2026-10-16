@@ -91,8 +91,17 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         summaries = page.locator(".cal-day-summary")
         assert summaries.count() >= 1
         if width <= 760:
-            assert summaries.first.bounding_box()["height"] >= 44
-        assert ("Cleaning" if lang == "en" else "Úklid") in summaries.first.inner_text()
+            cleaning_summary = page.locator('.cal-day-summary[data-cal-more="2026-10-19"]')
+            assert cleaning_summary.count() == 1
+            assert cleaning_summary.bounding_box()["height"] >= 44
+            assert ("Cleaning" if lang == "en" else "Úklid") in cleaning_summary.inner_text()
+            cleaning_summary.click()
+            assert page.locator("[data-cal-day-dialog]").is_visible()
+            page.locator("[data-cal-day-dialog] [data-cal-close]").click()
+        else:
+            marker = page.locator('.cal-event[data-event-kind="cleaning"]').first
+            assert marker.count() == 1
+            assert ("Cleaning" if lang == "en" else "Úklid") in marker.get_attribute("aria-label")
         assert page.locator(".cleaning-pin").first.inner_text() == "001234"
         assert page.locator("#cleaning-list input[type=checkbox]").count() == 0
         assert page.locator("#cleaning-list").bounding_box()["y"] > page.locator("#calendar").bounding_box()["y"]
@@ -146,6 +155,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin):
             page = context.new_page()
             page.goto(origin + "/cleaning?lang=en")
             loaded(page)
+            shot(page, f"fractional-calendar-{width}")
             if width <= 760:
                 summary = page.locator('.cal-day-summary[data-cal-more="2026-10-17"]')
                 assert summary.count() == 1
@@ -159,8 +169,11 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin):
                 _assert_fractional_bar(page, cleaning_event["id"], "2026-10-17", 11, "2026-10-17", 15)
                 page.locator('[data-cal-view="gantt"]').click()
                 page.wait_for_selector(".cal-gantt-row")
-                _assert_fractional_bar(page, booking_event, "2026-10-15", 15, "2026-10-17", 11, ws["home"])
+                # Cleaning Gantt starts at today (Oct 16), so the prior-day check-in
+                # is clipped at the visible range edge while checkout stays fractional.
+                _assert_fractional_bar(page, booking_event, "2026-10-16", 0, "2026-10-17", 11, ws["home"])
                 _assert_fractional_bar(page, cleaning_event["id"], "2026-10-17", 11, "2026-10-17", 15, ws["home"])
+                shot(page, "fractional-gantt-1280")
             context.close()
             browser.close()
 
