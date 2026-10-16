@@ -102,7 +102,7 @@ body.host-workspace .row-menu-panel, body.host-workspace dialog, body.host-works
 @media (max-width:900px) {
   body.host-workspace #main-content { padding-left:24px; padding-right:24px; }
 }
-@media (max-width:720px) {
+@media (max-width:760px) {
   body.host-workspace :is(.btn,button.btn,input[type=submit]) { min-height:44px; }
   body.host-workspace :is(input:not([type=checkbox]):not([type=radio]),select,textarea) { min-height:44px; }
   body.host-workspace .cal-control-label select, body.host-workspace .dashboard-calendar .cal-toolbar :is(.btn,.cal-segment button), body.host-workspace .dashboard-calendar .cal-segment button { height:44px; min-height:44px; }
