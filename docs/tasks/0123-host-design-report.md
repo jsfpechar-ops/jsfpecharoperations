@@ -2,15 +2,18 @@
 
 Status: review
 Branch: feature/host-design0123-20261016 | PR: #397
+Application SHA: cfe277c4c31d6694fa89142d8d90b65f7e66cd88
 Base: 7835b528cec95a1d7a25798e0002d28c0255f346
 Brief: docs/tasks/0123-host-design.md
 
 ## Delivered
 
-The signed-in workspace now follows the approved flat-white direction with the existing UbyHost mark/icons, warm rail, coral actions, readable separators and centered lane. Dashboard counts stay compact; the calendar is integrated with compact View and Period selects that mirror the existing Auto/manual state. Dashboard and Stays are visibly reorganized around safe stay labels and full date ranges. Stays keeps filing controls and its More menu; detail keeps guest facts open and all existing reporting, door, invoice and receipt actions. Properties and Cleaning use the same flat section treatment.
+The signed-in workspace now uses the approved flat-white work surfaces, real UbyHost mark and sidebar icons, warm rail, coral actions, centered lane, and compact count pills. Dashboard and Stays use safe stay labels and visible native actions; Stays shows the full date range and retains filing, filters, saved views, export, archive and restore. Compact View/Period selects preserve Auto/manual calendar behavior and month/week/year. Stay details keep guest facts open and retain reporting, receipt, invoice and door-code controls.
 
-Properties settings and the Property setup step own the only editable check-in/check-out pair. Door-lock setup and Cleaning show inherited values and link to Properties. Missing fields preserve legacy values; malformed/out-of-range hours are rejected before writes. Cleaning derives automatic turnover windows from property hours, retains legacy cleaning time columns without using them as defaults, and preserves explicit per-cleaning adjustments. TTLock issuance continues through its existing property-hour, buffer and timezone/DST logic.
+Properties settings and the Property wizard own the editable check-in/check-out pair. Door-lock setup and Cleaning show inherited property hours and a Properties link. Cleaning automatic turnover uses property hours while preserving legacy columns and explicit event adjustments. TTLock issuance and its buffers/timezone behavior remain unchanged.
 
-## Validation
+## Verification
 
-The first full run found two presentation assertions still tied to the prior markup, and calendar review found cleaning browser setup still expected Gantt as the default. This follow-up preserves the date-order and semantic-count assertions, and makes cleaning tests assert Auto's calendar choice before explicitly selecting Gantt for drag coverage. The corrected required run and screenshots are pending; no local shell/browser environment is available. Check exact results and uploaded screenshots in [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397/checks). No pass or screenshot is claimed before CI completes.
+[CI run #1195](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38902687125) passed all eight jobs on the application SHA above. The required Chromium job passed 165 tests with 0 failures and 0 skips; calendar review passed 80 with 0 failures and 0 skips. The full test, smoke, Docker, context, secrets and shellcheck jobs also passed.
+
+CI uploaded [dashboard and calendar review screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38902687125/artifacts/12047441670), [calendar feature screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38902687125/artifacts/12046922584), and [onboarding screenshots](https://github.com/jsfpechar-ops/jsfpecharoperations/actions/runs/38902687125/artifacts/12047199318). The managed environment had no local browser or screenshot viewer, so I did not personally inspect the rendered pixels; owner visual review remains.
