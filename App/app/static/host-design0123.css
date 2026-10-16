@@ -102,6 +102,15 @@ body.host-workspace .row-menu-panel, body.host-workspace dialog, body.host-works
 @media (max-width:900px) {
   body.host-workspace #main-content { padding-left:24px; padding-right:24px; }
 }
+@media (min-width:761px) {
+  body.host-workspace .dashboard-calendar .cal-control-label {
+    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  body.host-workspace .dashboard-calendar .cal-toolbar {
+    grid-template-columns:auto minmax(0,1fr) auto;
+  }
+  body.host-workspace .dashboard-calendar .cal-toolbar-options { grid-column:auto; }
+}
 @media (max-width:760px) {
   body.host-workspace :is(.btn,button.btn,input[type=submit]) { min-height:44px; }
   body.host-workspace :is(input:not([type=checkbox]):not([type=radio]),select,textarea) { min-height:44px; }
