@@ -58,7 +58,7 @@ body.host-workspace .dashboard-stats .dashboard-stat.action.is-positive { --stat
 body.host-workspace .dashboard-stats .dashboard-stat.ready.is-positive { --stat-color:var(--status-ready-ink); }
 body.host-workspace .dashboard-stats .dashboard-stat.overdue.is-positive { --stat-color:var(--status-critical-border); }
 body.host-workspace .dashboard-stats .dashboard-stat::before { content:""; display:block; border-radius:50%; background:var(--stat-color); }
-body.host-workspace .dashboard-stats .dashboard-stat strong { color:var(--stat-color); }
+body.host-workspace .dashboard-stats .dashboard-stat strong { color:var(--ink); }
 body.host-workspace .dashboard-stats .dashboard-stat strong { font-size:16px; line-height:1; }
 body.host-workspace .dashboard-stats .dashboard-stat span { font-size:12px; line-height:1.2; font-weight:600; }
 body.host-workspace .dashboard-stats .dashboard-stat::before { width:7px; height:7px; flex-basis:7px; }
