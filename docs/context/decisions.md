@@ -53,4 +53,4 @@ Append-only.
 - 2026-10-12 | TTLock: -1026 = created/deleted; host provider, no SCCs; same-period reuse needs custom PIN/mail; retry deletion to end (0067–69) | [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
 - 2026-10-15 | Watchdog digest: server 72 h, repo 6 h; host warnings unchanged | owner | [OPERATIONS](../OPERATIONS.md)
-- 2026-10-16 | #397: white workspace; compact calendar; Property hours; fractional stays; bold cleaning day markers; in-page Stay/Cleaning creation | owner | [PR](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397)
+- 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning day markers; in-page creation | owner | [PR](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397)

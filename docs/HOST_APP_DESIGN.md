@@ -230,5 +230,6 @@ demo exclusions and actions remain. Cleaning markers fill the scheduled day as a
 visual cue without replacing the actual property-hour window. Month/week
 prioritizes cleaning; typed Gantt keeps bookings first with a distinct cleaning
 band. Both host calendars support in-page Stay/Cleaning creation, and Dashboard
-refresh binds imported host controls idempotently. See [0123 follow-up](tasks/0123-calendar-cleaning-fix.md)
+refresh binds imported host controls idempotently.
+Dashboard calendars display stays only; the Cleaning section retains scheduled cleaning markers and cleaning actions. See [0123 follow-up](tasks/0123-calendar-cleaning-fix.md)
 and [0104](tasks/0104-cleaning-management.md).

@@ -13,7 +13,7 @@ Updated: 2026-10-16.
 ## Now
 
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
-- Host #397: a8a3de9; CI 8/8, zero browser skips ([brief](../tasks/0123-calendar-create-popup.md)).
+- Host #397: b51e0bb; CI 8/8, zero browser skips ([brief](../tasks/0123-dashboard-stays-only.md)).
 
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.

@@ -92,4 +92,4 @@ Grep. **HR**: owner decides.
 | K-T01 | Low open | Tests | Order-dependent tests | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 | K-OPS72 | Low open | filing_watchdog.py | Server 72 h, repo 6 h; align code/tests before server override | Owner, 2026-10-15 |
-| K-UI01 | Fixed | Calendar/cleaning | Bold day markers; Property timing retained | #397 |
+| K-UI01 | Fixed | Calendar/cleaning | Dashboard stays only; bold Cleaning markers | #397 |

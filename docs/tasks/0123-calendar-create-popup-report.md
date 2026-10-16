@@ -24,3 +24,6 @@ Render staging steps:
 1. Open the staging service in Render.
 2. Choose Manual Deploy, then Deploy a specific commit.
 3. Paste the tested application SHA above and deploy.
+
+
+The current Dashboard stays-only behavior is documented in [the latest follow-up report](0123-dashboard-stays-only-report.md); tested application SHA `b51e0bb07a0c8eea81ebaaa0199348b42cf51984` supersedes the earlier Render hand-off above.

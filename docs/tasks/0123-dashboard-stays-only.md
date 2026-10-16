@@ -1,6 +1,6 @@
 # 0123: Dashboard calendar shows stays only
 
-Status: in-progress
+Status: done
 Base: c1ad0582da87baf2119bca36be459ff46e9abdd2
 Branch: feature/host-design0123-20261016 | PR #397
 Report: docs/tasks/0123-dashboard-stays-only-report.md
