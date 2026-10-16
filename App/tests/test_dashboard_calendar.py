@@ -93,7 +93,7 @@ def test_anonymous_calendar_requires_login(calendar_workspace):
     assert "/login" in response.headers["location"]
 
 
-def test_calendar_is_owner_scoped_and_checkout_exclusive(calendar_workspace):
+def test_calendar_is_owner_scoped_and_includes_checkout_boundary(calendar_workspace):
     ws = calendar_workspace
     db.update("apartment", ws["properties"][0], {"checkin_hour": 15, "checkout_hour": 11})
     boundary_checkout = make_stay(ws["properties"][0], "2026-09-28", "2026-10-01")
@@ -104,7 +104,6 @@ def test_calendar_is_owner_scoped_and_checkout_exclusive(calendar_workspace):
         make_stay(ws["properties"][0], status="cancelled"),
         make_stay(ws["properties"][0], status="ignored"),
         make_stay(ws["properties"][0], archived_at=db.utcnow()),
-        make_stay(ws["properties"][0], "2026-11-01", "2026-11-04"),
         make_stay(ws["properties"][0], "2026-11-01", "2026-11-04"),
     ]
     response = calendar_get(ws["client"])

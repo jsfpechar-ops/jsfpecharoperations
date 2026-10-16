@@ -28,6 +28,9 @@
     return dayPoint(day) + hour / 24 + minute / 1440;
   }
   function overlap(event, start, end) {
+    return dayPoint(event.start) < dayPoint(end) && dayPoint(event.end) > dayPoint(start);
+  }
+  function displayOverlap(event, start, end) {
     return eventPoint(event, "start") < dayPoint(end) && eventPoint(event, "end") > dayPoint(start);
   }
   function autoView(mode, propertyCount) { return mode === "auto" ? (propertyCount >= 3 ? "gantt" : "calendar") : mode; }
@@ -162,8 +165,8 @@
   }
   function syncControls() {
     const currentView = view(), [start, end] = range();
-    $("[data-cal-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calView === currentView)));
-    $("[data-cal-scale]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calScale === state.scale)));
+    $$("[data-cal-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calView === currentView)));
+    $$("[data-cal-scale]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.calScale === state.scale)));
     $("[data-cal-scales]").hidden = currentView === "gantt";
     $("[data-cal-month]").value = state.date.slice(5, 7);
     $("[data-cal-month]").hidden = currentView === "calendar" && state.scale === "year";
@@ -231,7 +234,7 @@
     for (let day = 0; day < 7; day++) weekdays.append(el("span", "", weekday(addDays(start, day))));
     body.append(weekdays);
     const mobile = matchMedia("(max-width:760px)").matches;
-    const bookingBudget = 1;
+    const bookingBudget = cleaningMode ? 1 : (mobile ? 1 : 2);
     for (let week = start; week < end; week = addDays(week, 7)) {
       const until = addDays(week, 7);
       const bookings = lanes(state.events.filter(event => event.kind !== "cleaning"), week, until);
@@ -254,19 +257,19 @@
       const overlay = el("div", "cal-week-events");
       visibleBookings.forEach(segment => {
         const link = eventLink(segment.event);
-        segment.lane = 0; placeEvent(link, segment); overlay.append(link);
+        placeEvent(link, segment); overlay.append(link);
       });
       visibleCleanings.forEach(segment => {
-        const link = eventLink(segment);
-        segment.lane = Math.min(visibleBookings.length, bookingBudget);
+        const link = eventLink(segment.event);
+        segment.lane = bookingBudget;
         placeEvent(link, segment); overlay.append(link);
       });
       let summaryCount = 0;
       for (let index = 0; index < 7; index++) {
         const day = addDays(week, index), dayEnd = addDays(day, 1);
-        const moreBookings = hiddenBookings.filter(segment => overlap(segment.event, day, dayEnd)).length;
-        const moreCleanings = hiddenCleanings.filter(segment => overlap(segment.event, day, dayEnd)).length;
-        const dayCleanings = visibleCleanings.filter(segment => overlap(segment.event, day, dayEnd)).length;
+        const moreBookings = hiddenBookings.filter(segment => displayOverlap(segment.event, day, dayEnd)).length;
+        const moreCleanings = hiddenCleanings.filter(segment => displayOverlap(segment.event, day, dayEnd)).length;
+        const dayCleanings = visibleCleanings.filter(segment => displayOverlap(segment.event, day, dayEnd)).length;
         if (!moreBookings && !moreCleanings && !(mobile && dayCleanings)) continue;
         const parts = [];
         if (moreBookings) parts.push(cleaningMode ? String(moreBookings) + " " + cleaningLabels.overflow_bookings : format("more", { count: moreBookings }));
@@ -276,11 +279,14 @@
         button.type = "button"; button.dataset.calMore = day;
         button.setAttribute("aria-label", fullDate(day) + " · " + parts.join(" · "));
         button.style.gridColumn = String(index + 1);
-        button.style.gridRow = String(bookingBudget + (cleanings.count ? 2 : 1));
+        const summaryRow = bookingBudget + (cleanings.count ? 2 : 1);
+        button.style.gridRow = String(summaryRow);
         overlay.append(button); summaryCount++;
       }
-      const visibleCount = Math.min(bookings.count, bookingBudget) + (cleanings.count ? 1 : 0);
-      const lanesShown = Math.max(1, visibleCount + (summaryCount ? 1 : 0));
+      const lastBookingRow = visibleBookings.reduce((max, segment) => Math.max(max, segment.lane + 1), 0);
+      const cleaningRow = cleanings.count ? bookingBudget + 1 : 0;
+      const summaryLane = summaryCount ? bookingBudget + (cleanings.count ? 2 : 1) : 0;
+      const lanesShown = Math.max(1, lastBookingRow, cleaningRow, summaryLane);
       const row = el("div", "cal-week"); row.style.setProperty("--lanes", String(lanesShown));
       row.append(days, overlay); body.append(row);
     }
@@ -298,7 +304,7 @@
         const button = el("button", "cal-mini-day", String(dateValue(day).getUTCDate()));
         button.type = "button"; button.dataset.calMonthOpen = day;
         button.setAttribute("aria-label", fullDate(day));
-        const events = state.events.filter(event => overlap(event, day, addDays(day, 1)));
+        const events = state.events.filter(event => displayOverlap(event, day, addDays(day, 1)));
         if (events.length) button.classList.add("has-stays");
         if (events.some(event => event.tone === "overdue" || event.tone === "action")) button.classList.add("has-action");
         if (day === root.dataset.today) button.classList.add("is-today");
@@ -426,7 +432,8 @@
             event.code + (event.codeSource === "ttlock" ? "#" : "")));
           container.append(access);
         }
-        if (event.conflict) container.append(el("p", "cleaning-warning", cleaningLabels.conflict));
+        if (event.timingUnavailable) container.append(el("p", "cleaning-warning", cleaningLabels.timing_unavailable));
+        if (event.conflict && !event.timingUnavailable) container.append(el("p", "cleaning-warning", cleaningLabels.conflict));
         [event.notes, event.instructions].filter(Boolean).forEach(text => container.append(el("p", "cleaning-text", text)));
       } else container.append(el("p", "", cleaningLabels.booking + " · " + fullDate(event.end)));
       $("[data-cal-open]").href = event.url; $("[data-cal-open]").textContent = cleaningLabels.skip;
@@ -451,7 +458,7 @@
   function openDay(day) {
     dayListDate = day; $("[data-cal-day-dialog] #cal-day-title").textContent = cleaningMode ? fullDate(day) : format("day_stays", { date: fullDate(day) });
     const list = $("[data-cal-day-list]"); list.replaceChildren(); list.className = "cal-day-list";
-    const events = state.events.filter(event => overlap(event, day, addDays(day, 1)));
+    const events = state.events.filter(event => displayOverlap(event, day, addDays(day, 1)));
     events.forEach(event => list.append(eventLink(event)));
     if (!events.length) list.append(el("p", "cal-empty", labels.none_today));
     show(dayDialog);
@@ -599,11 +606,11 @@
   }
   $("[data-cal-month]").addEventListener("change", changePeriod);
   $("[data-cal-year]").addEventListener("change", changePeriod);
-  $("[data-cal-view]").forEach(button => button.addEventListener("click", () => {
+  $$("[data-cal-view]").forEach(button => button.addEventListener("click", () => {
     state.mode = button.dataset.calView;
     savePreferences(); load();
   }));
-  $("[data-cal-scale]").forEach(button => button.addEventListener("click", () => {
+  $$("[data-cal-scale]").forEach(button => button.addEventListener("click", () => {
     state.mode = "calendar"; state.scale = button.dataset.calScale;
     savePreferences(); load();
   }));

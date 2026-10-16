@@ -201,3 +201,48 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment button { heigh
   body.host-workspace .dashboard-calendar .cal-toolbar .cal-segment button,
   body.host-workspace .dashboard-calendar .cal-heading .cal-segment button { height:40px; min-height:40px; }
 }
+
+/* Compact native selectors keep one clear chevron across host and shared calendars. */
+body.host-workspace .dashboard-calendar :is(.cal-heading,.cal-toolbar) select,
+.cleaning-page .dashboard-calendar :is(.cal-heading,.cal-toolbar) select {
+  appearance:none;
+  padding-right:28px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23625f5a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 8px center;
+  background-size:12px 8px;
+}
+@media (max-width:760px) {
+  body.host-workspace .dashboard-calendar .cal-toolbar .cal-segment,
+  body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
+  .cleaning-page .dashboard-calendar .cal-toolbar .cal-segment,
+  .cleaning-page .dashboard-calendar .cal-heading .cal-segment {
+    height:46px;
+    min-height:46px;
+    padding:0;
+  }
+  body.host-workspace .dashboard-calendar .cal-toolbar .cal-segment button,
+  body.host-workspace .dashboard-calendar .cal-heading .cal-segment button,
+  .cleaning-page .dashboard-calendar .cal-toolbar .cal-segment button,
+  .cleaning-page .dashboard-calendar .cal-heading .cal-segment button {
+    height:44px;
+    min-height:44px;
+    box-sizing:border-box;
+  }
+  body.host-workspace .dashboard-calendar :is(.cal-toolbar,.cal-heading) select,
+  .cleaning-page .dashboard-calendar :is(.cal-toolbar,.cal-heading) select {
+    height:46px;
+    min-height:46px;
+  }
+}
+
+/* Fractional cleaning bars may be narrower than a text label on mobile. */
+.dashboard-calendar .cal-event[data-event-kind="cleaning"] {
+  box-sizing:border-box;
+  padding-left:0;
+  padding-right:0;
+}
+.dashboard-calendar .cal-event[data-event-kind="cleaning"] span {
+  min-width:0;
+  overflow:hidden;
+}

@@ -104,7 +104,7 @@ def test_invalid_property_window_is_flagged_without_persisting_visual_fallback(w
     db.update("apartment", ws["home"], {"checkin_hour": 11, "checkout_hour": 11})
     booking = stay(ws["home"], "2026-10-15", "2026-10-17")
     item = next(x for x in payload(ws).json()["cleanings"] if x["checkout"] == "2026-10-17")
-    assert item["timingUnavailable"] is True and item["conflict"] is True
+    assert item["timingUnavailable"] is True and item["conflict"] is False
     assert item["displayStart"] == "2026-10-17T12:00"
     assert item["displayEnd"] == "2026-10-17T13:00"
     assert item["checkoutTime"] == "11:00" and item["checkinTime"] == "11:00"
@@ -139,6 +139,12 @@ def test_notes_edit_preserves_legacy_explicit_times_and_auto_property_defaults(w
     assert saved["start_time"] == "12:30" and saved["end_time"] == "14:00"
     item = next(x for x in payload(ws).json()["cleanings"] if x["eventId"] == manual)
     assert item["displayStart"] == "2026-10-19T12:30" and item["displayEnd"] == "2026-10-19T14:00"
+    db.update("cleaning_event", manual, {"start_time": "nonsense", "end_time": "26:99"})
+    malformed = dict(db.query_one("SELECT * FROM cleaning_event WHERE id = ?", (manual,)))
+    cleaning.save_event(ws["home"], {"scheduled_date": malformed["scheduled_date"], "revision": malformed["revision"],
+                                     "notes": "Still safe"}, malformed)
+    retained = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE id = ?", (manual,))
+    assert (retained["start_time"], retained["end_time"]) == ("nonsense", "26:99")
 
 
 def test_normal_cleaning_editor_has_no_duplicate_time_fields(workspace):
@@ -150,6 +156,9 @@ def test_normal_cleaning_editor_has_no_duplicate_time_fields(workspace):
     assert 'name="start_time"' not in response.text
     assert 'name="end_time"' not in response.text
     assert "Edit timing in Properties" in response.text
+    new_response = ws["client"].get("/cleaning/new")
+    assert new_response.status_code == 200
+    assert 'href="/apartments/"' in new_response.text
 
 
 def test_notes_edit_preserves_automatic_date_following(workspace):
@@ -453,6 +462,20 @@ def test_pending_code_is_not_programmed_after_property_lock_is_changed(workspace
     assert cleaning_codes.process_queue() == 1
     row = db.query_one("SELECT * FROM cleaning_code WHERE id = ?", (job,))
     assert row["state"] == "revoked" and row["pin_enc"] is None
+
+
+def test_shared_booking_fractional_display_is_clipped_to_requested_dates(workspace):
+    ws = workspace
+    stay_id = stay(ws["home"], "2026-10-15", "2026-10-22")
+    _, token = cleaning.new_share(ws["owner"], [ws["home"]])
+    response = ws["client"].get(f"/cleaning/shared/{token}/schedule",
+                                params={"from": "2026-10-17", "to": "2026-10-20"})
+    assert response.status_code == 200
+    booking = next(item for item in response.json()["events"] if item["id"] == f"reservation:{stay_id}")
+    assert booking["start"] == "2026-10-17" and booking["end"] == "2026-10-20"
+    assert booking["displayStart"] == "2026-10-17T00:00"
+    assert booking["displayEnd"] == "2026-10-20T00:00"
+    assert "2026-10-15" not in str(booking) and "2026-10-22" not in str(booking)
 
 
 def test_shared_link_uses_canonical_https_origin_behind_a_proxy(workspace, monkeypatch):

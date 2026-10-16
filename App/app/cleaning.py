@@ -121,12 +121,18 @@ def event_for(owner_id: int | None, event_id: int) -> dict | None:
 
 def save_event(apartment_id: int, values: dict, existing: dict | None = None) -> int:
     day = parse_date(str(values.get("scheduled_date", ""))).isoformat()
-    start_value = values.get("start_time", existing.get("start_time") if existing else "")
-    end_value = values.get("end_time", existing.get("end_time") if existing else "")
-    start = parse_time(str(start_value or ""))
-    end = parse_time(str(end_value or ""))
-    if bool(start) != bool(end) or (start and end <= start):
-        raise ValueError("times")
+    times_posted = "start_time" in values or "end_time" in values
+    if existing and not times_posted:
+        # Normal notes/date edits omit retired time controls; preserve legacy
+        # values byte-for-byte, including malformed historical values.
+        start, end = existing.get("start_time"), existing.get("end_time")
+    else:
+        start_value = values.get("start_time", existing.get("start_time") if existing else "")
+        end_value = values.get("end_time", existing.get("end_time") if existing else "")
+        start = parse_time(str(start_value or ""))
+        end = parse_time(str(end_value or ""))
+        if bool(start) != bool(end) or (start and end <= start):
+            raise ValueError("times")
     notes = str(values.get("notes", "")).strip()
     if len(notes) > 5000:
         raise ValueError("notes")
