@@ -14,7 +14,7 @@ Reuse the existing canonical Stay creation contract and Cleaning event save path
 
 ## 3. Files
 
-App/app/templates/_dashboard_calendar.html; App/app/templates/dashboard.html; App/app/templates/cleaning.html; App/app/templates/_cleaning_screen.html; App/app/templates/cleaning_shared.html; App/app/static/dashboard-calendar.js; App/app/static/dashboard-calendar.css; App/app/static/cleaning.js; App/app/static/cleaning.css; App/app/routes/cleaning.py; App/app/routes/dashboard_calendar.py; App/app/cleaning.py; App/app/host_i18n.py; App/app/cleaning_i18n.py; App/tests/test_cleaning.py; App/tests/test_cleaning_browser.py; App/tests/test_dashboard_calendar.py; App/tests/test_dashboard_calendar_browser.py; docs/tasks/0123-calendar-create-popup.md; docs/tasks/0123-calendar-create-popup-report.md; docs/HOST_APP_DESIGN.md; docs/context/status.md; docs/context/decisions.md; docs/context/known-issues.md.
+App/app/templates/_dashboard_calendar.html; App/app/templates/dashboard.html; App/app/templates/cleaning.html; App/app/templates/_cleaning_screen.html; App/app/templates/cleaning_shared.html; App/app/static/dashboard-calendar.js; App/app/static/dashboard-calendar.css; App/app/static/cleaning.js; App/app/static/cleaning.css; App/app/routes/cleaning.py; App/app/routes/dashboard_calendar.py; App/app/cleaning.py; App/app/host_i18n.py; App/app/cleaning_i18n.py; App/tests/test_cleaning.py; App/tests/test_cleaning_browser.py; App/tests/test_dashboard_calendar.py; App/tests/test_dashboard_calendar_browser.py (rich-queue header action assertions only); docs/tasks/0123-calendar-create-popup.md; docs/tasks/0123-calendar-create-popup-report.md; docs/HOST_APP_DESIGN.md; docs/context/status.md; docs/context/decisions.md; docs/context/known-issues.md.
 
 ## 4. Steps
 
@@ -24,7 +24,7 @@ App/app/templates/_dashboard_calendar.html; App/app/templates/dashboard.html; Ap
 4. Refresh Dashboard calendar and bounded server-rendered work regions after successful Stay creation; keep refresh retries separate from POST retries.
 5. Add owner-safe cleaning markers to Dashboard without returning notes, instructions, codes, guest identity, or tokens.
 6. Preserve shared read-only behavior, HTML fallback links, locale, existing date/filter state, and all save/permission safeguards.
-7. Verify create flows, privacy, refresh/menu interactions, viewport geometry, localization, and no-navigation behavior with focused tests and CI.
+7. Verify create flows, privacy, refresh/menu interactions, viewport geometry, localization, and no-navigation behavior with focused tests and CI. Approved follow-up: in `App/tests/test_host_quiet_dashboard_browser.py`, update only the rich-queue header action assertions around lines 320–333 to include the requested Add cleaning action and expect four controls; preserve all existing viewport, mobile, EN/CS, height, same-row, queue, and menu checks.
 
 ## 5. Do not touch
 
