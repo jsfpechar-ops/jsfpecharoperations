@@ -102,11 +102,14 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
             day_summary.click()
             dialog = page.locator("[data-cal-day-dialog]")
             assert dialog.is_visible()
-            dialog_marker = dialog.locator(".cal-day-list .cal-event.is-cleaning-marker")
-            assert dialog_marker.is_visible()
-            assert dialog_marker.locator(".cal-cleaning-label").is_visible()
-            assert ("Cleaning" if lang == "en" else "Úklid") in dialog_marker.locator(".cal-cleaning-label").inner_text()
-            assert dialog_marker.locator(".cal-cleaning-property").inner_text().strip()
+            dialog_markers = dialog.locator(".cal-day-list .cal-event.is-cleaning-marker")
+            assert dialog_markers.count() >= 1
+            for index in range(dialog_markers.count()):
+                dialog_marker = dialog_markers.nth(index)
+                assert dialog_marker.is_visible()
+                assert dialog_marker.locator(".cal-cleaning-label").is_visible()
+                assert ("Cleaning" if lang == "en" else "Úklid") in dialog_marker.locator(".cal-cleaning-label").inner_text()
+                assert dialog_marker.locator(".cal-cleaning-property").inner_text().strip()
             page.locator("[data-cal-day-dialog] [data-cal-close]").click()
         else:
             assert ("Cleaning" if lang == "en" else "Úklid") in marker.get_attribute("aria-label")
@@ -132,7 +135,8 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
 
 
 def _assert_fractional_bar(page, event_id, start_day, start_hour, end_day, end_hour, property_id=None):
-    link = page.locator(f'.cal-event[data-cal-event="{event_id}"]')
+    event_container = ".cal-gantt-events" if property_id is not None else ".cal-week-events"
+    link = page.locator(f'{event_container} .cal-event[data-cal-event="{event_id}"]')
     assert link.count() == 1 and link.is_visible()
     bar = link.bounding_box()
     start_slot = page.locator(
@@ -220,7 +224,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         loaded(page)
         shot(page, f"day-marker-{lang}-{width}")
         visible = [item for item in day_cleanings
-                   if page.locator(f'.cal-event[data-cal-event="{item["id"]}"]').is_visible()]
+                   if page.locator(f'.cal-week-events .cal-event[data-cal-event="{item["id"]}"]').is_visible()]
         assert len(visible) == 1
         marker = visible[0]
         property_name = next(prop["internal_name"] for prop in cleaning.properties(ws["owner"])
@@ -228,12 +232,12 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         mobile = width <= 760
         _assert_cleaning_day_marker(page, marker["id"], "2026-10-17", property_name, lang, mobile)
         visible_booking_boxes = [
-            page.locator(f'.cal-event[data-cal-event="reservation:{stay_id}"]')
+            page.locator(f'.cal-week-events .cal-event[data-cal-event="reservation:{stay_id}"]')
             for stay_id in (booking_id, second_booking_id)
         ]
         visible_booking_boxes = [item.bounding_box() for item in visible_booking_boxes if item.is_visible()]
         assert visible_booking_boxes
-        marker_box = page.locator(f'.cal-event[data-cal-event="{marker["id"]}"]').bounding_box()
+        marker_box = page.locator(f'.cal-week-events .cal-event[data-cal-event="{marker["id"]}"]').bounding_box()
         assert marker_box["y"] + marker_box["height"] <= min(item["y"] for item in visible_booking_boxes) + 1
         overflow = page.locator('.cal-day-summary.has-cleaning-overflow[data-cal-more="2026-10-17"]')
         assert overflow.count() == 1 and overflow.is_visible()
@@ -254,14 +258,15 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
             assert overflow_visual["height"] >= 44
         overflow.click()
         assert page.locator("[data-cal-day-dialog]").is_visible()
-        dialog_marker = page.locator("[data-cal-day-dialog] .cal-day-list .cal-event.is-cleaning-marker")
+        dialog_marker = page.locator(f'[data-cal-day-dialog] .cal-day-list .cal-event.is-cleaning-marker[data-cal-event="{marker["id"]}"]')
+        assert dialog_marker.is_visible()
         assert dialog_marker.locator(".cal-cleaning-label").is_visible()
         assert property_name in dialog_marker.locator(".cal-cleaning-property").inner_text()
         page.locator("[data-cal-day-dialog] [data-cal-close]").click()
         single_cleaning_overflow = page.locator('.cal-day-summary.has-cleaning-overflow[data-cal-more="2026-10-19"]')
         assert single_cleaning_overflow.count() == 0
         if not mobile:
-            link = page.locator(f'.cal-event[data-cal-event="{marker["id"]}"]')
+            link = page.locator(f'.cal-week-events .cal-event[data-cal-event="{marker["id"]}"]')
             link.focus()
             link.press("Enter")
             assert page.locator("[data-cal-details]").is_visible()
@@ -272,7 +277,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
             # Gantt starts on Oct 16; the reservation is clipped at that range edge,
             # while its checkout and the real cleaning time remain independent.
             _assert_fractional_bar(page, booking_event, "2026-10-16", 0, "2026-10-17", 11, ws["home"])
-            gantt_marker = page.locator(f'.cal-event.is-gantt-cleaning[data-cal-event="{marker["id"]}"]')
+            gantt_marker = page.locator(f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="{marker["id"]}"]')
             slot = page.locator(
                 f'.cal-gantt-slot[data-date="2026-10-17"][data-property="{marker["propertyId"]}"]'
             ).bounding_box()
@@ -281,7 +286,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
             assert box["width"] >= slot["width"] - 6
             assert gantt_marker.is_visible() and gantt_marker.get_attribute("aria-label")
             assert gantt_marker.locator("svg").is_visible()
-            short_markers = [page.locator(f'.cal-event.is-gantt-cleaning[data-cal-event="cleaning:{job_id}"]')
+            short_markers = [page.locator(f'.cal-gantt-events .cal-event.is-gantt-cleaning[data-cal-event="cleaning:{job_id}"]')
                              for job_id in short_jobs]
             assert all(item.is_visible() for item in short_markers)
             short_boxes = [item.bounding_box() for item in short_markers]
@@ -296,7 +301,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         if calendar_mode.count() and calendar_mode.get_attribute("aria-pressed") != "true":
             calendar_mode.click()
             loaded(page)
-        shared_marker = page.locator(f'.cal-event.is-cleaning-marker[data-cal-event="{marker["id"]}"]')
+        shared_marker = page.locator(f'.cal-week-events .cal-event.is-cleaning-marker[data-cal-event="{marker["id"]}"]')
         assert shared_marker.is_visible()
         shared_box = shared_marker.bounding_box()
         shared_cell = page.locator('.cal-day[data-date="2026-10-17"]').bounding_box()
@@ -307,7 +312,8 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         context.close()
         browser.close()
 
-def test_three_property_auto_gantt_keeps_cleaning_markers_visible(workspace, origin):
+@pytest.mark.parametrize(("width", "lang"), [(360, "en"), (390, "cs"), (1280, "en")])
+def test_three_property_auto_gantt_keeps_cleaning_markers_visible(workspace, origin, width, lang):
     ws = workspace
     third = db.insert("apartment", {
         "owner_user_id": ws["owner"], "internal_name": "Third test property", "active": 1,
@@ -315,16 +321,26 @@ def test_three_property_auto_gantt_keeps_cleaning_markers_visible(workspace, ori
     })
     stay(third, "2026-10-15", "2026-10-17")
     scheduled = cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))
-    expected = {item["id"] for item in scheduled["cleanings"]}
+    expected = {item["id"]: item for item in scheduled["cleanings"]}
     with sync_api.sync_playwright() as playwright:
-        browser, context = browser_context(playwright, ws, origin)
+        browser, context = browser_context(playwright, ws, origin, width=width)
         page = context.new_page()
-        page.goto(origin + "/cleaning?lang=en")
+        page.goto(f"{origin}/cleaning?lang={lang}")
         loaded(page)
         assert page.locator('[data-cal-view="gantt"]').get_attribute("aria-pressed") == "true"
         assert page.locator(".cal-gantt-row").count() == 3
-        for event_id in expected:
-            assert page.locator(f'.cal-event[data-cal-event="{event_id}"]').is_visible()
+        for event_id, item in expected.items():
+            marker = page.locator(f'.cal-gantt-events .cal-event[data-cal-event="{event_id}"]')
+            marker.wait_for(state="visible")
+            assert ("Úklid" if lang == "cs" else "Cleaning") in (marker.get_attribute("aria-label") or "")
+            slot = page.locator(f'.cal-gantt-slot[data-date="{item["date"]}"][data-property="{item["propertyId"]}"]')
+            slot_box, marker_box = slot.bounding_box(), marker.bounding_box()
+            assert marker_box["width"] >= slot_box["width"] - 6
+            if width <= 760:
+                assert marker.locator("svg").is_visible()
+                assert marker.locator(".cal-cleaning-count").is_visible()
+                assert marker_box["height"] >= 24
+        shot(page, f"three-property-gantt-{lang}-{width}")
         context.close()
         browser.close()
 
@@ -339,7 +355,7 @@ def test_missing_code_is_omitted_from_host_list_and_calendar_dialog(workspace, o
         loaded(page)
         assert page.locator(".cleaning-card .cleaning-access").count() == 0
         assert page.locator(".cleaning-card").get_by_text("Door code unavailable", exact=False).count() == 0
-        block = page.locator('.cal-event[data-event-kind="cleaning"]').first
+        block = page.locator('.cal-week-events .cal-event[data-event-kind="cleaning"]').first
         block.click()
         assert page.locator("[data-cal-details]").is_visible()
         assert page.locator("[data-cal-detail-content] .cleaning-access").count() == 0
@@ -447,18 +463,20 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         dialog = page.locator("[data-cal-create]")
         assert dialog.is_visible()
         assert page.locator('[data-cal-type-choice="stay"]').get_attribute("aria-pressed") == "true"
+        shot(page, "cleaning-stay-popup-cs")
         stay_date = page.locator("#cal-arrival").input_value()
         page.locator('[data-cal-type-choice="cleaning"]').click()
         assert page.locator("#cal-clean-date").input_value() == stay_date
         page.locator('[data-cal-type-choice="stay"]').click()
         assert page.locator("#cal-arrival").input_value() == stay_date
-        page.locator("[data-cal-close]").click()
+        page.locator("[data-cal-create] [data-cal-close]").click()
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         dialog = page.locator("[data-cal-create]")
         page.locator("#cal-property").select_option(str(ws["home"]))
         page.locator("#cal-clean-date").fill("2026-10-27")
         page.locator("#cal-clean-notes").fill("Popup cleaning note")
+        shot(page, "cleaning-create-popup-cs")
         with page.expect_response(lambda response: response.request.method == "POST" and
                                   response.url.split("?")[0].endswith("/cleaning/events")) as result:
             page.locator("[data-cal-save]").click()
@@ -466,8 +484,30 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         assert response.status == 201
         created = response.json()
         assert page.evaluate("location.pathname") == pathname
-        assert page.locator(f'.cal-event[data-cal-event="cleaning:{created["id"]}"]').is_visible()
-        shot(page, "cleaning-create-popup-cs")
+        assert page.locator(f'.cal-gantt-events .cal-event[data-cal-event="cleaning:{created["id"]}"]').is_visible()
+        shot(page, "cleaning-create-result-cs")
+
+        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        stay_form = page.locator("[data-cal-form]")
+        stay_form.locator("#cal-property").select_option(str(ws["homes"][1]))
+        stay_form.locator("#cal-arrival").fill("2026-10-26")
+        stay_form.locator("#cal-departure").fill("2026-10-28")
+        stay_form.locator("#cal-label").fill("Cleaning page stay")
+        shot(page, "cleaning-page-stay-popup-en")
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  response.url.split("?")[0].endswith("/reservations")) as stay_result:
+            page.locator("[data-cal-save]").click()
+        saved_stay = stay_result.value.json()
+        assert stay_result.value.status == 201
+        assert page.evaluate("location.pathname") == pathname
+        page.locator(f'.cal-week-events .cal-event[data-cal-event="reservation:{saved_stay["id"]}"]').wait_for(state="visible")
+        turnover_items = cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))
+        turnover = next(item for item in turnover_items["cleanings"]
+                        if item["propertyId"] == ws["homes"][1] and item["date"] == "2026-10-28"
+                        and item["origin"] == "automatic")
+        page.locator(f'#cleaning-list #cleaning-{turnover["eventId"]}').wait_for(state="visible")
+        assert "Garden / 2" in page.locator(f'#cleaning-list #cleaning-{turnover["eventId"]}').inner_text()
+        shot(page, "cleaning-page-stay-refresh-en")
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         invalid_date = page.locator("#cal-clean-date")
@@ -506,5 +546,41 @@ def test_missing_property_hours_keep_full_day_cleaning_marker_without_saved_defa
         marker.click()
         assert page.locator("[data-cal-details] .cleaning-warning").count() >= 1
         shot(page, "cleaning-marker-unset-hours-mobile")
+        context.close()
+        browser.close()
+
+
+def test_cleaning_calendar_can_create_stay_and_refresh_turnover_in_place(workspace, origin):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width=1280)
+        page = context.new_page()
+        page.goto(f"{origin}/cleaning?lang=en")
+        loaded(page)
+        pathname = page.evaluate("location.pathname")
+        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        form = page.locator("[data-cal-form]")
+        assert page.locator('[data-cal-type-choice="stay"]').get_attribute("aria-pressed") == "true"
+        form.locator("#cal-property").select_option(str(ws["homes"][1]))
+        form.locator("#cal-arrival").fill("2026-10-26")
+        form.locator("#cal-departure").fill("2026-10-28")
+        form.locator("#cal-label").fill("Cleaning page booking")
+        shot(page, "cleaning-page-stay-popup-en")
+        assert form.locator('[name="start_time"], [name="end_time"], [name*="code"]').count() == 0
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  response.url.split("?")[0].endswith("/reservations")) as result:
+            page.locator("[data-cal-save]").click()
+        saved = result.value.json()
+        assert result.value.status == 201 and page.evaluate("location.pathname") == pathname
+        booking = page.locator(f'.cal-week-events .cal-event[data-cal-event="reservation:{saved["id"]}"]')
+        booking.wait_for(state="visible")
+        scheduled = cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))
+        turnover = next(item for item in scheduled["cleanings"]
+                        if item["propertyId"] == ws["homes"][1] and item["date"] == "2026-10-28"
+                        and item["origin"] == "automatic")
+        card = page.locator(f'#cleaning-list #cleaning-{turnover["eventId"]}')
+        card.wait_for(state="visible")
+        assert "Garden / 2" in card.inner_text()
+        shot(page, "cleaning-calendar-created-stay-turnover")
         context.close()
         browser.close()

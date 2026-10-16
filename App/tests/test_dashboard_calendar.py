@@ -125,11 +125,15 @@ def test_calendar_is_owner_scoped_and_includes_checkout_boundary(calendar_worksp
 
 
 
-def test_dashboard_calendar_exposes_cleaning_marker_without_private_fields(calendar_workspace):
+def test_dashboard_calendar_exposes_cleaning_marker_without_private_fields(calendar_workspace, monkeypatch):
     ws = calendar_workspace
+    db.update("apartment", ws["properties"][0], {"checkin_hour": 15, "checkout_hour": 11})
     event_id = cleaning.save_event(ws["properties"][0], {
         "scheduled_date": "2026-10-20", "notes": "private calendar note sentinel",
     })
+    def private_code_must_not_be_read(_home):
+        raise AssertionError("Dashboard calendar must use the private-data-free cleaning schedule")
+    monkeypatch.setattr(cleaning, "_code", private_code_must_not_be_read)
     try:
         response = calendar_get(ws["client"])
         assert response.status_code == 200
@@ -141,11 +145,12 @@ def test_dashboard_calendar_exposes_cleaning_marker_without_private_fields(calen
         assert event["displayStart"].startswith("2026-10-20T")
         assert event["displayEnd"].startswith("2026-10-20T")
         assert event["url"].startswith("/cleaning?")
-        assert not {"notes", "instructions", "code", "guest", "guest_email", "token"} & set(event)
+        assert set(event) == {"id", "kind", "propertyId", "property", "start", "end", "displayStart", "displayEnd", "timingUnavailable", "checkout", "checkoutTime", "nextArrival", "checkinTime", "conflict", "tone", "url"}
         assert "private calendar note sentinel" not in response.text
     finally:
         db.execute("DELETE FROM cleaning_event WHERE apartment_id = ?", (ws["properties"][0],))
         db.execute("DELETE FROM cleaning_property WHERE apartment_id = ?", (ws["properties"][0],))
+        db.update("apartment", ws["properties"][0], {"checkin_hour": None, "checkout_hour": None})
 
 
 @pytest.mark.parametrize("which", ["foreign", "inactive", "archived"])

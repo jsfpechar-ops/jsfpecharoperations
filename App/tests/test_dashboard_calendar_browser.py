@@ -398,36 +398,41 @@ def test_calendar_week_boundary_clips_fractional_checkout_with_continuation_edge
 
 def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calendar_workspace, calendar_origin):
     ws = calendar_workspace
+    existing_stay = make_stay(ws["properties"][2], "2026-10-21", "2026-10-22",
+                              summary="Existing details stay", expected_guests_override=2)
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, ws, calendar_origin, width=1280)
         pathname = page.evaluate("location.pathname")
 
         # The calendar day itself remains a usable entry point to the default Stay form.
-        page.locator("[data-cal-day]").first.click()
+        page.locator("[data-cal-day]:visible").first.click()
         assert page.locator("[data-cal-create]").is_visible()
         assert page.locator('[data-cal-type-choice="stay"]').get_attribute("aria-pressed") == "true"
-        page.locator("[data-cal-close]").click()
+        shot(page, "dashboard-stay-popup-en")
+        page.locator("[data-cal-create] [data-cal-close]").click()
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
         page.locator("#cal-property").select_option(str(ws["properties"][0]))
         page.locator("#cal-clean-date").fill("2026-10-27")
         page.locator("#cal-clean-notes").fill("Calendar popup")
+        shot(page, "dashboard-cleaning-popup-en")
         with page.expect_response(lambda response: response.request.method == "POST" and
                                   response.url.split("?")[0].endswith("/cleaning/events")) as result:
             page.locator("[data-cal-save]").click()
         created_cleaning = result.value.json()
         assert result.value.status == 201
         assert page.evaluate("location.pathname") == pathname
-        marker = page.locator(f'.cal-event[data-cal-event="cleaning:{created_cleaning["id"]}"]')
-        assert marker.is_visible()
+        marker = page.locator(f'.cal-gantt-events .cal-event[data-cal-event="cleaning:{created_cleaning["id"]}"]')
+        marker.wait_for(state="visible")
         marker.click()
         action = page.locator("[data-cal-details] [data-cal-open]")
         assert action.is_visible() and action.inner_text().strip() == "View cleaning"
         page.locator("[data-cal-details] [data-cal-close]").click()
 
-        booking = page.locator('.cal-event[data-cal-event^="reservation:"]:visible').first
+        booking = page.locator(f'.cal-event[data-cal-event="{existing_stay}"]:visible')
+        assert booking.count() == 1
         booking.click()
         action = page.locator("[data-cal-details] [data-cal-open]")
         assert action.is_visible() and action.inner_text().strip() == "Open"
@@ -436,9 +441,10 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
         form = page.locator("[data-cal-form]")
         form.locator("#cal-property").select_option(str(ws["properties"][0]))
-        form.locator("#cal-arrival").fill("2026-10-29")
-        form.locator("#cal-departure").fill("2026-10-31")
+        form.locator("#cal-arrival").fill("2026-10-20")
+        form.locator("#cal-departure").fill("2026-10-22")
         form.locator("#cal-label").fill("Popup row refresh")
+        shot(page, "dashboard-stay-save-popup-en")
         with page.expect_response(lambda response: response.request.method == "POST" and
                                   response.url.split("?")[0].endswith("/reservations")) as stay_result:
             page.locator("[data-cal-save]").click()
@@ -461,8 +467,8 @@ def test_create_popover_reclamps_when_switching_to_taller_stay_form(calendar_wor
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
         context, page = open_page(browser, calendar_workspace, calendar_origin, width=width)
-        page.locator("[data-cal-day]").last.scroll_into_view_if_needed()
-        page.locator("[data-cal-day]").last.click()
+        page.locator("[data-cal-day]:visible").last.scroll_into_view_if_needed()
+        page.locator("[data-cal-day]:visible").last.click()
         dialog = page.locator("[data-cal-create]")
         assert dialog.is_visible()
         page.locator('[data-cal-type-choice="cleaning"]').click()
@@ -473,5 +479,49 @@ def test_create_popover_reclamps_when_switching_to_taller_stay_form(calendar_wor
         assert box["x"] + box["width"] <= viewport["width"] + 1
         assert box["y"] + box["height"] <= viewport["height"] + 1
         shot(page, f"create-popover-reclamp-{width}")
+        context.close()
+        browser.close()
+
+
+def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_workspace, calendar_origin):
+    ws = calendar_workspace
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, ws, calendar_origin, width=1280)
+        failed_html = {"done": False}
+        posts = []
+        def fail_first_dashboard_html(route):
+            request = route.request
+            if request.method == "POST" and request.url.split("?")[0].endswith("/reservations"):
+                posts.append(request.url)
+            if (not failed_html["done"] and request.method == "GET" and
+                    request.url.split("?")[0] == calendar_origin + "/" and
+                    "text/html" in request.headers.get("accept", "")):
+                failed_html["done"] = True
+                route.abort()
+            else:
+                route.continue_()
+        page.route("**/*", fail_first_dashboard_html)
+        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        form = page.locator("[data-cal-form]")
+        form.locator("#cal-property").select_option(str(ws["properties"][0]))
+        form.locator("#cal-arrival").fill("2026-10-20")
+        form.locator("#cal-departure").fill("2026-10-22")
+        form.locator("#cal-label").fill("Refresh retry stay")
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  response.url.split("?")[0].endswith("/reservations")) as result:
+            page.locator("[data-cal-save]").click()
+        saved = result.value.json()
+        assert result.value.status == 201
+        message = page.locator("[data-cal-message]")
+        assert "Saved, but the calendar or list could not refresh." in message.inner_text()
+        assert page.locator('[data-cal-message] a').is_visible()
+        retry = page.locator("[data-cal-message] button")
+        assert retry.is_visible() and len(posts) == 1
+        retry.click()
+        page.locator(f'[data-dashboard-refresh="work"] .dashboard-row[data-stay-id="{saved["id"]}"]').wait_for(state="visible")
+        assert len(posts) == 1
+        assert db.query_one("SELECT COUNT(*) AS n FROM reservation WHERE id = ?", (saved["id"],))["n"] == 1
+        shot(page, "dashboard-refresh-retry-en")
         context.close()
         browser.close()
