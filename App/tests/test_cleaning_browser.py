@@ -507,16 +507,21 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         shot(page, "cleaning-create-result-cs")
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
-        invalid_date = page.locator("#cal-clean-date")
-        invalid_date.evaluate("(input) => { input.type = 'text'; input.value = 'not-a-date'; input.removeAttribute('required'); }")
+        page.locator("#cal-clean-date").fill("2026-10-27")
+        before_invalid_save = db.query_one("SELECT COUNT(*) AS n FROM cleaning_event")["n"]
+        notes = page.locator("#cal-clean-notes")
+        notes.evaluate("(field) => field.removeAttribute('maxlength')")
+        notes.fill("x" * 5001)
         with page.expect_response(lambda response: response.request.method == "POST" and
                                   response.url.split("?")[0].endswith("/cleaning/events")) as failure:
             page.locator("[data-cal-form]").evaluate("(form) => form.requestSubmit()")
         assert failure.value.status == 422
-        expected = cleaning_i18n.translator("cs")("dates")
-        error = page.locator('[data-cal-error-for="scheduled_date"]')
-        page.wait_for_function("""expected => document.querySelector('[data-cal-error-for="scheduled_date"]')?.textContent === expected""", arg=expected)
+        expected = cleaning_i18n.translator("cs")("notes_error")
+        error = page.locator('[data-cal-error-for="notes"]')
+        page.wait_for_function("""expected => document.querySelector('[data-cal-error-for="notes"]')?.textContent === expected""", arg=expected)
         assert error.is_visible() and error.inner_text() == expected
+        assert db.query_one("SELECT COUNT(*) AS n FROM cleaning_event")["n"] == before_invalid_save
+        assert page.locator("[data-cal-create]").is_visible()
         assert page.evaluate("location.pathname") == pathname
         shot(page, "cleaning-create-error-cs")
         context.close()
