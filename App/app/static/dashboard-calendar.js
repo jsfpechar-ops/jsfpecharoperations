@@ -399,14 +399,7 @@
     timeline.append(heading);
     state.properties.filter(property => !state.property || String(property.id) === state.property).forEach(property => {
       const events = state.events.filter(event => event.propertyId === property.id);
-      const bookingLayout = lanes(events.filter(event => event.kind !== "cleaning"), start, end);
-      const cleaningLayout = lanes(events.filter(event => event.kind === "cleaning"), start, end);
-      const cleaningRows = cleaningLayout.count;
-      const segments = [
-        ...cleaningLayout.segments.map(segment => ({ ...segment })),
-        ...bookingLayout.segments.map(segment => ({ ...segment, lane: segment.lane + cleaningRows }))
-      ];
-      const layout = { segments, count: cleaningRows + bookingLayout.count };
+      const layout = lanes(events, start, end);
       const row = el("div", "cal-gantt-row");
       const name = el("div", "cal-gantt-name"); name.title = property.name;
       name.dataset.calColor = propertyColor(property.id); name.append(el("span", "", property.name));
@@ -584,7 +577,7 @@
     form.action = createKind === "cleaning" ? "/cleaning/events" : "/reservations";
     $("[data-cal-create-title]").textContent = createKind === "cleaning" ? labels.add_cleaning : labels.add_stay;
     $("[data-cal-save]").textContent = createKind === "cleaning" ? labels.create_cleaning : labels.create_stay;
-    $("[data-cal-type-choice]").forEach(button => {
+    $$("[data-cal-type-choice]").forEach(button => {
       button.setAttribute("aria-pressed", String(button.dataset.calTypeChoice === createKind));
     });
     if (createKind === "stay") updateNights();
@@ -611,7 +604,7 @@
     form.elements.date_from.value = start; form.elements.date_to.value = end;
     form.elements.scheduled_date.value = start;
     $("[data-cal-save-error]").textContent = "";
-    $("[data-cal-error-for]").forEach(node => { node.textContent = ""; });
+    $$("[data-cal-error-for]").forEach(node => { node.textContent = ""; });
     setCreateKind(kind);
     if (dayDialog.open) close(dayDialog);
     show(createDialog);
@@ -720,7 +713,7 @@
     openCreate(root.dataset.today, addDays(root.dataset.today, 1), state.property,
       link.dataset.calCreateType || (cleaningMode ? "cleaning" : "stay"), link);
   }));
-  $("[data-cal-type-choice]").forEach(button => button.addEventListener("click", () => setCreateKind(button.dataset.calTypeChoice)));
+  $$("[data-cal-type-choice]").forEach(button => button.addEventListener("click", () => setCreateKind(button.dataset.calTypeChoice)));
   $("[data-cal-property]").addEventListener("change", event => {
     state.property = event.target.value;
     if (state.mode === "auto") state.scale = "month";
@@ -801,7 +794,7 @@
       saving = false; close(createDialog);
       const [rangeStart, rangeEnd] = range();
       if (!displayOverlap({ start: savedDate, end: savedEnd }, rangeStart, rangeEnd)) state.date = savedDate;
-      state.property = savedProperty;
+      if (state.property && state.property !== savedProperty) state.property = savedProperty;
       await load();
       let refreshed = true;
       if (savedKind === "stay" && !cleaningMode) {
