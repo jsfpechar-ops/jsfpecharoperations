@@ -269,7 +269,7 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
             link = page.locator(f'.cal-week-events .cal-event[data-cal-event="{marker["id"]}"]')
             link.focus()
             link.press("Enter")
-            assert page.locator("[data-cal-details]").is_visible()
+            page.locator("[data-cal-details]").wait_for(state="visible")
             page.locator("[data-cal-details] [data-cal-close]").click()
             _assert_fractional_bar(page, booking_event, "2026-10-15", 15, "2026-10-17", 11)
             page.locator('[data-cal-view="gantt"]').click()
@@ -385,13 +385,14 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
         page.route("**/static/cleaning.js?*", delayed_list_script)
         page.goto(origin + "/cleaning?lang=en")
         loaded(page)
+        pathname = page.evaluate("location.pathname")
         page.locator('[data-cal-view="gantt"]').click()
         page.wait_for_selector(".cal-gantt-row")
         first = next(item for item in cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))["cleanings"]
                      if item["propertyId"] == ws["home"])
         source = page.locator(f'[data-cal-event="cleaning:{first["eventId"]}"]')
         target = page.locator(f'[data-date="2026-10-22"][data-property="{ws["home"]}"]')
-        with page.expect_response(lambda response: response.url.endswith(f"/cleaning/events/{first['eventId']}") and response.request.method == "POST") as saved:
+        with page.expect_response(lambda response: response.url.split("?")[0].endswith(f"/cleaning/events/{first['eventId']}") and response.request.method == "POST") as saved:
             source.drag_to(target)
         assert saved.value.status == 200
         persisted_times = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE id = ?", (first["eventId"],))
@@ -401,12 +402,26 @@ def test_host_crud_and_drag_change_cleanings_without_moving_bookings(workspace, 
             arg=first["eventId"],
         )
         page.get_by_role("link", name="Add cleaning", exact=True).click()
-        page.select_option("#clean-property", str(ws["home"]))
-        page.fill("#clean-date", "2026-10-23")
-        page.fill("#clean-notes", "Mid-stay refresh")
-        page.get_by_role("button", name="Save", exact=True).click()
-        loaded(page)
+        create = page.locator("[data-cal-create]")
+        assert create.is_visible()
+        assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
+        page.locator("#cal-property").select_option(str(ws["home"]))
+        page.locator("#cal-clean-date").fill("2026-10-23")
+        page.locator("#cal-clean-notes").fill("Mid-stay refresh")
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  response.url.split("?")[0].endswith("/cleaning/events")) as created:
+            page.locator("[data-cal-save]").click()
+        assert created.value.status == 201
+        created_id = created.value.json()["id"]
+        assert page.evaluate("location.pathname") == pathname
+        marker = page.locator(f'.cal-gantt-events .cal-event[data-cal-event="cleaning:{created_id}"]')
+        marker.wait_for(state="visible")
+        marker.click()
+        page.locator("[data-cal-details]").wait_for(state="visible")
+        assert page.locator("[data-cal-details] [data-cal-open]").get_attribute("href").startswith("/cleaning?")
+        page.locator("[data-cal-details] [data-cal-close]").click()
         card = page.locator(".cleaning-card").filter(has_text="Mid-stay refresh")
+        card.wait_for(state="visible")
         card.get_by_role("link", name="Edit cleaning", exact=True).click()
         page.fill("#clean-date", "2026-10-25")
         page.get_by_role("button", name="Save", exact=True).click()
@@ -469,7 +484,7 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         assert page.locator("#cal-clean-date").input_value() == stay_date
         page.locator('[data-cal-type-choice="stay"]').click()
         assert page.locator("#cal-arrival").input_value() == stay_date
-        page.locator("[data-cal-create] [data-cal-close]").click()
+        page.locator("[data-cal-create] .cal-close").click()
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         dialog = page.locator("[data-cal-create]")

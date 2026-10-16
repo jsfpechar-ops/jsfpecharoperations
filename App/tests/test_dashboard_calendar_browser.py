@@ -185,11 +185,14 @@ def test_drag_nights_create_persist_and_open_details(calendar_workspace, calenda
         page.locator("#cal-guests").fill("2")
         page.locator("#cal-label").fill("Browser direct booking")
         shot(page, "drag-create-en-1280")
-        with page.expect_response(lambda response: response.url.endswith("/reservations") and response.request.method == "POST") as saved:
+        with page.expect_response(lambda response: response.url.split("?")[0].endswith("/reservations") and response.request.method == "POST") as saved:
             page.locator("[data-cal-save]").click()
         assert saved.value.status == 201
         row_id = saved.value.json()["id"]
-        page.wait_for_selector("[data-cal-details][open]")
+        live_booking = page.locator(f'.cal-week-events .cal-event[data-cal-event="{row_id}"]')
+        live_booking.wait_for(state="visible")
+        live_booking.click()
+        page.locator("[data-cal-details]").wait_for(state="visible")
         assert page.locator("[data-cal-detail-content]").get_by_text("Browser direct booking", exact=True).is_visible()
         row = db.query_one("SELECT * FROM reservation WHERE id = ?", (row_id,))
         assert row["date_from"] == "2026-10-26" and row["date_to"] == "2026-10-29"
@@ -197,9 +200,9 @@ def test_drag_nights_create_persist_and_open_details(calendar_workspace, calenda
         assert page.locator("[data-cal-open]").get_attribute("href").startswith(f"/reservations/{row_id}")
         shot(page, "saved-details-en-1280")
         page.locator("[data-cal-details] [data-cal-close]").click()
-        page.wait_for_selector(f'[data-cal-event="{row_id}"]')
-        page.locator(f'[data-cal-event="{row_id}"]').first.click()
-        assert page.locator("[data-cal-details]").is_visible()
+        live_booking = page.locator(f'.cal-week-events .cal-event[data-cal-event="{row_id}"]')
+        live_booking.click()
+        page.locator("[data-cal-details]").wait_for(state="visible")
         assert not errors
         context.close()
         browser.close()
@@ -231,7 +234,7 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         page.wait_for_function("() => document.querySelector('[data-cal-save-error]').textContent.length > 0")
         assert page.locator("[data-cal-create]").is_visible()
         page.locator('input[name="allow_overlap"]').check()
-        with page.expect_response(lambda response: response.url.endswith("/reservations") and response.request.method == "POST") as saved:
+        with page.expect_response(lambda response: response.url.split("?")[0].endswith("/reservations") and response.request.method == "POST") as saved:
             page.locator("[data-cal-save]").click()
         assert saved.value.status == 201
         page.wait_for_selector("[data-cal-details][open]")
@@ -410,7 +413,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         assert page.locator("[data-cal-create]").is_visible()
         assert page.locator('[data-cal-type-choice="stay"]').get_attribute("aria-pressed") == "true"
         shot(page, "dashboard-stay-popup-en")
-        page.locator("[data-cal-create] [data-cal-close]").click()
+        page.locator("[data-cal-create] .cal-close").click()
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
