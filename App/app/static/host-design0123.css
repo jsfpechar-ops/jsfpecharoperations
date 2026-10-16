@@ -134,7 +134,7 @@ body.host-workspace .filter-panel-actions .btn {
 }
 
 body.host-workspace .list-filter-period .month-row {
-  gap: 6px;
+  gap: 8px;
 }
 
 body.host-workspace .month-grid-panel {
@@ -383,4 +383,11 @@ body.host-workspace .cleaning-page .cleaning-date-group > h3 {
   body.host-workspace .month-choice {
     min-height: 44px;
   }
+}
+body.host-workspace .setup-wizard-head h1,
+body.host-workspace .setup-wizard-fee-intro {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.16;
+  letter-spacing: -.05em;
 }
