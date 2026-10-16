@@ -384,10 +384,11 @@ def test_calendar_week_boundary_clips_fractional_checkout_with_continuation_edge
         mon = page.locator('.cal-day[data-date="2026-10-19"]').last.bounding_box()
         tue = page.locator('.cal-day[data-date="2026-10-20"]').last.bounding_box()
         expected_start = sun["x"] + sun["width"] * 15 / 24
+        expected_first_right = sun["x"] + sun["width"]
         expected_monday = mon["x"]
         expected_checkout = tue["x"] + tue["width"] * 11 / 24
         assert abs(first_box["x"] - expected_start) <= 4, (first_box, expected_start)
-        assert abs(first_box["x"] + first_box["width"] - expected_monday) <= 4, (first_box, expected_monday)
+        assert abs(first_box["x"] + first_box["width"] - expected_first_right) <= 4, (first_box, expected_first_right)
         assert abs(second_box["x"] - expected_monday) <= 4, (second_box, expected_monday)
         assert abs(second_box["x"] + second_box["width"] - expected_checkout) <= 4, (second_box, expected_checkout)
         shot(page, "checkout-week-boundary-en-1280")
