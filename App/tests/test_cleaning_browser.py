@@ -500,7 +500,7 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         assert failure.value.status == 422
         expected = cleaning_i18n.translator("cs")("dates")
         error = page.locator('[data-cal-error-for="scheduled_date"]')
-        page.wait_for_function("""expected => document.querySelector('[data-cal-error-for="scheduled_date"]')?.textContent === expected""", expected)
+        page.wait_for_function("""expected => document.querySelector('[data-cal-error-for="scheduled_date"]')?.textContent === expected""", arg=expected)
         assert error.is_visible() and error.inner_text() == expected
         assert page.evaluate("location.pathname") == pathname
         shot(page, "cleaning-create-error-cs")

@@ -443,7 +443,6 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         form.locator("#cal-property").select_option(str(ws["properties"][0]))
         arrival, departure = page.evaluate("""today => {
             const start = new Date(today + "T12:00:00Z");
-            start.setUTCDate(start.getUTCDate() + 2);
             const end = new Date(start);
             end.setUTCDate(end.getUTCDate() + 2);
             return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
@@ -518,7 +517,6 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         form.locator("#cal-property").select_option(str(ws["properties"][0]))
         arrival, departure = page.evaluate("""today => {
             const start = new Date(today + "T12:00:00Z");
-            start.setUTCDate(start.getUTCDate() + 2);
             const end = new Date(start);
             end.setUTCDate(end.getUTCDate() + 2);
             return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
