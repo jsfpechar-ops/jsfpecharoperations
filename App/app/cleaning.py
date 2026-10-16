@@ -159,20 +159,21 @@ def save_settings(apartment_id: int, values: dict) -> None:
     instructions = str(values.get("instructions", "")).strip()
     if len(instructions) > 10000:
         raise ValueError("notes")
-    checkout = parse_time(str(values.get("checkout_time", "")))
-    checkin = parse_time(str(values.get("checkin_time", "")))
+    # Retain legacy default columns untouched; apartment hours are canonical.
     ensure_property(apartment_id)
     db.execute(
-        "UPDATE cleaning_property SET instructions = ?, checkout_time = ?, "
-        "checkin_time = ?, updated_at = ? WHERE apartment_id = ?",
-        (instructions, checkout, checkin, db.utcnow(), apartment_id),
+        "UPDATE cleaning_property SET instructions = ?, updated_at = ? WHERE apartment_id = ?",
+        (instructions, db.utcnow(), apartment_id),
     )
 
 
 def _hour(property_row: dict, direction: str) -> str | None:
-    explicit = property_row[direction + "_time"]
     hour = property_row[direction + "_hour"]
-    return explicit or (f"{int(hour):02d}:00" if hour is not None else None)
+    try:
+        value = int(hour) if hour is not None else None
+    except (TypeError, ValueError):
+        return None
+    return f"{value:02d}:00" if value is not None and 0 <= value <= 23 else None
 
 
 def _code(property_row: dict) -> dict:

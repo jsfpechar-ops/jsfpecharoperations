@@ -82,6 +82,20 @@
       </div>
     </section>
 
+    <section class="panel property-section" id="arrival-departure">
+      <h3 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h3>
+      <p class="small muted">{{ t('host.property_times_hint') }}</p>
+      {% if shared_time_error %}<p class="err-text" role="alert">{{ t(shared_time_error) }}</p>{% endif %}
+      <div class="grid two">
+        {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
+        <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
+          <select id="{{ name }}" name="{{ name }}"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+            {% for h in range(24) %}<option value="{{ h }}" {% if apartment[name] is not none and apartment[name]|int == h %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
+          </select></div>
+        {% endfor %}
+      </div>
+    </section>
+
     <section class="panel property-section" id="address">
       <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
       {% include "_property_address_fields.html" %}

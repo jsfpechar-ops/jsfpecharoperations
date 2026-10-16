@@ -113,6 +113,18 @@ WORDS = {
         "Rescheduled by host",
         "Termín upravil host"
     ],
+    "property_times": [
+        "Property timing defaults",
+        "Výchozí časy ubytování"
+    ],
+    "property_times_hint": [
+        "These Properties times set automatic turnover availability for checkout and the next arrival.",
+        "Tyto časy z Ubytování určují dostupnost automatického úklidu mezi odjezdem a dalším příjezdem."
+    ],
+    "edit_property_times": [
+        "Edit timing in Properties",
+        "Upravit časy v Ubytování"
+    ],
     "checkout": [
         "Checkout",
         "Odjezd"

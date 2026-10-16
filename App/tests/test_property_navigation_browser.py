@@ -600,3 +600,20 @@ def test_property_views_fit_every_width_and_sidebar(host, base):
                 assert fit["scroll"] <= fit["vw"] and not fit["bad"], (width, collapsed, "bookings", fit)
         _sidebar(page, False)
         browser.close()
+
+
+
+def test_shared_timing_pair_is_owned_by_properties(host, base):
+    url = f"{base}/apartments/{host['apartment']}?view=settings&section=property&lang=en"
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        page = _context(browser, base, host).new_page()
+        page.goto(url)
+        assert page.locator('#property-settings-form [name="checkin_hour"]').count() == 1
+        assert page.locator('#property-settings-form [name="checkout_hour"]').count() == 1
+        assert page.locator('#arrival-departure').is_visible()
+        page.locator('[data-property-section-link="lock"]').click()
+        assert page.locator('#settings-lock [name="checkin_hour"]').count() == 0
+        assert page.locator('#settings-lock [name="checkout_hour"]').count() == 0
+        assert page.locator('#settings-lock a[href*="section=property#arrival-departure"]').is_visible()
+        browser.close()

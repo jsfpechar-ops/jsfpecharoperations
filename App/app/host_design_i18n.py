@@ -90,6 +90,12 @@ STRINGS = {'en': {'nav.overview': 'Dashboard',
         'invoice.new': 'Vystavit fakturu'}}
 
 STRINGS['en'].update({
+    'host.property_times_hint': 'Set these once for guest access and automatic cleaning availability.',
+    'host.stay_dates': 'Dates',
+    'host.property_times_edit': 'Edit in Properties',
+    'calendar.view': 'View',
+    'calendar.period': 'Period',
+    'calendar.auto': 'Auto',
     'host.count_changed': 'The guest count changed. Review the guests and try again.',
     'settings.lede': 'Your account, data and workspace.',
     'invoice.detail.note_paid': 'Payment was recorded by the host.',
@@ -97,6 +103,12 @@ STRINGS['en'].update({
     'invoice.mark_paid': 'Record payment',
 })
 STRINGS['cs'].update({
+    'host.property_times_hint': 'Nastavte jednou pro přístup hostů a dostupnost automatického úklidu.',
+    'host.stay_dates': 'Termín',
+    'host.property_times_edit': 'Upravit v Ubytování',
+    'calendar.view': 'Zobrazení',
+    'calendar.period': 'Období',
+    'calendar.auto': 'Automaticky',
     'host.count_changed': 'Počet hostů se změnil. Zkontrolujte hosty a zkuste to znovu.',
     'settings.lede': 'Váš účet, data a pracovní prostor.',
     'invoice.detail.note_paid': 'Platbu zaznamenal ubytovatel.',

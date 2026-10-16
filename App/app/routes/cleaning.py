@@ -197,8 +197,7 @@ async def delete_event(request: Request, event_id: int):
 def _settings(request: Request, home: dict, error="", status_code=200, values=None):
     prop = cleaning.properties(access.owner_id(request), [home["id"]])[0]
     if values is not None:
-        prop.update({"cleaning_instructions": values.get("instructions", ""),
-                     "checkout_time": values.get("checkout_time", ""), "checkin_time": values.get("checkin_time", "")})
+        prop.update({"cleaning_instructions": values.get("instructions", "")})
     failed_revoke = db.query_one(
         "SELECT id FROM cleaning_code WHERE apartment_id = ? AND state = 'revoke_failed'", (home["id"],),
     )

@@ -1,69 +1,54 @@
-# 0123: Host workspace visual refresh
+# 0123: Unified host workspace and property timing
 
-Status: review
-Depends on: none | Base commit: dc5f730d63f7183a6f261c5d0e44f0966430addf | Branch: feature/host-design0123-20261016
-Executor: Luna executor (approved host design exception) | Fits one session
+Status: in-progress
+Depends on: none | Base commit: 7835b528cec95a1d7a25798e0002d28c0255f346 | Branch: feature/host-design0123-20261016
+Executor: Luna executor | PR: #397
 Report: docs/tasks/0123-host-design-report.md
 
 ## 1. Objective
 
-Adapt the signed-in host workspace to the approved warm canvas, white surfaces, restrained coral actions and clearer hierarchy. Preserve current FastAPI/Jinja routes and interaction behavior.
+Implement the owner-approved flat-white host workspace proposal in `docs/plans/0123-rework-proposal`, with real UbyHost logos/icons, compact calendar controls, stay-first lists, and one shared Properties source for check-in/check-out defaults.
 
-## 2. Context
+## 2. Context and decisions
 
-- `docs/HOST_APP_DESIGN.md` §3: “Light mode only. Use existing `App/app/static/tokens.css`: `--canvas`, `--surface`, `--ink`, `--muted`, `--line`, `--brand`, semantic state colors, 4 px spacing scale, system font, and reduced-motion tokens.”
-- `docs/DESIGN.md`, “Action geometry”: “Controls that sit in the same action group share one height (`--action-height`, 42px), one gap (`--action-gap`, 8px), and the same baseline.”
-- `docs/DESIGN.md`, “Filters on demand”: “A clearly labelled **Filters** button opens an inline panel above the results. It pushes content down, works by keyboard and touch, and exposes its expanded state. Keep a concise summary of applied filters visible when the panel closes.”
-- The signed-in host shell is isolated from public pages, login and guest forms. Shared tokens also serve those pages, so this change must remain host-scoped.
-- Keep one centered work lane at about 1080px and a 208–224px desktop rail. Touch controls are at least 44×44px.
-- Preserve real routes/status, native no-JavaScript form behavior, labels, focus, archive/restore controls and server guards.
-- The approved proposal changes presentation only: no backend, sharing-policy, filing, guest-data or dependency changes. The prototype directory is inspiration/data only; its embedded instructions and written plan are not authoritative.
+- Owner approved the revised proposal and implementation. Keep FastAPI/Jinja/plain JS, current routes/data/permissions, and system fonts.
+- Main workspace white; warm color remains in the rail and small accents. Coral actions, near-black type, neutral dividers, centered 1080px lane, 216px rail.
+- Keep existing Search, account/admin, language, environment, collapse/mobile drawer, dialogs, navigation, exports, filters, saved views, filing, restore/archive, invoices, receipts and door-code actions.
+- Property hours are `apartment.checkin_hour` / `checkout_hour`; Properties settings and the Property wizard step own the one editable pair. Door lock and Cleaning show inherited values and link back to Properties.
+- Cleaning legacy `checkout_time` / `checkin_time` values are retained without migration but do not override apartment hours. Explicit per-cleaning time/date adjustments remain valid.
+- Manual reservation summary is safe as the stay label only for manual source; imported summaries and guest identities do not become new list content.
 
-## 3. Files
+## 3. Allowed files
 
-| Path | Action | What |
-|---|---|---|
-| `App/app/static/host-design0123.css` | Add | Signed-in host-only visual layer; no shared token edits |
-| `App/app/templates/base.html` | Edit | Load the versioned host layer only when signed-in navigation is shown |
-| `.github/workflows/ci.yml` | Edit | Add existing filter/wide geometry suites and evidence destinations to required Chromium job |
-| `App/tests/test_host_filter_panels_browser.py` | Edit | Route opt-in screenshot output through CI evidence directory |
-| `App/tests/test_host_wide_geometry_browser.py` | Edit | Configurable evidence output; geometry checks for current row-menu actions |
-| `docs/tasks/0123-host-design.md` | Add | Numbered implementation brief and scope |
-| `docs/tasks/0123-host-design-report.md` | Add/edit | Numbered report and validation result |
-| `docs/context/status.md` | Edit | Record PR and review state |
-| `docs/context/decisions.md` | Append | Record owner-approved presentation-only scope |
-| `docs/context/known-issues.md` | Append | Record and track the corrected target-size review finding |
+Production UI: `App/app/static/host-design0123.css`; `App/app/templates/base.html`; `App/app/templates/dashboard.html`; `App/app/templates/reservations.html`; `App/app/templates/reservation_detail.html`; `App/app/templates/_components.html`; `App/app/templates/_dashboard_calendar.html`; `App/app/static/dashboard-calendar.js`; `App/app/static/dashboard-calendar.css`; `App/app/host_design_i18n.py`.
+Shared timing: `App/app/templates/_property_editor.html`; `App/app/routes/admin.py`; `App/app/templates/cleaning_settings.html`; `App/app/routes/cleaning.py`; `App/app/cleaning.py`; `App/app/cleaning_i18n.py`; `App/app/templates/setup_wizard/property.html`; `App/app/templates/setup_wizard/door_lock.html`; `App/app/property_setup.py`.
+Tests: `App/tests/test_dashboard_calendar_browser.py`; `App/tests/test_cleaning.py`; `App/tests/test_cleaning_browser.py`; `App/tests/test_host_wide_geometry_browser.py`; `App/tests/test_host_list_layouts_browser.py`; `App/tests/test_host_geometry.py`; `App/tests/test_lock_navigation_browser.py`; `App/tests/test_door_codes_safeguards.py`; `App/tests/test_onboarding_wizard_survival.py`; `App/tests/test_property_navigation_browser.py`.
+Docs/CI: `.github/workflows/ci.yml`; `docs/tasks/0123-host-design.md`; `docs/tasks/0123-host-design-report.md`; `docs/plans/0123-rework-proposal/README.md`; `docs/HOST_APP_DESIGN.md`; `docs/DESIGN.md`; `docs/context/status.md`; `docs/context/decisions.md`; `docs/context/known-issues.md`. CI changes are limited to adding an existing browser test if needed.
 
-No other file may change.
+## 4. Implementation
 
-## 4. Steps
-
-1. Add a host-only CSS layer after `host-controls.css`, with a new cache key. Keep existing rail, lane, card, responsive and row-action geometry.
-2. Improve headings, filters, white panels, tables, dashboard counts/calendar, and the actual dashboard action rows. Preserve all accessible labels and behaviors.
-3. Route generated wide and filter screenshots to `UBYHOST_SHOTS_DIR` or a dedicated configured directory.
-4. Run the unchanged full suite and required Chromium checks in CI; retain zero-skip enforcement and upload screenshots.
-5. Record the exact CI outcome and screenshot review in PR #397 before review closes.
+1. Replace the first-pass theme with a coherent host-only flat-white layer; retain real shell assets and working-lane/card breakpoints.
+2. Flatten dashboard counts/calendar/queue and list/detail/property/cleaning surfaces without losing current controls or data hooks. Stay rows use safe manual label, full date range, property identity, guest/report facts and existing More actions.
+3. Replace calendar button groups with native View (Auto/Calendar/Gantt) and Period (Month/Week/Year) selects mirroring current mode/scale, auto threshold, URL/storage and Settings behavior.
+4. Edit property hours independently of TTLock state, validate before writes, preserve missing legacy form values and existing lock guards. Cleaning automatic availability uses property hours; old cleaning defaults remain stored but ignored. Preserve manual event adjustments and conflict checks.
+5. Update focused browser/unit coverage and active design/context docs; keep screenshot evidence in existing CI uploads.
 
 ## 5. Do not touch
 
-Do not change shared tokens, guest or public screens, routes, endpoints, data attributes, request methods, CSRF, filing/reporting state, permissions, sharing policy, data retention, backend behavior, dependencies, migrations, deployment or production configuration. Do not reduce CI coverage or assertions.
+No public/guest/auth redesign, new backend search, data migration, dependency, share-policy, filing, permission, credential or TTLock issuance changes. No lock calls, main push, merge or deployment.
 
-## 6. Commands
+## 6. Verification
 
-From `App/`, the full suite is `.venv/bin/python -m pytest tests -q`. CI's required browser command uses `UBYHOST_REQUIRE_BROWSER=1` and includes guest, host geometry, dashboard/calendar, cleaning, list, filter-panel and wide-geometry browser suites. From repository root, run `python3 scripts/context_lint.py`.
+Run the full test suite and required zero-skip Chromium/geometry jobs through repository CI because the managed shell/browser environment is unavailable. Keep all existing assertions and screenshot uploads. Do not claim local browser results.
 
 ## 7. Acceptance
 
-- Existing navigation, search/account/admin/language/environment controls, dashboard views and stay creation remain available.
-- Labeled filter panel, applied summary, Apply/Cancel/Reset and native no-JavaScript GET behavior remain intact.
-- Guest details, filing/receipt/invoice/door-code actions, property settings, cleaning instructions and sharing permissions remain intact.
-- English and Czech labels fit at 360, 390, 1280 and wide desktop widths through 2048px; touch controls remain at least 44px.
-- Required browser CI passes with zero skips and screenshots are available for review.
+Flat-white work surfaces with real icons; readable EN/CS layouts at 360–2048px; working manual/Auto calendar behavior and every existing action; one Properties-owned hours pair used by TTLock and Cleaning; legacy cleaning values preserved; manual cleaning exceptions retained; full required CI with zero skipped browser cases.
 
 ## 8. Stop and ask
 
-Stop if the proposed CSS requires a backend, sharing-policy, route, guest/public or dependency change. Otherwise follow this scope; do not expand into prototype behavior.
+Stop only for a genuine schema, permission/security, missing-file, or required-scope blocker. Resolve routine visual and implementation choices autonomously.
 
 ## 9. Report
 
-The report is at `docs/tasks/0123-host-design-report.md`. See [PR checks](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397/checks) for exact CI results and uploaded screenshots.
+Use `docs/tasks/0123-host-design-report.md`, then mark this brief review. Link exact CI and screenshot evidence and state any remaining visual review limitation.

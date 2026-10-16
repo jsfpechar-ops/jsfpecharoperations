@@ -139,8 +139,9 @@ def test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code(
     ws = workspace
     stay(ws["home"])
     stay(ws["home"], "2026-10-23", "2026-10-25")
-    cleaning.save_settings(ws["home"], {"instructions": "1. Linen\n2. <script>alert(1)</script>",
-                                       "checkout_time": "10:30", "checkin_time": "15:30"})
+    cleaning.ensure_property(ws["home"])
+    db.update("cleaning_property", ws["home"], {"checkout_time": "10:30", "checkin_time": "15:30"})
+    cleaning.save_settings(ws["home"], {"instructions": "1. Linen\n2. <script>alert(1)</script>"})
     cleaning_codes.save_manual(ws["home"], "001234")
     response = ws["client"].get("/cleaning?lang=en")
     assert response.status_code == 200
@@ -148,7 +149,12 @@ def test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code(
     assert "001234" in response.text
     assert "&lt;script&gt;" in response.text
     assert "<script>alert(1)</script>" not in response.text
-    assert "10:30" in response.text and "15:30" in response.text
+    assert "11:00" in response.text and "15:00" in response.text
+    legacy = db.query_one("SELECT checkout_time, checkin_time FROM cleaning_property WHERE apartment_id = ?", (ws["home"],))
+    assert legacy["checkout_time"] == "10:30" and legacy["checkin_time"] == "15:30"
+    home = cleaning.properties(ws["owner"], [ws["home"]])[0]
+    assert cleaning._hour(home, "checkout") == "11:00"
+    assert cleaning._hour(home, "checkin") == "15:00"
     data = payload(ws).json()
     assert "type=\"checkbox\"" not in data["listHtml"]
     for lang in ("en", "cs"):
@@ -418,3 +424,29 @@ def test_manual_takeover_of_same_ttlock_pin_keeps_the_physical_code(workspace, m
     assert cleaning._code(prop)["source"] == "manual"
     previous = db.query_one("SELECT * FROM cleaning_code WHERE id = ?", (job,))
     assert previous["state"] == "detached" and previous["pin_enc"] is None
+
+
+
+def test_cleaning_availability_uses_property_hours_and_preserves_manual_override(workspace):
+    ws = workspace
+    home_id = ws["home"]
+    cleaning.ensure_property(home_id)
+    db.update("cleaning_property", home_id, {"checkout_time": "09:30", "checkin_time": "18:00"})
+    first = stay(home_id, "2026-10-17", "2026-10-20")
+    stay(home_id, "2026-10-22", "2026-10-24")
+    payload_value = cleaning.schedule(ws["owner"], date(2026, 10, 16), date(2026, 10, 24), [home_id])
+    assert payload_value["properties"][0]["id"] == home_id
+    generated = next(item for item in payload_value["cleanings"] if item["checkout"] == "2026-10-20")
+    assert generated["nextArrival"] == "2026-10-22"
+    assert generated["checkoutTime"] == "11:00" and generated["checkinTime"] == "15:00"
+    home = cleaning.properties(ws["owner"], [home_id])[0]
+    assert cleaning._hour(home, "checkout") == "11:00"
+    assert cleaning._hour(home, "checkin") == "15:00"
+    event = db.query_one("SELECT * FROM cleaning_event WHERE source_reservation_id = ?", (db.query_one("SELECT id FROM reservation WHERE id = ?", (first,))["id"],))
+    assert event is not None
+    manual_day = "2026-10-21"
+    cleaning.save_event(home_id, {"scheduled_date": manual_day, "start_time": "12:00", "end_time": "14:00", "notes": ""}, existing=dict(event))
+    moved = db.query_one("SELECT scheduled_date, start_time, end_time, overridden FROM cleaning_event WHERE id = ?", (event["id"],))
+    assert (moved["scheduled_date"], moved["start_time"], moved["end_time"], moved["overridden"]) == (manual_day, "12:00", "14:00", 1)
+    legacy = db.query_one("SELECT checkout_time, checkin_time FROM cleaning_property WHERE apartment_id = ?", (home_id,))
+    assert (legacy["checkout_time"], legacy["checkin_time"]) == ("09:30", "18:00")

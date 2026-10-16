@@ -1839,6 +1839,7 @@ def _refuse_apartment_save(
     form,
     operator_error: Optional[str],
     address_errors: Optional[Dict[str, str]] = None,
+    shared_time_error: Optional[str] = None,
 ):
     """Render the property page again with the host's unsaved values."""
     draft = dict(apartment)
@@ -1849,6 +1850,9 @@ def _refuse_apartment_save(
     draft["legal_entity_id"] = submitted["legal_entity_id"]
     if "data_controller_entity_id" in form:
         draft["data_controller_entity_id"] = submitted["data_controller_entity_id"]
+    for field in ("checkin_hour", "checkout_hour"):
+        if field in form:
+            draft[field] = _form_str(form, field)
     copy_ctx = {
         "copy_property_peers": [
             row for row in access.apartments(request) if row["id"] != apartment["id"]
@@ -1877,8 +1881,9 @@ def _refuse_apartment_save(
             "property_view": "settings",
             "settings_section": "property",
             "address_errors": address_errors or {},
+            "shared_time_error": shared_time_error,
         },
-        status_code=400 if (operator_error or address_errors) else 200,
+        status_code=400 if (operator_error or address_errors or shared_time_error) else 200,
     )
 
 
@@ -2108,6 +2113,27 @@ _ADDRESS_ONLY_FIELDS = (
 )
 
 
+def _property_hour_changes(form, apartment: Dict[str, Any]) -> tuple[Dict[str, Any], Optional[str]]:
+    """Read the shared arrival/departure defaults only when this form owns them."""
+    names = ("checkin_hour", "checkout_hour")
+    if not any(name in form for name in names):
+        return {}, None
+    values: Dict[str, Any] = {}
+    for name in names:
+        raw = _form_str(form, name) if name in form else apartment.get(name)
+        if raw in (None, ""):
+            values[name] = None
+            continue
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            return {}, "flash.error.door_code_hours"
+        if not 0 <= value <= 23:
+            return {}, "flash.error.door_code_hours"
+        values[name] = value
+    return values, None
+
+
 def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Optional[Response], bool]:
     """Persist the property form, or return the redirect that rejects it.
 
@@ -2127,6 +2153,43 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
         if "automation_mode" not in form:
             for key in ("automation_mode", "submit_after_hours", "default_purpose"):
                 payload.pop(key, None)
+    hour_values, hour_error = _property_hour_changes(form, apartment)
+    if hour_error:
+        if setup_step:
+            draft = dict(apartment)
+            for field in ("checkin_hour", "checkout_hour"):
+                if field in form:
+                    draft[field] = _form_str(form, field)
+            return _wizard_rerender(
+                request, apartment_id, "property", notice=_flash(request, hour_error),
+                status_code=400, extra={"draft": draft},
+            ), False
+        return _refuse_apartment_save(
+            request, apartment, form, None, shared_time_error=hour_error
+        ), False
+    turn_off_codes = "door_codes_fields" in form and _form_str(form, "door_codes") != "1"
+    enable_codes = _form_str(form, "door_codes") == "1"
+    lock_will_be_enabled = enable_codes or (
+        apartment.get("lock_provider") == "ttlock" and not turn_off_codes
+    )
+    effective_hours = {
+        name: hour_values[name] if name in hour_values else apartment.get(name)
+        for name in ("checkin_hour", "checkout_hour")
+    }
+    if lock_will_be_enabled and any(
+        value is None or not 0 <= int(value) <= 23 for value in effective_hours.values()
+    ):
+        if setup_step:
+            draft = dict(apartment)
+            draft.update(effective_hours)
+            return _wizard_rerender(
+                request, apartment_id, "property", notice=_flash(request, "flash.error.door_code_hours"),
+                status_code=400, extra={"draft": draft},
+            ), False
+        return _refuse_apartment_save(
+            request, apartment, form, None, shared_time_error="flash.error.door_code_hours"
+        ), False
+    payload.update(hour_values)
     if "operator_refresh" in form:
         return _refuse_apartment_save(request, apartment, form, None), False
     if not setup_step or setup_step == "property":
@@ -2232,23 +2295,10 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
                 return _lock_section_refusal(
                     request, apartment_id, form, "flash.error.door_code_lock_taken"
                 )
-            try:
-                cin = int(_form_str(form, "checkin_hour"))
-                cout = int(_form_str(form, "checkout_hour"))
-            except ValueError:
-                return _lock_section_refusal(
-                    request, apartment_id, form, "flash.error.door_code_hours"
-                )
-            if not (0 <= cin <= 23 and 0 <= cout <= 23):
-                return _lock_section_refusal(
-                    request, apartment_id, form, "flash.error.door_code_hours"
-                )
             payload.update(
                 {
                     "lock_provider": "ttlock",
                     "lock_id": lock_id,
-                    "checkin_hour": cin,
-                    "checkout_hour": cout,
                 }
             )
         elif "door_codes_fields" in form:
@@ -2258,16 +2308,6 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             payload["lock_provider"] = None
             if _form_str(form, "lock_id"):
                 payload["lock_id"] = _form_str(form, "lock_id")
-            if _form_str(form, "checkin_hour"):
-                try:
-                    payload["checkin_hour"] = int(_form_str(form, "checkin_hour"))
-                except ValueError:
-                    pass
-            if _form_str(form, "checkout_hour"):
-                try:
-                    payload["checkout_hour"] = int(_form_str(form, "checkout_hour"))
-                except ValueError:
-                    pass
     db.update("apartment", apartment_id, payload)
     if credentials_changed:
         alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
