@@ -53,3 +53,4 @@ Append-only.
 - 2026-10-12 | TTLock: -1026 = created/deleted; host provider, no SCCs; same-period reuse needs custom PIN/mail; retry deletion to end (0067–69) | [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
 - 2026-10-15 | Watchdog digest: server 72 h, repo 6 h; host warnings unchanged | owner | [OPERATIONS](../OPERATIONS.md)
+- 2026-10-16 | Host design 0123: host-scoped presentation refresh; no route, filing, data or permission changes | owner-approved proposal | [PR #397](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397)

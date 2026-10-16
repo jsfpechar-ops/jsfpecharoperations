@@ -63,3 +63,7 @@ From `App/`, the full suite is `.venv/bin/python -m pytest tests -q`. CI's requi
 ## 8. Stop and ask
 
 Stop if the proposed CSS requires a backend, sharing-policy, route, guest/public or dependency change. Otherwise follow this scope; do not expand into prototype behavior.
+
+## 9. Report
+
+The report is at `docs/tasks/0123-host-design-report.md`. Record exact required CI results and screenshot-review evidence in PR #397.

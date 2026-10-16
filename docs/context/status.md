@@ -13,6 +13,7 @@ Updated: 2026-10-16.
 ## Now
 
 - Cleaning 0104: implementation in PR #396; required CI in PR checks, staging review pending ([brief](../tasks/0104-cleaning-management.md)). Calendar 0103 is on main.
+- Host design 0123: implementation in PR #397; required checks and owner visual review are underway ([brief](../tasks/0123-host-design.md)).
 
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
