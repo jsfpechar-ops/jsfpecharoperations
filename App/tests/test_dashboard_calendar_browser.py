@@ -441,9 +441,20 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
         form = page.locator("[data-cal-form]")
         form.locator("#cal-property").select_option(str(ws["properties"][0]))
-        form.locator("#cal-arrival").fill("2026-10-20")
-        form.locator("#cal-departure").fill("2026-10-22")
+        arrival, departure = page.evaluate("""today => {
+            const start = new Date(today + "T12:00:00Z");
+            start.setUTCDate(start.getUTCDate() + 2);
+            const end = new Date(start);
+            end.setUTCDate(end.getUTCDate() + 2);
+            return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+        }""", page.locator("[data-calendar]").get_attribute("data-today"))
+        form.locator("#cal-arrival").fill(arrival)
+        form.locator("#cal-departure").fill(departure)
+        form.locator("#cal-guests").fill("2")
         form.locator("#cal-label").fill("Popup row refresh")
+        overlap = form.locator('input[name="allow_overlap"]')
+        if overlap.count() and overlap.is_visible():
+            overlap.check()
         shot(page, "dashboard-stay-save-popup-en")
         with page.expect_response(lambda response: response.request.method == "POST" and
                                   response.url.split("?")[0].endswith("/reservations")) as stay_result:
@@ -505,15 +516,27 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
         form = page.locator("[data-cal-form]")
         form.locator("#cal-property").select_option(str(ws["properties"][0]))
-        form.locator("#cal-arrival").fill("2026-10-20")
-        form.locator("#cal-departure").fill("2026-10-22")
+        arrival, departure = page.evaluate("""today => {
+            const start = new Date(today + "T12:00:00Z");
+            start.setUTCDate(start.getUTCDate() + 2);
+            const end = new Date(start);
+            end.setUTCDate(end.getUTCDate() + 2);
+            return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+        }""", page.locator("[data-calendar]").get_attribute("data-today"))
+        form.locator("#cal-arrival").fill(arrival)
+        form.locator("#cal-departure").fill(departure)
+        form.locator("#cal-guests").fill("2")
         form.locator("#cal-label").fill("Refresh retry stay")
+        overlap = form.locator('input[name="allow_overlap"]')
+        if overlap.count() and overlap.is_visible():
+            overlap.check()
         with page.expect_response(lambda response: response.request.method == "POST" and
                                   response.url.split("?")[0].endswith("/reservations")) as result:
             page.locator("[data-cal-save]").click()
         saved = result.value.json()
         assert result.value.status == 201
         message = page.locator("[data-cal-message]")
+        page.wait_for_function("""() => document.querySelector('[data-cal-message]')?.textContent.includes('Saved, but the calendar or list could not refresh.')""")
         assert "Saved, but the calendar or list could not refresh." in message.inner_text()
         assert page.locator('[data-cal-message] a').is_visible()
         retry = page.locator("[data-cal-message] button")

@@ -339,7 +339,7 @@ def test_three_property_auto_gantt_keeps_cleaning_markers_visible(workspace, ori
             if width <= 760:
                 assert marker.locator("svg").is_visible()
                 assert marker.locator(".cal-cleaning-count").is_visible()
-                assert marker_box["height"] >= 24
+                assert marker_box["height"] >= 44
         shot(page, f"three-property-gantt-{lang}-{width}")
         context.close()
         browser.close()
@@ -484,30 +484,12 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         assert response.status == 201
         created = response.json()
         assert page.evaluate("location.pathname") == pathname
-        assert page.locator(f'.cal-gantt-events .cal-event[data-cal-event="cleaning:{created["id"]}"]').is_visible()
+        marker = page.locator(f'.cal-week-events .cal-event[data-cal-event="cleaning:{created["id"]}"]')
+        marker.wait_for(state="visible")
+        cleaning_card = page.locator(f'#cleaning-list #cleaning-{created["id"]}')
+        cleaning_card.wait_for(state="visible")
+        assert "Popup cleaning note" in cleaning_card.inner_text()
         shot(page, "cleaning-create-result-cs")
-
-        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
-        stay_form = page.locator("[data-cal-form]")
-        stay_form.locator("#cal-property").select_option(str(ws["homes"][1]))
-        stay_form.locator("#cal-arrival").fill("2026-10-26")
-        stay_form.locator("#cal-departure").fill("2026-10-28")
-        stay_form.locator("#cal-label").fill("Cleaning page stay")
-        shot(page, "cleaning-page-stay-popup-en")
-        with page.expect_response(lambda response: response.request.method == "POST" and
-                                  response.url.split("?")[0].endswith("/reservations")) as stay_result:
-            page.locator("[data-cal-save]").click()
-        saved_stay = stay_result.value.json()
-        assert stay_result.value.status == 201
-        assert page.evaluate("location.pathname") == pathname
-        page.locator(f'.cal-week-events .cal-event[data-cal-event="reservation:{saved_stay["id"]}"]').wait_for(state="visible")
-        turnover_items = cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))
-        turnover = next(item for item in turnover_items["cleanings"]
-                        if item["propertyId"] == ws["homes"][1] and item["date"] == "2026-10-28"
-                        and item["origin"] == "automatic")
-        page.locator(f'#cleaning-list #cleaning-{turnover["eventId"]}').wait_for(state="visible")
-        assert "Garden / 2" in page.locator(f'#cleaning-list #cleaning-{turnover["eventId"]}').inner_text()
-        shot(page, "cleaning-page-stay-refresh-en")
 
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         invalid_date = page.locator("#cal-clean-date")
@@ -518,6 +500,7 @@ def test_calendar_popup_types_create_in_place_and_localize_validation(workspace,
         assert failure.value.status == 422
         expected = cleaning_i18n.translator("cs")("dates")
         error = page.locator('[data-cal-error-for="scheduled_date"]')
+        page.wait_for_function("""expected => document.querySelector('[data-cal-error-for="scheduled_date"]')?.textContent === expected""", expected)
         assert error.is_visible() and error.inner_text() == expected
         assert page.evaluate("location.pathname") == pathname
         shot(page, "cleaning-create-error-cs")
@@ -574,13 +557,12 @@ def test_cleaning_calendar_can_create_stay_and_refresh_turnover_in_place(workspa
         assert result.value.status == 201 and page.evaluate("location.pathname") == pathname
         booking = page.locator(f'.cal-week-events .cal-event[data-cal-event="reservation:{saved["id"]}"]')
         booking.wait_for(state="visible")
-        scheduled = cleaning.schedule(ws["owner"], cleaning.today(), cleaning.today() + timedelta(days=30))
-        turnover = next(item for item in scheduled["cleanings"]
-                        if item["propertyId"] == ws["homes"][1] and item["date"] == "2026-10-28"
-                        and item["origin"] == "automatic")
-        card = page.locator(f'#cleaning-list #cleaning-{turnover["eventId"]}')
+        turnover = db.query_one("SELECT id, scheduled_date FROM cleaning_event WHERE source_reservation_id = ?", (saved["id"],))
+        assert turnover and turnover["scheduled_date"] == "2026-10-28"
+        apartment_name = db.query_one("SELECT internal_name FROM apartment WHERE id = ?", (ws["homes"][1],))["internal_name"]
+        card = page.locator(f'#cleaning-list #cleaning-{turnover["id"]}')
         card.wait_for(state="visible")
-        assert "Garden / 2" in card.inner_text()
+        assert apartment_name in card.inner_text()
         shot(page, "cleaning-calendar-created-stay-turnover")
         context.close()
         browser.close()
