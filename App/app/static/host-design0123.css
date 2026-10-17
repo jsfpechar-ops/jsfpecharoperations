@@ -18,7 +18,7 @@ body.host-workspace h1, body.host-workspace h2, body.host-workspace h3 { color:#
 body.host-workspace h1 { font-size:clamp(30px,2.6vw,34px); line-height:1.15; font-weight:720; letter-spacing:-.035em; }
 body.host-workspace h2 { font-size:24px; line-height:1.25; font-weight:680; letter-spacing:-.025em; }
 body.host-workspace h3 { font-size:18px; line-height:1.3; font-weight:660; letter-spacing:-.015em; }
-body.host-workspace :is(.muted,.small,.hint,.help-tip-body,.lede,.dashboard-row-dates,.dashboard-row-task,.stay-col-source,.filter-applied-summary,.cal-control-label):not(.err-text):not(.warn-text) { color:var(--ink-secondary); }
+body.host-workspace :is(.muted,.small,.hint,.help-tip-body,.lede,.dashboard-row-dates,.dashboard-row-task,.stay-col-source,.filter-applied-summary,.cal-control-label):not(.err-text):not(.warn-text):not(.btn) { color:var(--ink-secondary); }
 body.host-workspace a { text-underline-offset:3px; }
 body.host-workspace .page-header { align-items:flex-end; margin-bottom:22px; padding-bottom:18px; border-bottom:1px solid var(--line); }
 body.host-workspace .page-header .lede { color:var(--ink-secondary); }
