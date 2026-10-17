@@ -13,15 +13,14 @@
   {#- 0099: the whole row opens the stay, as on every list (shared clickable-row). -#}
   <article class="dashboard-row clickable-row {{ 'is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}"
            data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
-           aria-label="{{ stay_label }} · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}">
+           aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
     <div class="dashboard-row-copy">
       <p class="dashboard-row-dates">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}
         {% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}<span>{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}</span>{% endif %}
         {% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}{% endif %}
         {{ guest_count(progress) }}
       </p>
-      <a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ stay_label }}</a>
-      <p class="dashboard-row-property-context">{{ property_identity(reservation.apartment_id, reservation.internal_name, true) }} · {{ source_label(reservation) }}</p>
+      <a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ property_identity(reservation.apartment_id, stay_label, true) }}</a>
       <p class="dashboard-row-task">
         {% if progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}
         {% elif progress.not_registered %}<span class="pill amber">{{ tp('host.missing', progress.not_registered) }}</span>
@@ -32,7 +31,6 @@
       </p>
     </div>
     <div class="dashboard-row-actions">
-      <a class="btn dashboard-row-open dashboard-open" href="/reservations/{{ reservation.id }}?return_to=/">{{ t('common.open') }}</a>
       {{ row_menu_begin() }}
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('common.open') }}</a>
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>

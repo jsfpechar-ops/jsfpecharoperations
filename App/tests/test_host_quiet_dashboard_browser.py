@@ -205,12 +205,7 @@ def test_dashboard_geometry_locales_and_screenshots(dashboard_host, base):
                 assert own_row.count() == 1
                 assert page.evaluate("() => document.documentElement.scrollWidth - innerWidth") <= 1
 
-                open_link = own_row.locator(".dashboard-open")
-                assert open_link.count() == 1 and open_link.is_visible()
-                assert open_link.inner_text() == ("Open" if locale == "en" else "Otevřít")
-                assert open_link.get_attribute("href") == f"/reservations/{dashboard_host['reservation']}?return_to=/"
-                open_box = open_link.bounding_box()
-                assert abs(open_box["height"] - (44 if width <= 390 else 42)) <= 1
+                assert own_row.locator(".dashboard-open").count() == 0
                 more_action = own_row.locator(".row-menu-trigger")
                 assert more_action.get_attribute("aria-label") == ("More actions" if locale == "en" else "Další akce")
                 assert more_action.inner_text() == ""
@@ -356,12 +351,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                     page.screenshot(path=os.path.join(shots, f"dashboard-{locale}-{width}.png"), full_page=True)
 
                 row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["ready"]}"]')
-                open_link = row.locator(".dashboard-open")
-                assert open_link.count() == 1 and open_link.is_visible()
-                assert open_link.inner_text() == ("Open" if locale == "en" else "Otevřít")
-                assert open_link.get_attribute("href") == f"/reservations/{dashboard_rich_host['ready']}?return_to=/"
-                open_box = open_link.bounding_box()
-                assert abs(open_box["height"] - (44 if width <= 760 else 42)) <= 1
+                assert row.locator(".dashboard-open").count() == 0
                 primary_link = row.locator(".dashboard-row-property")
                 more_action = row.locator(".row-menu-trigger")
                 more_box = more_action.bounding_box()
@@ -377,8 +367,6 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                     page.screenshot(path=os.path.join(shots, f"dashboard-hover-{locale}-{width}.png"), full_page=True)
 
                 more_action.focus()
-                page.keyboard.press("Shift+Tab")
-                assert open_link.evaluate("el => el === document.activeElement")
                 page.keyboard.press("Shift+Tab")
                 assert primary_link.evaluate("el => el === document.activeElement")
                 assert primary_link.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
