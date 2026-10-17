@@ -5,16 +5,15 @@ Read this file, then [status](docs/context/status.md). Open nothing else unless 
 
 ## Roles
 
-- **Orchestrator** (any chat AI the owner talks to: Claude, ChatGPT, Gemini, Copilot chat, Cowork, Claude Code): plans, writes briefs in docs/tasks/, reviews reports. Never edits App/, never runs the test suite, never implements, even when the owner says "fix this": in this repo that means "write the brief". Only the exact words "implement it yourself" lift this. Follow the [token budget](docs/context/workflow.md#token-budget-every-ai-every-session).
-- **Executor** (Cursor: composer, Kimi or GLM only): follows one brief exactly. Reads only this file, the brief and the files the brief names. If you are Cursor running a brief from docs/tasks/, you are the executor.
+- **Orchestrator** (any chat AI the owner talks to: Claude, ChatGPT, Gemini, Copilot chat, Cowork, Claude Code): plans, writes briefs in docs/tasks/, reviews reports. Never edits App/, never runs tests, never implements, even when the owner says "fix this": in this repo that means "write the brief". Only the exact words "implement it yourself" lift this. A Claude orchestrator implements only by spawning a **Haiku 5.5** subagent with one brief; other AIs hand the owner a Haiku prompt. Follow the [token budget](docs/context/workflow.md#token-budget-every-ai-every-session).
+- **Executor** (Haiku 5.5 only; replaces Cursor, Kimi, GLM and Luna): follows one brief exactly, alone, no subagents. Reads only this file, [executor](docs/context/executor.md), the brief and the files the brief names. If you are Haiku running a brief from docs/tasks/, you are the executor.
 - **Owner** (Josef): merges, deploys, secrets, servers. Give him numbered click-by-click steps in plain words.
 
-**Owner-authorized exception, 2026-10-10 host redesign:** the owner explicitly
-designated Luna 6.0 subagents as executors and authorized staging deployment.
-Codex remains orchestrator/reviewer; Luna may implement the scoped host briefs
-and run application checks. Follow the [session exception](docs/context/workflow.md#owner-authorized-host-design-execution).
-This permits feature-branch push and staging review, with no main push or
-production deployment.
+## Limits (every chat, strict)
+
+- **100k tokens per chat, orchestrator or Haiku.** Checkpoint at 60k: stop new work and hand over. Also stop after 25 tool calls (Haiku 30). What happens next: [at the cap](docs/context/workflow.md#when-haiku-reaches-the-cap).
+- **No audit and no full test suite** unless the owner asks in the current chat. Run only the [test-map](docs/context/test-map.md) row for what changed. CI runs the rest.
+- End every command with `| tail -30` (or `head -50`). Never print a full log.
 
 ## Hard rules (full text: [rules](docs/context/rules.md))
 
@@ -24,13 +23,13 @@ production deployment.
 4. No new dependency without an owner decision line in [decisions](docs/context/decisions.md).
 5. SQL only through `App/app/db.py` helpers, Postgres-portable. A schema change is a new `App/app/migrations/` file.
 6. Light mode only. Auth forms work without JavaScript.
-7. Template, CSS or guest-page change: browser and geometry tests pass with 0 skipped, plus screenshots in the report.
+7. Template, CSS or guest-page change: the browser and geometry tests for the changed pages pass with 0 skipped, plus one 390 px screenshot per changed page in the report.
 8. Never push to `main`. Merge only with `scripts/merge-pr-on-green.sh`. Production deploy is manual, done by the owner.
 9. Copy: one explanation lives in one place; no sentence the button already says; write "no tracking cookies", never "no cookies".
 
 ## Test
 
-From `App/`: `.venv/bin/python -m pytest tests -q` (never set `PYTHONPATH=App`). From the repo root: `python3 scripts/context_lint.py`.
+From `App/`: `.venv/bin/python -m pytest <files from the test-map> -q --tb=short -x 2>&1 | tail -30` (never set `PYTHONPATH=App`; the bare `pytest tests` is for CI or when the owner asks). From the repo root: `python3 scripts/context_lint.py`.
 
 ## Routing (open only your row; in long files read one section: `grep -n '^## '`, then that range)
 
