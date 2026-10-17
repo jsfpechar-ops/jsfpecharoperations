@@ -9,17 +9,17 @@ UbyHost repo. You are the orchestrator. Read AGENTS.md and docs/context/status.m
 ## Orchestrator (any AI)
 
 ```
-UbyHost orchestrator. Read AGENTS.md and docs/context/workflow.md#token-budget-every-ai-every-session and follow them. Task: <describe it>. Give me one Cursor prompt.
+UbyHost orchestrator. Read AGENTS.md and docs/context/workflow.md#token-budget-every-ai-every-session and follow them. Task: <describe it>. Give me one executor prompt (Haiku 5.5). A Claude orchestrator spawns Haiku itself with `model: haiku` and the executor prompt, then reads only the report.
 ```
 
 ## Executor
 
 ```
-Read AGENTS.md, then docs/tasks/NNNN-*.md. Follow it exactly, in order. Open only the files it names. If any stop condition in §8 happens, stop and write the report. Finish by writing docs/tasks/NNNN-report.md in the §9 format.
+You are the executor (Haiku 5.5). Read AGENTS.md, docs/context/executor.md, then docs/tasks/NNNN-*.md. Follow it exactly, in order. Open only the files it names. If any stop condition in §8 happens, stop and write the report. Finish by writing docs/tasks/NNNN-report.md in the §9 format.
 ```
 
 ```
-Read AGENTS.md. Create docs/tasks/NNNN-name.md with exactly the content between the BRIEF markers, commit it on a new branch task/NNNN-name, then follow it exactly. Open only the files it names. If any stop condition in §8 happens, stop and write the report. Finish by writing docs/tasks/NNNN-report.md in the §9 format and opening one PR.
+You are the executor (Haiku 5.5). Read AGENTS.md and docs/context/executor.md. Create docs/tasks/NNNN-name.md with exactly the content between the BRIEF markers, commit it on a new branch task/NNNN-name, then follow it exactly. Open only the files it names. If any stop condition in §8 happens, stop and write the report. Finish by writing docs/tasks/NNNN-report.md in the §9 format and opening one PR.
 ```
 
 ## Review

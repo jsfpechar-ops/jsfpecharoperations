@@ -53,3 +53,4 @@ Append-only.
 - 2026-10-12 | TTLock: -1026 = created/deleted; host provider, no SCCs; same-period reuse needs custom PIN/mail; retry deletion to end (0067–69) | [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
 - 2026-10-15 | Watchdog digest: server 72 h, repo 6 h; host warnings unchanged | owner | [OPERATIONS](../OPERATIONS.md)
+- 2026-10-17 | [workflow] Haiku 5.5 only executor (replaces Cursor, Kimi, GLM, Luna); 100k cap per chat; scoped tests from test-map, no audits or full suite unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
