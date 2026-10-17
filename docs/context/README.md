@@ -15,14 +15,15 @@ The goal: every session starts from about 3–5k tokens of trusted context inste
 |---|---|---|
 | `AGENTS.md` | Roles, hard rules, routing, protocol | 1,500 |
 | [status](status.md) | Production, now, next, blocked, owner steps done | 700 |
-| [decisions](decisions.md) | Append-only, one line each | 2,000 |
+| [decisions](decisions.md) | Append-only, one line each | 2,200 |
 | [known-issues](known-issues.md) | Open bugs and findings (grep it) | 2,500 |
 | [rules](rules.md) | Full text of the hard rules | 2,500 |
 | [architecture](architecture.md) | Stack and code map | 1,500 |
-| [workflow](workflow.md) | Process, triggers, compaction | 1,800 |
-| [glossary](glossary.md), [prompts](prompts.md) | Terms; paste-ready prompts | 700 / 800 |
+| [workflow](workflow.md) | Process, triggers, compaction | 2,600 |
+| [executor](executor.md), [test-map](test-map.md) | Haiku rules; which tests per change | 1,100 / 1,200 |
+| [glossary](glossary.md), [prompts](prompts.md) | Terms; paste-ready prompts | 700 / 1,000 |
 | `domains/<name>.md` | Only when a domain outgrows one architecture row | 1,000 |
-| Task brief / report | `docs/tasks/` | 12,000 / 1,500 |
+| Task brief / report | `docs/tasks/` | 12,000 / 1,500 (report target 600) |
 
 **New domain** (e.g. auth after passkeys): copy `docs/context/domains/_template.md` to `domains/<name>.md`, add one routing row in AGENTS.md, and add one decisions line.
 
