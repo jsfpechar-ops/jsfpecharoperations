@@ -168,6 +168,7 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
       const label = element.querySelector('.cal-cleaning-label');
       const icon = element.querySelector('svg');
       const count = element.querySelector('.cal-cleaning-count');
+      const prop = element.querySelector('.cal-cleaning-property');
       const rgb = value => value.match(/[\\d.]+/g).slice(0, 3).map(Number);
       const linear = channel => (channel / 255 <= .04045 ? channel / 255 / 12.92 : ((channel / 255 + .055) / 1.055) ** 2.4);
       const luminance = value => {
@@ -179,8 +180,11 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
         background: css.backgroundColor, color: css.color, border: css.borderTopStyle,
         contrast: (Math.max(a, b) + .05) / (Math.min(a, b) + .05),
         labelDisplay: label && getComputedStyle(label).display,
-        labelFits: label && label.scrollWidth <= label.clientWidth + 1,
-        labelText: label && label.textContent,
+        ariaLabel: element.getAttribute('aria-label') || '',
+        titleAttr: element.getAttribute('title') || '',
+        propertyText: prop ? prop.textContent : '',
+        propertyWidth: prop ? prop.getBoundingClientRect().width : 0,
+        propertyDisplay: prop && getComputedStyle(prop).display,
         iconVisible: !!icon && getComputedStyle(icon).display !== 'none',
         countVisible: !!count && getComputedStyle(count).display !== 'none'
       };
@@ -195,8 +199,11 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
         assert visual["countVisible"] and visual["labelDisplay"] == "none"
     else:
         assert box["width"] >= 120
-        assert visual["labelDisplay"] != "none" and visual["labelFits"]
-        assert expected in visual["labelText"]
+        # The visible word stays hidden on desktop (the icon carries it); the
+        # localized word must reach assistive tech and hover via aria-label/title.
+        assert expected in visual["ariaLabel"] and expected in visual["titleAttr"]
+        assert property_name in visual["propertyText"]
+        assert visual["propertyDisplay"] != "none" and visual["propertyWidth"] > 0
 
 
 @pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs"), (360, "en"), (390, "cs")])

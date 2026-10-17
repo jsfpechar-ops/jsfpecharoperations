@@ -76,3 +76,26 @@ No touch-target, overflow or accessibility assertion was weakened, except the vi
 1. Pill label: keep "Cleaning" visible on the desktop pill (then the brief's `display:none` changes, and the pill is icon + "Cleaning" + property), or keep icon + property and change the test to check `aria-label` instead?
 2. Should `host-design0123.css` line 99 be removed in a follow-up (owner or another task)?
 3. Is the mobile colour change (deviation 6) and the plain mobile overflow chip (deviation 5) acceptable?
+
+## Executor finish (visual check and test fix)
+
+**Decision:** the visible word "Cleaning" stays hidden in the desktop pill (`display:none`). Icon, `aria-label` and `title` carry it. The test was changed to match, not the CSS.
+
+**Test change:** `App/tests/test_cleaning_browser.py`, `_assert_cleaning_day_marker`, desktop branch. It now asserts the localized word in `aria-label` and `title`, the property name in the property span, and that the span is visible with width > 0. The touch-target, overflow and contrast assertions are unchanged.
+
+**Tests:** `tests/test_cleaning_browser.py` gives 21 passed, 0 skipped, with the env combination from the brief. The dashboard, host_geometry and wide_geometry subset was not run (budget).
+
+**Screenshots** (`docs/tasks/0106-screenshots/`): `cleaning-1280-full.png`, `cleaning-1024-full.png`, `cleaning-390-full.png`, `cleaning-360-full.png`, `cleaning-1280-calendar-closeup.png`, `cleaning-1280-gantt-full.png`, `dashboard-1280-full.png`. Overflow check via `scrollWidth == clientWidth`: 1280, 1024, 390 and 360 all pass (no horizontal scroll).
+
+**§7 items, as seen:**
+- Pills, 1280 month view: SEEN OK. Amber tint, small, icon plus property name ("Garden / 2", "Riverside / 4"). No saturated orange.
+- "+N" chips: SEEN OK ("+4" on Oct 25, small and quiet).
+- Date group headings: SEEN OK. About 13-15px, compact, as the brief asked.
+- Header and "Add cleaning" coral: SEEN OK. Exactly one coral button. Title is still large (about 28px); not fully slimmed.
+- List cards one row at 1280: NOT MET. Each card stacks the dates, a door-code block and an instructions list. Warnings are not clearly visible as small amber lines.
+- Gantt, Dashboard calendar, 1024, 390, 360: NOT VIEWED. The PNGs exist, but I did not open them (budget). Only the no-overflow numbers were checked.
+- No CSS changed in this pass. No fix rounds were run.
+
+**Unresolved:** the list card row layout (§7 item 5); a visual check of Gantt, Dashboard, 390 and 360; the Dashboard regression check; the known pre-existing failure `test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place` was not re-run in this pass.
+
+**context_lint.py:** `WARN 1 commit(s) touched App/ after the last status.md update` (orchestrator to update status). `next free: task 0124 | migration 0011`. `context lint: OK`.
