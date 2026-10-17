@@ -117,7 +117,7 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         assert page.locator("#cleaning-list input[type=checkbox]").count() == 0
         assert page.locator("#cleaning-list").bounding_box()["y"] > page.locator("#calendar").bounding_box()["y"]
         date_heading = page.locator(".cleaning-date-group h3").first
-        assert 16 <= date_heading.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") <= 18
+        assert 12 <= date_heading.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") <= 14  # 0106: compact 13px list heading
         assert page.locator(".cleaning-card h4").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") <= 16
         assert page.locator(".cleaning-card").first.evaluate("el => parseFloat(getComputedStyle(el).paddingTop)") <= 14
         assert page.locator(".cleaning-instructions").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 14
@@ -168,6 +168,7 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
       const label = element.querySelector('.cal-cleaning-label');
       const icon = element.querySelector('svg');
       const count = element.querySelector('.cal-cleaning-count');
+      const prop = element.querySelector('.cal-cleaning-property');
       const rgb = value => value.match(/[\\d.]+/g).slice(0, 3).map(Number);
       const linear = channel => (channel / 255 <= .04045 ? channel / 255 / 12.92 : ((channel / 255 + .055) / 1.055) ** 2.4);
       const luminance = value => {
@@ -179,14 +180,17 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
         background: css.backgroundColor, color: css.color, border: css.borderTopStyle,
         contrast: (Math.max(a, b) + .05) / (Math.min(a, b) + .05),
         labelDisplay: label && getComputedStyle(label).display,
-        labelFits: label && label.scrollWidth <= label.clientWidth + 1,
-        labelText: label && label.textContent,
+        ariaLabel: element.getAttribute('aria-label') || '',
+        titleAttr: element.getAttribute('title') || '',
+        propertyText: prop ? prop.textContent : '',
+        propertyWidth: prop ? prop.getBoundingClientRect().width : 0,
+        propertyDisplay: prop && getComputedStyle(prop).display,
         iconVisible: !!icon && getComputedStyle(icon).display !== 'none',
         countVisible: !!count && getComputedStyle(count).display !== 'none'
       };
     }""")
-    assert visual["background"] == "rgb(245, 185, 66)"
-    assert visual["color"] == "rgb(32, 32, 30)"
+    assert visual["background"] == "rgb(255, 244, 214)"  # --amber-bg (0106 quiet amber pill)
+    assert visual["color"] == "rgb(107, 58, 0)"  # --status-action-ink
     assert visual["border"] == "solid"
     assert visual["contrast"] >= 7
     assert visual["iconVisible"]
@@ -195,8 +199,11 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
         assert visual["countVisible"] and visual["labelDisplay"] == "none"
     else:
         assert box["width"] >= 120
-        assert visual["labelDisplay"] != "none" and visual["labelFits"]
-        assert expected in visual["labelText"]
+        # The visible word stays hidden on desktop (the icon carries it); the
+        # localized word must reach assistive tech and hover via aria-label/title.
+        assert expected in visual["ariaLabel"] and expected in visual["titleAttr"]
+        assert property_name in visual["propertyText"]
+        assert visual["propertyDisplay"] != "none" and visual["propertyWidth"] > 0
 
 
 @pytest.mark.parametrize(("width", "lang"), [(1280, "en"), (1280, "cs"), (360, "en"), (390, "cs")])
@@ -252,7 +259,8 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
             height: element.getBoundingClientRect().height
           };
         }""")
-        assert overflow_visual["background"] == "rgb(245, 185, 66)" and overflow_visual["icon"]
+        # 0106: the "+N" chip is quiet (transparent, amber icon), not the old saturated orange block.
+        assert overflow_visual["background"] in ("rgba(0, 0, 0, 0)", "transparent") and overflow_visual["icon"]
         assert overflow_visual["count"] == "+1"
         if mobile:
             assert overflow_visual["height"] >= 44

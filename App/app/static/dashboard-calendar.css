@@ -332,59 +332,22 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
     padding:0;
   }
 }
-/* Cleaning markers represent scheduled work on a date; booking bars remain fractional. */
+/* Cleaning pill: quiet amber tint, icon + property, one line. */
 .dashboard-calendar .cal-event.is-cleaning-marker,
 .cleaning-page .dashboard-calendar .cal-event.is-cleaning-marker {
-  box-sizing:border-box;
-  height:28px;
-  min-height:28px;
-  max-height:28px;
-  margin:0 1px;
-  padding:0 6px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  gap:5px;
-  overflow:hidden;
-  border:1px solid #674900;
-  border-radius:5px;
-  background:#f5b942;
-  color:#20201e;
-  font-size:12px;
-  font-weight:800;
-  line-height:16px;
-  box-shadow:0 1px 0 rgba(32,32,30,.12);
+  box-sizing:border-box; display:flex; align-items:center; gap:4px;
+  height:var(--event-height,22px); min-height:0; max-height:none; margin:0 1px; padding:0 7px 0 5px;
+  border:1px solid var(--status-action-border); border-left:3px solid var(--amber); border-radius:6px;
+  background:var(--amber-bg); color:var(--status-action-ink);
+  font-size:11px; font-weight:600; line-height:1; box-shadow:none; overflow:hidden;
 }
-.dashboard-calendar .cal-cleaning-icon,
-.cleaning-page .dashboard-calendar .cal-cleaning-icon {
-  display:block;
-  flex:0 0 16px;
-  width:16px;
-  height:16px;
-  color:#20201e;
-}
-.dashboard-calendar .cal-cleaning-label,
-.cleaning-page .dashboard-calendar .cal-cleaning-label {
-  display:block;
-  flex:0 0 auto;
-  min-width:0;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:clip;
-}
-.dashboard-calendar .cal-cleaning-property {
-  display:block;
-  flex:0 1 auto;
-  min-width:0;
-  max-width:45%;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-  font-weight:650;
-}
-.dashboard-calendar .cal-cleaning-count,
-.cleaning-page .dashboard-calendar .cal-cleaning-count {
-  display:none;
+.dashboard-calendar .cal-event.is-cleaning-marker:hover { background:var(--status-action-bg); filter:none; color:var(--status-action-ink); }
+.dashboard-calendar .cal-cleaning-icon { flex:0 0 12px; width:12px; height:12px; color:var(--amber); }
+.dashboard-calendar .cal-cleaning-label { display:none; }              /* the icon plus aria-label/title carry "Cleaning" */
+.dashboard-calendar .cal-cleaning-property { display:block; flex:1 1 auto; min-width:0; max-width:none; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.dashboard-calendar .cal-cleaning-count { display:none; }
+@media (min-width:761px) {
+  .dashboard-calendar .cal-event.is-cleaning-marker.is-gantt-cleaning { height:20px; min-height:20px; max-height:20px; }
 }
 .dashboard-calendar .cal-event.is-gantt-cleaning {
   height:24px;
@@ -410,29 +373,11 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
   font-size:10px;
   line-height:12px;
 }
-.dashboard-calendar .cal-day-summary.has-cleaning-overflow {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:2px;
-  min-width:0;
-  padding:0;
-  border:1px solid #674900;
-  border-radius:4px;
-  background:#f5b942;
-  color:#20201e;
-  font-weight:800;
-  text-align:center;
-}
-.dashboard-calendar .cal-cleaning-overflow-icon {
-  flex:0 0 14px;
-  width:14px;
-  height:14px;
-}
-.dashboard-calendar .cal-cleaning-overflow-count {
-  font-size:11px;
-  line-height:14px;
-}
+.dashboard-calendar .cal-more.has-cleaning-overflow { display:inline-flex; align-items:center; gap:3px; width:auto; height:var(--event-height,22px); min-height:0; padding:0 6px; border:0; border-radius:6px; background:transparent; color:var(--amber); font-size:11px; font-weight:600; line-height:1; }
+.dashboard-calendar .cal-more.has-cleaning-overflow:hover { background:var(--amber-bg); }
+.dashboard-calendar .cal-cleaning-overflow-icon { flex:0 0 12px; width:12px; height:12px; }
+.dashboard-calendar .cal-cleaning-overflow-count { font-size:11px; line-height:14px; }
+.dashboard-calendar .cal-cleaning-overflow-label { display:none; }
 .dashboard-calendar .cal-summary-sr-only {
   position:absolute;
   width:1px;

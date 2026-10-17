@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ ct('settings') }} · UbyHost{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/cleaning.css?v=20261016a">
+<link rel="stylesheet" href="/static/cleaning.css?v=20261016a-0106b">
 <div class="cleaning-page"><a href="/cleaning">{{ ct('back') }}</a><h1>{{ ct('settings') }}</h1>
 <div class="cleaning-property-links">{% for home in homes %}<a class="cleaning-panel" href="/cleaning/properties/{{ home.id }}"><strong>{{ home.internal_name }}</strong><span>{{ ct('settings') }} →</span></a>{% else %}<p>{{ ct('no_properties') }}</p>{% endfor %}</div>
 </div>
