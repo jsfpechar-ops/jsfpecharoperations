@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-08 after 0020 review.
+Updated: 2026-10-17 after PR 397 design feedback.
 
 ## Production
 
@@ -12,6 +12,7 @@ Updated: 2026-10-08 after 0020 review.
 
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
 - Optional: deploy #280+#281 (admin preview) when you want it on production.
+- Redesign PR 397 (draft): owner rejects the flat Dashboard stay rows; [0022](../tasks/0022-restore-dashboard-stay-rows.md) restores the production card look. Then CI, screenshots, merge.
 
 ## Next
 
