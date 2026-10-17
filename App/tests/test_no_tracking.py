@@ -6,9 +6,9 @@ the guardrail: adding Google Analytics, a Meta pixel, a CDN font or a chat widge
 fails CI here, and widening the CSP fails the exact-string assertion (which MK-5
 requires be changed in the same PR as any CMP).
 
-WP09: Umami may appear on the public marketing and legal pages, but only when
-UMAMI_WEBSITE_ID and UMAMI_SCRIPT_URL are both set. They are unset here, so
-this contract still holds; tests/test_umami_guard.py covers the configured case.
+WP09: PostHog may appear on the public marketing and legal pages, but only when
+POSTHOG_PROJECT_API_KEY is set and the EU hosts are valid. They are unset here,
+so this contract still holds; tests/test_umami_guard.py covers the configured case.
 """
 from __future__ import annotations
 

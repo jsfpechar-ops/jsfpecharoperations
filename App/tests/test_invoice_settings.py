@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app import auth, db, invoices
 from app.main import app
 from tests.conftest import login_as
+from tests.invoice_stay_helper import drop_stays, make_stay, stay_form
 
 USERNAME = "invoice-details-host"
 
@@ -27,6 +28,7 @@ def _cleanup():
     db.execute("DELETE FROM invoice_item WHERE invoice_id IN "
                "(SELECT id FROM invoice WHERE owner_user_id = ?)", (user_id,))
     db.execute("DELETE FROM invoice WHERE owner_user_id = ?", (user_id,))
+    drop_stays(user_id)
     db.execute(
         "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
         "ON CONFLICT(key) DO UPDATE SET value = ''"
@@ -68,9 +70,12 @@ def _add_entity(**over):
 
 def test_the_builder_shows_a_supplier_summary_with_the_details_link(host):
     entity_id = _add_entity()
-    page = host.get(f"/invoices/new?entity={entity_id}")
+    stay_id = make_stay(_owner())
+    page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}")
     assert page.status_code == 200
-    assert f"/invoices/settings?entity={entity_id}" in page.text
+    # 0076: the link opens the business editor at Invoice details and returns here.
+    assert f"/entities?edit={entity_id}&amp;next=" in page.text
+    assert "#entity-invoice" in page.text
     assert "Details s.r.o." in page.text
     assert "IČO 04656679" in page.text
     assert "Edit invoice details" in page.text
@@ -89,7 +94,7 @@ def test_bare_inputs_inherit_the_standard_field_styling(host):
     assert "input:not([type])" in css
 
     entity_id = _add_entity()
-    settings_page = host.get(f"/invoices/settings?entity={entity_id}")
+    settings_page = host.get(f"/entities?edit={entity_id}")
     assert settings_page.status_code == 200
     for field in ("account_prefix", "account_number", "account_bank"):
         marker = f'name="{field}"'
@@ -98,17 +103,19 @@ def test_bare_inputs_inherit_the_standard_field_styling(host):
         assert "type=" not in tag, f"{field} unexpectedly has a type attribute"
 
 
-def test_the_settings_route_is_not_eaten_by_the_dynamic_invoice_route(host):
+def test_the_old_settings_url_is_gone_and_not_read_as_an_invoice(host):
+    """0101: /invoices/settings was removed; it is a plain 404, never an invoice id."""
     entity_id = _add_entity()
-    page = host.get(f"/invoices/settings?entity={entity_id}")
-    assert page.status_code == 200
-    assert 'name="account_number"' in page.text
+    page = host.get(f"/invoices/settings?entity={entity_id}", follow_redirects=False)
+    assert page.status_code == 404
+    posted = host.post("/invoices/settings", data={"legal_entity_id": str(entity_id)}, follow_redirects=False)
+    assert posted.status_code in (404, 405)
 
 
 def test_settings_save_normalises_the_bank_and_keeps_absent_fields(host):
     entity_id = _add_entity(registry_entry=None)
     response = host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={"legal_entity_id": str(entity_id), "bank_account": "19-2000781379/0800",
               "next": f"/invoices/new?entity={entity_id}"},
         follow_redirects=False,
@@ -118,17 +125,17 @@ def test_settings_save_normalises_the_bank_and_keeps_absent_fields(host):
     # bank normalised through the payments helper
     assert row["bank_account"] == "19-2000781379/0800"
     assert row["iban"].startswith("CZ")
-    # absent fields untouched
+    # absent fields untouched; BIC fills from the bank code when blank
     assert row["registry_entry"] is None
-    assert row["bic"] is None
+    assert row["bic"] == "GIBACZPX"
 
 
 def test_saving_other_fields_does_not_wipe_an_iban_only_account(host):
     entity_id = _add_entity(bank_account="CZ9106000000000000000123", iban="CZ9106000000000000000123")
-    page = host.get(f"/invoices/settings?entity={entity_id}")
+    page = host.get(f"/entities?edit={entity_id}")
     token = page.text.split('name="csrf-token" content="', 1)[1].split('"', 1)[0]
     host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={
             "_csrf": token,
             "legal_entity_id": str(entity_id),
@@ -149,7 +156,7 @@ def test_saving_other_fields_does_not_wipe_an_iban_only_account(host):
 def test_a_sent_blank_clears_the_field(host):
     entity_id = _add_entity()
     host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={"legal_entity_id": str(entity_id), "bank_account": "", "bic": "  ",
               "next": f"/invoices/new?entity={entity_id}"},
         follow_redirects=False,
@@ -162,7 +169,7 @@ def test_a_sent_blank_clears_the_field(host):
 def test_a_bad_bank_number_keeps_the_old_value(host):
     entity_id = _add_entity()
     response = host.post(
-        "/invoices/settings",
+        f"/entities/{entity_id}/invoice",
         data={"legal_entity_id": str(entity_id), "bank_account": "not-an-account",
               "next": f"/invoices/new?entity={entity_id}"},
         follow_redirects=True,
@@ -174,10 +181,12 @@ def test_a_bad_bank_number_keeps_the_old_value(host):
 
 def test_a_failed_issue_rerenders_every_typed_value(host):
     entity_id = _add_entity()
+    stay_id = make_stay(_owner(), entity_id=entity_id)
     response = host.post(
         "/invoices",
         data={
             "legal_entity_id": str(entity_id),
+            **stay_form(stay_id),
             # customer name missing on purpose: this is the 422 path
             "buyer_email": "keep@me.test",
             "note": "typo note",

@@ -123,14 +123,18 @@ def test_login_is_required():
 
 def test_no_active_property_shows_empty_state_without_primary_button(host):
     client, owner_id, entity_id = host
-    _property(owner_id, entity_id, "Disabled Demo", rate=0)
+    apartment_id = _property(owner_id, entity_id, "Disabled Demo", rate=0)
 
     response = client.get("/stay-fees?month=2026-08")
 
     assert response.status_code == 200
     assert "Disabled Demo" in response.text
     assert "Not set up" in response.text
-    assert "/setup" in response.text
+    # 0077: Set up opens the one fee editor and comes back to this month.
+    assert (
+        f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting'
+        '&amp;return_to=%2Fstay-fees%3Fmonth%3D2026-08#stay-fee-settings"'
+    ) in response.text
     assert "btn accent primary" not in response.text
 
 
@@ -179,9 +183,15 @@ def test_period_filter_uses_month_picker_not_chip_rail(host):
     assert 'type="month"' in response.text
     assert 'name="month"' in response.text
     assert 'value="2026-08"' in response.text
+    assert 'min="2000-01"' in response.text
     assert 'max="2026-09"' in response.text
-    assert 'href="/stay-fees?month=2026-07"' in response.text
-    assert 'href="/stay-fees?month=2026-09"' in response.text
+    assert 'required data-month-native' in response.text
+    assert 'data-current-month="2026-08"' in response.text
+    assert 'data-min-month="2000-01"' in response.text
+    assert 'data-max-month="2026-09"' in response.text
+    assert 'type="button" data-month-prev hidden' in response.text
+    assert 'type="button" data-month-next hidden' in response.text
+    assert 'href="/stay-fees?month=' not in response.text
     assert 'class="chip' not in response.text
     assert "list-filter" in response.text
 

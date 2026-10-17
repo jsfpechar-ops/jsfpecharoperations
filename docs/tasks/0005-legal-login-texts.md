@@ -1,6 +1,6 @@
 # 0005 Legal and privacy texts for e-mail login and passkeys
 
-Status: todo
+Status: done
 Depends on: 0003+0004 on same branch | Branch: task/0002-account-emails
 Executor: Cursor | Fits one session
 

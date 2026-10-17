@@ -129,6 +129,14 @@ def _seed_stays():
 
 def _stay_sources(page_text: str):
     """What the Source column of a stays table actually renders, one per row."""
+    badges = [
+        value.strip()
+        for value in re.findall(
+            r'class="source-badge">(?:<img[^>]*>)?([^<]+)', page_text
+        )
+    ]
+    if badges:
+        return badges
     return [
         value.strip()
         for value in re.findall(r'data-label="Source">\s*([^<]+)', page_text)
@@ -304,7 +312,9 @@ def test_reservation_rows_are_full_click_targets():
         assert page.status_code == 200
         assert f'data-href="/reservations/{stays[0]}?return_to=' in page.text
         assert 'class="clickable-row"' in page.text
-        assert ">Open</a>" not in page.text
+        # Open remains in the menu and native date link; the row has no duplicate button.
+        assert 'class="btn row-open"' not in page.text
+        assert 'class="row-menu-item" href="/reservations/' in page.text
     finally:
         _cleanup()
 
@@ -316,12 +326,12 @@ def test_reservation_detail_shows_direct_guest_link():
         assert page.status_code == 200
         # The copied stay link is the readable one (WP19).
         assert f"/l/{guest_slug.current(apartment_id)}/{stays[0]}" in page.text
-        assert "Copy guest link for this stay" in page.text
+        assert "Copy guest form link" in page.text
         assert "Next step" in page.text
         assert "Edit stay details" in page.text
         assert 'class="panel stay-command-panel"' in page.text
         assert page.text.count('name="expected_guests_override"') == 1
-        assert 'href="/guest-links"' in page.text
+        assert f'href="/apartments/{apartment_id}?view=settings&amp;section=guests#communication"' in page.text
     finally:
         _cleanup()
 
@@ -379,7 +389,8 @@ def test_a_live_stay_keeps_its_deadline_and_copy_link():
         assert "This stay is cancelled" not in page.text
         assert "Marked as not a guest stay" not in page.text
         assert "Archived and hidden from your daily work." not in page.text
-        assert COPY_LINK_PRIMARY in page.text
+        assert COPY_LINK_PRIMARY not in page.text
+        assert 'class="row-menu-item" type="button" role="menuitem" data-copy="stay-link"' in page.text
         assert "Reporting deadline" in page.text
         assert 'class="stay-metrics detail-hero inactive"' not in page.text
     finally:
@@ -494,12 +505,12 @@ def test_filtered_stays_return_path_and_guest_links_workspace():
         assert "Back to stays" in detail.text
         assert f"/reservations?range=all&amp;apartment={apartment_id}" in detail.text
 
-        links = browser.get("/guest-links")
+        links = browser.get(f"/apartments/{apartment_id}")
         assert links.status_code == 200
         slug = guest_slug.current(apartment_id)
         assert f"/l/{slug}" in links.text
         assert f"/l/{slug}/{stays[0]}" not in links.text
-        assert "Suggested portal message" in links.text
+        assert "Suggested portal message" not in links.text  # 0094: removed by owner correction
     finally:
         _cleanup()
 
@@ -645,10 +656,15 @@ def test_property_can_use_separate_pm_and_data_controller():
         assert "privacy@controller.test" not in picker.text
 
         settings = _browser().get(f"/apartments/{apartment_id}")
-        assert 'id="controller_is_operator"' in settings.text
-        assert re.search(
-            rf'<option value="{controller_id}"\s+selected', settings.text
-        )
+        # 0088: one visible selector, the override still selected; no checkbox.
+        assert 'id="controller_is_operator"' not in settings.text
+        controller_select = settings.text[
+            settings.text.index('id="data_controller_entity_id"') : settings.text.index(
+                "</select>", settings.text.index('id="data_controller_entity_id"')
+            )
+        ]
+        assert re.search(rf'<option value="{controller_id}"\s+selected', controller_select)
+        assert "Same as operator" in controller_select
     finally:
         db.update(
             "apartment",

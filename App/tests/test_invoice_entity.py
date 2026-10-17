@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app import auth, db, validation
 from app.main import app
 from tests.conftest import login_as
+from tests.invoice_stay_helper import drop_stays
 
 USERNAME = "invoice-entity-host"
 
@@ -22,6 +23,7 @@ def _cleanup():
     )
     db.execute("DELETE FROM invoice_item WHERE invoice_id IN (SELECT id FROM invoice WHERE owner_user_id = ?)", (user_id,))
     db.execute("DELETE FROM invoice WHERE owner_user_id = ?", (user_id,))
+    drop_stays(user_id)
     db.execute(
         "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
         "ON CONFLICT(key) DO UPDATE SET value = ''"

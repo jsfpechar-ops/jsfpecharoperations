@@ -23,8 +23,30 @@ REVOKED = "revoked"
 REVOKE_FAILED = "revoke_failed"
 
 BACKOFF_MINUTES = (1, 5, 15, 60, 240)
+# A failed code is handed to the host after this many tries (1 min apart).
+ISSUE_MAX_ATTEMPTS = 2
+PERIOD_TAKEN = "period_taken"
+# A type-3 ``get`` for a period whose earlier code was never deleted returns
+# that same code (TTLock support, 2026-10-12). Such a code is never reused.
+PERIOD_SHARED = "period_shared"
+PERIOD_TAKEN_RETRY_MINUTES = (1, 5)
+PERIOD_TAKEN_MAX_ATTEMPTS = 4
+GATEWAY_RETRY_KINDS = ("offline", "transient", "network", "rate", "budget")
 LEASE_MINUTES = 2
+# A guest who has finished registering must not wait longer than this in silence.
+DELAY_MINUTES = 5
 BATCH = 20
+
+KEYPAD_CONFIRM_SUFFIX = "#"
+
+
+def guest_pin_display(pin: str) -> str:
+    """Digits guests type on the TTLock keypad, including the final # confirm."""
+    pin = (pin or "").strip()
+    if not pin or pin.endswith(KEYPAD_CONFIRM_SUFFIX):
+        return pin
+    return f"{pin}{KEYPAD_CONFIRM_SUFFIX}"
+
 
 def _mail_idempotency_key(reservation_id: int, row: dict) -> str:
     code_id = row["provider_code_id"] or "none"
@@ -33,18 +55,34 @@ def _mail_idempotency_key(reservation_id: int, row: dict) -> str:
     )
 
 
-def _release_issue_claim(door_code_id: int, *, decrement_attempt: bool = False) -> None:
+def _release_issue_claim(
+    door_code_id: int, *, decrement_attempt: bool = False, reason: Optional[str] = None
+) -> None:
+    """Put a row back to pending. ``reason`` is kept so a stuck code says why."""
     if decrement_attempt:
         db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, attempts = attempts - 1, "
-            "updated_at = ? WHERE id = ? AND attempts > 0",
-            (PENDING, db.utcnow(), door_code_id),
+            "last_error = COALESCE(?, last_error), updated_at = ? WHERE id = ? AND attempts > 0",
+            (PENDING, reason, db.utcnow(), door_code_id),
         )
     else:
         db.execute(
-            "UPDATE door_code SET state = ?, claimed_at = NULL, updated_at = ? WHERE id = ?",
-            (PENDING, db.utcnow(), door_code_id),
+            "UPDATE door_code SET state = ?, claimed_at = NULL, "
+            "last_error = COALESCE(?, last_error), updated_at = ? WHERE id = ?",
+            (PENDING, reason, db.utcnow(), door_code_id),
         )
+
+
+def _waited_minutes(since_iso: Optional[str]) -> float:
+    if not since_iso:
+        return 0.0
+    try:
+        since = datetime.fromisoformat(since_iso)
+    except ValueError:
+        return 0.0
+    if since.tzinfo is None:
+        since = since.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - since).total_seconds() / 60
 
 
 def _now() -> datetime:
@@ -72,7 +110,9 @@ def _eligible_sql() -> Tuple[str, str]:
         "r.status = 'active' AND r.archived_at IS NULL "
         "AND r.registration_completed_at IS NOT NULL AND r.date_to >= ? "
         "AND a.lock_provider = 'ttlock' AND a.lock_id IS NOT NULL "
-        "AND a.checkin_hour IS NOT NULL AND a.checkout_hour IS NOT NULL"
+        "AND a.checkin_hour IS NOT NULL AND a.checkout_hour IS NOT NULL "
+        # 0100: the setup guide's demo stay never opens a real door.
+        "AND COALESCE(r.source, '') != 'demo'"
     )
     if not config.DOOR_CODES_LIVE:
         sql += " AND r.source = 'manual'"
@@ -95,7 +135,7 @@ def _stay_checkin_label(date_from: str, hour: int) -> str:
 
 def view(reservation: dict, apartment: dict) -> Optional[dict]:
     """What the guest and host pages show. None when the property has no door codes."""
-    if apartment["lock_provider"] != "ttlock":
+    if apartment["lock_provider"] != "ttlock" or reservation["source"] == "demo":
         return None
     if not config.DOOR_CODES_LIVE and reservation["source"] != "manual":
         return None
@@ -105,11 +145,15 @@ def view(reservation: dict, apartment: dict) -> Optional[dict]:
     )
     if not row:
         if reservation["registration_completed_at"]:
+            if _waited_minutes(reservation["registration_completed_at"]) > DELAY_MINUTES:
+                return {"state": "delayed"}
             return {"state": "preparing"}
         return {"state": "waiting"}
     state = row["state"]
     if state in (PENDING, ISSUING, RETRYING):
         if reservation["registration_completed_at"]:
+            if _waited_minutes(reservation["registration_completed_at"]) > DELAY_MINUTES:
+                return {"state": "delayed"}
             return {"state": "preparing"}
         return {"state": "waiting"}
     if state == FAILED:
@@ -123,15 +167,18 @@ def view(reservation: dict, apartment: dict) -> Optional[dict]:
         return {"state": "preparing"}
     valid_from = row["valid_from"] or ""
     valid_to = row["valid_to"] or ""
-    first_ms = _iso_to_ms(valid_from) + 24 * 3_600_000 if valid_from else 0
+    custom = (row["code_kind"] or "") == "custom"
+    first_use = ""
+    if valid_from and not custom:
+        first_use = _fmt_local(_ms_to_iso(_iso_to_ms(valid_from) + 24 * 3_600_000))
     return {
         "state": "issued",
-        "pin": pin,
+        "pin": guest_pin_display(pin),
         "works_from": _fmt_local(valid_from) if valid_from else "",
         "works_until": _fmt_local(valid_to) if valid_to else "",
-        "first_use_by": _fmt_local(_ms_to_iso(first_ms)) if valid_from else "",
         "checkin": _stay_checkin_label(reservation["date_from"], apartment["checkin_hour"]),
         "checkout": _stay_checkin_label(reservation["date_to"], apartment["checkout_hour"]),
+        "first_use_by": first_use,
     }
 
 
@@ -172,6 +219,69 @@ def send_code_mail(door_code_id: int) -> None:
         log.exception("door_code_mail_failed door_code=%s", door_code_id)
 
 
+HOLD_CONFIRMATION_MINUTES = 5
+
+
+def completion_door_code(reservation: dict, apartment: dict) -> Tuple[str, Optional[dict], Optional[dict]]:
+    """What the registration confirmation does about the door code.
+
+    ("hold", None, None): a code is still being made, wait for it.
+    ("with", row, fields): the code exists and was not sent; put it in.
+    ("without", None, None): no code is coming.
+    """
+    if not config.DOOR_CODES_ENABLED:
+        return "without", None, None
+    row = db.query_one("SELECT * FROM door_code WHERE reservation_id = ?", (reservation["id"],))
+    if not row:
+        return "without", None, None
+    if row["state"] in (PENDING, ISSUING, RETRYING):
+        return "hold", None, None
+    if row["state"] == ISSUED and row["pin_enc"] and not row["notified_at"]:
+        shown = view(reservation, apartment)
+        if shown and shown.get("state") == "issued":
+            return "with", row, {
+                "checkin": shown["checkin"],
+                "checkout": shown["checkout"],
+                "first_use_by": shown["first_use_by"],
+            }
+    return "without", None, None
+
+
+def _release_confirmation(reservation_id: int, *, force: bool = False) -> None:
+    """Send a held registration confirmation (lazy import: claim imports us)."""
+    from . import claim
+
+    reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+    if not reservation:
+        return
+    apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],))
+    if apartment:
+        claim.maybe_notify_completion(reservation, apartment, force=force)
+
+
+def _release_held_confirmations() -> int:
+    """Safety net: no confirmation waits longer than HOLD_CONFIRMATION_MINUTES."""
+    now = _now()
+    cutoff = _iso(now - timedelta(minutes=HOLD_CONFIRMATION_MINUTES))
+    # Only stays this brief can have held: they have a door_code row and
+    # registered in the last day. Older stays must never get a late confirmation.
+    oldest = _iso(now - timedelta(hours=24))
+    rows = db.query(
+        "SELECT r.id FROM reservation r JOIN reservation_claim c ON c.reservation_id = r.id "
+        "JOIN door_code dc ON dc.reservation_id = r.id "
+        "WHERE c.state = 'claimed' AND c.email IS NOT NULL AND c.email <> '' "
+        "AND c.completion_notified_at IS NULL AND r.status = 'active' "
+        "AND r.registration_completed_at < ? AND r.registration_completed_at > ? LIMIT ?",
+        (cutoff, oldest, BATCH),
+    )
+    for row in rows:
+        log.error(
+            "DOOR_CODE_PROBLEM stage=confirmation_without_code reservation=%s", row["id"]
+        )
+        _release_confirmation(int(row["id"]), force=True)
+    return len(rows)
+
+
 def _send_code_mail(door_code_id: int) -> None:
     row = db.query_one("SELECT * FROM door_code WHERE id = ?", (door_code_id,))
     if not row or row["state"] != ISSUED or row["notified_at"]:
@@ -186,6 +296,12 @@ def _send_code_mail(door_code_id: int) -> None:
     )
     if not claim or not (claim["email"] or "").strip():
         return
+    if not claim["completion_notified_at"]:
+        # The confirmation has not gone yet: the code travels inside it.
+        _release_confirmation(int(reservation["id"]))
+        again = db.query_one("SELECT notified_at FROM door_code WHERE id = ?", (door_code_id,))
+        if again and again["notified_at"]:
+            return
     shown = view(reservation, apartment)
     if not shown or shown.get("state") != "issued":
         return
@@ -219,7 +335,43 @@ def _send_code_mail(door_code_id: int) -> None:
     mail.drain(limit=4)
 
 
-def issue(door_code_id: int) -> bool:
+def _period_code_held_by_other(
+    lock_id: str,
+    code_id: str,
+    start_ms: int,
+    end_ms: int,
+    door_code_id: int,
+) -> bool:
+    """True when another stay already stores this TTLock period code.
+
+    Type-3 ``get`` for a period whose earlier code was never deleted returns
+    that same code (TTLock support, 2026-10-12). The new stay must not adopt it.
+    """
+    return bool(
+        db.query_one(
+            "SELECT id FROM door_code WHERE lock_id = ? AND provider_code_id = ? "
+            "AND valid_from = ? AND valid_to = ? AND id != ?",
+            (lock_id, str(code_id), _ms_to_iso(start_ms), _ms_to_iso(end_ms), door_code_id),
+        )
+    )
+
+
+def _create_random(
+    account_id: int,
+    lock_id: str,
+    start_ms: int,
+    end_ms: int,
+    name: str,
+    priority: str,
+    door_code_id: int,
+) -> Tuple[str, str]:
+    pin, code_id = ttlock.create_period_code(account_id, lock_id, start_ms, end_ms, name, priority)
+    if _period_code_held_by_other(lock_id, code_id, start_ms, end_ms, door_code_id):
+        raise ttlock.TTLockError("period already has an undeleted code", kind=PERIOD_SHARED)
+    return pin, code_id
+
+
+def issue(door_code_id: int, *, allow_gateway: bool = False) -> bool:
     now = _now()
     now_iso = _iso(now)
     lease_cutoff = _iso(now - timedelta(minutes=LEASE_MINUTES))
@@ -247,12 +399,12 @@ def issue(door_code_id: int) -> bool:
         (reservation["id"], today),
     )
     if not still or not ttlock.allowed_for(apartment["owner_user_id"]):
-        _release_issue_claim(door_code_id, decrement_attempt=True)
+        _release_issue_claim(door_code_id, decrement_attempt=True, reason="not_eligible")
         return False
 
     account = ttlock.account_for(apartment["owner_user_id"])
     if not account or account["status"] != "ok":
-        _release_issue_claim(door_code_id, decrement_attempt=True)
+        _release_issue_claim(door_code_id, decrement_attempt=True, reason="no_account")
         return False
 
     try:
@@ -264,7 +416,7 @@ def issue(door_code_id: int) -> bool:
             config.DOOR_CODE_BUFFER_HOURS,
         )
     except ValueError:
-        _release_issue_claim(door_code_id, decrement_attempt=True)
+        _release_issue_claim(door_code_id, decrement_attempt=True, reason="bad_window")
         return False
 
     if end_ms < int(now.timestamp() * 1000):
@@ -282,32 +434,117 @@ def issue(door_code_id: int) -> bool:
         else ttlock.NORMAL
     )
     attempts = int(row["attempts"])
+    taken = (row["last_error"] or "").startswith(PERIOD_TAKEN)
+    via_add = False
+    kind = "random"
 
     try:
         pin: Optional[str] = None
         code_id: Optional[str] = None
         if attempts > 1:
-            found = ttlock.find_code_by_name(int(account["id"]), row["lock_id"], name)
-            if found:
-                pin, code_id = found
-        if pin is None:
-            pin, code_id = ttlock.create_period_code(
-                int(account["id"]),
-                row["lock_id"],
-                start_ms,
-                end_ms,
-                name,
-                priority,
+            found = ttlock.find_code_by_name(
+                int(account["id"]), row["lock_id"], name, start_ms, end_ms
             )
+            if found:
+                found_pin, found_id = found
+                if _period_code_held_by_other(
+                    row["lock_id"], found_id, start_ms, end_ms, door_code_id
+                ):
+                    # ``get`` names the returned period code UH-<id>. A retry
+                    # then finds it by that name and would hand the cancelled
+                    # stay's PIN to the new guest. Skip it; the custom-code
+                    # path below issues a code of this stay's own.
+                    log.error(
+                        "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s",
+                        PERIOD_SHARED,
+                        reservation["id"],
+                        door_code_id,
+                    )
+                    mail_notify.door_code_notice(door_code_id, PERIOD_SHARED)
+                    mail.drain(limit=4)
+                    if not taken:
+                        taken = True
+                        db.execute(
+                            "UPDATE door_code SET last_error = ? WHERE id = ?",
+                            ("period_taken:shared", door_code_id),
+                        )
+                else:
+                    pin, code_id = found_pin, found_id
+                    kind = "custom" if taken else "random"
+        if pin is None:
+            if taken and allow_gateway:
+                via_add = True
+                pin, code_id = ttlock.add_custom_code(
+                    int(account["id"]),
+                    row["lock_id"],
+                    start_ms,
+                    end_ms,
+                    name,
+                    priority,
+                )
+                kind = "custom"
+            elif taken:
+                _release_issue_claim(door_code_id, decrement_attempt=True)
+                return False
+            else:
+                try:
+                    pin, code_id = _create_random(
+                        int(account["id"]),
+                        row["lock_id"],
+                        start_ms,
+                        end_ms,
+                        name,
+                        priority,
+                        door_code_id,
+                    )
+                    kind = "random"
+                except ttlock.TTLockError as create_exc:
+                    if create_exc.kind not in (PERIOD_TAKEN, PERIOD_SHARED):
+                        raise
+                    log.error(
+                        "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s",
+                        create_exc.kind,
+                        reservation["id"],
+                        door_code_id,
+                    )
+                    mail_notify.door_code_notice(door_code_id, create_exc.kind)
+                    mail.drain(limit=4)
+                    if allow_gateway:
+                        via_add = True
+                        pin, code_id = ttlock.add_custom_code(
+                            int(account["id"]),
+                            row["lock_id"],
+                            start_ms,
+                            end_ms,
+                            name,
+                            priority,
+                        )
+                        kind = "custom"
+                    else:
+                        db.execute(
+                            "UPDATE door_code SET state = ?, claimed_at = NULL, "
+                            "last_error = ?, next_attempt_at = ?, updated_at = ? WHERE id = ?",
+                            (
+                                RETRYING,
+                                "period_taken:-1026"
+                                if create_exc.kind == PERIOD_TAKEN
+                                else "period_taken:shared",
+                                now_iso,
+                                now_iso,
+                                door_code_id,
+                            ),
+                        )
+                        return False
         with db.cursor():
             db.execute(
                 "UPDATE door_code SET state = ?, pin_enc = ?, provider_code_id = ?, "
-                "valid_from = ?, valid_to = ?, issued_at = ?, claimed_at = NULL, "
+                "code_kind = ?, valid_from = ?, valid_to = ?, issued_at = ?, claimed_at = NULL, "
                 "last_error = NULL, updated_at = ? WHERE id = ?",
                 (
                     ISSUED,
                     db.encrypt_field(pin),
                     code_id,
+                    kind,
                     _ms_to_iso(start_ms),
                     _ms_to_iso(end_ms),
                     now_iso,
@@ -316,16 +553,70 @@ def issue(door_code_id: int) -> bool:
                 ),
             )
         alerts.resolve(f"door_code_failed:{reservation['id']}")
+        alerts.resolve(f"door_code_delayed:{reservation['id']}")
         db.audit(
             "door_code_issued",
             f"door_code={door_code_id} reservation={reservation['id']}",
             actor="system",
             owner_user_id=apartment["owner_user_id"],
         )
-        send_code_mail(door_code_id)
+        fresh = db.query_one("SELECT status, archived_at FROM reservation WHERE id = ?", (reservation["id"],))
+        if fresh and fresh["status"] == "active" and fresh["archived_at"] is None:
+            send_code_mail(door_code_id)
         return True
     except ttlock.TTLockError as exc:
-        kind = (exc.kind or "transient")[:40]
+        kind_err = (exc.kind or "transient")[:40]
+        reason = f"{kind_err}:{exc.code}" if exc.code is not None else kind_err
+        if taken or via_add:
+            last_err = ("period_taken:" + reason)[:40]
+            if exc.code == -2012:
+                new_state = FAILED
+                next_at = None
+            elif kind_err in ("permission", "reauth", "config", "disabled", "storage", "duplicate"):
+                new_state = FAILED
+                next_at = None
+            elif kind_err == "budget":
+                new_state = RETRYING
+                next_at = _iso(now + timedelta(minutes=60))
+                db.execute(
+                    "UPDATE door_code SET attempts = attempts - 1 WHERE id = ?",
+                    (door_code_id,),
+                )
+            elif attempts >= PERIOD_TAKEN_MAX_ATTEMPTS:
+                new_state = FAILED
+                next_at = None
+            else:
+                new_state = RETRYING
+                idx = min(max(attempts - 2, 0), 1)
+                next_at = _iso(now + timedelta(minutes=PERIOD_TAKEN_RETRY_MINUTES[idx]))
+            db.execute(
+                "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, "
+                "next_attempt_at = ?, updated_at = ? WHERE id = ?",
+                (new_state, last_err, next_at, now_iso, door_code_id),
+            )
+            log.error(
+                "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s attempt=%s reason=%s",
+                "handed_over" if new_state == FAILED else "attempt_failed",
+                reservation["id"],
+                door_code_id,
+                attempts,
+                last_err,
+            )
+            if new_state == FAILED:
+                alerts.raise_alert(
+                    "warning",
+                    "door_code_failed",
+                    "Door code could not be created",
+                    dedupe_key=f"door_code_failed:{reservation['id']}",
+                    apartment_id=apartment["id"],
+                    reservation_id=reservation["id"],
+                    params={"property": apartment["internal_name"], "date": reservation["date_from"]},
+                )
+                mail_notify.door_code_notice(door_code_id, "failed")
+                _release_confirmation(int(reservation["id"]))
+                mail.drain(limit=4)
+            return False
+        kind = kind_err
         if exc.kind in ("reauth", "permission", "config", "disabled"):
             new_state = FAILED
             next_at = None
@@ -336,7 +627,7 @@ def issue(door_code_id: int) -> bool:
                 "UPDATE door_code SET attempts = attempts - 1 WHERE id = ?",
                 (door_code_id,),
             )
-        elif attempts >= len(BACKOFF_MINUTES):
+        elif attempts >= ISSUE_MAX_ATTEMPTS:
             new_state = FAILED
             next_at = None
         else:
@@ -345,7 +636,12 @@ def issue(door_code_id: int) -> bool:
         db.execute(
             "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, "
             "next_attempt_at = ?, updated_at = ? WHERE id = ?",
-            (new_state, kind, next_at, now_iso, door_code_id),
+            (new_state, reason[:40], next_at, now_iso, door_code_id),
+        )
+        log.error(
+            "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s attempt=%s reason=%s",
+            "handed_over" if new_state == FAILED else "attempt_failed",
+            reservation["id"], door_code_id, attempts, reason,
         )
         if new_state == FAILED:
             alerts.raise_alert(
@@ -358,10 +654,12 @@ def issue(door_code_id: int) -> bool:
                 params={"property": apartment["internal_name"], "date": reservation["date_from"]},
             )
             mail_notify.door_code_notice(door_code_id, "failed")
+            _release_confirmation(int(reservation["id"]))
+            mail.drain(limit=4)
         return False
     except Exception:
         log.exception("door_code_issue_failed door_code=%s", door_code_id)
-        if attempts >= len(BACKOFF_MINUTES):
+        if attempts >= ISSUE_MAX_ATTEMPTS:
             new_state = FAILED
             next_at = None
         else:
@@ -372,6 +670,11 @@ def issue(door_code_id: int) -> bool:
             "next_attempt_at = ?, updated_at = ? WHERE id = ?",
             (new_state, "transient", next_at, now_iso, door_code_id),
         )
+        log.error(
+            "DOOR_CODE_PROBLEM stage=%s reservation=%s door_code=%s attempt=%s reason=%s",
+            "handed_over" if new_state == FAILED else "attempt_failed",
+            reservation["id"], door_code_id, attempts, "transient",
+        )
         if new_state == FAILED:
             alerts.raise_alert(
                 "warning",
@@ -383,7 +686,26 @@ def issue(door_code_id: int) -> bool:
                 params={"property": apartment["internal_name"], "date": reservation["date_from"]},
             )
             mail_notify.door_code_notice(door_code_id, "failed")
+            _release_confirmation(int(reservation["id"]))
+            mail.drain(limit=4)
         return False
+
+
+def _stay_is_live(reservation) -> bool:
+    return bool(
+        reservation
+        and reservation["status"] == "active"
+        and reservation["archived_at"] is None
+    )
+
+
+def _keep_issued(row_id: int, now_iso: str) -> None:
+    """The stay is back; leave the PIN on the lock and show it again."""
+    db.execute(
+        "UPDATE door_code SET state = ?, claimed_at = NULL, attempts = 0, "
+        "next_attempt_at = NULL, last_error = NULL, updated_at = ? WHERE id = ?",
+        (ISSUED, now_iso, row_id),
+    )
 
 
 def _revoke_one(row_id: int) -> None:
@@ -404,6 +726,9 @@ def _revoke_one(row_id: int) -> None:
     apartment = db.query_one("SELECT * FROM apartment WHERE id = ?", (row["apartment_id"],))
     reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (row["reservation_id"],))
     if not apartment or not reservation:
+        return
+    if _stay_is_live(reservation):
+        _keep_issued(row_id, now_iso)
         return
     account = ttlock.account_for(apartment["owner_user_id"])
     if not account or account["status"] != "ok":
@@ -435,14 +760,35 @@ def _revoke_one(row_id: int) -> None:
         mail_notify.door_code_notice(row_id, "cancelled_deleted")
     except ttlock.TTLockError as exc:
         kind = exc.kind or "transient"
-        if kind in ("offline", "transient", "network", "rate") and attempts < 3:
-            delays = (1, 15, 60)
-            next_at = _iso(now + timedelta(minutes=delays[min(attempts - 1, 2)]))
-            db.execute(
-                "UPDATE door_code SET claimed_at = NULL, next_attempt_at = ?, last_error = ?, "
-                "updated_at = ? WHERE id = ?",
-                (next_at, kind[:40], now_iso, row_id),
+        # Every code, random or custom, is retried until its end: an undeleted
+        # code is handed again to the next stay with the same hours.
+        if kind in GATEWAY_RETRY_KINDS:
+            past_end = bool(
+                row["valid_to"]
+                and _iso_to_ms(row["valid_to"]) <= int(now.timestamp() * 1000)
             )
+            if past_end:
+                db.execute(
+                    "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
+                    "WHERE id = ?",
+                    (REVOKE_FAILED, kind[:40], now_iso, row_id),
+                )
+                db.audit(
+                    "door_code_revoke_failed",
+                    f"door_code={row_id}",
+                    actor="system",
+                    owner_user_id=apartment["owner_user_id"],
+                )
+            else:
+                delays = (1, 15, 60)
+                next_at = _iso(now + timedelta(minutes=delays[min(attempts - 1, 2)]))
+                db.execute(
+                    "UPDATE door_code SET claimed_at = NULL, next_attempt_at = ?, last_error = ?, "
+                    "updated_at = ? WHERE id = ?",
+                    (next_at, kind[:40], now_iso, row_id),
+                )
+                if attempts == 3:
+                    mail_notify.door_code_notice(row_id, "cancelled_not_deleted")
         else:
             db.execute(
                 "UPDATE door_code SET state = ?, claimed_at = NULL, last_error = ?, updated_at = ? "
@@ -480,9 +826,27 @@ def _handle_cancellations(now_iso: str) -> None:
                     (REVOKE_PENDING, now_iso, now_iso, row["id"]),
                 )
 
+    # A calendar revival or archive undo can bring the stay back while a
+    # delete is still queued. 0038 keeps retrying custom-code deletes until
+    # valid_to, so without this abort the guest's working PIN is removed
+    # hours later. Restore before the due query so the stay page shows it.
+    revived = db.query(
+        "SELECT dc.id FROM door_code dc "
+        "JOIN reservation r ON r.id = dc.reservation_id "
+        "WHERE dc.state IN (?, ?) AND r.status = 'active' AND r.archived_at IS NULL "
+        "AND dc.pin_enc IS NOT NULL",
+        (REVOKE_PENDING, REVOKE_FAILED),
+    )
+    for item in revived:
+        _keep_issued(int(item["id"]), now_iso)
+        db.audit("door_code_revoke_aborted", f"door_code={item['id']}", actor="system")
+
     due = db.query(
-        "SELECT id FROM door_code WHERE state = ? AND (next_attempt_at IS NULL OR next_attempt_at <= ?) "
-        "ORDER BY next_attempt_at LIMIT ?",
+        "SELECT dc.id FROM door_code dc "
+        "JOIN reservation r ON r.id = dc.reservation_id "
+        "WHERE dc.state = ? AND (r.status != 'active' OR r.archived_at IS NOT NULL) "
+        "AND (dc.next_attempt_at IS NULL OR dc.next_attempt_at <= ?) "
+        "ORDER BY dc.next_attempt_at LIMIT ?",
         (REVOKE_PENDING, now_iso, BATCH),
     )
     for item in due:
@@ -527,87 +891,110 @@ def _handle_moves(now_iso: str) -> None:
         if row["valid_from"] and row["valid_to"]:
             if _iso_to_ms(row["valid_from"]) == start_ms and _iso_to_ms(row["valid_to"]) == end_ms:
                 continue
+        if (row["valid_from"] and _iso_to_ms(row["valid_from"]) <= now_ms) or start_ms <= now_ms:
+            mail_notify.door_code_notice(int(row["id"]), "moved_during_stay")
+            continue
+        # Brief 0037: a move that failed with permission (etc.) is not retried after
+        # the host fixes TTLock access; the guest keeps the old code until then.
+        last_err = (row["last_error"] or "")
+        if last_err.startswith(("permission", "reauth", "config", "disabled")):
+            continue
         account = ttlock.account_for(row["owner_user_id"])
         if not account or account["status"] != "ok":
             continue
+        name = f"UH-{row['id']}"
+        move_now = _now()
+        priority = (
+            ttlock.CRITICAL
+            if start_ms < int((move_now + timedelta(hours=24)).timestamp() * 1000)
+            else ttlock.NORMAL
+        )
+        old_code_id = row["provider_code_id"] or ""
+        via_add = False
         try:
-            ttlock.change_code_period(
-                int(account["id"]),
-                row["lock_id"],
-                row["provider_code_id"] or "",
-                start_ms,
-                end_ms,
-                ttlock.NORMAL,
-            )
+            try:
+                pin, code_id = _create_random(
+                    int(account["id"]),
+                    row["lock_id"],
+                    start_ms,
+                    end_ms,
+                    name,
+                    priority,
+                    int(row["id"]),
+                )
+                code_kind = "random"
+            except ttlock.TTLockError as create_exc:
+                if create_exc.kind not in (PERIOD_TAKEN, PERIOD_SHARED):
+                    raise
+                mail_notify.door_code_notice(int(row["id"]), create_exc.kind)
+                mail.drain(limit=4)
+                via_add = True
+                pin, code_id = ttlock.add_custom_code(
+                    int(account["id"]),
+                    row["lock_id"],
+                    start_ms,
+                    end_ms,
+                    name,
+                    priority,
+                )
+                code_kind = "custom"
             db.execute(
-                "UPDATE door_code SET valid_from = ?, valid_to = ?, notified_at = NULL, "
-                "next_attempt_at = NULL, last_error = NULL, updated_at = ? WHERE id = ?",
-                (_ms_to_iso(start_ms), _ms_to_iso(end_ms), now_iso, row["id"]),
+                "UPDATE door_code SET pin_enc = ?, provider_code_id = ?, code_kind = ?, "
+                "valid_from = ?, valid_to = ?, notified_at = NULL, next_attempt_at = NULL, "
+                "last_error = NULL, updated_at = ? WHERE id = ?",
+                (
+                    db.encrypt_field(pin),
+                    code_id,
+                    code_kind,
+                    _ms_to_iso(start_ms),
+                    _ms_to_iso(end_ms),
+                    now_iso,
+                    row["id"],
+                ),
             )
             db.audit(
-                "door_code_moved",
+                "door_code_replaced",
                 f"door_code={row['id']}",
                 actor="system",
                 owner_user_id=row["owner_user_id"],
             )
             send_code_mail(int(row["id"]))
+            if old_code_id and old_code_id != code_id:
+                try:
+                    ttlock.delete_code(
+                        int(account["id"]),
+                        row["lock_id"],
+                        old_code_id,
+                    )
+                except ttlock.TTLockError:
+                    db.audit(
+                        "door_code_move_old_not_deleted",
+                        f"door_code={row['id']}",
+                        actor="system",
+                        owner_user_id=row["owner_user_id"],
+                    )
+                    mail_notify.door_code_notice(int(row["id"]), "moved_not_deleted")
+                    mail.drain(limit=4)
         except ttlock.TTLockError as exc:
             kind = exc.kind or "transient"
-            if kind in ("offline", "transient", "network", "rate", "budget"):
+            reason = f"{kind}:{exc.code}" if exc.code is not None else kind
+            if via_add:
+                last_error = ("period_taken:" + reason)[:40]
+            else:
+                last_error = reason[:40]
+            if kind in ("permission", "reauth", "config", "disabled"):
+                db.execute(
+                    "UPDATE door_code SET last_error = ?, updated_at = ? WHERE id = ?",
+                    (reason[:40], now_iso, row["id"]),
+                )
+                mail_notify.door_code_notice(int(row["id"]), "failed")
+                mail.drain(limit=4)
+            else:
+                # No attempt cap on move replace: the guest still has the old PIN.
                 delay = 60 if kind == "budget" else 15
                 db.execute(
                     "UPDATE door_code SET next_attempt_at = ?, last_error = ?, updated_at = ? WHERE id = ?",
-                    (_iso(_now() + timedelta(minutes=delay)), kind[:40], now_iso, row["id"]),
-                )
-                continue
-            old_code_id = row["provider_code_id"] or ""
-            try:
-                pin, code_id = ttlock.create_period_code(
-                    int(account["id"]),
-                    row["lock_id"],
-                    start_ms,
-                    end_ms,
-                    f"UH-{row['id']}",
-                    ttlock.NORMAL,
-                )
-                if old_code_id and old_code_id != code_id:
-                    try:
-                        ttlock.delete_code(
-                            int(account["id"]),
-                            row["lock_id"],
-                            old_code_id,
-                        )
-                    except ttlock.TTLockError:
-                        log.warning(
-                            "door_code_move_orphan lock=%s old_code=%s new_code=%s",
-                            row["lock_id"],
-                            old_code_id,
-                            code_id,
-                        )
-                db.execute(
-                    "UPDATE door_code SET pin_enc = ?, provider_code_id = ?, valid_from = ?, "
-                    "valid_to = ?, notified_at = NULL, next_attempt_at = NULL, last_error = NULL, "
-                    "updated_at = ? WHERE id = ?",
-                    (
-                        db.encrypt_field(pin),
-                        code_id,
-                        _ms_to_iso(start_ms),
-                        _ms_to_iso(end_ms),
-                        now_iso,
-                        row["id"],
-                    ),
-                )
-                db.audit(
-                    "door_code_replaced",
-                    f"door_code={row['id']}",
-                    actor="system",
-                    owner_user_id=row["owner_user_id"],
-                )
-                send_code_mail(int(row["id"]))
-            except ttlock.TTLockError:
-                db.execute(
-                    "UPDATE door_code SET next_attempt_at = ?, updated_at = ? WHERE id = ?",
-                    (_iso(_now() + timedelta(minutes=60)), now_iso, row["id"]),
+                    (_iso(_now() + timedelta(minutes=delay)), last_error, now_iso, row["id"]),
                 )
 
 
@@ -702,13 +1089,96 @@ def _budget_alerts() -> None:
         )
 
 
+def _alert_delayed() -> int:
+    """Tell the host about every registered stay still without a code.
+
+    Failure is only declared after the last retry, hours later. A guest who
+    finished registering must not wait that long without the host knowing.
+    """
+    cutoff = _iso(_now() - timedelta(minutes=DELAY_MINUTES))
+    today = deadlines.local_now().date().isoformat()
+    sql = (
+        "SELECT r.id AS reservation_id, r.date_from, a.id AS apartment_id, "
+        "a.internal_name, a.owner_user_id, dc.last_error, (dc.id IS NOT NULL) AS has_row "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        "LEFT JOIN door_code dc ON dc.reservation_id = r.id "
+        "WHERE a.lock_provider = 'ttlock' AND r.status = 'active' "
+        "AND r.archived_at IS NULL AND r.registration_completed_at IS NOT NULL "
+        "AND r.registration_completed_at < ? AND r.date_to >= ? "
+        "AND COALESCE(r.source, '') != 'demo' "
+        "AND (dc.id IS NULL OR dc.state IN (?, ?, ?))"
+    )
+    if not config.DOOR_CODES_LIVE:
+        sql += " AND r.source = 'manual'"
+    rows = db.query(sql, (cutoff, today, PENDING, ISSUING, RETRYING))
+    for row in rows:
+        if not ttlock.allowed_for(row["owner_user_id"]):
+            continue
+        reason = (row["last_error"] or "").strip() or ("waiting" if row["has_row"] else "not_set_up")
+        alerts.raise_alert(
+            "warning",
+            "door_code_delayed",
+            "Door code is taking too long",
+            detail=f"reason={reason}",
+            dedupe_key=f"door_code_delayed:{row['reservation_id']}",
+            apartment_id=row["apartment_id"],
+            reservation_id=row["reservation_id"],
+            params={"property": row["internal_name"], "date": row["date_from"]},
+        )
+        log.error(
+            "DOOR_CODE_PROBLEM stage=delayed reservation=%s reason=%s", row["reservation_id"], reason
+        )
+        # One mail to the host (support in copy), once per stay. Never to the guest.
+        mail_notify.door_code_delayed_notice(int(row["reservation_id"]), reason)
+        mail.drain(limit=4)
+    return len(rows)
+
+
+def _phase(name: str, func, *args):
+    """Run one reconcile phase so a failure in it cannot starve the others."""
+    try:
+        return func(*args)
+    except Exception:
+        log.exception("door_codes reconcile phase failed: %s", name)
+        return None
+
+
+def _issue_due(now_iso: str) -> Dict[str, int]:
+    out = {"created": 0, "issued": 0}
+    clause, today = _eligible_sql()
+    missing = db.query(
+        f"SELECT r.id FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        f"WHERE {clause} AND NOT EXISTS (SELECT 1 FROM door_code dc WHERE dc.reservation_id = r.id)",
+        (today,),
+    )
+    for row in missing:
+        if ensure_row(int(row["id"])) is not None:
+            out["created"] += 1
+
+    due = db.query(
+        "SELECT id FROM door_code WHERE state IN (?, ?) "
+        "AND (next_attempt_at IS NULL OR next_attempt_at <= ?) "
+        "ORDER BY next_attempt_at LIMIT ?",
+        (PENDING, RETRYING, now_iso, BATCH),
+    )
+    for row in due:
+        row_id = int(row["id"])
+        if _phase("issue", lambda rid: issue(rid, allow_gateway=True), row_id):
+            out["issued"] += 1
+    return out
+
+
 def reconcile() -> Dict[str, int]:
-    counts = {"created": 0, "issued": 0, "failed": 0, "expired": 0}
+    counts = {"created": 0, "issued": 0, "failed": 0, "expired": 0, "delayed": 0}
     if not config.DOOR_CODES_ENABLED:
         return counts
     now_iso = db.utcnow()
-    _handle_cancellations(now_iso)
-    _handle_moves(now_iso)
+
+    # Issuing comes first: a guest is waiting on it, and cancellations or moves
+    # (which call the gateway, up to 35 s each) must never hold it up.
+    issued = _phase("issue_due", _issue_due, now_iso)
+    if issued:
+        counts.update(issued)
 
     unsent = db.query(
         "SELECT id FROM door_code WHERE state = ? AND notified_at IS NULL "
@@ -718,25 +1188,8 @@ def reconcile() -> Dict[str, int]:
     for row in unsent:
         send_code_mail(int(row["id"]))
 
-    clause, today = _eligible_sql()
-    missing = db.query(
-        f"SELECT r.id FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
-        f"WHERE {clause} AND NOT EXISTS (SELECT 1 FROM door_code dc WHERE dc.reservation_id = r.id)",
-        (today,),
-    )
-    for row in missing:
-        if ensure_row(int(row["id"])) is not None:
-            counts["created"] += 1
-
-    due = db.query(
-        "SELECT id FROM door_code WHERE state IN (?, ?) "
-        "AND (next_attempt_at IS NULL OR next_attempt_at <= ?) "
-        "ORDER BY next_attempt_at LIMIT ?",
-        (PENDING, RETRYING, now_iso, BATCH),
-    )
-    for row in due:
-        if issue(int(row["id"])):
-            counts["issued"] += 1
+    _phase("cancellations", _handle_cancellations, now_iso)
+    _phase("moves", _handle_moves, now_iso)
 
     lease_cutoff = _iso(_now() - timedelta(minutes=LEASE_MINUTES))
     db.execute(
@@ -758,9 +1211,14 @@ def reconcile() -> Dict[str, int]:
     )
     counts["failed"] = int(failed["n"] or 0) if failed else 0
 
-    clock = check_lock_clocks()
-    counts.update(clock)
-    _budget_alerts()
+    delayed = _phase("delayed_alerts", _alert_delayed)
+    counts["delayed"] = int(delayed or 0)
+
+    clock = _phase("lock_clocks", check_lock_clocks)
+    if clock:
+        counts.update(clock)
+    _phase("budget_alerts", _budget_alerts)
+    _phase("held_confirmations", _release_held_confirmations)
     return counts
 
 

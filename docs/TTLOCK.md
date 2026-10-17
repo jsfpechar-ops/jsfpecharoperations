@@ -25,7 +25,7 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 - **One remote operation per lock at a time.** A second request while the first is running "is destined to fail" [GW]. UbyHost sends gateway calls only from the worker, one at a time.
 - A weak signal, or someone touching the keypad during the operation, makes it fail [GW]. UbyHost retries.
 - Through the gateway, the cloud can also unlock and lock, read the lock state and battery, and **query and calibrate the lock time** [GW]. UbyHost uses none of these now; remote time calibration is a possible later fix for clock drift.
-- Not yet proven on a real lock: that a remote delete of a never-used random code stops the lock accepting it (see "What the FAQ adds"). Owner test A settles it.
+- Proven on a real lock (owner, 2026-10-10): a never-typed random code that is deleted no longer opens the door.
 
 ## Request basics
 
@@ -66,12 +66,15 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 | `10000`, `10001` | Client id or secret wrong | Owner alert (server config), stop all calls |
 | `10005`, `30001`, `-2018`, `20002` | No permission, or not the lock admin | Host mail ("UbyHost has no admin rights on this lock"), no retry |
 | `30006` | API call frequency exceeded | Back off, owner alert |
+| `30007` | Monthly call limit exceeded; calls are refused until the 1st of the month, Beijing time [O, TTLock 2026-10-12]. Upgrade: Developer Account, Basic Information, Developer Version | Same as UbyHost's own `budget` stop (0069) |
 | `80000` | `date` off by more than 5 minutes | Owner alert (server clock), retry later |
 | `-2012` | Lock not connected to any gateway | Retry with backoff. For a delete, host mail after 1 h |
 | `-3037` | Gateway busy, or offline and not yet noticed by the server [FAQ 5.4] | Retry with backoff |
 | `-4056` | Lock storage full | Host mail |
 | `90000`, `1` | TTLock internal error, generic failure | Retry with backoff |
 | `-3` | Invalid parameter | Log, no retry (a UbyHost bug) |
+| `-1026` | Official (TTLock support, 2026-10-12): "Passcode with this validity period has been generated before and deleted." A type-3 code for exactly this lock and period was made and then deleted; that period can never get a type-3 code again. Seen on staging 2026-10-08 | Do not retry `get`. Worker calls `add`. Host mail is informational (0067). See the plan §6 |
+| `-3008` | A passcode that has never been used on the lock cannot be changed (confirmed by TTLock support 2026-10-12: a random code does not exist on the lock until first use). Once typed, a random code becomes a custom code and can be changed or deleted | UbyHost does not call `change` on a type-3 code |
 
 Source for every code: [X], table "System Error Codes", plus [FAQ] where marked. The reactions are UbyHost design, not TTLock text.
 
@@ -98,8 +101,8 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 
 ## What the FAQ adds about codes
 
-- **A random code is unknown to the lock until its first use.** Deleting a never-used random code over Bluetooth answers "data does not exist", because "the random password must be used once on the lock to be recorded" [FAQ 4.1]. So a remote delete of an unused random code may not stop the lock accepting it later. Owner test A settles this (plan §12).
-- **One random timed code per time range.** For type 3, "only one password can be generated within the same time range", and an expired timed code and a new one cannot share a range [FAQ 4.4, 4.5]. Codes on different days must differ by at least one hour at the start or the end. A stay cancelled and rebooked for the same dates and hours therefore cannot get a fresh random code without shifting the window.
+- **A random code is unknown to the lock until its first use.** Deleting a never-used random code over Bluetooth answers "data does not exist", because "the random password must be used once on the lock to be recorded" [FAQ 4.1]. Owner test 2026-10-10: a never-typed random code was deleted, then typed, and the door did not open. So a delete does stop an unused random code [O].
+- **One random timed code per time range.** For type 3, "only one password can be generated within the same time range", and an expired timed code and a new one cannot share a range [FAQ 4.4, 4.5]. Codes on different days must differ by at least one hour at the start or the end. A stay cancelled and rebooked for the same dates and hours therefore cannot get a fresh random code. UbyHost does not shift the window and does not reuse the old PIN. It creates a custom code for that stay ([plan](plans/ttlock-door-codes.md) §6).
 - Rounding: a same-day range rounds to half hours, a multi-day range to whole hours, a range over a year to months [FAQ 4.4].
 - **Custom codes** (`add`) are timed or permanent, accurate to the minute, have **no 24 h first-use rule**, and have no limit per time range [FAQ 4.4]. They stay on the lock after they expire until deleted. When the lock's memory is full, the oldest code is pushed out [FAQ 4.6]. Adding a code that already exists on the lock fails with "same password already exists" [FAQ 4.7]. With `addType=2` the lock must be online (gateway or Wi-Fi) [FAQ 4.8].
 - **Lock clock.** A wrong lock time makes codes invalid. Fix: TTLock app, lock, Settings, Lock Time, calibrate [FAQ 4.2, 4.8]. Unlocking with the app over Bluetooth also calibrates it [FAQ 1.10].
@@ -122,18 +125,26 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 
 - A second TTLock account that received a lock as **authorized admin** can create passcodes on it [O, tested in the TTLock app 2026-10-07]. UbyHost uses one dedicated TTLock account for the pilot, with the rental locks shared to it [O].
 
-## Custom passcode (add), not used
+## Custom passcode (add)
 
-- `POST /v3/keyboardPwd/add` with `keyboardPwd`, `startDate`, `endDate`, `addType=2` (gateway) returns `keyboardPwdId`. V4 passcode locks only [X]. UbyHost uses `get` instead [O].
+- `POST /v3/keyboardPwd/add` with `keyboardPwd`, `startDate`, `endDate`, `addType=2` (gateway) returns `keyboardPwdId`. V4 passcode locks only [X].
+- UbyHost calls it only after a type-3 `get` returns `-1026`, and only from the worker. The normal stay still uses `get` [O, 2026-10-10]. The digits are 7 long and do not start with 0, because this API takes the passcode as a number [X].
 
 ## Unlock records, not used
 
 - `POST /v3/lockRecord/list` with `lockId`, optional `startDate` and `endDate`, `pageNo`, `pageSize` (max 100) returns records with `recordType` (4 = passcode unlock), `success`, `keyboardPwd`, `lockDate`, `serverDate` [X]. The developer console has a per-app **Callback URL** that pushes unlock records to a URL [O, console screenshot 2026-10-08]. UbyHost leaves it empty: unlock times say when guests come and go, and no feature needs them. The callback receives each record with `username` (the code's name or the app user), `keyboardPwd` (the digits) and `lockDate` [GW], so it would hold guests' comings and goings plus codes. It only works for locks whose administrator got a token with UbyHost's client id [GW].
 
-## Not stated in the supplied docs
+## What TTLock support confirmed (2026-10-12)
 
-1. Whether the TTLock app's share screen accepts a prefixed API user (the API's Send ekey does).
-2. Whether an authorization-code (redirect) login exists. [X] lists the errors `10002`, `10008` and `10009`, which hints at one, but documents no endpoint. Not needed with the UbyHost-made user (plan §8.2).
-3. Whether `change` can move the period of a random (`get`) code.
-4. Whether the lock applies daylight saving time on its own, or only the raw offset.
-5. Who runs `euapi.ttlock.com`, where its data is stored, and the privacy policy URL.
+1. **Same period, old code not deleted:** `get` returns the same code, because one period has one code. UbyHost never hands it to a second stay (0069).
+2. **Deleting a never-used random code** with `deleteType=2` sends the lock a command to block it. With the gateway offline the call fails; nothing is queued.
+3. **Time zones:** the servers apply none. Only the lock has `timezoneRawOffset`; a code works by the lock's clock and the code's period. UbyHost sends instants (ms) computed from Prague time with daylight saving (`ttlock.stay_window`, zoneinfo), so the clock change is handled.
+4. **Lock memory:** about 150 codes, by model. Expired codes stay but are overwritten by new ones, oldest expired first; a valid code is never pushed out. With every slot valid, the lock answers "running out of memory" (`-4056`). The API cannot report free space. No cleanup of old custom codes is needed.
+5. **A typed random code** becomes a custom code and can be changed or deleted.
+6. **Error list:** TTLock will publish an updated list (promised for the week of 2026-10-12).
+7. **Call limit:** `30007`, see the error table.
+8. **Platform use:** one developer app may serve many hosts; TTLock suggests separate apps per project.
+9. **Sharing to the API user:** the app's Authorized Admin screen accepts the prefixed user, and that user can log in to the TTLock app. Its stored password is therefore a door key: encrypted at rest, never shown (plan §8.2).
+10. **Data:** EU users' data is stored in Germany; TTLock does not think it meets GDPR standards ([DOOR_CODES_LEGAL](privacy/DOOR_CODES_LEGAL.md) §4).
+
+Still unknown: whether an authorization-code (redirect) login exists ([X] lists `10002`, `10008`, `10009`); not needed with the UbyHost-made user.

@@ -1,8 +1,25 @@
-{% macro page_header(title, description='', back_url='', back_label='', eyebrow='', actions='') %}
-  <header class="page-header">
+{#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
+    id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
+{% macro help_tip(id, text, guide_href='') %}
+  <span class="help-tip" data-help-tip>
+    <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">?</button>
+    <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
+  </span>
+{% endmacro %}
+
+{% macro field_label(for, text, help_text='', optional=false, guide_href='') %}
+  <div class="field-label-row">
+    <label for="{{ for }}">{{ text }}{% if optional %} <span class="muted">{{ t('common.optional') }}</span>{% endif %}</label>
+    {% if help_text %}{{ help_tip(for ~ '-help', help_text, guide_href) }}{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro page_header(title, description='', back_url='', back_label='', eyebrow='', actions='', tabs=none) %}
+  {% set header_tabs = page_tabs() if tabs is none else tabs %}
+  <header class="page-header{{ ' has-tabs' if header_tabs }}">
     <div class="page-header-main">
       {% if back_url %}
-        <a class="back-link" href="{{ back_url }}"><span aria-hidden="true">&larr;</span> {{ back_label or t('common.back') }}</a>
+        <a class="back-link" href="{{ back_url }}"> {{ back_label or t('common.back') }}</a>
       {% endif %}
       {% if eyebrow %}<div class="eyebrow">{{ eyebrow }}</div>{% endif %}
       <h1>{{ title }}</h1>
@@ -10,6 +27,64 @@
     </div>
     {% if actions %}<div class="page-actions">{{ actions | safe }}</div>{% endif %}
   </header>
+  {{ sub_tabs(header_tabs) }}
+{% endmacro %}
+
+{#- 0099: one tab component for every section's sub-pages. items is a list of
+    (href, label key, current); tabs are plain links (no JS) and the open page
+    carries aria-current. Rendered directly under the title row. -#}
+{% macro sub_tabs(items, label='') %}
+{% if items %}
+<nav class="sub-tabs host-local-nav" aria-label="{{ label or t('host.section_navigation') }}" data-sub-tabs>
+  {%- for href, key, current in items %}<a class="sub-tab" href="{{ href }}"{% if current %} aria-current="page"{% endif %}>{{ t(key) }}</a>{% endfor -%}
+</nav>
+{% endif %}
+{% endmacro %}
+
+{#- 0099: the shared list-page layout (Stays, Properties, Invoices, Stay fees).
+    Order: notices, title row (title left; actions right with at most one
+    filled primary; small meta under the actions), sub-page tabs, toolbar, one
+    list panel, secondary sections. tabs none = the section's own tabs. -#}
+{% macro list_page_header(title, actions='', meta='', tabs=none) %}
+  {% set header_tabs = page_tabs() if tabs is none else tabs %}
+  {% set setup_notice = onboarding_banner(onboarding) | trim %}
+  {% if setup_notice %}<div class="list-notices" data-list-notices>{{ setup_notice }}</div>{% endif %}
+  <header class="page-header list-page-header{{ ' has-tabs' if header_tabs }}" data-list-title-row>
+    <div class="page-header-main"><h1>{{ title }}</h1></div>
+    {% if actions | trim or meta %}
+    <div class="list-page-side">
+      {% if actions | trim %}<div class="page-actions list-page-actions" data-list-actions>{{ actions | safe }}</div>{% endif %}
+      {% if meta %}<p class="small muted list-page-meta" data-list-meta>{{ meta }}</p>{% endif %}
+    </div>
+    {% endif %}
+  </header>
+  {{ sub_tabs(header_tabs) }}
+{% endmacro %}
+
+{#- 0099: the one list toolbar. Left: quick-filter chips, the Filters button
+    (JS shows it for panel_id; without JS the panel stays open) and the applied
+    summary. Right: secondary list actions (Save this view, Export CSV). -#}
+{% macro list_toolbar(summary='', chips='', panel_id='', actions='') %}
+<div class="filter-toolbar list-toolbar" data-filter-toolbar data-list-toolbar>
+  <div class="list-toolbar-main">
+    {% if chips | trim %}<div class="chips list-toolbar-chips">{{ chips | safe }}</div>{% endif %}
+    {% if panel_id %}
+    <button class="btn filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="{{ panel_id }}" hidden>
+      {{ t('host.filter.filters') }}
+    </button>
+    {% endif %}
+    {% if summary | trim %}<p class="filter-applied-summary" data-filter-summary>{{ summary | safe }}</p>{% endif %}
+  </div>
+  {% if actions | trim %}<div class="filter-toolbar-actions">{{ actions | safe }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{#- 0099: a plain secondary-section heading with an optional "?" tip. -#}
+{% macro list_section_heading(id, title, help_text='') %}
+  <div class="heading-with-tip list-section-heading">
+    <h2 id="{{ id }}">{{ title }}</h2>
+    {% if help_text %}{{ help_tip(id ~ '-help', help_text) }}{% endif %}
+  </div>
 {% endmacro %}
 
 {% macro breadcrumb(items) %}
@@ -155,6 +230,8 @@
     <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3.5" y="5.5" width="13" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 5.5V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M7.5 10h5M7.5 13h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
   {% elif name == 'automation' %}
     <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 7.5A6.5 6.5 0 0 1 15.2 5L17 7M16 12.5A6.5 6.5 0 0 1 4.8 15L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M17 3v4h-4M3 17v-4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  {% elif name == 'lock' %}
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="8.5" width="12" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 8.5V6a3 3 0 0 1 6 0v2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="13" r="1.2" fill="currentColor"/></svg>
   {% elif name == 'link' %}
     <svg class="nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m8 12 4-4M6.5 13.5l-1 1a2.8 2.8 0 0 1-4-4l2.3-2.3a2.8 2.8 0 0 1 4 0M13.5 6.5l1-1a2.8 2.8 0 1 1 4 4l-2.3 2.3a2.8 2.8 0 0 1-4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
   {% elif name == 'settings' %}
@@ -170,14 +247,15 @@
   {% endif %}
 {% endmacro %}
 
-{% macro csv_actions_menu(export_params='', compact=false) %}
+{% macro csv_actions_menu(export_params='', compact=false, scope_label='') %}
 <button class="btn{% if compact %} small csv-in-filter{% endif %}" type="button"
-        data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}">
+        data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}"
+        data-csv-scope-label="{{ scope_label }}">
   {{ t('csv.export_stays') }}
 </button>
 {% endmacro %}
 
-{% macro housebook_csv_menu(export_params='', compact=false, pdf_enabled=false) %}
+{% macro housebook_csv_menu(export_params='', compact=false, pdf_enabled=false, scope_label='') %}
 <div class="action-menu row-menu{% if compact %} csv-in-filter{% endif %}">
   <button class="btn row-menu-trigger{% if compact %} small{% endif %}" type="button" aria-expanded="false" aria-haspopup="true">
     {{ t('housebook.export_menu') }}
@@ -188,7 +266,8 @@
   </button>
   <div class="row-menu-panel" role="menu" hidden>
     <button class="row-menu-item" type="button" role="menuitem"
-            data-csv-export="/housebook.csv" data-csv-params="{{ export_params }}">{{ t('csv.download') }}</button>
+            data-csv-export="/housebook.csv" data-csv-params="{{ export_params }}"
+            data-csv-scope-label="{{ scope_label }}">{{ t('csv.download') }}</button>
     {% if pdf_enabled %}
       <button class="row-menu-item" type="button" role="menuitem" data-housebook-pdf-export>{{ t('csv.download_pdfs') }}</button>
     {% endif %}
@@ -244,11 +323,15 @@
   {%- endif -%}
 {%- endmacro %}
 
-{% macro empty_state(title, body='', action_url='', action_label='') %}
-  <div class="panel empty">
-    <h2>{{ title }}</h2>
+{#- 0099: the one empty state: a message and at most one button (primary=false
+    for a neutral one such as "Show all stays"). A caller block, when given,
+    holds a page-specific extra (the practice-mode demo loader on Stays). -#}
+{% macro empty_state(title, body='', action_url='', action_label='', primary=true) %}
+  <div class="panel empty empty-state" data-empty-state>
+    {% if title %}<h2>{{ title }}</h2>{% endif %}
     {% if body %}<p>{{ body }}</p>{% endif %}
-    {% if action_url %}<a class="btn primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+    {% if action_url %}<div class="empty-state-action"><a class="btn{{ ' primary' if primary }}" href="{{ action_url }}">{{ action_label }}</a></div>{% endif %}
+    {% if caller is defined %}{{ caller() }}{% endif %}
   </div>
 {% endmacro %}
 
@@ -275,10 +358,10 @@
 {% endmacro %}
 
 {# Copy a value straight from a list row, so chasing a guest is one click. #}
-{% macro copy_inline(target_id, value, label='') %}
-  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}">
-  <button class="btn small" type="button" data-copy="{{ target_id }}" data-copy-label="{{ t('common.copy') }}"
-          data-copied-label="{{ t('common.copied') }}"
+{% macro copy_inline(target_id, value, label='', role='') %}
+  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}"{% if role %} tabindex="-1"{% endif %}>
+  <button class="{{ 'row-menu-item' if role else 'btn small' }}" type="button" data-copy="{{ target_id }}" data-copy-label="{{ label or t('common.copy_link') }}"
+          data-copied-label="{{ t('common.copied') }}"{% if role %} role="{{ role }}"{% endif %}
           title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>
 {% endmacro %}
 
@@ -343,30 +426,15 @@
 {% endmacro %}
 
 {% macro onboarding_banner(onboarding) %}
-  {% if onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
-    <aside class="onboarding-banner" aria-label="{{ t('onboarding.welcome_title') }}">
-      <div class="onboarding-banner-progress" aria-hidden="true">
-        <span style="width:{{ onboarding.percent }}%"></span>
-      </div>
-      <div class="onboarding-banner-copy">
-        <small>{{ t('onboarding.progress', done=onboarding.completed, total=onboarding.total) }}</small>
-        <strong>{{ t('onboarding.step_of', n=onboarding.completed + 1, total=onboarding.total,
-                     title=t('onboarding.' ~ onboarding.current.id ~ '.title')) }}</strong>
-        <small>{{ t('onboarding.' ~ onboarding.current.id ~ '.detail') }}</small>
-      </div>
-      <div class="onboarding-banner-actions">
-        <a class="small" href="/onboarding">{{ t('onboarding.all_steps') }}</a>
-        <a class="btn primary small" href="{{ onboarding.current.url }}">
-          {{ t('onboarding.' ~ onboarding.current.id ~ '.action') }}</a>
-        {% if onboarding.current.manual_url %}
-          <a class="small" href="{{ onboarding.current.manual_url }}">
-            {{ t('onboarding.' ~ onboarding.current.id ~ '.manual') }}</a>
-        {% endif %}
-        <form method="post" action="/onboarding/dismiss">
-          <input type="hidden" name="return_to" value="{{ request.url.path }}">
-          <button class="btn ghost small" type="submit">{{ t('onboarding.skip') }}</button>
-        </form>
-      </div>
+  {% if onboarding and not onboarding.wizard_complete and not onboarding.dismissed %}
+    <aside class="onboarding-banner onboarding-banner-setup" aria-label="{{ t('setup.banner.aria') }}">
+      <a class="btn primary onboarding-banner-setup-link" href="{{ onboarding.setup_url }}">
+        {{ t('setup.banner.line', step=onboarding.wizard_step_number, total=onboarding.wizard_total_steps) }}
+      </a>
+      <form method="post" action="/onboarding/dismiss">
+        <input type="hidden" name="return_to" value="{{ request.url.path }}">
+        <button class="btn ghost" type="submit">{{ t('onboarding.skip') }}</button>
+      </form>
     </aside>
   {% endif %}
 {% endmacro %}
@@ -422,7 +490,7 @@
             <a class="small" href="{{ onboarding.current.manual_url }}">
               {{ t('onboarding.' ~ onboarding.current.id ~ '.manual') }}</a>
           {% endif %}
-          <a class="small" href="{{ onboarding.current.learn_url }}">{{ t('onboarding.learn') }} →</a>
+          <a class="small" href="{{ onboarding.current.learn_url }}">{{ t('onboarding.learn') }} </a>
         </div>
       </div>
     {% endif %}
@@ -454,7 +522,7 @@
             <details>
               <summary>{{ t('onboarding.learn') }}</summary>
               <p>{{ t('onboarding.' ~ step.id ~ '.why') }}</p>
-              <a href="{{ step.learn_url }}">{{ t('nav.guide') }} →</a>
+              <a href="{{ step.learn_url }}">{{ t('nav.guide') }} </a>
             </details>
           {% endif %}
         </article>
@@ -496,4 +564,24 @@
 {% macro row_menu_end() %}
   </div>
 </div>
+{% endmacro %}
+
+{% macro source_badge(key, label) %}
+<span class="source-badge">{{ source_mark(key) }}{{ label }}</span>
+{% endmacro %}
+
+{# 0083: a visible settings group with an ordinary header bar. #}
+{% macro settings_group(key, title) %}
+  <section class="settings-group" id="settings-group-{{ key }}" aria-labelledby="settings-group-{{ key }}-title">
+    <h2 class="settings-group-title" id="settings-group-{{ key }}-title">{{ title }}</h2>
+    {{ caller() }}
+  </section>
+{% endmacro %}
+
+{# 0083: a panel heading with the routine helper text behind the shared ? tip. #}
+{% macro settings_heading(key, title, help_text='', guide_href='') %}
+  <div class="settings-heading">
+    <h3>{{ title }}</h3>
+    {% if help_text %}{{ help_tip('settings-' ~ key ~ '-help', help_text, guide_href) }}{% endif %}
+  </div>
 {% endmacro %}

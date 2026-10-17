@@ -27,7 +27,7 @@ from . import (
     seo,
     templating,
 )
-from .routes import admin, guest, invoices, legal, mail_unsubscribe, stay_fees
+from .routes import admin, cleaning as cleaning_routes, guest, invoices, legal, mail_unsubscribe, onboarding_wizard, stay_fees
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -188,9 +188,9 @@ _CSP = _csp()
 
 
 def _public_csp() -> str:
-    """WP09: the CSP for the public pages that carry the Umami tag.
+    """WP09: the CSP for the public pages that carry the PostHog tag.
 
-    Derived from UMAMI_SCRIPT_URL (and UMAMI_HOST_URL), never hard-coded, so
+    Derived from POSTHOG_ASSETS_HOST and POSTHOG_HOST, never hard-coded, so
     the policy always matches the tag that templating rendered.
     """
     origin = analytics.script_origin()
@@ -268,6 +268,11 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     stats = db.start_request_stats()
     response = await call_next(request)
     security.attach_csrf_cookie(request, response)
+    if request.url.path.startswith("/cleaning/shared/"):
+        response.headers.update({
+            "Cache-Control": "no-store", "Referrer-Policy": "no-referrer",
+            "X-Robots-Tag": "noindex, nofollow",
+        })
     _harden(response, public_analytics=analytics.is_public_page(request))
     # Everything outside /static carries passport numbers, addresses and
     # signatures. Guests hand the phone back and hosts share laptops, so these
@@ -332,8 +337,10 @@ def _log_access(
 app.mount("/static", StaticFiles(directory=str(config.BASE_DIR / "static")), name="static")
 app.include_router(guest.router)
 app.include_router(admin.router)
+app.include_router(onboarding_wizard.router)
 app.include_router(invoices.router)
 app.include_router(stay_fees.router)
+app.include_router(cleaning_routes.router)
 app.include_router(legal.router)
 # Public, outside the host CSRF dependency: RFC 8058 one-click posts (WP12).
 app.include_router(mail_unsubscribe.router)

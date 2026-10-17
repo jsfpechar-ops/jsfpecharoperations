@@ -99,16 +99,17 @@ def test_a_czech_host_reads_the_rows_in_czech(stay):
     assert "Host č. 3: zatím neregistrován" in page.text
 
 
-def test_each_row_carries_both_ways_to_fill_it(stay):
+def test_missing_rows_keep_manual_entry_and_share_once_in_the_stay_menu(stay):
     client, reservation = stay
 
     page = client.get(f"/reservations/{reservation['id']}")
 
     rows = _placeholder_rows(page.text)
     assert rows, "no placeholder rows to inspect"
+    assert page.text.count('data-copy="stay-link"') == 1
+    assert host_i18n.STRINGS["en"]["host.copy_guest_form_link"] in page.text
     for row in rows:
-        assert host_i18n.STRINGS["en"]["common.copy_link"] in row
-        assert 'data-copy="stay-link"' in row
+        assert 'data-copy="stay-link"' not in row
         assert host_i18n.STRINGS["en"]["stay.detail.guests.add_by_hand"] in row
         assert f'href="/reservations/{reservation["id"]}/guests/new"' in row
 

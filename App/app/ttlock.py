@@ -15,7 +15,7 @@ from . import config, db
 
 log = logging.getLogger(__name__)
 
-DOOR_CODE_TERMS_VERSION = "2026-10-08"
+DOOR_CODE_TERMS_VERSION = "2026-10-12"
 
 ALLOWED_PATHS = frozenset(
     {
@@ -27,12 +27,14 @@ ALLOWED_PATHS = frozenset(
         "/v3/lock/queryDate",
         "/v3/lock/updateDate",
         "/v3/keyboardPwd/get",
+        "/v3/keyboardPwd/add",
         "/v3/keyboardPwd/change",
         "/v3/keyboardPwd/delete",
     }
 )
 GATEWAY_PATHS = frozenset(
     {
+        "/v3/keyboardPwd/add",
         "/v3/keyboardPwd/change",
         "/v3/keyboardPwd/delete",
         "/v3/lock/queryDate",
@@ -54,12 +56,19 @@ ERROR_KINDS: Dict[int, str] = {
     -2018: "permission",
     20002: "permission",
     30006: "rate",
+    30007: "budget",
     80000: "clock",
     -2012: "offline",
     -4056: "storage",
+    -3009: "storage",
     90000: "transient",
     1: "transient",
     -3: "bug",
+    # "A Passcode that has never been used on the Lock cannot be changed": the
+    # move path then makes a new code and deletes the old one.
+    -3008: "unused_code",
+    -1026: "period_taken",
+    -3007: "duplicate",
 }
 
 _MS_HOUR = 3_600_000
@@ -168,10 +177,11 @@ def _post(path: str, data: Dict[str, Any], priority: str) -> Dict[str, Any]:
         out = _parse_response(resp)
     except TTLockError as exc:
         log.warning(
-            "ttlock path=%s priority=%s errcode=%s",
+            "ttlock path=%s priority=%s errcode=%s kind=%s",
             path,
             priority,
             exc.code,
+            exc.kind,
         )
         raise
     log.info("ttlock path=%s priority=%s errcode=0", path, priority)
@@ -410,8 +420,18 @@ def _whole_hour(ms: int) -> None:
 
 
 def list_admin_locks(account_id: int) -> List[dict]:
+    return check_locks(account_id)[0]
+
+
+def check_locks(account_id: int) -> Tuple[List[dict], int]:
+    """The locks UbyHost can make codes on, and how many other keys it holds.
+
+    A plain eKey cannot create codes, so it never appears in the list. Counting
+    them lets the page say "you sent the wrong kind of key" instead of "nothing".
+    """
     page_no = 1
     items: List[dict] = []
+    plain = 0
     while True:
         answer = _call(
             account_id,
@@ -427,6 +447,7 @@ def list_admin_locks(account_id: int) -> List[dict]:
             user_type = str(raw.get("userType", ""))
             key_right = raw.get("keyRight")
             if user_type != _TOP_ADMIN and int(key_right or 0) != 1:
+                plain += 1
                 continue
             items.append(
                 {
@@ -446,7 +467,7 @@ def list_admin_locks(account_id: int) -> List[dict]:
         "UPDATE lock_account SET locks_json = ?, locks_fetched_at = ?, updated_at = ? WHERE id = ?",
         (json.dumps(items), now, now, account_id),
     )
-    return items
+    return items, plain
 
 
 def create_period_code(
@@ -474,10 +495,47 @@ def create_period_code(
     return str(answer["keyboardPwd"]), str(answer["keyboardPwdId"])
 
 
+def _random_custom_pin() -> str:
+    return str(secrets.randbelow(9_000_000) + 1_000_000)
+
+
+def add_custom_code(
+    account_id: int,
+    lock_id: str,
+    start_ms: int,
+    end_ms: int,
+    name: str,
+    priority: str,
+) -> Tuple[str, str]:
+    _whole_hour(start_ms)
+    _whole_hour(end_ms)
+    pin = _random_custom_pin()
+    payload = {
+        "lockId": int(lock_id),
+        "keyboardPwd": pin,
+        "keyboardPwdName": name,
+        "keyboardPwdType": 3,
+        "startDate": start_ms,
+        "endDate": end_ms,
+        "addType": 2,
+    }
+    try:
+        answer = _call(account_id, "/v3/keyboardPwd/add", payload, priority)
+    except TTLockError as exc:
+        if exc.code != -3007:
+            raise
+        pin = _random_custom_pin()
+        payload["keyboardPwd"] = pin
+        answer = _call(account_id, "/v3/keyboardPwd/add", payload, priority)
+    return pin, str(answer["keyboardPwdId"])
+
+
 def find_code_by_name(
     account_id: int,
     lock_id: str,
     name: str,
+    start_ms: int,
+    end_ms: int,
 ) -> Optional[Tuple[str, str]]:
     answer = _call(
         account_id,
@@ -492,8 +550,13 @@ def find_code_by_name(
         NORMAL,
     )
     for raw in answer.get("list") or []:
-        if str(raw.get("keyboardPwdName")) == name:
-            return str(raw["keyboardPwd"]), str(raw["keyboardPwdId"])
+        if str(raw.get("keyboardPwdName")) != name:
+            continue
+        if int(raw.get("startDate") or 0) != start_ms:
+            continue
+        if int(raw.get("endDate") or 0) != end_ms:
+            continue
+        return str(raw["keyboardPwd"]), str(raw["keyboardPwdId"])
     return None
 
 
@@ -556,3 +619,14 @@ def delete_account(account_id: int) -> None:
     db.execute("DELETE FROM lock_account WHERE id = ?", (account_id,))
     if err:
         raise err
+
+
+def add_permanent_code(account_id: int, lock_id: str, pin: str, name: str) -> str:
+    """Custom permanent PIN via gateway. Caller persists PIN/name for retries."""
+    if not pin.isascii() or not pin.isdigit() or not 4 <= len(pin) <= 9:
+        raise ValueError("invalid permanent PIN")
+    answer = _call(account_id, "/v3/keyboardPwd/add", {
+        "lockId": int(lock_id), "keyboardPwd": pin, "keyboardPwdName": name,
+        "keyboardPwdType": 2, "addType": 2,
+    }, NORMAL)
+    return str(answer["keyboardPwdId"])

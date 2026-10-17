@@ -46,7 +46,7 @@ NO_ARCHIVE = ["AGENTS.md", "docs/context/status.md"]
 BRIEF_SECTIONS = ["## 1. Objective", "## 2. Context", "## 3. Files", "## 4. Steps",
                   "## 5. Do not touch", "## 6. Commands", "## 7. Acceptance",
                   "## 8. Stop and ask", "## 9. Report"]
-STATUSES = {"todo", "in-progress", "review", "done", "blocked"}
+STATUSES = {"todo", "in-progress", "review", "done", "blocked", "replaced"}
 PATH_PREFIXES = ("App/", "docs/", "scripts/", "deploy/", ".github/", ".cursor/")
 PLACEHOLDER = re.compile(r"[<>*{}]|NNNN|YYYY|\.\.\.")
 
@@ -146,9 +146,33 @@ def check_briefs() -> None:
         for sec in BRIEF_SECTIONS:
             if sec not in text:
                 errors.append(f"{rel(p)}: missing section '{sec}'")
-        report = p.with_name(p.name[:4] + "-report.md")
+        explicit_report = re.search(
+            r"^Report:\s*(docs/tasks/[^\s]+-report\.md)\s*$", text, flags=re.M
+        )
+        report = (
+            ROOT / explicit_report.group(1)
+            if explicit_report
+            else p.with_name(p.name[:4] + "-report.md")
+        )
         if m.group(1) in ("review", "done") and not report.exists():
             errors.append(f"{rel(p)}: status {m.group(1)} but {rel(report)} is missing")
+
+
+def check_brief_overlap() -> None:
+    """Warn when two open briefs (todo or in-progress) name the same file in section 3."""
+    owners: dict[str, list[str]] = {}
+    for p in sorted((ROOT / "docs/tasks").glob("[0-9][0-9][0-9][0-9]-*.md")):
+        if p.name.endswith("-report.md"):
+            continue
+        text = p.read_text(encoding="utf-8", errors="ignore")
+        m = re.search(r"^Status: *([a-z-]+)", text, flags=re.M)
+        if not m or m.group(1) not in ("todo", "in-progress"):
+            continue
+        for path in set(re.findall(r"^\| `([^`]+)` \|", text, flags=re.M)):
+            owners.setdefault(path, []).append(p.name)
+    for path, names in sorted(owners.items()):
+        if len(names) > 1:
+            warnings.append(f"{path} is named by open briefs {', '.join(names)}; say which goes first")
 
 
 def check_known_issues() -> None:
@@ -204,6 +228,7 @@ def main() -> int:
     check_caps()
     check_links()
     check_briefs()
+    check_brief_overlap()
     check_known_issues()
     check_staleness()
     check_pointers()

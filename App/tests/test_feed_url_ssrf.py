@@ -1,6 +1,8 @@
 """SSRF guards for iCal calendar URLs."""
 from __future__ import annotations
 
+import socket
+
 import pytest
 
 from app import config
@@ -10,6 +12,19 @@ from app.feed_url import FeedUrlError, validate_calendar_url
 @pytest.fixture(autouse=True)
 def enforce_public_ical_only(monkeypatch):
     monkeypatch.setattr(config, "ICAL_ALLOW_PRIVATE", False)
+
+
+@pytest.fixture
+def stable_google_dns(monkeypatch):
+    """Resolve the mocked public host to a fixed public address without egress DNS."""
+    real_getaddrinfo = socket.getaddrinfo
+
+    def resolve(host, port, *args, **kwargs):
+        if host == "www.google.com":
+            host = "93.184.216.34"
+        return real_getaddrinfo(host, port, *args, **kwargs)
+
+    monkeypatch.setattr(socket, "getaddrinfo", resolve)
 
 
 def test_blocks_loopback_literal():
@@ -69,7 +84,7 @@ def test_blocks_internal_targets_however_they_are_written(url):
         validate_calendar_url(url)
 
 
-def test_redirects_are_revalidated_not_followed_blindly():
+def test_redirects_are_revalidated_not_followed_blindly(stable_google_dns):
     """A public feed that 302s to the metadata service must be stopped."""
     from app.feed_url import resolve_redirect_url
 
@@ -86,7 +101,7 @@ def test_redirects_are_revalidated_not_followed_blindly():
     ) == "https://www.google.com/calendar/ical/y.ics"
 
 
-def test_a_redirect_that_drops_https_is_refused():
+def test_a_redirect_that_drops_https_is_refused(stable_google_dns):
     """[F16] A TLS feed must not be silently downgraded to cleartext."""
     from app.feed_url import resolve_redirect_url
 
@@ -109,7 +124,7 @@ def test_a_redirect_that_drops_https_is_refused():
     ) == "https://www.google.com/calendar/ical/y.ics"
 
 
-def test_allows_public_https_calendar():
+def test_allows_public_https_calendar(stable_google_dns):
     # Does not fetch — only DNS resolution; use a stable public host.
     url = validate_calendar_url("https://www.google.com/calendar/ical/test/basic.ics")
     assert url.startswith("https://")
@@ -121,3 +136,42 @@ def test_production_cannot_enable_private_calendar_targets(monkeypatch):
 
     with pytest.raises(FeedUrlError):
         validate_calendar_url("http://127.0.0.1/calendar.ics")
+
+
+def test_the_add_calendar_route_still_refuses_an_internal_target(monkeypatch):
+    """0089: platform is checked too, but the SSRF guard still runs before any write."""
+    import secrets
+
+    from fastapi.testclient import TestClient
+
+    from app import auth, db, icalsync
+    from app.main import app
+    from tests.conftest import login_as
+
+    db.init_db()
+    synced = []
+    monkeypatch.setattr(icalsync, "sync_all", lambda apartment_id: synced.append(apartment_id))
+    username = f"ssrf-route-{secrets.token_hex(4)}"
+    owner_id = auth.create_account(f"{username}@example.test", "SSRF Host", role="host", username=username)
+    apartment_id = db.insert("apartment", {
+        "internal_name": "SSRF flat", "owner_user_id": owner_id,
+        "permalink_token": f"ssrf{secrets.token_hex(5)}", "permalink_pin": "123456",
+        "active": 1, "created_at": db.utcnow(),
+    })
+    try:
+        client = TestClient(app)
+        login_as(client, username, url="/login?lang=en", follow_redirects=False)
+        response = client.post(
+            f"/apartments/{apartment_id}/feeds",
+            data={"label": "airbnb", "url": "http://127.0.0.1/calendar.ics"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 400
+        assert db.query("SELECT id FROM ical_feed WHERE apartment_id = ?", (apartment_id,)) == []
+        assert synced == []
+    finally:
+        db.execute("DELETE FROM apartment_slug WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+        db.execute("DELETE FROM alert WHERE owner_user_id = ?", (owner_id,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
+        db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))

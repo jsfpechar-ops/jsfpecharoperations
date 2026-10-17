@@ -104,7 +104,8 @@ def test_the_signature_clear_button_is_a_thumb_sized_target():
 def test_a_folded_summary_is_a_thumb_sized_target():
     """One rule covers the host message, the explainer and the arrival note."""
     assert "min-height: 44px" in _rule(".g-fold > summary")
-    assert "min-height: 44px" in _rule(".g-arrival-message summary")
+    # The arrival note is fully visible; it no longer has a disclosure control.
+    assert ".g-arrival-message summary" not in CSS.read_text(encoding="utf-8")
 
 
 def test_the_hosts_phone_and_email_are_thumb_sized_targets():

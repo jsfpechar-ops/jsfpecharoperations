@@ -185,18 +185,29 @@ def test_apartment_form_links_to_sample_pdf(authed_client):
     client, apartment_id = authed_client
     page = client.get(f"/apartments/{apartment_id}")
     assert page.status_code == 200
-    assert "Open annotated sample PDF" in page.text
-    assert SAMPLE_URL in page.text
+    assert "Where to find your credentials" in page.text
+    assert 'href="/guide#ubyport-credentials"' in page.text
+    # 0097: the example letter is linked again next to the Police reporting heading.
+    head = page.text.split('id="ubyport"', 1)[1].split('id="uby_idub"', 1)[0]
+    import re
+
+    tag = re.search(r'<a [^>]*id="police-sample-link"[^>]*>([^<]*)</a>', head)
+    assert tag, head
+    assert f'href="{SAMPLE_URL}?v=20261004a"' in tag.group(0)
+    assert 'target="_blank"' in tag.group(0) and 'rel="noopener"' in tag.group(0)
+    assert "See an example police letter (what is what)" in tag.group(1)
+    for lang, text in (("cs", "Ukázka dopisu od policie"), ("en", "See an example police letter")):
+        assert text in client.get(f"/apartments/{apartment_id}?lang={lang}").text
+    guide = client.get("/guide")
+    assert guide.status_code == 200
+    assert "Open annotated sample PDF" in guide.text
+    assert SAMPLE_URL in guide.text
     # WP17 (review 3.E item 7): one hint per field, no separate field map.
     assert "Where each UbyHost field comes from" not in page.text
-    assert "Five letters on file with the police" in page.text
-    assert "E-mail or phone from your original UbyPort registration" in page.text
+    assert "Filled from the characters after UBY-WS_" not in page.text
+    assert "Filled from your operator contact e-mail when left blank" not in page.text
 
 
-def test_automation_page_links_to_sample_and_property_setup(authed_client):
-    client, apartment_id = authed_client
-    page = client.get("/automation")
-    assert page.status_code == 200
-    assert SAMPLE_URL in page.text
-    assert "Open annotated sample PDF" in page.text
-    assert f"/apartments/{apartment_id}#ubyport" in page.text
+def test_the_old_automation_hub_is_gone(authed_client):
+    client, _apartment_id = authed_client
+    assert client.get("/automation", follow_redirects=False).status_code == 404

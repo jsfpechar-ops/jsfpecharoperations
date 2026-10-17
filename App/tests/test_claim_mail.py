@@ -146,9 +146,13 @@ def test_guest_pages_show_host_contact_not_ubyhost_support():
         assert form.status_code == 200
         assert "Your host" in form.text
         assert "host@claim.test" in form.text
-        assert "A message from your host" in form.text
-        assert "Welcome to Claim Facility." in form.text
-        assert "Please complete this before arrival." in form.text
+        assert "A message from your host" not in form.text
+        assert "Welcome to Claim Facility." not in form.text
+        arrival = browser.get(f"/l/{TOKEN}")
+        assert "A message from your host" in arrival.text
+        assert "Welcome to Claim Facility." in arrival.text
+        assert "Please complete this before arrival." in arrival.text
+        assert '<section class="g-arrival-message"' in arrival.text
         assert "mailto:support@ubyhost.com" not in form.text
     finally:
         _cleanup()
@@ -749,11 +753,18 @@ def test_stay_link_reach_back_window_bounds_a_forgotten_form():
 
         # A stranger cannot tell an old id from an id that never existed. The
         # language switcher echoes the path that was asked for, so normalise
-        # only that echo: everything else has to be byte-identical.
+        # that echo. CSRF tokens rotate per response, so normalise those too;
+        # everything else has to be byte-identical.
         def shape(response, reservation_id):
-            return response.status_code, response.text.replace(
+            text = response.text.replace(
                 f"/l/{TOKEN}/{reservation_id}", "/l/{TOKEN}/{ID}"
             )
+            text = re.sub(
+                r'(<meta name="csrf-token" content=")[^"]*(")',
+                r"\1{CSRF}\2",
+                text,
+            )
+            return response.status_code, text
 
         never_existed = browser.get(f"/l/{TOKEN}/987654")
         assert never_existed.status_code == 404

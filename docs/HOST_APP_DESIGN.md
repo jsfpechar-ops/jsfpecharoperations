@@ -24,11 +24,12 @@ The approved visual starting point is `docs/archive/plans/host-app-redesign/appr
 
 Fixed 208–224 px width when open; collapses to an icon rail using the existing control. Top: UbyHost wordmark, Search button with shortcut. Main links, without category headings:
 
-1. **Today** → `/`
+1. **Dashboard** → `/`
 2. **Stays** → `/reservations`
 3. **Properties** → `/apartments`
 4. **Invoices** → `/invoices`
-5. **Stay fees** → `/stay-fees` **only when at least one active, accessible property has a positive configured rate**. If none has a rate, show a quiet “Optional stay fee” entry inside the relevant property's settings, not a dashboard task or onboarding step. If the existing route still permits a direct visit, show its accurate empty state.
+5. **Cleaning** → `/cleaning`, with a broom icon. Calendar/Gantt above a fully expanded, large-type chronological list; property instructions, codes, host CRUD and scoped read-only team links.
+6. **Stay fees** → `/stay-fees`. Unconfigured properties show an accurate Not set up state and setup action. The fee remains optional in property settings and is not a dashboard task or onboarding requirement.
 
 Bottom: Help, then the account button (name/avatar). Account menu contains Settings, Archived records, Privacy requests, Team (admin), Incidents (admin), language, and Sign out. Environment and impersonation indicators stay visible whenever relevant; do not hide them in the menu. Legal and support links remain available from Help or the bottom of Settings. Search opens the existing command palette and includes all destinations, properties, stays, and records the user is allowed to see.
 
@@ -40,8 +41,8 @@ Do **not** render property shortcuts or saved views in the default rail. Propert
 |---|---|---|
 | Stays landing | **Stays · Police reports · Guest register** | Records tied to stays remain discoverable in one place. `/submissions` and `/housebook` are both one click from Stays. |
 | Stay detail | Guests · Police report, with a direct Invoice action | Guest facts and report state live with the stay. The unused `#money` anchor should not create an empty visual panel. |
-| Properties landing | **Properties · Business details**; “Property tools” menu for all guest links and automation overviews | Business entities may be shared across properties. Each property shows its assigned entity and links to edit it. |
-| Property detail | Bookings · Guest link · Police reporting · Business details · Optional stay fee | Settings are grouped by the property they affect. Technical fields appear only in the relevant section. |
+| Properties landing | **Properties**; **Business & legal details** at `/entities`; guest-link and timing summary at `/apartments#property-summaries` | Entities may be shared. Edit guest links and reporting timing in the selected property's settings. |
+| Property detail | **Overview · Bookings & calendars · Settings**; Settings groups property, guest links, reporting, automation and door lock | Shortcut cards and Search use `?view=&section=` with the relevant anchor. Keep editing within the selected property. |
 | Invoices | All invoices · Invoice settings | Creation remains a prominent action; settings are one click away. |
 | Stay fees | Period selector; property/group report details | This feature is independent of stay detail and is enabled per property. |
 
@@ -56,19 +57,53 @@ Use the implemented top bar with menu, logo, Search, and environment indicator. 
 - Light mode only. Use existing `App/app/static/tokens.css`: `--canvas`, `--surface`, `--ink`, `--muted`, `--line`, `--brand`, semantic state colors, 4 px spacing scale, system font, and reduced-motion tokens. Preserve the real UbyHost mark and existing host/guest token split. No gradient or competing accent system.
 - Content max width approximately 1080 px for working pages, narrower for forms. On a 1024 px viewport, main content must not feel pinched by the rail; tables may scroll horizontally only as a deliberate last resort.
 - Page header: small breadcrumb or category, strong page title, one concise orientation line **when needed**, primary action aligned right. Do not put the same copy in a hero card and the heading.
+- The header, actions, navigation, filter toolbar/panel, safety notice and results share one centered working lane. Deliberately narrower forms align their headings and actions internally; shared safety notices and navigation retain the host lane. Verify actual edges at wide desktop widths through 2048 CSS pixels and on mobile; absence of overflow does not prove alignment.
 - Default content density: 16–24 px gaps between groups, 12–16 px inside rows, compact list cards with borders rather than deep shadows. No giant blank “achievement” boxes. Use one coral primary action per screen or decisive step.
 - State color has a meaning: coral for an action, amber for attention, green for verified success, muted for waiting/neutral. Text labels must carry meaning without color. Do not show green “Paid” unless the manual invoice payment record actually says so.
 - Numbers and dates use the app's locale. Keep the current Prague date basis where business logic uses it. Czech and English text must have matching i18n keys. A label should fit mobile without abbreviations that change meaning.
 - Long identifiers (passport, VS, IBAN, invoice number) use a readable mono style and copy control where appropriate. Guest identity is visible inline to authorized hosts on stay detail, with wrapping and a direct Edit action. Avoid duplicating sensitive data in toast text, audit logs, screenshots, or client analytics.
 - Focus rings, skip link, visible labels, keyboard search, escape-to-close, form errors adjacent to fields, and native semantics are required. Announce success or error once. Reduced motion must remove decorative animation.
 
-## 4. Today: a useful work queue
+## 4. Dashboard: a useful work queue
 
-**Header:** “Today” and the current date. Small count of actionable stays. One “Add stay” action. No generic metrics strip unless a number has a useful destination.
+**Owner selection, 2026-10-10: Quiet overview.** Keep the simple text-first design,
+quiet status colors and consistent hover/keyboard feedback. No property photos
+or decorative details. Show at most **five unique actionable stay rows** below the
+calendar. Routine stays are current or arrive within **30 days**, using Prague
+today; real overdue/failed work takes priority even for older stays. Counts
+must be calculated before truncation, with a visible additional-action count
+when necessary and **View all stays** for the full list. See
+[dashboard policy](DESIGN.md#dashboard-only-useful-information).
+The 30-day window supersedes the earlier 14-day choice.
 
-**Needs you now:** compact rows ordered by actual urgency. Each row shows arrival/departure context, property, one task label (“1 guest missing”, “Check police report”, “Property needs setup”), and one action (“Open stay”, “Check report”, “Finish setup”). A second short line is allowed only if the action would be unclear, for example “No confirmation from UbyPort yet.” Avoid “2 of 3 registered. Share the invitation to finish check-in” when the count and button already say this.
+**Header:** “Dashboard” and the current date. “Add stay” and “Update calendars”
+share action geometry. Owner update, 2026-10-15: use compact inline count pills
+for Needs action, Ready to send and Overdue, directly above the calendar. Remove Waiting for guests from
+the dashboard summary; routine waiting is not a task. Zero counts stay neutral.
+Count the full action candidate set before the five-row cap.
+Owner's latest wording: label the row button **Open**; label invitation copying
+**Copy guest form link** and copy the guest-facing registration URL. Copy
+availability follows Open guest form link availability across reporting states;
+never create or enable a missing/expired link.
 
-**Coming up:** date, property, guest count or invitation state, and a row link. Successful reports may appear as a compact recent activity line with a direct receipt link. Do not place invoicing or fee work into Today unless the backend can accurately establish a real action; the default place to find invoices and fees is their dedicated section.
+**Needs you now:** compact rows ordered by actual urgency. Each row shows arrival/departure context, property, one task label (“1 guest missing”, “Check police report”, “Property needs setup”), and one action (“Open”, “Check report”, “Finish setup”). A second short line is allowed only if the action would be unclear, for example “No confirmation from UbyPort yet.” Avoid “2 of 3 registered. Share the invitation to finish check-in” when the count and button already say this.
+
+**Reservations calendar (owner, 2026-10-15):** below the summary pills, replace
+the routine list with Month/Week/Year calendar and a property-row Gantt. In
+automatic mode, 1–2 visible active properties use monthly calendar; 3 or more
+use Gantt. An explicit view choice persists and wins until Auto is enabled.
+Drag across occupied nights to prefill manual creation (checkout is exclusive).
+Click a booking for a details dialog and the canonical stay page. Expose overlaps,
+require confirmation before creating an overlap, and preserve the canonical
+creation handler, permissions and CSRF checks. Calendar range loading is separate
+from the action queue's 30-day horizon and five-row cap. Desktop uses compact
+100px week rows, slim rounded property-colored bars, outline calendar/timeline/
+sliders icons and separate month/year selectors. Busy dates open a full stay list;
+mobile retains 44px touch targets. Hide imported Reserved/Booked placeholders and
+routine exclamation marks from bars. Reporting urgency stays in summary, queue and
+details; property colors use existing teal/blue/purple tokens.
+
+ Keep receipt access on the stay/report pages; do not add a separate activity feed to this overview. Do not place invoicing or fee work into the dashboard unless the backend can accurately establish a real action; the default place to find invoices and fees is their dedicated section.
 
 **Empty state:** “Nothing needs you today.” followed by the next known stay or a single Add stay action. Do not show invented “all caught up” statistics.
 
@@ -76,7 +111,23 @@ Use the implemented top bar with menu, logo, Search, and environment indicator. 
 
 ### Stays list `/reservations`
 
-Default to the most useful period (current/upcoming) while keeping existing status, date, property, archive, list/timeline, and saved filters. A row shows arrival date, property or booking label, stay range, guest count, and only a meaningful status. “Add stay” opens a short path: property → dates → expected guests → save. Calendar import, manual creation, and sync must stay available. Empty states distinguish no property, no calendar, no matching filter, and no stays.
+Existing archive actions use the owner-selected **Delete** label and explain
+that the record moves to **Archived**. Preserve archive/restore behavior and
+guards across host pages; see [action policy](DESIGN.md#delete-action-move-to-archived).
+
+The owner's latest “all the time” direction is interpreted as an unbounded
+**All dates** default, replacing the earlier current/upcoming default. Keep
+Upcoming/current and Past available as views. Default collapsed summary:
+**All properties · Active**. Show dates only for an explicitly applied custom
+range, using one **Stay dates** control in the panel. Keep existing status,
+property, archive, list/timeline and saved filters. A row shows arrival date,
+property or booking label, stay range, guest count, and only a meaningful status.
+Owner direction, 2026-10-14: keep Open and Copy guest form link inside the
+three-dot menu, with the native date/property link available. Remove the portal
+shortcut. Paint hover and focus across the whole row, including grid gaps.
+“Add stay” opens a short path: property → dates → expected guests → save.
+Calendar import, manual creation and sync remain available. Empty states
+distinguish no property, no calendar, no matching filter and no stays.
 
 ### Stay detail `/reservations/{id}`
 
@@ -102,17 +153,17 @@ Local Stays tab “Guest register”. Preserve filter, archival, retention, lega
 
 ### Property list and detail
 
-Property list cards/rows show name, location, one truthful setup state, and a clear Open action. A contextual “Property tools” menu can reach the existing guest-link and automation overviews for multi-property users. Business details are a local tab or section of Properties, because they are used by properties and invoices. Do not duplicate a legal entity just to make the UI appear property-specific; show the assigned entity on each property and provide a direct link to its shared record.
+Property list cards/rows show name, location and one truthful setup state. Owner direction, 2026-10-14: click the row or its native text link to open it, or choose Open from its three-dot menu. Do not repeat an Open button beside that menu. Owner decision 2026-10-10: remove the duplicate Property tools menu inside individual property pages. The Properties landing page provides useful cross-property overview links, also reachable through Search. Business details are a local tab or section of Properties, because they are used by properties and invoices. Do not duplicate a legal entity just to make the UI appear property-specific; show the assigned entity on each property and provide a direct link to its shared record.
 
-Property detail groups existing sections into readable cards: **Bookings** (feeds/sync), **Guest link** (copy URL, PIN, regenerate with warning), **Police reporting** (UbyPort credentials, test connection, code lists, automation), **Business details** (assigned entity, contact), **Stay fee** (optional, rate and council/payment inputs). Keep advanced technical fields in their section, not on the landing view. Section links or anchored tabs should be stable across failed submissions.
+Property detail groups existing sections into readable cards: **Bookings** (feeds/sync), **Guest link** (copy URL, PIN, regenerate with warning), **Police reporting** (UbyPort credentials, test connection, code lists, automation; the example police letter is linked beside the heading, each field has a `?` naming its line on the police letter, and the facility name is never prefilled, 0097), **Business details** (assigned entity, contact), **Stay fee** (optional, rate and council/payment inputs). Keep advanced technical fields in their section, not on the landing view. Section links or anchored tabs should be stable across failed submissions.
 
 ### First setup and onboarding
 
 The main path is **Add property → connect booking calendar or add a stay manually → prepare guest link → check reporting details → use the app**. Each step has one task, a visible Skip/Later when optional, and a return route. Do not require invoices or stay fees before a first stay. Existing demo-load/reset may remain in onboarding with a conspicuous demo label. A host can return to any setup card from Properties, without losing work or encountering a dead-end success screen.
 
-### Global guest links and automation
+### Guest links, automation, and legacy URLs
 
-`/guest-links` and `/automation` remain working overviews for multi-property management and old links. They are reached from Properties > Property tools and Search. Each row links to the property's exact setting, so edits occur in context. Keep PIN, resend, automation, test connection, and error details as supported today. Avoid a global “on/off” appearance if settings are per property.
+0101: `/automation` is removed; `/guest-links` stays only as a redirect for lifecycle e-mails already sent. The cross-property overview is the Properties summary (`/apartments#property-summaries`), reached from the Properties landing page and Search. Each row links to the property's exact setting, so edits occur in context. Keep PIN, resend, automation, test connection, and error details as supported today. Avoid a global “on/off” appearance if settings are per property. Preserve shared-lock account setup, contextual property links and return navigation.
 
 ## 7. Invoices
 
@@ -160,3 +211,12 @@ The shared host shell and primitives cover signed-in destinations. Today, naviga
 The prototype contains sample states and is a visual reference. Production controls use real backend data and existing routes. `IMPLEMENTATION.md` takes precedence over prototype behavior for delivered capabilities. This document governs presentation; current audited fee and security contracts govern legal data and backend behavior.
 
 No database schema migration, dependency update, live filing, real e-mail delivery, public deployment or bank reconciliation is part of this change.
+
+## Cleaning management (2026-10-16)
+The owner authorized implementation and a sidebar Cleaning entry. Reuse the
+0103 calendar/Gantt with typed cleaning blocks in a separate lane. The cleaning
+page defaults to the next 30 days; calendar filters and the full chronological
+list share one server result. List essentials use 18–20px text, 24–28px date/code
+type, high contrast, and no disclosures. Instructions are static text. No claim,
+assignment, completion, photos or comments. Permanent/manual property codes are
+independent of guest PINs. See [0104](tasks/0104-cleaning-management.md).

@@ -23,7 +23,8 @@ def _nav(text: str) -> str:
     """Just the section nav, so the page body cannot be mistaken for it."""
     if 'class="host-property-grid"' in text:
         start = text.index('<div class="host-property-grid"')
-        return text[start:text.index('<details class="panel host-checklist"', start)]
+        end = text.find('<section class="panel host-checklist"', start)
+        return text[start:end if end > 0 else text.index('data-property-view="bookings"', start)]
     start = text.index('<nav class="section-nav"')
     return text[start:text.index('</nav>', start)]
 
@@ -34,8 +35,8 @@ def _rendered_text(text: str) -> str:
 
 
 def _automation_panel(text: str) -> str:
-    start = text.index('<details class="panel property-section" id="automation"')
-    return text[start:text.index('</details>', start)]
+    start = text.index('<section class="panel property-section" id="automation"')
+    return text[start:text.index('</section>', start)]
 
 
 def test_the_third_nav_link_is_the_police_panel(host):
@@ -43,7 +44,7 @@ def test_the_third_nav_link_is_the_police_panel(host):
 
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
 
-    assert 'href="#ubyport"' in nav
+    assert '#ubyport"' in nav  # 0094: ?view=settings&section=reporting#ubyport
     assert '<strong>Police reporting</strong>' in nav
 
 
@@ -60,7 +61,7 @@ def test_the_czech_nav_says_hlasi_se_policii(host):
 
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=cs").text)
 
-    assert 'href="#ubyport"' in nav
+    assert '#ubyport"' in nav
     assert '<strong>Hlášení policii</strong>' in nav
 
 
@@ -68,30 +69,20 @@ def test_the_nav_numbers_run_one_to_five_without_a_gap(host):
     client, apartment_id = host
 
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
-    targets = re.findall(r'href="#([^"]+)"', nav)
-    assert targets == ['calendars', 'communication', 'ubyport', 'basics', 'stay-fee-settings', 'address']
+    targets = re.findall(r'href="[^"#]*#([^"]+)"', nav)
+    # 0094: the business card opens the shared entity editor, not a property anchor.
+    assert targets == ['calendars', 'communication', 'ubyport', 'stay-fee-settings', 'address']
+    assert 'href="/entities' in nav
 
 
-def test_the_automation_summary_names_the_page_it_sends_you_to(host):
+def test_the_automation_panel_is_editable_on_the_property_page(host):
     client, apartment_id = host
 
-    page = client.get(f"/apartments/{apartment_id}?lang=en")
+    panel = _automation_panel(client.get(f"/apartments/{apartment_id}?lang=en").text)
 
-    assert (
-        "Send timing and default purpose are set on the Automation page."
-        in _rendered_text(page.text)
-    )
-
-
-def test_the_czech_automation_summary_says_the_same(host):
-    client, apartment_id = host
-
-    page = client.get(f"/apartments/{apartment_id}?lang=cs")
-
-    assert (
-        "Časování odesílání a výchozí účel pobytu nastavíte na stránce Automatizace."
-        in _rendered_text(page.text)
-    )
+    assert 'name="automation_mode"' in panel
+    assert 'name="default_purpose"' in panel
+    assert "Automatic modes do not wait for ID verification" in panel
 
 
 def test_the_automation_summary_no_longer_promises_credentials(host):
@@ -111,22 +102,23 @@ def test_the_czech_automation_summary_no_longer_promises_credentials(host):
     assert "údaje UbyPortu" not in _automation_panel(page)
 
 
-def test_the_automation_panel_still_links_to_the_automation_page(host):
+def test_the_automation_panel_does_not_link_away(host):
     client, apartment_id = host
 
     page = client.get(f"/apartments/{apartment_id}?lang=en").text
 
-    assert f'href="/automation#apartment-{apartment_id}"' in _automation_panel(page)
+    assert "/automation" not in _automation_panel(page)
 
 
-def test_the_new_property_form_keeps_its_own_nav_labels(host):
-    """Creating a property is a different journey; its nav was already correct."""
+def test_the_new_property_form_has_no_numbered_nav(host):
+    """0092: creating a property is one short page, not a numbered tour."""
     client, _apartment_id = host
 
-    nav = _nav(client.get("/apartments/new?lang=en").text)
+    page = client.get("/apartments/new?lang=en").text
 
-    assert '<a href="#ubyport">3. UbyPort</a>' in nav
-    assert '<a href="#automation">4. Automation</a>' in nav
+    assert '<nav class="section-nav"' not in page
+    assert "3. UbyPort" not in page and "5. Guest link" not in page
+    assert 'name="uby_idub"' not in page
 
 
 def test_the_audited_copy_is_in_both_dictionaries():

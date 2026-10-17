@@ -4,8 +4,9 @@ from __future__ import annotations
 import sqlite3
 import unicodedata
 from datetime import date
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
 from .. import (
@@ -65,6 +66,8 @@ STAY_FEE_STATUSES = (
     ("waiting", "stay_fees.status.in_progress"),
     ("ready", "stay_fees.status.ready"),
     ("saved", "stay_fees.status.saved"),
+    ("sent", "stay_fees.status.sent"),
+    ("paid", "stay_fees.status.paid"),
 )
 
 
@@ -72,6 +75,10 @@ def _row_status(row: dict) -> str:
     if row["unset"]:
         return "attention"
     if row.get("frozen"):
+        if row.get("paid_at"):
+            return "paid"
+        if row.get("sent_at"):
+            return "sent"
         return "saved"
     issues = row["issues"] or []
     if issues == ["stay_fees.issue.period_running"]:
@@ -151,6 +158,7 @@ def stay_fees_list(request: Request):
         "periods": rows,
         "selected_month": selected_month,
         "has_properties": bool(apartments),
+        **_fee_links(_list_return(request)),
         **list_filter.context(
             view,
             action="/stay-fees",
@@ -162,7 +170,18 @@ def stay_fees_list(request: Request):
     })
 
 
-def _fee_values(form) -> dict:
+# 0077: the one normaliser for the stay-fee fields of _stay_fee_fields.html.
+# The property save (admin._apartment_payload) uses it, so a field cannot be
+# read two different ways.
+FEE_ACCOUNT_RAW = "_stay_fee_account_raw"
+
+
+def fee_form_values(form) -> dict:
+    """Normalised fee fields. The account is left raw under FEE_ACCOUNT_RAW.
+
+    The raw key is absent when an all-empty domestic form would otherwise
+    wipe a stored IBAN-only account: the stored account is then kept.
+    """
     rate = stay_fee.clamp_rate(_form_str(form, "stay_fee_rate_czk", "0"))
     cadence = _form_str(form, "stay_fee_cadence", "monthly")
     values = {
@@ -171,74 +190,112 @@ def _fee_values(form) -> dict:
         "stay_fee_vs": (
             "".join(ch for ch in _form_str(form, "stay_fee_vs") if ch.isdigit())[:10] or None
         ),
-        "stay_fee_authority_name": _form_str(form, "stay_fee_authority_name")[:200].strip() or None,
-        "stay_fee_authority_address": _form_str(form, "stay_fee_authority_address")[:200].strip() or None,
-        "stay_fee_authority_contact": _form_str(form, "stay_fee_authority_contact")[:200].strip() or None,
-        "stay_fee_payee": _form_str(form, "stay_fee_payee")[:60].strip() or None,
-        "stay_fee_instruction": _form_str(form, "stay_fee_instruction")[:500].strip() or None,
     }
-    raw = None
+    for key, limit in (
+        ("stay_fee_authority_name", 200),
+        ("stay_fee_authority_address", 200),
+        ("stay_fee_authority_contact", 200),
+        ("stay_fee_payee", 60),
+        ("stay_fee_instruction", 500),
+    ):
+        values[key] = _form_str(form, key)[:limit].strip() or None
+    values["stay_fee_authority_databox"] = (
+        validation.normalise_databox(_form_str(form, "stay_fee_authority_databox")) or None
+    )
     if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
         prefix = _form_str(form, "account_prefix")
         number = _form_str(form, "account_number")
         bank = _form_str(form, "account_bank")
         existing = _form_str(form, "_stay_fee_account_existing")
-        if payments.preserve_iban_only_account(existing, prefix, number, bank):
-            return values
-        raw = payments.compose_czech_account(prefix, number, bank)
+        if not payments.preserve_iban_only_account(existing, prefix, number, bank):
+            values[FEE_ACCOUNT_RAW] = payments.compose_czech_account(prefix, number, bank)
     else:
-        raw = _form_str(form, "stay_fee_council_account")
-    if raw is not None:
-        if raw.strip():
-            account, iban = payments.normalise_account(raw)
-            values["stay_fee_council_account"] = account
-            values["stay_fee_council_iban"] = iban
-        else:
-            values["stay_fee_council_account"] = None
-            values["stay_fee_council_iban"] = None
+        values[FEE_ACCOUNT_RAW] = _form_str(form, "stay_fee_council_account")
     return values
 
 
-@router.get("/stay-fees/{apartment_id}/setup")
-def stay_fee_setup(apartment_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment or apartment["archived_at"] or not apartment["active"]:
-        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
-    return render(request, "stay_fee_setup.html", {
-        "nav": "stay_fees",
-        "apartment": apartment,
-        "account": payments.czech_account_parts(apartment["stay_fee_council_account"] or ""),
-    })
-
-
-@router.post("/stay-fees/{apartment_id}/setup")
-async def stay_fee_setup_save(apartment_id: int, request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    apartment = access.apartment(request, apartment_id)
-    if not apartment:
-        return _back("/stay-fees", err=_flash(request, "flash.error.no_such_apartment"))
-    form = await request.form()
-    try:
-        values = _fee_values(form)
-    except ValueError:
-        return _back(
-            f"/stay-fees/{apartment_id}/setup",
-            err=_flash(request, "flash.stay_fees.account_invalid"),
+def apply_fee_account(values: dict) -> None:
+    """Turn the raw account into stored account/IBAN. Raise ValueError when invalid."""
+    raw = values.pop(FEE_ACCOUNT_RAW, None)
+    if raw is None:
+        return
+    if raw.strip():
+        values["stay_fee_council_account"], values["stay_fee_council_iban"] = (
+            payments.normalise_account(raw)
         )
-    db.update("apartment", apartment_id, values)
-    db.audit("stay_fee_setup", f"apartment_id={apartment_id}")
-    month = stay_fee.month_key(_default_month(claim.prague_today()))
-    if values["stay_fee_rate_czk"] <= 0:
-        return _back("/stay-fees", msg=_flash(request, "flash.stay_fees.saved"))
-    return _back(
-        f"/stay-fees/{apartment_id}?month={month}",
-        msg=_flash(request, "flash.stay_fees.saved"),
-    )
+    else:
+        values["stay_fee_council_account"] = None
+        values["stay_fee_council_iban"] = None
+
+
+def fee_account_draft(form) -> dict:
+    """The account fields as typed, for the editor after a refused save."""
+    return {
+        "prefix": _form_str(form, "account_prefix"),
+        "number": _form_str(form, "account_number"),
+        "bank": _form_str(form, "account_bank"),
+        "iban": "",
+    }
+
+
+def fee_return_path(raw, apartment_id: int) -> str:
+    """A validated way back to the fee list or this property's fee report, or ''."""
+    path = security.safe_local_path(raw, "") if raw else ""
+    if not path:
+        return ""
+    if path.split("?", 1)[0] in ("/stay-fees", f"/stay-fees/{apartment_id}"):
+        return path
+    return ""
+
+
+def fee_settings_url(apartment_id: int, return_to: str = "") -> str:
+    """The canonical fee editor: property Settings -> Reporting & fees -> Stay fee."""
+    url = f"/apartments/{apartment_id}?view=settings&section=reporting"
+    back = fee_return_path(return_to, apartment_id)
+    if back:
+        url += "&return_to=" + quote(back, safe="")
+    return url + "#stay-fee-settings"
+
+
+def fee_operator_url(apartment, return_to: str = "") -> str:
+    """Where a missing payer is fixed: the assigned business, else the property's operator choice."""
+    if apartment["legal_entity_id"]:
+        return f"/entities?edit={apartment['legal_entity_id']}"
+    url = f"/apartments/{apartment['id']}?view=settings&section=property"
+    back = fee_return_path(return_to, apartment["id"])
+    if back:
+        url += "&return_to=" + quote(back, safe="")
+    return url + "#settings-property"
+
+
+def _list_return(request: Request) -> str:
+    """This fee list with its period and filters (a one-off ?lang= is not kept)."""
+    query = urlencode([(k, v) for k, v in request.query_params.multi_items() if k != "lang"])
+    return "/stay-fees" + (f"?{query}" if query else "")
+
+
+def _fee_links(return_to: str) -> dict:
+    return {
+        "fee_return": return_to,
+        "fee_settings_url": fee_settings_url,
+        "fee_operator_url": fee_operator_url,
+    }
+
+
+def fee_return_after_save(apartment, return_to: str) -> str:
+    """Where a save that came from a fee page lands, or ''.
+
+    A property whose rate is now 0 has no report to open, so its report
+    link falls back to the fee list of the same month.
+    """
+    back = fee_return_path(return_to, apartment["id"])
+    if not back:
+        return ""
+    split = urlsplit(back)
+    if split.path != "/stay-fees" and not stay_fee.is_active(apartment):
+        month = stay_fee.parse_month(dict(parse_qsl(split.query)).get("month"))
+        return f"/stay-fees?month={stay_fee.month_key(month)}" if month else "/stay-fees"
+    return back
 
 
 @router.get("/stay-fees/{apartment_id}")
@@ -288,6 +345,8 @@ def stay_fee_detail(apartment_id: int, request: Request):
             issues.append("stay_fees.issue.unsigned")
         issues = list(dict.fromkeys(issues))
     pay = stay_fee.payment_details(group) if frozen else None
+    filing_row = stay_fee_filing.covering(apartment["id"], selected_month) if frozen else None
+    send_panel = _send_panel_context(apartment, period, group, filing_row) if filing_row else None
     return render(request, "stay_fee_detail.html", {
         "nav": "stay_fees",
         "apartment": apartment,
@@ -305,7 +364,54 @@ def stay_fee_detail(apartment_id: int, request: Request):
         "correcting": correcting,
         "filing_version": period.get("version") if period else None,
         "exempt_categories": stay_fee.EXEMPT_CATEGORIES,
+        "send_panel": send_panel,
+        **_fee_links(f"/stay-fees/{apartment_id}?month={stay_fee.month_key(selected_month)}"),
     })
+
+
+def _operator_line(apartment) -> str:
+    entity = None
+    entity_id = apartment["legal_entity_id"]
+    if entity_id:
+        entity = db.query_one("SELECT * FROM legal_entity WHERE id = ?", (entity_id,))
+    name = (entity["name"] if entity else "") or (apartment["internal_name"] or "")
+    ico = (entity["ico"] if entity else "") or ""
+    if ico.strip():
+        return f"{name}, IČO {ico.strip()}"
+    return name
+
+
+def _send_panel_context(apartment, period, group, filing_row: dict) -> dict:
+    period_label = period["label"] if period else ""
+    property_name = apartment["internal_name"] or ""
+    subject_cs = f"Ohlášení poplatku z pobytu – {period_label} – {property_name}"
+    amount = stay_fee.format_czk(group["total_czk"])
+    body_cs = "\n".join([
+        _operator_line(apartment),
+        period_label,
+        f"Částka k úhradě: {amount}. Podrobnosti v příloze.",
+    ])
+    return {
+        "filing_id": filing_row["id"],
+        "authority_name": apartment["stay_fee_authority_name"] or "",
+        "databox": apartment["stay_fee_authority_databox"] or "",
+        "subject_cs": subject_cs,
+        "body_cs": body_cs,
+        "sent_at": filing_row["sent_at"],
+        "paid_at": filing_row["paid_at"],
+        "sent_message_id": filing_row["sent_message_id"] or "",
+    }
+
+
+def _filing_for_action(request: Request, apartment_id: int, filing_id: int):
+    apartment = access.apartment(request, apartment_id)
+    if not apartment:
+        return None, None
+    row = db.query_one(
+        "SELECT * FROM stay_fee_filing WHERE id = ? AND apartment_id = ? AND superseded_at IS NULL",
+        (filing_id, apartment_id),
+    )
+    return apartment, row
 
 
 def _guest_lines(apartment, period):
@@ -670,3 +776,52 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
         return _back(back_path, err=_flash(request, "flash.stay_fees.already_saved"))
     db.audit("stay_fee_finalize", f"apartment_id={apartment['id']} period={key}")
     return _back(back_path, msg=_flash(request, "flash.stay_fees.period_saved"))
+
+
+@router.post("/stay-fees/{apartment_id}/filings/{filing_id}/sent")
+async def stay_fee_filing_sent(apartment_id: int, filing_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, row = _filing_for_action(request, apartment_id, filing_id)
+    if not apartment or not row:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
+    back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    undo = _form_str(form, "undo") == "1"
+    if undo:
+        if row["sent_at"]:
+            db.update("stay_fee_filing", filing_id, {"sent_at": None, "sent_message_id": None})
+            db.audit("stay_fee_sent_undo", f"filing_id={filing_id}")
+    elif not row["sent_at"]:
+        message_id = _form_str(form, "sent_message_id")[:100].strip() or None
+        db.update(
+            "stay_fee_filing",
+            filing_id,
+            {"sent_at": db.utcnow(), "sent_message_id": message_id},
+        )
+        db.audit("stay_fee_sent", f"filing_id={filing_id}")
+    return _back(back_path, msg=_flash(request, "flash.stay_fees.saved"))
+
+
+@router.post("/stay-fees/{apartment_id}/filings/{filing_id}/paid")
+async def stay_fee_filing_paid(apartment_id: int, filing_id: int, request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, row = _filing_for_action(request, apartment_id, filing_id)
+    if not apartment or not row:
+        raise HTTPException(status_code=404)
+    form = await request.form()
+    month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(claim.prague_today())
+    back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    undo = _form_str(form, "undo") == "1"
+    if undo:
+        if row["paid_at"]:
+            db.update("stay_fee_filing", filing_id, {"paid_at": None})
+            db.audit("stay_fee_paid_undo", f"filing_id={filing_id}")
+    elif not row["paid_at"]:
+        db.update("stay_fee_filing", filing_id, {"paid_at": db.utcnow()})
+        db.audit("stay_fee_paid", f"filing_id={filing_id}")
+    return _back(back_path, msg=_flash(request, "flash.stay_fees.saved"))

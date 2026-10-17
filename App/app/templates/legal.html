@@ -20,7 +20,7 @@
     <dd>{{ operator.address }}</dd>
     {% if operator.email %}
       <dt>{{ t('legal.operator_contact') }}</dt>
-      <dd><a href="mailto:{{ operator.email }}" data-umami-event="contact_click">{{ operator.email }}</a></dd>
+      <dd><a href="mailto:{{ operator.email }}" data-analytics-event="contact_click">{{ operator.email }}</a></dd>
     {% endif %}
     <dt>{{ t('legal.operator_registry') }}</dt>
     <dd><a href="{{ operator.registry_url }}" rel="noopener noreferrer">{{ t('legal.registry_link') }}</a></dd>
@@ -45,7 +45,7 @@
 <div class="panel">
   <h2 style="margin-top:0">{{ t('legal.dpa_title') }}</h2>
   <p class="small muted">{{ t('legal.dpa_body') | legal_links }}</p>
-  <p class="small" style="margin-bottom:0"><a href="/dpa">{{ t('dpa.footer_link') }} &rarr;</a></p>
+  <p class="small" style="margin-bottom:0"><a href="/dpa">{{ t('dpa.footer_link') }} </a></p>
 </div>
 
 <div class="panel quiet">

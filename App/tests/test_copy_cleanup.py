@@ -132,21 +132,28 @@ def test_the_reporting_section_still_states_the_deadline_and_timing():
 
 
 def test_the_house_book_legal_block_renders_once():
-    template = (TEMPLATES / "housebook.html").read_text(encoding="utf-8")
-    assert template.count("t('housebook.legal_body')") == 1
-    assert template.count("t('housebook.legal_paper')") == 1
-    assert template.count("t('housebook.legal_footnote')") == 1
-    assert "housebook-legal-intro" not in template
-    assert "ubyhost_housebook_legal_v1" not in template
+    housebook = (TEMPLATES / "housebook.html").read_text(encoding="utf-8")
+    guide = (TEMPLATES / "guide.html").read_text(encoding="utf-8")
+    assert "housebook-legal-details" not in housebook
+    assert 'href="/guide#housebook"' in housebook
+    assert guide.count("t('housebook.legal_body')") == 1
+    assert guide.count("t('housebook.legal_paper')") == 1
+    assert guide.count("t('housebook.legal_footnote')") == 1
+    assert "housebook-legal-intro" not in housebook
+    assert "ubyhost_housebook_legal_v1" not in housebook
 
 
 def test_each_property_form_explanation_renders_once():
-    template = (TEMPLATES / "apartment_form.html").read_text(encoding="utf-8")
+    # 0094: the property page is composed of partials; each explanation lives
+    # once across them, and the suggested portal message is gone.
+    template = "".join(
+        (TEMPLATES / name).read_text(encoding="utf-8")
+        for name in ("apartment_form.html", "_property_overview.html", "_property_calendars.html", "_property_editor.html")
+    )
     assert template.count("apartment.form.calendars.lede") == 1
     assert template.count("t('guest_links.lede')") == 1
-    assert "guest_links.message_lede" not in template
-    guest_links = (TEMPLATES / "guest_links.html").read_text(encoding="utf-8")
-    assert guest_links.count("t('guest_links.message_lede')") == 1
+    assert template.count("guest_links.message_lede") == 0
+    assert not (TEMPLATES / "guest_links.html").exists()
 
 
 def test_one_retention_note_not_three():

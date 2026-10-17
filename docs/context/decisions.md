@@ -1,11 +1,6 @@
 # Decisions
 
-Append-only, one line each: `date | decision | reason | link`.
-
-- Tags: `[workflow]` = a process change; also edit [workflow](workflow.md) and [prompts](prompts.md) when you add one.
-- Find past decisions with `grep -i <topic>`. Don't read this file whole.
-- Superseded lines stay; add a new line that says what it supersedes.
-- When the file goes over its cap, entries older than 90 days that nothing references move to `docs/archive/decisions-YYYY.md`.
+Append-only.
 
 - 2026-09-09 | Core product = automatic UbyPort filing plus the house book (uvítací kniha); everything else is optional | the owner's founding rule | [UBYPORT_CORE](../UBYPORT_CORE.md)
 - 2026-09-13 | Production on AWS Lightsail; Render is staging with mock UbyPort, permanently | cost, control | [LIGHTSAIL](../LIGHTSAIL.md)
@@ -23,25 +18,44 @@ Append-only, one line each: `date | decision | reason | link`.
 - 2026-10-05 | Admin preview: full workspace access, reason optional, 24 h default | the owner must be able to support hosts | PR #280, K-P01
 - 2026-10-05 | Ticket Wallet guest UI archived (kept in `App/app/static/archive/`), may return | simpler guest form | -
 - 2026-10-06 | [workflow] Opus orchestrates only (plans, briefs, reviews); Cursor executes with composer, Kimi or GLM only | Opus was 92% of $1,588 per 30 days | [workflow](workflow.md)
-- 2026-10-06 | [workflow] Context system: AGENTS.md L0 + `docs/context/` L1 + `docs/plans/` L2; audits archived; known-issues.md replaces FOLLOWUPS.md | 87% of spend was re-read context | [README](README.md)
+- 2026-10-06 | [workflow] Context: AGENTS.md L0, context L1, plans L2; audits archived; known-issues replaces FOLLOWUPS | re-reading used 87% of spend | [README](README.md)
 - 2026-10-06 | [workflow] WP/patch series closed at WP33/0034; new work uses task numbers NNNN | one numbering scheme | [workflow](workflow.md)
 - 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in one day found the same issues | [workflow](workflow.md)
 - 2026-10-06 | Cloudflare MCP servers removed from the local Cursor MCP config | context cost in every chat, and production DNS/WAF access for agents | task 0001
 - 2026-10-06 | Cursor automations (regression coverage, bug sweep) stay as they are and read known-issues.md | owner choice | [prompts](prompts.md#bug-hunt-automation)
 - 2026-10-06 | [workflow] Task 0001 merged (#281) before orchestrator review; review post-merge approved; stale PR cleanup remains owner-run | owner merged early | [0001 report](../tasks/0001-report.md)
-- 2026-10-06 | [workflow] Context-rollout upload: flat files only in the rollout bundle folder (no subfolder); MANIFEST at bundle root | place_files script paths | [TEMPLATE](../tasks/TEMPLATE.md)
-- 2026-10-06 | [workflow] Every chat AI is the orchestrator and follows the token budget; Cursor writes all code; pointer files for Gemini, Copilot and Cursor point to AGENTS.md | one session spent ~320k tokens on a council plus implementing in the orchestrator | [workflow](workflow.md#token-budget-every-ai-every-session)
-- 2026-10-06 | New dependency `webauthn==3.0.1` (py_webauthn) with its transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned in requirements.lock | passkey verification must not be hand-rolled; owner approved all five | task 0004
+- 2026-10-06 | [workflow] Context-rollout bundle: flat files only; MANIFEST at root | place_files paths | [TEMPLATE](../tasks/TEMPLATE.md)
+- 2026-10-06 | [workflow] Every chat AI is the orchestrator and follows the token budget; Cursor writes all code; pointer files point to AGENTS.md | one session spent ~320k tokens | [workflow](workflow.md#token-budget-every-ai-every-session)
+- 2026-10-06 | New dependency `webauthn==3.0.1` plus transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned | passkeys must not be hand-rolled; owner approved all five | task 0004
 - 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
-- 2026-10-06 | Downloads opt out of the navigation skeleton by `download` / `data-no-skeleton` plus a path-ending rule, pinned by a template scan test | a stay-fee PDF click blanked the page for 15 s | skeleton.js
-- 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row (no "Úprava výpočtu" line); the CSV register keeps one neutral line "přenocování bez záznamu hosta" so it adds up to the payment | owner: a correction line looks wrong to the office; council: register must reconcile | stay_fee.py
-- 2026-10-06 | UbyPort outcome by police severity: 0-2 accepted, 4-6 not accepted; 112 = reported late = accepted (supersedes "112 = batch not received") | police letter CPR-34587-2/ČJ-2026-930023, A1-A5 | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
-- 2026-10-06 | The sweep sends a refused record once, then waits for the host to fix it (was 3 tries) | police B2-B3: resending refused data counts against the host | [OPERATIONS](../OPERATIONS.md#ubyport-error-codes-and-what-112-and-150-really-do)
-- 2026-10-06 | Staging may target the police test environment (`ubyport_env=test`) with the issued UBY-WS test account; credentials only in the staging app, never in git | police B4: test behaves like production | [LIGHTSAIL](../LIGHTSAIL.md)
+- 2026-10-06 | Downloads skip the navigation skeleton (`download`, `data-no-skeleton`, path-ending rule), pinned by a template scan test | a stay-fee PDF click blanked the page for 15 s | skeleton.js
+- 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row; the CSV keeps one neutral line so it adds up | a correction line looks wrong to the office | stay_fee.py
+- 2026-10-06 | UbyPort outcome: 0-2 accepted, 4-6 not; 112 = reported late = accepted (replaces batch-not-received) | police letter A1-A5 | [OPERATIONS](../OPERATIONS.md)
+- 2026-10-06 | Sweep: one send per refused record, then wait for host fix (was 3 tries) | police B2-B3 | [OPERATIONS](../OPERATIONS.md)
+- 2026-10-06 | Staging may use the police test environment (`ubyport_env=test`, UBY-WS test account); credentials only in the staging app | police B4: test behaves like production | [LIGHTSAIL](../LIGHTSAIL.md)
 - 2026-10-06 | Abbreviation (zkratka) check accepts 5-6 letters or digits | the police issued a 6-character test abbreviation | validation.py
-- 2026-10-08 | Door codes (TTLock pilot): timed random codes (`get`, cloud-only, works with Wi-Fi down; custom codes rejected as gateway-dependent); issued when the whole party is registered; guest page + mail, host CC; best-effort delete on cancel plus host mail. Gateway calls worker-only; hosts share locks with a UbyHost-made TTLock user, never a password; setup under Property tools; details in plan §8.2, §9. No claim check in the pilot (accepted risk, owner's properties only; required before other hosts). Test mode first: only manual stays get codes until `UBYHOST_DOOR_CODES_LIVE=1`, after the owner's production acceptance test | owner + council-lite; TTLock FAQ and gateway guide | [ttlock-door-codes](../plans/ttlock-door-codes.md)
+- 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live; full rules in the plan | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Funnel: in-app dashboard, no JS; Umami public-only | own rows | 0018
 - 2026-10-08 | Stored files: no expiry; invoices 10 y; first new file kind brings a storage module | tiny saving, legal risk | [plan](../plans/file-retention.md)
+<<<<<<< HEAD
 - 2026-10-08 | Door codes: one Background jobs row (`door_codes`, 1 min, task 0012). No PIN/list/unlock poll. Timeout recovery lists by name; weekly `queryDate` runs inside that job (task 0015) | API budget; list responses contain digits | [ttlock-door-codes](../plans/ttlock-door-codes.md#7-api-call-budget-30000-a-month-shared-by-all-hosts)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
-- 2026-10-17 | Dashboard stay rows keep the production card look, no Open button (PR 397 flat rows rejected) | owner | [0022](../tasks/0022-restore-dashboard-stay-rows.md)
+- 2026-10-17 | Dashboard stay rows keep the production card look, no Open button (PR 397 flat rows rejected) | owner | [0105](../tasks/0105-restore-dashboard-stay-rows.md)
+=======
+- 2026-10-08 | Door codes: one 1-min `door_codes` job; no PIN/list/unlock poll; weekly `queryDate` in it | API budget; type-3 codes unknown to the lock until first use | [plan §7](../plans/ttlock-door-codes.md)
+- 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
+- 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
+- 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in the same commit; executors skip non-todo; lint warns on overlapping open briefs | brief collisions | [workflow](workflow.md)
+- 2026-10-09 | Waiting guest sees only "You will receive your door code by e-mail." (0024; replaces 0022) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
+- 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
+- 2026-10-10 | UI decisions continue | cap | [UI](ui-decisions.md)
+- 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
+- 2026-10-10 | PostHog replaces Umami; privacy settings live in the snippet, not the dashboard | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
+- 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)
+- 2026-10-11 | ARES lookup on host click; sends only the IČO; requests lib; 24 h cache; 20/h per user | owner | [0055](../tasks/0055-ares-lookup.md)
+- 2026-10-11 | Facility abbreviation: suffix after UBY-WS_ | owner | [0043](../tasks/0043-police-setup-fewer-fields.md)
+- 2026-10-11 | Web-service credential request: data box ybndqw9, Ředitelství služby cizinecké policie, Olšanská 2, 130 51 Praha 3 | owner | [0044](../tasks/0044-ws-request-letter.md)
+- 2026-10-12 | TTLock: -1026 = created/deleted; host provider, no SCCs; same-period reuse needs custom PIN/mail; retry deletion to end (0067–69) | [legal](../privacy/DOOR_CODES_LEGAL.md)
+- 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
+- 2026-10-15 | Watchdog digest: server 72 h, repo 6 h; host warnings unchanged | owner | [OPERATIONS](../OPERATIONS.md)
+>>>>>>> origin/main

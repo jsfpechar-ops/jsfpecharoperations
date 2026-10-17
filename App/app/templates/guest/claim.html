@@ -2,7 +2,7 @@
 {% block content %}
 
 {% if can_pick_other %}
-  <a class="g-back" href="/l/{{ token }}?lang={{ lang }}">&larr; {{ t('back_to_stays') }}</a>
+  <a class="g-back" href="/l/{{ token }}?lang={{ lang }}">{{ t('back_to_stays') }}</a>
 {% endif %}
 
 {% include "guest/_why.html" %}

@@ -1,0 +1,19 @@
+/* Shared warm skeleton shimmer, adapted from the supplied c05 loader. */
+.skeleton, .g-skeleton, .c05-skel__bone { display:block;position:relative;min-height:12px;border-radius:var(--radius-xs);background:var(--surface-active);overflow:hidden }
+.skeleton::after, .g-skeleton::after, .c05-skel__bone::after { content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,var(--surface) 40%,var(--canvas-subtle,var(--surface-hover)) 60%,transparent);animation:c05-skel-sweep 1.8s cubic-bezier(.65,0,.35,1) infinite }
+.c05-skel { display:flex;flex-direction:column;gap:16px;width:min(100%,480px);padding:24px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);box-sizing:border-box }
+.c05-skel__row { display:flex;gap:12px;align-items:center }
+.c05-skel__lines { display:flex;flex:1;flex-direction:column;gap:8px;min-width:0 }
+.c05-skel__avatar { width:44px;height:44px;border-radius:50%;flex:0 0 auto }
+.c05-skel__line { height:12px;width:100% }
+.c05-skel__line--sm { height:10px;min-height:10px;width:60% }
+.c05-skel__block { height:14px }
+.c05-skel__block--w80 { width:80% }
+.c05-skel__block--w95 { width:95% }
+.c05-skel__block--w60 { width:60% }
+.c05-skel__lines .c05-skel__bone:nth-child(2)::after { animation-delay:.15s }
+.c05-skel > .c05-skel__block:nth-child(2)::after { animation-delay:.2s }
+.c05-skel > .c05-skel__block:nth-child(3)::after { animation-delay:.35s }
+.c05-skel.paused .c05-skel__bone::after, .skeleton-paused .skeleton::after, .skeleton-paused .g-skeleton::after { animation-play-state:paused }
+@keyframes c05-skel-sweep { 0% { transform:translateX(-100%) } 60%,100% { transform:translateX(100%) } }
+@media (prefers-reduced-motion:reduce) { .skeleton::after, .g-skeleton::after, .c05-skel__bone::after, .page-skeleton, .g-page-skeleton { animation:none!important } }

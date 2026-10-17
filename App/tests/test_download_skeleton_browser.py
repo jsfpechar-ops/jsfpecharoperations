@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, claim, db, invoices, passport_photos
 from app.main import app
+from tests.browser_support import chromium_launch_kwargs
 from starlette.datastructures import FormData
 from tests.conftest import login_as
 
@@ -273,7 +274,7 @@ def test_every_host_download_button_keeps_the_page_visible(base, host_world):
     ]
 
     with sync_api.sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = browser.new_context(viewport={"width": 1280, "height": 900})
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}])
         page = context.new_page()

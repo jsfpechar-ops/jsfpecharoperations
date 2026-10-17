@@ -309,6 +309,17 @@ def normalise_zip(value: Optional[str]) -> str:
     return "".join(ch for ch in (value or "") if ch.isdigit())
 
 
+def normalise_databox(value: Optional[str]) -> str:
+    """Czech data-box ID: exactly seven lowercase letters or digits."""
+    raw = (value or "").strip().lower()
+    if _DATABOX_RE.fullmatch(raw):
+        return raw
+    return ""
+
+
+_DATABOX_RE = re.compile(r"[a-z0-9]{7}")
+
+
 # --- birth date ----------------------------------------------------------
 
 def normalise_birth_date(value: Optional[str]) -> str:
@@ -801,6 +812,158 @@ def guest_is_reportable(nationality: Optional[str]) -> bool:
     return bool(nationality) and nationality.upper() != CZECH_CODE
 
 
+# --- Czech property address (one line ↔ police parts) --------------------
+
+_ADDR_SPLIT_FIELDS = (
+    "addr_street",
+    "addr_house_no",
+    "addr_orient_no",
+    "addr_zip",
+    "addr_obec",
+    "addr_obec_cast",
+)
+
+_CP_PREFIX_RE = re.compile(r"^(?:č\.?\s*p\.?|cp\.?)\s*", re.IGNORECASE)
+_STREET_NUMBER_RE = re.compile(
+    r"^(?P<prefix>.*?)\s+"
+    r"(?P<house>E\d{1,4}|\d{1,4}E|\d{1,4})"
+    r"(?:/(?P<orient>\d{1,3}[A-Za-z]?))?$",
+    re.IGNORECASE,
+)
+_STREET_NUMBER_ONLY_RE = re.compile(r"^(E\d{1,4}|\d{1,4}E|\d{1,4})$", re.IGNORECASE)
+_CITY_SEGMENT_RE = re.compile(r"^(?P<zip>\d{3}\s?\d{2})\s+(?P<rest>.+)$")
+
+
+def _address_field(ap: Any, key: str) -> str:
+    try:
+        value = ap[key]
+    except (KeyError, TypeError, IndexError):
+        value = ap.get(key) if isinstance(ap, dict) else None
+    return (value or "").strip()
+
+
+def compose_czech_address_line(ap: Dict[str, Optional[str]]) -> str:
+    """Rebuild the one-line address the host typed from the stored police parts."""
+    number = "/".join(
+        p for p in (_address_field(ap, "addr_house_no"), _address_field(ap, "addr_orient_no")) if p
+    )
+    street = " ".join(p for p in (_address_field(ap, "addr_street"), number) if p)
+    zipcode = normalise_zip(_address_field(ap, "addr_zip") or None)
+    zip_raw = _address_field(ap, "addr_zip")
+    zip_display = f"{zipcode[:3]} {zipcode[3:]}" if len(zipcode) == 5 else zip_raw
+    obec = _address_field(ap, "addr_obec")
+    cast = _address_field(ap, "addr_obec_cast")
+    if cast:
+        obec = f"{obec} - {cast}" if obec else cast
+    town = " ".join(p for p in (zip_display, obec) if p)
+    return ", ".join(p for p in (street, town) if p)
+
+
+def _clean_address_split(parts: Dict[str, str]) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    for key, raw in parts.items():
+        value = (raw or "").strip()
+        if not value:
+            continue
+        if key == "addr_house_no":
+            if not _HOUSE_RE.match(value):
+                continue
+        elif key == "addr_orient_no":
+            if not _ORIENT_RE.match(value):
+                continue
+        elif key == "addr_zip":
+            value = normalise_zip(value)
+            if len(value) != 5:
+                continue
+        elif key in APARTMENT_FIELD_LIMITS:
+            value = value[: APARTMENT_FIELD_LIMITS[key]]
+        out[key] = value
+    return out
+
+
+def _parse_street_segment(segment: str) -> Dict[str, str]:
+    seg = _CP_PREFIX_RE.sub("", segment.strip())
+    if not seg:
+        return {}
+    match = _STREET_NUMBER_RE.match(seg)
+    if match:
+        prefix = (match.group("prefix") or "").strip()
+        result: Dict[str, str] = {"addr_house_no": match.group("house")}
+        orient = (match.group("orient") or "").strip()
+        if orient:
+            result["addr_orient_no"] = orient
+        if prefix:
+            result["addr_street"] = prefix
+        return result
+    only_number = _STREET_NUMBER_ONLY_RE.match(seg)
+    if only_number:
+        return {"addr_house_no": only_number.group(1)}
+    return {}
+
+
+def _parse_city_segment(segment: str) -> Dict[str, str]:
+    match = _CITY_SEGMENT_RE.match(segment.strip())
+    if not match:
+        return {}
+    zipcode = normalise_zip(match.group("zip"))
+    if len(zipcode) != 5:
+        return {}
+    rest = match.group("rest").strip()
+    if " - " in rest:
+        obec, cast = rest.split(" - ", 1)
+        return {
+            "addr_zip": zipcode,
+            "addr_obec": obec.strip(),
+            "addr_obec_cast": cast.strip(),
+        }
+    return {"addr_zip": zipcode, "addr_obec": rest}
+
+
+def split_czech_address(line: str) -> Dict[str, str]:
+    """Split one Czech address line into police address parts."""
+    raw = strip_forbidden(line).strip()
+    if not raw:
+        return {}
+    normalized = re.sub(r"\s+", " ", raw)
+    segments = [part.strip() for part in normalized.split(",") if part.strip()]
+    merged: Dict[str, str] = {}
+    if len(segments) >= 2:
+        merged.update(_parse_street_segment(segments[0]))
+        merged.update(_parse_city_segment(segments[1]))
+    elif len(segments) == 1:
+        city = _parse_city_segment(segments[0])
+        if city:
+            merged.update(city)
+        else:
+            merged.update(_parse_street_segment(segments[0]))
+    street = (merged.get("addr_street") or "").strip()
+    obec = (merged.get("addr_obec") or "").strip()
+    if street and obec and street.casefold() == obec.casefold():
+        merged.pop("addr_street", None)
+    return _clean_address_split(merged)
+
+
+def merge_split_address_fields(payload: Dict[str, Any], split: Dict[str, str]) -> bool:
+    """Fill empty addr_* keys in ``payload`` from ``split``. Return True on conflict."""
+    mismatch = False
+    for field in _ADDR_SPLIT_FIELDS:
+        parsed = (split.get(field) or "").strip()
+        if not parsed:
+            continue
+        existing = (payload.get(field) or "").strip()
+        if field == "addr_zip":
+            existing_cmp = normalise_zip(existing)
+            parsed_cmp = normalise_zip(parsed)
+        else:
+            existing_cmp = existing
+            parsed_cmp = parsed
+        if not existing_cmp:
+            payload[field] = parsed
+        elif existing_cmp != parsed_cmp:
+            mismatch = True
+    return mismatch
+
+
 # --- accommodation facility (report header) ------------------------------
 
 _IDUB_RE = re.compile(r"^[A-Za-z0-9]{12,14}$")
@@ -811,7 +974,31 @@ _IDUB_RE = re.compile(r"^[A-Za-z0-9]{12,14}$")
 _MARK_RE = re.compile(r"^[A-Za-z0-9]{5,6}$")
 _HOUSE_RE = re.compile(r"^(?:\d{1,4}|E\d{1,4}|\d{1,4}E)$", re.IGNORECASE)
 _ORIENT_RE = re.compile(r"^\d{1,3}[A-Za-z]?$")
-_WS_USER_RE = re.compile(r"^(?:uby-ws[A-Za-z0-9]{6}|uby-tws[A-Za-z0-9]{5})$", re.IGNORECASE)
+_WS_USER_RE = re.compile(
+    r"^(?:uby-ws[A-Za-z0-9]{6}|uby-ws_[A-Za-z0-9]{5,6}|uby-tws[A-Za-z0-9]{5})$",
+    re.IGNORECASE,
+)
+
+
+def mark_from_ws_user(user: str) -> str:
+    """Facility abbreviation from a production web-service login.
+
+    UBY-WS_MLJNO yields MLJNO (the characters after UBY-WS_). A login with no
+    underscore, UBY-WSab12cd, yields the six characters after UBY-WS. Test
+    logins (uby-tws…) are never used.
+    """
+    login = (user or "").strip()
+    if not _WS_USER_RE.match(login):
+        return ""
+    lowered = login.lower()
+    if lowered.startswith("uby-tws"):
+        return ""
+    if lowered.startswith("uby-ws_"):
+        return login[7:].upper()
+    if lowered.startswith("uby-ws"):
+        return login[6:].upper()
+    return ""
+
 
 APARTMENT_FIELD_LIMITS = {
     "uby_name": 35,

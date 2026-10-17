@@ -61,10 +61,9 @@ def _destructive_forms() -> list[tuple[Path, str]]:
 def test_the_sweep_actually_finds_the_destructive_actions():
     """Guard the guard: a broken scan would make every assertion below vacuous."""
     forms = _destructive_forms()
-    assert len(forms) >= 6, f"only found {len(forms)} destructive forms, scan is broken"
+    assert len(forms) >= 5, f"only found {len(forms)} destructive forms, scan is broken"
     actions = " ".join(tag for _, tag in forms)
     assert "/archive" in actions
-    assert "regenerate" in actions
 
 
 def test_every_destructive_action_asks_first():

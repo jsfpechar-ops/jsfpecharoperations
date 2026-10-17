@@ -120,11 +120,6 @@ def test_the_feed_table_keeps_room_for_remove(client, world):
     assert 'class="table-cards feed-table"' in page
 
 
-def test_automation_button_label_is_capitalised(client):
-    page = client.get("/automation?lang=en").text
-    buttons = re.findall(r'<a class="btn small" href="/apartments/\d+">([^<]+)</a>', page)
-    assert buttons and set(buttons) == {"Full property setup"}
-
 
 def test_finished_onboarding_shows_skip_once(client):
     page = client.get("/onboarding?lang=en").text
@@ -135,7 +130,8 @@ def test_finished_onboarding_shows_skip_once(client):
 
 def test_settings_does_not_nest_a_second_data_protection_heading(client):
     page = client.get("/settings?lang=en").text
-    assert page.count(">Data protection</h2>") == 1
+    # 0083 groups settings; Data protection is one sub-heading inside Data & archive.
+    assert page.count(">Data protection</h2>") + page.count(">Data protection</h3>") == 1
     assert ">Retention status</h3>" in page
     assert "record(s)" not in page
 

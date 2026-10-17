@@ -201,7 +201,7 @@ def test_06_calendar_import_creates_the_stay_and_skips_the_block(host, feed_url)
     apartment = db.query_one("SELECT * FROM apartment")
     response = host.post(
         f"/apartments/{apartment['id']}/feeds",
-        data={"url": url, "label": "Airbnb", "own_name": "Airbnb"},
+        data={"url": url, "label": "airbnb", "own_name": "Airbnb"},
         follow_redirects=False,
     )
     assert response.status_code == 303, response.text
@@ -517,7 +517,8 @@ def test_22_house_book_export_covers_everyone_including_czechs(host, monkeypatch
 
     page = host.get("/housebook?lang=en")
     assert page.status_code == 200
-    assert "Your legal duty" in page.text
+    assert 'href="/guide#housebook"' in page.text
+    assert "Your legal duty" not in page.text
 
     csv = host.get("/housebook.csv")
     assert csv.status_code == 200

@@ -2,7 +2,7 @@
 {% set nav = 'settings' %}
 {% block title %}{{ t('archive.title') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end with context %}
+{% from "_components.html" import page_header, help_tip, row_menu_begin, row_menu_end with context %}
 {{ page_header(
   t('archive.title'),
   t('archive.page_lede'),
@@ -12,7 +12,7 @@
 
 <p class="small muted">{{ t('archive.retention_note') }}</p>
 
-<div class="chips">
+<div class="chips archive-type-filters" role="group" aria-label="{{ t('archive.title') }}">
   {% for value, label_key in [
     ('all', 'archive.chip.all_count'),
     ('stays', 'archive.chip.stays_count'),
@@ -39,8 +39,7 @@
 {% else %}
 
   {% if item_type in ('all', 'stays') and archived_stays %}
-  <h2>{{ t('archive.section.stays') }}</h2>
-  <p class="small muted">{{ t('archive.hint.stays') }}</p>
+  <div class="heading-with-tip"><h2>{{ t('archive.section.stays') }}</h2> {{ help_tip('archive-stays-help', t('archive.hint.stays')) }}</div>
   <div class="panel tight scroll-x">
     <table class="table-cards">
       <thead>
@@ -80,8 +79,7 @@
   {% endif %}
 
   {% if item_type in ('all', 'properties') and archived_properties %}
-  <h2>{{ t('archive.section.properties') }}</h2>
-  <p class="small muted">{{ t('archive.hint.properties') }}</p>
+  <div class="heading-with-tip"><h2>{{ t('archive.section.properties') }}</h2> {{ help_tip('archive-properties-help', t('archive.hint.properties')) }}</div>
   <div class="panel tight scroll-x">
     <table class="table-cards">
       <thead>
@@ -119,8 +117,7 @@
   {% endif %}
 
   {% if item_type in ('all', 'housebook') and archived_housebook %}
-  <h2>{{ t('archive.section.guests') }}</h2>
-  <p class="small muted">{{ t('archive.hint.housebook') }}</p>
+  <div class="heading-with-tip"><h2>{{ t('archive.section.guests') }}</h2> {{ help_tip('archive-housebook-help', t('archive.hint.housebook')) }}</div>
   <div class="panel tight scroll-x">
     <table class="table-cards">
       <thead>
@@ -155,8 +152,7 @@
   {% endif %}
 
   {% if item_type in ('all', 'entities') and archived_entities %}
-  <h2>{{ t('archive.section.entities') }}</h2>
-  <p class="small muted">{{ t('archive.hint.entities') }}</p>
+  <div class="heading-with-tip"><h2>{{ t('archive.section.entities') }}</h2> {{ help_tip('archive-entities-help', t('archive.hint.entities')) }}</div>
   <div class="panel tight scroll-x">
     <table class="table-cards">
       <thead>

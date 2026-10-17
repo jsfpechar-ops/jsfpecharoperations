@@ -1052,7 +1052,9 @@ def workspace_deletion(owner_user_id: int, due_at: str, stage: str) -> int:
 LIFECYCLE_ACTIONS = {
     "lifecycle_no_property": "/apartments/new",
     "lifecycle_no_calendar": "/apartments",
-    "lifecycle_no_guest": "/guest-links",
+    # 0101: the canonical home. /guest-links stays as a redirect only because
+    # tips already sent link it.
+    "lifecycle_no_guest": "/apartments#property-summaries",
 }
 
 
@@ -1255,16 +1257,18 @@ def build_door_code(
     subject = _guest_text(lang, "mail_door_code_subject", property=property_name)
     title = _guest_text(lang, "door_code_title")
     times = _guest_text(lang, "door_code_times", checkin=checkin, checkout=checkout)
-    first_use = _guest_text(lang, "door_code_first_use", deadline=first_use_by)
     footer_lines = _guest_footer_lines(lang, property_name, host)
     code_line = mail.DOOR_CODE_MARKER
     blocks = [
         _block_heading(title),
         _block_paragraph(code_line, size=22),
         _block_paragraph(times),
-        _block_paragraph(first_use),
     ]
-    text_lines = [title, code_line, "", times, first_use]
+    text_lines = [title, code_line, "", times]
+    if first_use_by:
+        first_use = _guest_text(lang, "door_code_first_use", deadline=first_use_by)
+        blocks.append(_block_paragraph(first_use))
+        text_lines.append(first_use)
     text = "\n".join([*text_lines, "", "--", *_footer_text(footer_lines)])
     return {
         "subject": subject,
@@ -1304,6 +1308,8 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
     except ValueError:
         stay_day = reservation["date_from"]
     params: Dict[str, str] = {"property": apartment["internal_name"] or "", "date": stay_day}
+    if variant == "failed":
+        params["reason"] = _door_code_reason(lang, (row["last_error"] or "").strip() or "other")
     if variant == "cancelled_not_deleted" and row["pin_enc"]:
         pin = db.decrypt_field(row["pin_enc"]) or ""
         tail = pin[-2:] if len(pin) >= 2 else pin
@@ -1320,7 +1326,100 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
         reservation_id=reservation["id"],
         apartment_id=apartment["id"],
         owner_user_id=apartment["owner_user_id"],
+        cc_email=config.SUPPORT_EMAIL if variant in _SUPPORT_COPY_VARIANTS else None,
     )
+
+
+# Notices about a code that was not created. The host creates it by hand, and
+# support gets a copy so the problem is on record. Never sent to a guest.
+_SUPPORT_COPY_VARIANTS = ("failed", "delayed", "period_taken", "period_shared", "moved_not_deleted")
+
+
+_DOOR_CODE_REASONS = (
+    "waiting",
+    "not_set_up",
+    "no_account",
+    "not_eligible",
+    "bad_window",
+    "cloud",
+    "offline",
+    "permission",
+    "storage",
+    "budget",
+)
+# TTLock error kinds (ttlock.ERROR_KINDS) as the reason a host reads.
+_DOOR_CODE_REASON_KINDS = {
+    "transient": "cloud",
+    "network": "cloud",
+    "rate": "cloud",
+    "auth": "cloud",
+    "offline": "offline",
+    "permission": "permission",
+    "reauth": "no_account",
+    "storage": "storage",
+    "budget": "budget",
+}
+# Reasons where nothing is retried: the late mail keeps the "failed" text.
+_DOOR_CODE_NO_RETRY = ("not_set_up", "not_eligible", "bad_window")
+
+
+def _door_code_reason(lang: str, reason: str) -> str:
+    """The reason as a sentence a host can act on, with the raw token for support."""
+    parts = reason.split(":")
+    kind = parts[1] if parts[0] == "period_taken" and len(parts) > 1 else parts[0]
+    key = _DOOR_CODE_REASON_KINDS.get(kind, kind)
+    if key not in _DOOR_CODE_REASONS:
+        key = "other"
+    text = _text(lang, f"mail.door_code_reason.{key}")
+    return f"{text} [{reason}]"
+
+
+def door_code_delayed_notice(reservation_id: int, reason: str) -> Optional[int]:
+    """Tell the host (support in copy) that a registered stay still has no code.
+
+    One mail per stay. It needs no ``door_code`` row, because a stay whose
+    property is not set up for codes never gets one.
+    """
+    try:
+        reservation = db.query_one("SELECT * FROM reservation WHERE id = ?", (reservation_id,))
+        if not reservation:
+            return None
+        apartment = db.query_one(
+            "SELECT * FROM apartment WHERE id = ?", (reservation["apartment_id"],)
+        )
+        if not apartment:
+            return None
+        to_email = _entity_contact_email(apartment["legal_entity_id"])
+        if not to_email:
+            return None
+        lang = host_i18n.normalise_language(HOST_MAIL_LANGUAGE)
+        try:
+            stay_day = datetime.fromisoformat(reservation["date_from"]).strftime("%d.%m.%Y")
+        except ValueError:
+            stay_day = reservation["date_from"]
+        params = {
+            "property": apartment["internal_name"] or "",
+            "date": stay_day,
+            "reason": _door_code_reason(lang, reason or "waiting"),
+        }
+        variant = "failed" if (reason or "waiting") in _DOOR_CODE_NO_RETRY else "delayed"
+        subject = _text(lang, f"mail.door_code_notice.{variant}.subject", **params)
+        body = _text(lang, f"mail.door_code_notice.{variant}.body", **params)
+        payload = {"text": body, "html": f"<p>{html.escape(body)}</p>", "lang": lang}
+        return mail.enqueue(
+            kind="door_code_notice",
+            idempotency_key=f"door_code_notice:stay{reservation_id}:delayed",
+            to_email=to_email,
+            subject=subject,
+            payload=payload,
+            reservation_id=reservation_id,
+            apartment_id=apartment["id"],
+            owner_user_id=apartment["owner_user_id"],
+            cc_email=config.SUPPORT_EMAIL,
+        )
+    except Exception:
+        log.exception("door_code_delayed_notice_failed reservation=%s", reservation_id)
+        return None
 
 
 def build_completion(
@@ -1330,6 +1429,7 @@ def build_completion(
     dates: str,
     stay_url: str,
     host: Optional[Dict[str, str]] = None,
+    door_code: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
 
@@ -1353,6 +1453,23 @@ def build_completion(
         _block_paragraph(intro),
     ]
     text_lines = [intro]
+    if door_code:
+        code_title = _guest_text(lang, "door_code_title")
+        times = _guest_text(
+            lang, "door_code_times", checkin=door_code["checkin"], checkout=door_code["checkout"]
+        )
+        blocks.extend([
+            _block_heading(code_title),
+            _block_paragraph(mail.DOOR_CODE_MARKER, size=22),
+            _block_paragraph(times),
+        ])
+        text_lines.extend(["", code_title, mail.DOOR_CODE_MARKER, times])
+        if door_code.get("first_use_by"):
+            first_use = _guest_text(
+                lang, "door_code_first_use", deadline=door_code["first_use_by"]
+            )
+            blocks.append(_block_paragraph(first_use))
+            text_lines.append(first_use)
 
     # Slot 2: the links, quiet by design -- nothing here is still owed.
     blocks.append(_block_link(stay_url, action))

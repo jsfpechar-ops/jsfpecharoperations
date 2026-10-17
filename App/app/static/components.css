@@ -46,8 +46,7 @@ html:not(.has-js) .row-menu-panel[hidden] {
   box-shadow:none;
 }
 html:not(.has-js) .row-menu-item { width:auto;padding:5px 7px;text-decoration:underline }
-/* Placeholders for content on its way. Static on purpose: DESIGN.md
-   allows no looping animation, so there is no shimmer. */
+/* Owner-selected shimmer: existing light surfaces, static with reduced motion. */
 .skeleton { display:block;min-height:12px;border-radius:var(--radius-xs);background:var(--surface-active) }
 .skeleton-line { height:12px;margin:10px 0 }
 .skeleton-line.short { width:40% }
@@ -121,6 +120,10 @@ dialog::backdrop { background:rgba(10,10,9,.58) }
   box-shadow:none;
 }
 .property-mark,.avatar { border:1px solid color-mix(in srgb,currentColor 28%,transparent) }
+
+.onboarding-banner-setup { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; }
+.onboarding-banner-setup-link { font-weight:700; text-decoration:none; color:var(--ink); }
+.visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 .command-dialog,.shortcuts-dialog {
   border:2px solid var(--ink);
   box-shadow:8px 9px 0 rgba(32,32,30,.32);
@@ -128,3 +131,26 @@ dialog::backdrop { background:rgba(10,10,9,.58) }
 .command-search { background:linear-gradient(135deg,var(--amber-bg),var(--surface) 52%) }
 .command-option { border-radius:9px }
 .command-option.is-selected { color:var(--ink);background:var(--blue-bg) }
+.source-badge { display:inline-flex;align-items:center;gap:6px;min-width:0 }
+.source-badge img { width:16px;height:16px;flex:0 0 auto }
+.feed-table .source-badge { gap:4px }
+.feed-table .source-badge img { width:14px;height:14px }
+.host-workspace .more-options { margin-top: 14px; }
+.host-workspace .more-options > summary {
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 0;
+  list-style: none;
+}
+.host-workspace .more-options > summary::-webkit-details-marker { display: none; }
+.host-workspace .more-options[open] > summary { margin-bottom: 16px; }
+.host-workspace .more-options-body { display: grid; gap: 12px; }
+.host-workspace .operator-only-line { margin: 0 0 6px; }
+.host-workspace .operator-change { display: inline; }
+.host-workspace .operator-change > summary {
+  display: inline;
+  cursor: pointer;
+  color: var(--brand);
+  font-weight: 600;
+}

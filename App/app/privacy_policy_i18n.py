@@ -116,23 +116,30 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         # WP09: owner's final wording from 04_legal_positions.md, sections 1, 4
         # and 5. analytics_* and optout_* are shown on /privacy only while
-        # Umami is configured; roles_* sits in section 3, own_retention_* in 11.
+        # PostHog is configured; roles_* sits in section 3, own_retention_* in 11.
         "privacy.analytics_title": "Website analytics",
         "privacy.analytics_body": (
-            "On our public pages (not in the app) we use Umami Cloud, operated by Umami Software, "
-            "Inc., with data stored in the EU, to count visits. Umami does not set cookies and does "
-            "not store your IP address. It derives a short-lived anonymous visit identifier from "
-            "your IP address, browser type and our website ID, and we see only aggregated "
-            "statistics (pages viewed, referring site, browser, device type, country). We do not "
-            "combine this data with account data and we do not use it for advertising. Legal "
-            "basis: our legitimate interest in understanding how our website is used (Art. 6(1)(f) "
-            "GDPR). The exemption under § 89(3) of Act No. 127/2005 Coll. applies because the "
-            "measurement serves only anonymous traffic statistics. You can switch measurement off "
-            "in your browser here:"
+            "On our public pages (not in the app, not on guest pages and not on sign-in) we use "
+            "PostHog Cloud EU, operated by PostHog, Inc., with data stored in the EU (Frankfurt), "
+            "to count visits. The measurement is set not to store a cookie and not to store your IP "
+            "address. PostHog derives a short-lived visit identifier, and we see aggregated "
+            "statistics (pages viewed, referring site, browser, device type, country). We do not use "
+            "this for advertising. Legal basis: our legitimate interest in understanding how our "
+            "website is used (Art. 6(1)(f) GDPR). You can switch measurement off in this browser "
+            "here:"
+        ),
+        "privacy.product_analytics_title": "Product analytics",
+        "privacy.product_analytics_body": (
+            "For our marketing and sales picture we also send PostHog, from our own server, the host "
+            "account e-mail, the workspace name, the campaign labels of the sign-up link "
+            "(utm_source, utm_medium, utm_campaign), the sign-up source, and how far the account "
+            "has got. We do not send guest data, passport details, stay contents, door codes or "
+            "advertising click identifiers. Legal basis: our legitimate interest in operating the "
+            "service (Art. 6(1)(f) GDPR)."
         ),
         "privacy.analytics_dnt": "We also respect your browser's Do Not Track setting.",
         "privacy.optout_lede": (
-            "We measure visits to our public pages with Umami, without cookies."
+            "We measure visits to our public pages with PostHog, without cookies."
         ),
         "privacy.optout_disable": "Turn off measurement in this browser",
         "privacy.optout_off_note": "Measurement is off in this browser.",
@@ -392,23 +399,30 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "Transport Security (HSTS), takže se tato doména po omezenou dobu otevírá jen přes HTTPS."
         ),
         # WP09: konečné znění provozovatele z 04_legal_positions.md, oddíly 1,
-        # 4 a 5. analytics_* a optout_* jen při zapnutém Umami.
+        # 4 a 5. analytics_* a optout_* jen při zapnutém PostHogu.
         "privacy.analytics_title": "Měření návštěvnosti",
         "privacy.analytics_body": (
-            "Na veřejných stránkách webu (ne v aplikaci) používáme nástroj Umami Cloud provozovaný "
-            "společností Umami Software, Inc. s ukládáním dat v EU, abychom zjistili počet návštěv. "
-            "Umami nepoužívá cookies a neukládá vaši IP adresu. Z IP adresy, typu prohlížeče a "
-            "identifikátoru našeho webu vytváří krátkodobý anonymní identifikátor návštěvy a my "
-            "vidíme pouze souhrnné statistiky (zobrazené stránky, odkazující web, prohlížeč, typ "
-            "zařízení, země). Tato data nespojujeme s údaji z vašeho účtu a nepoužíváme je k "
-            "reklamě. Právní základ: náš oprávněný zájem porozumět používání webu (čl. 6 odst. 1 "
-            "písm. f) GDPR). Jde o měření nezbytné pro provoz webu ve smyslu § 89 odst. 3 zákona "
-            "č. 127/2005 Sb., protože slouží jen k anonymní statistice návštěvnosti. Měření můžete "
-            "ve svém prohlížeči vypnout zde:"
+            "Na veřejných stránkách (ne v aplikaci, ne na stránkách pro hosty a ne při přihlášení) "
+            "používáme PostHog Cloud EU, provozovaný společností PostHog, Inc., s ukládáním dat v EU "
+            "(Frankfurt), abychom zjistili počet návštěv. Měření je nastaveno tak, aby neukládalo "
+            "cookie a neukládalo vaši IP adresu. PostHog vytváří krátkodobý identifikátor návštěvy "
+            "a my vidíme souhrnné statistiky (zobrazené stránky, odkazující web, prohlížeč, typ "
+            "zařízení, země). Nepoužíváme to k reklamě. Právní základ: náš oprávněný zájem "
+            "porozumět tomu, jak je náš web používán (čl. 6 odst. 1 písm. f) GDPR). Měření můžete "
+            "v tomto prohlížeči vypnout zde:"
+        ),
+        "privacy.product_analytics_title": "Produktová analytika",
+        "privacy.product_analytics_body": (
+            "Pro účely marketingu a prodeje ze svého serveru také odesíláme společnosti PostHog "
+            "e-mail účtu hostitele, název pracovního prostoru, štítky kampaně odkazu pro registraci "
+            "(utm_source, utm_medium, utm_campaign), zdroj registrace a stav pokroku účtu. "
+            "Neodesíláme údaje hostů, údaje z cestovních dokladů, obsah pobytů, kódy dveří ani "
+            "identifikátory reklamních kliknutí. Právní základ: náš oprávněný zájem provozovat "
+            "službu (čl. 6 odst. 1 písm. f) GDPR)."
         ),
         "privacy.analytics_dnt": "Respektujeme také nastavení Do Not Track ve vašem prohlížeči.",
         "privacy.optout_lede": (
-            "Návštěvnost veřejných stránek měříme nástrojem Umami bez cookies."
+            "Návštěvnost veřejných stránek měříme nástrojem PostHog bez cookies."
         ),
         "privacy.optout_disable": "Vypnout měření v tomto prohlížeči",
         "privacy.optout_off_note": "Měření je v tomto prohlížeči vypnuté.",

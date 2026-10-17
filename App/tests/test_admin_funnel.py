@@ -2,14 +2,12 @@
 CSV export carries the same rows as the page."""
 from __future__ import annotations
 
-import csv
-import io
 from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import admin_funnel, auth, db
+from app import admin_funnel, auth, config, db
 from app.main import app
 from tests.conftest import login_as
 
@@ -142,38 +140,27 @@ def test_admins_are_not_in_the_funnel():
     assert f"{PREFIX}boss" not in _mine(admin_funnel.rows(now=NOW))
 
 
-def test_host_cannot_open_the_funnel_or_the_csv():
+def test_host_cannot_open_the_funnel():
     _account("plainhost")
     client = _login("plainhost")
     assert client.get("/admin/funnel", follow_redirects=False).status_code == 403
-    assert client.get("/admin/funnel.csv", follow_redirects=False).status_code == 403
 
 
-def test_csv_has_the_same_rows_as_the_page():
-    for level in (0, 4, 8):
-        _seed_host_at(level)
+def test_funnel_page_points_to_posthog_and_csv_is_gone(monkeypatch):
     _account("admin", role="admin")
     client = _login("admin")
     page = client.get("/admin/funnel?lang=en")
     assert page.status_code == 200
-    assert "funnel.stage." not in page.text and "funnel.col." not in page.text
-    exported = client.get("/admin/funnel.csv")
-    assert exported.status_code == 200
-    assert exported.headers["content-type"].startswith("text/csv")
-    reader = list(csv.DictReader(io.StringIO(exported.text)))
-    data = admin_funnel.rows()
-    assert [row["account_id"] for row in reader] == [str(row["id"]) for row in data["rows"]]
-    assert [row["stage"] for row in reader] == [row["stage"] for row in data["rows"]]
-    for row in data["rows"]:
-        assert f'data-account="{row["id"]}"' in page.text
-    by_name = {row["username"]: row for row in reader}
-    assert by_name[f"{PREFIX}level4"]["stage"] == "first_property"
-    assert by_name[f"{PREFIX}level8"]["stage"] == "retained"
-    header = list(reader[0].keys())
-    assert header[:4] == ["account_id", "username", "name", "active"]
-    assert "created" in header and "first_filing" in header
-    czech = client.get("/admin/funnel?lang=cs").text
-    assert "Účty podle fáze" in czech
+    assert "Host and campaign figures are in PostHog." in page.text
+    assert "<table" not in page.text
+    assert client.get("/admin/funnel.csv").status_code == 404
+    assert client.get("/reservations", follow_redirects=False).status_code in (200, 303)
+
+    monkeypatch.setattr(config, "POSTHOG_PROJECT_API_KEY", "phc_test")
+    monkeypatch.setattr(config, "POSTHOG_HOST", "https://analytics.example.invalid")
+    monkeypatch.setattr(config, "POSTHOG_ASSETS_HOST", "https://assets.example.invalid")
+    linked = _login("admin").get("/admin/funnel?lang=en")
+    assert 'href="https://eu.posthog.com"' in linked.text
 
 
 def test_wp20_hook_adds_stages_before_created(monkeypatch):
@@ -249,17 +236,9 @@ def test_weekly_buckets_hosts_in_window():
     assert old_row["created_at"] < since
 
 
-def test_dashboard_markup_and_no_script():
-    for level in (0, 4, 8):
-        _seed_host_at(level)
+def test_funnel_template_has_no_script():
     _account("admin", role="admin")
-    client = _login("admin")
-    page = client.get("/admin/funnel?lang=en")
-    assert page.status_code == 200
-    assert 'id="funnel-cards"' in page.text
-    assert 'id="funnel-chart"' in page.text
-    assert 'id="funnel-weekly"' in page.text
     template = open("app/templates/admin_funnel.html", encoding="utf-8").read()
     assert "<script" not in template.lower()
-    czech = client.get("/admin/funnel?lang=cs").text
-    assert "Účty podle fáze" in czech
+    czech = _login("admin").get("/admin/funnel?lang=cs").text
+    assert "Údaje o hostitelích a kampaních jsou v PostHogu." in czech

@@ -5,5 +5,5 @@ httpx==0.28.1
 pdfplumber>=0.11.10
 pypdf>=6.19.0
 pytest-cov==7.1.0
-ruff==0.16.9
+ruff==0.16.10
 mypy==2.3.1

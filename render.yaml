@@ -46,6 +46,9 @@ services:
       # Staging username/password login (Render does not deliver mail). Copy from Environment after deploy.
       - key: UBYHOST_STAGING_LOGIN_PASSWORD
         generateValue: true
+      # Staging test: no login, every visitor is the first administrator.
+      - key: UBYHOST_STAGING_NO_LOGIN
+        value: "1"
       - key: UBYHOST_MAIL_BACKEND
         value: console
       # Door codes (TTLock): set client id/secret in the Render dashboard

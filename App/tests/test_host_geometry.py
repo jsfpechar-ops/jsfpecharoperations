@@ -22,6 +22,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
+from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 
 
@@ -75,7 +76,7 @@ def test_dashboard_actions_share_height_and_gap(base):
     session = _browser_session_cookie(username)
     with sync_api.sync_playwright() as playwright:
         try:
-            browser = playwright.chromium.launch()
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
         except Exception as exc:
             if REQUIRE_BROWSER:
                 raise
@@ -124,6 +125,13 @@ def test_dashboard_actions_share_height_and_gap(base):
         assert separated or stacked
 
 
+def _open_month_filter(page):
+    panel = page.locator('form[data-filter-panel][id="list-filter-panel"]')
+    if not panel.is_visible():
+        page.locator('button[data-filter-toggle][aria-controls="list-filter-panel"]').click()
+    panel.wait_for(state="visible", timeout=30000)
+
+
 def test_the_month_filter_shares_its_page_edges(base):
     """The filter row must share the page lane and read as one control group.
 
@@ -141,7 +149,7 @@ def test_the_month_filter_shares_its_page_edges(base):
     })
     session = _browser_session_cookie(username)
     with sync_api.sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         context.add_cookies(
             [{"name": auth.SESSION_COOKIE, "value": session, "url": base + "/"}]
@@ -150,7 +158,7 @@ def test_the_month_filter_shares_its_page_edges(base):
         measured = {}
         for route in ("/stay-fees?lang=en", "/invoices?lang=en"):
             page.goto(base + route)
-            page.wait_for_selector(".list-filter", timeout=30000)
+            _open_month_filter(page)
             measured[route] = page.evaluate(
                 """() => {
                   const box = (selector) => document.querySelector(selector).getBoundingClientRect();
@@ -177,7 +185,7 @@ def test_the_month_filter_shares_its_page_edges(base):
                 for path in ("/stay-fees", "/invoices"):
                     route = f"{path}?lang={lang}"
                     page.goto(base + route)
-                    page.wait_for_selector(".list-filter", timeout=30000)
+                    _open_month_filter(page)
                     responsive[(width, route)] = page.evaluate(
                         """() => {
                           const root = document.documentElement;

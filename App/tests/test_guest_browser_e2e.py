@@ -38,6 +38,7 @@ else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import claim, db, guest_slug, i18n, mail  # noqa: E402
+from tests.browser_support import chromium_launch_kwargs
 
 
 # Layout rules every guest screen must meet. Each returns a sentence per
@@ -159,7 +160,7 @@ def live_server():
 def browser():
     with sync_api.sync_playwright() as playwright:
         try:
-            chromium = playwright.chromium.launch()
+            chromium = playwright.chromium.launch(**chromium_launch_kwargs())
         except Exception as exc:  # the browser binary is not installed
             if REQUIRE_BROWSER:
                 raise
@@ -186,6 +187,7 @@ def _seed(token: str):
         {
             "legal_entity_id": entity,
             "internal_name": "Browser Loft",
+            "guest_message": "Welcome! Your keys are in the example key safe. This complete host note is visible without opening anything.",
             "permalink_token": token,
             "permalink_window_days": 14,
             "default_purpose": "10",
@@ -343,6 +345,11 @@ def _register_a_group_of_three(live_server, browser, width, token, readable, lan
         page.goto(f"{live_server}/l/{key}" + ("?lang=en" if lang == "en" else ""))
         assert page.get_attribute("html", "lang") == lang
         guest.check_layout("pick")
+        note = page.locator(".g-arrival-message")
+        assert note.is_visible()
+        assert note.locator("summary").count() == 0
+        assert "complete host note" in note.inner_text()
+        assert page.locator(".g-why").bounding_box()["y"] > page.locator(".g-arrival-choice").bounding_box()["y"]
         page.locator(f"a[href*='/l/{key}/{stay}']").first.click()
         page.wait_for_load_state()
         guest.check_layout("claim")
@@ -359,6 +366,14 @@ def _register_a_group_of_three(live_server, browser, width, token, readable, lan
         page.locator("form button[type=submit]").first.click()
         page.wait_for_load_state()
 
+        assert page.locator(".g-host-message, .g-arrival-message").count() == 0
+        why = page.locator(".g-why")
+        assert not why.evaluate("el => el.open")
+        assert why.evaluate("el => el.getBoundingClientRect().top") >= page.locator("form[data-guest-wizard]").evaluate("el => el.getBoundingClientRect().bottom")
+        assert page.locator(".g-why-summary").evaluate("el => getComputedStyle(el, '::after').content") == '"?"'
+        why.locator("summary").click()
+        assert why.evaluate("el => el.open")
+        why.locator("summary").click()
         for number, person in enumerate(PEOPLE, start=1):
             if number > 1:
                 link = page.get_by_role("link", name=i18n.translator(lang)("add_person"))

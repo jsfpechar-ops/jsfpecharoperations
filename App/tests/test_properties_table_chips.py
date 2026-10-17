@@ -126,7 +126,7 @@ def _cell(page: str, lang: str, column_key: str) -> str:
 def test_technical_automation_column_is_not_on_property_landing(host):
     page = host.get("/apartments?lang=en").text
     assert '<th>Automation</th>' not in page
-    assert 'href="/automation"' in page  # Property tools still reaches overview.
+    assert 'href="/automation"' not in page
 
 
 @pytest.mark.parametrize("mode,key,hours", MODES)
@@ -134,13 +134,19 @@ def test_every_automation_mode_remains_accessible_in_context(host, mode, key, ho
     apartment = db.query_one("SELECT id FROM apartment WHERE internal_name = ?", (f"Flat {mode}",))
     page = host.get(f"/apartments/{apartment['id']}?lang=en").text
     assert 'id="automation"' in page
-    assert f"/automation#apartment-{apartment['id']}" in page
+    assert 'name="automation_mode"' in page
 
 
-def test_property_tools_translates(host):
+def test_entities_page_has_no_property_tools_bar(host):
+    page = host.get("/entities?lang=cs").text
+    assert 'class="host-local-nav"' not in page
+
+
+def test_properties_landing_has_no_secondary_property_bar(host):
     page = host.get("/apartments?lang=cs").text
-    assert host_i18n.translate('cs', 'host.property_tools') in page
-    assert 'href="/automation"' in page
+    assert 'class="host-local-nav"' not in page
+    assert 'href="/guest-links"' not in page
+    assert 'href="/automation"' not in page
 
 
 def test_the_setup_pill_survives(host):
@@ -195,7 +201,7 @@ def test_the_add_property_cta_translates(host):
 
 def test_the_empty_state_still_shows_one_primary_button(empty_host):
     page = empty_host.get("/apartments?lang=en").text
-    panel = re.search(r'<div class="panel empty">(.*?)</div>', page, re.S)
+    panel = re.search(r'<div class="panel empty empty-state" data-empty-state>(.*?)\n  </div>', page, re.S)
 
     assert panel, "the empty state disappeared"
     assert panel.group(1).count('class="btn primary') == 1
@@ -204,7 +210,8 @@ def test_the_empty_state_still_shows_one_primary_button(empty_host):
 
 def test_the_header_cta_is_hidden_while_the_list_is_empty(empty_host):
     """The empty state already names the one first step, so the header stays quiet."""
-    assert 'href="/apartments/new"' not in empty_host.get("/apartments?lang=en").text
+    # 0101: the setup banner may link the create page itself; the header CTA may not.
+    assert 'class="btn primary sync-btn" href="/apartments/new"' not in empty_host.get("/apartments?lang=en").text
 
 
 def test_the_header_cta_is_back_once_there_is_a_property(host):

@@ -236,6 +236,17 @@ def rename(apartment_id: int, readable: str) -> Optional[str]:
     return target
 
 
+def follow_name(apartment) -> Optional[str]:
+    """0096: the readable part follows the property name; old slugs redirect.
+
+    Called after a save that changed the name. A clash with another
+    property's slug (rare) keeps the current link unchanged.
+    """
+    if not ensure(apartment):
+        return None
+    return rename(int(apartment["id"]), _generated_readable(apartment["internal_name"]))
+
+
 def rotate(apartment_id: int, readable: Optional[str] = None) -> str:
     """Drop every slug of the apartment and issue one with a new code.
 

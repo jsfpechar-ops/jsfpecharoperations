@@ -69,7 +69,7 @@ LANDING_STRINGS = {
         "privacy_first.trackers.title": "No trackers in the app",
         "privacy_first.trackers.body": (
             "No ad or analytics scripts in the app or on guest pages. Website statistics "
-            "run on public pages only."
+            "run on public pages only, with PostHog Cloud EU."
         ),
         "privacy_first.photos.title": "Passport photos deleted after check-in",
         "privacy_first.photos.body": (
@@ -277,7 +277,7 @@ LANDING_STRINGS = {
         "privacy_first.trackers.title": "V aplikaci nic nesleduje",
         "privacy_first.trackers.body": (
             "V aplikaci ani na stránkách pro hosty nejsou reklamní ani analytické skripty. "
-            "Návštěvnost webu měříme jen na veřejných stránkách."
+            "Návštěvnost webu měříme jen na veřejných stránkách, s PostHog Cloud EU."
         ),
         "privacy_first.photos.title": "Fotky dokladů se po příjezdu mažou",
         "privacy_first.photos.body": (

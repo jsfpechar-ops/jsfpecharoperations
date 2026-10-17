@@ -30,7 +30,7 @@
         <a href="{{ switch_path }}?lang=cs" lang="cs" hreflang="cs" class="{{ 'active' if lang == 'cs' }}"{% if lang == 'cs' %} aria-current="true"{% endif %}>CZ</a>
         <a href="{{ switch_path }}?lang=en" lang="en" hreflang="en" class="{{ 'active' if lang == 'en' }}"{% if lang == 'en' %} aria-current="true"{% endif %}>EN</a>
       </nav>
-      <a class="landing-login" href="/login?lang={{ lang }}" data-umami-event="login_click">{{ t('landing.nav.login') }}</a>
+      <a class="landing-login" href="/login?lang={{ lang }}" data-analytics-event="login_click">{{ t('landing.nav.login') }}</a>
     </div>
     {#- Below 900px the nav above is hidden; this is the only way through it. -#}
     <details class="landing-menu">

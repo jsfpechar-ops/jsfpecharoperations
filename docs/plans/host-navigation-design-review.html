@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UbyHost — host navigation design review</title>
+  <style>
+    :root{color-scheme:light;--canvas:#fbf3ee;--surface:#fff;--ink:#292321;--muted:#756761;--line:#e6d6cd;--brand:#ad4940}
+    *{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    a{color:var(--brand);text-underline-offset:3px}a:focus-visible{outline:3px solid var(--brand);outline-offset:5px}
+    .skip{position:absolute;left:16px;top:-80px;background:white;padding:12px}.skip:focus{top:12px}
+    main{max-width:1440px;padding:40px 28px 72px;margin:auto}header{max-width:900px;margin-bottom:28px}
+    .eyebrow{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}h1{font-size:clamp(30px,4vw,48px);line-height:1.15;margin:12px 0 16px;letter-spacing:-.04em}h2{font-size:25px;margin:0;line-height:1.3}h3{font-size:18px;margin:20px 0 8px}
+    p{margin:10px 0}.muted{color:var(--muted)}nav{display:flex;gap:10px;flex-wrap:wrap;margin:26px 0}nav a{display:flex;align-items:center;min-height:44px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 14px;text-decoration:none}
+    section{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;margin:24px 0;scroll-margin-top:18px}.heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.tag{font-size:13px;padding:5px 10px;border-radius:20px;background:#f7ece6;color:var(--muted)}
+    figure{margin:20px 0 0}figure a{display:block;border-radius:12px;overflow:hidden;background:#f8f6f4;border:1px solid var(--line)}img{display:block;width:100%;height:auto}figcaption{font-size:14px;color:var(--muted);margin-top:8px}
+    .review-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.review-grid>div{background:#fcf8f5;padding:16px;border-radius:10px}ul,ol{padding-left:22px;margin:10px 0}li{margin:7px 0}.checklist li{list-style:none;margin-left:-20px}.checklist li::before{content:'□';margin-right:10px;color:var(--brand)}
+    .notice{border-left:3px solid var(--brand);padding:12px 16px;background:#fff9f5;border-radius:0 8px 8px 0}.links{display:flex;gap:18px;flex-wrap:wrap}footer{font-size:14px;color:var(--muted);margin-top:32px}
+    @media(max-width:700px){main{padding:24px 14px 48px}section{padding:18px 12px}.review-grid{grid-template-columns:1fr}h2{font-size:22px}nav a{flex:1 1 140px}}
+    @media print{body{background:white}main{max-width:none;padding:0}nav,.skip{display:none}section{break-inside:avoid;border-color:#ddd}a{color:inherit}}
+  </style>
+</head>
+<body>
+<a class="skip" href="#review">Skip to designs</a>
+<main id="review">
+  <header>
+    <div class="eyebrow">UbyHost · Design review · 12 October 2026</div>
+    <h1>Simple navigation.<br>One editor for each setting.</h1>
+    <p>Keep the warm visual style and familiar property cards. Give each page a clear task, then link configuration to one shared editing destination.</p>
+    <p class="muted">Five boards cover 16 desktop and mobile views. Open any board to inspect it at full resolution. Property direction was selected in chat; all five design families were approved in chat for implementation and staging review.</p>
+    <div class="links"><a href="host-navigation-maintainability.md">Full delivery plan</a><a href="../tasks/0071-host-navigation-readiness.md">First executor brief</a><a href="host-navigation-design-approval.md">Approval checklist</a></div>
+  </header>
+  <nav aria-label="Design boards">
+    <a href="#board-1">01 · Property core</a><a href="#board-2">02 · Property tools</a><a href="#board-3">03 · Daily work</a><a href="#board-4">04 · Lists &amp; account</a><a href="#board-5">05 · Mobile</a>
+  </nav>
+  <p class="notice">These are generated layout concepts with fictional data, not screenshots of implemented pages. Complete fields, real statuses, available actions, English/Czech copy and browser behavior are governed by the plan and current application contracts.</p>
+
+  <section id="board-1">
+    <div class="heading"><h2>01 · Property overview and settings</h2><span class="tag">Direction selected in chat</span></div>
+    <p>Three tabs, your existing shortcut cards, and one grouped settings editor. The Property details card opens Settings → Property information.</p>
+    <figure><a href="host-navigation-designs/01-property-core.png" target="_blank" rel="noopener"><img src="host-navigation-designs/01-property-core.png" alt="Property Overview shortcut cards beside the same property's grouped Settings editor." width="2048" height="768"></a><figcaption>Two states of the same property. Business records remain shared; the other property cards open their corresponding settings sections.</figcaption></figure>
+    <div class="review-grid"><div><h3>Keep</h3><ul><li>Familiar cards, short summaries and generous click targets.</li><li>Overview · Bookings &amp; calendars · Settings.</li><li>Property information, Guest experience, Reporting &amp; fees, Automation.</li></ul></div><div><h3>Implementation details to preserve</h3><ul><li>Full fields, safe validation and drafts across sections.</li><li>Normal-flow Save/Discard; no floating bar over fields.</li><li>Legacy anchors and one canonical property form.</li></ul></div></div>
+  </section>
+
+  <section id="board-2">
+    <div class="heading"><h2>02 · Calendars, guest links and shared business</h2><span class="tag">Approved direction</span></div>
+    <p>Calendars get their own property tab. Guest links belong in Guest experience. A shared business gets one editor with business and invoice sections.</p>
+    <figure><a href="host-navigation-designs/02-property-support.png" target="_blank" rel="noopener"><img src="host-navigation-designs/02-property-support.png" alt="Property calendar connections and opened connection form, guest-link controls, and a shared business details editor." loading="lazy"></a><figcaption>The connection form is shown opened by Connect calendar. The guest-link crop abbreviates section navigation; the actual editor uses the same four groups as board 01. The redundant sample welcome-message helper will be omitted.</figcaption></figure>
+    <div class="review-grid"><div><h3>Review</h3><ul><li>Connection status and last check come before full URLs.</li><li>Copy/Preview stay near the guest link; regeneration stays under More options.</li><li>Shared business navigation identifies which properties use it.</li></ul></div><div><h3>Single ownership</h3><ul><li>Old guest-link/automation URLs remain redirects.</li><li>No separately editable all-property copies.</li><li>Business changes apply prospectively; issued invoices keep their snapshots.</li></ul></div></div>
+  </section>
+
+  <section id="board-3">
+    <div class="heading"><h2>03 · Dashboard, Stays and stay detail</h2><span class="tag">Approved direction</span></div>
+    <p>Daily work prioritizes the next action. Lists stay easy to scan, and saved guest facts remain visible inside a stay.</p>
+    <figure><a href="host-navigation-designs/03-daily-work.png" target="_blank" rel="noopener"><img src="host-navigation-designs/03-daily-work.png" alt="Quiet dashboard, searchable stays list with guest progress, and stay detail with inline guest facts and report state." loading="lazy"></a><figcaption>Counts and guest records are fictional. Full existing guest/verification fields and supported invitation actions remain available; the image abbreviates them. Dashboard state cards follow the existing Quiet overview rules.</figcaption></figure>
+    <div class="review-grid"><div><h3>Review</h3><ul><li>Quiet state cards and a short prioritized dashboard queue.</li><li>Stays · Police reports · Guest register; filters on demand.</li><li>Next action, then inline guests, then reporting.</li></ul></div><div><h3>Preserve</h3><ul><li>All dates default, full counts before the five-row dashboard cap.</li><li>Copy guest form link availability and truthful feedback.</li><li>Reported-record protections and safe removal of extra empty slots.</li></ul></div></div>
+  </section>
+
+  <section id="board-4">
+    <div class="heading"><h2>04 · Properties, invoices, fees and account</h2><span class="tag">Approved direction</span></div>
+    <p>Use compact lists for finding records and grouped settings for editing. Configuration links always lead to the same editor.</p>
+    <figure><a href="host-navigation-designs/04-portfolio-finance-account.png" target="_blank" rel="noopener"><img src="host-navigation-designs/04-portfolio-finance-account.png" alt="Properties list, invoice list with direct PDFs, period-based stay fees list, and grouped account settings." loading="lazy"></a><figcaption>Invoice creation remains stay-linked. The fee report annotation is a separate detail view. Account email/language retain their existing separate actions, not a generic combined save.</figcaption></figure>
+    <div class="review-grid"><div><h3>Review</h3><ul><li>Property rows with Open and shared business/lock-account links.</li><li>Optional read-only guest-link/automation summary disclosure.</li><li>Invoice PDFs and fee-period reports easy to reach.</li></ul></div><div><h3>Preserve</h3><ul><li>Stay invoice eligibility, item layout and snapshots.</li><li>Optional per-property fees, finalized reports and manual markers.</li><li>Account/security/data/privacy scope and role-aware access.</li></ul></div></div>
+  </section>
+
+  <section id="board-5">
+    <div class="heading"><h2>05 · Mobile</h2><span class="tag">Approved direction</span></div>
+    <p>The same destinations, adapted to one-column cards and a labelled settings-section selector. Controls stay reachable without a desktop table.</p>
+    <figure><a href="host-navigation-designs/05-mobile.png" target="_blank" rel="noopener"><img src="host-navigation-designs/05-mobile.png" alt="Mobile property Overview and Settings, labelled stay cards, and a fee report with full-width download controls." loading="lazy"></a><figcaption>Real implementation uses shared tokens, matching action geometry and text-based state meaning. Validate 360/390 CSS pixels, keyboard focus, long Czech labels and actual browser behavior; the image itself does not prove these checks.</figcaption></figure>
+    <div class="review-grid"><div><h3>Review</h3><ul><li>Cards stacked into one column.</li><li>Property tabs remain discoverable; sections use a labelled selector.</li><li>Dates, guest progress, Open and More remain readable.</li></ul></div><div><h3>Preserve</h3><ul><li>At least 44px mobile touch targets.</li><li>Save controls in flow and no horizontal page overflow.</li><li>Full feature access, menu hierarchy and visible environment warnings.</li></ul></div></div>
+  </section>
+
+  <section id="approval">
+    <h2>Approved for staged implementation</h2>
+    <p>The owner approved all five boards in chat on 12 October 2026. Follow the detailed execution protocol and numbered briefs. Production remains gated on explicit approval of the implemented staging candidate.</p>
+    <ul class="checklist"><li>01 · Combined property navigation and editor</li><li>02 · Calendars, guest links and shared business</li><li>03 · Dashboard, Stays and stay detail</li><li>04 · Properties, invoices, fees and account</li><li>05 · Mobile behavior and hierarchy</li></ul>
+    <p class="muted">Next: run readiness 0071, execute released briefs one at a time, test the exact candidate on staging, then request production promotion approval. Keep all delivery merges off main until that approval.</p>
+  </section>
+  <footer>Local review artifact. No third-party scripts, tracking, live account data or connection to application services.</footer>
+</main>
+</body>
+</html>

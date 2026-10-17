@@ -60,7 +60,7 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 | `UBYHOST_HEARTBEAT_URL` | unset | `app/scheduler.py` — pinged after each successful submission sweep. If unset, a dead scheduler is noticed only when someone logs in. |
 | `UBYHOST_HEARTBEAT_ICAL_URL` | unset | Pinged after each successful calendar sync (WP07). |
 | `UBYHOST_HEARTBEAT_MAIL_URL` | unset | Pinged after each mail run in which every step succeeded (WP07). |
-| `UBYHOST_HEARTBEAT_FILING_URL` | unset | Filing watchdog (WP23, `app/filing_watchdog.py`). Pinged on every deadline-job run: `<url>` when no stay is at risk of missing its police deadline, `<url>/fail` when at least one stay with a known reportable guest is (healthchecks.io semantics). Stays with no guest entered never cause `/fail`. Not pinged when the watchdog itself fails. The operator digest of at-risk stays goes to `UBYHOST_OPERATOR_EMAIL`, at most every 6 hours. |
+| `UBYHOST_HEARTBEAT_FILING_URL` | unset | Filing watchdog (WP23, `app/filing_watchdog.py`). Pinged on every deadline-job run: `<url>` when no stay is at risk of missing its police deadline, `<url>/fail` when at least one stay with a known reportable guest is (healthchecks.io semantics). Stays with no guest entered never cause `/fail`. Not pinged when the watchdog itself fails. The operator digest of at-risk stays goes to `UBYHOST_OPERATOR_EMAIL`, at most every 72 hours in production; see the server override note in [Operations](OPERATIONS.md). |
 
 The deadline watch (30 min), guest mail drain (5 min) and passport-photo sweep
 (12 h) intervals are not configurable. See
@@ -82,22 +82,28 @@ Turnstile is **inert unless all three of the `TURNSTILE_*` values are set**.
 When it is active, an unreachable Cloudflare fails open a bounded number of
 times per address and raises `turnstile_unavailable`.
 
-## Page analytics (Umami)
+## Page analytics (PostHog)
 
 | Variable | Default | Notes |
 |---|---|---|
-| `UMAMI_WEBSITE_ID` | unset | Website ID from the Umami website settings. |
-| `UMAMI_SCRIPT_URL` | unset | Exact `src` of the tracking code from the Umami website settings. Must be `https://`. |
-| `UMAMI_HOST_URL` | unset | Optional `data-host-url`. Unset uses the tracker default; for the Umami Cloud script that is `https://gateway.umami.is`. |
-| `UMAMI_DOMAINS` | host of `UBYHOST_PUBLIC_BASE_URL` | `data-domains`, comma-separated. |
+| `POSTHOG_PROJECT_API_KEY` | unset | Project API key from PostHog. The public tag is absent until this is set. |
+| `POSTHOG_HOST` | `https://eu.i.posthog.com` | PostHog API host (`https` only). US hosts (`us.i.posthog.com`) are ignored. |
+| `POSTHOG_ASSETS_HOST` | `https://eu-assets.i.posthog.com` | Host that serves `array.js` (`https` only). US asset hosts are ignored. |
 
-The tag is rendered **only when both `UMAMI_WEBSITE_ID` and `UMAMI_SCRIPT_URL`
-are set**, and only on the public marketing and legal pages listed in
-`app/analytics.py`. Those pages get a CSP that adds the script origin to
-`script-src` and the event endpoint to `connect-src`; app, guest and auth pages
-keep the strict CSP. `tests/test_umami_guard.py` enforces this.
-While it is on, `/privacy` shows the analytics paragraph with an opt-out and
-opt-back-in link (`static/umami-optout.js`, localStorage key `umami.disabled`).
+Both hosts default to the EU region. A US API or asset host is refused and the
+tag stays off. The tag is rendered **only when `POSTHOG_PROJECT_API_KEY` is set**
+and the hosts are valid, and only on the public marketing and legal pages listed
+in `app/analytics.py`. Those pages get a CSP that adds the assets host to
+`script-src` and the API host to `connect-src`; app, guest and auth pages keep
+the strict CSP. `tests/test_umami_guard.py` enforces this.
+While it is on, `/privacy` shows the analytics paragraphs with an opt-out and
+opt-back-in link (`static/analytics-optout.js`, localStorage key
+`ubyhost.analytics.disabled`).
+
+Before you set the key:
+
+1. In PostHog, open **Settings**, then **Project**, then **IP data capture**. Turn on **Discard client IP data**.
+2. In the same project settings, find **Cookieless server hash mode** and turn it on. Without it, the cookieless page views are dropped.
 
 ## Reverse proxy and client IP
 
@@ -169,7 +175,7 @@ minutes), optionally followed by an authenticator-app code. The only exception
 is **`UBYHOST_STAGING_LOGIN_PASSWORD`** on **`UBYHOST_DEPLOYMENT=staging`**
 (Render): one shared break-glass password on the login form because staging
 uses the console mail backend and does not deliver links. Refused on
-production. `UBYHOST_ADMIN_PASSWORD` is no longer read and can be removed from
+production. **`UBYHOST_STAGING_NO_LOGIN=1`** on staging skips login entirely: every visitor is the first administrator and the legal-acceptance screen is skipped (the flag is ignored unless `UBYHOST_DEPLOYMENT=staging`). `UBYHOST_ADMIN_PASSWORD` is no longer read and can be removed from
 `.env`.
 
 ## Operator identity (shown in the UI and legal pages)

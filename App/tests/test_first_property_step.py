@@ -76,8 +76,9 @@ EMPTY_COPY = [
     ),
 ]
 
+# 0099: the shared empty-state component (_components.empty_state).
 EMPTY_PANEL_RE = re.compile(
-    r'<div class="panel empty">\n(.*?)\n</div>', re.DOTALL
+    r'<div class="panel empty empty-state" data-empty-state>(.*?)\n  </div>', re.DOTALL
 )
 PRIMARY_LINK_RE = re.compile(
     r'<a class="btn primary" href="([^"]+)">([^<]+)</a>'
@@ -225,7 +226,7 @@ def test_the_stays_list_renders_the_word_property(host_with_stay):
     page = host_with_stay.get("/reservations?lang=en")
     assert page.status_code == 200, page.text
     assert '<label for="apartment">Property</label>' in page.text
-    assert "<th>Property</th>" in page.text
+    assert re.search(r"<th\b[^>]*>\s*Property\s*</th>", page.text)
     assert "Apartment" not in page.text
 
 

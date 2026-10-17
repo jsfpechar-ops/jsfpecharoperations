@@ -91,6 +91,15 @@ def test_timeouts_are_5_seconds_for_cloud_calls_and_35_for_gateway_calls():
         ttlock.CRITICAL,
     )
     assert RECORDED[-1][2] == 35
+    assert "/v3/keyboardPwd/add" in ttlock.ALLOWED_PATHS
+    assert "/v3/keyboardPwd/add" in ttlock.GATEWAY_PATHS
+    _queue(("/v3/keyboardPwd/add", {"keyboardPwdId": 1, "errcode": 0}))
+    ttlock._post(
+        "/v3/keyboardPwd/add",
+        {"accessToken": "t", "lockId": 1},
+        ttlock.NORMAL,
+    )
+    assert RECORDED[-1][2] == 35
 
 
 def test_create_account_registers_once_and_stores_secrets_encrypted(caplog):
@@ -542,9 +551,105 @@ def test_change_sends_the_new_window_through_the_gateway():
     assert RECORDED[-1][2] == 35
 
 
+def test_add_custom_code_posts_expected_fields_and_retries_duplicate(monkeypatch):
+    pins = iter(["1234567", "2345678"])
+
+    def fake_pin():
+        return next(pins)
+
+    monkeypatch.setattr(
+        ttlock,
+        "_call",
+        lambda _aid, path, data, priority: ttlock._post(
+            path, {**data, "accessToken": "t"}, priority
+        ),
+    )
+    monkeypatch.setattr(ttlock, "_random_custom_pin", fake_pin)
+    _queue(
+        ("/v3/keyboardPwd/add", {"errcode": -3007, "errmsg": "dup"}),
+        ("/v3/keyboardPwd/add", {"keyboardPwdId": 42, "errcode": 0}),
+    )
+    pin, code_id = ttlock.add_custom_code(1, "9", 0, 3_600_000, "UH-1", ttlock.NORMAL)
+    assert pin == "2345678"
+    assert code_id == "42"
+    bodies = [r[1] for r in RECORDED if "/keyboardPwd/add" in r[0]]
+    assert len(bodies) == 2
+    assert bodies[0]["keyboardPwd"] == "1234567"
+    assert bodies[1]["keyboardPwd"] == "2345678"
+    assert bodies[0]["addType"] == 2
+    assert bodies[0]["keyboardPwdType"] == 3
+    assert re.fullmatch(r"[1-9]\d{6}", bodies[0]["keyboardPwd"])
+
+
+def test_add_custom_code_raises_after_two_duplicates(monkeypatch):
+    monkeypatch.setattr(
+        ttlock,
+        "_call",
+        lambda _aid, path, data, priority: ttlock._post(
+            path, {**data, "accessToken": "t"}, priority
+        ),
+    )
+    monkeypatch.setattr(ttlock, "_random_custom_pin", lambda: "1234567")
+    _queue(
+        ("/v3/keyboardPwd/add", {"errcode": -3007, "errmsg": "dup"}),
+        ("/v3/keyboardPwd/add", {"errcode": -3007, "errmsg": "dup"}),
+    )
+    with pytest.raises(ttlock.TTLockError) as exc:
+        ttlock.add_custom_code(1, "9", 0, 3_600_000, "UH-1", ttlock.NORMAL)
+    assert exc.value.code == -3007
+
+
+def test_find_code_by_name_requires_matching_window(monkeypatch):
+    monkeypatch.setattr(
+        ttlock,
+        "_call",
+        lambda _aid, path, data, priority: ttlock._post(
+            path, {**data, "accessToken": "t"}, priority
+        ),
+    )
+    _queue(
+        (
+            "/v3/lock/listKeyboardPwd",
+            {
+                "list": [
+                    {
+                        "keyboardPwdName": "UH-1",
+                        "keyboardPwd": "1111111",
+                        "keyboardPwdId": 1,
+                        "startDate": 99,
+                        "endDate": 3_600_000,
+                    }
+                ],
+                "pages": 1,
+            },
+        ),
+    )
+    assert ttlock.find_code_by_name(1, "9", "UH-1", 0, 3_600_000) is None
+    _queue(
+        (
+            "/v3/lock/listKeyboardPwd",
+            {
+                "list": [
+                    {
+                        "keyboardPwdName": "UH-1",
+                        "keyboardPwd": "2222222",
+                        "keyboardPwdId": 2,
+                        "startDate": 0,
+                        "endDate": 3_600_000,
+                    }
+                ],
+                "pages": 1,
+            },
+        ),
+    )
+    assert ttlock.find_code_by_name(1, "9", "UH-1", 0, 3_600_000) == ("2222222", "2")
+
+
 def test_error_codes_map_to_kinds():
     for code, kind in (
         (-2012, "offline"),
+        (-1026, "period_taken"),
+        (-3007, "duplicate"),
         (80000, "clock"),
         (30006, "rate"),
         (12345, "transient"),

@@ -24,6 +24,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db, demo, reporting
 from app.main import app
+from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
 
 
@@ -84,7 +85,7 @@ def world():
 def browser():
     with sync_api.sync_playwright() as playwright:
         try:
-            chromium = playwright.chromium.launch()
+            chromium = playwright.chromium.launch(**chromium_launch_kwargs())
         except Exception as exc:
             if REQUIRE_BROWSER:
                 raise
@@ -104,8 +105,9 @@ def _page(browser, base, world, width, signed_in=True):
 def test_guest_links_message_wraps_instead_of_widening_the_page(base, world, browser, width):
     context, page = _page(browser, base, world, width)
     try:
-        page.goto(base + "/guest-links?lang=en")
-        page.wait_for_selector(".message-template")
+        # 0094: the suggested message is gone; the guest link row must still wrap.
+        page.goto(f"{base}/apartments/{world['studio']}?view=settings&section=guests&lang=en")
+        page.wait_for_selector("#communication #permalink")
         assert page.evaluate(NO_SIDEWAYS_SCROLL) <= 1
     finally:
         context.close()
@@ -114,7 +116,7 @@ def test_guest_links_message_wraps_instead_of_widening_the_page(base, world, bro
 def test_calendar_remove_button_is_visible_without_scrolling(base, world, browser):
     context, page = _page(browser, base, world, 1280)
     try:
-        page.goto(f"{base}/apartments/{world['studio']}?lang=en")
+        page.goto(f"{base}/apartments/{world['studio']}?view=bookings&lang=en")
         page.wait_for_selector(".feed-table")
         box = page.evaluate(
             """() => {

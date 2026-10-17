@@ -15,8 +15,8 @@ The owner's words: "We do not store anything extra, only what is needed." The fu
 
 - Store only guest-book fields (§ 102 zákon 326/1999 Sb.), stay-fee fields (§ 3g zákon 565/1990 Sb.), or what a feature cannot work without.
 - Cookies: only `STRICTLY_NECESSARY_COOKIES` in `App/app/cookie_inventory.py`. `App/tests/test_privacy_first.py` fails on any other cookie.
-- No third-party scripts, analytics, ads or CDN fonts in the app or on guest pages. The one exception is Cloudflare Turnstile on sign-in and on the guest PIN/claim pages.
-- Analytics: Umami, cookieless, on public pages only (`App/app/analytics.py`). Ads measurement: only with explicit consent, server-side, click id only.
+- No third-party scripts, analytics, ads or CDN fonts in the app, on guest pages or on auth pages. The exceptions are Cloudflare Turnstile on sign-in and on the guest PIN/claim pages, and PostHog on the public marketing and legal pages listed in `App/app/analytics.py`.
+- Analytics: PostHog Cloud EU. Cookieless page views on those public pages. Host account profiles (e-mail, workspace name, UTM, funnel stage) from the server only. No guest data. No ad click ids. Ads measurement: only with explicit consent, server-side, click id only, to Google or Meta, never to PostHog.
 - A new personal-data field needs a purpose and a retention line in `App/app/retention.py`, in the same PR.
 - A new outbound request needs a line in the PR description: what is sent, to whom, and why.
 - Brand claims must be true for the code. If behaviour behind `privacy_first.*` (in `App/app/landing_i18n.py`) or `privacy_first_line` (in `App/app/i18n.py`) changes, fix the copy in the same commit.

@@ -346,6 +346,7 @@ def _guest_mail_content(
     filled: int = 0,
     expected: Optional[int] = None,
     stay_complete: bool = False,
+    door_code: Optional[Dict[str, str]] = None,
 ) -> Dict[str, str]:
     """Compose a guest message, falling back to plain text on any failure.
 
@@ -412,6 +413,7 @@ def _guest_mail_content(
                 dates=dates,
                 stay_url=stay_url or "",
                 host=host,
+                door_code=door_code,
             )
         if kind == "reminder_guest":
             return mail_notify.build_reminder_guest(
@@ -644,7 +646,7 @@ def expire_on_cancel(reservation) -> None:
     )
 
 
-def maybe_notify_completion(reservation, apartment) -> None:
+def maybe_notify_completion(reservation, apartment, *, force: bool = False) -> None:
     claim = _row(reservation["id"])
     if not claim or claim["state"] != CLAIMED or claim["completion_notified_at"]:
         return
@@ -657,14 +659,22 @@ def maybe_notify_completion(reservation, apartment) -> None:
         # there is nobody to send the completion receipt to.
         return
     lang = claim["lang"] or "en"
+    from . import door_codes
+
+    mode, code_row, code_fields = door_codes.completion_door_code(reservation, apartment)
+    if mode == "hold" and not force:
+        return
     content = _guest_mail_content(
         "completion",
         apartment,
         reservation,
         lang=lang,
         stay_url=_stay_link(apartment, reservation),
+        door_code=code_fields,
     )
     payload = mail_notify.guest_payload(apartment, content, lang)
+    if code_row is not None:
+        payload[mail.DOOR_CODE_KEY] = code_row["pin_enc"]
     mail.enqueue(
         kind="completion",
         idempotency_key=f"completion:{reservation['id']}:{progress['filled']}",
@@ -683,6 +693,11 @@ def maybe_notify_completion(reservation, apartment) -> None:
         "WHERE reservation_id = ?",
         (db.utcnow(), db.utcnow(), reservation["id"]),
     )
+    if code_row is not None:
+        db.execute(
+            "UPDATE door_code SET notified_at = ?, updated_at = ? WHERE id = ?",
+            (db.utcnow(), db.utcnow(), code_row["id"]),
+        )
     mail.drain(limit=4)
 
 

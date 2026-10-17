@@ -280,19 +280,40 @@ def _session_payload(token: Optional[str]) -> Optional[dict[str, Any]]:
         return None
 
 
+def staging_no_login() -> bool:
+    """True on Render staging with UBYHOST_STAGING_NO_LOGIN set: no login at all."""
+    from . import config
+
+    return config.DEPLOYMENT == "staging" and config.STAGING_NO_LOGIN
+
+
+def _staging_no_login_account(request: Request):
+    """The first administrator, for every visitor, when staging has no login."""
+    if not staging_no_login():
+        return None
+    account = db.query_one(
+        "SELECT * FROM user_account WHERE role = 'admin' AND active = 1 ORDER BY id LIMIT 1"
+    )
+    if not account:
+        return None
+    request.state.user_account = account
+    request.state.session_payload = {"iat": int(time.time())}
+    return account
+
+
 def current_user(request: Request):
     cached = getattr(request.state, "user_account", None)
     if cached is not None:
         return cached
     payload = _session_payload(request.cookies.get(SESSION_COOKIE))
     if not payload or not payload.get("uid"):
-        return None
+        return _staging_no_login_account(request)
     account = db.query_one(
         "SELECT * FROM user_account WHERE id = ? AND active = 1",
         (payload["uid"],),
     )
     if not account or int(account["session_version"]) != int(payload.get("sv", 0)):
-        return None
+        return _staging_no_login_account(request)
     request.state.user_account = account
     request.state.session_payload = payload
     return account
@@ -491,6 +512,7 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
     impersonating = bool(workspace and workspace["id"] != account["id"])
     if (
         not impersonating
+        and not staging_no_login()
         and request.url.path not in _ACCEPTANCE_EXEMPT_PATHS
         and acceptance.pending(account["id"])
     ):

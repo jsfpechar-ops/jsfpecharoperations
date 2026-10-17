@@ -1,18 +1,19 @@
-"""Host-only invoice tool: a standalone, free-form invoice builder.
+"""Host-only invoice tool: every new invoice belongs to one stay.
 
-An invoice is NOT tied to a stay. Included in main.py after admin.router.
+Included in main.py after admin.router.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from functools import lru_cache
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse, Response
 
 from .. import (
     access,
+    ares,
     auth,
     claim,
     codelists,
@@ -26,8 +27,10 @@ from .. import (
     mail_notify,
     payments,
     rate_limit,
+    reporting,
     security,
     stay_fee,
+    validation,
 )
 
 VAT_STATUSES = ("non_payer", "identified", "payer")
@@ -78,15 +81,124 @@ def _chosen_entity(request, entities, form=None):
     return entities[0] if entities else None
 
 
-def _settings_next(request, form, entity) -> str:
-    """Where ?next= on the settings page points; the builder keeps the operator."""
-    raw = _form_str(form, "next") if form is not None else ""
-    return security.safe_local_path(raw, f"/invoices/new?entity={entity['id']}")
+def owned_entity(entities, wanted) -> Optional[Dict[str, Any]]:
+    """0076: the host's active operator with this id, else None (never a fallback)."""
+    text = str(wanted or "").strip()
+    if text.isdigit():
+        for entity in entities:
+            if str(entity["id"]) == text:
+                return entity
+    return None
+
+
+def builder_path(entity_id) -> str:
+    """The invoice builder for one operator: the old invoice-settings default return."""
+    return f"/invoices/new?entity={entity_id}"
+
+
+def _stay_for(request: Request, raw_id) -> Optional[Dict[str, Any]]:
+    """The host's own stay, shaped for invoices.build_draft, or None."""
+    text = str(raw_id or "").strip()
+    if not text.isdigit():
+        return None
+    row = access.reservation(
+        request,
+        int(text),
+        columns="r.*, a.legal_entity_id AS apartment_entity_id, a.internal_name, a.uby_name",
+    )
+    if not row:
+        return None
+    name = (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
+    return {"reservation": row, "property_name": name, "entity_id": row["apartment_entity_id"]}
+
+
+def _entity_for_stay(request, entities, stay, form=None):
+    """The property's operator when it has one; otherwise the host's pick."""
+    if stay and stay["entity_id"]:
+        for entity in entities:
+            if entity["id"] == stay["entity_id"]:
+                return entity
+    return _chosen_entity(request, entities, form)
+
+
+def _stay_options(request: Request):
+    """Stays the host can invoice, newest check-in first, for the picker."""
+    today = claim.prague_today()
+    rows = db.query(
+        "SELECT r.id, r.date_from, r.date_to, a.internal_name, a.uby_name "
+        "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+        f"WHERE {db.null_safe_eq('a.owner_user_id')} AND r.status != 'cancelled' "
+        "AND COALESCE(r.source, '') != 'demo' "  # 0100: the setup guide's demo stay
+        "AND r.date_to > r.date_from AND r.date_to >= ? AND r.date_from <= ? "
+        "ORDER BY r.date_from DESC, r.id DESC LIMIT 200",
+        (
+            access.owner_id(request),
+            (today - timedelta(days=invoices.STAY_PAST_DAYS)).isoformat(),
+            (today + timedelta(days=invoices.STAY_FUTURE_DAYS)).isoformat(),
+        ),
+    )
+    options = []
+    for row in rows:
+        name = (row["internal_name"] or "").strip() or (row["uby_name"] or "").strip()
+        dates = validation.fmt_date_range(row["date_from"], row["date_to"])
+        options.append({"id": row["id"], "label": f"{name}, {dates}"})
+    return options
+
+
+def _lead_guest(reservation) -> Optional[Dict[str, Any]]:
+    """Lowest-id complete guest on the stay, or None."""
+    rows = db.query(
+        "SELECT * FROM guest WHERE reservation_id = ? AND archived_at IS NULL ORDER BY id ASC",
+        (reservation["id"],),
+    )
+    for row in rows:
+        if reporting.guest_is_complete(row, reservation):
+            return row
+    return None
+
+
+def _guest_buyer_values(guest) -> Dict[str, str]:
+    first = (guest.get("first_name") or "").strip()
+    last = (guest.get("surname") or "").strip()
+    name = f"{first} {last}".strip()
+    return {
+        "buyer_name": name,
+        "buyer_street": (guest.get("res_street") or "").strip(),
+        "buyer_city": (guest.get("res_city") or "").strip(),
+        "buyer_country": (guest.get("res_country") or "").strip(),
+    }
+
+
+def _merge_guest_fill(state: Dict[str, Any], guest) -> None:
+    """Copy guest address fields into blank buyer slots only."""
+    for key, value in _guest_buyer_values(guest).items():
+        if value and not (state.get(key) or "").strip():
+            state[key] = value
+
+
+def _last_stay_price_hint(request: Request, apartment_id: int) -> str:
+    """Last issued accommodation unit price on this property, for a placeholder."""
+    row = db.query_one(
+        "SELECT ii.gross_haler, ii.quantity FROM invoice i "
+        "JOIN invoice_item ii ON ii.invoice_id = i.id "
+        f"WHERE i.apartment_id = ? AND {db.null_safe_eq('i.owner_user_id')} "
+        "AND i.kind = 'invoice' AND ii.kind = 'accommodation' "
+        "ORDER BY i.issue_date DESC, i.id DESC LIMIT 1",
+        (apartment_id, access.owner_id(request)),
+    )
+    if not row or not row["gross_haler"]:
+        return ""
+    qty = row["quantity"] or 1
+    amount = row["gross_haler"] / (100 * qty)
+    if amount == int(amount):
+        return str(int(amount))
+    return f"{amount:.2f}".rstrip("0").rstrip(".")
 
 
 def _form_state(request, form, entity) -> Dict[str, Any]:
     """Reshape a failed POST so the 422 render loses nothing the host typed."""
     state = {key: _form_str(form, key) for key in (
+        "stay_price", "stay_vat_rate", "reservation_id",
         "buyer_name", "buyer_street", "buyer_city", "buyer_zip", "buyer_country",
         "buyer_ico", "buyer_dic", "buyer_email", "paid_via", "paid_via_custom",
         "due_date", "duzp", "note",
@@ -96,27 +208,42 @@ def _form_state(request, form, entity) -> Dict[str, Any]:
     state["lang"] = _form_str(form, "lang")
     state["item_rows"] = [
         {key: row[key] for key in (
-            "description", "quantity", "unit", "unit_price", "vat_rate"
+            "kind", "description", "quantity", "unit", "unit_price", "vat_rate"
         )}
         for row in invoices.form_item_rows(form)
     ]
     return state
 
 
-def _form_context(request, entities, entity, *, errors=None, values=None):
+def _form_context(request, entities, entity, *, errors=None, values=None, stay=None):
+    values = dict(values or {})
+    if stay and not values and stay["reservation"]["guest_email"]:
+        values["buyer_email"] = stay["reservation"]["guest_email"]
+    lang = "cs" if _lang(request) == "cs" else "en"
+    lead_guest = _lead_guest(stay["reservation"]) if stay else None
+    price_hint = ""
+    if stay:
+        price_hint = _last_stay_price_hint(request, stay["reservation"]["apartment_id"])
     return {
         "nav": "invoices",
         "entities": entities,
         "entity": entity,
         "next_number": invoices.preview_number(entity) if entity else "",
         "errors": errors or [],
-        "values": values or {},
+        "values": values,
         "countries": codelists.nationality_options(_lang(request)),
+        "stay": stay,
+        "stay_label": invoices.stay_label(stay["property_name"], stay["reservation"], lang) if stay else "",
+        "extra_kinds": invoices.EXTRA_KINDS,
+        "show_fill_guest": bool(lead_guest),
+        "stay_price_hint": price_hint,
     }
 
 
-def _draft(request, entity, form):
-    draft = invoices.build_draft(entity, form, _lang(request), today=claim.prague_today())
+def _draft(request, entity, form, stay=None):
+    draft = invoices.build_draft(
+        entity, form, _lang(request), today=claim.prague_today(), stay=stay
+    )
     draft.update({"legal_entity_id": entity["id"], "owner_user_id": access.owner_id(request)})
     return draft
 
@@ -154,7 +281,7 @@ def _preview_view(draft) -> dict:
         "buyer_ico": buyer["ico"],
         "buyer_dic": buyer["dic"],
         "buyer_email": buyer["email"],
-        "stay_label": None,
+        "stay_label": draft.get("stay_label"),
         "total_haler": draft["total_haler"],
         "corrects_number": None,
         "correction_reason": None,
@@ -255,88 +382,202 @@ def invoice_new(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    entities = _entities(request)
-    entity = _chosen_entity(request, entities)
-    if entity and not request.query_params.get("entity"):
-        # A plain builder URL pins the chosen operator once, so a save on the
-        # invoice-details page always reopens the same operator's builder.
-        return RedirectResponse(
-            f"/invoices/new?entity={entity['id']}", status_code=303
+    raw_stay = request.query_params.get("reservation_id")
+    if not raw_stay:
+        return render(
+            request,
+            "invoice_stay_picker.html",
+            {
+                "nav": "invoices",
+                "stays": _stay_options(request),
+                "invoice_details_url": access.invoice_details_url(request),
+            },
         )
-    context = _form_context(request, entities, entity)
+    stay = _stay_for(request, raw_stay)
+    if not stay:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_stay"))
+    problem = invoices.stay_problem(stay["reservation"], claim.prague_today())
+    if problem:
+        return _back("/invoices/new", err=_flash(request, problem))
+    reservation_id = stay["reservation"]["id"]
+    active = invoices.active_invoice_for_stay(reservation_id)
+    if active:
+        return _back(f"/invoices/{active['id']}", err=_flash(request, "invoice.err.stay_has_invoice"))
+    entities = _entities(request)
+    entity = _entity_for_stay(request, entities, stay)
+    if entity and request.query_params.get("entity") != str(entity["id"]):
+        # Pin the operator in the URL once, so the details page returns here.
+        return RedirectResponse(
+            f"/invoices/new?reservation_id={reservation_id}&entity={entity['id']}", status_code=303
+        )
+    if entity and stay["entity_id"] == entity["id"]:
+        entities = [entity]  # the property names its operator: no other choice
+    context = _form_context(request, entities, entity, stay=stay)
     if not entity:
         context["errors"] = [host_i18n.translate(_lang(request), "invoice.err.no_entity")]
     return render(request, "invoice_form.html", context)
 
 
-@router.get("/invoices/settings")
-def invoice_settings(request: Request):
-    """Invoice details of one operator: the fields the printed document uses.
+# --- 0076: invoice details of one operator -------------------------------
+# The canonical editor is the shared business editor (/entities?edit={id},
+# Invoice details), rendered by routes/admin.py. The save, lookup and
+# normalisation live here, so admin imports invoices and never the reverse.
 
-    Registered before ``/invoices/{invoice_id}`` so "settings" is never read
-    as an invoice number.
+
+def invoice_bank_view(entity: Dict[str, Any]) -> Dict[str, Any]:
+    """The stored account as editor parts, and whether the BIC is the derived one."""
+    account = entity.get("bank_account") or entity.get("iban") or ""
+    derived_bic = payments.bic_for_account(account)
+    stored_bic = (entity.get("bic") or "").strip().upper()
+    return {
+        "bank_parts": payments.czech_account_parts(entity.get("bank_account") or ""),
+        "bic_from_bank": bool(derived_bic and stored_bic == derived_bic),
+    }
+
+
+def save_invoice_details(request: Request, form, entity: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Save the invoice details a POST carried for ``entity`` (already authorised).
+
+    Returns None when saved. On a refused account it saves nothing and returns
+    the rerender state (every typed value, the error) for a 422 page. Issued
+    invoices keep their own snapshot; only ``legal_entity`` changes.
     """
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    entities = _entities(request)
-    entity = _chosen_entity(request, entities)
-    if not entity:
-        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    return render(request, "invoice_settings.html", {
-        "nav": "invoices",
-        "entity": entity,
-        "entities": entities,
-        "bank_parts": payments.czech_account_parts(entity["bank_account"] or ""),
-        "next": security.safe_local_path(
-            request.query_params.get("next") or "",
-            f"/invoices/new?entity={entity['id']}",
-        ),
-    })
-
-
-@router.post("/invoices/settings")
-async def invoice_settings_save(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    entities = _entities(request)
-    form = await request.form()
-    entity = _chosen_entity(request, entities, form)
-    if not entity:
-        return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    redirect = _settings_next(request, form, entity)
-    detail = _settings_detail_payload(form)
-    if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
-        prefix = _form_str(form, "account_prefix")
-        number = _form_str(form, "account_number")
-        bank = _form_str(form, "account_bank")
-        existing = entity["bank_account"] or entity.get("iban") or ""
-        if not payments.preserve_iban_only_account(existing, prefix, number, bank):
-            detail["bank_account"] = payments.compose_czech_account(prefix, number, bank)
-    if "bank_account" in detail:
-        account = detail["bank_account"]
-        if account:
-            try:
-                detail["bank_account"], detail["iban"] = payments.normalise_account(
-                    account
-                )
-            except ValueError:
-                return _back(
-                    f"/invoices/settings?entity={entity['id']}",
-                    err=_flash(request, "entities.bank.invalid"),
-                )
-        else:
-            detail["bank_account"] = None
-            detail["iban"] = None
+    detail = invoice_detail_payload(form)
+    if not apply_account_payload(detail, form, entity, accept_parts=True):
+        return {
+            "entity": _settings_entity_from_form(entity, form),
+            "bank_parts": _typed_bank_parts(form, entity),
+            "bic_from_bank": False,
+            "account_error": host_i18n.translate(_lang(request), "entities.bank.invalid"),
+        }
+    derive_missing_bic(detail, form, entity)
     db.update("legal_entity", entity["id"], detail)
     db.audit("entity_invoice_details_saved", f"id={entity['id']}",
              owner_user_id=access.owner_id(request))
-    return _back(redirect, msg=_flash(request, "flash.entities.saved"))
+    return None
 
 
-def _settings_detail_payload(form) -> Dict[str, Any]:
-    """Presence-checked invoice details: sent = update (blank clears), absent = keep."""
+_SETTINGS_ARES_FIELDS = ("registry_entry",)
+
+
+def _settings_entity_from_form(entity: Dict[str, Any], form) -> Dict[str, Any]:
+    row = dict(entity)
+    for key in (
+        "ico",
+        "bic",
+        "vat_status",
+        "registry_entry",
+        "invoice_prefix",
+        "invoice_next_number",
+        "invoice_due_days",
+    ):
+        if key in form:
+            row[key] = _form_str(form, key)
+    return row
+
+
+def lookup_invoice_details(request: Request, form, entity: Dict[str, Any]) -> Dict[str, Any]:
+    """The click-only register lookup of the invoice details; saves nothing.
+
+    The IČO here is lookup-only (0075 policy, kept by 0076): it fills a blank
+    registry entry and proposes VAT payer, but is never stored from this form.
+    """
+    owner_id = access.owner_id(request)
+    lang = _lang(request)
+    row = _settings_entity_from_form(entity, form)
+    ares_note = None
+    ares_vat_found = False
+    ico = (_form_str(form, "ico") or row.get("ico") or "").strip()
+    row["ico"] = ico
+    data, ares_error = register_lookup(owner_id, lang, ico)
+    if data:
+        filled = ares.merge_blank(row, data, _SETTINGS_ARES_FIELDS)
+        if data.get("vat_payer"):
+            ares_vat_found = True
+            current = _form_str(form, "vat_status") or entity.get("vat_status") or "non_payer"
+            if current == "non_payer":
+                row["vat_status"] = "payer"
+                if "vat_status" not in filled:
+                    filled.append("vat_status")
+        ares_note = register_filled_note(lang, filled)
+    return {
+        "entity": row,
+        "bank_parts": _typed_bank_parts(form, entity),
+        "bic_from_bank": False,
+        "ares_error": ares_error,
+        "ares_note": ares_note,
+        "ares_vat_found": ares_vat_found,
+    }
+
+
+def _typed_bank_parts(form, entity: Dict[str, Any]) -> Dict[str, str]:
+    """The account editor's values on a rerender: what was typed, else what is stored."""
+    if not any(key in form for key in ACCOUNT_PART_FIELDS):
+        return payments.czech_account_parts(entity.get("bank_account") or "")
+    parts = {key.split("_", 1)[1]: _form_str(form, key) for key in ACCOUNT_PART_FIELDS}
+    parts["iban"] = ""
+    if not payments.compose_czech_account(parts["prefix"], parts["number"], parts["bank"]):
+        existing = entity.get("bank_account") or entity.get("iban") or ""
+        parts["iban"] = payments.czech_account_parts(existing).get("iban", "")
+    return parts
+
+
+_BUYER_ARES_MAP = {
+    "buyer_name": "name",
+    "buyer_street": "street",
+    "buyer_city": "city",
+    "buyer_zip": "zip",
+    "buyer_country": "country",
+    "buyer_dic": "dic",
+}
+
+
+def _buyer_ares_fill(request: Request, form, values: Dict[str, Any]) -> Dict[str, Any]:
+    owner_id = access.owner_id(request)
+    lang = _lang(request)
+    meta = {"ares_error": None, "ares_note": None}
+    ico = (_form_str(form, "buyer_ico") or values.get("buyer_ico") or "").strip()
+    if ares.rate_limited(owner_id):
+        meta["ares_error"] = host_i18n.translate(lang, "ares.rate_limited")
+        return meta
+    if not validation.ico_ok(ico):
+        meta["ares_error"] = host_i18n.translate(lang, "ares.failure")
+        return meta
+    ares.record_lookup(owner_id)
+    data = ares.lookup(ico)
+    if not data:
+        meta["ares_error"] = host_i18n.translate(lang, "ares.failure")
+        return meta
+    filled: list[str] = []
+    for form_field, ares_key in _BUYER_ARES_MAP.items():
+        if str(values.get(form_field) or "").strip():
+            continue
+        value = data.get(ares_key)
+        if value is None or not str(value).strip():
+            continue
+        values[form_field] = value
+        filled.append(form_field)
+    if filled:
+        labels = ", ".join(
+            host_i18n.translate(lang, f"ares.field.{field}") for field in filled
+        )
+        meta["ares_note"] = host_i18n.translate(lang, "ares.filled", fields=labels)
+    return meta
+
+
+# --- 0075: invoice-default normalisation and register lookup -------------
+# The one implementation behind the entity editor's Invoice details
+# (routes/admin.py). Each caller states its policy explicitly: only invoice
+# settings composes the three account fields and derives a missing BIC.
+
+ACCOUNT_PART_FIELDS = ("account_prefix", "account_number", "account_bank")
+
+
+def invoice_detail_payload(form) -> Dict[str, Any]:
+    """Presence-checked invoice details: sent = update (blank clears), absent = keep.
+
+    ``bank_account`` stays raw here; ``apply_account_payload`` validates it.
+    """
     detail: Dict[str, Any] = {}
     if "bank_account" in form:
         detail["bank_account"] = _form_str(form, "bank_account")
@@ -367,6 +608,78 @@ def _settings_detail_payload(form) -> Dict[str, Any]:
     return detail
 
 
+def apply_account_payload(
+    detail: Dict[str, Any],
+    form,
+    entity: Optional[Dict[str, Any]] = None,
+    *,
+    accept_parts: bool,
+) -> bool:
+    """Validate the account in ``detail`` into ``bank_account`` and ``iban``.
+
+    With ``accept_parts`` the three domestic fields are composed first, except
+    that an all-empty set never wipes a stored IBAN-only account. A sent blank
+    clears both columns. Returns False for an invalid account (nothing set).
+    """
+    if accept_parts and any(key in form for key in ACCOUNT_PART_FIELDS):
+        prefix, number, bank = (_form_str(form, key) for key in ACCOUNT_PART_FIELDS)
+        existing = ((entity or {}).get("bank_account") or (entity or {}).get("iban") or "")
+        if not payments.preserve_iban_only_account(existing, prefix, number, bank):
+            detail["bank_account"] = payments.compose_czech_account(prefix, number, bank)
+    if "bank_account" not in detail:
+        return True
+    account = detail["bank_account"]
+    if not account:
+        detail["bank_account"] = None
+        detail["iban"] = None
+        return True
+    try:
+        detail["bank_account"], detail["iban"] = payments.normalise_account(account)
+    except ValueError:
+        detail.pop("bank_account", None)
+        detail.pop("iban", None)
+        return False
+    return True
+
+
+def derive_missing_bic(detail: Dict[str, Any], form, entity: Dict[str, Any]) -> None:
+    """Invoice-settings policy: an absent BIC with none stored comes from the bank code.
+
+    A posted BIC (even blank) and a stored BIC always win.
+    """
+    if "bic" in form or (entity.get("bic") or "").strip():
+        return
+    account = detail.get("bank_account", entity.get("bank_account")) or ""
+    iban = detail.get("iban", entity.get("iban")) or ""
+    derived = payments.bic_for_account(account or iban or "")
+    if derived:
+        detail["bic"] = derived
+
+
+def register_lookup(owner_id, lang: str, ico: str):
+    """One click-only ARES lookup under the existing per-owner limit and cache.
+
+    Returns ``(data, None)`` or ``(None, translated_error)``.
+    """
+    if ares.rate_limited(owner_id):
+        return None, host_i18n.translate(lang, "ares.rate_limited")
+    if not validation.ico_ok(ico):
+        return None, host_i18n.translate(lang, "ares.failure")
+    ares.record_lookup(owner_id)
+    data = ares.lookup(ico)
+    if not data:
+        return None, host_i18n.translate(lang, "ares.failure")
+    return data, None
+
+
+def register_filled_note(lang: str, filled) -> Optional[str]:
+    """The "filled from ARES: …" note for the fields a lookup filled, or None."""
+    if not filled:
+        return None
+    labels = ", ".join(host_i18n.translate(lang, f"ares.field.{field}") for field in filled)
+    return host_i18n.translate(lang, "ares.filled", fields=labels)
+
+
 @router.post("/invoices/preview")
 async def invoice_preview(request: Request):
     guard = auth.require_login(request)
@@ -374,10 +687,13 @@ async def invoice_preview(request: Request):
         return guard
     entities = _entities(request)
     form = await request.form()
-    entity = _chosen_entity(request, entities, form)
+    stay = _stay_for(request, _form_str(form, "reservation_id"))
+    if not stay or invoices.stay_problem(stay["reservation"], claim.prague_today()):
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_stay"))
+    entity = _entity_for_stay(request, entities, stay, form)
     if not entity:
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    draft = _draft(request, entity, form)
+    draft = _draft(request, entity, form, stay)
     pdf = invoices.invoice_pdf.render(
         _preview_view(draft), draft["items"], draft["lang"], preview=True
     )
@@ -395,10 +711,42 @@ async def invoice_issue(request: Request):
         return guard
     entities = _entities(request)
     form = await request.form()
-    entity = _chosen_entity(request, entities, form)
+    stay = _stay_for(request, _form_str(form, "reservation_id"))
+    if not stay:
+        return _back("/invoices/new", err=_flash(request, "invoice.err.no_stay"))
+    problem = invoices.stay_problem(stay["reservation"], claim.prague_today())
+    if problem:
+        return _back("/invoices/new", err=_flash(request, problem))
+    entity = _entity_for_stay(request, entities, stay, form)
     if not entity:
         return _back("/invoices/new", err=_flash(request, "invoice.err.no_entity"))
-    draft = _draft(request, entity, form)
+    if form.get("fill_buyer_from_register"):
+        values = _form_state(request, form, entity)
+        meta = _buyer_ares_fill(request, form, values)
+        context = _form_context(request, entities, entity, values=values, stay=stay)
+        context.update(meta)
+        return render(request, "invoice_form.html", context)
+    if form.get("fill_from_guest"):
+        guest = _lead_guest(stay["reservation"])
+        state = _form_state(request, form, entity)
+        if guest:
+            _merge_guest_fill(state, guest)
+        context = _form_context(request, entities, entity, values=state, stay=stay)
+        if not guest:
+            context["errors"] = [
+                host_i18n.translate(_lang(request), "invoice.fill_guest.none")
+            ]
+        return render(request, "invoice_form.html", context)
+    if any(str(key).startswith("fill_") for key in form):
+        context = _form_context(
+            request,
+            entities,
+            entity,
+            values=_form_state(request, form, entity),
+            stay=stay,
+        )
+        return render(request, "invoice_form.html", context)
+    draft = _draft(request, entity, form, stay)
     issues = invoices.validate_for_issue(draft)
     if not issues and invoices.invoice_pdf.too_long(_preview_view(draft), draft["items"], draft["lang"]):
         issues = [invoices.validation.Issue("note", "invoice.err.too_long")]
@@ -410,9 +758,15 @@ async def invoice_issue(request: Request):
             entity,
             errors=[host_i18n.translate(lang, issue.message) for issue in issues],
             values=_form_state(request, form, entity),
+            stay=stay,
         )
         return render(request, "invoice_form.html", context, status_code=422)
-    invoice_id = invoices.issue(draft, access.owner_id(request))
+    try:
+        invoice_id = invoices.issue(draft, access.owner_id(request))
+    except invoices.StayLimit as limit:
+        if limit.invoice_id:
+            return _back(f"/invoices/{limit.invoice_id}", err=_flash(request, limit.key))
+        return _back(f"/reservations/{stay['reservation']['id']}", err=_flash(request, limit.key))
     number = db.query_one("SELECT number FROM invoice WHERE id = ?", (invoice_id,))["number"]
     return _back(f"/invoices/{invoice_id}", msg=_flash(request, "invoice.issued_flash", number=number))
 
@@ -436,7 +790,7 @@ def invoice_pdf_download(invoice_id: int, request: Request):
     )
 
 
-@router.get("/invoices/{invoice_id}")
+@router.get("/invoices/{invoice_id:int}")  # 0101: a non-number path is a 404, not a 422
 def invoice_detail(invoice_id: int, request: Request):
     guard = auth.require_login(request)
     if guard:

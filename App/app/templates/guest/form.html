@@ -32,9 +32,9 @@
 
 <div class="g-checkin-main">
 {% if back_url %}
-  <a class="g-back" href="{{ back_url }}">&larr; {{ t('wrong_dates') if can_pick_other and not guest else t('back') }}</a>
+  <a class="g-back" href="{{ back_url }}">{{ t('wrong_dates') if can_pick_other and not guest else t('back') }}</a>
 {% elif can_pick_other %}
-  <a class="g-back" href="{{ pick_url }}">&larr; {{ t('wrong_dates') }}</a>
+  <a class="g-back" href="{{ pick_url }}">{{ t('wrong_dates') }}</a>
 {% endif %}
 
 {% if issues | selectattr('is_error') | list %}
@@ -46,15 +46,6 @@
       {% for issue in issues if issue.is_error %}<li><a href="#{{ issue.field }}">{{ issue.message }}</a></li>{% endfor %}
     </ul>
   </div>
-{% endif %}
-
-{% with why_classes = 'g-card g-why g-fold' %}{% include "guest/_why.html" %}{% endwith %}
-
-{% if apartment.guest_message %}
-<details class="g-card g-host-message g-fold">
-  <summary>{{ t('message_from_host') }}</summary>
-  <p>{{ apartment.guest_message }}</p>
-</details>
 {% endif %}
 
 <form method="post" action="/l/{{ token }}/{{ reservation.id }}/save?lang={{ lang }}"
@@ -213,6 +204,7 @@
       </div>
       <div class="g-field">
         <label for="res_country">{{ t('res_country') }}</label>
+        {% set res_country_sel = values.get('res_country') if values.get('res_country') not in (none, '') else (guest.res_country if guest and guest.res_country else val('nationality')) %}
         <select class="{{ bad('res_country') }}" {{ invalid('res_country') }} id="res_country" name="res_country"
                 data-guest-placeholder="{{ t('tw_country_search') }}" data-guest-none="{{ t('tw_country_none') }}"
                 data-guest-required="{{ t('tw_country_required') }}" autocomplete="country" required>
@@ -220,7 +212,7 @@
           {% for group in country_groups %}
             <optgroup label="{{ t(group.key) }}">
               {% for country in group.options %}
-                <option value="{{ country.code }}" {% if val('res_country') == country.code %}selected{% endif %}>
+                <option value="{{ country.code }}" {% if res_country_sel == country.code %}selected{% endif %}>
                   {{ country.label }}</option>
               {% endfor %}
             </optgroup>
@@ -291,6 +283,7 @@
     <button class="g-btn" type="submit">{{ t('submit') }}</button>
   </div>
 </form>
+{% include "guest/_why.html" %}
 </div>
 {% if require_passport %}
 <script>
@@ -409,4 +402,19 @@
 })();
 </script>
 {% endif %}
+<script>
+(function () {
+  var nationality = document.getElementById('nationality');
+  var residence = document.getElementById('res_country');
+  if (!nationality || !residence) return;
+  var touched = false;
+  residence.addEventListener('change', function () { touched = true; });
+  nationality.addEventListener('change', function () {
+    if (!touched) residence.value = nationality.value || '';
+  });
+  if (!touched && !residence.value && nationality.value) {
+    residence.value = nationality.value;
+  }
+})();
+</script>
 {% endblock %}

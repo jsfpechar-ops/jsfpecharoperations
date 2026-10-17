@@ -68,6 +68,8 @@ def _payload(**overrides):
     data = {
         "internal_name": "Default Flat",
         "addr_city": "Praha",
+        "addr_obec": "Praha",
+        "addr_house_no": "12",
         "addr_zip": "120 00",
         "uby_idub": "123456789012",
         "uby_mark": "abc",
@@ -78,6 +80,14 @@ def _payload(**overrides):
         "permalink_reachback_days": "30",
         "active": "on",
     }
+    # 0088: a property always has an operator; use this host's only one.
+    entity = db.query_one(
+        "SELECT id FROM legal_entity WHERE owner_user_id = "
+        "(SELECT id FROM user_account WHERE username = ?) ORDER BY id LIMIT 1",
+        (USERNAME,),
+    )
+    if entity:
+        data["legal_entity_id"] = str(entity["id"])
     data.update(overrides)
     return data
 
@@ -101,6 +111,16 @@ def host():
     )
     if not existing:
         auth.create_account(f"{USERNAME}@example.test", "Default Host", username=USERNAME)
+    db.insert(
+        "legal_entity",
+        {
+            "name": "Default Operator",
+            "owner_user_id": db.query_one(
+                "SELECT id FROM user_account WHERE username = ?", (USERNAME,)
+            )["id"],
+            "created_at": db.utcnow(),
+        },
+    )
     client = TestClient(app)
     response = login_as(client, USERNAME, url="/login?lang=en", follow_redirects=False)
     assert response.status_code == 303, response.text
@@ -110,14 +130,31 @@ def host():
         _cleanup()
 
 
+def _create_and_open(host, name, **overrides):
+    created = host.post("/apartments", data=_payload(internal_name=name, **overrides), follow_redirects=False)
+    assert created.status_code == 303, created.text
+    apartment_id = db.query_one(
+        "SELECT id FROM apartment WHERE internal_name = ? AND owner_user_id = "
+        "(SELECT id FROM user_account WHERE username = ?)",
+        (name, USERNAME),
+    )["id"]
+    return host.get(f"/apartments/{apartment_id}")
+
+
 def test_a_new_property_starts_on_manual(host):
+    """0092: the short create page carries no reporting choice at all, so a
+    property can only start on Manual; its page then shows Manual selected."""
     page = host.get("/apartments/new")
     assert page.status_code == 200, page.text
-    assert _selected_mode(page.text) == "manual"
+    assert 'name="automation_mode"' not in page.text
+    assert 'name="submit_after_hours"' not in page.text
+    assert '<select id="default_purpose"' not in page.text
+    detail = _create_and_open(host, "Starts Manual Flat")
+    assert _selected_mode(detail.text) == "manual"
 
 
 def test_the_timing_select_still_offers_every_mode(host):
-    page = host.get("/apartments/new")
+    page = _create_and_open(host, "Every Mode Flat")
     values = [
         value
         for value, _ in OPTION_RE.findall(SELECT_RE.search(page.text).group(0))
@@ -125,14 +162,20 @@ def test_the_timing_select_still_offers_every_mode(host):
     assert values == ["manual", "scheduled", "immediate"]
 
 
-def test_the_new_property_form_states_what_the_choice_means(host):
+def test_the_new_property_form_leaves_the_choice_to_the_property_page(host):
     page = host.get("/apartments/new?lang=en")
-    assert LEDE_EN in page.text
+    assert LEDE_EN not in page.text
+    assert OLD_LEDE_EN not in page.text
+    detail = _create_and_open(host, "Choice Later Flat")
+    assert 'id="automation"' in detail.text
+    assert host_i18n.STRINGS["en"]["automation.timing_help"] in detail.text
 
 
-def test_the_new_property_form_states_it_in_czech_too(host):
+def test_the_czech_create_page_leaves_it_too(host):
     page = host.get("/apartments/new?lang=cs")
-    assert LEDE_CS in page.text
+    assert LEDE_CS not in page.text
+    assert OLD_LEDE_CS not in page.text
+    assert 'name="automation_mode"' not in page.text
 
 
 def test_the_lede_is_pinned_in_both_languages():
@@ -190,11 +233,11 @@ def test_the_edit_form_does_not_carry_a_mode_default(host):
 
     page = host.get(f"/apartments/{apartment_id}")
     assert page.status_code == 200, page.text
-    assert 'id="automation_mode"' not in page.text
-    assert LEDE_EN not in page.text
+    assert _selected_mode(page.text) == "scheduled"
+    assert 'id="automation"' in page.text
 
 
-def test_editing_a_property_never_rewrites_its_mode(host):
+def test_editing_a_property_can_change_its_mode(host):
     created = host.post(
         "/apartments",
         data=_payload(internal_name="Manual Flat"),
@@ -216,4 +259,4 @@ def test_editing_a_property_never_rewrites_its_mode(host):
         follow_redirects=False,
     )
     assert edited.status_code == 303, edited.text
-    assert _mode_of("Manual Flat") == "manual"
+    assert _mode_of("Manual Flat") == "scheduled"

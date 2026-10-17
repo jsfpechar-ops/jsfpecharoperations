@@ -169,3 +169,12 @@ def test_production_mock_allowed_with_explicit_opt_in():
         operator_identity=OPERATOR,
     )
     assert any("nothing is reported" in item for item in warnings)
+
+
+def test_production_refuses_the_staging_no_login_flag():
+    with pytest.raises(env_guard.EnvGuardError, match="UBYHOST_STAGING_NO_LOGIN"):
+        env_guard.validate_runtime_env(
+            ubyport_env="mock",
+            deployment="production",
+            environ={"UBYHOST_STAGING_NO_LOGIN": "1"},
+        )

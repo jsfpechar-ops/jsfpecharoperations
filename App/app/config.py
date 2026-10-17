@@ -232,6 +232,12 @@ def _staging_login_password_from_env() -> str:
 
 STAGING_LOGIN_PASSWORD = _staging_login_password_from_env()
 
+# Render staging only: skip login entirely, every visitor is the first administrator.
+# Ignored unless UBYHOST_DEPLOYMENT=staging. Never set this where real data lives.
+STAGING_NO_LOGIN = os.environ.get("UBYHOST_STAGING_NO_LOGIN", "").strip().lower() in (
+    "1", "true", "yes", "on",
+)
+
 TIMEZONE = "Europe/Prague"
 
 # Host-admin software support (sidebar + Settings). Guest stay questions go to
@@ -241,6 +247,8 @@ OPERATOR_ICO = os.environ.get("UBYHOST_OPERATOR_ICO", "").strip()
 OPERATOR_DIC = os.environ.get("UBYHOST_OPERATOR_DIC", "").strip()
 OPERATOR_ADDRESS = os.environ.get("UBYHOST_OPERATOR_ADDRESS", "").strip()
 OPERATOR_EMAIL = os.environ.get("UBYHOST_OPERATOR_EMAIL", "").strip() or "support@ubyhost.com"
+# Gets a copy of every "door code not created" notice, so the problem is on record.
+SUPPORT_EMAIL = "support@ubyhost.com"
 OPERATOR_REGISTRY_URL = os.environ.get("UBYHOST_OPERATOR_REGISTRY_URL", "").strip()
 
 # Cloudflare Turnstile. The site key is public; keep TURNSTILE_SECRET only in
@@ -256,18 +264,16 @@ TURNSTILE_HOSTNAMES = {
 }
 TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET and TURNSTILE_HOSTNAMES)
 
-# Umami Cloud page analytics, public marketing and legal pages only (WP09).
-# Both values empty by default; set them only in the production .env, copied
-# from the tracking-code snippet in the Umami website settings. The tag and the
-# CSP allowance appear only when both are set (see analytics.py).
-UMAMI_WEBSITE_ID = os.environ.get("UMAMI_WEBSITE_ID", "").strip()
-UMAMI_SCRIPT_URL = os.environ.get("UMAMI_SCRIPT_URL", "").strip()
-# Optional: Umami's data-host-url, where the tracker sends its events. Empty
-# means "the tracker's own default"; see analytics.py for what that is.
-UMAMI_HOST_URL = os.environ.get("UMAMI_HOST_URL", "").strip().rstrip("/")
-# data-domains: the hostnames the tracker may run on. Defaults to the host of
-# UBYHOST_PUBLIC_BASE_URL, so a staging copy never reports into production.
-UMAMI_DOMAINS = os.environ.get("UMAMI_DOMAINS", "").strip()
+# PostHog Cloud EU page analytics, public marketing and legal pages only (WP09).
+# API key empty by default; set POSTHOG_PROJECT_API_KEY only in production .env.
+# The tag and CSP allowance appear only when the key and EU hosts are valid
+# (see analytics.py). US PostHog hosts are refused.
+POSTHOG_PROJECT_API_KEY = os.environ.get("POSTHOG_PROJECT_API_KEY", "").strip()
+POSTHOG_HOST = os.environ.get("POSTHOG_HOST", "https://eu.i.posthog.com").strip().rstrip("/")
+POSTHOG_ASSETS_HOST = (
+    os.environ.get("POSTHOG_ASSETS_HOST", "https://eu-assets.i.posthog.com").strip().rstrip("/")
+)
+POSTHOG_APP_URL = os.environ.get("POSTHOG_APP_URL", "https://eu.posthog.com").strip().rstrip("/")
 
 # Bumped when Terms of Service change materially (logged on host login).
 # 1.6 (WP24): stay fee duty, filing on the host's instruction, filing by hand,

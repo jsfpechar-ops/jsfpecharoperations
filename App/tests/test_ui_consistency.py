@@ -42,13 +42,20 @@ def host(client):
         account = db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))
     response = login_as(client, USERNAME, follow_redirects=False)
     assert response.status_code == 303
+    operator = db.insert(
+        "legal_entity",
+        {"name": "UI Operator", "owner_user_id": account["id"], "created_at": db.utcnow()},
+    )
     created = client.post(
         "/apartments",
         data={
             "internal_name": APARTMENT_NAME,
             "city_en": "Prague",
+            "addr_obec": "Praha",
+            "addr_house_no": "12",
+            "addr_zip": "11000",
             "uby_name": REGISTERED_NAME,
-            "active": "1",
+            "legal_entity_id": str(operator),
         },
         follow_redirects=False,
     )
@@ -80,7 +87,7 @@ def test_no_shell_template_hardcodes_a_demo_date():
 
 def test_properties_and_search_are_on_every_host_page(host):
     """It is part of the sidebar, so no page may depend on a route passing it."""
-    for path in ("/", "/reservations", "/housebook", "/guest-links", "/automation"):
+    for path in ("/", "/reservations", "/housebook", "/apartments", "/entities", "/invoices", "/stay-fees"):
         page = host.get(path)
 
         assert page.status_code == 200, path

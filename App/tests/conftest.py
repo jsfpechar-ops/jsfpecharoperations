@@ -19,6 +19,7 @@ from fastapi.testclient import TestClient
 
 _TMP = Path(tempfile.mkdtemp(prefix="ubyhost-tests-"))
 PROJECT_DIR = Path(__file__).resolve().parent.parent
+os.environ.setdefault("FONTCONFIG_FILE", str(PROJECT_DIR / "tests" / "fonts.conf"))
 
 
 def _free_port() -> int:

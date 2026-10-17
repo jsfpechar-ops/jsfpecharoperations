@@ -1,0 +1,62 @@
+{% extends "setup_wizard/_layout.html" %}
+{% from "_components.html" import field_label, help_tip with context %}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('wizard.door_lock.intro') }} {{ help_tip('wizard-lock-help', t('apartment.form.door_code.connect_first')) }}</p>
+{% if door_code %}
+<form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="door-lock-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
+  <input type="hidden" name="setup_step" value="door_lock">
+  <input type="hidden" name="door_code_section" value="1">
+  <input type="hidden" name="internal_name" value="{{ apartment.internal_name }}">
+  <input type="hidden" name="legal_entity_id" value="{{ apartment.legal_entity_id }}">
+  <input type="hidden" name="city_en" value="{{ apartment.city_en or '' }}">
+  <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
+  {% if not door_code.account %}
+  <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}/setup/door_lock#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
+  {% elif not door_code.locks %}
+  <p class="setup-wizard-instruction">{{ t('apartment.form.door_code.no_locks') }}</p>
+  <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}/setup/door_lock#smart-locks-share">{{ t('smart_locks.title') }}</a>
+  {% else %}
+  <input type="hidden" name="door_codes_fields" value="1">
+  <div class="feature-switch-row">
+    <label class="switch feature-switch" for="door_codes">
+      <input type="checkbox" role="switch" id="door_codes" name="door_codes" value="1" {% if door_code.enabled %}checked{% endif %}>
+      <span>{{ t('property_nav.door_switch') }}</span>
+    </label>
+  </div>
+  <div class="field setup-wizard-lock-field"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
+    <select id="lock_id" name="lock_id"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+      {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and lock.lock_id == door_code.default_lock_id) %}selected{% endif %}>{{ lock.alias }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="grid two">
+    {% for name, value, label in [('checkin_hour', door_code.checkin_hour, 'apartment.form.door_code.checkin'), ('checkout_hour', door_code.checkout_hour, 'apartment.form.door_code.checkout')] %}
+    <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
+      <select id="{{ name }}" name="{{ name }}"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+        {% for h in range(24) %}<option value="{{ h }}" {% if value == h %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
+      </select></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</form>
+{% else %}
+<p class="setup-wizard-instruction">{{ t('wizard.door_lock.unavailable') }}</p>
+{% endif %}
+{% endblock %}
+{% block wizard_actions %}
+{% if door_code and door_code.locks %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="step" value="door_lock">
+  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.skip') }}</button>
+</form>
+<button class="btn primary" type="submit" form="door-lock-form">{{ t('wizard.save_continue') }}</button>
+{% else %}
+<form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="step" value="door_lock">
+  <button class="btn primary" type="submit" name="action" value="skip">{{ t('wizard.skip') }}</button>
+</form>
+{% endif %}
+{% endblock %}

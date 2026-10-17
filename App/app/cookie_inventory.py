@@ -116,6 +116,44 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "lifetime": {"en": "Until you clear it", "cs": "Dokud jej nevyma\u017eete"},
     },
     {
+        "name": "ubyhost.calendar.display.v1",
+        "set_by": "static/dashboard-calendar.js",
+        "party": "first",
+        "kind": "localStorage",
+        "surface": "host",
+        "purpose": {
+            "en": "Remembers calendar view and display settings; contains no booking or guest data",
+            "cs": "Pamatuje si zobrazení kalendáře; neobsahuje údaje o rezervacích ani hostech",
+            "de": "Speichert Kalenderansicht und Anzeigeoptionen, keine Buchungs- oder Gästedaten",
+            "es": "Recuerda la vista y las opciones del calendario, sin datos de reservas ni huéspedes",
+            "fr": "Mémorise la vue et les options du calendrier, sans données de réservation ni de voyageur",
+        },
+        "lifetime": {
+            "en": "Until you clear it", "cs": "Dokud jej nevymažete",
+            "de": "Bis Sie es löschen", "es": "Hasta que lo borre",
+            "fr": "Jusqu'à ce que vous l'effaciez",
+        },
+    },
+    {
+        "name": "ubyhost.cleaning.display.v1",
+        "set_by": "static/dashboard-calendar.js",
+        "party": "first",
+        "kind": "localStorage",
+        "surface": "host",
+        "purpose": {
+            "en": "Remembers cleaning calendar display settings; no codes or schedule data",
+            "cs": "Pamatuje si zobrazení kalendáře úklidů; bez kódů a údajů rozpisu",
+            "de": "Speichert die Ansicht des Reinigungskalenders, keine Codes oder Termindaten",
+            "es": "Recuerda la vista del calendario de limpieza, sin códigos ni datos del horario",
+            "fr": "Mémorise l’affichage du calendrier de ménage, sans codes ni données du planning",
+        },
+        "lifetime": {
+            "en": "Until you clear it", "cs": "Dokud jej nevymažete",
+            "de": "Bis Sie es löschen", "es": "Hasta que lo borre",
+            "fr": "Jusqu’à ce que vous l’effaciez",
+        },
+    },
+    {
         "name": "ubyhost-saved-stay-views",
         "set_by": "static/app.js",
         "party": "first",
@@ -129,20 +167,20 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
     },
     {
         # WP09: written only when a visitor clicks the opt-out on /privacy
-        # (static/umami-optout.js). The Umami tracker reads it and then counts
+        # (static/analytics-optout.js). The PostHog tracker reads it and then counts
         # nothing in this browser; the opt-back-in link removes it.
-        "name": "umami.disabled",
-        "set_by": "static/umami-optout.js",
+        "name": "ubyhost.analytics.disabled",
+        "set_by": "static/analytics-optout.js",
         "party": "first",
         "kind": "localStorage",
         "surface": "public",
         "purpose": {
             "en": (
-                "Cookieless analytics (Umami): no cookies are set. This optional key is stored "
+                "Cookieless analytics (PostHog): no cookies are set. This optional key is stored "
                 "only after you turn measurement off on the Privacy Policy page"
             ),
             "cs": (
-                "Měření návštěvnosti bez cookies (Umami): žádné cookies se nenastavují. Tento "
+                "Měření návštěvnosti bez cookies (PostHog): žádné cookies se nenastavují. Tento "
                 "nepovinný klíč se uloží jen poté, co měření vypnete na stránce Zásad ochrany "
                 "osobních údajů"
             ),
@@ -180,26 +218,26 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
 
 
 # Third-party services on the public pages that set no cookie, listed so the
-# privacy page can say so (WP09, 04_legal_positions.md section 1). Umami itself
+# privacy page can say so (WP09, 04_legal_positions.md section 1). PostHog itself
 # writes nothing; the only storage key involved is the visitor's own opt-out,
-# "umami.disabled", which is a COOKIE_INVENTORY row above because our
-# umami-optout.js writes it.
+# "ubyhost.analytics.disabled", which is a COOKIE_INVENTORY row above because our
+# analytics-optout.js writes it.
 COOKIELESS_SERVICES: Tuple[Dict[str, object], ...] = (
     {
-        "name": "Umami Cloud",
+        "name": "PostHog Cloud EU",
         "surface": "public",
-        "party": "Umami Software, Inc.",
+        "party": "PostHog, Inc.",
         "note": {
             "en": (
-                "Cookieless analytics, no cookies set; optional localStorage key umami.disabled "
-                "only after opt-out. Public marketing and legal pages only, data stored in the EU. "
-                "Never loaded in the app, on sign-in or on guest pages."
+                "Cookieless analytics, no cookies set; optional localStorage key "
+                "ubyhost.analytics.disabled only after opt-out. Public marketing and legal pages "
+                "only, data stored in the EU. Never loaded in the app, on sign-in or on guest pages."
             ),
             "cs": (
                 "Měření návštěvnosti bez cookies, žádné cookies se nenastavují; nepovinný klíč "
-                "umami.disabled v localStorage jen po vypnutí měření. Jen veřejné marketingové a "
-                "právní stránky, data uložená v EU. V aplikaci, při přihlášení ani na stránkách "
-                "pro hosty se nikdy nenačítá."
+                "ubyhost.analytics.disabled v localStorage jen po vypnutí měření. Jen veřejné "
+                "marketingové a právní stránky, data uložená v EU. V aplikaci, při přihlášení ani "
+                "na stránkách pro hosty se nikdy nenačítá."
             ),
         },
     },
@@ -330,11 +368,11 @@ _GUEST_LANGUAGE_TEXT: Dict[str, Dict[str, Dict[str, str]]] = {
             "fr": "Jusqu'à ce que vous l'effaciez",
         },
     },
-    "umami.disabled": {
+    "ubyhost.analytics.disabled": {
         "purpose": {
-            "de": "Cookielose Analyse (Umami): Es werden keine Cookies gesetzt. Dieser optionale Schlüssel wird nur gespeichert, nachdem Sie die Messung auf der Seite zur Datenschutzerklärung deaktiviert haben",
-            "es": "Analítica sin cookies (Umami): no se establecen cookies. Esta clave opcional solo se guarda después de que desactive la medición en la página de la Política de privacidad",
-            "fr": "Mesure d'audience sans cookies (Umami) : aucun cookie n'est défini. Cette clé facultative n'est enregistrée qu'après la désactivation de la mesure sur la page Politique de confidentialité",
+            "de": "Cookielose Analyse (PostHog): Es werden keine Cookies gesetzt. Dieser optionale Schlüssel wird nur gespeichert, nachdem Sie die Messung auf der Seite zur Datenschutzerklärung deaktiviert haben",
+            "es": "Analítica sin cookies (PostHog): no se establecen cookies. Esta clave opcional solo se guarda después de que desactive la medición en la página de la Política de privacidad",
+            "fr": "Mesure d'audience sans cookies (PostHog) : aucun cookie n'est défini. Cette clé facultative n'est enregistrée qu'après la désactivation de la mesure sur la page Politique de confidentialité",
         },
         "lifetime": {
             "de": "Bis Sie die Messung wieder aktivieren oder ihn löschen",

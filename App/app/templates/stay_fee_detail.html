@@ -2,8 +2,29 @@
 {% set nav = 'stay_fees' %}
 {% block title %}{{ apartment.internal_name }} ({{ ui_period }}){% endblock %}
 {% block content %}
-{% from "_components.html" import page_header, copy_button with context %}
-<a class="back-link" href="/stay-fees?month={{ month_key }}"><span aria-hidden="true">&larr;</span> {{ t('stay_fees.back') }}</a>
+{% from "_components.html" import page_header, copy_button, field_label with context %}
+{% macro decision_form(line, review) %}
+  <form method="post" action="/stay-fees/guest-decision" class="fee-decision">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <input type="hidden" name="guest_id" value="{{ line.guest_id }}">
+    <input type="hidden" name="apartment_id" value="{{ apartment.id }}">
+    <input type="hidden" name="month" value="{{ month_key }}">
+    <select name="reason" aria-label="{{ t('stay_fees.decision.reason_label') }}"{% if review %} required{% endif %}>
+      <option value="">{{ t('stay_fees.decision.reason_placeholder') }}</option>
+      {% for code in exempt_categories %}
+      <option value="{{ code }}" {% if line.reason == code %}selected{% endif %}>{{ t('stay_fees.exempt.' ~ code) }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="reason_reference" maxlength="200"
+           placeholder="{{ t('stay_fees.decision.reference_placeholder') }}"
+           aria-label="{{ t('stay_fees.decision.reference_label') }}">
+    <button class="btn small" type="submit" name="decision" value="exempt">{{ t('stay_fees.decision.exempt') }}</button>
+    <button class="btn small" type="submit" name="decision" value="charge">{{ t('stay_fees.decision.charge') }}</button>
+    {% if line.decision %}<button class="btn small" type="submit" name="decision" value="">{{ t('stay_fees.decision.auto') }}</button>{% endif %}
+  </form>
+{% endmacro %}
+
+<a class="back-link" href="/stay-fees?month={{ month_key }}"> {{ t('stay_fees.back') }}</a>
 {% include "_list_filter.html" %}
 {% set actions %}
   {% if frozen %}
@@ -28,6 +49,220 @@
 {% endset %}
 {{ page_header(apartment.internal_name ~ ' (' ~ ui_period ~ ')', '', '', '', t('nav.stay_fees'), actions) }}
 
+<div class="panel tight">
+  <div class="stay-metrics detail-hero">
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('stay_fees.metric.liable') }}</div>
+      <div class="metric-value">{{ group.liable_nights }}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('stay_fees.metric.exempt') }}</div>
+      <div class="metric-value">{{ group.exempt_nights }}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('stay_fees.metric.total') }}</div>
+      <div class="metric-value">{{ total_display }}</div>
+    </div>
+    <div class="detail-metric">
+      <div class="metric-label">{{ t('stay_fees.metric.vs') }}</div>
+      <div class="metric-value small-value mono">{{ group.vs or '—' }}</div>
+    </div>
+  </div>
+</div>
+
+{% if issues %}
+<section class="panel fee-blockers" id="fee-blockers" aria-labelledby="fee-blockers-title">
+  <h2 id="fee-blockers-title">{{ t('stay_fees.blockers.title') }}</h2>
+<ul class="fee-issues">
+{% for issue in issues %}
+  <li class="warn-text small">
+    {{ t(issue) }}
+    {% if issue == 'stay_fees.issue.no_vs' or issue == 'stay_fees.issue.no_authority' %}
+      <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('host.fix_details') }}</a>
+    {% elif issue == 'stay_fees.issue.no_payer' %}
+      <a href="{{ fee_operator_url(apartment, fee_return) }}">{{ t('nav.entities') }}</a>
+    {% endif %}
+  </li>
+{% endfor %}
+</ul>
+
+{% if 'stay_fees.issue.scope_ruling' in issues %}
+<form method="post" action="/stay-fees/{{ apartment.id }}/scope-ruling" class="filters fee-scope-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="month" value="{{ month_key }}">
+  <div class="field">
+    <label for="scope-rule">{{ t('stay_fees.scope.rule') }}</label>
+    <select id="scope-rule" name="rule" required>
+      <option value="calendar_days">{{ t('stay_fees.scope.calendar_days') }}</option>
+      <option value="nights">{{ t('stay_fees.scope.nights') }}</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="scope-reference">{{ t('stay_fees.scope.reference') }}</label>
+    <input type="text" id="scope-reference" name="reference" maxlength="200" required
+           placeholder="{{ t('stay_fees.scope.reference_placeholder') }}">
+  </div>
+  <button class="btn accent primary" type="submit">{{ t('stay_fees.scope.save') }}</button>
+</form>
+{% endif %}
+</section>
+{% endif %}
+
+{% if frozen and send_panel %}
+<section class="panel" id="fee-send">
+  <h2>{{ t('stay_fees.send.title') }}</h2>
+  <p class="small muted">{{ t('stay_fees.send.lede') }}</p>
+  <div class="field">
+    <label>{{ t('stay_fees.send.recipient') }}</label>
+    <div class="copyrow">
+      <input type="text" id="fee-send-recipient" readonly value="{{ send_panel.authority_name }}{% if send_panel.databox %} ({{ send_panel.databox }}){% endif %}">
+      {{ copy_button('fee-send-recipient') }}
+    </div>
+    {% if not send_panel.databox %}
+    <p class="small warn-text">{{ t('stay_fees.send.missing_databox') }} <a href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.send.add_databox') }}</a></p>
+    {% else %}
+    <div class="field">
+      <label for="fee-send-databox">{{ t('stay_fees.send.databox') }}</label>
+      <div class="copyrow">
+        <input type="text" id="fee-send-databox" readonly value="{{ send_panel.databox }}">
+        {{ copy_button('fee-send-databox') }}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="field">
+    <label for="fee-send-subject">{{ t('stay_fees.send.subject') }}</label>
+    <div class="copyrow">
+      <input type="text" id="fee-send-subject" readonly value="{{ send_panel.subject_cs }}">
+      {{ copy_button('fee-send-subject') }}
+    </div>
+  </div>
+  <div class="field">
+    <label for="fee-send-body">{{ t('stay_fees.send.body') }}</label>
+    <div class="copyrow">
+      <textarea id="fee-send-body" readonly rows="4">{{ send_panel.body_cs }}</textarea>
+      {{ copy_button('fee-send-body') }}
+    </div>
+  </div>
+  <div class="action-group">
+    <a class="btn accent primary" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_key }}" download>{{ t('stay_fees.download_pdf') }}</a>
+  </div>
+  <h3 class="fee-send-marks-title">{{ t('stay_fees.send.marks_title') }}</h3>
+  <div class="fee-send-marks">
+    {% if send_panel.sent_at %}
+    <p class="small">{{ t('stay_fees.send.sent_on', date=send_panel.sent_at | date_cz) }}{% if send_panel.sent_message_id %} · {{ t('stay_fees.send.message_id', id=send_panel.sent_message_id) }}{% endif %}</p>
+    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/sent" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month_key }}">
+      <input type="hidden" name="undo" value="1">
+      <button class="btn small" type="submit">{{ t('stay_fees.send.undo_sent') }}</button>
+    </form>
+    {% else %}
+    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/sent" class="fee-send-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month_key }}">
+      <div class="field">
+        <label for="fee-sent-message-id">{{ t('stay_fees.send.message_id_label') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <input id="fee-sent-message-id" name="sent_message_id" maxlength="100" value="">
+      </div>
+      <button class="btn" type="submit">{{ t('stay_fees.send.mark_sent') }}</button>
+    </form>
+    {% endif %}
+    {% if send_panel.paid_at %}
+    <p class="small">{{ t('stay_fees.send.paid_on', date=send_panel.paid_at | date_cz) }}</p>
+    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/paid" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month_key }}">
+      <input type="hidden" name="undo" value="1">
+      <button class="btn small" type="submit">{{ t('stay_fees.send.undo_paid') }}</button>
+    </form>
+    {% else %}
+    <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/paid" class="inline-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <input type="hidden" name="month" value="{{ month_key }}">
+      <button class="btn" type="submit">{{ t('stay_fees.send.mark_paid') }}</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<section id="payment">
+  <div class="section-heading">
+    <h2>{{ t('stay_fees.payment.title') }}</h2>
+    {% if pay and pay.qr %}
+      <span class="pill green">{{ t('stay_fees.payment.ready') }}</span>
+    {% else %}
+      <span class="pill amber">{{ t('stay_fees.payment.incomplete') }}</span>
+    {% endif %}
+  </div>
+  <div class="panel">
+    {% if pay %}
+      <div class="field">
+        <label for="fee-account">{{ t('stay_fees.payment.account') }}</label>
+        <div class="copyrow">
+          <input type="text" id="fee-account" readonly value="{{ pay.account }}">
+          {{ copy_button('fee-account') }}
+        </div>
+      </div>
+      <div class="field">
+        <label for="fee-iban">{{ t('stay_fees.payment.iban') }}</label>
+        <div class="copyrow">
+          <input type="text" id="fee-iban" readonly value="{{ pay.iban }}">
+          {{ copy_button('fee-iban') }}
+        </div>
+      </div>
+      <div class="field">
+        {{ field_label('fee-vs', t('stay_fees.payment.vs'), t('stay_fees.payment.vs_hint')) }}
+        <div class="copyrow">
+          <input type="text" id="fee-vs" readonly value="{{ pay.vs }}" aria-describedby="fee-vs-help">
+          {{ copy_button('fee-vs') }}
+        </div>
+      </div>
+      {% if pay.qr %}
+        <div class="fee-qr">
+          <img src="{{ pay.qr }}" width="176" height="176" alt="{{ t('stay_fees.payment.qr_alt') }}">
+          <div>
+            <strong>QR Platba</strong>
+            <p class="small muted fee-qr-help">{{ t('stay_fees.payment.qr_help', amount=total_display) }}</p>
+            <p class="small muted mono">{{ pay.spayd }}</p>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+  <p class="small muted">{{ t('stay_fees.payment.footnote') }}</p>
+</section>
+
+<section id="guests">
+  <div class="section-heading">
+    <h2>{{ t('stay_fees.guests.title') }}</h2>
+  </div>
+  <div class="panel">
+    {% if lines %}
+      <ul class="fee-lines">
+        {% for line in lines %}
+        <li class="fee-line">
+          <div>
+            <a href="/reservations/{{ line.reservation_id }}">{{ line.name }}</a>
+            <div class="small muted">{{ line.stay_from }} – {{ line.stay_to }} · {{ tp('stay_fees.nights', line.nights) }}</div>
+          </div>
+          <span class="pill grey no-dot">{{ t(line.status_key) }}</span>
+          <span class="fee-amount">{{ line.amount_display }}</span>
+          {% if line.local_hint %}
+            <div class="small muted fee-hint">{{ t('stay_fees.hint.local_resident') }}</div>
+          {% endif %}
+          {% if line.status != 'not_subject' %}
+            {{ decision_form(line, line.review) }}
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">{{ t('stay_fees.guests.empty') }}</p>
+    {% endif %}
+  </div>
+</section>
 {% if not frozen %}
 <section class="panel" id="fee-adjust">
   <h2>{{ t('stay_fees.adjust.title') }}</h2>
@@ -89,173 +324,4 @@
 </section>
 {% endif %}
 
-{% if 'stay_fees.issue.scope_ruling' in issues %}
-<form method="post" action="/stay-fees/{{ apartment.id }}/scope-ruling" class="filters panel">
-  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="month" value="{{ month_key }}">
-  <div class="field">
-    <label for="scope-rule">{{ t('stay_fees.scope.rule') }}</label>
-    <select id="scope-rule" name="rule" required>
-      <option value="calendar_days">{{ t('stay_fees.scope.calendar_days') }}</option>
-      <option value="nights">{{ t('stay_fees.scope.nights') }}</option>
-    </select>
-  </div>
-  <div class="field">
-    <label for="scope-reference">{{ t('stay_fees.scope.reference') }}</label>
-    <input type="text" id="scope-reference" name="reference" maxlength="200" required
-           placeholder="{{ t('stay_fees.scope.reference_placeholder') }}">
-  </div>
-  <button class="btn accent primary" type="submit">{{ t('stay_fees.scope.save') }}</button>
-</form>
-{% endif %}
-{% for issue in issues %}
-  <p class="warn-text small">
-    {{ t(issue) }}
-    {% if issue == 'stay_fees.issue.no_vs' or issue == 'stay_fees.issue.no_authority' %}
-      <a href="/apartments/{{ apartment.id }}#stay-fee-settings">{{ t('host.fix_details') }}</a>
-    {% elif issue == 'stay_fees.issue.no_payer' %}
-      <a href="/entities">{{ t('nav.entities') }}</a>
-    {% endif %}
-  </p>
-{% endfor %}
-
-<div class="panel tight">
-  <div class="stay-metrics detail-hero">
-    <div class="detail-metric">
-      <div class="metric-label">{{ t('stay_fees.metric.liable') }}</div>
-      <div class="metric-value">{{ group.liable_nights }}</div>
-    </div>
-    <div class="detail-metric">
-      <div class="metric-label">{{ t('stay_fees.metric.exempt') }}</div>
-      <div class="metric-value">{{ group.exempt_nights }}</div>
-    </div>
-    <div class="detail-metric">
-      <div class="metric-label">{{ t('stay_fees.metric.total') }}</div>
-      <div class="metric-value">{{ total_display }}</div>
-    </div>
-    <div class="detail-metric">
-      <div class="metric-label">{{ t('stay_fees.metric.vs') }}</div>
-      <div class="metric-value small-value mono">{{ group.vs or '—' }}</div>
-    </div>
-  </div>
-</div>
-
-<section id="payment">
-  <div class="section-heading">
-    <h2>{{ t('stay_fees.payment.title') }}</h2>
-    {% if pay and pay.qr %}
-      <span class="pill green">{{ t('stay_fees.payment.ready') }}</span>
-    {% else %}
-      <span class="pill amber">{{ t('stay_fees.payment.incomplete') }}</span>
-    {% endif %}
-  </div>
-  <div class="panel">
-    {% if pay %}
-      <div class="field">
-        <label for="fee-account">{{ t('stay_fees.payment.account') }}</label>
-        <div class="copyrow">
-          <input type="text" id="fee-account" readonly value="{{ pay.account }}">
-          {{ copy_button('fee-account') }}
-        </div>
-      </div>
-      <div class="field">
-        <label for="fee-iban">{{ t('stay_fees.payment.iban') }}</label>
-        <div class="copyrow">
-          <input type="text" id="fee-iban" readonly value="{{ pay.iban }}">
-          {{ copy_button('fee-iban') }}
-        </div>
-      </div>
-      <div class="field">
-        <label for="fee-vs">{{ t('stay_fees.payment.vs') }}</label>
-        <div class="copyrow">
-          <input type="text" id="fee-vs" readonly value="{{ pay.vs }}">
-          {{ copy_button('fee-vs') }}
-        </div>
-        <div class="hint">{{ t('stay_fees.payment.vs_hint') }}</div>
-      </div>
-      {% if pay.qr %}
-        <div class="fee-qr">
-          <img src="{{ pay.qr }}" width="176" height="176" alt="{{ t('stay_fees.payment.qr_alt') }}">
-          <div>
-            <strong>QR Platba</strong>
-            <p class="small muted" style="margin-top:6px">{{ t('stay_fees.payment.qr_help', amount=total_display) }}</p>
-            <p class="small muted mono">{{ pay.spayd }}</p>
-          </div>
-        </div>
-      {% endif %}
-    {% endif %}
-  </div>
-  <p class="small muted">{{ t('stay_fees.payment.footnote') }}</p>
-</section>
-
-<section id="guests">
-  <div class="section-heading">
-    <h2>{{ t('stay_fees.guests.title') }}</h2>
-  </div>
-  <div class="panel">
-    {% if lines %}
-      <ul class="fee-lines">
-        {% for line in lines %}
-        <li class="fee-line">
-          <div>
-            <a href="/reservations/{{ line.reservation_id }}">{{ line.name }}</a>
-            <div class="small muted">{{ line.stay_from }} – {{ line.stay_to }} · {{ tp('stay_fees.nights', line.nights) }}</div>
-          </div>
-          <span class="pill grey no-dot">{{ t(line.status_key) }}</span>
-          <span class="fee-amount">{{ line.amount_display }}</span>
-          {% if line.local_hint %}
-            <div class="small muted fee-hint">{{ t('stay_fees.hint.local_resident') }}</div>
-          {% endif %}
-          {% if line.status != 'not_subject' %}
-            {% if line.review %}
-              <form method="post" action="/stay-fees/guest-decision" class="fee-decision">
-                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-                <input type="hidden" name="guest_id" value="{{ line.guest_id }}">
-                <input type="hidden" name="apartment_id" value="{{ apartment.id }}">
-                <input type="hidden" name="month" value="{{ month_key }}">
-                <select name="reason" aria-label="{{ t('stay_fees.decision.reason_label') }}" required>
-                  <option value="">{{ t('stay_fees.decision.reason_placeholder') }}</option>
-                  {% for code in exempt_categories %}
-                  <option value="{{ code }}" {% if line.reason == code %}selected{% endif %}>{{ t('stay_fees.exempt.' ~ code) }}</option>
-                  {% endfor %}
-                </select>
-                <input type="text" name="reason_reference" maxlength="200"
-                       placeholder="{{ t('stay_fees.decision.reference_placeholder') }}"
-                       aria-label="{{ t('stay_fees.decision.reference_label') }}">
-                <button class="btn small" type="submit" name="decision" value="exempt">{{ t('stay_fees.decision.exempt') }}</button>
-                <button class="btn small" type="submit" name="decision" value="charge">{{ t('stay_fees.decision.charge') }}</button>
-                {% if line.decision %}<button class="btn small" type="submit" name="decision" value="">{{ t('stay_fees.decision.auto') }}</button>{% endif %}
-              </form>
-            {% else %}
-              <details>
-                <summary class="small">{{ t('stay_fees.decision.change') }}</summary>
-                <form method="post" action="/stay-fees/guest-decision" class="fee-decision">
-                  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-                  <input type="hidden" name="guest_id" value="{{ line.guest_id }}">
-                  <input type="hidden" name="apartment_id" value="{{ apartment.id }}">
-                  <input type="hidden" name="month" value="{{ month_key }}">
-                  <select name="reason" aria-label="{{ t('stay_fees.decision.reason_label') }}">
-                    <option value="">{{ t('stay_fees.decision.reason_placeholder') }}</option>
-                    {% for code in exempt_categories %}
-                    <option value="{{ code }}" {% if line.reason == code %}selected{% endif %}>{{ t('stay_fees.exempt.' ~ code) }}</option>
-                    {% endfor %}
-                  </select>
-                  <input type="text" name="reason_reference" maxlength="200"
-                         placeholder="{{ t('stay_fees.decision.reference_placeholder') }}"
-                         aria-label="{{ t('stay_fees.decision.reference_label') }}">
-                  <button class="btn small" type="submit" name="decision" value="exempt">{{ t('stay_fees.decision.exempt') }}</button>
-                  <button class="btn small" type="submit" name="decision" value="charge">{{ t('stay_fees.decision.charge') }}</button>
-                  {% if line.decision %}<button class="btn small" type="submit" name="decision" value="">{{ t('stay_fees.decision.auto') }}</button>{% endif %}
-                </form>
-              </details>
-            {% endif %}
-          {% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="muted">{{ t('stay_fees.guests.empty') }}</p>
-    {% endif %}
-  </div>
-</section>
 {% endblock %}

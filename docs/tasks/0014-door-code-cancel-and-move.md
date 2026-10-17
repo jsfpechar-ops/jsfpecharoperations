@@ -1,6 +1,6 @@
 # 0014: Door codes follow cancellations and date changes
 
-Status: todo
+Status: done
 Depends on: 0013 | Base commit: after 0013 merges | Branch: task/0014-door-code-cancel-and-move
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 

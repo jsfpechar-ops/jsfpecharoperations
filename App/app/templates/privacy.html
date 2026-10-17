@@ -33,7 +33,7 @@
     <dd>{{ operator.address }}</dd>
     {% if operator.email %}
       <dt>{{ t('legal.operator_contact') }}</dt>
-      <dd><a href="mailto:{{ operator.email }}" data-umami-event="contact_click">{{ operator.email }}</a></dd>
+      <dd><a href="mailto:{{ operator.email }}" data-analytics-event="contact_click">{{ operator.email }}</a></dd>
     {% endif %}
     <dt>{{ t('legal.operator_registry') }}</dt>
     <dd><a href="{{ operator.registry_url }}" rel="noopener noreferrer">{{ t('legal.registry_link') }}</a></dd>
@@ -53,18 +53,20 @@
   {% endif %}
   {% if sid == '07' %}
     {% include "_cookie_table.html" %}
-    {% if umami_tag %}
+    {% if analytics_tag %}
       {#- WP09: described only while the tag is actually served (section 1). -#}
       <h3 id="analytics">{{ t('privacy.analytics_title') }}</h3>
       <p>{{ t('privacy.analytics_body') }}</p>
-      {#- Opt-out and opt-back-in; umami-optout.js toggles localStorage
-          "umami.disabled". Only this page loads that script. -#}
+      <h3>{{ t('privacy.product_analytics_title') }}</h3>
+      <p>{{ t('privacy.product_analytics_body') }}</p>
+      {#- Opt-out and opt-back-in; analytics-optout.js toggles localStorage
+          "ubyhost.analytics.disabled". Only this page loads that script. -#}
       <div class="panel quiet" id="analytics-optout" aria-live="polite">
         <p>{{ t('privacy.optout_lede') }}</p>
         <p data-optout-when="on" style="margin-bottom:0"><a href="#analytics-optout" role="button" data-optout-action="disable">{{ t('privacy.optout_disable') }}</a></p>
         <p data-optout-when="off" style="margin-bottom:0" hidden>{{ t('privacy.optout_off_note') }} <a href="#analytics-optout" role="button" data-optout-action="enable">{{ t('privacy.optout_enable') }}</a></p>
       </div>
-      <script src="/static/umami-optout.js?v=20261004a" defer></script>
+      <script src="/static/analytics-optout.js?v=20261010a" defer></script>
       <p>{{ t('privacy.analytics_dnt') }}</p>
       <ul class="small muted">
       {% for service in cookieless_services %}

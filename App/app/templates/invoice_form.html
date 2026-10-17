@@ -2,7 +2,7 @@
 {% set nav = 'invoices' %}
 {% block title %}{{ t('invoice.new') }}{% endblock %}
 {% block content %}
-{% from "_components.html" import page_header with context %}
+{% from "_components.html" import page_header, field_label, help_tip with context %}
 {{ page_header(t('invoice.new'), t('invoices.lede'), '/invoices', t('nav.invoices')) }}
 
 {% if errors %}
@@ -18,12 +18,20 @@
 
 {% if entity %}
 {% set payer = (entity.vat_status or 'non_payer') == 'payer' %}
-<form method="post" action="/invoices" class="invoice-form">
+<form method="post" action="/invoices" class="invoice-form" data-reservation-id="{{ stay.reservation.id if stay else '' }}">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  {% if stay %}<input type="hidden" name="reservation_id" value="{{ stay.reservation.id }}">{% endif %}
 
   <div class="invoice-workspace">
   <div class="invoice-document">
 
+  {% if stay %}
+  <p class="invoice-stay-context">
+    <span class="muted small">{{ t('invoice.context.stay') }}</span>
+    <strong>{{ stay_label }}</strong>
+    <a class="small" href="/reservations/{{ stay.reservation.id }}">{{ t('invoice.context.open_stay') }}</a>
+  </p>
+  {% endif %}
   <div class="panel invoice-supplier">
     <div class="invoice-supplier-row">
       <div class="field invoice-supplier-picker">
@@ -43,7 +51,7 @@
           {% if entity.seat %}· {{ entity.seat }}{% endif %}
         </span>
       </div>
-      <a class="btn small ghost" href="/invoices/settings?entity={{ entity.id }}&amp;next={{ (('/invoices/new?entity=' ~ entity.id) | urlencode) }}">
+      <a class="btn small ghost" href="/entities?edit={{ entity.id }}&amp;next={{ (('/invoices/new?reservation_id=' ~ (stay.reservation.id if stay else '') ~ '&entity=' ~ entity.id) | urlencode) }}#entity-invoice">
         {{ t('invoice.edit_details') }}
       </a>
     </div>
@@ -51,6 +59,11 @@
 
   <div class="panel">
     <h2 style="margin-top:0">{{ t('invoice.section.customer') }}</h2>
+    {% if show_fill_guest %}
+    <div class="actions" style="margin-bottom:12px">
+      <button type="submit" name="fill_from_guest" value="1" formnovalidate class="btn-secondary">{{ t('invoice.fill_guest.button') }}</button>
+    </div>
+    {% endif %}
     <div class="grid invoice-buyer-grid">
       <div class="field">
         <label for="buyer_name">{{ t('invoice.buyer.name') }}</label>
@@ -78,7 +91,12 @@
       </div>
       <div class="field">
         <label for="buyer_ico">{{ t('invoice.buyer.ico') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" value="{{ values.get('buyer_ico', '') }}">
+        <div class="action-group" style="align-items:flex-end">
+          <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" value="{{ values.get('buyer_ico', '') }}">
+          <button class="btn" type="submit" name="fill_buyer_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
+        </div>
+        {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
+        {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
       </div>
       <div class="field">
         <label for="buyer_dic">{{ t('invoice.buyer.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
@@ -92,9 +110,88 @@
   </div>
 
   <div class="panel">
-    <h2 style="margin-top:0">{{ t('invoice.section.items') }}</h2>
-    <p class="small muted" style="margin-top:-4px">{{ t('invoice.items_help') }}</p>
-    <table class="table-cards" id="item-rows">
+    <div class="field-label-row invoice-items-heading">
+      <h2 style="margin-top:0">{{ t('invoice.section.items') }}</h2>
+      {{ help_tip('invoice-items-help', t('invoice.items_help')) }}
+    </div>
+    <style>
+      /* Keep invoice-item geometry inside the form so the shared host table
+         rules and viewport width cannot change the price/action tracks. */
+      #item-rows.invoice-items-grid {
+        display: block;
+        width: 100%;
+        table-layout: fixed;
+        container-type: inline-size;
+      }
+      .invoice-items-grid thead,
+      .invoice-items-grid tbody { display: block; width: 100%; }
+      .invoice-items-grid thead tr,
+      .invoice-items-grid tbody tr {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) 84px 124px 148px 78px 126px;
+        align-items: start;
+      }
+      .invoice-items-grid thead tr {
+        align-items: stretch;
+        background: #f7ede7;
+      }
+      .invoice-items-grid thead th {
+        display: flex;
+        align-items: center;
+        background: transparent;
+      }
+      .invoice-items-grid th,
+      .invoice-items-grid td { box-sizing: border-box; min-width: 0; }
+      .invoice-items-grid td { vertical-align: top; }
+      .invoice-items-grid input:not([type=hidden]),
+      .invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
+      .invoice-items-grid .row-actions [data-remove-item] { min-height: 48px; }
+      .invoice-items-grid [data-vat-col][hidden] {
+        display: block !important;
+        visibility: hidden;
+      }
+      .invoice-other-description-field { display: block; margin-top: 8px; }
+      .invoice-other-description-field > span {
+        display: block;
+        margin-bottom: 3px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      @container (max-width: 850px) {
+        .invoice-items-grid thead { display: none; }
+        .invoice-items-grid tbody tr {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px 14px;
+          padding: 16px;
+          border-bottom: 1px solid var(--line);
+        }
+        .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
+        .invoice-items-grid td {
+          display: block;
+          padding: 0;
+          border: 0;
+        }
+        .invoice-items-grid td:first-child,
+        .invoice-items-grid td.row-actions { grid-column: 1 / -1; }
+        .invoice-items-grid td.row-actions { text-align: left; }
+        .invoice-items-grid td.row-actions .btn { margin: 0; }
+        .invoice-items-grid td::before {
+          content: attr(data-label);
+          display: block;
+          margin-bottom: 3px;
+          color: var(--muted);
+          font-size: 11.5px;
+          font-weight: 650;
+          letter-spacing: .05em;
+          text-transform: uppercase;
+        }
+        .invoice-items-grid td:first-child::before,
+        .invoice-items-grid td.row-actions::before { display: none; }
+        .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
+      }
+    </style>
+    <table class="table-cards invoice-items-grid" id="item-rows">
       <thead>
         <tr>
           <th class="col-name">{{ t('invoice.col.description') }}</th>
@@ -105,12 +202,52 @@
           <th></th>
         </tr>
       </thead>
+      {% if stay %}
+      <tbody data-stay-body>
+        <tr data-item-row data-stay-row>
+          <td data-label="{{ t('invoice.col.description') }}">
+            <strong>{{ t('invoice.stay.line') }}</strong><br><span class="small">{{ stay_label }}</span>
+          </td>
+          <td data-label="{{ t('invoice.col.qty') }}">1<input type="hidden" class="input-qty" value="1"></td>
+          <td data-label="{{ t('invoice.col.unit') }}">{{ t('invoice.stay.unit') }}</td>
+          <td data-label="{{ t('invoice.col.unit_price') }}">
+            <input type="text" name="stay_price" inputmode="decimal" required class="input-price"
+                   aria-label="{{ t('invoice.stay.price') }}"
+                   {% if stay_price_hint %}placeholder="{{ stay_price_hint }}" aria-describedby="stay-price-hint"{% endif %}
+                   value="{{ values.get('stay_price', '') }}">
+            {% if stay_price_hint %}
+            <span id="stay-price-hint" class="small muted">{{ t('invoice.price_hint', price=stay_price_hint) }}</span>
+            {% endif %}
+          </td>
+          <td data-label="{{ t('invoice.col.vat') }}" data-vat-col {% if not payer %}hidden{% endif %}>
+            <select name="stay_vat_rate" class="input-vat" {% if not payer %}disabled{% endif %}>
+              {% for rate in (12, 21, 0) %}
+                <option value="{{ rate }}" {% if values.get('stay_vat_rate', '12') == rate|string %}selected{% endif %}>{{ rate }} %</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td></td>
+        </tr>
+      </tbody>
+      {% endif %}
       <tbody data-item-body>
         {% set rows = values.item_rows if values is defined and values is not none else [] %}
         {% if rows %}
           {% for row in rows %}
           <tr data-item-row>
-            <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required value="{{ row.description }}"></td>
+            <td data-label="{{ t('invoice.col.description') }}">
+              <select name="item_kind" class="input-kind" aria-label="{{ t('invoice.extra.kind') }}">
+                <option value="">{{ t('invoice.extra.choose') }}</option>
+                {% for kind in extra_kinds %}
+                  <option value="{{ kind }}" {% if row.kind == kind %}selected{% endif %}>{{ t('invoice.extra.' ~ kind) }}</option>
+                {% endfor %}
+              </select>
+              <label class="invoice-other-description-field" data-other-description>
+                <span>{{ t('invoice.col.description') }}</span>
+                <input type="text" name="item_description" maxlength="60" value="{{ row.description }}"
+                       placeholder="{{ t('invoice.extra.other_text') }}" aria-label="{{ t('invoice.extra.other_text') }}">
+              </label>
+            </td>
             <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="{{ row.quantity }}" inputmode="numeric" class="input-qty"></td>
             <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" value="{{ row.unit }}" class="input-unit"></td>
             <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" value="{{ row.unit_price }}" class="input-price"></td>
@@ -126,7 +263,19 @@
           {% endfor %}
         {% else %}
         <tr data-item-row>
-          <td data-label="{{ t('invoice.col.description') }}"><input type="text" name="item_description" maxlength="150" required></td>
+            <td data-label="{{ t('invoice.col.description') }}">
+              <select name="item_kind" class="input-kind" aria-label="{{ t('invoice.extra.kind') }}">
+                <option value="">{{ t('invoice.extra.choose') }}</option>
+                {% for kind in extra_kinds %}
+                  <option value="{{ kind }}">{{ t('invoice.extra.' ~ kind) }}</option>
+                {% endfor %}
+              </select>
+              <label class="invoice-other-description-field" data-other-description>
+                <span>{{ t('invoice.col.description') }}</span>
+                <input type="text" name="item_description" maxlength="60" value=""
+                       placeholder="{{ t('invoice.extra.other_text') }}" aria-label="{{ t('invoice.extra.other_text') }}">
+              </label>
+            </td>
           <td data-label="{{ t('invoice.col.qty') }}"><input type="number" name="item_quantity" min="1" step="1" value="1" inputmode="numeric" class="input-qty"></td>
           <td data-label="{{ t('invoice.col.unit') }}"><input type="text" name="item_unit" maxlength="20" class="input-unit"></td>
           <td data-label="{{ t('invoice.col.unit_price') }}"><input type="text" name="item_unit_price" inputmode="decimal" class="input-price"></td>
@@ -183,14 +332,12 @@
     <div class="grid" id="due-fields" data-due-fields
          {% if values.get('already_paid', '1') != '0' %}hidden{% endif %}>
       <div class="field">
-        <label for="due_date">{{ t('invoice.due') }}</label>
-        <input type="date" id="due_date" name="due_date" value="{{ values.get('due_date', '') }}">
-        <div class="hint">{{ t('invoice.due_help') }}</div>
+        {{ field_label('due_date', t('invoice.due'), t('invoice.due_help')) }}
+        <input type="date" id="due_date" name="due_date" value="{{ values.get('due_date', '') }}" aria-describedby="due_date-help">
       </div>
       <div class="field invoice-paid-duzp-clone" hidden></div>
     </div>
-    <details class="invoice-more">
-      <summary>{{ t('invoice.more_options') }}</summary>
+    <div class="invoice-more">
       <div class="invoice-more-body">
         <div class="field">
           <label for="lang">{{ t('invoice.section.language') }}</label>
@@ -204,7 +351,7 @@
           <input type="text" id="note" name="note" maxlength="300" value="{{ values.get('note', '') }}">
         </div>
       </div>
-    </details>
+    </div>
     <p class="warn-text small" data-bank-warning data-has-iban="{{ 1 if entity.iban else 0 }}" hidden>
       {{ t('invoice.warn_no_iban') }}
     </p>
@@ -271,6 +418,17 @@
     totalEl.textContent = nf.format(total()) + " Kč";
   }
 
+  function syncOtherDescription(row) {
+    var kind = row.querySelector(".input-kind");
+    var description = row.querySelector("[data-other-description]");
+    if (kind && description) description.hidden = kind.value !== "other";
+  }
+
+  var MAX_EXTRAS = 3;
+  function syncAddButton() {
+    var add = document.querySelector("[data-add-item]");
+    if (add && body) add.hidden = body.querySelectorAll("[data-item-row]").length >= MAX_EXTRAS;
+  }
   /* Items: cloning keeps the rate of the last visible row instead of
      resetting it; the template row itself simply has no rate yet. */
   if (body) {
@@ -289,17 +447,24 @@
         vat.disabled = lastVat && lastVat.disabled;
       }
       body.appendChild(row);
+      syncOtherDescription(row);
+      syncAddButton();
     });
     body.addEventListener("click", function (event) {
       var button = event.target.closest("[data-remove-item]");
       if (!button) return;
       if (body.querySelectorAll("[data-item-row]").length > 1) {
         button.closest("[data-item-row]").remove();
+        syncAddButton();
       }
       syncTotal();
     });
     body.addEventListener("input", syncTotal);
-    body.addEventListener("change", syncTotal);
+    body.addEventListener("change", function (event) {
+      if (event.target.matches(".input-kind")) syncOtherDescription(event.target.closest("[data-item-row]"));
+      syncTotal();
+    });
+    body.querySelectorAll("[data-item-row]").forEach(syncOtherDescription);
   }
 
   /* Payment: either the money is already here (and "paid via" says how), or
@@ -351,7 +516,7 @@
         pendingMeta.innerHTML = '<span class="skeleton skeleton-line medium" aria-hidden="true"></span>' +
           '<span class="skeleton skeleton-line short" aria-hidden="true"></span>';
       }
-      fetch("/invoices/new?entity=" + encodeURIComponent(wanted))
+      fetch("/invoices/new?reservation_id=" + encodeURIComponent(form.getAttribute("data-reservation-id")) + "&entity=" + encodeURIComponent(wanted))
         .then(function (res) { return res.ok ? res.text() : null; })
         .then(function (html) {
           if (!html) throw new Error("fetch failed");
@@ -378,7 +543,7 @@
           syncBank();
         })
         .catch(function () {
-          window.location.assign("/invoices/new?entity=" + encodeURIComponent(wanted));
+          window.location.assign("/invoices/new?reservation_id=" + encodeURIComponent(form.getAttribute("data-reservation-id")) + "&entity=" + encodeURIComponent(wanted));
         });
     });
   }
@@ -396,6 +561,7 @@
 
   syncVat();
   syncTotal();
+  syncAddButton();
 })();
 </script>
 {% endif %}

@@ -13,9 +13,10 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, claim, config, db, i18n, mail, mail_notify
+from app import auth, claim, config, db, i18n, invoices, mail, mail_notify
 from app.main import app
 from tests.conftest import login_as
+from tests.invoice_stay_helper import drop_stays, stay_form
 
 INTERNAL = "Downtown Comfort Loft"
 REGISTER = "č1"
@@ -89,6 +90,7 @@ def _cleanup():
         (user_id,),
     )
     db.execute("DELETE FROM invoice WHERE owner_user_id = ?", (user_id,))
+    drop_stays(user_id)
     db.execute(
         "INSERT INTO settings (key, value) VALUES ('invoice_purge_unlock', '') "
         "ON CONFLICT(key) DO UPDATE SET value = ''"
@@ -169,19 +171,35 @@ def _stay(entity_id: int) -> int:
 
 
 def _send_invoice(client, reservation_id=None) -> dict:
-    response = client.post(
-        "/invoices",
-        data={
+    if reservation_id is None:
+        # Route now requires a stay; keep the plain-subject case via the library
+        # path that 0019 left open when stay is omitted (old invoices).
+        entity = db.query_one(
+            "SELECT * FROM legal_entity WHERE owner_user_id = ? ORDER BY id DESC",
+            (_owner_id(),),
+        )
+        form = {
             "buyer_name": "Buyer", "buyer_email": "buyer@example.test",
             "already_paid": "1", "lang": "en",
             "item_description": ["Accommodation"], "item_quantity": ["1"],
             "item_unit": ["ks"], "item_unit_price": ["1000"], "item_vat_rate": ["0"],
-        },
-        follow_redirects=False,
-    )
-    invoice_id = int(response.headers["location"].split("?")[0].rsplit("/", 1)[1])
-    if reservation_id is not None:
-        db.execute("UPDATE invoice SET reservation_id = ? WHERE id = ?", (reservation_id, invoice_id))
+        }
+        draft = invoices.build_draft(entity, form, "en", today=claim.prague_today())
+        draft.update({"legal_entity_id": entity["id"], "owner_user_id": _owner_id()})
+        invoice_id = invoices.issue(draft, _owner_id())
+    else:
+        response = client.post(
+            "/invoices",
+            data={
+                "buyer_name": "Buyer", "buyer_email": "buyer@example.test",
+                "already_paid": "1", "lang": "en",
+                **stay_form(reservation_id),
+                "item_description": ["Accommodation"], "item_quantity": ["1"],
+                "item_unit": ["ks"], "item_unit_price": ["1000"], "item_vat_rate": ["0"],
+            },
+            follow_redirects=False,
+        )
+        invoice_id = int(response.headers["location"].split("?")[0].rsplit("/", 1)[1])
     client.post(f"/invoices/{invoice_id}/send", follow_redirects=False)
     row = db.query_one(
         "SELECT * FROM email_outbox WHERE kind = 'invoice_issued' AND owner_user_id = ? "

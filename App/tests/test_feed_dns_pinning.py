@@ -8,6 +8,7 @@ that replaced it, plus the fetch limits it must keep enforcing.
 """
 from __future__ import annotations
 
+import os
 import socket
 import threading
 from collections import Counter
@@ -23,6 +24,15 @@ from app.feed_fetch import CalendarFetchError, fetch_calendar_text
 @pytest.fixture(autouse=True)
 def enforce_public_ical_only(monkeypatch):
     monkeypatch.setattr(config, "ICAL_ALLOW_PRIVATE", False)
+    # Every mocked HTTP endpoint in this module uses reserved .example names.
+    # Let those fixture URLs reach their loopback servers despite cloud proxy
+    # injection; keep proxy settings active for every other host.
+    for variable in ("NO_PROXY", "no_proxy"):
+        inherited = os.environ.get(variable, "")
+        entries = [entry for entry in inherited.split(",") if entry]
+        if ".example" not in entries:
+            entries.append(".example")
+        monkeypatch.setenv(variable, ",".join(entries))
 
 
 def _calendar(prodid: str) -> bytes:

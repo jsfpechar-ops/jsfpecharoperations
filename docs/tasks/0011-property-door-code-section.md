@@ -1,6 +1,6 @@
 # 0011: Door code section on the property page
 
-Status: todo
+Status: done
 Depends on: 0010 | Base commit: after 0010 merges | Branch: task/0011-property-door-code-section
 Executor: Cursor local agent (composer, Kimi or GLM) | Fits one session
 
