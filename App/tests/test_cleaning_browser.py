@@ -117,7 +117,7 @@ def test_calendar_and_large_list_geometry_and_filtering(workspace, origin, width
         assert page.locator("#cleaning-list input[type=checkbox]").count() == 0
         assert page.locator("#cleaning-list").bounding_box()["y"] > page.locator("#calendar").bounding_box()["y"]
         date_heading = page.locator(".cleaning-date-group h3").first
-        assert 16 <= date_heading.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") <= 18
+        assert 12 <= date_heading.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") <= 14  # 0106: compact 13px list heading
         assert page.locator(".cleaning-card h4").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") <= 16
         assert page.locator(".cleaning-card").first.evaluate("el => parseFloat(getComputedStyle(el).paddingTop)") <= 14
         assert page.locator(".cleaning-instructions").first.evaluate("el => parseFloat(getComputedStyle(el).fontSize)") >= 14
@@ -185,8 +185,8 @@ def _assert_cleaning_day_marker(page, event_id, day, property_name, lang, mobile
         countVisible: !!count && getComputedStyle(count).display !== 'none'
       };
     }""")
-    assert visual["background"] == "rgb(245, 185, 66)"
-    assert visual["color"] == "rgb(32, 32, 30)"
+    assert visual["background"] == "rgb(255, 244, 214)"  # --amber-bg (0106 quiet amber pill)
+    assert visual["color"] == "rgb(107, 58, 0)"  # --status-action-ink
     assert visual["border"] == "solid"
     assert visual["contrast"] >= 7
     assert visual["iconVisible"]
@@ -252,7 +252,8 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
             height: element.getBoundingClientRect().height
           };
         }""")
-        assert overflow_visual["background"] == "rgb(245, 185, 66)" and overflow_visual["icon"]
+        # 0106: the "+N" chip is quiet (transparent, amber icon), not the old saturated orange block.
+        assert overflow_visual["background"] in ("rgba(0, 0, 0, 0)", "transparent") and overflow_visual["icon"]
         assert overflow_visual["count"] == "+1"
         if mobile:
             assert overflow_visual["height"] >= 44

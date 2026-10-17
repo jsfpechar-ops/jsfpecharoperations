@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ ct('title') }} · UbyHost{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/cleaning.css?v=20261016-0123d">
+<link rel="stylesheet" href="/static/cleaning.css?v=20261016-0123d-0106">
 <div class="cleaning-page">
   <header class="cleaning-page-heading"><div><h1>{{ ct('title') }}</h1><p>{{ ct('subtitle') }}</p></div>
     <div class="cleaning-actions"><a class="btn primary" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">{{ ct('add') }}</a><a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('calendar.add_stay') }}</a><a class="btn" href="/cleaning/properties">{{ ct('settings') }}</a><a class="btn" href="/cleaning/shares">{{ ct('share') }}</a></div>
