@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ ct('edit') if event else ct('add') }} · UbyHost{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/cleaning.css?v=20261016-0123a-0106">
+<link rel="stylesheet" href="/static/cleaning.css?v=20261016-0123a-0106b">
 <div class="cleaning-page cleaning-form-page"><a href="/cleaning">{{ ct('back') }}</a>
 <h1>{{ ct('edit') if event else ct('add') }}</h1>
 {% if error %}<p class="cleaning-warning" role="alert">{{ ct(error ~ '_error') if error in ('notes','property','code') else ct(error) }}</p>{% endif %}

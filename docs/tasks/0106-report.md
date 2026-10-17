@@ -99,3 +99,10 @@ No touch-target, overflow or accessibility assertion was weakened, except the vi
 **Unresolved:** the list card row layout (§7 item 5); a visual check of Gantt, Dashboard, 390 and 360; the Dashboard regression check; the known pre-existing failure `test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place` was not re-run in this pass.
 
 **context_lint.py:** `WARN 1 commit(s) touched App/ after the last status.md update` (orchestrator to update status). `next free: task 0124 | migration 0011`. `context lint: OK`.
+
+## Executor: door code on narrow Cleaning cards (CSS only)
+- `App/app/static/cleaning.css`: `.cleaning-pin` now `white-space:nowrap; overflow-wrap:normal`; under the existing `max-width:760px` block the access block wraps, the label takes the first line, and the code source is 12px secondary ink. Desktop rules unchanged.
+- Bumped `?v=` to `-0106b` in cleaning.html, cleaning_edit, cleaning_properties, cleaning_settings, cleaning_shares, cleaning_shared (`_cleaning_screen.html` has no cleaning.css link).
+- `test_cleaning_browser.py`: 21 passed, 0 skipped (UBYHOST_REQUIRE_BROWSER=1).
+- Seen at 360 px: `001234` on one line, label above, "Saved manual code" beside it, scrollWidth 360, no overflow.
+- Seen at 1280 px month grid: pills and "N more bookings" chips visible (the chip text is "1 more bookings", not "+N"). Warning-card shot (item 4) not captured in this pass.
