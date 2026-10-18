@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 import os
+import secrets
 import socket
 import threading
 import time
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 import uvicorn
+from fastapi.testclient import TestClient
 
 REQUIRE_BROWSER = os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1"
 if REQUIRE_BROWSER:
@@ -16,9 +19,10 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth, db
+from app import auth, claim, db, onboarding
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
+from tests.conftest import login_as
 from tests.test_dashboard_calendar import calendar_workspace, make_stay  # noqa: F401
 
 
@@ -55,7 +59,7 @@ def launch(playwright):
         pytest.skip("Chromium is required for calendar interaction coverage")
 
 
-def open_page(browser, ws, origin, width=1280, locale="en", touch=False):
+def open_page(browser, ws, origin, width=1280, locale="en", touch=False, cal_date="2026-10-01"):
     context = browser.new_context(viewport={"width": width, "height": 1000}, has_touch=touch)
     context.add_cookies([{"name": auth.SESSION_COOKIE, "value": ws["client"].cookies.get(auth.SESSION_COOKIE), "url": origin + "/"}])
     page = context.new_page()
@@ -64,7 +68,7 @@ def open_page(browser, ws, origin, width=1280, locale="en", touch=False):
     page.on("pageerror", lambda error: script_errors.append(str(error)))
     page.on("console", lambda message: script_errors.append(message.text) if message.type == "error" else None)
     page.on("response", lambda response: api_responses.append(response.status) if "/dashboard/calendar?" in response.url else None)
-    response = page.goto(f"{origin}/?lang={locale}&cal_date=2026-10-01")
+    response = page.goto(f"{origin}/?lang={locale}&cal_date={cal_date}")
     try:
         page.wait_for_selector(".cal-gantt-row", timeout=10000)
     except Exception:
@@ -409,15 +413,69 @@ def test_calendar_week_boundary_clips_fractional_checkout_with_continuation_edge
         browser.close()
 
 
-def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calendar_workspace, calendar_origin):
-    ws = calendar_workspace
+@pytest.fixture
+def isolated_host_workspace():
+    """A host account with no shared module stays.
+
+    The Dashboard "Needs action now" list shows only five rows. The module's
+    calendar_origin stays use fixed October dates, so as the real clock moves on they
+    become overdue and fill those rows before a newly created stay can appear.
+    """
+    db.init_db()
+    suffix = secrets.token_hex(5)
+    owner = auth.create_account(f"calendar-iso-{suffix}@example.test", "Calendar Isolated",
+                                role="host", username=f"calendar-iso-{suffix}")
+    now = db.utcnow()
+    entity = db.insert("legal_entity", {"name": "Calendar Isolated", "owner_user_id": owner, "created_at": now})
+    properties = [
+        db.insert("apartment", {
+            "internal_name": f"Isolated home {index}", "owner_user_id": owner, "legal_entity_id": entity,
+            "active": 1, "archived_at": None, "created_at": now,
+            "automation_mode": "manual", "permalink_token": secrets.token_hex(12),
+        })
+        for index in (1, 2, 3)
+    ]
+    client = TestClient(app)
+    response = login_as(client, f"calendar-iso-{suffix}", url="/login?lang=en", follow_redirects=False)
+    assert response.status_code == 303
+    onboarding.set_dismissed(owner, True)
+    yield {"client": client, "owner": owner, "properties": properties}
+    for apartment_id in properties:
+        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM cleaning_event WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
+    db.execute("DELETE FROM legal_entity WHERE id = ?", (entity,))
+    db.execute("DELETE FROM settings WHERE key = ?", (f"onboarding_dismissed_{owner}",))
+    db.execute("DELETE FROM alert WHERE owner_user_id = ?", (owner,))
+    db.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (owner,))
+
+
+def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(isolated_host_workspace, calendar_origin):
+    ws = isolated_host_workspace
+    # Every date is relative to the Prague "today" that the Dashboard reports.
+    today = claim.prague_today()
+
+    def day(offset):
+        return (today + timedelta(days=offset)).isoformat()
+
     # Dashboard copy links use the apartment's authorized public token.
     db.update("apartment", ws["properties"][0], {"permalink_token": "refresh-copy-test-token"})
-    existing_stay = make_stay(ws["properties"][2], "2026-10-21", "2026-10-22",
+    # Never arrive on a Sunday: a stay that crosses into the next week row is drawn as two segments.
+    existing_offset = 3
+    while (today + timedelta(days=existing_offset)).weekday() == 6:
+        existing_offset += 1
+    existing_stay = make_stay(ws["properties"][2], day(existing_offset), day(existing_offset + 1),
                               summary="Existing details stay", expected_guests_override=2)
+    # Busy day for the month view's "more" link. It starts after the existing stay, so it
+    # sorts behind the new stay in the work list and cannot push that stay past the cap.
+    for index in range(4):
+        make_stay(ws["properties"][index % 3], day(6), day(7),
+                  summary="Reserved" if index % 2 == 0 else "! Reserved")
     with sync_api.sync_playwright() as playwright:
         browser = launch(playwright)
-        context, page = open_page(browser, ws, calendar_origin, width=1280)
+        context, page = open_page(browser, ws, calendar_origin, width=1280,
+                                  cal_date=today.replace(day=1).isoformat())
         pathname = page.evaluate("location.pathname")
 
         # The calendar day itself remains a usable entry point to the default Stay form.
@@ -430,7 +488,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
         assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
         page.locator("#cal-property").select_option(str(ws["properties"][0]))
-        page.locator("#cal-clean-date").fill("2026-10-27")
+        page.locator("#cal-clean-date").fill(day(9))
         page.locator("#cal-clean-notes").fill("Calendar popup")
         shot(page, "dashboard-cleaning-popup-en")
         with page.expect_response(lambda response: response.request.method == "POST" and
@@ -446,7 +504,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         )
         assert len(saved_cleanings) == 1
         assert saved_cleanings[0]["apartment_id"] == ws["properties"][0]
-        assert saved_cleanings[0]["scheduled_date"] == "2026-10-27"
+        assert saved_cleanings[0]["scheduled_date"] == day(9)
         assert page.locator(f'.cal-gantt-events .cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
         shot(page, "dashboard-cleaning-absent-gantt-en")
 
@@ -460,7 +518,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         page.locator('[data-cal-scale="month"]').click()
         page.wait_for_selector(".cal-week")
         wait_loaded(page)
-        busy_day = page.locator('[data-cal-more="2026-10-14"]')
+        busy_day = page.locator(f'[data-cal-more="{day(6)}"]')
         assert busy_day.is_visible()
         busy_day.click()
         assert page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
@@ -468,7 +526,7 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         shot(page, "dashboard-cleaning-absent-en")
 
         cleaning_page = context.new_page()
-        cleaning_page.goto(f"{calendar_origin}/cleaning?lang=en&cal_date=2026-10-27")
+        cleaning_page.goto(f"{calendar_origin}/cleaning?lang=en&cal_date={day(9)}")
         cleaning_page.wait_for_selector("[data-calendar]")
         wait_loaded(cleaning_page)
         cleaning_page.locator('[data-cal-view="calendar"]').click()
