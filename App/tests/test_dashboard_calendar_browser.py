@@ -106,21 +106,21 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         assert page.locator(".cal-gantt-row").count() == 3
         page.locator("[data-cal-property]").select_option(str(calendar_workspace["properties"][0]))
         page.wait_for_selector(".cal-week")
-        assert page.locator("[data-cal-scale='month']").get_attribute("aria-pressed") == "true"
-        page.locator("[data-cal-view='gantt']").click()
+        assert page.locator('[data-cal-scale="month"]').get_attribute("aria-pressed") == "true"
+        page.locator('[data-cal-view="gantt"]').click()
         page.wait_for_selector(".cal-gantt-row")
         assert page.locator(".cal-gantt-row").count() == 1
         page.locator("[data-cal-property]").select_option("")
         page.wait_for_function("() => document.querySelectorAll('.cal-gantt-row').length === 3")
-        page.locator("[data-cal-view='calendar']").click()
+        page.locator('[data-cal-view="calendar"]').click()
         page.wait_for_selector(".cal-week")
         page.reload()
         page.wait_for_selector(".cal-week")
-        assert page.locator("[data-cal-view='calendar']").get_attribute("aria-pressed") == "true"
+        assert page.locator('[data-cal-view="calendar"]').get_attribute("aria-pressed") == "true"
         # A new visit without a view in the URL must still honor the manual choice.
         page.goto(f"{calendar_origin}/?lang=en&cal_date=2026-10-01")
         page.wait_for_selector(".cal-week")
-        assert page.locator("[data-cal-view='calendar']").get_attribute("aria-pressed") == "true"
+        assert page.locator('[data-cal-view="calendar"]').get_attribute("aria-pressed") == "true"
         # Imported booking-state placeholders never become visible bar titles.
         assert page.locator(".cal-week-events").get_by_text("Reserved", exact=False).count() == 0
         assert page.locator(".cal-event-mark").count() == 0
@@ -149,11 +149,11 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.wait_for_selector('[data-cal-day="2028-10-01"]')
         page.locator("[data-cal-month]").select_option("02")
         page.wait_for_selector('[data-cal-day="2028-02-29"]')
-        page.locator("[data-cal-scale='year']").click()
+        page.locator('[data-cal-scale="year"]').click()
         page.wait_for_function("() => document.querySelectorAll('.cal-mini-title').length === 12")
         page.locator(".cal-mini-title").nth(1).click()
         page.wait_for_selector('[data-cal-day="2028-02-29"]')
-        page.locator("[data-cal-scale='week']").click()
+        page.locator('[data-cal-scale="week"]').click()
         page.wait_for_function("() => document.querySelectorAll('.cal-week').length === 1")
         context.close()
         browser.close()
@@ -185,11 +185,14 @@ def test_drag_nights_create_persist_and_open_details(calendar_workspace, calenda
         page.locator("#cal-guests").fill("2")
         page.locator("#cal-label").fill("Browser direct booking")
         shot(page, "drag-create-en-1280")
-        with page.expect_response(lambda response: response.url.endswith("/reservations") and response.request.method == "POST") as saved:
+        with page.expect_response(lambda response: response.url.split("?")[0].endswith("/reservations") and response.request.method == "POST") as saved:
             page.locator("[data-cal-save]").click()
         assert saved.value.status == 201
         row_id = saved.value.json()["id"]
-        page.wait_for_selector("[data-cal-details][open]")
+        live_booking = page.locator(f'.cal-week-events .cal-event[data-cal-event="{row_id}"]')
+        live_booking.wait_for(state="visible")
+        live_booking.click()
+        page.locator("[data-cal-details]").wait_for(state="visible")
         assert page.locator("[data-cal-detail-content]").get_by_text("Browser direct booking", exact=True).is_visible()
         row = db.query_one("SELECT * FROM reservation WHERE id = ?", (row_id,))
         assert row["date_from"] == "2026-10-26" and row["date_to"] == "2026-10-29"
@@ -197,9 +200,9 @@ def test_drag_nights_create_persist_and_open_details(calendar_workspace, calenda
         assert page.locator("[data-cal-open]").get_attribute("href").startswith(f"/reservations/{row_id}")
         shot(page, "saved-details-en-1280")
         page.locator("[data-cal-details] [data-cal-close]").click()
-        page.wait_for_selector(f'[data-cal-event="{row_id}"]')
-        page.locator(f'[data-cal-event="{row_id}"]').first.click()
-        assert page.locator("[data-cal-details]").is_visible()
+        live_booking = page.locator(f'.cal-week-events .cal-event[data-cal-event="{row_id}"]')
+        live_booking.click()
+        page.locator("[data-cal-details]").wait_for(state="visible")
         assert not errors
         context.close()
         browser.close()
@@ -227,15 +230,25 @@ def test_keyboard_selection_cancel_and_overlap_confirmation(calendar_workspace, 
         page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
         page.locator('[data-cal-day="2026-10-05"]').click()
         assert page.locator("[data-cal-overlap]").is_visible()
+        overlap_arrival = page.locator("#cal-arrival").input_value()
+        overlap_departure = page.locator("#cal-departure").input_value()
         page.locator("[data-cal-save]").click()
         page.wait_for_function("() => document.querySelector('[data-cal-save-error]').textContent.length > 0")
         assert page.locator("[data-cal-create]").is_visible()
         page.locator('input[name="allow_overlap"]').check()
-        with page.expect_response(lambda response: response.url.endswith("/reservations") and response.request.method == "POST") as saved:
+        with page.expect_response(lambda response: response.url.split("?")[0].endswith("/reservations") and response.request.method == "POST") as saved:
             page.locator("[data-cal-save]").click()
         assert saved.value.status == 201
-        page.wait_for_selector("[data-cal-details][open]")
-        assert page.locator("[data-cal-detail-content]").get_by_text("Overlapping bookings", exact=True).is_visible()
+        row_id = saved.value.json()["id"]
+        assert page.evaluate("location.pathname") == "/"
+        message = page.locator("[data-cal-message]")
+        message.wait_for(state="visible")
+        open_link = page.locator("[data-cal-message] a")
+        open_link.wait_for(state="visible")
+        open_href = open_link.get_attribute("href")
+        assert open_href.split("?")[0] == f"/reservations/{row_id}" and "lang=en" in open_href
+        row = db.query_one("SELECT date_from, date_to FROM reservation WHERE id = ?", (row_id,))
+        assert row["date_from"] == overlap_arrival and row["date_to"] == overlap_departure
         context.close()
         browser.close()
 
@@ -317,11 +330,22 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                             )
                             assert max(heights) <= 102, heights
                             assert boxes[1]["height"] <= 725, boxes
+                    control_heights = page.locator(
+                        ".cal-view-segment, .cal-scale-segment, [data-cal-property], [data-cal-month], "
+                        "[data-cal-year], [data-cal-settings], [data-cal-today], [data-cal-prev], [data-cal-next]"
+                    ).evaluate_all(
+                        "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
+                    )
+                    assert control_heights and max(control_heights) - min(control_heights) <= 1, control_heights
                     if width <= 390:
-                        controls = page.locator(".cal-segment button").evaluate_all(
+                        buttons = page.locator(".cal-view-segment button, .cal-scale-segment button").evaluate_all(
                             "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
                         )
-                        assert min(controls) >= 44, controls
+                        groups = page.locator(".cal-view-segment, .cal-scale-segment, [data-cal-month], [data-cal-year]").evaluate_all(
+                            "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
+                        )
+                        assert min(buttons) >= 44, buttons
+                        assert max(groups) - min(groups) <= 2, groups
                         target = page.locator(".cal-day-number" if mode == "calendar" else ".cal-gantt-slot").first
                         box = target.bounding_box()
                         assert box["width"] >= 43.9 and box["height"] >= 44, box
@@ -342,4 +366,354 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         shot(page, f"collapsed-{locale}-{width}")
                 assert not errors
                 context.close()
+        browser.close()
+
+
+def test_calendar_week_boundary_clips_fractional_checkout_with_continuation_edges(calendar_workspace, calendar_origin, request):
+    ws = calendar_workspace
+    template = db.query_one("SELECT legal_entity_id FROM apartment WHERE id = ?", (ws["properties"][0],))
+    apartment_id = db.insert("apartment", {
+        "owner_user_id": ws["owner"], "legal_entity_id": template["legal_entity_id"],
+        "internal_name": "Week boundary fixture", "active": 1, "created_at": db.utcnow(),
+        "automation_mode": "manual", "checkin_hour": 15, "checkout_hour": 11,
+    })
+    def cleanup():
+        db.execute("DELETE FROM reservation WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
+    request.addfinalizer(cleanup)
+    stay_id = make_stay(apartment_id, "2026-10-18", "2026-10-20", summary="Boundary booking")
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, ws, calendar_origin, width=1280, locale="en")
+        page.locator("[data-cal-property]").select_option(str(apartment_id))
+        page.wait_for_selector(".cal-week")
+        segments = page.locator(f'.cal-event[data-cal-event="{stay_id}"]')
+        assert segments.count() == 2
+        first, second = segments.nth(0), segments.nth(1)
+        assert first.get_attribute("class").find("continues-end") >= 0
+        assert second.get_attribute("class").find("continues-start") >= 0
+        first_box, second_box = first.bounding_box(), second.bounding_box()
+        sun = page.locator('.cal-day[data-date="2026-10-18"]').bounding_box()
+        mon = page.locator('.cal-day[data-date="2026-10-19"]').last.bounding_box()
+        tue = page.locator('.cal-day[data-date="2026-10-20"]').last.bounding_box()
+        expected_start = sun["x"] + sun["width"] * 15 / 24
+        expected_first_right = sun["x"] + sun["width"]
+        expected_monday = mon["x"]
+        expected_checkout = tue["x"] + tue["width"] * 11 / 24
+        assert abs(first_box["x"] - expected_start) <= 4, (first_box, expected_start)
+        assert abs(first_box["x"] + first_box["width"] - expected_first_right) <= 4, (first_box, expected_first_right)
+        assert abs(second_box["x"] - expected_monday) <= 4, (second_box, expected_monday)
+        assert abs(second_box["x"] + second_box["width"] - expected_checkout) <= 4, (second_box, expected_checkout)
+        shot(page, "checkout-week-boundary-en-1280")
+        context.close()
+        browser.close()
+
+
+def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calendar_workspace, calendar_origin):
+    ws = calendar_workspace
+    # Dashboard copy links use the apartment's authorized public token.
+    db.update("apartment", ws["properties"][0], {"permalink_token": "refresh-copy-test-token"})
+    existing_stay = make_stay(ws["properties"][2], "2026-10-21", "2026-10-22",
+                              summary="Existing details stay", expected_guests_override=2)
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, ws, calendar_origin, width=1280)
+        pathname = page.evaluate("location.pathname")
+
+        # The calendar day itself remains a usable entry point to the default Stay form.
+        page.locator("[data-cal-day]:visible").first.click()
+        assert page.locator("[data-cal-create]").is_visible()
+        assert page.locator('[data-cal-type-choice="stay"]').get_attribute("aria-pressed") == "true"
+        shot(page, "dashboard-stay-popup-en")
+        page.locator("[data-cal-create] .cal-close").click()
+
+        page.locator('[data-calendar-add][data-cal-create-type="cleaning"]').click()
+        assert page.locator('[data-cal-type-choice="cleaning"]').get_attribute("aria-pressed") == "true"
+        page.locator("#cal-property").select_option(str(ws["properties"][0]))
+        page.locator("#cal-clean-date").fill("2026-10-27")
+        page.locator("#cal-clean-notes").fill("Calendar popup")
+        shot(page, "dashboard-cleaning-popup-en")
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  response.url.split("?")[0].endswith("/cleaning/events")) as result:
+            page.locator("[data-cal-save]").click()
+        created_cleaning = result.value.json()
+        assert result.value.status == 201
+        assert page.evaluate("location.pathname") == pathname
+        cleaning_event_id = f"cleaning:{created_cleaning['id']}"
+        saved_cleanings = db.query(
+            "SELECT id, apartment_id, scheduled_date FROM cleaning_event WHERE id = ?",
+            (created_cleaning["id"],),
+        )
+        assert len(saved_cleanings) == 1
+        assert saved_cleanings[0]["apartment_id"] == ws["properties"][0]
+        assert saved_cleanings[0]["scheduled_date"] == "2026-10-27"
+        assert page.locator(f'.cal-gantt-events .cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
+        shot(page, "dashboard-cleaning-absent-gantt-en")
+
+        page.locator('[data-cal-view="calendar"]').click()
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        assert page.locator(f'.cal-week-events .cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
+        page.locator('[data-cal-scale="year"]').click()
+        page.wait_for_function("() => document.querySelectorAll('.cal-mini-title').length === 12")
+        assert page.locator(f'.cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
+        page.locator('[data-cal-scale="month"]').click()
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        busy_day = page.locator('[data-cal-more="2026-10-14"]')
+        assert busy_day.is_visible()
+        busy_day.click()
+        assert page.locator(f'[data-cal-day-list] .cal-event[data-cal-event="{cleaning_event_id}"]').count() == 0
+        page.locator("[data-cal-day-dialog] [data-cal-close]").click()
+        shot(page, "dashboard-cleaning-absent-en")
+
+        cleaning_page = context.new_page()
+        cleaning_page.goto(f"{calendar_origin}/cleaning?lang=en&cal_date=2026-10-27")
+        cleaning_page.wait_for_selector("[data-calendar]")
+        wait_loaded(cleaning_page)
+        cleaning_page.locator('[data-cal-view="calendar"]').click()
+        cleaning_page.wait_for_selector(".cal-week")
+        wait_loaded(cleaning_page)
+        cleaning_marker = cleaning_page.locator(
+            f'.cal-week-events .cal-event[data-cal-event="{cleaning_event_id}"]'
+        )
+        cleaning_marker.wait_for(state="visible")
+        assert "Calendar popup" in cleaning_page.locator(f'#cleaning-{created_cleaning["id"]}').inner_text()
+        shot(cleaning_page, "cleaning-calendar-created-marker-en")
+        cleaning_page.close()
+
+        booking = page.locator(f'.cal-event[data-cal-event="{existing_stay}"]:visible')
+        assert booking.count() == 1
+        booking.click()
+        action = page.locator("[data-cal-details] [data-cal-open]")
+        assert action.is_visible() and action.inner_text().strip() == "Open stay"
+        page.locator("[data-cal-details] [data-cal-close]").click()
+
+        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        form = page.locator("[data-cal-form]")
+        form.locator("#cal-property").select_option(str(ws["properties"][0]))
+        arrival, departure = page.evaluate("""today => {
+            const start = new Date(today + "T12:00:00Z");
+            const end = new Date(start);
+            end.setUTCDate(end.getUTCDate() + 2);
+            return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+        }""", page.locator("[data-calendar]").get_attribute("data-today"))
+        form.locator("#cal-arrival").fill(arrival)
+        form.locator("#cal-departure").fill(departure)
+        form.locator("#cal-guests").fill("2")
+        form.locator("#cal-label").fill("Popup row refresh")
+        overlap = form.locator('input[name="allow_overlap"]')
+        if overlap.count() and overlap.is_visible():
+            overlap.check()
+        shot(page, "dashboard-stay-save-popup-en")
+        attention_before = int(page.locator('[data-dashboard-refresh="stats"] .dashboard-stat.action strong').inner_text())
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  response.url.split("?")[0].endswith("/reservations")) as stay_result:
+            page.locator("[data-cal-save]").click()
+        created_stay = stay_result.value.json()
+        assert stay_result.value.status == 201
+        assert page.evaluate("location.pathname") == pathname
+        page.wait_for_function("""before => {
+            const strong = document.querySelector('[data-dashboard-refresh="stats"] .dashboard-stat.action strong');
+            return !!strong && Number(strong.textContent.trim()) === before + 1;
+        }""", arg=attention_before)
+        row = page.locator(f'[data-dashboard-refresh="work"] .dashboard-row[data-stay-id="{created_stay["id"]}"]')
+        # The work list shows at most five rows (reporting.py limit), so the new stay is
+        # counted above but only rendered when it ranks in the top five. Row checks run then.
+        row_rendered = row.count() > 0
+        if row_rendered:
+            row.wait_for(state="visible")
+            assert "Popup row refresh" in row.inner_text()
+
+            # Re-delivering the scoped update must not double-bind imported controls.
+            page.evaluate("""() => {
+                const root = document.querySelector('[data-dashboard-refresh="work"]');
+                document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
+                document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
+            }""")
+            row.locator(".row-menu-trigger").click()
+            menu = page.locator(".row-menu-panel:visible").last
+            menu.wait_for(state="visible")
+            assert menu.locator(".row-menu-item").count() >= 1
+            copy_button = menu.locator("button[data-copy]")
+            assert copy_button.count() == 1
+            copy_button_id = "refresh-copy-action"
+            copy_button.evaluate("(button, id) => { button.id = id; }", copy_button_id)
+            copy_button.click()
+            page.wait_for_function("""id => {
+                const button = document.getElementById(id);
+                return !!button && (button.classList.contains("is-copy-confirmed") ||
+                    !!document.querySelector("[data-copy-manual-visible]"));
+            }""", arg=copy_button_id)
+
+            if not menu.is_visible():
+                row.locator(".row-menu-trigger").click()
+                menu = page.locator(".row-menu-panel:visible").last
+                menu.wait_for(state="visible")
+            archive_posts = []
+            page.on("request", lambda request: archive_posts.append(request.url)
+                   if request.method == "POST" and request.url.split("?")[0].endswith("/archive") else None)
+            archive_form = menu.locator('form[data-confirm][action$="/archive"]')
+            assert archive_form.count() == 1
+            archive_form.locator('button[type="submit"]').click()
+            confirmation = page.locator("#confirm-dialog")
+            confirmation.wait_for(state="visible")
+            confirmation.locator("[data-confirm-cancel]").click()
+            assert not confirmation.is_visible()
+            assert archive_posts == []
+            assert row.is_visible()
+
+        # Dashboard has no dismissible banner in every fixture; exercise the same
+        # scoped binder with a transient banner under the refreshed work region.
+        banner_id = page.evaluate("""() => {
+            const root = document.querySelector('[data-dashboard-refresh="work"]');
+            const banner = document.createElement("aside");
+            banner.className = "dismissible-banner";
+            banner.id = "refresh-dismiss-banner";
+            const button = document.createElement("button");
+            button.type = "button";
+            button.setAttribute("data-dismiss-banner", "");
+            button.textContent = "Dismiss test banner";
+            banner.append(button);
+            root.append(banner);
+            document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
+            return banner.id;
+        }""")
+        page.locator(f'#{banner_id} [data-dismiss-banner]').click()
+        assert page.locator(f"#{banner_id}").count() == 0
+
+        shot(page, "dashboard-calendar-create-refresh-en")
+        if row_rendered:
+            with page.expect_navigation():
+                row.focus()
+                row.press("Enter")
+            assert page.url.split("?")[0].endswith(f"/reservations/{created_stay['id']}")
+        context.close()
+        browser.close()
+
+
+@pytest.mark.parametrize("width", [360, 1280])
+def test_create_popover_reclamps_when_switching_to_taller_stay_form(calendar_workspace, calendar_origin, width):
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=width)
+        page.locator("[data-cal-day]:visible").last.scroll_into_view_if_needed()
+        page.locator("[data-cal-day]:visible").last.click()
+        dialog = page.locator("[data-cal-create]")
+        assert dialog.is_visible()
+        page.locator('[data-cal-type-choice="cleaning"]').click()
+        page.locator('[data-cal-type-choice="stay"]').click()
+        box = dialog.bounding_box()
+        viewport = page.evaluate("({width: innerWidth, height: innerHeight})")
+        assert box["x"] >= 0 and box["y"] >= 0
+        assert box["x"] + box["width"] <= viewport["width"] + 1
+        assert box["y"] + box["height"] <= viewport["height"] + 1
+        shot(page, f"create-popover-reclamp-{width}")
+        context.close()
+        browser.close()
+
+
+def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_workspace, calendar_origin):
+    ws = calendar_workspace
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, ws, calendar_origin, width=1280)
+        before = page.evaluate("""() => {
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            return {
+                stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
+                    id: row.getAttribute("data-stay-id"),
+                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
+                }))
+            };
+        }""")
+        assert before["rows"], "fixture should render work rows before the committed save"
+        failed_html = {"done": False}
+        posts = []
+        def fail_first_dashboard_html(route):
+            request = route.request
+            if request.method == "POST" and request.url.split("?")[0].endswith("/reservations"):
+                posts.append(request.url)
+            if (not failed_html["done"] and request.method == "GET" and
+                    request.url.split("?")[0] == calendar_origin + "/" and
+                    "text/html" in request.headers.get("accept", "")):
+                failed_html["done"] = True
+                route.abort()
+            else:
+                route.continue_()
+        page.route("**/*", fail_first_dashboard_html)
+        page.locator('[data-calendar-add][data-cal-create-type="stay"]').click()
+        form = page.locator("[data-cal-form]")
+        form.locator("#cal-property").select_option(str(ws["properties"][0]))
+        arrival, departure = page.evaluate("""today => {
+            const start = new Date(today + "T12:00:00Z");
+            const end = new Date(start);
+            end.setUTCDate(end.getUTCDate() + 2);
+            return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+        }""", page.locator("[data-calendar]").get_attribute("data-today"))
+        form.locator("#cal-arrival").fill(arrival)
+        form.locator("#cal-departure").fill(departure)
+        form.locator("#cal-guests").fill("2")
+        form.locator("#cal-label").fill("Refresh retry stay")
+        overlap = form.locator('input[name="allow_overlap"]')
+        if overlap.count() and overlap.is_visible():
+            overlap.check()
+        with page.expect_response(lambda response: response.request.method == "POST" and
+                                  response.url.split("?")[0].endswith("/reservations")) as result:
+            page.locator("[data-cal-save]").click()
+        saved = result.value.json()
+        assert result.value.status == 201
+        message = page.locator("[data-cal-message]")
+        page.wait_for_function("""() => document.querySelector('[data-cal-message]')?.textContent.includes('Saved, but the calendar or list could not refresh.')""")
+        assert "Saved, but the calendar or list could not refresh." in message.inner_text()
+        assert page.locator('[data-cal-message] a').is_visible()
+        retry = page.locator("[data-cal-message] button")
+        assert retry.is_visible() and len(posts) == 1
+
+        # The work list is intentionally capped at five rows. Change an existing visible
+        # synthetic manual label so the successful retry proves it replaced stale HTML.
+        target_id = before["rows"][0]["id"]
+        sentinel = f"Refresh retry sentinel {saved['id']}"
+        assert sentinel not in before["rows"][0]["text"]
+        db.update("reservation", target_id, {"summary": sentinel})
+        with page.expect_response(lambda response: response.request.method == "GET" and
+                                      response.url.split("?")[0] == calendar_origin + "/" and
+                                      "text/html" in response.request.headers.get("accept", "")) as refreshed:
+            retry.click()
+        fresh_response = refreshed.value
+        fresh_html = fresh_response.text()
+        assert fresh_response.status == 200
+        expected = page.evaluate("""html => {
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            doc.querySelectorAll("noscript").forEach(node => node.remove());
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            return {
+                stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
+                rows: [...doc.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
+                    id: row.getAttribute("data-stay-id"),
+                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
+                }))
+            };
+        }""", fresh_html)
+        assert any(row["id"] == target_id and sentinel in row["text"] for row in expected["rows"])
+        saved_row = db.query_one("SELECT date_from, date_to, expected_guests_override, summary FROM reservation WHERE id = ?", (saved["id"],))
+        assert (saved_row["date_from"], saved_row["date_to"], saved_row["expected_guests_override"], saved_row["summary"]) == (
+            arrival, departure, 2, "Refresh retry stay"
+        )
+        page.wait_for_function("""expected => {
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            const actual = {
+                stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
+                    id: row.getAttribute("data-stay-id"),
+                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
+                }))
+            };
+            return JSON.stringify(actual) === JSON.stringify(expected);
+        }""", arg=expected)
+        assert len(posts) == 1
+        assert db.query_one("SELECT COUNT(*) AS n FROM reservation WHERE id = ?", (saved["id"],))["n"] == 1
+        shot(page, "dashboard-refresh-retry-en")
+        context.close()
         browser.close()

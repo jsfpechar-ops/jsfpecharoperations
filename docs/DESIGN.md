@@ -19,6 +19,8 @@ that document, not only against layout tests.
 
 **[HOST_APP_DESIGN.md](HOST_APP_DESIGN.md)** governs the signed-in workspace. Its implementation, route coverage, verification evidence, and integration instructions are in **[plans/host-app-redesign](archive/plans/host-app-redesign/README.md)**. The host layer is `static/host.css` and `static/host.js`, loaded only with the signed-in navigation. Keep the public site, login and guest forms under their existing rules below.
 
+0123's approved flat-white host workspace supersedes the earlier host color/surface treatment while preserving the host rules and reporting safeguards in [HOST_APP_DESIGN.md](HOST_APP_DESIGN.md). It does not change guest/public/auth surfaces.
+
 ### Owner's standard: extremely easy and intuitive
 
 Reaffirmed 2026-10-10: a first-time host, including an older person, should see

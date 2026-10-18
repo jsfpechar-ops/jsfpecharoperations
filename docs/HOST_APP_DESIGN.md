@@ -2,6 +2,10 @@
 
 **Status:** implemented signed-in host-app direction, 30 September 2026. Source baseline: `ceb1bc5ed34d020b0c6e21cac3c88bada74d1955`. See `docs/archive/plans/host-app-redesign/IMPLEMENTATION.md` for the exact delivered scope and route coverage. It extends the light-mode brand policy in `docs/DESIGN.md`. It does not govern the public site, login, or guest-facing forms.
 
+## 0123 owner-approved update
+
+The owner-approved 0123 direction supersedes the earlier peach-dominant card treatment: signed-in work surfaces are white with near-black hierarchy and neutral separators; the 216px rail stays warm and uses existing UbyHost marks/icons. Dashboard uses an integrated calendar and flat stay-first attention rows. Stays uses Stay / Dates / Property / Guests / Police report / actions. Calendar keeps native property/month/year selectors, Calendar/Gantt and Month/Week/Year segments, with Auto in Settings. Properties owns the check-in/check-out hour pair used by Cleaning and TTLock; manual cleaning exceptions, TTLock buffers/timezone behavior and all current data/permission rules remain.
+
 ## 1. Product idea
 
 The host should always be able to answer three questions without decoding the interface: **Where am I? What needs me? What happens if I press this?** The app should feel like a tidy working desk. A first-time host can add one property and one stay; an experienced host can reach any record quickly. Simplicity means fewer decisions on each screen, not fewer capabilities.
@@ -213,10 +217,19 @@ The prototype contains sample states and is a visual reference. Production contr
 No database schema migration, dependency update, live filing, real e-mail delivery, public deployment or bank reconciliation is part of this change.
 
 ## Cleaning management (2026-10-16)
-The owner authorized implementation and a sidebar Cleaning entry. Reuse the
-0103 calendar/Gantt with typed cleaning blocks in a separate lane. The cleaning
-page defaults to the next 30 days; calendar filters and the full chronological
-list share one server result. List essentials use 18–20px text, 24–28px date/code
-type, high contrast, and no disclosures. Instructions are static text. No claim,
-assignment, completion, photos or comments. Permanent/manual property codes are
-independent of guest PINs. See [0104](tasks/0104-cleaning-management.md).
+The 0103 calendar/Gantt uses a distinct cleaning lane. Native property/month/year
+selectors and icon-and-label Calendar/Gantt and Month/Week/Year segments retain
+Auto and manual preferences. Calendar control groups are 36px desktop and 46px
+mobile, with 44px segment buttons. Cleaning uses compact chronological groups
+with 17px date headings and readable 14–16px facts. Automatic turnover is on
+the actual checkout date between Properties check-out and check-in hours; a later
+arrival is context only. Missing or invalid hours show an unavailable warning;
+any fallback is visual only. Explicit legacy event windows remain supported.
+The whole code section is omitted when no usable code exists. Existing sharing,
+demo exclusions and actions remain. Cleaning markers fill the scheduled day as a
+visual cue without replacing the actual property-hour window. Month/week
+prioritizes cleaning; typed Gantt keeps bookings first with a distinct cleaning
+band. Both host calendars support in-page Stay/Cleaning creation, and Dashboard
+refresh binds imported host controls idempotently.
+Dashboard calendars display stays only; the Cleaning section retains scheduled cleaning markers and cleaning actions. See [0123 follow-up](tasks/0123-calendar-cleaning-fix.md)
+and [0104](tasks/0104-cleaning-management.md).

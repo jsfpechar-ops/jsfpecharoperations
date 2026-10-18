@@ -121,10 +121,18 @@ def event_for(owner_id: int | None, event_id: int) -> dict | None:
 
 def save_event(apartment_id: int, values: dict, existing: dict | None = None) -> int:
     day = parse_date(str(values.get("scheduled_date", ""))).isoformat()
-    start = parse_time(str(values.get("start_time") or ""))
-    end = parse_time(str(values.get("end_time") or ""))
-    if bool(start) != bool(end) or (start and end <= start):
-        raise ValueError("times")
+    times_posted = "start_time" in values or "end_time" in values
+    if existing and not times_posted:
+        # Normal notes/date edits omit retired time controls; preserve legacy
+        # values byte-for-byte, including malformed historical values.
+        start, end = existing.get("start_time"), existing.get("end_time")
+    else:
+        start_value = values.get("start_time", existing.get("start_time") if existing else "")
+        end_value = values.get("end_time", existing.get("end_time") if existing else "")
+        start = parse_time(str(start_value or ""))
+        end = parse_time(str(end_value or ""))
+        if bool(start) != bool(end) or (start and end <= start):
+            raise ValueError("times")
     notes = str(values.get("notes", "")).strip()
     if len(notes) > 5000:
         raise ValueError("notes")
@@ -159,20 +167,21 @@ def save_settings(apartment_id: int, values: dict) -> None:
     instructions = str(values.get("instructions", "")).strip()
     if len(instructions) > 10000:
         raise ValueError("notes")
-    checkout = parse_time(str(values.get("checkout_time", "")))
-    checkin = parse_time(str(values.get("checkin_time", "")))
+    # Retain legacy default columns untouched; apartment hours are canonical.
     ensure_property(apartment_id)
     db.execute(
-        "UPDATE cleaning_property SET instructions = ?, checkout_time = ?, "
-        "checkin_time = ?, updated_at = ? WHERE apartment_id = ?",
-        (instructions, checkout, checkin, db.utcnow(), apartment_id),
+        "UPDATE cleaning_property SET instructions = ?, updated_at = ? WHERE apartment_id = ?",
+        (instructions, db.utcnow(), apartment_id),
     )
 
 
 def _hour(property_row: dict, direction: str) -> str | None:
-    explicit = property_row[direction + "_time"]
     hour = property_row[direction + "_hour"]
-    return explicit or (f"{int(hour):02d}:00" if hour is not None else None)
+    try:
+        value = int(hour) if hour is not None else None
+    except (TypeError, ValueError):
+        return None
+    return f"{value:02d}:00" if value is not None and 0 <= value <= 23 else None
 
 
 def _code(property_row: dict) -> dict:
@@ -191,7 +200,7 @@ def _code(property_row: dict) -> dict:
     }
 
 
-def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | None = None) -> dict:
+def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | None = None, *, include_private: bool = True) -> dict:
     reconcile(owner_id)
     homes = properties(owner_id, ids)
     output = {"properties": [{"id": p["id"], "name": p["internal_name"]} for p in homes],
@@ -204,14 +213,17 @@ def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | Non
             "AND status = 'active' AND archived_at IS NULL AND COALESCE(source, '') <> 'demo' "
             "ORDER BY date_from, date_to, id", (home["id"],),
         )
-        code = _code(home)
+        code = _code(home) if include_private else {"value": "", "source": "", "pending": ""}
         checkout_time, checkin_time = _hour(home, "checkout"), _hour(home, "checkin")
         for stay in stays:
-            if stay["date_from"] < last.isoformat() and stay["date_to"] > first.isoformat():
+            if stay["date_from"] < last.isoformat() and stay["date_to"] >= first.isoformat():
                 output["events"].append({
                     "id": f"reservation:{stay['id']}", "kind": "booking",
                     "propertyId": home["id"], "property": home["internal_name"],
                     "start": stay["date_from"], "end": stay["date_to"],
+                    "displayStart": f"{stay['date_from']}T{_hour(home, 'checkin') or '12:00'}",
+                    "displayEnd": f"{stay['date_to']}T{_hour(home, 'checkout') or '12:00'}",
+                    "timingFallback": _hour(home, "checkin") is None or _hour(home, "checkout") is None,
                     "label": "", "tone": "neutral", "expected": None, "url": "#cleaning-list",
                 })
         events = db.query(
@@ -236,17 +248,38 @@ def schedule(owner_id: int | None, first: date, last: date, ids: list[int] | Non
                 warning |= any(r["id"] != source["id"] and r["date_from"] < departure and
                                r["date_to"] > departure for r in stays)
                 warning |= bool(arrival == departure and checkout_time and checkin_time and checkout_time >= checkin_time)
+            default_window_valid = bool(checkout_time and checkin_time and checkout_time < checkin_time)
+            explicit_start = event["start_time"]
+            explicit_end = event["end_time"]
+            try:
+                explicit_start = parse_time(explicit_start or "")
+                explicit_end = parse_time(explicit_end or "")
+            except ValueError:
+                explicit_start = explicit_end = None
+            explicit_window_valid = bool(explicit_start and explicit_end and explicit_end > explicit_start)
+            if explicit_window_valid:
+                visual_start, visual_end = explicit_start, explicit_end
+            elif default_window_valid:
+                visual_start, visual_end = checkout_time, checkin_time
+            else:
+                # Visual-only marker for a missing/invalid default. Never persist
+                # these placeholder hours or present them as confirmed timing.
+                visual_start, visual_end = "12:00", "13:00"
             item = {
                 "id": f"cleaning:{event['id']}", "eventId": event["id"], "kind": "cleaning",
                 "propertyId": home["id"], "property": home["internal_name"],
                 "start": event["scheduled_date"],
                 "end": (date.fromisoformat(event["scheduled_date"]) + timedelta(days=1)).isoformat(),
-                "date": event["scheduled_date"], "startTime": event["start_time"], "endTime": event["end_time"],
+                "displayStart": f"{event['scheduled_date']}T{visual_start}",
+                "displayEnd": f"{event['scheduled_date']}T{visual_end}",
+                "timingUnavailable": not (explicit_window_valid or default_window_valid),
+                "date": event["scheduled_date"], "startTime": event["start_time"] if explicit_window_valid else None,
+                "endTime": event["end_time"] if explicit_window_valid else None,
                 "checkout": departure, "checkoutTime": checkout_time,
                 "nextArrival": arrival, "checkinTime": checkin_time,
-                "notes": db.decrypt_field(event["notes_enc"]) if event["notes_enc"] else "",
-                "instructions": home["cleaning_instructions"] or "", "code": code["value"],
-                "codeSource": code["source"], "codePending": code["pending"],
+                "notes": (db.decrypt_field(event["notes_enc"]) if event["notes_enc"] else "") if include_private else "",
+                "instructions": (home["cleaning_instructions"] or "") if include_private else "",
+                "code": code["value"], "codeSource": code["source"], "codePending": code["pending"],
                 "origin": "automatic" if source else "manual", "overridden": bool(event["overridden"]),
                 "revision": event["revision"], "conflict": bool(warning), "tone": "neutral",
                 "label": "", "expected": None, "url": f"#cleaning-{event['id']}",

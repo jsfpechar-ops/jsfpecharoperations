@@ -113,6 +113,18 @@ WORDS = {
         "Rescheduled by host",
         "Termín upravil host"
     ],
+    "property_times": [
+        "Property timing defaults",
+        "Výchozí časy ubytování"
+    ],
+    "property_times_hint": [
+        "These Properties times set automatic turnover availability for checkout and the next arrival.",
+        "Tyto časy z Ubytování určují dostupnost automatického úklidu mezi odjezdem a dalším příjezdem."
+    ],
+    "edit_property_times": [
+        "Edit timing in Properties",
+        "Upravit časy v Ubytování"
+    ],
     "checkout": [
         "Checkout",
         "Odjezd"
@@ -197,6 +209,13 @@ WORDS = {
         "This cleaning conflicts with the booking window. Check the dates and times.",
         "Úklid koliduje s termínem pobytu. Zkontrolujte datum a čas."
     ],
+    "timing_unavailable": [
+        "Set valid property checkout and check-in times to show an accurate cleaning window.",
+        "Pro přesné časové okno úklidu nastavte platný čas odjezdu i příjezdu."
+    ],
+    "overflow_bookings": ["more bookings", "další rezervace"],
+    "overflow_cleanings": ["more cleanings", "další úklidy"],
+    "cleaning_summary": ["Cleaning", "Úklid"],
     "booking": [
         "Reservation",
         "Rezervace"

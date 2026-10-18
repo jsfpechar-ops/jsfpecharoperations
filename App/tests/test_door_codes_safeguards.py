@@ -137,6 +137,25 @@ def _failing_ttlock(monkeypatch):
     monkeypatch.setattr(ttlock, "create_period_code", boom)
 
 
+def test_issue_uses_the_saved_property_hours_for_the_ttlock_window(monkeypatch):
+    _, apartment, stay = _stay(registered_minutes_ago=1)
+    db.update("apartment", apartment, {"checkin_hour": 16, "checkout_hour": 10})
+    captured = {}
+
+    def create_period_code(account_id, lock_id, start_ms, end_ms, name, priority):
+        captured.update(start_ms=start_ms, end_ms=end_ms)
+        return "4821937", "shared-hours-code"
+
+    monkeypatch.setattr(ttlock, "create_period_code", create_period_code)
+    row_id = door_codes.ensure_row(stay)
+    assert door_codes.issue(row_id) is True
+    reservation = db.query_one("SELECT date_from, date_to FROM reservation WHERE id = ?", (stay,))
+    expected = ttlock.stay_window(
+        reservation["date_from"], reservation["date_to"], 16, 10, config.DOOR_CODE_BUFFER_HOURS
+    )
+    assert (captured["start_ms"], captured["end_ms"]) == expected
+
+
 def test_a_fresh_wait_is_preparing_with_no_alert(monkeypatch):
     _failing_ttlock(monkeypatch)
     _, apartment, stay = _stay(registered_minutes_ago=1)

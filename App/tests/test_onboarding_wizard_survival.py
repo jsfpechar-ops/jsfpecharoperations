@@ -57,6 +57,8 @@ STEP_OWNERS = {
         "legal_entity_id",
         "data_controller_entity_id",
         "default_purpose",
+        "checkin_hour",
+        "checkout_hour",
         *ADDRESS.keys(),
     ),
     "police": ("uby_idub", "uby_mark", "uby_name", "uby_contact", "uby_ws_user"),
@@ -71,7 +73,7 @@ STEP_OWNERS = {
         "stay_fee_instruction",
         "stay_fee_council_account",
     ),
-    "door_lock": ("lock_provider", "lock_id", "checkin_hour", "checkout_hour"),
+    "door_lock": ("lock_provider", "lock_id"),
     "automation": ("automation_mode", "submit_after_hours"),
     "calendar": (),
     "guest_link": (),
@@ -241,6 +243,8 @@ def test_cross_step_guarded_fields_survive_each_wizard_post(host):
                     "setup_step": "police",
                     "return_to": f"{base}/stay_fee",
                     **{k: v for k, v in POLICE.items() if k != "uby_ws_password"},
+                    "checkin_hour": "2",
+                    "checkout_hour": "3",
                 },
                 follow_redirects=False,
             ),
@@ -618,3 +622,109 @@ def test_demo_action_teaches_pin_then_opens_the_guest_form_and_reuses_its_stay(h
     assert urlparse(again.headers["location"]).path == expected
     assert demo.demo_stay_for(apt_id)["id"] == stay["id"]
     assert "try_it" not in property_setup.load(apt_id)["steps"]
+
+
+
+def test_property_step_owns_shared_hours_and_other_steps_preserve_them(host):
+    flat = _full_apartment(host)
+    apt_id = flat["id"]
+    client = host["client"]
+    response = client.post(
+        f"/apartments/{apt_id}",
+        data={
+            "internal_name": flat["internal_name"],
+            "legal_entity_id": str(host["entity"]),
+            "city_en": flat["city_en"],
+            "default_purpose": flat["default_purpose"],
+            **ADDRESS,
+            "checkin_hour": "16",
+            "checkout_hour": "10",
+            "setup_step": "property",
+            "return_to": f"/apartments/{apt_id}/setup/calendar",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    saved = db.query_one("SELECT checkin_hour, checkout_hour FROM apartment WHERE id = ?", (apt_id,))
+    assert (saved["checkin_hour"], saved["checkout_hour"]) == (16, 10)
+    client.post(
+        f"/apartments/{apt_id}",
+        data={
+            "internal_name": flat["internal_name"],
+            "setup_step": "police",
+            "checkin_hour": "7",
+            "checkout_hour": "19",
+            "return_to": f"/apartments/{apt_id}/setup/automation",
+        },
+        follow_redirects=False,
+    )
+    after = db.query_one("SELECT checkin_hour, checkout_hour FROM apartment WHERE id = ?", (apt_id,))
+    assert (after["checkin_hour"], after["checkout_hour"]) == (16, 10)
+
+
+
+def test_unrelated_wizard_ignores_forged_lock_flags_with_legacy_hours(host):
+    flat = _full_apartment(host)
+    apt_id = flat["id"]
+    db.update(
+        "apartment", apt_id,
+        {"lock_provider": "ttlock", "checkin_hour": None, "checkout_hour": None},
+    )
+    response = host["client"].post(
+        f"/apartments/{apt_id}",
+        data={
+            **POLICE,
+            "setup_step": "police",
+            "door_code_section": "1",
+            "door_codes_fields": "1",
+            "door_codes": "1",
+            "return_to": f"/apartments/{apt_id}/setup/automation",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    saved = db.query_one(
+        "SELECT lock_provider, checkin_hour, checkout_hour FROM apartment WHERE id = ?",
+        (apt_id,),
+    )
+    assert (saved["lock_provider"], saved["checkin_hour"], saved["checkout_hour"]) == ("ttlock", None, None)
+
+
+def test_property_hour_validation_rerender_keeps_draft_and_selection(host):
+    flat = _full_apartment(host)
+    response = host["client"].post(
+        f"/apartments/{flat['id']}",
+        data={
+            "internal_name": "Draft Flat",
+            "legal_entity_id": str(host["entity"]),
+            "city_en": "Brno",
+            "default_purpose": "10",
+            **ADDRESS,
+            "checkin_hour": "99",
+            "checkout_hour": "10",
+            "setup_step": "property",
+            "return_to": f"/apartments/{flat['id']}/setup/calendar",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "Draft Flat" in response.text and ADDRESS["addr_street"] in response.text
+    checkout = response.text.split('id="checkout_hour"', 1)[1].split("</select>", 1)[0]
+    assert 'option value="10" selected' in checkout
+
+
+def test_missing_property_hours_from_lock_step_keep_saved_property_draft(host, monkeypatch):
+    flat = _full_apartment(host)
+    monkeypatch.setattr(admin_routes.ttlock, "allowed_for", lambda _owner: True)
+    response = host["client"].post(
+        f"/apartments/{flat['id']}",
+        data={
+            "setup_step": "door_lock",
+            "door_code_section": "1",
+            "door_codes": "1",
+            "return_to": f"/apartments/{flat['id']}/setup/automation",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert flat["internal_name"] in response.text and ADDRESS["addr_street"] in response.text

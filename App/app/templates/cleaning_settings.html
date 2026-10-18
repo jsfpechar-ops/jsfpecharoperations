@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block title %}{{ home.internal_name }} · {{ ct('title') }}{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/cleaning.css?v=20261016a">
+<link rel="stylesheet" href="/static/cleaning.css?v=20261016-0123b-0106b">
 <div class="cleaning-page cleaning-form-page"><a href="/cleaning/properties">{{ ct('settings') }}</a><h1>{{ home.internal_name }}</h1>
 {% if error %}<p class="cleaning-warning" role="alert">{{ ct(error ~ '_error') if error in ('notes','property','code') else ct(error) }}</p>{% endif %}
 {% if request.query_params.get('notice') == 'saved' %}<p role="status">{{ ct('saved') }}</p>{% endif %}
 <form class="cleaning-panel cleaning-form" method="post" action="/cleaning/properties/{{ home.id }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <div class="field"><label for="property-instructions">{{ ct('instructions') }}</label><textarea id="property-instructions" name="instructions" rows="8" maxlength="10000" aria-describedby="property-instructions-hint">{{ prop.cleaning_instructions or '' }}</textarea><p id="property-instructions-hint">{{ ct('notes_hint') }}</p></div>
-<div class="cleaning-form-row"><div class="field"><label for="checkout-time">{{ ct('checkout') }}</label><input id="checkout-time" name="checkout_time" type="time" value="{{ prop.checkout_time or '' }}" placeholder="{{ '%02d:00' | format(home.checkout_hour) if home.checkout_hour is not none else '' }}"></div><div class="field"><label for="checkin-time">{{ ct('arrival') }}</label><input id="checkin-time" name="checkin_time" type="time" value="{{ prop.checkin_time or '' }}" placeholder="{{ '%02d:00' | format(home.checkin_hour) if home.checkin_hour is not none else '' }}"></div></div>
+<section class="cleaning-timing-summary" aria-labelledby="cleaning-property-times"><h2 id="cleaning-property-times">{{ ct('property_times') }}</h2><p>{{ ct('checkout') }}: <strong>{{ prop.effective_checkout_time or '—' }}</strong> · {{ ct('arrival') }}: <strong>{{ prop.effective_checkin_time or '—' }}</strong></p><p>{{ ct('property_times_hint') }}</p><a href="/apartments/{{ home.id }}?view=settings&amp;section=property#arrival-departure">{{ ct('edit_property_times') }}</a></section>
 <button class="btn primary" type="submit">{{ ct('save') }}</button></form>
 <section class="cleaning-panel"><h2>{{ ct('code') }}</h2><p>{{ ct('code_hint') }}</p>
 {% if codes_disabled %}<p class="cleaning-warning" role="status">{{ ct('login_required') }}</p>{% endif %}

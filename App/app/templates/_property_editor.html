@@ -82,6 +82,20 @@
       </div>
     </section>
 
+    <section class="panel property-section" id="arrival-departure">
+      <h3 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h3>
+      <p class="small muted">{{ t('host.property_times_hint') }}</p>
+      {% if shared_time_error %}<p class="err-text" role="alert">{{ t(shared_time_error) }}</p>{% endif %}
+      <div class="grid two">
+        {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
+        <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
+          <select id="{{ name }}" name="{{ name }}"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+            {% for h in range(24) %}<option value="{{ h }}" {% if apartment[name]|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
+          </select></div>
+        {% endfor %}
+      </div>
+    </section>
+
     <section class="panel property-section" id="address">
       <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
       {% include "_property_address_fields.html" %}
@@ -190,6 +204,11 @@
     <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
     <p class="property-group-intro">{{ t('property_nav.lock_intro') }}</p>
     <section class="panel property-section" id="door-code">
+      <p class="small muted">{{ t('host.property_times_hint') }}
+          {{ t('apartment.form.door_code.checkin') }} {{ '%02d:00' | format(apartment.checkin_hour) if apartment.checkin_hour is not none else '—' }} ·
+          {{ t('apartment.form.door_code.checkout') }} {{ '%02d:00' | format(apartment.checkout_hour) if apartment.checkout_hour is not none else '—' }}.
+          <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
+        </p>
       <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.margin', hours=door_code.buffer) ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
       <input type="hidden" name="door_code_section" value="1">
       {% if not door_code.account %}
@@ -217,14 +236,7 @@
           </select>
           {% if door_code.tz_warning %}<div class="hint"><strong>{{ t('smart_locks.timezone_warning') }}</strong></div>{% endif %}
         </div>
-        <div class="grid two">
-          {% for name, value, label in [('checkin_hour', door_code.checkin_hour, 'apartment.form.door_code.checkin'), ('checkout_hour', door_code.checkout_hour, 'apartment.form.door_code.checkout')] %}
-          <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
-            <select id="{{ name }}" name="{{ name }}"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
-              {% for h in range(24) %}<option value="{{ h }}" {% if value == h %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
-            </select></div>
-          {% endfor %}
-        </div>
+        
         <p class="small">{{ t('apartment.form.door_code.first_use') }}</p>
         {% if door_code.overlap %}<p class="small"><strong>{{ t('apartment.form.door_code.overlap') }}</strong></p>{% endif %}
       {% endif %}

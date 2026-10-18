@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ ct('edit') if event else ct('add') }} · UbyHost{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="/static/cleaning.css?v=20261016a">
+<link rel="stylesheet" href="/static/cleaning.css?v=20261016-0123a-0106b">
 <div class="cleaning-page cleaning-form-page"><a href="/cleaning">{{ ct('back') }}</a>
 <h1>{{ ct('edit') if event else ct('add') }}</h1>
 {% if error %}<p class="cleaning-warning" role="alert">{{ ct(error ~ '_error') if error in ('notes','property','code') else ct(error) }}</p>{% endif %}
@@ -12,7 +12,7 @@
 {% if event and event.source_reservation_id %}<input type="hidden" name="apartment_id" value="{{ event.apartment_id }}"><p>{% for home in homes if home.id == event.apartment_id %}{{ home.internal_name }}{% endfor %}</p>
 {% else %}<select id="clean-property" name="apartment_id" required><option value="">…</option>{% for home in homes %}<option value="{{ home.id }}" {% if values.apartment_id | string == home.id | string %}selected{% endif %}>{{ home.internal_name }}</option>{% endfor %}</select>{% endif %}</div>
 <div class="field"><label for="clean-date">{{ ct('date') }}</label><input id="clean-date" type="date" name="scheduled_date" value="{{ values.scheduled_date }}" min="1900-01-01" max="2100-12-31" required></div>
-<div class="cleaning-form-row"><div class="field"><label for="clean-start">{{ ct('start') }}</label><input id="clean-start" type="time" name="start_time" value="{{ values.start_time or '' }}"></div><div class="field"><label for="clean-end">{{ ct('end') }}</label><input id="clean-end" type="time" name="end_time" value="{{ values.end_time or '' }}"></div></div>
+<p class="cleaning-timing-summary">{{ ct('property_times_hint') }} <a href="{{ '/apartments/' ~ values.apartment_id ~ '?view=settings&section=property#arrival-departure' if values.apartment_id else '/apartments/' }}">{{ ct('edit_property_times') }}</a></p>
 <div class="field"><label for="clean-notes">{{ ct('notes') }}</label><textarea id="clean-notes" name="notes" rows="5" maxlength="5000" aria-describedby="clean-notes-hint">{{ values.notes or '' }}</textarea><p id="clean-notes-hint">{{ ct('notes_hint') }}</p></div>
 {% if event and event.source_reservation_id %}<p>{{ ct('auto_help') }}</p>{% endif %}
 <div class="cleaning-actions"><button class="btn primary" type="submit">{{ ct('save') }}</button><a class="btn" href="/cleaning">{{ ct('cancel') }}</a></div>

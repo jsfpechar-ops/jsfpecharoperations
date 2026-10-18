@@ -12,6 +12,11 @@
   <input type="hidden" name="legal_entity_id" value="{{ apartment.legal_entity_id }}">
   <input type="hidden" name="city_en" value="{{ apartment.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
+  <p class="setup-wizard-instruction">{{ t('host.property_times_hint') }}
+    {{ t('apartment.form.door_code.checkin') }} {{ '%02d:00' | format(apartment.checkin_hour) if apartment.checkin_hour is not none else '—' }} ·
+    {{ t('apartment.form.door_code.checkout') }} {{ '%02d:00' | format(apartment.checkout_hour) if apartment.checkout_hour is not none else '—' }}.
+    <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
+  </p>
   {% if not door_code.account %}
   <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}/setup/door_lock#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
   {% elif not door_code.locks %}
@@ -30,14 +35,7 @@
       {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and lock.lock_id == door_code.default_lock_id) %}selected{% endif %}>{{ lock.alias }}</option>{% endfor %}
     </select>
   </div>
-  <div class="grid two">
-    {% for name, value, label in [('checkin_hour', door_code.checkin_hour, 'apartment.form.door_code.checkin'), ('checkout_hour', door_code.checkout_hour, 'apartment.form.door_code.checkout')] %}
-    <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
-      <select id="{{ name }}" name="{{ name }}"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
-        {% for h in range(24) %}<option value="{{ h }}" {% if value == h %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
-      </select></div>
-    {% endfor %}
-  </div>
+
   {% endif %}
 </form>
 {% else %}

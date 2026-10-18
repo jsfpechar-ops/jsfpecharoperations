@@ -72,11 +72,44 @@ def test_auto_checkout_is_persisted_once_and_has_next_arrival_beyond_loaded_rang
     data = payload(ws).json()
     item = next(x for x in data["cleanings"] if x["date"] == "2026-10-16")
     assert item["checkoutTime"] == "11:00"
+    assert item["displayStart"] == "2026-10-16T11:00"
+    assert item["displayEnd"] == "2026-10-16T15:00"
     assert item["nextArrival"] == "2026-12-01"
     assert item["checkinTime"] == "15:00"
     assert db.query_one("SELECT COUNT(*) AS n FROM cleaning_event WHERE source_reservation_id = ?", (booking,))["n"] == 1
     assert "Private guest" not in str(data)
     assert "private internal note" not in str(data)
+
+
+def test_checkout_turnover_uses_same_day_property_hours_and_keeps_next_arrival_context(workspace):
+    ws = workspace
+    db.update("apartment", ws["home"], {"checkin_hour": 15, "checkout_hour": 11})
+    booking = stay(ws["home"], "2026-10-15", "2026-10-17")
+    stay(ws["home"], "2026-10-20", "2026-10-22")
+    data = payload(ws).json()
+    reservation = next(item for item in data["events"] if item["id"] == f"reservation:{booking}")
+    turnover = next(item for item in data["cleanings"] if item["checkout"] == "2026-10-17")
+    assert reservation["start"] == "2026-10-15" and reservation["end"] == "2026-10-17"
+    assert reservation["displayStart"] == "2026-10-15T15:00"
+    assert reservation["displayEnd"] == "2026-10-17T11:00"
+    assert turnover["date"] == "2026-10-17"
+    assert turnover["displayStart"] == "2026-10-17T11:00"
+    assert turnover["displayEnd"] == "2026-10-17T15:00"
+    assert turnover["nextArrival"] == "2026-10-20"
+    assert db.query_one("SELECT scheduled_date FROM cleaning_event WHERE source_reservation_id = ?", (booking,))["scheduled_date"] == "2026-10-17"
+
+
+def test_invalid_property_window_is_flagged_without_persisting_visual_fallback(workspace):
+    ws = workspace
+    db.update("apartment", ws["home"], {"checkin_hour": 11, "checkout_hour": 11})
+    booking = stay(ws["home"], "2026-10-15", "2026-10-17")
+    item = next(x for x in payload(ws).json()["cleanings"] if x["checkout"] == "2026-10-17")
+    assert item["timingUnavailable"] is True and item["conflict"] is False
+    assert item["displayStart"] == "2026-10-17T12:00"
+    assert item["displayEnd"] == "2026-10-17T13:00"
+    assert item["checkoutTime"] == "11:00" and item["checkinTime"] == "11:00"
+    row = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE source_reservation_id = ?", (booking,))
+    assert row["start_time"] is None and row["end_time"] is None
 
 
 def test_booking_changes_follow_until_host_moves_date_and_stale_edits_fail(workspace):
@@ -95,6 +128,37 @@ def test_booking_changes_follow_until_host_moves_date_and_stale_edits_fail(works
     assert payload(ws).json()["cleanings"][0]["conflict"]
     assert db.decrypt_field(moved["notes_enc"]) == "Fresh towels"
     assert "Fresh towels" not in moved["notes_enc"]
+
+
+def test_notes_edit_preserves_legacy_explicit_times_and_auto_property_defaults(workspace):
+    ws = workspace
+    manual = cleaning.save_event(ws["home"], {"scheduled_date": "2026-10-19", "start_time": "12:30", "end_time": "14:00", "notes": "Legacy override"})
+    row = dict(db.query_one("SELECT * FROM cleaning_event WHERE id = ?", (manual,)))
+    cleaning.save_event(ws["home"], {"scheduled_date": "2026-10-19", "revision": row["revision"], "notes": "Notes only"}, row)
+    saved = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE id = ?", (manual,))
+    assert saved["start_time"] == "12:30" and saved["end_time"] == "14:00"
+    item = next(x for x in payload(ws).json()["cleanings"] if x["eventId"] == manual)
+    assert item["displayStart"] == "2026-10-19T12:30" and item["displayEnd"] == "2026-10-19T14:00"
+    db.update("cleaning_event", manual, {"start_time": "nonsense", "end_time": "26:99"})
+    malformed = dict(db.query_one("SELECT * FROM cleaning_event WHERE id = ?", (manual,)))
+    cleaning.save_event(ws["home"], {"scheduled_date": malformed["scheduled_date"], "revision": malformed["revision"],
+                                     "notes": "Still safe"}, malformed)
+    retained = db.query_one("SELECT start_time, end_time FROM cleaning_event WHERE id = ?", (manual,))
+    assert (retained["start_time"], retained["end_time"]) == ("nonsense", "26:99")
+
+
+def test_normal_cleaning_editor_has_no_duplicate_time_fields(workspace):
+    ws = workspace
+    booking = stay(ws["home"])
+    item = event(ws, booking)
+    response = ws["client"].get(f"/cleaning/events/{item['id']}/edit")
+    assert response.status_code == 200
+    assert 'name="start_time"' not in response.text
+    assert 'name="end_time"' not in response.text
+    assert "Edit timing in Properties" in response.text
+    new_response = ws["client"].get("/cleaning/new")
+    assert new_response.status_code == 200
+    assert 'href="/apartments/"' in new_response.text
 
 
 def test_notes_edit_preserves_automatic_date_following(workspace):
@@ -139,8 +203,9 @@ def test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code(
     ws = workspace
     stay(ws["home"])
     stay(ws["home"], "2026-10-23", "2026-10-25")
-    cleaning.save_settings(ws["home"], {"instructions": "1. Linen\n2. <script>alert(1)</script>",
-                                       "checkout_time": "10:30", "checkin_time": "15:30"})
+    cleaning.ensure_property(ws["home"])
+    db.update("cleaning_property", ws["home"], {"checkout_time": "10:30", "checkin_time": "15:30"})
+    cleaning.save_settings(ws["home"], {"instructions": "1. Linen\n2. <script>alert(1)</script>"})
     cleaning_codes.save_manual(ws["home"], "001234")
     response = ws["client"].get("/cleaning?lang=en")
     assert response.status_code == 200
@@ -148,7 +213,12 @@ def test_readable_list_and_settings_escape_host_text_and_show_leading_zero_code(
     assert "001234" in response.text
     assert "&lt;script&gt;" in response.text
     assert "<script>alert(1)</script>" not in response.text
-    assert "10:30" in response.text and "15:30" in response.text
+    assert "11:00" in response.text and "15:00" in response.text
+    legacy = db.query_one("SELECT checkout_time, checkin_time FROM cleaning_property WHERE apartment_id = ?", (ws["home"],))
+    assert legacy["checkout_time"] == "10:30" and legacy["checkin_time"] == "15:30"
+    home = cleaning.properties(ws["owner"], [ws["home"]])[0]
+    assert cleaning._hour(home, "checkout") == "11:00"
+    assert cleaning._hour(home, "checkin") == "15:00"
     data = payload(ws).json()
     assert "type=\"checkbox\"" not in data["listHtml"]
     for lang in ("en", "cs"):
@@ -183,6 +253,30 @@ def test_host_create_update_delete_json_and_concurrent_change(workspace):
     current = payload(ws).json()["cleanings"][0]
     assert current["date"] == "2026-10-21"
     assert ws["client"].post(endpoint + "/delete", data={"revision": current["revision"]}).status_code == 200
+
+
+
+def test_calendar_json_creation_contract_and_validation(workspace):
+    ws = workspace
+    response = ws["client"].post("/cleaning/events", headers={"Accept": "application/json"}, data={
+        "apartment_id": ws["home"], "scheduled_date": "2026-10-26", "notes": "popup only",
+    })
+    assert response.status_code == 201
+    assert response.headers["cache-control"] == "no-store"
+    created = response.json()
+    assert created["id"] > 0
+    assert created["url"].startswith("/cleaning?cal_date=2026-10-26&property=")
+    row = db.query_one("SELECT scheduled_date, start_time, end_time FROM cleaning_event WHERE id = ?", (created["id"],))
+    assert row["scheduled_date"] == "2026-10-26"
+    assert row["start_time"] is None and row["end_time"] is None
+
+    invalid = ws["client"].post("/cleaning/events", headers={"Accept": "application/json"}, data={
+        "apartment_id": ws["home"], "scheduled_date": "", "notes": "must not save",
+    })
+    assert invalid.status_code == 422
+    assert invalid.json()["errors"]["scheduled_date"]
+    assert db.query_one("SELECT COUNT(*) AS n FROM cleaning_event WHERE apartment_id = ? AND notes_enc IS NOT NULL",
+                        (ws["home"],))["n"] == 1
 
 
 def test_owner_isolation_and_authentication(workspace):
@@ -394,6 +488,20 @@ def test_pending_code_is_not_programmed_after_property_lock_is_changed(workspace
     assert row["state"] == "revoked" and row["pin_enc"] is None
 
 
+def test_shared_booking_fractional_display_is_clipped_to_requested_dates(workspace):
+    ws = workspace
+    stay_id = stay(ws["home"], "2026-10-15", "2026-10-22")
+    _, token = cleaning.new_share(ws["owner"], [ws["home"]])
+    response = ws["client"].get(f"/cleaning/shared/{token}/schedule",
+                                params={"from": "2026-10-17", "to": "2026-10-20"})
+    assert response.status_code == 200
+    booking = next(item for item in response.json()["events"] if item["id"] == f"reservation:{stay_id}")
+    assert booking["start"] == "2026-10-17" and booking["end"] == "2026-10-20"
+    assert booking["displayStart"] == "2026-10-17T00:00"
+    assert booking["displayEnd"] == "2026-10-20T00:00"
+    assert "2026-10-15" not in str(booking) and "2026-10-22" not in str(booking)
+
+
 def test_shared_link_uses_canonical_https_origin_behind_a_proxy(workspace, monkeypatch):
     monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://cleaning.example.test")
     response = workspace["client"].post("/cleaning/shares", data={"properties": [workspace["home"]]})
@@ -418,3 +526,43 @@ def test_manual_takeover_of_same_ttlock_pin_keeps_the_physical_code(workspace, m
     assert cleaning._code(prop)["source"] == "manual"
     previous = db.query_one("SELECT * FROM cleaning_code WHERE id = ?", (job,))
     assert previous["state"] == "detached" and previous["pin_enc"] is None
+
+
+
+def test_cleaning_availability_uses_property_hours_and_preserves_manual_override(workspace):
+    ws = workspace
+    home_id = ws["home"]
+    cleaning.ensure_property(home_id)
+    db.update("cleaning_property", home_id, {"checkout_time": "09:30", "checkin_time": "18:00"})
+    first = stay(home_id, "2026-10-17", "2026-10-20")
+    stay(home_id, "2026-10-22", "2026-10-24")
+    payload_value = cleaning.schedule(ws["owner"], date(2026, 10, 16), date(2026, 10, 24), [home_id])
+    assert payload_value["properties"][0]["id"] == home_id
+    generated = next(item for item in payload_value["cleanings"] if item["checkout"] == "2026-10-20")
+    assert generated["nextArrival"] == "2026-10-22"
+    assert generated["checkoutTime"] == "11:00" and generated["checkinTime"] == "15:00"
+    home = cleaning.properties(ws["owner"], [home_id])[0]
+    assert cleaning._hour(home, "checkout") == "11:00"
+    assert cleaning._hour(home, "checkin") == "15:00"
+    event = db.query_one("SELECT * FROM cleaning_event WHERE source_reservation_id = ?", (db.query_one("SELECT id FROM reservation WHERE id = ?", (first,))["id"],))
+    assert event is not None
+    manual_day = "2026-10-21"
+    db.update("apartment", home_id, {"checkout_hour": 12, "checkin_hour": 16})
+    refreshed = cleaning.schedule(ws["owner"], date(2026, 10, 16), date(2026, 10, 24), [home_id])
+    updated_generated = next(item for item in refreshed["cleanings"] if item["checkout"] == "2026-10-20")
+    assert updated_generated["checkoutTime"] == "12:00" and updated_generated["checkinTime"] == "16:00"
+    cleaning.save_event(home_id, {"scheduled_date": manual_day, "start_time": "12:00", "end_time": "14:00", "notes": "", "revision": event["revision"]}, existing=dict(event))
+    moved = db.query_one("SELECT scheduled_date, start_time, end_time, overridden FROM cleaning_event WHERE id = ?", (event["id"],))
+    assert (moved["scheduled_date"], moved["start_time"], moved["end_time"], moved["overridden"]) == (manual_day, "12:00", "14:00", 1)
+    legacy = db.query_one("SELECT checkout_time, checkin_time FROM cleaning_property WHERE apartment_id = ?", (home_id,))
+    assert (legacy["checkout_time"], legacy["checkin_time"]) == ("09:30", "18:00")
+    db.update("apartment", home_id, {"checkout_hour": 30, "checkin_hour": -1})
+    invalid_home = cleaning.properties(ws["owner"], [home_id])[0]
+    assert cleaning._hour(invalid_home, "checkout") is None
+    assert cleaning._hour(invalid_home, "checkin") is None
+    response = ws["client"].get(f"/cleaning/properties/{home_id}")
+    assert response.status_code == 200
+    assert 'id="cleaning-property-times"' in response.text
+    summary = response.text.split('id="cleaning-property-times"', 1)[1].split("</section>", 1)[0]
+    assert "/apartments/" in summary
+    assert "30:00" not in summary and "-1:00" not in summary

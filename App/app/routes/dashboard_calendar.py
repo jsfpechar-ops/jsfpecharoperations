@@ -30,6 +30,27 @@ def parse_range(start: str, end: str) -> tuple[date, date]:
     return first, last
 
 
+def _visual_hour(value) -> str:
+    """Return a property hour for visual placement, or a noon-only fallback."""
+    try:
+        hour = int(value) if value is not None else None
+    except (TypeError, ValueError):
+        hour = None
+    return f"{hour:02d}:00" if hour is not None and 0 <= hour <= 23 else "12:00"
+
+
+def _hour_is_valid(value) -> bool:
+    try:
+        hour = int(value) if value is not None else None
+    except (TypeError, ValueError):
+        hour = None
+    return hour is not None and 0 <= hour <= 23
+
+
+def _display_at(day: str, hour: str) -> str:
+    return f"{day}T{hour}"
+
+
 def overlapping_count(apartment_id: int, start: str, end: str) -> int:
     """Called only after the canonical create handler checks apartment access."""
     return int(db.query_one(
@@ -42,11 +63,11 @@ def overlapping_count(apartment_id: int, start: str, end: str) -> int:
 
 def events(owner_user_id: int | None, start: date, end: date, apartment_id: int | None = None):
     sql = (
-        "SELECT r.*, a.internal_name, a.automation_mode FROM reservation r "
+        "SELECT r.*, a.internal_name, a.automation_mode, a.checkin_hour, a.checkout_hour FROM reservation r "
         "JOIN apartment a ON a.id = r.apartment_id "
         f"WHERE {db.null_safe_eq('a.owner_user_id')} AND a.active = 1 "
         "AND a.archived_at IS NULL AND r.archived_at IS NULL AND r.status = 'active' "
-        "AND r.date_from < ? AND r.date_to > ?"
+        "AND r.date_from < ? AND r.date_to >= ?"
     )
     params = [owner_user_id, end.isoformat(), start.isoformat()]
     if apartment_id is not None:
@@ -75,6 +96,9 @@ def events(owner_user_id: int | None, start: date, end: date, apartment_id: int 
             "id": stay["id"], "propertyId": stay["apartment_id"],
             "property": stay["internal_name"], "label": stay["summary"] or "",
             "start": stay["date_from"], "end": stay["date_to"],
+            "displayStart": _display_at(stay["date_from"], _visual_hour(stay["checkin_hour"])),
+            "displayEnd": _display_at(stay["date_to"], _visual_hour(stay["checkout_hour"])),
+            "timingFallback": not _hour_is_valid(stay["checkin_hour"]) or not _hour_is_valid(stay["checkout_hour"]),
             "guests": len(progress["guests"]), "complete": progress["filled"],
             "expected": progress["expected"], "status": status,
             "tone": tone, "preview": preview, "source": stay["source"],

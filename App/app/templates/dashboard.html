@@ -9,6 +9,7 @@
 <div class="dashboard-row-list">
 {% for row in items %}
   {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
+  {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
   {#- 0099: the whole row opens the stay, as on every list (shared clickable-row). -#}
   <article class="dashboard-row clickable-row {{ 'is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}"
            data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
@@ -19,7 +20,7 @@
         {% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}{% endif %}
         {{ guest_count(progress) }}
       </p>
-      <a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ property_identity(reservation.apartment_id, reservation.internal_name, true) }}</a>
+      <a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ property_identity(reservation.apartment_id, stay_label, true) }}</a>
       <p class="dashboard-row-task">
         {% if progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}
         {% elif progress.not_registered %}<span class="pill amber">{{ tp('host.missing', progress.not_registered) }}</span>
@@ -48,46 +49,7 @@
 {% else %}<div class="panel empty small">{{ t(empty_key) }}</div>{% endif %}
 {% endmacro %}
 
-<style>
-.host-workspace .dashboard-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:0 auto 26px; }
-.host-workspace .host-today-head { padding:0; border:0; border-radius:0; background:transparent; }
-.host-workspace .host-today-head h1 { margin:3px 0 0; }
-.host-workspace .dashboard-stat { --stat-color:var(--ink-muted); display:flex; align-items:center; gap:12px; min-height:70px; padding:12px 15px; border:1px solid var(--line); border-radius:11px; box-shadow:inset 3px 0 var(--stat-color); color:inherit; background:#fff; text-decoration:none; }
-.host-workspace .dashboard-stat:hover { background:var(--surface-hover); }
-.host-workspace .dashboard-stat:focus-visible, .host-workspace .dashboard-row-property:focus-visible, .host-workspace .dashboard-row-actions .row-menu-trigger:focus-visible { outline:3px solid var(--focus-ring); outline-offset:2px; }
-.host-workspace .dashboard-stat strong { font-size:23px; letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
-.host-workspace .dashboard-stat span { font-size:13px; line-height:1.25; font-weight:650; }
-.host-workspace .dashboard-stat::before { content:""; flex:0 0 9px; width:9px; height:9px; border-radius:50%; background:var(--stat-color); }
-.host-workspace .dashboard-stat.action.is-positive { --stat-color:var(--status-action-border); }
-.host-workspace .dashboard-stat.ready.is-positive { --stat-color:var(--status-ready-ink); }
-.host-workspace .dashboard-stat.overdue { --stat-color:var(--ink-muted); }
-.host-workspace .dashboard-stat.overdue.is-positive { --stat-color:var(--status-critical-border); }
-.host-workspace .dashboard-row-list { display:grid; gap:8px; }
-.host-workspace .dashboard-row { display:grid; grid-template-columns:minmax(0,1fr) 184px; align-items:center; gap:18px; padding:12px 14px; border:1px solid var(--line); border-radius:11px; background:#fff; }
-.host-workspace .dashboard-row.is-overdue { border-left:3px solid var(--status-critical-border); }
-.host-workspace .dashboard-row-copy { min-width:0; }
-.host-workspace .dashboard-row-dates, .host-workspace .dashboard-row-task { margin:0; color:var(--ink-secondary); font-size:12px; line-height:1.4; }
-.host-workspace .dashboard-row-dates { display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:var(--ink-muted); }
-.host-workspace .dashboard-row-property { display:inline-block; margin-top:3px; color:var(--ink); font-size:15px; font-weight:700; text-decoration:none; border-radius:3px; }
-.host-workspace .dashboard-row-task { margin-top:3px; }
-.host-workspace .dashboard-row-task .pill.teal { background:var(--brown-bg); color:var(--brown); border-color:var(--border-strong); }
-.host-workspace .dashboard-row-actions { display:grid; grid-template-columns:42px; justify-content:end; gap:8px; align-items:center; }
-.host-workspace .dashboard-row-actions .row-menu { width:42px; }
-.host-workspace .dashboard-row-actions .row-menu-trigger { width:42px; min-width:42px; height:42px; min-height:42px; padding:0; }
-@media (max-width:760px) {
-  .host-workspace .dashboard-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-  .host-workspace .dashboard-stat { min-height:62px; padding:10px 11px; gap:9px; }
-  .host-workspace .dashboard-stat strong { font-size:21px; }
-  .host-workspace .dashboard-row { grid-template-columns:minmax(0,1fr); gap:10px; padding:12px; }
-  .host-workspace .dashboard-row-actions { grid-template-columns:44px; justify-content:end; }
-  .host-workspace .dashboard-row-actions .row-menu { width:44px; }
-  .host-workspace .dashboard-row-actions .row-menu-trigger { width:44px; min-width:44px; height:44px; min-height:44px; }
-}
-@media (max-width:380px) {
-  .host-workspace .dashboard-row-actions { grid-template-columns:44px; }
-  .host-workspace .dashboard-row-dates { gap:5px; }
-}
-</style>
+
 
 {% set header_actions %}
   <div class="page-toolbar"><div class="page-toolbar-row">
@@ -100,13 +62,14 @@
 <header class="page-header host-today-head">
   <div><div class="host-today-date">{{ today.isoformat() | date_cz }}</div><h1>{{ t('dashboard.title') }}</h1></div>
   <div class="dashboard-actions"><div class="action-group action-group-stack">
-    <a class="btn primary" href="/reservations?new=1" data-calendar-add>+ {{ t('stays.add_stay') }}</a>
+    <a class="btn primary" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">+ {{ t('stays.add_stay') }}</a>
+    <a class="btn" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ t('calendar.add_cleaning') }}</a>
     {% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}
     {% if demo_loaded %}<form method="post" action="/demo/reset" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}"><button class="btn" type="submit">{{ t('demo.clear') }}</button></form>{% endif %}
   </div>{% if last_sync %}<p class="small muted">{{ t('dashboard.last_synced', when=last_sync | datetime_local) }}</p>{% endif %}</div>
 </header>
 {% if apartments %}
-<nav class="dashboard-stats" aria-label="{{ t('nav.overview') }}">
+<nav class="dashboard-stats" aria-label="{{ t('nav.overview') }}" data-dashboard-refresh="stats">
   <a class="dashboard-stat action {{ 'is-positive' if counts.attention > 0 }}" href="#needs-action"><strong>{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
   <a class="dashboard-stat ready {{ 'is-positive' if counts.ready > 0 }}" href="/reservations"><strong>{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
   <a class="dashboard-stat overdue {{ 'is-positive' if counts.overdue > 0 }}" href="#needs-action"><strong>{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
@@ -119,6 +82,7 @@
   {% if not onboarding.dismissed %}{{ onboarding_welcome(onboarding, compact=True) }}
   {% else %}<div class="panel empty onboarding-skipped"><h2>{{ t('onboarding.skipped_title') }}</h2><p>{{ t('onboarding.skipped_body') }}</p><div class="actions"><a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a><a class="btn" href="/onboarding">{{ t('onboarding.open_checklist') }}</a></div></div>{% endif %}
 {% else %}
+  <div data-dashboard-refresh="work">
   {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
   {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
   {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
@@ -159,5 +123,6 @@
     {% if queue_groups.current %}<section id="current"><div class="section-heading"><h2>{{ t('dashboard.section.current') }}</h2><a href="/reservations">{{ t('dashboard.section.view_stays') }}</a></div>{{ dashboard_rows(queue_groups.current, 'dashboard.queue.empty.waiting') }}</section>{% endif %}
   </noscript>
   {% if finish_card_showing and not focus_is_urgent %}{{ onboarding_finish(onboarding) }}{% endif %}
+  </div>
 {% endif %}
 {% endblock %}

@@ -76,6 +76,8 @@ def _payload(request: Request, first: date, last: date, ids=None, read_only=Fals
             if entry["kind"] == "booking":
                 entry["start"] = max(entry["start"], first.isoformat())
                 entry["end"] = min(entry["end"], last.isoformat())
+                entry["displayStart"] = max(entry["displayStart"], first.isoformat() + "T00:00")
+                entry["displayEnd"] = min(entry["displayEnd"], last.isoformat() + "T00:00")
     payload["properties"] = [{"id": p["id"], "name": p["internal_name"]} for p in allowed]
     context = _context(request, groups=_groups(payload), read_only=read_only)
     payload["listHtml"] = templating.templates.get_template("_cleaning_list.html").render(context)
@@ -139,12 +141,25 @@ async def create_event(request: Request):
     if guard:
         return guard
     values = dict(await request.form())
+    wants_json = "application/json" in request.headers.get("accept", "")
     try:
         home = _home(request, int(values.get("apartment_id", 0)))
-        cleaning.save_event(home["id"], values)
+        event_id = cleaning.save_event(home["id"], values)
     except (ValueError, TypeError) as exc:
-        return _editor(request, values, error=str(exc) if str(exc) in {"dates", "times", "notes"} else "property",
-                       status_code=422)
+        error = str(exc) if str(exc) in {"dates", "times", "notes", "property"} else "property"
+        if wants_json:
+            translate = cleaning_i18n.translator(_lang(request))
+            messages = {"dates": translate("dates"), "times": translate("times"),
+                        "notes": translate("notes_error"), "property": translate("property_error")}
+            field = {"dates": "scheduled_date", "times": "scheduled_date", "notes": "notes",
+                     "property": "apartment_id"}[error]
+            return JSONResponse({"errors": {field: messages[error]}}, status_code=422, headers=PRIVATE)
+        return _editor(request, values, error=error, status_code=422)
+    if wants_json:
+        scheduled = values.get("scheduled_date", "")
+        return JSONResponse({"id": event_id,
+                             "url": f"/cleaning?cal_date={scheduled}&property={home['id']}#cleaning-{event_id}"},
+                            status_code=201, headers=PRIVATE)
     return _back()
 
 
@@ -197,8 +212,9 @@ async def delete_event(request: Request, event_id: int):
 def _settings(request: Request, home: dict, error="", status_code=200, values=None):
     prop = cleaning.properties(access.owner_id(request), [home["id"]])[0]
     if values is not None:
-        prop.update({"cleaning_instructions": values.get("instructions", ""),
-                     "checkout_time": values.get("checkout_time", ""), "checkin_time": values.get("checkin_time", "")})
+        prop.update({"cleaning_instructions": values.get("instructions", "")})
+    prop["effective_checkout_time"] = cleaning._hour(prop, "checkout")
+    prop["effective_checkin_time"] = cleaning._hour(prop, "checkin")
     failed_revoke = db.query_one(
         "SELECT id FROM cleaning_code WHERE apartment_id = ? AND state = 'revoke_failed'", (home["id"],),
     )

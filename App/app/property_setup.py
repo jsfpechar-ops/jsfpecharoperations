@@ -36,6 +36,8 @@ STEP_FIELDS: Dict[str, tuple] = {
         "legal_entity_id",
         "data_controller_entity_id",
         "default_purpose",
+        "checkin_hour",
+        "checkout_hour",
         "addr_okres",
         "addr_obec",
         "addr_obec_cast",
@@ -57,7 +59,7 @@ STEP_FIELDS: Dict[str, tuple] = {
         "stay_fee_instruction",
         "stay_fee_council_account",
     ),
-    "door_lock": ("lock_provider", "lock_id", "checkin_hour", "checkout_hour"),
+    "door_lock": ("lock_provider", "lock_id"),
     "automation": ("automation_mode", "submit_after_hours"),
 }
 

@@ -70,11 +70,11 @@ Grep. **HR**: owner decides.
 | K-U06 | Low open | apartment_form.html | Pills aligned; CI/staging pending | UI §3 |
 | K-U07 | Low decision | entities.html | Visible Delete/explanation; guard kept; CI | UI §4 |
 | K-U08 | Low open | invoice_form.html | Other-only input fixed; CI pending | UI §6 |
-| K-U09 | Low open | dashboard.html, host.css | Hover/focus fixed; CI/staging pending | UI §9 |
+| K-U09 | Low open | dashboard.html, host.css | Hover/focus fixed; CI pending | UI §9 |
 | K-U10 | Low open | app.js:copy | Copy feedback fixed; CI/staging pending | UI §12 |
 | K-U11 | Med open | host.css | Geometry checked locally; CI/staging pending | [0040](../tasks/0040-host-wide-geometry-audit.md) |
-| K-U12 | Med open | reservations.html, dashboard.html | WIP: 1280px overflow; mobile menu closes | [0041](../tasks/0041-host-stay-actions.md) |
-| K-U13 | Med review | browser tests | CI imports: 0042; UI still fails | 0042 |
+| K-U12 | Med open | reservations.html, dashboard.html | 1280px overflow; mobile menu closes | [0041](../tasks/0041-host-stay-actions.md) |
+| K-U13 | Med review | browser tests | CI import 0042; UI fails | 0042 |
 | K-O01 | High open | server crontab | Backup and off-site crons aren't in the repo; verify on the server | AR-04 |
 | K-O02 | Med open | docker-compose.yml:14 | Floating image tag; check rollback on a real deploy | AR-03 |
 | K-O03 | Med open | reporting.py:702 dashboard_rows | N+1 queries and double decrypts | P A50-51 |
@@ -88,8 +88,8 @@ Grep. **HR**: owner decides.
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can receive an undeleted cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
-
-| K-U15 | Med review | Host forms/navigation | Fixed on staging PR; 0084 (incl. old K-U14 ownership) + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
+| K-U15 | Med review | Host forms/navigation | Fixed on staging; 0084 incl. K-U14 + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests | [0080](../tasks/0080-report.md) |
-| K-U16 | Review | Host UI | #389 polish; CI in PR checks | 0102 |
-| K-OPS72 | Low open | App/app/filing_watchdog.py DIGEST_INTERVAL | Server digest 72 h, repository 6 h. Align code/tests before deploying over the server override. | Owner, 2026-10-15 |
+| K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
+| K-OPS72 | Low open | filing_watchdog.py | Server 72 h, repo 6 h; align code/tests before server override | Owner, 2026-10-15 |
+| K-UI01 | Fixed | Calendar/cleaning | Dashboard stays only; bold Cleaning markers | #397 |

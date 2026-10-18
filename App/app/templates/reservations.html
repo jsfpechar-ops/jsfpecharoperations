@@ -129,10 +129,17 @@
 {% endif %}
 
 {% if rows %}
-<div class="panel tight stays-view">
+<div class="stays-view">
   <table class="table-cards">
     <thead>
-      <tr><th class="stay-col-stay">{{ t('stays.table.stay') }}</th><th class="stay-col-property">{{ t('stays.table.apartment') }}</th><th class="stay-col-guests">{{ t('stays.table.guests') }}</th><th class="stay-col-reporting">{{ t('stays.table.reporting') }}</th><th class="stay-col-deadline">{{ t('stays.table.deadline') }}</th><th class="stay-col-actions"><span class="sr-only">{{ t('common.open') }}</span></th></tr>
+      <tr>
+        <th class="stay-col-stay">{{ t('stays.table.stay') }}</th>
+        <th class="stay-col-dates">{{ t('host.stay_dates') }}</th>
+        <th class="stay-col-property">{{ t('stays.table.apartment') }}</th>
+        <th class="stay-col-guests">{{ t('stays.table.guests') }}</th>
+        <th class="stay-col-reporting">{{ t('stays.table.reporting') }}</th>
+        <th class="stay-col-actions"><span class="sr-only">{{ t('common.open') }}</span></th>
+      </tr>
     </thead>
     <tbody>
     {% for row in rows %}
@@ -140,13 +147,16 @@
       {% set progress = row.progress %}
       {% set check_in = deadline_anchor(reservation, progress.guests) %}
       {% set check_out = parse_iso_date(reservation.date_to) %}
+      {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
       <tr class="clickable-row" data-href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}"
           tabindex="0" role="link"
-          aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
-        <td class="nowrap stay-col-stay" data-label="{{ t('stays.table.stay') }}">
-          <a class="row-primary-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">
-            {{ reservation.date_from | date_cz }} &ndash; {{ reservation.date_to | date_cz }}
-          </a>
+          aria-label="{{ stay_label }} · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}">
+        <td class="stay-col-stay" data-label="{{ t('stays.table.stay') }}">
+          <a class="row-primary-link stay-identity-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ stay_label }}</a>
+          <div class="small muted stay-col-source">{{ source_badge(reservation.source, source_label(reservation)) }}</div>
+        </td>
+        <td class="nowrap stay-col-dates" data-label="{{ t('host.stay_dates') }}">
+          <a class="stay-date-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
           <div class="small muted">
             {{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}
             {%- if check_in and check_out and check_in <= today() <= check_out %}
@@ -156,20 +166,14 @@
         </td>
         <td class="stay-col-property" data-label="{{ t('stays.table.apartment') }}">
           {{ property_identity(reservation.apartment_id, reservation.internal_name, true) }}
-          <div class="small stay-col-source">
-            {{ source_badge(reservation.source, source_label(reservation)) }}
-            
-          </div>
         </td>
         <td class="num stay-col-guests" data-label="{{ t('stays.table.guests') }}">{{ guest_count(progress, placeholder=true) }}</td>
         <td class="stay-col-reporting" data-label="{{ t('stays.table.reporting') }}">
           {% if reservation.status != 'active' %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
-        </td>
-        <td class="nowrap stay-col-deadline" data-label="{{ t('stays.table.deadline') }}">
           {% if check_in and reservation.status == 'active' %}
-            {{ deadline_badge(deadline_cell(progress, check_in)) }}
-          {% else %}—{% endif %}
+            <div class="stay-report-deadline">{{ deadline_badge(deadline_cell(progress, check_in)) }}</div>
+          {% endif %}
         </td>
         <td class="nowrap row-actions stay-col-actions" data-label="">
           {{ row_reporting_actions(reservation, row.controls, return_to) }}
@@ -187,11 +191,13 @@
             {% endif %}
             {% if show_archive %}
               <form method="post" action="/reservations/{{ reservation.id }}/unarchive" class="row-menu-form">
+                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
                 <button class="row-menu-item" type="submit" role="menuitem">{{ t('stays.row.restore') }}</button>
               </form>
             {% else %}
               <form method="post" action="/reservations/{{ reservation.id }}/archive" class="row-menu-form">
                 <input type="hidden" name="return_to" value="{{ return_to }}">
+                <input type="hidden" name="_csrf" value="{{ csrf_token }}">
                 <button class="row-menu-item" type="submit" role="menuitem" data-confirm
                         data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">{{ t('host.delete') }}</button>
               </form>

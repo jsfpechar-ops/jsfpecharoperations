@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, db, onboarding
+from app import auth, cleaning, db, onboarding
 from app.main import app
 from app.routes import dashboard_calendar
 from tests.conftest import login_as
@@ -93,8 +93,10 @@ def test_anonymous_calendar_requires_login(calendar_workspace):
     assert "/login" in response.headers["location"]
 
 
-def test_calendar_is_owner_scoped_and_checkout_exclusive(calendar_workspace):
+def test_calendar_is_owner_scoped_and_includes_checkout_boundary(calendar_workspace):
     ws = calendar_workspace
+    db.update("apartment", ws["properties"][0], {"checkin_hour": 15, "checkout_hour": 11})
+    boundary_checkout = make_stay(ws["properties"][0], "2026-09-28", "2026-10-01")
     owned = make_stay(ws["properties"][0], guest_email="never-serialize@example.test", host_note="private note")
     long_stay = make_stay(ws["properties"][1], "2026-09-01", "2026-12-01")
     excluded = [
@@ -102,7 +104,6 @@ def test_calendar_is_owner_scoped_and_checkout_exclusive(calendar_workspace):
         make_stay(ws["properties"][0], status="cancelled"),
         make_stay(ws["properties"][0], status="ignored"),
         make_stay(ws["properties"][0], archived_at=db.utcnow()),
-        make_stay(ws["properties"][0], "2026-09-28", "2026-10-01"),
         make_stay(ws["properties"][0], "2026-11-01", "2026-11-04"),
     ]
     response = calendar_get(ws["client"])
@@ -110,14 +111,52 @@ def test_calendar_is_owner_scoped_and_checkout_exclusive(calendar_workspace):
     assert response.headers["cache-control"] == "no-store"
     data = response.json()
     ids = {event["id"] for event in data["events"]}
-    assert {owned, long_stay} <= ids
+    assert {owned, long_stay, boundary_checkout} <= ids
     assert not ids.intersection(excluded)
+    boundary_event = next(event for event in data["events"] if event["id"] == boundary_checkout)
+    assert boundary_event["start"] == "2026-09-28" and boundary_event["end"] == "2026-10-01"
+    assert boundary_event["displayEnd"] == "2026-10-01T11:00"
     assert {item["id"] for item in data["properties"]} == set(ws["properties"])
     assert "never-serialize" not in response.text
     assert "private note" not in response.text
     assert "permalink" not in response.text
     filtered = calendar_get(ws["client"], property=ws["properties"][1]).json()["events"]
     assert filtered and {event["propertyId"] for event in filtered} == {ws["properties"][1]}
+
+
+
+def test_dashboard_calendar_excludes_cleanings_without_private_fields(calendar_workspace, monkeypatch):
+    ws = calendar_workspace
+    apartment_id = ws["properties"][0]
+    db.update("apartment", apartment_id, {"checkin_hour": 15, "checkout_hour": 11})
+    stay_id = make_stay(apartment_id, "2026-10-20", "2026-10-22", summary="Authorized dashboard stay")
+    cleaning_id = cleaning.save_event(apartment_id, {
+        "scheduled_date": "2026-10-20", "notes": "private calendar note sentinel",
+    })
+
+    def dashboard_must_not_request_cleanings(*args, **kwargs):
+        pytest.fail("Dashboard calendar must not request cleaning.schedule")
+
+    monkeypatch.setattr(cleaning, "schedule", dashboard_must_not_request_cleanings)
+    try:
+        response = calendar_get(ws["client"])
+        assert response.status_code == 200
+        assert response.headers["cache-control"] == "no-store"
+        events = response.json()["events"]
+        assert all(event.get("kind") != "cleaning" for event in events)
+        assert all(not str(event["id"]).startswith("cleaning:") for event in events)
+        assert all(not any("note" in key.lower() or "code" in key.lower() for key in event) for event in events)
+        stay = next(event for event in events if event["id"] == stay_id)
+        assert stay["propertyId"] == apartment_id
+        assert stay["start"] == "2026-10-20" and stay["end"] == "2026-10-22"
+        assert stay["displayStart"] == "2026-10-20T15:00"
+        assert stay["displayEnd"] == "2026-10-22T11:00"
+        assert "private calendar note sentinel" not in response.text
+        assert f"cleaning:{cleaning_id}" not in response.text
+    finally:
+        db.execute("DELETE FROM cleaning_event WHERE apartment_id = ?", (apartment_id,))
+        db.execute("DELETE FROM cleaning_property WHERE apartment_id = ?", (apartment_id,))
+        db.update("apartment", apartment_id, {"checkin_hour": None, "checkout_hour": None})
 
 
 @pytest.mark.parametrize("which", ["foreign", "inactive", "archived"])
