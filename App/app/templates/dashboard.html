@@ -11,7 +11,7 @@
   {{ ui_button('+ ' ~ t('calendar.add_cleaning'), 'secondary', href='/cleaning/new', attrs='data-calendar-add data-cal-create-type="cleaning"') }}
   {% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}
   {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
-  {{ ui_icon_button(t('common.more_actions'), 'ellipsis-vertical', attrs='class="ui-btn ui-btn-quiet ui-btn-icon ui-ph-menu" data-toggle-panel="dashboard-more"') }}
+  {{ ui_icon_button(t('common.more_actions'), 'ellipsis-vertical', attrs='data-toggle-panel="dashboard-more"', extra_class='ui-ph-menu') }}
 {% endif %}{% endblock %}
 
 {% macro dashboard_rows(items, empty_key) %}

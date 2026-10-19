@@ -3,7 +3,7 @@
 {% block title %}UI catalog{% endblock %}
 {% block meta %}docs/design/MASTER.md 2.0.0. Every component, state and skeleton from the real CSS.{% endblock %}
 {% block primary_action %}{{ ui_button('Primary action', 'primary', href='#buttons') }}{% endblock %}
-{% block secondary_actions %}{{ ui_button('Secondary', 'secondary', href='#fields', icon_name='refresh-cw') }}{{ ui_icon_button('More actions', 'ellipsis-vertical', attrs='class="ui-btn ui-btn-quiet ui-btn-icon ui-ph-menu"') }}{% endblock %}
+{% block secondary_actions %}{{ ui_button('Secondary', 'secondary', href='#fields', icon_name='refresh-cw') }}{{ ui_icon_button('More actions', 'ellipsis-vertical', extra_class='ui-ph-menu') }}{% endblock %}
 {% block tabs %}{{ ui_tabs([('/dev/ui#tokens', 'Tokens', true), ('/dev/ui#buttons', 'Buttons', false), ('/dev/ui#lists', 'Lists', false), ('/dev/ui#skeletons', 'Skeletons', false)], 'Catalog') }}{% endblock %}
 {% block body %}
 {% call ui_section('Tokens', id='tokens') %}
