@@ -462,3 +462,8 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 /* 0158: guest-link URLs stay on one line (full URL in the title and the copy button) */
 .host-workspace .property-inline-url { display: block; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
 .host-workspace .cleaning-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+
+/* 0144 settings: moved inline styles */
+.host-workspace .ui-prewrap { white-space: pre-wrap; }
+.host-workspace .ui-center { justify-content: center; }
+.host-workspace .settings-mail-preview { width: 100%; min-height: 26rem; margin-top: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-2); background: var(--surface); }

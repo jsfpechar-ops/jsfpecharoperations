@@ -63,7 +63,7 @@ CAPTURE_ROUTES = {
     # 0094: both now live in property Settings; the lane is the tab content.
     "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views"),
     "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views"),
-    "archive": ("/settings/archived", ".panel"),
+    "archive": ("/settings/archived", ".ui-section, .ui-empty"),
     "settings": ("/settings", ".host-property-grid"),
     "smart-locks": ("/smart-locks", ".panel"),
 }

@@ -197,10 +197,10 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
 
         # Real interactive rows/cards show the quiet hover tint and keyboard
         # focus context; static panels do not acquire a pointer cursor.
-        for width, expected_height in ((360, 44), (390, 44), (1280, 42)):
+        for width, expected_height in ((360, 44), (390, 44), (1280, 40)):
             page.set_viewport_size({"width": width, "height": 900})
             page.goto(f"{base}/?lang=en")
-            heights = page.locator(".action-group .btn").evaluate_all(
+            heights = page.locator(".ui-ph-acts .ui-btn-primary").evaluate_all(
                 "els => els.map(el => el.getBoundingClientRect().height)"
             )
             assert heights and all(height == expected_height for height in heights), (width, heights)
@@ -239,7 +239,7 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
         page.goto(f"{base}/settings/archived?lang=en")
         assert page.locator(".archive-type-filters").count() == 1
         assert page.locator('.archive-type-filters[role="group"]').count() == 1
-        assert page.locator(".archive-type-filters .chip").count() == 5
+        assert page.locator(".archive-type-filters .ui-chip").count() == 5
 
         audit_labels = {
             "en": ("All activity", "Support sessions"),

@@ -1,25 +1,26 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'guide' %}
+{% set body_kind = 'detail' %}
 {% block title %}{{ t('guide.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header with context %}
-{{ page_header(t('guide.title'), t('guide.lede')) }}
+{% block page_title %}{{ t('guide.title') }}{% endblock %}
+{% block meta %}{{ t('guide.lede') }}{% endblock %}
+{% block body %}
 
 {% set sections = ['overview', 'statuses', 'setup', 'stays', 'guests', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'door-codes', 'faster', 'faq', 'legal'] + (['demo'] if demo_available else []) %}
 <div class="guide-layout">
-  <nav class="guide-nav panel" aria-label="{{ t('guide.title') }}">
+  <nav class="guide-nav ui-section" aria-label="{{ t('guide.title') }}">
     {% for key in sections %}<a href="#{{ key }}" class="guide-nav-link">{{ t('guide.nav.' ~ key) }}</a>{% endfor %}
   </nav>
 
   <div class="guide-content">
-    <section class="guide-section panel" id="overview">
+    <section class="guide-section ui-section" id="overview">
       <h2>{{ t('guide.nav.overview') }}</h2>
       <p>{{ t('guide.overview.body') }}</p>
       <p>{{ t('guide.overview.count') }}</p>
       <p>{{ t('guide.overview.deadline') }}</p>
     </section>
 
-    <section class="guide-section panel" id="statuses">
+    <section class="guide-section ui-section" id="statuses">
       <h2>{{ t('guide.nav.statuses') }}</h2>
       <p>{{ t('guide.statuses.lede') }}</p>
       <dl class="kv guide-statuses">
@@ -30,14 +31,14 @@
           ('teal', 'status.awaiting_guest_short', 'guide.statuses.waiting'),
           ('green', 'status.reported', 'guide.statuses.reported'),
           ('grey', 'status.not_required', 'guide.statuses.not_required')] %}
-        <dt><span class="pill {{ tone }}">{{ t(label_key) }}</span></dt>
+        <dt><span class="ui-badge ui-badge-{{ 'done' if tone == 'green' else 'action' }}" data-tone="{{ tone }}">{{ t(label_key) }}</span></dt>
         <dd>{{ t(body_key) }}</dd>
         {% endfor %}
       </dl>
-      <p class="small muted">{{ t('guide.statuses.other') }}</p>
+      <p class="ui-sub">{{ t('guide.statuses.other') }}</p>
     </section>
 
-    <section class="guide-section panel" id="setup">
+    <section class="guide-section ui-section" id="setup">
       <h2>{{ t('guide.nav.setup') }}</h2>
       <ol class="guide-steps">
         {% for n in range(1, 6) %}
@@ -46,15 +47,15 @@
       </ol>
     </section>
 
-    <section class="guide-section panel" id="stays">
+    <section class="guide-section ui-section" id="stays">
       <h2>{{ t('guide.nav.stays') }}</h2>
       <p>{{ t('guide.stays.body') }}</p>
       <p>{{ t('guide.stays.detail') }}</p>
       <p>{{ t('guide.stays.dates_changed') }}</p>
-      <p class="small muted">{{ t('guide.stays.cancelled') }}</p>
+      <p class="ui-sub">{{ t('guide.stays.cancelled') }}</p>
     </section>
 
-    <section class="guide-section panel" id="guests">
+    <section class="guide-section ui-section" id="guests">
       <h2>{{ t('guide.nav.guests') }}</h2>
       <p>{{ t('guide.guests.body') }}</p>
       <ol class="guide-steps">
@@ -62,11 +63,11 @@
       </ol>
       <p>{{ t('guide.guests.step_mail') }}</p>
       <p>{{ t('guide.guests.czech') }}</p>
-      <p class="small muted">{{ t('guide.guests.photo') }}</p>
-      <p class="small muted">{{ t('guide.guests.cookies') }}</p>
+      <p class="ui-sub">{{ t('guide.guests.photo') }}</p>
+      <p class="ui-sub">{{ t('guide.guests.cookies') }}</p>
     </section>
 
-    <section class="guide-section panel" id="reporting">
+    <section class="guide-section ui-section" id="reporting">
       <h2>{{ t('guide.nav.reporting') }}</h2>
       <p>{{ t('guide.reporting.body') }}</p>
       <dl class="kv">
@@ -78,7 +79,7 @@
       <p>{{ t('guide.reporting.deadline') }}</p>
       <p>{{ t('guide.reporting.filed') }}</p>
       <p>{{ t('guide.reporting.failure') }}</p>
-      <p class="small muted">{{ t('guide.reporting.receipts') }}</p>
+      <p class="ui-sub">{{ t('guide.reporting.receipts') }}</p>
       <h3 id="manual-filing">{{ t('guide.reporting.manual_filing_title') }}</h3>
       <p>{{ t('guide.reporting.manual_filing_lede') }}</p>
       <p>{{ t('guide.reporting.manual_filing_before') }}</p>
@@ -87,19 +88,19 @@
         <li>{{ t('guide.reporting.manual_filing_' ~ step) }}</li>
         {% endfor %}
       </ol>
-      <p class="small muted">{{ t('guide.reporting.manual_filing_correction') }}</p>
+      <p class="ui-sub">{{ t('guide.reporting.manual_filing_correction') }}</p>
       <p>{{ t('guide.reporting.manual_filing_duty') }}</p>
       <h3 id="ubyport-credentials">{{ t('apartment.form.ubyport.credentials_help_heading') }}</h3>
-      <p class="small muted">{{ t('apartment.form.ubyport.intro') }}</p>
-      <p class="small" style="margin:12px 0">
-        <a class="btn small" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">
+      <p class="ui-sub">{{ t('apartment.form.ubyport.intro') }}</p>
+      <p class="ui-sub">
+        <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">
           {{ t('automation.sample_pdf') }}</a>
-        <span class="muted">{{ t('apartment.form.ubyport.sample_help') }}</span>
+        <span class="ui-sub">{{ t('apartment.form.ubyport.sample_help') }}</span>
       </p>
-      <p class="small muted">{{ t('apartment.form.ubyport.mismatch_help') }}</p>
+      <p class="ui-sub">{{ t('apartment.form.ubyport.mismatch_help') }}</p>
     </section>
 
-    <section class="guide-section panel" id="filters">
+    <section class="guide-section ui-section" id="filters">
       <h2>{{ t('guide.nav.filters') }}</h2>
       <p>{{ t('guide.filters.body') }}</p>
       <ul class="guide-steps">
@@ -107,31 +108,31 @@
       </ul>
     </section>
 
-    <section class="guide-section panel" id="housebook">
+    <section class="guide-section ui-section" id="housebook">
       <h2>{{ t('guide.nav.housebook') }}</h2>
       <p>{{ t('guide.housebook.body') }}</p>
-      <p class="small muted">{{ t('housebook.legal_body') }}</p>
-      <ul class="legal-list small">
+      <p class="ui-sub">{{ t('housebook.legal_body') }}</p>
+      <ul class="legal-list ui-sub">
         <li>{{ t('housebook.legal_paper') }}</li>
         <li>{{ t('housebook.legal_inspection') }}</li>
       </ul>
-      <p class="small muted legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
+      <p class="ui-sub legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
     </section>
 
-    <section class="guide-section panel" id="stay_fee">
+    <section class="guide-section ui-section" id="stay_fee">
       <h2>{{ t('guide.nav.stay_fee') }}</h2>
       <p>{{ t('guide.stay_fee.body') }}</p>
       <p>{{ t('guide.stay_fee.rules') }}</p>
       <p>{{ t('guide.stay_fee.save') }}</p>
     </section>
 
-    <section class="guide-section panel" id="invoices">
+    <section class="guide-section ui-section" id="invoices">
       <h2>{{ t('guide.nav.invoices') }}</h2>
       <p>{{ t('guide.invoices.body') }}</p>
       <p>{{ t('guide.invoices.flow') }}</p>
     </section>
 
-    <section class="guide-section panel" id="settings">
+    <section class="guide-section ui-section" id="settings">
       <h2>{{ t('guide.nav.settings') }}</h2>
       <p>{{ t('guide.settings.body') }}</p>
       <ul class="guide-steps">
@@ -139,7 +140,7 @@
       </ul>
     </section>
 
-    <section class="guide-section panel" id="door-codes">
+    <section class="guide-section ui-section" id="door-codes">
       <h2>{{ t('guide.nav.door_codes') }}</h2>
       <p>{{ t('guide.door_codes.lede') }}</p>
       <h3>{{ t('guide.door_codes.need_title') }}</h3>
@@ -152,11 +153,11 @@
       <h3>{{ t('guide.door_codes.how_title') }}</h3>
       <ul>{% for n in range(1, 8) %}<li>{{ t('guide.door_codes.how' ~ n) }}</li>{% endfor %}</ul>
       <h3 id="door-codes-terms">{{ t('guide.door_codes.terms_title') }}</h3>
-      <p class="small muted">{{ t('guide.door_codes.terms_version', version='2026-10-12') }}</p>
+      <p class="ui-sub">{{ t('guide.door_codes.terms_version', version='2026-10-12') }}</p>
       <ol>{% for n in range(1, 10) %}<li>{{ t('guide.door_codes.terms' ~ n) }}</li>{% endfor %}</ol>
     </section>
 
-    <section class="guide-section panel" id="faster">
+    <section class="guide-section ui-section" id="faster">
       <h2>{{ t('guide.nav.faster') }}</h2>
       <ul class="guide-steps">
         <li>{{ t('guide.faster.search') }}</li>
@@ -164,7 +165,7 @@
       </ul>
     </section>
 
-    <section class="guide-section panel" id="faq">
+    <section class="guide-section ui-section" id="faq">
       <h2>{{ t('guide.nav.faq') }}</h2>
       <dl class="kv">
         {% for item in ['link', 'count', 'czech', 'twice', 'edit'] %}
@@ -174,25 +175,25 @@
       </dl>
     </section>
 
-    <section class="guide-section panel guide-legal" id="legal">
+    <section class="guide-section ui-section guide-legal" id="legal">
       <h2>{{ t('guide.nav.legal') }}</h2>
       <p class="lede">{{ t('guide.legal.lede') }}</p>
       {% for item in ['housebook', 'paper', 'signature', 'verification', 'reporting', 'retention'] %}
       <h3>{{ t('guide.legal.' ~ item ~ '_title') }}</h3>
       <p>{{ t('guide.legal.' ~ item ~ '_body') }}</p>
       {% endfor %}
-      <div class="legal-disclaimer panel quiet">
+      <div class="legal-disclaimer ui-section quiet">
         <h3>{{ t('guide.legal.disclaimer_title') }}</h3>
-        <p class="small muted">{{ t('guide.legal.disclaimer_body') }}</p>
+        <p class="ui-sub">{{ t('guide.legal.disclaimer_body') }}</p>
       </div>
     </section>
 
     {% if demo_available %}
-    <section class="guide-section panel" id="demo">
+    <section class="guide-section ui-section" id="demo">
       <h2>{{ t('guide.nav.demo') }}</h2>
       <p>{{ t('guide.demo.body') }}</p>
       <form method="post" action="/demo" class="inline">
-        <button class="btn primary" type="submit">{{ t('demo.load') }}</button>
+        <button class="ui-btn ui-btn-primary" type="submit">{{ t('demo.load') }}</button>
       </form>
     </section>
     {% endif %}

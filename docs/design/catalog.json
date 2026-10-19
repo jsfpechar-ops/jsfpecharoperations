@@ -208,7 +208,12 @@
     "App/app/templates/cleaning_edit.html",
     "App/app/templates/cleaning_properties.html",
     "App/app/templates/cleaning_settings.html",
-    "App/app/templates/cleaning_shares.html"
+    "App/app/templates/cleaning_shares.html",
+    "App/app/templates/settings.html",
+    "App/app/templates/settings_archived.html",
+    "App/app/templates/privacy_requests.html",
+    "App/app/templates/guide.html",
+    "App/app/templates/onboarding.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [
@@ -606,6 +611,62 @@
       "cleaning-share-row",
       "cleaning-share-url",
       "cleaning-warning"
+    ],
+    "App/app/templates/settings.html": [
+      "account-identity",
+      "checkline",
+      "document-links",
+      "err-text",
+      "hint",
+      "host-audit-filter",
+      "host-audit-filters",
+      "host-property-card",
+      "host-property-grid",
+      "kv",
+      "nowrap",
+      "passkey-row",
+      "scroll-x",
+      "settings-action-list",
+      "settings-action-row",
+      "settings-email-form",
+      "settings-email-row",
+      "settings-groups",
+      "settings-mail-preview",
+      "settings-move",
+      "settings-move-form",
+      "technical",
+      "ui-btn-",
+      "ui-prewrap"
+    ],
+    "App/app/templates/settings_archived.html": [
+      "archive-type-filters",
+      "heading-with-tip",
+      "nowrap",
+      "row-actions",
+      "row-primary-link",
+      "scroll-x",
+      "ui-center"
+    ],
+    "App/app/templates/privacy_requests.html": [
+      "checkline"
+    ],
+    "App/app/templates/guide.html": [
+      "guide-content",
+      "guide-layout",
+      "guide-legal",
+      "guide-nav",
+      "guide-nav-link",
+      "guide-section",
+      "guide-shot",
+      "guide-statuses",
+      "guide-steps",
+      "kv",
+      "lede",
+      "legal-disclaimer",
+      "legal-fineprint",
+      "legal-list",
+      "quiet",
+      "ui-badge-"
     ]
   },
   "enforced_stylesheets": [
