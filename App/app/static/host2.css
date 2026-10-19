@@ -320,3 +320,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .ui-table-stack td[data-label]::before { content: attr(data-label); flex: 0 0 38%; color: var(--ink-3); font-size: var(--size-14); }
   .host-workspace .ui-table-stack td[data-label=""]::before, .host-workspace .ui-table-stack td:not([data-label])::before { content: none; }
 }
+
+/* 0134-cont-2: icon buttons stay square; copy labels are for screen readers */
+.host-workspace .ui-btn-icon .btn-icon-label, .host-workspace .ui-btn-icon .copy-label-stack, .host-workspace .ui-btn-icon .copy-label-confirmed { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
