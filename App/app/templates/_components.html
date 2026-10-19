@@ -307,7 +307,8 @@
     'running': 'teal',
     'noop': 'grey'
   } %}
-  <span class="pill {{ tones.get(state, 'red') }}">{{ labels.get(state, state) }}</span>
+  {% set stone = tones.get(state, 'red') %}
+  <span class="ui-badge ui-badge-{{ UI_SUBMISSION_KINDS.get(stone, 'neutral') }}{{ ' ui-badge-overdue' if stone == 'red' }}" data-tone="{{ stone }}">{% if stone == 'red' %}! {% endif %}{{ labels.get(state, state) }}</span>
 {% endmacro %}
 
 {# The deadline cell of a stay, from ``deadline_cell(progress, check_in)``.
