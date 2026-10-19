@@ -496,3 +496,8 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .setup-wizard-actions { flex-direction: column-reverse; align-items: stretch; width: 100%; margin-left: 0; }
   .host-workspace .setup-wizard-foot .ui-btn, .host-workspace .setup-wizard-actions form, .host-workspace .setup-wizard-actions form .ui-btn { width: 100%; margin-left: 0; }
 }
+
+/* 0163: split columns start on one line; the manage form keeps a readable width */
+.host-workspace .split.wide > section, .host-workspace .split.wide > aside { margin-top: 0; padding-top: 0; }
+.host-workspace .split.wide > section > .ui-section:first-child, .host-workspace .split.wide > aside > :first-child { margin-top: 0; padding-top: 0; }
+.host-workspace #user-manage { max-width: 40rem; }

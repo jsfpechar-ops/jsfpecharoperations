@@ -173,3 +173,43 @@ def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
         db.execute("DELETE FROM user_account WHERE id = ?", (admin_id,))
     lines = [f"{r} {w} {s}: {f}" for r, w, s, f in findings[:40]]
     assert not findings, f"{len(findings)} admin layout findings\n" + "\n".join(lines)
+
+
+def test_admin_users_columns_start_on_one_line(wide_host, wide_base):
+    username = f"guard-admin-{secrets.token_hex(4)}"
+    admin_id = auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username)
+    client = TestClient(app)
+    login_as(client, username, url="/login?lang=en", follow_redirects=False)
+    cookie = client.cookies.get(auth.SESSION_COOKIE)
+    assert cookie
+    try:
+        with sync_api.sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(**chromium_launch_kwargs())
+            except Exception:
+                if REQUIRE_BROWSER:
+                    raise
+                pytest.skip("Chromium is required for the columns test")
+            context = browser.new_context(viewport={"width": 1280, "height": 1000})
+            context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+            context.add_init_script("try { localStorage.setItem('ubyhost-sidebar-collapsed', '0'); } catch (e) {}")
+            page = context.new_page()
+            response = page.goto(f"{wide_base}/admin/users?manage={wide_host['owner']}&lang=en")
+            assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+            _wait_for_host_layout(page)
+            _dismiss_optional_security_prompt(page)
+            gap = page.evaluate(
+                "() => { const s = document.querySelector('.split.wide'); const a = s.children[0].getBoundingClientRect().top, b = s.children[1].getBoundingClientRect().top; return Math.abs(a - b); }"
+            )
+            assert gap <= 2, f"split columns start {gap}px apart"
+            email = page.locator("#user-manage input[type=email]")
+            if email.count() == 0:
+                email = page.locator("#user-manage input:not([type=hidden]):visible")
+            width = email.first.bounding_box()["width"]
+            assert width <= 660, f"manage input is {width}px wide"
+            context.close()
+            browser.close()
+    finally:
+        db.execute("DELETE FROM audit WHERE owner_user_id = ? OR actor_user_id = ?", (admin_id, admin_id))
+        db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (admin_id,))
+        db.execute("DELETE FROM user_account WHERE id = ?", (admin_id,))
