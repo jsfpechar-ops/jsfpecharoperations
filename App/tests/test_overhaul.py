@@ -447,7 +447,7 @@ def test_stay_settings_and_the_quick_edit_share_one_panel():
     _apartment_id, stays, _past = _seed_stays()
     try:
         body = _browser().get(f"/reservations/{stays[0]}").text
-        assert 'class="panel stay-settings" id="stay-quick-edit"' in body
+        assert 'class="ui-section stay-settings" id="stay-quick-edit"' in body
         panel = body.split('id="stay-quick-edit"', 1)[1].split("</details>", 1)[0]
         assert "data-inline-edit" in panel
         assert 'name="expected_guests_override"' in panel
