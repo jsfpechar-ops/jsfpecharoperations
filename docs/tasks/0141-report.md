@@ -1,6 +1,6 @@
 # 0141 report (executor: Haiku 5.5)
 
-Status: blocked
+Status: review
 
 ## Done
 - Steps 1 to 6 ran, each `ok`, each committed as `0141 step k`: invoices.html, _list_filter.html, invoice_detail.html, invoice_form.html (+ host2.css block), invoice_stay_picker.html, catalog.json.
@@ -21,3 +21,10 @@ Step 7 remainder (that selector), step 8 browser run, step 9 static versions, st
 
 ## Owner or orchestrator steps
 Add `App/tests/test_invoice_stay_browser.py` to brief section 3, change the selector to `.invoice-actions button.ui-btn-primary`, then resume at step 7.
+
+## Session 2 (0141-cont-1)
+- Step 1: `App/tests/test_invoice_stay_browser.py` selector now `.invoice-actions button.ui-btn-primary`. Run: `2 passed` (0 skipped). Commit `ee940b9`.
+- Step 8 browser set (9 files): `2 failed, 82 passed, 1 warning in 85.08s`, 0 skipped. Only the two known failures, same messages: `Remove height differs from the first control at 360px (en)` and `[('rhythm', 'tabs', [0, 8, 16]), ('rhythm', 'toolbar', [20, 24])]`.
+- Step 9: `base.html 1`, `ok`. `test_static_versions.py --write` wrote 32 files; `2 passed`. Key `20261019-0141`.
+- Step 10: committed. No PR opened (brief says do not push).
+- Not staged: `docs/tasks/0140-properties-v2.md`, `docs/design/pages/properties.md`.
