@@ -317,17 +317,16 @@
 {% macro deadline_badge(cell, tag='span', extra_class='') -%}
   {%- set classes = (' ' ~ extra_class) if extra_class else '' -%}
   {%- if cell.by_hand and cell.state in ('filed_on_time', 'filed_late') -%}
-    {#- Filed by the host in the UbyPort web application: say so, late or not. -#}
-    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ t('deadline.filed_by_hand', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
+    <{{ tag }} class="ui-badge ui-badge-{{ UI_DEADLINE_KINDS.get(cell.level, 'neutral') }}{{ classes }}" data-deadline="{{ cell.level }}">{{ t('deadline.filed_by_hand', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
   {%- elif cell.state == 'filed_on_time' -%}
-    <{{ tag }} class="deadline{{ classes }} done">{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
+    <{{ tag }} class="ui-badge ui-badge-done{{ classes }}" data-deadline="done">{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
   {%- elif cell.state == 'filed_late' -%}
-    <{{ tag }} class="deadline{{ classes }} neutral" title="{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}">
+    <{{ tag }} class="ui-badge ui-badge-neutral{{ classes }}" data-deadline="neutral" title="{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}">
       {%- if cell.late_hours < 48 %}{{ t('deadline.filed_late_hours', n=cell.late_hours) }}
       {%- else %}{{ tp('deadline.filed_late_days', cell.late_hours // 24) }}{% endif -%}
     </{{ tag }}>
   {%- elif cell.state == 'countdown' -%}
-    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ describe_time_left(cell.check_in) if cell.check_in else '—' }}</{{ tag }}>
+    <{{ tag }} class="ui-badge ui-badge-{{ UI_DEADLINE_KINDS.get(cell.level, 'neutral') }}{{ ' ui-badge-overdue' if cell.level == 'overdue' }}{{ classes }}" data-deadline="{{ cell.level }}">{% if cell.level == 'overdue' %}! {% endif %}{{ describe_time_left(cell.check_in) if cell.check_in else '—' }}</{{ tag }}>
   {%- endif -%}
 {%- endmacro %}
 
