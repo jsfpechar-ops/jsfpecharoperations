@@ -1,6 +1,6 @@
 # 0124: CI fixes before the design switch (funnel window, create popover reclamp)
 
-Status: todo
+Status: review
 Depends on: none | Base commit: df8b842 | Branch: claude/project-thread-td6fpc
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
