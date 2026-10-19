@@ -47,7 +47,7 @@ CAPTURE_ROUTES = {
     # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
     "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=reporting", ".property-settings"),
     "fee-detail": ("/stay-fees/{configured_apartment}", ".ui-body-detail, .ui-section"),
-    "invoice-new-picker": ("/invoices/new", ".panel"),
+    "invoice-new-picker": ("/invoices/new", ".ui-section"),
     "invoice-new-selected": ("/invoices/new?entity={entity_id}&reservation_id={reservation_id}", ".invoice-workspace, .invoice-stay-picker"),
     # 0076/0101: Invoice settings is the business editor; its panel is the result lane.
     "invoice-settings": ("/entities?edit={entity_id}&next=/invoices", ".entity-form"),
