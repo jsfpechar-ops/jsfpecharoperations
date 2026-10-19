@@ -308,3 +308,15 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .ui-table tr.is-overdue { box-shadow: inset 3px 0 0 var(--st-action-dot); }
   .host-workspace .ui-table tr.is-overdue td:first-child { box-shadow: none; }
 }
+/* 0134: legacy inputs inside a v2 field, until every form uses ui_field */
+.host-workspace .ui-field > input:not([type="checkbox"]):not([type="radio"]), .host-workspace .ui-field > select, .host-workspace .ui-field > textarea { width: 100%; min-height: var(--control-h); padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-2); background: var(--surface); color: var(--ink); font: inherit; font-size: var(--size-16); }
+.host-workspace .ui-field > textarea { min-height: calc(var(--control-h) * 2); padding: var(--space-2) var(--space-3); }
+.host-workspace .ui-field > label { display: block; margin: 0 0 var(--space-1); font-size: var(--size-14); color: var(--ink-2); }
+/* 0134: stacked table under the desktop breakpoint; the header row is read by assistive tech only */
+@media (max-width: 1023px) {
+  .host-workspace .ui-table-stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .host-workspace .ui-table-stack tr { display: block; padding: var(--row-py) 0; border-bottom: 1px solid var(--line); }
+  .host-workspace .ui-table-stack td { display: flex; gap: var(--space-3); padding: var(--space-1) 0; border: 0; }
+  .host-workspace .ui-table-stack td[data-label]::before { content: attr(data-label); flex: 0 0 38%; color: var(--ink-3); font-size: var(--size-14); }
+  .host-workspace .ui-table-stack td[data-label=""]::before, .host-workspace .ui-table-stack td:not([data-label])::before { content: none; }
+}

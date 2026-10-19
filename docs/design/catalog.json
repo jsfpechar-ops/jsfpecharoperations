@@ -7,7 +7,7 @@
     "ui-body", "ui-body-list", "ui-body-detail", "ui-body-form", "ui-body-settings",
     "ui-btn", "ui-btn-primary", "ui-btn-secondary", "ui-btn-quiet", "ui-btn-danger", "ui-btn-compact", "ui-btn-icon", "ui-btn-loading", "ui-btn-group",
     "ui-field", "ui-field-err", "ui-label", "ui-opt", "ui-help", "ui-error", "ui-pair", "ui-check", "ui-toggle", "ui-switch", "ui-form-actions", "ui-sticky-actions", "ui-steps",
-    "ui-table", "ui-table-wrap", "ui-row", "ui-cell-first", "ui-cell-r", "ui-cell-acts", "ui-sub", "ui-cards", "ui-card", "ui-card-l1", "ui-card-l2", "ui-card-l3", "ui-card-menu",
+    "ui-table", "ui-table-stack", "ui-table-wrap", "ui-row", "ui-cell-first", "ui-cell-r", "ui-cell-acts", "ui-sub", "ui-cards", "ui-card", "ui-card-l1", "ui-card-l2", "ui-card-l3", "ui-card-menu",
     "ui-badge", "ui-badge-action", "ui-badge-attention", "ui-badge-done", "ui-badge-neutral", "ui-badge-overdue",
     "ui-pdot", "ui-num", "ui-mono",
     "ui-section", "ui-section-h", "ui-stats", "ui-stat", "ui-facts", "ui-detail", "ui-detail-side", "ui-banner", "ui-banner-attention", "ui-banner-neutral", "ui-gcard",
@@ -23,8 +23,9 @@
     "ui-w10", "ui-w14", "ui-w18", "ui-w30", "ui-w40", "ui-w60", "ui-skel-detail", "ui-skel-side", "ui-cards-stack", "ui-swatch-grid", "ui-swatch", "ui-swatch-chip", "ui-type-sample"
   ],
   "hooks": ["sr-only", "skip-link", "grow", "hidden", "is-open", "is-on", "is-active", "row-menu", "row-menu-trigger", "row-menu-panel", "help-tip", "help-tip-btn", "help-tip-body", "toast", "toast-stack", "clickable-row", "row-menu-item", "row-menu-form", "row-action-send", "row-action-form", "send-all", "send-all-form", "sync-btn", "sync-cta", "sync-cta-form", "sync-cta-meta", "has-meta", "csv-in-filter", "btn-icon-label", "property-identity", "truncate", "guest-count", "inline", "source-badge", "dashboard-row", "dashboard-row-copy", "dashboard-row-task", "dashboard-row-actions", "dashboard-row-property", "dashboard-row-dates", "dashboard-missing-line", "ui-table-wrap", "is-overdue"],
-  "enforced_templates": ["App/app/templates/dev_ui.html", "App/app/templates/dashboard.html"],
+  "enforced_templates": ["App/app/templates/dev_ui.html", "App/app/templates/dashboard.html", "App/app/templates/reservations.html"],
   "legacy": {
+    "App/app/templates/reservations.html": ["action-panel", "empty-state-extra", "filter-apply", "filter-fields", "filter-panel-actions", "filters", "grid", "host-filter-panel", "muted", "nowrap", "num", "opt", "row-action-pair", "row-actions", "row-primary-link", "saved-views", "small", "stay-col-actions", "stay-col-dates", "stay-col-guests", "stay-col-property", "stay-col-reporting", "stay-col-source", "stay-col-stay", "stay-date-link", "stay-identity-link", "stay-report-deadline", "stays-view", "two"],
     "App/app/templates/dashboard.html": [
       "dashboard-stats",
       "dashboard-stat",
