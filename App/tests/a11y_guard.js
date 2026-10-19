@@ -53,6 +53,7 @@
   for (const el of document.querySelectorAll('a[href],button,input:not([type=hidden]),select,textarea,[role=button],[role=menuitem],[role=tab]')) {
     if (!vis(el) && !el.matches('.sr-only')) continue;
     if (el.closest('[hidden],dialog:not([open]),template')) continue;
+    if (el.closest('[aria-hidden=true]') && el.tabIndex < 0) continue;
     const n = accName(el);
     if (!n) out.push(['no-accessible-name', name(el)]);
     else if (el.matches('a[href]') && generic.includes(n.toLowerCase())) out.push(['generic-link-text', name(el)]);
@@ -72,7 +73,10 @@
     }
   }
   // 5. the open page is marked in navigation
-  for (const n of navs) if (n.querySelector('a') && !n.querySelector('[aria-current]') && !n.matches('.ui-nav-bottom,.sub-tabs,[data-sub-tabs]')) out.push(['nav-no-current', name(n)]);
+  for (const n of navs) {
+    const here = [...n.querySelectorAll('a[href]')].find((a) => !a.hash && new URL(a.href, location.href).pathname === location.pathname);
+    if (here && !n.querySelector('[aria-current]')) out.push(['nav-no-current', name(n)]);
+  }
   // 6. colour contrast (WCAG 1.4.3): text against its real background
   const parse = (c) => {
     const m = c.match(/rgba?\(([^)]+)\)/);
