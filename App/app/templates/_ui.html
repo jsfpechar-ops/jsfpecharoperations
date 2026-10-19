@@ -14,8 +14,8 @@
 {%- endmacro %}
 
 {#- icon-only button: the label becomes aria-label and title. -#}
-{% macro ui_icon_button(label, icon_name, variant='quiet', href='', type='button', size='regular', attrs='') -%}
-{%- set classes = 'ui-btn ui-btn-' ~ variant ~ ' ui-btn-icon' ~ (' ui-btn-compact' if size == 'compact') -%}
+{% macro ui_icon_button(label, icon_name, variant='quiet', href='', type='button', size='regular', attrs='', extra_class='') -%}
+{%- set classes = 'ui-btn ui-btn-' ~ variant ~ ' ui-btn-icon' ~ (' ui-btn-compact' if size == 'compact') ~ (' ' ~ extra_class if extra_class) -%}
 {%- if href -%}<a class="{{ classes }}" href="{{ href }}" aria-label="{{ label }}" title="{{ label }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{{ icon(icon_name, 16) }}</a>
 {%- else -%}<button class="{{ classes }}" type="{{ type }}" aria-label="{{ label }}" title="{{ label }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{{ icon(icon_name, 16) }}</button>{%- endif -%}
 {%- endmacro %}
