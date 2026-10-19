@@ -467,3 +467,7 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .ui-prewrap { white-space: pre-wrap; }
 .host-workspace .ui-center { justify-content: center; }
 .host-workspace .settings-mail-preview { width: 100%; min-height: 26rem; margin-top: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-2); background: var(--surface); }
+
+/* 0144 extra: export dialogs pair their two actions in equal columns */
+.csv-export-dialog .ui-form-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.csv-export-dialog .ui-form-actions > .ui-btn { width: 100%; }
