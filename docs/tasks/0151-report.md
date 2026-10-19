@@ -1,48 +1,37 @@
 # 0151 report
 
-Status: blocked
+Status: review
 
 Branch: claude/project-thread-td6fpc (not pushed, no PR). Base 5b10d6a.
 
 ## Commits
-- 70f3f88 0151 step 1 (host2.css, app.js)
-- a1b744c 0151 step 2 (two browser test files)
-- 2205fab 0151 step 3 (MASTER.md, stays.md)
-
-## Files changed (git diff --stat 5b10d6a)
-App/app/static/host2.css, App/app/static/app.js, App/tests/test_host_filter_panels_browser.py, App/tests/test_host_wide_geometry_browser.py, docs/design/MASTER.md, docs/design/pages/stays.md, this report.
+- 6693758 0152 step 1: wait for the deferred skeleton hide (`skeleton.wait_for(state="hidden", timeout=2000)`) before `assert skeleton.is_hidden()`.
+- 0151 report (this commit): K-T02 row in known-issues, this report.
 
 ## Commands (last lines)
-- `python3 scripts/design_lint.py | tail -3`: `design lint: OK`
-- ruff `--select E9,F63,F7,F82,F401,F841` on the two test files: `All checks passed!`
-- `python3 scripts/context_lint.py | tail -3`: `context lint: OK`
-- Step 4, 8 files, one run: `2 failed, 100 passed, 1 warning in 474.51s (0:07:54)`
-- Step 4 rerun of the two failing ids alone: `2 failed, 1 warning in 8.83s`
-
-## Failures (not the skeleton flake only, see Deviations)
-Both failed in the first run and in the rerun, same assertion:
-- `test_phone_guest_sharing_and_clear_setup_actions[True-360-cs]`, tests/test_onboarding_wizard_browser.py:1518: `assert skeleton.is_hidden()` -> `AssertionError: assert False`
-- `test_phone_guest_sharing_and_clear_setup_actions[True-1280-en]`, tests/test_onboarding_wizard_browser.py:1518: `assert skeleton.is_hidden()` -> `AssertionError: assert False`
-
-The other 100 tests in the eight files passed.
+- 0152 step 1: `pytest tests/test_onboarding_wizard_browser.py -k phone_guest_sharing_and_clear_setup_actions` gives `12 passed, 58 deselected`. Ruff `E9,F63,F7,F82,F401,F841`: `All checks passed!`.
+- 0151 step 4, eight files: `102 passed, 1 warning in 474.05s (0:07:54)`, exit 0, no skipped, no failed.
+- Capture 0079 `share_compact_row_menu`: `1 passed, 1 deselected`.
+- Evidence folders restored with `git checkout -- docs/tasks/0102-evidence` and `docs/tasks/0079-evidence`. Nothing from them is committed.
 
 ## Acceptance (§7)
-- [x] Step 1 design lint OK; host2.css and app.js only
-- [x] Step 2 ruff passes; only the two test files
-- [x] Step 3 context lint OK
-- [ ] Step 4 0 failed, 0 skipped: 2 failed
-- [ ] Step 5 screenshots and K-T02 row: not done (stopped at §8)
+- [x] Step 2 passes with 0 skipped (102 passed).
+- [x] Step 3 report written.
 
 ## By eye
-Not done. The wizard and stays screenshots were not captured (step 4 stopped).
+- `wizard-calendar-390.png`: "Přidat kalendář" is whole and readable, nothing overlaps it, and the bottom tab bar sits below it.
+- `stays-390.png`: one card per stay; stay names on one line; badges in a row under the dates; property left and guest count right; menu button top right; no horizontal scroll visible.
+
+## Screenshots
+- /tmp/claude-0/-home-user-jsfpecharoperations/3c6f1ec6-a025-553c-863a-9c0748d5832e/scratchpad/shots/0151/wizard-calendar-390.png
+- /tmp/claude-0/-home-user-jsfpecharoperations/3c6f1ec6-a025-553c-863a-9c0748d5832e/scratchpad/shots/0151/stays-390.png
 
 ## Deviations
-- Stopped at §8: a test failed twice. The brief allows one rerun of the skeleton flake; the rerun failed again on both ids, so I did not run the 0079/0102 capture steps, did not add K-T02, and did not open a PR.
-- Done: steps 1 to 3. Left: step 4 (rerun of the wizard test after the skeleton fix or owner decision), step 5.
-- A stray background `cat` (my own typo, no file written) was left waiting on stdin; it did not change the repo.
+- The skeleton assertion did not fail on the eight-file run, so no rerun was needed.
+- Step 5 known-issues row added as K-T02 (after K-T01).
 
 ## Questions
-- The two failing ids match the flake signature, but both failed on the rerun too. Should the skeleton wait in the test be fixed, or should K-T02 be accepted and the test marked for a fix in a new brief?
+None.
 
 ## Owner steps left
-None until the question above is answered.
+- Review and open the PR for branch claude/project-thread-td6fpc (not pushed by the executor).
