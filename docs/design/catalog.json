@@ -1,0 +1,27 @@
+{
+  "master_version": "2.0.0",
+  "classes": [
+    "ui-page", "ui-ph", "ui-ph-main", "ui-ph-back", "ui-ph-meta", "ui-ph-acts", "ui-ph-menu",
+    "ui-tabs", "ui-tab",
+    "ui-toolbar", "ui-toolbar-search", "ui-toolbar-right", "ui-chips", "ui-chip", "ui-chip-x",
+    "ui-body", "ui-body-list", "ui-body-detail", "ui-body-form", "ui-body-settings",
+    "ui-btn", "ui-btn-primary", "ui-btn-secondary", "ui-btn-quiet", "ui-btn-danger", "ui-btn-compact", "ui-btn-icon", "ui-btn-loading", "ui-btn-group",
+    "ui-field", "ui-field-err", "ui-label", "ui-opt", "ui-help", "ui-error", "ui-pair", "ui-check", "ui-toggle", "ui-switch", "ui-form-actions", "ui-sticky-actions", "ui-steps",
+    "ui-table", "ui-row", "ui-cell-first", "ui-cell-r", "ui-cell-acts", "ui-sub", "ui-cards", "ui-card", "ui-card-l1", "ui-card-l2", "ui-card-l3", "ui-card-menu",
+    "ui-badge", "ui-badge-action", "ui-badge-attention", "ui-badge-done", "ui-badge-neutral", "ui-badge-overdue",
+    "ui-pdot", "ui-num", "ui-mono",
+    "ui-section", "ui-section-h", "ui-stats", "ui-stat", "ui-facts", "ui-detail", "ui-detail-side", "ui-banner", "ui-banner-attention", "ui-banner-neutral", "ui-gcard",
+    "ui-menu", "ui-menu-panel", "ui-menu-item", "ui-menu-danger",
+    "ui-dialog", "ui-sheet", "ui-sheet-handle", "ui-toast",
+    "ui-empty", "ui-tip", "ui-pagination",
+    "ui-skel", "ui-bone", "ui-skel-h", "ui-skel-rows", "ui-skel-row", "ui-skel-cards", "ui-skel-card", "ui-skel-group",
+    "ui-sidebar", "ui-brand", "ui-brand-mark", "ui-env", "ui-search-row", "ui-nav", "ui-nav-gap", "ui-nav-count", "ui-nav-bottom", "ui-account", "ui-avatar",
+    "ui-topbar", "ui-tabbar", "ui-tabbar-ic",
+    "ui-calendar", "ui-cal-h", "ui-cal-grid",
+    "ui-icon", "ui-input", "ui-select", "ui-textarea"
+  ],
+  "hooks": ["sr-only", "skip-link", "grow", "hidden", "is-open", "is-on", "is-active", "row-menu", "row-menu-trigger", "row-menu-panel", "help-tip", "help-tip-btn", "help-tip-body", "toast", "toast-stack", "clickable-row"],
+  "enforced_templates": [],
+  "legacy": {},
+  "enforced_stylesheets": ["App/app/static/host2.css"]
+}
