@@ -323,7 +323,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                     assert header_actions.locator('form[action="/sync"]').is_visible()
                     assert header_actions.locator('form[action="/demo/reset"]').is_visible()
                 # v2 (MASTER): one primary action; below 1024 px the rest sit in the overflow menu.
-                header_buttons = page.locator(".ui-ph-acts .ui-btn")
+                header_buttons = page.locator(".ui-ph-acts .ui-btn:not(.ui-ph-menu)")
                 visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
                 if width < 1024:
                     assert len(visible_buttons) == 1
