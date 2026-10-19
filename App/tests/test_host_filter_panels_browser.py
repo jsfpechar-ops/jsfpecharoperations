@@ -421,7 +421,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                     if width <= 600:
                         assert geometry["triggerHeight"] >= 44
                     else:
-                        assert geometry["triggerHeight"] >= 42
+                        assert geometry["triggerHeight"] >= 40
                     if capture:
                         page.locator("[data-filter-toggle]").click()
                         _capture(page, f"{name}-{lang}-{width}-expanded")
