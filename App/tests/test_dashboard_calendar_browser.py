@@ -692,7 +692,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
                 stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
                 rows: [...doc.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
+                    text: normalize(row.textContent)
                 }))
             };
         }""", fresh_html)
