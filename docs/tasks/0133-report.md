@@ -65,3 +65,30 @@ Screenshots present (from the test run; not confirmed as rewritten by this run):
 Deviations: step 5 changed only line 695 of test_dashboard_calendar_browser.py; the identical text at lines 627 and 710 was left alone (brief names only ~695).
 Questions: should the five non-named failures be handled in a new brief?
 
+
+## 0133-fix-1 (executor run)
+
+Status: blocked. Steps 1 to 3 committed; step 4 has 4 failures outside the brief's named cause (acceptance not met). Nothing pushed, no PR (owner said no push).
+
+Commits: `8d37fd1` step 1 (phone rows on one DOM, `is-overdue` hook, catalog), `62972be` step 2 (phone table CSS), `5450456` step 3 (33 px gap, `row.textContent`).
+
+Step 4, `tail -25`: `5 failed, 47 passed, 3 warnings`. Verbatim:
+- `test_host_list_layouts_browser.py::test_stays_pills_and_deadlines_stay_on_one_line` (expected, 0134): `E   assert row["height"] <= 72`, `('en', 1280, {... 'height': 85 ...})`
+- `test_dashboard_calendar_browser.py::test_calendar_geometry_locales_and_screenshots:315`: `E   assert (369.203125 - 325.203125) <= 33`
+- `test_dashboard_calendar_browser.py::test_dashboard_committed_stay_refresh_retry_does_not_post_twice:704`: `playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.`
+- `test_host_quiet_dashboard_browser.py::test_dashboard_rich_queue_colors_cap_and_interaction_screenshots:318`: `E   assert False` where `is_visible()` on `.dashboard-actions >> a[href="/reservations?new=1"]`
+- `test_design_dashboard.py::test_dashboard_with_a_property_has_the_v2_header_one_primary_and_refresh_hooks:11`: `E   assert ('class="ui-stats"' in page and page.count('class="ui-stat"') == 3)`
+
+Baseline check: the same 4 tests (all except list_layouts) fail at `2a477eb`, before any 0133-fix-1 commit. The geometry test also fails at line 315 there with the old limit of 16. So these are pre-existing, not caused by steps 1 to 3. I did not fix them: none is named in the brief, and the 33 px limit does not match the measured 44 px gap.
+
+Lint: `design_lint` OK; ruff `--select E9,F63,F7,F82,F401,F841` "All checks passed!".
+
+Screenshots (scratchpad `shots/0133/`): `dashboard-390.png`, `dashboard-1280.png`. These are copies of `dashboard-single-en-390.png` and `-1280.png`, written by a test run at 08:27. I have not confirmed which test wrote them. Viewed the 390 one: the stay is a card with the row menu (three dots) visible. The bottom tab bar overlaps the calendar in the full-page capture, which is likely a fixed-nav artifact.
+
+Deviations: step 4 acceptance not met; I stopped at the brief's §8 rule instead of fixing the four tests. Untracked `docs/tasks/0102-evidence/*.png` files were already in the tree and are not committed.
+
+Questions:
+1. Is the geometry test's 33 px limit right, given the measured 44 px gap?
+2. Should the four pre-existing failures get their own brief?
+
+Owner steps left: none. Push and PR wait for the owner's decision.
