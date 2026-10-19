@@ -514,3 +514,5 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .cleaning-period .ui-field { margin: 0; flex: 0 1 12rem; min-width: 0; }
 .host-workspace .cleaning-period > .ui-btn { align-self: flex-end; }
 .host-workspace .cleaning-period > a { align-self: flex-end; display: inline-flex; align-items: center; min-height: var(--control-h); }
+/* 0168: help buttons meet the 24 px target size; the 44 px hit area stays */
+.host-workspace .help-tip-btn { width: var(--space-6); height: var(--space-6); }
