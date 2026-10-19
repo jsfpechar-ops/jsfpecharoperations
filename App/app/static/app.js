@@ -440,6 +440,9 @@
     panel.classList.add("is-open");
     panel.style.position = "fixed";
     panel.style.zIndex = "10000";
+    if (panel.classList.contains("ui-menu-panel") && window.matchMedia("(max-width: 1023px)").matches) {
+      return; // 0151: below 1024 px the panel is the bottom sheet of host2.css; CSS places it
+    }
     var rect = trigger.getBoundingClientRect();
     var width = panel.offsetWidth || 180;
     var left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
