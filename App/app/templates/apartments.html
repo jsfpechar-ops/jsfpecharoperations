@@ -1,21 +1,21 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'apartments' %}
+{% set body_kind = 'list' %}
+{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, property_identity, help_tip, copy_icon with context %}
+{% from "_ui.html" import ui_button with context %}
+{% from "_ui_layout.html" import ui_toolbar, ui_section_tabs with context %}
+{% from "_icons.html" import icon with context %}
 {% block title %}{{ t('apartments.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import list_page_header, list_toolbar, list_section_heading, empty_state, row_menu_begin, row_menu_end, property_identity, nav_icon, help_tip, copy_icon with context %}
-{% set header_actions %}
-  {% if rows %}<a class="btn primary sync-btn" href="/apartments/new"><span class="sync-btn-icon" aria-hidden="true">{{ nav_icon('property') }}</span><span>{{ t('apartments.add') }}</span></a>{% endif %}
-{% endset %}
+{% block meta %}{% if last_sync %}{{ t('dashboard.last_synced', when=last_sync | datetime_local) }}{% endif %}{% endblock %}
+{% block primary_action %}{% if rows %}{{ ui_button(t('apartments.add'), 'primary', href='/apartments/new', icon_name='house') }}{% endif %}{% endblock %}
 {#- 0099: the shared records (Business & legal details, Door lock account)
     are this section's sub-page tabs under the title (0078 shared scope). -#}
-{{ list_page_header(
-  t('apartments.title'),
-  actions=header_actions,
-  meta=(t('dashboard.last_synced', when=last_sync | datetime_local) if last_sync else '')
-) }}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block toolbar %}{% if rows %}{{ ui_toolbar(actions='<span class="ui-sub">' ~ tp('properties.list.count', rows | length) ~ '</span>') }}{% endif %}{% endblock %}
+{% block body %}
+{{ onboarding_banner(onboarding) }}
 
 {% if rows %}
-{{ list_toolbar(tp('properties.list.count', rows | length)) }}
 <div class="panel tight scroll-x list-cards lc-properties">
   <table class="table-cards properties-table">
     <thead>
@@ -30,15 +30,15 @@
           aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('apartments.table.property') }}">
           <a class="row-primary-link" href="{{ base_url }}">{{ property_identity(apartment.id, apartment.internal_name) }}</a>
-          {% if not apartment.active %}<span class="pill grey">{{ t('apartments.inactive') }}</span>{% endif %}
+          {% if not apartment.active %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('apartments.inactive') }}</span>{% endif %}
         </td>
         <td data-label="{{ t('apartments.table.entity') }}">{% if apartment.legal_entity_id %}<a href="/entities?edit={{ apartment.legal_entity_id }}&amp;next=/apartments">{{ row.apartment.entity_name or '—' }}</a>{% else %}<a href="{{ base_url }}?view=settings&amp;section=property#operator-picker">{{ t('properties.choose_business') }}</a>{% endif %}</td>
         <td class="num" data-label="{{ t('apartments.table.calendars') }}">{{ apartment.feeds }}</td>
         <td class="num" data-label="{{ t('apartments.table.stays') }}">{{ apartment.reservations }}</td>
         <td data-label="{{ t('apartments.table.setup') }}">
-          {% if row.issues %}<span class="pill amber">{{ t('apartments.setup.fix', count=row.issues | length) }}</span>
-          {% elif not apartment.feeds %}<span class="pill amber">{{ t('apartments.setup.calendar') }}</span>
-          {% else %}<span class="pill green">{{ t('apartments.setup.ready') }}</span>{% endif %}
+          {% if row.issues %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('apartments.setup.fix', count=row.issues | length) }}</span>
+          {% elif not apartment.feeds %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('apartments.setup.calendar') }}</span>
+          {% else %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('apartments.setup.ready') }}</span>{% endif %}
         </td>
         <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
@@ -89,7 +89,7 @@
               <span class="property-inline-icons">
                 <button class="btn-icon" type="button" data-copy="guest-url-{{ apartment.id }}"
                         data-copied-label="{{ t('common.copied') }}" aria-label="{{ t('common.copy_link') }}">{{ copy_icon() }}<span class="sr-only">{{ t('common.copy_link') }}</span></button>
-                <a class="btn-icon" href="/l/{{ row.link_key }}" target="_blank" rel="noopener" aria-label="{{ t('guest_links.preview') }}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.4"/></svg><span class="sr-only">{{ t('guest_links.preview') }}</span></a>
+                <a class="btn-icon" href="/l/{{ row.link_key }}" target="_blank" rel="noopener" aria-label="{{ t('guest_links.preview') }}">{{ icon('external-link', 16) }}<span class="sr-only">{{ t('guest_links.preview') }}</span></a>
               </span>
             </div>
             {% else %}—{% endif %}
@@ -104,7 +104,7 @@
                       data-confirm data-confirm-message="{{ t('properties.inline.new_pin_confirm', name=apartment.internal_name) }}">
                   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
                   <input type="hidden" name="return_to" value="/apartments#property-summaries">
-                  <button class="btn-icon" type="submit" aria-label="{{ t('guest_links.new_pin') }}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12.5 1.5v3h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">{{ t('guest_links.new_pin') }}</span></button>
+                  <button class="btn-icon" type="submit" aria-label="{{ t('guest_links.new_pin') }}">{{ icon('refresh-cw', 16) }}<span class="sr-only">{{ t('guest_links.new_pin') }}</span></button>
                 </form>
               </span>
             </div>
@@ -127,7 +127,7 @@
                        min="1" max="48" step="1" inputmode="numeric" value="{{ apartment.submit_after_hours }}" data-timing-hours-input>
                 <span aria-hidden="true">{{ t('properties.inline.hours_unit') }}</span>
               </span>
-              <button class="btn small" type="submit" data-timing-save>{{ t('common.save') }}</button>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" data-timing-save>{{ t('common.save') }}</button>
               <span class="small property-timing-status" role="status" aria-live="polite" data-timing-status></span>
             </form>
           </td>

@@ -335,7 +335,7 @@ def test_business_editor_save_discard_stay(browser, base, host, lang, width, hei
     page = _page(browser, base, host, width, height)
     editor = f"{base}/entities?edit={host['entity']}&lang={lang}"
     page.goto(editor)
-    close = page.locator("#entity-edit .section-heading a.btn")
+    close = page.locator("#entity-edit .ui-section-h a.ui-btn")
 
     # Clean: the link just goes.
     with page.expect_navigation():
@@ -381,7 +381,7 @@ def test_without_javascript_nothing_changes(browser, base, host):
     assert not page.locator(".host-property-save [data-unsaved-reset]").is_visible()
     page.fill("#internal_name", "No JS O1 name")
     with page.expect_navigation():
-        page.locator(".host-property-save .btn.primary").click()
+        page.locator(".host-property-save .ui-btn-primary").click()
     assert _stored(host, "internal_name") == "No JS O1 name"
     page.goto(f"{url}?view=settings&section=property&lang=en")
     page.fill("#internal_name", "No JS unsaved")

@@ -1,59 +1,71 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'users' %}
+{% set body_kind = 'list' %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('users.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end with context %}
-{{ page_header(
-  t('users.title'),
-  t('users.lede')
-) }}
+{% block meta %}{{ t('users.lede') }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
+{% from "_components.html" import row_menu_begin, row_menu_end with context %}
+{% from "_ui.html" import ui_button, ui_field with context %}
 
 {% if missing_email_count %}
-<div class="panel" role="status" id="users-missing-email">
-  <p class="small"><strong>{{ t('users.email.missing_banner', count=missing_email_count) }}</strong></p>
+<div class="ui-section" role="status" id="users-missing-email">
+  <p class="ui-sub"><strong>{{ t('users.email.missing_banner', count=missing_email_count) }}</strong></p>
 </div>
+{% endif %}
+
+{% set manage_id = request.query_params.get('manage') %}{% set managed = (users | selectattr('id', 'equalto', manage_id | int) | list | first) if manage_id and manage_id.isdigit() else none %}
+{% if managed %}
+<section class="ui-section" id="user-manage">
+  <h2>{{ t('users.manage.title', name=managed.display_name or managed.username) }}</h2>
+  <form method="post" action="/admin/users/{{ managed.id }}/email">
+    {{ ui_field('user-email-' ~ managed.id, t('users.email.label'), name='email', value=managed.email or '', type='email', attrs='required maxlength="254" autocomplete="off" autocapitalize="none" spellcheck="false"') }}
+    {% if managed.email %}
+    {{ ui_field('user-email-reason-' ~ managed.id, t('users.email.reason'), name='reason', attrs='required minlength="5" maxlength="300"') }}
+    {% endif %}
+    {{ ui_button(t('users.email.change') if managed.email else t('users.email.set'), 'secondary', type='submit') }}
+  </form>
+  {% if managed.id != current_user.id %}
+  <form method="post" action="/admin/users/{{ managed.id }}/impersonate">
+    {{ ui_field('support-reason-' ~ managed.id, t('users.menu.open_workspace_reason'), name='reason', placeholder=t('users.menu.open_workspace_reason_optional'), attrs='maxlength="300"') }}
+    {{ ui_button(t('users.menu.open_workspace'), 'secondary', type='submit') }}
+  </form>
+  <form method="post" action="/admin/users/{{ managed.id }}/schedule-deletion">
+    {{ ui_field('user-delete-confirm-' ~ managed.id, t('users.menu.schedule_deletion_confirm', username=managed.username), name='confirm', attrs='required') }}
+    {{ ui_button(t('users.menu.schedule_deletion'), 'secondary', type='submit') }}
+  </form>
+  {% endif %}
+  <p><a class="ui-btn ui-btn-quiet" href="/admin/users">{{ t('users.manage.close') }}</a></p>
+</section>
 {% endif %}
 
 <div class="split wide">
   <section>
-    <div class="panel tight scroll-x">
-      <table class="table-cards user-table">
+    <div class="ui-section">
+      <table class="ui-table ui-table-stack user-table">
         <thead><tr><th>{{ t('users.table.user') }}</th><th>{{ t('users.table.role') }}</th><th>{{ t('users.table.properties') }}</th><th>{{ t('users.table.status') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr></thead>
         <tbody>
         {% for user in users %}
           <tr id="user-{{ user.id }}">
             <td data-label="{{ t('users.table.user') }}">
               <strong>{{ user.display_name or user.username }}</strong>
-              <div class="small muted mono">{{ user.username }}</div>
-              {% if user.email %}<div class="small muted">{{ user.email }}</div>{% elif user.active %}<span class="pill amber">{{ t('users.status.no_email') }}</span>{% endif %}
-              {% if user.signup_source %}<div class="small muted">{{ t('users.source', source=t('users.source.' ~ user.signup_source)) }}</div>{% endif %}
+              <div class="ui-sub ui-mono">{{ user.username }}</div>
+              {% if user.email %}<div class="ui-sub">{{ user.email }}</div>{% elif user.active %}<span class="ui-badge ui-badge-attention">{{ t('users.status.no_email') }}</span>{% endif %}
+              {% if user.signup_source %}<div class="ui-sub">{{ t('users.source', source=t('users.source.' ~ user.signup_source)) }}</div>{% endif %}
             </td>
             <td data-label="{{ t('users.table.role') }}">{{ user.role | capitalize }}</td>
             <td data-label="{{ t('users.table.properties') }}">{{ user.apartment_count }}</td>
             <td data-label="{{ t('users.table.status') }}">
-              {% if user.signup_at and not user.email_verified_at and not user.active %}<span class="pill amber">{{ t('users.status.unverified') }}</span>
-              {% elif not user.active %}<span class="pill grey">{{ t('users.status.disabled') }}</span>
-              {% elif not user.last_login_at %}<span class="pill amber">{{ t('users.status.invited') }}</span>
-              {% else %}<span class="pill green">{{ t('users.status.active') }}</span>{% endif %}
+              {% if user.signup_at and not user.email_verified_at and not user.active %}<span class="ui-badge ui-badge-attention">{{ t('users.status.unverified') }}</span>
+              {% elif not user.active %}<span class="ui-badge ui-badge-neutral">{{ t('users.status.disabled') }}</span>
+              {% elif not user.last_login_at %}<span class="ui-badge ui-badge-attention">{{ t('users.status.invited') }}</span>
+              {% else %}<span class="ui-badge ui-badge-done">{{ t('users.status.active') }}</span>{% endif %}
             </td>
-            <td class="row-actions" data-label="">
+            <td class="ui-cell-acts" data-card="actions">
                 {{ row_menu_begin(t('users.menu.aria')) }}
-                  <form method="post" action="/admin/users/{{ user.id }}/email" class="row-menu-form">
-                    <label class="small muted" for="user-email-{{ user.id }}">{{ t('users.email.label') }}</label>
-                    <input type="email" id="user-email-{{ user.id }}" name="email" required maxlength="254"
-                           autocomplete="off" autocapitalize="none" spellcheck="false" value="{{ user.email or '' }}">
-                    {% if user.email %}
-                    <label class="small muted" for="user-email-reason-{{ user.id }}">{{ t('users.email.reason') }}</label>
-                    <input type="text" id="user-email-reason-{{ user.id }}" name="reason" required minlength="5" maxlength="300">
-                    {% endif %}
-                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.email.change') if user.email else t('users.email.set') }}</button>
-                  </form>
+                  <a class="row-menu-item" role="menuitem" href="/admin/users?manage={{ user.id }}#user-manage">{{ t('users.menu.manage') }}</a>
               {% if user.id != current_user.id %}
-                  <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
-                    <label class="small muted" for="support-reason-{{ user.id }}">{{ t('users.menu.open_workspace_reason') }}</label>
-                    <input type="text" id="support-reason-{{ user.id }}" name="reason" maxlength="300" placeholder="{{ t('users.menu.open_workspace_reason_optional') }}">
-                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.open_workspace') }}</button>
-                  </form>
                   <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form"{% if user.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=user.display_name or user.username) }}"{% endif %}>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.disable') if user.active else t('users.menu.enable') }}</button>
                   </form>
@@ -77,11 +89,6 @@
                   <form method="post" action="/admin/users/{{ user.id }}/export" class="row-menu-form" data-no-skeleton>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.export') }}</button>
                   </form>
-                  <form method="post" action="/admin/users/{{ user.id }}/schedule-deletion" class="row-menu-form">
-                    <label class="small muted">{{ t('users.menu.schedule_deletion_confirm', username=user.username) }}</label>
-                    <input type="text" name="confirm" class="mono" required>
-                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.schedule_deletion') }}</button>
-                  </form>
               {% endif %}
                 {{ row_menu_end() }}
             </td>
@@ -92,31 +99,31 @@
     </div>
   </section>
 
-  <aside class="panel">
+  <aside class="ui-section">
     {% if signup_enabled %}
     <form method="post" action="/admin/ads-conversions.csv">
-      <button class="btn" type="submit">{{ t('users.ads_export') }}</button>
+      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('users.ads_export') }}</button>
     </form>
-    <p class="small muted">{{ t('users.ads_export_hint', days=ads_export_days) }}</p>
+    <p class="ui-sub">{{ t('users.ads_export_hint', days=ads_export_days) }}</p>
     <form method="post" action="/admin/ads-conversions.csv">
       <input type="hidden" name="again" value="1">
-      <button class="btn small" type="submit">{{ t('users.ads_export_again') }}</button>
+      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('users.ads_export_again') }}</button>
     </form>
     {% endif %}
-    <h2 style="margin-top:0">{{ t('users.create.title') }}</h2>
-    <p class="small muted">{{ t('users.create.lede') }}</p>
+    <h2>{{ t('users.create.title') }}</h2>
+    <p class="ui-sub">{{ t('users.create.lede') }}</p>
     <form method="post" action="/admin/users">
-      <div class="field">
+      <div class="ui-field">
         <label for="display_name">{{ t('users.create.name') }}</label>
         <input type="text" id="display_name" name="display_name" autocomplete="off">
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="email">{{ t('users.email.label') }}</label>
         <input type="email" id="email" name="email" required maxlength="254" autocomplete="off"
                autocapitalize="none" spellcheck="false">
-        <div class="hint">{{ t('users.email.create_hint') }}</div>
+        <div class="ui-help">{{ t('users.email.create_hint') }}</div>
       </div>
-      <button class="btn primary" type="submit">{{ t('users.create.submit') }}</button>
+      <button class="ui-btn ui-btn-primary" type="submit">{{ t('users.create.submit') }}</button>
     </form>
   </aside>
 </div>

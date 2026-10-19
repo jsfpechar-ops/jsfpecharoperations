@@ -1,14 +1,17 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'invoices' %}
+{% set body_kind = 'form' %}
+{% from "_components.html" import field_label with context %}
 {% block title %}{{ t('invoice.new') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, field_label with context %}
-{{ page_header(t('invoice.new'), t('invoice.picker.lede'), '/invoices', t('nav.invoices')) }}
+{% block meta %}{{ t('invoice.picker.lede') }}{% endblock %}
+{% block back_url %}/invoices{% endblock %}
+{% block back_label %}{{ t('nav.invoices') }}{% endblock %}
+{% block body %}
 
-<div class="panel">
+<div class="ui-section">
   {% if stays %}
   <form method="get" action="/invoices/new">
-    <div class="field">
+    <div class="ui-field">
       {{ field_label('reservation_id', t('invoice.picker.label'), t('invoice.picker.help')) }}
       <select id="reservation_id" name="reservation_id" required aria-describedby="reservation_id-help">
         {% for option in stays %}
@@ -16,14 +19,14 @@
         {% endfor %}
       </select>
     </div>
-    <div class="actions">
-      <button class="btn accent primary" type="submit">{{ t('invoice.picker.continue') }}</button>
+    <div class="ui-form-actions">
+      <button class="ui-btn ui-btn-primary" type="submit">{{ t('invoice.picker.continue') }}</button>
     </div>
   </form>
   {% else %}
   <p>{{ t('invoice.picker.empty') }}</p>
   {% endif %}
-  <p class="small muted"><a href="/reservations">{{ t('invoice.picker.add_stay') }}</a>
+  <p class="ui-sub"><a href="/reservations">{{ t('invoice.picker.add_stay') }}</a>
     · <a href="{{ invoice_details_url }}">{{ t('host.invoice_settings') }}</a></p>
 </div>
 {% endblock %}

@@ -1,4 +1,5 @@
 {% extends "setup_wizard/_layout.html" %}
+{% set cta = 'ui-btn ui-btn-primary' %}
 {% from "_components.html" import field_label, help_tip with context %}
 {% block wizard_content %}
 <p class="setup-wizard-lede">{{ t('wizard.door_lock.intro') }} {{ help_tip('wizard-lock-help', t('apartment.form.door_code.connect_first')) }}</p>
@@ -18,10 +19,10 @@
     <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
   </p>
   {% if not door_code.account %}
-  <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}/setup/door_lock#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
+  <a class="ui-btn ui-btn-secondary" href="/smart-locks?return_to=/apartments/{{ apartment.id }}/setup/door_lock#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
   {% elif not door_code.locks %}
   <p class="setup-wizard-instruction">{{ t('apartment.form.door_code.no_locks') }}</p>
-  <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}/setup/door_lock#smart-locks-share">{{ t('smart_locks.title') }}</a>
+  <a class="ui-btn ui-btn-secondary" href="/smart-locks?return_to=/apartments/{{ apartment.id }}/setup/door_lock#smart-locks-share">{{ t('smart_locks.title') }}</a>
   {% else %}
   <input type="hidden" name="door_codes_fields" value="1">
   <div class="feature-switch-row">
@@ -47,14 +48,14 @@
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="door_lock">
-  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.skip') }}</button>
+  <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.skip') }}</button>
 </form>
-<button class="btn primary" type="submit" form="door-lock-form">{{ t('wizard.save_continue') }}</button>
+<button class="{{ cta }}" type="submit" form="door-lock-form">{{ t('wizard.save_continue') }}</button>
 {% else %}
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="door_lock">
-  <button class="btn primary" type="submit" name="action" value="skip">{{ t('wizard.skip') }}</button>
+  <button class="{{ cta }}" type="submit" name="action" value="skip">{{ t('wizard.skip') }}</button>
 </form>
 {% endif %}
 {% endblock %}

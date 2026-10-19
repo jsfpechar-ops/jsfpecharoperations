@@ -45,7 +45,7 @@
 .host-workspace .ui-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: var(--space-5); height: var(--space-5); border-radius: var(--radius-pill); background: var(--surface); transition: left var(--motion-1) var(--ease-standard); }
 .host-workspace .ui-switch:checked { background: var(--accent); }
 .host-workspace .ui-switch:checked::after { left: calc(100% - var(--space-5) - 2px); }
-.host-workspace .ui-form-actions { display: flex; justify-content: flex-end; gap: var(--space-2); padding-top: var(--space-2); }
+.host-workspace .ui-form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); padding-top: var(--space-2); }
 .host-workspace .ui-sticky-actions { display: none; }
 .host-workspace .ui-steps { color: var(--ink-3); font-size: var(--size-14); margin: 0 0 var(--space-4); }
 
@@ -63,7 +63,7 @@
 .host-workspace .ui-pdot[data-property="3"]::before { background: var(--property-3); }
 .host-workspace .ui-pdot[data-property="4"]::before { background: var(--property-4); }
 .host-workspace .ui-num { font-variant-numeric: tabular-nums; }
-.host-workspace .ui-mono { font-family: var(--font-mono); font-size: var(--size-14); }
+.host-workspace .ui-mono { font-family: var(--font-mono); font-size: var(--size-14); overflow-wrap: anywhere; }
 
 /* ---- 7.7 chips ---- */
 .host-workspace .ui-chips { display: flex; gap: var(--space-2); flex-wrap: wrap; }
@@ -90,7 +90,7 @@
 .host-workspace .ui-toast, .host-workspace .toast-stack .toast { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--card-radius); box-shadow: var(--shadow-2); max-width: var(--toast-w); padding: var(--space-3) var(--space-4); font-size: var(--body-size); }
 
 /* ---- 7.11 empty state, 7.12 tip, 7.13 pagination ---- */
-.host-workspace .ui-empty { text-align: center; padding: var(--space-12) var(--space-6); color: var(--ink-2); }
+.host-workspace .ui-empty { text-align: center; padding: var(--space-8) var(--space-4); color: var(--ink-2); }
 .host-workspace .ui-empty h2 { margin: 0 0 var(--space-1); font-size: var(--size-18); font-weight: var(--control-weight); color: var(--ink); }
 .host-workspace .ui-empty p { margin: 0 auto var(--space-4); max-width: 48ch; }
 .host-workspace .ui-tip { display: inline-flex; vertical-align: middle; position: relative; }
@@ -104,7 +104,6 @@
   .host-workspace .ui-field .ui-input:not([type="checkbox"]):not([type="radio"]), .host-workspace .ui-field .ui-select { min-height: var(--control-h-phone); height: var(--control-h-phone); }
   .host-workspace .ui-chip { min-height: var(--control-h-phone); }
   .host-workspace .ui-pair { grid-template-columns: 1fr; }
-  .host-workspace .ui-form-actions { display: none; }
   .host-workspace .ui-sticky-actions { display: flex; gap: var(--space-2); position: sticky; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); margin: 0 calc(-1 * var(--space-4)); padding: var(--space-2) var(--space-4); background: var(--surface); border-top: 1px solid var(--line); z-index: var(--z-sticky); }
   .host-workspace .ui-sticky-actions .ui-btn { flex: 1; }
   .host-workspace .ui-pagination { justify-content: stretch; }
@@ -361,3 +360,151 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .ui-toolbar .ui-chips::-webkit-scrollbar { display: none; }
   .host-workspace .ui-chip { flex: none; }
 }
+/* 0154: host alerts as one quiet list card in the lane; every alert and action stays visible */
+.host-workspace .notification-stack { gap: 0; max-width: 1080px; margin: 0 auto var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); overflow: hidden; }
+.host-workspace .notification-stack .notification-bubble { border: 0; border-radius: 0; background: transparent; box-shadow: none; animation: none; }
+.host-workspace .notification-stack .notification-bubble + .notification-bubble { border-top: 1px solid var(--line); }
+.host-workspace .notification-stack .notification-link { align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-12) var(--space-3) var(--row-px); }
+.host-workspace .notification-stack .notification-link .grow { min-width: 0; }
+.host-workspace .notification-stack .notification-icon { width: var(--space-5); height: var(--space-5); margin-top: 0.125rem; border-radius: 50%; background: var(--st-action-dot); color: var(--surface); font-size: var(--size-12); }
+.host-workspace .notification-stack .notification-bubble.warning .notification-icon,
+.host-workspace .notification-stack .notification-bubble.info .notification-icon { background: var(--st-attention-dot); }
+.host-workspace .notification-stack .notification-bubble strong { font-size: var(--size-14); font-weight: 600; color: var(--ink); }
+.host-workspace .notification-stack .notification-bubble small { display: inline; margin: 0; font-size: var(--size-13); color: var(--ink-3); }
+.host-workspace .notification-stack .notification-bubble small:not(.notification-action) { display: inline; -webkit-line-clamp: unset; }
+.host-workspace .notification-stack .notification-bubble small + small::before { content: " · "; color: var(--ink-4); }
+.host-workspace .notification-stack .notification-bubble .notification-action { color: var(--accent-ink); font-weight: 600; }
+.host-workspace .notification-stack .notification-bubble form { top: 50%; right: var(--space-2); transform: translateY(-50%); }
+/* 0155: compact empty-state title on phone */
+@media (max-width: 1023px) { .host-workspace .ui-empty h2 { font-size: var(--size-16); } }
+
+/* 0141 invoices: moved from invoice_form.html <style> and two inline styles */
+.host-workspace .action-group.invoice-ico-row { align-items: flex-end; }
+.invoice-cancel-reason { max-width: 14rem; }
+#item-rows.invoice-items-grid { display: block; width: 100%; table-layout: fixed; container-type: inline-size; }
+.invoice-items-grid thead,
+.invoice-items-grid tbody { display: block; width: 100%; }
+.invoice-items-grid thead tr,
+.invoice-items-grid tbody tr { display: grid; grid-template-columns: minmax(220px, 1fr) 84px 124px 148px 78px 126px; align-items: start; }
+.invoice-items-grid thead tr { align-items: stretch; background: var(--surface-2); }
+.invoice-items-grid thead th { display: flex; align-items: center; background: transparent; }
+.invoice-items-grid th,
+.invoice-items-grid td { box-sizing: border-box; min-width: 0; }
+.invoice-items-grid td { vertical-align: top; }
+.invoice-items-grid input:not([type=hidden]),
+.invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
+.invoice-items-grid .row-actions [data-remove-item] { min-height: 48px; }
+.invoice-items-grid [data-vat-col][hidden] { display: block !important; visibility: hidden; }
+.invoice-other-description-field { display: block; margin-top: var(--space-2); }
+.invoice-other-description-field > span { display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-12); font-weight: 600; }
+@container (max-width: 850px) {
+  .invoice-items-grid thead { display: none; }
+  .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); padding: var(--space-4); border-bottom: 1px solid var(--line); }
+  .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
+  .invoice-items-grid td { display: block; padding: 0; border: 0; }
+  .invoice-items-grid td:first-child,
+  .invoice-items-grid td.row-actions { grid-column: 1 / -1; }
+  .invoice-items-grid td.row-actions { text-align: left; }
+  .invoice-items-grid td.row-actions .ui-btn { margin: 0; }
+  .invoice-items-grid td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-11); font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
+  .invoice-items-grid td:first-child::before,
+  .invoice-items-grid td.row-actions::before { display: none; }
+  .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
+}
+/* 0141: Stay fees still extends base.html until 0142; keep the shared filter's v2 toolbar, summary and panel on the legacy centred lane there */
+.host-workspace .wrap.with-sidebar > .ui-toolbar,
+.host-workspace .wrap.with-sidebar > .ui-sub[data-filter-summary],
+.host-workspace .wrap.with-sidebar > .list-filter { margin-left: auto; margin-right: auto; }
+
+/* 0141-fix-1: stacked tables without card roles show each cell's label; stacked metrics have no side line */
+@media (max-width: 1023px) {
+  .host-workspace .ui-table td[data-label]:not([data-card]) { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--size-14); }
+  .host-workspace .ui-table td[data-label]:not([data-card])::before { content: attr(data-label); color: var(--ink-3); font-size: var(--size-13); }
+  .host-workspace .ui-table td[data-label]:not([data-card]):first-child { display: block; font-weight: 600; color: var(--ink); }
+  .host-workspace .ui-table td[data-label]:not([data-card]):first-child::before { content: none; }
+  .host-workspace .detail-metric { border-right: 0; }
+}
+
+/* 0142-cont-3: the invoice builder and detail use the page lane like every other page */
+.host-workspace .wrap.with-sidebar .invoice-workspace { max-width: none; margin-left: 0; margin-right: 0; }
+
+/* 0142-fix-1: fee cards keep the row menu top right; copy rows hold textareas; record marks stack; fee sections breathe */
+@container list-cards (max-width: 939.98px) {
+  .host-workspace .lc-fees td:first-child { grid-column: 1; grid-row: 1; }
+  .host-workspace .lc-fees td.row-actions { grid-column: 2; grid-row: 1; justify-content: flex-end; align-items: flex-start; }
+}
+.host-workspace .copyrow textarea { flex: 1 1 14rem; min-width: 0; }
+.host-workspace .fee-send-marks { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: var(--space-3); }
+.host-workspace .fee-send-marks > form, .host-workspace .fee-send-marks > p { flex: none; }
+.host-workspace .fee-send-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-3); width: 100%; }
+.host-workspace .fee-send-form .ui-field { flex: 0 1 18rem; min-width: 0; margin: 0; }
+
+/* 0140: businesses page, moved out of entities.html */
+.host-workspace .entities-page tbody tr .row-actions > * { opacity: 1; }
+.host-workspace .entities-page .row-menu-item[aria-disabled="true"] { color: var(--ink-3); cursor: not-allowed; }
+.host-workspace .entities-page .row-menu-explanation { max-width: 240px; margin: 0 var(--space-2) var(--space-2); color: var(--ink-3); font-size: var(--size-12); line-height: 1.45; }
+.host-workspace .ui-body .entity-form, .host-workspace .ui-body .entity-add { max-width: none; } /* the forms share the page lane with the header (app.css capped them at 700px) */
+/* 0140: property page local tabs take the ui-tabs look over the host.css .property-tabs pills */
+.host-workspace .ui-tabs.property-tabs { flex-wrap: wrap; padding: 0; }
+.host-workspace .ui-tabs.property-tabs .ui-tab { min-height: 0; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; }
+.host-workspace .ui-tabs.property-tabs .ui-tab[aria-current] { background: none; border-color: var(--ink); color: var(--ink); }
+/* 0140: the overview setup tiles' badge keeps the spacing the old .pill had (host.css) */
+.host-workspace .setup-status-copy > .ui-badge { margin-top: var(--space-2); white-space: normal; }
+
+/* 0157: layout guard (MASTER 11.0): phone fields and small controls reach 44 px; toolbar actions share one size */
+@media (max-width: 1023px) {
+  .host-workspace input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not(.sr-only), .host-workspace select { min-height: var(--control-h-phone); }
+  .host-workspace .operator-phone-code { min-width: var(--control-h-phone); }
+  .host-workspace [data-cal-scale] { min-width: var(--control-h-phone); min-height: var(--control-h-phone); }
+  .host-workspace #sig-clear { min-height: var(--control-h-phone); min-width: var(--control-h-phone); }
+}
+
+/* 0158: guest-link URLs stay on one line (full URL in the title and the copy button) */
+.host-workspace .property-inline-url { display: block; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.host-workspace .cleaning-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+
+/* 0144 settings: moved inline styles */
+.host-workspace .ui-prewrap { white-space: pre-wrap; }
+.host-workspace .ui-center { justify-content: center; }
+.host-workspace .settings-mail-preview { width: 100%; min-height: 26rem; margin-top: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-2); background: var(--surface); }
+
+/* 0144 extra: export dialogs pair their two actions in equal columns */
+.csv-export-dialog .ui-form-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.csv-export-dialog .ui-form-actions > .ui-btn { width: 100%; }
+
+/* 0144 extra: dialog buttons reach the phone tap size */
+@media (max-width: 1023px) { dialog .ui-btn { min-height: var(--control-h-phone); } }
+.csv-export-dialog .ui-form-actions > .ui-btn { min-height: var(--control-h-phone); height: var(--control-h-phone); }
+
+/* 0159: subtext class on a table cell keeps the cell a cell on desktop */
+@media (min-width: 1024px) { .host-workspace .ui-table td.ui-sub, .host-workspace .ui-table th.ui-sub { display: table-cell; } }
+
+/* 0144-b setup wizard on host_page: the lane owns the gutter */
+.host-workspace .setup-wizard { padding: 0; }
+.host-workspace .setup-wizard-head { row-gap: var(--space-3); }
+.host-workspace .setup-wizard-foot .ui-btn-primary { margin-left: auto; }
+.host-workspace .setup-wizard-foot .ui-btn { max-width: 100%; }
+.host-workspace .setup-wizard-lede.setup-wizard-fee-intro { font-size: var(--size-26); font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+@media (max-width: 1023px) { .host-workspace .setup-wizard-lede.setup-wizard-fee-intro { font-size: var(--size-22); } }
+
+/* 0160: wizard on the page lane; phone footer = full-width stack, primary first, back last */
+.host-workspace .setup-wizard, .host-workspace .setup-wizard-body, .host-workspace .setup-wizard-foot { max-width: none; margin-left: 0; margin-right: 0; }
+.host-workspace .police-sample-link { margin-bottom: var(--space-3); }
+@media (max-width: 599px) {
+  .host-workspace .setup-wizard-foot { flex-direction: column-reverse; align-items: stretch; }
+  .host-workspace .setup-wizard-foot > span:empty { display: none; }
+  .host-workspace .setup-wizard-actions { flex-direction: column-reverse; align-items: stretch; width: 100%; margin-left: 0; }
+  .host-workspace .setup-wizard-foot .ui-btn, .host-workspace .setup-wizard-actions form, .host-workspace .setup-wizard-actions form .ui-btn { width: 100%; margin-left: 0; }
+}
+
+/* 0163: split columns start on one line; the manage form keeps a readable width */
+.host-workspace .split.wide > section, .host-workspace .split.wide > aside { margin-top: 0; padding-top: 0; }
+.host-workspace .split.wide > section > .ui-section:first-child, .host-workspace .split.wide > aside > :first-child { margin-top: 0; padding-top: 0; }
+.host-workspace #user-manage { max-width: 40rem; }
+
+/* 0146 skeleton pause while the tab is hidden */
+.ui-skel.paused .ui-bone { animation-play-state: paused; }
+
+/* 0164: the guest-link cell in the property summary may wrap its icons under the URL */
+.host-workspace .property-summary-panel .property-inline-url { max-width: 11rem; }
+.host-workspace .property-summary-panel .property-inline-value { flex-wrap: wrap; }

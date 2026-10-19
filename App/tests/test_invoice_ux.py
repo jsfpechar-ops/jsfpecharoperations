@@ -125,7 +125,7 @@ def test_invoice_list_month_filter_matches_issue_date(host, monkeypatch):
     assert "2026-0009" not in august.text
     assert 'value="2026-08"' in august.text
     assert "month-control is-empty" not in august.text
-    assert 'class="btn ghost list-filter-reset" href="/invoices"' in august.text
+    assert 'class="ui-btn ui-btn-quiet list-filter-reset" href="/invoices"' in august.text
 
     unpaid = host.get("/invoices?status=unpaid&q=0009")
     assert "2026-0009" in unpaid.text

@@ -1,11 +1,12 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'funnel' %}
+{% set body_kind = 'detail' %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('funnel.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header with context %}
-{{ page_header(t('funnel.title')) }}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
 <p>{{ t('funnel.posthog_body') }}</p>
 {% if posthog_url %}
-<p><a class="btn" href="{{ posthog_url }}">{{ t('funnel.posthog_link') }}</a></p>
+<p><a class="ui-btn ui-btn-secondary" href="{{ posthog_url }}">{{ t('funnel.posthog_link') }}</a></p>
 {% endif %}
 {% endblock %}

@@ -41,13 +41,13 @@ CAPTURE_ROUTES = {
     "operators": ("/entities", ".entities-page, .panel.empty"),
     "operator-add": ("/entities?new=1", ".entity-add"),
     "operator-edit": ("/entities?edit={entity_id}", ".entity-form"),
-    "invoices": ("/invoices", ".panel.tight.scroll-x, .panel.empty"),
+    "invoices": ("/invoices", ".ui-table-wrap, .ui-empty"),
     "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
     "fee-setup": ("/apartments/{unconfigured_apartment}?view=settings&section=reporting", ".property-settings"),
-    "fee-detail": ("/stay-fees/{configured_apartment}", ".stay-fee-detail, .panel"),
-    "invoice-new-picker": ("/invoices/new", ".panel"),
+    "fee-detail": ("/stay-fees/{configured_apartment}", ".ui-body-detail, .ui-section"),
+    "invoice-new-picker": ("/invoices/new", ".ui-section"),
     "invoice-new-selected": ("/invoices/new?entity={entity_id}&reservation_id={reservation_id}", ".invoice-workspace, .invoice-stay-picker"),
     # 0076/0101: Invoice settings is the business editor; its panel is the result lane.
     "invoice-settings": ("/entities?edit={entity_id}&next=/invoices", ".entity-form"),
@@ -58,14 +58,14 @@ CAPTURE_ROUTES = {
     "property-detail": ("/apartments/{property_id}", ".property-detail, .panel"),
     "property-detail-configured": ("/apartments/{configured_apartment}", ".property-detail, .panel"),
     "housebook": ("/housebook?apartment={unconfigured_apartment}&from={today}&to={housebook_end}", ".housebook-page, .panel"),
-    "submissions": ("/submissions", ".panel.tight.scroll-x, .panel.empty"),
+    "submissions": ("/submissions", ".ui-table, .ui-empty"),
     "submission-detail": ("/submissions/{submission_id}", ".submission-detail, .panel"),
     # 0094: both now live in property Settings; the lane is the tab content.
     "guest-links": ("/apartments/{property_id}?view=settings&section=guests", ".property-views"),
     "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views"),
-    "archive": ("/settings/archived", ".panel"),
+    "archive": ("/settings/archived", ".ui-section, .ui-empty"),
     "settings": ("/settings", ".host-property-grid"),
-    "smart-locks": ("/smart-locks", ".panel"),
+    "smart-locks": ("/smart-locks", ".ui-body-list, .panel"),
 }
 
 
@@ -717,8 +717,8 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
                     page.wait_for_load_state("networkidle")
                     _dismiss_optional_security_prompt(page)
                     page.evaluate("window.scrollTo(0, 0)")
-                    header = page.locator(".page-header").bounding_box()
-                    back = page.locator("main.wrap.with-sidebar > a.back-link").bounding_box()
+                    header = page.locator(".ui-ph").bounding_box()
+                    back = page.locator(".ui-ph-back").bounding_box()
                     assert header and back
                     assert abs(back["x"] - header["x"]) <= 2, {
                         "width": width, "lang": lang, "route": route, "header": header, "back": back,
@@ -730,7 +730,7 @@ def test_direct_fee_backlinks_align_with_page_lane(wide_host, wide_base):
                 assert response and response.status == 200
                 page.wait_for_load_state("networkidle")
                 assert f"/apartments/{wide_host['unconfigured_apartment']}?view=settings&section=reporting" in page.url
-                header = page.locator(".page-header").first.bounding_box()
+                header = page.locator(".page-header, .ui-ph").first.bounding_box()
                 section = page.locator("#stay-fee-settings").bounding_box()
                 assert header and section and section["width"] > 0
                 assert section["x"] >= header["x"] - 2

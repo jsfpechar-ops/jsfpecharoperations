@@ -120,12 +120,12 @@ def test_list_rows_show_setup_calendars_and_open_inside_the_menu(host):
     assert "property-location" not in table and ">Brno<" not in table
     for police in ("UBY-FACILITY", "123456789012", "UBYX", "ws-login-x"):
         assert police not in page, police
-    assert re.search(r'<span class="pill (amber|green)">', table)
+    assert re.search(r'<span class="ui-badge ui-badge-(?:action|done)" data-tone="(amber|green)">', table)
     # Old hashes that pointed at the wrong group are gone.
     assert "#ubyport\" role=\"menuitem\"" not in table
     # Two businesses: the shared link opens the list, never an arbitrary one.
     _entity(name="Druhá s.r.o.")
-    assert '<a class="sub-tab" href="/entities">Business &amp; legal details</a>' in host.get("/apartments").text
+    assert '<a class="ui-tab" href="/entities">Business &amp; legal details</a>' in host.get("/apartments").text
 
 
 def test_summary_is_visible_read_only_and_links_to_each_editor(host):
@@ -261,14 +261,14 @@ def live_base(browser_host):
 _FIT_JS = """() => {
   const vw = document.documentElement.clientWidth;
   const bad = [];
-  const sel = '.sub-tabs a, .properties-table a, .properties-table button, '
+  const sel = '.ui-tabs a, .properties-table a, .properties-table button, '
     + '.property-summaries a, .property-summaries h2, .property-summaries button';
   for (const el of document.querySelectorAll(sel)) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     if (r.right > vw + 1 || r.left < -1) bad.push(el.textContent.trim().slice(0, 30));
   }
-  const opens = [...document.querySelectorAll('.properties-table .row-actions > a.btn')]
+  const opens = [...document.querySelectorAll('.properties-table .row-actions .row-menu-trigger')]
     .map(a => Math.round(a.getBoundingClientRect().right));
   const lane = document.querySelector('.properties-table').closest('.panel').getBoundingClientRect();
   const summary = document.querySelector('.property-summaries .panel').getBoundingClientRect();

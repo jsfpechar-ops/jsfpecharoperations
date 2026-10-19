@@ -10,7 +10,7 @@ Version 2.0.0 (draft for owner approval, plan step B). Governs every signed-in h
 4. Phone first: design at 390 px, then 768, 1024, 1280, 1440+. Desktop is the same components wider, never a second design.
 5. Pages fill slots; they do not design. No page-level layout CSS, inline styles or new stylesheets (section 11).
 6. Only tokens. No raw colour, spacing, radius or shadow outside `tokens.css`.
-7. Meaning never by colour alone: every status has a word, overdue adds "!".
+7. Meaning never by colour alone: every status has a word, overdue adds a coral border.
 8. Nothing moves unless it answers an action. Reduced motion removes the rest.
 9. Familiar words in Czech and English with matched keys. One explanation lives in one place.
 10. UbyPort filing correctness and its copy beat every visual rule.
@@ -220,7 +220,7 @@ Only inside list kind at 1024+. Header 13/500 `--ink-3`, 40 px, hairline under; 
 
 ### 7.5 Status badge: `badge(kind, label, overdue=false)`
 
-Kinds and meanings are fixed: `action` (coral: host must act), `attention` (amber: look at this), `done` (green: verified done), `neutral` (grey: waiting or informational). 22 px pill, padding 0 8, font 12/600, 6 px leading dot in the kind's `--status-*-dot`, text in `--status-*-ink`, background `--status-*-bg`. `overdue=true` prefixes "!" and uses a 1 px `--status-action-dot` border. No other colours (property identity uses `property_dot`, not a badge). Failed UbyPort filing = `action` with overdue.
+Kinds and meanings are fixed: `action` (coral: host must act), `attention` (amber: look at this), `done` (green: verified done), `neutral` (grey: waiting or informational). 22 px pill, padding 0 8, font 12/600, 6 px leading dot in the kind's `--status-*-dot`, text in `--status-*-ink`, background `--status-*-bg`. `overdue=true` uses a 1 px `--status-action-dot` border. No other colours (property identity uses `property_dot`, not a badge). Failed UbyPort filing = `action` with overdue.
 
 ### 7.6 Tabs: `tabs(items)` (section 5.2)
 
@@ -293,6 +293,27 @@ Phone: one `secondary` "Show more" button, full width, replaced by the next page
 
 ## 11. Enforcement
 
+### 11.0 Layout guard (hard rules, CI fails the build)
+
+Added 2026-10-19 after the owner found broken screens that every earlier check had missed: short demo names, no laptop width, menus never opened.
+
+1. Every host page in `ROUTES` of `App/tests/test_design_guardrails_browser.py` passes `App/tests/design_guard.js` at 390, 1280 and 2000 px, with the sidebar open and collapsed (collapsed from 1024 px up). The guard fails on any of these:
+   - The page scrolls sideways.
+   - An element sits under the rail or past the right edge (unless it is inside a deliberate horizontal scroller).
+   - A list panel that scrolls sideways (list-scrolls-sideways).
+   - Text is clipped by its own box.
+   - Content spills out of its table row.
+   - A table cell does not sit under its column header.
+   - Two buttons in one row differ in height by more than 2 px, or their centre lines differ.
+   - A control is smaller than 44 × 44 px at 390.
+   - A row menu opens off screen or holds a form field.
+2. Test data uses long real-world property names (35 characters or more, such as "Vivus Apartment with Balcony & Garage"). Short demo names hide wrapping and overlap.
+3. Menus hold actions only. A form (input, label, typed confirmation) goes in a dialog or on the page, never in a row menu.
+4. A new or moved host page adds its route to `ROUTES` in the same PR.
+5. There is no allowlist and no skip. A failing check is fixed in the page, never excluded or loosened.
+6. Every changed CSS or JS file gets a new `?v=` key (`App/tests/test_static_versions.py`).
+7. A page is done only when its 390, 1280 and 2000 px screenshots (open and collapsed) are saved, and the orchestrator has opened them and listed in the report what it checked. That list covers: button heights and alignment in each row, wrapping in tables, the empty state, each opened menu, and the header actions on phone.
+
 ### 11.1 Lint (`scripts/design_lint.py`, runs in CI, fails the build)
 
 1. **Raw values:** in `App/app/static/host.css` and every host template, fail on `#[0-9a-f]{3,8}`, `rgb(`, `hsl(`, a bare `\d+px` in `margin|padding|gap|border-radius|font-size|width|height` (except `0`, `1px` borders and the token file), `box-shadow:` with a literal, and `font-family:`.
@@ -346,7 +367,7 @@ Shows, in this order, each with its macro call printed under it: tokens (colour 
 - [ ] Page extends `host_page.html`, sets one `body_kind`, fills only named blocks; `docs/design/pages/<page>.md` exists and is under 40 lines.
 - [ ] No `<style>`, `style=""`, stylesheet or script in the template; no raw colour, px spacing, radius or font size anywhere I touched.
 - [ ] Every class is in the catalog; every icon is from `_icons.html`; every button has a variant; exactly one or zero `primary` per screen.
-- [ ] Badges carry a word; overdue has "!"; green only for verified data; coral only in the places listed in 4.2.
+- [ ] Badges carry a word; overdue has a coral border, no "!"; green only for verified data; coral only in the places listed in 4.2.
 - [ ] 390 px: no horizontal scroll, every target 44 px, primary action reachable without scrolling past the first screen or sticky on forms, bottom bar does not cover content.
 - [ ] 1280 px: content in the 1080 lane, header and body edges align, table has at most 6 columns, secondary actions at most 2.
 - [ ] Skeleton shown by the template matches the page's body kind and height; empty state has title, next step and one button.

@@ -1,9 +1,11 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'settings' %}
+{% set body_kind = 'settings' %}
 {% block title %}{{ t('nav.settings') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, field_label, help_tip, settings_group, settings_heading with context %}
-{{ page_header(t('nav.settings'), t('settings.lede')) }}
+{% block page_title %}{{ t('nav.settings') }}{% endblock %}
+{% block meta %}{{ t('settings.lede') }}{% endblock %}
+{% block body %}
+{% from "_components.html" import field_label, help_tip, settings_group, settings_heading with context %}
 
 {# 0083: one index, six visible groups. Each specialized action keeps its own form and endpoint. #}
 <nav class="host-property-grid" aria-label="{{ t('settings.index_label') }}">
@@ -15,7 +17,7 @@
 <div class="settings-groups">
 
 {% call settings_group('account', t('settings.group.account')) %}
-    <div class="panel" id="settings-account">
+    <div class="ui-section" id="settings-account">
       <div class="account-identity">
         <strong>{{ current_user.display_name or current_user.email or current_user.username }}</strong>
       </div>
@@ -27,13 +29,13 @@
           </div>
         </div>
         <form method="post" action="/account/email" class="settings-move-form settings-email-form">
-          <div class="field">
+          <div class="ui-field">
             {{ field_label('account-new-email', t('settings.account.email_new'), t('settings.account.email_hint')) }}
             <input id="account-new-email" name="email" type="email" required maxlength="254"
                    autocomplete="email" autocapitalize="none" spellcheck="false"
                    aria-describedby="account-new-email-help">
           </div>
-          <button class="btn small" type="submit">{{ t('settings.account.email_action') }}</button>
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.email_action') }}</button>
         </form>
         {# 0083: the single place for a link to the shared business editor. 0076 may point it at /entities?edit=<id>. #}
         <div class="settings-action-row" id="settings-business">
@@ -42,7 +44,7 @@
             <small>{{ t('settings.business.help') }}</small>
           </div>
           {#- 0076: one business opens its editor directly; several open the list. -#}
-          <a class="btn small" href="{{ ('/entities?edit=' ~ business_entities[0].id ~ '&next=/settings') if business_entities and business_entities | length == 1 else '/entities' }}">{{ t('settings.business.action') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ ('/entities?edit=' ~ business_entities[0].id ~ '&next=/settings') if business_entities and business_entities | length == 1 else '/entities' }}">{{ t('settings.business.action') }}</a>
         </div>
         {% if onboarding_emails is not none %}
           <form method="post" action="/account/onboarding-emails" class="settings-action-row" id="settings-onboarding-emails">
@@ -53,7 +55,7 @@
               </label>
               <small>{{ t('settings.account.onboarding_emails_help') }}</small>
             </div>
-            <button class="btn small" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button>
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button>
           </form>
         {% endif %}
         {% if current_user.role == 'admin' %}
@@ -62,14 +64,14 @@
               <strong>{{ t('settings.account.users') }}</strong>
               <small>{{ t('settings.account.users_help') }}</small>
             </div>
-            <a class="btn small" href="/admin/users">{{ t('settings.account.users_action') }}</a>
+            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/users">{{ t('settings.account.users_action') }}</a>
           </div>
           <div class="settings-action-row">
             <div>
               <strong>{{ t('users.incidents_link') }}</strong>
               <small>{{ t('settings.account.incidents_help') }}</small>
             </div>
-            <a class="btn small" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
+            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/admin/incidents">{{ t('settings.account.incidents_action') }}</a>
           </div>
         {% endif %}
       </div>
@@ -77,7 +79,7 @@
 {% endcall %}
 
 {% call settings_group('security', t('settings.group.security')) %}
-    <div class="panel" id="settings-security">
+    <div class="ui-section" id="settings-security">
       {{ settings_heading('security', t('settings.nav.security'), t('settings.security.lede')) }}
       <div class="settings-action-list" id="settings-passkeys">
         <div class="settings-action-row">
@@ -86,14 +88,14 @@
             <small>{{ t('passkeys.help') }}</small>
           </div>
           {% if passkeys_available %}
-            <button class="btn small primary" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
+            <button class="ui-btn ui-btn-primary ui-btn-compact" type="button" data-passkey-add data-passkey-supported hidden>{{ t('passkeys.add') }}</button>
           {% endif %}
         </div>
         {% if passkeys_available %}
-          <p class="small muted" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
-          <p class="small err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
+          <p class="ui-sub" data-passkey-unsupported>{{ t('passkeys.unsupported') }}</p>
+          <p class="ui-sub err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
         {% else %}
-          <p class="small muted">{{ t('passkeys.unavailable') }}</p>
+          <p class="ui-sub">{{ t('passkeys.unavailable') }}</p>
         {% endif %}
         {% for key in passkeys %}
           <div class="settings-action-row passkey-row">
@@ -104,18 +106,18 @@
             </div>
             <form method="post" action="/account/passkeys/{{ key.id }}/delete"
                   data-confirm data-confirm-message="{{ t('passkeys.remove_confirm', name=key.name) }}">
-              <button class="btn small" type="submit">{{ t('passkeys.remove') }}</button>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('passkeys.remove') }}</button>
             </form>
           </div>
           <details class="settings-move">
             <summary><small>{{ t('passkeys.rename') }}</small></summary>
             <form method="post" action="/account/passkeys/{{ key.id }}/rename" class="settings-move-form">
-              <div class="field">
+              <div class="ui-field">
                 <label for="passkey-name-{{ key.id }}">{{ t('passkeys.name') }}</label>
                 <input id="passkey-name-{{ key.id }}" name="name" type="text" maxlength="60"
                        value="{{ key.name }}" required>
               </div>
-              <button class="btn small" type="submit">{{ t('passkeys.rename_action') }}</button>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('passkeys.rename_action') }}</button>
             </form>
           </details>
         {% endfor %}
@@ -127,9 +129,9 @@
             <small>{{ t('settings.account.2fa_on') if current_user.totp_enabled else t('settings.account.2fa_off') }}</small>
           </div>
           {% if current_user.totp_enabled %}
-            <span class="pill green">{{ t('settings.account.enabled') }}</span>
+            <span class="ui-badge ui-badge-done" data-tone="green">{{ t('settings.account.enabled') }}</span>
           {% else %}
-            <a class="btn small" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
+            <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/account/2fa/setup">{{ t('settings.account.setup') }}</a>
           {% endif %}
         </div>
         {% if current_user.totp_enabled %}
@@ -139,13 +141,13 @@
               <small>{{ t('settings.account.2fa_move_help') }}</small>
             </summary>
             <form method="post" action="/account/2fa/move" class="settings-move-form">
-              <div class="field">
+              <div class="ui-field">
                 <label for="move-code">{{ t('settings.account.2fa_move_code') }}</label>
                 <input id="move-code" name="code" type="text" inputmode="numeric"
                        autocomplete="one-time-code" aria-describedby="move-code-hint" required>
                 <p class="hint" id="move-code-hint">{{ t('settings.account.2fa_move_code_hint') }}</p>
               </div>
-              <button class="btn small" type="submit">{{ t('settings.account.2fa_move_action') }}</button>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.2fa_move_action') }}</button>
             </form>
           </details>
           <details class="settings-move">
@@ -154,12 +156,12 @@
               <small>{{ t('settings.security.2fa_off_help') }}</small>
             </summary>
             <form method="post" action="/account/2fa/disable" class="settings-move-form">
-              <div class="field">
+              <div class="ui-field">
                 <label for="disable-code">{{ t('settings.account.2fa_move_code') }}</label>
                 <input id="disable-code" name="code" type="text" inputmode="numeric"
                        autocomplete="one-time-code" required>
               </div>
-              <button class="btn small" type="submit">{{ t('settings.security.2fa_off_action') }}</button>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.security.2fa_off_action') }}</button>
             </form>
           </details>
         {% endif %}
@@ -168,12 +170,12 @@
 {% endcall %}
 
 {% call settings_group('data', t('settings.group.data')) %}
-    <div class="panel" id="settings-archive">
+    <div class="ui-section" id="settings-archive">
       {{ settings_heading('archive', t('settings.nav.archive'), t('settings.archive_hint_extended')) }}
-      <a class="btn" href="/settings/archived">{{ t('settings.archive_link') }}</a>
+      <a class="ui-btn ui-btn-secondary" href="/settings/archived">{{ t('settings.archive_link') }}</a>
     </div>
 
-    <div class="panel" id="settings-retention">
+    <div class="ui-section" id="settings-retention">
       {{ settings_heading('retention', t('settings.nav.retention'), t('settings.retention.help')) }}
       <dl class="kv">
         <dt>{{ t('settings.retention.period') }}</dt><dd>{{ t('settings.retention.years', count=retention_years) }}</dd>
@@ -182,15 +184,15 @@
       </dl>
       <form method="post" action="/settings/purge-expired"
             data-confirm data-confirm-message="{{ t('confirm.purge_expired') }}">
-        <button class="btn {{ 'danger' if expired_records else '' }}" type="submit"
+        <button class="ui-btn ui-btn-{{ 'danger' if expired_records else 'secondary' }}" type="submit"
                 {% if not expired_records %}disabled{% endif %}>
           {{ tp('settings.retention.delete', expired_records) }}
         </button>
-        <span class="small muted">{{ t('settings.retention.delete_help') }}</span>
+        <span class="ui-sub">{{ t('settings.retention.delete_help') }}</span>
       </form>
 
-      <div class="panel" id="settings-data" style="margin-top:14px">
-        <h3 style="margin-top:0">{{ t('settings.data.title') }}</h3>
+      <div class="ui-section" id="settings-data">
+        <h3>{{ t('settings.data.title') }}</h3>
         <dl class="kv">
           <dt>{{ t('settings.data.retention_last') }}</dt>
           <dd>
@@ -198,7 +200,7 @@
               {{ retention_last_run.at }},
               {{ t('settings.data.dry_run') if retention_last_run.dry_run else t('settings.data.live') }}
               {% if retention_last_run.counts %}
-                <span class="small muted">
+                <span class="ui-sub">
                   {% for key, value in retention_last_run.counts.items() %}{{ key }}={{ value }}{{ " " if not loop.last }}{% endfor %}
                 </span>
               {% endif %}
@@ -213,7 +215,7 @@
             <dd>
               {{ backup_status.at }},
               {{ t('settings.data.encrypted') if backup_status.encrypted else t('settings.data.not_encrypted') }}
-              <span class="small muted">{{ t('settings.data.retention_days', days=backup_status.retention_days) }}</span>
+              <span class="ui-sub">{{ t('settings.data.retention_days', days=backup_status.retention_days) }}</span>
             </dd>
           {% endif %}
         </dl>
@@ -222,20 +224,20 @@
 {% endcall %}
 
 {% call settings_group('privacy', t('settings.group.privacy')) %}
-    <div class="panel" id="settings-privacy-requests">
+    <div class="ui-section" id="settings-privacy-requests">
       <div class="settings-action-list">
         <div class="settings-action-row">
           <div>
             <strong>{{ t('nav.privacy_requests') }}</strong>
             <small>{{ t('settings.privacy.requests_help') }}</small>
           </div>
-          <a class="btn small" href="/privacy-requests">{{ t('settings.privacy.requests_action') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/privacy-requests">{{ t('settings.privacy.requests_action') }}</a>
         </div>
       </div>
     </div>
 
       {% if apartments_without_entity or entities_without_contact %}
-        <div class="banner warning">
+        <div class="ui-banner ui-banner-attention">
           <div class="grow">
             <strong>{{ t('settings.privacy_incomplete') }}</strong>
             {% if apartments_without_entity %}
@@ -255,7 +257,7 @@
       {% endif %}
 
     {% if ad_consents %}
-    <div class="panel" id="settings-privacy">
+    <div class="ui-section" id="settings-privacy">
       {{ settings_heading('privacy', t('settings.privacy.title'), t('settings.privacy.help')) }}
       <div class="settings-action-list">
         {% for consent in ad_consents %}
@@ -269,7 +271,7 @@
             {% endif %}
           </div>
           {% if consent.withdrawn_at %}
-            <span class="pill grey">{{ t('settings.privacy.off') }}</span>
+            <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('settings.privacy.off') }}</span>
           {% else %}
             <form method="post" action="/settings/privacy/ad-consent">
               <input type="hidden" name="platform" value="{{ consent.platform }}">
@@ -277,7 +279,7 @@
                 <input type="checkbox" name="enabled" value="1" checked>
                 <span>{{ t('settings.privacy.on') }}</span>
               </label>
-              <button class="btn small" type="submit">{{ t('settings.privacy.save') }}</button>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.privacy.save') }}</button>
             </form>
           {% endif %}
         </div>
@@ -288,38 +290,38 @@
 {% endcall %}
 
 {% call settings_group('technical', t('settings.group.technical')) %}
-    <details class="panel technical" id="settings-technical">
+    <details class="ui-section technical" id="settings-technical">
       <summary>{{ t('settings.technical.title') }}</summary>
 
-      <h2 id="settings-overview" style="margin-top:0">{{ t('settings.destination.title') }}</h2>
+      <h2 id="settings-overview">{{ t('settings.destination.title') }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.destination.deployment') }}</dt><dd>{{ deployment_tier | capitalize }}</dd>
         <dt>{{ t('settings.destination.target') }}</dt><dd>{{ t('settings.destination.production') if ubyport_env == 'prod' else (ubyport_env | upper) }}</dd>
-        <dt>{{ t('settings.destination.endpoint') }}</dt><dd class="mono small">{{ endpoint }}</dd>
+        <dt>{{ t('settings.destination.endpoint') }}</dt><dd class="ui-mono ui-sub">{{ endpoint }}</dd>
         <dt>{{ t('settings.destination.polling') }}</dt><dd>{{ t('settings.destination.every_minutes', count=poll_minutes) }}</dd>
         <dt>{{ t('settings.destination.sweep') }}</dt><dd>{{ t('settings.destination.every_minutes', count=sweep_minutes) }}</dd>
-        <dt>{{ t('settings.destination.public_url') }}</dt><dd class="mono small">{{ public_base_url }}</dd>
+        <dt>{{ t('settings.destination.public_url') }}</dt><dd class="ui-mono ui-sub">{{ public_base_url }}</dd>
       </dl>
       {% if ubyport_env == 'mock' %}
-        <div class="banner warning" style="margin-top:14px">
+        <div class="ui-banner ui-banner-attention">
           <div class="grow">
             <strong>{{ t('env.mock_title') }}</strong>
             <small>{{ t('settings.destination.mock_help') }}
-              <span class="mono">UBYHOST_UBYPORT_ENV=test</span> or <span class="mono">prod</span>
+              <span class="ui-mono">UBYHOST_UBYPORT_ENV=test</span> or <span class="ui-mono">prod</span>
               {{ t('settings.destination.restart') }}</small>
           </div>
         </div>
       {% endif %}
-      <p class="small muted">{{ t('settings.destination.help') }}</p>
+      <p class="ui-sub">{{ t('settings.destination.help') }}</p>
 
       <h2 id="settings-mail">{{ t('settings.mail.title') }}</h2>
       <dl class="kv">
         <dt>{{ t('settings.mail.backend') }}</dt>
-        <dd class="mono">{{ mail_backend }}</dd>
+        <dd class="ui-mono">{{ mail_backend }}</dd>
       </dl>
-      <p class="small muted">{{ t('settings.mail.help') }}</p>
+      <p class="ui-sub">{{ t('settings.mail.help') }}</p>
       {% if mail_backend == 'console' and console_mail %}
-        <table class="data" style="margin-top:12px">
+        <table class="ui-table">
           <thead>
             <tr>
               <th>{{ t('settings.mail.to') }}</th>
@@ -329,17 +331,17 @@
           <tbody>
             {% for item in console_mail %}
               <tr>
-                <td class="small">{{ item.to_email }}</td>
-                <td class="small">{{ item.subject }}</td>
+                <td class="ui-sub">{{ item.to_email }}</td>
+                <td class="ui-sub">{{ item.subject }}</td>
               </tr>
               <tr>
-                <td colspan="2"><pre class="small" style="white-space:pre-wrap">{{ item.body_text }}</pre></td>
+                <td colspan="2"><pre class="ui-sub ui-prewrap">{{ item.body_text }}</pre></td>
               </tr>
               {% if item.body_html %}
                 <tr>
                   <td colspan="2">
                     <details>
-                      <summary class="small muted">{{ t('settings.mail.preview') }}</summary>
+                      <summary class="ui-sub">{{ t('settings.mail.preview') }}</summary>
                       {# Rendered in a sandboxed frame with no allowances so the
                          stored markup cannot run script or reach the app. The
                          value is autoescaped, which is what srcdoc wants: the
@@ -347,7 +349,7 @@
                          markup before it is parsed. #}
                       <iframe srcdoc="{{ item.body_html }}" sandbox=""
                               title="{{ t('settings.mail.preview') }}"
-                              style="width:100%;min-height:420px;margin-top:8px;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>
+                              class="settings-mail-preview"></iframe>
                     </details>
                   </td>
                 </tr>
@@ -363,10 +365,10 @@
         <dt>{{ t('settings.codelists.purposes') }}</dt><dd>{{ (codelists.purposes | datetime_local(seconds=true)) if codelists.purposes else t('settings.codelists.bundled') }}</dd>
         <dt>{{ t('settings.codelists.errors') }}</dt><dd>{{ (codelists.errors | datetime_local(seconds=true)) if codelists.errors else t('settings.codelists.not_fetched') }}</dd>
       </dl>
-      <p class="small muted">{{ t('settings.codelists.help') }}</p>
+      <p class="ui-sub">{{ t('settings.codelists.help') }}</p>
     </details>
 
-    <div class="panel" id="settings-ubyport">
+    <div class="ui-section" id="settings-ubyport">
       {{ settings_heading('access', t('settings.access.title'), t('settings.access.help')) }}
       <dl class="kv">
         <dt>{{ t('settings.access.pin') }}</dt>
@@ -374,27 +376,27 @@
       </dl>
     </div>
 
-    <details class="panel technical" open id="settings-audit">
+    <details class="ui-section technical" open id="settings-audit">
       <summary>{{ t('settings.nav.audit') }}</summary>
-      <p class="small muted">{{ t('settings.audit.help') }}</p>
+      <p class="ui-sub">{{ t('settings.audit.help') }}</p>
       <h2>{{ t('settings.audit.recent', count=audit_count) }}</h2>
       <div class="host-audit-filters" data-audit-filter role="group" aria-label="{{ t('settings.audit.filter_label') }}">
         <a class="host-audit-filter {{ 'is-active' if not audit_filter }}" href="/settings#settings-audit" {% if not audit_filter %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_all') }}</a>
         <a class="host-audit-filter {{ 'is-active' if audit_filter == 'support' }}" href="/settings?audit=support#settings-audit" {% if audit_filter == 'support' %}aria-current="page"{% endif %}>{{ t('settings.audit.filter_support') }}</a>
       </div>
       <div class="scroll-x">
-        <table class="table-cards">
+        <table class="ui-table ui-table-stack">
           <thead><tr><th>{{ t('settings.audit.when') }}</th><th>{{ t('settings.audit.who') }}</th><th>{{ t('settings.audit.action') }}</th><th>{{ t('settings.audit.detail') }}</th></tr></thead>
           <tbody>
           {% for entry in audit %}
             <tr>
-              <td class="nowrap small" data-label="{{ t('settings.audit.when') }}">{{ entry.at | datetime_local(seconds=true) }}</td>
-              <td class="small" data-label="{{ t('settings.audit.who') }}">{{ entry.actor }}{% if entry.impersonator_username %} <span class="muted">({{ t('settings.audit.as_admin', name=entry.impersonator_username) }})</span>{% endif %}</td>
-              <td class="small" data-label="{{ t('settings.audit.action') }}">{{ entry.action }}</td>
-              <td class="small muted" data-label="{{ t('settings.audit.detail') }}">{{ entry.detail }}</td>
+              <td class="ui-sub nowrap" data-label="{{ t('settings.audit.when') }}">{{ entry.at | datetime_local(seconds=true) }}</td>
+              <td class="ui-sub" data-label="{{ t('settings.audit.who') }}">{{ entry.actor }}{% if entry.impersonator_username %} <span class="ui-sub">({{ t('settings.audit.as_admin', name=entry.impersonator_username) }})</span>{% endif %}</td>
+              <td class="ui-sub" data-label="{{ t('settings.audit.action') }}">{{ entry.action }}</td>
+              <td class="ui-sub" data-label="{{ t('settings.audit.detail') }}">{{ entry.detail }}</td>
             </tr>
           {% else %}
-            <tr><td colspan="4" class="muted small">{{ t('settings.audit.empty') }}</td></tr>
+            <tr><td colspan="4" class="ui-sub">{{ t('settings.audit.empty') }}</td></tr>
           {% endfor %}
           </tbody>
         </table>
@@ -403,30 +405,30 @@
 {% endcall %}
 
 {% call settings_group('help', t('settings.group.help')) %}
-    <div class="panel" id="settings-guide">
+    <div class="ui-section" id="settings-guide">
       <div class="settings-action-list">
         <div class="settings-action-row">
           <div>
             <strong>{{ t('nav.guide') }}</strong>
             <small>{{ t('settings.help.guide_help') }}</small>
           </div>
-          <a class="btn small" href="/guide">{{ t('settings.help.guide_action') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guide">{{ t('settings.help.guide_action') }}</a>
         </div>
       </div>
     </div>
 
-    <div class="panel" id="settings-legal">
-      <h2 style="margin-top:0">{{ t('legal.settings_title') }}</h2>
-      <p class="small muted">{{ t('legal.settings_body', name=operator().name, ico=operator().ico) }}</p>
-      <dl class="kv small">
+    <div class="ui-section" id="settings-legal">
+      <h2>{{ t('legal.settings_title') }}</h2>
+      <p class="ui-sub">{{ t('legal.settings_body', name=operator().name, ico=operator().ico) }}</p>
+      <dl class="kv ui-sub">
         <dt>{{ t('legal.operator_address') }}</dt><dd>{{ operator().address }}</dd>
         {% if operator().email %}
           <dt>{{ t('legal.support_label') }}</dt><dd><a href="mailto:{{ operator().email }}">{{ operator().email }}</a></dd>
         {% else %}
-          <dt>{{ t('legal.support_label') }}</dt><dd class="muted">{{ t('legal.settings_contact_missing') }}</dd>
+          <dt>{{ t('legal.support_label') }}</dt><dd class="ui-sub">{{ t('legal.settings_contact_missing') }}</dd>
         {% endif %}
       </dl>
-      <p class="small muted">{{ t('legal.support_help') }}</p>
+      <p class="ui-sub">{{ t('legal.support_help') }}</p>
       <nav class="document-links" aria-label="{{ t('legal.settings_title') }}">
         <a href="/legal"><span>{{ t('legal.footer_link') }}</span></a>
         <a href="/terms"><span>{{ t('terms.footer_link') }}</span></a>
@@ -435,9 +437,9 @@
       </nav>
     </div>
 
-    <div class="panel" id="settings-version">
-      <h3 style="margin-top:0">{{ t('settings.nav.version') }}</h3>
-      <p class="small muted">{{ t('settings.version_line', version=app_version) }}</p>
+    <div class="ui-section" id="settings-version">
+      <h3>{{ t('settings.nav.version') }}</h3>
+      <p class="ui-sub">{{ t('settings.version_line', version=app_version) }}</p>
     </div>
 {% endcall %}
 </div>

@@ -233,7 +233,7 @@ def test_invoice_builder_heading_matches_narrow_form_lane(base):
         for width in (1280, 1440, 1680, 1920, 2048):
             page = browser.new_page(viewport={"width": width, "height": 900})
             _open_form(page, base, username, entity, stay)
-            heading = page.locator(".page-header").bounding_box()
+            heading = page.locator(".ui-ph").bounding_box()
             workspace = page.locator(".invoice-workspace").bounding_box()
             assert abs(heading["x"] - workspace["x"]) <= 2, (
                 f"invoice heading/workspace left edges differ at {width}px: {heading['x']} vs {workspace['x']}"

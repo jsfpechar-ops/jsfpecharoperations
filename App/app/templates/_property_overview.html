@@ -1,5 +1,6 @@
 {#- 0094/0102: Overview tab — shortcut cards and setup progress. -#}
-{%- from "_components.html" import nav_icon, copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
+{%- from "_icons.html" import icon with context -%}
+{%- from "_components.html" import copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set operator = (entities | selectattr('id', 'equalto', apartment.legal_entity_id) | list | first) -%}
 {%- set feed_errors_count = feeds | selectattr('last_status', 'equalto', 'error') | list | length -%}
@@ -8,13 +9,13 @@
 {% if setup_progress and not setup_progress.hidden %}
 <section class="panel setup-continue-card" aria-label="{{ t('wizard.continue_card_aria') }}">
   <p>{{ t('wizard.continue_card', done=setup_progress.done, total=setup_progress.total) }}
-    {% if setup_progress.reporting_waiting %}<span class="pill amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
+    {% if setup_progress.reporting_waiting %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('setup_guide.reporting.waiting_item') }}</span>{% endif %}
   </p>
   <div class="actions">
-    <a class="btn primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
+    <a class="ui-btn ui-btn-primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
     <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <button class="link-button" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
+      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
     </form>
   </div>
 </section>
@@ -25,21 +26,21 @@
 </form>
 {% endif %}
 <div class="host-property-grid">
-  <a class="host-property-card" href="{{ base_url }}?view=bookings#calendars">{{ nav_icon('calendar') }}<div><strong>{{ t('wizard.overview.calendars') }}</strong>
+  <a class="host-property-card" href="{{ base_url }}?view=bookings#calendars">{{ icon('calendar-days', 20) }}<div><strong>{{ t('wizard.overview.calendars') }}</strong>
     <small>{{ tp('apartment.form.calendars_count', feeds | length) }}{% if feed_errors_count %} · {{ t('apartment.form.feed.status.error') }}{% endif %}</small></div></a>
-  <div class="host-property-card host-property-card-static">{{ nav_icon('link') }}<div><strong><a href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ t('nav.guest_links') }}</a></strong>
+  <div class="host-property-card host-property-card-static">{{ icon('external-link', 20) }}<div><strong><a href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ t('nav.guest_links') }}</a></strong>
     <small>{{ t('wizard.guest_link.ready') }}</small></div>
     <div class="actions host-property-card-actions">{{ copy_inline('overview-guest-url', permalink, t('wizard.guest_link.copy_link')) }}</div></div>
-  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#ubyport">{{ nav_icon('report') }}<div><strong>{{ t('host.reporting') }}</strong>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#ubyport">{{ icon('send', 20) }}<div><strong>{{ t('host.reporting') }}</strong>
     <small>{{ t('property_nav.report_ready') if not report_missing else tp('property_nav.report_missing', report_missing) }}</small></div></a>
-  <a class="host-property-card" href="{{ ('/entities?edit=' ~ apartment.legal_entity_id ~ '&next=' ~ (base_url | urlencode)) if operator else (base_url ~ '?view=settings&section=property#operator-picker') }}">{{ nav_icon('entity') }}<div><strong>{{ t('host.business') }}</strong>
+  <a class="host-property-card" href="{{ ('/entities?edit=' ~ apartment.legal_entity_id ~ '&next=' ~ (base_url | urlencode)) if operator else (base_url ~ '?view=settings&section=property#operator-picker') }}">{{ icon('receipt', 20) }}<div><strong>{{ t('host.business') }}</strong>
     {% if operator %}<small>{{ operator.name }}</small>{% endif %}</div></a>
-  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#stay-fee-settings">{{ nav_icon('coins') }}<div><strong>{{ t('host.fee') }}</strong>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#stay-fee-settings">{{ icon('coins', 20) }}<div><strong>{{ t('host.fee') }}</strong>
     <small>{{ apartment.stay_fee_rate_czk or 0 }} Kč / {{ t('stay_fees.nights.one', count=1) }}</small></div></a>
-  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=property#address">{{ nav_icon('property') }}<div><strong>{{ t('host.property_details') }}</strong>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=property#address">{{ icon('house', 20) }}<div><strong>{{ t('host.property_details') }}</strong>
     <small>{{ address_text or t('property_nav.address_missing') }}</small></div></a>
   {% if door_code %}
-  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=lock#door-code">{{ nav_icon('lock') }}<div><strong>{{ t('host.door_code') }}</strong>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=lock#door-code">{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }}</strong>
     <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div></a>
   {% endif %}
 </div>
@@ -49,18 +50,18 @@
 <section class="panel host-checklist" data-setup-status aria-labelledby="property-readiness-title">
   <header class="setup-status-head">
     <div><h2 id="property-readiness-title">{{ t('host.setup_details') }}</h2><p>{{ t('wizard.overview.status_note') }}</p></div>
-    <span class="pill {{ 'green' if readiness.invite_ready else 'grey' }}">{{ t('apartment.form.readiness.invite_ready') if readiness.invite_ready else t('wizard.overview.invite_pending') }}</span>
+    <span class="ui-badge ui-badge-{{ 'done' if readiness.invite_ready else 'neutral' }}" data-tone="{{ 'green' if readiness.invite_ready else 'grey' }}">{{ t('apartment.form.readiness.invite_ready') if readiness.invite_ready else t('wizard.overview.invite_pending') }}</span>
   </header>
-  {% set icons = {'property': 'property', 'calendar': 'calendar', 'guest_link': 'link', 'try_it': 'users', 'police': 'report', 'stay_fee': 'coins', 'door_lock': 'lock', 'automation': 'automation'} %}
+  {% set icons = {'property': 'house', 'calendar': 'calendar-days', 'guest_link': 'external-link', 'try_it': 'users', 'police': 'send', 'stay_fee': 'coins', 'door_lock': 'key-round', 'automation': 'refresh-cw'} %}
     <ul class="setup-status-grid">
     {% for row in setup_checklist %}
     {% set status = row.status if row.status in ['done', 'skipped', 'waiting'] else 'todo' %}
     <li class="setup-status-tile is-{{ status }}" data-overview-setup-step="{{ row.key }}">
-      <span class="setup-status-icon" aria-hidden="true">{{ nav_icon(icons[row.key]) }}</span>
+      <span class="setup-status-icon" aria-hidden="true">{{ icon(icons[row.key], 20) }}</span>
       <div class="setup-status-copy">
         <div class="setup-status-label"><strong>{{ t('wizard.summary.' ~ row.key) if row.key in ['calendar', 'try_it'] else t('wizard.step.' ~ row.key) }}</strong>
         </div>
-        <span class="pill {{ 'green' if status == 'done' else 'amber' if status == 'waiting' else 'grey' }}">{{ t('wizard.summary.status.' ~ status) }}</span>
+        <span class="ui-badge ui-badge-{{ 'done' if status == 'done' else 'action' if status == 'waiting' else 'neutral' }}" data-tone="{{ 'green' if status == 'done' else 'amber' if status == 'waiting' else 'grey' }}">{{ t('wizard.summary.status.' ~ status) }}</span>
       </div>
     </li>
     {% endfor %}

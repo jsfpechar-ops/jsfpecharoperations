@@ -19,8 +19,8 @@ from tests.conftest import login_as
 
 USERNAME = "settings-technical-host"
 
-OPEN_TAG = '<details class="panel technical" id="settings-technical">'
-PIN_PANEL = '<div class="panel" id="settings-ubyport">'
+OPEN_TAG = '<details class="ui-section technical" id="settings-technical">'
+PIN_PANEL = '<div class="ui-section" id="settings-ubyport">'
 
 
 def _cleanup():

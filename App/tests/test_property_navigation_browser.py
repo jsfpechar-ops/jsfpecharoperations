@@ -191,7 +191,7 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     assert _active(html, "data-property-view") == ["overview"]
     assert _active(html, "data-settings-group") == ["property"]
     # No folded essentials, no suggested portal message, no shadow form on Overview.
-    content = html[html.index('<nav class="property-tabs"'):]
+    content = html[html.index('<nav class="ui-tabs property-tabs"'):]
     # The shared fee partial's council fold belongs to 0077 (outside this task).
     assert "<details" not in content.replace('<details class="fee-setup-section">', "")
     assert "message-template" not in content and "copy_message" not in content
@@ -278,7 +278,7 @@ def test_bookings_view_with_no_one_and_many_feeds(host):
     one = _page(host, "?view=bookings&lang=en")
     assert 'class="calendar-connect is-collapsed" id="calendar-connect"' in one
     assert "data-calendar-add" in one and "Synthetic failure" in one
-    assert 'class="pill red"' in one
+    assert 'data-tone="red"' in one
     opened = _page(host, "?view=bookings&add_calendar=1")
     assert 'class="calendar-connect" id="calendar-connect"' in opened
     db.insert("ical_feed", {"apartment_id": host["apartment"], "url": "https://example.invalid/b.ics",
@@ -368,7 +368,7 @@ _STATE_JS = """() => ({
 _FIT_JS = """() => {
   const vw = document.documentElement.clientWidth;
   const bad = [];
-  for (const el of document.querySelectorAll('.property-tabs a, .property-settings-nav a, .property-view.is-active .btn, .property-view.is-active input, .property-view.is-active select, .property-view.is-active h2, .property-view.is-active h3')) {
+  for (const el of document.querySelectorAll('.property-tabs a, .property-settings-nav a, .property-view.is-active .ui-btn, .property-view.is-active input, .property-view.is-active select, .property-view.is-active h2, .property-view.is-active h3')) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     if (r.right > vw + 1 || r.left < -1) bad.push(el.id || el.textContent.trim().slice(0, 30));
@@ -473,7 +473,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         # A field the browser refuses in a hidden group is revealed and focused.
         page.goto(f"{url}?view=settings&section=property&lang=en")
         page.evaluate("() => { document.getElementById('permalink_pin').value = '12'; }")
-        page.locator(".host-property-save .btn.primary").click()
+        page.locator(".host-property-save .ui-btn-primary").click()
         page.wait_for_timeout(100)
         state = page.evaluate(_STATE_JS)
         assert state["visibleGroups"] == ["guests"], state
@@ -483,7 +483,7 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         # Save returns to the group in use; the credentials test does too.
         page.goto(f"{url}?view=settings&section=automation&lang=en")
         page.select_option("#automation_mode", "manual")
-        page.locator(".host-property-save .btn.primary").click()
+        page.locator(".host-property-save .ui-btn-primary").click()
         page.wait_for_load_state()
         assert "view=settings&section=automation" in page.url
         assert page.evaluate(_STATE_JS)["visibleGroups"] == ["automation"]
@@ -516,7 +516,7 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
         page.select_option("#legal_entity_id", str(host["entities"][0]))
         for field, value in (("addr_obec", "Brno"), ("addr_house_no", "12"), ("addr_zip", "602 00")):
             page.fill(f"#{field}", value)
-        page.locator(".property-create-actions .btn.primary").click()
+        page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
         assert "/setup/calendar" in page.url
         assert not page.locator(".property-first-use").count()
@@ -553,7 +553,7 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
         page.locator('.property-tabs a[data-property-tab="settings"]').click()
         page.locator('[data-property-section-link="property"]').click()
         page.fill("#notes", "No-JS synthetic note")
-        page.locator(".host-property-save .btn.primary").click()
+        page.locator(".host-property-save .ui-btn-primary").click()
         page.wait_for_load_state()
         assert "view=settings" in page.url
         assert db.query_one("SELECT notes FROM apartment WHERE id = ?", (host["apartment"],))["notes"] == "No-JS synthetic note"

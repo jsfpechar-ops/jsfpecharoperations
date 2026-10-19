@@ -141,8 +141,8 @@ def test_list_pages_share_order_edges_and_rhythm(acc, base):
                         failures.append((label, "actions not right-aligned", r["actions"]["right"], r["title"]["right"]))
                     if width <= 760 and not (_near(r["actions"]["left"], left) and r["actions"]["top"] >= r["h1"]["bottom"] - 1):
                         failures.append((label, "stacked actions not under the title", r["actions"], left))
-                    if r["meta"] and r["meta"]["top"] < r["actions"]["bottom"] - 1:
-                        failures.append((label, "meta not under the actions", r["meta"], r["actions"]))
+                    if r["meta"] and r["meta"]["top"] < r["h1"]["bottom"] - 1:
+                        failures.append((label, "meta not under the title", r["meta"], r["h1"]))
                 if CAPTURE and not collapsed and width == 1280:
                     _shot(page, name, width, lang)
             context.close()

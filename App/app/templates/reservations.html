@@ -20,7 +20,7 @@
   {% set _ = stay_chip_items.append(('/reservations?range=' ~ value ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or ''), t(label_key), date_range == value or (value == 'archive' and show_archive))) %}
 {% endfor %}
 {% set stay_list_actions %}
-    <button class="ui-btn ui-btn-quiet" type="button" data-save-view data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
+    <button class="ui-btn ui-btn-quiet ui-btn-compact" type="button" data-save-view data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
     {{ csv_actions_menu(csv_export_params, true, scope_label=stay_property.label) }}
 {% endset %}
 {% endif %}

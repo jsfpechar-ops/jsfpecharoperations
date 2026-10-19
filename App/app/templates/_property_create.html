@@ -3,7 +3,8 @@
     (reporting, guest links, fees, locks, notes) is set on the property page after
     it exists. Copied settings travel as hidden fields only after the host chose
     "Copy" for a named property. -#}
-{%- from "_components.html" import nav_icon, help_tip with context -%}
+{%- from "_components.html" import help_tip with context -%}
+{%- from "_icons.html" import icon with context -%}
 {%- set draft = draft or {} -%}
 {%- set property_prefill = property_prefill or {} -%}
 {%- set property_values = draft -%}
@@ -12,7 +13,7 @@
     {% if copied_from_name %}
     <p class="panel property-create-copied" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}
       <a href="/apartments/new">{{ t('property_create.copy_clear') }}</a>
-      {% if property_prefill.get('stay_fee_rate_czk') %}<br><span class="small muted">{{ t('apartment.form.copy_from.vs_hint') }}</span>{% endif %}</p>
+      {% if property_prefill.get('stay_fee_rate_czk') %}<br><span class="ui-sub">{{ t('apartment.form.copy_from.vs_hint') }}</span>{% endif %}</p>
     {% endif %}
     <form method="post" action="/apartments" class="property-create-form" id="property-create-form">
       {# Enter in any field creates the property, never "Check again". #}
@@ -38,12 +39,12 @@
       {% endif %}
 
       <section class="panel property-create-card" id="basics" aria-labelledby="property-create-details">
-        <header class="property-create-head">{{ nav_icon('property') }}<h2 id="property-create-details">{{ t('property_create.details') }}</h2></header>
+        <header class="property-create-head">{{ icon('house', 20) }}<h2 id="property-create-details">{{ t('property_create.details') }}</h2></header>
         {% include "_property_identity_fields.html" %}
       </section>
 
       <section class="panel property-create-card" aria-labelledby="property-create-operator">
-        <header class="property-create-head">{{ nav_icon('entity') }}<h2 id="property-create-operator">{{ t('property_create.managed_by') }}</h2></header>
+        <header class="property-create-head">{{ icon('receipt', 20) }}<h2 id="property-create-operator">{{ t('property_create.managed_by') }}</h2></header>
         {% set operator_current = draft.legal_entity_id or selected_entity_id or property_prefill.get('legal_entity_id') %}
         <div class="property-create-operator-row">
           {% include "_property_operator.html" %}
@@ -51,7 +52,7 @@
         </div>
         {% set controller_current = draft.data_controller_entity_id or property_prefill.get('data_controller_entity_id') %}
         {% if controller_current %}
-        <div class="field" style="max-width:420px" id="alternate-controller">
+        <div class="field" id="alternate-controller">
           <label for="data_controller_entity_id">{{ t('apartment.form.controller.alternate_label') }}</label>
           <select id="data_controller_entity_id" name="data_controller_entity_id"{% if operator_error == 'flash.error.no_such_controller' %} aria-describedby="controller-message" aria-invalid="true"{% endif %}>
             <option value="">{{ t('apartment.form.controller.same_as_operator') }}</option>
@@ -65,14 +66,14 @@
       </section>
 
       <section class="panel property-create-card" id="address" aria-labelledby="property-create-address">
-        <header class="property-create-head">{{ nav_icon('report') }}<div><div class="heading-with-tip"><h2 id="property-create-address">{{ t('property_create.address') }}</h2>
+        <header class="property-create-head">{{ icon('send', 20) }}<div><div class="heading-with-tip"><h2 id="property-create-address">{{ t('property_create.address') }}</h2>
           {{ help_tip('property-create-address-help', t('property_create.address_lede')) }}</div></div></header>
         {% include "_property_address_fields.html" %}
       </section>
 
       <div class="actions property-create-actions">
-        <a class="btn" href="/apartments">{{ t('property_create.cancel') }}</a>
-        <button class="btn primary" type="submit">{{ t('property_create.submit') }}</button>
+        <a class="ui-btn ui-btn-secondary" href="/apartments">{{ t('property_create.cancel') }}</a>
+        <button class="ui-btn ui-btn-primary" type="submit">{{ t('property_create.submit') }}</button>
       </div>
     </form>
   </div>
@@ -80,10 +81,10 @@
   <aside class="panel property-create-next" aria-labelledby="property-create-next-title">
     <h2 id="property-create-next-title">{{ t('property_create.next_title') }}</h2>
     <ul class="property-create-next-list">
-      <li>{{ nav_icon('calendar') }}<div><strong>{{ t('property_create.next_calendar') }}</strong><small>{{ t('property_create.next_calendar_body') }}</small></div></li>
-      <li>{{ nav_icon('link') }}<div><strong>{{ t('property_create.next_guests') }}</strong><small>{{ t('property_create.next_guests_body') }}</small></div></li>
-      <li>{{ nav_icon('report') }}<div><strong>{{ t('property_create.next_reporting') }}</strong><small>{{ t('property_create.next_reporting_body') }}</small></div></li>
-      <li>{{ nav_icon('lock') }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong><small>{{ t('property_create.next_lock_body') }} <a href="/guide#door-codes">{{ t('help.tip.more') }}</a></small></div></li>
+      <li>{{ icon('calendar-days', 20) }}<div><strong>{{ t('property_create.next_calendar') }}</strong><small>{{ t('property_create.next_calendar_body') }}</small></div></li>
+      <li>{{ icon('external-link', 20) }}<div><strong>{{ t('property_create.next_guests') }}</strong><small>{{ t('property_create.next_guests_body') }}</small></div></li>
+      <li>{{ icon('send', 20) }}<div><strong>{{ t('property_create.next_reporting') }}</strong><small>{{ t('property_create.next_reporting_body') }}</small></div></li>
+      <li>{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong><small>{{ t('property_create.next_lock_body') }} <a href="/guide#door-codes">{{ t('help.tip.more') }}</a></small></div></li>
     </ul>
     {% if copy_property_peers %}
     <form method="get" action="/apartments/new" class="property-create-copy">
@@ -95,7 +96,7 @@
           <option value="{{ peer.id }}" {% if copy_from_id == peer.id %}selected{% endif %}>{{ peer.internal_name }}</option>
           {% endfor %}
         </select>
-        <button class="btn small" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
+        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
       </div>
     </form>
     {% endif %}

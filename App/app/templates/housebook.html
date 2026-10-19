@@ -1,20 +1,19 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'housebook' %}
-{% block title %}{{ t('housebook.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end, housebook_csv_menu, property_identity with context %}
+{% set body_kind = 'list' %}
+{% from "_components.html" import row_menu_begin, row_menu_end, housebook_csv_menu, property_identity with context %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% set housebook_csv_params = 'apartment=' ~ (apartment_id or '') %}
-{{ page_header(
-  t('housebook.title'),
-  ''
-) }}
+{% block title %}{{ t('housebook.title') }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
 
 {% set housebook_property = namespace(label=t('host.filter.all_properties')) %}
 {% for property in apartments %}
   {% if apartment_id and property.id|string == apartment_id|string %}{% set housebook_property.label = property.internal_name %}{% endif %}
 {% endfor %}
 <div class="filter-toolbar" data-filter-toolbar>
-  <button class="btn filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="housebook-filter-panel" hidden>
+  <button class="ui-btn ui-btn-secondary filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="housebook-filter-panel" hidden>
     {{ t('host.filter.filters') }}
   </button>
   <p class="filter-applied-summary" data-filter-summary>
@@ -30,9 +29,9 @@
     {{ housebook_csv_menu(housebook_csv_params, true, true, scope_label=housebook_property.label) }}
   </div>
 </div>
-<form id="housebook-filter-panel" method="get" action="/housebook" class="filters panel host-filter-panel" data-filter-panel data-filter-route="day-range">
+<form id="housebook-filter-panel" method="get" action="/housebook" class="filters ui-section host-filter-panel" data-filter-panel data-filter-route="day-range">
   <div class="filter-fields">
-    <div class="field">
+    <div class="ui-field">
       <label for="apartment">{{ t('housebook.apartment') }}</label>
       <select id="apartment" name="apartment">
         <option value="">{{ t('host.filter.all_properties') }}</option>
@@ -46,9 +45,9 @@
     {{ date_range('housebook', date_from, date_to, 'host.filter.stay_dates', 'housebook.from', 'housebook.until') }}
   </div>
   <div class="filter-panel-actions">
-    <button class="btn primary filter-apply" type="submit">{{ t('host.filter.apply_filters') }}</button>
-    <button class="btn ghost" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
-    <a class="btn ghost" href="/housebook">{{ t('host.filter.reset') }}</a>
+    <button class="ui-btn ui-btn-primary filter-apply" type="submit">{{ t('host.filter.apply_filters') }}</button>
+    <button class="ui-btn ui-btn-quiet" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
+    <a class="ui-btn ui-btn-quiet" href="/housebook">{{ t('host.filter.reset') }}</a>
   </div>
 </form>
 
@@ -79,17 +78,17 @@
         <td class="mono small" data-label="{{ t('housebook.document') }}">{{ guest_identifier(row.doc_number, row._guest_id) }}{% if row.visa_number %}<br>{{ t('housebook.visa', number=guest_identifier(row.visa_number, row._guest_id)) }}{% endif %}</td>
         <td class="small col-address" data-label="{{ t('housebook.residence') }}">{{ row.residence or '—' }}</td>
         <td class="small col-purpose" data-label="{{ t('housebook.purpose') }}">{{ row.purpose }}</td>
-        <td class="small nowrap" data-label="{{ t('housebook.signed') }}">{% if row.signed == 'yes' %}<span class="pill green">{{ t('housebook.signed_yes') }}</span>
-          {% else %}<span class="pill amber">{{ t('housebook.signed_no') }}</span>{% endif %}</td>
+        <td class="small nowrap" data-label="{{ t('housebook.signed') }}">{% if row.signed == 'yes' %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('housebook.signed_yes') }}</span>
+          {% else %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('housebook.signed_no') }}</span>{% endif %}</td>
         {# The stored values double as the CSV column, which the importer reads
            back, so they stay as they are and only the label changes here. #}
         <td class="small col-reported" data-label="{{ t('housebook.reported') }}">
-          {% if row.reported == 'yes' %}<span class="pill green">{{ t('status.reported') }}</span>
-            <div class="small muted">{{ row.reported_at[:10] }}</div>
-          {% elif row.reported.startswith('not required') %}<span class="pill grey">{{ t('status.not_required') }}</span>
-          {% elif row.reported == 'NO - rejected, cannot be corrected' %}<span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
-          {% elif row.reported.startswith('NO') %}<span class="pill red">{{ t('submission.rejected') }}</span>
-          {% else %}<span class="pill teal">{{ t('housebook.not_sent') }}</span>{% endif %}
+          {% if row.reported == 'yes' %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('status.reported') }}</span>
+            <div class="ui-sub">{{ row.reported_at[:10] }}</div>
+          {% elif row.reported.startswith('not required') %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('status.not_required') }}</span>
+          {% elif row.reported == 'NO - rejected, cannot be corrected' %}<span class="ui-badge ui-badge-action" data-tone="red">{{ t('stay.detail.guests.rejected_final') }}</span>
+          {% elif row.reported.startswith('NO') %}<span class="ui-badge ui-badge-action" data-tone="red">{{ t('submission.rejected') }}</span>
+          {% else %}<span class="ui-badge ui-badge-neutral" data-tone="teal">{{ t('housebook.not_sent') }}</span>{% endif %}
         </td>
         <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
@@ -107,14 +106,14 @@
     </tbody>
   </table>
 </div>
-<p class="small muted">{{ t('housebook.entries', count=rows | length) }} {{ t('housebook.filter_footer') }}</p>
+<p class="ui-sub">{{ t('housebook.entries', count=rows | length) }} {{ t('housebook.filter_footer') }}</p>
 {% else %}
   <div class="panel empty">{{ t('housebook.empty') }}</div>
 {% endif %}
 
 {% if archived_rows %}
 <h2>{{ t('housebook.archived_title') }}</h2>
-<p class="small muted">{{ t('housebook.archived_lede') }}</p>
+<p class="ui-sub">{{ t('housebook.archived_lede') }}</p>
 <div class="panel tight scroll-x">
   <table class="table-cards">
     <thead>
@@ -129,7 +128,7 @@
         <td class="small muted" data-label="{{ t('housebook.archived') }}">{{ row.archived_at[:10] }}</td>
         <td class="nowrap" data-label="">
           <form method="post" action="/guests/{{ row._guest_id }}/unarchive" class="inline">
-            <button class="btn small" type="submit">{{ t('common.restore') }}</button>
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('common.restore') }}</button>
           </form>
         </td>
       </tr>
@@ -139,14 +138,14 @@
 </div>
 {% endif %}
 
-<p class="small" style="margin-top:16px"><a href="/guide#housebook">{{ t('nav.guide') }}</a></p>
+<p class="ui-sub"><a href="/guide#housebook">{{ t('nav.guide') }}</a></p>
 
 <dialog id="housebook-pdf-dialog" class="csv-export-dialog">
   <form id="housebook-pdf-form" method="get" action="/housebook/pdfs.zip">
-    <h2 style="margin-top:0">{{ t('housebook.pdf_export_title') }}</h2>
-    <p class="small muted">{{ t('housebook.pdf_export_help') }}</p>
-    <p class="small muted housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
-    <div class="field">
+    <h2>{{ t('housebook.pdf_export_title') }}</h2>
+    <p class="ui-sub">{{ t('housebook.pdf_export_help') }}</p>
+    <p class="ui-sub housebook-pdf-warn">{{ t('housebook.pdf_hint', limit=max_inspection_pdfs) }}</p>
+    <div class="ui-field">
       <label for="pdf_export_apartment">{{ t('housebook.apartment') }}</label>
       <select id="pdf_export_apartment" name="apartment">
         <option value="">{{ t('common.all') }}</option>
@@ -156,19 +155,19 @@
         {% endfor %}
       </select>
     </div>
-    <div class="grid two">
-      <div class="field">
+    <div class="ui-pair">
+      <div class="ui-field">
         <label for="pdf_export_from">{{ t('common.from') }}</label>
         <input type="date" id="pdf_export_from" name="from" value="{{ date_from }}">
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="pdf_export_to">{{ t('common.until') }}</label>
         <input type="date" id="pdf_export_to" name="to" value="{{ date_to }}">
       </div>
     </div>
-    <div class="actions" style="margin-top:14px">
-      <button class="btn" type="button" data-housebook-pdf-cancel>{{ t('data.export_csv_cancel') }}</button>
-      <button class="btn primary" type="submit">{{ t('data.export_csv_download') }}</button>
+    <div class="ui-form-actions">
+      <button class="ui-btn ui-btn-secondary" type="button" data-housebook-pdf-cancel>{{ t('data.export_csv_cancel') }}</button>
+      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('data.export_csv_download') }}</button>
     </div>
   </form>
 </dialog>

@@ -36,7 +36,7 @@ def test_button_variants_sizes_and_states():
 def test_badge_kinds_carry_a_word_and_overdue_a_mark():
     for kind in ("action", "attention", "done", "neutral"):
         assert f'class="ui-badge ui-badge-{kind}">Word</span>' in _r('{{ ui_badge(kind, "Word") }}', kind=kind)
-    assert "ui-badge-overdue\">! Late" in _r('{{ ui_badge("action", "Late", true) }}')
+    assert "ui-badge-overdue\">Late" in _r('{{ ui_badge("action", "Late", true) }}')
 
 
 def test_fields_bind_help_and_errors_to_the_control():

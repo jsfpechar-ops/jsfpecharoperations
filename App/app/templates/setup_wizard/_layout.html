@@ -1,17 +1,14 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
+{% set body_kind = 'form' %}
 {% block title %}{{ t('wizard.title', name=apartment.internal_name) }}{% endblock %}
-{% block content %}
+{% block page_title %}{{ t('wizard.title', name=apartment.internal_name) }}{% endblock %}
+{% block meta %}{% if wizard_number %}{{ t('wizard.count', n=wizard_number, total=wizard_total, step=t('wizard.step.' ~ wizard_step)) }}{% elif guide %}{{ t('wizard.count', n=guide.number, total=guide.total, step=t('wizard.step.' ~ guide.key)) }}{% endif %}{% endblock %}
+{% block body %}
 {% from "_components.html" import help_tip, copy_button, progress_pill, guest_count with context %}
 {% set base_setup = '/apartments/' ~ apartment.id ~ '/' ~ 'setup' %}
 {% set values = draft if draft is defined else apartment %}
 <div class="setup-wizard" data-setup-wizard data-setup-step="{{ wizard_step }}">
-  <header class="setup-wizard-head">
-    <h1>{{ t('wizard.title', name=apartment.internal_name) }}</h1>
-    {% if wizard_number %}
-    <p class="setup-wizard-subline">{{ t('wizard.count', n=wizard_number, total=wizard_total, step=t('wizard.step.' ~ wizard_step)) }}</p>
-    {% elif guide %}
-    <p class="setup-wizard-subline">{{ t('wizard.count', n=guide.number, total=guide.total, step=t('wizard.step.' ~ guide.key)) }}</p>
-    {% endif %}
+  <div class="setup-wizard-head">
     {% if guide %}
     <ol class="setup-wizard-progress" aria-hidden="true">
       {% for item in guide.progress %}
@@ -21,16 +18,16 @@
     {% endif %}
     <form method="post" action="{{ base_setup }}" class="setup-wizard-exit">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <button class="btn small" type="submit" name="action" value="hide" formnovalidate>{{ t('wizard.exit') }}</button>
+      <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="hide" formnovalidate>{{ t('wizard.exit') }}</button>
     </form>
-  </header>
+  </div>
   <div class="setup-wizard-body">
     {% if setup_notice %}<p class="err-text" role="alert">{{ setup_notice }}</p>{% endif %}
     {% block wizard_content %}{% endblock %}
   </div>
   <footer class="setup-wizard-foot">
     {% if prev_step %}
-    <a class="btn ghost setup-wizard-back" href="{{ base_setup }}/{{ prev_step }}"> {{ t('wizard.back') }}</a>
+    <a class="ui-btn ui-btn-quiet setup-wizard-back" href="{{ base_setup }}/{{ prev_step }}">{{ t('wizard.back') }}</a>
     {% else %}
     <span></span>
     {% endif %}

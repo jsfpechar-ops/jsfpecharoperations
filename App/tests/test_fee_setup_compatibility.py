@@ -362,7 +362,7 @@ def live(host):
 
 def _save(page):
     page.locator('#property-settings-form [data-property-save] button[type="submit"], '
-                 '#property-settings-form button.btn.primary[type="submit"]').first.click()
+                 '#property-settings-form button.ui-btn-primary[type="submit"]').first.click()
     page.wait_for_load_state("networkidle")
 
 
@@ -387,7 +387,7 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 page.set_viewport_size({"width": width, "height": 900})
                 page.goto(f"{base}/stay-fees?month={month}&lang={locale}")
                 page.wait_for_load_state("networkidle")
-                page.locator(f'a.btn[href^="/apartments/{unset}?view=settings"]').click()
+                page.locator(f'a.ui-btn[href^="/apartments/{unset}?view=settings"]').click()
                 page.wait_for_load_state("networkidle")
                 assert "section=reporting" in page.url and page.url.endswith("#stay-fee-settings")
                 assert page.locator("html").get_attribute("lang") == locale

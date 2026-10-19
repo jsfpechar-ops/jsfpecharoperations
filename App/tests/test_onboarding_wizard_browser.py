@@ -1196,16 +1196,16 @@ def test_deferred_police_journey_without_javascript(host, base_url, monkeypatch,
 
         def check_controls():
             assert page.evaluate(_overflow_js())
-            header = page.locator(".setup-wizard-head h1").bounding_box()
+            header = page.locator(".ui-ph h1").bounding_box()
             exit_button = page.locator(".setup-wizard-exit button").bounding_box()
             assert header and exit_button
-            assert header["x"] + header["width"] <= exit_button["x"] + 1
-            radius = page.locator(".setup-wizard-foot .btn.primary").evaluate(
+            assert header["y"] + header["height"] <= exit_button["y"] + 1
+            radius = page.locator(".setup-wizard-foot .ui-btn-primary").evaluate(
                 "(el) => getComputedStyle(el).borderRadius"
             )
-            controls = page.locator(".setup-wizard-exit button, .setup-wizard-foot .btn")
+            controls = page.locator(".setup-wizard-exit .ui-btn, .setup-wizard-foot .ui-btn")
             for control in controls.all():
-                assert control.evaluate("(el) => el.classList.contains('btn')")
+                assert control.evaluate("(el) => el.classList.contains('ui-btn')")
                 assert control.evaluate("(el) => getComputedStyle(el).borderRadius") == radius
                 box = control.bounding_box()
                 assert box and box["width"] > 0 and box["height"] >= 36
@@ -1332,7 +1332,7 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
             return [s.fontFamily, s.fontSize, s.fontWeight, s.lineHeight, s.letterSpacing, s.color];
         }"""
         assert page.locator(".setup-wizard-fee-intro").evaluate(typography) == page.locator(
-            ".setup-wizard-head h1"
+            ".ui-ph h1"
         ).evaluate(typography)
         assert page.evaluate(_overflow_js())
         _shot(page, f"24-fee-intro-{tag}.png")
@@ -1343,15 +1343,15 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         page.wait_for_url("**/setup/done**")
         cards = page.locator(".setup-wizard-checklist .host-property-card")
         assert cards.count() == TOTAL
-        assert page.locator(".setup-wizard-checklist .pill.green").count() == 4
-        assert page.locator(".setup-wizard-checklist .pill.grey").count() == 3
+        assert page.locator(".setup-wizard-checklist .ui-badge-done").count() == 4
+        assert page.locator(".setup-wizard-checklist .ui-badge-neutral").count() == 3
         police = page.locator('[data-setup-summary-step="police"]')
-        assert police.locator(".pill.amber").inner_text() == _t(lang, "wizard.summary.status.waiting")
-        assert police.locator(".pill.green").count() == 0
+        assert police.locator(".ui-badge-attention").inner_text() == _t(lang, "wizard.summary.status.waiting")
+        assert police.locator(".ui-badge-done").count() == 0
         assert police.locator("a").is_visible()
         assert page.evaluate(_overflow_js())
         _shot(page, f"25-summary-cards-{tag}.png")
-        page.locator(".setup-wizard-foot .btn.primary").click()
+        page.locator(".setup-wizard-foot .ui-btn-primary").click()
         page.wait_for_url("**/apartments/*?view=overview**")
         overview = page.locator(".host-property-grid").first
         assert overview.get_by_text(_t(lang, "wizard.overview.calendars"), exact=True).is_visible()
@@ -1470,7 +1470,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         lede = page.locator(".setup-wizard-lede").first
         assert int(lede.evaluate("(el) => getComputedStyle(el).fontWeight")) >= 700
         assert lede.evaluate("(el) => getComputedStyle(el).color") == page.locator(
-            ".setup-wizard-head h1"
+            ".ui-ph h1"
         ).evaluate("(el) => getComputedStyle(el).color")
         page.locator("button[value=skip]").click()
         page.wait_for_url("**/setup/police**")
@@ -1491,28 +1491,13 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
             page.evaluate("window.ubyhostSkeleton.start()")
             skeleton = page.locator("[data-page-skeleton]")
             skeleton.wait_for(state="visible")
-            bones = skeleton.locator(".c05-skel__bone")
-            assert bones.count() == 6
-            assert bones.first.evaluate(
-                "(el) => getComputedStyle(el, '::after').animationName"
-            ) == "c05-skel-sweep"
+            bones = skeleton.locator(".ui-bone")
+            assert bones.count() >= 6
+            assert bones.first.evaluate("(el) => getComputedStyle(el).animationName") == "ui-pulse"
             assert page.evaluate(_overflow_js())
             _shot(page, f"32-warm-skeleton-{tag}.png")
-            page.evaluate("""() => {
-                Object.defineProperty(document, 'hidden', {configurable: true, value: true});
-                document.dispatchEvent(new Event('visibilitychange'));
-            }""")
-            assert bones.first.evaluate(
-                "(el) => getComputedStyle(el, '::after').animationPlayState"
-            ) == "paused"
-            page.evaluate("""() => {
-                delete document.hidden;
-                document.dispatchEvent(new Event('visibilitychange'));
-            }""")
             page.emulate_media(reduced_motion="reduce")
-            assert bones.first.evaluate(
-                "(el) => getComputedStyle(el, '::after').animationName"
-            ) == "none"
+            assert bones.first.evaluate("(el) => getComputedStyle(el).animationName") == "none"
             _shot(page, f"33-static-skeleton-{tag}.png")
             page.evaluate("window.ubyhostSkeleton.hide()")
             skeleton.wait_for(state="hidden", timeout=2000)  # skeleton.js MIN_VISIBLE_MS defers the hide

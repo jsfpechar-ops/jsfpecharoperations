@@ -21,7 +21,7 @@
       {% if item.notes %}<p class="cleaning-text">{{ item.notes }}</p>{% endif %}
       {% if item.instructions %}<p class="cleaning-text">{{ item.instructions }}</p>{% endif %}
     </div>{% endif %}
-    {% if not read_only %}<div class="cleaning-card-actions"><a class="btn" href="/cleaning/events/{{ item.eventId }}/edit">{{ ct('edit') }}</a><a href="/cleaning/properties/{{ item.propertyId }}">{{ ct('settings') }}</a></div>{% endif %}
+    {% if not read_only %}<div class="cleaning-card-actions"><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/cleaning/events/{{ item.eventId }}/edit">{{ ct('edit') }}</a><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/cleaning/properties/{{ item.propertyId }}">{{ ct('settings') }}</a></div>{% endif %}
   </article>
   {% endfor %}
 </section>

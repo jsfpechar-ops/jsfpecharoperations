@@ -12,7 +12,7 @@ def _render(src, **ctx):
 
 
 def test_progress_pill_maps_tones_to_kinds_and_keeps_the_tone():
-    cases = {"failed": ("action", "red", "! "), "incomplete": ("action", "amber", ""), "ready": ("action", "blue", ""),
+    cases = {"failed": ("action", "red", ""), "incomplete": ("action", "amber", ""), "ready": ("action", "blue", ""),
              "awaiting_guest": ("neutral", "teal", ""), "reported": ("done", "green", ""), "not_required": ("neutral", "grey", "")}
     for status, (kind, tone, mark) in cases.items():
         html = _render("{{ progress_pill(status) }}", status=status)

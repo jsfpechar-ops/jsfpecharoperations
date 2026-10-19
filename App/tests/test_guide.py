@@ -12,7 +12,7 @@ def test_the_guide_renders_every_section_without_raw_keys(host):
                         "door-codes", "faster", "faq", "legal"):
             assert f'id="{section}"' in page, (lang, section)
         assert "guide." not in page.replace("/guide", "")
-        assert '<span class="pill red">' in page
+        assert '<span class="ui-badge ui-badge-action" data-tone="red">' in page
 
 
 def test_the_guide_has_the_same_keys_in_english_and_czech():

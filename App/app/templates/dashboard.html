@@ -86,10 +86,12 @@
   {% endset %}
   {{ ui_banner('attention', missing_text, t('dashboard.setup.title'), '/apartments') }}
   {% endif %}
+  {% if rows %}
   {% call ui_section(t('dashboard.section.needs_action', count=counts.attention), actions='<a href="/reservations">' ~ t('dashboard.section.view_stays') ~ '</a>', id='needs-action') %}
     {{ dashboard_rows(queue_groups.needs_action, 'dashboard.queue.empty.action') }}
     {% if additional_action_count %}<p class="ui-sub"><a href="/reservations">{{ t('dashboard.more_action', count=additional_action_count) }}</a></p>{% endif %}
   {% endcall %}
+  {% endif %}
   {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
   {{ onboarding_banner(onboarding) }}
   {% if not rows and feed_count %}{{ ui_empty(t('dashboard.empty.no_stays')) }}

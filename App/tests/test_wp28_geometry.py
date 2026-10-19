@@ -121,7 +121,7 @@ def test_calendar_remove_button_is_visible_without_scrolling(base, world, browse
         box = page.evaluate(
             """() => {
               const wrap = document.querySelector('.feed-table').closest('.scroll-x');
-              const button = wrap.querySelector('.row-actions .btn');
+              const button = wrap.querySelector('.row-actions .ui-btn');
               const w = wrap.getBoundingClientRect(), b = button.getBoundingClientRect();
               const name = wrap.querySelector('td strong');
               const range = document.createRange(); range.selectNodeContents(name);

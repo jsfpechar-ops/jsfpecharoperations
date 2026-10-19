@@ -1,21 +1,17 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'entities' %}
-{% block title %}{{ t('entities.title') }}{% endblock %}
-
-{% block content %}
-{% from "_components.html" import page_header, breadcrumb, onboarding_banner, row_menu_begin, row_menu_end, help_tip with context %}
+{% set body_kind = 'list' %}
+{% from "_components.html" import onboarding_banner, row_menu_begin, row_menu_end, help_tip with context %}
 {% from "_entity_business_fields.html" import business_form_body, ico_field, register_messages, register_lookup_saved with context %}
 {% from "_entity_invoice_fields.html" import invoice_fields with context %}
-<style>
-  .entities-page tbody tr .row-actions > * { opacity: 1; }
-  .entities-page .row-menu-item[aria-disabled="true"] { color: var(--muted); cursor: not-allowed; }
-  .entities-page .row-menu-explanation { max-width: 240px; margin: 0 8px 6px; color: var(--muted); font-size: 12px; line-height: 1.45; }
-</style>
-{{ breadcrumb([
-  {'label': t('nav.properties'), 'url': '/apartments'},
-  {'label': t('entities.title'), 'url': ''}
-]) }}
-{{ page_header(t('entities.title'), t('entities.lede'), next_path or '/apartments', t('common.back') if next_path else t('entities.back')) }}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
+{% set cta = 'ui-btn ui-btn-primary' %}
+{% block title %}{{ t('entities.title') }}{% endblock %}
+{% block meta %}{{ t('entities.lede') }}{% endblock %}
+{% block back_url %}{{ next_path or '/apartments' }}{% endblock %}
+{% block back_label %}{{ t('common.back') if next_path else t('entities.back') }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
 {{ onboarding_banner(onboarding) }}
 
 {% if edit_entity %}
@@ -24,9 +20,9 @@
     defined once in its partial. Which business a property uses stays a
     property setting. -#}
 <div class="panel entity-form" id="entity-edit">
-  <div class="section-heading" style="margin-top:0">
+  <div class="ui-section-h">
     <h2>{{ t('entities.edit', name=edit_entity.name) }}</h2>
-    <a class="btn small ghost" href="{{ next_path or '/entities' }}">{{ t('common.close') }}</a>
+    <a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{ next_path or '/entities' }}">{{ t('common.close') }}</a>
   </div>
   <div class="entity-linked" id="entity-linked">
     <span class="entity-linked-label">{{ t('entities.linked.label') }}</span>
@@ -37,7 +33,7 @@
         {% endfor %}
       </ul>
     {% else %}
-      <span class="muted">{{ t('entities.linked.none') }}</span>
+      <span class="ui-sub">{{ t('entities.linked.none') }}</span>
     {% endif %}
     {{ help_tip('entity-linked-help', t('entities.linked.help')) }}
   </div>
@@ -48,7 +44,7 @@
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
       {{ business_form_body('edit_', edit_entity, signature_preview, ares_error, ares_note) }}
-      <div class="actions"><button class="btn primary" type="submit">{{ t('entities.save') }}</button></div>
+      <div class="actions"><button class="{{ cta }}" type="submit">{{ t('entities.save') }}</button></div>
     </form>
   </section>
 
@@ -66,7 +62,7 @@
       <input type="hidden" name="_invoice_account_existing" value="{{ invoice_entity.bank_account or invoice_entity.iban or '' }}">
       {{ register_lookup_saved(edit_entity.ico, invoice.ares_error, invoice.ares_note, invoice.ares_vat_found) }}
       {{ invoice_fields(invoice_entity, invoice.bank_parts, invoice.bic_from_bank, invoice.account_error) }}
-      <div class="actions"><button class="btn primary" type="submit">{{ t('common.save') }}</button></div>
+      <div class="actions"><button class="{{ cta }}" type="submit">{{ t('common.save') }}</button></div>
     </form>
   </section>
   {% endif %}
@@ -88,14 +84,14 @@
         </td>
         <td data-label="{{ t('entities.seat') }}">{{ entity.seat or '—' }}</td>
         <td class="mono" data-label="{{ t('entities.ico') }}">{{ entity.ico or '—' }}</td>
-        <td class="small" data-label="{{ t('entities.contact') }}">
+        <td class="ui-sub" data-label="{{ t('entities.contact') }}">
           {% if entity.contact_email %}{{ entity.contact_email }}
-          {% else %}<span class="pill amber">{{ t('entities.missing') }}</span>{% endif %}
+          {% else %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('entities.missing') }}</span>{% endif %}
         </td>
         <td class="num" data-label="{{ t('entities.properties') }}">{{ entity.apartments }}</td>
         <td class="nowrap row-actions" data-label="">
-          <a class="btn small" href="/entities?edit={{ entity.id }}">{{ t('common.edit') }}</a>
-          <a class="btn small" href="/entities?edit={{ entity.id }}#entity-invoice">{{ t('host.invoice_settings') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/entities?edit={{ entity.id }}">{{ t('common.edit') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/entities?edit={{ entity.id }}#entity-invoice">{{ t('host.invoice_settings') }}</a>
           {{ row_menu_begin() }}
             {% if not entity.apartments %}
             <form method="post" action="/entities/{{ entity.id }}/archive" class="row-menu-form"
@@ -120,7 +116,7 @@
 
 {% if archived_entities %}
 <h2>{{ t('entities.archived') }}</h2>
-<p class="small muted">{{ t('entities.archived_lede') }}</p>
+<p class="ui-sub">{{ t('entities.archived_lede') }}</p>
 <div class="panel tight scroll-x">
   <table class="table-cards">
     <thead><tr><th class="col-name">{{ t('entities.name') }}</th><th>{{ t('entities.archived') }}</th><th>{{ t('entities.ico') }}</th><th></th></tr></thead>
@@ -131,7 +127,7 @@
         <td class="col-name" data-label="{{ t('entities.name') }}">
           <a class="row-primary-link" href="/entities?edit={{ entity.id }}">{{ entity.name }}</a>
         </td>
-        <td class="small muted" data-label="{{ t('entities.archived') }}">{{ entity.archived_at[:10] }}</td>
+        <td class="ui-sub" data-label="{{ t('entities.archived') }}">{{ entity.archived_at[:10] }}</td>
         <td class="mono" data-label="{{ t('entities.ico') }}">{{ entity.ico or '—' }}</td>
         <td class="nowrap row-actions" data-label="">
           {{ row_menu_begin() }}
@@ -154,11 +150,11 @@
 {% endif %}
 
 <div class="panel entity-add" id="entity-add">
-  <h2 style="margin-top:0">{{ t('entities.add') }}</h2>
+  <h2>{{ t('entities.add') }}</h2>
   <form method="post" action="/entities" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     {{ business_form_body('new_', new_entity or none, '', ares_error, ares_note) }}
-    <div class="actions"><button class="btn primary" type="submit">{{ t('entities.add_action') }}</button></div>
+    <div class="actions"><button class="{{ cta }}" type="submit">{{ t('entities.add_action') }}</button></div>
   </form>
 </div>
 {% endblock %}

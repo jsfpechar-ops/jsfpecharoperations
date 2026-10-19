@@ -21,6 +21,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Analytics | `test_posthog_*.py test_umami_guard.py test_meta_capi.py` |
 | Design system, catalog page, design lint | `test_design_*.py test_dev_ui*.py` |
 | Static files under App/app/static (any), cache keys | `test_static_versions.py test_wp07_cache_heartbeats.py` plus the row of the page the file styles |
+| Any host template, host CSS or host JS | test_design_guardrails_browser.py (0 skipped; the rules are in MASTER 11.0) |
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
 
 A row missing or wrong: the orchestrator fixes this table in the same brief.

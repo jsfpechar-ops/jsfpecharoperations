@@ -24,12 +24,10 @@ CAPTURE = os.environ.get("UBYHOST_CAPTURE_O2") == "1"
 LISTS = {
     "properties": "/apartments",
     "businesses": "/entities",
-    "invoices": "/invoices",
     "fees": "/stay-fees",
-    "reports": "/submissions",
 }
 # Per-list switch point (measured min-content width + ~40 px), in panel px.
-THRESHOLDS = {"properties": 800, "businesses": 950, "invoices": 830, "fees": 940, "reports": 850}
+THRESHOLDS = {"properties": 800, "businesses": 950, "fees": 940}
 
 _LIST_JS = """() => {
   const panel = document.querySelector('.list-cards');
@@ -37,7 +35,7 @@ _LIST_JS = """() => {
   const pr = panel.getBoundingClientRect();
   const table = panel.querySelector('table');
   const cards = getComputedStyle(table.querySelector('thead')).display === 'none';
-  const acts = [...panel.querySelectorAll('tbody td.row-actions a.btn, tbody td.row-actions .row-menu-trigger')]
+  const acts = [...panel.querySelectorAll('tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger')]
     .filter(el => { const r = el.getBoundingClientRect(); return r.width > 1 && r.height > 1; })
     .map(el => { const r = el.getBoundingClientRect();
       return {left: r.left, right: r.right, top: r.top, bottom: r.bottom, text: (el.textContent || '').trim().slice(0, 20)}; });

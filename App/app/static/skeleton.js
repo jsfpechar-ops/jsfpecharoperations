@@ -99,7 +99,7 @@
 
   function pauseShimmer() {
     document.documentElement.classList.toggle("skeleton-paused", document.hidden);
-    document.querySelectorAll(".c05-skel").forEach(function (card) {
+    document.querySelectorAll(".c05-skel, .ui-skel").forEach(function (card) {
       card.classList.toggle("paused", document.hidden);
     });
   }

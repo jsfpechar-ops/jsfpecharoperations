@@ -20,9 +20,9 @@
 {%- else -%}<button class="{{ classes }}" type="{{ type }}" aria-label="{{ label }}" title="{{ label }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{{ icon(icon_name, 16) }}</button>{%- endif -%}
 {%- endmacro %}
 
-{#- 7.5 badge. kind: action | attention | done | neutral. overdue prefixes "!" and a border. -#}
+{#- 7.5 badge. kind: action | attention | done | neutral. overdue adds a border (the word says late; no "!"). -#}
 {% macro ui_badge(kind, label, overdue=false) -%}
-<span class="ui-badge ui-badge-{{ kind }}{{ ' ui-badge-overdue' if overdue }}">{% if overdue %}! {% endif %}{{ label }}</span>
+<span class="ui-badge ui-badge-{{ kind }}{{ ' ui-badge-overdue' if overdue }}">{{ label }}</span>
 {%- endmacro %}
 
 {#- 7.7 chip: a link (href) or a button; selected is ink, never coral. -#}

@@ -1,73 +1,77 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'smart_locks' %}
+{% set body_kind = 'list' %}
+{# One coral button per state: setup (no account), share check (no locks yet), list check (locks). #}
+{% set cta = 'ui-btn ui-btn-primary' %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('smart_locks.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, help_tip, copy_button with context %}
+{% block meta %}{{ t('smart_locks.lede') }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
+{% from "_components.html" import help_tip, copy_button with context %}
 
-{{ page_header(t('smart_locks.title'), t('smart_locks.lede')) }}
-
-{% if reauth %}<p class="small"><strong>{{ t('smart_locks.reauth') }}</strong></p>{% endif %}
+{% if reauth %}<p class="ui-sub"><strong>{{ t('smart_locks.reauth') }}</strong></p>{% endif %}
 
 {% macro share_block(code_id, section) %}
-  <h2 style="margin-top:0">{{ t('smart_locks.share_title') }}</h2>
-  <p class="small muted">{{ t('smart_locks.warn_owner') }}</p>
-  <p style="margin-bottom:6px"><strong>{{ t('smart_locks.name_label') }}</strong></p>
-  <p style="margin-top:0"><code id="{{ code_id }}">{{ receiver }}</code> {{ copy_button(code_id) }}</p>
+  <h2>{{ t('smart_locks.share_title') }}</h2>
+  <p class="ui-sub">{{ t('smart_locks.warn_owner') }}</p>
+  <p><strong>{{ t('smart_locks.name_label') }}</strong></p>
+  <p><code id="{{ code_id }}">{{ receiver }}</code> {{ copy_button(code_id) }}</p>
   {# 0090: three essentials here; every TTLock tap lives in the Guide. #}
   <h3 class="smart-locks-steps-title">{{ t('smart_locks.steps_title') }}
     {{ help_tip('smart-locks-steps-help-' ~ section, t('smart_locks.steps_help'), '/guide#door-codes-share') }}</h3>
   <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('smart_locks.essential' ~ n) }}</li>{% endfor %}</ol>
-  <p class="small" style="margin-top:16px"><strong>{{ t('smart_locks.warn_ekey') }}</strong></p>
-  <form method="post" action="/smart-locks/refresh" style="margin-top:20px"><input type="hidden" name="return_to" value="{{ return_to }}">
+  <p class="ui-sub"><strong>{{ t('smart_locks.warn_ekey') }}</strong></p>
+  <form method="post" action="/smart-locks/refresh"><input type="hidden" name="return_to" value="{{ return_to }}">
     <input type="hidden" name="section" value="{{ section }}">
-    <div class="action-group"><button class="btn primary" type="submit">{{ t('smart_locks.check') }}</button></div></form>
+    <div class="action-group"><button class="{{ cta if section == 'share' else 'ui-btn ui-btn-secondary' }}" type="submit">{{ t('smart_locks.check') }}</button></div></form>
 {% endmacro %}
 
 {% if not account %}
-<section class="panel" id="smart-locks-how">
-  <h2 style="margin-top:0">{{ t('smart_locks.how_title') }}</h2>
+<section class="ui-section" id="smart-locks-how">
+  <h2>{{ t('smart_locks.how_title') }}</h2>
   <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('smart_locks.how' ~ n) }}</li>{% endfor %}</ol>
 </section>
-<section class="panel" id="smart-locks-setup">
-  <h2 style="margin-top:0">{{ t('smart_locks.setup_title') }}</h2>
+<section class="ui-section" id="smart-locks-setup">
+  <h2>{{ t('smart_locks.setup_title') }}</h2>
   <form method="post" action="/smart-locks/setup">
     <input type="hidden" name="return_to" value="{{ return_to }}">
     <div class="checkline"><input type="checkbox" id="terms" name="terms" value="1" required>
       <label for="terms">{{ t('smart_locks.terms') }} <a href="/guide#door-codes-terms">{{ t('smart_locks.terms_link') }}</a></label></div>
-    <div class="action-group" style="margin-top:28px"><button class="btn primary" type="submit">{{ t('smart_locks.setup') }}</button></div>
+    <div class="action-group"><button class="{{ cta }}" type="submit">{{ t('smart_locks.setup') }}</button></div>
   </form>
-  <p class="small muted" style="margin-top:20px"><a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a></p>
+  <p class="ui-sub"><a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a></p>
 </section>
 {% else %}
 {% if not locks %}
-<section class="panel" id="smart-locks-share">
+<section class="ui-section" id="smart-locks-share">
   {{ share_block('ttlock-receiver', 'share') }}
 </section>
 {% else %}
-<details class="panel" id="smart-locks-add-more">
+<details class="ui-section" id="smart-locks-add-more">
   <summary>{{ t('smart_locks.add_more') }}</summary>
   {{ share_block('ttlock-receiver-more', 'add-more') }}
 </details>
-<section class="panel" id="smart-locks-list">
+<section class="ui-section" id="smart-locks-list">
   {% for lock in locks %}
-  <div class="smart-lock-row" style="margin-bottom:16px">
+  <div class="smart-lock-row">
     <p><strong>{{ lock.alias }}</strong> · {{ t('smart_locks.lock_id', id=lock.lock_id) }}
       {% if lock.battery is not none %} · {{ t('smart_locks.battery', percent=lock.battery) }}{% endif %}</p>
-    <p class="small">&#10003; {{ t('smart_locks.connected') }}</p>
-    <p class="small muted">{% set used = properties_using.get(lock.lock_id, []) %}
+    <p class="ui-sub">✓ {{ t('smart_locks.connected') }}</p>
+    <p class="ui-sub">{% set used = properties_using.get(lock.lock_id, []) %}
       {% if used %}{{ used | join(', ') }}{% else %}{{ t('smart_locks.unused') }}{% endif %}</p>
-    {% if used | length > 1 %}<p class="small"><strong>{{ t('smart_locks.shared_warning') }}</strong></p>{% endif %}
+    {% if used | length > 1 %}<p class="ui-sub"><strong>{{ t('smart_locks.shared_warning') }}</strong></p>{% endif %}
     {% if lock.tz_offset_ms is not none and lock.tz_offset_ms != 3600000 %}
-    <p class="small"><strong>{{ t('smart_locks.timezone_warning') }}</strong></p>
+    <p class="ui-sub"><strong>{{ t('smart_locks.timezone_warning') }}</strong></p>
     {% endif %}
   </div>
   {% endfor %}
   <div class="action-group">
-    <form method="post" action="/smart-locks/refresh" style="display:inline"><input type="hidden" name="return_to" value="{{ return_to }}">
+    <form method="post" action="/smart-locks/refresh" class="inline"><input type="hidden" name="return_to" value="{{ return_to }}">
       <input type="hidden" name="section" value="list">
-      <button class="btn primary" type="submit">{{ t('smart_locks.check') }}</button></form>
-    <form method="post" action="/smart-locks/remove" style="display:inline" data-confirm data-confirm-message="{{ t('smart_locks.remove_confirm') }}"><input type="hidden" name="return_to" value="{{ return_to }}">
-      <button class="btn danger" type="submit">{{ t('smart_locks.remove') }}</button></form>
+      <button class="{{ cta }}" type="submit">{{ t('smart_locks.check') }}</button></form>
+    <form method="post" action="/smart-locks/remove" class="inline" data-confirm data-confirm-message="{{ t('smart_locks.remove_confirm') }}"><input type="hidden" name="return_to" value="{{ return_to }}">
+      <button class="ui-btn ui-btn-danger" type="submit">{{ t('smart_locks.remove') }}</button></form>
   </div>
 </section>
 {% endif %}

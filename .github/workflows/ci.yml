@@ -223,7 +223,7 @@ jobs:
           tests/test_onboarding_wizard_browser.py tests/test_onboarding_wizard_survival.py
           tests/test_download_skeleton_browser.py tests/test_onboarding_followup_browser.py
           tests/test_host_stay_actions_browser.py tests/test_host_stay_detail_layout_browser.py
-          tests/test_host_quiet_dashboard_browser.py tests/test_dashboard_calendar_browser.py tests/test_cleaning_browser.py tests/test_host_list_layouts_browser.py tests/test_host_filter_panels_browser.py tests/test_host_wide_geometry_browser.py tests/test_lock_navigation_browser.py tests/test_property_navigation_browser.py::test_shared_timing_pair_is_owned_by_properties -q -rs --junitxml=/tmp/ubyhost-tests.xml
+          tests/test_host_quiet_dashboard_browser.py tests/test_dashboard_calendar_browser.py tests/test_cleaning_browser.py tests/test_host_list_layouts_browser.py tests/test_host_filter_panels_browser.py tests/test_host_wide_geometry_browser.py tests/test_design_guardrails_browser.py tests/test_lock_navigation_browser.py tests/test_property_navigation_browser.py::test_shared_timing_pair_is_owned_by_properties -q -rs --junitxml=/tmp/ubyhost-tests.xml
 
 
       - name: Summarize required browser checks

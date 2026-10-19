@@ -436,7 +436,7 @@ def test_copy_correction_pages_browser_evidence(browser_base):
             page.locator("#internal_name").fill("Broken address flat")
             page.locator("#addr_street").fill("Broken")
             page.locator("#addr_zip").fill("1")
-            page.locator(".property-create-actions .btn.primary").click()
+            page.locator(".property-create-actions .ui-btn-primary").click()
             page.wait_for_selector("#addr_zip-error", state="visible")
             assert page.locator("#addr_zip-error").count() == 1
             assert page.locator("#addr_street").input_value() == "Broken"
