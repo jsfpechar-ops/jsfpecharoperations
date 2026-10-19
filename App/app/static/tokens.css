@@ -102,9 +102,7 @@
   /* Compatibility aliases while legacy templates move onto primitives. */
   --bg: var(--canvas);
   --bg-tint: var(--canvas-subtle);
-  --surface-2: var(--canvas);
   --surface-3: var(--surface-hover);
-  --ink-2: var(--ink-secondary);
   --muted: var(--ink-muted);
   --faint: var(--ink-faint);
   --line: var(--border);
