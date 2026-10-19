@@ -27,14 +27,18 @@ Depends on: 0131 | Base commit: df8b842 | Branch: claude/project-thread-td6fpc |
 - [ ] 390 px screenshot: not taken
 
 ## Remaining steps
-- Step 17: create App/tests/test_design_shared_macros.py (not done)
-- Step 18: commit of the test file (not done)
-- Section 6 browser command (UBYHOST_REQUIRE_BROWSER=1, 0 skipped): not run
-- Section 7 screenshot (390 px Stays list): not taken; shots dir ready at scratchpad shots/0132
+- Step 17: done in 0132-cont-1 (App/tests/test_design_shared_macros.py, 4 passed). Commit b45aee8.
+- Step 18: done in 0132-cont-1 (commit b45aee8). No app or template file needed a change.
+- Section 6 browser command (UBYHOST_REQUIRE_BROWSER=1, 0 skipped): RUN, 4 failed, 3 passed, 0 skipped (2 runs, same failures; the touch-target check failed once on the dashboard test). Failing: test_host_quiet_dashboard_browser.py (amber dashboard-row-task tone; touch target 40px en/360), test_host_stay_actions_browser.py (stays status pill missing in td.stay-col-reporting), test_host_list_layouts_browser.py (stays row height 85 > 72 at en/1280). None is in the known-failure list.
+- Section 7 screenshot (390 px Stays list): not taken; no file written to scratchpad shots/0132.
+- Lint: design_lint OK; ruff check (E9,F63,F7,F82,F401,F841) passed.
 
 ## Deviations
 - Steps 1-9 and 11-13 applied by an exact-anchor replacement script (abort on any miss, one commit per step). No anchor missed.
 - Step 10: test_stays_empty_workspace.py line 224 (`<a class="btn" href="/apartments">`, the empty-state button) changed to `ui-btn ui-btn-secondary`, as step 10 allows.
+
+## Questions (0132-cont-1)
+- Brief 0132-cont-1 section 8: a test outside the known list failed twice. Stopped before the screenshot. Owner or orchestrator to decide whether the stays and dashboard row layout failures belong to 0132 steps 1-16 (fix needed in templates or CSS, which cont-1 section 5 forbids) or to a later brief.
 
 ## Questions
 1. The two test_status_colours.py failures read literal page-template pills (reservation_detail.html). Brief section 3 says page-template pills move with their page briefs, but these tests are not listed there. Keep them failing until the page brief, or make PILL also accept `class="pill"` for now?
