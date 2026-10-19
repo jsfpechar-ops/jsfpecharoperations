@@ -90,7 +90,7 @@
 .host-workspace .ui-toast, .host-workspace .toast-stack .toast { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--card-radius); box-shadow: var(--shadow-2); max-width: var(--toast-w); padding: var(--space-3) var(--space-4); font-size: var(--body-size); }
 
 /* ---- 7.11 empty state, 7.12 tip, 7.13 pagination ---- */
-.host-workspace .ui-empty { text-align: center; padding: var(--space-12) var(--space-6); color: var(--ink-2); }
+.host-workspace .ui-empty { text-align: center; padding: var(--space-8) var(--space-4); color: var(--ink-2); }
 .host-workspace .ui-empty h2 { margin: 0 0 var(--space-1); font-size: var(--size-18); font-weight: var(--control-weight); color: var(--ink); }
 .host-workspace .ui-empty p { margin: 0 auto var(--space-4); max-width: 48ch; }
 .host-workspace .ui-tip { display: inline-flex; vertical-align: middle; position: relative; }
@@ -375,3 +375,5 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .notification-stack .notification-bubble small + small::before { content: " · "; color: var(--ink-4); }
 .host-workspace .notification-stack .notification-bubble .notification-action { color: var(--accent-ink); font-weight: 600; }
 .host-workspace .notification-stack .notification-bubble form { top: 50%; right: var(--space-2); transform: translateY(-50%); }
+/* 0155: compact empty-state title on phone */
+@media (max-width: 1023px) { .host-workspace .ui-empty h2 { font-size: var(--size-16); } }
