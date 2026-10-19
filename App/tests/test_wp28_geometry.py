@@ -152,10 +152,10 @@ def test_stay_page_cards_hold_their_buttons(base, world, browser):
               const out = {placeholders: [], verify: null, filing: null};
               document.querySelectorAll('.guest-card.placeholder').forEach(card => {
                 const c = R(card);
-                const worst = Math.max(...[...card.querySelectorAll('.btn')].map(b => R(b).bottom));
+                const worst = Math.max(...[...card.querySelectorAll('.ui-btn')].map(b => R(b).bottom));
                 out.placeholders.push(Math.round(c.bottom - worst));
               });
-              const verify = document.querySelector('.guest-card .verify-form .btn');
+              const verify = document.querySelector('.guest-card .verify-form .ui-btn');
               if (verify) {
                 const card = verify.closest('.guest-card');
                 out.verify = Math.round(R(card).bottom - R(verify).bottom);

@@ -727,18 +727,18 @@ def test_the_refused_stay_page_leads_with_the_fix_and_keeps_send_secondary():
     body = client.get(f"/reservations/{reservation['id']}").text
 
     assert "UbyPort rejected a guest record." in body
-    assert 'class="btn accent primary" href="#guests"' in body
+    assert 'class="ui-btn ui-btn-primary" href="#guests"' in body
     assert "Fix rejection" in body
     assert "Send again" in body
     assert body.index("Fix rejection") < body.index("Send again")
     # Nothing has been changed since the refusal, so the resend is not primary.
-    assert 'class="btn accent primary" type="submit"' not in body
+    assert 'class="ui-btn ui-btn-primary" type="submit"' not in body
     assert "Send to UbyPort" not in body
 
     db.update("guest", guest_id, {"updated_at": "2026-09-20T12:00:00+00:00"})
     fixed = client.get(f"/reservations/{reservation['id']}").text
 
-    assert 'class="btn accent primary" type="submit"' in fixed
+    assert 'class="ui-btn ui-btn-primary" type="submit"' in fixed
     assert "Fix rejection" in fixed
 
 
