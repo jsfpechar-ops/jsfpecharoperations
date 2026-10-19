@@ -94,7 +94,7 @@ def test_create_page_is_short_and_has_each_field_once():
     for field in NOT_ON_CREATE:
         assert f'name="{field}"' not in page, field
     assert len(ids) == len(set(ids)), "duplicate ids"
-    content = page[page.index('<header class="page-header"'):]
+    content = page[page.index('<header class="ui-ph"'):]
     for gone in ('class="section-nav"', "onboarding-banner", "more-options", "<details", "Step 1 of"):
         assert gone not in content, gone
     # The purpose default is the existing tourism code, carried as one hidden value.
@@ -354,7 +354,7 @@ def _sidebar(page, collapsed):
 _FIT_JS = """() => {
   const vw = document.documentElement.clientWidth;
   const bad = [];
-  for (const el of document.querySelectorAll('.property-create input, .property-create select, .property-create .btn, .property-create h2, .property-create label')) {
+  for (const el of document.querySelectorAll('.property-create input, .property-create select, .property-create .ui-btn, .property-create h2, .property-create label')) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     if (r.right > vw + 1 || r.left < -1) bad.push(el.id || el.className || el.tagName);
@@ -385,7 +385,7 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
                     assert fit["below"], (width, fit)
                 assert page.locator("#internal_name").is_visible()
                 assert page.locator("#addr_zip").is_visible()
-                assert page.locator(".property-create-actions .btn.primary").is_visible()
+                assert page.locator(".property-create-actions .ui-btn-primary").is_visible()
                 _shot(page, f"create-{width}-{lang}")
         for collapsed in (False, True):
             for width in (760, 1024, 1440, 1680, 1920, 2048):
@@ -408,7 +408,7 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
 
         # Browser validation keeps the host on the page without a name/operator.
         page.locator("#city_en").fill("Brno")
-        page.locator(".property-create-actions .btn.primary").click()
+        page.locator(".property-create-actions .ui-btn-primary").click()
         assert page.url.endswith("/apartments/new?lang=en")
         assert db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (host["owner"],)) == []
 
@@ -416,7 +416,7 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         page.evaluate("() => document.querySelector('#property-create-form').noValidate = true")
         page.locator("#internal_name").fill("Synthetic Riverside Apartment With An Unusually Long Name")
         page.locator("#addr_zip").fill("12")
-        page.locator(".property-create-actions .btn.primary").click()
+        page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
         assert page.locator("#legal_entity_id[aria-invalid=true]").count() == 1
         assert page.locator("#addr_zip-error").is_visible()
@@ -427,7 +427,7 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         page.locator("#addr_zip").fill("11000")
         page.locator("#addr_obec").fill("Praha")
         page.locator("#addr_house_no").fill("12")
-        page.locator(".property-create-actions .btn.primary").click()
+        page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
         assert "/setup/calendar" in page.url
         assert page.locator("[data-setup-wizard]").is_visible()
@@ -452,7 +452,7 @@ def test_create_page_works_without_javascript(base):
         page.locator("#addr_obec").fill("Praha")
         page.locator("#addr_house_no").fill("12")
         page.locator("#addr_zip").fill("11000")
-        page.locator(".property-create-actions .btn.primary").click()
+        page.locator(".property-create-actions .ui-btn-primary").click()
         page.wait_for_load_state()
         assert "/setup/calendar" in page.url
         row = db.query_one("SELECT * FROM apartment WHERE owner_user_id = ?", (host["owner"],))

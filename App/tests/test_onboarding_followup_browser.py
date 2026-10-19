@@ -166,8 +166,8 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         assert status.locator(".setup-status-tile a").count() == 0
         assert not status.locator(".setup-readiness-help").evaluate("el => el.open")
         police = status.locator('[data-overview-setup-step="police"]')
-        assert police.locator(".pill.amber").is_visible()
-        assert police.locator(".pill.green").count() == 0
+        assert police.locator('[data-tone="amber"]').is_visible()
+        assert police.locator('[data-tone="green"]').count() == 0
         tile = status.locator(".setup-status-tile").first
         color = tile.evaluate("el => getComputedStyle(el).backgroundColor")
         tile.hover()

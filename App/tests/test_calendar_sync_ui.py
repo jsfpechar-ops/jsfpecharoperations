@@ -111,7 +111,7 @@ def test_sync_reports_a_failed_feed_in_the_redirect_and_alerts(monkeypatch):
     assert "<strong>Calendar</strong>" in table
     assert "Other" in table
     assert "—" not in table
-    assert 'class="pill red"' in table
+    assert 'data-tone="red"' in table
     db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
     db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))
 

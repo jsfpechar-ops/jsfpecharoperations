@@ -362,7 +362,7 @@ def live(host):
 
 def _save(page):
     page.locator('#property-settings-form [data-property-save] button[type="submit"], '
-                 '#property-settings-form button.btn.primary[type="submit"]').first.click()
+                 '#property-settings-form button.ui-btn-primary[type="submit"]').first.click()
     page.wait_for_load_state("networkidle")
 
 

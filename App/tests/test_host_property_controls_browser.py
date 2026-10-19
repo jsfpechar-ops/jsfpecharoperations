@@ -219,7 +219,7 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
         # 0099: the list shows the Properties section tabs (one component),
         # with the list itself as the open tab; property pages show none.
         assert page.locator(".host-local-nav").count() == 1
-        assert page.locator('.sub-tabs a[aria-current="page"]').inner_text() == "Properties"
+        assert page.locator('.ui-tabs a[aria-current="page"]').inner_text() == "Properties"
         assert page.locator(".host-tools").count() == 0
         page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
         assert page.locator(".host-tools").count() == 0
@@ -251,7 +251,7 @@ def _shot_0088(page, name):
 
 
 def _assert_operator_fits(page):
-    result = page.evaluate(_FIT_JS, "#operator-picker, #operator-picker select, #operator-picker .btn, #alternate-controller select")
+    result = page.evaluate(_FIT_JS, "#operator-picker, #operator-picker select, #operator-picker .ui-btn, #alternate-controller select")
     assert result["scroll"] <= result["vw"] + 1, result
     assert not result["offenders"], result
 
@@ -438,7 +438,7 @@ def test_calendar_platform_controls_in_browser(host, base):
                     table = page.locator(".feed-table")
                     assert "Booking.com" in table.inner_text()
                     assert "—" not in table.inner_text()
-                    fit = page.evaluate(_FIT_JS, "#calendar-add, #calendar-add select, #calendar-add input, #calendar-add .btn")
+                    fit = page.evaluate(_FIT_JS, "#calendar-add, #calendar-add select, #calendar-add input, #calendar-add .ui-btn")
                     assert fit["scroll"] <= fit["vw"] + 1 and not fit["offenders"], fit
                     _shot_0089(page, f"calendar-add-{width}-{lang}")
                     platform.select_option("other")

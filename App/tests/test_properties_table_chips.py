@@ -153,7 +153,7 @@ def test_the_setup_pill_survives(host):
     """One coloured chip column stays: the one that is a status."""
     page = host.get("/apartments?lang=en").text
 
-    assert re.search(r'<span class="pill (amber|green|red)">', page)
+    assert re.search(r'<span class="ui-badge ui-badge-(?:action|done)" data-tone="(amber|green|red)">', page)
 
 
 # --- the add-property CTA --------------------------------------------------------------
@@ -168,9 +168,8 @@ def _add_cta(page: str) -> str:
 def test_the_add_property_cta_carries_the_property_icon(host):
     cta = _add_cta(host.get("/apartments?lang=en").text)
 
-    assert 'class="btn primary sync-btn"' in cta
-    assert 'class="sync-btn-icon" aria-hidden="true"' in cta
-    assert 'class="nav-icon"' in cta
+    assert 'class="ui-btn ui-btn-primary"' in cta
+    assert 'class="ui-icon"' in cta
     assert host_i18n.STRINGS["en"]["apartments.add"] in cta
 
 
@@ -178,16 +177,8 @@ def test_the_add_property_cta_icon_is_the_property_mark(host):
     """The house mark, not whatever icon happened to be next in the macro."""
     cta = _add_cta(host.get("/apartments?lang=en").text)
 
-    assert _nav_icon_svg("property") in cta
-    assert _nav_icon_svg("calendar") not in cta
-
-
-def _nav_icon_svg(name: str) -> str:
-    lines = _COMPONENTS.read_text(encoding="utf-8").splitlines()
-    for index, line in enumerate(lines):
-        if f"{{% elif name == '{name}' %}}" in line:
-            return lines[index + 1].strip()
-    raise AssertionError(f"no icon named {name}")
+    assert 'data-icon="house"' in cta
+    assert 'data-icon="calendar-days"' not in cta
 
 
 def test_the_add_property_cta_translates(host):
@@ -211,7 +202,7 @@ def test_the_empty_state_still_shows_one_primary_button(empty_host):
 def test_the_header_cta_is_hidden_while_the_list_is_empty(empty_host):
     """The empty state already names the one first step, so the header stays quiet."""
     # 0101: the setup banner may link the create page itself; the header CTA may not.
-    assert 'class="btn primary sync-btn" href="/apartments/new"' not in empty_host.get("/apartments?lang=en").text
+    assert 'class="ui-btn ui-btn-primary" href="/apartments/new"' not in empty_host.get("/apartments?lang=en").text
 
 
 def test_the_header_cta_is_back_once_there_is_a_property(host):

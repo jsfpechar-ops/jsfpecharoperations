@@ -3,7 +3,7 @@
     experience, Reporting & fees, Automation. A group that is not selected is only
     hidden from view; its controls stay enabled and are always submitted.
     0096: Door lock is its own group (only where door codes exist). -#}
-{%- from "_components.html" import nav_icon, copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
+{%- from "_components.html" import copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set property_values = apartment -%}
 {% macro text_field(name, label, value, help='', optional=false, maxlength=none) %}
@@ -35,11 +35,11 @@
         {% endfor %}
       </select>
     </div>
-    <button class="btn" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
+    <button class="ui-btn ui-btn-secondary" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
   </div>
   {% if copied_from_name %}
-  <p class="small" style="margin:10px 0 0" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}</p>
-  <p class="small muted" style="margin:4px 0 0">{{ t('apartment.form.copy_from.vs_hint') }}</p>
+  <p class="ui-sub" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}</p>
+  <p class="ui-sub">{{ t('apartment.form.copy_from.vs_hint') }}</p>
   {% endif %}
 </form>
 {% endif %}
@@ -84,7 +84,7 @@
 
     <section class="panel property-section" id="arrival-departure">
       <h3 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h3>
-      <p class="small muted">{{ t('host.property_times_hint') }}</p>
+      <p class="ui-sub">{{ t('host.property_times_hint') }}</p>
       {% if shared_time_error %}<p class="err-text" role="alert">{{ t(shared_time_error) }}</p>{% endif %}
       <div class="grid two">
         {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
@@ -114,18 +114,18 @@
       <div class="setup-item">
         <div class="grow">
           <strong>{{ t('apartments.archived.when') }} {{ apartment.archived_at[:10] }}</strong>
-          <div class="small muted">{{ t('apartment.form.archived_help') }}</div>
+          <div class="ui-sub">{{ t('apartment.form.archived_help') }}</div>
         </div>
-        <button class="btn small" type="submit" formmethod="post" formnovalidate
+        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
                 formaction="{{ base_url }}/unarchive">{{ t('common.restore') }}</button>
       </div>
       {% else %}
       <div class="setup-item">
         <div class="grow">
           <strong>{{ t('apartment.form.archive_title') }}</strong>
-          <div class="small muted">{{ t('apartment.form.archive_help') }}</div>
+          <div class="ui-sub">{{ t('apartment.form.archive_help') }}</div>
         </div>
-        <button class="btn small" type="submit" formmethod="post" formnovalidate
+        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
                 formaction="{{ base_url }}/archive"
                 data-confirm data-confirm-message="{{ t('host.delete_to_archived.confirm') }}">{{ t('common.archive') }}</button>
       </div>
@@ -144,7 +144,7 @@
           <div class="copyrow">
             <input type="text" id="permalink" readonly value="{{ permalink }}">
             {{ copy_button('permalink') }}
-            <a class="btn small ghost" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
+            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/l/{{ link_key }}" target="_blank" rel="noopener">{{ t('guest_links.preview') }}</a>
           </div>
         </div>
         <div class="field guest-link-pin">
@@ -157,13 +157,13 @@
         </div>
         <div class="guest-link-actions">
           <span class="guest-link-action">
-            <button class="btn small" type="submit" formmethod="post" formnovalidate
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
                     formaction="{{ base_url }}/regenerate-pin"
                     data-confirm data-confirm-message="{{ t('confirm.regenerate_pin') }}">{{ t('guest_links.new_pin') }}</button>
             {{ help_tip('regenerate-pin-help', t('apartment.form.guest_link.regenerate_pin_help')) }}
           </span>
           <span class="guest-link-action">
-            <button class="btn small" type="submit" formmethod="post" formnovalidate
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formmethod="post" formnovalidate
                     formaction="{{ base_url }}/regenerate-link"
                     data-confirm data-confirm-message="{{ t('confirm.regenerate_link') }}">{{ t('apartment.form.guest_link.regenerate_link') }}</button>
             {{ help_tip('regenerate-link-help', t('apartment.form.guest_link.regenerate_link_help')) }}
@@ -204,7 +204,7 @@
     <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
     <p class="property-group-intro">{{ t('property_nav.lock_intro') }}</p>
     <section class="panel property-section" id="door-code">
-      <p class="small muted">{{ t('host.property_times_hint') }}
+      <p class="ui-sub">{{ t('host.property_times_hint') }}
           {{ t('apartment.form.door_code.checkin') }} {{ '%02d:00' | format(apartment.checkin_hour) if apartment.checkin_hour is not none else '—' }} ·
           {{ t('apartment.form.door_code.checkout') }} {{ '%02d:00' | format(apartment.checkout_hour) if apartment.checkout_hour is not none else '—' }}.
           <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
@@ -212,13 +212,13 @@
       <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.margin', hours=door_code.buffer) ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
       <input type="hidden" name="door_code_section" value="1">
       {% if not door_code.account %}
-        <p class="small muted">{{ t('apartment.form.door_code.connect_first') }}</p>
-        <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
+        <p class="ui-sub">{{ t('apartment.form.door_code.connect_first') }}</p>
+        <a class="ui-btn ui-btn-secondary" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
       {% elif not door_code.locks %}
-        <p class="small muted">{{ t('apartment.form.door_code.no_locks') }}</p>
-        <a class="btn" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-share">{{ t('smart_locks.title') }}</a>
+        <p class="ui-sub">{{ t('apartment.form.door_code.no_locks') }}</p>
+        <a class="ui-btn ui-btn-secondary" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-share">{{ t('smart_locks.title') }}</a>
       {% else %}
-        {% if door_code.test_mode %}<p class="small"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
+        {% if door_code.test_mode %}<p class="ui-sub"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
         <input type="hidden" name="door_codes_fields" value="1">
         <div class="feature-switch-row">
           <label class="switch feature-switch" for="door_codes">
@@ -237,8 +237,8 @@
           {% if door_code.tz_warning %}<div class="hint"><strong>{{ t('smart_locks.timezone_warning') }}</strong></div>{% endif %}
         </div>
         
-        <p class="small">{{ t('apartment.form.door_code.first_use') }}</p>
-        {% if door_code.overlap %}<p class="small"><strong>{{ t('apartment.form.door_code.overlap') }}</strong></p>{% endif %}
+        <p class="ui-sub">{{ t('apartment.form.door_code.first_use') }}</p>
+        {% if door_code.overlap %}<p class="ui-sub"><strong>{{ t('apartment.form.door_code.overlap') }}</strong></p>{% endif %}
       {% endif %}
     </section>
   </div>
@@ -249,8 +249,8 @@
     <h2 class="property-group-title">{{ t('property_nav.group.reporting') }}</h2>
     <section class="panel property-section" id="ubyport">
       <div class="field-label-row police-section-head"><h3 class="property-section-title">{{ t('host.reporting') }}</h3>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
-        <a class="btn small police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
-      <p class="small"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
+        <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
+      <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
       <div class="grid">
         {{ text_field('uby_idub', 'IDUB', apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
       </div>
@@ -279,7 +279,7 @@
         {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
       </div>
       <div class="actions">
-        <button class="btn" type="submit" formaction="{{ base_url }}/test-connection"
+        <button class="ui-btn ui-btn-secondary" type="submit" formaction="{{ base_url }}/test-connection"
                 formmethod="post" formnovalidate>{{ t('apartment.form.test_connection') }}</button>
       </div>
     </section>
@@ -307,7 +307,7 @@
                     data-instruction="{{ peer.stay_fee_instruction or '' }}">{{ peer.internal_name }}</option>
             {% endfor %}
           </select>
-          <button class="btn small" type="button" id="fee-copy-apply">
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" id="fee-copy-apply">
             {{ t('apartment.form.stay_fee.copy_button') }}
           </button>
         </div>
@@ -320,7 +320,7 @@
               or not (apartment.stay_fee_authority_name or '').strip() %}
         <p class="small warn-text">{{ t('apartment.form.stay_fee.missing_warn') }}</p>
         {% endif %}
-        <p class="small">
+        <p class="ui-sub">
           <a href="/stay-fees/{{ apartment.id }}">{{ t('apartment.form.stay_fee.open_overview') }} </a>
         </p>
       {% endif %}
@@ -364,9 +364,9 @@
   </div>
 
   <div class="actions host-property-save">
-    <button class="btn primary" type="submit">{{ t('common.save_changes') }}</button>
-    <button class="btn" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
-    <a class="btn" href="/apartments">{{ t('apartment.form.back_list') }}</a>
+    <button class="ui-btn ui-btn-primary" type="submit">{{ t('common.save_changes') }}</button>
+    <button class="ui-btn ui-btn-secondary" type="button" data-unsaved-reset hidden>{{ t('unsaved.discard_changes') }}</button>
+    <a class="ui-btn ui-btn-secondary" href="/apartments">{{ t('apartment.form.back_list') }}</a>
   </div>
 </form>
 </div>

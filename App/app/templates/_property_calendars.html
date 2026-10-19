@@ -2,7 +2,7 @@
     removal, and the one calendar connection form (a sibling of the settings form,
     never nested). After a calendar exists the connection form waits behind an
     explicit "Add calendar" action; a refused draft keeps it open. -#}
-{%- from "_components.html" import nav_icon, copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
+{%- from "_components.html" import copy_button, copy_inline, field_label, help_tip, source_badge, sync_calendars_button with context -%}
 {%- set base_url = '/apartments/' ~ apartment.id -%}
 {%- set feed_draft = feed_draft or {} -%}
 {%- set feed_errors = feed_errors or {} -%}
@@ -16,8 +16,8 @@
 <div class="property-view-head">
   <div class="field-label-row"><h2 id="calendars">{{ t('apartments.table.calendars') }}</h2>{{ help_tip('calendars-help', t('apartment.form.calendars.lede')) }}</div>
   <div class="actions">
-    {% if feeds %}<a class="btn small" href="{{ base_url }}?view=bookings&amp;add_calendar=1#calendar-connect" data-calendar-add>{{ t('property_nav.add_calendar') }}</a>{% endif %}
-    {% if not just_created %}<a class="btn small ghost" href="/reservations?new=1&amp;apartment={{ apartment.id }}#add-stay-panel">{{ t('property_create.created_manual') }}</a>{% endif %}
+    {% if feeds %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ base_url }}?view=bookings&amp;add_calendar=1#calendar-connect" data-calendar-add>{{ t('property_nav.add_calendar') }}</a>{% endif %}
+    {% if not just_created %}<a class="ui-btn ui-btn-quiet ui-btn-compact" href="/reservations?new=1&amp;apartment={{ apartment.id }}#add-stay-panel">{{ t('property_create.created_manual') }}</a>{% endif %}
     {% if feeds %}{{ sync_calendars_button(base_url ~ '?view=bookings') }}{% endif %}
   </div>
 </div>
@@ -36,13 +36,13 @@
             <td data-label="{{ t('apartment.form.feed.name') }}"><strong>{{ feed.display_name }}</strong></td>
             <td data-label="{{ t('apartment.form.feed.portal') }}">{{ source_badge(feed_platform_key(feed.url), feed.display_portal) }}</td>
             <td class="nowrap" data-label="{{ t('apartment.form.feed.last_sync') }}">
-              {% if feed.last_status == 'ok' %}<span class="pill green">{{ t('apartment.form.feed.status.ok') }}</span>
-              {% elif feed.last_status == 'suspect' %}<span class="pill amber">{{ t('apartment.form.feed.status.suspect') }}</span>
-              {% elif feed.last_status == 'error' %}<span class="pill red">{{ t('apartment.form.feed.status.error') }}</span>
-              {% else %}<span class="pill grey">{{ t('apartment.form.feed.status.never') }}</span>{% endif %}
+              {% if feed.last_status == 'ok' %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('apartment.form.feed.status.ok') }}</span>
+              {% elif feed.last_status == 'suspect' %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('apartment.form.feed.status.suspect') }}</span>
+              {% elif feed.last_status == 'error' %}<span class="ui-badge ui-badge-action" data-tone="red">{{ t('apartment.form.feed.status.error') }}</span>
+              {% else %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('apartment.form.feed.status.never') }}</span>{% endif %}
               {# last_checked_at: the latest check, also when the calendar had not changed (WP15). #}
               {% set checked_at = feed.last_checked_at or feed.last_sync_at %}
-              {% if checked_at %}<div class="small muted">{{ checked_at | datetime_local }}</div>{% endif %}
+              {% if checked_at %}<div class="ui-sub">{{ checked_at | datetime_local }}</div>{% endif %}
               {% if feed.last_error %}<div class="small err-text">{{ feed.last_error }}</div>{% endif %}
             </td>
             <td class="small mono truncate" data-label="{{ t('apartment.form.feed.url') }}">{{ feed.url }}</td>
@@ -50,7 +50,7 @@
               <form method="post" action="/feeds/{{ feed.id }}/delete" class="inline"
                     data-confirm data-confirm-message="{{ t('confirm.disconnect_feed') }}">
                 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-                <button class="btn small danger" type="submit">{{ t('common.remove') }}</button>
+                <button class="ui-btn ui-btn-danger ui-btn-compact" type="submit">{{ t('common.remove') }}</button>
               </form>
             </td>
           </tr>
@@ -68,7 +68,7 @@
   <div class="calendar-connect{% if not connect_open %} is-collapsed{% endif %}" id="calendar-connect" data-calendar-connect>
   <form method="post" action="{{ base_url }}/feeds" class="panel calendar-add-form" id="calendar-add">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <h2 style="margin-top:0">{{ t('apartment.form.calendars.connect_title') }}</h2>
+    <h2>{{ t('apartment.form.calendars.connect_title') }}</h2>
     <div class="field">
       <label for="label">{{ t('calendar.platform_label') }}</label>
       <select id="label" name="label" required{% if feed_errors.label %} aria-invalid="true" aria-describedby="label-error"{% endif %}{% if first_feed_error == 'label' %} autofocus{% endif %}>
@@ -96,7 +96,7 @@
              placeholder="{{ t('apartment.form.calendars.own_name_ph') }}"{% if feed_errors.own_name %} aria-invalid="true" aria-describedby="own-name-error"{% endif %}{% if first_feed_error == 'own_name' %} autofocus{% endif %}>
       {% if feed_errors.own_name %}<p class="err-text" id="own-name-error" role="alert">{{ feed_errors.own_name }}</p>{% endif %}
     </div>
-    <div class="actions"><button class="btn primary" type="submit">{{ t('property_nav.add_calendar') }}</button></div>
+    <div class="actions"><button class="ui-btn ui-btn-primary" type="submit">{{ t('property_nav.add_calendar') }}</button></div>
   </form>
   {% if setup_calendar %}
   <form method="post" action="{{ base_url }}/setup" class="property-setup-skip">

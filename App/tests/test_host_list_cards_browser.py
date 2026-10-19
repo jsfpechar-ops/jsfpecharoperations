@@ -35,7 +35,7 @@ _LIST_JS = """() => {
   const pr = panel.getBoundingClientRect();
   const table = panel.querySelector('table');
   const cards = getComputedStyle(table.querySelector('thead')).display === 'none';
-  const acts = [...panel.querySelectorAll('tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger')]
+  const acts = [...panel.querySelectorAll('tbody td.row-actions a.btn, tbody td.row-actions a.ui-btn, tbody td.row-actions a.ui-btn, tbody td.row-actions .row-menu-trigger')]
     .filter(el => { const r = el.getBoundingClientRect(); return r.width > 1 && r.height > 1; })
     .map(el => { const r = el.getBoundingClientRect();
       return {left: r.left, right: r.right, top: r.top, bottom: r.bottom, text: (el.textContent || '').trim().slice(0, 20)}; });

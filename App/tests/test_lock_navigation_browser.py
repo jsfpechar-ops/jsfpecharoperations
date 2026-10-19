@@ -174,7 +174,7 @@ def test_lock_setup_flow_keeps_its_place(world):
             _settle(page)
             assert page.locator("#door-code").is_visible()  # 0094: Settings → Guest experience, no fold
             _in_view(page, "#door-code")
-            page.locator("#door-code a.btn").click()
+            page.locator("#door-code a.ui-btn").click()
             _settle(page)
             assert page.url.endswith("#smart-locks-how")
             _in_view(page, "#smart-locks-how")

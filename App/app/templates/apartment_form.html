@@ -1,33 +1,30 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'apartments' %}
 {% set editing = apartment is not none %}
+{% set body_kind = 'detail' if editing else 'form' %}
 {% block title %}{{ apartment.internal_name if editing else t('property_create.title') }}{% endblock %}
 
 
-{% block content %}
-{% from "_components.html" import page_header, breadcrumb, copy_button, copy_inline, nav_icon, source_badge, field_label, help_tip, sync_calendars_button with context %}
+{% block meta %}{{ (apartment.city_en or apartment.addr_obec or '') if editing else t('property_create.lede') }}{% endblock %}
+{% block back_url %}/apartments{% endblock %}
+{% block back_label %}{{ t('apartment.form.back') if editing else t('nav.properties') }}{% endblock %}
+{% block body %}
+{% from "_components.html" import copy_button, copy_inline, source_badge, field_label, help_tip, sync_calendars_button with context %}
+{% from "_icons.html" import icon with context %}
 {% set property_prefill = property_prefill or {} %}
 {% set draft = draft or {} %}
 {% set copy_property_peers = copy_property_peers or [] %}
 {% if not editing %}
-{{ breadcrumb([{'url': '/apartments', 'label': t('nav.properties')}, {'label': t('property_create.title')}]) }}
-{{ page_header(t('property_create.title'), t('property_create.lede')) }}
 {% include "_property_create.html" %}
 {% else %}
-{{ page_header(
-  apartment.internal_name,
-  apartment.city_en or apartment.addr_obec or '',
-  '/apartments',
-  t('apartment.form.back')
-) }}
 
 {# 0094: Overview / Bookings & calendars / Settings. All three views are in the
    page once; ?view= picks the one shown without JavaScript, app.js switches them
    in place (initPropertyViews) so the settings draft is never re-rendered. #}
 {% set base_url = '/apartments/' ~ apartment.id %}
-<nav class="property-tabs" aria-label="{{ t('property_nav.tabs_aria') }}">
+<nav class="ui-tabs property-tabs" aria-label="{{ t('property_nav.tabs_aria') }}">
   {% for key, label in [('overview', t('property_nav.overview')), ('bookings', t('property_nav.bookings')), ('settings', t('property_nav.settings'))] %}
-  <a href="{{ base_url }}?view={{ key }}" data-property-tab="{{ key }}"{% if key == property_view %} aria-current="page"{% endif %}>{{ label }}</a>
+  <a class="ui-tab" href="{{ base_url }}?view={{ key }}" data-property-tab="{{ key }}"{% if key == property_view %} aria-current="page"{% endif %}>{{ label }}</a>
   {% endfor %}
 </nav>
 <div class="property-views" data-property-views data-property-base="{{ base_url }}">
