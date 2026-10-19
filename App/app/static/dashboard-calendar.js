@@ -693,8 +693,9 @@
     const pointTarget = document.elementFromPoint(event.clientX, event.clientY);
     const anchor = pointTarget && pointTarget.closest("[data-date]");
     if (phoneDots() && chosen.start === chosen.end) {
-      cancelSelection();
+      cancelSelection(); suppressClickUntil = Date.now() + 400;
       if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
+      openDay(chosen.start);
       return;
     }
     cancelSelection(); suppressClickUntil = Date.now() + 400;
