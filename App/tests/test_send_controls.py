@@ -738,7 +738,9 @@ def test_the_refused_stay_page_leads_with_the_fix_and_keeps_send_secondary():
     db.update("guest", guest_id, {"updated_at": "2026-09-20T12:00:00+00:00"})
     fixed = client.get(f"/reservations/{reservation['id']}").text
 
-    assert 'class="ui-btn ui-btn-primary" type="submit"' in fixed
+    # 0137: "Send again" lives in the stay's More menu; Fix stays the one coral button.
+    assert '<button class="row-menu-item" type="submit" role="menuitem">Send again</button>' in fixed
+    assert 'class="ui-btn ui-btn-primary" type="submit"' not in fixed
     assert "Fix rejection" in fixed
 
 
