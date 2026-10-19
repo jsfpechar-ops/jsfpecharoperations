@@ -23,6 +23,11 @@ Master version: 2.0.0. Adds only.
 ## Property detail
 - body_kind: `detail`; tabs: Overview, Bookings and calendars, Settings (existing `?view=`); side column = readiness facts; sections = existing groups (Bookings, Guest link, Police reporting with the police-letter help tips, Business details, Stay fee, Door lock) each as `section` with small forms whose Save is `secondary`; the page primary is "Finish setup" when readiness is missing, else none
 
+## Businesses (`/entities`, `entities.html`, brief 0140)
+- nav: `entities`; body_kind: `list` (the businesses table keeps the desktop table at 1280; a `settings` lane would turn it into cards); title `entities.title`; meta `entities.lede`; back link `entities.back` -> `/apartments` (or `common.back` -> `next`)
+- tabs: the Properties tabs, Business & legal details current
+- the edit and add forms keep their markup; each form's Save is the page's `cta` (`ui-btn ui-btn-primary`)
+
 ## Tests
 - `test_host_fit_browser.py`, `test_host_geometry.py`; screenshots 390 and 1280 of list and form plus list and form skeletons
 
