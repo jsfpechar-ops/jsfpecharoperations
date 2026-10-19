@@ -293,6 +293,25 @@ Phone: one `secondary` "Show more" button, full width, replaced by the next page
 
 ## 11. Enforcement
 
+### 11.0 Layout guard (hard rules, CI fails the build)
+
+Added 2026-10-19 after the owner found broken screens that every earlier check had missed: short demo names, no laptop width, menus never opened.
+
+1. Every host page in `ROUTES` of `App/tests/test_design_guardrails_browser.py` passes `App/tests/design_guard.js` at 390, 1280 and 2000 px, with the sidebar open and collapsed (collapsed from 1024 px up). The guard fails on any of these:
+   - The page scrolls sideways.
+   - An element sits under the rail or past the right edge (unless it is inside a deliberate horizontal scroller).
+   - Text is clipped by its own box.
+   - Content spills out of its table row.
+   - Two buttons in one row differ in height by more than 2 px, or their centre lines differ.
+   - A control is smaller than 44 × 44 px at 390.
+   - A row menu opens off screen or holds a form field.
+2. Test data uses long real-world property names (35 characters or more, such as "Vivus Apartment with Balcony & Garage"). Short demo names hide wrapping and overlap.
+3. Menus hold actions only. A form (input, label, typed confirmation) goes in a dialog or on the page, never in a row menu.
+4. A new or moved host page adds its route to `ROUTES` in the same PR.
+5. There is no allowlist and no skip. A failing check is fixed in the page, never excluded or loosened.
+6. Every changed CSS or JS file gets a new `?v=` key (`App/tests/test_static_versions.py`).
+7. A page is done only when its 390, 1280 and 2000 px screenshots (open and collapsed) are saved, and the orchestrator has opened them and listed in the report what it checked. That list covers: button heights and alignment in each row, wrapping in tables, the empty state, each opened menu, and the header actions on phone.
+
 ### 11.1 Lint (`scripts/design_lint.py`, runs in CI, fails the build)
 
 1. **Raw values:** in `App/app/static/host.css` and every host template, fail on `#[0-9a-f]{3,8}`, `rgb(`, `hsl(`, a bare `\d+px` in `margin|padding|gap|border-radius|font-size|width|height` (except `0`, `1px` borders and the token file), `box-shadow:` with a literal, and `font-family:`.
