@@ -75,11 +75,14 @@
   {% if missing_report_display and not banner_showing %}
   {% set anchor_query = {'basics': 'view=settings&section=property', 'address': 'view=settings&section=property', 'ubyport': 'view=settings&section=reporting', 'calendars': 'view=bookings'} %}
   {% set missing_text %}
+    <span class="dashboard-missing-list">
     {% for row in missing_report_display %}
     <span class="dashboard-missing-line"><strong>{{ property_identity(row.apartment.id, row.apartment.internal_name, true) }}</strong>: {{ t('dashboard.missing_banner.missing') }}
       {% for item in row.missing %}<a href="/apartments/{{ row.apartment.id }}?{{ anchor_query.get(item.anchor, 'view=settings') }}#{{ item.anchor }}">{{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span>
     {% endfor %}
     {% if missing_report_more %}<a href="/apartments">{{ t('dashboard.missing_banner.and_more', count=missing_report_more) }}</a>{% endif %}
+    </span>
+    <span class="dashboard-missing-short">{{ tp('dashboard.setup.properties', missing_report_display | length + missing_report_more) }}</span>
   {% endset %}
   {{ ui_banner('attention', missing_text, t('dashboard.setup.title'), '/apartments') }}
   {% endif %}

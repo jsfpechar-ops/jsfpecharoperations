@@ -323,3 +323,9 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 
 /* 0134-cont-2: icon buttons stay square; copy labels are for screen readers */
 .host-workspace .ui-btn-icon .btn-icon-label, .host-workspace .ui-btn-icon .copy-label-stack, .host-workspace .ui-btn-icon .copy-label-confirmed { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* 0148: setup banner is one line on phone */
+.host-workspace .dashboard-missing-short { display: none; }
+@media (max-width: 767px) {
+  .host-workspace .dashboard-missing-list { display: none; }
+  .host-workspace .dashboard-missing-short { display: inline; }
+}
