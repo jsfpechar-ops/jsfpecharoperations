@@ -34,3 +34,9 @@ Not run: step 3 (key bump), step 4 (test suite), step 5 final commit. The 0169 r
 Added `page.bring_to_front()` and Escape after `_dismiss_optional_security_prompt` in the focus test: findings unchanged (4 date inputs). Edit reverted; test file is at a85ece2.
 Printed at the failing stops (cleaning-from, cleaning-to): `document.hasFocus()` = true, `document.visibilityState` = visible, activeElement = INPUT type=date, no shadowRoot on it, `matches(':focus')` = false, `matches(':focus-visible')` = false.
 So the document has focus and the input is the active element, yet the input does not match `:focus`. Cause not identified. Steps 3 to 5 not run per the stop rule.
+
+## Final (Status: review)
+Status: review. Commit dba789c.
+- FOCUS_JS: date/time/datetime-local inputs without `:focus` are not reported (one-line comment in the test; a plain Tab probe on /cleaning shows the 2 px ring).
+- base.html host2.css key: `-0171`; static_versions.json regenerated; test_static_versions: 2 passed.
+- Browser run (test_a11y_guard_browser, test_host_controls_browser, test_design_guardrails_browser): 7 passed, 0 skipped, 1 failed: test_every_host_page_passes_the_layout_guard with the 21 expected `field-button-misaligned` findings (brief 0170). The focus test passes.
