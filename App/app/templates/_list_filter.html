@@ -13,7 +13,7 @@
 {% for value, label_key in filter_statuses %}
   {% if view.status == value %}{% set status_ns.label = t(label_key) %}{% endif %}
 {% endfor %}
-{% from "_components.html" import list_toolbar with context %}
+{% from "_ui_layout.html" import ui_toolbar with context %}
 {% set list_summary %}
     <span>{{ period_summary }}</span>
     {% if filter_properties or filter_statuses or view.q %}
@@ -22,30 +22,31 @@
       {% if view.q %}<span aria-hidden="true"> · </span><span>{{ view.q }}</span>{% endif %}
     {% endif %}
 {% endset %}
-{{ list_toolbar(list_summary, panel_id='list-filter-panel', actions=list_filter_actions | default('')) }}
-<form id="list-filter-panel" method="get" action="{{ filter_action }}" class="filters panel list-filter host-filter-panel" data-filter-panel data-filter-route="month" role="search">
+{{ ui_toolbar(filters_id='list-filter-panel', filters_count=filter_active | default(0), actions=list_filter_actions | default('')) }}
+<p class="ui-sub" data-filter-summary>{{ list_summary }}</p>
+<form id="list-filter-panel" method="get" action="{{ filter_action }}" class="filters ui-section list-filter host-filter-panel" data-filter-panel data-filter-route="month" role="search">
   <div class="filter-fields">
-    <div class="field list-filter-period" data-month-picker data-month-optional="{{ 'true' if filter_month_optional else 'false' }}"
+    <div class="ui-field list-filter-period" data-month-picker data-month-optional="{{ 'true' if filter_month_optional else 'false' }}"
          data-current-month="{{ view.month_key or filter_max_month }}" data-min-month="2000-01" data-max-month="{{ filter_max_month }}">
       <label for="filter-month">{{ t(filter_period_label_key) }}</label>
       <div class="month-row">
-        <button class="btn month-step" type="button" data-month-prev hidden {% if view.month_key == '2000-01' %}disabled{% endif %} aria-label="{{ t('host.filter.prev_month') }}">‹</button>
+        <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-prev hidden {% if view.month_key == '2000-01' %}disabled{% endif %} aria-label="{{ t('host.filter.prev_month') }}">‹</button>
         <div class="month-control{% if not view.month %} is-empty{% endif %}">
-          <button class="btn month-trigger" type="button" data-month-trigger hidden aria-expanded="false" aria-haspopup="dialog">
+          <button class="ui-btn ui-btn-secondary month-trigger" type="button" data-month-trigger hidden aria-expanded="false" aria-haspopup="dialog">
             <span data-month-caption>{{ period_summary }}</span><span aria-hidden="true">▾</span>
           </button>
           {% if not view.month %}<span class="month-control-face" data-month-all aria-hidden="true">{{ t('host.filter.all_dates') }}</span>{% endif %}
           <input type="month" id="filter-month" name="month" value="{{ view.month_key }}" min="2000-01" max="{{ filter_max_month }}"
                  {% if not filter_month_optional %}required{% endif %} data-month-native>
         </div>
-        <button class="btn month-step" type="button" data-month-next hidden {% if not filter_next_href %}disabled{% endif %}
+        <button class="ui-btn ui-btn-secondary month-step" type="button" data-month-next hidden {% if not filter_next_href %}disabled{% endif %}
                 aria-label="{{ t('host.filter.next_month') }}">›</button>
       </div>
       <div class="month-grid-panel" data-month-grid-panel role="dialog" aria-label="{{ t('host.filter.months') }}" hidden>
         <div class="month-year-row">
-          <button class="btn year-step" type="button" data-year-prev aria-label="{{ t('host.filter.previous_year') }}">‹</button>
+          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-prev aria-label="{{ t('host.filter.previous_year') }}">‹</button>
           <strong data-month-year>{{ month_grid_year }}</strong>
-          <button class="btn year-step" type="button" data-year-next aria-label="{{ t('host.filter.next_year') }}">›</button>
+          <button class="ui-btn ui-btn-secondary year-step" type="button" data-year-next aria-label="{{ t('host.filter.next_year') }}">›</button>
         </div>
         <div class="month-grid" data-month-grid role="group" aria-label="{{ t('host.filter.months') }}">
           {% for month_no in range(1, 13) %}
@@ -55,11 +56,11 @@
                   {% if month_grid_year < 2000 or month_grid_year > filter_max_month[:4]|int or (month_grid_year == filter_max_month[:4]|int and month_no > filter_max_month[5:7]|int) %}disabled{% endif %}>{{ t('month.' ~ month_no) }}</button>
           {% endfor %}
         </div>
-        {% if filter_month_optional %}<button class="btn ghost month-all-dates" type="button" data-month-all-choice>{{ t('host.filter.all_dates') }}</button>{% endif %}
+        {% if filter_month_optional %}<button class="ui-btn ui-btn-quiet month-all-dates" type="button" data-month-all-choice>{{ t('host.filter.all_dates') }}</button>{% endif %}
       </div>
     </div>
     {% if filter_properties | length > 1 %}
-    <div class="field">
+    <div class="ui-field">
       <label for="filter-apartment">{{ t('stays.filter.apartment') }}</label>
       <select id="filter-apartment" name="apartment">
         <option value="">{{ t('host.filter.all_properties') }}</option>
@@ -70,7 +71,7 @@
     </div>
     {% endif %}
     {% if filter_statuses %}
-    <div class="field">
+    <div class="ui-field">
       <label for="filter-status">{{ t('filter.status') }}</label>
       <select id="filter-status" name="status">
         <option value="">{{ t('host.filter.all_statuses') }}</option>
@@ -81,15 +82,15 @@
     </div>
     {% endif %}
     {% if filter_search %}
-    <div class="field list-filter-search">
+    <div class="ui-field list-filter-search">
       <label for="filter-q">{{ t('filter.search') }}</label>
       <input type="search" id="filter-q" name="q" value="{{ view.q }}" maxlength="60" placeholder="{{ t('invoices.filter.search_placeholder') }}">
     </div>
     {% endif %}
   </div>
   <div class="filter-panel-actions">
-    <button class="btn primary filter-apply" type="submit">{{ t('host.filter.apply_filters') }}</button>
-    <button class="btn ghost" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
-    {% if filter_active %}<a class="btn ghost list-filter-reset" href="{{ filter_reset_href }}">{{ t('host.filter.reset') }} <span class="list-filter-count" aria-label="{{ t('filter.active', count=filter_active) }}">{{ filter_active }}</span></a>{% endif %}
+    <button class="ui-btn ui-btn-primary filter-apply" type="submit">{{ t('host.filter.apply_filters') }}</button>
+    <button class="ui-btn ui-btn-quiet" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
+    {% if filter_active %}<a class="ui-btn ui-btn-quiet list-filter-reset" href="{{ filter_reset_href }}">{{ t('host.filter.reset') }} <span class="list-filter-count" aria-label="{{ t('filter.active', count=filter_active) }}">{{ filter_active }}</span></a>{% endif %}
   </div>
 </form>
