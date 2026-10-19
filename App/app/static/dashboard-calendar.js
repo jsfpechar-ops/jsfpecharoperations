@@ -591,6 +591,13 @@
     if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
   }
   let createAnchor = null, createAnchorDate = "";
+  // The create form changes height when its kind switches (cleaning to stay)
+  // and when a field shows or hides; a one-off frame can measure the old
+  // height. Re-place on every size change so the popover never leaves the
+  // viewport. placeCreate is idempotent and no-ops when the dialog is closed.
+  if (typeof ResizeObserver === "function") {
+    new ResizeObserver(() => { if (createDialog.open) placeCreate(createAnchor); }).observe(createDialog);
+  }
   function placeCreate(anchor) {
     if (!createDialog.open) return;
     if (matchMedia("(max-width:760px)").matches) {
