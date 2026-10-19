@@ -93,14 +93,7 @@
           {# Fix-first: the coral leads to the refusal, and "Send again" only
              takes it once a refused guest has been edited since the refusal,
              so the page never invites an unchanged resend. #}
-          <a class="{{ 'ui-btn ui-btn-secondary' if send_controls.rejected_edited else cta }}" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
-          <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
-            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-            <button class="{{ cta if send_controls.rejected_edited else 'ui-btn ui-btn-secondary' }}" type="submit">
-              {{ t('stay.detail.cta.send_again') }}
-            </button>
-          </form>
+          <a class="{{ cta }}" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
         {% else %}
           <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -148,6 +141,27 @@
           </form>
         {% endif %}
         <a class="row-menu-item" href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication" role="menuitem">{{ t('stay.detail.menu.guest_links') }}</a>
+        {% if send_controls.send_enabled and progress.status == 'failed' %}
+          {# 0137: Re-send after a refusal lives in the menu; the duplicate-filing rules are unchanged. #}
+          <form method="post" action="/reservations/{{ reservation.id }}/submit" class="row-menu-form">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.detail.cta.send_again') }}</button>
+          </form>
+        {% endif %}
+        {% if stay_claim.guest_access_locked_at %}
+          <form method="post" action="/reservations/{{ reservation.id }}/reopen-guest" class="row-menu-form">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.claim.reopen') }}</button>
+          </form>
+        {% endif %}
+        {% if stay_claim.state != 'unclaimed' %}
+          <form method="post" action="/reservations/{{ reservation.id }}/release-claim" class="row-menu-form"
+                data-confirm data-confirm-message="{{ t('stay.claim.release_confirm') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.claim.release') }}</button>
+          </form>
+        {% endif %}
       {{ row_menu_end() }}
     </div>
   </div>
@@ -174,21 +188,6 @@
       {{ t('stay.claim.unclaimed') }}
     {% endif %}
   </p>
-  <div class="stay-command-actions">
-    {% if stay_claim.guest_access_locked_at %}
-      <form method="post" action="/reservations/{{ reservation.id }}/reopen-guest" class="inline">
-        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('stay.claim.reopen') }}</button>
-      </form>
-    {% endif %}
-    {% if stay_claim.state != 'unclaimed' %}
-      <form method="post" action="/reservations/{{ reservation.id }}/release-claim" class="inline"
-            data-confirm data-confirm-message="{{ t('stay.claim.release_confirm') }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('stay.claim.release') }}</button>
-      </form>
-    {% endif %}
-  </div>
 </div>
 {% endif %}
 {% if guest_rows or progress.not_registered %}
@@ -303,13 +302,6 @@
         <div class="guest-card-state">
           
           <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
-          {% if not stay_inactive and progress.expected > 1 %}
-          <form method="post" action="/reservations/{{ reservation.id }}/remove-empty-slot" data-confirm data-confirm-title="{{ t('host.remove_slot') }}" data-confirm-message="{{ t('host.remove_slot_confirm') }}">
-            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <input type="hidden" name="expected" value="{{ progress.expected }}">
-            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('host.remove_slot') }}</button>
-          </form>
-          {% endif %}
         </div>
       </div>
     </li>

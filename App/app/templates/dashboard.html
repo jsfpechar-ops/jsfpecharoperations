@@ -1,7 +1,7 @@
 {% extends "host_page.html" %}
 {% set nav = 'dashboard' %}
 {% set body_kind = 'detail' %}
-{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, deadline_badge, property_identity, sync_calendars_button, guest_count with context %}
+{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count with context %}
 {% set show_welcome = not apartments and not onboarding.dismissed %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block page_title %}{% if not show_welcome %}{{ t('dashboard.title') }}{% endif %}{% endblock %}
@@ -9,7 +9,7 @@
 {% block primary_action %}{% if not show_welcome %}{{ ui_button('+ ' ~ t('stays.add_stay'), 'primary', href='/reservations?new=1', attrs='data-calendar-add data-cal-create-type="stay"') }}{% endif %}{% endblock %}
 {% block secondary_actions %}{% if not show_welcome %}
   {{ ui_button('+ ' ~ t('calendar.add_cleaning'), 'secondary', href='/cleaning/new', attrs='data-calendar-add data-cal-create-type="cleaning"') }}
-  {% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}
+  
   {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
   {{ ui_icon_button(t('common.more_actions'), 'ellipsis-vertical', attrs='data-toggle-panel="dashboard-more"', extra_class='ui-ph-menu') }}
 {% endif %}{% endblock %}
@@ -61,7 +61,7 @@
   {% if not onboarding.dismissed %}{{ onboarding_welcome(onboarding, compact=True) }}
   {% else %}{% call ui_empty(t('onboarding.skipped_title'), t('onboarding.skipped_body'), t('apartments.add'), '/apartments/new') %}{{ ui_button(t('onboarding.open_checklist'), 'secondary', href='/onboarding') }}{% endcall %}{% endif %}
 {% else %}
-  <div id="dashboard-more" class="ui-btn-group hidden" data-panel>{{ ui_button('+ ' ~ t('calendar.add_cleaning'), 'secondary', href='/cleaning/new') }}{% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}</div>
+  <div id="dashboard-more" class="ui-btn-group hidden" data-panel>{{ ui_button('+ ' ~ t('calendar.add_cleaning'), 'secondary', href='/cleaning/new') }}</div>
   <nav class="ui-stats dashboard-stats" aria-label="{{ t('nav.overview') }}" data-dashboard-refresh="stats">
     <a class="dashboard-stat action ui-stat{{ ' is-positive' if counts.attention > 0 }}" href="#needs-action"><strong class="ui-num">{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
     <a class="dashboard-stat ready ui-stat{{ ' is-positive' if counts.ready > 0 }}" href="/reservations"><strong class="ui-num">{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
@@ -92,7 +92,7 @@
   {% endcall %}
   {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
   {{ onboarding_banner(onboarding) }}
-  {% if not rows and feed_count %}{% call ui_empty(t('dashboard.empty.no_stays')) %}{{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}{% endcall %}
+  {% if not rows and feed_count %}{{ ui_empty(t('dashboard.empty.no_stays')) }}
   {% elif not rows %}{{ ui_empty(t('dashboard.empty.no_feed'), '', t('dashboard.empty.connect_calendar'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', primary=false) }}
   {% endif %}
   <noscript>

@@ -1,14 +1,14 @@
 {% extends "host_page.html" %}
 {% set nav = 'reservations' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import empty_state, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count, deadline_badge, source_badge, onboarding_banner with context %}
+{% from "_components.html" import empty_state, progress_pill, row_menu_begin, row_menu_end, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count, deadline_badge, source_badge, onboarding_banner with context %}
 {% from "_ui.html" import ui_button, ui_pagination with context %}
 {% from "_ui_layout.html" import ui_toolbar, ui_section_tabs with context %}
 {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
 {% set view_query = 'range=' ~ date_range ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
 {% block title %}{{ t('stays.title') }}{% endblock %}
 {% block primary_action %}{% if apartments %}{{ ui_button(t('stays.add_stay'), 'primary', attrs='data-toggle-panel="add-stay-panel"') }}{% endif %}{% endblock %}
-{% block secondary_actions %}{% if apartments %}{{ bulk_send_ready(ready_send_count, return_to) }}{% endif %}{% endblock %}
+{% block secondary_actions %}{% if manual_send %}{{ bulk_send_ready(ready_send_count, return_to) }}{% endif %}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% if apartments %}
 {% set stay_property = namespace(label=t('host.filter.all_properties')) %}
@@ -174,7 +174,6 @@
           {% endif %}
         </td>
         <td class="ui-cell-acts row-actions stay-col-actions" data-card="actions" data-label="">
-          {{ row_reporting_actions(reservation, row.controls, return_to) }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}" role="menuitem">{{ t('common.open') }}</a>
             {% if reservation.permalink_token %}
