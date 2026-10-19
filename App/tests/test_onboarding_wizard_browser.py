@@ -1515,6 +1515,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
             ) == "none"
             _shot(page, f"33-static-skeleton-{tag}.png")
             page.evaluate("window.ubyhostSkeleton.hide()")
+            skeleton.wait_for(state="hidden", timeout=2000)  # skeleton.js MIN_VISIBLE_MS defers the hide
             assert skeleton.is_hidden()
         browser.close()
 
