@@ -522,3 +522,9 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 /* 0171 */
 .host-workspace input:focus-visible, .host-workspace input:focus { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
 .host-workspace :is(label, .btn):has(+ input:focus-visible), .host-workspace :is(label, .btn):has(> input:focus-visible), .host-workspace input:focus-visible + :is(label, .btn) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
+
+/* 0170 */
+.host-workspace .copy-property-form .copyrow { display: flex; align-items: flex-end; gap: var(--space-3); }
+.host-workspace .copy-property-form .copyrow .field { margin: 0; }
+.host-workspace .copy-property-form .copyrow > .ui-btn { align-self: flex-end; }
+.host-workspace .settings-grid > .ui-form-actions { grid-column: 1 / -1; justify-self: start; }
