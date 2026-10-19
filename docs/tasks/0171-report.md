@@ -24,3 +24,8 @@ Done: steps 1 (committed). Left: steps 2 to 5. Step 2 did not reach a fix after 
 
 ## Owner steps left
 None until the questions are answered.
+
+## Update after 2b (Status: blocked)
+Done: step 1 (8b6f394); step 2 partial (a85ece2): `.host-workspace input:focus-visible, .host-workspace input:focus` ring, label ring for `:has(+ input:focus-visible)`, and the allowed FOCUS_JS edit (hidden inputs: skip obscured, require label ring). File-input findings (new_signature_file, edit_signature_file) are now gone.
+Still failing: 4 `focus-not-visible` on date inputs (cleaning-from/to, stay_from/to). Computed in the guard run: `document.activeElement` is the date input, but `matches(':focus')` is false, `matches(':focus-visible')` is false, outline `none`. Because `:focus` does not match, no CSS rule on `:focus` can add a ring. Likely a focus-state artifact of the guard's Tab sequence in Chromium (page not focused / focus inside the date input's inner fields), not a styling bug. Brief 2b item 2 says a guard bug means stop for that item. Owner or coordinator decision needed.
+Not run: step 3 (key bump), step 4 (test suite), step 5 final commit. The 0169 report is committed as-is in the working tree (still `M`, not staged); include it in the final commit when resolved.
