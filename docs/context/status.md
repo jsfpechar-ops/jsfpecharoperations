@@ -18,7 +18,6 @@ Updated: 2026-10-19.
 
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
-- Optional: deploy #280+#281 (admin preview) when you want it on production.
 
 ## Next
 
