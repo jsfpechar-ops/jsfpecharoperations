@@ -154,7 +154,7 @@ def test_navigation_pages_fit_and_capture(base):
                     overflow = page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
                     assert overflow <= 1, (name, width, overflow)
                     if name in ("list", "detail"):
-                        for link in page.locator(".page-actions a, .stay-command-actions a").all():
+                        for link in page.locator(".ui-ph-acts a, .stay-command-actions a").all():
                             box = link.bounding_box()
                             assert box and box["x"] >= -1 and box["x"] + box["width"] <= width + 1, (name, width)
                     if capture:

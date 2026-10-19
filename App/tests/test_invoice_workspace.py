@@ -121,7 +121,7 @@ def test_issue_is_the_only_coral_primary_in_the_builder(host):
     entity_id = _add_entity()
     stay_id = make_stay(_owner())
     page = host.get(f"/invoices/new?reservation_id={stay_id}&entity={entity_id}").text
-    assert page.count("btn accent primary") == 1  # Issue invoice
+    assert page.count("ui-btn ui-btn-primary") == 1  # Issue invoice
     assert 'formaction="/invoices/preview"' in page  # preview stays quiet
     assert 'data-total' in page  # the live total mirrors the Decimal sum
 

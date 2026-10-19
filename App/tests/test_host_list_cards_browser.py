@@ -24,11 +24,10 @@ CAPTURE = os.environ.get("UBYHOST_CAPTURE_O2") == "1"
 LISTS = {
     "properties": "/apartments",
     "businesses": "/entities",
-    "invoices": "/invoices",
     "fees": "/stay-fees",
 }
 # Per-list switch point (measured min-content width + ~40 px), in panel px.
-THRESHOLDS = {"properties": 800, "businesses": 950, "invoices": 830, "fees": 940}
+THRESHOLDS = {"properties": 800, "businesses": 950, "fees": 940}
 
 _LIST_JS = """() => {
   const panel = document.querySelector('.list-cards');
