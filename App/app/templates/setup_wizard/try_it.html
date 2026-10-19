@@ -1,4 +1,6 @@
 {% extends "setup_wizard/_layout.html" %}
+{% from "_icons.html" import icon with context %}
+{% set cta = 'ui-btn ui-btn-primary' %}
 {% from "_components.html" import help_tip, progress_pill, guest_count with context %}
 {% block wizard_content %}
 <p class="setup-wizard-lede">{{ t('setup_guide.try.text') }} {{ help_tip('setup-try-help', t('setup_guide.try.help')) }}</p>
@@ -8,7 +10,7 @@
   <a class="setup-demo-property" href="/apartments/{{ apartment.id }}?view=overview">
     <span class="setup-demo-mark" aria-hidden="true">{{ apartment.internal_name[:1] }}</span>
     <span><strong>{{ apartment.internal_name }}</strong><span>{{ apartment.city_en or apartment.addr_obec or '' }}</span></span>
-    <span class="pill grey">{{ t('wizard.try_it.preview') }}</span>
+    <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('wizard.try_it.preview') }}</span>
   </a>
   <h2>{{ t('wizard.try_it.stay') }}</h2>
   <div class="setup-demo-stay">
@@ -18,14 +20,14 @@
       {% if demo_state != 'none' %}
       {{ progress_pill(setup_demo.progress.status, apartment.automation_mode, is_demo=true) }}
       {{ guest_count(setup_demo.progress) }}
-      {% else %}<span class="pill grey">{{ t('wizard.try_it.preview') }}</span>{% endif %}
+      {% else %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('wizard.try_it.preview') }}</span>{% endif %}
     </div>
-    {% if demo_state == 'registered' %}<a class="btn" href="/reservations/{{ setup_demo.reservation.id }}">{{ t('setup_guide.try.open_stay') }}</a>{% endif %}
+    {% if demo_state == 'registered' %}<a class="ui-btn ui-btn-secondary" href="/reservations/{{ setup_demo.reservation.id }}">{{ t('setup_guide.try.open_stay') }}</a>{% endif %}
   </div>
 </section>
 <section class="setup-demo-message" aria-labelledby="demo-message-heading">
-  <header><span class="setup-demo-mark" aria-hidden="true">{{ message_operator_first_name[:1] }}</span><div><h2 id="demo-message-heading">{{ t('wizard.try_it.message') }} <span class="pill grey">{{ t('wizard.try_it.preview') }}</span></h2><strong>{{ message_operator_first_name }}</strong></div>{{ help_tip('demo-message-help', t('wizard.try_it.message_help')) }}</header>
-  <p class="setup-wizard-instruction setup-demo-disclaimer">{{ t('wizard.try_it.model_note') }}</p>
+  <header><span class="setup-demo-mark" aria-hidden="true">{{ message_operator_first_name[:1] }}</span><div><h2 id="demo-message-heading">{{ t('wizard.try_it.message') }} <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('wizard.try_it.preview') }}</span></h2><strong>{{ message_operator_first_name }}</strong></div>{{ help_tip('demo-message-help', t('wizard.try_it.message_help')) }}</header>
+  <div class="ui-banner ui-banner-neutral setup-demo-disclaimer" role="status">{{ icon('info', 20) }}<div class="grow">{{ t('wizard.try_it.model_note') }}</div></div>
   {% set message_url = permalink %}
   {% set message_text = t('wizard.guest_link.message_template', url=message_url, pin=pin, operator_first_name=message_operator_first_name, property_name=apartment.internal_name) %}
   <div class="setup-demo-bubble">{% for part in message_text.split(message_url) %}{{ part }}{% if not loop.last %}{% if demo_state == 'none' %}<button class="setup-demo-message-link" type="submit" form="setup-create-demo">{{ message_url }}</button>{% else %}<a href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ message_url }}</a>{% endif %}{% endif %}{% endfor %}</div>
@@ -43,35 +45,35 @@
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.delete_continue') }}</button>
+  <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.delete_continue') }}</button>
 </form>
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="btn primary" type="submit" name="action" value="keep_demo" formnovalidate>{{ t('wizard.try_it.keep') }}</button>
+  <button class="{{ cta }}" type="submit" name="action" value="keep_demo" formnovalidate>{{ t('wizard.try_it.keep') }}</button>
 </form>
 {% elif demo_state == 'open' %}
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
+  <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
 </form>
 <form method="get" action="/apartments/{{ apartment.id }}/setup/try_it" class="inline">
-  <button class="btn" type="submit">{{ t('wizard.try_it.check_again') }}</button>
+  <button class="ui-btn ui-btn-secondary" type="submit">{{ t('wizard.try_it.check_again') }}</button>
 </form>
-<a class="btn primary" href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ t('setup_guide.try.open') }}</a>
+<a class="{{ cta }}" href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ t('setup_guide.try.open') }}</a>
 {% else %}
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
+  <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.try_it.skip') }}</button>
 </form>
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline" id="setup-create-demo" target="_blank" rel="noopener" data-wizard-demo>
   <input type="hidden" name="action" value="demo">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="try_it">
-  <button class="btn primary" type="submit" name="action" value="demo">{{ t('setup_guide.try.create') }}</button>
+  <button class="{{ cta }}" type="submit" name="action" value="demo">{{ t('setup_guide.try.create') }}</button>
 </form>
-<noscript><a class="btn" href="/apartments/{{ apartment.id }}/setup/try_it">{{ t('wizard.try_it.check_again') }}</a></noscript>
+<noscript><a class="ui-btn ui-btn-secondary" href="/apartments/{{ apartment.id }}/setup/try_it">{{ t('wizard.try_it.check_again') }}</a></noscript>
 {% endif %}
 {% endblock %}

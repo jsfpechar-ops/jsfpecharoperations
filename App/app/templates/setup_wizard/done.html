@@ -11,7 +11,7 @@
       <span class="setup-summary-icon">{{ nav_icon(icons[row.key]) }}</span>
       <div class="setup-summary-copy">
         <strong>{{ t('wizard.summary.' ~ row.key) if row.key in ['calendar', 'try_it'] else t('wizard.step.' ~ row.key) }}</strong>
-        <span class="pill {{ 'green' if status == 'done' else 'amber' if status == 'waiting' else 'grey' }}">
+        <span class="ui-badge ui-badge-{{ 'done' if status == 'done' else 'attention' if status == 'waiting' else 'neutral' }}" data-tone="{{ 'green' if status == 'done' else 'amber' if status == 'waiting' else 'grey' }}">
           {% if status == 'done' %}<span aria-hidden="true">✓</span>{% endif %}
           {{ t('wizard.summary.status.' ~ status) }}
         </span>
@@ -26,5 +26,5 @@
 {% endblock %}
 {% block wizard_actions %}
 <span></span>
-<a class="btn primary" href="/apartments/{{ apartment.id }}?view=overview">{{ t('wizard.done.go') }}</a>
+<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}?view=overview">{{ t('wizard.done.go') }}</a>
 {% endblock %}

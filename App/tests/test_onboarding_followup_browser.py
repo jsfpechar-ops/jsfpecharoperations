@@ -154,7 +154,7 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         _ready(page)
         assert current_name in page.locator(".setup-demo-bubble").inner_text()
         assert page.locator(".setup-demo-disclaimer").inner_text() == _t(lang, "wizard.try_it.model_note")
-        assert page.locator("#demo-message-heading .pill").is_visible()
+        assert page.locator("#demo-message-heading .ui-badge").is_visible()
         _shot(page, f"39-labeled-demo-message-{lang}-{width}.png")
         property_setup.finish(apartment_id)
         page.goto(f"{base}?view=overview&lang={lang}")

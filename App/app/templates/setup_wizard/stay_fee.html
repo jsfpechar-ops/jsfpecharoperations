@@ -21,7 +21,7 @@
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="step" value="stay_fee">
-  <button class="btn" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.skip') }}</button>
+  <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip" formnovalidate>{{ t('wizard.skip') }}</button>
 </form>
-<button class="btn primary" type="submit" form="stay-fee-form">{{ t('wizard.save_continue') }}</button>
+<button class="ui-btn ui-btn-primary" type="submit" form="stay-fee-form">{{ t('wizard.save_continue') }}</button>
 {% endblock %}

@@ -478,3 +478,11 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 
 /* 0159: subtext class on a table cell keeps the cell a cell on desktop */
 @media (min-width: 1024px) { .host-workspace .ui-table td.ui-sub, .host-workspace .ui-table th.ui-sub { display: table-cell; } }
+
+/* 0144-b setup wizard on host_page: the lane owns the gutter */
+.host-workspace .setup-wizard { padding: 0; }
+.host-workspace .setup-wizard-head { row-gap: var(--space-3); }
+.host-workspace .setup-wizard-foot .ui-btn-primary { margin-left: auto; }
+.host-workspace .setup-wizard-foot .ui-btn { max-width: 100%; }
+.host-workspace .setup-wizard-lede.setup-wizard-fee-intro { font-size: var(--size-26); font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+@media (max-width: 1023px) { .host-workspace .setup-wizard-lede.setup-wizard-fee-intro { font-size: var(--size-22); } }

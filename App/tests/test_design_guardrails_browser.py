@@ -31,6 +31,12 @@ ROUTES.update({
     "guest-new": "/reservations/{reservation_id}/guests/new",
     "setup-property": "/apartments/{property_id}/setup/property",
     "setup-police": "/apartments/{property_id}/setup/police",
+    "setup-guest-link": "/apartments/{property_id}/setup/guest_link",
+    "setup-calendar": "/apartments/{property_id}/setup/calendar",
+    "setup-stay-fee": "/apartments/{property_id}/setup/stay_fee",
+    "setup-door-lock": "/apartments/{property_id}/setup/door_lock",
+    "setup-automation": "/apartments/{property_id}/setup/automation",
+    "setup-try-it": "/apartments/{property_id}/setup/try_it",
     "settings-account": "/settings",
 })
 

@@ -213,7 +213,17 @@
     "App/app/templates/settings_archived.html",
     "App/app/templates/privacy_requests.html",
     "App/app/templates/guide.html",
-    "App/app/templates/onboarding.html"
+    "App/app/templates/onboarding.html",
+    "App/app/templates/setup_wizard/_layout.html",
+    "App/app/templates/setup_wizard/automation.html",
+    "App/app/templates/setup_wizard/calendar.html",
+    "App/app/templates/setup_wizard/done.html",
+    "App/app/templates/setup_wizard/door_lock.html",
+    "App/app/templates/setup_wizard/guest_link.html",
+    "App/app/templates/setup_wizard/police.html",
+    "App/app/templates/setup_wizard/property.html",
+    "App/app/templates/setup_wizard/stay_fee.html",
+    "App/app/templates/setup_wizard/try_it.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [
@@ -667,6 +677,117 @@
       "legal-list",
       "quiet",
       "ui-badge-"
+    ],
+    "App/app/templates/setup_wizard/_layout.html": [
+      "err-text",
+      "is-",
+      "setup-wizard",
+      "setup-wizard-back",
+      "setup-wizard-body",
+      "setup-wizard-exit",
+      "setup-wizard-foot",
+      "setup-wizard-head",
+      "setup-wizard-progress"
+    ],
+    "App/app/templates/setup_wizard/automation.html": [
+      "field",
+      "inline-hours",
+      "setup-wizard-form",
+      "setup-wizard-lede",
+      "setup-wizard-radio-card",
+      "setup-wizard-radio-choice",
+      "setup-wizard-radios"
+    ],
+    "App/app/templates/setup_wizard/calendar.html": [
+      "calendar-other-platform",
+      "err-text",
+      "field",
+      "opt",
+      "setup-wizard-form",
+      "setup-wizard-lede",
+      "setup-wizard-skip"
+    ],
+    "App/app/templates/setup_wizard/done.html": [
+      "host-property-card",
+      "host-property-card-static",
+      "host-property-grid",
+      "is-",
+      "setup-summary-action",
+      "setup-summary-card",
+      "setup-summary-copy",
+      "setup-summary-icon",
+      "setup-wizard-checklist",
+      "setup-wizard-section-title",
+      "ui-badge-"
+    ],
+    "App/app/templates/setup_wizard/door_lock.html": [
+      "feature-switch",
+      "feature-switch-row",
+      "field",
+      "setup-wizard-form",
+      "setup-wizard-instruction",
+      "setup-wizard-lede",
+      "setup-wizard-lock-field",
+      "setup-wizard-skip",
+      "switch"
+    ],
+    "App/app/templates/setup_wizard/guest_link.html": [
+      "field-label-row",
+      "setup-wizard-card",
+      "setup-wizard-cards",
+      "setup-wizard-copy",
+      "setup-wizard-lede",
+      "setup-wizard-message",
+      "setup-wizard-message-head",
+      "setup-wizard-pin",
+      "setup-wizard-url"
+    ],
+    "App/app/templates/setup_wizard/police.html": [
+      "err-text",
+      "field",
+      "field-label-row",
+      "grid",
+      "police-sample-link",
+      "police-section-head",
+      "setup-wizard-actions",
+      "setup-wizard-form",
+      "setup-wizard-instruction",
+      "setup-wizard-lede",
+      "setup-wizard-note-box",
+      "setup-wizard-police-notes",
+      "setup-wizard-section-title",
+      "setup-wizard-wait",
+      "two"
+    ],
+    "App/app/templates/setup_wizard/property.html": [
+      "field",
+      "grid",
+      "property-operator-hint",
+      "property-section-title",
+      "setup-wizard-form",
+      "setup-wizard-instruction",
+      "setup-wizard-lede",
+      "two"
+    ],
+    "App/app/templates/setup_wizard/stay_fee.html": [
+      "err-text",
+      "setup-wizard-fee-intro",
+      "setup-wizard-form",
+      "setup-wizard-lede",
+      "setup-wizard-skip"
+    ],
+    "App/app/templates/setup_wizard/try_it.html": [
+      "setup-demo-bubble",
+      "setup-demo-disclaimer",
+      "setup-demo-mark",
+      "setup-demo-message",
+      "setup-demo-message-link",
+      "setup-demo-property",
+      "setup-demo-stay",
+      "setup-wizard-demo",
+      "setup-wizard-instruction",
+      "setup-wizard-lede",
+      "setup-wizard-skip"
     ]
   },
   "enforced_stylesheets": [
