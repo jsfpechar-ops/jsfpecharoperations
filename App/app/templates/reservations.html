@@ -154,7 +154,7 @@
           <div class="ui-sub stay-col-source">{{ source_badge(reservation.source, source_label(reservation)) }}</div>
         </td>
         <td class="nowrap stay-col-dates" data-card="secondary" data-label="{{ t('host.stay_dates') }}">
-          <a class="stay-date-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
+          <a class="stay-date-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ reservation.date_from | date_short }} – {{ reservation.date_to | date_short }}</a>
           <div class="ui-sub">
             {{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}
             {%- if check_in and check_out and check_in <= today() <= check_out %}
