@@ -15,15 +15,15 @@
 
 {% if apartments %}
 <div id="add-stay-panel" class="action-panel hidden">
-  <div class="panel">
-    <div class="section-heading" style="margin-top:0">
+  <div class="ui-section">
+    <div class="ui-section-h">
       <h2>{{ t('stays.add_panel.title') }}</h2>
-      <button class="btn small ghost" type="button" data-close-panel>{{ t('common.close') }}</button>
+      <button class="ui-btn ui-btn-quiet ui-btn-compact" type="button" data-close-panel>{{ t('common.close') }}</button>
     </div>
-    <p class="small muted">{{ t('stays.add_panel.lede') }}</p>
+    <p class="ui-sub">{{ t('stays.add_panel.lede') }}</p>
     <form method="post" action="/reservations">
       <div class="grid">
-        <div class="field">
+        <div class="ui-field">
           <label for="new_apartment">{{ t('stays.add_panel.apartment') }}</label>
           <select id="new_apartment" name="apartment_id" required>
             {% for apartment in apartments %}
@@ -31,25 +31,25 @@
             {% endfor %}
           </select>
         </div>
-        <div class="field">
+        <div class="ui-field">
           <label for="date_from">{{ t('stays.add_panel.arrival') }}</label>
           <input type="date" id="date_from" name="date_from" required>
         </div>
-        <div class="field">
+        <div class="ui-field">
           <label for="date_to">{{ t('stays.add_panel.departure') }}</label>
           <input type="date" id="date_to" name="date_to" required>
         </div>
-        <div class="field">
+        <div class="ui-field">
           <label for="expected_guests">{{ t('stays.add_panel.guests') }} <span class="opt">{{ t('common.optional') }}</span></label>
           <input type="number" id="expected_guests" name="expected_guests" min="1" max="60">
         </div>
       </div>
       <div class="grid two">
-        <div class="field">
+        <div class="ui-field">
           <label for="summary">{{ t('stays.add_panel.label') }} <span class="opt">{{ t('common.optional') }}</span></label>
           <input type="text" id="summary" name="summary" placeholder="{{ t('stays.add_panel.label_ph') }}">
         </div>
-        <div class="field">
+        <div class="ui-field">
           <label for="guest_email">{{ t('stays.add_panel.email') }} <span class="opt">{{ t('common.optional') }}</span></label>
           <input type="email" id="guest_email" name="guest_email">
         </div>
@@ -82,7 +82,7 @@
     {% endif %}
 {% endset %}
 {% set stay_list_actions %}
-    <button class="btn ghost" type="button" data-save-view data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
+    <button class="ui-btn ui-btn-quiet" type="button" data-save-view data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
     {{ csv_actions_menu(csv_export_params, true, scope_label=stay_property.label) }}
 {% endset %}
 {{ ui_toolbar(chips=stay_chip_items, filters_id='stays-filter-panel', actions=stay_list_actions) }}
@@ -90,11 +90,11 @@
 <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
 
 {% if show_archive %}
-<p class="small muted">{{ t('stays.archive_note') }}</p>
+<p class="ui-sub">{{ t('stays.archive_note') }}</p>
 {% endif %}
-<form id="stays-filter-panel" method="get" action="/reservations" class="filters panel host-filter-panel" data-filter-panel data-filter-route="stays" data-original-range="{{ date_range }}">
+<form id="stays-filter-panel" method="get" action="/reservations" class="filters ui-section host-filter-panel" data-filter-panel data-filter-route="stays" data-original-range="{{ date_range }}">
   <div class="filter-fields">
-    <div class="field">
+    <div class="ui-field">
       <label for="apartment">{{ t('stays.filter.apartment') }}</label>
       <select id="apartment" name="apartment">
         <option value="">{{ t('host.filter.all_properties') }}</option>
@@ -104,7 +104,7 @@
         {% endfor %}
       </select>
     </div>
-    <div class="field">
+    <div class="ui-field">
       <label for="status">{{ t('stays.filter.state') }}</label>
       <select id="status" name="status">
         {% for value, label_key in [('active', 'stays.filter.state.active'), ('cancelled', 'stays.filter.state.cancelled'), ('ignored', 'stays.filter.state.ignored'), ('all', 'stays.filter.state.all')] %}
@@ -117,16 +117,16 @@
   </div>
   {% if show_archive %}<input type="hidden" name="archive_scope" value="1">{% endif %}
   <div class="filter-panel-actions">
-    <button class="btn primary filter-apply" type="submit" name="range" value="custom">{{ t('host.filter.apply_filters') }}</button>
-    <button class="btn ghost" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
-    <a class="btn ghost" href="{{ '/reservations?range=archive' if show_archive else '/reservations?range=all' }}">{{ t('host.filter.reset') }}</a>
+    <button class="ui-btn ui-btn-primary filter-apply" type="submit" name="range" value="custom">{{ t('host.filter.apply_filters') }}</button>
+    <button class="ui-btn ui-btn-quiet" type="button" data-filter-cancel hidden>{{ t('confirm.cancel') }}</button>
+    <a class="ui-btn ui-btn-quiet" href="{{ '/reservations?range=archive' if show_archive else '/reservations?range=all' }}">{{ t('host.filter.reset') }}</a>
   </div>
 </form>
 {% endif %}
 
 {% if rows %}
 <div class="stays-view">
-  <table class="table-cards">
+  <table class="ui-table ui-table-stack">
     <thead>
       <tr>
         <th class="stay-col-stay">{{ t('stays.table.stay') }}</th>
@@ -153,10 +153,10 @@
         </td>
         <td class="nowrap stay-col-dates" data-label="{{ t('host.stay_dates') }}">
           <a class="stay-date-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
-          <div class="small muted">
+          <div class="ui-sub">
             {{ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) }}
             {%- if check_in and check_out and check_in <= today() <= check_out %}
-              &middot; <span class="pill grey">{{ t('stays.table.in_house') }}</span>
+              &middot; <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.table.in_house') }}</span>
             {%- endif %}
           </div>
         </td>
@@ -165,7 +165,7 @@
         </td>
         <td class="num stay-col-guests" data-label="{{ t('stays.table.guests') }}">{{ guest_count(progress, placeholder=true) }}</td>
         <td class="stay-col-reporting" data-label="{{ t('stays.table.reporting') }}">
-          {% if reservation.status != 'active' %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
+          {% if reservation.status != 'active' %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.filter.state.' ~ reservation.status) }}</span>
           {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
           {% if check_in and reservation.status == 'active' %}
             <div class="stay-report-deadline">{{ deadline_badge(deadline_cell(progress, check_in)) }}</div>
@@ -206,7 +206,7 @@
     </tbody>
   </table>
 </div>
-<p class="small muted">
+<p class="ui-sub">
   {% if total == 1 %}
     {{ t('stays.pagination.showing', from=((page - 1) * page_size) + 1, to=[page * page_size, total] | min, total=total) }}
   {% else %}
@@ -230,8 +230,8 @@
   {#- Practice mode only: the demo loader is the page-specific extra. -#}
   {% call empty_state('', t('stays.empty.no_apartments'), '/apartments/new', t('stays.empty.add_first')) %}
     <form method="post" action="/demo" class="empty-state-extra">
-      <button class="btn" type="submit">{{ t('demo.load') }}</button>
-      <p class="small muted">{{ t('demo.load_detail') }}</p>
+      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('demo.load') }}</button>
+      <p class="ui-sub">{{ t('demo.load_detail') }}</p>
     </form>
   {% endcall %}
 {% else %}
