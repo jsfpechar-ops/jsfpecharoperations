@@ -21,12 +21,12 @@ from tests.conftest import login_as
 
 USERNAME = "stays-empty-host"
 
-EMPTY_PANEL_RE = re.compile(r'<div class="panel empty empty-state" data-empty-state>(.*?)\n  </div>', re.DOTALL)
+EMPTY_PANEL_RE = re.compile(r'<div class="ui-empty" data-empty-state>(.*?)\n  </div>', re.DOTALL)
 FILTER_FORM_RE = re.compile(
     r'<form id="stays-filter-panel" method="get" action="/reservations".*?</form>',
     re.DOTALL,
 )
-PRIMARY_LINK_RE = re.compile(r'<a class="btn primary" href="([^"]+)">([^<]+)</a>')
+PRIMARY_LINK_RE = re.compile(r'<a class="ui-btn ui-btn-primary" href="([^"]+)">([^<]+)</a>')
 STRINGS = host_i18n.STRINGS
 CONNECT_CALENDAR = {lang: STRINGS[lang]["dashboard.empty.connect_calendar"] for lang in ("en", "cs")}
 DEMO_BUTTON = STRINGS["en"]["demo.load"]
@@ -221,7 +221,7 @@ def test_with_a_calendar_the_empty_state_keeps_its_quiet_link(host_with_property
     assert f'href="/apartments/{_property_id()}?view=bookings#calendars"' not in page.text
     assert _primary_links(panel) == []
     assert (
-        f'<a class="btn" href="/apartments">'
+        f'<a class="ui-btn ui-btn-secondary" href="/apartments">'
         f'{STRINGS["en"]["stays.empty.go_apartments"]}</a>' in panel
     )
 

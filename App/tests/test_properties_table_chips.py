@@ -201,10 +201,10 @@ def test_the_add_property_cta_translates(host):
 
 def test_the_empty_state_still_shows_one_primary_button(empty_host):
     page = empty_host.get("/apartments?lang=en").text
-    panel = re.search(r'<div class="panel empty empty-state" data-empty-state>(.*?)\n  </div>', page, re.S)
+    panel = re.search(r'<div class="ui-empty" data-empty-state>(.*?)\n  </div>', page, re.S)
 
     assert panel, "the empty state disappeared"
-    assert panel.group(1).count('class="btn primary') == 1
+    assert panel.group(1).count('class="ui-btn ui-btn-primary') == 1
     assert host_i18n.STRINGS["en"]["apartments.empty.entity"] in panel.group(1)
 
 

@@ -334,10 +334,10 @@
     for a neutral one such as "Show all stays"). A caller block, when given,
     holds a page-specific extra (the practice-mode demo loader on Stays). -#}
 {% macro empty_state(title, body='', action_url='', action_label='', primary=true) %}
-  <div class="panel empty empty-state" data-empty-state>
+  <div class="ui-empty" data-empty-state>
     {% if title %}<h2>{{ title }}</h2>{% endif %}
     {% if body %}<p>{{ body }}</p>{% endif %}
-    {% if action_url %}<div class="empty-state-action"><a class="btn{{ ' primary' if primary }}" href="{{ action_url }}">{{ action_label }}</a></div>{% endif %}
+    {% if action_url %}<div class="ui-btn-group"><a class="ui-btn ui-btn-{{ 'primary' if primary else 'secondary' }}" href="{{ action_url }}">{{ action_label }}</a></div>{% endif %}
     {% if caller is defined %}{{ caller() }}{% endif %}
   </div>
 {% endmacro %}
