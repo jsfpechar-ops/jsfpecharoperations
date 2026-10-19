@@ -87,22 +87,22 @@ def test_dashboard_actions_share_height_and_gap(base):
         )
         page = context.new_page()
         page.goto(base + "/?lang=en")
-        page.wait_for_selector(".dashboard-actions .action-group", timeout=30000)
+        page.wait_for_selector(".ui-ph-acts", timeout=30000)
         aligned = page.evaluate(
             """() => {
               const rect = (el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; };
               return {
-                stats: rect(document.querySelector('.dashboard-stats')),
-                head: rect(document.querySelector('.host-today-head')),
+                stats: rect(document.querySelector('.ui-stats')),
+                head: rect(document.querySelector('.ui-ph')),
                 first: rect(document.querySelector('section, .panel.empty')),
               };
             }"""
         )
         assert aligned["stats"] == aligned["head"], "the stat tiles must span the header card exactly"
         assert aligned["stats"] == aligned["first"], "the stat tiles must align with the content below"
-        measured = page.locator(".dashboard-actions .action-group").evaluate(
+        measured = page.locator(".ui-ph-acts").evaluate(
             """(group) => {
-              const buttons = [...group.querySelectorAll('.btn')];
+              const buttons = [...group.querySelectorAll('.ui-btn')];
               const boxes = buttons.map((button) => {
                 const box = button.getBoundingClientRect();
                 return { top: box.top, right: box.right, bottom: box.bottom, left: box.left,
@@ -117,7 +117,7 @@ def test_dashboard_actions_share_height_and_gap(base):
     assert measured["gap"] == "8px"
     assert boxes
     assert len({box["height"] for box in boxes}) == 1
-    assert boxes[0]["height"] == 42
+    assert boxes[0]["height"] == 40
     assert not any(box["clipped"] for box in boxes)
     for left, right in zip(boxes, boxes[1:]):
         separated = left["right"] <= right["left"] + 1 or right["right"] <= left["left"] + 1
