@@ -9,7 +9,9 @@ Master version: 2.0.0. Adds only.
 - tabs: (`stays.tab.stays`, `/reservations`), (`stays.tab.reports`, `/submissions`), (`stays.tab.register`, `/housebook`)
 - toolbar: search = guest or label; chips = Upcoming, Past, All, Archive; filters sheet = property select, state select, stay dates date_range; actions = Save view, Export CSV
 - columns: Stay (label + `source` as 13 meta); Dates (`d. m. to d. m.` + nights, "In house" neutral badge); Property (`property_dot`); Guests (n of m, right); Police report (badge + deadline line); actions (one `secondary compact` Send when ready, menu)
-- phone card: line 1 dates + report badge; line 2 stay label and property; line 3 guests and deadline
+- phone card (MASTER 7.3 roles, one DOM): `primary` = stay label with source inline; `badge` = report badge over the deadline badge; `secondary` = dates with nights inline; `meta` = property, then guests at the right; `actions` = menu at the right edge, Send (only when ready) as the full-width line 4
+- desktop rows: the Stay, Dates and Police report cells carry one sub-line; rows stay under 72 px; the date text is plain ink (the row is the link)
+- setup strip (`onboarding_banner`): one quiet line, `secondary compact` Continue + `quiet compact` Skip; the page's only primary is Add stay
 - badges: `action` = ready to send, guest missing, rejected, failed ("!" when overdue); `attention` = deadline within 24 h, sent and no confirmation after 48 h; `done` = confirmed; `neutral` = waiting for guests, not required, cancelled, archived
 - row menu: Open, Copy guest form link, Add guest, Open guest form, Delete (or Restore in Archive)
 - pagination: Show more on phone, Previous/Next on desktop
@@ -24,4 +26,4 @@ Master version: 2.0.0. Adds only.
 - badges: as the list; filing rows add `neutral` "Sent" until UbyPort answers
 
 ## Tests
-- `test_host_filter_panels_browser.py`, `test_host_controls_browser.py`, `test_host_geometry.py`; screenshots 390 and 1280 of both pages plus list and detail skeletons
+- `test_host_filter_panels_browser.py`, `test_host_controls_browser.py`, `test_host_geometry.py`, `test_host_list_layouts_browser.py` (rows ≤ 72 px at 1280, badges on one line), `test_design_stays.py`; screenshots 390 and 1280 of both pages plus list and detail skeletons
