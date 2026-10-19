@@ -25,3 +25,16 @@ Is `test_host_wide_lanes_align` on invoices failing on base (c340b7f) or caused 
 
 ## Owner steps
 None.
+
+## Session 0142-cont-1 (executor, Haiku 5.5)
+
+Status: blocked
+
+- Step 1 (done, committed as `0142-cont-1 step 1`): `invoices` selector in `App/tests/test_host_wide_geometry_browser.py` changed to `.ui-table-wrap, .ui-empty`. The invoices case now passes.
+- Step 1 still fails: `test_host_wide_lanes_align` now fails on `invoice-new-picker/en/1024`: `selected result lane '.panel' is missing`. Brief section 8 says any other failure means stop. Not fixed.
+- Steps 2 to 6 (0142 step 5 browser run, step 6 commit) not run.
+
+Done: step 1 (partial). Left: step 1 (invoice-new-picker selector), steps 2 to 6.
+
+## Owner steps
+Decide the fix for `invoice-new-picker` (selector `.panel` no longer present after brief 0141), then resume with brief `0142-cont-1`.

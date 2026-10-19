@@ -41,7 +41,7 @@ CAPTURE_ROUTES = {
     "operators": ("/entities", ".entities-page, .panel.empty"),
     "operator-add": ("/entities?new=1", ".entity-add"),
     "operator-edit": ("/entities?edit={entity_id}", ".entity-form"),
-    "invoices": ("/invoices", ".panel.tight.scroll-x, .panel.empty"),
+    "invoices": ("/invoices", ".ui-table-wrap, .ui-empty"),
     "fees-unset": ("/stay-fees?apartment={unconfigured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     "fees-configured": ("/stay-fees?apartment={configured_apartment}", ".panel.tight.scroll-x, .panel.empty"),
     # 0077/0101: the fee editor is property Settings -> Reporting & fees -> Stay fee.
