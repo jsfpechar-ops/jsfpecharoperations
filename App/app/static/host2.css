@@ -210,7 +210,14 @@
   .host-workspace .ui-toolbar-search { width: auto; flex: 1; }
   .host-workspace .ui-toolbar-right { display: none; }
   .host-workspace .ui-toolbar .ui-chips { width: 100%; }
-  .host-workspace .ui-table { display: none; }
+  .host-workspace .ui-table { display: block; border: 0; background: transparent; overflow: visible; }
+  .host-workspace .ui-table thead { display: none; }
+  .host-workspace .ui-table tbody { display: flex; flex-direction: column; gap: var(--space-2); }
+  .host-workspace .ui-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-2); align-items: center; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--row-py) var(--row-px); min-height: calc(var(--row-h) + var(--space-6) + var(--space-1)); }
+  .host-workspace .ui-table td { display: block; grid-column: 1; height: auto; padding: 0; border: 0; text-align: left; }
+  .host-workspace .ui-table td:empty { display: none; }
+  .host-workspace .ui-table td.ui-cell-acts { grid-column: 2; grid-row: 1 / span 4; }
+  .host-workspace .ui-table .ui-row:hover td, .host-workspace .ui-table .ui-row:focus-within td { background: transparent; }
   .host-workspace .ui-cards { display: flex; flex-direction: column; gap: var(--space-2); }
   .host-workspace .ui-stats { gap: var(--space-2); }
   .host-workspace .ui-stat { padding: var(--space-3); }
