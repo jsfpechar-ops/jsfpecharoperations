@@ -1,8 +1,8 @@
 # 0131 report
 
-Status: blocked
+Status: review
 
-Done: steps 1 to 5. Left: steps 6 and 7 (browser test `App/tests/test_dev_ui_browser.py`, screenshots, final commit). Stopped at the 25-tool-call checkpoint.
+Done: steps 1 to 6. Step 7 (combined commit) does not apply: steps 1 to 6 are committed one per step.
 
 ## Commits (branch claude/project-thread-td6fpc, not pushed)
 
@@ -11,34 +11,41 @@ Done: steps 1 to 5. Left: steps 6 and 7 (browser test `App/tests/test_dev_ui_bro
 - ed4faae 0131 step 3 (App/app/templates/dev_ui.html)
 - 1cd3ef4 0131 step 4 (docs/design/catalog.json, App/app/static/host2.css)
 - 797b141 0131 step 5 (App/tests/test_dev_ui.py)
+- 94a42d3 0131 step 6 (App/tests/test_dev_ui_browser.py)
 
 ## Commands (last lines)
 
-- `python3 scripts/design_lint.py`: `design lint: OK`
-- `App/.venv/bin/ruff check --select E9,F63,F7,F82,F401,F841 App/`: `All checks passed!`
-- `pytest tests/test_dev_ui.py -q --tb=short -x`: `3 passed, 1 warning in 1.15s`
-- Step 3 compile: `compiles`
+- `python3 scripts/design_lint.py | tail -3`: `design lint: OK`
+- `App/.venv/bin/ruff check --select E9,F63,F7,F82,F401,F841 App/ | tail -3`: `All checks passed!`
+- `cd App && UBYHOST_REQUIRE_BROWSER=1 ... .venv/bin/python -m pytest tests/test_dev_ui_browser.py -q --tb=short -x -rs | tail -30`: `2 passed, 3 warnings in 5.13s` (0 skipped)
+
+## Measured budget (screenshots at 390 and 1280)
+
+- 390 px: coral 4.98% (budget 6.0%), empty 72.9% (min 50%)
+- 1280 px: coral 0.82% (budget 3.0%), empty 86.3% (min 55%)
+
+Screenshots: /tmp/claude-0/-home-user-jsfpecharoperations/3c6f1ec6-a025-553c-863a-9c0748d5832e/scratchpad/shots/0131/dev-ui-390.png and .../dev-ui-1280.png
 
 ## Acceptance (section 7)
 
-- [ ] /dev/ui 404 for host, 200 for admin: host 404 verified by test; admin content verified by test. Not yet checked against a live browser.
-- [ ] Screenshots and coral/empty percentages: not done (step 6 not run).
+- [x] /dev/ui 404 for host, 200 for admin: verified by test_dev_ui.py (step 5) and the browser test (admin, 200).
+- [x] Screenshots exist and coral/empty percentages are measured (above).
 - [x] Design lint passes with dev_ui.html enforced.
-- [ ] Final `git diff df8b842 --stat`: not checked (base commit differs, see deviations).
+- [ ] `git diff df8b842 --stat`: not run (base commit differs, see deviations).
 
 ## Deviations
 
-1. Step 2 check command fails on this FastAPI: included routes are `_IncludedRouter` objects with no `.path`. Verified instead: `dev_ui.router.routes` gives `/dev/ui`, and `app.openapi()` lists `/dev/ui`.
-2. Step 5 assertion changed from `== 1` to `== 2` for `class="ui-btn ui-btn-primary"`. The brief's own template renders two primary buttons: the header primary action and the "Primary" sample in Buttons.
-3. Commits: brief header says commit each step; I committed steps 1 to 5 separately, so the step 7 combined commit does not apply.
-4. Step 4 CSS: the four rules were appended to `App/app/static/host2.css` as the brief specifies.
-5. Earlier, a stray `cat` with no input (my error) briefly hung one command; nothing was written beyond the step 1 commit. A scratch file `/tmp/x` was created and removed.
+1. Step 2 check command fails on this FastAPI (`_IncludedRouter` has no `.path`). Verified instead with `dev_ui.router.routes` and `app.openapi()`.
+2. Step 5 assertion changed from `== 1` to `== 2` for the primary button class (header action plus the "Primary" sample).
+3. Step 6: the brief's import `from app import auth, db` left `db` unused, which fails ruff F401. Removed `db` (the import line is now `from app import auth`). Commit amended before push.
+4. Step 6 run used `UBYHOST_SHOTS_DIR` in the scratchpad (per owner) and `PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`.
+5. Section 6 also lists `tests/test_dev_ui.py`, `tests/test_design_lint.py` and `tests/test_host_geometry.py`; not run in this session (owner asked only for step 6). Run them in CI or on request.
 
 ## Questions
 
-- Should steps 6 and 7 run in a fresh session (per executor rule at the checkpoint)?
+- None.
 
 ## Owner steps left
 
 1. After the branch is on staging, open `/dev/ui` as admin to see the catalog.
-2. Continue from this branch in a fresh executor session with steps 6 and 7 of `docs/tasks/0131-dev-ui-catalog-page.md`.
+2. Review the two screenshots above, then decide whether to open the PR.
