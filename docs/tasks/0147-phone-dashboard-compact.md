@@ -11,7 +11,7 @@ Part 2 (one PIN alert, one-line setup banner) is [0148](0148-phone-dashboard-ale
 Below 768 px the dashboard month calendar is as tall as the rest of the page (390 px screenshot: each week is 94 px or more because stays render as 46 px text bars). Owner decision:
 
 1. On phone, each day cell shows its stays as small dots (one per stay, property colour, at most 3, then "+n"), never as text bars. Tapping a day opens the existing day dialog (`[data-cal-day-dialog]`, which lists that day's stays and has an Add button). Desktop (768 px and up) is unchanged: bars, drag to create, click a day to create.
-2. On phone the controls shrink to the property picker, the previous/next arrows and the month title. Hidden below 768 px: the Calendar/Gantt toggle, the settings button, the Month/Week/Year segment, the month and year selects, and the Today button.
+2. On phone the controls shrink to the property picker, the previous/next arrows, Today and the month title (orchestrator: Today kept). Hidden below 768 px: the Calendar/Gantt toggle, the settings button, the Month/Week/Year segment, and the month and year selects.
 3. Phone = `(max-width: 767px)`, the same breakpoint `host2.css` uses. The cleaning page shares this calendar partial; nothing changes there (`data-cleaning="true"`).
 
 Dots use the three property colours already defined by `[data-cal-color]` (teal, blue, purple). No coral (MASTER 4).
@@ -146,8 +146,7 @@ No other file may change. `dashboard.html`, `host2.css`, Python and `host_i18n.p
      .dashboard-calendar[data-cleaning="false"] [data-cal-settings],
      .dashboard-calendar[data-cleaning="false"] [data-cal-scales],
      .dashboard-calendar[data-cleaning="false"] [data-cal-month],
-     .dashboard-calendar[data-cleaning="false"] [data-cal-year],
-     .dashboard-calendar[data-cleaning="false"] [data-cal-today] { display:none !important; }
+     .dashboard-calendar[data-cleaning="false"] [data-cal-year] { display:none !important; }
    }
    ```
    In `_dashboard_calendar.html` change both Anchor H version strings to `?v=20261019-0147` (keep the rest of each line). `python3 scripts/design_lint.py | tail -3` must print OK. Commit `0147 step 2`.
@@ -190,7 +189,7 @@ No other file may change. `dashboard.html`, `host2.css`, Python and `host_i18n.p
                            assert page.locator(".cal-week-events .cal-event").count() == 0
                            assert page.locator(".cal-dots .cal-dot").count() >= 3
                            shown = page.locator(
-                               ".cal-view-segment, .cal-scale-segment, [data-cal-month], [data-cal-year], [data-cal-settings], [data-cal-today]"
+                               ".cal-view-segment, .cal-scale-segment, [data-cal-month], [data-cal-year], [data-cal-settings]"
                            ).evaluate_all("nodes => nodes.filter(node => node.offsetParent).length")
                            assert shown == 0, shown
                            box = page.locator(".cal-day-number").first.bounding_box()
@@ -243,7 +242,7 @@ No other file may change. `dashboard.html`, `host2.css`, Python and `host_i18n.p
        calendar_origin, calendar_workspace, launch, open_page, shot,
    )
 
-   HIDDEN_ON_PHONE = (".cal-view-segment", "[data-cal-settings]", "[data-cal-scales]", "[data-cal-month]", "[data-cal-year]", "[data-cal-today]")
+   HIDDEN_ON_PHONE = (".cal-view-segment", "[data-cal-settings]", "[data-cal-scales]", "[data-cal-month]", "[data-cal-year]")
    SHOWN_ON_PHONE = ("[data-cal-property]", "[data-cal-prev]", "[data-cal-next]", "[data-cal-period]")
 
 
@@ -287,7 +286,7 @@ No other file may change. `dashboard.html`, `host2.css`, Python and `host_i18n.p
    `UBYHOST_REQUIRE_BROWSER=1 PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers UBYHOST_SHOTS_DIR=/tmp/claude-0/-home-user-jsfpecharoperations/3c6f1ec6-a025-553c-863a-9c0748d5832e/scratchpad/shots/0147 .venv/bin/python -m pytest tests/test_dashboard_phone_browser.py tests/test_dashboard_calendar_browser.py tests/test_host_quiet_dashboard_browser.py -q --tb=line -rs 2>&1 | tail -15`
    Expected: pass, 0 skipped.
 
-6. Open `calendar-phone-390.png` and `calendar-phone-1280.png` from the shots dir and confirm by eye: at 390 every week row is one line of day numbers with dots under them (no text bars; a "+1" on 14 to 18 October), the toolbar is arrows left and "October 2026" right, the property select above it, no Gantt/settings/segments/selects/Today; at 1280 the page is unchanged from `docs/tasks/0102-evidence` style (gantt with bars, all controls). Copy both files to `docs/tasks/0147-evidence/`. Run ruff: `App/.venv/bin/ruff check --select E9,F63,F7,F82,F401,F841 App/tests/test_dashboard_phone_browser.py | tail -3`. Write `docs/tasks/0147-report.md` (Status: review or blocked; the pytest tail; what you saw in the two screenshots; the two evidence paths). Commit `0147 report` with `git add docs/tasks/0147-report.md docs/tasks/0147-evidence`.
+6. Open `calendar-phone-390.png` and `calendar-phone-1280.png` from the shots dir and confirm by eye: at 390 every week row is one line of day numbers with dots under them (no text bars; a "+1" on 14 to 18 October), the toolbar is arrows left and "October 2026" right, the property select above it, no Gantt/settings/segments/selects (Today stays); at 1280 the page is unchanged from `docs/tasks/0102-evidence` style (gantt with bars, all controls). Copy both files to `docs/tasks/0147-evidence/`. Run ruff: `App/.venv/bin/ruff check --select E9,F63,F7,F82,F401,F841 App/tests/test_dashboard_phone_browser.py | tail -3`. Write `docs/tasks/0147-report.md` (Status: review or blocked; the pytest tail; what you saw in the two screenshots; the two evidence paths). Commit `0147 report` with `git add docs/tasks/0147-report.md docs/tasks/0147-evidence`.
 
 ## 5. Do not touch
 
