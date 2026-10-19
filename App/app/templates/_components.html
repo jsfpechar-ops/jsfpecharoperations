@@ -199,10 +199,10 @@
 {% macro bulk_send_ready(count, return_to) %}
   <form method="post" action="/reservations/submit-ready" class="inline send-all-form">
     <input type="hidden" name="return_to" value="{{ return_to }}">
-    <button class="btn send-all" type="submit"
+    <button class="ui-btn ui-btn-secondary send-all" type="submit"
             {% if not count %}disabled{% endif %}
             title="{{ t('send.all_ready_hint') }}">
-      {{ t('send.all_ready') }}{% if count %} ({{ count }}){% endif %}
+      {{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if count %} ({{ count }}){% endif %}</span>
     </button>
   </form>
 {% endmacro %}
