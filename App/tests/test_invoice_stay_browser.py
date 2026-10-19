@@ -124,7 +124,7 @@ def test_issue_with_javascript_off(base):
         page.goto(base + f"/invoices/new?reservation_id={stay}&entity={entity}&lang=cs")
         page.fill("#buyer_name", "Jan Novák")
         page.fill('input[name="stay_price"]', "4500")
-        page.click(".invoice-actions button.accent.primary")
+        page.click(".invoice-actions button.ui-btn-primary")
         page.wait_for_load_state("load")
         assert "/invoices/" in page.url and "/invoices/new" not in page.url, page.url
         browser.close()
