@@ -1,24 +1,23 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'reservations' %}
+{% set body_kind = 'detail' %}
+{% from "_components.html" import field_label, help_tip, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge, source_badge with context %}
+{# The UbyPort step is the page's one coral button; the branches below are exclusive. #}
+{% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
-{% block content %}
-{# 0080: local primitive (the shared _components.html belongs to another lane).
-   In-page jump links so the four groups are reachable without folding any. #}
+{% block page_title %}{{ reservation.internal_name }}{% endblock %}
+{% block back_url %}{{ return_to }}{% endblock %}
+{% block back_label %}{{ t('stay.detail.back') }}{% endblock %}
+{# 0080: in-page jump links so the four groups are reachable without folding any; 0135: styled as tabs. #}
 {% macro stay_jump_nav(items) %}
-<nav class="stay-jump" aria-label="{{ t('stay.detail.nav.label') }}">
-  {% for href, label in items %}<a href="{{ href }}">{{ label }}</a>{% endfor %}
+<nav class="ui-tabs stay-jump" aria-label="{{ t('stay.detail.nav.label') }}">
+  {% for href, label in items %}<a class="ui-tab" href="{{ href }}">{{ label }}</a>{% endfor %}
 </nav>
 {% endmacro %}
-{% from "_components.html" import page_header, field_label, help_tip, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge, source_badge with context %}
-<input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {% set stay_lede %}{{ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz) ~ ' · ' ~ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) ~ ' · ' }}{{ source_badge(reservation.source, source_label(reservation)) }}{% endset %}
-{{ page_header(
-  reservation.internal_name,
-  stay_lede,
-  return_to,
-  t('stay.detail.back'),
-  ''
-) }}
+{% block meta %}{{ stay_lede }}{% endblock %}
+{% block body %}
+<input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 
 <div class="host-stay-detail">
 {% set stay_inactive = reservation.status != 'active' or reservation.archived_at %}
@@ -94,11 +93,11 @@
           {# Fix-first: the coral leads to the refusal, and "Send again" only
              takes it once a refused guest has been edited since the refusal,
              so the page never invites an unchanged resend. #}
-          <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
+          <a class="{{ 'ui-btn ui-btn-secondary' if send_controls.rejected_edited else cta }}" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
           <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
             <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-            <button class="btn{% if send_controls.rejected_edited %} accent primary{% endif %}" type="submit">
+            <button class="{{ cta if send_controls.rejected_edited else 'ui-btn ui-btn-secondary' }}" type="submit">
               {{ t('stay.detail.cta.send_again') }}
             </button>
           </form>
