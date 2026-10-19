@@ -332,3 +332,11 @@ def test_web_form_login_is_flagged_as_wrong_kind():
 
 def test_missing_password_blocks_reporting():
     assert errors(v.validate_apartment(good_apartment(uby_ws_password=""))) == {"uby_ws_password"}
+
+
+def test_fmt_date_short_prints_the_year_only_when_it_is_not_the_current_one():
+    assert v.fmt_date_short("2026-10-20", today=date(2026, 10, 19)) == "20. 10."
+    assert v.fmt_date_short("2026-01-05", today=date(2026, 10, 19)) == "5. 1."
+    assert v.fmt_date_short("2025-12-31", today=date(2026, 10, 19)) == "31. 12. 2025"
+    assert v.fmt_date_short("not-a-date") == "not-a-date"
+    assert v.fmt_date_short(None) == ""

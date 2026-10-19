@@ -1127,3 +1127,18 @@ def fmt_date_range(date_from: Optional[str], date_to: Optional[str]) -> str:
     if start and end:
         return f"{start} \u2013 {end}"
     return start or end
+
+
+def fmt_date_short(value: Optional[str], today: Optional[date] = None) -> str:
+    """An ISO date as the short Czech ``d. m.`` a list column prints (stays.md).
+
+    The year is added only when it is not the current one, so a past or
+    next-year stay stays unambiguous without widening every row. Unparseable
+    input passes through unchanged, as in ``fmt_date``.
+    """
+    parsed = parse_iso_date(value)
+    if not parsed:
+        return value or ""
+    short = f"{parsed.day}. {parsed.month}."
+    current_year = (today or date.today()).year
+    return short if parsed.year == current_year else f"{short} {parsed.year}"
