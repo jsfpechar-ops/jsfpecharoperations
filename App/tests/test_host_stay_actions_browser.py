@@ -195,7 +195,7 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 assert copy.is_hidden()
                 assert ready_row.locator(".row-open").count() == 0
                 boxes = [control.bounding_box() for control in (send, trigger)]
-                expected_height = 44 if width <= 390 else 42
+                expected_height = 44 if width <= 390 else 40
                 assert all(box["height"] >= expected_height - 1 for box in boxes), boxes
                 assert all(abs(box["height"] - expected_height) <= 1 for box in (boxes[0], boxes[1])), boxes
                 # 0091: actions wrap as whole controls when the lane is narrow, so

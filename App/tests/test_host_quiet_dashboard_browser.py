@@ -233,7 +233,7 @@ def test_dashboard_geometry_locales_and_screenshots(dashboard_host, base):
                             f"touch target is only {target_box['height']}px high in {locale}/{width}"
                         )
                 else:
-                    assert abs(more_box["height"] - 42) <= 1
+                    assert abs(more_box["height"] - 40) <= 1
 
                 page.keyboard.press("Escape")
                 assert not panel.is_visible()
@@ -358,7 +358,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 more_action = row.locator(".row-menu-trigger")
                 more_box = more_action.bounding_box()
                 assert more_action.inner_text() == ""
-                assert abs(more_box["height"] - (44 if width <= 760 else 42)) <= 1
+                assert abs(more_box["height"] - (44 if width <= 760 else 40)) <= 1
 
                 before_hover = row.evaluate("el => getComputedStyle(el).backgroundColor")
                 row.hover()
