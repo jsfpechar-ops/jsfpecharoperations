@@ -1,6 +1,6 @@
 # 0168 report
 
-Status: blocked
+Status: in-progress
 Executor: Haiku 5.5 | Branch: claude/project-thread-5hw8cf
 
 ## Files changed (committed)

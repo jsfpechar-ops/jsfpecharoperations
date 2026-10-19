@@ -20,7 +20,7 @@ WCAG 2.2 AA: text needs 4.5:1 (3:1 for large text), targets 24 by 24 CSS px, lin
 
 ## 3. Files
 
-`App/app/static/app.css`, `App/app/static/host2.css` (append), `App/app/templates/_shell_tabbar.html`, `App/app/templates/_components.html`, `App/app/templates/guest_form_admin.html`, `App/app/host_design_i18n.py`, `App/app/templates/base.html` (keys), `App/tests/static_versions.json`, `docs/tasks/0168-*`.
+`App/app/static/app.css`, `App/app/static/host2.css` (append), `App/app/templates/_shell_tabbar.html`, `App/app/templates/_components.html`, `App/app/templates/guest_form_admin.html`, `App/app/host_i18n.py`, `App/app/templates/base.html` (keys), `App/tests/static_versions.json`, `docs/tasks/0168-*`.
 
 ## 4. Steps
 
@@ -33,7 +33,7 @@ WCAG 2.2 AA: text needs 4.5:1 (3:1 for large text), targets 24 by 24 CSS px, lin
 ```
 
    Check first that `--space-6` is 24px: `grep -n "\-\-space-6" App/app/static/tokens.css | head -2`. If it is not 24px, use `1.5rem` instead (S2 lint allows rem).
-3. `_shell_tabbar.html` line 12: add `aria-label="{{ t('nav.more_menu') }}"` to the More link. In `App/app/host_design_i18n.py` add the key `nav.more_menu` next to `nav.more` in both language blocks (copy the style of the neighbouring lines): English `'More menu'`; Czech: the Czech value of `nav.more` followed by ` – nabídka` (read the Czech `nav.more` value first; the visible word must be the start of the label).
+3. `_shell_tabbar.html` line 12: add `aria-label="{{ t('nav.more_menu') }}"` to the More link. In `App/app/host_i18n.py` add the key `nav.more_menu` next to `nav.more` in both language blocks (copy the style of the neighbouring lines): English `'More menu'`; Czech: the Czech value of `nav.more` followed by ` – nabídka` (read the Czech `nav.more` value first; the visible word must be the start of the label).
 4. `_components.html` line 13: change `<a href="{{ guide_href }}">{{ t('help.tip.more') }}</a>` to `<a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>`. Use the exact variable names in that macro (`text` is the tip text variable on that line).
 5. `guest_form_admin.html` lines 246 and 247: add `id="sig-help"` to the existing signature hint paragraph or text just above the canvas if one exists (read lines 238 to 250 first). If there is no hint text there, change `aria-describedby="sig-help sig-status"` to `aria-describedby="sig-status"` and check that an element with `id="sig-status"` exists on that page; if neither exists, remove the attribute.
 6. Bump keys: in `App/app/templates/base.html` give `app.css` and `host2.css` new `?v=` keys ending in `-0168` (also in `App/app/templates/guest/base.html` if it loads `app.css`; `grep -rn "app.css?v=" App/app/templates`). From `App/`: `.venv/bin/python tests/test_static_versions.py --write && .venv/bin/python -m pytest tests/test_static_versions.py -q 2>&1 | tail -3` (passed). From the repo root: `python3 scripts/design_lint.py 2>&1 | tail -2` (OK).
