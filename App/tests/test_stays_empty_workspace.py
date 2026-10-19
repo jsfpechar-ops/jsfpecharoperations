@@ -246,7 +246,7 @@ def test_filter_panel_uses_primary_apply_filters_and_native_get_fields(host_with
     form = match.group(0)
     assert 'method="get" action="/reservations"' in form
     assert 'data-filter-panel' in form
-    assert 'class="btn primary filter-apply" type="submit" name="range" value="custom"' in form
+    assert 'class="ui-btn ui-btn-primary filter-apply" type="submit" name="range" value="custom"' in form
     assert f'>{STRINGS["en"]["host.filter.apply_filters"]}</button>' in form
     assert 'type="date" id="stays-from" name="from"' in form
     assert 'type="date" id="stays-until" name="to"' in form
@@ -257,7 +257,7 @@ def test_filter_panel_uses_localized_apply_filters_in_czech(host_with_property):
     match = FILTER_FORM_RE.search(page.text)
 
     assert match, "no filter form on the Czech page"
-    assert 'class="btn primary filter-apply" type="submit" name="range" value="custom"' in match.group(0)
+    assert 'class="ui-btn ui-btn-primary filter-apply" type="submit" name="range" value="custom"' in match.group(0)
     assert f'>{STRINGS["cs"]["host.filter.apply_filters"]}</button>' in match.group(0)
 
 
