@@ -1,10 +1,12 @@
 # 0141: Invoices (list, detail, form, stay picker) and the shared month filter on the v2 template
 
 Status: todo
-Depends on: 0140 | Base commit: df8b842 | Branch: claude/project-thread-td6fpc
+Depends on: 0140 | Base commit: 79252fd (refreshed 2026-10-19 against 0130-0137 and 0147-0152; every anchor count below was asserted on a scratch copy of this head and the result compiled and tested) | Branch: claude/project-thread-td6fpc
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 Part of [design-v2](../plans/design-v2.md). Commit each step as `0141 step k`. Never push, never open a PR. Page file: `docs/design/pages/invoices.md`.
+
+**How to run this brief.** Every step is one command, run from `App/` (`cd App` first; the scripts use paths relative to `App/`). Each script asserts the count of every anchor before it writes anything and prints `ok` at the end; if it prints an `AssertionError` tuple instead (the anchor text and the count it found), nothing was written: stop and put the tuple in the report. Do not retype the scripts and do not edit the files by hand. Known-failing tests are named per step; a failure not named there is yours to report, not to fix by weakening the test.
 
 ## 1. Objective
 
@@ -12,12 +14,46 @@ Move the four invoice templates onto `host_page.html` (list, detail, form, stay 
 
 ## 2. Context
 
-Rules: MASTER 5 (list, detail, form kinds), 5.3 (toolbar), 7.2, 7.4, 7.13, 4. `app.js` keys on `[data-filter-panel]`, `[data-filter-toggle]`, `[data-filter-summary]`, `[data-filter-cancel]`, `[data-month-picker]` and its `data-month-*` hooks, `.clickable-row`, `[data-add-item]`, `[data-remove-item]`, never on `.btn`, `.pill` or `.field`. The month picker buttons (`month-step`, `month-trigger`, `year-step`, `month-choice`, `month-all-dates`) keep their legacy classes; only their `btn` token changes.
+Rules: MASTER 4, 5 (list, detail, form kinds), 5.3 (toolbar), 7.2, 7.3, 7.4, 7.13, `docs/design/pages/invoices.md`. `app.js` keys on `[data-filter-panel]`, `[data-filter-toggle]`, `[data-filter-summary]`, `[data-filter-cancel]`, `[data-month-picker]` and its `data-month-*` hooks, `.clickable-row`, `[data-add-item]`, `[data-remove-item]`, never on `.btn`, `.pill` or `.field`. Settled since the first version:
 
-Anchor A, `App/app/templates/invoices.html` lines 1 to 8 (verbatim):
+- Invoice list roles: customer `primary`, number `secondary` (`ui-mono`), date (`date_short`) and total (`ui-num ui-cell-r`) `meta`, kind `hide`, status `badge`, the PDF link `actions` in a `row-action-form`. Pagination is `ui_pagination`. One coral per page: the header's New invoice renders only when there are invoices or an active filter; otherwise the empty state's New invoice is the coral.
+- `_list_filter.html` renders `ui_toolbar(...)` plus a `<p class="ui-sub" data-filter-summary>` summary line; the month picker buttons keep their legacy hook classes and get `ui-btn ui-btn-secondary`. host.css sizes them at 42/44 px, so script 2 appends a `/* 0141 month picker */` block to `host2.css` that sets them to `var(--control-h)` (40) at 1024 and above and `var(--control-h-phone)` (44) below; `test_host_geometry.py` moves from `44 if width <= 600 else 42` to `44 if width < 1024 else 40` (script 6).
+- The invoice items grid is **not** `ui-table`: host2's table rules would override the grid tracks the item JS relies on. It keeps `invoice-items-grid` only; its rules move to `host2.css` in tokens.
+- Action rows are `ui-btn-group`; the danger zone is `ui-section ui-card`; the cancel-reason field width is a class (`invoice-cancel-reason`) in `host2.css`.
+- Tests reading the old markup move to v2 with the same assertion: `test_invoice_ux.py` (reset link class), `test_invoice_workspace.py` (one primary in the builder), `test_invoice_stay_browser.py` (Issue button selector), `test_host_invoice_items_browser.py` (`.ui-ph`), `test_host_invoice_navigation.py` (`.ui-ph-acts`), `test_host_geometry.py` (empty-state lane, heights), the wide-lane capture (`.lc-invoices`, `.ui-section`).
+- Known failures before this brief, not yours: `test_host_invoice_items_browser.py` at 360 px ("Remove height differs from the first control at 360px (en)"); `test_host_list_page_layout_browser.py` tab/toolbar rhythm until 0142 makes Stay fees v2 (this brief gives the fees page the v2 filter partial but not the v2 header).
+
+## 3. Files
+
+| Path | Action | What |
+|---|---|---|
+| `App/app/templates/invoices.html` | edit | head, roles, badges, pagination (script 1) |
+| `App/app/templates/_list_filter.html` | edit | toolbar macro, controls, fields (script 2) |
+| `App/app/templates/invoice_detail.html` | edit | head, badges, action row, items roles, danger zone (script 3) |
+| `App/app/templates/invoice_form.html` | edit | head, `<style>` block out, sections, controls, fields (script 4) |
+| `App/app/templates/invoice_stay_picker.html` | edit | head, classes (script 4) |
+| `App/app/static/host2.css` | edit | month picker heights (2), cancel-reason width (3), items grid (4) |
+| `docs/design/catalog.json` | edit | enforce the five templates; legacy lists (script 5) |
+| `App/tests/test_invoice_ux.py`, `App/tests/test_invoice_workspace.py`, `App/tests/test_invoice_stay_browser.py`, `App/tests/test_host_invoice_items_browser.py`, `App/tests/test_host_invoice_navigation.py`, `App/tests/test_host_geometry.py`, `App/tests/test_host_wide_geometry_browser.py` | edit | one or two strings each (script 6) |
+| `App/tests/test_design_invoices.py` | create | list shell, picker shell, no legacy control |
+
+No other file may change.
+
+## 4. Steps
+
+1. `invoices.html`:
 
 ```
-{% extends "base.html" %}
+.venv/bin/python - <<'EOF'
+import pathlib
+def patch(path, pairs):
+    p = pathlib.Path(path); s = p.read_text(encoding="utf-8")
+    for old, new in pairs:
+        assert s.count(old) == 1, (path, old[:70], s.count(old)); s = s.replace(old, new)
+    p.write_text(s, encoding="utf-8")
+CPT = 'class="ui-btn ui-btn-secondary ui-btn-compact"'
+patch("app/templates/invoices.html", [
+ ("""{% extends "base.html" %}
 {% set nav = 'invoices' %}
 {% block title %}{{ t('invoices.title') }}{% endblock %}
 {% block content %}
@@ -25,152 +61,68 @@ Anchor A, `App/app/templates/invoices.html` lines 1 to 8 (verbatim):
 {#- 0099: Invoice settings is the second tab (it was a button here). -#}
 {{ list_page_header(t('invoices.title'),
     actions='<a class="btn accent primary" href="/invoices/new">' ~ t('invoice.new') ~ '</a>') }}
-```
-
-Anchor B, same file, the pagination block starts with `{% if invoice_pages > 1 %}` followed by `<nav class="action-group" aria-label="{{ t('invoices.title') }}">` and ends with the matching `</nav>` and `{% endif %}` (nine lines).
-
-Anchor C, `App/app/templates/invoice_detail.html` lines 1 to 5 (verbatim):
-
-```
-{% extends "base.html" %}
-{% set nav = 'invoices' %}
-{% block title %}{{ t('invoice.detail.title', number=invoice.number) }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end with context %}
-```
-
-Anchor D, same file (six lines, verbatim):
-
-```
-{{ page_header(
-  t('invoice.detail.title', number=invoice.number),
-  invoice.buyer_name,
-  '/invoices',
-  t('nav.invoices')
-) }}
-```
-
-Anchor E, `App/app/templates/invoice_form.html` lines 1 to 6 (verbatim):
-
-```
-{% extends "base.html" %}
-{% set nav = 'invoices' %}
-{% block title %}{{ t('invoice.new') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, field_label, help_tip with context %}
-{{ page_header(t('invoice.new'), t('invoices.lede'), '/invoices', t('nav.invoices')) }}
-```
-
-Anchor F, same file: the block from the line `    <style>` (line 117) to the line `    </style>` (line 193), 77 lines, all rules for `.invoice-items-grid` and `.invoice-other-description-field`.
-
-Anchor G, `App/app/templates/invoice_stay_picker.html` lines 1 to 6 (verbatim):
-
-```
-{% extends "base.html" %}
-{% set nav = 'invoices' %}
-{% block title %}{{ t('invoice.new') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, field_label with context %}
-{{ page_header(t('invoice.new'), t('invoice.picker.lede'), '/invoices', t('nav.invoices')) }}
-```
-
-Anchor H, `App/app/templates/_list_filter.html`, two lines (verbatim):
-
-```
-{% from "_components.html" import list_toolbar with context %}
-```
-
-and, after the `{% endset %}` that closes `list_summary`:
-
-```
-{{ list_toolbar(list_summary, panel_id='list-filter-panel', actions=list_filter_actions | default('')) }}
-```
-
-## 3. Files
-
-| Path | Action | What |
-|---|---|---|
-| `App/app/templates/invoices.html` | edit | head, pagination, classes |
-| `App/app/templates/invoice_detail.html` | edit | head, classes, one style |
-| `App/app/templates/invoice_form.html` | edit | head, classes, styles, `<style>` block out |
-| `App/app/templates/invoice_stay_picker.html` | edit | head, classes |
-| `App/app/templates/_list_filter.html` | edit | toolbar macro, classes |
-| `App/app/static/host2.css` | edit | invoice items grid rules (tokens) |
-| `docs/design/catalog.json` | edit | enforce the four pages; legacy lists |
-| `App/tests/test_invoice_ux.py` | edit | one string (reset link) |
-| `App/tests/test_host_invoice_items_browser.py` | edit | one selector |
-| `App/tests/test_host_invoice_navigation.py` | edit | one selector |
-| `App/tests/test_design_invoices.py` | create | shells, one primary, no styles |
-
-No other file may change.
-
-## 4. Steps
-
-1. `invoices.html`: replace Anchor A with:
-
-```
-{% extends "host_page.html" %}
+""", """{% extends "host_page.html" %}
 {% set nav = 'invoices' %}
 {% set body_kind = 'list' %}
-{% block title %}{{ t('invoices.title') }}{% endblock %}
-{% block page_title %}{{ t('invoices.title') }}{% endblock %}
-{% block primary_action %}{{ ui_button(t('invoice.new'), 'primary', href='/invoices/new', icon_name='plus') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs(t('nav.invoices')) }}{% endblock %}
-{% block body %}
 {% from "_components.html" import empty_state with context %}
-{% from "_ui.html" import ui_button, ui_pagination with context %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
-```
-
-   Replace Anchor B with:
-
-```
-{% if invoice_pages > 1 %}
+{% block title %}{{ t('invoices.title') }}{% endblock %}
+{#- one coral per page: with no invoice at all the empty state carries New invoice. -#}
+{% block primary_action %}{% if invoices or filter_active %}{{ ui_button(t('invoice.new'), 'primary', href='/invoices/new', icon_name='plus') }}{% endif %}{% endblock %}
+{#- 0099: Invoice settings is the second tab. -#}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
+"""),
+ ('<div class="panel tight scroll-x list-cards lc-invoices">', '<div class="list-cards lc-invoices">'),
+ ('<table class="table-cards">', '<table class="ui-table ui-table-stack">'),
+ ("        <th>{{ t('invoices.col.total') }}</th>", "        <th class=\"ui-cell-r\">{{ t('invoices.col.total') }}</th>"),
+ # one DOM (MASTER 7.3): customer leads the card, number under it, date and total as the meta pair, status badge
+ ("<td class=\"mono small\" data-label=\"{{ t('invoices.col.number') }}\">", "<td class=\"ui-mono\" data-card=\"secondary\" data-label=\"{{ t('invoices.col.number') }}\">"),
+ ("<td class=\"nowrap small\" data-label=\"{{ t('invoices.col.date') }}\">{{ inv.issue_date | date_cz }}</td>", "<td class=\"nowrap\" data-card=\"meta\" data-label=\"{{ t('invoices.col.date') }}\">{{ inv.issue_date | date_short }}</td>"),
+ ("<td class=\"col-name\" data-label=\"{{ t('invoices.col.customer') }}\">", "<td class=\"ui-cell-first col-name\" data-card=\"primary\" data-label=\"{{ t('invoices.col.customer') }}\">"),
+ ("<td class=\"small\" data-label=\"{{ t('invoices.col.kind') }}\">", "<td data-card=\"hide\" data-label=\"{{ t('invoices.col.kind') }}\">"),
+ ("<td class=\"num\" data-label=\"{{ t('invoices.col.total') }}\">", "<td class=\"ui-num ui-cell-r\" data-card=\"meta\" data-label=\"{{ t('invoices.col.total') }}\">"),
+ ("<td data-label=\"{{ t('filter.status') }}\">", "<td data-card=\"badge\" data-label=\"{{ t('filter.status') }}\">"),
+ ('<td class="row-actions" data-label=""><a class="btn small" href="/invoices/{{ inv.id }}.pdf">{{ t(\'host.invoice_pdf\') }}</a></td>',
+  '<td class="ui-cell-acts row-actions" data-card="actions" data-label=""><span class="row-action-form"><a ' + CPT + ' href="/invoices/{{ inv.id }}.pdf">{{ t(\'host.invoice_pdf\') }}</a></span></td>'),
+ ('<span class="pill green">', '<span class="ui-badge ui-badge-done" data-tone="green">'),
+ ('<span class="pill teal">', '<span class="ui-badge ui-badge-neutral" data-tone="teal">'),
+ ("""{% elif inv.state == 'cancelled' %}<span class="pill grey">{{ t('invoice.state.cancelled') }}</span>{% else %}<span class="pill grey">""",
+  """{% elif inv.state == 'cancelled' %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('invoice.state.cancelled') }}</span>{% else %}<span class="ui-badge ui-badge-neutral" data-tone="grey">"""),
+ ("""{% if invoice_pages > 1 %}
+<nav class="action-group" aria-label="{{ t('invoices.title') }}">
+  {% if invoice_page > 1 %}
+  <a class="btn" href="{{ page_href }}{{ invoice_page - 1 }}" aria-label="{{ invoice_page - 1 }}">‹</a>
+  {% endif %}
+  {% if invoice_page < invoice_pages %}
+  <a class="btn" href="{{ page_href }}{{ invoice_page + 1 }}" aria-label="{{ invoice_page + 1 }}">›</a>
+  {% endif %}
+</nav>
+{% endif %}
+""", """{% if invoice_pages > 1 %}
 {{ ui_pagination(invoice_page, invoice_pages, prev_url=(page_href ~ (invoice_page - 1)) if invoice_page > 1 else '', next_url=(page_href ~ (invoice_page + 1)) if invoice_page < invoice_pages else '', label=t('invoices.title'), more_label=t('stays.pagination.next'), prev_label=t('stays.pagination.prev'), next_label=t('stays.pagination.next')) }}
 {% endif %}
-```
-
-   Then, from `App/`:
-
-```
-.venv/bin/python - <<'EOF'
-import pathlib
-p = pathlib.Path("app/templates/invoices.html"); s = p.read_text(encoding="utf-8")
-PAIRS = [
- ('class="pill green"', 'class="ui-badge ui-badge-done" data-tone="green"', 1),
- ('class="pill teal"', 'class="ui-badge ui-badge-neutral" data-tone="teal"', 1),
- ('class="pill grey"', 'class="ui-badge ui-badge-neutral" data-tone="grey"', 2),
- ('class="btn small"', 'class="ui-btn ui-btn-secondary ui-btn-compact"', 1),
- ('class="panel tight scroll-x list-cards lc-invoices"', 'class="list-cards lc-invoices"', 1),
- ('class="table-cards"', 'class="ui-table ui-table-stack"', 1),
- ('class="mono small"', 'class="ui-mono"', 1),
- ('class="nowrap small"', 'class="ui-sub nowrap"', 1),
- ('class="small"', 'class="ui-sub"', 1),
- ('class="num"', 'class="ui-num"', 1),
-]
-for old, new, n in PAIRS:
-    assert s.count(old) == n, (old, s.count(old)); s = s.replace(old, new)
-assert 'class="btn' not in s and 'class="pill' not in s and "ui-btn-primary" not in s
-p.write_text(s, encoding="utf-8"); print("ok")
+"""),
+])
+s = pathlib.Path("app/templates/invoices.html").read_text(encoding="utf-8")
+for f in ('class="btn', 'class="pill', 'class="small', 'class="num"', 'class="mono', 'class="panel', 'ui-btn-primary'):
+    assert f not in s, f
+print("ok")
 EOF
 ```
 
-   Expected: `ok`. Compile: `cd App && .venv/bin/python -c "from app.templating import templates; [templates.env.get_template(n) for n in ('invoices.html',)]; print('compiled')"`. Expected: `compiled`.
+   Expected: `ok`. Then `.venv/bin/python -c "from app.templating import templates; templates.env.get_template('invoices.html'); print('compiled')"`. Expected: `compiled`. Commit `0141 step 1`.
 
-2. `_list_filter.html`: replace the first line of Anchor H with `{% from "_ui_layout.html" import ui_toolbar with context %}` and the second line with:
-
-```
-{{ ui_toolbar(filters_id='list-filter-panel', filters_count=filter_active | default(0), actions=list_filter_actions | default('')) }}
-<p class="ui-sub" data-filter-summary>{{ list_summary }}</p>
-```
-
-   Then, from `App/`:
+2. `_list_filter.html` and the month picker heights:
 
 ```
 .venv/bin/python - <<'EOF'
 import pathlib
 p = pathlib.Path("app/templates/_list_filter.html"); s = p.read_text(encoding="utf-8")
 PAIRS = [
+ ('{% from "_components.html" import list_toolbar with context %}', '{% from "_ui_layout.html" import ui_toolbar with context %}', 1),
+ ("{{ list_toolbar(list_summary, panel_id='list-filter-panel', actions=list_filter_actions | default('')) }}",
+  "{{ ui_toolbar(filters_id='list-filter-panel', filters_count=filter_active | default(0), actions=list_filter_actions | default('')) }}\n<p class=\"ui-sub\" data-filter-summary>{{ list_summary }}</p>", 1),
  ('class="btn primary filter-apply"', 'class="ui-btn ui-btn-primary filter-apply"', 1),
  ('class="btn ghost list-filter-reset"', 'class="ui-btn ui-btn-quiet list-filter-reset"', 1),
  ('class="btn ghost month-all-dates"', 'class="ui-btn ui-btn-quiet month-all-dates"', 1),
@@ -185,206 +137,321 @@ PAIRS = [
 ]
 for old, new, n in PAIRS:
     assert s.count(old) == n, (old, s.count(old)); s = s.replace(old, new)
-assert 'class="btn' not in s and s.count("ui-btn-primary") == 1
-p.write_text(s, encoding="utf-8"); print("ok")
+assert 'class="btn' not in s and s.count("ui-btn-primary") == 1 and "list_toolbar" not in s
+p.write_text(s, encoding="utf-8")
+# host2.css: the month picker's legacy rules size its buttons at 42/44 px; v2 controls are 40 px at 1024+ and 44 below.
+p = pathlib.Path("app/static/host2.css"); s = p.read_text(encoding="utf-8")
+assert "0141 month picker" not in s
+s = s.rstrip("\n") + """
+
+/* 0141 month picker: v2 control heights over the legacy host.css sizes */
+.host-workspace .list-filter .ui-btn.month-step, .host-workspace .ui-btn.year-step { width: var(--control-h); min-width: var(--control-h); height: var(--control-h); min-height: var(--control-h); }
+.host-workspace .ui-btn.month-trigger, .host-workspace .ui-btn.month-all-dates { min-height: var(--control-h); height: auto; }
+@media (max-width: 1023px) {
+  .host-workspace .list-filter .ui-btn.month-step, .host-workspace .ui-btn.year-step { width: var(--control-h-phone); min-width: var(--control-h-phone); height: var(--control-h-phone); min-height: var(--control-h-phone); }
+  .host-workspace .ui-btn.month-trigger, .host-workspace .ui-btn.month-all-dates { min-height: var(--control-h-phone); }
+}
+"""
+p.write_text(s, encoding="utf-8")
+print("ok")
 EOF
 ```
 
-   Expected: `ok`. Then `grep -n "month-step\|month-trigger\|year-step" App/app/static/host.css App/app/static/host-controls.css App/app/static/app.css | head -20`: these rules select by the legacy class (`.month-step` etc.), not by `.btn.month-step`. If a rule uses `.btn.month-step` or `.btn.year-step`, add the same rule with `.ui-btn.month-step` (respectively `.ui-btn.year-step`) under a `/* 0141 month picker */` comment at the end of `App/app/static/host2.css`, copying the declarations verbatim. Expected: the month picker opens and steps exactly as before (checked in step 8).
+   Expected: `ok`. Then `.venv/bin/python -c "from app.templating import templates; templates.env.get_template('_list_filter.html'); templates.env.get_template('invoices.html'); templates.env.get_template('stay_fees.html'); print('compiled')"`. Expected: `compiled`. Commit `0141 step 2`.
 
-3. `invoice_detail.html`: replace Anchor C with:
-
-```
-{% extends "host_page.html" %}
-{% set nav = 'invoices' %}
-{% set body_kind = 'detail' %}
-{% set cta = 'ui-btn ui-btn-primary' %}
-{% block title %}{{ t('invoice.detail.title', number=invoice.number) }}{% endblock %}
-{% block page_title %}{{ t('invoice.detail.title', number=invoice.number) }}{% endblock %}
-{% block meta %}{{ invoice.buyer_name }}{% endblock %}
-{% block back_url %}/invoices{% endblock %}
-{% block back_label %}{{ t('nav.invoices') }}{% endblock %}
-{% block body %}
-{% from "_components.html" import row_menu_begin, row_menu_end with context %}
-```
-
-   Delete Anchor D (the six lines). Then, from `App/`:
+3. `invoice_detail.html`:
 
 ```
 .venv/bin/python - <<'EOF'
 import pathlib
 p = pathlib.Path("app/templates/invoice_detail.html"); s = p.read_text(encoding="utf-8")
+SEC = 'class="ui-btn ui-btn-secondary"'
 PAIRS = [
- ('<div class="field" style="max-width:220px">', '<div class="ui-field invoice-cancel-reason">', 1),
- ('class="btn primary"', 'class="{{ cta }}"', 1),
- ('class="btn ghost"', 'class="ui-btn ui-btn-quiet"', 1),
- ('class="btn"', 'class="ui-btn ui-btn-secondary"', 4),
- ("'<span class=\"pill grey\">'", "'<span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">'", 1),
- ("'<span class=\"pill green\">'", "'<span class=\"ui-badge ui-badge-done\" data-tone=\"green\">'", 1),
- ("'<span class=\"pill teal\">'", "'<span class=\"ui-badge ui-badge-neutral\" data-tone=\"teal\">'", 1),
- ('class="small muted"', 'class="ui-sub"', 3),
- ('class="num"', 'class="ui-num"', 3),
- ('class="field"', 'class="ui-field"', 2),
- ('class="actions"', 'class="ui-form-actions"', 1),
- ('class="table-cards"', 'class="ui-table ui-table-stack"', 1),
- ('class="panel tight scroll-x"', 'class="ui-section scroll-x"', 1),
- ('class="panel danger-zone"', 'class="ui-section danger-zone"', 1),
-]
-for old, new, n in PAIRS:
-    assert s.count(old) == n, (old, s.count(old)); s = s.replace(old, new)
-assert 'style="' not in s and 'class="btn' not in s and 'class="pill' not in s and s.count("ui-btn-primary") == 1
-p.write_text(s, encoding="utf-8"); print("ok")
-EOF
-```
-
-   Expected: `ok`. `class="panel stay-command-panel"` stays (test-asserted). Append to `App/app/static/host2.css`:
-
-```
-/* 0141 invoice detail: cancel reason field width */
-.invoice-cancel-reason { max-width: 14rem; }
-```
-
-4. `invoice_form.html`: replace Anchor E with:
-
-```
-{% extends "host_page.html" %}
+ ("""{% extends "base.html" %}
 {% set nav = 'invoices' %}
-{% set body_kind = 'form' %}
-{% block title %}{{ t('invoice.new') }}{% endblock %}
-{% block page_title %}{{ t('invoice.new') }}{% endblock %}
-{% block meta %}{{ t('invoices.lede') }}{% endblock %}
+{% block title %}{{ t('invoice.detail.title', number=invoice.number) }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, row_menu_begin, row_menu_end with context %}
+""", """{% extends "host_page.html" %}
+{% set nav = 'invoices' %}
+{% set body_kind = 'detail' %}
+{% from "_components.html" import row_menu_begin, row_menu_end with context %}
+{% block title %}{{ t('invoice.detail.title', number=invoice.number) }}{% endblock %}
+{% block meta %}{{ invoice.buyer_name }}{% endblock %}
 {% block back_url %}/invoices{% endblock %}
 {% block back_label %}{{ t('nav.invoices') }}{% endblock %}
 {% block body %}
-{% from "_components.html" import field_label, help_tip with context %}
+""", 1),
+ ("""{{ page_header(
+  t('invoice.detail.title', number=invoice.number),
+  invoice.buyer_name,
+  '/invoices',
+  t('nav.invoices')
+) }}
+""", "", 1),
+ ("'<span class=\"pill grey\">'", "'<span class=\"ui-badge ui-badge-neutral\" data-tone=\"grey\">'", 1),
+ ("'<span class=\"pill green\">'", "'<span class=\"ui-badge ui-badge-done\" data-tone=\"green\">'", 1),
+ ("'<span class=\"pill teal\">'", "'<span class=\"ui-badge ui-badge-neutral\" data-tone=\"teal\">'", 1),
+ ('<div class="actions">', '<div class="ui-btn-group">', 1),
+ ('class="btn primary"', 'class="ui-btn ui-btn-primary"', 1),
+ ('class="btn ghost"', 'class="ui-btn ui-btn-quiet"', 1),
+ ('class="btn"', SEC, 4),
+ ('<div class="panel tight scroll-x">', '<div class="ui-section scroll-x">', 1),
+ ('<table class="table-cards">', '<table class="ui-table ui-table-stack">', 1),
+ ("<th>{{ t('invoice.col.total') }}</th>", "<th class=\"ui-cell-r\">{{ t('invoice.col.total') }}</th>", 2),
+ # items: one DOM; the description leads the card, quantity under it, the line total at the right
+ ("<td data-label=\"{{ t('invoice.col.description') }}\">", "<td class=\"ui-cell-first\" data-card=\"primary\" data-label=\"{{ t('invoice.col.description') }}\">", 2),
+ ("<td data-label=\"{{ t('invoice.col.qty') }}\">", "<td data-card=\"secondary\" data-label=\"{{ t('invoice.col.qty') }}\">", 2),
+ ("<td data-label=\"{{ t('invoice.detail.unit_excl_vat') }}\">", "<td data-card=\"hide\" data-label=\"{{ t('invoice.detail.unit_excl_vat') }}\">", 1),
+ ("<td data-label=\"{{ t('invoice.col.vat') }}\">", "<td data-card=\"hide\" data-label=\"{{ t('invoice.col.vat') }}\">", 1),
+ ("<td data-label=\"{{ t('invoice.detail.vat_col') }}\">", "<td data-card=\"hide\" data-label=\"{{ t('invoice.detail.vat_col') }}\">", 1),
+ ("<td data-label=\"{{ t('invoice.col.unit_price') }}\">", "<td data-card=\"hide\" data-label=\"{{ t('invoice.col.unit_price') }}\">", 1),
+ ("<td data-label=\"{{ t('invoice.col.total') }}\">", "<td class=\"ui-num ui-cell-r\" data-card=\"meta\" data-label=\"{{ t('invoice.col.total') }}\">", 2),
+ ('<td colspan="6" class="small muted">', '<td colspan="6">', 1),
+ ('<td class="num">', '<td class="ui-num ui-cell-r">', 3),
+ ('<p class="small muted">', '<p class="ui-sub">', 2),
+ ('<details class="panel danger-zone" id="cancel">', '<details class="ui-section ui-card danger-zone" id="cancel">', 1),
+ ('<div class="field" style="max-width:220px">', '<div class="ui-field invoice-cancel-reason">', 1),
+ ('<div class="field">', '<div class="ui-field">', 1),
+]
+for old, new, n in PAIRS:
+    assert s.count(old) == n, (old[:70], s.count(old)); s = s.replace(old, new)
+for f in ('style="', 'class="btn', 'class="pill', 'class="small', 'class="num"', 'class="actions"', 'class="field"', 'page_header'):
+    assert f not in s, f
+assert s.count("ui-btn-primary") == 1 and 'class="panel stay-command-panel"' in s
+p.write_text(s, encoding="utf-8")
+p = pathlib.Path("app/static/host2.css"); s = p.read_text(encoding="utf-8")
+assert "invoice-cancel-reason" not in s
+p.write_text(s.rstrip("\n") + "\n\n/* 0141 invoice detail: cancel reason field width */\n.host-workspace .invoice-cancel-reason { max-width: 14rem; }\n", encoding="utf-8")
+print("ok")
+EOF
 ```
 
-   Delete Anchor F (the whole `<style>` ... `</style>` block, 77 lines) and append to `App/app/static/host2.css` the same rules rewritten with tokens (copy exactly):
+   Expected: `ok`. Then `.venv/bin/python -c "from app.templating import templates; templates.env.get_template('invoice_detail.html'); print('compiled')"`. Expected: `compiled`. Commit `0141 step 3`.
 
-```
-/* 0141 invoice items grid (moved from invoice_form.html) */
-#item-rows.invoice-items-grid { display: block; width: 100%; table-layout: fixed; container-type: inline-size; }
-.invoice-items-grid thead,
-.invoice-items-grid tbody { display: block; width: 100%; }
-.invoice-items-grid thead tr,
-.invoice-items-grid tbody tr { display: grid; grid-template-columns: minmax(220px, 1fr) 84px 124px 148px 78px 126px; align-items: start; }
-.invoice-items-grid thead tr { align-items: stretch; background: var(--surface-2); }
-.invoice-items-grid thead th { display: flex; align-items: center; background: transparent; }
-.invoice-items-grid th,
-.invoice-items-grid td { box-sizing: border-box; min-width: 0; }
-.invoice-items-grid td { vertical-align: top; }
-.invoice-items-grid input:not([type=hidden]),
-.invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
-.invoice-items-grid .row-actions [data-remove-item] { min-height: var(--control-h); }
-.invoice-items-grid [data-vat-col][hidden] { display: block !important; visibility: hidden; }
-.invoice-other-description-field { display: block; margin-top: var(--space-2); }
-.invoice-other-description-field > span { display: block; margin-bottom: var(--space-1); color: var(--ink-6); font-size: var(--size-12); font-weight: 600; }
-@container (max-width: 850px) {
-  .invoice-items-grid thead { display: none; }
-  .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); padding: var(--space-4); border-bottom: 1px solid var(--line); }
-  .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
-  .invoice-items-grid td { display: block; padding: 0; border: 0; }
-  .invoice-items-grid td:first-child,
-  .invoice-items-grid td.row-actions { grid-column: 1 / -1; }
-  .invoice-items-grid td.row-actions { text-align: left; }
-  .invoice-items-grid td.row-actions .ui-btn { margin: 0; }
-  .invoice-items-grid td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--ink-6); font-size: var(--size-11); font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
-  .invoice-items-grid td:first-child::before,
-  .invoice-items-grid td.row-actions::before { display: none; }
-  .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
-}
-```
-
-   Grid track widths (`220px 84px ...`) are layout tracks the item JS relies on, not spacing; the S2 rule covers margin, padding, gap, border-radius and font-size only, so they pass. If `--control-h` does not exist in `App/app/static/tokens.css` or the 0125 token layer, use `48px` and note it in the report. Then, from `App/` (the five remaining `style=` attributes are on lines 61, 63, 94, 114 and 298 before the edit; the script removes all five):
+4. `invoice_form.html`, `invoice_stay_picker.html`, the items grid in `host2.css`:
 
 ```
 .venv/bin/python - <<'EOF'
 import pathlib, re
 p = pathlib.Path("app/templates/invoice_form.html"); s = p.read_text(encoding="utf-8")
-assert "<style>" not in s
-s = s.replace('<div class="action-group" style="align-items:flex-end">', '<div class="action-group ui-align-end">')
-s = s.replace('<div class="actions" style="margin-bottom:12px">', '<div class="ui-form-actions">')
-s = s.replace('<h2 style="margin-top:0">', '<h2>')
-assert 'style="' not in s, re.findall(r' style="[^"]*"', s)
+blocks = re.findall(r"\n    <style>.*?</style>", s, re.S); assert len(blocks) == 1 and "invoice-items-grid" in blocks[0], len(blocks)
+s = s.replace(blocks[0], "")
+SEC = 'class="ui-btn ui-btn-secondary"'
+CPT = 'class="ui-btn ui-btn-secondary ui-btn-compact"'
 PAIRS = [
- ('class="btn accent primary"', 'class="ui-btn ui-btn-primary"', 1),
- ('class="btn small ghost"', 'class="ui-btn ui-btn-quiet ui-btn-compact"', 1),
- ('class="btn small"', 'class="ui-btn ui-btn-secondary ui-btn-compact"', 3),
- ('class="btn-secondary"', 'class="ui-btn ui-btn-secondary"', 1),
- ('class="btn"', 'class="ui-btn ui-btn-secondary"', 2),
- ('class="banner err"', 'class="ui-banner ui-banner-attention"', 1),
- ('class="table-cards invoice-items-grid"', 'class="ui-table invoice-items-grid"', 1),
- ('class="field"', 'class="ui-field"', 13),
- ('class="actions"', 'class="ui-form-actions"', 2),
- ('class="panel invoice-supplier"', 'class="ui-section invoice-supplier"', 1),
- ('class="panel"', 'class="ui-section"', 3),
- ('class="small muted"', 'class="ui-sub"', 3),
- ('class="muted small"', 'class="ui-sub"', 1),
- ('class="warn-text small"', 'class="ui-sub warn-text"', 1),
- ('class="small"', 'class="ui-sub"', 2),
-]
-for old, new, n in PAIRS:
-    assert s.count(old) == n, (old, s.count(old)); s = s.replace(old, new)
-assert 'class="btn' not in s and s.count("ui-btn-primary") == 1
-p.write_text(s, encoding="utf-8"); print("ok")
-EOF
-```
-
-   Expected: `ok`. If `class="banner err"` count is 0, check `grep -n banner App/app/templates/invoice_form.html` and replace the actual banner class with `ui-banner ui-banner-attention`. Add to `host2.css`: `.ui-align-end { align-items: flex-end; }` under the `/* 0141 */` comment. Compile check as in step 1 for `invoice_form.html`.
-
-5. `invoice_stay_picker.html`: replace Anchor G with:
-
-```
-{% extends "host_page.html" %}
+ ("""{% extends "base.html" %}
+{% set nav = 'invoices' %}
+{% block title %}{{ t('invoice.new') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, field_label, help_tip with context %}
+{{ page_header(t('invoice.new'), t('invoices.lede'), '/invoices', t('nav.invoices')) }}
+""", """{% extends "host_page.html" %}
 {% set nav = 'invoices' %}
 {% set body_kind = 'form' %}
+{% from "_components.html" import field_label, help_tip with context %}
 {% block title %}{{ t('invoice.new') }}{% endblock %}
-{% block page_title %}{{ t('invoice.new') }}{% endblock %}
+{% block meta %}{{ t('invoices.lede') }}{% endblock %}
+{% block back_url %}/invoices{% endblock %}
+{% block back_label %}{{ t('nav.invoices') }}{% endblock %}
+{% block body %}
+""", 1),
+ ('<div class="banner err">', '<div class="ui-banner ui-banner-attention">', 1),
+ ('<div class="panel invoice-supplier">', '<div class="ui-section invoice-supplier">', 1),
+ ('<div class="field invoice-supplier-picker">', '<div class="ui-field invoice-supplier-picker">', 1),
+ ('class="btn small ghost"', 'class="ui-btn ui-btn-quiet ui-btn-compact"', 1),
+ ('<div class="panel">', '<div class="ui-section">', 3),
+ ('<h2 style="margin-top:0">', '<h2>', 3),
+ ('<div class="actions" style="margin-bottom:12px">', '<div class="ui-btn-group">', 1),
+ ('class="btn-secondary"', SEC, 1),
+ ('<div class="action-group" style="align-items:flex-end">', '<div class="ui-btn-group">', 1),
+ ('class="btn"', SEC, 2),
+ ('class="table-cards invoice-items-grid"', 'class="invoice-items-grid"', 1),
+ ('class="btn small"', CPT, 3),
+ ('<div class="actions">', '<div class="ui-btn-group">', 1),
+ ('<div class="field invoice-paid-duzp-clone" hidden>', '<div class="ui-field invoice-paid-duzp-clone" hidden>', 1),
+ ('<div class="field">', '<div class="ui-field">', 13),
+ ('<p class="warn-text small"', '<p class="ui-sub warn-text"', 1),
+ ('class="btn accent primary"', 'class="ui-btn ui-btn-primary"', 1),
+]
+for old, new, n in PAIRS:
+    assert s.count(old) == n, (old[:70], s.count(old)); s = s.replace(old, new)
+for f in ('<style', 'style="', 'class="btn', 'class="panel', 'class="actions', 'class="field"', 'class="field ', 'page_header'):
+    assert f not in s, f
+assert s.count("ui-btn-primary") == 1
+p.write_text(s, encoding="utf-8")
+
+p = pathlib.Path("app/templates/invoice_stay_picker.html"); s = p.read_text(encoding="utf-8")
+for old, new in [
+ ("""{% extends "base.html" %}
+{% set nav = 'invoices' %}
+{% block title %}{{ t('invoice.new') }}{% endblock %}
+{% block content %}
+{% from "_components.html" import page_header, field_label with context %}
+{{ page_header(t('invoice.new'), t('invoice.picker.lede'), '/invoices', t('nav.invoices')) }}
+""", """{% extends "host_page.html" %}
+{% set nav = 'invoices' %}
+{% set body_kind = 'form' %}
+{% from "_components.html" import field_label with context %}
+{% block title %}{{ t('invoice.new') }}{% endblock %}
 {% block meta %}{{ t('invoice.picker.lede') }}{% endblock %}
 {% block back_url %}/invoices{% endblock %}
 {% block back_label %}{{ t('nav.invoices') }}{% endblock %}
 {% block body %}
-{% from "_components.html" import field_label with context %}
+"""),
+ ('<div class="panel">', '<div class="ui-section">'),
+ ('<div class="field">', '<div class="ui-field">'),
+ ('<div class="actions">', '<div class="ui-btn-group">'),
+ ('class="btn accent primary"', 'class="ui-btn ui-btn-primary"'),
+ ('<p class="small muted">', '<p class="ui-sub">'),
+]:
+    assert s.count(old) == 1, (old[:60], s.count(old)); s = s.replace(old, new)
+for f in ('style="', 'class="btn', 'class="panel', 'class="actions', 'class="field', 'page_header'):
+    assert f not in s, f
+p.write_text(s, encoding="utf-8")
+
+# host2.css: the items grid rules, in tokens (track widths are layout the item JS relies on, not spacing)
+p = pathlib.Path("app/static/host2.css"); s = p.read_text(encoding="utf-8")
+assert "0141 invoice items grid" not in s
+s = s.rstrip("\n") + """
+
+/* 0141 invoice items grid (moved from invoice_form.html) */
+#item-rows.invoice-items-grid { display: block; width: 100%; table-layout: fixed; container-type: inline-size; }
+.invoice-items-grid thead, .invoice-items-grid tbody { display: block; width: 100%; }
+.invoice-items-grid thead tr, .invoice-items-grid tbody tr { display: grid; grid-template-columns: minmax(220px, 1fr) 84px 124px 148px 78px 126px; align-items: start; }
+.invoice-items-grid thead tr { align-items: stretch; background: var(--surface-2); }
+.invoice-items-grid thead th { display: flex; align-items: center; background: transparent; }
+.invoice-items-grid th, .invoice-items-grid td { box-sizing: border-box; min-width: 0; }
+.invoice-items-grid td { vertical-align: top; }
+.invoice-items-grid input:not([type=hidden]), .invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
+.invoice-items-grid .row-actions [data-remove-item] { min-height: var(--control-h); }
+.invoice-items-grid [data-vat-col][hidden] { display: block !important; visibility: hidden; }
+.invoice-other-description-field { display: block; margin-top: var(--space-2); }
+.invoice-other-description-field > span { display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-12); font-weight: 600; }
+@container (max-width: 850px) {
+  .invoice-items-grid thead { display: none; }
+  .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); padding: var(--space-4); border-bottom: 1px solid var(--line); }
+  .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
+  .invoice-items-grid td { display: block; padding: 0; border: 0; }
+  .invoice-items-grid td:first-child, .invoice-items-grid td.row-actions { grid-column: 1 / -1; }
+  .invoice-items-grid td.row-actions { text-align: left; }
+  .invoice-items-grid td.row-actions .ui-btn { margin: 0; }
+  .invoice-items-grid td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-11); font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
+  .invoice-items-grid td:first-child::before, .invoice-items-grid td.row-actions::before { display: none; }
+  .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
+}
+"""
+p.write_text(s, encoding="utf-8")
+print("ok")
+EOF
 ```
 
-   Replacements (each count 1): `class="btn accent primary"` → `class="ui-btn ui-btn-primary"`, `class="panel"` → `class="ui-section"`, `class="field"` → `class="ui-field"`, `class="actions"` → `class="ui-form-actions"`, `class="small muted"` → `class="ui-sub"`. Command: `grep -c 'class="btn\|class="panel"\|class="field"' App/app/templates/invoice_stay_picker.html`. Expected: `0`.
+   Expected: `ok`. Then `.venv/bin/python -c "from app.templating import templates; templates.env.get_template('invoice_form.html'); templates.env.get_template('invoice_stay_picker.html'); print('compiled')"`. Expected: `compiled`. Commit `0141 step 4`.
 
-6. Catalog: add the four page templates (`invoices.html`, `invoice_detail.html`, `invoice_form.html`, `invoice_stay_picker.html`, with the `App/app/templates/` prefix) to `enforced_templates`; `_list_filter.html` stays unenforced (it still carries the month picker's legacy classes). For each enforced template run `python3 scripts/design_lint.py 2>&1 | grep <name> | sed 's/.*catalog: //' | sort -u | tr '\n' ' '` and put the tokens into that template's `legacy` list. Command: `python3 scripts/design_lint.py`. Expected: OK (S1/S2 pass on host2.css, so no raw colour or bare px slipped into step 4).
+5. Catalog:
 
-7. Tests. `App/tests/test_invoice_ux.py` line 128: `'class="btn ghost list-filter-reset" href="/invoices"'` → `'class="ui-btn ui-btn-quiet list-filter-reset" href="/invoices"'`. `App/tests/test_host_invoice_items_browser.py` line 236: `.page-header` → `.ui-ph`. `App/tests/test_host_invoice_navigation.py` line 157: `.page-actions a, .stay-command-actions a` → `.ui-ph-acts a, .stay-command-actions a`. Create `App/tests/test_design_invoices.py`:
+```
+.venv/bin/python - <<'EOF'
+import json, pathlib
+p = pathlib.Path("../docs/design/catalog.json"); s = p.read_text(encoding="utf-8")
+LEGACY = {
+ "invoices.html": ["col-name", "lc-invoices", "list-cards", "nowrap", "row-actions"],
+ "invoice_detail.html": ["col-name", "danger-zone", "detail-hero", "detail-metric", "eyebrow", "invoice-cancel-reason", "invoice-document", "invoice-workspace", "metric-label", "metric-value", "panel", "scroll-x", "small-value", "stay-command-actions", "stay-command-main", "stay-command-note", "stay-command-panel", "stay-metrics"],
+ "invoice_form.html": ["alert", "banner-list", "checkline", "col-name", "field-label-row", "grid", "hint", "input-kind", "input-price", "input-qty", "input-unit", "input-vat", "invoice-actions", "invoice-buyer-grid", "invoice-document", "invoice-form", "invoice-items-grid", "invoice-items-heading", "invoice-more", "invoice-more-body", "invoice-other-description-field", "invoice-paid-choice", "invoice-paid-duzp-clone", "invoice-paid-grid", "invoice-stay-context", "invoice-supplier", "invoice-supplier-meta", "invoice-supplier-name", "invoice-supplier-picker", "invoice-supplier-row", "invoice-total", "invoice-total-label", "invoice-total-value", "invoice-workspace", "medium", "muted", "opt", "row-actions", "short", "skeleton", "skeleton-line", "small", "warn-text"],
+ "invoice_stay_picker.html": [],
+ "_list_filter.html": ["filter-apply", "filter-fields", "filter-panel-actions", "filters", "host-filter-panel", "is-empty", "list-filter", "list-filter-count", "list-filter-period", "list-filter-reset", "list-filter-search", "month-all-dates", "month-choice", "month-control", "month-control-face", "month-grid", "month-grid-panel", "month-row", "month-step", "month-trigger", "month-year-row", "selected", "year-step"],
+}
+old = '"App/app/templates/entities.html"],\n  "legacy": {\n'
+assert s.count(old) == 1, s.count(old)
+new = ('"App/app/templates/entities.html", ' + ", ".join(f'"App/app/templates/{n}"' for n in LEGACY) + '],\n  "legacy": {\n'
+       + "".join(f'    "App/app/templates/{n}": {json.dumps(t)},\n' for n, t in LEGACY.items()))
+s = s.replace(old, new); json.loads(s); p.write_text(s, encoding="utf-8"); print("ok")
+EOF
+```
 
-```python
-"""0141: invoice pages render on host_page with one primary and no inline styles."""
+   Expected: `ok`. Then `cd .. && python3 scripts/design_lint.py && cd App`. Expected: `design lint: OK`. Commit `0141 step 5`.
+
+6. Tests:
+
+```
+.venv/bin/python - <<'EOF'
+import pathlib
+def patch(path, pairs):
+    p = pathlib.Path(path); s = p.read_text(encoding="utf-8")
+    for old, new in pairs:
+        assert s.count(old) == 1, (path, old[:70], s.count(old)); s = s.replace(old, new)
+    p.write_text(s, encoding="utf-8")
+# tests that read the old markup move to v2 and keep their assertion
+patch("tests/test_invoice_ux.py", [
+ ("""    assert 'class="btn ghost list-filter-reset" href="/invoices"' in august.text""",
+  """    assert 'class="ui-btn ui-btn-quiet list-filter-reset" href="/invoices"' in august.text"""),
+])
+patch("tests/test_invoice_workspace.py", [
+ ("""    assert page.count("btn accent primary") == 1  # Issue invoice""",
+  """    assert page.count('class="ui-btn ui-btn-primary"') == 1  # Issue invoice"""),
+])
+patch("tests/test_host_invoice_items_browser.py", [
+ ("""            heading = page.locator(".page-header").bounding_box()""", """            heading = page.locator(".ui-ph").bounding_box()"""),
+])
+patch("tests/test_host_invoice_navigation.py", [
+ ("""                        for link in page.locator(".page-actions a, .stay-command-actions a").all():""",
+  """                        for link in page.locator(".ui-ph-acts a, .stay-command-actions a").all():"""),
+])
+# v2 controls: 40 px at 1024 and above, 44 below (MASTER 4); the month stepper follows host2.css now
+patch("tests/test_host_geometry.py", [
+ ("""        expected_height = 44 if width <= 600 else 42""", """        expected_height = 44 if width < 1024 else 40"""),
+ ("""                    table: edges('.panel, table'),""", """                    table: edges('.panel, table, .ui-empty'),"""),
+])
+patch("tests/test_invoice_stay_browser.py", [
+ ('        page.click(".invoice-actions button.accent.primary")', '        page.click(".invoice-actions button.ui-btn-primary")'),
+])
+patch("tests/test_host_wide_geometry_browser.py", [
+ ('    "invoices": ("/invoices", ".panel.tight.scroll-x, .panel.empty"),', '    "invoices": ("/invoices", ".lc-invoices, .ui-empty"),'),
+ ('    "invoice-new-picker": ("/invoices/new", ".panel"),', '    "invoice-new-picker": ("/invoices/new", ".ui-section"),'),
+])
+pathlib.Path("tests/test_design_invoices.py").write_text('''"""0141: invoice list, detail, builder and picker render on host_page."""
 from __future__ import annotations
+
+from pathlib import Path
 
 from tests.test_signed_in_chrome import host_with_property  # noqa: F401
 
-TEMPLATES = ("invoices.html", "invoice_detail.html", "invoice_form.html", "invoice_stay_picker.html")
+TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
 
 
-def test_invoice_list_has_the_v2_list_shell(host_with_property):
+def test_invoice_list_has_the_v2_header_tabs_and_toolbar(host_with_property):
     page = host_with_property.get("/invoices?lang=en").text
     assert page.count("<h1") == 1 and 'data-body-kind="list"' in page
-    assert 'class="ui-toolbar"' in page and 'data-filter-summary' in page
-    assert page.count('class="ui-btn ui-btn-primary"') == 1
-    assert "list_toolbar" not in page and "page-header" not in page
+    assert 'class="ui-tabs" data-sub-tabs' in page and "data-list-toolbar" in page
+    assert 'class="page-header' not in page and 'class="sub-tabs' not in page
+    assert page.count('class="ui-btn ui-btn-primary"') == 1  # one coral: New invoice (header, or the empty state)
 
 
-def test_invoice_form_has_the_v2_form_shell(host_with_property):
+def test_invoice_picker_is_a_form_page(host_with_property):
     page = host_with_property.get("/invoices/new?lang=en").text
-    assert 'data-body-kind="form"' in page and "<style>" not in page
-    assert page.count('class="ui-btn ui-btn-primary"') == 1
+    assert page.count("<h1") == 1 and 'data-body-kind="form"' in page and "ui-ph-back" in page
 
 
-def test_templates_have_no_raw_style_or_legacy_control():
-    for name in TEMPLATES:
-        text = open(f"app/templates/{name}", encoding="utf-8").read()
-        assert 'style="' not in text and 'class="btn' not in text and "<style>" not in text, name
+def test_no_raw_style_or_legacy_control_in_the_invoice_templates():
+    for name in ("invoices.html", "invoice_detail.html", "invoice_form.html", "invoice_stay_picker.html", "_list_filter.html"):
+        text = (TEMPLATES / name).read_text(encoding="utf-8")
+        assert "<style" not in text and 'style="' not in text, name
+        assert 'class="btn' not in text and 'class="pill' not in text and "page_header(" not in text, name
+        assert text.count("ui-btn-primary") <= 1, name
+    for name in ("invoices.html", "invoice_detail.html"):
+        text = (TEMPLATES / name).read_text(encoding="utf-8")
+        # one DOM per list: the rows carry MASTER 7.3 roles instead of a second phone markup
+        assert 'data-card="primary"' in text, name
+''', encoding="utf-8")
+print("ok")
+EOF
 ```
 
-   If `/invoices/new` redirects to the stay picker for this fixture, change the second test's URL to the redirect target shown by `host_with_property.get("/invoices/new?lang=en", allow_redirects=False).headers.get("location")` and note it in the report. Command: `cd App && .venv/bin/python -m pytest tests/test_design_invoices.py tests/test_invoice*.py tests/test_host_invoice_navigation.py tests/test_design_lint.py -q --tb=short -x 2>&1 | tail -30`. Expected: passed.
+   Expected: `ok`. Then `.venv/bin/python -m pytest tests/test_design_invoices.py tests/test_invoice*.py tests/test_stay_fee_list.py tests/test_reporting_help_0097.py tests/test_design_lint.py -q --tb=short 2>&1 | tail -30`. Expected: all passed (`test_invoice_stay_browser.py` and `test_host_invoice_navigation.py` need the browser env of step 7 to run; a skip here is fine, step 7 runs them). Commit `0141 step 6`.
 
-8. Browser and screenshots: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-shots .venv/bin/python -m pytest tests/test_host_invoice_items_browser.py tests/test_host_filter_panels_browser.py tests/test_host_list_page_layout_browser.py -q --tb=short 2>&1 | tail -30`. Expected: passed, 0 skipped, except the five known pre-existing failures listed in the plan (test_host_invoice_items_browser at 360 px), which must fail with the same message as before this brief; quote it in the report. Attach `invoices-390.png`, `invoices-1280.png`, `invoice-form-390.png`, `invoice-form-1280.png`.
+7. Browser: `UBYHOST_REQUIRE_BROWSER=1 PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers .venv/bin/python -m pytest tests/test_host_geometry.py tests/test_invoice_stay_browser.py tests/test_host_invoice_navigation.py tests/test_host_invoice_items_browser.py tests/test_host_filter_panels_browser.py tests/test_host_list_cards_browser.py tests/test_host_list_page_layout_browser.py tests/test_host_wide_geometry_browser.py -q --tb=line 2>&1 | tail -30`. Expected: passed, 0 skipped, except the two known failures in section 2 (quote their messages; the items test must fail with the same 360 px message as before, nothing else).
+
+8. Screenshots: `UBYHOST_REQUIRE_BROWSER=1 PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers SHOT_TASK=0141 SHOT_PAGES="invoices invoice-form invoice-detail" .venv/bin/python -m pytest -p tests.conftest /tmp/claude-0/-home-user-jsfpecharoperations/3c6f1ec6-a025-553c-863a-9c0748d5832e/scratchpad/shoot_pages.py -q -s 2>&1 | tail -8`. The fixture seeds no invoice, so `invoice-detail` prints "nothing to show"; if it does, rerun with `SHOT_PAGES="invoices invoice-form"` and say so in the report. Check in `invoices-390.png` that the month filter toolbar and the empty state share the lane, and in `invoice-form-1280.png` that the stay picker is a boxed form. Then `git status --short | head -20`: the only changes must be the files in section 3. If a tracked evidence folder changed (for example `docs/tasks/0087-evidence/`), `git checkout -- <that folder>` before committing.
 
 9. Commit: `git add App/app/templates App/app/static/host2.css docs/design/catalog.json App/tests && git commit -m "0141 step 9: invoices and the shared month filter on host_page"`.
 
@@ -395,26 +462,26 @@ def test_templates_have_no_raw_style_or_legacy_control():
 ## 6. Commands
 
 - `python3 scripts/design_lint.py` expected: OK.
-- Step 7 and step 8 commands.
+- Step 6 and step 7 commands; only the known failures named in section 2.
 
 ## 7. Acceptance
 
-- [ ] Invoices list: header with one primary New invoice, section tabs, v2 toolbar with the month filter still working (opens, steps, applies), v2 table, v2 pagination.
-- [ ] Invoice detail: back link, buyer meta, one primary Download PDF, badges.
-- [ ] Invoice form: form shell, items grid works (add, remove, VAT column) at 1280 and 390, no `<style>` in the page.
-- [ ] Screenshots attached; lint OK with the four templates enforced.
+- [ ] Invoices list: header with one primary New invoice (or the empty state's), section tabs, v2 toolbar with the month filter still working (opens, steps, applies), v2 table with roles, v2 pagination.
+- [ ] Invoice detail: back link, buyer meta, one primary Download PDF, badges, items table with roles.
+- [ ] Invoice form: form shell, items grid works (add, remove, VAT column) at 1280 and 390, no `<style>` in the page; stay picker as a boxed form.
+- [ ] Screenshots attached; lint OK with the five templates enforced; month stepper 40 px at 1024 and above, 44 below.
 
 ## 8. Stop and ask
 
-Stop, and write the report, if: an excerpt is not found; a count differs; a test fails twice; you reach 25 tool calls or about 50k tokens (report as `blocked`); a file outside section 3 needs a change; section 5 would be touched; a step is unclear; you need push, merge, secrets, SSH or deploy.
+Stop, and write the report, if: a script prints an `AssertionError` instead of `ok`; a test not named as known-failing fails twice; you reach 25 tool calls or about 50k tokens (report as `blocked`); a file outside section 3 needs a change; section 5 would be touched; a step is unclear; you need push, merge, secrets, SSH or deploy.
 
 ## 9. Report
 
-Write `docs/tasks/0141-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, section 7 ticked, deviations, questions, owner steps left.
+Write `docs/tasks/0141-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, section 7 ticked, the known failures seen (one line each, with the message), deviations, questions, owner steps left.
 
 ## Risk list (for the reviewer)
 
-`App/app/templates/_list_filter.html` (shared with Stay fees; 0142 depends on this exact result), `App/app/static/host2.css` (items grid moved).
+`App/app/templates/_list_filter.html` (shared with Stay fees; 0142 depends on this exact result), `App/app/static/host2.css` (items grid moved, month picker heights), `App/tests/test_host_geometry.py` (42 to 40).
 
 ## Owner steps
 
