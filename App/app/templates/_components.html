@@ -189,7 +189,7 @@
   {% if controls.get('send_visible') %}
     <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline row-action-form">
       <input type="hidden" name="return_to" value="{{ return_to }}">
-      <button class="btn small row-action-send{% if controls.get('send_enabled') %} accent{% endif %}" type="submit"
+      <button class="ui-btn ui-btn-secondary ui-btn-compact row-action-send" type="submit"
               {% if not controls.get('send_enabled') %}disabled{% endif %}
               title="{{ t(controls.get('send_hint_key', '')) }}" aria-label="{{ t('send.this_stay') }}">{{ t('send.this_stay') if controls.get('send_enabled') else t('common.auto') }}</button>
     </form>
