@@ -23,7 +23,7 @@ def test_auth_uses_horizontal_and_stacked_lockups():
 
 
 def test_host_chrome_uses_mark_only_with_live_wordmark():
-    html = _read("base.html")
+    html = _read("base.html") + _read("_shell_sidebar.html")
     assert 'src="/static/ubyhost-mark.png?v=' in html
     assert "brand-word" in html and "UbyHost" in html
     # Horizontal/stacked lockups must not land in the sidebar.
