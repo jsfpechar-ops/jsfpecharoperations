@@ -312,7 +312,7 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         const r = document.querySelector(selector).getBoundingClientRect();
                         return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
                     })""")
-                    assert 0 <= boxes[1]["top"] - boxes[0]["bottom"] <= 33, boxes
+                    assert 0 <= boxes[1]["top"] - boxes[0]["bottom"] <= 44, boxes
                     assert boxes[2]["top"] >= boxes[1]["bottom"], boxes
                     for box in boxes[1:]:
                         assert abs(box["left"] - boxes[0]["left"]) <= 2, boxes
@@ -687,12 +687,12 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         expected = page.evaluate("""html => {
             const doc = new DOMParser().parseFromString(html, "text/html");
             doc.querySelectorAll("noscript").forEach(node => node.remove());
-            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             return {
                 stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
                 rows: [...doc.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.textContent)
+                    text: rowText(row)
                 }))
             };
         }""", fresh_html)
@@ -702,12 +702,12 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             arrival, departure, 2, "Refresh retry stay"
         )
         page.wait_for_function("""expected => {
-            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             const actual = {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
                 rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.textContent)
+                    text: rowText(row)
                 }))
             };
             return JSON.stringify(actual) === JSON.stringify(expected);

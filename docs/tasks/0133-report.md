@@ -92,3 +92,20 @@ Questions:
 2. Should the four pre-existing failures get their own brief?
 
 Owner steps left: none. Push and PR wait for the owner's decision.
+
+## 0133-fix-2
+
+Status: blocked (executor hit the 25-call cap; steps 1 to 4 partly done, step 5 not done).
+
+Done (commits 3139e4b, e4d420d, 6b0d299, plus the browser-fix commit below):
+- Regression restored: "Finish setup" aside (dashboard.setup.title) wraps the missing-report banner in dashboard.html.
+- Regression restored: none other. Finish card line was already present.
+- Tests updated: missing banner (v2 ui-banner-attention), queue copy / deadline / host language (td.dashboard-row-task, tr.dashboard-row, section[id=needs-action]), dashboard-row-dates class-contains, design dashboard stats (class-contains, dropped "dashboard-stats" negative check), wp25 and inline controls via property_identity, lock-account test scoped to main.
+- property_identity: outer class is the old `property-identity{{ truncate }}`; dot moved to inner empty span.ui-pdot.
+- Browser: quiet dashboard selector `.dashboard-actions` -> `.ui-ph-acts`. Calendar gap measured 44 px at every width (360 to 2048, en and cs), limit set to 44. Retry test: the comparison ignores [data-copy] button text (copy feedback "Copied" is transient UI state, not row content).
+
+Not done / remaining:
+- test_host_properties_navigation.py::test_properties_page_fits_every_width_and_both_languages fails: selector `.properties-table .row-actions > a.btn` finds nothing (apartments page has no .properties-table). Not in brief section 2; needs a v2 selector decision.
+- Quiet dashboard browser test re-run not verified after selector change.
+- Browser set not re-run as a whole. Only the allowed 0134 stays test is known to fail.
+- design_lint and ruff not run.

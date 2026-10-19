@@ -314,7 +314,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 assert page.get_by_text("No guest forms are currently outstanding.", exact=True).count() == 0
                 assert page.evaluate("() => document.documentElement.scrollWidth - innerWidth") <= 1
 
-                header_actions = page.locator(".dashboard-actions")
+                header_actions = page.locator(".ui-ph-acts")
                 assert header_actions.locator('a[href="/reservations?new=1"]').is_visible()
                 if width >= 1024:
                     assert header_actions.locator(
