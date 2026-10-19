@@ -209,7 +209,7 @@ Phone: a card 12 px radius, 1 px `--line`, padding 12 16, min 76 px; line 1 prim
 
 ### 7.4 Table: `table(columns, rows)`
 
-Only inside list kind at 1024+. Header 13/500 `--ink-3`, 40 px, hairline under; rows 48 px, hairline between, no zebra; max 6 columns, column 1 grows; `scroll-x` only when a page add-on declares more than 6 columns with a reason. Below 1024 the same macro renders `row` cards.
+Only inside list kind at 1024+. Header 13/500 `--ink-3`, 40 px, hairline under; rows 48 px, hairline between, no zebra; max 6 columns, column 1 grows; `scroll-x` only when a page add-on declares more than 6 columns with a reason. Below 1024 the same `<tr>` restyles as the `row` card (CSS only, one DOM): a page never renders its rows twice, because duplicate rows duplicate ids, hooks and copy targets.
 
 ### 7.5 Status badge: `badge(kind, label, overdue=false)`
 
