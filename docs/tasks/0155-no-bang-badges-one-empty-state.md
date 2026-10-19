@@ -1,6 +1,6 @@
 # 0155: Overdue badges without "!", one compact empty state on the dashboard
 
-Status: todo
+Status: done
 Depends on: 0154 | Base commit: 6c51d3f | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -112,6 +112,10 @@ def test_needs_action_section_is_guarded_by_rows():
 ## 5. Do not touch
 
 Badge kinds and colours, routes, copy keys; other briefs' files in docs/tasks; hard rules 1, 3, 8.
+
+## 6. Commands
+
+Steps 1 to 6 as written.
 
 ## 7. Acceptance
 

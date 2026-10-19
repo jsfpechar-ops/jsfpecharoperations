@@ -1,6 +1,6 @@
 # 0154: Save buttons visible on phone, host alerts as one quiet list
 
-Status: todo
+Status: done
 Depends on: 0153 | Base commit: c340b7f | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

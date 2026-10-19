@@ -1,10 +1,10 @@
 # 0143: Cleaning pages (host side) on the v2 template
 
 Status: todo
-Depends on: 0142 | Base commit: df8b842 | Branch: claude/project-thread-td6fpc
+Depends on: 0142 | Base commit: c340b7f | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
-Part of [design-v2](../plans/design-v2.md). Commit each step as `0143 step k`. Never push, never open a PR. Page file: `docs/design/pages/cleaning.md`.
+Part of [design-v2](../plans/design-v2.md). One commit at the end (step 9). Never push, never open a PR. Page file: `docs/design/pages/cleaning.md`.
 
 ## 1. Objective
 
@@ -12,7 +12,7 @@ Move the five host cleaning pages (`cleaning.html`, `cleaning_edit.html`, `clean
 
 ## 2. Context
 
-Rules: MASTER 5 (list, form kinds), 4 (one primary), 7.2. `cleaning.js` keys on `data-cleaning-labels`, `[data-calendar-add]`, `data-cal-create-type`, `.cleaning-card` and ids; `app.js` keys on `data-confirm`; neither keys on `.btn` or `.field`. The cleaning route already passes `nav: "cleaning"` and `ct` (the cleaning translator) in the context, so the templates do not set `nav`. Tests (`test_cleaning_browser.py`) select `.cleaning-card`, `.cleaning-pin`, `.cleaning-date-group h3` and the sidebar link; none selects `.btn` or the heading block.
+Rules: MASTER 5 (list, form kinds), 4 (one primary), 7.2. `cleaning.js` keys on `data-cleaning-labels`, `[data-calendar-add]`, `data-cal-create-type`, `.cleaning-card` and ids; `app.js` keys on `data-confirm`; neither keys on `.btn` or `.field`. The cleaning route already passes `nav: "cleaning"` and `ct` (the cleaning translator) in the context, so the templates do not set `nav`. Tests (`test_cleaning.py`, `test_cleaning_browser.py`) select `.cleaning-card`, `.cleaning-pin`, `.cleaning-date-group h3` and the sidebar link; none selects `.btn` or the heading block.
 
 Anchor A, `App/app/templates/cleaning.html` lines 1 to 9 (verbatim):
 
@@ -69,7 +69,9 @@ Anchor E, `App/app/templates/cleaning_shares.html` lines 1 to 5 (verbatim):
 <div class="cleaning-page cleaning-form-page"><a href="/cleaning">{{ ct('back') }}</a><h1>{{ ct('share') }}</h1><p>{{ ct('share_intro') }}</p>
 ```
 
-Anchor F, `App/app/templates/base.html`, one line (added by 0128): `  <link rel="stylesheet" href="/static/host2.css?v=20261019-v2a">`.
+Anchor F, `App/app/templates/base.html`: the one line containing `href="/static/host2.css?v=`. Earlier briefs (0138 to 0142) may bump its `?v=` key, so step 1 finds the line by that prefix, not by the full line. At c340b7f it reads `  <link rel="stylesheet" href="/static/host2.css?v=20261019-v2a">` (inside the `{% if show_nav | default(true) %}` group).
+
+Anchors A to E were re-checked verbatim at c340b7f, after cleaning management (PR #396) merged; no earlier brief touches these seven cleaning templates. `_dashboard_calendar.html` (included by `_cleaning_screen.html`) and `base.html` still carry old `class="btn` buttons; they are out of scope, so the new test checks the page header and the cleaning templates, not the whole page.
 
 ## 3. Files
 
@@ -85,19 +87,32 @@ Anchor F, `App/app/templates/base.html`, one line (added by 0128): `  <link rel=
 | `App/app/templates/base.html` | edit | conditional `cleaning.css` link |
 | `docs/design/catalog.json` | edit | enforce the five pages; legacy lists |
 | `App/tests/test_design_cleaning.py` | create | shells, stylesheet once, one primary |
+| `App/tests/static_versions.json` | regenerate | newest `cleaning.css` key becomes `20261019-0143` (step 8) |
+
+Existing tests on this markup, which must pass unchanged (checked at c340b7f with every edit below applied): `App/tests/test_cleaning.py`, `App/tests/test_cleaning_browser.py`.
 
 No other file may change. `cleaning_shared.html`, `cleaning.css`, `cleaning.js` stay as they are.
 
 ## 4. Steps
 
-1. `base.html`: replace Anchor F with:
+1. `base.html`: add the conditional `cleaning.css` link on its own line directly above Anchor F. From `App/`:
 
 ```
-  {% if nav | default('') == 'cleaning' %}<link rel="stylesheet" href="/static/cleaning.css?v=20261019-v2a">{% endif %}
-  <link rel="stylesheet" href="/static/host2.css?v=20261019-v2a">
+.venv/bin/python - <<'PY'
+import pathlib
+p = pathlib.Path("app/templates/base.html"); s = p.read_text(encoding="utf-8")
+assert "cleaning.css" not in s, "cleaning.css already in base.html"
+lines = s.split("\n")
+hits = [i for i, l in enumerate(lines) if 'href="/static/host2.css?v=' in l]
+assert len(hits) == 1, hits
+lines.insert(hits[0], "  {% if nav | default('') == 'cleaning' %}<link rel=\"stylesheet\" href=\"/static/cleaning.css?v=20261019-0143\">{% endif %}")
+p.write_text("\n".join(lines), encoding="utf-8")
+print("ok")
+PY
+grep -c 'cleaning.css' app/templates/base.html
 ```
 
-   `host2.css` stays last so its control rules win over `cleaning.css` where both match. Command: `grep -c 'cleaning.css' App/app/templates/base.html`. Expected: `1`.
+   Expected: `ok`, then `1`. `host2.css` stays after it so its control rules win over `cleaning.css` where both match.
 
 2. `cleaning.html`: replace Anchor A with:
 
@@ -194,7 +209,32 @@ EOF
 
    Expected: `ok`. `cleaning_edit.html` and `cleaning_settings.html` have `class="field"` on one line with other attributes; the substring match still finds them.
 
-4. Catalog: add the five page templates to `enforced_templates` (the two partials stay unenforced: `_cleaning_screen.html` carries the `<script data-cleaning-labels>` and `<script src="/static/cleaning.js">` tags, which rule T1 forbids in pages). For each page run `python3 scripts/design_lint.py 2>&1 | grep <name> | sed 's/.*catalog: //' | sort -u | tr '\n' ' '` and put the tokens into its `legacy` list (the `cleaning-*` classes). Command: `python3 scripts/design_lint.py`. Expected: OK.
+
+4. Catalog: enforce the five page templates and give each its `legacy` list (the two partials stay unenforced: `_cleaning_screen.html` carries the `<script data-cleaning-labels>` and `<script src="/static/cleaning.js">` tags, which rule T1 forbids). Edit by name with this script, from the repo root (the lists were computed from the templates after step 3):
+
+```
+python3 - <<'PY'
+import json, pathlib
+p = pathlib.Path("docs/design/catalog.json"); c = json.loads(p.read_text(encoding="utf-8"))
+T = "App/app/templates/"
+LEGACY = {
+ "cleaning.html": ["cleaning-page"],
+ "cleaning_edit.html": ["cleaning-actions", "cleaning-form", "cleaning-form-page", "cleaning-page", "cleaning-panel", "cleaning-remove", "cleaning-timing-summary", "cleaning-warning"],
+ "cleaning_properties.html": ["cleaning-page", "cleaning-panel", "cleaning-property-links"],
+ "cleaning_settings.html": ["cleaning-form", "cleaning-form-page", "cleaning-page", "cleaning-panel", "cleaning-pin", "cleaning-remove", "cleaning-timing-summary", "cleaning-warning"],
+ "cleaning_shares.html": ["cleaning-form", "cleaning-form-page", "cleaning-page", "cleaning-panel", "cleaning-share-option", "cleaning-share-row", "cleaning-share-url", "cleaning-warning"],
+}
+for name, tokens in LEGACY.items():
+    if T + name not in c["enforced_templates"]:
+        c["enforced_templates"].append(T + name)
+    c["legacy"][T + name] = tokens
+p.write_text(json.dumps(c, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+print("ok")
+PY
+python3 scripts/design_lint.py 2>&1 | tail -5
+```
+
+   Expected: `ok`, then `design lint: OK`. (The dump reflows the file's hand wrapping; that is expected.) If the lint names a `cleaning-*` token for one of these five files, add it to that file's list and rerun; anything else: stop.
 
 5. Create `App/tests/test_design_cleaning.py`:
 
@@ -202,35 +242,57 @@ EOF
 """0143: host cleaning pages render on host_page; cleaning.css loads once from base."""
 from __future__ import annotations
 
+from pathlib import Path
+
 from tests.test_signed_in_chrome import host_with_property  # noqa: F401
 
-PAGES = ("/cleaning", "/cleaning/new", "/cleaning/properties", "/cleaning/shares")
+TEMPLATES = Path(__file__).resolve().parent.parent / "app" / "templates"
+# path -> ui-btn-primary count inside the page (properties is a plain link list)
+PAGES = {"/cleaning": 1, "/cleaning/new": 1, "/cleaning/properties": 0, "/cleaning/shares": 1}
+HOST_TEMPLATES = ("cleaning.html", "cleaning_edit.html", "cleaning_properties.html", "cleaning_settings.html",
+                  "cleaning_shares.html", "_cleaning_list.html", "_cleaning_screen.html")
 
 
 def test_cleaning_pages_have_the_v2_shell_and_one_stylesheet(host_with_property):
-    for path in PAGES:
-        page = host_with_property.get(f"{path}?lang=en").text
+    for path, primaries in PAGES.items():
+        response = host_with_property.get(f"{path}?lang=en")
+        assert response.status_code == 200, path
+        page = response.text
         assert page.count("<h1") == 1, path
         assert page.count("/static/cleaning.css") == 1, path
         assert page.index("/static/cleaning.css") < page.index("/static/host2.css"), path
-        assert page.count('class="ui-btn ui-btn-primary"') == 1, path
-        assert "cleaning-page-heading" not in page and 'class="btn' not in page, path
+        header = page[page.index('<header class="ui-ph"'):]
+        header = header[: header.index("</header>")]
+        assert 'class="btn' not in header and "cleaning-page-heading" not in page, path
+        lane = page[page.index('<div class="ui-page"'): page.index("</main>")]
+        assert lane.count("ui-btn-primary") == primaries, path
+
+
+def test_host_cleaning_templates_use_only_v2_buttons_and_no_own_stylesheet():
+    for name in HOST_TEMPLATES:
+        text = (TEMPLATES / name).read_text(encoding="utf-8")
+        assert 'class="btn' not in text and 'class="field"' not in text and "<link" not in text, name
 
 
 def test_other_host_pages_do_not_load_cleaning_css(host_with_property):
     assert "/static/cleaning.css" not in host_with_property.get("/reservations?lang=en").text
 
 
-def test_shared_cleaner_page_template_is_untouched():
-    text = open("app/templates/cleaning_shared.html", encoding="utf-8").read()
-    assert 'href="/static/cleaning.css' in text
+def test_shared_cleaner_page_template_keeps_its_own_stylesheet():
+    text = (TEMPLATES / "cleaning_shared.html").read_text(encoding="utf-8")
+    assert 'href="/static/cleaning.css?v=20261016-0123b-0106b"' in text
+    assert 'class="cleaning-page-heading"' in text
 ```
 
-   If the shared template links its stylesheet with another attribute order, adjust the last assertion to the exact substring and say so in the report. Command: `cd App && .venv/bin/python -m pytest tests/test_design_cleaning.py tests/test_cleaning*.py tests/test_design_lint.py -q --tb=short -x 2>&1 | tail -30`. Expected: passed.
+   Command: none (step 6 runs it).
 
-6. Browser and screenshots: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-shots .venv/bin/python -m pytest tests/test_cleaning_browser.py -q --tb=short 2>&1 | tail -30`. Expected: passed, 0 skipped. Attach `cleaning-390.png`, `cleaning-1280.png`, `cleaning-edit-390.png`.
+6. Unit tests, from `App/`: `.venv/bin/python -m pytest tests/test_design_cleaning.py tests/test_cleaning.py tests/test_design_lint.py tests/test_design_page_template.py -q --tb=short -x 2>&1 | tail -30`. Expected: passed (about 50).
 
-7. Commit: `git add App/app/templates docs/design/catalog.json App/tests && git commit -m "0143 step 7: host cleaning pages on host_page, cleaning.css from base"`.
+7. Browser, from `App/`: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium .venv/bin/python -m pytest tests/test_cleaning_browser.py tests/test_shell_lane_browser.py -q --tb=short -rs 2>&1 | tail -30`. Expected: `25 passed`, 0 skipped (about one minute; run it with a 10-minute timeout). Without `UBYHOST_BROWSER_EXECUTABLE` Playwright looks for a headless shell that is not installed and every test errors. No screenshots: the orchestrator takes them after review.
+
+8. Static version manifest (no static file changes, but the newest `cleaning.css` key changes from `20261016a-0106b` to `20261019-0143`), from `App/`: `.venv/bin/python tests/test_static_versions.py --write && .venv/bin/python -m pytest tests/test_static_versions.py -q 2>&1 | tail -5`. Expected: `wrote ...`, then `2 passed`.
+
+9. Commit: `git add App/app/templates docs/design/catalog.json App/tests && git commit -m "0143: host cleaning pages on host_page, cleaning.css from base"`. Then `git diff --stat HEAD~1 | tail -15`: only section 3 files.
 
 ## 5. Do not touch
 
@@ -239,14 +301,15 @@ def test_shared_cleaner_page_template_is_untouched():
 ## 6. Commands
 
 - `python3 scripts/design_lint.py` expected: OK.
-- Step 5 and step 6 commands, 0 skipped.
+- Step 6, 7 and 8 commands; step 7 with 0 skipped.
 
 ## 7. Acceptance
 
 - [ ] Cleaning list: v2 header, one primary Add cleaning (still opens the calendar quick-create), three secondaries, calendar and cards unchanged.
 - [ ] Edit, properties, property settings, shares: back link, title, v2 buttons and fields.
-- [ ] The shared cleaner page looks exactly as before (open one share link at 390 px: `cleaning-shared-390.png`).
-- [ ] Screenshots attached; lint OK with the five templates enforced.
+- [ ] `cleaning_shared.html` is not in `git diff --stat`.
+- [ ] Lint OK with the five templates enforced; step 7 passed with 0 skipped.
+- No screenshots from the executor: the orchestrator takes them after review.
 
 ## 8. Stop and ask
 

@@ -25,3 +25,9 @@ Master version: 2.0.0. Adds only.
 
 ## Tests
 - `test_host_fit_browser.py`, `test_host_geometry.py`; screenshots 390 and 1280 of list and form plus list and form skeletons
+
+## Smart locks (`/smart-locks`, `smart_locks.html`, brief 0145)
+- nav: `smart_locks`; body_kind: `list` (same lane as the other Properties tabs); title `smart_locks.title`; meta `smart_locks.lede`
+- tabs: the Properties tabs above, Smart locks current
+- one primary per state: Connect (no account), Check connection in the share block (no locks), Check connection under the list (locks); the "add more" share block's Check is `secondary`
+- sections (`ui-section`): How it works, Setup, Share, Add more (details), Lock list; Remove is `danger` with the existing confirm
