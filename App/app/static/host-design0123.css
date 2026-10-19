@@ -35,24 +35,7 @@ body.host-workspace .table-cards thead th { color:#62625d; font-size:12px; font-
 body.host-workspace .table-cards tbody tr { border-bottom:1px solid #e6e4e0; }
 body.host-workspace .table-cards tbody tr:hover { background:#faf9f7; }
 body.host-workspace .table-cards td { padding-top:15px; padding-bottom:15px; vertical-align:middle; }
-body.host-workspace .stays-view td { padding-top:0; padding-bottom:0; }
 body.host-workspace .row-primary-link, body.host-workspace .stay-identity-link { color:#20201e; font-size:15px; font-weight:700; text-decoration:none; }
-body.host-workspace .stays-view { border:0; padding:0; overflow:visible; }
-body.host-workspace .stays-view table { width:100%; }
-@container stays-list (min-width:900px) {
-  body.host-workspace .stays-view table {
-    display:grid;
-    grid-template-columns:minmax(110px,1.05fr) minmax(135px,1.3fr) minmax(100px,1fr) minmax(58px,.5fr) minmax(150px,1.4fr) minmax(155px,1.4fr);
-    column-gap:8px;
-  }
-  body.host-workspace .stays-view thead,
-  body.host-workspace .stays-view tbody { display:grid; grid-column:1 / -1; grid-template-columns:subgrid; }
-  body.host-workspace .stays-view tr { display:grid; grid-column:1 / -1; grid-template-columns:subgrid; column-gap:8px; padding-left:10px; padding-right:10px; }
-}
-body.host-workspace .stay-report-deadline { margin-top:6px; }
-body.host-workspace .stay-col-source { margin-top:5px; }
-body.host-workspace .stay-col-actions .row-action-pair { display:flex; align-items:center; justify-content:flex-end; gap:6px; }
-body.host-workspace .stay-col-actions .row-menu-trigger { min-width:42px; min-height:42px; }
 body.host-workspace .dashboard-stats { display:flex; flex-wrap:wrap; gap:8px; margin:0 auto 12px; }
 body.host-workspace .dashboard-stats .dashboard-stat { --stat-color:var(--ink-muted); display:inline-flex; align-items:center; gap:8px; width:auto; min-height:36px; padding:6px 12px; border:1px solid #e6e4e0; border-radius:99px; box-shadow:none; background:#fff; color:#20201e; }
 body.host-workspace .dashboard-stats .dashboard-stat.action.is-positive { --stat-color:var(--status-action-border); }
@@ -121,13 +104,6 @@ body.host-workspace .row-menu-panel, body.host-workspace dialog, body.host-works
   body.host-workspace .dashboard-row-actions { grid-template-columns:44px; justify-content:end; }
   body.host-workspace .dashboard-row-actions .row-menu { width:44px; }
   body.host-workspace .dashboard-row-actions .row-menu-trigger { width:44px; min-width:44px; height:44px; min-height:44px; }
-  body.host-workspace .stays-view table, body.host-workspace .stays-view tbody, body.host-workspace .stays-view tr, body.host-workspace .stays-view td { display:block; width:100%; }
-  body.host-workspace .stays-view thead { display:none; }
-  body.host-workspace .stays-view tbody tr { padding:12px 0; }
-  body.host-workspace .stays-view td { padding:7px 0; }
-  body.host-workspace .stays-view td::before { content:attr(data-label); display:block; margin-bottom:2px; color:#62625d; font-size:12px; font-weight:650; }
-  body.host-workspace .stays-view .stay-col-actions::before { content:none; }
-  body.host-workspace .stay-col-actions .row-action-pair { justify-content:flex-start; }
 }
 @media (max-width:380px) {
   body.host-workspace .dashboard-row-actions { grid-template-columns:44px; }
