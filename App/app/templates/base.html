@@ -197,6 +197,7 @@
   {#- 0099: section tabs render under each page's title row (page_header,
       list_page_header in _components.html), not above it. -#}
   {% block content %}{% endblock %}
+  {% block page_skeleton %}
   <div class="page-skeleton" data-page-skeleton role="status" hidden>
     <span class="sr-only">{{ t('a11y.loading') }}</span>
     <div class="c05-skel" aria-hidden="true">
@@ -212,6 +213,7 @@
       <span class="c05-skel__bone c05-skel__block c05-skel__block--w60"></span>
     </div>
   </div>
+  {% endblock %}
 </main>
 
 <dialog id="confirm-dialog" class="admin-dialog">
