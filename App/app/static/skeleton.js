@@ -7,8 +7,10 @@
    show it. Opt a link or form out with data-no-skeleton. */
 (function () {
   "use strict";
-  var DELAY_MS = 400;
+  var DELAY_MS = 300;
+  var MIN_VISIBLE_MS = 400;
   var SAFETY_MS = 15000;
+  var shownAt = 0;
   // A path that ends in a file kind, as an extension ("/invoices/5.pdf") or as
   // its own segment ("/stay-fees/42/pdf", "/submissions/3/request.xml",
   // "/admin/users/3/export", "/settings/workspace-export"). Those answer with
@@ -28,16 +30,26 @@
     if (!el || !el.parentElement) return;
     el.parentElement.setAttribute("aria-busy", "true");
     el.hidden = false;
+    shownAt = Date.now();
     // A download, a 204 or a cancelled navigation leaves us on this page.
     // Never keep the content hidden for longer than this.
     safety = window.setTimeout(hide, SAFETY_MS);
   }
 
   function hide() {
+    // A skeleton that flashes for less than MIN_VISIBLE_MS reads as a glitch;
+    // keep it up until the minimum has passed (MASTER 5.5).
+    var el0 = placeholder();
+    if (el0 && !el0.hidden && shownAt && Date.now() - shownAt < MIN_VISIBLE_MS) {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(function () { shownAt = 0; hide(); }, MIN_VISIBLE_MS - (Date.now() - shownAt));
+      return;
+    }
     window.clearTimeout(timer);
     window.clearTimeout(safety);
     timer = null;
     safety = null;
+    shownAt = 0;
     var el = placeholder();
     if (!el || !el.parentElement) return;
     el.hidden = true;
