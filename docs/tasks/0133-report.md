@@ -1,6 +1,6 @@
 # 0133 report
 
-Status: blocked (0133-fix-3 stopped at step 3, section 8)
+Status: review (0133-fix-4: steps 1 to 5 done, acceptance met, 0 skipped; not pushed, no PR)
 
 ## Commits (branch claude/project-thread-td6fpc, not pushed)
 
@@ -125,3 +125,15 @@ Acceptance: step 2 passes except the known failure; step 3 not passing; screensh
 
 Owner steps left: decide whether the `.ui-ph-menu` failure is pre-existing (check on the 0133-fix-2 commit d79da3d), and why the setup banner shows no button.
 
+## 0133-fix-4 (executor, Haiku 5.5)
+
+- 5579b99 step 1: ui_icon_button gets extra_class
+- a6ae80f step 2: dashboard.html and dev_ui.html use extra_class='ui-ph-menu'; grep for attrs=class prints nothing
+- 776a37f step 3: assertions added in test_design_dashboard.py and test_dashboard_missing_banner.py
+- 3d28201 step 4: header count in test_host_quiet_dashboard_browser.py excludes .ui-ph-menu (fix once, see Deviations)
+- Browser run: 4 passed, 0 skipped. Unit run: 10 passed, 1 skipped (test_capture_banner_screenshots, evidence capture env-gated).
+- design_lint OK; ruff E9,F63,F7,F82,F401,F841 clean.
+- Finish setup banner button: renders (href="/apartments" and "Finish setup" asserted in test_dashboard_missing_banner).
+- Screenshots: dashboard-focus-cs-390.png and dashboard-focus-cs-1280.png in the 0133 shots dir (newest by mtime).
+
+Deviations: the browser test failed once at test_host_quiet_dashboard_browser.py (assert 2 == 1, the phone header now shows the overflow trigger, which sits in .ui-ph-acts). Fixed by excluding .ui-ph-menu from the count.
