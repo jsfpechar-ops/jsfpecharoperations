@@ -62,8 +62,9 @@ def _findings_stylesheet(path: Path, text: str) -> list[str]:
     body = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
     for m in RAW_COLOUR.finditer(body):
         out.append(f"{rel}: S1 raw colour {m.group(0)}")
-    if "font-family:" in body:
-        out.append(f"{rel}: S1 font-family outside tokens")
+    for m in re.finditer(r"font-family\s*:\s*([^;}]+)", body):
+        if not m.group(1).strip().startswith("var("):
+            out.append(f"{rel}: S1 font-family outside tokens")
     for m in re.finditer(r"box-shadow\s*:\s*([^;]+);", body):
         if "var(" not in m.group(1) and m.group(1).strip() != "none":
             out.append(f"{rel}: S1 literal box-shadow")
