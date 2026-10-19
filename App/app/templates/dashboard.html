@@ -23,11 +23,11 @@
   {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
   <tr class="ui-row dashboard-row clickable-row{{ ' is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
       aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
-    <td class="ui-cell-first dashboard-row-copy"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
+    <td class="ui-cell-first dashboard-row-copy" data-card="primary"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
       <span class="ui-sub dashboard-row-dates">{% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}{% endif %}</span></td>
-    <td>{{ property_identity(reservation.apartment_id, stay_label, true) }}</td>
-    <td class="ui-cell-r ui-num">{{ guest_count(progress) }}</td>
-    <td class="dashboard-row-task">
+    <td data-card="secondary">{{ property_identity(reservation.apartment_id, stay_label, true) }}</td>
+    <td class="ui-cell-r ui-num" data-card="meta">{{ guest_count(progress) }}</td>
+    <td class="dashboard-row-task" data-card="badge">
       {% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}
       {% elif progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}
       {% elif progress.not_registered %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span>
@@ -36,7 +36,7 @@
       {% elif progress.status == 'awaiting_guest' %}{# Routine waiting is shown as occupancy, not a task. #}
       {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
     </td>
-    <td class="ui-cell-acts dashboard-row-actions">
+    <td class="ui-cell-acts dashboard-row-actions" data-card="actions">
       {{ row_menu_begin() }}
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('common.open') }}</a>
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
