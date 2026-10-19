@@ -42,6 +42,11 @@
       }
     }
   }
+  // 3b. a list panel never scrolls sideways (tables stack into cards instead)
+  for (const p of ws.querySelectorAll('.list-cards, .ui-table-wrap')) {
+    if (!vis(p)) continue;
+    if (p.scrollWidth > p.clientWidth + 1) out.push(['list-scrolls-sideways', name(p).slice(0, 60), p.scrollWidth, p.clientWidth]);
+  }
   // 4. buttons that share a row have one height and one centre line
   const btnSel = '.ui-btn:not(.row-menu-trigger):not(.ui-btn-icon),.btn,input[type=submit],button[type=submit]';
   const parents = new Set([...ws.querySelectorAll(btnSel)].filter(vis).map((b) => b.parentElement));

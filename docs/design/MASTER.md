@@ -300,6 +300,7 @@ Added 2026-10-19 after the owner found broken screens that every earlier check h
 1. Every host page in `ROUTES` of `App/tests/test_design_guardrails_browser.py` passes `App/tests/design_guard.js` at 390, 1280 and 2000 px, with the sidebar open and collapsed (collapsed from 1024 px up). The guard fails on any of these:
    - The page scrolls sideways.
    - An element sits under the rail or past the right edge (unless it is inside a deliberate horizontal scroller).
+   - A list panel that scrolls sideways (list-scrolls-sideways).
    - Text is clipped by its own box.
    - Content spills out of its table row.
    - A table cell does not sit under its column header.

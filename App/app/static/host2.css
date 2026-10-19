@@ -504,3 +504,7 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 
 /* 0146 skeleton pause while the tab is hidden */
 .ui-skel.paused .ui-bone { animation-play-state: paused; }
+
+/* 0164: the guest-link cell in the property summary may wrap its icons under the URL */
+.host-workspace .property-summary-panel .property-inline-url { max-width: 11rem; }
+.host-workspace .property-summary-panel .property-inline-value { flex-wrap: wrap; }
