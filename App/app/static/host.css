@@ -700,9 +700,6 @@ body.host-workspace {
 
 /* 0080 */
 .host-workspace .stay-property-line { margin: -4px auto 10px; font-size: 14px; overflow-wrap: anywhere; }
-.host-workspace .stay-jump { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0 auto 18px; }
-.host-workspace .stay-jump a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: white; color: var(--ink); font-size: 13px; font-weight: 600; text-decoration: none; }
-.host-workspace .stay-jump a:hover, .host-workspace .stay-jump a:focus-visible { border-color: var(--brand); }
 .host-workspace .section-heading .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .host-workspace .guest-facts-identity { grid-template-columns: repeat(4,minmax(0,1fr)); padding-bottom: 8px; }
 .host-workspace .guest-facts-stay { grid-template-columns: repeat(3,minmax(0,1fr)); padding: 8px 0 16px; border-top: 1px dashed var(--line); margin: 0 20px; }
@@ -713,7 +710,6 @@ body.host-workspace {
   .host-workspace .guest-facts-identity, .host-workspace .guest-facts-stay { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 600px) {
-  .host-workspace .stay-jump a { min-height: 44px; }
   .host-workspace .guest-facts-stay { margin: 0 15px; padding-bottom: 15px; }
 }
 
