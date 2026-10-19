@@ -1,20 +1,17 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'reservations' %}
-{% block title %}{{ t('stays.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import list_page_header, list_toolbar, empty_state, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count, deadline_badge, source_badge with context %}
+{% set body_kind = 'list' %}
+{% from "_components.html" import empty_state, progress_pill, row_menu_begin, row_menu_end, row_reporting_actions, bulk_send_ready, csv_actions_menu, copy_inline, property_identity, guest_count, deadline_badge, source_badge, onboarding_banner with context %}
+{% from "_ui.html" import ui_button, ui_pagination with context %}
+{% from "_ui_layout.html" import ui_toolbar, ui_section_tabs with context %}
 {% set csv_export_params = 'apartment=' ~ (apartment_id or '') %}
 {% set view_query = 'range=' ~ date_range ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or '') ~ '&from=' ~ (date_from or '') ~ '&to=' ~ (date_to or '') %}
-{% if apartments %}
-{% set header_actions %}
-  {{ bulk_send_ready(ready_send_count, return_to) }}
-  <button class="btn" type="button" data-toggle-panel="add-stay-panel">{{ t('stays.add_stay') }}</button>
-{% endset %}
-{% else %}
-{# Nothing to send and nothing to add to yet, so the header stays out of the way. #}
-{% set header_actions = '' %}
-{% endif %}
-{{ list_page_header(t('stays.title'), actions=header_actions) }}
+{% block title %}{{ t('stays.title') }}{% endblock %}
+{% block primary_action %}{% if apartments %}{{ ui_button(t('stays.add_stay'), 'primary', attrs='data-toggle-panel="add-stay-panel"') }}{% endif %}{% endblock %}
+{% block secondary_actions %}{% if apartments %}{{ bulk_send_ready(ready_send_count, return_to) }}{% endif %}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
+{{ onboarding_banner(onboarding) }}
 
 {% if apartments %}
 <div id="add-stay-panel" class="action-panel hidden">
