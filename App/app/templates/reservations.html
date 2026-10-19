@@ -216,7 +216,7 @@
   {% endif %}
 </p>
 {% if page_count > 1 %}
-  {{ ui_pagination(page, page_count, prev_url=previous_page_url or '', next_url=next_page_url or '', label=t('stays.title'), more_label=t('stays.pagination.next'), prev_label=t('stays.pagination.prev'), next_label=t('stays.pagination.next')) }}
+  {{ ui_pagination(page, page_count, prev_url=previous_page_url or '', next_url=next_page_url or '', label=t('stays.title'), more_label=t('stays.pagination.next'), prev_label=t('stays.pagination.prev'), next_label=t('stays.pagination.next'), page_label=t('stays.pagination.label', page=page, pages=page_count)) }}
 {% endif %}
 {% elif show_archive %}
   {{ empty_state('', t('stays.empty.archive')) }}
