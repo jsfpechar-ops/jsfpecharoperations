@@ -12,7 +12,7 @@ Updated: 2026-10-19.
 
 ## Now
 
-- Host design reset, follow-up PR (same branch, 0165-0173): six-item sidebar, smart locks under Properties, WCAG 2.2 AA check (`a11y_guard.js`), field/button rows aligned. **Deploy needed:** host.css and app.css got new `?v=` keys (0172); production still serves an old host.css (Stays rows overlap). `--write` now refuses a changed file under an old key. Shots: project files design-reset/checkpoint-4.
+- Host design reset follow-up (0165-0173): six-item sidebar, WCAG 2.2 AA check, aligned field rows. **Deploy needed:** new host.css/app.css `?v=` keys (0172); production still serves an old host.css. Shots: design-reset/checkpoint-4.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 - Host #397: b51e0bb; CI 8/8, zero browser skips ([brief](../tasks/0123-dashboard-stays-only.md)).
 

@@ -93,4 +93,4 @@ Grep. **HR**: owner decides.
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 | K-OPS72 | Low open | filing_watchdog.py | Server 72 h, repo 6 h; align code/tests before server override | Owner, 2026-10-15 |
 
-- K-UI-CACHE (2026-10-19): any static file changed without a new `?v=` key stays stale in browsers and CDN for a year. Guard: test_static_versions.py (0172).
+- K-UI-CACHE: a static file changed without a new `?v=` key stays stale a year; guard 0172.
