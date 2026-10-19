@@ -268,7 +268,7 @@ _FIT_JS = """() => {
     if (!r.width || !r.height) continue;
     if (r.right > vw + 1 || r.left < -1) bad.push(el.textContent.trim().slice(0, 30));
   }
-  const opens = [...document.querySelectorAll('.properties-table .row-actions > a.btn')]
+  const opens = [...document.querySelectorAll('.properties-table .row-actions .row-menu-trigger')]
     .map(a => Math.round(a.getBoundingClientRect().right));
   const lane = document.querySelector('.properties-table').closest('.panel').getBoundingClientRect();
   const summary = document.querySelector('.property-summaries .panel').getBoundingClientRect();

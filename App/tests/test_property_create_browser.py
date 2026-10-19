@@ -434,7 +434,7 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         _shot(page, "created-1280-en")
         page.set_viewport_size({"width": 390, "height": 900})
         page.reload()
-        assert page.locator(".setup-wizard-skip .link-button").count() == 1
+        assert page.locator(".setup-wizard-skip button").count() == 1
         _shot(page, "created-390-en")
         browser.close()
 
