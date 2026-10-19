@@ -363,7 +363,7 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                 assert pdf_geometry["buttonWidths"][0] == pdf_geometry["buttonWidths"][1]
                 assert pdf_geometry["buttonHeights"] == [44, 44]
                 if width == 1280:
-                    pdf_field_tops = pdf_dialog.locator(".grid.two .field").evaluate_all(
+                    pdf_field_tops = pdf_dialog.locator(".ui-pair .ui-field, .grid.two .field").evaluate_all(
                         "els => els.map(el => el.getBoundingClientRect().top)"
                     )
                     assert pdf_field_tops[0] == pdf_field_tops[1], pdf_field_tops

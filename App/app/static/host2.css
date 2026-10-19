@@ -471,3 +471,7 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 /* 0144 extra: export dialogs pair their two actions in equal columns */
 .csv-export-dialog .ui-form-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
 .csv-export-dialog .ui-form-actions > .ui-btn { width: 100%; }
+
+/* 0144 extra: dialog buttons reach the phone tap size */
+@media (max-width: 1023px) { dialog .ui-btn { min-height: var(--control-h-phone); } }
+.csv-export-dialog .ui-form-actions > .ui-btn { min-height: var(--control-h-phone); height: var(--control-h-phone); }
