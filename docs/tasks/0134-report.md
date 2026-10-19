@@ -58,3 +58,16 @@ Status: blocked
 - Steps 6 (screenshots) and 7 not run.
 
 Owner steps left: none until the decisions above are made.
+
+## 0134-cont-3 executor report
+
+Status: blocked
+Step 1 commit: 1775a85 (files: App/app/templates/_ui.html, App/app/templates/reservations.html). Tests: 32 passed, 1 warning in 2.68s.
+Step 2 (screenshots): not done. The login helper returned 303 to /login?notice=form_expired, so no session cookie; the existing test_host_stay_actions_browser.py passes. Scratch script at the scratchpad, shoot_0134.py. Owner or orchestrator to decide.
+Step 3 lint output:
+```
+design lint: OK
+All checks passed!
+```
+Deviations: login workaround attempts in a scratchpad script only; nothing outside the brief was changed.
+Owner steps left: none until step 2 is solved.
