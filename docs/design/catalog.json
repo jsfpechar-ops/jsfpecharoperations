@@ -20,10 +20,10 @@
     "ui-calendar", "ui-cal-h", "ui-cal-grid",
     "ui-icon", "ui-input", "ui-select", "ui-textarea",
     "ui-bone-title", "ui-bone-meta", "ui-bone-btn", "ui-bone-toolbar", "ui-bone-label", "ui-bone-control", "ui-bone-badge", "ui-bone-line",
-    "ui-w10", "ui-w14", "ui-w18", "ui-w30", "ui-w40", "ui-w60", "ui-skel-detail", "ui-skel-side", "ui-cards-stack"
+    "ui-w10", "ui-w14", "ui-w18", "ui-w30", "ui-w40", "ui-w60", "ui-skel-detail", "ui-skel-side", "ui-cards-stack", "ui-swatch-grid", "ui-swatch", "ui-swatch-chip", "ui-type-sample"
   ],
   "hooks": ["sr-only", "skip-link", "grow", "hidden", "is-open", "is-on", "is-active", "row-menu", "row-menu-trigger", "row-menu-panel", "help-tip", "help-tip-btn", "help-tip-body", "toast", "toast-stack", "clickable-row"],
-  "enforced_templates": [],
+  "enforced_templates": ["App/app/templates/dev_ui.html"],
   "legacy": {},
   "enforced_stylesheets": ["App/app/static/host2.css"]
 }
