@@ -1,6 +1,6 @@
 # 0168 report
 
-Status: blocked (step 8 not committed; a fixed rule still reports)
+Status: review (step 8 not committed; a fixed rule still reports)
 Executor: Haiku 5.5 | Branch: claude/project-thread-5hw8cf | Nothing pushed.
 
 ## Files changed (committed, one commit per step)
