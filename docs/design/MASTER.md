@@ -302,6 +302,7 @@ Added 2026-10-19 after the owner found broken screens that every earlier check h
    - An element sits under the rail or past the right edge (unless it is inside a deliberate horizontal scroller).
    - Text is clipped by its own box.
    - Content spills out of its table row.
+   - A table cell does not sit under its column header.
    - Two buttons in one row differ in height by more than 2 px, or their centre lines differ.
    - A control is smaller than 44 × 44 px at 390.
    - A row menu opens off screen or holds a form field.

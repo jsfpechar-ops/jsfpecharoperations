@@ -68,5 +68,20 @@
       if (r.height + grow < 43.5 || r.width + grow < 43.5) out.push(['tap-target-small', name(el), Math.round(r.width), Math.round(r.height)]);
     }
   }
+  // 6. table cells sit under their header (catches card rules leaking onto a desktop table)
+  for (const table of ws.querySelectorAll('table')) {
+    const head = table.tHead;
+    if (!head || !vis(head) || !head.rows.length || !table.tBodies.length) continue;
+    const ths = [...head.rows[0].cells].filter(vis);
+    for (const tr of table.tBodies[0].rows) {
+      if (!vis(tr) || [...tr.cells].some((c) => c.colSpan > 1)) continue;
+      const tds = [...tr.cells].filter(vis);
+      for (let i = 0; i < Math.min(tds.length, ths.length); i++) {
+        const a = tds[i].getBoundingClientRect(), b = ths[i].getBoundingClientRect();
+        if (Math.abs(a.left - b.left) > 2 || a.top > tds[0].getBoundingClientRect().bottom) { out.push(['cell-not-under-header', name(tds[i]), name(ths[i])]); break; }
+      }
+      break;
+    }
+  }
   return out;
 }

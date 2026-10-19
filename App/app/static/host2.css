@@ -475,3 +475,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 /* 0144 extra: dialog buttons reach the phone tap size */
 @media (max-width: 1023px) { dialog .ui-btn { min-height: var(--control-h-phone); } }
 .csv-export-dialog .ui-form-actions > .ui-btn { min-height: var(--control-h-phone); height: var(--control-h-phone); }
+
+/* 0159: subtext class on a table cell keeps the cell a cell on desktop */
+@media (min-width: 1024px) { .host-workspace .ui-table td.ui-sub, .host-workspace .ui-table th.ui-sub { display: table-cell; } }
