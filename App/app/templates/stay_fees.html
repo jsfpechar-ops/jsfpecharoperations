@@ -2,10 +2,10 @@
 {% set nav = 'stay_fees' %}
 {% set body_kind = 'list' %}
 {% from "_components.html" import row_menu_begin, row_menu_end, empty_state with context %}
-{#- 0099: no sub-page tabs: fee settings live per property (Settings,
-    Reporting & fees); there is no one fee-settings page to link. -#}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('stay_fees.title') }}{% endblock %}
 {% block page_title %}{{ t('stay_fees.title') }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block toolbar %}{% include "_list_filter.html" %}{% endblock %}
 {% block body %}
 {% if periods %}

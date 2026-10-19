@@ -15,13 +15,10 @@
         ('/', 'layout-dashboard', t('nav.overview'), nav == 'dashboard'),
         ('/reservations', 'calendar-days', t('nav.stays'), stays_nav),
         ('/apartments', 'house', t('nav.properties'), properties_nav),
-        ('/invoices', 'receipt', t('nav.invoices'), nav == 'invoices'),
-        ('/cleaning', 'brush-cleaning', t('nav.cleaning'), nav == 'cleaning'),
-        ('/stay-fees', 'coins', t('nav.stay_fees'), nav == 'stay_fees')] %}
+        ('/invoices', 'receipt', t('nav.invoices'), nav in ('invoices', 'stay_fees')),
+        ('/cleaning', 'brush-cleaning', t('nav.cleaning'), nav == 'cleaning')] %}
     <a href="{{ href }}" title="{{ label }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name, 20) }}<span>{{ label }}</span>{% if href == '/' and nav_action_count is defined and nav_action_count %}<span class="ui-nav-count">{{ nav_action_count if nav_action_count < 10 else '9+' }}</span>{% endif %}</a>
     {% endfor %}
-    <span class="ui-nav-gap" aria-hidden="true"></span>
-    <a href="/smart-locks" title="{{ t('nav.smart_locks') }}" {% if nav == 'smart_locks' %}aria-current="page"{% endif %}>{{ icon('key-round', 20) }}<span>{{ t('nav.smart_locks') }}</span></a>
     <a href="/settings" title="{{ t('nav.settings') }}" {% if nav == 'settings' %}aria-current="page"{% endif %}>{{ icon('settings', 20) }}<span>{{ t('nav.settings') }}</span></a>
   </nav>
   {% if current_user %}

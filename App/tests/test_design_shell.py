@@ -14,7 +14,7 @@ def test_signed_in_pages_carry_the_v2_shell_and_not_the_drawer(host_with_propert
     assert tabbar.count("<a ") == 5
     assert 'data-sheet-open="more-sheet"' in tabbar
     assert '<dialog id="more-sheet" class="ui-dialog"' in page
-    for href in ("/invoices", "/stay-fees", "/smart-locks", "/settings", "/guide", "/settings/archived", "/privacy-requests"):
+    for href in ("/invoices", "/settings", "/guide", "/settings/archived", "/privacy-requests"):
         assert f'class="ui-menu-item" href="{href}"' in page, href
 
 
@@ -22,7 +22,7 @@ def test_the_sidebar_lists_every_destination_with_a_lucide_icon(host_with_proper
     page = host_with_property.get("/?lang=en").text
     sidebar = re.search(r'<aside class="ui-sidebar".*?</aside>', page, re.S).group(0)
     for href, icon in (("/", "layout-dashboard"), ("/reservations", "calendar-days"), ("/apartments", "house"), ("/invoices", "receipt"),
-                       ("/cleaning", "brush-cleaning"), ("/stay-fees", "coins"), ("/smart-locks", "key-round"), ("/settings", "settings"), ("/guide", "book-open")):
+                       ("/cleaning", "brush-cleaning"), ("/settings", "settings"), ("/guide", "book-open")):
         assert re.search(rf'href="{re.escape(href)}"[^>]*>\s*<svg class="ui-icon"[^>]*data-icon="{icon}"', sidebar), href
     assert sidebar.count('aria-current="page"') == 1
     assert "<path" in sidebar and "hand-drawn" not in sidebar

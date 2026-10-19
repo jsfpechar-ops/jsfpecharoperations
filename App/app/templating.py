@@ -415,14 +415,12 @@ def _template_section_tabs(request: Request, section: str, current: str = "") ->
             items.append(("business", business, "host.business"))
         from . import ttlock
 
-        owner = access.owner_id(request)
-        # As before on Properties: the lock account tab only once the host has
-        # one (and on its own page, so the open page is always a tab).
-        if ttlock.enabled() and (current == "lock" or (owner and ttlock.account_for(owner))):
+        if ttlock.enabled():
             items.append(("lock", "/smart-locks", "properties.shared.lock"))
     elif section == "invoices":
         items = [
             ("invoices", "/invoices", "nav.invoices"),
+            ("stay_fees", "/stay-fees", "nav.stay_fees"),
             ("settings", access.invoice_details_url(request), "host.invoice_settings"),
         ]
     elif section == "settings":
@@ -449,6 +447,8 @@ def _template_page_tabs(context) -> list:
         return _template_section_tabs(request, "stays", current)
     if nav == "invoices":
         return _template_section_tabs(request, "invoices", "invoices")
+    if nav == "stay_fees" and path == "/stay-fees":
+        return _template_section_tabs(request, "invoices", "stay_fees")
     if nav == "apartments" and path == "/apartments":
         return _template_section_tabs(request, "properties", "properties")
     if nav == "entities":
