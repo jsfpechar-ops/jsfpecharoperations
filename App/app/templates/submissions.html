@@ -1,50 +1,47 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'submissions' %}
+{% set body_kind = 'list' %}
+{% from "_components.html" import row_menu_begin, row_menu_end, submission_pill, empty_state, property_identity with context %}
+{% from "_ui.html" import ui_button with context %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('reports.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import row_menu_begin, row_menu_end, page_header, submission_pill, empty_state, property_identity with context %}
-{% set header_actions %}
-  {% if receipt_count %}
-    <a class="btn" href="/submissions/receipts.zip">{{ t('reports.download_receipts') }}</a>
-  {% endif %}
-{% endset %}
-{{ page_header(
-  t('reports.title'),
-  t('reports.lede'),
-  actions=header_actions if receipt_count else ''
-) }}
+{% block meta %}{{ t('reports.lede') }}{% endblock %}
+{% block secondary_actions %}{% if receipt_count %}{{ ui_button(t('reports.download_receipts'), 'secondary', href='/submissions/receipts.zip', icon_name='download') }}{% endif %}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
 {% if receipt_count %}
-  <p class="small muted">{{ t('reports.download_receipts_hint') }}</p>
+  <p class="ui-sub">{{ t('reports.download_receipts_hint') }}</p>
 {% endif %}
 
 {% if rows %}
-<div class="panel tight scroll-x list-cards lc-reports">
-  <table class="table-cards">
-    <thead>
-      <tr><th>{{ t('reports.when') }}</th><th>{{ t('reports.property') }}</th><th>{{ t('reports.mode') }}</th><th>{{ t('reports.guests') }}</th><th>{{ t('reports.outcome') }}</th>
-        <th>{{ t('reports.stamp') }}</th><th></th></tr>
-    </thead>
-    <tbody>
-    {% for submission in rows %}
-      <tr class="clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link"
-          aria-label="{{ t('reports.open', id=submission.id) }}">
-        <td class="nowrap small" data-label="{{ t('reports.when') }}">{{ submission.created_at | datetime_local }}</td>
-        <td data-label="{{ t('reports.property') }}">{{ property_identity(submission.apartment_id, submission.internal_name, true) }}</td>
-        <td class="small" data-label="{{ t('reports.mode') }}">{{ report_mode_label(submission.mode) }}</td>
-        <td class="num" data-label="{{ t('reports.guests') }}">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
-        <td data-label="{{ t('reports.outcome') }}">{{ submission_pill(submission.state) }}</td>
-        <td class="mono small" data-label="{{ t('reports.stamp') }}">{{ submission.pseudo_stamp or '—' }}</td>
-        <td class="nowrap row-actions" data-label="">
+{# 0138: the stay detail's report table grammar (MASTER 7.3, 7.4): one DOM, cards under 1024 px; the receipt is a row-menu item. #}
+<table class="ui-table ui-table-stack" aria-label="{{ t('reports.title') }}">
+  <thead>
+    <tr><th>{{ t('reports.when') }}</th><th>{{ t('reports.property') }}</th><th>{{ t('reports.mode') }}</th><th class="ui-cell-r">{{ t('reports.guests') }}</th><th>{{ t('reports.outcome') }}</th>
+      <th>{{ t('reports.stamp') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr>
+  </thead>
+  <tbody>
+  {% for submission in rows %}
+    <tr class="ui-row clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link"
+        aria-label="{{ t('reports.open', id=submission.id) }}">
+      <td class="ui-cell-first nowrap" data-card="primary" data-label="{{ t('reports.when') }}">{{ submission.created_at | datetime_local }}</td>
+      <td data-card="secondary" data-label="{{ t('reports.property') }}">{{ property_identity(submission.apartment_id, submission.internal_name, true) }}</td>
+      <td data-card="meta" data-label="{{ t('reports.mode') }}">{{ report_mode_label(submission.mode) }}</td>
+      <td class="ui-num ui-cell-r" data-card="meta" data-label="{{ t('reports.guests') }}">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
+      <td data-card="badge" data-label="{{ t('reports.outcome') }}">{{ submission_pill(submission.state) }}</td>
+      <td class="ui-mono" data-card="hide" data-label="{{ t('reports.stamp') }}">{{ submission.pseudo_stamp or '—' }}</td>
+      <td class="ui-cell-acts row-actions" data-card="actions" data-label="">
+        {{ row_menu_begin() }}
+          <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('reports.details') }}</a>
           {% if submission.has_receipt %}
-            <a class="btn small primary" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.receipt') }}</a>
+            <a class="row-menu-item" href="/submissions/{{ submission.id }}/receipt.pdf" role="menuitem">{{ t('reports.receipt') }}</a>
           {% endif %}
-          {{ row_menu_begin() }}<a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('reports.details') }}</a>{{ row_menu_end() }}
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
+        {{ row_menu_end() }}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
 {% else %}
   {{ empty_state(t('reports.empty_title'), t('reports.empty_body'), '/reservations', t('reports.empty_action')) }}
 {% endif %}

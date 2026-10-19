@@ -74,7 +74,7 @@ def _erase(apartment_id: int) -> None:
 
 
 def _actions(page: str) -> str:
-    match = re.search(r'<div class="actions">(.*?)</div>', page, re.S)
+    match = re.search(r'<div class="ui-form-actions">(.*?)</div>', page, re.S)
     return match.group(1) if match else ""
 
 
@@ -110,10 +110,10 @@ def test_the_next_step_is_the_coral_primary_and_the_only_button(host, monkeypatc
         page = host.get(f"/submissions/{sent['submission_id']}{EN}").text
         actions = _actions(page)
         assert (
-            f'<a class="btn primary" href="/reservations/{reservation["id"]}#guests">'
+            f'<a class="ui-btn ui-btn-primary" href="/reservations/{reservation["id"]}#guests">'
             in actions
         )
-        assert actions.count("<a class=\"btn") == 1
+        assert actions.count("<a class=\"ui-btn") == 1
     finally:
         _erase(apartment["id"])
 

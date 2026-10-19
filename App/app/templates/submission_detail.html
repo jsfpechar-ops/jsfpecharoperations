@@ -1,8 +1,10 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'submissions' %}
+{% set body_kind = 'detail' %}
+{% from "_components.html" import submission_pill, row_menu_begin, row_menu_end, copy_button with context %}
+{# The two coral links below sit in exclusive branches (failed vs receipt), as on the stay detail. #}
+{% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ t('reports.detail.title', id=submission.id) }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, submission_pill, row_menu_begin, row_menu_end, copy_button with context %}
 
 {% set outcome_notes = {
   'ok': t('reports.detail.note_ok'),
@@ -17,12 +19,10 @@
   'not_configured': t('reports.detail.note_noop'),
 } %}
 
-{{ page_header(
-  t('reports.detail.title', id=submission.id),
-  submission.internal_name ~ ' · ' ~ report_mode_label(submission.mode),
-  '/submissions',
-  t('reports.detail.back')
-) }}
+{% block meta %}{{ submission.internal_name ~ ' · ' ~ report_mode_label(submission.mode) }}{% endblock %}
+{% block back_url %}/submissions{% endblock %}
+{% block back_label %}{{ t('reports.detail.back') }}{% endblock %}
+{% block body %}
 
 {# The report detail follows the stay page's grammar (C-16 [UX-81]): the Now
    panel answers outcome and next step, the guests follow, and the operator
@@ -41,26 +41,26 @@
       <div class="eyebrow">{{ t('reports.outcome') }}</div>
       <p class="stay-command-note">{{ outcome_notes.get(submission.state, '') }}</p>
       {% if accepted and not submission.receipt_pdf %}
-        <p class="small muted report-receipt-missing" data-receipt-missing>{{ t('reports.detail.receipt_missing') }}</p>
+        <p class="ui-sub report-receipt-missing" data-receipt-missing>{{ t('reports.detail.receipt_missing') }}</p>
       {% endif %}
     </div>
     <div class="stay-command-actions">
-      <div class="actions">
+      <div class="ui-form-actions">
         {% if submission.state in ('error', 'failed') and fix_reservation_id %}
-          <a class="btn primary" href="/reservations/{{ fix_reservation_id }}#guests">{{ t('reports.detail.fix_stay') }}</a>
+          <a class="{{ cta }}" href="/reservations/{{ fix_reservation_id }}#guests">{{ t('reports.detail.fix_stay') }}</a>
         {% endif %}
         {% if submission.receipt_pdf %}
-          <a class="btn primary" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
+          <a class="{{ cta }}" href="/submissions/{{ submission.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
         {% endif %}
         {% if submission.error_pdf %}
-          <a class="btn" href="/submissions/{{ submission.id }}/errors.pdf">{{ t('reports.detail.download_errors') }}</a>
+          <a class="ui-btn ui-btn-secondary" href="/submissions/{{ submission.id }}/errors.pdf">{{ t('reports.detail.download_errors') }}</a>
         {% endif %}
       </div>
     </div>
   </div>
 
   {% if submission.error_text %}
-    <div class="banner err" style="margin:0; border-radius:0; border-left:0; border-right:0">
+    <div class="ui-banner ui-banner-attention">
       <div class="grow"><strong>{{ t('reports.detail.transport_error') }}</strong><small>{{ submission.error_text }}</small></div>
     </div>
   {% endif %}
@@ -68,10 +68,10 @@
   {% if header_messages %}
     <div class="report-header-problems">
       <h3>{{ t('reports.detail.header_problems') }}</h3>
-      <ul class="small">
+      <ul class="ui-sub">
         {% for message in header_messages %}<li>{{ message }}</li>{% endfor %}
       </ul>
-      <p class="small muted">{{ t('reports.detail.header_help') }}
+      <p class="ui-sub">{{ t('reports.detail.header_help') }}
         <a href="/apartments/{{ submission.apartment_id }}?view=settings&amp;section=reporting#ubyport">{{ t('reports.detail.header_help_link') }}</a>
       </p>
     </div>
@@ -86,7 +86,7 @@
       <div class="metric-label">{{ t('reports.stamp') }}</div>
       <div class="metric-value small-value report-stamp-value">
         {% if submission.pseudo_stamp %}
-          <span class="mono report-stamp" id="report-stamp">{{ submission.pseudo_stamp }}</span>
+          <span class="ui-mono report-stamp" id="report-stamp">{{ submission.pseudo_stamp }}</span>
           {{ copy_button('report-stamp') }}
         {% else %}&mdash;{% endif %}
       </div>
@@ -102,63 +102,63 @@
   </div>
 </section>
 
-<h2>{{ t('reports.detail.guests') }}</h2>
-<div class="panel tight scroll-x">
-  <table class="table-cards">
+<section class="ui-section">
+<div class="ui-section-h"><h2>{{ t('reports.detail.guests') }}</h2></div>
+  <table class="ui-table ui-table-stack" aria-label="{{ t('reports.detail.guests') }}">
     <thead><tr><th>#</th><th>{{ t('reports.detail.guest') }}</th><th>{{ t('reports.detail.result') }}</th><th></th></tr></thead>
     <tbody>
     {% for guest in guests %}
-      <tr class="clickable-row" data-href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" tabindex="0" role="link">
-        <td class="num" data-label="#">{{ loop.index }}</td>
-        <td data-label="{{ t('reports.detail.guest') }}">
+      <tr class="ui-row clickable-row" data-href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" tabindex="0" role="link">
+        <td class="ui-num" data-card="hide" data-label="#">{{ loop.index }}</td>
+        <td class="ui-cell-first" data-card="primary" data-label="{{ t('reports.detail.guest') }}">
           <strong>{{ guest.surname }} {{ guest.first_name }}</strong>
-          {% if guest.restricted_at %}<span class="pill amber">{{ t('guest.restricted_badge') }}</span>{% endif %}
-          <div class="small muted">{{ country_name(guest.nationality or '', lang) or guest.nationality or '—' }} &middot; {{ guest_identifier(guest.doc_number, guest.id) }}</div>
+          {% if guest.restricted_at %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('guest.restricted_badge') }}</span>{% endif %}
+          <div class="ui-sub">{{ country_name(guest.nationality or '', lang) or guest.nationality or '—' }} &middot; {{ guest_identifier(guest.doc_number, guest.id) }}</div>
         </td>
-        <td data-label="{{ t('reports.detail.result') }}">
+        <td data-card="badge" data-label="{{ t('reports.detail.result') }}">
           {% if guest.result == 'duplicate' %}
-            <span class="pill amber">{{ t('submission.duplicate') }}</span>
+            <span class="ui-badge ui-badge-action" data-tone="amber">{{ t('submission.duplicate') }}</span>
             {% if guest.receipt_submission_id %}
-              <div class="small muted">{{ t('reports.detail.receipt_elsewhere') }}
+              <div class="ui-sub">{{ t('reports.detail.receipt_elsewhere') }}
                 <a href="/submissions/{{ guest.receipt_submission_id }}">{{ t('reports.detail.title', id=guest.receipt_submission_id) }}</a>
               </div>
             {% else %}
-              <div class="small muted">{{ t('reports.detail.receipt_none') }}</div>
+              <div class="ui-sub">{{ t('reports.detail.receipt_none') }}</div>
             {% endif %}
-          {% elif guest.result == 'accepted' %}<span class="pill green">{{ t('submission.accepted') }}</span>
-          {% elif guest.result == 'rejected_final' %}<span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
-          {% elif guest.result == 'rejected' %}<span class="pill red">{{ t('submission.rejected') }}</span>
-          {% else %}<span class="pill grey">{{ guest.result }}</span>{% endif %}
-          {% if guest.errors %}<div class="small err-text">{{ guest.errors }}</div>{% endif %}
+          {% elif guest.result == 'accepted' %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('submission.accepted') }}</span>
+          {% elif guest.result == 'rejected_final' %}<span class="ui-badge ui-badge-action" data-tone="red">{{ t('stay.detail.guests.rejected_final') }}</span>
+          {% elif guest.result == 'rejected' %}<span class="ui-badge ui-badge-action" data-tone="red">{{ t('submission.rejected') }}</span>
+          {% else %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ guest.result }}</span>{% endif %}
+          {% if guest.errors %}<div class="ui-sub err-text">{{ guest.errors }}</div>{% endif %}
         </td>
-        <td class="nowrap row-actions" data-label="">
+        <td class="ui-cell-acts row-actions" data-card="actions" data-label="">
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">{{ t('common.edit') }}</a>
           {{ row_menu_end() }}
         </td>
       </tr>
     {% else %}
-      <tr><td colspan="4" class="small muted">{{ t('reports.detail.guests_empty') }}</td></tr>
+      <tr><td colspan="4" data-card="primary">{{ t('reports.detail.guests_empty') }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
-</div>
+</section>
 
 <details class="panel technical">
   <summary>{{ t('reports.detail.technical') }}</summary>
-  <p class="small muted">{{ t('reports.detail.technical_help') }}</p>
+  <p class="ui-sub">{{ t('reports.detail.technical_help') }}</p>
   <dl class="kv">
     <dt>{{ t('reports.detail.endpoint') }}</dt>
-    <dd class="mono small">{{ submission.endpoint or '—' }}</dd>
+    <dd class="ui-mono">{{ submission.endpoint or '—' }}</dd>
   </dl>
   <h3>{{ t('reports.detail.messages') }}</h3>
   <div class="technical-downloads">
     <span class="technical-download">
-      <a class="btn small" href="/submissions/{{ submission.id }}/request.xml">{{ t('reports.detail.request') }}</a>
+      <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/submissions/{{ submission.id }}/request.xml">{{ t('reports.detail.request') }}</a>
       <span class="help-dot" tabindex="0" title="{{ t('reports.detail.request_help') }}" aria-label="{{ t('reports.detail.request_about') }}">?</span>
     </span>
     <span class="technical-download">
-      <a class="btn small" href="/submissions/{{ submission.id }}/response.xml">{{ t('reports.detail.response') }}</a>
+      <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/submissions/{{ submission.id }}/response.xml">{{ t('reports.detail.response') }}</a>
       <span class="help-dot" tabindex="0" title="{{ t('reports.detail.response_help') }}" aria-label="{{ t('reports.detail.response_about') }}">?</span>
     </span>
   </div>
@@ -166,7 +166,7 @@
     <h3>{{ t('reports.detail.error_codes') }}
       <span class="help-dot" title="{{ t('reports.detail.error_codes_help') }}" aria-label="{{ t('reports.detail.error_codes_about') }}">?</span>
     </h3>
-    <pre class="mono small code-block">{{ record_errors | join('\n') }}</pre>
+    <pre class="ui-mono code-block">{{ record_errors | join('\n') }}</pre>
   {% endif %}
 </details>
 {% endblock %}

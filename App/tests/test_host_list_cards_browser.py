@@ -26,10 +26,9 @@ LISTS = {
     "businesses": "/entities",
     "invoices": "/invoices",
     "fees": "/stay-fees",
-    "reports": "/submissions",
 }
 # Per-list switch point (measured min-content width + ~40 px), in panel px.
-THRESHOLDS = {"properties": 800, "businesses": 950, "invoices": 830, "fees": 940, "reports": 850}
+THRESHOLDS = {"properties": 800, "businesses": 950, "invoices": 830, "fees": 940}
 
 _LIST_JS = """() => {
   const panel = document.querySelector('.list-cards');
