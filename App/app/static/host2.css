@@ -486,3 +486,13 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .setup-wizard-foot .ui-btn { max-width: 100%; }
 .host-workspace .setup-wizard-lede.setup-wizard-fee-intro { font-size: var(--size-26); font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
 @media (max-width: 1023px) { .host-workspace .setup-wizard-lede.setup-wizard-fee-intro { font-size: var(--size-22); } }
+
+/* 0160: wizard on the page lane; phone footer = full-width stack, primary first, back last */
+.host-workspace .setup-wizard, .host-workspace .setup-wizard-body, .host-workspace .setup-wizard-foot { max-width: none; margin-left: 0; margin-right: 0; }
+.host-workspace .police-sample-link { margin-bottom: var(--space-3); }
+@media (max-width: 599px) {
+  .host-workspace .setup-wizard-foot { flex-direction: column-reverse; align-items: stretch; }
+  .host-workspace .setup-wizard-foot > span:empty { display: none; }
+  .host-workspace .setup-wizard-actions { flex-direction: column-reverse; align-items: stretch; width: 100%; margin-left: 0; }
+  .host-workspace .setup-wizard-foot .ui-btn, .host-workspace .setup-wizard-actions form, .host-workspace .setup-wizard-actions form .ui-btn { width: 100%; margin-left: 0; }
+}
