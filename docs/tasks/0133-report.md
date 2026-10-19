@@ -44,3 +44,24 @@ App/app/static/host2.css, App/app/templates/dashboard.html, docs/design/catalog.
 ## Owner steps left
 
 None. Steps 5 and 6 (browser run, 0 skipped, 390/360/1280 screenshots, acceptance section 7) are not done.
+
+## 0133-cont-1 run (Status: blocked)
+
+Commits (not pushed): step 1 068aa1a, step 2 a23efe5, step 3 f062923, step 4 2199f32, step 5 9109830.
+Lint: `design_lint.py` OK. Ruff E9,F63,F7,F82,F401,F841: All checks passed.
+
+Browser run (step 6, `-rfEs`, UBYHOST_REQUIRE_BROWSER=1): 6 failed, 25 passed, 0 skipped. Failing:
+- test_host_list_layouts_browser.py::test_stays_pills_and_deadlines_stay_on_one_line: expected (fixed in 0134). `AssertionError: ('en', 1280, {'pill': True, 'deadline': True, 'height': 85, 'name': 23, ...})`
+- test_host_quiet_dashboard_browser.py::test_dashboard_geometry_locales_and_screenshots: `assert 'is-overdue' in (('ui-row dashboard-row clickable-row'))` at line 304.
+- test_host_quiet_dashboard_browser.py::test_dashboard_rich_queue_colors_cap_and_interaction_screenshots: Locator.click timeout, `.dashboard-row[data-stay-id="1"] .row-menu-trigger` not visible.
+- test_dashboard_calendar_browser.py::test_calendar_geometry_locales_and_screenshots: `AssertionError: [{'top': 230.2, 'bottom': 325.2, 'left': 16, 'right': 344, ...}, ...]` at line 315.
+- test_dashboard_calendar_browser.py::test_dashboard_committed_stay_refresh_retry_does_not_post_twice: Page.wait_for_function timeout 30000 ms.
+- test_host_list_layouts_browser.py::test_dashboard_and_stays_share_compact_row_menu: `AssertionError: (('en', 360), {'dashboard': 0, 'stays': 44})` at line 77.
+
+Not verified whether the five non-named failures predate this brief (no run on the parent commit). Stopped per brief section 8.
+
+Screenshots present (from the test run; not confirmed as rewritten by this run): shots/0133/dashboard-single-en-390.png, shots/0133/dashboard-single-en-1280.png.
+
+Deviations: step 5 changed only line 695 of test_dashboard_calendar_browser.py; the identical text at lines 627 and 710 was left alone (brief names only ~695).
+Questions: should the five non-named failures be handled in a new brief?
+
