@@ -1,0 +1,36 @@
+{#- Design v2 phone bottom tab bar and More sheet (MASTER 6.2). Shown below 1024 px only.
+    More is a real link to Settings; shell.js turns it into the sheet. -#}
+{% from "_icons.html" import icon with context %}
+{% set stays_nav = nav in ('reservations', 'submissions', 'housebook') %}
+{% set properties_nav = nav in ('apartments', 'guest_links', 'automation', 'entities', 'smart_locks') %}
+{% set more_nav = nav in ('invoices', 'stay_fees', 'settings', 'admin', 'guide') %}
+<nav class="ui-tabbar" aria-label="{{ t('a11y.main_navigation') }}">
+  <a href="/" {% if nav == 'dashboard' %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('layout-dashboard', 24) }}</span><span>{{ t('nav.overview') }}</span>{% if nav_action_count is defined and nav_action_count %}<span class="ui-nav-count">{{ nav_action_count if nav_action_count < 10 else '9+' }}</span>{% endif %}</a>
+  <a href="/reservations" {% if stays_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('calendar-days', 24) }}</span><span>{{ t('nav.stays') }}</span></a>
+  <a href="/apartments" {% if properties_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('house', 24) }}</span><span>{{ t('nav.properties') }}</span></a>
+  <a href="/cleaning" {% if nav == 'cleaning' %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('brush-cleaning', 24) }}</span><span>{{ t('nav.cleaning') }}</span></a>
+  <a href="/settings" data-sheet-open="more-sheet" {% if more_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('ellipsis', 24) }}</span><span>{{ t('nav.more') }}</span></a>
+</nav>
+<dialog id="more-sheet" class="ui-dialog" aria-label="{{ t('nav.more') }}">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <nav class="ui-menu-panel ui-sheet-list" aria-label="{{ t('nav.more') }}">
+      <button class="ui-menu-item" type="button" data-command-open>{{ icon('search', 16) }}{{ t('host.search') }}</button>
+      <a class="ui-menu-item" href="/invoices">{{ icon('receipt', 16) }}{{ t('nav.invoices') }}</a>
+      <a class="ui-menu-item" href="/stay-fees">{{ icon('coins', 16) }}{{ t('nav.stay_fees') }}</a>
+      <a class="ui-menu-item" href="/smart-locks">{{ icon('key-round', 16) }}{{ t('nav.smart_locks') }}</a>
+      <a class="ui-menu-item" href="/settings">{{ icon('settings', 16) }}{{ t('nav.settings') }}</a>
+      <a class="ui-menu-item" href="/guide">{{ icon('book-open', 16) }}{{ t('nav.guide') }}</a>
+      {% if current_user and current_user.role == 'admin' %}<a class="ui-menu-item" href="/admin/users">{{ icon('shield', 16) }}{{ t('nav.admin') }}</a>{% endif %}
+      <a class="ui-menu-item" href="/settings/archived">{{ icon('archive', 16) }}{{ t('settings.nav.archive') }}</a>
+      <a class="ui-menu-item" href="/privacy-requests">{{ icon('file-lock', 16) }}{{ t('nav.privacy_requests') }}</a>
+      <form method="post" action="/language" class="lang-switch compact ui-sheet-lang">
+        <input type="hidden" name="next" value="{{ request.url.path }}">
+        <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
+        <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
+      </form>
+      <form method="post" action="/logout"><button class="ui-menu-item" type="submit">{{ icon('log-out', 16) }}{{ t('nav.logout') }}</button></form>
+    </nav>
+    <button class="ui-btn ui-btn-secondary" type="button" data-sheet-close>{{ t('common.close') }}</button>
+  </div>
+</dialog>
