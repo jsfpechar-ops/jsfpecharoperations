@@ -1,29 +1,27 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'invoices' %}
+{% set body_kind = 'detail' %}
+{% from "_components.html" import row_menu_begin, row_menu_end with context %}
+{% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ t('invoice.detail.title', number=invoice.number) }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, row_menu_begin, row_menu_end with context %}
+{% block meta %}{{ invoice.buyer_name }}{% endblock %}
+{% block back_url %}/invoices{% endblock %}
+{% block back_label %}{{ t('nav.invoices') }}{% endblock %}
+{% block body %}
 
 {# The invoice detail follows the stay/report page grammar (C-16 [UX-81]):
    a command panel that says the state and the next step, the facts strip,
    the line items, and the destructive fold last. #}
 {% if invoice.kind in ('storno', 'corrective') %}
-  {% set state_pill = '<span class="pill grey">' ~ t('invoice.kind.' ~ invoice.kind) ~ '</span>' %}
+  {% set state_pill = '<span class="ui-badge ui-badge-neutral" data-tone="grey">' ~ t('invoice.kind.' ~ invoice.kind) ~ '</span>' %}
   {% set state_note = t('invoice.detail.note_' ~ invoice.kind) %}
 {% elif invoice.marked_paid_at or invoice.paid_on %}
-  {% set state_pill = '<span class="pill green">' ~ t('invoice.state.paid') ~ '</span>' %}
+  {% set state_pill = '<span class="ui-badge ui-badge-done" data-tone="green">' ~ t('invoice.state.paid') ~ '</span>' %}
   {% set state_note = t('invoice.detail.note_paid') %}
 {% else %}
-  {% set state_pill = '<span class="pill teal">' ~ t('invoice.state.unpaid') ~ '</span>' %}
+  {% set state_pill = '<span class="ui-badge ui-badge-neutral" data-tone="teal">' ~ t('invoice.state.unpaid') ~ '</span>' %}
   {% set state_note = t('invoice.detail.note_unpaid') %}
 {% endif %}
-
-{{ page_header(
-  t('invoice.detail.title', number=invoice.number),
-  invoice.buyer_name,
-  '/invoices',
-  t('nav.invoices')
-) }}
 
 <div class="invoice-workspace">
   <div class="invoice-document">
@@ -34,22 +32,22 @@
         <p class="stay-command-note">{{ state_note }}</p>
       </div>
       <div class="stay-command-actions">
-        <div class="actions">
-          <a class="btn primary" href="/invoices/{{ invoice.id }}.pdf">{{ t('invoice.detail.download') }}</a>
+        <div class="ui-btn-group">
+          <a class="{{ cta }}" href="/invoices/{{ invoice.id }}.pdf">{{ t('invoice.detail.download') }}</a>
           {% if invoice.kind == 'invoice' and not invoice.marked_paid_at and not invoice.paid_on %}
           <form method="post" action="/invoices/{{ invoice.id }}/paid" class="inline">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <button class="btn" type="submit">{{ t('invoice.mark_paid') }}</button>
+            <button class="ui-btn ui-btn-secondary" type="submit">{{ t('invoice.mark_paid') }}</button>
           </form>
           {% endif %}
           {% if invoice.buyer_email and invoice.kind == 'invoice' %}
           <form method="post" action="/invoices/{{ invoice.id }}/send" class="inline">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <button class="btn" type="submit" data-confirm data-confirm-message="{{ t('invoice.send_confirm', email=invoice.buyer_email) }}">{{ t('invoice.send') }}</button>
+            <button class="ui-btn ui-btn-secondary" type="submit" data-confirm data-confirm-message="{{ t('invoice.send_confirm', email=invoice.buyer_email) }}">{{ t('invoice.send') }}</button>
           </form>
           {% endif %}
-          {% if invoice.reservation_id %}<a class="btn" href="/reservations/{{ invoice.reservation_id }}">{{ t('invoice.context.open_stay') }}</a>{% endif %}
-          <a class="btn ghost" href="/entities?edit={{ invoice.legal_entity_id }}&amp;next={{ ('/invoices/' ~ invoice.id) | urlencode }}#entity-invoice">{{ t('host.invoice_settings') }}</a>
+          {% if invoice.reservation_id %}<a class="ui-btn ui-btn-secondary" href="/reservations/{{ invoice.reservation_id }}">{{ t('invoice.context.open_stay') }}</a>{% endif %}
+          <a class="ui-btn ui-btn-quiet" href="/entities?edit={{ invoice.legal_entity_id }}&amp;next={{ ('/invoices/' ~ invoice.id) | urlencode }}#entity-invoice">{{ t('host.invoice_settings') }}</a>
         </div>
       </div>
     </div>
@@ -80,8 +78,8 @@
   </section>
 
   <h2>{{ t('invoice.section.items') }}</h2>
-  <div class="panel tight scroll-x">
-    <table class="table-cards">
+  <div class="ui-table-wrap">
+    <table class="ui-table ui-table-stack">
       <thead>
         {% if invoice.vat_status == 'payer' %}
         <tr>
@@ -116,48 +114,48 @@
         </tr>
         {% endif %}
         {% else %}
-        <tr><td colspan="6" class="small muted">{{ t('invoice.items_empty') }}</td></tr>
+        <tr><td colspan="6" class="ui-sub">{{ t('invoice.items_empty') }}</td></tr>
         {% endfor %}
       </tbody>
       {% if invoice.vat_status == 'payer' and items %}
       <tfoot>
         <tr>
           <th colspan="4">{{ t('invoice.detail.base_total') }}</th>
-          <td class="num">{{ (vat_totals.base or 0) | money_czk }}</td>
+          <td class="ui-num">{{ (vat_totals.base or 0) | money_czk }}</td>
           <td></td>
         </tr>
         <tr>
           <th colspan="4">{{ t('invoice.detail.vat_total') }}</th>
-          <td class="num">{{ (vat_totals.vat or 0) | money_czk }}</td>
-          <td class="num">{{ invoice.total_haler | money_czk }}</td>
+          <td class="ui-num">{{ (vat_totals.vat or 0) | money_czk }}</td>
+          <td class="ui-num">{{ invoice.total_haler | money_czk }}</td>
         </tr>
       </tfoot>
       {% endif %}
     </table>
   </div>
   {% if invoice.note %}
-  <p class="small muted"><strong>{{ t('invoice.note') }}:</strong> {{ invoice.note }}</p>
+  <p class="ui-sub"><strong>{{ t('invoice.note') }}:</strong> {{ invoice.note }}</p>
   {% endif %}
   </div>{# /invoice-document #}
 
   {% if invoice.kind == 'invoice' and not invoice.corrects_invoice_id %}
-  <details class="panel danger-zone" id="cancel">
+  <details class="ui-section danger-zone" id="cancel">
     <summary>{{ t('invoice.cancel') }}</summary>
-    <p class="small muted">{{ t('invoice.cancel_help') }}</p>
+    <p class="ui-sub">{{ t('invoice.cancel_help') }}</p>
     <form method="post" action="/invoices/{{ invoice.id }}/cancel"
           data-confirm data-confirm-message="{{ t('confirm.cancel_invoice') }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <div class="field">
+      <div class="ui-field">
         <label for="reason">{{ t('invoice.cancel_reason') }}</label>
         <input type="text" id="reason" name="reason" maxlength="200" required>
       </div>
       {% if invoice.vat_status == 'payer' %}
-      <div class="field" style="max-width:220px">
+      <div class="ui-field invoice-cancel-reason">
         <label for="correction_date">{{ t('invoice.correction_date') }}</label>
         <input type="date" id="correction_date" name="correction_date">
       </div>
       {% endif %}
-      <button class="btn" type="submit">{{ t('invoice.cancel') }}</button>
+      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('invoice.cancel') }}</button>
     </form>
   </details>
   {% endif %}
