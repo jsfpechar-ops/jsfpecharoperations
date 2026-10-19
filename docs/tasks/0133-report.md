@@ -1,6 +1,6 @@
 # 0133 report
 
-Status: blocked
+Status: blocked (0133-fix-3 stopped at step 3, section 8)
 
 ## Commits (branch claude/project-thread-td6fpc, not pushed)
 
@@ -109,3 +109,19 @@ Not done / remaining:
 - Quiet dashboard browser test re-run not verified after selector change.
 - Browser set not re-run as a whole. Only the allowed 0134 stays test is known to fail.
 - design_lint and ruff not run.
+
+## 0133-fix-3
+
+Commits: 413ff4d step 1 (dashboard.html Anchor A to ui_banner with action; _ui_layout.html Anchor B comment).
+
+- Step 2 (`pytest` non-browser set, `--tb=line`): `1 failed, 123 passed, 1 skipped, 1 warning in 23.94s`. The failure is the known local `test_host_properties_navigation.py::test_properties_page_fits_every_width_and_both_languages` (`assert 0 == 3`, `where 0 = len([])`). The one skip was not identified.
+- Step 3 (browser set, `-rfs`): `2 failed, 27 passed, 3 warnings in 95.07s (0:01:35)`. Failures:
+  - `test_host_list_layouts_browser.py::test_stays_pills_and_deadlines_stay_on_one_line`: `assert 85 <= 72` (expected, 0134).
+  - `test_host_quiet_dashboard_browser.py::test_dashboard_rich_queue_colors_cap_and_interaction_screenshots`: `assert False` / `where False = is_visible()` on `locator('.ui-ph-menu')`, test line 330. Failed the same way on two runs. Not in the brief's known list, not touched by this change; blocking per section 8.
+- Step 4: `dashboard-390.png` and `dashboard-1280.png` exist in the shots dir, written by the test run (`/?lang=en`, Quiet Dashboard host). Neither shows a "Finish setup" button on the setup banner, though `ui_banner` renders one when `action_href` is set. Open question.
+- Step 5: `design_lint.py`: `design lint: OK`. `ruff check --select E9,F63,F7,F82,F401,F841 App/`: `All checks passed!`.
+
+Acceptance: step 2 passes except the known failure; step 3 not passing; screenshots exist.
+
+Owner steps left: decide whether the `.ui-ph-menu` failure is pre-existing (check on the 0133-fix-2 commit d79da3d), and why the setup banner shows no button.
+
