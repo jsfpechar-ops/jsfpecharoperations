@@ -1,6 +1,6 @@
 # 0126: Design lint (raw colours, inline styles, page CSS, catalog classes) in CI
 
-Status: todo
+Status: blocked
 Depends on: 0125 | Base commit: df8b842 | Branch: claude/project-thread-td6fpc
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
