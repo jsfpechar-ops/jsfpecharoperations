@@ -1,6 +1,6 @@
 # 0160: setup wizard sits on the page lane; phone action buttons stack cleanly
 
-Status: todo
+Status: done
 Depends on: 0144-b | Branch: claude/project-thread-5hw8cf
 Executor: Sonnet 5.5 or Haiku 5.5 | Fits one session
 

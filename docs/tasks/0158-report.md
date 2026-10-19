@@ -1,6 +1,6 @@
 # 0158 report
 
-Status: review
+Status: done
 
 ## Files changed
 - App/app/templates/_cleaning_list.html (settings link gets ui-btn ui-btn-quiet ui-btn-compact)

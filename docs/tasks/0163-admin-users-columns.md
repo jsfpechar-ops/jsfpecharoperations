@@ -1,6 +1,6 @@
 # 0163: admin users page, column tops line up and manage fields stay readable
 
-Status: todo
+Status: done
 Depends on: 0162 | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session
 

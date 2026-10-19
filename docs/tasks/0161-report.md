@@ -1,6 +1,6 @@
 # 0161 report
 
-Status: review
+Status: done
 
 Files: App/app/templates/users.html, App/app/host_i18n.py, App/tests/test_design_guardrails_browser.py.
 Row menu now holds a "Manage account" link plus button-only forms; the e-mail, open-workspace and schedule-deletion forms live in `#user-manage` (`?manage=<id>`), no JS needed.

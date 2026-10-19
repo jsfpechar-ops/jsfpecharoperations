@@ -1,6 +1,6 @@
 # 0156 report
 
-Status: review
+Status: done
 
 Files: App/tests/design_guard.js, App/tests/test_design_guardrails_browser.py, .github/workflows/ci.yml, docs/context/test-map.md.
 

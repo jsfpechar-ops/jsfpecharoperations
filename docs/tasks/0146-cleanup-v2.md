@@ -1,6 +1,6 @@
 # 0146: Design v2 cleanup: one skeleton, dead macros out, legacy burn-down report
 
-Status: todo
+Status: done
 Depends on: 0145 | Base commit: cdcb781 | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

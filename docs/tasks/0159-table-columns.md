@@ -1,6 +1,6 @@
 # 0159: guard checks that table cells sit under their headers; fix the settings activity log
 
-Status: todo
+Status: done
 Depends on: 0144 | Branch: claude/project-thread-5hw8cf
 Executor: Sonnet 5.5 or Haiku 5.5 | Fits one session
 

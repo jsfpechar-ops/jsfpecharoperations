@@ -1,6 +1,6 @@
 # 0142 report
 
-Status: review
+Status: done
 
 ## Files changed
 - App/app/templates/stay_fees.html, App/app/templates/stay_fee_detail.html

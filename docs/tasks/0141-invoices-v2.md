@@ -1,6 +1,6 @@
 # 0141: Invoices (list, detail, form, stay picker) and the shared month filter on the v2 template
 
-Status: todo
+Status: done
 Depends on: 0140 | Base commit: 6c51d3f | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

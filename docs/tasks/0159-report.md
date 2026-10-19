@@ -1,6 +1,6 @@
 # 0159 report
 
-Status: review
+Status: done
 
 Files: App/tests/design_guard.js, App/app/static/host2.css, App/app/templates/base.html (key 20261019-0159), App/tests/static_versions.json, docs/design/MASTER.md.
 

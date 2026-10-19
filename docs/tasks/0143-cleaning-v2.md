@@ -1,6 +1,6 @@
 # 0143: Cleaning pages (host side) on the v2 template
 
-Status: todo
+Status: done
 Depends on: 0142 | Base commit: c340b7f | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

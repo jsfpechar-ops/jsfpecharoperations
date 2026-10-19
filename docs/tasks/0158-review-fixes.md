@@ -1,6 +1,6 @@
 # 0158: screenshot review fixes for cleaning cards and the properties guest links
 
-Status: todo
+Status: done
 Depends on: 0143 | Branch: claude/project-thread-5hw8cf
 Executor: Sonnet 5.5 or Haiku 5.5 | Fits one session
 

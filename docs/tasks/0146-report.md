@@ -1,6 +1,6 @@
 # 0146 report
 
-Status: review
+Status: done
 
 Files: base.html, skeleton.js, host2.css, _components.html, apartments.html (import list), static_versions.json, test_design_cleanup.py (new).
 Decisions (coordinator): guest/base.html and skeleton.css untouched (c05 rules kept for guest pages); skeleton.js selector ".c05-skel, .ui-skel"; line-range replace in base.html; keys skeleton.js and host2.css end in -0146; Anchor D unchanged; test renamed test_no_c05_markup_in_host_templates.

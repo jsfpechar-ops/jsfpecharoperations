@@ -1,6 +1,6 @@
 # 0156: layout guard, a browser test that fails CI on broken layout
 
-Status: todo
+Status: done
 Depends on: 0140 | Branch: claude/project-thread-5hw8cf
 Executor: Sonnet 5.5 (new test logic; Haiku and Sonnet are allowed by the owner) | Fits one session
 

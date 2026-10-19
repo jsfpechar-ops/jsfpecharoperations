@@ -1,6 +1,6 @@
 # 0145: Smart locks and the admin pages (users, incidents, operations, funnel) on the v2 template
 
-Status: todo
+Status: done
 Depends on: 0144 | Base commit: c340b7f | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

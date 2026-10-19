@@ -1,6 +1,6 @@
 # 0140: Properties list, property page, add property and businesses on the v2 template
 
-Status: todo
+Status: done
 Depends on: 0139 | Base commit: 075294b | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session: about 14 tool calls, 30 tool calls at most, 60k tokens
 

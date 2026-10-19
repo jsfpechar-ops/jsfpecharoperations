@@ -1,6 +1,6 @@
 # 0161: admin user menu holds actions only; forms move to a manage section
 
-Status: todo
+Status: done
 Depends on: 0145 | Branch: claude/project-thread-5hw8cf
 Executor: Sonnet 5.5 | Fits one session
 

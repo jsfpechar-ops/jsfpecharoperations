@@ -1,6 +1,6 @@
 # 0157: fix the layout guard findings (except cleaning)
 
-Status: todo
+Status: done
 Depends on: 0156 | Branch: claude/project-thread-5hw8cf
 Executor: Sonnet 5.5 or Haiku 5.5 | Fits one session
 

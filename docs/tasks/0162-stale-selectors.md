@@ -1,6 +1,6 @@
 # 0162: admin heading placeholder and two stale test selectors
 
-Status: todo
+Status: done
 Depends on: 0161 | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session
 

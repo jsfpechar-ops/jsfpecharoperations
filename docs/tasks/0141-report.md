@@ -1,6 +1,6 @@
 # 0141 report (executor: Haiku 5.5)
 
-Status: review
+Status: done
 
 ## Done
 - Steps 1 to 6 ran, each `ok`, each committed as `0141 step k`: invoices.html, _list_filter.html, invoice_detail.html, invoice_form.html (+ host2.css block), invoice_stay_picker.html, catalog.json.
