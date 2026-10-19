@@ -50,3 +50,16 @@ Status: blocked (steps 1 to 5 run; step 6 checks run, no new commit)
 
 ## Owner steps left
 - None until the questions above are answered.
+
+## 0135-fix-1 (step 5 rerun)
+
+Status: review
+
+- Step 1 commit 1c00fb4: `reservation_detail.html` (ui-card on `#filed-by-hand`, `#file-by-hand`), `test_wp28_ui_sweep.py`, `test_host_stay_detail_layout_browser.py` (360 px nav assertion rewritten for scrolling tabs), `test_wp28_geometry.py` (v2 deadline hook). Tests: `52 passed`, `design lint: OK`.
+- Step 2 browser run: `26 passed, 1 warning in 99.61s`, 0 skipped. Overdue test runs and passes.
+- Screenshots (fresh, 12:10, this run): `/tmp/claude-0/-home-user-jsfpecharoperations/3c6f1ec6-a025-553c-863a-9c0748d5832e/scratchpad/shots/0135/stay-detail-en-390.png` shows four underline tabs in one row (last tab "Stay s" cut at the edge, scrolls); the hand-filing row is a bordered card; one coral button. `/tmp/claude-0/-home-user-jsfpecharoperations/3c6f1ec6-a025-553c-863a-9c0748d5832e/scratchpad/shots/0135/stay-detail-en-1280.png` shows tabs under the property line, the hand-filing card, and the stay settings form. A bottom mobile nav bar overlaps the 390 capture mid-page; that is the app shell, not this change.
+- Lint: ruff `--select E9,F63,F7,F82,F401,F841`: All checks passed.
+- Evidence folder restored with git checkout; nothing from it is committed.
+- 0135 report screenshots were stale (captured before step 3); replaced.
+
+Owner steps left: none.

@@ -276,9 +276,9 @@ def test_no_raw_style_or_legacy_control_in_the_template():
 
 ## 7. Acceptance
 
-- [ ] Back link, name, dates line; four jump tabs (no pills); one coral button, and only in `#now`; 40 px controls at 768+, 44 below.
+- [x] Back link, name, dates line; four jump tabs (no pills); one coral button, and only in `#now`; 40 px controls at 768+, 44 below.
 - [ ] Reporting table rows carry the four `data-card` roles; no `data-label`, no `style=`, no `btn`, no `pill` in the template.
-- [ ] 390 px and 1280 px screenshots in the shots folder and described in the report.
+- [x] 390 px and 1280 px screenshots in the shots folder and described in the report.
 - [ ] Lint passes with `reservation_detail.html` enforced; `host.css` has no `stay-jump` rule.
 
 ## 8. Stop and ask
