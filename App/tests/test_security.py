@@ -443,7 +443,7 @@ def test_mock_environment_is_declared_on_every_host_page(monkeypatch):
 
         # The badge must not render mock and test identically.
         overview = host.get("/")
-        assert 'class="env-badge mock"' in overview.text
+        assert 'class="env-badge ui-env mock"' in overview.text
 
         # Login says it too. It is where a host who keeps a practice instance
         # alongside a real one finds out they opened the wrong one, which is
