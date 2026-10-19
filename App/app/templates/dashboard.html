@@ -81,7 +81,7 @@
     {% endfor %}
     {% if missing_report_more %}<a href="/apartments">{{ t('dashboard.missing_banner.and_more', count=missing_report_more) }}</a>{% endif %}
   {% endset %}
-  <aside aria-label="{{ t('dashboard.setup.title') }}">{{ ui_banner('attention', missing_text) }}</aside>
+  {{ ui_banner('attention', missing_text, t('dashboard.setup.title'), '/apartments') }}
   {% endif %}
   {% call ui_section(t('dashboard.section.needs_action', count=counts.attention), actions='<a href="/reservations">' ~ t('dashboard.section.view_stays') ~ '</a>', id='needs-action') %}
     {{ dashboard_rows(queue_groups.needs_action, 'dashboard.queue.empty.action') }}

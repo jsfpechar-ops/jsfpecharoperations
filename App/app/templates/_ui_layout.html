@@ -48,7 +48,7 @@
 {%- endmacro %}
 
 {#- 7.4 table: columns = list of (label, align) with align '' or 'r'. Rows go in the call block as <tr class="ui-row"> ...
-    Below 1024 the page also renders ui_card rows inside <div class="ui-cards">; the CSS shows one of the two. -#}
+    Below 1024 the same <tr> restyles as a card (host2.css); never render rows twice. -#}
 {% macro ui_table_begin(columns, label='') -%}
 <table class="ui-table" aria-label="{{ label }}"><thead><tr>{% for text, align in columns %}<th scope="col"{% if align == 'r' %} class="ui-cell-r"{% endif %}>{{ text }}</th>{% endfor %}</tr></thead><tbody>
 {%- endmacro %}
