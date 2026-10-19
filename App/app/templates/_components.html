@@ -255,7 +255,7 @@
 {% endmacro %}
 
 {% macro csv_actions_menu(export_params='', compact=false, scope_label='') %}
-<button class="btn{% if compact %} small csv-in-filter{% endif %}" type="button"
+<button class="ui-btn ui-btn-quiet{% if compact %} ui-btn-compact csv-in-filter{% endif %}" type="button"
         data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}"
         data-csv-scope-label="{{ scope_label }}">
   {{ t('csv.export_stays') }}
