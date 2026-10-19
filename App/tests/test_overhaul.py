@@ -312,7 +312,7 @@ def test_reservation_rows_are_full_click_targets():
         page = _browser().get(f"/reservations?range=all&apartment={apartment_id}")
         assert page.status_code == 200
         assert f'data-href="/reservations/{stays[0]}?return_to=' in page.text
-        assert 'class="clickable-row"' in page.text
+        assert re.search(r'class="[^"]*\bclickable-row\b', page.text)
         # Open remains in the menu and native date link; the row has no duplicate button.
         assert 'class="btn row-open"' not in page.text
         assert 'class="row-menu-item" href="/reservations/' in page.text

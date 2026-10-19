@@ -174,7 +174,7 @@ def _next_action_for(page_text: str, stay_id: int) -> str:
         rf'<tr class="[^"]*\bdashboard-row\b[^"]*"[^>]*data-stay-id="{stay_id}"[^>]*>(.*?)</tr>', page_text, re.S,
     )
     assert row, f"stay {stay_id} has no row on the work queue"
-    action = re.search(r'<td class="dashboard-row-task">(.*?)</td>', row.group(1), re.S)
+    action = re.search(r'<td class="dashboard-row-task"[^>]*>(.*?)</td>', row.group(1), re.S)
     assert action, f"stay {stay_id} has no next-action line"
     return " ".join(action.group(1).split())
 
