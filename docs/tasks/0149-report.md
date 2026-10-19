@@ -1,36 +1,38 @@
-# 0149 report
+# 0149-fix-1 report
 
 Status: blocked
 
-## Commits
-- 0780cbd 0149 step 1 (host.css, host-design0123.css: old stays CSS removed; script printed 150/49/17/7 lines removed, brace count 0)
-- 13ed608 0149 step 2 (host2.css: Anchors A, B, C replaced/removed; appended desktop cell rules; design_lint OK)
-- e475024 0149 step 3 (reservations.html, dashboard.html: data-card roles; design_lint OK; tests/test_design_stays.py + tests/test_host_quiet_dashboard.py: 8 passed)
+## Files changed
+- App/tests/test_dashboard_queue_copy.py, test_deadline_after_reporting.py, test_host_language.py, test_overhaul.py (step 1)
+- App/app/static/host2.css (step 2)
+- App/app/static/host-design0123.css (step 3)
+- App/tests/test_host_stay_actions_browser.py, test_host_quiet_dashboard_browser.py (step 4)
 
-## Step 4 browser run (5 files)
-`4 failed, 7 passed, 1 warning in 82.18s`. Not all pass, 0 skipped.
-- test_host_list_layouts_browser.py:66 `stays/cs/1024`: `assert 25 <= 1` (horizontal overflow of 25 px at 1024, Czech).
-- test_host_list_layouts_browser.py:105 `('en', 1280, {'pill': True, 'deadline': True, 'height': 81.5, 'name': 23, ...})`: short row is 81.5 px, limit 72.
-- test_host_stay_actions_browser.py:199 `[{'height': 32, 'width': 114.6}, {'height': 32, 'width': 32}]`: desktop Send and ⋯ are 32 px, test expects 42. The 0079 `min-height:42px` rule was removed in step 1, and the brief names no replacement.
-- test_host_list_page_layout_browser.py:155 properties [40,42]: known local failure, ignored.
-The share_compact_row_menu capture test also failed (17.97 s, 1 failed). Its PNGs were written and copied.
+## Commands (last lines)
+- Step 1: `.venv/bin/python -m pytest tests/test_dashboard_queue_copy.py tests/test_deadline_after_reporting.py tests/test_host_language.py tests/test_overhaul.py -q --tb=line` gives `57 passed, 1 warning in 4.01s`
+- Step 2: `python3 scripts/design_lint.py` gives `design lint: OK`; brace count `0`
+- Step 3: `grep -c dashboard-row-actions` gives `1`; brace count `0`
+- Step 4: `ruff check --select E9,F63,F7,F82,F401,F841 tests/` gives `All checks passed!`
+- Step 5 (browser run, 5 files, -rs): `2 failed, 9 passed, 1 warning in 91.92s`
 
-Not fixed: the brief forbids adding page CSS, and the fix needs CSS the brief does not name. Stopped per section 8.
+## Failures
+1. `tests/test_host_list_layouts_browser.py:105` (test_stays_pills_and_deadlines_stay_on_one_line), fails on rerun:
+   `E   AssertionError: ('cs', 1280, {'pill': True, 'deadline': True, 'height': 89, 'name': 12, ...})`
+   `E   assert 89 <= 72`
+   Width 1280, locale cs. Stop rule (brief section 8) applies.
+2. `tests/test_host_list_page_layout_browser.py:155` (properties [40,42]): the listed known local failure, ignored.
 
-## By-eye check (screenshots in scratchpad/shots/0149/)
-- stays-1280-cs.png: does not match the brief. The header is a tinted fill, not plain. Each row has "Kopírovat odkaz" as a full-width box above "Otevřít" and ⋯, so Send and ⋯ are not side by side. Rows are about 108 px, not 48 to 60. The Send button sits in its own line.
-- stays-390-cs.png: cards are one box each. Line 1 label, status badge at right. The deadline badge sits under the status and overlaps the source line. Send is a full-width line only on ready cards. ⋯ is top right. The bottom nav covers the first card (screenshot artifact).
-- dashboard-*.png: not reviewed this turn.
+## Not done
+- Screenshot capture (`UBYHOST_CAPTURE_0079=1` run), copy to shots/0149, md5 check: not run, because the browser run stopped at the 72 px failure.
+- By-eye list (step 6): not done.
+- PR not opened: this run may not push.
 
 ## Deviations
-- Commit trailer used Claude Haiku 5.5 (per session attribution), not Opus 5.5 as the task text said.
-- Step 5 by-eye list for dashboard-390 and dashboard-1280 not done.
+Done: steps 1 to 4. Left: step 5 (capture, copy, reset), step 6 (report by eye, PR).
 
-## Questions
-- Which role or rule should set desktop Send and ⋯ to 42 px, and should stay rows be compact at 1280? Needs an owner or orchestrator decision.
-- Is the 1024 overflow (25 px) pre-existing? Not checked.
+## Questions for orchestrator
+- The stay row at cs/1280 with pill and deadline is 89 px high after step 2 (padding 0 on the table cell and the new 1024 to 1279 cell padding). Decide whether the 72 px limit or the row layout needs a change before rerunning.
+- Known follow-ups from the brief (section 8): phone badge squeeze, `d. m.` date format.
 
 ## Owner steps left
-- Decide the desktop action sizing and row height rules, then re-brief.
-
-Ruff: see command output.
+- None until the orchestrator decides on the 72 px failure.
