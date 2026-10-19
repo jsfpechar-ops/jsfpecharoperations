@@ -9,7 +9,7 @@ Master version: 2.0.0. Adds only.
 - tabs: (`stays.tab.stays`, `/reservations`), (`stays.tab.reports`, `/submissions`), (`stays.tab.register`, `/housebook`)
 - toolbar: search = guest or label; chips = Upcoming, Past, All, Archive; filters sheet = property select, state select, stay dates date_range; actions = Save view, Export CSV
 - columns: Stay (label + `source` as 13 meta); Dates (`d. m. to d. m.` + nights, "In house" neutral badge); Property (`property_dot`); Guests (n of m, right); Police report (badge + deadline line); actions (one `secondary compact` Send when ready, menu)
-- phone card (MASTER 7.3 roles, one DOM): `primary` = stay label with source inline; `badge` = report badge over the deadline badge; `secondary` = dates with nights inline; `meta` = property, then guests at the right; `actions` = menu at the right edge, Send (only when ready) as the full-width line 4
+- phone card (MASTER 7.3 roles, one DOM): `primary` = stay label with source inline; `secondary` = dates with nights inline; `badge` = report badge, then the deadline badge, on their own line; `meta` = property, then guests at the right; `actions` = menu at the top right, Send (only when ready) as the full-width last line
 - desktop rows: the Stay, Dates and Police report cells carry one sub-line; rows stay under 72 px; the date text is plain ink (the row is the link)
 - setup strip (`onboarding_banner`): one quiet line, `secondary compact` Continue + `quiet compact` Skip; the page's only primary is Add stay
 - badges: `action` = ready to send, guest missing, rejected, failed ("!" when overdue); `attention` = deadline within 24 h, sent and no confirmation after 48 h; `done` = confirmed; `neutral` = waiting for guests, not required, cancelled, archived

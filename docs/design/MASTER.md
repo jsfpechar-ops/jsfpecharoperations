@@ -205,13 +205,13 @@ Regular: height 40 (44 on phone), padding 0 14, font 14/600, radius 8, icon 16 p
 
 ### 7.3 Row and card: `row(href, primary, secondary, badge, meta, actions)`
 
-Phone: a card 12 px radius, 1 px `--line`, padding 12 16, min 76 px; line 1 primary 16/600 `--ink` and badge right; line 2 secondary 15 `--ink-2`; line 3 meta 13 `--ink-3`; `ellipsis-vertical` menu button 44 px at the right edge. Desktop (inside `table`): a 48 px `<tr>` with `data-href`, whole-row hover `--surface-2` and focus ring inset; first cell primary 15/600, other cells 15 `--ink-2`, numbers right-aligned tabular, badge cell, actions cell with at most one `secondary compact` button and the menu. Whole row is clickable; the primary text is also a real link.
+Phone: a card 12 px radius, 1 px `--line`, padding 12 16, min 76 px; line 1 primary 16/600 `--ink`; line 2 secondary 15 `--ink-2`; line 3 the badges, left, in a row that wraps; line 4 meta 13 `--ink-3`; `ellipsis-vertical` menu button 44 px at the top right. Desktop (inside `table`): a 48 px `<tr>` with `data-href`, whole-row hover `--surface-2` and focus ring inset; first cell primary 15/600, other cells 15 `--ink-2`, numbers right-aligned tabular, badge cell, actions cell with at most one `secondary compact` button and the menu. Whole row is clickable; the primary text is also a real link.
 
 Card roles (one DOM; the card is the table's `<tr>`, see 7.4). Every `<td>` carries `data-card="primary|secondary|meta|badge|actions|hide"` and `host2.css` places the roles; a page adds no card CSS:
-1. Grid columns `minmax(0,1fr) auto 44px`, column gap 12, row gap 2, padding 12 8 12 16.
-2. `primary`: row 1, column 1, 16/600 `--ink`. `secondary`: row 2, 15 `--ink-2`. `meta`: row 3, 13 `--ink-3`; at most two meta cells, the second sits right (column 2).
-3. `badge`: column 2 over rows 1 to 2, right-aligned; several badges in the cell stack with 4 px between them.
-4. `actions`: `display: contents`. Its `.row-menu` is the 44 px menu at the right edge (column 3, rows 1 to 3). Its one `.row-action-form`, when present, is a full-width 44 px secondary button on row 4 (the only extra line a card may have).
+1. Grid columns `minmax(0,1fr) auto 44px`, column gap 12, row gap 2, padding 12 8 12 16. The middle track holds only the second meta cell, so it is as narrow as a guest count; primary, secondary and badge span tracks 1 to 2.
+2. `primary`: row 1, 16/600 `--ink`. `secondary`: row 2, 15 `--ink-2`. `meta`: row 4, 13 `--ink-3`; at most two meta cells, the second sits right (track 2).
+3. `badge`: row 3, left-aligned, badges in a row with 4 px between lines and 8 px between badges; the row wraps when a label is long (0151: a wide badge never narrows the primary text).
+4. `actions`: `display: contents`. Its `.row-menu` is the 44 px menu at the top right (track 3, rows 1 to 4). Its one `.row-action-form`, when present, is a full-width 44 px secondary button on row 5 (the only extra line a card may have).
 5. `hide`: not shown below 1024. A `.ui-sub` inside a role cell flows inline after the cell's text. A cell without a role lands on its own line under the card (legacy only).
 
 ### 7.4 Table: `table(columns, rows)`
