@@ -508,3 +508,9 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 /* 0164: the guest-link cell in the property summary may wrap its icons under the URL */
 .host-workspace .property-summary-panel .property-inline-url { max-width: 11rem; }
 .host-workspace .property-summary-panel .property-inline-value { flex-wrap: wrap; }
+
+/* 0167: the cleaning period row aligns fields and button on one bottom line */
+.host-workspace .cleaning-period { align-items: flex-end; gap: var(--space-3); }
+.host-workspace .cleaning-period .ui-field { margin: 0; flex: 0 1 12rem; min-width: 0; }
+.host-workspace .cleaning-period > .ui-btn { align-self: flex-end; }
+.host-workspace .cleaning-period > a { align-self: flex-end; display: inline-flex; align-items: center; min-height: var(--control-h); }

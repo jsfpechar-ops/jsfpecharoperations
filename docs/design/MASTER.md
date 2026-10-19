@@ -305,6 +305,7 @@ Added 2026-10-19 after the owner found broken screens that every earlier check h
    - Content spills out of its table row.
    - A table cell does not sit under its column header.
    - Two buttons in one row differ in height by more than 2 px, or their centre lines differ.
+   - a button and a field in one row that do not share a bottom or centre line (field-button-misaligned);
    - A control is smaller than 44 × 44 px at 390.
    - A row menu opens off screen or holds a form field.
 2. Test data uses long real-world property names (35 characters or more, such as "Vivus Apartment with Balcony & Garage"). Short demo names hide wrapping and overlap.
