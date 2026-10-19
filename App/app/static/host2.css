@@ -152,7 +152,7 @@
 .host-workspace .ui-stat span { color: var(--ink-2); font-size: var(--size-14); }
 .host-workspace .ui-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); overflow: hidden; }
 .host-workspace .ui-table th { text-align: left; font-size: var(--size-13); font-weight: 500; color: var(--ink-3); height: var(--control-h); padding: 0 var(--row-px); border-bottom: 1px solid var(--line); }
-.host-workspace .ui-table td { height: var(--row-h); padding: var(--space-1) var(--row-px); border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--ink-2); font-size: var(--body-size); }
+.host-workspace .ui-table td { height: var(--row-h); padding: 0 var(--row-px); border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--ink-2); font-size: var(--body-size); }
 .host-workspace .ui-table tr:last-child td { border-bottom: 0; }
 .host-workspace .ui-table .ui-row:hover td, .host-workspace .ui-table .ui-row:focus-within td { background: var(--surface-2); }
 .host-workspace .ui-table .ui-cell-first, .host-workspace .ui-table .ui-cell-first a { color: var(--ink); font-weight: 600; text-decoration: none; }
@@ -272,6 +272,7 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 @media (max-width: 1279px) and (min-width: 1024px) {
   .host-workspace .ui-sidebar { width: var(--nav-w-collapsed); padding: var(--space-3) var(--space-2); }
   .host-workspace .wrap.with-sidebar { margin-left: var(--nav-w-collapsed); }
+  .host-workspace .ui-table th, .host-workspace .ui-table td { padding-left: var(--space-3); padding-right: var(--space-3); }
   .host-workspace .ui-sidebar :is(.brand-word, .ui-env, .ui-search-row span, .ui-search-row kbd, .ui-nav a > span:not(.ui-nav-count), .host-account-name) { display: none; }
   .host-workspace .ui-sidebar .ui-nav a, .host-workspace .ui-sidebar .ui-search-row { justify-content: center; padding: 0; }
   .host-workspace .ui-brand { flex-direction: column; height: auto; gap: var(--space-2); }
@@ -341,6 +342,11 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 
 /* 0149: desktop list cells. The row is the link, so a link in a cell is plain ink. */
 .host-workspace .ui-table td > a { color: inherit; text-decoration: none; }
-.host-workspace .ui-table td > .ui-sub, .host-workspace .ui-table .stay-report-deadline { margin: var(--space-1) 0 0; }
+.host-workspace .ui-table .stay-report-deadline { margin: var(--space-1) 0 0; }
 .host-workspace .ui-table .ui-cell-acts > .row-action-form, .host-workspace .ui-table .ui-cell-acts > .row-menu { display: inline-flex; vertical-align: middle; margin: 0; }
 .host-workspace .ui-table .ui-cell-acts > .row-action-form + .row-menu { margin-left: var(--space-2); }
+/* 0149-fix-1: table actions are full-height controls (40 px desktop, 44 in the phone card above) */
+@media (min-width: 1024px) {
+  .host-workspace .ui-table .ui-cell-acts .ui-btn { min-height: var(--control-h); height: var(--control-h); }
+  .host-workspace .ui-table .ui-cell-acts .ui-btn-icon { width: var(--control-h); }
+}
