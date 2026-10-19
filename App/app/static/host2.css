@@ -516,3 +516,5 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .cleaning-period > a { align-self: flex-end; display: inline-flex; align-items: center; min-height: var(--control-h); }
 /* 0168: help buttons meet the 24 px target size; the 44 px hit area stays */
 .host-workspace .help-tip-btn { width: var(--space-6); height: var(--space-6); }
+/* 0169: keyboard focus is always visible (WCAG 2.4.7) */
+.host-workspace :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: var(--space-1) solid var(--coral-600) !important; outline-offset: var(--space-1); }
