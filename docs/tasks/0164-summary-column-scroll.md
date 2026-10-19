@@ -1,6 +1,6 @@
 # 0164: property summary stops scrolling sideways; the guard catches hidden list scroll
 
-Status: todo
+Status: done
 Depends on: 0146-fix-1 | Branch: claude/project-thread-5hw8cf
 Executor: Sonnet 5.5 | Fits one session
 
