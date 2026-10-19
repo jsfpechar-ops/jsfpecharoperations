@@ -588,7 +588,7 @@
       button.setAttribute("aria-pressed", String(button.dataset.calTypeChoice === createKind));
     });
     if (createKind === "stay") updateNights();
-    if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
+    if (createDialog.open) placeCreate(createAnchor);
   }
   let createAnchor = null, createAnchorDate = "";
   // The create form changes height when its kind switches (cleaning to stay)
