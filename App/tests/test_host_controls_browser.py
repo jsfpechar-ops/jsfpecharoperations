@@ -291,7 +291,7 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                     assert field.evaluate("el => el.labels.length === 1 && getComputedStyle(el).width !== 'auto'")
                 csv_geometry = csv_dialog.evaluate("""el => {
                   const r = el.getBoundingClientRect(), form = el.querySelector('form'), fr = form.getBoundingClientRect();
-                  const buttons = [...el.querySelectorAll('.actions .btn')].map(b => b.getBoundingClientRect());
+                  const buttons = [...el.querySelectorAll('.ui-form-actions .ui-btn, .actions .btn')].map(b => b.getBoundingClientRect());
                   const fields = [...el.querySelectorAll('.grid.two .field')].map(f => f.getBoundingClientRect());
                   return {left:r.left,right:r.right,innerRight:fr.right,scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,
                     buttonWidths:buttons.map(b=>b.width),buttonHeights:buttons.map(b=>b.height),fieldBounds:fields.map(f=>({left:f.left,right:f.right,top:f.top,bottom:f.bottom}))};
@@ -352,7 +352,7 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
                 pdf_geometry = pdf_dialog.evaluate("""el => {
                   const r = el.getBoundingClientRect(), form = el.querySelector('form').getBoundingClientRect();
                   const controls = [...el.querySelectorAll('select,input[type=date]')].map(c=>c.getBoundingClientRect());
-                  const buttons = [...el.querySelectorAll('.actions .btn')].map(b=>b.getBoundingClientRect());
+                  const buttons = [...el.querySelectorAll('.ui-form-actions .ui-btn, .actions .btn')].map(b=>b.getBoundingClientRect());
                   return {left:r.left,right:r.right,formLeft:form.left,formRight:form.right,scrollWidth:el.scrollWidth,clientWidth:el.clientWidth,
                     controls:controls.map(c=>({left:c.left,right:c.right,top:c.top,bottom:c.bottom})),buttonWidths:buttons.map(b=>b.width),buttonHeights:buttons.map(b=>b.height)};
                 }""")
