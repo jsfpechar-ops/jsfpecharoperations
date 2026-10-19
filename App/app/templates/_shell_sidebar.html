@@ -1,0 +1,64 @@
+{#- Design v2 desktop sidebar (MASTER 6.3). Hidden below 1024 px by host2.css.
+    Keeps id="app-sidebar", .sidebar-nav and data-sidebar-collapse for app.js and the browser tests. -#}
+{% from "_icons.html" import icon with context %}
+{% set stays_nav = nav in ('reservations', 'submissions', 'housebook') %}
+{% set properties_nav = nav in ('apartments', 'guest_links', 'automation', 'entities', 'smart_locks') %}
+<aside class="ui-sidebar" id="app-sidebar">
+  <div class="ui-brand">
+    <a class="brand plain" href="/" aria-label="UbyHost"><img class="brand-logo" src="/static/ubyhost-mark.png?v=20261004a" alt=""><span class="brand-word">UbyHost</span></a>
+    <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact sidebar-collapse" type="button" data-sidebar-collapse aria-expanded="true" aria-label="{{ t('a11y.hide_menu') }}">{{ icon('panel-left', 16) }}</button>
+  </div>
+  <span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
+  <button class="ui-search-row" type="button" data-command-open>{{ icon('search', 16) }}<span>{{ t('host.search') }}</span><kbd data-command-shortcut>Ctrl K</kbd></button>
+  <nav class="ui-nav sidebar-nav" aria-label="{{ t('a11y.main_navigation') }}">
+    {% for href, icon_name, label, active in [
+        ('/', 'layout-dashboard', t('nav.overview'), nav == 'dashboard'),
+        ('/reservations', 'calendar-days', t('nav.stays'), stays_nav),
+        ('/apartments', 'house', t('nav.properties'), properties_nav),
+        ('/invoices', 'receipt', t('nav.invoices'), nav == 'invoices'),
+        ('/cleaning', 'brush-cleaning', t('nav.cleaning'), nav == 'cleaning'),
+        ('/stay-fees', 'coins', t('nav.stay_fees'), nav == 'stay_fees')] %}
+    <a href="{{ href }}" title="{{ label }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name, 20) }}<span>{{ label }}</span>{% if href == '/' and nav_action_count is defined and nav_action_count %}<span class="ui-nav-count">{{ nav_action_count if nav_action_count < 10 else '9+' }}</span>{% endif %}</a>
+    {% endfor %}
+    <span class="ui-nav-gap" aria-hidden="true"></span>
+    <a href="/smart-locks" title="{{ t('nav.smart_locks') }}" {% if nav == 'smart_locks' %}aria-current="page"{% endif %}>{{ icon('key-round', 20) }}<span>{{ t('nav.smart_locks') }}</span></a>
+    <a href="/settings" title="{{ t('nav.settings') }}" {% if nav == 'settings' %}aria-current="page"{% endif %}>{{ icon('settings', 20) }}<span>{{ t('nav.settings') }}</span></a>
+  </nav>
+  {% if current_user %}
+  <div class="host-rail-bottom">
+    <nav class="ui-nav ui-nav-bottom" aria-label="{{ t('nav.guide') }}">
+      <a class="host-help" href="/guide">{{ icon('book-open', 20) }}<span>{{ t('nav.guide') }}</span></a>
+      {% if current_user.role == 'admin' %}<a href="/admin/users" {% if nav == 'admin' %}aria-current="page"{% endif %}>{{ icon('shield', 20) }}<span>{{ t('nav.admin') }}</span></a>{% endif %}
+    </nav>
+    <details class="host-account" data-host-account>
+      <summary aria-label="{{ t('nav.account') }}: {{ workspace_user.display_name or workspace_user.username }}">
+        <span class="sidebar-user-avatar" aria-hidden="true">{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</span>
+        <span class="host-account-name">{{ workspace_user.display_name or workspace_user.username }}<small>{{ t('nav.account') }}</small></span>
+      </summary>
+      <div class="host-account-menu">
+        <a href="/settings">{{ t('nav.settings') }}</a>
+        {% if operator().email %}
+        <a class="host-menu-support" href="mailto:{{ operator().email }}">{{ t('nav.support') }}<small>{{ operator().email }}</small></a>
+        {% endif %}
+        <div class="host-menu-rule"></div>
+        <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
+        <a href="/privacy-requests">{{ t('nav.privacy_requests') }}</a>
+        {% if current_user.role == 'admin' %}
+        <a href="/admin/users">{{ t('nav.users') }}</a>
+        <a href="/admin/incidents">{{ t('users.incidents_link') }}</a>
+        <a href="/admin/operations">{{ t('ops.title') }}</a>
+        <a href="/admin/funnel">{{ t('funnel.title') }}</a>
+        {% endif %}
+        <div class="host-menu-rule"></div>
+        <form method="post" action="/language" class="lang-switch compact">
+          <input type="hidden" name="next" value="{{ request.url.path }}">
+          <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
+          <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
+        </form>
+        <button class="nav-button" type="button" data-shortcuts-open>{{ t('shortcuts.open') }}</button>
+        <form method="post" action="/logout"><button class="nav-button" type="submit">{{ t('nav.logout') }}</button></form>
+      </div>
+    </details>
+  </div>
+  {% endif %}
+</aside>
