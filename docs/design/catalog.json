@@ -18,7 +18,9 @@
     "ui-sidebar", "ui-brand", "ui-brand-mark", "ui-env", "ui-search-row", "ui-nav", "ui-nav-gap", "ui-nav-count", "ui-nav-bottom", "ui-account", "ui-avatar",
     "ui-topbar", "ui-tabbar", "ui-tabbar-ic",
     "ui-calendar", "ui-cal-h", "ui-cal-grid",
-    "ui-icon", "ui-input", "ui-select", "ui-textarea"
+    "ui-icon", "ui-input", "ui-select", "ui-textarea",
+    "ui-bone-title", "ui-bone-meta", "ui-bone-btn", "ui-bone-toolbar", "ui-bone-label", "ui-bone-control", "ui-bone-badge", "ui-bone-line",
+    "ui-w10", "ui-w14", "ui-w18", "ui-w30", "ui-w40", "ui-w60", "ui-skel-detail", "ui-skel-side", "ui-cards-stack"
   ],
   "hooks": ["sr-only", "skip-link", "grow", "hidden", "is-open", "is-on", "is-active", "row-menu", "row-menu-trigger", "row-menu-panel", "help-tip", "help-tip-btn", "help-tip-body", "toast", "toast-stack", "clickable-row"],
   "enforced_templates": [],
