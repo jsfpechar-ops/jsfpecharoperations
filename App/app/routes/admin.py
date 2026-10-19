@@ -4221,6 +4221,11 @@ def dismiss_alert(alert_id: int, request: Request):
         return _back(_redirect_path_from_referer(request),
                      err=_flash(request, "flash.error.resign_card_locked"))
     alerts.resolve_by_id(alert_id, user_dismissed=True)
+    if row["kind"] == "guest_pin_rotated":
+        # One card stands for every property whose PIN was rotated (0148).
+        for other in alerts.open_alerts(row["owner_user_id"]):
+            if other["kind"] == "guest_pin_rotated":
+                alerts.resolve_by_id(other["id"], user_dismissed=True)
     if request.headers.get("x-requested-with") == "fetch":
         return Response(status_code=204)
     return RedirectResponse(_redirect_path_from_referer(request), status_code=303)
