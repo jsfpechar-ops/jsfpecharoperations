@@ -102,7 +102,7 @@ def test_dashboard_actions_share_height_and_gap(base):
         assert aligned["stats"] == aligned["first"], "the stat tiles must align with the content below"
         measured = page.locator(".ui-ph-acts").evaluate(
             """(group) => {
-              const buttons = [...group.querySelectorAll('.ui-btn')];
+              const buttons = [...group.querySelectorAll('.ui-btn')].filter((button) => button.offsetParent !== null);
               const boxes = buttons.map((button) => {
                 const box = button.getBoundingClientRect();
                 return { top: box.top, right: box.right, bottom: box.bottom, left: box.left,
