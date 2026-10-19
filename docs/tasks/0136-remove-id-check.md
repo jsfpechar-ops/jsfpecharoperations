@@ -5,7 +5,7 @@ Depends on: 0135 | Base commit: df8b842 | Branch: claude/project-thread-td6fpc
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 HIGH RISK (filing-adjacent): exact diff only; the reviewer reads the full diff of every file below.
 
-Owner confirmation pending on the set; default = recommended (legacy actions items 1 and 2). Part of [design-v2](../plans/design-v2.md). Commit each step as `0136 step k`. Never push, never open a PR.
+Owner-confirmed set (2026-10-19): legacy actions items 1 and 2. Part of [design-v2](../plans/design-v2.md). Commit each step as `0136 step k`. Never push, never open a PR.
 
 ## 1. Objective
 
@@ -234,4 +234,4 @@ Write `docs/tasks/0136-report.md` (600 tokens at most) and set `Status: review`:
 
 ## Owner steps
 
-1. Confirm the removal set (legacy actions items 1 and 2) before this brief runs; the brief assumes the recommended set.
+None (set confirmed 2026-10-19).

@@ -1,11 +1,11 @@
-# 0137: Remove legacy host actions (calendar sync copies, row send, code lists, slot, demo, claim workarounds; Send all only for manual sending)
+# 0137: Remove legacy host actions (calendar sync copies, row send, code lists, slot, claim workarounds; Send all only for manual sending)
 
 Status: todo
 Depends on: 0136 | Base commit: df8b842 | Branch: claude/project-thread-td6fpc
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 HIGH RISK (filing-adjacent): exact diff only; the reviewer reads the full diff of every file below.
 
-Owner confirmation pending on the set; default = recommended (legacy actions items 3 to 10). Part of [design-v2](../plans/design-v2.md). Commit each step as `0137 step k`. Never push, never open a PR.
+Owner-confirmed set (2026-10-19): items 3 to 6 and 8 to 10 as recommended; item 7 (demo buttons) is kept. Part of [design-v2](../plans/design-v2.md). Commit each step as `0137 step k`. Never push, never open a PR.
 
 ## 1. Objective
 
@@ -15,7 +15,7 @@ Apply the recommended removal set from `/mnt/project-files/design-reset/legacy-a
 - 4: the stays-list row "Send" button goes; the stay detail keeps one Send button; "Send again" after a refusal moves into the stay's More menu.
 - 5: "Refresh code lists from UbyPort" and its help line go (the bundled lists are used; the route stays for CI).
 - 6: "Remove extra guest" goes (editing the expected count does the same; the route stays).
-- 7: "Delete demo stay" and "Clear demo data" buttons go (routes stay).
+- 7: kept. "Delete demo stay" and "Clear demo data" already show only with demo data; after 0133 the dashboard renders "Clear demo data" once, in the header actions, so nothing to dedupe.
 - 8: "Reopen guest access" and "Release assignment" move into the stay's More menu.
 - 9: "Send all ready" shows only when the host has a property with manual sending.
 - 10: "Save and test connection" stays where it is (UbyPort setup section); no change.
@@ -26,7 +26,7 @@ Nothing under "Keep" changes: filed-by-hand and Undo, the one Send button, Re-se
 
 Every anchor is the text after 0133 (dashboard), 0134 (stays list) and 0135 (stay detail). Verify each with `grep -n` before editing; if one is not found verbatim, stop. No route, `reporting.py`, `send_controls` or worker code changes; the only Python change is one query in the stays list route (item 9).
 
-Anchor A, `App/app/templates/dashboard.html`: the string `{% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}` (twice: secondary actions and `#dashboard-more`); the string `{% call ui_empty(t('dashboard.empty.no_stays')) %}{{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}{% endcall %}` (once); the line `  {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}` (once); `, sync_calendars_button, guest_count with context %}` in the import line (once).
+Anchor A, `App/app/templates/dashboard.html`: the string `{% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}` (twice: secondary actions and `#dashboard-more`); the string `{% call ui_empty(t('dashboard.empty.no_stays')) %}{{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}{% endcall %}` (once); `, sync_calendars_button, guest_count with context %}` in the import line (once).
 
 Anchor B, `App/app/templates/apartments.html` line 7: `  {{ sync_calendars_button(return_to='/apartments') }}` and `sync_calendars_button, ` in the import on line 5.
 
@@ -52,15 +52,7 @@ Anchor E, same file, the end of the `#now` menu (two lines):
       {{ row_menu_end() }}
 ```
 
-Anchor F, same file, the demo form (five lines inside `<div class="ui-banner ui-banner-neutral stay-demo-banner" id="demo-stay">`):
-
-```
-  <form method="post" action="/reservations/{{ reservation.id }}/delete-demo" class="inline"
-        data-confirm data-confirm-message="{{ t('confirm.delete_demo_stay') }}">
-    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('setup_guide.try.delete') }}</button>
-  </form>
-```
+Anchor F: none (item 7 kept).
 
 Anchor G, same file, the claim actions (fifteen lines, from `  <div class="stay-command-actions">` that follows `{{ t('stay.claim.unclaimed') }}` to its `  </div>`), containing the `reopen-guest` and `release-claim` forms.
 
@@ -97,10 +89,10 @@ Anchor J, `App/app/routes/admin.py` (stays list route): the line `    query_para
 | `App/app/templates/dashboard.html` | edit | Anchor A |
 | `App/app/templates/apartments.html` | edit | Anchor B |
 | `App/app/templates/reservations.html` | edit | Anchor C |
-| `App/app/templates/reservation_detail.html` | edit | Anchors D to H |
+| `App/app/templates/reservation_detail.html` | edit | Anchors D, E, G, H |
 | `App/app/templates/_property_editor.html` | edit | Anchor I |
 | `App/app/routes/admin.py` | edit | Anchor J: `manual_send` flag |
-| `App/app/host_i18n.py` | edit | delete eight unused keys (en and cs) |
+| `App/app/host_i18n.py` | edit | delete four unused keys (en and cs) |
 | `App/app/host_design_i18n.py` | edit | delete `host.remove_slot`, `host.remove_slot_confirm` (en and cs) |
 | `App/tests/test_calendar_sync_ui.py` | edit | lines 167 to 170 |
 | `App/tests/test_dashboard_empty.py` | edit | lines 122 and 128 |
@@ -126,7 +118,6 @@ def patch(name, pairs):
 patch("dashboard.html", [
  ("{% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}", "", 2),
  ("{% call ui_empty(t('dashboard.empty.no_stays')) %}{{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}{% endcall %}", "{{ ui_empty(t('dashboard.empty.no_stays')) }}", 1),
- ("""  {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}\n""", "", 1),
  (", sync_calendars_button, guest_count with context %}", ", guest_count with context %}", 1),
 ])
 patch("apartments.html", [
@@ -177,12 +168,6 @@ E_NEW = """        <a class="row-menu-item" href="/apartments/{{ reservation.apa
         {% endif %}
       {{ row_menu_end() }}
 """
-F_OLD = """  <form method="post" action="/reservations/{{ reservation.id }}/delete-demo" class="inline"
-        data-confirm data-confirm-message="{{ t('confirm.delete_demo_stay') }}">
-    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('setup_guide.try.delete') }}</button>
-  </form>
-"""
 H_OLD = """          {% if not stay_inactive and progress.expected > 1 %}
           <form method="post" action="/reservations/{{ reservation.id }}/remove-empty-slot" data-confirm data-confirm-title="{{ t('host.remove_slot') }}" data-confirm-message="{{ t('host.remove_slot_confirm') }}">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -192,7 +177,7 @@ H_OLD = """          {% if not stay_inactive and progress.expected > 1 %}
           {% endif %}
 """
 p = pathlib.Path("app/templates/reservation_detail.html"); s = p.read_text(encoding="utf-8")
-for old, new in ((D_OLD, D_NEW), (E_OLD, E_NEW), (F_OLD, ""), (H_OLD, "")):
+for old, new in ((D_OLD, D_NEW), (E_OLD, E_NEW), (H_OLD, "")):
     assert s.count(old) == 1, old[:70]; s = s.replace(old, new)
 # Anchor G: the claim actions div, reopen-guest form first
 start = s.index('<div class="stay-command-actions">\n    {% if stay_claim.guest_access_locked_at %}')
@@ -200,7 +185,7 @@ end = s.index("  </div>\n", start) + len("  </div>\n")
 block = s[start:end]
 assert "release-claim" in block and block.count("<form") == 2, block
 s = s[:start].rstrip(" ") + s[end:]
-assert s.count("reopen-guest") == 1 and s.count("release-claim") == 1 and "remove-empty-slot" not in s and "delete-demo" not in s
+assert s.count("reopen-guest") == 1 and s.count("release-claim") == 1 and "remove-empty-slot" not in s and s.count("delete-demo") == 1
 p.write_text(s, encoding="utf-8")
 patch("_property_editor.html", [("""        <button class="btn" type="submit" formaction="{{ base_url }}/refresh-codelists"
                 formmethod="post" formnovalidate>{{ t('apartment.form.refresh_codelists') }}</button>
@@ -238,8 +223,7 @@ print('compiled')"`. Expected: `compiled`.
 .venv/bin/python - <<'EOF'
 import pathlib, re
 p = pathlib.Path("app/host_i18n.py"); s = p.read_text(encoding="utf-8")
-for key in ("demo.clear", "confirm.clear_demo", "setup_guide.try.delete", "confirm.delete_demo_stay",
-            "apartment.form.refresh_codelists", "apartment.form.codelists_bundled",
+for key in ("apartment.form.refresh_codelists", "apartment.form.codelists_bundled",
             "apartment.form.codelists_cached", "apartment.form.credentials_actions_help"):
     pat = re.compile(r'^        "' + re.escape(key) + r'": .*\n', re.M)
     assert len(pat.findall(s)) == 2, (key, len(pat.findall(s))); s = pat.sub("", s)
@@ -252,7 +236,7 @@ p.write_text(s, encoding="utf-8"); print("ok")
 EOF
 ```
 
-   Expected: `ok`. Command: `grep -rn "demo.clear\|confirm.clear_demo\|setup_guide.try.delete\|confirm.delete_demo_stay\|refresh_codelists\|codelists_bundled\|codelists_cached\|credentials_actions_help\|host.remove_slot" App/app --include=*.py --include=*.html | grep -v 'routes/admin.py' | wc -l`. Expected: `0`. (`routes/admin.py` keeps its `/refresh-codelists` route and flash keys.)
+   Expected: `ok`. Command: `grep -rn "refresh_codelists\|codelists_bundled\|codelists_cached\|credentials_actions_help\|host.remove_slot" App/app --include=*.py --include=*.html | grep -v 'routes/admin.py' | wc -l`. Expected: `0`. (`routes/admin.py` keeps its `/refresh-codelists` route and flash keys.)
 
 4. Tests, exact edits:
    - `App/tests/test_calendar_sync_ui.py` lines 167 to 170: replace the four asserts with
@@ -265,7 +249,7 @@ EOF
      ```
    - `App/tests/test_dashboard_empty.py`: line 128 `    assert "Update calendars" in with_feed.text` -> `    assert "Update calendars" not in with_feed.text`; rename the test on line 117 to `test_the_dashboard_never_shows_the_sync_button` and keep line 122.
    - `App/tests/test_host_quiet_dashboard_browser.py` lines 317 to 330: replace
-     `header_actions = page.locator(".dashboard-actions")` with `header_actions = page.locator(".ui-ph-acts")` (if 0133 already did, keep it); delete the two lines `assert header_actions.locator('form[action="/sync"]').is_visible()` and `assert header_actions.locator('form[action="/demo/reset"]').is_visible()`; replace the `header_buttons = header_actions.locator(\n                    ".action-group > .btn, .action-group > form > .btn, .action-group .sync-cta .btn"\n                )` call with `header_buttons = header_actions.locator(".ui-btn")`; replace `# Add cleaning is the requested fourth header action.\n                assert header_buttons.count() == 4` with `# Add stay, Add cleaning and the More button: the sync and demo buttons are gone (0137).\n                assert header_buttons.count() == 3`; replace `assert all(abs(box["height"] - (44 if width <= 390 else 42)) <= 1 for box in header_boxes)` with `assert all(box["height"] >= 40 for box in header_boxes)`.
+     `header_actions = page.locator(".dashboard-actions")` with `header_actions = page.locator(".ui-ph-acts")` (if 0133 already did, keep it); delete the line `assert header_actions.locator('form[action="/sync"]').is_visible()` (the `/demo/reset` assert stays); replace the `header_buttons = header_actions.locator(\n                    ".action-group > .btn, .action-group > form > .btn, .action-group .sync-cta .btn"\n                )` call with `header_buttons = header_actions.locator(".ui-btn")`; replace `# Add cleaning is the requested fourth header action.\n                assert header_buttons.count() == 4` with `# Add stay, Add cleaning, Clear demo data and the More button: the sync button is gone (0137).\n                assert header_buttons.count() == 4`; replace `assert all(abs(box["height"] - (44 if width <= 390 else 42)) <= 1 for box in header_boxes)` with `assert all(box["height"] >= 40 for box in header_boxes)`.
    - `App/tests/test_host_stay_actions_browser.py` lines 191 to 200: delete `send = ready_row.locator(".row-action-send")` and `assert send.is_visible()`; `boxes = [control.bounding_box() for control in (send, trigger)]` -> `boxes = [trigger.bounding_box()]`; `for box in (boxes[0], boxes[1])), boxes` -> `for box in boxes), boxes`.
    - `App/tests/test_send_controls.py` line 741: `    assert 'class="ui-btn ui-btn-primary" type="submit"' in fixed` -> `    assert '<button class="row-menu-item" type="submit" role="menuitem">Send again</button>' in fixed` and add after line 742 `    assert 'class="ui-btn ui-btn-primary" type="submit"' not in fixed`.
 
@@ -300,17 +284,17 @@ def test_the_stay_detail_keeps_one_send_and_moves_the_rest_into_the_menu():
     text = _t("reservation_detail.html")
     assert text.count("/submit\" class=\"inline\"") == 1
     assert text.count('/submit" class="row-menu-form"') == 1
-    for gone in ("remove-empty-slot", "delete-demo"):
-        assert gone not in text, gone
+    assert "remove-empty-slot" not in text
+    assert text.count("delete-demo") == 1  # item 7 kept: shows only for the demo stay
     menu = text[text.index('id="now"'):text.index("</section>", text.index('id="now"'))]
     assert "reopen-guest" in menu and "release-claim" in menu
     assert "filed-by-hand" in text  # Keep: the manual-filing fallback
 
 
-def test_code_list_refresh_and_demo_buttons_are_gone():
+def test_code_list_refresh_is_gone_and_test_connection_and_clear_demo_stay():
     assert "refresh-codelists" not in _t("_property_editor.html")
     assert "test-connection" in _t("_property_editor.html")  # item 10: kept in UbyPort setup
-    assert "/demo/reset" not in _t("dashboard.html")
+    assert _t("dashboard.html").count("/demo/reset") == 1  # item 7 kept, once
 ```
 
    Command: `cd App && .venv/bin/python -m pytest tests/test_remove_legacy_actions.py tests/test_send_controls.py tests/test_calendar_sync_ui.py tests/test_dashboard_empty.py tests/test_stays_empty_workspace.py tests/test_host_redesign.py tests/test_demo_stay_exclusion.py tests/test_flash_next_step.py tests/test_property_hub.py tests/test_endtoend.py tests/test_host_i18n.py tests/test_design_lint.py -q --tb=short -x 2>&1 | tail -30`. Expected: passed. Filing row: `cd App && .venv/bin/python -m pytest tests/test_ubyport_*.py tests/test_worker.py tests/test_submission_*.py tests/test_filed_by_hand.py tests/test_duplicate_guard.py tests/test_claim_*.py -q --tb=short -x 2>&1 | tail -30`. Expected: passed.
@@ -321,7 +305,7 @@ def test_code_list_refresh_and_demo_buttons_are_gone():
 
 ## 5. Do not touch
 
-Routes (all stay, including `/sync`, `/demo/reset`, `/reservations/{id}/delete-demo`, `remove-empty-slot`, `reopen-guest`, `release-claim`, `refresh-codelists`), `app/reporting.py`, `app/send_controls`, the worker, `_components.html` macros (unused ones are deleted in the cleanup brief), the filed-by-hand panel, invoice and fee actions, Settings purge; hard rules 1, 3, 8.
+Routes (all stay, including `/sync`, `remove-empty-slot`, `reopen-guest`, `release-claim`, `refresh-codelists`), `app/reporting.py`, `app/send_controls`, the worker, `_components.html` macros (unused ones are deleted in the cleanup brief), the filed-by-hand panel, the demo buttons (item 7, kept), invoice and fee actions, Settings purge; hard rules 1, 3, 8.
 
 ## 6. Commands
 
@@ -330,9 +314,9 @@ Routes (all stay, including `/sync`, `/demo/reset`, `/reservations/{id}/delete-d
 
 ## 7. Acceptance
 
-- [ ] Dashboard header: Add stay, Add cleaning, More; no sync or demo button. Properties header: Add property only. Property calendar section: one Update calendars.
+- [ ] Dashboard header: Add stay, Add cleaning, Clear demo data (demo only), More; no sync button. Properties header: Add property only. Property calendar section: one Update calendars.
 - [ ] Stays list rows: menu only. Send all ready: present for a host with a manual property, absent otherwise.
-- [ ] Stay detail: one Send button at most; Send again, Reopen guest access and Release assignment in the More menu; no slot or demo button.
+- [ ] Stay detail: one Send button at most; Send again, Reopen guest access and Release assignment in the More menu; no slot button; Delete demo stay stays (demo only).
 - [ ] Filing tests pass unchanged.
 
 ## 8. Stop and ask
@@ -349,4 +333,4 @@ Write `docs/tasks/0137-report.md` (600 tokens at most) and set `Status: review`:
 
 ## Owner steps
 
-1. Confirm the removal set (items 3 to 10, recommended options) before this brief runs.
+None (set confirmed 2026-10-19).
