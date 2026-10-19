@@ -1,0 +1,8 @@
+{#- Design v2 phone top bar (MASTER 6.2.5). Shown below 1024 px only. Not sticky. -#}
+{% from "_icons.html" import icon with context %}
+<header class="ui-topbar">
+  <a class="brand plain" href="/" aria-label="UbyHost"><img class="brand-logo" src="/static/ubyhost-mark.png?v=20261004a" alt=""></a>
+  <span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
+  <span class="grow"></span>
+  <button class="ui-btn ui-btn-quiet ui-btn-icon" type="button" data-command-open aria-label="{{ t('command.open') }}">{{ icon('search', 20) }}</button>
+</header>

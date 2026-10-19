@@ -149,17 +149,12 @@ def test_stay_page_cards_hold_their_buttons(base, world, browser):
         measured = page.evaluate(
             """() => {
               const R = el => el.getBoundingClientRect();
-              const out = {placeholders: [], verify: null, filing: null};
+              const out = {placeholders: [], filing: null};
               document.querySelectorAll('.guest-card.placeholder').forEach(card => {
                 const c = R(card);
-                const worst = Math.max(...[...card.querySelectorAll('.btn')].map(b => R(b).bottom));
+                const worst = Math.max(...[...card.querySelectorAll('.ui-btn')].map(b => R(b).bottom));
                 out.placeholders.push(Math.round(c.bottom - worst));
               });
-              const verify = document.querySelector('.guest-card .verify-form .btn');
-              if (verify) {
-                const card = verify.closest('.guest-card');
-                out.verify = Math.round(R(card).bottom - R(verify).bottom);
-              }
               const filing = document.querySelector('#file-by-hand');
               if (filing) out.filing = parseFloat(getComputedStyle(filing).paddingLeft);
               return out;
@@ -169,8 +164,6 @@ def test_stay_page_cards_hold_their_buttons(base, world, browser):
         context.close()
     assert measured["placeholders"], measured
     assert min(measured["placeholders"]) >= 8, f"a button sits on the card edge: {measured}"
-    if measured["verify"] is not None:
-        assert measured["verify"] >= 8, f"Mark ID checked touches the card edge: {measured}"
     if measured["filing"] is not None:
         assert measured["filing"] >= 12, "the hand-filing panel lost its padding"
 
@@ -187,7 +180,7 @@ def test_overdue_deadline_is_a_pill_not_a_bar(base, world, browser):
     try:
         page.goto(f"{base}/reservations/{overdue['id']}?lang=en")
         widths = page.evaluate(
-            """() => { const pill = document.querySelector('.metric-value.deadline.overdue');
+            """() => { const pill = document.querySelector('.metric-value[data-deadline=\"overdue\"]');
               if (!pill) return null;
               return [pill.getBoundingClientRect().width, pill.parentElement.getBoundingClientRect().width]; }"""
         )

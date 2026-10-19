@@ -42,9 +42,16 @@ def test_stay_detail_groups_facts_and_wraps(stay_actions_host, stay_actions_base
                     assert order == sorted(order), order
                     assert page.locator("#stay-quick-edit").evaluate("e => e.tagName") == "SECTION"
                     assert page.locator("nav.stay-jump a").count() == 4
-                    for link in page.locator("nav.stay-jump a").all():
-                        box = link.bounding_box()
-                        assert box and box["x"] >= -1 and box["x"] + box["width"] <= width + 1
+                    # MASTER 5.2: tabs scroll horizontally on phone and never wrap, so the nav stays
+                    # inside the lane and every link sits inside the nav's scroll extent.
+                    nav_box = page.locator("nav.stay-jump").bounding_box()
+                    assert nav_box and nav_box["x"] >= -1 and nav_box["x"] + nav_box["width"] <= width + 1, nav_box
+                    extents = page.evaluate(
+                        "(() => { const nav = document.querySelector('nav.stay-jump'); const n = nav.getBoundingClientRect();"
+                        " return [...nav.querySelectorAll('a')].map(a => { const b = a.getBoundingClientRect();"
+                        " return [b.left - n.left + nav.scrollLeft, b.right - n.left + nav.scrollLeft, nav.scrollWidth, getComputedStyle(nav).overflowX]; }); })()"
+                    )
+                    assert all(-1 <= left and right <= scroll_w + 1 and overflow in ("auto", "scroll") for left, right, scroll_w, overflow in extents), extents
                     if key != "incomplete":
                         # Identity row and stay row, both visible on the page itself.
                         assert page.locator(".guest-card .guest-facts").count() == 2

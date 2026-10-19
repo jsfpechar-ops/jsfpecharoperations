@@ -24,7 +24,7 @@ TOKEN = "deadlinefiledtoken"
 
 _ENTITY_ID: int | None = None
 
-DEADLINE_SPAN = re.compile(r'class="deadline(?: [a-z-]+)* ([a-z]+)"[^>]*>([^<]*)<')
+DEADLINE_SPAN = re.compile(r'data-deadline="([a-z_]+)"[^>]*>(?:! )?([^<]*)<')
 
 
 # --- the cell itself -------------------------------------------------------
@@ -248,7 +248,7 @@ def test_a_reported_stay_past_its_deadline_shows_no_overdue(one_day_window):
         assert not any(level == "overdue" for level, _ in badges), name
         assert "overdue by" not in page, name
         if name == "dashboard":
-            task = re.search(r'<p class="dashboard-row-task">(.*?)</p>', page, re.S)
+            task = re.search(r'<td class="dashboard-row-task"[^>]*>(.*?)</td>', page, re.S)
             assert task and host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
 
 
@@ -264,7 +264,7 @@ def test_a_stay_filed_after_its_deadline_reads_late(one_day_window):
         assert ("neutral", "Reported 6 h late") in badges, f"{name}: {badges}"
         assert "overdue by" not in page, name
         if name == "dashboard":
-            task = re.search(r'<p class="dashboard-row-task">(.*?)</p>', page, re.S)
+            task = re.search(r'<td class="dashboard-row-task"[^>]*>(.*?)</td>', page, re.S)
             assert task and host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
 
 

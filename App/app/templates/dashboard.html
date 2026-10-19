@@ -1,36 +1,42 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'dashboard' %}
+{% set body_kind = 'detail' %}
+{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count with context %}
+{% set show_welcome = not apartments and not onboarding.dismissed %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, deadline_badge, property_identity, sync_calendars_button, guest_count with context %}
+{% block page_title %}{% if not show_welcome %}{{ t('dashboard.title') }}{% endif %}{% endblock %}
+{% block meta %}{{ today.isoformat() | date_cz }}{% if last_sync %} · {{ t('dashboard.last_synced', when=last_sync | datetime_local) }}{% endif %}{% endblock %}
+{% block primary_action %}{% if not show_welcome %}{{ ui_button('+ ' ~ t('stays.add_stay'), 'primary', href='/reservations?new=1', attrs='data-calendar-add data-cal-create-type="stay"') }}{% endif %}{% endblock %}
+{% block secondary_actions %}{% if not show_welcome %}
+  {{ ui_button('+ ' ~ t('calendar.add_cleaning'), 'secondary', href='/cleaning/new', attrs='data-calendar-add data-cal-create-type="cleaning"') }}
+  
+  {% if demo_loaded %}<form method="post" action="/demo/reset" class="inline" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}">{{ ui_button(t('demo.clear'), 'quiet', type='submit') }}</form>{% endif %}
+  {{ ui_icon_button(t('common.more_actions'), 'ellipsis-vertical', attrs='data-toggle-panel="dashboard-more"', extra_class='ui-ph-menu') }}
+{% endif %}{% endblock %}
 
 {% macro dashboard_rows(items, empty_key) %}
 {% if items %}
-<div class="dashboard-row-list">
+<div class="ui-table-wrap">
+{{ ui_table_begin([(t('host.stay_dates'), ''), (t('stays.table.apartment'), ''), (t('stays.table.guests'), 'r'), (t('dashboard.stat.action'), ''), ('', '')], t('dashboard.section.needs_action', count=items | length)) }}
 {% for row in items %}
   {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
   {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
-  {#- 0099: the whole row opens the stay, as on every list (shared clickable-row). -#}
-  <article class="dashboard-row clickable-row {{ 'is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}"
-           data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
-           aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
-    <div class="dashboard-row-copy">
-      <p class="dashboard-row-dates">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}
-        {% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}<span>{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}</span>{% endif %}
-        {% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}{% endif %}
-        {{ guest_count(progress) }}
-      </p>
-      <a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ property_identity(reservation.apartment_id, stay_label, true) }}</a>
-      <p class="dashboard-row-task">
-        {% if progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}
-        {% elif progress.not_registered %}<span class="pill amber">{{ tp('host.missing', progress.not_registered) }}</span>
-        {% elif cell.state in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}
-        {% elif progress.status in ('reported', 'not_required') %}{{ next_action(progress, reservation) }}
-        {% elif progress.status == 'awaiting_guest' %}{# Routine waiting is shown as occupancy, not a task. #}
-        {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
-      </p>
-    </div>
-    <div class="dashboard-row-actions">
+  <tr class="ui-row dashboard-row clickable-row{{ ' is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
+      aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
+    <td class="ui-cell-first dashboard-row-copy" data-card="primary"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
+      <span class="ui-sub dashboard-row-dates">{% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}{% endif %}</span></td>
+    <td data-card="secondary">{{ property_identity(reservation.apartment_id, stay_label, true) }}</td>
+    <td class="ui-cell-r ui-num" data-card="meta">{{ guest_count(progress) }}</td>
+    <td class="dashboard-row-task" data-card="badge">
+      {% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}
+      {% elif progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}
+      {% elif progress.not_registered %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span>
+      {% elif cell.state in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}
+      {% elif progress.status in ('reported', 'not_required') %}{{ next_action(progress, reservation) }}
+      {% elif progress.status == 'awaiting_guest' %}{# Routine waiting is shown as occupancy, not a task. #}
+      {% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=('(demo)' in reservation.internal_name or reservation.source == 'demo')) }}{% endif %}
+    </td>
+    <td class="ui-cell-acts dashboard-row-actions" data-card="actions">
       {{ row_menu_begin() }}
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to=/" role="menuitem">{{ t('common.open') }}</a>
         <a class="row-menu-item" href="/reservations/{{ reservation.id }}/guests/new" role="menuitem">{{ t('dashboard.row.add_guest') }}</a>
@@ -42,85 +48,55 @@
           <input type="hidden" name="return_to" value="/"><button class="row-menu-item" type="submit" role="menuitem">{{ t('host.delete') }}</button>
         </form>
       {{ row_menu_end() }}
-    </div>
-  </article>
+    </td>
+  </tr>
 {% endfor %}
+{{ ui_table_end() }}
 </div>
-{% else %}<div class="panel empty small">{{ t(empty_key) }}</div>{% endif %}
+{% else %}{{ ui_empty(t(empty_key)) }}{% endif %}
 {% endmacro %}
 
-
-
-{% set header_actions %}
-  <div class="page-toolbar"><div class="page-toolbar-row">
-    {% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=last_sync) }}{% endif %}
-    {% if demo_loaded %}<form method="post" action="/demo/reset" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}"><button class="btn ghost" type="submit">{{ t('demo.clear') }}</button></form>{% endif %}
-  </div></div>
-{% endset %}
-{% set show_welcome = not apartments and not onboarding.dismissed %}
-{% if not show_welcome %}
-<header class="page-header host-today-head">
-  <div><div class="host-today-date">{{ today.isoformat() | date_cz }}</div><h1>{{ t('dashboard.title') }}</h1></div>
-  <div class="dashboard-actions"><div class="action-group action-group-stack">
-    <a class="btn primary" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">+ {{ t('stays.add_stay') }}</a>
-    <a class="btn" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">+ {{ t('calendar.add_cleaning') }}</a>
-    {% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}
-    {% if demo_loaded %}<form method="post" action="/demo/reset" data-confirm data-confirm-message="{{ t('confirm.clear_demo') }}"><button class="btn" type="submit">{{ t('demo.clear') }}</button></form>{% endif %}
-  </div>{% if last_sync %}<p class="small muted">{{ t('dashboard.last_synced', when=last_sync | datetime_local) }}</p>{% endif %}</div>
-</header>
-{% if apartments %}
-<nav class="dashboard-stats" aria-label="{{ t('nav.overview') }}" data-dashboard-refresh="stats">
-  <a class="dashboard-stat action {{ 'is-positive' if counts.attention > 0 }}" href="#needs-action"><strong>{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
-  <a class="dashboard-stat ready {{ 'is-positive' if counts.ready > 0 }}" href="/reservations"><strong>{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
-  <a class="dashboard-stat overdue {{ 'is-positive' if counts.overdue > 0 }}" href="#needs-action"><strong>{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
-</nav>
-{% include "_dashboard_calendar.html" %}
-{% endif %}
-{% endif %}
-
+{% block body %}
 {% if not apartments %}
   {% if not onboarding.dismissed %}{{ onboarding_welcome(onboarding, compact=True) }}
-  {% else %}<div class="panel empty onboarding-skipped"><h2>{{ t('onboarding.skipped_title') }}</h2><p>{{ t('onboarding.skipped_body') }}</p><div class="actions"><a class="btn primary" href="/apartments/new">{{ t('apartments.add') }}</a><a class="btn" href="/onboarding">{{ t('onboarding.open_checklist') }}</a></div></div>{% endif %}
+  {% else %}{% call ui_empty(t('onboarding.skipped_title'), t('onboarding.skipped_body'), t('apartments.add'), '/apartments/new') %}{{ ui_button(t('onboarding.open_checklist'), 'secondary', href='/onboarding') }}{% endcall %}{% endif %}
 {% else %}
+  <div id="dashboard-more" class="ui-btn-group hidden" data-panel>{{ ui_button('+ ' ~ t('calendar.add_cleaning'), 'secondary', href='/cleaning/new') }}</div>
+  <nav class="ui-stats dashboard-stats" aria-label="{{ t('nav.overview') }}" data-dashboard-refresh="stats">
+    <a class="dashboard-stat action ui-stat{{ ' is-positive' if counts.attention > 0 }}" href="#needs-action"><strong class="ui-num">{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
+    <a class="dashboard-stat ready ui-stat{{ ' is-positive' if counts.ready > 0 }}" href="/reservations"><strong class="ui-num">{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
+    <a class="dashboard-stat overdue ui-stat{{ ' is-positive' if counts.overdue > 0 }}" href="#needs-action"><strong class="ui-num">{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
+  </nav>
+  {% call ui_section('') %}{% include "_dashboard_calendar.html" %}{% endcall %}
   <div data-dashboard-refresh="work">
   {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
   {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
   {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
   {% if missing_report_display and not banner_showing %}
-  <aside class="notification-stack" aria-label="{{ t('dashboard.setup.title') }}">
-    <article class="notification-bubble warning">
-      <div class="notification-link">
-        <span class="notification-icon" aria-hidden="true">!</span>
-        <span class="grow">
-          {# 0101: every link names its tab and group; the hash only scrolls. #}
-          {% set anchor_query = {'basics': 'view=settings&section=property', 'address': 'view=settings&section=property', 'ubyport': 'view=settings&section=reporting', 'calendars': 'view=bookings'} %}
-          {% for row in missing_report_display %}
-          <p class="dashboard-missing-line">
-            <strong>{{ property_identity(row.apartment.id, row.apartment.internal_name, true) }}</strong>:
-            {{ t('dashboard.missing_banner.missing') }}
-            {% for item in row.missing %}
-            <a href="/apartments/{{ row.apartment.id }}?{{ anchor_query.get(item.anchor, 'view=settings') }}#{{ item.anchor }}">{{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% if not loop.last %}, {% endif %}
-            {% endfor %}
-          </p>
-          {% endfor %}
-          {% if missing_report_more %}<p class="small"><a href="/apartments">{{ t('dashboard.missing_banner.and_more', count=missing_report_more) }}</a></p>{% endif %}
-        </span>
-      </div>
-    </article>
-  </aside>
+  {% set anchor_query = {'basics': 'view=settings&section=property', 'address': 'view=settings&section=property', 'ubyport': 'view=settings&section=reporting', 'calendars': 'view=bookings'} %}
+  {% set missing_text %}
+    <span class="dashboard-missing-list">
+    {% for row in missing_report_display %}
+    <span class="dashboard-missing-line"><strong>{{ property_identity(row.apartment.id, row.apartment.internal_name, true) }}</strong>: {{ t('dashboard.missing_banner.missing') }}
+      {% for item in row.missing %}<a href="/apartments/{{ row.apartment.id }}?{{ anchor_query.get(item.anchor, 'view=settings') }}#{{ item.anchor }}">{{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span>
+    {% endfor %}
+    {% if missing_report_more %}<a href="/apartments">{{ t('dashboard.missing_banner.and_more', count=missing_report_more) }}</a>{% endif %}
+    </span>
+    <span class="dashboard-missing-short">{{ tp('dashboard.setup.properties', missing_report_display | length + missing_report_more) }}</span>
+  {% endset %}
+  {{ ui_banner('attention', missing_text, t('dashboard.setup.title'), '/apartments') }}
   {% endif %}
-  <section id="needs-action">
-    <div class="section-heading"><h2>{{ t('dashboard.section.needs_action', count=counts.attention) }}</h2><a href="/reservations">{{ t('dashboard.section.view_stays') }}</a></div>
+  {% call ui_section(t('dashboard.section.needs_action', count=counts.attention), actions='<a href="/reservations">' ~ t('dashboard.section.view_stays') ~ '</a>', id='needs-action') %}
     {{ dashboard_rows(queue_groups.needs_action, 'dashboard.queue.empty.action') }}
-    {% if additional_action_count %}<p class="small"><a href="/reservations">{{ t('dashboard.more_action', count=additional_action_count) }}</a></p>{% endif %}
-  </section>
+    {% if additional_action_count %}<p class="ui-sub"><a href="/reservations">{{ t('dashboard.more_action', count=additional_action_count) }}</a></p>{% endif %}
+  {% endcall %}
   {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
   {{ onboarding_banner(onboarding) }}
-  {% if not rows and feed_count %}<div class="panel empty"><p>{{ t('dashboard.empty.no_stays') }}</p>{{ sync_calendars_button(return_to='/', label_key='dashboard.empty.sync_now') }}</div>
-  {% elif not rows %}<div class="panel empty"><p>{{ t('dashboard.empty.no_feed') }}</p><div class="actions"><a class="btn primary" href="/apartments/{{ apartments[0].id }}?view=bookings#calendars">{{ t('dashboard.empty.connect_calendar') }}</a></div></div>
+  {% if not rows and feed_count %}{{ ui_empty(t('dashboard.empty.no_stays')) }}
+  {% elif not rows %}{{ ui_empty(t('dashboard.empty.no_feed'), '', t('dashboard.empty.connect_calendar'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', primary=false) }}
   {% endif %}
   <noscript>
-    {% if queue_groups.current %}<section id="current"><div class="section-heading"><h2>{{ t('dashboard.section.current') }}</h2><a href="/reservations">{{ t('dashboard.section.view_stays') }}</a></div>{{ dashboard_rows(queue_groups.current, 'dashboard.queue.empty.waiting') }}</section>{% endif %}
+    {% if queue_groups.current %}{% call ui_section(t('dashboard.section.current'), actions='<a href="/reservations">' ~ t('dashboard.section.view_stays') ~ '</a>', id='current') %}{{ dashboard_rows(queue_groups.current, 'dashboard.queue.empty.waiting') }}{% endcall %}{% endif %}
   </noscript>
   {% if finish_card_showing and not focus_is_urgent %}{{ onboarding_finish(onboarding) }}{% endif %}
   </div>

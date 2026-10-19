@@ -373,6 +373,7 @@ def _legal_links(value: object) -> Markup:
 
 
 templates.env.filters["date_cz"] = _fmt_date
+templates.env.filters["date_short"] = validation.fmt_date_short
 templates.env.filters["money_czk"] = _money_czk
 templates.env.filters["weekday"] = _weekday
 templates.env.filters["datetime_local"] = _datetime_local

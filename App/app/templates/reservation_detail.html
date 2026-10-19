@@ -1,28 +1,27 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'reservations' %}
+{% set body_kind = 'detail' %}
+{% from "_components.html" import field_label, help_tip, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge, source_badge with context %}
+{# The UbyPort step is the page's one coral button; the branches below are exclusive. #}
+{% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
-{% block content %}
-{# 0080: local primitive (the shared _components.html belongs to another lane).
-   In-page jump links so the four groups are reachable without folding any. #}
+{% block page_title %}{{ reservation.internal_name }}{% endblock %}
+{% block back_url %}{{ return_to }}{% endblock %}
+{% block back_label %}{{ t('stay.detail.back') }}{% endblock %}
+{# 0080: in-page jump links so the four groups are reachable without folding any; 0135: styled as tabs. #}
 {% macro stay_jump_nav(items) %}
-<nav class="stay-jump" aria-label="{{ t('stay.detail.nav.label') }}">
-  {% for href, label in items %}<a href="{{ href }}">{{ label }}</a>{% endfor %}
+<nav class="ui-tabs stay-jump" aria-label="{{ t('stay.detail.nav.label') }}">
+  {% for href, label in items %}<a class="ui-tab" href="{{ href }}">{{ label }}</a>{% endfor %}
 </nav>
 {% endmacro %}
-{% from "_components.html" import page_header, field_label, help_tip, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge, source_badge with context %}
-<input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 {% set stay_lede %}{{ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz) ~ ' · ' ~ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) ~ ' · ' }}{{ source_badge(reservation.source, source_label(reservation)) }}{% endset %}
-{{ page_header(
-  reservation.internal_name,
-  stay_lede,
-  return_to,
-  t('stay.detail.back'),
-  ''
-) }}
+{% block meta %}{{ stay_lede }}{% endblock %}
+{% block body %}
+<input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
 
 <div class="host-stay-detail">
 {% set stay_inactive = reservation.status != 'active' or reservation.archived_at %}
-<p class="stay-property-line"><span class="muted">{{ t('stay.detail.property') }}</span>
+<p class="stay-property-line"><span class="ui-sub">{{ t('stay.detail.property') }}</span>
   <a href="/apartments/{{ reservation.apartment_id }}">{{ reservation.internal_name }}</a></p>
 {{ stay_jump_nav([
   ('#now', t('stay.detail.next_step')),
@@ -31,27 +30,27 @@
   ('#stay-quick-edit', t('stay.detail.settings.title')),
 ]) }}
 {% if reservation.status == 'cancelled' %}
-<div class="banner critical">
+<div class="ui-banner ui-banner-attention">
   <div class="grow">{{ t('stay.detail.banner.cancelled') }}</div>
 </div>
 {% elif reservation.status == 'ignored' %}
-<div class="banner info">
+<div class="ui-banner ui-banner-neutral">
   <div class="grow">{{ t('stay.detail.banner.ignored') }}</div>
 </div>
 {% endif %}
 {% if reservation.archived_at %}
-<div class="banner warning">
+<div class="ui-banner ui-banner-attention">
   <div class="grow">{{ t('stay.detail.banner.archived') }}</div>
 </div>
 {% endif %}
 {% if is_demo_stay %}
 {#- 0100: the setup guide's demo stay. Never reported; left out of fees, invoices and the house book. -#}
-<div class="banner info stay-demo-banner" id="demo-stay">
+<div class="ui-banner ui-banner-neutral stay-demo-banner" id="demo-stay">
   <div class="grow">{{ t('stay.detail.banner.demo') }}</div>
   <form method="post" action="/reservations/{{ reservation.id }}/delete-demo" class="inline"
         data-confirm data-confirm-message="{{ t('confirm.delete_demo_stay') }}">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <button class="btn small" type="submit">{{ t('setup_guide.try.delete') }}</button>
+    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('setup_guide.try.delete') }}</button>
   </form>
 </div>
 {% endif %}
@@ -80,7 +79,7 @@
           {% endif %}
         {% endif %}
       </p>
-      {% if door_code %}<p class="small" id="door-code-line">
+      {% if door_code %}<p class="ui-sub" id="door-code-line">
         {% if door_code.state == 'issued' %}{{ t('stay.detail.door_code.issued', pin=door_code.pin, start=door_code.works_from, end=door_code.works_until) }}
         {% elif door_code.state == 'failed' %}{{ t('stay.detail.door_code.failed') }}
         {% elif door_code.state == 'delayed' %}{{ t('stay.detail.door_code.delayed') }}
@@ -94,41 +93,34 @@
           {# Fix-first: the coral leads to the refusal, and "Send again" only
              takes it once a refused guest has been edited since the refusal,
              so the page never invites an unchanged resend. #}
-          <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
-          <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
-            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-            <button class="btn{% if send_controls.rejected_edited %} accent primary{% endif %}" type="submit">
-              {{ t('stay.detail.cta.send_again') }}
-            </button>
-          </form>
+          <a class="{{ cta }}" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
         {% else %}
           <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
             <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-            <button class="btn accent primary" type="submit" title="{{ t(send_controls.send_hint_key) }}">
+            <button class="{{ cta }}" type="submit" title="{{ t(send_controls.send_hint_key) }}">
               {{ t('stay.detail.cta.send') }}
             </button>
           </form>
         {% endif %}
       {% elif progress.status == 'failed' %}
-        <a class="btn accent primary" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
+        <a class="{{ cta }}" href="#guests">{{ t('stay.detail.cta.fix') }}</a>
       {% elif progress.status == 'reported' and submissions %}
         {# The Doručenka is the proof of filing, so once the stay is reported
            it is the first thing offered. The route keeps WP04's block while an
            admin views the workspace. #}
         {% set receipt_report = submissions | selectattr('has_receipt') | first %}
         {% if receipt_report %}
-          <a class="btn accent primary" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
-          <a class="btn" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
+          <a class="{{ cta }}" href="/submissions/{{ receipt_report.id }}/receipt.pdf">{{ t('reports.detail.download_receipt') }}</a>
+          <a class="ui-btn ui-btn-secondary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
         {% else %}
-          <a class="btn accent primary" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
+          <a class="{{ cta }}" href="#reports">{{ t('stay.detail.cta.view_reports') }}</a>
         {% endif %}
       {% endif %}
       {% if stay_invoice %}
-        <a class="btn" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>
+        <a class="ui-btn ui-btn-secondary" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>
       {% else %}
-        <a class="btn" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>
+        <a class="ui-btn ui-btn-secondary" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>
       {% endif %}
       {{ row_menu_begin() }}
         <button class="row-menu-item" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
@@ -149,6 +141,27 @@
           </form>
         {% endif %}
         <a class="row-menu-item" href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication" role="menuitem">{{ t('stay.detail.menu.guest_links') }}</a>
+        {% if send_controls.send_enabled and progress.status == 'failed' %}
+          {# 0137: Re-send after a refusal lives in the menu; the duplicate-filing rules are unchanged. #}
+          <form method="post" action="/reservations/{{ reservation.id }}/submit" class="row-menu-form">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.detail.cta.send_again') }}</button>
+          </form>
+        {% endif %}
+        {% if stay_claim.guest_access_locked_at %}
+          <form method="post" action="/reservations/{{ reservation.id }}/reopen-guest" class="row-menu-form">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.claim.reopen') }}</button>
+          </form>
+        {% endif %}
+        {% if stay_claim.state != 'unclaimed' %}
+          <form method="post" action="/reservations/{{ reservation.id }}/release-claim" class="row-menu-form"
+                data-confirm data-confirm-message="{{ t('stay.claim.release_confirm') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.claim.release') }}</button>
+          </form>
+        {% endif %}
       {{ row_menu_end() }}
     </div>
   </div>
@@ -157,8 +170,8 @@
 
 {# --- 2. Guests --------------------------------------------------------- #}
 <section id="guests">
-<div class="section-heading"><h2>{{ t('stay.detail.guests.title') }} {{ guest_count(progress, placeholder=true) }}</h2>
-  <div class="actions"><a href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="btn small" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
+<div class="ui-section-h"><h2>{{ t('stay.detail.guests.title') }} {{ guest_count(progress, placeholder=true) }}</h2>
+  <div class="ui-form-actions"><a href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
 </div>
 
 {% if stay_claim and (stay_claim.state != 'unclaimed' or stay_claim.guest_access_locked_at) %}
@@ -175,21 +188,6 @@
       {{ t('stay.claim.unclaimed') }}
     {% endif %}
   </p>
-  <div class="stay-command-actions">
-    {% if stay_claim.guest_access_locked_at %}
-      <form method="post" action="/reservations/{{ reservation.id }}/reopen-guest" class="inline">
-        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <button class="btn small" type="submit">{{ t('stay.claim.reopen') }}</button>
-      </form>
-    {% endif %}
-    {% if stay_claim.state != 'unclaimed' %}
-      <form method="post" action="/reservations/{{ reservation.id }}/release-claim" class="inline"
-            data-confirm data-confirm-message="{{ t('stay.claim.release_confirm') }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-        <button class="btn small" type="submit">{{ t('stay.claim.release') }}</button>
-      </form>
-    {% endif %}
-  </div>
 </div>
 {% endif %}
 {% if guest_rows or progress.not_registered %}
@@ -200,32 +198,30 @@
       <div class="guest-card-head">
         <div class="guest-card-who">
           <h3>{{ guest.surname or '—' }} {{ guest.first_name or '' }}</h3>
-          {% if guest.is_lead %}<span class="pill grey no-dot">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
+          {% if guest.is_lead %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stay.detail.guests.lead') }}</span>{% endif %}
         </div>
         <div class="guest-card-state">
           {% if guest.restricted_at %}
-            <span class="pill amber">{{ t('guest.restricted_badge') }}</span>
+            <span class="ui-badge ui-badge-action" data-tone="amber">{{ t('guest.restricted_badge') }}</span>
           {% endif %}
           {% if guest.submit_state == 'sent' and guest.manual_filed_at %}
-            <span class="pill green">{{ t('stay.detail.guests.filed_by_hand') }}</span>
-            <span class="small muted">{{ guest.manual_filed_at | datetime_local }}</span>
+            <span class="ui-badge ui-badge-done" data-tone="green">{{ t('stay.detail.guests.filed_by_hand') }}</span>
+            <span class="ui-sub">{{ guest.manual_filed_at | datetime_local }}</span>
           {% elif guest.submit_state == 'sent' %}
-            <span class="pill green">{{ t('stay.detail.guests.reported') }}</span>
-            {% if guest.submitted_at %}<span class="small muted">{{ guest.submitted_at | datetime_local }}</span>{% endif %}
+            <span class="ui-badge ui-badge-done" data-tone="green">{{ t('stay.detail.guests.reported') }}</span>
+            {% if guest.submitted_at %}<span class="ui-sub">{{ guest.submitted_at | datetime_local }}</span>{% endif %}
           {% elif guest.submit_state == 'not_required' %}
-            <span class="pill grey">{{ t('stay.detail.guests.exempt') }}</span>
+            <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stay.detail.guests.exempt') }}</span>
           {% elif guest.submit_state == 'error' %}
-            <span class="pill red">{{ t('stay.detail.guests.rejected') }}</span>
+            <span class="ui-badge ui-badge-action" data-tone="red">{{ t('stay.detail.guests.rejected') }}</span>
           {% elif guest.submit_state == 'blocked' %}
-            <span class="pill red">{{ t('stay.detail.guests.rejected_final') }}</span>
+            <span class="ui-badge ui-badge-action" data-tone="red">{{ t('stay.detail.guests.rejected_final') }}</span>
           {% elif not row.complete %}
-            <span class="pill amber">{{ t('stay.detail.guests.incomplete') }}</span>
-          {% elif row.needs_verification %}
-            <span class="pill amber">{{ t('host.verify_pending') }}</span>
+            <span class="ui-badge ui-badge-action" data-tone="amber">{{ t('stay.detail.guests.incomplete') }}</span>
           {% else %}
-            <span class="pill blue">{{ t('stay.detail.guests.ready') }}</span>
+            <span class="ui-badge ui-badge-action" data-tone="blue">{{ t('stay.detail.guests.ready') }}</span>
           {% endif %}
-          <a class="btn small" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ t('stay.detail.guests.edit') }}</a>
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ t('stay.detail.guests.edit') }}</a>
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}" role="menuitem">{{ t('stay.detail.guests.edit') }}</a>
             <a class="row-menu-item" href="/guests/{{ guest.id }}/form.pdf" role="menuitem">{{ t('stay.detail.guests.pdf') }}</a>
@@ -249,7 +245,7 @@
         </div>
         <div>
           <dt>{{ t('stay.detail.guests.document') }}</dt>
-          <dd>{% if guest.doc_type %}<span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ guest.doc_type %}{{ t(doc_key) if t(doc_key) != doc_key else guest.doc_type }} </span>{% endif %}<span class="mono">{{ guest_identifier(guest.doc_number, guest.id) or '—' }}{% if guest.visa_number %}
+          <dd>{% if guest.doc_type %}<span class="fact-extra">{% set doc_key = 'guest.doc_type.' ~ guest.doc_type %}{{ t(doc_key) if t(doc_key) != doc_key else guest.doc_type }} </span>{% endif %}<span class="ui-mono">{{ guest_identifier(guest.doc_number, guest.id) or '—' }}{% if guest.visa_number %}
             <span class="fact-extra">{{ t('stay.detail.guests.visa', number=guest_identifier(guest.visa_number, guest.id)) }}</span>{% endif %}</span></dd>
         </div>
         <div>
@@ -283,15 +279,6 @@
         </div>
       </dl>
 
-      {% if row.needs_verification %}
-        <form method="post" action="/guests/{{ guest.id }}/verify-identity" class="verify-form guest-card-action">
-          <input type="hidden" name="return_to" value="/reservations/{{ reservation.id }}">
-          <button class="btn small" type="submit">{{ t('host.verify_button') }}</button>
-          {% if row.has_passport_photo %}
-            <a class="small" href="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">{{ t('host.verify_view_photo') }}</a>
-          {% endif %}
-        </form>
-      {% endif %}
       {% if guest.note %}
         <p class="guest-card-note">{{ t('stay.detail.guests.note', text=guest.note) }}</p>
       {% endif %}
@@ -314,14 +301,7 @@
         </div>
         <div class="guest-card-state">
           
-          <a class="btn small" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
-          {% if not stay_inactive and progress.expected > 1 %}
-          <form method="post" action="/reservations/{{ reservation.id }}/remove-empty-slot" data-confirm data-confirm-title="{{ t('host.remove_slot') }}" data-confirm-message="{{ t('host.remove_slot_confirm') }}">
-            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <input type="hidden" name="expected" value="{{ progress.expected }}">
-            <button class="btn small" type="submit">{{ t('host.remove_slot') }}</button>
-          </form>
-          {% endif %}
+          <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.guests.add_by_hand') }}</a>
         </div>
       </div>
     </li>
@@ -330,8 +310,8 @@
 {% else %}
   <div class="panel empty">
     <p>{{ t('stay.detail.guests.empty') }}</p>
-    <p class="small">{{ t('stay.detail.guests.empty_hint') }}</p>
-    <a class="btn" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.cta.add_guest') }}</a>
+    <p class="ui-sub">{{ t('stay.detail.guests.empty_hint') }}</p>
+    <a class="ui-btn ui-btn-secondary" href="/reservations/{{ reservation.id }}/guests/new">{{ t('stay.detail.cta.add_guest') }}</a>
   </div>
 {% endif %}
 </section>
@@ -342,14 +322,14 @@
 {% set money_panels = [] %}
 {% if money_panels %}
 <section id="money">
-  <div class="section-heading"><h2>{{ t('stay.detail.money.title') }}</h2></div>
+  <div class="ui-section-h"><h2>{{ t('stay.detail.money.title') }}</h2></div>
   {% for money_panel in money_panels %}{{ money_panel }}{% endfor %}
 </section>
 {% endif %}
 
 {# --- 4. Police reporting ----------------------------------------------- #}
 <section id="reports">
-  <div class="section-heading"><h2>{{ t('host.reporting') }}</h2></div>
+  <div class="ui-section-h"><h2>{{ t('host.reporting') }}</h2></div>
   <div class="panel tight">
   <div class="stay-metrics detail-hero{% if stay_inactive %} inactive{% endif %}">
     {% set cell = deadline_cell(progress, check_in) %}
@@ -366,54 +346,54 @@
       <div class="metric-label">{{ t('stay.detail.metric.reporting') }}</div>
       {# A cancelled or archived stay sends nothing, so "Waiting for guest"
          would contradict the banner above; show the stay's own state. #}
-      <div class="metric-value small-value">{% if stay_inactive %}<span class="pill grey">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=is_demo_stay) }}{% endif %}</div>
+      <div class="metric-value small-value">{% if stay_inactive %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.filter.state.' ~ reservation.status) if reservation.status != 'active' else t('archive.col.when') }}</span>{% else %}{{ progress_pill(progress.status, reservation.automation_mode, is_demo=is_demo_stay) }}{% endif %}</div>
 
     </div>
   </div>
   </div>
   {# WP23: the host filed this stay in the UbyPort web application. #}
   {% if hand_filing.count %}
-  <div class="panel" id="filed-by-hand">
+  <div class="ui-section ui-card" id="filed-by-hand">
     <p><strong>{{ t('stay.hand_filing.done', when=hand_filing.filed_at.strftime('%d.%m.%Y %H:%M')) }}</strong></p>
-    {% if hand_filing.reference %}<p class="small muted">{{ t('stay.hand_filing.done_reference', reference=hand_filing.reference) }}</p>{% endif %}
+    {% if hand_filing.reference %}<p class="ui-sub">{{ t('stay.hand_filing.done_reference', reference=hand_filing.reference) }}</p>{% endif %}
     {% if hand_filing.can_undo %}
     <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand/undo" class="inline"
           data-confirm data-confirm-message="{{ t('stay.hand_filing.undo_confirm') }}">
-      <button class="btn small" type="submit">{{ t('stay.hand_filing.undo') }}</button>
-      <span class="small muted">{{ t('stay.hand_filing.undo_until', when=hand_filing.undo_until.strftime('%d.%m. %H:%M')) }}</span>
+      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('stay.hand_filing.undo') }}</button>
+      <span class="ui-sub">{{ t('stay.hand_filing.undo_until', when=hand_filing.undo_until.strftime('%d.%m. %H:%M')) }}</span>
     </form>
     {% endif %}
   </div>
   {% endif %}
   {% if hand_filing.candidates and not stay_inactive %}
-  <details class="panel" id="file-by-hand">
+  <details class="ui-section ui-card" id="file-by-hand">
     <summary>{{ t('stay.hand_filing.open') }}</summary>
-    <p class="small muted">{{ t('stay.hand_filing.lede') }} <a href="/guide#manual-filing">{{ t('guide.reporting.manual_filing_title') }}</a></p>
+    <p class="ui-sub">{{ t('stay.hand_filing.lede') }} <a href="/guide#manual-filing">{{ t('guide.reporting.manual_filing_title') }}</a></p>
     <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand" class="settings-grid">
-      <div class="field">
+      <div class="ui-field">
         <label for="hand_filed_at">{{ t('stay.hand_filing.filed_at') }}</label>
         <input type="datetime-local" id="hand_filed_at" name="filed_at" value="{{ hand_filing.default_filed_at }}" max="{{ hand_filing.default_filed_at }}" required>
       </div>
-      <div class="field">
+      <div class="ui-field">
         {{ field_label('hand_reference', t('stay.hand_filing.reference'), t('stay.hand_filing.reference_hint')) }}
         <input type="text" id="hand_reference" name="reference" maxlength="200" autocomplete="off" aria-describedby="hand_reference-help">
       </div>
-      <p class="small muted">{{ t('stay.hand_filing.covers', count=hand_filing.candidates) }}</p>
-      <div class="actions settings-actions"><button class="btn primary" type="submit">{{ t('stay.hand_filing.confirm') }}</button></div>
+      <p class="ui-sub">{{ t('stay.hand_filing.covers', count=hand_filing.candidates) }}</p>
+      <div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{ t('stay.hand_filing.confirm') }}</button></div>
     </form>
   </details>
   {% endif %}
   {% if submissions %}
   <div class="panel tight scroll-x">
-    <table class="table-cards">
+    <table class="ui-table ui-table-stack">
       <thead><tr><th>{{ t('stay.detail.reports.when') }}</th><th>{{ t('stay.detail.reports.outcome') }}</th><th>{{ t('stay.detail.reports.stamp') }}</th><th></th></tr></thead>
       <tbody>
       {% for submission in submissions %}
         <tr class="clickable-row" data-href="/submissions/{{ submission.id }}" tabindex="0" role="link">
-          <td class="nowrap small" data-label="{{ t('stay.detail.reports.when') }}">{{ submission.created_at | datetime_local }}</td>
-          <td data-label="{{ t('stay.detail.reports.outcome') }}">{{ submission_pill(submission.state) }}</td>
-          <td class="mono small" data-label="{{ t('stay.detail.reports.stamp') }}">{{ submission.pseudo_stamp or '—' }}</td>
-          <td class="nowrap row-actions" data-label="">
+          <td class="ui-cell-first nowrap" data-card="primary">{{ submission.created_at | datetime_local }}</td>
+          <td data-card="badge">{{ submission_pill(submission.state) }}</td>
+          <td class="ui-mono ui-sub" data-card="meta">{{ submission.pseudo_stamp or '—' }}</td>
+          <td class="ui-cell-acts row-actions" data-card="actions">
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('stay.detail.reports.open') }}</a>
               {% if submission.has_receipt %}
@@ -433,9 +413,9 @@
 {# One panel owns both the quick edit and the full settings form, so the
    #stay-quick-edit anchor keeps working and the page ends on a single
    collapsed group instead of two stacked ones. #}
-<section class="panel stay-settings" id="stay-quick-edit">
-  <div class="section-heading"><h2>{{ t('stay.detail.settings.title') }}</h2></div>
-  <p class="small muted">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
+<section class="ui-section stay-settings" id="stay-quick-edit">
+  <div class="ui-section-h"><h2>{{ t('stay.detail.settings.title') }}</h2></div>
+  <p class="ui-sub">{{ t('stay.detail.settings.lede') }} <a href="/apartments/{{ reservation.apartment_id }}?view=settings&amp;section=guests#communication">{{ t('stay.detail.settings.guest_links') }}</a>.</p>
   <h3 class="inline-edit-title">{{ t('stay.detail.inline.title') }}</h3>
   <form class="inline-edit-bar" method="post" action="/reservations/{{ reservation.id }}/quick-edit"
         data-inline-edit data-saved="{{ t('stay.detail.inline.saved') }}"
@@ -450,18 +430,18 @@
       <input id="quick-guests" type="number" name="expected_guests_override"
              value="{{ progress.expected or '' }}" min="{{ [1, progress.guests | length] | max }}" max="60">
     </label>
-    <button class="btn small" type="submit">{{ t('common.save') }}</button>
+    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('common.save') }}</button>
     <span class="inline-edit-status" role="status" aria-live="polite"></span>
   </form>
   <form method="post" action="/reservations/{{ reservation.id }}" class="settings-grid">
-    <div class="field">
+    <div class="ui-field">
       <div class="field-label-row">
         <label for="guest_email">{{ t('stay.detail.settings.email') }} <span class="opt">{{ t('stay.detail.settings.host_only') }}</span></label>
         {{ help_tip('guest_email-help', t('stay.detail.settings.email_hint')) }}
       </div>
       <input type="email" id="guest_email" name="guest_email" value="{{ reservation.guest_email or '' }}" aria-describedby="guest_email-help">
     </div>
-    <div class="field">
+    <div class="ui-field">
       {{ field_label('status', t('stay.detail.settings.state'), t('stay.detail.settings.state_hint')) }}
       <select id="status" name="status" aria-describedby="status-help">
         <option value="active" {% if reservation.status == 'active' %}selected{% endif %}>{{ t('stay.detail.settings.state.active') }}</option>
@@ -469,11 +449,11 @@
         <option value="ignored" {% if reservation.status == 'ignored' %}selected{% endif %}>{{ t('stay.detail.settings.state.ignored') }}</option>
       </select>
     </div>
-    <div class="field">
+    <div class="ui-field">
       <label for="host_note">{{ t('stay.detail.settings.note') }}</label>
       <textarea id="host_note" name="host_note">{{ reservation.host_note or '' }}</textarea>
     </div>
-    <div class="actions settings-actions"><button class="btn primary" type="submit">{{ t('common.save') }}</button></div>
+    <div class="ui-form-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{ t('common.save') }}</button></div>
   </form>
 </section>
 </div>

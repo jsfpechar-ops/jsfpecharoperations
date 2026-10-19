@@ -1,3 +1,10 @@
+{% from "_icons.html" import icon with context %}
+{#- Status tones map to the four v2 badge kinds (docs/design/MASTER.md 7.5):
+    red, amber and blue are things the host must do; teal and grey wait; green is verified done.
+    data-tone keeps the old tone name for tests and for anyone reading the markup. -#}
+{% set UI_KINDS = {'red': 'action', 'amber': 'action', 'blue': 'action', 'teal': 'neutral', 'green': 'done', 'grey': 'neutral'} %}
+{% set UI_SUBMISSION_KINDS = {'red': 'action', 'amber': 'attention', 'blue': 'action', 'teal': 'neutral', 'green': 'done', 'grey': 'neutral'} %}
+{% set UI_DEADLINE_KINDS = {'overdue': 'action', 'urgent': 'attention', 'soon': 'attention', 'done': 'done', 'late': 'neutral'} %}
 {#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
     id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
 {% macro help_tip(id, text, guide_href='') %}
@@ -161,7 +168,7 @@
     {% set label = labels.get(status, status) %}
     {% set tip = '' %}
   {% endif %}
-  <span class="pill {{ tone }}" {% if tip %}title="{{ tip }}"{% endif %}>{{ label }}</span>
+  <span class="ui-badge ui-badge-{{ UI_KINDS.get(tone, 'neutral') }}{{ ' ui-badge-overdue' if tone == 'red' }}" data-tone="{{ tone }}"{% if tip %} title="{{ tip }}"{% endif %}>{% if tone == 'red' %}! {% endif %}{{ label }}</span>
 {% endmacro %}
 
 {# Guest count for a stay. Calendars never carry it, so until the guest or the
@@ -169,7 +176,7 @@
 {% macro guest_count(progress, placeholder=false) %}
   {% if progress.expected is not none or progress.guests %}
     <span class="guest-count" title="{{ t('stays.table.guests') }}">
-      <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M3.5 13.5c0-2.4 2-3.8 4.5-3.8s4.5 1.4 4.5 3.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      {{ icon('users', 16) }}
       <span class="sr-only">{{ t('stays.table.guests') }}:</span>
       {% if progress.expected is not none %}{{ progress.filled }} / {{ progress.expected }}{% else %}{{ progress.guests | length }}{% endif %}
     </span>
@@ -182,7 +189,7 @@
   {% if controls.get('send_visible') %}
     <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline row-action-form">
       <input type="hidden" name="return_to" value="{{ return_to }}">
-      <button class="btn small row-action-send{% if controls.get('send_enabled') %} accent{% endif %}" type="submit"
+      <button class="ui-btn ui-btn-secondary ui-btn-compact row-action-send" type="submit"
               {% if not controls.get('send_enabled') %}disabled{% endif %}
               title="{{ t(controls.get('send_hint_key', '')) }}" aria-label="{{ t('send.this_stay') }}">{{ t('send.this_stay') if controls.get('send_enabled') else t('common.auto') }}</button>
     </form>
@@ -192,10 +199,10 @@
 {% macro bulk_send_ready(count, return_to) %}
   <form method="post" action="/reservations/submit-ready" class="inline send-all-form">
     <input type="hidden" name="return_to" value="{{ return_to }}">
-    <button class="btn send-all" type="submit"
+    <button class="ui-btn ui-btn-secondary send-all" type="submit"
             {% if not count %}disabled{% endif %}
             title="{{ t('send.all_ready_hint') }}">
-      {{ t('send.all_ready') }}{% if count %} ({{ count }}){% endif %}
+      {{ icon('send', 16) }}<span>{{ t('send.all_ready') }}{% if count %} ({{ count }}){% endif %}</span>
     </button>
   </form>
 {% endmacro %}
@@ -204,8 +211,8 @@
   <div class="sync-cta{% if last_sync %} has-meta{% endif %}">
     <form method="post" action="/sync" class="sync-cta-form">
       <input type="hidden" name="return_to" value="{{ return_to }}">
-      <button class="btn{% if primary %} primary{% endif %} sync-btn" type="submit">
-        <span class="sync-btn-icon" aria-hidden="true">{{ nav_icon('calendar') }}</span>
+      <button class="ui-btn ui-btn-{{ 'primary' if primary else 'secondary' }} sync-btn" type="submit">
+        {{ icon('refresh-cw', 16) }}
         <span>{{ t(label_key) }}</span>
       </button>
     </form>
@@ -248,7 +255,7 @@
 {% endmacro %}
 
 {% macro csv_actions_menu(export_params='', compact=false, scope_label='') %}
-<button class="btn{% if compact %} small csv-in-filter{% endif %}" type="button"
+<button class="ui-btn ui-btn-quiet{% if compact %} ui-btn-compact csv-in-filter{% endif %}" type="button"
         data-csv-export="/reservations.csv" data-csv-params="{{ export_params }}"
         data-csv-scope-label="{{ scope_label }}">
   {{ t('csv.export_stays') }}
@@ -300,7 +307,8 @@
     'running': 'teal',
     'noop': 'grey'
   } %}
-  <span class="pill {{ tones.get(state, 'red') }}">{{ labels.get(state, state) }}</span>
+  {% set stone = tones.get(state, 'red') %}
+  <span class="ui-badge ui-badge-{{ UI_SUBMISSION_KINDS.get(stone, 'neutral') }}{{ ' ui-badge-overdue' if stone == 'red' }}" data-tone="{{ stone }}">{% if stone == 'red' %}! {% endif %}{{ labels.get(state, state) }}</span>
 {% endmacro %}
 
 {# The deadline cell of a stay, from ``deadline_cell(progress, check_in)``.
@@ -309,17 +317,16 @@
 {% macro deadline_badge(cell, tag='span', extra_class='') -%}
   {%- set classes = (' ' ~ extra_class) if extra_class else '' -%}
   {%- if cell.by_hand and cell.state in ('filed_on_time', 'filed_late') -%}
-    {#- Filed by the host in the UbyPort web application: say so, late or not. -#}
-    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ t('deadline.filed_by_hand', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
+    <{{ tag }} class="ui-badge ui-badge-{{ UI_DEADLINE_KINDS.get(cell.level, 'neutral') }}{{ classes }}" data-deadline="{{ cell.level }}">{{ t('deadline.filed_by_hand', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
   {%- elif cell.state == 'filed_on_time' -%}
-    <{{ tag }} class="deadline{{ classes }} done">{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
+    <{{ tag }} class="ui-badge ui-badge-done{{ classes }}" data-deadline="done">{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}</{{ tag }}>
   {%- elif cell.state == 'filed_late' -%}
-    <{{ tag }} class="deadline{{ classes }} neutral" title="{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}">
+    <{{ tag }} class="ui-badge ui-badge-neutral{{ classes }}" data-deadline="neutral" title="{{ t('deadline.filed_at', when=cell.filed_at.strftime('%d.%m. %H:%M')) }}">
       {%- if cell.late_hours < 48 %}{{ t('deadline.filed_late_hours', n=cell.late_hours) }}
       {%- else %}{{ tp('deadline.filed_late_days', cell.late_hours // 24) }}{% endif -%}
     </{{ tag }}>
   {%- elif cell.state == 'countdown' -%}
-    <{{ tag }} class="deadline{{ classes }} {{ cell.level }}">{{ describe_time_left(cell.check_in) if cell.check_in else '—' }}</{{ tag }}>
+    <{{ tag }} class="ui-badge ui-badge-{{ UI_DEADLINE_KINDS.get(cell.level, 'neutral') }}{{ ' ui-badge-overdue' if cell.level == 'overdue' }}{{ classes }}" data-deadline="{{ cell.level }}">{% if cell.level == 'overdue' %}! {% endif %}{{ describe_time_left(cell.check_in) if cell.check_in else '—' }}</{{ tag }}>
   {%- endif -%}
 {%- endmacro %}
 
@@ -327,10 +334,10 @@
     for a neutral one such as "Show all stays"). A caller block, when given,
     holds a page-specific extra (the practice-mode demo loader on Stays). -#}
 {% macro empty_state(title, body='', action_url='', action_label='', primary=true) %}
-  <div class="panel empty empty-state" data-empty-state>
+  <div class="ui-empty" data-empty-state>
     {% if title %}<h2>{{ title }}</h2>{% endif %}
     {% if body %}<p>{{ body }}</p>{% endif %}
-    {% if action_url %}<div class="empty-state-action"><a class="btn{{ ' primary' if primary }}" href="{{ action_url }}">{{ action_label }}</a></div>{% endif %}
+    {% if action_url %}<div class="ui-btn-group"><a class="ui-btn ui-btn-{{ 'primary' if primary else 'secondary' }}" href="{{ action_url }}">{{ action_label }}</a></div>{% endif %}
     {% if caller is defined %}{{ caller() }}{% endif %}
   </div>
 {% endmacro %}
@@ -338,8 +345,7 @@
 {# ``truncate`` keeps a dense table row on one line: the name ends in an
    ellipsis and the full name stays in the tooltip and for screen readers. #}
 {% macro property_identity(id, name, compact=false, truncate=false) %}
-  <span class="property-identity{{ ' truncate' if truncate }}"{% if truncate %} title="{{ name }}"{% endif %}>
-    <span class="property-mark property-tone-{{ id % 10 }}" aria-hidden="true">{{ name[:1] }}</span>
+  <span class="property-identity{{ ' truncate' if truncate }}"{% if truncate %} title="{{ name }}"{% endif %}><span class="ui-pdot" data-property="{{ (id % 4) + 1 }}" aria-hidden="true"></span>
     <span class="{{ 'small' if compact }}{{ ' property-identity-name' if truncate }}">{{ name }}</span>
   </span>
 {% endmacro %}
@@ -352,9 +358,9 @@
 {% endmacro %}
 
 {% macro copy_button(target_id) %}
-  <button class="btn-icon" type="button" data-copy="{{ target_id }}"
+  <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact" type="button" data-copy="{{ target_id }}"
           data-copy-label="{{ t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
-          aria-label="{{ t('common.copy') }}">{{ copy_icon() }}<span class="btn-icon-label" data-copy-label-slot hidden></span></button>
+          aria-label="{{ t('common.copy') }}">{{ icon('copy', 16) }}<span class="btn-icon-label" data-copy-label-slot hidden></span></button>
 {% endmacro %}
 
 {# Copy a value straight from a list row, so chasing a guest is one click. #}
@@ -428,12 +434,12 @@
 {% macro onboarding_banner(onboarding) %}
   {% if onboarding and not onboarding.wizard_complete and not onboarding.dismissed %}
     <aside class="onboarding-banner onboarding-banner-setup" aria-label="{{ t('setup.banner.aria') }}">
-      <a class="btn primary onboarding-banner-setup-link" href="{{ onboarding.setup_url }}">
+      <a class="ui-btn ui-btn-secondary ui-btn-compact onboarding-banner-setup-link" href="{{ onboarding.setup_url }}">
         {{ t('setup.banner.line', step=onboarding.wizard_step_number, total=onboarding.wizard_total_steps) }}
       </a>
       <form method="post" action="/onboarding/dismiss">
         <input type="hidden" name="return_to" value="{{ request.url.path }}">
-        <button class="btn ghost" type="submit">{{ t('onboarding.skip') }}</button>
+        <button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit">{{ t('onboarding.skip') }}</button>
       </form>
     </aside>
   {% endif %}
@@ -552,13 +558,9 @@
 {% endmacro %}
 
 {% macro row_menu_begin(label='') %}
-<div class="row-menu">
-  <button class="btn-icon row-menu-trigger" type="button" aria-label="{{ label or t('common.more_actions') }}" aria-expanded="false" aria-haspopup="true">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <circle cx="3.25" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.75" cy="8" r="1.25"/>
-    </svg>
-  </button>
-  <div class="row-menu-panel" role="menu" hidden>
+<div class="row-menu ui-menu">
+  <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger" type="button" aria-label="{{ label or t('common.more_actions') }}" aria-expanded="false" aria-haspopup="true">{{ icon('ellipsis-vertical', 16) }}</button>
+  <div class="row-menu-panel ui-menu-panel" role="menu" hidden>
 {% endmacro %}
 
 {% macro row_menu_end() %}

@@ -128,7 +128,7 @@
       else localStorage.setItem(preferencesKey, displaySettings);
     } catch (_) { /* Optional. */ }
   }
-  function view() { return autoView(state.mode, state.property ? 1 : state.properties.length); }
+  function view() { return phoneDots() ? "calendar" : autoView(state.mode, state.property ? 1 : state.properties.length); }
   function range() {
     if (view() === "gantt" && cleaningMode) return [state.date,
       state.date === root.dataset.rangeFrom && root.dataset.rangeTo ? root.dataset.rangeTo : addDays(state.date, 30)];
@@ -210,6 +210,7 @@
     return labels["status_" + event.status] || labels.booked;
   }
   function propertyColor(id) { return ["teal", "blue", "purple"][Math.abs(Number(id)) % 3]; }
+  function phoneDots() { return !cleaningMode && matchMedia("(max-width:767px)").matches; }
   function appendCleaningIcon(node, className) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
@@ -268,7 +269,7 @@
     const [start, end] = range(), weekdays = el("div", "cal-weekdays");
     for (let day = 0; day < 7; day++) weekdays.append(el("span", "", weekday(addDays(start, day))));
     body.append(weekdays);
-    const mobile = matchMedia("(max-width:760px)").matches;
+    const mobile = matchMedia("(max-width:760px)").matches, dots = phoneDots();
     const bookingBudgetDefault = cleaningMode ? 1 : (mobile ? 1 : 2);
     for (let week = start; week < end; week = addDays(week, 7)) {
       const until = addDays(week, 7);
@@ -289,7 +290,22 @@
         const button = el("button", "cal-day-number", String(dateValue(date).getUTCDate()));
         button.type = "button"; button.dataset.calDay = date;
         button.setAttribute("aria-label", format("select_day", { date: fullDate(date) }));
-        button.title = labels.keyboard; day.append(button); days.append(day);
+        button.title = labels.keyboard;
+        if (dots) {
+          const dayEvents = state.events.filter(event => event.kind !== "cleaning" && displayOverlap(event, date, addDays(date, 1)));
+          const marks = el("div", "cal-dots");
+          marks.dataset.calDots = String(dayEvents.length);
+          dayEvents.slice(0, 3).forEach(event => { const dot = el("span", "cal-dot"); dot.dataset.calColor = propertyColor(event.propertyId); marks.append(dot); });
+          if (dayEvents.length > 3) marks.append(el("span", "cal-dot-more", "+" + String(dayEvents.length - 3)));
+          button.append(marks);
+          if (dayEvents.length) day.classList.add("has-stays");
+        }
+        day.append(button); days.append(day);
+      }
+      if (dots) {
+        const row = el("div", "cal-week is-dots"); row.style.setProperty("--lanes", "1");
+        row.append(days); body.append(row);
+        continue;
       }
       const overlay = el("div", "cal-week-events");
       if (cleaningMode || cleanings.count) {
@@ -440,6 +456,7 @@
   }
   async function load() {
     const number = ++requestNumber;
+    if (phoneDots() && state.scale === "year") state.scale = "month";
     if (controller) controller.abort();
     controller = new AbortController(); state.loading = true; body.setAttribute("aria-busy", "true");
     syncControls(); setMessage(labels.loading);
@@ -588,9 +605,16 @@
       button.setAttribute("aria-pressed", String(button.dataset.calTypeChoice === createKind));
     });
     if (createKind === "stay") updateNights();
-    if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
+    if (createDialog.open) placeCreate(createAnchor);
   }
   let createAnchor = null, createAnchorDate = "";
+  // The create form changes height when its kind switches (cleaning to stay)
+  // and when a field shows or hides; a one-off frame can measure the old
+  // height. Re-place on every size change so the popover never leaves the
+  // viewport. placeCreate is idempotent and no-ops when the dialog is closed.
+  if (typeof ResizeObserver === "function") {
+    new ResizeObserver(() => { if (createDialog.open) placeCreate(createAnchor); }).observe(createDialog);
+  }
   function placeCreate(anchor) {
     if (!createDialog.open) return;
     if (matchMedia("(max-width:760px)").matches) {
@@ -668,6 +692,12 @@
     const chosen = { ...selection };
     const pointTarget = document.elementFromPoint(event.clientX, event.clientY);
     const anchor = pointTarget && pointTarget.closest("[data-date]");
+    if (phoneDots() && chosen.start === chosen.end) {
+      cancelSelection(); suppressClickUntil = Date.now() + 400;
+      if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
+      openDay(chosen.start);
+      return;
+    }
     cancelSelection(); suppressClickUntil = Date.now() + 400;
     if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
     openCreate(chosen.start, addDays(chosen.end, 1), chosen.property, cleaningMode ? "cleaning" : "stay", anchor);
@@ -709,6 +739,7 @@
     const day = target.closest("[data-cal-day]");
     if (day) {
       if (Date.now() < suppressClickUntil || state.loading || !lastLoadedRange) return;
+      if (phoneDots()) { openDay(day.dataset.calDay); return; }
       openCreate(day.dataset.calDay, addDays(day.dataset.calDay, 1), day.dataset.property || state.property, cleaningMode ? "cleaning" : "stay", day); return;
     }
     const more = target.closest("[data-cal-more]");
@@ -847,7 +878,7 @@
     }
   });
   window.addEventListener("resize", () => {
-    if (!state.loading && lastLoadedRange) render();
+    if (!state.loading && lastLoadedRange) { if (phoneDots() && state.scale === "year") load(); else render(); }
     if (createDialog.open) requestAnimationFrame(() => placeCreate(createAnchor));
   });
   window.addEventListener("popstate", () => {

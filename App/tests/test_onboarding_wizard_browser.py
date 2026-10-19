@@ -1421,7 +1421,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         page.goto(f"{base_url}/apartments?lang={lang}")
         continue_button = page.locator(".onboarding-banner-setup-link")
         assert continue_button.is_visible()
-        assert "primary" in continue_button.get_attribute("class").split()
+        assert "ui-btn-secondary" in continue_button.get_attribute("class").split()
         assert continue_button.get_attribute("href") != "/onboarding/dismiss"
         assert continue_button.evaluate("(el) => getComputedStyle(el).backgroundColor") != "rgba(0, 0, 0, 0)"
         _shot(page, f"28-continue-setup-{tag}.png")
@@ -1515,6 +1515,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
             ) == "none"
             _shot(page, f"33-static-skeleton-{tag}.png")
             page.evaluate("window.ubyhostSkeleton.hide()")
+            skeleton.wait_for(state="hidden", timeout=2000)  # skeleton.js MIN_VISIBLE_MS defers the hide
             assert skeleton.is_hidden()
         browser.close()
 

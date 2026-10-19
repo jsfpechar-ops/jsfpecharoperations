@@ -233,7 +233,7 @@ def test_dashboard_geometry_locales_and_screenshots(dashboard_host, base):
                             f"touch target is only {target_box['height']}px high in {locale}/{width}"
                         )
                 else:
-                    assert abs(more_box["height"] - 42) <= 1
+                    assert abs(more_box["height"] - 40) <= 1
 
                 page.keyboard.press("Escape")
                 assert not panel.is_visible()
@@ -297,9 +297,9 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 assert set(shown_ids) <= dashboard_rich_host["all_actionable"]
                 assert dashboard_rich_host["overdue"] in shown_ids
                 assert dashboard_rich_host["ready"] in shown_ids
-                assert page.locator(".dashboard-row-task .pill.amber").count() >= 1
+                assert page.locator('.dashboard-row-task .pill.amber, .dashboard-row-task [data-tone="amber"]').count() >= 1
                 ready_row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["ready"]}"]')
-                assert ready_row.locator(".dashboard-row-task .pill.blue").count() == 1
+                assert ready_row.locator('.dashboard-row-task [data-tone="blue"]').count() == 1
                 overdue_row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["overdue"]}"]')
                 assert "is-overdue" in (overdue_row.get_attribute("class") or "")
                 overflow = page.locator("#needs-action > p a")
@@ -314,20 +314,21 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 assert page.get_by_text("No guest forms are currently outstanding.", exact=True).count() == 0
                 assert page.evaluate("() => document.documentElement.scrollWidth - innerWidth") <= 1
 
-                header_actions = page.locator(".dashboard-actions")
+                header_actions = page.locator(".ui-ph-acts")
                 assert header_actions.locator('a[href="/reservations?new=1"]').is_visible()
-                assert header_actions.locator(
-                    'a[href="/cleaning/new"][data-calendar-add][data-cal-create-type="cleaning"]'
-                ).is_visible()
-                assert header_actions.locator('form[action="/sync"]').is_visible()
-                assert header_actions.locator('form[action="/demo/reset"]').is_visible()
-                header_buttons = header_actions.locator(
-                    ".action-group > .btn, .action-group > form > .btn, .action-group .sync-cta .btn"
-                )
-                # Add cleaning is the requested fourth header action.
-                assert header_buttons.count() == 4
-                header_boxes = [button.bounding_box() for button in header_buttons.all()]
-                assert all(abs(box["height"] - (44 if width <= 390 else 42)) <= 1 for box in header_boxes)
+                if width >= 1024:
+                    assert header_actions.locator(
+                        'a[href="/cleaning/new"][data-calendar-add][data-cal-create-type="cleaning"]'
+                    ).is_visible()
+                    assert header_actions.locator('form[action="/demo/reset"]').is_visible()
+                # v2 (MASTER): one primary action; below 1024 px the rest sit in the overflow menu.
+                header_buttons = page.locator(".ui-ph-acts .ui-btn:not(.ui-ph-menu)")
+                visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
+                if width < 1024:
+                    assert len(visible_buttons) == 1
+                    assert page.locator(".ui-ph-menu").is_visible()
+                header_boxes = [button.bounding_box() for button in visible_buttons]
+                assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes)
                 if width > 390:
                     assert max(box["y"] for box in header_boxes) - min(box["y"] for box in header_boxes) <= 2
 
@@ -335,7 +336,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                     # On ultrawide screens the dashboard title/actions, count
                     # cards, and queue should share the same centered lane.
                     lane_boxes = page.evaluate("""() => [
-                      '.host-today-head', '.dashboard-stats', '#needs-action'
+                      '.ui-ph', '.dashboard-stats', '#needs-action'
                     ].map(selector => {
                       const rect = document.querySelector(selector).getBoundingClientRect();
                       return {selector, left: rect.left, right: rect.right};
@@ -356,7 +357,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 more_action = row.locator(".row-menu-trigger")
                 more_box = more_action.bounding_box()
                 assert more_action.inner_text() == ""
-                assert abs(more_box["height"] - (44 if width <= 760 else 42)) <= 1
+                assert abs(more_box["height"] - (44 if width <= 760 else 40)) <= 1
 
                 before_hover = row.evaluate("el => getComputedStyle(el).backgroundColor")
                 row.hover()

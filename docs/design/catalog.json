@@ -1,0 +1,40 @@
+{
+  "master_version": "2.0.0",
+  "classes": [
+    "ui-page", "ui-ph", "ui-ph-main", "ui-ph-back", "ui-ph-meta", "ui-ph-acts", "ui-ph-menu",
+    "ui-tabs", "ui-tab",
+    "ui-toolbar", "ui-toolbar-search", "ui-toolbar-right", "ui-chips", "ui-chip", "ui-chip-x",
+    "ui-body", "ui-body-list", "ui-body-detail", "ui-body-form", "ui-body-settings",
+    "ui-btn", "ui-btn-primary", "ui-btn-secondary", "ui-btn-quiet", "ui-btn-danger", "ui-btn-compact", "ui-btn-icon", "ui-btn-loading", "ui-btn-group",
+    "ui-field", "ui-field-err", "ui-label", "ui-opt", "ui-help", "ui-error", "ui-pair", "ui-check", "ui-toggle", "ui-switch", "ui-form-actions", "ui-sticky-actions", "ui-steps",
+    "ui-table", "ui-table-stack", "ui-table-wrap", "ui-row", "ui-cell-first", "ui-cell-r", "ui-cell-acts", "ui-sub", "ui-cards", "ui-card", "ui-card-l1", "ui-card-l2", "ui-card-l3", "ui-card-menu",
+    "ui-badge", "ui-badge-action", "ui-badge-attention", "ui-badge-done", "ui-badge-neutral", "ui-badge-overdue",
+    "ui-pdot", "ui-num", "ui-mono",
+    "ui-section", "ui-section-h", "ui-stats", "ui-stat", "ui-facts", "ui-detail", "ui-detail-side", "ui-banner", "ui-banner-attention", "ui-banner-neutral", "ui-gcard",
+    "ui-menu", "ui-menu-panel", "ui-menu-item", "ui-menu-danger",
+    "ui-dialog", "ui-sheet", "ui-sheet-handle", "ui-toast",
+    "ui-empty", "ui-tip", "ui-pagination",
+    "ui-skel", "ui-bone", "ui-skel-h", "ui-skel-rows", "ui-skel-row", "ui-skel-cards", "ui-skel-card", "ui-skel-group",
+    "ui-sidebar", "ui-brand", "ui-brand-mark", "ui-env", "ui-search-row", "ui-nav", "ui-nav-gap", "ui-nav-count", "ui-nav-bottom", "ui-account", "ui-avatar",
+    "ui-topbar", "ui-tabbar", "ui-tabbar-ic",
+    "ui-calendar", "ui-cal-h", "ui-cal-grid",
+    "ui-icon", "ui-input", "ui-select", "ui-textarea",
+    "ui-bone-title", "ui-bone-meta", "ui-bone-btn", "ui-bone-toolbar", "ui-bone-label", "ui-bone-control", "ui-bone-badge", "ui-bone-line",
+    "ui-w10", "ui-w14", "ui-w18", "ui-w30", "ui-w40", "ui-w60", "ui-skel-detail", "ui-skel-side", "ui-cards-stack", "ui-swatch-grid", "ui-swatch", "ui-swatch-chip", "ui-type-sample"
+  ],
+  "hooks": ["sr-only", "skip-link", "grow", "hidden", "is-open", "is-on", "is-active", "row-menu", "row-menu-trigger", "row-menu-panel", "help-tip", "help-tip-btn", "help-tip-body", "toast", "toast-stack", "clickable-row", "row-menu-item", "row-menu-form", "row-action-send", "row-action-form", "send-all", "send-all-form", "sync-btn", "sync-cta", "sync-cta-form", "sync-cta-meta", "has-meta", "csv-in-filter", "btn-icon-label", "property-identity", "truncate", "guest-count", "inline", "source-badge", "dashboard-row", "dashboard-row-copy", "dashboard-row-task", "dashboard-row-actions", "dashboard-row-property", "dashboard-row-dates", "dashboard-missing-line", "dashboard-missing-list", "dashboard-missing-short", "ui-table-wrap", "is-overdue"],
+  "enforced_templates": ["App/app/templates/dev_ui.html", "App/app/templates/dashboard.html", "App/app/templates/reservations.html", "App/app/templates/reservation_detail.html"],
+  "legacy": {
+    "App/app/templates/reservation_detail.html": ["detail-hero", "detail-metric", "empty", "err-text", "eyebrow", "fact-extra", "fact-wide", "field-label-row", "guest-card", "guest-card-action", "guest-card-head", "guest-card-note", "guest-card-state", "guest-card-who", "guest-cards", "guest-facts", "guest-facts-identity", "guest-facts-stay", "host-stay-detail", "inactive", "inline-edit-bar", "inline-edit-status", "inline-edit-title", "metric-label", "metric-note", "metric-value", "nowrap", "opt", "panel", "placeholder", "row-actions", "scroll-x", "settings-grid", "small-value", "stay-claim-label", "stay-claim-line", "stay-command-actions", "stay-command-main", "stay-command-note", "stay-command-panel", "stay-demo-banner", "stay-jump", "stay-metrics", "stay-property-line", "stay-settings", "tight", "verify-form"],
+    "App/app/templates/reservations.html": ["action-panel", "empty-state-extra", "filter-apply", "filter-fields", "filter-panel-actions", "filters", "grid", "host-filter-panel", "muted", "nowrap", "num", "opt", "row-action-pair", "row-actions", "row-primary-link", "saved-views", "small", "stay-col-actions", "stay-col-dates", "stay-col-guests", "stay-col-property", "stay-col-reporting", "stay-col-source", "stay-col-stay", "stay-date-link", "stay-identity-link", "stay-report-deadline", "stays-view", "two"],
+    "App/app/templates/dashboard.html": [
+      "dashboard-stats",
+      "dashboard-stat",
+      "action",
+      "ready",
+      "overdue",
+      "is-positive"
+    ]
+  },
+  "enforced_stylesheets": ["App/app/static/host2.css"]
+}

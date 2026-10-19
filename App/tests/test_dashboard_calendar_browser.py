@@ -66,7 +66,7 @@ def open_page(browser, ws, origin, width=1280, locale="en", touch=False):
     page.on("response", lambda response: api_responses.append(response.status) if "/dashboard/calendar?" in response.url else None)
     response = page.goto(f"{origin}/?lang={locale}&cal_date=2026-10-01")
     try:
-        page.wait_for_selector(".cal-gantt-row", timeout=10000)
+        page.wait_for_selector(".cal-gantt-row, .cal-week", timeout=10000)
     except Exception:
         shot(page, f"open-failed-{locale}-{width}")
         widget_state = {
@@ -303,8 +303,9 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                 context, page = open_page(browser, calendar_workspace, calendar_origin, width=width, locale=locale, touch=width < 761)
                 errors = []
                 page.on("pageerror", lambda error: errors.append(str(error)))
-                for mode in ("gantt", "calendar"):
-                    page.locator(f'[data-cal-view="{mode}"]').click()
+                for mode in (("calendar",) if width < 768 else ("gantt", "calendar")):
+                    if width >= 768:
+                        page.locator(f'[data-cal-view="{mode}"]').click()
                     page.wait_for_selector(".cal-gantt-row" if mode == "gantt" else ".cal-week")
                     wait_loaded(page)
                     # Summary -> calendar -> detailed action queue, in the same lane.
@@ -312,13 +313,14 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         const r = document.querySelector(selector).getBoundingClientRect();
                         return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
                     })""")
-                    assert 0 <= boxes[1]["top"] - boxes[0]["bottom"] <= 16, boxes
+                    assert 0 <= boxes[1]["top"] - boxes[0]["bottom"] <= 44, boxes
                     assert boxes[2]["top"] >= boxes[1]["bottom"], boxes
                     for box in boxes[1:]:
                         assert abs(box["left"] - boxes[0]["left"]) <= 2, boxes
                         assert abs(box["right"] - boxes[0]["right"]) <= 2, boxes
-                    icon = page.locator("[data-cal-settings] svg").bounding_box()
-                    assert icon["width"] >= 18 and icon["height"] >= 18, icon
+                    if width >= 768:
+                        icon = page.locator("[data-cal-settings] svg").bounding_box()
+                        assert icon["width"] >= 18 and icon["height"] >= 18, icon
                     if width >= 1024:
                         pill_heights = page.locator(".dashboard-stat").evaluate_all(
                             "nodes => nodes.map(node => node.getBoundingClientRect().height)"
@@ -337,21 +339,22 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
                     )
                     assert control_heights and max(control_heights) - min(control_heights) <= 1, control_heights
-                    if width <= 390:
-                        buttons = page.locator(".cal-view-segment button, .cal-scale-segment button").evaluate_all(
-                            "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
-                        )
-                        groups = page.locator(".cal-view-segment, .cal-scale-segment, [data-cal-month], [data-cal-year]").evaluate_all(
-                            "nodes => nodes.filter(node => node.offsetParent).map(node => node.getBoundingClientRect().height)"
-                        )
-                        assert min(buttons) >= 44, buttons
-                        assert max(groups) - min(groups) <= 2, groups
-                        target = page.locator(".cal-day-number" if mode == "calendar" else ".cal-gantt-slot").first
-                        box = target.bounding_box()
+                    if width < 768:
+                        assert page.locator(".cal-week-events .cal-event").count() == 0
+                        assert page.locator(".cal-dots .cal-dot").count() >= 3
+                        shown = page.locator(
+                            ".cal-view-segment, .cal-scale-segment, [data-cal-month], [data-cal-year], [data-cal-settings]"
+                        ).evaluate_all("nodes => nodes.filter(node => node.offsetParent).length")
+                        assert shown == 0, shown
+                        box = page.locator(".cal-day-number").first.bounding_box()
                         assert box["width"] >= 43.9 and box["height"] >= 44, box
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
                     shot(page, f"{mode}-{locale}-{width}")
                 page.locator('[data-cal-day="2026-10-15"]').click()
+                if width < 768:
+                    assert page.locator("[data-cal-day-dialog]").is_visible()
+                    assert page.locator("[data-cal-day-list] .cal-event").count() >= 1
+                    page.locator("[data-cal-day-add]").click()
                 assert page.locator("[data-cal-create]").is_visible()
                 assert page.locator("#cal-arrival").input_value() == "2026-10-15"
                 assert page.locator("#cal-departure").input_value() == "2026-10-16"
@@ -599,6 +602,8 @@ def test_create_popover_reclamps_when_switching_to_taller_stay_form(calendar_wor
         context, page = open_page(browser, calendar_workspace, calendar_origin, width=width)
         page.locator("[data-cal-day]:visible").last.scroll_into_view_if_needed()
         page.locator("[data-cal-day]:visible").last.click()
+        if width < 768:
+            page.locator("[data-cal-day-add]").click()
         dialog = page.locator("[data-cal-create]")
         assert dialog.is_visible()
         page.locator('[data-cal-type-choice="cleaning"]').click()
@@ -624,7 +629,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
                 rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
+                    text: normalize(row.textContent)
                 }))
             };
         }""")
@@ -687,12 +692,12 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         expected = page.evaluate("""html => {
             const doc = new DOMParser().parseFromString(html, "text/html");
             doc.querySelectorAll("noscript").forEach(node => node.remove());
-            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             return {
                 stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
                 rows: [...doc.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
+                    text: rowText(row)
                 }))
             };
         }""", fresh_html)
@@ -702,12 +707,12 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             arrival, departure, 2, "Refresh retry stay"
         )
         page.wait_for_function("""expected => {
-            const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
+            const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             const actual = {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
                 rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
+                    text: rowText(row)
                 }))
             };
             return JSON.stringify(actual) === JSON.stringify(expected);

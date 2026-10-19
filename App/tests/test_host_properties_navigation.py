@@ -180,12 +180,15 @@ def test_czech_labels_render(host):
 
 def test_lock_account_link_only_when_connected(host):
     _entity()
-    assert 'href="/smart-locks"' not in host.get("/apartments").text
+    body = host.get("/apartments").text
+    body = body[body.index("<main") : body.index("</main>")]
+    assert 'href="/smart-locks"' not in body
     with patch("app.ttlock.enabled", return_value=True), \
             patch("app.ttlock.account_for", return_value={"id": 1, "username": "x"}):
         page = host.get("/apartments?lang=en").text
         urls = {item.get("url") for item in host.get("/api/command-palette").json()["items"]}
-    assert page.count('href="/smart-locks"') == 1 and "Door lock account" in page
+    main = page[page.index("<main") : page.index("</main>")]
+    assert main.count('href="/smart-locks"') == 1 and "Door lock account" in main
     assert "/smart-locks" in urls
 
 

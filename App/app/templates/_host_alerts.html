@@ -1,9 +1,16 @@
 {% if open_alerts %}
+{% set pin_alerts = open_alerts | selectattr('kind', 'equalto', 'guest_pin_rotated') | list %}
+{% set pin_ids = pin_alerts | map(attribute='apartment_id') | list %}
+{% set pin_names = [] %}
+{% for apartment in apartments | default([]) if apartment.id in pin_ids %}{% set _ = pin_names.append(apartment.internal_name) %}{% endfor %}
 <aside class="notification-stack" data-host-alerts aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
-  {% for alert in open_alerts %}
-    <article class="notification-bubble {{ alert.level }}" data-notification>
+  {% for alert in open_alerts if alert.kind != 'guest_pin_rotated' or alert.id == pin_alerts[0].id %}
+    {% set grouped = alert.kind == 'guest_pin_rotated' and pin_alerts | length > 1 %}
+    <article class="notification-bubble {{ alert.level }}" data-notification{% if grouped %} data-notification-group="guest_pin_rotated"{% endif %}>
       {% if alert.reservation_id %}
         <a class="notification-link" href="/reservations/{{ alert.reservation_id }}">
+      {% elif grouped %}
+        <a class="notification-link" href="/apartments">
       {% elif alert.apartment_id %}
         <a class="notification-link" href="/apartments/{{ alert.apartment_id }}">
       {% else %}
@@ -12,8 +19,10 @@
           <span class="notification-icon" aria-hidden="true">!</span>
           <span class="grow">
             <strong>{{ alert.display_title or alert.message }}</strong>
-            {% if alert.display_detail or alert.detail %}<small>{{ alert.display_detail or alert.detail }}</small>{% endif %}
+            {% if grouped %}<small>{{ pin_names | join(', ') }}. {{ alert.display_detail or alert.detail }}</small>
+            {% elif alert.display_detail or alert.detail %}<small>{{ alert.display_detail or alert.detail }}</small>{% endif %}
             {% if alert.reservation_id %}<small class="notification-action">{{ t('notification.open_stay') }}</small>
+            {% elif grouped %}<small class="notification-action">{{ t('dashboard.setup.view_properties') }}</small>
             {% elif alert.apartment_id %}<small class="notification-action">{{ t('notification.open_property') }}</small>{% endif %}
           </span>
       {% if alert.reservation_id or alert.apartment_id %}</a>{% else %}</div>{% endif %}

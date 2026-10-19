@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-16.
+Updated: 2026-10-19.
 
 ## Production
 
@@ -12,16 +12,15 @@ Updated: 2026-10-16.
 
 ## Now
 
+- Host design reset (MASTER.md, PR #401, branch claude/project-thread-td6fpc): 0130-0134 and 0147-0152 done (shell, macros, dashboard, stays, phone calendar dots, card roles). Next 0135-0137, then owner checkpoint 2, then 0138-0146.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 - Host #397: b51e0bb; CI 8/8, zero browser skips ([brief](../tasks/0123-dashboard-stays-only.md)).
 
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
-- Optional: deploy #280+#281 (admin preview) when you want it on production.
 
 ## Next
 
-- Host UX #382 is merged into main ([report](../tasks/0086-pr-382-integration-report.md)).
 
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
 - Merged 0067 (#371) and 0068 (#372). TTLock answered all questions ([TTLOCK](../TTLOCK.md#what-ttlock-support-confirmed-2026-10-12)). Next: [0069](../tasks/0069-same-period-shared-pin.md), same-hours rebooking must not reuse a PIN (K-D04).
@@ -29,7 +28,6 @@ Updated: 2026-10-16.
 
 - TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).
 
-- PR review 2026-10-09: #332, #328 merged. #331 approved, merge. #278, #279 undecided.
 - Doručenka smoke on a new filing after this cutover.
 - TTLock on Render staging, 2026-10-08: lock shared as authorized admin, hand-added stay completed, PIN issued, TTLock window matched UbyHost (09:00 to 16:00) and **the code opened the lock** (owner-tested). Lock has a gateway. Delete of a never-typed code tested 2026-10-10 (stops working). Not yet tested: change, calendar stays, daylight saving.
 

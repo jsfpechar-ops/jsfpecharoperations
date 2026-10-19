@@ -97,8 +97,8 @@ def _labels(lang: str) -> list[str]:
 
 
 def _banner_block(text: str) -> str:
-    start = text.index('class="notification-bubble warning"')
-    return text[start : text.index("</article>", start)]
+    start = text.index('class="ui-banner ui-banner-attention"')
+    return text[start : text.index("</div></div>", start)]
 
 
 @pytest.fixture
@@ -138,6 +138,8 @@ def test_the_banner_lists_missing_report_fields_in_readiness_order(host):
     ]
     assert present.index("IDUB") < present.index("Facility abbreviation") < present.index("Password")
     assert f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting#ubyport"' in banner
+    assert 'href="/apartments"' in banner
+    assert host_i18n.STRINGS["en"]["dashboard.setup.title"] in banner
 
 
 def test_the_banner_is_absent_when_reporting_is_ready(host):
@@ -146,7 +148,7 @@ def test_the_banner_is_absent_when_reporting_is_ready(host):
 
     page = host.get("/?lang=en")
 
-    assert 'class="notification-bubble warning"' not in page.text
+    assert 'class="ui-banner ui-banner-attention"' not in page.text
 
 
 def test_the_sixth_incomplete_property_collapses_into_and_more(host):
@@ -168,7 +170,7 @@ def test_inactive_properties_are_omitted(host):
 
     page = host.get("/?lang=en")
 
-    assert 'class="notification-bubble warning"' not in page.text
+    assert 'class="ui-banner ui-banner-attention"' not in page.text
 
 
 @pytest.mark.skipif(os.environ.get("UBYHOST_CAPTURE_0047") != "1", reason="evidence capture")
@@ -181,7 +183,7 @@ def test_capture_banner_screenshots(host):
 
     def save(label):
         html = host.get("/?lang=en").text
-        assert 'class="notification-bubble warning"' in html
+        assert 'class="ui-banner ui-banner-attention"' in html
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch()
             for width in widths:

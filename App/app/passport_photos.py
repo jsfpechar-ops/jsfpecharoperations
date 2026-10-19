@@ -1,14 +1,11 @@
 """Temporary passport photos for host identity verification.
 
 Guests upload a photo, camera capture, or PDF (e.g. a multi-guest registration
-form). Files stay on disk only until the host confirms the data matches the
-document, then are deleted immediately. Only authenticated hosts can read them
-via the admin route. Unverified files go 7 days after check-in, and no file
-lives longer than 30 days after upload (see ``purge_stale``).
-
-Verification is the happy path, not a guarantee: a host can simply never press
-the button. ``purge_stale`` is the backstop that makes the promise true, and it
-also clears files no guest row points at any more, which nothing else can reach.
+form). Files stay on disk only until they have no purpose left. Only authenticated
+hosts can read them via the admin route. A file goes 7 days after check-in and
+never lives longer than 30 days after upload (see ``purge_stale``). 0136 removed
+the host's "Mark ID checked" button, so these two limits are the whole rule;
+``purge_stale`` also clears files no guest row points at any more.
 """
 from __future__ import annotations
 
@@ -218,9 +215,9 @@ def delete_photo(guest_id: int) -> None:
 #
 # A photo exists for one purpose: letting the host compare the form against the
 # document before reporting. That purpose ends with the check, so the owner's
-# retention decision (legal positions, section 4) is: delete it when the host
-# marks the guest verified, otherwise 7 days after check-in, and never later
-# than 30 days after upload, whatever the stay dates say.
+# retention decision (legal positions, section 4) is: 7 days after check-in, and
+# never later than 30 days after upload, whatever the stay dates say. A row that
+# still carries identity_verified_at (hand-entered guests) also qualifies.
 PHOTO_AFTER_CHECKIN_DAYS = 7
 PHOTO_MAX_AGE_DAYS = 30
 
@@ -270,8 +267,8 @@ def purge_stale(owner_user_id: Optional[int] = None, today: Optional[date] = Non
     """Delete photos that have no purpose left, plus any orphaned files.
 
     A photo goes when any one of these holds: the host marked the guest
-    verified (the Verify route deletes at once; this catches every other path
-    that sets ``identity_verified_at``), check-in was more than 7 days ago, or
+    verified (hand-entered guests set ``identity_verified_at`` on save; no button
+    does any more), check-in was more than 7 days ago, or
     the upload is more than 30 days old. Clears ``passport_photo_at`` so the
     host stops being offered a photo that is no longer there, but never touches
     the rest of the guest row: that is a house book entry with its own period.

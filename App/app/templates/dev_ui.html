@@ -1,0 +1,73 @@
+{% extends "host_page.html" %}
+{% set nav = 'admin' %}
+{% block title %}UI catalog{% endblock %}
+{% block meta %}docs/design/MASTER.md 2.0.0. Every component, state and skeleton from the real CSS.{% endblock %}
+{% block primary_action %}{{ ui_button('Primary action', 'primary', href='#buttons') }}{% endblock %}
+{% block secondary_actions %}{{ ui_button('Secondary', 'secondary', href='#fields', icon_name='refresh-cw') }}{{ ui_icon_button('More actions', 'ellipsis-vertical', extra_class='ui-ph-menu') }}{% endblock %}
+{% block tabs %}{{ ui_tabs([('/dev/ui#tokens', 'Tokens', true), ('/dev/ui#buttons', 'Buttons', false), ('/dev/ui#lists', 'Lists', false), ('/dev/ui#skeletons', 'Skeletons', false)], 'Catalog') }}{% endblock %}
+{% block body %}
+{% call ui_section('Tokens', id='tokens') %}
+<div class="ui-swatch-grid">
+  {% for name in ['canvas', 'surface', 'surface-2', 'surface-3', 'ink', 'ink-2', 'ink-3', 'line', 'line-strong', 'accent', 'accent-soft', 'accent-ink', 'st-action-bg', 'st-attention-bg', 'st-done-bg', 'st-neutral-bg', 'danger', 'property-1', 'property-2', 'property-3'] %}
+  <div class="ui-swatch" data-token="{{ name }}"><span class="ui-swatch-chip"></span><code>--{{ name }}</code></div>
+  {% endfor %}
+</div>
+<p class="ui-type-sample">Body 16 px. <strong>Facts 600.</strong> <span class="ui-sub">Meta 13 px ink-3.</span> <span class="ui-mono">Mono 4821 #</span> <span class="ui-num">12 345 Kč</span></p>
+{% endcall %}
+
+{% call ui_section('Buttons', id='buttons', actions=ui_button('Section action', 'quiet', size='compact')) %}
+<div class="ui-btn-group">
+  {{ ui_button('Primary', 'primary') }}{{ ui_button('Secondary', 'secondary') }}{{ ui_button('Quiet', 'quiet') }}{{ ui_button('Danger', 'danger') }}
+  {{ ui_button('Compact', 'secondary', size='compact') }}{{ ui_button('With icon', 'secondary', icon_name='plus') }}{{ ui_icon_button('Icon only', 'pencil', 'secondary') }}
+  {{ ui_button('Loading', 'secondary', loading=true) }}{{ ui_button('Disabled', 'secondary', disabled=true) }}{{ ui_button('Disabled primary', 'quiet', disabled=true) }}
+</div>
+{% endcall %}
+
+{% call ui_section('Fields', id='fields') %}
+<form onsubmit="return false">
+  <div class="ui-pair">{{ ui_field('f1', 'Text input', value='Byt Vinohradská 12', help='Help text under the field') }}{{ ui_field('f2', 'With error', error='Enter the house number, the police require it.') }}</div>
+  <div class="ui-pair">{{ ui_select('f3', 'Select', [('a', 'All properties'), ('b', 'Studio Karlín')], selected='b') }}{{ ui_field('f4', 'Date', type='date', optional=true) }}</div>
+  {{ ui_textarea('f5', 'Textarea', value='Notes') }}
+  {{ ui_check('f6', 'Checkbox label', checked=true) }}
+  {{ ui_toggle('f7', 'Toggle label', checked=true) }}
+  <div class="ui-form-actions">{{ ui_button('Cancel', 'quiet') }}{{ ui_button('Save (secondary here, the page primary is in the header)', 'secondary', type='submit') }}</div>
+</form>
+{% endcall %}
+
+{% call ui_section('Badges and chips', id='badges') %}
+<div class="ui-btn-group">{{ ui_badge('action', '1 guest missing') }}{{ ui_badge('action', 'Report overdue', true) }}{{ ui_badge('attention', 'Waiting for UbyPort') }}{{ ui_badge('done', 'Confirmed') }}{{ ui_badge('neutral', 'Waiting for guests') }}{{ ui_pdot(1, 'Property one') }}{{ ui_pdot(2, 'Property two') }}</div>
+<div class="ui-chips">{{ ui_chip('Upcoming', href='#', selected=true) }}{{ ui_chip('Past', href='#') }}{{ ui_chip('All', href='#') }}</div>
+{% endcall %}
+
+{% call ui_section('Toolbar, table and cards', id='lists') %}
+{{ ui_toolbar(search=('q', 'Search guest or label', ''), chips=[('#', 'Upcoming', true), ('#', 'Past', false)], filters_id='dev-filters', filters_count=2, actions=ui_button('Export CSV', 'quiet', icon_name='download')) }}
+{{ ui_table_begin([('Stay', ''), ('Dates', ''), ('Property', ''), ('Guests', 'r'), ('Police report', ''), ('', '')], 'Sample rows') }}
+{% for i in range(3) %}
+<tr class="ui-row clickable-row" data-href="#" tabindex="0"><td class="ui-cell-first"><a href="#">Sample stay {{ i + 1 }}</a><span class="ui-sub">Airbnb</span></td><td class="ui-num">19. 10. to 22. 10.</td><td>{{ ui_pdot(i, 'Property') }}</td><td class="ui-cell-r ui-num">1 of 2</td><td>{{ ui_badge('action', '1 guest missing') }}</td><td class="ui-cell-acts">{{ ui_button('Send', 'secondary', size='compact', icon_name='send') }} {{ ui_menu_begin() }}{{ ui_menu_item('Open', '#') }}{{ ui_menu_item('Delete', danger=true, icon_name='trash-2') }}{{ ui_menu_end() }}</td></tr>
+{% endfor %}
+{{ ui_table_end() }}
+<div class="ui-cards">{% for i in range(3) %}{{ ui_card('#', '19. 10. to 22. 10.', 'Nováková · Byt Vinohradská 12', '1 of 2 guests', ui_badge('action', '1 guest missing')) }}{% endfor %}</div>
+{{ ui_pagination(1, 4, '', '#', 'Sample', 'Show more', 'Previous', 'Next') }}
+{% endcall %}
+
+{% call ui_section('Detail parts', id='detail') %}
+<div class="ui-detail">
+  <div>{{ ui_banner('attention', '<strong>Studio Karlín</strong>: address and UbyPort credentials missing.', 'Finish setup', '#') }}{{ ui_banner('neutral', 'The report can be sent once every guest is complete.') }}
+    <div class="ui-gcard"><h3>Jana Nováková {{ ui_badge('done', 'Details complete') }}</h3><p class="ui-sub">Passport, 14. 3. 1986, Slovakia</p></div>
+    {{ ui_empty('No stays yet', 'Connect a calendar or add a stay by hand.', 'Add stay', '#', primary=false) }}
+    {{ ui_tip('dev-tip', 'A help tip opens a short note.', '/guide') }}
+  </div>
+  <aside class="ui-detail-side">{{ ui_facts([('Property', 'Byt Vinohradská 12'), ('Arrival', '19. 10. 2026'), ('Guests', '1 of 2'), ('Door code', '<span class="ui-mono">4821 #</span>')]) }}</aside>
+</div>
+{{ ui_stats([('#', 3, 'Needs you'), ('#', 2, 'Ready to send'), ('#', 1, 'Overdue')], 'Sample') }}
+{% endcall %}
+
+{% call ui_section('Dialog', id='dialog') %}
+{{ ui_button('Open dialog', 'secondary', attrs='onclick="document.getElementById(\'dev-dialog\').showModal()"') }}
+{{ ui_dialog_begin('dev-dialog', 'Delete this stay?') }}<p>It moves to Archived. You can restore it there.</p><div class="ui-form-actions">{{ ui_button('Cancel', 'secondary', attrs='onclick="this.closest(\'dialog\').close()"') }}{{ ui_button('Delete', 'danger', attrs='onclick="this.closest(\'dialog\').close()"') }}</div>{{ ui_dialog_end() }}
+{% endcall %}
+
+{% call ui_section('Skeletons', id='skeletons') %}
+{% for kind in skeleton_kinds %}<h3 class="ui-sub">{{ kind }}</h3>{{ ui_skeleton(kind) }}{% endfor %}
+{% endcall %}
+{% endblock %}

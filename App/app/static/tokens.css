@@ -61,6 +61,7 @@
   /* Type scale */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --scrim: rgba(32, 32, 30, 0.4);
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;
   --text-base: 0.9375rem;
@@ -102,9 +103,7 @@
   /* Compatibility aliases while legacy templates move onto primitives. */
   --bg: var(--canvas);
   --bg-tint: var(--canvas-subtle);
-  --surface-2: var(--canvas);
   --surface-3: var(--surface-hover);
-  --ink-2: var(--ink-secondary);
   --muted: var(--ink-muted);
   --faint: var(--ink-faint);
   --line: var(--border);
@@ -121,10 +120,44 @@
   --shadow-pop: var(--shadow-popover);
   --sidebar: var(--sidebar-width);
   --ease: var(--ease-standard);
+
+  /* ---- Design v2 (docs/design/MASTER.md section 2). Three layers. ---- */
+  /* 2.1 primitive: used only inside this file */
+  --coral-50: #fbf0ee; --coral-100: #f9e9e7; --coral-200: #f0c9c4; --coral-500: #c85a52; --coral-600: #ad4942; --coral-700: #963e38;
+  --sand-0: #ffffff; --sand-50: #fbfaf8; --sand-100: #f7f7f5; --sand-150: #f1f1ef; --sand-200: #ececea; --sand-300: #deded9; --sand-400: #c9c9c2;
+  --ink-900: #20201e; --ink-700: #50504c; --ink-500: #6b6b66; --ink-400: #92928c;
+  --amber-700: #6b3a00; --amber-100: #fde9c2; --amber-300: #eec27a; --amber-dot: #c27a00;
+  --green-700: #1f5f3b; --green-100: #e6f5ec; --green-300: #bfe0cb; --green-dot: #2e8a57;
+  --red-700: #b42318; --red-100: #fcebea;
+  --blue-700: #245cb5; --teal-700: #08736b; --purple-700: #7840a2;
+  --size-11: 0.6875rem; --size-12: 0.75rem; --size-13: 0.8125rem; --size-14: 0.875rem; --size-15: 0.9375rem; --size-16: 1rem; --size-18: 1.125rem; --size-22: 1.375rem; --size-26: 1.625rem;
+  --radius-1: 6px; --radius-2: 8px; --radius-3: 12px; --radius-4: 16px;
+  --shadow-1: 0 1px 2px rgba(20, 20, 18, 0.06); --shadow-2: 0 8px 24px rgba(20, 20, 18, 0.12), 0 2px 6px rgba(20, 20, 18, 0.08); --shadow-3: 0 20px 60px rgba(20, 20, 18, 0.2);
+  --motion-1: 120ms; --motion-2: 180ms; --motion-3: 240ms;
+  /* 2.2 semantic */
+  --canvas-2: var(--sand-100); --surface-2: var(--sand-150); --surface-3: var(--sand-200);
+  --ink-2: var(--ink-700); --ink-3: var(--ink-500); --line-1: var(--sand-300); --line-strong: var(--sand-400);
+  --accent: var(--coral-600); --accent-hover: var(--coral-700); --accent-pressed: var(--coral-700); --accent-soft: var(--coral-100); --accent-ink: var(--coral-700); --on-accent: #ffffff;
+  --focus-ring-2: 0 0 0 1px var(--sand-0), 0 0 0 4px rgba(200, 90, 82, 0.32);
+  --st-action-bg: var(--coral-100); --st-action-ink: var(--coral-700); --st-action-dot: var(--coral-600);
+  --st-attention-bg: var(--amber-100); --st-attention-ink: var(--amber-700); --st-attention-dot: var(--amber-dot);
+  --st-done-bg: var(--green-100); --st-done-ink: var(--green-700); --st-done-dot: var(--green-dot);
+  --st-neutral-bg: var(--sand-150); --st-neutral-ink: var(--ink-700); --st-neutral-dot: var(--ink-400);
+  --danger: var(--red-700); --danger-bg: var(--red-100);
+  --property-1: var(--teal-700); --property-2: var(--blue-700); --property-3: var(--purple-700); --property-4: var(--amber-700);
+  /* 2.3 component */
+  --control-h: 40px; --control-h-phone: 44px; --control-h-compact: 32px; --control-px: 14px; --control-radius: var(--radius-2); --control-font: var(--size-14); --control-weight: 600;
+  --input-h: var(--control-h); --input-border: var(--line-strong); --input-radius: var(--radius-2); --input-px: 12px;
+  --row-h: 48px; --row-py: 12px; --row-px: 16px; --row-gap: 12px; --card-radius: var(--radius-3); --card-p: 16px;
+  --badge-h: 22px; --badge-px: 8px; --badge-font: var(--size-12); --badge-radius: var(--radius-pill);
+  --nav-w: 240px; --nav-w-collapsed: 64px; --nav-item-h: 40px; --nav-icon: 20px; --tabbar-h: 56px; --topbar-h: 52px;
+  --lane: 1080px; --lane-narrow: 720px; --gutter: 32px; --section-gap: 32px; --body-size: var(--size-16);
+  --sheet-radius: var(--radius-4); --dialog-w: 480px; --toast-w: 360px;
+  --skeleton-delay: 300ms; --skeleton-min: 400ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root { --motion-fast: 0.01ms; --motion-base: 0.01ms; }
+  :root { --motion-fast: 0.01ms; --motion-base: 0.01ms; --motion-1: 0.01ms; --motion-2: 0.01ms; --motion-3: 0.01ms; }
 }
 
 /* Autofilled fields keep the surface and ink of the page. Chrome ignores

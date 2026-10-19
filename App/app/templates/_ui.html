@@ -1,0 +1,127 @@
+{#- Design v2 component macros (docs/design/MASTER.md section 7). Every class
+    here is in docs/design/catalog.json; a template may use nothing else. -#}
+{% from "_icons.html" import icon with context %}
+
+{#- 7.1 button. variant: primary | secondary | quiet | danger. size: regular | compact.
+    href renders <a>, otherwise <button type=...>. attrs is raw attribute text. -#}
+{% macro ui_button(label, variant='secondary', href='', type='button', size='regular', icon_name='', loading=false, disabled=false, attrs='', id='') -%}
+{%- set classes = 'ui-btn ui-btn-' ~ variant ~ (' ui-btn-compact' if size == 'compact') ~ (' ui-btn-loading' if loading) -%}
+{%- if href -%}
+<a class="{{ classes }}" href="{{ href }}"{% if id %} id="{{ id }}"{% endif %}{% if disabled %} aria-disabled="true" tabindex="-1"{% endif %}{% if loading %} aria-busy="true"{% endif %}{% if attrs %} {{ attrs | safe }}{% endif %}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}<span>{{ label }}</span></a>
+{%- else -%}
+<button class="{{ classes }}" type="{{ type }}"{% if id %} id="{{ id }}"{% endif %}{% if disabled %} disabled{% endif %}{% if loading %} aria-busy="true"{% endif %}{% if attrs %} {{ attrs | safe }}{% endif %}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}<span>{{ label }}</span></button>
+{%- endif -%}
+{%- endmacro %}
+
+{#- icon-only button: the label becomes aria-label and title. -#}
+{% macro ui_icon_button(label, icon_name, variant='quiet', href='', type='button', size='regular', attrs='', extra_class='') -%}
+{%- set classes = 'ui-btn ui-btn-' ~ variant ~ ' ui-btn-icon' ~ (' ui-btn-compact' if size == 'compact') ~ (' ' ~ extra_class if extra_class) -%}
+{%- if href -%}<a class="{{ classes }}" href="{{ href }}" aria-label="{{ label }}" title="{{ label }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{{ icon(icon_name, 16) }}</a>
+{%- else -%}<button class="{{ classes }}" type="{{ type }}" aria-label="{{ label }}" title="{{ label }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{{ icon(icon_name, 16) }}</button>{%- endif -%}
+{%- endmacro %}
+
+{#- 7.5 badge. kind: action | attention | done | neutral. overdue prefixes "!" and a border. -#}
+{% macro ui_badge(kind, label, overdue=false) -%}
+<span class="ui-badge ui-badge-{{ kind }}{{ ' ui-badge-overdue' if overdue }}">{% if overdue %}! {% endif %}{{ label }}</span>
+{%- endmacro %}
+
+{#- 7.7 chip: a link (href) or a button; selected is ink, never coral. -#}
+{% macro ui_chip(label, href='', selected=false, remove_href='', attrs='') -%}
+{%- if href -%}<a class="ui-chip" href="{{ href }}"{% if selected %} aria-current="true"{% endif %}{% if attrs %} {{ attrs | safe }}{% endif %}>{{ label }}</a>
+{%- else -%}<button class="ui-chip" type="button" aria-pressed="{{ 'true' if selected else 'false' }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{{ label }}{% if remove_href %}{% endif %}</button>{%- endif -%}
+{%- endmacro %}
+
+{#- 7.2 text input. error renders the message under the field with aria-describedby. -#}
+{% macro ui_field(id, label, name='', value='', type='text', help='', error='', optional=false, attrs='', placeholder='') -%}
+<div class="ui-field{{ ' ui-field-err' if error }}">
+  <label class="ui-label" for="{{ id }}">{{ label }}{% if optional %} <span class="ui-opt">{{ t('common.optional') }}</span>{% endif %}</label>
+  <input class="ui-input" id="{{ id }}" name="{{ name or id }}" type="{{ type }}" value="{{ value }}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if error %} aria-invalid="true" aria-describedby="{{ id }}-error"{% elif help %} aria-describedby="{{ id }}-help"{% endif %} {{ attrs | safe }}>
+  {% if error %}<span class="ui-error" id="{{ id }}-error">{{ icon('triangle-alert', 16) }}{{ error }}</span>{% elif help %}<span class="ui-help" id="{{ id }}-help">{{ help }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- select: options is a list of (value, label); the caller passes the chosen value. -#}
+{% macro ui_select(id, label, options, selected='', name='', help='', error='', optional=false, attrs='') -%}
+<div class="ui-field{{ ' ui-field-err' if error }}">
+  <label class="ui-label" for="{{ id }}">{{ label }}{% if optional %} <span class="ui-opt">{{ t('common.optional') }}</span>{% endif %}</label>
+  <select class="ui-select" id="{{ id }}" name="{{ name or id }}"{% if error %} aria-invalid="true" aria-describedby="{{ id }}-error"{% elif help %} aria-describedby="{{ id }}-help"{% endif %} {{ attrs | safe }}>
+    {% for value, text in options %}<option value="{{ value }}"{% if value | string == selected | string %} selected{% endif %}>{{ text }}</option>{% endfor %}
+  </select>
+  {% if error %}<span class="ui-error" id="{{ id }}-error">{{ icon('triangle-alert', 16) }}{{ error }}</span>{% elif help %}<span class="ui-help" id="{{ id }}-help">{{ help }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro ui_textarea(id, label, value='', name='', help='', error='', optional=false, rows=3, attrs='') -%}
+<div class="ui-field{{ ' ui-field-err' if error }}">
+  <label class="ui-label" for="{{ id }}">{{ label }}{% if optional %} <span class="ui-opt">{{ t('common.optional') }}</span>{% endif %}</label>
+  <textarea class="ui-textarea" id="{{ id }}" name="{{ name or id }}" rows="{{ rows }}"{% if error %} aria-invalid="true" aria-describedby="{{ id }}-error"{% elif help %} aria-describedby="{{ id }}-help"{% endif %} {{ attrs | safe }}>{{ value }}</textarea>
+  {% if error %}<span class="ui-error" id="{{ id }}-error">{{ icon('triangle-alert', 16) }}{{ error }}</span>{% elif help %}<span class="ui-help" id="{{ id }}-help">{{ help }}</span>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro ui_check(id, label, name='', checked=false, value='1', attrs='') -%}
+<label class="ui-check" for="{{ id }}"><input class="ui-input" type="checkbox" id="{{ id }}" name="{{ name or id }}" value="{{ value }}"{% if checked %} checked{% endif %} {{ attrs | safe }}><span>{{ label }}</span></label>
+{%- endmacro %}
+
+{#- toggle: a real checkbox styled as a switch, so it works without JavaScript. -#}
+{% macro ui_toggle(id, label, name='', checked=false, attrs='') -%}
+<label class="ui-toggle" for="{{ id }}"><span>{{ label }}</span><input class="ui-input ui-switch" type="checkbox" role="switch" id="{{ id }}" name="{{ name or id }}" value="1"{% if checked %} checked{% endif %} {{ attrs | safe }}></label>
+{%- endmacro %}
+
+{#- 7.8 menu: trigger plus a panel of items. Reuses the row-menu JS hooks in app.js
+    (row-menu-trigger / row-menu-panel are functional hooks listed in catalog.json). -#}
+{% macro ui_menu_begin(label='') -%}
+<span class="ui-menu row-menu" data-row-menu>
+  <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="{{ label or t('common.actions') }}" title="{{ label or t('common.actions') }}">{{ icon('ellipsis-vertical', 16) }}</button>
+  <span class="ui-menu-panel row-menu-panel" role="menu" hidden>
+{%- endmacro %}
+{% macro ui_menu_end() -%}
+  </span>
+</span>
+{%- endmacro %}
+{% macro ui_menu_item(label, href='', danger=false, icon_name='', attrs='') -%}
+{%- if href -%}<a class="ui-menu-item{{ ' ui-menu-danger' if danger }}" role="menuitem" href="{{ href }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}{{ label }}</a>
+{%- else -%}<button class="ui-menu-item{{ ' ui-menu-danger' if danger }}" role="menuitem" type="submit"{% if attrs %} {{ attrs | safe }}{% endif %}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}{{ label }}</button>{%- endif -%}
+{%- endmacro %}
+
+{#- 7.9 dialog: a native <dialog>; CSS turns it into a bottom sheet below 768. -#}
+{% macro ui_dialog_begin(id, title) -%}
+<dialog id="{{ id }}" class="ui-dialog" aria-labelledby="{{ id }}-title">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <h2 id="{{ id }}-title">{{ title }}</h2>
+{%- endmacro %}
+{% macro ui_dialog_end() -%}
+  </div>
+</dialog>
+{%- endmacro %}
+
+{#- 7.11 empty state: title, one sentence, one button. -#}
+{% macro ui_empty(title, body='', action_label='', action_href='', primary=true) -%}
+<div class="ui-empty" data-empty-state>
+  <h2>{{ title }}</h2>
+  {% if body %}<p>{{ body }}</p>{% endif %}
+  {% if action_href %}{{ ui_button(action_label, 'primary' if primary else 'secondary', href=action_href) }}{% endif %}
+  {% if caller is defined %}{{ caller() }}{% endif %}
+</div>
+{%- endmacro %}
+
+{#- 7.12 help tip: reuses the help-tip JS hooks. -#}
+{% macro ui_tip(id, text, href='') -%}
+<span class="ui-tip help-tip" data-help-tip><button type="button" class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact help-tip-btn" aria-label="{{ t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">{{ icon('circle-help', 16) }}</button><span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if href %} <a href="{{ href }}">{{ t('help.tip.more') }}</a>{% endif %}</span></span>
+{%- endmacro %}
+
+{#- 7.13 pagination: phone shows one "Show more" link; desktop Previous / Next. -#}
+{% macro ui_pagination(page, pages, prev_url='', next_url='', label='', more_label='', prev_label='', next_label='', page_label='') -%}
+<nav class="ui-pagination" aria-label="{{ label }}">
+  {% if next_url %}{{ ui_button(more_label, 'secondary', href=next_url, attrs='data-pagination-more') }}{% endif %}
+  <span class="ui-num">{{ page_label or (page ~ ' / ' ~ pages) }}</span>
+  {% if prev_url %}{{ ui_button(prev_label, 'secondary', href=prev_url, size='compact') }}{% else %}{{ ui_button(prev_label, 'secondary', size='compact', disabled=true) }}{% endif %}
+  {% if next_url %}{{ ui_button(next_label, 'secondary', href=next_url, size='compact') }}{% else %}{{ ui_button(next_label, 'secondary', size='compact', disabled=true) }}{% endif %}
+</nav>
+{%- endmacro %}
+
+{#- property identity dot: index 1 to 4 cycles the property tokens. -#}
+{% macro ui_pdot(index, name) -%}
+<span class="ui-pdot" data-property="{{ (index | int % 4) + 1 }}">{{ name }}</span>
+{%- endmacro %}

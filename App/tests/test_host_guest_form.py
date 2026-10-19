@@ -231,7 +231,7 @@ def _host_guest(stay_id: int, **overrides) -> int:
     return db.insert("guest", values)
 
 
-def test_the_verify_identity_form_is_not_nested_in_the_guest_form():
+def test_the_guest_form_has_no_nested_form_and_no_verify_form():
     """A <form> inside a <form> closes the outer one, which killed Save.
 
     The verify panel used to hold its own form inside the main guest form. An
@@ -257,9 +257,8 @@ def test_the_verify_identity_form_is_not_nested_in_the_guest_form():
         assert nested.index("Save changes") >= 0
         assert 'id="signature"' in nested
 
-        # The verify button still submits, through the form attribute.
-        assert f'<form id="verify-{guest_id}"' in html
-        assert f'form="verify-{guest_id}"' in nested
+        # 0136: the ID check button and its form are gone.
+        assert "verify-identity" not in html
     finally:
         _cleanup()
 

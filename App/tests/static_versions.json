@@ -1,0 +1,130 @@
+{
+  "analytics-optout.js": {
+    "sha256": "9afc536f5842652fcfebd0fb30a88278f84f472b2874ad721a9984b72c01f9d5",
+    "v": "20261010a"
+  },
+  "app.css": {
+    "sha256": "d141f8b48006cc1f4ebdf1ee9d4ace53def15a4087a237ac84449cd67f37710c",
+    "v": "20261006a"
+  },
+  "app.js": {
+    "sha256": "4b6325cfc188909a3302b77f43273f669002f578c531b2df41808e1782a85f81",
+    "v": "20261019-0153"
+  },
+  "apple-touch-icon.png": {
+    "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
+    "v": "20261004a"
+  },
+  "auth.js": {
+    "sha256": "4e8f87ff689788f7f01049f8e55cd3bb37aba03c2f50b939ed6366ba1e9892da",
+    "v": "20260925a"
+  },
+  "claim.js": {
+    "sha256": "be07c1fa7a37b4207f0d6d7fd56238175a87579bd71b52d879ba0a81c91aa099",
+    "v": "20260918a"
+  },
+  "cleaning.css": {
+    "sha256": "99a3f07a07384e4d89cd5a60f8077d80ba9534565bf68d30f59b13fc60bc203e",
+    "v": "20261016a-0106b"
+  },
+  "cleaning.js": {
+    "sha256": "8c430853292b8dd39b0922b26ad4307d6005f057f9ff670e1847b545de16c904",
+    "v": "20261016-0123c"
+  },
+  "components.css": {
+    "sha256": "844da27d439ab6086d6191474f2ac0f394e3b11d5c9367a9a9ebff04bde6d68c",
+    "v": "20261014-0102c"
+  },
+  "csrf.js": {
+    "sha256": "84efc595e531ca8b52ae2e7f7da35a40ed5a418624c27fe43b07847f16a11fe4",
+    "v": "20260915a"
+  },
+  "dashboard-calendar.css": {
+    "sha256": "b8fafb677460ef1573a277a860b5f2457f75c2404242d7d514422c37e0a66f7d",
+    "v": "20261019-0147"
+  },
+  "dashboard-calendar.js": {
+    "sha256": "8fedd7cfedc0fbcc90b5aead0e1544ed726583e1f23e9d8c95da4a08db75f8f1",
+    "v": "20261019-0147c"
+  },
+  "docs/ubyport-ws-credential-sample.pdf": {
+    "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
+    "v": "20261004a"
+  },
+  "favicon.png": {
+    "sha256": "af1e1865b06ae0dcaecba51cae5e17440cdb97f8a393211ba98caac5e5779f4a",
+    "v": "20261004a"
+  },
+  "guest-enhancements.js": {
+    "sha256": "3a916b6481143037c7df5b9bb0bd1d125d29d7a95754d73a5d9f28d2744ec7ee",
+    "v": "20261003a"
+  },
+  "guest.css": {
+    "sha256": "30938b47ff9fba9a060cfae019c9f9c002867d3fae9e116581b6a546d284add0",
+    "v": "20261014-0102c"
+  },
+  "host-controls.css": {
+    "sha256": "5f187fafa975e322becf8101dd749d862a5c166f03d74523a738f2fd55a2f93d",
+    "v": "20261014-0102d"
+  },
+  "host-design0123.css": {
+    "sha256": "a381b6f6bc9328521a8af378a9d774ebef7334705ab3272b52b0e0e02f07b409",
+    "v": "20261016-0123f"
+  },
+  "host.css": {
+    "sha256": "cb80290c4b43e188d781b8625046106336193f8341bda0b02ca8d943e58f8b04",
+    "v": "20261014-0102d"
+  },
+  "host.js": {
+    "sha256": "e33ebd32562ff579a849052dfd49e9a0aec1f6882cfff7e13d43b2f75be27bb7",
+    "v": "20261014-0102d"
+  },
+  "host2.css": {
+    "sha256": "3c647af6acb745cb0869425bec467a8754b4b8b60159abeb87a42c3ebe9fa986",
+    "v": "20261019-v2a"
+  },
+  "landing.css": {
+    "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",
+    "v": "20260919y"
+  },
+  "landing.js": {
+    "sha256": "0e8f2e973a4c2797dfe018fd1ce477669641ee7baa1fdd06c263702c01d972bf",
+    "v": "20260919a"
+  },
+  "passkeys.js": {
+    "sha256": "7a524fd600b1dad58cf986b4d2aa9138227920fb66810c7e2e278775587e6835",
+    "v": "20261007a"
+  },
+  "shell.js": {
+    "sha256": "8300b8b36398d7e956f5677f46506021918e563f9d536e25f1e6f80340c52387",
+    "v": "20261019-v2a"
+  },
+  "signature.js": {
+    "sha256": "bcac93af12f5fc224354750ccba402013f277740b2cee55aead39b1e2a6cad6c",
+    "v": "20261004b"
+  },
+  "skeleton.css": {
+    "sha256": "4685a64e9b7d3fc56680e55c6772d6d8b6c9dcaf8c9b1655ec0d17cebe70d46f",
+    "v": "20261014-0102c"
+  },
+  "skeleton.js": {
+    "sha256": "ce8afe57a622cec3b9f5e6ba1d07b77d0713630aa941c130e4ac8131d1d8e390",
+    "v": "20261019-0153"
+  },
+  "tokens.css": {
+    "sha256": "30b8f8649ba1e20584994156fae084749aabd1913bf4b10f2b5f9c119c508cb1",
+    "v": "20261019-0153"
+  },
+  "ubyhost-logo-stacked.png": {
+    "sha256": "3f4a4fa5aae52cb2ea45c076ff4ecd26f86c76915852cff2664317d3f7fb50fa",
+    "v": "20261004a"
+  },
+  "ubyhost-logo.png": {
+    "sha256": "a4714f5a63d405b48db370f289a6e765554c7f873a7bbce6c10a60e3420419de",
+    "v": "20261004a"
+  },
+  "ubyhost-mark.png": {
+    "sha256": "ae71e0a3ab7231aceeadc761b7d98e66f50b97bae22413cbba65f89e17f53e60",
+    "v": "20261004a"
+  }
+}

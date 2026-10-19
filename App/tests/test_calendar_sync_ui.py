@@ -164,10 +164,13 @@ def test_sync_forms_embed_their_return_to_on_dashboard_and_properties():
 
         assert dashboard.status_code == 200
         assert apartments.status_code == 200
-        assert 'action="/sync"' in dashboard.text
-        assert 'name="return_to" value="/"' in dashboard.text
-        assert 'action="/sync"' in apartments.text
-        assert 'name="return_to" value="/apartments"' in apartments.text
+        # 0137: Update calendars lives only in the property calendar section.
+        assert 'action="/sync"' not in dashboard.text
+        assert 'action="/sync"' not in apartments.text
+        property_page = client.get(f"/apartments/{apartment_id}?view=bookings")
+        assert property_page.status_code == 200
+        assert 'action="/sync"' in property_page.text
+        assert f'name="return_to" value="/apartments/{apartment_id}?view=bookings"' in property_page.text
     finally:
         db.execute("DELETE FROM ical_feed WHERE apartment_id = ?", (apartment_id,))
         db.execute("DELETE FROM apartment WHERE id = ?", (apartment_id,))

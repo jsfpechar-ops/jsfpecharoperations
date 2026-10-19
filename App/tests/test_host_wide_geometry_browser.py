@@ -36,7 +36,7 @@ MOBILE_ROUTE_KEYS = {
 }
 CAPTURE_ROUTES = {
     "dashboard": ("/", ".dashboard-stats"),
-    "stays": ("/reservations", ".stays-view, .panel.empty"),
+    "stays": ("/reservations", ".stays-view, .ui-empty"),
     "properties": ("/apartments", ".panel.tight.scroll-x, .panel.empty"),
     "operators": ("/entities", ".entities-page, .panel.empty"),
     "operator-add": ("/entities?new=1", ".entity-add"),
@@ -54,7 +54,7 @@ CAPTURE_ROUTES = {
     "invoice-detail": ("/invoices/{invoice_id}", ".invoice-workspace"),
     "property-new": ("/apartments/new", ".property-create-lane"),  # 0092: form + follow-up panel
     "stay-detail": ("/reservations/{reservation_id}", ".reservation-detail, .panel"),
-    "stays-archive": ("/reservations?range=archive", ".stays-view, .panel.empty"),
+    "stays-archive": ("/reservations?range=archive", ".stays-view, .ui-empty"),
     "property-detail": ("/apartments/{property_id}", ".property-detail, .panel"),
     "property-detail-configured": ("/apartments/{configured_apartment}", ".property-detail, .panel"),
     "housebook": ("/housebook?apartment={unconfigured_apartment}&from={today}&to={housebook_end}", ".housebook-page, .panel"),
@@ -284,7 +284,7 @@ def _capture_geometry(page, result_selector):
             })
           );
           const actionSelectors = [
-            '.page-actions .btn', '.dashboard-actions .btn',
+            '.page-actions .btn', '.ui-ph-acts .ui-btn', '.dashboard-actions .btn',
             '.dashboard-row-actions .btn', '.filter-panel-actions .btn',
             '.host-property-save .btn', '.invoice-form button[type=submit]',
             '.stays-view td.row-actions a', '.stays-view td.row-actions button'
@@ -309,11 +309,11 @@ def _capture_geometry(page, result_selector):
           return {
             viewport: {width: innerWidth, scrollWidth: document.documentElement.scrollWidth},
             hostLane,
-            title: box('.page-header-main h1, .host-today-head h1'),
-            pageHeader: box('.page-header, .host-today-head'),
+            title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1'),
+            pageHeader: box('.page-header, .ui-ph, .host-today-head'),
             directBacklink: box('main.wrap.with-sidebar > a.back-link'),
-            headerMain: box('.page-header-main, .host-today-head'),
-            headerActions: box('.page-actions, .dashboard-actions'),
+            headerMain: box('.page-header-main, .ui-ph-main, .host-today-head'),
+            headerActions: box('.page-actions, .ui-ph-acts, .dashboard-actions'),
             navigation: box('.host-local-nav'),
             alertStack: box('.notification-stack'),
             feedbackRegion: box('[data-host-feedback]'),
@@ -389,7 +389,7 @@ def _assert_stay_menu_copy_geometry(page, width, row_index, locale, *, keyboard=
     assert trigger.is_visible()
     assert trigger.get_attribute("aria-label")
     trigger_box = trigger.bounding_box()
-    assert trigger_box and trigger_box["height"] >= (44 if width <= 760 else 41), trigger_box
+    assert trigger_box and trigger_box["height"] >= (44 if width <= 760 else 39), trigger_box
 
     if keyboard:
         trigger.focus()
@@ -593,7 +593,7 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                             assert not hidden, (
                                 f"stay row actions clipped by visible list panel at {lang}/{width}: {hidden}"
                             )
-                        expected_action_height = 44 if width in MOBILE_WIDTHS else 42
+                        expected_action_height = 44 if width in MOBILE_WIDTHS else 40
                         for group in {item["rowGroup"] for item in visible_actions}:
                             grouped = [item for item in visible_actions if item["rowGroup"] == group]
                             menus = [item for item in grouped if item["isMenu"]]
@@ -677,9 +677,9 @@ def test_stay_row_actions_fit_midwidth_lanes(wide_host, wide_base):
                         same_row = abs(control["top"] - more["top"]) <= 2
                         wrapped = control["bottom"] <= more["top"] + 1 or control["top"] >= more["bottom"] - 1
                         assert same_row or wrapped, (control, more)
-                        assert control["height"] >= 41, (control, more)
+                        assert control["height"] >= 39, (control, more)
                         if not control["isCopy"]:
-                            assert abs(control["height"] - 42) <= 1, (control, more)
+                            assert abs(control["height"] - 40) <= 1, (control, more)
                 _assert_stay_menu_copy_geometry(page, width, 0, lang, keyboard=True)
                 _assert_stay_menu_copy_geometry(page, width, 1, lang)
                 overflow_cells = [cell for cell in geometry["compactCells"]

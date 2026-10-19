@@ -46,6 +46,10 @@ jobs:
       - name: Lint for runtime errors
         run: ruff check app tests tools --select E9,F63,F7,F82,F401,F841
 
+      - name: Design lint (docs/design/MASTER.md 11.1)
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/design_lint.py
+
       - name: Type check (informational baseline)
         continue-on-error: true
         run: >-

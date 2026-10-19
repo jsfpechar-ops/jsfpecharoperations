@@ -179,9 +179,9 @@ def _seed_receipt_for(stay_id: int) -> int:
 
 
 def _stay_dates(html: str) -> list[str]:
-    """Read arrival dates from the dedicated Dates column after the list redesign."""
+    """Read arrival dates from each row's aria-label (the column prints short `d. m.` dates)."""
     return re.findall(
-        r'class="stay-date-link"[^>]*>\s*(\d{2}\.\d{2}\.\d{4})',
+        r'<tr class="ui-row clickable-row"[^>]*?aria-label="[^"]*?(\d{2}\.\d{2}\.\d{4})',
         html,
     )
 
@@ -312,7 +312,7 @@ def test_reservation_rows_are_full_click_targets():
         page = _browser().get(f"/reservations?range=all&apartment={apartment_id}")
         assert page.status_code == 200
         assert f'data-href="/reservations/{stays[0]}?return_to=' in page.text
-        assert 'class="clickable-row"' in page.text
+        assert re.search(r'class="[^"]*\bclickable-row\b', page.text)
         # Open remains in the menu and native date link; the row has no duplicate button.
         assert 'class="btn row-open"' not in page.text
         assert 'class="row-menu-item" href="/reservations/' in page.text
@@ -447,7 +447,7 @@ def test_stay_settings_and_the_quick_edit_share_one_panel():
     _apartment_id, stays, _past = _seed_stays()
     try:
         body = _browser().get(f"/reservations/{stays[0]}").text
-        assert 'class="panel stay-settings" id="stay-quick-edit"' in body
+        assert 'class="ui-section stay-settings" id="stay-quick-edit"' in body
         panel = body.split('id="stay-quick-edit"', 1)[1].split("</details>", 1)[0]
         assert "data-inline-edit" in panel
         assert 'name="expected_guests_override"' in panel

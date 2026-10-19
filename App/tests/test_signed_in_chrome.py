@@ -211,7 +211,7 @@ def test_dashboard_status_counts_use_distinct_colours(host_with_property):
 
     cards = re.findall(
         r'<a class="dashboard-stat (action|waiting|ready|overdue)([^"]*)"[^>]*>'
-        r'<strong>(\d+)</strong><span>(.*?)</span></a>', page, re.S,
+        r'<strong[^>]*>(\d+)</strong><span>(.*?)</span></a>', page, re.S,
     )
     assert len(cards) == 3
     assert {kind for kind, _classes, _count, _label in cards} == {
@@ -237,7 +237,7 @@ def test_positive_action_count_uses_semantic_color_and_zeros_stay_neutral(host_w
         page = host_with_property.get("/?lang=en").text
         cards = re.findall(
             r'<a class="dashboard-stat (action|waiting|ready|overdue)([^"]*)"[^>]*>'
-            r'<strong>(\d+)</strong><span>(.*?)</span></a>', page, re.S,
+            r'<strong[^>]*>(\d+)</strong><span>(.*?)</span></a>', page, re.S,
         )
         by_kind = {kind: (classes, count) for kind, classes, count, _label in cards}
         assert by_kind["action"][1] == "1"

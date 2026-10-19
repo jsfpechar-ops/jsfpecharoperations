@@ -166,7 +166,7 @@ def test_default_stays_are_unbounded_and_native_get_filters_work_without_javascr
         with page.expect_navigation():
             page.locator("#stays-filter-panel .filter-apply").click()
         assert "range=custom" in page.url and "archive_scope=1" in page.url
-        assert "10.03.2026" in page.locator(".stays-view").inner_text()
+        assert page.locator('.stays-view tbody tr[aria-label*="10.03.2026"]').count() == 1
         page.goto(base + "/invoices?lang=en")
         empty_month = page.locator(".month-control.is-empty")
         assert empty_month.is_visible()
@@ -351,10 +351,10 @@ def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
         with page.expect_navigation():
             page.locator("#stays-filter-panel .filter-apply").click()
         assert "archive_scope=1" in page.url and "range=archive" in page.url
-        assert "10.03.2026" in page.locator(".stays-view").inner_text()
+        assert page.locator('.stays-view tbody tr[aria-label*="10.03.2026"]').count() == 1
         assert "Filter Property Two" in page.locator("[data-filter-summary]").inner_text()
         page.goto(base + f"/reservations?range=custom&archive_scope=1&apartment={host['apartments'][1]}&status=cancelled&lang=en")
-        assert "range=archive" in page.locator("[data-list-toolbar] .chip.on").get_attribute("href")
+        assert "range=archive" in page.locator("[data-list-toolbar] .ui-chip[aria-current='true']").get_attribute("href")
         assert page.locator('#stays-filter-panel a').filter(has_text="Reset").get_attribute("href") == "/reservations?range=archive"
         assert not page_errors, "browser script errors: " + " | ".join(page_errors)
 
@@ -421,7 +421,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                     if width <= 600:
                         assert geometry["triggerHeight"] >= 44
                     else:
-                        assert geometry["triggerHeight"] >= 42
+                        assert geometry["triggerHeight"] >= 40
                     if capture:
                         page.locator("[data-filter-toggle]").click()
                         _capture(page, f"{name}-{lang}-{width}-expanded")

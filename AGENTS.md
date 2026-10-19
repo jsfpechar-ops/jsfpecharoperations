@@ -37,7 +37,7 @@ From `App/`: `.venv/bin/python -m pytest <files from the test-map> -q --tb=short
 |---|---|
 | UbyPort, submission, claim, automation | [UBYPORT_CORE](docs/UBYPORT_CORE.md), [submit_state](docs/OPERATIONS.md#the-submit_state-state-machine) |
 | Guest pages | [Arrival lane](docs/DESIGN.md#guest-registration-arrival-lane-active), [rules: guest pages](docs/context/rules.md#guest-pages) |
-| Host UI | [HOST_APP_DESIGN](docs/HOST_APP_DESIGN.md) (that page's section), [geometry](docs/DESIGN.md#action-geometry) |
+| Host UI | [MASTER](docs/design/MASTER.md) (the component's section) and that page's add-on in `docs/design/pages/` |
 | Database, migrations | [rules: database](docs/context/rules.md#database) |
 | Personal data, retention, legal copy | [RETENTION](docs/privacy/RETENTION.md), [ROPA](docs/privacy/ROPA.md), [legal positions](docs/UbyHost_workplan/04_legal_positions.md#summary-of-decisions) |
 | Auth, sessions, secrets | [SECURITY](docs/SECURITY.md), [rules: secrets](docs/context/rules.md#secrets) |

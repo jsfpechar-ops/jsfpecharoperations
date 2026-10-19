@@ -9,13 +9,14 @@
   {% include "_seo_head.html" %}
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
-  <link rel="stylesheet" href="/static/tokens.css?v=20261002a">
+  <link rel="stylesheet" href="/static/tokens.css?v=20261019-0153">
   <link rel="stylesheet" href="/static/app.css?v=20261006a">
   <link rel="stylesheet" href="/static/components.css?v=20261014-0102c">
   {% if show_nav | default(true) %}
   <link rel="stylesheet" href="/static/host.css?v=20261014-0102d">
   <link rel="stylesheet" href="/static/host-controls.css?v=20261014-0102d">
   <link rel="stylesheet" href="/static/host-design0123.css?v=20261016-0123f">
+  <link rel="stylesheet" href="/static/host2.css?v=20261019-v2a">
   {% endif %}
   <link rel="stylesheet" href="/static/skeleton.css?v=20261014-0102c">
 </head>
@@ -23,90 +24,8 @@
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>
 {% from "_components.html" import nav_icon with context %}
 {% if show_nav | default(true) %}
-<header class="appbar">
-  <button class="nav-toggle" type="button" data-nav-toggle aria-controls="app-sidebar" aria-label="{{ t('a11y.open_menu') }}" aria-expanded="false">
-    <span aria-hidden="true">☰</span>
-  </button>
-  <a class="brand plain" href="/" aria-label="UbyHost"><img class="brand-logo" src="/static/ubyhost-mark.png?v=20261004a" alt=""></a>
-  {% if current_user %}
-    <a class="appbar-help" href="/guide">{{ t('nav.guide') }}</a>
-  {% endif %}
-  <button class="appbar-search" type="button" data-command-open aria-label="{{ t('command.open') }}">
-    <span aria-hidden="true">⌕</span>
-  </button>
-  <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
-</header>
-<button class="nav-backdrop" type="button" data-nav-close aria-label="{{ t('a11y.close_menu') }}"></button>
-<button class="sidebar-expand" type="button" data-sidebar-expand aria-label="{{ t('a11y.show_menu') }}">
-  <span aria-hidden="true">☰</span>
-</button>
-<aside class="sidebar" id="app-sidebar">
-  <div class="sidebar-brand">
-    <div class="sidebar-brand-row">
-      <a class="brand plain" href="/">
-        <img class="brand-logo" src="/static/ubyhost-mark.png?v=20261004a" alt="">
-        <span class="brand-word">UbyHost</span>
-      </a>
-      <button class="sidebar-collapse" type="button" data-sidebar-collapse aria-expanded="true"
-              aria-label="{{ t('a11y.hide_menu') }}"><span aria-hidden="true">‹</span></button>
-    </div>
-    <span class="env-badge {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
-  </div>
-  <button class="command-trigger" type="button" data-command-open>
-    <span aria-hidden="true" class="command-trigger-icon">⌕</span>
-    <span>{{ t('host.search') }}</span><kbd data-command-shortcut>Ctrl K</kbd>
-  </button>
-  {% set stays_nav = nav in ('reservations', 'submissions', 'housebook') %}
-  {% set properties_nav = nav in ('apartments', 'guest_links', 'automation', 'entities') %}
-  <nav class="sidebar-nav" aria-label="{{ t('a11y.main_navigation') }}">
-    {% for href, icon, label, active in [('/', 'overview', 'nav.overview', nav == 'dashboard'),
-        ('/reservations', 'calendar', 'nav.stays', stays_nav),
-        ('/apartments', 'property', 'nav.properties', properties_nav),
-        ('/invoices', 'invoice', 'nav.invoices', nav == 'invoices')] %}
-      <a href="{{ href }}" title="{{ t(label) }}" aria-label="{{ t(label) }}" class="{{ 'active' if active }}" {% if active %}aria-current="page"{% endif %}>
-        {{ nav_icon(icon) }}<span>{{ t(label) }}</span>
-      </a>
-    {% endfor %}
-    <a href="/cleaning" title="{{ 'Úklid' if lang == 'cs' else 'Cleaning' }}" aria-label="{{ 'Úklid' if lang == 'cs' else 'Cleaning' }}" class="{{ 'active' if nav == 'cleaning' }}" {% if nav == 'cleaning' %}aria-current="page"{% endif %}>
-      <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 3-6 10m-3-1 8 5-4 5-8-5 4-5Zm1 2-3 4m6-2-3 4M18 9v4m-2-2h4"/></svg><span>{{ 'Úklid' if lang == 'cs' else 'Cleaning' }}</span>
-    </a>
-    <a href="/stay-fees" title="{{ t('nav.stay_fees') }}" aria-label="{{ t('nav.stay_fees') }}" class="{{ 'active' if nav == 'stay_fees' }}" {% if nav == 'stay_fees' %}aria-current="page"{% endif %}>{{ nav_icon('coins') }}<span>{{ t('nav.stay_fees') }}</span></a>
-  </nav>
-  {% if current_user %}
-  <div class="host-rail-bottom">
-    <a class="host-help" href="/guide">{{ nav_icon('book') }}{{ t('nav.guide') }}</a>
-    <details class="host-account" data-host-account>
-      <summary aria-label="{{ t('nav.account') }}: {{ workspace_user.display_name or workspace_user.username }}">
-        <span class="sidebar-user-avatar" aria-hidden="true">{{ (workspace_user.display_name or workspace_user.username)[:1] | upper }}</span>
-        <span class="host-account-name">{{ workspace_user.display_name or workspace_user.username }}<small>{{ t('nav.account') }}</small></span>
-      </summary>
-      <div class="host-account-menu">
-        <a href="/settings">{{ t('nav.settings') }}</a>
-        {% if operator().email %}
-        <a class="host-menu-support" href="mailto:{{ operator().email }}">{{ t('nav.support') }}<small>{{ operator().email }}</small></a>
-        {% endif %}
-        <div class="host-menu-rule"></div>
-        <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
-        <a href="/privacy-requests">{{ t('nav.privacy_requests') }}</a>
-        {% if current_user.role == 'admin' %}
-        <a href="/admin/users">{{ t('nav.users') }}</a>
-        <a href="/admin/incidents">{{ t('users.incidents_link') }}</a>
-        <a href="/admin/operations">{{ t('ops.title') }}</a>
-        <a href="/admin/funnel">{{ t('funnel.title') }}</a>
-        {% endif %}
-        <div class="host-menu-rule"></div>
-        <form method="post" action="/language" class="lang-switch compact">
-          <input type="hidden" name="next" value="{{ request.url.path }}">
-          <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
-          <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
-        </form>
-        <button class="nav-button" type="button" data-shortcuts-open>{{ t('shortcuts.open') }}</button>
-        <form method="post" action="/logout"><button class="nav-button" type="submit">{{ t('nav.logout') }}</button></form>
-      </div>
-    </details>
-  </div>
-  {% endif %}
-</aside>
+{% include "_shell_topbar.html" %}
+{% include "_shell_sidebar.html" %}
 {% endif %}
 
 <main id="main-content" class="wrap {{ wrap_class | default('') }} {{ 'with-sidebar' if show_nav | default(true) }}">
@@ -196,6 +115,7 @@
   {#- 0099: section tabs render under each page's title row (page_header,
       list_page_header in _components.html), not above it. -#}
   {% block content %}{% endblock %}
+  {% block page_skeleton %}
   <div class="page-skeleton" data-page-skeleton role="status" hidden>
     <span class="sr-only">{{ t('a11y.loading') }}</span>
     <div class="c05-skel" aria-hidden="true">
@@ -211,6 +131,7 @@
       <span class="c05-skel__bone c05-skel__block c05-skel__block--w60"></span>
     </div>
   </div>
+  {% endblock %}
 </main>
 
 <dialog id="confirm-dialog" class="admin-dialog">
@@ -321,9 +242,10 @@
 {% endif %}
 
 <script src="/static/csrf.js?v=20260915a"></script>
-<script src="/static/skeleton.js?v=20261014-0102c"></script>
-<script src="/static/app.js?v=20261016-0123-refresh1"></script>
+<script src="/static/skeleton.js?v=20261019-0153"></script>
+<script src="/static/app.js?v=20261019-0153"></script>
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261014-0102d" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261006a" defer></script>{% endif %}
+{% if show_nav | default(true) %}{% include "_shell_tabbar.html" %}<script src="/static/shell.js?v=20261019-v2a" defer></script>{% endif %}
 </body>
 </html>

@@ -210,7 +210,7 @@
     </div>
   </div>
 
-  {% if editing and needs_verification %}
+  {% if editing and needs_verification and has_passport_photo %}
   <div class="panel verify-panel tight">
     {% if has_passport_photo and identity_hidden %}
       {{ identity_placeholder() }}
@@ -227,21 +227,6 @@
         {% endif %}
       </div>
     {% endif %}
-    <p class="small muted" style="margin:0 0 10px">{{ t('host.verify_in_person') }}</p>
-    {# The form element itself renders after the main form, further down: a <form>
-       nested inside another one closes the outer form early, which killed Save. #}
-    <div class="verify-form">
-      <button class="btn small" type="submit" form="verify-{{ guest.id }}">{{ t('host.verify_button') }}</button>
-    </div>
-  </div>
-  {% elif editing and guest.identity_verified_at and guest.nationality != 'CZE' %}
-  <div class="panel quiet">
-    <p class="small muted" style="margin:0">{{ t('host.verify_done') }}
-      {{ guest.identity_verified_at | datetime_local }}.</p>
-  </div>
-  {% elif not editing %}
-  <div class="panel quiet">
-    <p class="small muted" style="margin:0">{{ t('host.verify_host_entry') }}</p>
   </div>
   {% endif %}
 
@@ -303,12 +288,6 @@
 </form>
 {% endif %}
 
-{% if editing and needs_verification %}
-<form id="verify-{{ guest.id }}" method="post" action="/guests/{{ guest.id }}/verify-identity">
-  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <input type="hidden" name="return_to" value="/guests/{{ guest.id }}?return_to=/reservations/{{ reservation.id }}">
-</form>
-{% endif %}
 
 {% if editing and guest.id %}
 <details class="panel danger-zone" style="margin-top:24px">

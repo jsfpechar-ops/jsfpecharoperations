@@ -281,13 +281,6 @@
       <div class="actions">
         <button class="btn" type="submit" formaction="{{ base_url }}/test-connection"
                 formmethod="post" formnovalidate>{{ t('apartment.form.test_connection') }}</button>
-        <button class="btn" type="submit" formaction="{{ base_url }}/refresh-codelists"
-                formmethod="post" formnovalidate>{{ t('apartment.form.refresh_codelists') }}</button>
-        <span class="small muted">
-          {{ t('apartment.form.credentials_actions_help') }}
-          {% if codelist_fetched %}{{ t('apartment.form.codelists_cached', date=codelist_fetched[:10]) }}
-          {% else %}{{ t('apartment.form.codelists_bundled') }}{% endif %}
-        </span>
       </div>
     </section>
 

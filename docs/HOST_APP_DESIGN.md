@@ -1,5 +1,7 @@
 # UbyHost host app design specification
 
+**Superseded (2026-10-19):** the signed-in host app is governed by [docs/design/MASTER.md](design/MASTER.md) and the page add-on files in `docs/design/pages/`. This file is history; where the two differ, MASTER wins.
+
 **Status:** implemented signed-in host-app direction, 30 September 2026. Source baseline: `ceb1bc5ed34d020b0c6e21cac3c88bada74d1955`. See `docs/archive/plans/host-app-redesign/IMPLEMENTATION.md` for the exact delivered scope and route coverage. It extends the light-mode brand policy in `docs/DESIGN.md`. It does not govern the public site, login, or guest-facing forms.
 
 ## 0123 owner-approved update

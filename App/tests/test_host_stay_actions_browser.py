@@ -171,9 +171,9 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 for key, reservation_id in valid_ids.items():
                     row = page.locator(f'tr[data-href^="/reservations/{reservation_id}?"]')
                     assert row.count() == 1
-                    status_pill = row.locator("td.stay-col-reporting .pill")
+                    status_pill = row.locator("td.stay-col-reporting [data-tone]")
                     assert status_pill.count() == 1
-                    assert f"pill {expected_tones[key]}" in (status_pill.get_attribute("class") or ""), (key, expected_statuses[key], status_pill.get_attribute("class"))
+                    assert status_pill.get_attribute("data-tone") == expected_tones[key], (key, expected_statuses[key], status_pill.get_attribute("data-tone"))
                     copy = row.locator('button[data-copy]')
                     assert copy.count() == 1, f"Copy missing on {key} ({expected_statuses[key]}) {locale}/{width}"
                     source_id = copy.get_attribute("data-copy")
@@ -188,16 +188,15 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 assert no_token.locator('a[href^="/l/"][target="_blank"]').count() == 0
 
                 ready_row = page.locator(f'tr[data-href^="/reservations/{stay_actions_host["ids"]["ready"]}?"]')
-                send = ready_row.locator(".row-action-send")
+                assert ready_row.locator(".row-action-send").count() == 0  # 0137: rows have the menu only
                 copy = ready_row.locator('button[data-copy]')
                 trigger = ready_row.locator(".row-menu-trigger")
-                assert send.is_visible()
                 assert copy.is_hidden()
                 assert ready_row.locator(".row-open").count() == 0
-                boxes = [control.bounding_box() for control in (send, trigger)]
-                expected_height = 44 if width <= 390 else 42
+                boxes = [trigger.bounding_box()]
+                expected_height = 44 if width <= 390 else 40
                 assert all(box["height"] >= expected_height - 1 for box in boxes), boxes
-                assert all(abs(box["height"] - expected_height) <= 1 for box in (boxes[0], boxes[1])), boxes
+                assert all(abs(box["height"] - expected_height) <= 1 for box in boxes), boxes
                 # 0091: actions wrap as whole controls when the lane is narrow, so
                 # they share a row or sit on distinct rows; they never overlap.
                 for i, a in enumerate(boxes):

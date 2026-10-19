@@ -114,7 +114,7 @@ def test_without_a_calendar_the_empty_state_does_not_blame_the_calendars(host):
     assert "Update calendars now" not in page.text
 
 
-def test_the_header_sync_button_waits_for_a_calendar(host):
+def test_the_dashboard_never_shows_the_sync_button(host):
     client, apartment_id = host
 
     without = client.get("/?lang=en")
@@ -125,7 +125,7 @@ def test_the_header_sync_button_waits_for_a_calendar(host):
 
     with_feed = client.get("/?lang=en")
 
-    assert "Update calendars" in with_feed.text
+    assert "Update calendars" not in with_feed.text  # 0137: only the property calendar section syncs
     assert "Either the calendars have nothing booked" in with_feed.text
     assert "No stays yet. Connect a booking calendar" not in with_feed.text
 

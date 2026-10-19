@@ -553,3 +553,17 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 .cleaning-page .dashboard-calendar .cal-day-list .cal-event.is-cleaning-marker .cal-cleaning-property {
   display:block;
 }
+
+/* 0147: phone month view shows dots, not bars; controls shrink to property, arrows, title. */
+.cal-dots { display:flex; align-items:center; justify-content:flex-end; gap:var(--space-1); min-height:8px; pointer-events:none; }
+.cal-dot { flex:0 0 6px; width:6px; height:6px; border-radius:var(--radius-pill); background:var(--cal-ink); }
+.cal-dot-more { font-size:var(--size-11); line-height:1; color:var(--ink-muted); }
+@media (max-width:767px) {
+  .dashboard-calendar .cal-week.is-dots .cal-week-days { min-height:0; }
+  .dashboard-calendar .cal-week.is-dots .cal-day-number { display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; height:48px; min-height:48px; padding:var(--space-1) var(--space-2); }
+  .dashboard-calendar[data-cleaning="false"] .cal-view-segment,
+  .dashboard-calendar[data-cleaning="false"] [data-cal-settings],
+  .dashboard-calendar[data-cleaning="false"] [data-cal-scales],
+  .dashboard-calendar[data-cleaning="false"] [data-cal-month],
+  .dashboard-calendar[data-cleaning="false"] [data-cal-year] { display:none !important; }
+}

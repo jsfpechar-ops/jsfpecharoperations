@@ -64,13 +64,11 @@ def test_production_shows_a_quiet_named_sidebar_badge(client, env):
 
     page = client.get("/")
 
-    assert 'class="env-badge prod"' in page.text
+    assert 'class="env-badge ui-env prod"' in page.text
     assert "Production" in page.text
-    # Logo row and badge are stacked — the pill must not sit in the same flex
-    # row as the mark/wordmark (that used to cover “UbyHost”).
-    assert 'class="sidebar-brand-row"' in page.text
-    brand = page.text.split('class="sidebar-brand"', 1)[1].split("</aside>", 1)[0]
-    assert brand.index("sidebar-brand-row") < brand.index('class="env-badge prod"')
+    # The badge sits below the logo row, never inside it (it used to cover "UbyHost").
+    sidebar = page.text.split('id="app-sidebar"', 1)[1].split("</aside>", 1)[0]
+    assert sidebar.index('class="ui-brand"') < sidebar.index('class="env-badge ui-env prod"')
 
 
 def test_a_test_environment_is_not_shouted_about(client, env):

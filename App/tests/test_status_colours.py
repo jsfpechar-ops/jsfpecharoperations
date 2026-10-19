@@ -23,8 +23,11 @@ TOKEN = "statuscolourtoken"
 
 # <span class="pill blue" title="...">Label</span>, with the title optional.
 PILL = re.compile(
-    r'<span class="pill ([a-z]+)"(?: title="([^"]*)")?>([^<]*)</span>',
+    r'<span class="ui-badge ui-badge-[a-z]+(?: ui-badge-overdue)?" data-tone="([a-z]+)"(?: title="([^"]*)")?>(?:! )?([^<]*)</span>',
 )
+
+# Pills a page template still writes literally; they move to ui_badge with their page brief (0136, 0140).
+OLD_PILL = re.compile(r'<span class="pill ([a-z]+)"(?: title="([^"]*)")?>([^<]*)</span>')
 
 _ENTITY_ID: int | None = None
 
@@ -140,7 +143,7 @@ def host():
 
 
 def _pills(page_text: str) -> list[tuple[str, str, str]]:
-    return PILL.findall(page_text)
+    return PILL.findall(page_text) + OLD_PILL.findall(page_text)
 
 
 def _pill(page_text: str, label: str) -> tuple[str, str]:
@@ -224,13 +227,19 @@ def test_the_stay_pill_is_czech_for_a_czech_host(host):
     assert tip == "Doklad nezkontrolován (volitelné)"
 
 
-def test_the_guest_card_keeps_its_amber_id_not_checked_pill(host):
-    """The guest-card pill is a per-person to-do, so amber stays there."""
+def test_the_guest_card_reads_ready_now_that_the_id_check_is_gone(host):
+    """0136: no "Mark ID checked" button, no amber "ID not checked" badge; a complete guest reads Ready.
+
+    The stay pill's tip still says "ID not checked (optional)": that is the
+    reporting status text, not the removed badge.
+    """
     client, _, reservation_id = host
     page = client.get(f"/reservations/{reservation_id}")
     assert page.status_code == 200
-    tone, _tip = _pill(page.text, host_i18n.translate("en", "host.verify_pending"))
-    assert tone == "amber"
+    assert "verify-identity" not in page.text
+    assert not [pill for pill in _pills(page.text) if pill[2].strip() == "ID not checked"]
+    tone, _tip = _pill(page.text, "Ready")
+    assert tone == "blue"
 
 
 def test_the_properties_list_setup_pill_is_amber_not_red(host):
