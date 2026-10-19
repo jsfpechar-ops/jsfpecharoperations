@@ -7,11 +7,37 @@
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block body %}
 {% from "_components.html" import row_menu_begin, row_menu_end with context %}
+{% from "_ui.html" import ui_button, ui_field with context %}
 
 {% if missing_email_count %}
 <div class="ui-section" role="status" id="users-missing-email">
   <p class="ui-sub"><strong>{{ t('users.email.missing_banner', count=missing_email_count) }}</strong></p>
 </div>
+{% endif %}
+
+{% set manage_id = request.query_params.get('manage') %}{% set managed = (users | selectattr('id', 'equalto', manage_id | int) | list | first) if manage_id and manage_id.isdigit() else none %}
+{% if managed %}
+<section class="ui-section" id="user-manage">
+  <h2>{{ t('users.manage.title', name=managed.display_name or managed.username) }}</h2>
+  <form method="post" action="/admin/users/{{ managed.id }}/email">
+    {{ ui_field('user-email-' ~ managed.id, t('users.email.label'), name='email', value=managed.email or '', type='email', attrs='required maxlength="254" autocomplete="off" autocapitalize="none" spellcheck="false"') }}
+    {% if managed.email %}
+    {{ ui_field('user-email-reason-' ~ managed.id, t('users.email.reason'), name='reason', attrs='required minlength="5" maxlength="300"') }}
+    {% endif %}
+    {{ ui_button(t('users.email.change') if managed.email else t('users.email.set'), 'secondary', type='submit') }}
+  </form>
+  {% if managed.id != current_user.id %}
+  <form method="post" action="/admin/users/{{ managed.id }}/impersonate">
+    {{ ui_field('support-reason-' ~ managed.id, t('users.menu.open_workspace_reason'), name='reason', placeholder=t('users.menu.open_workspace_reason_optional'), attrs='maxlength="300"') }}
+    {{ ui_button(t('users.menu.open_workspace'), 'secondary', type='submit') }}
+  </form>
+  <form method="post" action="/admin/users/{{ managed.id }}/schedule-deletion">
+    {{ ui_field('user-delete-confirm-' ~ managed.id, t('users.menu.schedule_deletion_confirm', username=managed.username), name='confirm', attrs='required') }}
+    {{ ui_button(t('users.menu.schedule_deletion'), 'secondary', type='submit') }}
+  </form>
+  {% endif %}
+  <p><a class="ui-btn ui-btn-quiet" href="/admin/users">{{ t('users.manage.close') }}</a></p>
+</section>
 {% endif %}
 
 <div class="split wide">
@@ -38,22 +64,8 @@
             </td>
             <td class="ui-cell-acts" data-card="actions">
                 {{ row_menu_begin(t('users.menu.aria')) }}
-                  <form method="post" action="/admin/users/{{ user.id }}/email" class="row-menu-form">
-                    <label class="ui-sub" for="user-email-{{ user.id }}">{{ t('users.email.label') }}</label>
-                    <input type="email" id="user-email-{{ user.id }}" name="email" required maxlength="254"
-                           autocomplete="off" autocapitalize="none" spellcheck="false" value="{{ user.email or '' }}">
-                    {% if user.email %}
-                    <label class="ui-sub" for="user-email-reason-{{ user.id }}">{{ t('users.email.reason') }}</label>
-                    <input type="text" id="user-email-reason-{{ user.id }}" name="reason" required minlength="5" maxlength="300">
-                    {% endif %}
-                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.email.change') if user.email else t('users.email.set') }}</button>
-                  </form>
+                  <a class="row-menu-item" role="menuitem" href="/admin/users?manage={{ user.id }}#user-manage">{{ t('users.menu.manage') }}</a>
               {% if user.id != current_user.id %}
-                  <form method="post" action="/admin/users/{{ user.id }}/impersonate" class="row-menu-form">
-                    <label class="ui-sub" for="support-reason-{{ user.id }}">{{ t('users.menu.open_workspace_reason') }}</label>
-                    <input type="text" id="support-reason-{{ user.id }}" name="reason" maxlength="300" placeholder="{{ t('users.menu.open_workspace_reason_optional') }}">
-                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.open_workspace') }}</button>
-                  </form>
                   <form method="post" action="/admin/users/{{ user.id }}/toggle" class="row-menu-form"{% if user.active %} data-confirm data-confirm-message="{{ t('confirm.disable_user', name=user.display_name or user.username) }}"{% endif %}>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.disable') if user.active else t('users.menu.enable') }}</button>
                   </form>
@@ -76,11 +88,6 @@
                   {% endif %}
                   <form method="post" action="/admin/users/{{ user.id }}/export" class="row-menu-form" data-no-skeleton>
                     <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.export') }}</button>
-                  </form>
-                  <form method="post" action="/admin/users/{{ user.id }}/schedule-deletion" class="row-menu-form">
-                    <label class="ui-sub">{{ t('users.menu.schedule_deletion_confirm', username=user.username) }}</label>
-                    <input type="text" name="confirm" class="ui-mono" required>
-                    <button class="row-menu-item" type="submit" role="menuitem">{{ t('users.menu.schedule_deletion') }}</button>
                   </form>
               {% endif %}
                 {{ row_menu_end() }}
