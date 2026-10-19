@@ -30,11 +30,14 @@ def sample_route():
         @app.get(path)
         def _view(request: Request):  # pragma: no cover - test only
             return templating.render(request, name, {"nav": "reservations"})
-        return path, TEMPLATES / name
+        route = app.router.routes[-1]
+        return path, TEMPLATES / name, route
     created = []
     yield lambda kind: created.append(make(kind)) or created[-1][0]
-    for _, p in created:
+    for _, p, route in created:
         p.unlink(missing_ok=True)
+        if route in app.router.routes:
+            app.router.routes.remove(route)
 
 
 @pytest.mark.parametrize("kind", ["list", "detail", "form", "settings"])
