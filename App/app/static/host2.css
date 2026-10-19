@@ -117,7 +117,6 @@
   .host-workspace .ui-sheet-handle { display: block; width: var(--space-8); height: var(--space-1); border-radius: var(--radius-pill); background: var(--line-strong); margin: var(--space-1) auto var(--space-4); }
   .host-workspace .ui-menu-panel { position: fixed; inset: auto 0 0 0; border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; min-width: 0; padding: var(--space-4) var(--space-4) calc(var(--space-6) + env(safe-area-inset-bottom)); }
   .host-workspace .ui-menu-item { min-height: var(--control-h-phone); }
-  .host-workspace .ui-menu-panel .row-menu-item { min-height: var(--control-h-phone); }
 }
 @media (prefers-reduced-motion: reduce) {
   .host-workspace .ui-btn-loading::after, .host-workspace .ui-switch::after { animation: none; transition: none; }
@@ -288,3 +287,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .guest-count { display: inline-flex; align-items: center; gap: var(--space-1); font-variant-numeric: tabular-nums; }
 .host-workspace .sync-cta { display: inline-flex; flex-direction: column; gap: var(--space-1); }
 .host-workspace .sync-cta-meta { margin: 0; font-size: var(--size-13); color: var(--ink-3); }
+@media (max-width: 767px) {
+  .host-workspace .ui-menu-panel .row-menu-item { min-height: var(--control-h-phone); }
+}
