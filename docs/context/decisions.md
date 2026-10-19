@@ -55,3 +55,4 @@ Append-only.
 - 2026-10-15 | Watchdog digest: server 72 h, repo 6 h; host warnings unchanged | owner | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning day markers; in-page creation | owner | [PR](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397)
 - 2026-10-17 | [workflow] Haiku 5.5 only executor (replaces Cursor, Kimi, GLM, Luna); 100k cap per chat; scoped tests from test-map, no audits or full suite unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
+- 2026-10-19 | Design reset v2: `docs/design/MASTER.md` is the single host design source (host sections of DESIGN.md and HOST_APP_DESIGN.md superseded); Lucide icons vendored as inline SVG (ISC, no runtime dependency); CI lint blocks raw colours, inline styles and page CSS in host templates; phone bottom tab bar replaces the slide-out menu | owner | [plan](../plans/design-v2.md)

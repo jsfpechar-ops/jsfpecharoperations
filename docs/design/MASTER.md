@@ -67,15 +67,15 @@ Legacy aliases (`--bg`, `--muted`, `--line-2`, `--brand*`, `--status-critical-*`
 --row-h:48px; --row-py:12px; --row-px:16px; --row-gap:12px; --card-radius:var(--radius-3); --card-p:16px;
 --badge-h:22px; --badge-px:8px; --badge-font:var(--size-12); --badge-radius:var(--radius-pill);
 --nav-w:240px; --nav-w-collapsed:64px; --nav-item-h:40px; --nav-icon:20px; --tabbar-h:56px; --topbar-h:52px;
---lane:1080px; --lane-narrow:720px; --gutter:16px (phone) / 32px (>=1024); --section-gap:24px (phone) / 32px (>=1024);
+--lane:1080px; --lane-narrow:720px; --gutter:16px (phone) / 32px (>=1024); --section-gap:24px (phone) / 32px (>=1024); --body-size:var(--size-16);
 --sheet-radius:var(--radius-4); --dialog-w:480px; --toast-w:360px;
 --skeleton-delay:300ms; --skeleton-min:400ms;
 ```
 
 ## 3. Type and spacing defaults
 
-1. Body text `--size-15` at 1024+ and `--size-16` below 1024; line height 1.5. Facts in rows are body size, never smaller.
-2. Scale and use: 26/600 page title (22 on phone); 18/600 section title; 16/600 card title; 15 body; 14 control labels and buttons; 13 meta and column headers (`--ink-3`, weight 500, no uppercase); 12 badges only. Tabular numbers (`font-variant-numeric: tabular-nums`) on every amount, count and date column.
+1. Body text `--size-16` at every width; line height 1.5. Facts in rows are body size, never smaller.
+2. Scale and use: 26/600 page title (22 on phone); 18/600 section title; 16/600 card title; 16 body; 14 control labels and buttons; 13 meta and column headers (`--ink-3`, weight 500, no uppercase); 12 badges only. Tabular numbers (`font-variant-numeric: tabular-nums`) on every amount, count and date column.
 3. Letter spacing: none, except page title `-0.01em`.
 4. Vertical rhythm: section gap 32 (24 on phone); inside a panel 16; between a label and its control 6; between rows 0 (hairline) or 8 (cards on phone).
 5. Horizontal: page gutter 16 on phone, 24 at 768, 32 at 1024+; lane max 1080, forms 720; the sidebar is outside the lane.
@@ -155,7 +155,7 @@ Rules: shown only if the response is slower than 300 ms, then kept at least 400 
 | Stays | `calendar-days` | Smart locks | `key-round` |
 | Properties | `house` | Guide | `book-open` |
 | Invoices | `receipt` | Admin | `shield` |
-| Cleaning | `brush-cleaning` (fallback `sparkles` if the installed version lacks it) | More | `ellipsis` |
+| Cleaning | `brush-cleaning` (lucide-static 0.552.0, the vendored version) | More | `ellipsis` |
 | Stay fees | `coins` | Search | `search` |
 | Add | `plus` | Row menu | `ellipsis-vertical` | Close | `x` | Back | `arrow-left` | Filter | `sliders-horizontal` | Copy | `copy` | Download | `download` | Send | `send` | Sync | `refresh-cw` | Edit | `pencil` | Delete | `trash-2` | Help tip | `circle-help` | Warning | `triangle-alert` | Done | `check` | External | `external-link` | Calendar prev/next | `chevron-left` / `chevron-right` |
 
@@ -173,7 +173,7 @@ Rules: shown only if the response is slower than 300 ms, then kept at least 400 
 1. Width 240 px, background `--surface`, 1 px `--line` right edge; collapsed 64 px (icons only, labels in tooltips), toggle at the bottom; the choice is remembered in `localStorage`.
 2. Top: wordmark row 52 px; environment badge under it; then the Search row: 36 px, `--surface-2`, search icon, "Search", `Ctrl K` kbd right; it opens the existing command palette.
 3. Items: 40 px, radius 8, padding 0 12, icon 20 px stroke 1.75 and label 14/550, gap 12; inactive `--ink-2`; hover `--surface-2`; active `--accent-soft` background, `--accent-ink` label 600, icon stroke 2.25 in `--accent`. No per-section tint, no bar.
-4. Order: Dashboard, Stays, Properties, Invoices, Cleaning, Stay fees (only when a property opted in), then a 16 px gap, Smart locks (only when a lock account exists), Settings. Bottom: Guide, Admin (admin only), account row (avatar initial 28 px, name, menu with language, shortcuts, sign out).
+4. Order: Dashboard, Stays, Properties, Invoices, Cleaning, Stay fees, then a 16 px gap, Smart locks, Settings. All items are always visible (section 14.4). Bottom: Guide, Admin (admin only), account row (avatar initial 28 px, name, menu with language, shortcuts, sign out).
 5. The Dashboard item shows the same count badge as the phone tab.
 6. 768 to 1023: no sidebar, bottom bar; 1024 to 1279: sidebar collapsed by default; 1280+: open.
 
@@ -349,10 +349,10 @@ Shows, in this order, each with its macro call printed under it: tokens (colour 
 - [ ] `python3 scripts/design_lint.py` passes; host browser and geometry tests for the page pass with 0 skipped; screenshots at 390 and 1280 attached; coral budget under 3 % / 6 %.
 - [ ] UbyPort filing copy and safeguards unchanged.
 
-## 14. Open questions for the owner
+## 14. Owner questions (decided, default; the owner can still change any line)
 
-1. Active nav state: tint only (specified) or tint plus a 3 px coral bar at the left of the sidebar item.
-2. Desktop body text 15 px (specified) or 16 px everywhere.
-3. Bottom bar fifth tab: `More` (specified) or `Invoices` with Cleaning moved under More for hosts who do not use cleaning.
-4. Whether `Stay fees` and `Smart locks` stay hidden in the sidebar until opted in (specified) or are always visible.
-5. The `board` body kind: reserve the name now or decide when a feature needs it.
+1. Active nav state: tint only, no coral bar. Decided, default (less coral).
+2. Body text 16 px at every width. Decided, default (older hosts).
+3. Bottom bar fifth tab: `More`. Decided, default.
+4. `Stay fees` and `Smart locks` are always visible: in the sidebar on desktop, in the More sheet on phone. No product change. Decided, default.
+5. No `board` body kind yet; the four kinds stand. Decided, default.

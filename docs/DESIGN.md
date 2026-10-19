@@ -17,6 +17,8 @@ that document, not only against layout tests.
 
 ## Signed-in host app: selected redesign
 
+**Superseded (2026-10-19):** signed-in host UI rules now live in [docs/design/MASTER.md](design/MASTER.md). This section is kept for history only.
+
 **[HOST_APP_DESIGN.md](HOST_APP_DESIGN.md)** governs the signed-in workspace. Its implementation, route coverage, verification evidence, and integration instructions are in **[plans/host-app-redesign](archive/plans/host-app-redesign/README.md)**. The host layer is `static/host.css` and `static/host.js`, loaded only with the signed-in navigation. Keep the public site, login and guest forms under their existing rules below.
 
 0123's approved flat-white host workspace supersedes the earlier host color/surface treatment while preserving the host rules and reporting safeguards in [HOST_APP_DESIGN.md](HOST_APP_DESIGN.md). It does not change guest/public/auth surfaces.
@@ -498,6 +500,8 @@ size, a signature pad that saved nothing and a date of birth a line too low.
 
 ## Host app: Effortless
 
+**Superseded (2026-10-19):** see [docs/design/MASTER.md](design/MASTER.md).
+
 **Goal:** a host who has never seen UbyHost can register a stay's guests and report them to UbyPort without reading a guide. A host who uses it daily gets through their day in a handful of clicks. Competitors exist; UbyHost wins by being **the most obvious one to use**.
 
 ### Principles, in priority order
@@ -715,6 +719,8 @@ sample message; its new-tab link teaches PIN entry with the existing PIN
 validation, and remains accessible only to that property's signed-in owner.
 
 ## Host list and setup refinement, 2026-10-14
+
+**Superseded (2026-10-19):** see [docs/design/MASTER.md](design/MASTER.md).
 
 The owner removed duplicate Open buttons from record lists. The whole row,
 its native name/date link, and Open in the three-dot menu are entry points.
