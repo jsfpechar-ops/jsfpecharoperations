@@ -1,6 +1,6 @@
 # 0142 report
 
-Status: blocked
+Status: review
 
 ## Files changed
 - App/app/templates/stay_fees.html, App/app/templates/stay_fee_detail.html
@@ -38,3 +38,17 @@ Done: step 1 (partial). Left: step 1 (invoice-new-picker selector), steps 2 to 6
 
 ## Owner steps
 Decide the fix for `invoice-new-picker` (selector `.panel` no longer present after brief 0141), then resume with brief `0142-cont-1`.
+
+## Session 0142-cont-3 (executor, Haiku 5.5)
+
+Status: review
+
+- Step 1 (committed as `0142-cont-3 step 1: invoice workspace on page lane`, d6c5ba9): appended the `.invoice-workspace` override to `App/app/static/host2.css`; host2.css key in `App/app/templates/base.html` bumped `20261019-0141f` to `20261019-0142`; `App/tests/static_versions.json` regenerated. `test_static_versions.py`: 2 passed. `design_lint.py`: OK.
+- Step 2: `test_host_wide_geometry_browser.py -k lanes_align`: 2 passed, 4 deselected, 0 skipped. The lanes now align on `invoice-new-selected` and `invoice-detail`.
+- Step 3 (0142 step 5): browser set of 8 files: 44 passed, 0 skipped. No fix needed, no step 5 commit.
+- Step 4 (0142 step 6): all 0142 step 4 template and test files were already committed earlier, so nothing was staged for them. This report is the only change in this session.
+
+Done: 0142 steps 5 and 6, and cont-3 steps 1 and 2. No push, no PR (brief says do not push).
+
+## Owner steps
+Push `claude/project-thread-5hw8cf` and open the PR with `scripts/merge-pr-on-green.sh` when ready. Production deploy is manual.
