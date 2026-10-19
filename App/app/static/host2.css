@@ -424,3 +424,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .ui-table td[data-label]:not([data-card]):first-child::before { content: none; }
   .host-workspace .detail-metric { border-right: 0; }
 }
+
+/* 0142-cont-3: the invoice builder and detail use the page lane like every other page */
+.host-workspace .wrap.with-sidebar .invoice-workspace { max-width: none; margin-left: 0; margin-right: 0; }
