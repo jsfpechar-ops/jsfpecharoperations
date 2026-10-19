@@ -223,7 +223,12 @@
     "App/app/templates/setup_wizard/police.html",
     "App/app/templates/setup_wizard/property.html",
     "App/app/templates/setup_wizard/stay_fee.html",
-    "App/app/templates/setup_wizard/try_it.html"
+    "App/app/templates/setup_wizard/try_it.html",
+    "App/app/templates/smart_locks.html",
+    "App/app/templates/users.html",
+    "App/app/templates/admin_incidents.html",
+    "App/app/templates/admin_operations.html",
+    "App/app/templates/admin_funnel.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [
@@ -788,7 +793,24 @@
       "setup-wizard-instruction",
       "setup-wizard-lede",
       "setup-wizard-skip"
-    ]
+    ],
+    "App/app/templates/smart_locks.html": [
+      "action-group",
+      "checkline",
+      "guide-steps",
+      "smart-lock-row",
+      "smart-locks-steps-title"
+    ],
+    "App/app/templates/users.html": [
+      "split",
+      "user-table",
+      "wide"
+    ],
+    "App/app/templates/admin_incidents.html": [
+      "checkline"
+    ],
+    "App/app/templates/admin_operations.html": [],
+    "App/app/templates/admin_funnel.html": []
   },
   "enforced_stylesheets": [
     "App/app/static/host2.css"

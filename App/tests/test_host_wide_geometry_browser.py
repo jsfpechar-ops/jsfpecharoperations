@@ -65,7 +65,7 @@ CAPTURE_ROUTES = {
     "automation": ("/apartments/{property_id}?view=settings&section=automation", ".property-views"),
     "archive": ("/settings/archived", ".ui-section, .ui-empty"),
     "settings": ("/settings", ".host-property-grid"),
-    "smart-locks": ("/smart-locks", ".panel"),
+    "smart-locks": ("/smart-locks", ".ui-body-list, .panel"),
 }
 
 
