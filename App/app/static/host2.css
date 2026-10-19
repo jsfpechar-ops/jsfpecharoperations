@@ -427,3 +427,14 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 
 /* 0142-cont-3: the invoice builder and detail use the page lane like every other page */
 .host-workspace .wrap.with-sidebar .invoice-workspace { max-width: none; margin-left: 0; margin-right: 0; }
+
+/* 0142-fix-1: fee cards keep the row menu top right; copy rows hold textareas; record marks stack; fee sections breathe */
+@container list-cards (max-width: 939.98px) {
+  .host-workspace .lc-fees td:first-child { grid-column: 1; grid-row: 1; }
+  .host-workspace .lc-fees td.row-actions { grid-column: 2; grid-row: 1; justify-content: flex-end; align-items: flex-start; }
+}
+.host-workspace .copyrow textarea { flex: 1 1 14rem; min-width: 0; }
+.host-workspace .fee-send-marks { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: var(--space-3); }
+.host-workspace .fee-send-marks > form, .host-workspace .fee-send-marks > p { flex: none; }
+.host-workspace .fee-send-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2) var(--space-3); width: 100%; }
+.host-workspace .fee-send-form .ui-field { flex: 0 1 18rem; min-width: 0; margin: 0; }

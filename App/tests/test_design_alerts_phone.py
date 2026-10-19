@@ -26,3 +26,13 @@ def test_unroled_stacked_cells_show_labels():
     block = CSS.split("/* 0141-fix-1:", 1)[1]
     assert "td[data-label]:not([data-card])::before { content: attr(data-label);" in block
     assert ".detail-metric { border-right: 0; }" in block
+
+
+def test_fee_layout_fixes():
+    block = CSS.split("/* 0142-fix-1:", 1)[1]
+    assert ".lc-fees td.row-actions { grid-column: 2; grid-row: 1;" in block
+    assert ".copyrow textarea { flex: 1 1 14rem;" in block
+    assert ".fee-send-marks { flex-direction: column;" in block
+    detail = (Path(__file__).resolve().parents[1] / "app" / "templates" / "stay_fee_detail.html").read_text(encoding="utf-8")
+    assert '<section class="ui-section" id="payment">' in detail
+    assert '<section class="ui-section" id="guests">' in detail
