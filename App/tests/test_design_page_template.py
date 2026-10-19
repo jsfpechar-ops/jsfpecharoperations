@@ -1,5 +1,4 @@
 """host_page.html: slots, body kinds and the matching skeleton (MASTER 5)."""
-import re
 from pathlib import Path
 
 import pytest
