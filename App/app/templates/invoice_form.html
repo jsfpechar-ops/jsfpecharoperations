@@ -1,12 +1,15 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'invoices' %}
+{% set body_kind = 'form' %}
+{% from "_components.html" import field_label, help_tip with context %}
 {% block title %}{{ t('invoice.new') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import page_header, field_label, help_tip with context %}
-{{ page_header(t('invoice.new'), t('invoices.lede'), '/invoices', t('nav.invoices')) }}
+{% block meta %}{{ t('invoices.lede') }}{% endblock %}
+{% block back_url %}/invoices{% endblock %}
+{% block back_label %}{{ t('nav.invoices') }}{% endblock %}
+{% block body %}
 
 {% if errors %}
-<div class="banner err">
+<div class="ui-banner ui-banner-attention">
   <div class="grow">
     <strong>{{ t('invoice.err.fix') }}</strong>
     <ul class="banner-list">
@@ -27,12 +30,12 @@
 
   {% if stay %}
   <p class="invoice-stay-context">
-    <span class="muted small">{{ t('invoice.context.stay') }}</span>
+    <span class="ui-sub">{{ t('invoice.context.stay') }}</span>
     <strong>{{ stay_label }}</strong>
-    <a class="small" href="/reservations/{{ stay.reservation.id }}">{{ t('invoice.context.open_stay') }}</a>
+    <a class="ui-sub" href="/reservations/{{ stay.reservation.id }}">{{ t('invoice.context.open_stay') }}</a>
   </p>
   {% endif %}
-  <div class="panel invoice-supplier">
+  <div class="ui-section invoice-supplier">
     <div class="invoice-supplier-row">
       <div class="field invoice-supplier-picker">
         <label for="legal_entity_id">{{ t('invoice.entity.label') }}</label>
@@ -46,42 +49,42 @@
       </div>
       <div class="invoice-supplier-meta">
         <span class="invoice-supplier-name">{{ entity.name }}</span>
-        <span class="small muted">
+        <span class="ui-sub">
           {% if entity.ico %}IČO {{ entity.ico }}{% endif %}
           {% if entity.seat %}· {{ entity.seat }}{% endif %}
         </span>
       </div>
-      <a class="btn small ghost" href="/entities?edit={{ entity.id }}&amp;next={{ (('/invoices/new?reservation_id=' ~ (stay.reservation.id if stay else '') ~ '&entity=' ~ entity.id) | urlencode) }}#entity-invoice">
+      <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/entities?edit={{ entity.id }}&amp;next={{ (('/invoices/new?reservation_id=' ~ (stay.reservation.id if stay else '') ~ '&entity=' ~ entity.id) | urlencode) }}#entity-invoice">
         {{ t('invoice.edit_details') }}
       </a>
     </div>
   </div>
 
-  <div class="panel">
-    <h2 style="margin-top:0">{{ t('invoice.section.customer') }}</h2>
+  <div class="ui-section">
+    <h2>{{ t('invoice.section.customer') }}</h2>
     {% if show_fill_guest %}
-    <div class="actions" style="margin-bottom:12px">
-      <button type="submit" name="fill_from_guest" value="1" formnovalidate class="btn-secondary">{{ t('invoice.fill_guest.button') }}</button>
+    <div class="ui-form-actions">
+      <button type="submit" name="fill_from_guest" value="1" formnovalidate class="ui-btn ui-btn-secondary">{{ t('invoice.fill_guest.button') }}</button>
     </div>
     {% endif %}
     <div class="grid invoice-buyer-grid">
-      <div class="field">
+      <div class="ui-field">
         <label for="buyer_name">{{ t('invoice.buyer.name') }}</label>
         <input type="text" id="buyer_name" name="buyer_name" required value="{{ values.get('buyer_name', '') }}">
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="buyer_street">{{ t('invoice.buyer.street') }}</label>
         <input type="text" id="buyer_street" name="buyer_street" value="{{ values.get('buyer_street', '') }}">
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="buyer_city">{{ t('invoice.buyer.city') }}</label>
         <input type="text" id="buyer_city" name="buyer_city" value="{{ values.get('buyer_city', '') }}">
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="buyer_zip">{{ t('invoice.buyer.zip') }}</label>
         <input type="text" id="buyer_zip" name="buyer_zip" value="{{ values.get('buyer_zip', '') }}">
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="buyer_country">{{ t('invoice.buyer.country') }}</label>
         <select id="buyer_country" name="buyer_country">
           {% for country in countries %}
@@ -89,108 +92,31 @@
           {% endfor %}
         </select>
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="buyer_ico">{{ t('invoice.buyer.ico') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <div class="action-group" style="align-items:flex-end">
+        <div class="action-group invoice-ico-row">
           <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" value="{{ values.get('buyer_ico', '') }}">
-          <button class="btn" type="submit" name="fill_buyer_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
+          <button class="ui-btn ui-btn-secondary" type="submit" name="fill_buyer_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
         </div>
         {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
         {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="buyer_dic">{{ t('invoice.buyer.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
         <input type="text" id="buyer_dic" name="buyer_dic" value="{{ values.get('buyer_dic', '') }}">
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="buyer_email">{{ t('invoice.buyer.email') }} <span class="opt">{{ t('common.optional') }}</span></label>
         <input type="email" id="buyer_email" name="buyer_email" value="{{ values.get('buyer_email', '') }}">
       </div>
     </div>
   </div>
 
-  <div class="panel">
+  <div class="ui-section">
     <div class="field-label-row invoice-items-heading">
-      <h2 style="margin-top:0">{{ t('invoice.section.items') }}</h2>
+      <h2>{{ t('invoice.section.items') }}</h2>
       {{ help_tip('invoice-items-help', t('invoice.items_help')) }}
     </div>
-    <style>
-      /* Keep invoice-item geometry inside the form so the shared host table
-         rules and viewport width cannot change the price/action tracks. */
-      #item-rows.invoice-items-grid {
-        display: block;
-        width: 100%;
-        table-layout: fixed;
-        container-type: inline-size;
-      }
-      .invoice-items-grid thead,
-      .invoice-items-grid tbody { display: block; width: 100%; }
-      .invoice-items-grid thead tr,
-      .invoice-items-grid tbody tr {
-        display: grid;
-        grid-template-columns: minmax(220px, 1fr) 84px 124px 148px 78px 126px;
-        align-items: start;
-      }
-      .invoice-items-grid thead tr {
-        align-items: stretch;
-        background: #f7ede7;
-      }
-      .invoice-items-grid thead th {
-        display: flex;
-        align-items: center;
-        background: transparent;
-      }
-      .invoice-items-grid th,
-      .invoice-items-grid td { box-sizing: border-box; min-width: 0; }
-      .invoice-items-grid td { vertical-align: top; }
-      .invoice-items-grid input:not([type=hidden]),
-      .invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
-      .invoice-items-grid .row-actions [data-remove-item] { min-height: 48px; }
-      .invoice-items-grid [data-vat-col][hidden] {
-        display: block !important;
-        visibility: hidden;
-      }
-      .invoice-other-description-field { display: block; margin-top: 8px; }
-      .invoice-other-description-field > span {
-        display: block;
-        margin-bottom: 3px;
-        color: var(--muted);
-        font-size: 12px;
-        font-weight: 600;
-      }
-      @container (max-width: 850px) {
-        .invoice-items-grid thead { display: none; }
-        .invoice-items-grid tbody tr {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 12px 14px;
-          padding: 16px;
-          border-bottom: 1px solid var(--line);
-        }
-        .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
-        .invoice-items-grid td {
-          display: block;
-          padding: 0;
-          border: 0;
-        }
-        .invoice-items-grid td:first-child,
-        .invoice-items-grid td.row-actions { grid-column: 1 / -1; }
-        .invoice-items-grid td.row-actions { text-align: left; }
-        .invoice-items-grid td.row-actions .btn { margin: 0; }
-        .invoice-items-grid td::before {
-          content: attr(data-label);
-          display: block;
-          margin-bottom: 3px;
-          color: var(--muted);
-          font-size: 11.5px;
-          font-weight: 650;
-          letter-spacing: .05em;
-          text-transform: uppercase;
-        }
-        .invoice-items-grid td:first-child::before,
-        .invoice-items-grid td.row-actions::before { display: none; }
-        .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
-      }
-    </style>
     <table class="table-cards invoice-items-grid" id="item-rows">
       <thead>
         <tr>
@@ -206,7 +132,7 @@
       <tbody data-stay-body>
         <tr data-item-row data-stay-row>
           <td data-label="{{ t('invoice.col.description') }}">
-            <strong>{{ t('invoice.stay.line') }}</strong><br><span class="small">{{ stay_label }}</span>
+            <strong>{{ t('invoice.stay.line') }}</strong><br><span class="ui-sub">{{ stay_label }}</span>
           </td>
           <td data-label="{{ t('invoice.col.qty') }}">1<input type="hidden" class="input-qty" value="1"></td>
           <td data-label="{{ t('invoice.col.unit') }}">{{ t('invoice.stay.unit') }}</td>
@@ -216,7 +142,7 @@
                    {% if stay_price_hint %}placeholder="{{ stay_price_hint }}" aria-describedby="stay-price-hint"{% endif %}
                    value="{{ values.get('stay_price', '') }}">
             {% if stay_price_hint %}
-            <span id="stay-price-hint" class="small muted">{{ t('invoice.price_hint', price=stay_price_hint) }}</span>
+            <span id="stay-price-hint" class="ui-sub">{{ t('invoice.price_hint', price=stay_price_hint) }}</span>
             {% endif %}
           </td>
           <td data-label="{{ t('invoice.col.vat') }}" data-vat-col {% if not payer %}hidden{% endif %}>
@@ -258,7 +184,7 @@
                 {% endfor %}
               </select>
             </td>
-            <td class="row-actions"><button type="button" class="btn small" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
+            <td class="row-actions"><button type="button" class="ui-btn ui-btn-secondary ui-btn-compact" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
           </tr>
           {% endfor %}
         {% else %}
@@ -286,16 +212,16 @@
               <option value="0">0 %</option>
             </select>
           </td>
-          <td class="row-actions"><button type="button" class="btn small" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
+          <td class="row-actions"><button type="button" class="ui-btn ui-btn-secondary ui-btn-compact" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
         </tr>
         {% endif %}
       </tbody>
     </table>
-    <div class="actions"><button type="button" class="btn small" data-add-item>{{ t('invoice.add_item') }}</button></div>
+    <div class="ui-form-actions"><button type="button" class="ui-btn ui-btn-secondary ui-btn-compact" data-add-item>{{ t('invoice.add_item') }}</button></div>
   </div>
 
-  <div class="panel">
-    <h2 style="margin-top:0">{{ t('invoice.section.payment') }}</h2>
+  <div class="ui-section">
+    <h2>{{ t('invoice.section.payment') }}</h2>
     <div class="invoice-paid-choice" role="radiogroup" aria-label="{{ t('invoice.section.payment') }}">
       <label class="checkline">
         <input type="radio" id="already_paid" name="already_paid" value="1"
@@ -310,7 +236,7 @@
     </div>
     <div class="grid invoice-paid-grid" id="paid-fields" data-paid-fields
          {% if values.get('already_paid') == '0' %}hidden{% endif %}>
-      <div class="field">
+      <div class="ui-field">
         <label for="paid_via">{{ t('invoice.paid_via') }}</label>
         <select id="paid_via" name="paid_via" data-paid-via>
           <option value="direct_transfer" {% if values.get('paid_via', 'direct_transfer') == 'direct_transfer' %}selected{% endif %}>{{ t('invoice.paid_via.direct_transfer') }}</option>
@@ -324,14 +250,14 @@
                placeholder="{{ t('invoice.paid_via.custom_hint') }}"
                {% if not values.get('paid_via_custom') %}hidden{% endif %}>
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="duzp">{{ t('invoice.duzp') }}</label>
         <input type="date" id="duzp" name="duzp" value="{{ values.get('duzp', '') or today().isoformat() }}">
       </div>
     </div>
     <div class="grid" id="due-fields" data-due-fields
          {% if values.get('already_paid', '1') != '0' %}hidden{% endif %}>
-      <div class="field">
+      <div class="ui-field">
         {{ field_label('due_date', t('invoice.due'), t('invoice.due_help')) }}
         <input type="date" id="due_date" name="due_date" value="{{ values.get('due_date', '') }}" aria-describedby="due_date-help">
       </div>
@@ -339,20 +265,20 @@
     </div>
     <div class="invoice-more">
       <div class="invoice-more-body">
-        <div class="field">
+        <div class="ui-field">
           <label for="lang">{{ t('invoice.section.language') }}</label>
           <select id="lang" name="lang">
             <option value="cs" {% if values.get('lang', 'cs') == 'cs' %}selected{% endif %}>{{ t('invoice.lang.cs') }}</option>
             <option value="en" {% if values.get('lang') == 'en' %}selected{% endif %}>{{ t('invoice.lang.en') }}</option>
           </select>
         </div>
-        <div class="field">
+        <div class="ui-field">
           <label for="note">{{ t('invoice.note') }} <span class="opt">{{ t('common.optional') }}</span></label>
           <input type="text" id="note" name="note" maxlength="300" value="{{ values.get('note', '') }}">
         </div>
       </div>
     </div>
-    <p class="warn-text small" data-bank-warning data-has-iban="{{ 1 if entity.iban else 0 }}" hidden>
+    <p class="ui-sub warn-text" data-bank-warning data-has-iban="{{ 1 if entity.iban else 0 }}" hidden>
       {{ t('invoice.warn_no_iban') }}
     </p>
   </div>
@@ -364,9 +290,9 @@
       <span class="invoice-total-label">{{ t('invoice.total_live') }}</span>
       <span class="invoice-total-value" data-total>0 Kč</span>
     </div>
-    <span class="small muted" data-next-number>{{ t('invoice.next_number', number=next_number) }}</span>
-    <button class="btn" type="submit" formaction="/invoices/preview" formtarget="_blank">{{ t('invoice.preview') }}</button>
-    <button class="btn accent primary" type="submit" data-confirm data-confirm-message="{{ t('invoice.issue_confirm') }}">{{ t('invoice.issue') }}</button>
+    <span class="ui-sub" data-next-number>{{ t('invoice.next_number', number=next_number) }}</span>
+    <button class="ui-btn ui-btn-secondary" type="submit" formaction="/invoices/preview" formtarget="_blank">{{ t('invoice.preview') }}</button>
+    <button class="ui-btn ui-btn-primary" type="submit" data-confirm data-confirm-message="{{ t('invoice.issue_confirm') }}">{{ t('invoice.issue') }}</button>
   </div>
   </div>{# /invoice-workspace #}
 </form>

@@ -377,3 +377,41 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .notification-stack .notification-bubble form { top: 50%; right: var(--space-2); transform: translateY(-50%); }
 /* 0155: compact empty-state title on phone */
 @media (max-width: 1023px) { .host-workspace .ui-empty h2 { font-size: var(--size-16); } }
+
+/* 0141 invoices: moved from invoice_form.html <style> and two inline styles */
+.host-workspace .action-group.invoice-ico-row { align-items: flex-end; }
+.invoice-cancel-reason { max-width: 14rem; }
+#item-rows.invoice-items-grid { display: block; width: 100%; table-layout: fixed; container-type: inline-size; }
+.invoice-items-grid thead,
+.invoice-items-grid tbody { display: block; width: 100%; }
+.invoice-items-grid thead tr,
+.invoice-items-grid tbody tr { display: grid; grid-template-columns: minmax(220px, 1fr) 84px 124px 148px 78px 126px; align-items: start; }
+.invoice-items-grid thead tr { align-items: stretch; background: var(--surface-2); }
+.invoice-items-grid thead th { display: flex; align-items: center; background: transparent; }
+.invoice-items-grid th,
+.invoice-items-grid td { box-sizing: border-box; min-width: 0; }
+.invoice-items-grid td { vertical-align: top; }
+.invoice-items-grid input:not([type=hidden]),
+.invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
+.invoice-items-grid .row-actions [data-remove-item] { min-height: 48px; }
+.invoice-items-grid [data-vat-col][hidden] { display: block !important; visibility: hidden; }
+.invoice-other-description-field { display: block; margin-top: var(--space-2); }
+.invoice-other-description-field > span { display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-12); font-weight: 600; }
+@container (max-width: 850px) {
+  .invoice-items-grid thead { display: none; }
+  .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); padding: var(--space-4); border-bottom: 1px solid var(--line); }
+  .invoice-items-grid tbody tr:last-child { border-bottom: 0; }
+  .invoice-items-grid td { display: block; padding: 0; border: 0; }
+  .invoice-items-grid td:first-child,
+  .invoice-items-grid td.row-actions { grid-column: 1 / -1; }
+  .invoice-items-grid td.row-actions { text-align: left; }
+  .invoice-items-grid td.row-actions .ui-btn { margin: 0; }
+  .invoice-items-grid td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-11); font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
+  .invoice-items-grid td:first-child::before,
+  .invoice-items-grid td.row-actions::before { display: none; }
+  .invoice-items-grid [data-vat-col][hidden] { display: none !important; }
+}
+/* 0141: Stay fees still extends base.html until 0142; keep the shared filter's v2 toolbar, summary and panel on the legacy centred lane there */
+.host-workspace .wrap.with-sidebar > .ui-toolbar,
+.host-workspace .wrap.with-sidebar > .ui-sub[data-filter-summary],
+.host-workspace .wrap.with-sidebar > .list-filter { margin-left: auto; margin-right: auto; }
