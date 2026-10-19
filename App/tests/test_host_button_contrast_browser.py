@@ -30,7 +30,7 @@ MIN_RATIO = 4.5
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0107-screenshots"
 CAPTURE = os.environ.get("UBYHOST_CAPTURE_0107") == "1"
 
-BUTTONS = """() => [...document.querySelectorAll('a.btn.small.primary')].map(el => {
+BUTTONS = """() => [...document.querySelectorAll('a.ui-btn.ui-btn-compact')].map(el => {
   const cs = getComputedStyle(el);
   return {text: el.textContent.trim(), color: cs.color, background: cs.backgroundColor};
 })"""

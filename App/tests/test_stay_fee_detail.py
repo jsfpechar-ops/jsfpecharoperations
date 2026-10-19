@@ -482,7 +482,7 @@ def test_exactly_one_primary_button_when_the_report_is_ready(host):
     response = client.get(f"/stay-fees/{apartment_id}?month=2026-08")
 
     assert response.status_code == 200
-    assert response.text.count("btn accent primary") == 1
+    assert response.text.count('class="ui-btn ui-btn-primary"') == 1
     assert 'type="submit"' in response.text
     assert "Save period" in response.text
 
@@ -495,7 +495,7 @@ def test_a_blocked_report_has_no_primary_button(host):
     response = client.get(f"/stay-fees/{apartment_id}?month=2026-08")
 
     assert response.status_code == 200
-    assert "btn accent primary" not in response.text
+    assert 'class="ui-btn ui-btn-primary"' not in response.text
     assert "Add the variable symbol the council gave you." in response.text
     assert (
         f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting'

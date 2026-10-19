@@ -189,13 +189,13 @@ def test_fee_pages_fit_and_keep_one_lane(fee_host, fee_base):
                     page.goto(f"{fee_base}{path}&lang={locale}")
                     page.wait_for_load_state("networkidle")
                     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (key, width, locale)
-                    for control in page.locator(".host-workspace main a.btn, .host-workspace main button.btn").all():
+                    for control in page.locator(".host-workspace main a.btn, .host-workspace main button.btn, .host-workspace main a.ui-btn, .host-workspace main button.ui-btn").all():
                         if not control.is_visible():
                             continue
                         box = control.bounding_box()
                         assert box and box["x"] >= -1 and box["x"] + box["width"] <= width + 1, (key, width)
                     if key != "list":
-                        left = page.locator(".page-header").bounding_box()
+                        left = page.locator(".ui-ph").bounding_box()
                         stats = page.locator(".stay-metrics").bounding_box()
                         assert abs(left["x"] - stats["x"]) <= 40, (key, width)
                     if key == "detail-saved":
