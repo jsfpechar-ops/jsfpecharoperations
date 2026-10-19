@@ -129,7 +129,7 @@ _TIP_JS = """(id) => { const t = document.getElementById(id); const b = t.getBou
 
 _LIST_JS = """() => { const r = sel => { const el = document.querySelector(sel); if (!el) return null;
     const b = el.getBoundingClientRect(); return {left: b.left, right: b.right, top: b.top, bottom: b.bottom, w: b.width}; };
-  const panel = r('.panel.list-cards'); const toolbar = r('[data-filter-toolbar]');
+  const panel = r('.list-cards'); const toolbar = r('[data-filter-toolbar]');
   const filter = r('#list-filter-panel');
   return {summary: r('#fee-list-summary'), panel, toolbar, filter: filter && filter.w > 0 ? filter : toolbar,
           overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1}; }"""

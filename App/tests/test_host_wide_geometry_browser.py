@@ -284,7 +284,7 @@ def _capture_geometry(page, result_selector):
             })
           );
           const actionSelectors = [
-            '.page-actions .btn', '.dashboard-actions .btn',
+            '.page-actions .btn', '.ui-ph-acts .ui-btn', '.dashboard-actions .btn',
             '.dashboard-row-actions .btn', '.filter-panel-actions .btn',
             '.host-property-save .btn', '.invoice-form button[type=submit]',
             '.stays-view td.row-actions a', '.stays-view td.row-actions button'
@@ -309,11 +309,11 @@ def _capture_geometry(page, result_selector):
           return {
             viewport: {width: innerWidth, scrollWidth: document.documentElement.scrollWidth},
             hostLane,
-            title: box('.page-header-main h1, .host-today-head h1'),
-            pageHeader: box('.page-header, .host-today-head'),
+            title: box('.page-header-main h1, .ui-ph-main h1, .host-today-head h1'),
+            pageHeader: box('.page-header, .ui-ph, .host-today-head'),
             directBacklink: box('main.wrap.with-sidebar > a.back-link'),
-            headerMain: box('.page-header-main, .host-today-head'),
-            headerActions: box('.page-actions, .dashboard-actions'),
+            headerMain: box('.page-header-main, .ui-ph-main, .host-today-head'),
+            headerActions: box('.page-actions, .ui-ph-acts, .dashboard-actions'),
             navigation: box('.host-local-nav'),
             alertStack: box('.notification-stack'),
             feedbackRegion: box('[data-host-feedback]'),

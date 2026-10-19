@@ -42,7 +42,7 @@ TABS = {
     "invoices": ["nav.invoices", "host.invoice_settings"],
     "fees": [],
 }
-FILLED = ".btn.primary, .btn.accent, .btn.send-all"
+FILLED = ".btn.primary, .btn.accent, .btn.send-all, .ui-btn-primary"
 
 _LAYOUT_JS = """(filled) => {
   const one = sel => document.querySelector(sel);
@@ -57,13 +57,13 @@ _LAYOUT_JS = """(filled) => {
   const meta = one('[data-list-meta]');
   const tabs = one('[data-sub-tabs]');
   const toolbar = one('[data-list-toolbar]');
-  const panel = one('.stays-view, .panel.list-cards');
+  const panel = one('.stays-view, .list-cards, .ui-body-list');
   const order = [env, notices, title, tabs, toolbar, panel].filter(Boolean);
   let ordered = true;
   for (let i = 1; i < order.length; i++) {
     if (!(order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING)) ordered = false;
   }
-  const buttons = actions ? [...actions.querySelectorAll('.btn')].filter(visible) : [];
+  const buttons = actions ? [...actions.querySelectorAll('.btn, .ui-btn')].filter(visible) : [];
   const tabLinks = tabs ? [...tabs.querySelectorAll('a')] : [];
   return {
     ordered, hasEnv: !!env, hasTitle: !!title, hasToolbar: !!toolbar, hasPanel: !!panel,
@@ -172,18 +172,18 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
     ]
     for path, key in cases:
         html = client.get(_with_lang(path, "en")).text
-        nav = re.search(r'<nav class="sub-tabs host-local-nav"[^>]*data-sub-tabs>(.*?)</nav>', html, re.S)
+        nav = re.search(r'<nav class="(?:sub-tabs host-local-nav|ui-tabs)"[^>]*data-sub-tabs[^>]*>(.*?)</nav>', html, re.S)
         assert nav, path
-        current = re.findall(r'<a class="sub-tab" href="[^"]+" aria-current="page">([^<]+)</a>', nav.group(1))
+        current = re.findall(r'<a class="(?:sub-tab|ui-tab)" href="[^"]+" aria-current="page">([^<]+)</a>', nav.group(1))
         assert current == [STRINGS["en"][key].replace("&", "&amp;")], (path, current)
         # Tabs sit directly under the title row, never above it.
         assert html.index("</h1>") < nav.start(), path
         assert "<button" not in nav.group(1) and "<form" not in nav.group(1), path
     # Two businesses: Business & legal details opens the list, never one record.
-    assert '<a class="sub-tab" href="/entities">' in client.get("/apartments").text
+    assert re.search(r'<a class="(?:sub-tab|ui-tab)" href="/entities"', client.get("/apartments").text)
     # 0101: Invoice settings with two businesses opens the list to pick one.
     invoices = client.get("/invoices").text
-    assert '<a class="sub-tab" href="/entities">' in invoices and "/invoices/settings" not in invoices
+    assert re.search(r'<a class="(?:sub-tab|ui-tab)" href="/entities"', invoices) and "/invoices/settings" not in invoices
     # Stay fees has no sub-pages (fee settings live in each property).
     assert "data-sub-tabs" not in client.get("/stay-fees").text
     # Property pages keep their own local tabs, not the section tabs.
@@ -197,7 +197,7 @@ def test_empty_states_use_the_shared_component(acc):
         assert html.count("data-empty-state") == 1, path
         block = html[html.index("data-empty-state"):]
         block = block[:block.index("\n  </div>")]
-        assert len(re.findall(r'<a class="btn[^"]*"', block)) == 1, (path, block)
+        assert len(re.findall(r'<a class="(?:btn|ui-btn)[^"]*"', block)) == 1, (path, block)
         assert "<p>" in block or "<h2>" in block, path
     filtered = acc["client"].get("/invoices?q=zzzz-no-such-invoice&lang=en").text
     assert filtered.count("data-empty-state") == 1

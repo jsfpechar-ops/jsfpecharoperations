@@ -172,7 +172,7 @@ def test_the_month_filter_shares_its_page_edges(base):
                   return {
                     filter: edges('.list-filter'),
                     table: edges('.panel, table'),
-                    title: edges('.page-header, h1'),
+                    title: edges('.page-header, .ui-ph, h1'),
                     controlGap: Math.round(stepper.left - control.right),
                     rightSlack: Math.round(filter.right - stepper.right),
                   };

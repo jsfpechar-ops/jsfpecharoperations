@@ -32,7 +32,7 @@ LISTS = {
 THRESHOLDS = {"properties": 800, "businesses": 950, "invoices": 830, "fees": 940, "reports": 850}
 
 _LIST_JS = """() => {
-  const panel = document.querySelector('.panel.list-cards');
+  const panel = document.querySelector('.list-cards');
   if (!panel) return null;
   const pr = panel.getBoundingClientRect();
   const table = panel.querySelector('table');
