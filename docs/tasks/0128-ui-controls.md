@@ -46,17 +46,17 @@ No other file may change.
 {% macro ui_button(label, variant='secondary', href='', type='button', size='regular', icon_name='', loading=false, disabled=false, attrs='', id='') -%}
 {%- set classes = 'ui-btn ui-btn-' ~ variant ~ (' ui-btn-compact' if size == 'compact') ~ (' ui-btn-loading' if loading) -%}
 {%- if href -%}
-<a class="{{ classes }}" href="{{ href }}"{% if id %} id="{{ id }}"{% endif %}{% if disabled %} aria-disabled="true" tabindex="-1"{% endif %}{% if loading %} aria-busy="true"{% endif %} {{ attrs | safe }}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}<span>{{ label }}</span></a>
+<a class="{{ classes }}" href="{{ href }}"{% if id %} id="{{ id }}"{% endif %}{% if disabled %} aria-disabled="true" tabindex="-1"{% endif %}{% if loading %} aria-busy="true"{% endif %}{% if attrs %} {{ attrs | safe }}{% endif %}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}<span>{{ label }}</span></a>
 {%- else -%}
-<button class="{{ classes }}" type="{{ type }}"{% if id %} id="{{ id }}"{% endif %}{% if disabled %} disabled{% endif %}{% if loading %} aria-busy="true"{% endif %} {{ attrs | safe }}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}<span>{{ label }}</span></button>
+<button class="{{ classes }}" type="{{ type }}"{% if id %} id="{{ id }}"{% endif %}{% if disabled %} disabled{% endif %}{% if loading %} aria-busy="true"{% endif %}{% if attrs %} {{ attrs | safe }}{% endif %}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}<span>{{ label }}</span></button>
 {%- endif -%}
 {%- endmacro %}
 
 {#- icon-only button: the label becomes aria-label and title. -#}
 {% macro ui_icon_button(label, icon_name, variant='quiet', href='', type='button', size='regular', attrs='') -%}
 {%- set classes = 'ui-btn ui-btn-' ~ variant ~ ' ui-btn-icon' ~ (' ui-btn-compact' if size == 'compact') -%}
-{%- if href -%}<a class="{{ classes }}" href="{{ href }}" aria-label="{{ label }}" title="{{ label }}" {{ attrs | safe }}>{{ icon(icon_name, 16) }}</a>
-{%- else -%}<button class="{{ classes }}" type="{{ type }}" aria-label="{{ label }}" title="{{ label }}" {{ attrs | safe }}>{{ icon(icon_name, 16) }}</button>{%- endif -%}
+{%- if href -%}<a class="{{ classes }}" href="{{ href }}" aria-label="{{ label }}" title="{{ label }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{{ icon(icon_name, 16) }}</a>
+{%- else -%}<button class="{{ classes }}" type="{{ type }}" aria-label="{{ label }}" title="{{ label }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{{ icon(icon_name, 16) }}</button>{%- endif -%}
 {%- endmacro %}
 
 {#- 7.5 badge. kind: action | attention | done | neutral. overdue prefixes "!" and a border. -#}
@@ -66,8 +66,8 @@ No other file may change.
 
 {#- 7.7 chip: a link (href) or a button; selected is ink, never coral. -#}
 {% macro ui_chip(label, href='', selected=false, remove_href='', attrs='') -%}
-{%- if href -%}<a class="ui-chip" href="{{ href }}"{% if selected %} aria-current="true"{% endif %} {{ attrs | safe }}>{{ label }}</a>
-{%- else -%}<button class="ui-chip" type="button" aria-pressed="{{ 'true' if selected else 'false' }}" {{ attrs | safe }}>{{ label }}{% if remove_href %}{% endif %}</button>{%- endif -%}
+{%- if href -%}<a class="ui-chip" href="{{ href }}"{% if selected %} aria-current="true"{% endif %}{% if attrs %} {{ attrs | safe }}{% endif %}>{{ label }}</a>
+{%- else -%}<button class="ui-chip" type="button" aria-pressed="{{ 'true' if selected else 'false' }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{{ label }}{% if remove_href %}{% endif %}</button>{%- endif -%}
 {%- endmacro %}
 
 {#- 7.2 text input. error renders the message under the field with aria-describedby. -#}
@@ -119,8 +119,8 @@ No other file may change.
 </span>
 {%- endmacro %}
 {% macro ui_menu_item(label, href='', danger=false, icon_name='', attrs='') -%}
-{%- if href -%}<a class="ui-menu-item{{ ' ui-menu-danger' if danger }}" role="menuitem" href="{{ href }}" {{ attrs | safe }}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}{{ label }}</a>
-{%- else -%}<button class="ui-menu-item{{ ' ui-menu-danger' if danger }}" role="menuitem" type="submit" {{ attrs | safe }}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}{{ label }}</button>{%- endif -%}
+{%- if href -%}<a class="ui-menu-item{{ ' ui-menu-danger' if danger }}" role="menuitem" href="{{ href }}"{% if attrs %} {{ attrs | safe }}{% endif %}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}{{ label }}</a>
+{%- else -%}<button class="ui-menu-item{{ ' ui-menu-danger' if danger }}" role="menuitem" type="submit"{% if attrs %} {{ attrs | safe }}{% endif %}>{% if icon_name %}{{ icon(icon_name, 16) }}{% endif %}{{ label }}</button>{%- endif -%}
 {%- endmacro %}
 
 {#- 7.9 dialog: a native <dialog>; CSS turns it into a bottom sheet below 768. -#}
@@ -168,7 +168,7 @@ No other file may change.
 
    Command: `cd App && .venv/bin/python -c "
 import jinja2;env=jinja2.Environment(loader=jinja2.FileSystemLoader('app/templates'));env.globals['t']=lambda k,**kw:k
-print(env.from_string('{% from \"_ui.html\" import ui_button, ui_badge %}{{ ui_button(\"Save\",\"primary\") }}{{ ui_badge(\"action\",\"x\",true) }}').render())"`. Expected: a `<button class="ui-btn ui-btn-primary" type="button" >…` and `<span class="ui-badge ui-badge-action ui-badge-overdue">! x</span>`.
+print(env.from_string('{% from \"_ui.html\" import ui_button, ui_badge %}{{ ui_button(\"Save\",\"primary\") }}{{ ui_badge(\"action\",\"x\",true) }}').render())"`. Expected: a `<button class="ui-btn ui-btn-primary" type="button"><span>Save</span></button>` and `<span class="ui-badge ui-badge-action ui-badge-overdue">! x</span>`.
 
 2. Create `App/app/static/host2.css` (part 1; 0129 appends part 2):
 
