@@ -211,8 +211,8 @@
   <div class="sync-cta{% if last_sync %} has-meta{% endif %}">
     <form method="post" action="/sync" class="sync-cta-form">
       <input type="hidden" name="return_to" value="{{ return_to }}">
-      <button class="btn{% if primary %} primary{% endif %} sync-btn" type="submit">
-        <span class="sync-btn-icon" aria-hidden="true">{{ nav_icon('calendar') }}</span>
+      <button class="ui-btn ui-btn-{{ 'primary' if primary else 'secondary' }} sync-btn" type="submit">
+        {{ icon('refresh-cw', 16) }}
         <span>{{ t(label_key) }}</span>
       </button>
     </form>
