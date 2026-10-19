@@ -458,3 +458,7 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace [data-cal-scale] { min-width: var(--control-h-phone); min-height: var(--control-h-phone); }
   .host-workspace #sig-clear { min-height: var(--control-h-phone); min-width: var(--control-h-phone); }
 }
+
+/* 0158: guest-link URLs stay on one line (full URL in the title and the copy button) */
+.host-workspace .property-inline-url { display: block; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.host-workspace .cleaning-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
