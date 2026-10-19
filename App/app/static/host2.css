@@ -45,7 +45,7 @@
 .host-workspace .ui-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: var(--space-5); height: var(--space-5); border-radius: var(--radius-pill); background: var(--surface); transition: left var(--motion-1) var(--ease-standard); }
 .host-workspace .ui-switch:checked { background: var(--accent); }
 .host-workspace .ui-switch:checked::after { left: calc(100% - var(--space-5) - 2px); }
-.host-workspace .ui-form-actions { display: flex; justify-content: flex-end; gap: var(--space-2); padding-top: var(--space-2); }
+.host-workspace .ui-form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); padding-top: var(--space-2); }
 .host-workspace .ui-sticky-actions { display: none; }
 .host-workspace .ui-steps { color: var(--ink-3); font-size: var(--size-14); margin: 0 0 var(--space-4); }
 
@@ -63,7 +63,7 @@
 .host-workspace .ui-pdot[data-property="3"]::before { background: var(--property-3); }
 .host-workspace .ui-pdot[data-property="4"]::before { background: var(--property-4); }
 .host-workspace .ui-num { font-variant-numeric: tabular-nums; }
-.host-workspace .ui-mono { font-family: var(--font-mono); font-size: var(--size-14); }
+.host-workspace .ui-mono { font-family: var(--font-mono); font-size: var(--size-14); overflow-wrap: anywhere; }
 
 /* ---- 7.7 chips ---- */
 .host-workspace .ui-chips { display: flex; gap: var(--space-2); flex-wrap: wrap; }

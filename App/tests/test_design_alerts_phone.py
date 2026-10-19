@@ -15,3 +15,8 @@ def test_alert_stack_is_one_card_without_shadows():
     block = CSS.split("/* 0154:", 1)[1]
     assert ".notification-stack { gap: 0;" in block
     assert "box-shadow: none" in block
+
+
+def test_form_actions_wrap_and_mono_breaks():
+    assert ".ui-form-actions { display: flex; flex-wrap: wrap;" in CSS
+    assert "overflow-wrap: anywhere" in CSS
