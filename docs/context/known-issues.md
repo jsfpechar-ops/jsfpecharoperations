@@ -90,7 +90,5 @@ Grep. **HR**: owner decides.
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can receive an undeleted cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
 | K-U15 | Med review | Host forms/navigation | Fixed on staging; 0084 incl. K-U14 + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests | [0080](../tasks/0080-report.md) |
-| K-T02 | Low open | Tests | `tests/test_onboarding_wizard_browser.py` asserts `skeleton.is_hidden()` right after `hide()`; `skeleton.js` keeps the skeleton 400 ms, so it flakes on a fast machine. Fixed in the test by 0152 (waits for hidden, 2 s bound). | [0151](../tasks/0151-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 | K-OPS72 | Low open | filing_watchdog.py | Server 72 h, repo 6 h; align code/tests before server override | Owner, 2026-10-15 |
-| K-UI01 | Fixed | Calendar/cleaning | Dashboard stays only; bold Cleaning markers | #397 |

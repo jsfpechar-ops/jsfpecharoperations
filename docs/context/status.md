@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-16.
+Updated: 2026-10-19.
 
 ## Production
 
@@ -12,6 +12,7 @@ Updated: 2026-10-16.
 
 ## Now
 
+- Host design reset (MASTER.md, PR #401, branch claude/project-thread-td6fpc): 0130-0134 and 0147-0152 done (shell, macros, dashboard, stays, phone calendar dots, card roles). Next 0135-0137, then owner checkpoint 2, then 0138-0146.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 - Host #397: b51e0bb; CI 8/8, zero browser skips ([brief](../tasks/0123-dashboard-stays-only.md)).
 
