@@ -13,7 +13,8 @@ def _assert_v2_form_shell(page: str, stay_id: int) -> None:
     assert f'class="ui-ph-back" href="/reservations/{stay_id}"' in page
     assert 'class="ui-ph-meta"' in page
     assert page.count('class="ui-btn ui-btn-primary"') == 1
-    assert '<div class="ui-form-actions">\n    <button class="ui-btn ui-btn-primary" type="submit">' in page
+    assert '<div class="ui-form-actions">\n    <a class="ui-btn ui-btn-quiet" href="/reservations/' in page
+    assert 'class="ui-btn ui-btn-primary" type="submit"' in page
     assert "page-header" not in page and "breadcrumbs" not in page
     assert '/static/signature.js?v=' in page
 

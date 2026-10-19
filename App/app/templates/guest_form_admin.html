@@ -259,21 +259,21 @@
   </div>
 
   <div class="ui-form-actions">
+    <a class="ui-btn ui-btn-quiet" href="/reservations/{{ reservation.id }}">{{ t('confirm.cancel') }}</a>
     <button class="ui-btn ui-btn-primary" type="submit">{{ t('common.save_changes') if editing else t('guest.admin.submit_add') }}</button>
   </div>
-  <div class="ui-btn-group">
-    <a class="ui-btn ui-btn-secondary" href="/reservations/{{ reservation.id }}">{{ t('confirm.cancel') }}</a>
-    {% if editing and guest.id %}
-      <a class="ui-btn ui-btn-secondary" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
-      <a class="ui-btn ui-btn-secondary" href="/guests/{{ guest.id }}/export.json">{{ t('guest.admin.export_dsr') }}</a>
-      <a class="ui-btn ui-btn-secondary" href="/privacy-requests">{{ t('guest.admin.record_request') }}</a>
-      {% if guest.restricted_at %}
-        <button class="ui-btn ui-btn-secondary" type="submit" formaction="/guests/{{ guest.id }}/unrestrict">{{ t('guest.admin.unrestrict') }}</button>
-      {% else %}
-        <button class="ui-btn ui-btn-secondary" type="submit" formaction="/guests/{{ guest.id }}/restrict">{{ t('guest.admin.restrict') }}</button>
-      {% endif %}
+  {% if editing and guest.id %}
+  <div class="ui-form-actions">
+    <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
+    <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/guests/{{ guest.id }}/export.json">{{ t('guest.admin.export_dsr') }}</a>
+    <a class="ui-btn ui-btn-secondary ui-btn-compact" href="/privacy-requests">{{ t('guest.admin.record_request') }}</a>
+    {% if guest.restricted_at %}
+      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formaction="/guests/{{ guest.id }}/unrestrict">{{ t('guest.admin.unrestrict') }}</button>
+    {% else %}
+      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" formaction="/guests/{{ guest.id }}/restrict">{{ t('guest.admin.restrict') }}</button>
     {% endif %}
   </div>
+  {% endif %}
 </form>
 
 {% if identity_hidden %}
