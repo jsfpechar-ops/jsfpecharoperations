@@ -518,3 +518,7 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .help-tip-btn { width: var(--space-6); height: var(--space-6); }
 /* 0169: keyboard focus is always visible (WCAG 2.4.7) */
 .host-workspace :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
+
+/* 0171 */
+.host-workspace input:focus-visible, .host-workspace input:focus { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
+.host-workspace :is(label, .btn):has(+ input:focus-visible), .host-workspace :is(label, .btn):has(> input:focus-visible), .host-workspace input:focus-visible + :is(label, .btn) { outline: 2px solid var(--coral-600); outline-offset: 2px; }

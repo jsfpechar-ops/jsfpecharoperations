@@ -39,6 +39,16 @@ FOCUS_JS = """() => {
   if (!visible) return {label: label, visible: false};
   const outlineOk = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2;
   const shadowOk = cs.boxShadow !== 'none';
+  const hidden = r.width <= 2 || r.height <= 2 || cs.clip !== 'auto' || cs.opacity === '0';
+  if (hidden) {
+    let lbl = el.labels && el.labels[0];
+    if (!lbl && el.nextElementSibling && el.nextElementSibling.matches('.btn')) lbl = el.nextElementSibling;
+    if (!lbl && el.previousElementSibling && el.previousElementSibling.matches('label, .btn')) lbl = el.previousElementSibling;
+    const ls = lbl ? getComputedStyle(lbl) : null;
+    const labelRing = !!ls && (parseFloat(ls.outlineWidth) >= 2 || ls.boxShadow !== 'none');
+    return {label: label, visible: true, outlineStyle: cs.outlineStyle, outlineWidth: cs.outlineWidth,
+            boxShadow: cs.boxShadow, notVisible: !labelRing, obscured: false};
+  }
   const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
   const obscured = !!hit && hit !== el && !el.contains(hit) && !hit.contains(el);
   return {label: label, visible: true, outlineStyle: cs.outlineStyle, outlineWidth: cs.outlineWidth,
