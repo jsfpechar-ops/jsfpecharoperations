@@ -1,6 +1,6 @@
 # 0128: v2 controls: button, field, badge, chip, menu, dialog, toast, empty state, tip, pagination
 
-Status: blocked
+Status: review
 Depends on: 0127 | Base commit: df8b842 | Branch: claude/project-thread-td6fpc
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
