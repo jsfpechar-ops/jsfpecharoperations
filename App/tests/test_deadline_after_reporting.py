@@ -24,7 +24,7 @@ TOKEN = "deadlinefiledtoken"
 
 _ENTITY_ID: int | None = None
 
-DEADLINE_SPAN = re.compile(r'class="deadline(?: [a-z-]+)* ([a-z]+)"[^>]*>([^<]*)<')
+DEADLINE_SPAN = re.compile(r'data-deadline="([a-z_]+)"[^>]*>(?:! )?([^<]*)<')
 
 
 # --- the cell itself -------------------------------------------------------

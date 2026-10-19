@@ -23,7 +23,7 @@ TOKEN = "statuscolourtoken"
 
 # <span class="pill blue" title="...">Label</span>, with the title optional.
 PILL = re.compile(
-    r'<span class="pill ([a-z]+)"(?: title="([^"]*)")?>([^<]*)</span>',
+    r'<span class="ui-badge ui-badge-[a-z]+(?: ui-badge-overdue)?" data-tone="([a-z]+)"(?: title="([^"]*)")?>(?:! )?([^<]*)</span>',
 )
 
 _ENTITY_ID: int | None = None
