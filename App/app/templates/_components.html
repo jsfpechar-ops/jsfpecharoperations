@@ -1,3 +1,10 @@
+{% from "_icons.html" import icon with context %}
+{#- Status tones map to the four v2 badge kinds (docs/design/MASTER.md 7.5):
+    red, amber and blue are things the host must do; teal and grey wait; green is verified done.
+    data-tone keeps the old tone name for tests and for anyone reading the markup. -#}
+{% set UI_KINDS = {'red': 'action', 'amber': 'action', 'blue': 'action', 'teal': 'neutral', 'green': 'done', 'grey': 'neutral'} %}
+{% set UI_SUBMISSION_KINDS = {'red': 'action', 'amber': 'attention', 'blue': 'action', 'teal': 'neutral', 'green': 'done', 'grey': 'neutral'} %}
+{% set UI_DEADLINE_KINDS = {'overdue': 'action', 'urgent': 'attention', 'soon': 'attention', 'done': 'done', 'late': 'neutral'} %}
 {#- 0093 help: one contextual "?" tip beside a field label. Place it OUTSIDE the <label> tag.
     id must be unique on the page; text is escaped; guide_href optional ("/guide#anchor"). -#}
 {% macro help_tip(id, text, guide_href='') %}
