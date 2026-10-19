@@ -1,6 +1,6 @@
 # 0133 report
 
-Status: review (0133-fix-4: steps 1 to 5 done, acceptance met, 0 skipped; not pushed, no PR)
+Status: review
 
 ## Commits (branch claude/project-thread-td6fpc, not pushed)
 
@@ -137,3 +137,13 @@ Owner steps left: decide whether the `.ui-ph-menu` failure is pre-existing (chec
 - Screenshots: dashboard-focus-cs-390.png and dashboard-focus-cs-1280.png in the 0133 shots dir (newest by mtime).
 
 Deviations: the browser test failed once at test_host_quiet_dashboard_browser.py (assert 2 == 1, the phone header now shows the overflow trigger, which sits in .ui-ph-acts). Fixed by excluding .ui-ph-menu from the count.
+
+## 0133-fix-5
+
+- Step 1 (e30a7fa): deleted the three `.dashboard-row` rules (grid card, overdue border, 1023px grid override) from host-design0123.css.
+- Step 2 (04712c7): `.ui-env` now `display:block`, nowrap, ellipsis, line-height badge-h; appended the fix-5 block to host2.css. design_lint OK.
+- Step 3: five browser files, 18 passed, 1 failed, 0 skipped. Only failure is the expected 0134 test: `test_host_list_layouts_browser.py::test_stays_pills_and_deadlines_stay_on_one_line`, `AssertionError: ('en', 1280, {'pill': True, 'deadline': True, 'height': 85, 'name': 23, ...}) assert 85 <= 72`.
+- Step 4 (screenshots dashboard-cs-1280.png, dashboard-cs-390.png): 1280 Needs-you is a normal table, one row per stay (~48 px); Add cleaning and Sync not duplicated in the visible header; the overdue row has a left red marker; sidebar badge is one line but truncated ("UKAZKA NIC SE NEODE..."). 390: the overflow menu sits at the right of the "Prehled" title row; Needs-you shows as stacked cards, not a table (expected at phone width).
+- Step 5: ruff E9,F63,F7,F82,F401,F841 clean.
+
+Deviations: the badge truncates with an ellipsis rather than showing full text (brief asked only for one line). Status set to review; the 0134 failure is expected per the brief.
