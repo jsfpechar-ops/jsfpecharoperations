@@ -26,6 +26,9 @@ PILL = re.compile(
     r'<span class="ui-badge ui-badge-[a-z]+(?: ui-badge-overdue)?" data-tone="([a-z]+)"(?: title="([^"]*)")?>(?:! )?([^<]*)</span>',
 )
 
+# Pills a page template still writes literally; they move to ui_badge with their page brief (0136, 0140).
+OLD_PILL = re.compile(r'<span class="pill ([a-z]+)"(?: title="([^"]*)")?>([^<]*)</span>')
+
 _ENTITY_ID: int | None = None
 
 
@@ -140,7 +143,7 @@ def host():
 
 
 def _pills(page_text: str) -> list[tuple[str, str, str]]:
-    return PILL.findall(page_text)
+    return PILL.findall(page_text) + OLD_PILL.findall(page_text)
 
 
 def _pill(page_text: str, label: str) -> tuple[str, str]:
