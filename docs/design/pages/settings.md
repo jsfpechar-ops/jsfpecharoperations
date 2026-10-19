@@ -1,0 +1,26 @@
+# Pages: Settings (`/settings`, `settings.html`), Archived (`/settings/archived`), Privacy requests (`/privacy-requests`), Smart locks (`/smart-locks`), admin pages
+
+Master version: 2.0.0. Adds only.
+
+## Settings
+- nav: `settings`; body_kind: `settings`; title key: `nav.settings`; meta: none (the lede sentence is removed; groups explain themselves)
+- primary action: none; secondary: none; tabs: none
+- anchor list (1280): Account, Security, Data and archive, Privacy, Notifications, Help (existing six groups; the `host-property-grid` card index is replaced by the anchor list, and by the group titles on phone)
+- groups and rows (each row: label and current value left, control right):
+  - Account: login e-mail (value, "Change" secondary opens inline form); display name; business details link; language toggle; sign out everywhere (danger, confirm)
+  - Security: passkeys (list + "Add passkey" secondary); authenticator app (toggle-like state, "Set up"); sessions
+  - Data and archive: export workspace (secondary, `download`); backups; retention facts; archived records link
+  - Privacy: privacy requests link; retention policy link; PostHog note stays as text
+  - Notifications and mail: digest toggles; destination address
+  - Help: guide, support e-mail, shortcuts, legal links
+- badges: `attention` = no second factor; `done` = passkey added; `neutral` = default
+- dangerous rows (delete workspace) sit last in a `section` with a `danger` button behind a confirm dialog
+
+## Archived (`settings_archived.html`)
+- body_kind: `list`; tabs = Stays, Properties, Guests, Entities (existing filters become tabs); columns = name, archived date, reason, actions (Restore secondary compact, menu); badge `neutral` "Archived"; empty state per tab
+
+## Privacy requests, Smart locks, Users, Incidents, Operations, Funnel
+- all `list` kind with `page_header` title, one primary where a create action exists (Add lock account, Invite user), otherwise none; Operations and Funnel are `detail` with `stat_row` and `table`s; admin pages keep `nav: admin` and appear only under Admin
+
+## Tests
+- `test_host_controls_browser.py`, `test_host_geometry.py`; screenshots 390 and 1280 of Settings plus the settings skeleton
