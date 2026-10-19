@@ -46,3 +46,15 @@ Steps 5 to 7 not run. No screenshots taken.
 
 Owner steps left: none yet.
 Questions: may the next brief change `host.css` (`.btn-icon .copy-label-confirmed`) and `app.js` for the copy label?
+
+## 0134-cont-2 (executor report)
+
+Status: blocked
+
+- Step 1 (commit 832d37b, `0134-cont-2 step 1`): appended the icon-button label rule to `App/app/static/host2.css`. `design_lint` prints OK. `test_every_page_family_fits_every_width_language_and_rail_state` passes alone (1 passed, 97 s).
+- Step 1 other test: `test_host_ux_acceptance.py::test_page_families_through_rail_cards_search_and_back` fails with `Locator.click: Timeout 30000ms exceeded ... waiting for locator("a.btn[href^=\"/apartments/1\"]").first`. It also fails with the CSS change reverted, so it predates this brief. Not in the brief's named list; not fixed.
+- Step 5 run (7 files): 16 passed, 1 failed. `test_host_list_page_layout_browser.py:155`: `actions differ in height [40, 42]` (properties, en/cs, 1024 to 1440, expanded). It also fails at 0134-cont-1 HEAD without the new rule, so it predates this brief. Not in the brief's named list; not fixed. Step 5 is therefore not passing with 0 skipped.
+- Step 1b (orchestrator addition, `tests/test_overhaul.py::test_reservations_paginate_and_preserve_filters`): fails on `assert "Page 2 of 2" in second.text`. Cause: `_ui.html` `ui_pagination` renders `{{ page }} / {{ pages }}` (line 117) and has no visible label slot. The old `reservations.html` used `t('stays.pagination.label')` ("Page %(page)s of %(pages)s") between Previous and Next. Restoring it needs the macro to take a visible label. That means editing `App/app/templates/_ui.html`, which the brief lists as do-not-touch, and it changes the shared macro used by host pages. Not committed. Owner or orchestrator decision needed: approve the `_ui.html` macro change, or choose another option.
+- Steps 6 (screenshots) and 7 not run.
+
+Owner steps left: none until the decisions above are made.
