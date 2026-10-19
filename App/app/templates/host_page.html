@@ -1,0 +1,44 @@
+{#- Design v2 page layout (docs/design/MASTER.md section 5). A page extends
+    this, sets `nav` and `body_kind` (list | detail | form | settings) and fills
+    only the blocks below with catalog macros. No layout HTML outside blocks. -#}
+{% extends "base.html" %}
+{% from "_ui.html" import ui_button, ui_icon_button, ui_badge, ui_chip, ui_field, ui_select, ui_textarea, ui_check, ui_toggle, ui_menu_begin, ui_menu_end, ui_menu_item, ui_dialog_begin, ui_dialog_end, ui_empty, ui_tip, ui_pagination, ui_pdot with context %}
+{% from "_ui_layout.html" import ui_tabs, ui_toolbar, ui_section, ui_facts, ui_stats, ui_banner, ui_table_begin, ui_table_end, ui_card, ui_skeleton with context %}
+{% from "_icons.html" import icon with context %}
+{% set body_kind = body_kind | default('list') %}
+{% set wrap_class = 'ui-lane-narrow' if body_kind in ('form', 'settings') else '' %}
+{% block content %}
+{% set page_back = self.back_url() | trim %}
+{% set page_meta = self.meta() | trim %}
+{% set page_primary = self.primary_action() | trim %}
+{% set page_secondary = self.secondary_actions() | trim %}
+{% set page_title_html = self.page_title() | trim %}
+<div class="ui-page" data-body-kind="{{ body_kind }}">
+  {% if page_title_html %}
+  <header class="ui-ph" data-list-title-row>
+    <div class="ui-ph-main">
+      {% if page_back %}<a class="ui-ph-back" href="{{ page_back }}">{{ icon('arrow-left', 16) }}<span>{{ self.back_label() | trim or t('common.back') }}</span></a>{% endif %}
+      <h1>{{ page_title_html }}</h1>
+      {% if page_meta %}<p class="ui-ph-meta" data-list-meta>{{ page_meta }}</p>{% endif %}
+    </div>
+    {% if page_primary or page_secondary %}
+    <div class="ui-ph-acts" data-list-actions>{{ page_secondary }}{{ page_primary }}</div>
+    {% endif %}
+  </header>
+  {% endif %}
+  {% block tabs %}{% endblock %}
+  {% block toolbar %}{% endblock %}
+  <div class="ui-body ui-body-{{ body_kind }}">{% block body %}{% endblock %}</div>
+</div>
+{% if false %}{# slot defaults: rendered through self.<name>() above #}
+{% block page_title %}{{ self.title() }}{% endblock %}
+{% block back_url %}{% endblock %}{% block back_label %}{% endblock %}{% block meta %}{% endblock %}
+{% block primary_action %}{% endblock %}{% block secondary_actions %}{% endblock %}
+{% endif %}
+{% endblock %}
+{% block page_skeleton %}
+  <div class="page-skeleton" data-page-skeleton role="status" hidden>
+    <span class="sr-only">{{ t('a11y.loading') }}</span>
+    {{ ui_skeleton(body_kind) }}
+  </div>
+{% endblock %}
