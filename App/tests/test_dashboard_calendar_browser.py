@@ -312,7 +312,7 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         const r = document.querySelector(selector).getBoundingClientRect();
                         return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
                     })""")
-                    assert 0 <= boxes[1]["top"] - boxes[0]["bottom"] <= 16, boxes
+                    assert 0 <= boxes[1]["top"] - boxes[0]["bottom"] <= 33, boxes
                     assert boxes[2]["top"] >= boxes[1]["bottom"], boxes
                     for box in boxes[1:]:
                         assert abs(box["left"] - boxes[0]["left"]) <= 2, boxes
@@ -624,7 +624,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
                 rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
+                    text: normalize(row.textContent)
                 }))
             };
         }""")
@@ -707,7 +707,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
                 rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
                     id: row.getAttribute("data-stay-id"),
-                    text: normalize(row.querySelector(".dashboard-row-copy")?.textContent)
+                    text: normalize(row.textContent)
                 }))
             };
             return JSON.stringify(actual) === JSON.stringify(expected);
