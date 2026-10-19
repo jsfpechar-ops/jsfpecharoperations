@@ -168,7 +168,7 @@
     {% set label = labels.get(status, status) %}
     {% set tip = '' %}
   {% endif %}
-  <span class="pill {{ tone }}" {% if tip %}title="{{ tip }}"{% endif %}>{{ label }}</span>
+  <span class="ui-badge ui-badge-{{ UI_KINDS.get(tone, 'neutral') }}{{ ' ui-badge-overdue' if tone == 'red' }}" data-tone="{{ tone }}"{% if tip %} title="{{ tip }}"{% endif %}>{% if tone == 'red' %}! {% endif %}{{ label }}</span>
 {% endmacro %}
 
 {# Guest count for a stay. Calendars never carry it, so until the guest or the
