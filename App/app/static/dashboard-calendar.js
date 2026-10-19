@@ -692,6 +692,11 @@
     const chosen = { ...selection };
     const pointTarget = document.elementFromPoint(event.clientX, event.clientY);
     const anchor = pointTarget && pointTarget.closest("[data-date]");
+    if (phoneDots() && chosen.start === chosen.end) {
+      cancelSelection();
+      if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
+      return;
+    }
     cancelSelection(); suppressClickUntil = Date.now() + 400;
     if (root.hasPointerCapture(event.pointerId)) root.releasePointerCapture(event.pointerId);
     openCreate(chosen.start, addDays(chosen.end, 1), chosen.property, cleaningMode ? "cleaning" : "stay", anchor);
