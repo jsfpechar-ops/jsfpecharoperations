@@ -501,3 +501,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .split.wide > section, .host-workspace .split.wide > aside { margin-top: 0; padding-top: 0; }
 .host-workspace .split.wide > section > .ui-section:first-child, .host-workspace .split.wide > aside > :first-child { margin-top: 0; padding-top: 0; }
 .host-workspace #user-manage { max-width: 40rem; }
+
+/* 0146 skeleton pause while the tab is hidden */
+.ui-skel.paused .ui-bone { animation-play-state: paused; }

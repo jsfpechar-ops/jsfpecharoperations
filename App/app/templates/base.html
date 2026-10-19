@@ -1,3 +1,4 @@
+{% from "_ui_layout.html" import ui_skeleton with context %}
 <!doctype html>
 <html lang="{{ lang | default('en') }}">
 <head>
@@ -17,7 +18,7 @@
   <link rel="stylesheet" href="/static/host-controls.css?v=20261014-0102d">
   <link rel="stylesheet" href="/static/host-design0123.css?v=20261016-0123f">
   {% if nav | default('') == 'cleaning' %}<link rel="stylesheet" href="/static/cleaning.css?v=20261019-0143">{% endif %}
-  <link rel="stylesheet" href="/static/host2.css?v=20261019-0163">
+  <link rel="stylesheet" href="/static/host2.css?v=20261019-0146">
   {% endif %}
   <link rel="stylesheet" href="/static/skeleton.css?v=20261014-0102c">
 </head>
@@ -119,18 +120,7 @@
   {% block page_skeleton %}
   <div class="page-skeleton" data-page-skeleton role="status" hidden>
     <span class="sr-only">{{ t('a11y.loading') }}</span>
-    <div class="c05-skel" aria-hidden="true">
-      <div class="c05-skel__row">
-        <span class="c05-skel__bone c05-skel__avatar"></span>
-        <div class="c05-skel__lines">
-          <span class="c05-skel__bone c05-skel__line"></span>
-          <span class="c05-skel__bone c05-skel__line c05-skel__line--sm"></span>
-        </div>
-      </div>
-      <span class="c05-skel__bone c05-skel__block c05-skel__block--w95"></span>
-      <span class="c05-skel__bone c05-skel__block c05-skel__block--w80"></span>
-      <span class="c05-skel__bone c05-skel__block c05-skel__block--w60"></span>
-    </div>
+    {{ ui_skeleton('detail') }}
   </div>
   {% endblock %}
 </main>
@@ -243,7 +233,7 @@
 {% endif %}
 
 <script src="/static/csrf.js?v=20260915a"></script>
-<script src="/static/skeleton.js?v=20261019-0153"></script>
+<script src="/static/skeleton.js?v=20261019-0146"></script>
 <script src="/static/app.js?v=20261019-0153"></script>
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261014-0102d" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261006a" defer></script>{% endif %}

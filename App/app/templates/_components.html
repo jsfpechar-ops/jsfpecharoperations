@@ -37,76 +37,6 @@
   {{ sub_tabs(header_tabs) }}
 {% endmacro %}
 
-{#- 0099: one tab component for every section's sub-pages. items is a list of
-    (href, label key, current); tabs are plain links (no JS) and the open page
-    carries aria-current. Rendered directly under the title row. -#}
-{% macro sub_tabs(items, label='') %}
-{% if items %}
-<nav class="sub-tabs host-local-nav" aria-label="{{ label or t('host.section_navigation') }}" data-sub-tabs>
-  {%- for href, key, current in items %}<a class="sub-tab" href="{{ href }}"{% if current %} aria-current="page"{% endif %}>{{ t(key) }}</a>{% endfor -%}
-</nav>
-{% endif %}
-{% endmacro %}
-
-{#- 0099: the shared list-page layout (Stays, Properties, Invoices, Stay fees).
-    Order: notices, title row (title left; actions right with at most one
-    filled primary; small meta under the actions), sub-page tabs, toolbar, one
-    list panel, secondary sections. tabs none = the section's own tabs. -#}
-{% macro list_page_header(title, actions='', meta='', tabs=none) %}
-  {% set header_tabs = page_tabs() if tabs is none else tabs %}
-  {% set setup_notice = onboarding_banner(onboarding) | trim %}
-  {% if setup_notice %}<div class="list-notices" data-list-notices>{{ setup_notice }}</div>{% endif %}
-  <header class="page-header list-page-header{{ ' has-tabs' if header_tabs }}" data-list-title-row>
-    <div class="page-header-main"><h1>{{ title }}</h1></div>
-    {% if actions | trim or meta %}
-    <div class="list-page-side">
-      {% if actions | trim %}<div class="page-actions list-page-actions" data-list-actions>{{ actions | safe }}</div>{% endif %}
-      {% if meta %}<p class="small muted list-page-meta" data-list-meta>{{ meta }}</p>{% endif %}
-    </div>
-    {% endif %}
-  </header>
-  {{ sub_tabs(header_tabs) }}
-{% endmacro %}
-
-{#- 0099: the one list toolbar. Left: quick-filter chips, the Filters button
-    (JS shows it for panel_id; without JS the panel stays open) and the applied
-    summary. Right: secondary list actions (Save this view, Export CSV). -#}
-{% macro list_toolbar(summary='', chips='', panel_id='', actions='') %}
-<div class="filter-toolbar list-toolbar" data-filter-toolbar data-list-toolbar>
-  <div class="list-toolbar-main">
-    {% if chips | trim %}<div class="chips list-toolbar-chips">{{ chips | safe }}</div>{% endif %}
-    {% if panel_id %}
-    <button class="btn filter-toggle" type="button" data-filter-toggle aria-expanded="true" aria-controls="{{ panel_id }}" hidden>
-      {{ t('host.filter.filters') }}
-    </button>
-    {% endif %}
-    {% if summary | trim %}<p class="filter-applied-summary" data-filter-summary>{{ summary | safe }}</p>{% endif %}
-  </div>
-  {% if actions | trim %}<div class="filter-toolbar-actions">{{ actions | safe }}</div>{% endif %}
-</div>
-{% endmacro %}
-
-{#- 0099: a plain secondary-section heading with an optional "?" tip. -#}
-{% macro list_section_heading(id, title, help_text='') %}
-  <div class="heading-with-tip list-section-heading">
-    <h2 id="{{ id }}">{{ title }}</h2>
-    {% if help_text %}{{ help_tip(id ~ '-help', help_text) }}{% endif %}
-  </div>
-{% endmacro %}
-
-{% macro breadcrumb(items) %}
-  <nav class="breadcrumbs" aria-label="{{ t('a11y.breadcrumb') }}">
-    <ol>
-      {% for item in items %}
-        <li>
-          {% if item.url and not loop.last %}<a href="{{ item.url }}">{{ item.label }}</a>
-          {% else %}<span {% if loop.last %}aria-current="page"{% endif %}>{{ item.label }}</span>{% endif %}
-        </li>
-      {% endfor %}
-    </ol>
-  </nav>
-{% endmacro %}
-
 {% macro next_action(progress, reservation) %}
   {% if progress.status == 'failed' %}{{ t('action.failed') }}
   {% elif progress.status in ('ready', 'awaiting_verification') and reservation.automation_mode == 'immediate' %}{{ t('action.ready_immediate') }}
@@ -182,17 +112,6 @@
     </span>
   {% elif placeholder %}
     <span class="muted" aria-hidden="true">–</span><span class="sr-only">{{ t('common.guests_unknown') }}</span>
-  {% endif %}
-{% endmacro %}
-
-{% macro row_reporting_actions(reservation, controls, return_to) %}
-  {% if controls.get('send_visible') %}
-    <form method="post" action="/reservations/{{ reservation.id }}/submit" class="inline row-action-form">
-      <input type="hidden" name="return_to" value="{{ return_to }}">
-      <button class="ui-btn ui-btn-secondary ui-btn-compact row-action-send" type="submit"
-              {% if not controls.get('send_enabled') %}disabled{% endif %}
-              title="{{ t(controls.get('send_hint_key', '')) }}" aria-label="{{ t('send.this_stay') }}">{{ t('send.this_stay') if controls.get('send_enabled') else t('common.auto') }}</button>
-    </form>
   {% endif %}
 {% endmacro %}
 
