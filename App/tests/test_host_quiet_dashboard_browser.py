@@ -337,7 +337,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                     # On ultrawide screens the dashboard title/actions, count
                     # cards, and queue should share the same centered lane.
                     lane_boxes = page.evaluate("""() => [
-                      '.host-today-head', '.dashboard-stats', '#needs-action'
+                      '.ui-ph', '.dashboard-stats', '#needs-action'
                     ].map(selector => {
                       const rect = document.querySelector(selector).getBoundingClientRect();
                       return {selector, left: rect.left, right: rect.right};
