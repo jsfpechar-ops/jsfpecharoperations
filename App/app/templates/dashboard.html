@@ -21,7 +21,7 @@
 {% for row in items %}
   {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
   {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
-  <tr class="ui-row dashboard-row clickable-row" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
+  <tr class="ui-row dashboard-row clickable-row{{ ' is-overdue' if cell.level == 'overdue' }}" data-stay-id="{{ reservation.id }}" data-href="/reservations/{{ reservation.id }}?return_to=/" tabindex="0" role="link"
       aria-label="{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }} · {{ reservation.internal_name }}">
     <td class="ui-cell-first dashboard-row-copy"><a class="dashboard-row-property" href="/reservations/{{ reservation.id }}?return_to=/">{{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}</a>
       <span class="ui-sub dashboard-row-dates">{% if row.deadline and cell.state == 'countdown' and cell.level != 'future' %}{{ t('dashboard.table.deadline_by', when=row.deadline.strftime('%d.%m. %H:%M')) }}{% endif %}</span></td>
@@ -52,14 +52,6 @@
   </tr>
 {% endfor %}
 {{ ui_table_end() }}
-</div>
-<div class="ui-cards">
-{% for row in items %}
-  {% set reservation = row.reservation %}{% set progress = row.progress %}{% set cell = row.deadline_cell %}
-  {% set stay_label = reservation.summary if reservation.source == 'manual' and reservation.summary and reservation.summary.strip() else reservation.internal_name %}
-  {% set badge %}{% if cell.level == 'overdue' %}{{ deadline_badge(cell) }}{% elif progress.status == 'failed' %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% elif progress.not_registered %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ tp('host.missing', progress.not_registered) }}</span>{% elif cell.state in ('filed_on_time', 'filed_late') %}{{ deadline_badge(cell) }}{% elif progress.status not in ('awaiting_guest', 'reported', 'not_required') %}{{ progress_pill(progress.status, reservation.automation_mode) }}{% endif %}{% endset %}
-  {{ ui_card('/reservations/' ~ reservation.id ~ '?return_to=/', (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz), stay_label, guest_count(progress), badge) }}
-{% endfor %}
 </div>
 {% else %}{{ ui_empty(t(empty_key)) }}{% endif %}
 {% endmacro %}
