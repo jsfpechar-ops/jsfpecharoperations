@@ -2931,6 +2931,12 @@ def reservations_list(request: Request):
     ready_send_count = sum(
         1 for item in rows if item["controls"].get("send_enabled") and item["apartment_active"]
     )
+    # 0137: "Send all ready" is the manual-sending control; a host whose properties all send
+    # automatically never sees it. Archived properties count: their stays still list.
+    manual_send = db.query_one(
+        "SELECT 1 AS x FROM apartment WHERE owner_user_id = ? AND automation_mode = 'manual' LIMIT 1",
+        (access.owner_id(request),),
+    ) is not None
     query_params = [(key, value) for key, value in request.query_params.multi_items() if key != "page"]
 
     def page_url(number: int) -> str:
@@ -2942,6 +2948,7 @@ def reservations_list(request: Request):
         {
             "rows": rows,
             "ready_send_count": ready_send_count,
+            "manual_send": manual_send,
             "status": status,
             "apartments": access.apartments(request, "id, internal_name"),
             "apartment_id": apartment_id,
