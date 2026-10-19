@@ -1,15 +1,18 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'invoices' %}
+{% set body_kind = 'list' %}
+{% from "_components.html" import empty_state with context %}
+{% from "_ui.html" import ui_button, ui_pagination with context %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('invoices.title') }}{% endblock %}
-{% block content %}
-{% from "_components.html" import list_page_header, empty_state with context %}
+{% block primary_action %}{{ ui_button(t('invoice.new'), 'primary', href='/invoices/new', icon_name='plus') }}{% endblock %}
 {#- 0099: Invoice settings is the second tab (it was a button here). -#}
-{{ list_page_header(t('invoices.title'),
-    actions='<a class="btn accent primary" href="/invoices/new">' ~ t('invoice.new') ~ '</a>') }}
-{% include "_list_filter.html" %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block toolbar %}{% include "_list_filter.html" %}{% endblock %}
+{% block body %}
 {% if invoices %}
-<div class="panel tight scroll-x list-cards lc-invoices">
-  <table class="table-cards">
+<div class="ui-table-wrap lc-invoices">
+  <table class="ui-table ui-table-stack">
     <thead>
       <tr>
         <th>{{ t('invoices.col.number') }}</th>
@@ -24,33 +27,26 @@
     <tbody>
     {% for inv in invoices %}
       <tr class="clickable-row" data-href="/invoices/{{ inv.id }}" tabindex="0" role="link" aria-label="{{ inv.number }} · {{ inv.buyer_name }}">
-        <td class="mono small" data-label="{{ t('invoices.col.number') }}"><a href="/invoices/{{ inv.id }}">{{ inv.number }}</a></td>
-        <td class="nowrap small" data-label="{{ t('invoices.col.date') }}">{{ inv.issue_date | date_cz }}</td>
+        <td class="ui-mono" data-label="{{ t('invoices.col.number') }}"><a href="/invoices/{{ inv.id }}">{{ inv.number }}</a></td>
+        <td class="ui-sub nowrap" data-label="{{ t('invoices.col.date') }}">{{ inv.issue_date | date_cz }}</td>
         <td class="col-name" data-label="{{ t('invoices.col.customer') }}">{{ inv.buyer_name }}</td>
-        <td class="small" data-label="{{ t('invoices.col.kind') }}">{{ t('invoice.kind.' ~ inv.kind) }}</td>
-        <td class="num" data-label="{{ t('invoices.col.total') }}">{{ inv.total_haler | money_czk }}</td>
-        <td data-label="{{ t('filter.status') }}">{% if inv.state == 'paid' %}<span class="pill green">{{ t('invoice.state.paid') }}</span>{% elif inv.state == 'unpaid' %}<span class="pill teal">{{ t('invoice.state.unpaid') }}</span>{% elif inv.state == 'cancelled' %}<span class="pill grey">{{ t('invoice.state.cancelled') }}</span>{% else %}<span class="pill grey">{{ t('invoice.kind.' ~ inv.kind) }}</span>{% endif %}</td>
-        <td class="row-actions" data-label=""><a class="btn small" href="/invoices/{{ inv.id }}.pdf">{{ t('host.invoice_pdf') }}</a></td>
+        <td class="ui-sub" data-label="{{ t('invoices.col.kind') }}">{{ t('invoice.kind.' ~ inv.kind) }}</td>
+        <td class="ui-num" data-label="{{ t('invoices.col.total') }}">{{ inv.total_haler | money_czk }}</td>
+        <td data-label="{{ t('filter.status') }}">{% if inv.state == 'paid' %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('invoice.state.paid') }}</span>{% elif inv.state == 'unpaid' %}<span class="ui-badge ui-badge-neutral" data-tone="teal">{{ t('invoice.state.unpaid') }}</span>{% elif inv.state == 'cancelled' %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('invoice.state.cancelled') }}</span>{% else %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('invoice.kind.' ~ inv.kind) }}</span>{% endif %}</td>
+        <td class="row-actions" data-label=""><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/invoices/{{ inv.id }}.pdf">{{ t('host.invoice_pdf') }}</a></td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
 </div>
 {% if invoice_pages > 1 %}
-<nav class="action-group" aria-label="{{ t('invoices.title') }}">
-  {% if invoice_page > 1 %}
-  <a class="btn" href="{{ page_href }}{{ invoice_page - 1 }}" aria-label="{{ invoice_page - 1 }}">‹</a>
-  {% endif %}
-  {% if invoice_page < invoice_pages %}
-  <a class="btn" href="{{ page_href }}{{ invoice_page + 1 }}" aria-label="{{ invoice_page + 1 }}">›</a>
-  {% endif %}
-</nav>
+{{ ui_pagination(invoice_page, invoice_pages, prev_url=(page_href ~ (invoice_page - 1)) if invoice_page > 1 else '', next_url=(page_href ~ (invoice_page + 1)) if invoice_page < invoice_pages else '', label=t('invoices.title'), more_label=t('stays.pagination.next'), prev_label=t('stays.pagination.prev'), next_label=t('stays.pagination.next')) }}
 {% endif %}
 {% else %}
 {% if filter_active %}
 {{ empty_state(t('filter.no_results'), '', filter_reset_href, t('filter.reset'), primary=false) }}
 {% else %}
-{{ empty_state(t('invoices.empty_title'), t('invoices.empty'), '/invoices/new', t('invoice.new')) }}
+{{ empty_state(t('invoices.empty_title'), t('invoices.empty'), '/invoices/new', t('invoice.new'), primary=false) }}
 {% endif %}
 {% endif %}
 {% endblock %}
