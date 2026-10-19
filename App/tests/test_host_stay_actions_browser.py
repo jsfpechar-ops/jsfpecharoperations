@@ -171,9 +171,9 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 for key, reservation_id in valid_ids.items():
                     row = page.locator(f'tr[data-href^="/reservations/{reservation_id}?"]')
                     assert row.count() == 1
-                    status_pill = row.locator("td.stay-col-reporting .pill")
+                    status_pill = row.locator("td.stay-col-reporting [data-tone]")
                     assert status_pill.count() == 1
-                    assert f"pill {expected_tones[key]}" in (status_pill.get_attribute("class") or ""), (key, expected_statuses[key], status_pill.get_attribute("class"))
+                    assert status_pill.get_attribute("data-tone") == expected_tones[key], (key, expected_statuses[key], status_pill.get_attribute("data-tone"))
                     copy = row.locator('button[data-copy]')
                     assert copy.count() == 1, f"Copy missing on {key} ({expected_statuses[key]}) {locale}/{width}"
                     source_id = copy.get_attribute("data-copy")
