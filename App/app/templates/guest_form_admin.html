@@ -1,11 +1,12 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
 {% set nav = 'reservations' %}
+{% set body_kind = 'form' %}
 {% set editing = editing | default(guest is not none) %}
 {% block title %}{{ t('guest.admin.title_edit') if editing else t('guest.admin.title_add') }}{% endblock %}
 
 {% macro err_for(field) %}
   {% for issue in issues if issue.field == field %}
-    <div class="{{ 'err' if issue.is_error else 'hint' }}">{{ validation_message(issue.message) }}</div>
+    <div class="{{ 'ui-error' if issue.is_error else 'ui-help' }}">{{ validation_message(issue.message) }}</div>
   {% endfor %}
 {% endmacro %}
 {% macro bad(field) %}{% for issue in issues if issue.field == field and issue.is_error %}bad{% endfor %}{% endmacro %}
@@ -14,8 +15,8 @@
    the reason field and the buttons join it through the form attribute. #}
 {% macro identity_placeholder() %}
   <div class="identity-hidden" data-identity-hidden>
-    <p class="small muted" style="margin:0 0 8px"><strong>{{ t('identity.hidden') }}</strong></p>
-    <button class="btn small" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
+    <p class="ui-sub"><strong>{{ t('identity.hidden') }}</strong></p>
+    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
   </div>
 {% endmacro %}
 {# Filed guests (submit_state 'sent', by UbyHost or by hand): the reported
@@ -25,22 +26,14 @@
 {% macro lock() %}{% if filed %} disabled aria-describedby="filed-lock-note"{% endif %}{% endmacro %}
 {% macro field_val(name) %}{{ guest[name] if guest and guest[name] is not none else '' }}{% endmacro %}
 
-{% block content %}
-{% from "_components.html" import page_header, breadcrumb with context %}
-{{ breadcrumb([
-  {'label': t('nav.stays'), 'url': '/reservations'},
-  {'label': reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz), 'url': '/reservations/' ~ reservation.id},
-  {'label': t('guest.admin.title_edit') if editing else t('guest.admin.title_add'), 'url': ''}
-]) }}
-{{ page_header(
-  t('guest.admin.title_edit') if editing else t('guest.admin.title_add'),
-  reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz),
-  '/reservations/' ~ reservation.id,
-  t('guest.admin.back_to_stay')
-) }}
+{% block page_title %}{{ t('guest.admin.title_edit') if editing else t('guest.admin.title_add') }}{% endblock %}
+{% block meta %}{{ reservation.internal_name ~ ' · ' ~ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz) }}{% endblock %}
+{% block back_url %}/reservations/{{ reservation.id }}{% endblock %}
+{% block back_label %}{{ t('guest.admin.back_to_stay') }}{% endblock %}
+{% block body %}
 
 {% if editing and guest.submit_state in ('error', 'blocked') %}
-  <div class="banner critical">
+  <div class="ui-banner ui-banner-attention">
     <div class="grow">
       <strong>{{ t('guest.admin.banner.rejected_title') }}</strong>
       <small>{{ guest.last_errors }}</small>
@@ -49,7 +42,7 @@
   </div>
 {% endif %}
 {% if editing and guest.submit_state == 'sent' %}
-  <div class="banner info">
+  <div class="ui-banner ui-banner-neutral">
     <div class="grow">
       <strong>{% if guest.manual_filed_at %}{{ t('guest.admin.banner.filed_by_hand', at=guest.manual_filed_at | datetime_local) }}{% elif guest.submitted_at %}{{ t('guest.admin.banner.sent_title_at', at=guest.submitted_at | datetime_local) }}{% else %}{{ t('guest.admin.banner.sent_title') }}{% endif %}</strong>
       <small id="filed-lock-note">{{ t('guest.admin.banner.sent_help') }}</small>
@@ -58,32 +51,32 @@
 {% endif %}
 
 {% if identity_hidden %}
-  <div class="banner warning" id="identity-hidden-note" role="status">
+  <div class="ui-banner ui-banner-attention" id="identity-hidden-note" role="status">
     <div class="grow">
       <strong>{{ t('identity.hidden') }}</strong>
       <small>{{ t('identity.hidden_help') }}</small>
-      <div class="field" style="margin:10px 0 0">
+      <div class="ui-field">
         <label for="reveal-reason">{{ t('identity.reveal_reason') }}</label>
         <input type="text" id="reveal-reason" name="reason" form="reveal-identity"
                minlength="5" maxlength="300" required>
       </div>
     </div>
-    <button class="btn small" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
+    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" form="reveal-identity">{{ t('identity.reveal') }}</button>
   </div>
 {% endif %}
 
 <form method="post" action="{{ ('/guests/' ~ guest.id) if editing else ('/reservations/' ~ reservation.id ~ '/guests') }}">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <div class="panel">
-    <h2 style="margin-top:0">{{ t('guest.admin.identity.title') }}</h2>
-    <div class="grid two">
-      <div class="field">
+  <div class="ui-section">
+    <h2>{{ t('guest.admin.identity.title') }}</h2>
+    <div class="ui-pair">
+      <div class="ui-field">
         <label for="surname">{{ t('guest.admin.surname') }}</label>
         <input class="{{ bad('surname') }}" type="text" id="surname" name="surname"{{ lock() }} maxlength="50" required
                value="{{ field_val('surname') }}">
         {{ err_for('surname') }}
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="first_name">{{ t('guest.admin.given_names') }}</label>
         <input class="{{ bad('first_name') }}" type="text" id="first_name" name="first_name"{{ lock() }} maxlength="24"
                value="{{ field_val('first_name') }}">
@@ -91,16 +84,16 @@
       </div>
     </div>
     <div class="grid">
-      <div class="field">
+      <div class="ui-field">
         <label for="birth_date">{{ t('guest.admin.birth_date') }}</label>
         <input class="{{ bad('birth_date') }}" type="text" id="birth_date" name="birth_date"{{ lock() }}
                data-birth-date inputmode="numeric" placeholder="{{ t('guest.admin.birth_date_ph') }}" maxlength="10"
                autocomplete="bday"
                value="{{ display_birth_date(guest.birth_date) if guest and guest.birth_date else '' }}">
-        <div class="hint">{{ t('guest.admin.birth_date_hint') }}</div>
+        <div class="ui-help">{{ t('guest.admin.birth_date_hint') }}</div>
         {{ err_for('birth_date') }}
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="nationality">{{ t('stay.detail.guests.nationality') }}</label>
         <select class="{{ bad('nationality') }}" id="nationality" name="nationality"{{ lock() }} required>
           <option value="">{{ t('common.select') }}</option>
@@ -110,10 +103,10 @@
               {{ country.label }} ({{ country.code }})</option>
           {% endfor %}
         </select>
-        <div class="hint">{{ t('guest.admin.nationality_hint') }}</div>
+        <div class="ui-help">{{ t('guest.admin.nationality_hint') }}</div>
         {{ err_for('nationality') }}
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="doc_type">{{ t('guest.doc_type.label') }}</label>
         <select id="doc_type" name="doc_type">
           {% for code in doc_types %}
@@ -122,9 +115,9 @@
               {{ t('guest.doc_type.' ~ code) }}</option>
           {% endfor %}
         </select>
-        <div class="hint">{{ t('guest.doc_type.hint') }}</div>
+        <div class="ui-help">{{ t('guest.doc_type.hint') }}</div>
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="doc_number">{{ t('guest.admin.document') }}</label>
         {% if identity_hidden %}
         <input type="text" id="doc_number" value="{{ guest_identifier(guest.doc_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
@@ -132,11 +125,11 @@
         <input class="{{ bad('doc_number') }}" type="text" id="doc_number" name="doc_number"{{ lock() }} maxlength="30"
                value="{{ field_val('doc_number') }}">
         {% endif %}
-        <div class="hint">{{ t('guest.admin.document_hint') }}</div>
+        <div class="ui-help">{{ t('guest.admin.document_hint') }}</div>
         {{ err_for('doc_number') }}
       </div>
-      <div class="field">
-        <label for="visa_number">{{ t('guest.admin.visa') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <div class="ui-field">
+        <label for="visa_number">{{ t('guest.admin.visa') }} <span class="ui-opt">{{ t('common.optional') }}</span></label>
         {% if identity_hidden %}
         <input type="text" id="visa_number" value="{{ guest_identifier(guest.visa_number, guest.id) }}" readonly aria-describedby="identity-hidden-note">
         {% else %}
@@ -148,22 +141,22 @@
     </div>
   </div>
 
-  <div class="panel">
-    <h2 style="margin-top:0">{{ t('stay.detail.guests.residence') }}</h2>
+  <div class="ui-section">
+    <h2>{{ t('stay.detail.guests.residence') }}</h2>
     <div class="grid">
-      <div class="field">
-        <label for="res_street">{{ t('guest.admin.res_street') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <div class="ui-field">
+        <label for="res_street">{{ t('guest.admin.res_street') }} <span class="ui-opt">{{ t('common.optional') }}</span></label>
         <input class="{{ bad('res_street') }}" type="text" id="res_street" name="res_street"{{ lock() }} maxlength="42"
                value="{{ field_val('res_street') }}">
         {{ err_for('res_street') }}
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="res_city">{{ t('guest.admin.res_city') }}</label>
         <input class="{{ bad('res_city') }}" type="text" id="res_city" name="res_city"{{ lock() }} maxlength="42"
                value="{{ field_val('res_city') }}">
         {{ err_for('res_city') }}
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="res_country">{{ t('guest.admin.res_country') }}</label>
         <select class="{{ bad('res_country') }}" id="res_country" name="res_country"{{ lock() }}>
           <option value="">{{ t('common.select') }}</option>
@@ -178,21 +171,21 @@
     </div>
   </div>
 
-  <div class="panel">
-    <h2 style="margin-top:0">{{ t('guest.admin.stay.title') }}</h2>
+  <div class="ui-section">
+    <h2>{{ t('guest.admin.stay.title') }}</h2>
     <div class="grid">
-      <div class="field">
+      <div class="ui-field">
         <label for="stay_from">{{ t('guest.admin.stay_from') }}</label>
         <input type="date" id="stay_from" name="stay_from"{{ lock() }}
                value="{{ (guest.stay_from if guest and guest.stay_from else reservation.date_from) }}">
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="stay_to">{{ t('guest.admin.stay_to') }}</label>
         <input class="{{ bad('stay_to') }}" type="date" id="stay_to" name="stay_to"{{ lock() }}
                value="{{ (guest.stay_to if guest and guest.stay_to else reservation.date_to) }}">
         {{ err_for('stay_to') }}
       </div>
-      <div class="field">
+      <div class="ui-field">
         <label for="purpose">{{ t('stay.detail.guests.purpose') }}</label>
         <select id="purpose" name="purpose"{{ lock() }}>
           {% for purpose in purposes %}
@@ -203,15 +196,15 @@
         </select>
       </div>
     </div>
-    <div class="field">
-      <label for="note">{{ t('guest.admin.note') }} <span class="opt">{{ t('guest.admin.note_optional') }}</span></label>
+    <div class="ui-field">
+      <label for="note">{{ t('guest.admin.note') }} <span class="ui-opt">{{ t('guest.admin.note_optional') }}</span></label>
       <textarea class="{{ bad('note') }}" id="note" name="note"{{ lock() }} maxlength="255">{{ field_val('note') }}</textarea>
       {{ err_for('note') }}
     </div>
   </div>
 
   {% if editing and needs_verification and has_passport_photo %}
-  <div class="panel verify-panel tight">
+  <div class="ui-section verify-panel">
     {% if has_passport_photo and identity_hidden %}
       {{ identity_placeholder() }}
     {% elif has_passport_photo %}
@@ -219,9 +212,9 @@
         {% if passport_is_pdf %}
           {# WP08: a PDF is never shown inline from our origin; the host downloads it. #}
           <p class="passport-preview-pdf-link">
-            <a class="btn small ghost" href="/guests/{{ guest.id }}/passport-photo" download>{{ t('guest.admin.passport_pdf_download') }}</a>
+            <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/guests/{{ guest.id }}/passport-photo" download>{{ t('guest.admin.passport_pdf_download') }}</a>
           </p>
-          <p class="small muted" style="margin:4px 0 0">{{ t('guest.admin.passport_pdf_hint') }}</p>
+          <p class="ui-sub">{{ t('guest.admin.passport_pdf_hint') }}</p>
         {% else %}
           <img src="/guests/{{ guest.id }}/passport-photo" alt="{{ t('guest.admin.passport_photo_alt') }}">
         {% endif %}
@@ -230,8 +223,8 @@
   </div>
   {% endif %}
 
-  <div class="panel">
-    <h2 style="margin-top:0">{{ t('host.signature_title') }}</h2>
+  <div class="ui-section">
+    <h2>{{ t('host.signature_title') }}</h2>
     {% if identity_hidden %}
     {{ identity_placeholder() }}
     {% elif filed %}
@@ -248,7 +241,7 @@
       {{ t('host.signature_locked') }}
     </p>
     {% else %}
-    <p class="small muted">{{ t('host.signature_help') }}</p>
+    <p class="ui-sub">{{ t('host.signature_help') }}</p>
     <div class="signature-pad">
       <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('host.signature_title') }}"
               aria-describedby="sig-help sig-status"></canvas>
@@ -265,17 +258,19 @@
     {{ err_for('signature') }}
   </div>
 
-  <div class="actions">
-    <button class="btn primary" type="submit">{{ t('common.save_changes') if editing else t('guest.admin.submit_add') }}</button>
-    <a class="btn" href="/reservations/{{ reservation.id }}">{{ t('confirm.cancel') }}</a>
+  <div class="ui-form-actions">
+    <button class="ui-btn ui-btn-primary" type="submit">{{ t('common.save_changes') if editing else t('guest.admin.submit_add') }}</button>
+  </div>
+  <div class="ui-btn-group">
+    <a class="ui-btn ui-btn-secondary" href="/reservations/{{ reservation.id }}">{{ t('confirm.cancel') }}</a>
     {% if editing and guest.id %}
-      <a class="btn" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
-      <a class="btn" href="/guests/{{ guest.id }}/export.json">{{ t('guest.admin.export_dsr') }}</a>
-      <a class="btn" href="/privacy-requests">{{ t('guest.admin.record_request') }}</a>
+      <a class="ui-btn ui-btn-secondary" href="/guests/{{ guest.id }}/form.pdf">{{ t('guest.admin.download_pdf') }}</a>
+      <a class="ui-btn ui-btn-secondary" href="/guests/{{ guest.id }}/export.json">{{ t('guest.admin.export_dsr') }}</a>
+      <a class="ui-btn ui-btn-secondary" href="/privacy-requests">{{ t('guest.admin.record_request') }}</a>
       {% if guest.restricted_at %}
-        <button class="btn" type="submit" formaction="/guests/{{ guest.id }}/unrestrict">{{ t('guest.admin.unrestrict') }}</button>
+        <button class="ui-btn ui-btn-secondary" type="submit" formaction="/guests/{{ guest.id }}/unrestrict">{{ t('guest.admin.unrestrict') }}</button>
       {% else %}
-        <button class="btn" type="submit" formaction="/guests/{{ guest.id }}/restrict">{{ t('guest.admin.restrict') }}</button>
+        <button class="ui-btn ui-btn-secondary" type="submit" formaction="/guests/{{ guest.id }}/restrict">{{ t('guest.admin.restrict') }}</button>
       {% endif %}
     {% endif %}
   </div>
@@ -290,32 +285,32 @@
 
 
 {% if editing and guest.id %}
-<details class="panel danger-zone" style="margin-top:24px">
+<details class="ui-section danger-zone">
   <summary>{{ t('guest.admin.danger.summary') }}</summary>
-<div style="margin-top:16px">
-  <h3 style="margin-top:0">{{ t('guest.admin.resend.title') }}</h3>
-  <p class="small muted">
+<div>
+  <h3>{{ t('guest.admin.resend.title') }}</h3>
+  <p class="ui-sub">
     {{ t('guest.admin.resend.help') }}
   </p>
   <form method="post" action="/guests/{{ guest.id }}/resend">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <div class="checkline" style="margin-bottom:12px">
+    <div class="checkline">
       <input type="checkbox" id="confirm_duplicate" name="confirm_duplicate" value="1">
       <label for="confirm_duplicate">{{ t('guest.admin.resend.confirm') }}</label>
     </div>
-    <button class="btn danger" type="submit">{{ t('guest.admin.resend.submit') }}</button>
+    <button class="ui-btn ui-btn-danger" type="submit">{{ t('guest.admin.resend.submit') }}</button>
   </form>
 </div>
 
 {% if guest.submit_state != 'sent' %}
-<form method="post" action="/guests/{{ guest.id }}/delete" class="panel"
+<form method="post" action="/guests/{{ guest.id }}/delete" class="ui-section"
       data-confirm data-confirm-message="{{ t('confirm.remove_guest') }}">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-  <h3 style="margin-top:0">{{ t('guest.admin.remove.title') }}</h3>
-  <button class="btn danger" type="submit">{{ t('guest.admin.remove.submit') }}</button>
+  <h3>{{ t('guest.admin.remove.title') }}</h3>
+  <button class="ui-btn ui-btn-danger" type="submit">{{ t('guest.admin.remove.submit') }}</button>
 </form>
 {% endif %}
 </details>
 {% endif %}
-<script src="/static/signature.js?v=20261004b"></script>
+{% include "_signature_script.html" %}
 {% endblock %}
