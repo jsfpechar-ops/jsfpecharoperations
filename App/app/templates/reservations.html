@@ -54,7 +54,7 @@
           <input type="email" id="guest_email" name="guest_email">
         </div>
       </div>
-      <div class="actions"><button class="btn primary" type="submit">{{ t('stays.add_panel.create') }}</button></div>
+      <div class="ui-form-actions">{{ ui_button(t('stays.add_panel.create'), 'primary', type='submit') }}</div>
     </form>
   </div>
 </div>
@@ -68,12 +68,10 @@
 {% for property in apartments %}
   {% if apartment_id and property.id|string == apartment_id|string %}{% set stay_property.label = property.internal_name %}{% endif %}
 {% endfor %}
-{% set stay_chips %}
-    {% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('past', 'stays.chip.past'), ('all', 'stays.chip.all'), ('archive', 'stays.chip.archive')] %}
-      <a class="chip {{ 'on' if date_range == value or (value == 'archive' and show_archive) }}"
-         href="/reservations?range={{ value }}&status={{ status }}&apartment={{ apartment_id or '' }}">{{ t(label_key) }}</a>
-    {% endfor %}
-{% endset %}
+{% set stay_chip_items = [] %}
+{% for value, label_key in [('upcoming', 'stays.chip.upcoming'), ('past', 'stays.chip.past'), ('all', 'stays.chip.all'), ('archive', 'stays.chip.archive')] %}
+  {% set _ = stay_chip_items.append(('/reservations?range=' ~ value ~ '&status=' ~ status ~ '&apartment=' ~ (apartment_id or ''), t(label_key), date_range == value or (value == 'archive' and show_archive))) %}
+{% endfor %}
 {% set stay_summary %}
     <span>{{ stay_property.label }}</span><span aria-hidden="true"> · </span><span>{{ t('stays.filter.state.' ~ status) }}</span>
     {% if date_range == 'custom' and (date_from or date_to) %}
@@ -87,7 +85,8 @@
     <button class="btn ghost" type="button" data-save-view data-saved-label="{{ t('stays.filter.saved') }}">{{ t('stays.filter.save_view') }}</button>
     {{ csv_actions_menu(csv_export_params, true, scope_label=stay_property.label) }}
 {% endset %}
-{{ list_toolbar(stay_summary, chips=stay_chips, panel_id='stays-filter-panel', actions=stay_list_actions) }}
+{{ ui_toolbar(chips=stay_chip_items, filters_id='stays-filter-panel', actions=stay_list_actions) }}
+<p class="ui-sub" data-filter-summary>{{ stay_summary }}</p>
 <div class="saved-views" data-saved-views data-label="{{ t('stays.filter.saved_views') }}"></div>
 
 {% if show_archive %}
@@ -215,13 +214,7 @@
   {% endif %}
 </p>
 {% if page_count > 1 %}
-  <nav class="pagination" aria-label="{{ t('stays.title') }}">
-    {% if previous_page_url %}<a class="btn" href="{{ previous_page_url }}">{{ t('stays.pagination.prev') }}</a>
-    {% else %}<span class="btn disabled" aria-disabled="true">{{ t('stays.pagination.prev') }}</span>{% endif %}
-    <span class="pagination-label">{{ t('stays.pagination.label', page=page, pages=page_count) }}</span>
-    {% if next_page_url %}<a class="btn" href="{{ next_page_url }}">{{ t('stays.pagination.next') }}</a>
-    {% else %}<span class="btn disabled" aria-disabled="true">{{ t('stays.pagination.next') }}</span>{% endif %}
-  </nav>
+  {{ ui_pagination(page, page_count, prev_url=previous_page_url or '', next_url=next_page_url or '', label=t('stays.title'), more_label=t('stays.pagination.next'), prev_label=t('stays.pagination.prev'), next_label=t('stays.pagination.next')) }}
 {% endif %}
 {% elif show_archive %}
   {{ empty_state('', t('stays.empty.archive')) }}
