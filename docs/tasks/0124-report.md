@@ -26,6 +26,7 @@ Status: review
 
 ## Deviations
 
+- Step 3 done after coordinator approval: bumped `?v=20261016-0123-refresh1` to `refresh2` in `App/app/templates/_dashboard_calendar.html` line 170 (outside section 3). Commit 02d04e8.
 - Step 3 (cache bust): the `dashboard-calendar.js?v=20261016-0123-refresh1` tag is in `App/app/templates/_dashboard_calendar.html`, not `base.html`. That file is outside section 3, so I did not change it. The tests load fresh and do not need the bump.
 - Done: steps 1, 2, 4, 5 (commit made for steps 1 and 2 separately; step 5 message applies to the same change set). Left: step 3 (bump) only.
 
