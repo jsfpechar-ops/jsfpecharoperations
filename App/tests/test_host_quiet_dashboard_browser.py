@@ -316,18 +316,20 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
 
                 header_actions = page.locator(".dashboard-actions")
                 assert header_actions.locator('a[href="/reservations?new=1"]').is_visible()
-                assert header_actions.locator(
-                    'a[href="/cleaning/new"][data-calendar-add][data-cal-create-type="cleaning"]'
-                ).is_visible()
-                assert header_actions.locator('form[action="/sync"]').is_visible()
-                assert header_actions.locator('form[action="/demo/reset"]').is_visible()
-                header_buttons = header_actions.locator(
-                    ".action-group > .btn, .action-group > form > .btn, .action-group .sync-cta .btn"
-                )
-                # Add cleaning is the requested fourth header action.
-                assert header_buttons.count() == 4
-                header_boxes = [button.bounding_box() for button in header_buttons.all()]
-                assert all(abs(box["height"] - (44 if width <= 390 else 42)) <= 1 for box in header_boxes)
+                if width >= 1024:
+                    assert header_actions.locator(
+                        'a[href="/cleaning/new"][data-calendar-add][data-cal-create-type="cleaning"]'
+                    ).is_visible()
+                    assert header_actions.locator('form[action="/sync"]').is_visible()
+                    assert header_actions.locator('form[action="/demo/reset"]').is_visible()
+                # v2 (MASTER): one primary action; below 1024 px the rest sit in the overflow menu.
+                header_buttons = page.locator(".ui-ph-acts .ui-btn")
+                visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
+                if width < 1024:
+                    assert len(visible_buttons) == 1
+                    assert page.locator(".ui-ph-menu").is_visible()
+                header_boxes = [button.bounding_box() for button in visible_buttons]
+                assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes)
                 if width > 390:
                     assert max(box["y"] for box in header_boxes) - min(box["y"] for box in header_boxes) <= 2
 
