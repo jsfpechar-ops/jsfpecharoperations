@@ -15,6 +15,19 @@ from tests.test_dashboard_calendar_browser import (  # noqa: F401
     calendar_origin, calendar_workspace, launch, open_page, shot,
 )
 
+from app import alerts, db
+
+
+def seed_pin_alerts(ws):
+    for property_id in ws["properties"]:
+        alerts.raise_alert(
+            "warning", "guest_pin_rotated", "The guest link PIN was replaced with a new six-digit PIN.",
+            detail="Four-digit PINs are no longer accepted.", dedupe_key=f"guest_pin_rotated:{property_id}",
+            apartment_id=property_id, owner_user_id=ws["owner"],
+        )
+    return [db.query_one("SELECT internal_name FROM apartment WHERE id = ?", (pid,))["internal_name"] for pid in ws["properties"]]
+
+
 HIDDEN_ON_PHONE = (".cal-view-segment", "[data-cal-settings]", "[data-cal-scales]", "[data-cal-month]", "[data-cal-year]")
 SHOWN_ON_PHONE = ("[data-cal-property]", "[data-cal-prev]", "[data-cal-next]", "[data-cal-period]")
 
@@ -41,7 +54,24 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
                 assert page.locator("[data-cal-day-dialog]").is_visible()
                 assert page.locator("[data-cal-day-list] .cal-event").count() == 4
                 page.locator("[data-cal-day-dialog] [data-cal-close]").click()
-                # 0148: alerts and banner (390)
+                names = seed_pin_alerts(calendar_workspace)
+                page.reload()
+                pin_cards = page.locator("[data-notification]", has_text="PIN")
+                assert pin_cards.count() == 1
+                assert pin_cards.first.get_attribute("data-notification-group") == "guest_pin_rotated"
+                for name in names:
+                    assert name in pin_cards.first.inner_text(), name
+                assert pin_cards.first.locator('a[href="/apartments"]').count() == 1
+                short = page.locator(".dashboard-missing-short")
+                assert short.is_visible()
+                assert short.inner_text().strip() == "3 properties need setup", short.inner_text()
+                assert not page.locator(".dashboard-missing-list").first.is_visible()
+                assert page.locator(".ui-banner-attention .ui-btn").count() == 1
+                shot(page, "phone-390-alert")
+                pin_cards.first.locator("[data-notification-dismiss] button").click()
+                page.wait_for_timeout(500)
+                page.reload()
+                assert page.locator("[data-notification]", has_text="PIN").count() == 0
             else:
                 assert page.locator(".cal-dots").count() == 0
                 assert page.locator(".cal-gantt-row").count() >= 1
@@ -53,7 +83,9 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
                 page.locator("[data-cal-scales]").wait_for(state="visible")
                 page.locator('[data-cal-view="gantt"]').click()
                 page.locator(".cal-gantt-row").first.wait_for(state="visible")
-                # 0148: alerts and banner (1280)
+                assert page.locator(".dashboard-missing-list").first.is_visible()
+                assert not page.locator(".dashboard-missing-short").is_visible()
+                assert page.locator(".dashboard-missing-line").count() == 3
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             shot(page, f"phone-{width}")
             context.close()
