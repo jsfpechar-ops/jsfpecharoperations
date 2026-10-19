@@ -342,8 +342,8 @@ print('<h1>Hello</h1>' in html, 'ui-ph-meta' in html, html.count('ui-btn-primary
 .host-workspace .ui-cards { display: none; }
 .host-workspace .ui-card { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--row-py) var(--row-px); min-height: calc(var(--row-h) + var(--space-6) + var(--space-1)); text-decoration: none; color: inherit; position: relative; }
 .host-workspace .ui-card-l1 { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); font-weight: 600; font-size: var(--size-16); color: var(--ink); }
-.host-workspace .ui-card-l2 { display: block; color: var(--ink-2); margin-top: 2px; }
-.host-workspace .ui-card-l3 { display: block; color: var(--ink-3); font-size: var(--size-13); margin-top: 2px; }
+.host-workspace .ui-card-l2 { display: block; color: var(--ink-2); margin-top: calc(var(--space-1) / 2); }
+.host-workspace .ui-card-l3 { display: block; color: var(--ink-3); font-size: var(--size-13); margin-top: calc(var(--space-1) / 2); }
 .host-workspace .ui-card-menu { position: absolute; right: var(--space-1); bottom: var(--space-1); }
 .host-workspace .ui-facts { background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--space-1) var(--row-px); margin: 0; }
 .host-workspace .ui-facts div { display: flex; justify-content: space-between; gap: var(--space-4); min-height: var(--control-h-phone); align-items: center; border-bottom: 1px solid var(--line); }

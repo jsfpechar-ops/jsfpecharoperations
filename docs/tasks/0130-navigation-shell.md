@@ -314,7 +314,7 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .ui-topbar { display: flex; align-items: center; gap: var(--space-2); height: var(--topbar-h); padding: 0 var(--space-2) 0 var(--space-4); background: var(--surface); border-bottom: 1px solid var(--line); }
   .host-workspace .ui-topbar .ui-env { margin: 0; }
   .host-workspace .ui-tabbar { position: fixed; inset: auto 0 0 0; display: grid; grid-template-columns: repeat(5, 1fr); height: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--surface); border-top: 1px solid var(--line); z-index: var(--z-sticky); }
-  .host-workspace .ui-tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--control-h-phone); color: var(--ink-2); text-decoration: none; font-size: var(--size-11); font-weight: 500; position: relative; }
+  .host-workspace .ui-tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--space-1) / 2); min-height: var(--control-h-phone); color: var(--ink-2); text-decoration: none; font-size: var(--size-11); font-weight: 500; position: relative; }
   .host-workspace .ui-tabbar-ic { display: grid; place-items: center; width: var(--control-h-phone); height: calc(var(--space-6) + var(--space-1)); border-radius: var(--radius-pill); }
   .host-workspace .ui-tabbar a[aria-current="page"] { color: var(--accent-ink); font-weight: 600; }
   .host-workspace .ui-tabbar a[aria-current="page"] .ui-tabbar-ic { background: var(--accent-soft); }
