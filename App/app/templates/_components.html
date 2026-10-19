@@ -558,13 +558,9 @@
 {% endmacro %}
 
 {% macro row_menu_begin(label='') %}
-<div class="row-menu">
-  <button class="btn-icon row-menu-trigger" type="button" aria-label="{{ label or t('common.more_actions') }}" aria-expanded="false" aria-haspopup="true">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <circle cx="3.25" cy="8" r="1.25"/><circle cx="8" cy="8" r="1.25"/><circle cx="12.75" cy="8" r="1.25"/>
-    </svg>
-  </button>
-  <div class="row-menu-panel" role="menu" hidden>
+<div class="row-menu ui-menu">
+  <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact row-menu-trigger" type="button" aria-label="{{ label or t('common.more_actions') }}" aria-expanded="false" aria-haspopup="true">{{ icon('ellipsis-vertical', 16) }}</button>
+  <div class="row-menu-panel ui-menu-panel" role="menu" hidden>
 {% endmacro %}
 
 {% macro row_menu_end() %}
