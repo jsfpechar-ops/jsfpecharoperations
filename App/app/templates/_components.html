@@ -21,6 +21,17 @@
   </div>
 {% endmacro %}
 
+{#- 0099: one tab component for every section's sub-pages. items is a list of
+    (href, label key, current); tabs are plain links (no JS) and the open page
+    carries aria-current. Rendered directly under the title row. -#}
+{% macro sub_tabs(items, label='') %}
+{% if items %}
+<nav class="sub-tabs host-local-nav" aria-label="{{ label or t('host.section_navigation') }}" data-sub-tabs>
+  {%- for href, key, current in items %}<a class="sub-tab" href="{{ href }}"{% if current %} aria-current="page"{% endif %}>{{ t(key) }}</a>{% endfor -%}
+</nav>
+{% endif %}
+{% endmacro %}
+
 {% macro page_header(title, description='', back_url='', back_label='', eyebrow='', actions='', tabs=none) %}
   {% set header_tabs = page_tabs() if tabs is none else tabs %}
   <header class="page-header{{ ' has-tabs' if header_tabs }}">
