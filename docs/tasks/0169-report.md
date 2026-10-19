@@ -1,6 +1,6 @@
 # 0169 report
 
-Status: blocked
+Status: review
 
 ## Files changed (commits)
 - step 1: App/app/static/host2.css (focus-visible rule; --space-1 is 4px so rule kept as written). design_lint OK.

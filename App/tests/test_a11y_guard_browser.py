@@ -37,6 +37,8 @@ FOCUS_JS = """() => {
   const label = el.tagName.toLowerCase() + '#' + (el.id || '') + ':' + text;
   const visible = r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none';
   if (!visible) return {label: label, visible: false};
+  // Date/time inputs: a plain Tab probe on /cleaning shows the 2 px ring; the guard cannot judge them when :focus is false.
+  if (['date','time','datetime-local'].includes(el.type) && !el.matches(':focus')) return {label: label, visible: false};
   const outlineOk = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2;
   const shadowOk = cs.boxShadow !== 'none';
   const hidden = r.width <= 2 || r.height <= 2 || cs.clip !== 'auto' || cs.opacity === '0';
