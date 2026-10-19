@@ -1,11 +1,13 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
+{% set body_kind = 'list' %}
+{% from "_ui.html" import ui_button with context %}
 {% block title %}{{ ct('title') }} · UbyHost{% endblock %}
-{% block content %}
-<link rel="stylesheet" href="/static/cleaning.css?v=20261016-0123d-0106b">
+{% block page_title %}{{ ct('title') }}{% endblock %}
+{% block meta %}{{ ct('subtitle') }}{% endblock %}
+{% block primary_action %}{{ ui_button(ct('add'), 'primary', href='/cleaning/new', icon_name='plus', attrs='data-calendar-add data-cal-create-type="cleaning"') }}{% endblock %}
+{% block secondary_actions %}{{ ui_button(t('calendar.add_stay'), 'secondary', href='/reservations?new=1', attrs='data-calendar-add data-cal-create-type="stay"') }}{{ ui_button(ct('settings'), 'secondary', href='/cleaning/properties') }}{{ ui_button(ct('share'), 'secondary', href='/cleaning/shares') }}{% endblock %}
+{% block body %}
 <div class="cleaning-page">
-  <header class="cleaning-page-heading"><div><h1>{{ ct('title') }}</h1><p>{{ ct('subtitle') }}</p></div>
-    <div class="cleaning-actions"><a class="btn primary" href="/cleaning/new" data-calendar-add data-cal-create-type="cleaning">{{ ct('add') }}</a><a class="btn" href="/reservations?new=1" data-calendar-add data-cal-create-type="stay">{{ t('calendar.add_stay') }}</a><a class="btn" href="/cleaning/properties">{{ ct('settings') }}</a><a class="btn" href="/cleaning/shares">{{ ct('share') }}</a></div>
-  </header>
   {% include "_cleaning_screen.html" %}
 </div>
 {% endblock %}

@@ -203,7 +203,12 @@
     "App/app/templates/stay_fee_detail.html",
     "App/app/templates/apartments.html",
     "App/app/templates/apartment_form.html",
-    "App/app/templates/entities.html"
+    "App/app/templates/entities.html",
+    "App/app/templates/cleaning.html",
+    "App/app/templates/cleaning_edit.html",
+    "App/app/templates/cleaning_properties.html",
+    "App/app/templates/cleaning_settings.html",
+    "App/app/templates/cleaning_shares.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [
@@ -563,6 +568,44 @@
       "scroll-x",
       "table-cards",
       "tight"
+    ],
+    "App/app/templates/cleaning.html": [
+      "cleaning-page"
+    ],
+    "App/app/templates/cleaning_edit.html": [
+      "cleaning-actions",
+      "cleaning-form",
+      "cleaning-form-page",
+      "cleaning-page",
+      "cleaning-panel",
+      "cleaning-remove",
+      "cleaning-timing-summary",
+      "cleaning-warning"
+    ],
+    "App/app/templates/cleaning_properties.html": [
+      "cleaning-page",
+      "cleaning-panel",
+      "cleaning-property-links"
+    ],
+    "App/app/templates/cleaning_settings.html": [
+      "cleaning-form",
+      "cleaning-form-page",
+      "cleaning-page",
+      "cleaning-panel",
+      "cleaning-pin",
+      "cleaning-remove",
+      "cleaning-timing-summary",
+      "cleaning-warning"
+    ],
+    "App/app/templates/cleaning_shares.html": [
+      "cleaning-form",
+      "cleaning-form-page",
+      "cleaning-page",
+      "cleaning-panel",
+      "cleaning-share-option",
+      "cleaning-share-row",
+      "cleaning-share-url",
+      "cleaning-warning"
     ]
   },
   "enforced_stylesheets": [

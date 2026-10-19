@@ -2,9 +2,9 @@
 {% if notice | default('') %}<p class="cleaning-notice" role="status">{{ ct(notice) }}</p>{% endif %}
 {% if not read_only %}
 <form class="cleaning-period" action="/cleaning" method="get">
-  <div class="field"><label for="cleaning-from">{{ ct('from') }}</label><input id="cleaning-from" type="date" name="from" value="{{ payload['from'] }}" required></div>
-  <div class="field"><label for="cleaning-to">{{ ct('to') }}</label><input id="cleaning-to" type="date" name="to" value="{{ payload['to'] }}" required></div>
-  <button class="btn" type="submit">{{ ct('filter') }}</button><a href="/cleaning">{{ ct('reset') }}</a>
+  <div class="ui-field"><label for="cleaning-from">{{ ct('from') }}</label><input id="cleaning-from" type="date" name="from" value="{{ payload['from'] }}" required></div>
+  <div class="ui-field"><label for="cleaning-to">{{ ct('to') }}</label><input id="cleaning-to" type="date" name="to" value="{{ payload['to'] }}" required></div>
+  <button class="ui-btn ui-btn-secondary" type="submit">{{ ct('filter') }}</button><a href="/cleaning">{{ ct('reset') }}</a>
 </form>
 {% endif %}
 {% if payload.properties %}

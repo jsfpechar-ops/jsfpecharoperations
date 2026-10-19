@@ -1,13 +1,17 @@
-{% extends "base.html" %}
+{% extends "host_page.html" %}
+{% set body_kind = 'form' %}
 {% block title %}{{ ct('share') }} · UbyHost{% endblock %}
-{% block content %}
-<link rel="stylesheet" href="/static/cleaning.css?v=20261016a-0106b">
-<div class="cleaning-page cleaning-form-page"><a href="/cleaning">{{ ct('back') }}</a><h1>{{ ct('share') }}</h1><p>{{ ct('share_intro') }}</p>
+{% block page_title %}{{ ct('share') }}{% endblock %}
+{% block meta %}{{ ct('share_intro') }}{% endblock %}
+{% block back_url %}/cleaning{% endblock %}
+{% block back_label %}{{ ct('back') }}{% endblock %}
+{% block body %}
+<div class="cleaning-page cleaning-form-page">
 {% if error %}<p class="cleaning-warning" role="alert">{{ ct('property_error') if error == 'property' else ct(error) }}</p>{% endif %}
 {% if share_url %}<section class="cleaning-panel"><h2>{{ ct('share_ready') }}</h2><p>{{ ct('share_once') }}</p><a class="cleaning-share-url" href="{{ share_url }}">{{ share_url }}</a><p>{{ ct('share_caution') }}</p></section>{% endif %}
 <form class="cleaning-panel cleaning-form" method="post" action="/cleaning/shares"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <fieldset><legend>{{ ct('property') }}</legend>{% for home in homes %}<label class="cleaning-share-option"><input type="checkbox" name="properties" value="{{ home.id }}"><span>{{ home.internal_name }}</span></label>{% endfor %}</fieldset>
-<p>{{ ct('share_caution') }}</p><button class="btn primary" type="submit">{{ ct('create_share') }}</button></form>
-{% for share in shares %}<div class="cleaning-panel cleaning-share-row"><div><strong>{{ ct('share_number') }} {{ share.id }}</strong><p>{{ ct('expires') }} {{ share.expires_at | datetime_local }}</p></div><form action="/cleaning/shares/{{ share.id }}/revoke" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="btn" type="submit">{{ ct('revoke') }}</button></form></div>{% endfor %}
+<p>{{ ct('share_caution') }}</p><button class="ui-btn ui-btn-primary" type="submit">{{ ct('create_share') }}</button></form>
+{% for share in shares %}<div class="cleaning-panel cleaning-share-row"><div><strong>{{ ct('share_number') }} {{ share.id }}</strong><p>{{ ct('expires') }} {{ share.expires_at | datetime_local }}</p></div><form action="/cleaning/shares/{{ share.id }}/revoke" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="ui-btn ui-btn-secondary" type="submit">{{ ct('revoke') }}</button></form></div>{% endfor %}
 </div>
 {% endblock %}
