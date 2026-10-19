@@ -1,0 +1,81 @@
+{#- Design v2 layout macros (docs/design/MASTER.md 5, 7.3, 7.4, 7.6, 7.7, 7.14). -#}
+{% from "_icons.html" import icon with context %}
+{% from "_ui.html" import ui_button, ui_icon_button, ui_chip with context %}
+
+{#- 5.2 tabs: items = list of (href, label, current). Position, not action: ink underline. -#}
+{% macro ui_tabs(items, label='') -%}
+{% if items %}<nav class="ui-tabs" data-sub-tabs aria-label="{{ label or t('host.section_navigation') }}">{% for href, text, current in items %}<a class="ui-tab" href="{{ href }}"{% if current %} aria-current="page"{% endif %}>{{ text }}</a>{% endfor %}</nav>{% endif %}
+{%- endmacro %}
+
+{#- the section's own sub-page tabs (page_tabs() from the request context), translated. -#}
+{% macro ui_section_tabs(label='') -%}
+{% set items = [] %}{% for href, key, current in page_tabs() %}{% set _ = items.append((href, t(key), current)) %}{% endfor %}{{ ui_tabs(items, label) }}
+{%- endmacro %}
+
+{#- 5.3 toolbar. search: (name, placeholder, value) or none. chips: list of (href, label, selected).
+    filters_id: id of the filter <form> that opens as a sheet on phone (hidden by app.js like today).
+    actions: raw html of quiet buttons for the right side. -#}
+{% macro ui_toolbar(search=none, chips=[], filters_id='', filters_count=0, actions='', filters_label='') -%}
+<div class="ui-toolbar" data-filter-toolbar data-list-toolbar>
+  {% if search %}<label class="ui-toolbar-search">{{ icon('search', 16) }}<input class="ui-input" type="search" name="{{ search[0] }}" placeholder="{{ search[1] }}" value="{{ search[2] }}" aria-label="{{ search[1] }}"></label>{% endif %}
+  {% if chips %}<div class="ui-chips">{% for href, text, selected in chips %}{{ ui_chip(text, href=href, selected=selected) }}{% endfor %}</div>{% endif %}
+  {% if filters_id %}<button class="ui-btn ui-btn-secondary" type="button" data-filter-toggle aria-expanded="true" aria-controls="{{ filters_id }}" hidden>{{ icon('sliders-horizontal', 16) }}<span>{{ filters_label or t('host.filter.filters') }}</span>{% if filters_count %}<span class="ui-badge ui-badge-neutral">{{ filters_count }}</span>{% endif %}</button>{% endif %}
+  {% if actions | trim %}<div class="ui-toolbar-right">{{ actions | safe }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- 7.14 section with a title row; call-block holds the content. -#}
+{% macro ui_section(title, actions='', id='') -%}
+<section class="ui-section"{% if id %} id="{{ id }}"{% endif %}>
+  <div class="ui-section-h"><h2>{{ title }}</h2>{% if actions | trim %}<div class="ui-btn-group">{{ actions | safe }}</div>{% endif %}</div>
+  {{ caller() }}
+</section>
+{%- endmacro %}
+
+{#- facts: list of (key, value_html). -#}
+{% macro ui_facts(pairs) -%}
+<dl class="ui-facts">{% for key, value in pairs %}<div><dt>{{ key }}</dt><dd>{{ value | safe }}</dd></div>{% endfor %}</dl>
+{%- endmacro %}
+
+{#- stat row: list of (href, number, label). Numbers stay ink. -#}
+{% macro ui_stats(items, label='') -%}
+<nav class="ui-stats" aria-label="{{ label }}">{% for href, number, text in items %}<a class="ui-stat" href="{{ href }}"><strong class="ui-num">{{ number }}</strong><span>{{ text }}</span></a>{% endfor %}</nav>
+{%- endmacro %}
+
+{#- banner: kind attention | neutral; one optional secondary action (label, href). -#}
+{% macro ui_banner(kind, text, action_label='', action_href='') -%}
+<div class="ui-banner ui-banner-{{ kind }}" role="status">{{ icon('triangle-alert' if kind == 'attention' else 'info', 20) }}<div class="grow">{{ text | safe }}</div>{% if action_href %}{{ ui_button(action_label, 'secondary', href=action_href, size='compact') }}{% endif %}</div>
+{%- endmacro %}
+
+{#- 7.4 table: columns = list of (label, align) with align '' or 'r'. Rows go in the call block as <tr class="ui-row"> ...
+    Below 1024 the page also renders ui_card rows inside <div class="ui-cards">; the CSS shows one of the two. -#}
+{% macro ui_table_begin(columns, label='') -%}
+<table class="ui-table" aria-label="{{ label }}"><thead><tr>{% for text, align in columns %}<th scope="col"{% if align == 'r' %} class="ui-cell-r"{% endif %}>{{ text }}</th>{% endfor %}</tr></thead><tbody>
+{%- endmacro %}
+{% macro ui_table_end() -%}</tbody></table>{%- endmacro %}
+
+{#- 7.3 card row for phone: three lines and a badge; whole card is the link. -#}
+{% macro ui_card(href, l1, l2='', l3='', badge='', label='') -%}
+<a class="ui-card" href="{{ href }}"{% if label %} aria-label="{{ label }}"{% endif %}><span class="ui-card-l1"><span>{{ l1 | safe }}</span>{{ badge | safe }}</span>{% if l2 %}<span class="ui-card-l2">{{ l2 | safe }}</span>{% endif %}{% if l3 %}<span class="ui-card-l3">{{ l3 | safe }}</span>{% endif %}</a>
+{%- endmacro %}
+
+{#- 5.5 skeleton per body kind, same heights as the real components, no inline styles. -#}
+{% macro ui_skeleton(kind) -%}
+<div class="ui-skel" aria-hidden="true" data-skeleton-kind="{{ kind }}">
+  <div class="ui-skel-h"><div><span class="ui-bone ui-bone-title"></span><span class="ui-bone ui-bone-meta"></span></div><span class="ui-bone ui-bone-btn"></span></div>
+  {% if kind == 'list' %}
+  <span class="ui-bone ui-bone-toolbar"></span>
+  <div class="ui-skel-rows">{% for i in range(6) %}<div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w18"></span><span class="ui-bone ui-w14"></span><span class="ui-bone ui-bone-badge"></span></div>{% endfor %}</div>
+  <div class="ui-skel-cards">{% for i in range(6) %}<div class="ui-skel-card"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-w60"></span><span class="ui-bone ui-w30"></span></div>{% endfor %}</div>
+  {% elif kind == 'detail' %}
+  <div class="ui-skel-detail">
+    <div class="ui-skel-group">{% for i in range(2) %}<span class="ui-bone ui-bone-label"></span><div class="ui-skel-rows">{% for j in range(3) %}<div class="ui-skel-row"><span class="ui-bone ui-w40"></span></div>{% endfor %}</div>{% endfor %}</div>
+    <div class="ui-skel-side ui-skel-rows">{% for i in range(4) %}<div class="ui-skel-row"><span class="ui-bone ui-w30"></span><span class="ui-bone ui-w30"></span></div>{% endfor %}</div>
+  </div>
+  {% elif kind == 'form' %}
+  <div class="ui-skel-group">{% for i in range(6) %}<span class="ui-bone ui-bone-label"></span><span class="ui-bone ui-bone-control"></span>{% endfor %}<span class="ui-bone ui-bone-btn"></span></div>
+  {% else %}
+  <div class="ui-skel-group">{% for i in range(2) %}<span class="ui-bone ui-bone-label"></span><div class="ui-skel-rows">{% for j in range(3) %}<div class="ui-skel-row ui-skel-row-setting"><span class="ui-bone ui-w40"></span><span class="ui-bone ui-bone-btn"></span></div>{% endfor %}</div>{% endfor %}</div>
+  {% endif %}
+</div>
+{%- endmacro %}
