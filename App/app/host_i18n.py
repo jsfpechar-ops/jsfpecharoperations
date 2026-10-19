@@ -439,23 +439,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host.signature_none_filed": "No signature is stored for this record.",
         "host.signature_locked": "The record is already reported, so the signature can no longer be changed.",
         "host.signature_saved_alt": "The guest's saved signature",
-        "host.verify_title": "ID check",
-        "host.verify_in_person": (
-            "You are responsible for accurate records. Compare the travel document when you can; "
-            "sending to UbyPort also records your confirmation."
-        ),
-        "host.verify_help": "Optional: record that you checked the guest's document in person.",
-        "host.verify_confirm": "I checked this guest's ID against the details above.",
-        "host.verify_button": "Mark ID checked",
-        "host.verify_pending": "ID not checked",
-        "host.verify_view_photo": "View uploaded ID",
-        "host.verify_footnote": "UbyHost does not collect a passport image.",
-        "host.verify_waiting_photo": "No document check recorded. You can mark an in-person check.",
-        "host.verify_done": "ID checked on",
-        "host.verify_host_entry": (
-            "When you enter a guest by hand you confirm the details against their document in "
-            "person. The record is marked verified on save."
-        ),
         "housebook.legal_footnote": "You are the data controller for guest data. UbyHost only provides the software: it is not legal advice and is not liable for data you or guests enter, or for how you use it.",
         "send.this_stay": "Send this stay",
         "send.all_ready": "Send all ready stays",
@@ -1093,7 +1076,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.all_reported": "All guests are reported. Nothing left to send.",
         "hint.nothing_duty": "Only Czech guests on this stay: nothing goes to the police.",
         "hint.need_signature": "Every foreign guest must sign before reporting to UbyPort",
-        "hint.need_verification": "Verify each guest against their passport before reporting",
         "hint.nothing_left": "Nothing left to send for this stay",
         "hint.not_ready": "Some guest details or signatures are missing. See the guests marked below.",
         "hint.missing_guests": "Guest forms: %(filled)s/%(expected)s. Send the link to the others, add them yourself, or lower the guest count if fewer came.",
@@ -1269,7 +1251,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.cta.send_again": "Send again",
         "stay.detail.cta.fix": "Fix rejection",
         "stay.detail.cta.view_reports": "View reports",
-        "stay.detail.cta.verify": "Verify passports",
         "stay.detail.cta.open": "Open stay",
         "stay.detail.cta.add_guest": "Add a guest",
         "stay.detail.next_step": "Next step",
@@ -1313,7 +1294,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.guests.rejected": "Rejected",
         "stay.detail.guests.rejected_final": "Rejected, final",
         "stay.detail.guests.incomplete": "Incomplete",
-        "stay.detail.guests.verify": "Verify passport",
         "stay.detail.guests.ready": "Ready",
         "stay.detail.guests.edit": "Edit details",
         "stay.detail.guests.pdf": "Registration form PDF",
@@ -2015,23 +1995,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "host.signature_none_filed": "K tomuto záznamu není uložen žádný podpis.",
         "host.signature_locked": "Záznam je už nahlášený, podpis proto nelze změnit.",
         "host.signature_saved_alt": "Uložený podpis hosta",
-        "host.verify_title": "Kontrola dokladu",
-        "host.verify_in_person": (
-            "Za správnost údajů odpovídáte vy. Porovnejte doklad, když můžete; odeslání do UbyPortu "
-            "také zaznamená vaše potvrzení."
-        ),
-        "host.verify_help": "Volitelně zaznamenejte, že jste doklad hosta zkontrolovali osobně.",
-        "host.verify_confirm": "Zkontroloval(a) jsem doklad hosta proti údajům výše.",
-        "host.verify_button": "Označit doklad zkontrolovaný",
-        "host.verify_pending": "Doklad nezkontrolován",
-        "host.verify_view_photo": "Zobrazit nahraný doklad",
-        "host.verify_footnote": "UbyHost obrázek pasu ani dokladu nesbírá.",
-        "host.verify_waiting_photo": "Kontrola dokladu není zaznamenána. Osobní kontrolu můžete označit.",
-        "host.verify_done": "Doklad zkontrolován",
-        "host.verify_host_entry": (
-            "Když zadáváte hosta ručně, potvrzujete údaje proti dokladu na místě. Záznam se "
-            "označí jako ověřený při uložení."
-        ),
         "housebook.legal_footnote": "Správcem údajů hostů jste vy. UbyHost poskytuje jen software: nejde o právní poradenství a neodpovídá za údaje zadané vámi nebo hosty ani za způsob jeho použití.",
         "nav.guide": "Nápověda",
         "help.tip.label": "Nápověda",
@@ -2665,7 +2628,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "hint.all_reported": "Všichni hosté jsou nahlášení. Už není co odeslat.",
         "hint.nothing_duty": "Na pobytu jsou jen čeští hosté: policii se nic nehlásí.",
         "hint.need_signature": "Každý cizinec se musí podepsat před odesláním do UbyPortu",
-        "hint.need_verification": "Ověřte každého hosta proti pasu před hlášením",
         "hint.nothing_left": "Pro tento pobyt už nic k odeslání není",
         "hint.not_ready": "Některým hostům chybí údaje nebo podpis. Viz označené hosty níže.",
         "hint.missing_guests": "Formuláře hostů: %(filled)s/%(expected)s. Pošlete ostatním odkaz, zadejte je sami, nebo snižte počet hostů, pokud jich přijelo méně.",
@@ -2837,7 +2799,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.cta.send_again": "Odeslat znovu",
         "stay.detail.cta.fix": "Opravit odmítnutí",
         "stay.detail.cta.view_reports": "Zobrazit hlášení",
-        "stay.detail.cta.verify": "Ověřit pasy",
         "stay.detail.cta.open": "Otevřít pobyt",
         "stay.detail.cta.add_guest": "Přidat hosta",
         "stay.detail.next_step": "Další krok",
@@ -2880,7 +2841,6 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "stay.detail.guests.rejected": "Odmítnuto",
         "stay.detail.guests.rejected_final": "Odmítnuto, finální",
         "stay.detail.guests.incomplete": "Neúplné",
-        "stay.detail.guests.verify": "Ověřit pas",
         "stay.detail.guests.ready": "Připraveno",
         "stay.detail.guests.edit": "Upravit údaje",
         "stay.detail.guests.pdf": "PDF registračního formuláře",
@@ -3438,7 +3398,7 @@ _INTERFACE_STRINGS = {
         "guest.admin.note": 'Note',
         "guest.admin.note_optional": '(optional, max 255)',
         "guest.admin.passport_pdf_download": 'Download the passport PDF',
-        "guest.admin.passport_pdf_hint": 'The PDF opens on your device, not inside UbyHost. Compare it with the form, then confirm below.',
+        "guest.admin.passport_pdf_hint": 'The PDF opens on your device, not inside UbyHost. Compare it with the form.',
         "guest.admin.passport_photo_alt": 'Passport photo',
         "guest.admin.remove.submit": 'Delete this guest',
         "guest.admin.remove.title": 'Remove',
@@ -4256,7 +4216,7 @@ _INTERFACE_STRINGS = {
         "guest.admin.note": 'Poznámka',
         "guest.admin.note_optional": '(volitelné, max. 255)',
         "guest.admin.passport_pdf_download": 'Stáhnout PDF pasu',
-        "guest.admin.passport_pdf_hint": 'PDF se otevře ve vašem zařízení, ne v UbyHostu. Porovnejte ho s formulářem a pak níže potvrďte.',
+        "guest.admin.passport_pdf_hint": 'PDF se otevře ve vašem zařízení, ne v UbyHostu. Porovnejte ho s formulářem.',
         "guest.admin.passport_photo_alt": 'Fotografie pasu',
         "guest.admin.remove.submit": 'Smazat tohoto hosta',
         "guest.admin.remove.title": 'Odstranit',
