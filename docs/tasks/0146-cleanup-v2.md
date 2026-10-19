@@ -1,7 +1,7 @@
 # 0146: Design v2 cleanup: one skeleton, dead macros out, legacy burn-down report
 
 Status: todo
-Depends on: 0145 | Base commit: df8b842 | Branch: claude/project-thread-td6fpc
+Depends on: 0145 | Base commit: cdcb781 | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 Part of [design-v2](../plans/design-v2.md). Commit each step as `0146 step k`. Never push, never open a PR.
@@ -50,7 +50,8 @@ def test_requested_skeleton_has_motion_and_accessibility_guards():
 
 | Path | Action | What |
 |---|---|---|
-| `App/app/templates/base.html` | edit | fallback skeleton via `ui_skeleton`; import |
+| `App/app/templates/base.html` | edit | fallback skeleton via `ui_skeleton`; import; new `?v=` keys |
+| `App/tests/static_versions.json` | edit | regenerated |
 | `App/app/static/skeleton.css` | edit | drop the `c05` rules |
 | `App/app/static/skeleton.js` | edit | pause hook on `.ui-skel` |
 | `App/app/static/host2.css` | edit | paused rule for `.ui-bone` |
@@ -118,7 +119,7 @@ for m in list_page_header list_toolbar sub_tabs breadcrumb nav_icon row_reportin
 
    For every macro that prints no template after the colon, delete its whole `{% macro name(...) %}` ... `{% endmacro %}` block (and the comment line directly above it, if that comment names the macro) from `App/app/templates/_components.html`. A macro that still prints a template stays, and is listed in the report. For each deleted macro also run `grep -n "import.*\\b<name>\\b" App/app/templates/*.html` and remove the name from any `{% from "_components.html" import ... %}` list that still names it (an import of a missing macro fails only at render time, not at compile time). `page_header` stays in any case: the public documents (`dpa.html`, `legal.html`, `privacy.html`, `subprocessors.html`, `terms.html`) use it. Command: `cd App && .venv/bin/python -c "from app.templating import templates; import glob, os; [templates.env.get_template(os.path.basename(p)) for p in glob.glob('app/templates/*.html')]; print('all compiled')"`. Expected: `all compiled`.
 
-4. Tests. Replace Anchor C with:
+4. Tests. Anchor C was already replaced by an earlier brief (the file already checks `.ui-bone` and `ui-pulse`); if so, leave it. Otherwise replace Anchor C with:
 
 ```
             bones = skeleton.locator(".ui-bone")
@@ -169,7 +170,7 @@ def test_removed_macros_are_neither_defined_nor_called():
 
    If step 3 kept one of the `REMOVED` names because a template still calls it, drop that name from the tuple and say so in the report. Command: `cd App && .venv/bin/python -m pytest tests/test_design_cleanup.py tests/test_skeleton_loaders.py tests/test_design_lint.py tests/test_signed_in_chrome.py tests/test_host_guest_pages.py -q --tb=short -x 2>&1 | tail -30` (drop a test file from the list if it does not exist). Expected: passed.
 
-5. Browser: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_SHOTS_DIR=/tmp/ubyhost-shots .venv/bin/python -m pytest tests/test_onboarding_wizard_browser.py tests/test_download_skeleton_browser.py tests/test_host_controls_browser.py -q --tb=short 2>&1 | tail -30`. Expected: passed, 0 skipped. Attach one screenshot of a host page while the skeleton shows (the onboarding wizard test writes one when `UBYHOST_SHOTS_DIR` is set; otherwise `skeleton-1280.png` from `page.evaluate("window.ubyhostSkeleton.start()")` on `/reservations`).
+5. Asset versions first: in `App/app/templates/base.html` give `skeleton.css`, `skeleton.js` and `host2.css` new `?v=` keys ending in `-0146` (grep `?v=` to find them), then from `App/`: `.venv/bin/python tests/test_static_versions.py --write && .venv/bin/python -m pytest tests/test_static_versions.py -q 2>&1 | tail -3` (passed). Browser: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium UBYHOST_SHOTS_DIR=/tmp/ubyhost-shots .venv/bin/python -m pytest tests/test_onboarding_wizard_browser.py tests/test_download_skeleton_browser.py tests/test_host_controls_browser.py tests/test_design_guardrails_browser.py -q -rs --tb=short 2>&1 | tail -30` (foreground, timeout 600000), then from the repo root `git checkout -- docs/tasks/0102-evidence; git clean -fdq docs/tasks/0102-evidence`. Expected: passed, 0 skipped. Attach one screenshot of a host page while the skeleton shows (the onboarding wizard test writes one when `UBYHOST_SHOTS_DIR` is set; otherwise `skeleton-1280.png` from `page.evaluate("window.ubyhostSkeleton.start()")` on `/reservations`).
 
 6. Burn-down table, from the repo root (output goes into the report, section "Legacy burn-down"):
 
