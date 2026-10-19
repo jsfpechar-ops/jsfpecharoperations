@@ -62,7 +62,10 @@
     for (const el of ws.querySelectorAll('button,.ui-btn,input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,[role=menuitem],[role=tab]')) {
       if (!vis(el) || el.closest('[role=menu],[hidden]')) continue;
       const r = el.getBoundingClientRect();
-      if (r.height < 43.5 || r.width < 43.5) out.push(['tap-target-small', name(el), Math.round(r.width), Math.round(r.height)]);
+      if (r.width <= 2 || r.height <= 2) continue; // visually hidden (sr-only), not a tap target
+      const after = getComputedStyle(el, '::after');
+      const grow = after.position === 'absolute' && after.content !== 'none' ? Math.max(0, -parseFloat(after.left) || 0) * 2 : 0; // hit area widened by a negative inset
+      if (r.height + grow < 43.5 || r.width + grow < 43.5) out.push(['tap-target-small', name(el), Math.round(r.width), Math.round(r.height)]);
     }
   }
   return out;

@@ -87,7 +87,7 @@ def test_every_host_page_passes_the_layout_guard(wide_host, wide_base):
                             if box and (box["x"] < 0 or box["x"] + box["width"] > width
                                         or box["y"] + box["height"] > doc_h):
                                 findings.append((name, width, state, ["menu-off-screen", box]))
-                            if panel.locator("input:not([type=hidden]):visible, textarea:visible, select:visible").count():
+                            if panel.locator("input:not([type=hidden]):not(.sr-only):visible, textarea:visible, select:visible").count():
                                 findings.append((name, width, state, ["menu-holds-form"]))
                         page.keyboard.press("Escape")
                 context.close()

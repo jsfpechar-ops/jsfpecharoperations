@@ -450,3 +450,11 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .ui-tabs.property-tabs .ui-tab[aria-current] { background: none; border-color: var(--ink); color: var(--ink); }
 /* 0140: the overview setup tiles' badge keeps the spacing the old .pill had (host.css) */
 .host-workspace .setup-status-copy > .ui-badge { margin-top: var(--space-2); white-space: normal; }
+
+/* 0157: layout guard (MASTER 11.0): phone fields and small controls reach 44 px; toolbar actions share one size */
+@media (max-width: 1023px) {
+  .host-workspace input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not(.sr-only), .host-workspace select { min-height: var(--control-h-phone); }
+  .host-workspace .operator-phone-code { min-width: var(--control-h-phone); }
+  .host-workspace [data-cal-scale] { min-width: var(--control-h-phone); min-height: var(--control-h-phone); }
+  .host-workspace #sig-clear { min-height: var(--control-h-phone); min-width: var(--control-h-phone); }
+}

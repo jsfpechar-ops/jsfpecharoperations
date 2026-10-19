@@ -15,7 +15,7 @@
     <a class="ui-btn ui-btn-primary" href="{{ setup_progress.continue_url }}">{{ t('wizard.continue') }}</a>
     <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-      <button class="link-button" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
+      <button class="ui-btn ui-btn-quiet" type="submit" name="action" value="hide" formnovalidate>{{ t('setup_guide.hide') }}</button>
     </form>
   </div>
 </section>
