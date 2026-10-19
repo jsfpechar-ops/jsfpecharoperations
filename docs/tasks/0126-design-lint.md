@@ -73,7 +73,7 @@ No other file may change.
 }
 ```
 
-   Command: `python3 -c "import json;print(len(json.load(open('docs/design/catalog.json'))['classes']))"`. Expected: `118`.
+   Command: `python3 -c "import json;print(len(json.load(open('docs/design/catalog.json'))['classes']))"`. Expected: `114`.
 
 2. Create `scripts/design_lint.py`:
 
