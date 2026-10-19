@@ -152,7 +152,7 @@
 .host-workspace .ui-stat span { color: var(--ink-2); font-size: var(--size-14); }
 .host-workspace .ui-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); overflow: hidden; }
 .host-workspace .ui-table th { text-align: left; font-size: var(--size-13); font-weight: 500; color: var(--ink-3); height: var(--control-h); padding: 0 var(--row-px); border-bottom: 1px solid var(--line); }
-.host-workspace .ui-table td { height: var(--row-h); padding: 0 var(--row-px); border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--ink-2); font-size: var(--body-size); }
+.host-workspace .ui-table td { height: var(--row-h); padding: var(--space-1) var(--row-px); border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--ink-2); font-size: var(--body-size); }
 .host-workspace .ui-table tr:last-child td { border-bottom: 0; }
 .host-workspace .ui-table .ui-row:hover td, .host-workspace .ui-table .ui-row:focus-within td { background: var(--surface-2); }
 .host-workspace .ui-table .ui-cell-first, .host-workspace .ui-table .ui-cell-first a { color: var(--ink); font-weight: 600; text-decoration: none; }
@@ -213,10 +213,23 @@
   .host-workspace .ui-table { display: block; border: 0; background: transparent; overflow: visible; }
   .host-workspace .ui-table thead { display: none; }
   .host-workspace .ui-table tbody { display: flex; flex-direction: column; gap: var(--space-2); }
-  .host-workspace .ui-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-2); align-items: center; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--row-py) var(--row-px); min-height: calc(var(--row-h) + var(--space-6) + var(--space-1)); }
-  .host-workspace .ui-table td { display: block; grid-column: 1; height: auto; padding: 0; border: 0; text-align: left; }
+  .host-workspace .ui-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto var(--control-h-phone); column-gap: var(--space-3); row-gap: calc(var(--space-1) / 2); align-items: start; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--row-py) var(--space-2) var(--row-py) var(--row-px); min-height: calc(var(--row-h) + var(--space-6) + var(--space-1)); }
+  .host-workspace .ui-table td { display: block; grid-column: 1; min-width: 0; height: auto; padding: 0; border: 0; text-align: left; }
   .host-workspace .ui-table td:empty { display: none; }
-  .host-workspace .ui-table td.ui-cell-acts { grid-column: 2; grid-row: 1 / span 4; }
+  .host-workspace .ui-table td.ui-cell-acts:not([data-card]) { grid-column: 3; grid-row: 1 / span 3; justify-self: end; }
+  /* 0149: MASTER 7.3 card roles */
+  .host-workspace .ui-table td[data-card="primary"] { grid-row: 1; font-size: var(--size-16); font-weight: 600; color: var(--ink); }
+  .host-workspace .ui-table td[data-card="secondary"] { grid-row: 2; grid-column: auto; font-size: var(--size-15); color: var(--ink-2); }
+  .host-workspace .ui-table td[data-card="meta"] { grid-row: 3; grid-column: auto; font-size: var(--size-13); color: var(--ink-3); }
+  .host-workspace .ui-table td[data-card="meta"] + td[data-card="meta"] { justify-self: end; }
+  .host-workspace .ui-table td[data-card="badge"] { grid-column: 2; grid-row: 1 / span 2; justify-self: end; display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-1); }
+  .host-workspace .ui-table td[data-card="hide"] { display: none; }
+  .host-workspace .ui-table td[data-card] .ui-sub { display: inline; margin: 0 0 0 var(--space-1); font-size: var(--size-13); color: var(--ink-3); font-weight: 400; }
+  .host-workspace .ui-table td[data-card="actions"] { display: contents; }
+  .host-workspace .ui-table td[data-card="actions"] > .row-menu { grid-column: 3; grid-row: 1 / span 3; justify-self: end; align-self: start; }
+  .host-workspace .ui-table td[data-card="actions"] > .row-action-form { grid-column: 1 / span 2; grid-row: 4; margin: var(--space-1) 0 0; }
+  .host-workspace .ui-table td[data-card="actions"] .row-action-send { width: 100%; height: var(--control-h-phone); min-height: var(--control-h-phone); }
+  .host-workspace .ui-table .row-menu-trigger { width: var(--control-h-phone); height: var(--control-h-phone); min-height: var(--control-h-phone); }
   .host-workspace .ui-table .ui-row:hover td, .host-workspace .ui-table .ui-row:focus-within td { background: transparent; }
   .host-workspace .ui-cards { display: flex; flex-direction: column; gap: var(--space-2); }
   .host-workspace .ui-stats { gap: var(--space-2); }
@@ -315,10 +328,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 /* 0134: stacked table under the desktop breakpoint; the header row is read by assistive tech only */
 @media (max-width: 1023px) {
   .host-workspace .ui-table-stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-  .host-workspace .ui-table-stack tr { display: block; padding: var(--row-py) 0; border-bottom: 1px solid var(--line); }
-  .host-workspace .ui-table-stack td { display: flex; gap: var(--space-3); padding: var(--space-1) 0; border: 0; }
-  .host-workspace .ui-table-stack td[data-label]::before { content: attr(data-label); flex: 0 0 38%; color: var(--ink-3); font-size: var(--size-14); }
-  .host-workspace .ui-table-stack td[data-label=""]::before, .host-workspace .ui-table-stack td:not([data-label])::before { content: none; }
 }
 
 /* 0134-cont-2: icon buttons stay square; copy labels are for screen readers */
@@ -329,3 +338,9 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .dashboard-missing-list { display: none; }
   .host-workspace .dashboard-missing-short { display: inline; }
 }
+
+/* 0149: desktop list cells. The row is the link, so a link in a cell is plain ink. */
+.host-workspace .ui-table td > a { color: inherit; text-decoration: none; }
+.host-workspace .ui-table td > .ui-sub, .host-workspace .ui-table .stay-report-deadline { margin: var(--space-1) 0 0; }
+.host-workspace .ui-table .ui-cell-acts > .row-action-form, .host-workspace .ui-table .ui-cell-acts > .row-menu { display: inline-flex; vertical-align: middle; margin: 0; }
+.host-workspace .ui-table .ui-cell-acts > .row-action-form + .row-menu { margin-left: var(--space-2); }
