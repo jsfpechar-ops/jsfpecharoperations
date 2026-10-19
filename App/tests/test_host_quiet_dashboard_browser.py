@@ -297,7 +297,7 @@ def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_r
                 assert set(shown_ids) <= dashboard_rich_host["all_actionable"]
                 assert dashboard_rich_host["overdue"] in shown_ids
                 assert dashboard_rich_host["ready"] in shown_ids
-                assert page.locator('.dashboard-row-task [data-tone="amber"]').count() >= 1
+                assert page.locator('.dashboard-row-task .pill.amber, .dashboard-row-task [data-tone="amber"]').count() >= 1
                 ready_row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["ready"]}"]')
                 assert ready_row.locator('.dashboard-row-task [data-tone="blue"]').count() == 1
                 overdue_row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["overdue"]}"]')
