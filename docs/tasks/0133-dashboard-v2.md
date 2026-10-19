@@ -49,6 +49,14 @@ No other file may change.
 
 ## 4. Steps
 
+0. (Added by the orchestrator after 0132-fix-1.) In `App/app/static/host2.css`, delete line 120 (`  .host-workspace .ui-menu-panel .row-menu-item { min-height: var(--control-h-phone); }`, inside the 767px block; it loses to the later desktop rule), and append at the end of the file:
+```
+@media (max-width: 767px) {
+  .host-workspace .ui-menu-panel .row-menu-item { min-height: var(--control-h-phone); }
+}
+```
+   This fixes `test_host_quiet_dashboard_browser.py` "touch target is only 40px high". Also expect `test_host_quiet_dashboard_browser.py` line ~328 (header button count, `.btn` selectors and 42 px height) to need the v2 selectors `.ui-btn` and the v2 heights (44 px at 390 or less, 40 px above): update that assertion and list it in the report. Commit `0133 step 0`.
+
 1. Replace the whole content of `App/app/templates/dashboard.html` (verify Anchor A is its first six lines first) with:
 
 ```
