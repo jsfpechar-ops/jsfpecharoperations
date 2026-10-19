@@ -1,6 +1,6 @@
 # 0127: Vendored Lucide icons as an inline SVG macro
 
-Status: todo
+Status: review
 Depends on: 0126 | Base commit: df8b842 | Branch: claude/project-thread-td6fpc
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
