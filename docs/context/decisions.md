@@ -57,5 +57,5 @@ Append-only.
 - 2026-10-17 | [workflow] Haiku 5.5 only executor (replaces Cursor, Kimi, GLM, Luna); 100k cap per chat; scoped tests from test-map, no audits or full suite unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
 - 2026-10-19 | Design reset v2: `docs/design/MASTER.md` is the single host design source (host sections of DESIGN.md and HOST_APP_DESIGN.md superseded); Lucide icons vendored as inline SVG (ISC, no runtime dependency); CI lint blocks raw colours, inline styles and page CSS in host templates; phone bottom tab bar replaces the slide-out menu | owner | [plan](../plans/design-v2.md)
 
-- 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172); host.css once went stale in production.
+- 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
