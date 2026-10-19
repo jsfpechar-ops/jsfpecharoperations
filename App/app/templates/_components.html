@@ -345,8 +345,7 @@
 {# ``truncate`` keeps a dense table row on one line: the name ends in an
    ellipsis and the full name stays in the tooltip and for screen readers. #}
 {% macro property_identity(id, name, compact=false, truncate=false) %}
-  <span class="property-identity{{ ' truncate' if truncate }}"{% if truncate %} title="{{ name }}"{% endif %}>
-    <span class="property-mark property-tone-{{ id % 10 }}" aria-hidden="true">{{ name[:1] }}</span>
+  <span class="property-identity ui-pdot{{ ' truncate' if truncate }}" data-property="{{ (id % 4) + 1 }}"{% if truncate %} title="{{ name }}"{% endif %}>
     <span class="{{ 'small' if compact }}{{ ' property-identity-name' if truncate }}">{{ name }}</span>
   </span>
 {% endmacro %}
