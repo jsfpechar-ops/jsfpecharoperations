@@ -226,9 +226,10 @@ def test_weekly_buckets_hosts_in_window():
     expected_labels = [(first + timedelta(weeks=i)).strftime("%d.%m.") for i in range(12)]
     assert labels == expected_labels
     since = first.isoformat()
+    until = (admin_funnel._monday(NOW.date()) + timedelta(weeks=1)).isoformat()
     in_window = db.query(
-        "SELECT COUNT(*) AS n FROM user_account WHERE role = 'host' AND created_at >= ?",
-        (since,),
+        "SELECT COUNT(*) AS n FROM user_account WHERE role = 'host' AND created_at >= ? AND created_at < ?",
+        (since, until),
     )[0]["n"]
     assert sum(w["value"] for w in series["hosts"]) == in_window
     assert in_window >= 1
