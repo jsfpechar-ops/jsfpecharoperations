@@ -65,8 +65,6 @@ body.host-workspace .dashboard-stats .dashboard-stat span { font-size:12px; line
 body.host-workspace .dashboard-stats .dashboard-stat::before { width:7px; height:7px; flex-basis:7px; }
 body.host-workspace .host-today-head { padding:0; border:0; border-bottom:1px solid var(--line); border-radius:0; background:#fff; }
 body.host-workspace .dashboard-row-list { display:grid; gap:8px; }
-body.host-workspace .dashboard-row { display:grid; grid-template-columns:minmax(0,1fr) 184px; align-items:center; gap:18px; padding:12px 14px; border:1px solid var(--line); border-radius:11px; background:#fff; }
-body.host-workspace .dashboard-row.is-overdue { border-left:3px solid var(--status-critical-border); }
 body.host-workspace .dashboard-row-copy { min-width:0; }
 body.host-workspace .dashboard-row-dates, body.host-workspace .dashboard-row-task { margin:0; color:var(--ink-secondary); font-size:12px; line-height:1.4; }
 body.host-workspace .dashboard-row-dates { display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:var(--ink-muted); }
@@ -120,7 +118,6 @@ body.host-workspace .row-menu-panel, body.host-workspace dialog, body.host-works
   body.host-workspace #main-content { padding-left:16px; padding-right:16px; }
   body.host-workspace .dashboard-stats { gap:7px; }
   body.host-workspace .dashboard-stats .dashboard-stat { min-height:44px; }
-  body.host-workspace .dashboard-row { grid-template-columns:minmax(0,1fr); gap:10px; padding:12px; }
   body.host-workspace .dashboard-row-actions { grid-template-columns:44px; justify-content:end; }
   body.host-workspace .dashboard-row-actions .row-menu { width:44px; }
   body.host-workspace .dashboard-row-actions .row-menu-trigger { width:44px; min-width:44px; height:44px; min-height:44px; }
