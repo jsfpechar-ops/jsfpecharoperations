@@ -8,6 +8,8 @@ def test_dashboard_with_a_property_has_the_v2_header_one_primary_and_refresh_hoo
     page = host_with_property.get("/?lang=en").text
     assert page.count("<h1") == 1 and 'data-body-kind="detail"' in page
     assert page.count('class="ui-btn ui-btn-primary"') == 1
+    assert page.count('class="ui-btn ui-btn-quiet ui-btn-icon ui-ph-menu"') == 1
+    assert ' class="ui-btn' not in page.split("ui-ph-menu", 1)[1].split(">", 1)[0]
     assert 'data-dashboard-refresh="stats"' in page and 'data-dashboard-refresh="work"' in page
     assert 'class="ui-stats' in page and len(re.findall(r'class="[^"]*\bui-stat\b[^"]*"', page)) == 3
     assert "page-toolbar" not in page
