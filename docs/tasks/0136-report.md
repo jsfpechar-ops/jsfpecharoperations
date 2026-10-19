@@ -1,6 +1,6 @@
 # 0136 report
 
-Status: blocked
+Status: review
 
 ## Files changed
 - App/app/templates/reservation_detail.html (step 1, 4f587de)
@@ -20,6 +20,13 @@ Status: blocked
   FAILED tests/test_endtoend.py::test_04_connection_test_reaches_the_service
   1 failed, 74 passed, 1 warning in 5.44s
   ```
+
+## Steps 5 and 6
+- Step 4 set without -x: 96 passed, 19 failed, all in test_endtoend.py from test_12 on (cascade from test_04, which is order-dependent, K-T01). Same set without test_endtoend: 87 passed. Filing row (test_ubyport_*, test_worker, test_submission_*, test_filed_by_hand, test_duplicate_guard): 125 passed.
+- Step 5 browser and geometry (`-rs`): `10 passed, 1 warning in 25.15s`, 0 skipped.
+- Screenshots (scratchpad, not committed): /tmp/claude-0/-home-user-jsfpecharoperations/3c6f1ec6-a025-553c-863a-9c0748d5832e/scratchpad/shots/0136/guest-edit-390.png, guest-edit-1280.png, stay-390.png, stay-1280.png. Each viewed once. Stay page: "Ready" pill and "Edit details" on the guest card, no "Mark ID checked", no "ID not checked" badge, no check panel. Guest edit: no check panel, form ends with the signature and the buttons; the passport preview does not show because this guest has no photo. The with-photo preview path is not checked here.
+- Step 6: design_lint OK; ruff selection All checks passed. Working tree clean; each file was already committed in its step, so there is no separate step 6 commit.
+- No PR opened (brief: never open a PR).
 
 ## Deviations
 - test_endtoend.py::test_04 fails in the combined step 4 run. It passes alone (28 passed). It also fails with only `tests/test_send_controls.py tests/test_endtoend.py`, and neither file was edited, so this is a pre-existing file-order interaction, not this brief. It is not in the known list. Stopped here per the two-failure rule.
