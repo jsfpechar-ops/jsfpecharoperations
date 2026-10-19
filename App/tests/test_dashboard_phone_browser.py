@@ -46,7 +46,13 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
                 assert page.locator(".cal-dots").count() == 0
                 assert page.locator(".cal-gantt-row").count() >= 1
                 for selector in HIDDEN_ON_PHONE:
-                    assert visible_count(page, selector) >= 1, selector
+                    if selector != "[data-cal-scales]":
+                        assert visible_count(page, selector) >= 1, selector
+                assert not page.locator("[data-cal-scales]").is_visible()  # gantt hides scales by design
+                page.locator('[data-cal-view="calendar"]').click()
+                page.locator("[data-cal-scales]").wait_for(state="visible")
+                page.locator('[data-cal-view="gantt"]').click()
+                page.locator(".cal-gantt-row").first.wait_for(state="visible")
                 # 0148: alerts and banner (1280)
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             shot(page, f"phone-{width}")
