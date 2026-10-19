@@ -140,7 +140,7 @@ def test_stay_page_hand_filing_panel_and_verify_button_have_room(client, world):
     stay = _stay(world, world["studio"], guests=True)
     page = client.get(f"/reservations/{stay}?lang=en").text
     if 'id="file-by-hand"' in page:
-        assert '<details class="ui-section" id="file-by-hand">' in page
+        assert '<details class="ui-section ui-card" id="file-by-hand">' in page
     assert 'class="inline verify-form' not in page
     # A guest without a document type no longer prints a lone dash before the number.
     assert '<span class="fact-extra">\u2014 </span>' not in page

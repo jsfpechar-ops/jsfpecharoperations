@@ -187,7 +187,7 @@ def test_overdue_deadline_is_a_pill_not_a_bar(base, world, browser):
     try:
         page.goto(f"{base}/reservations/{overdue['id']}?lang=en")
         widths = page.evaluate(
-            """() => { const pill = document.querySelector('.metric-value.deadline.overdue');
+            """() => { const pill = document.querySelector('.metric-value[data-deadline=\"overdue\"]');
               if (!pill) return null;
               return [pill.getBoundingClientRect().width, pill.parentElement.getBoundingClientRect().width]; }"""
         )

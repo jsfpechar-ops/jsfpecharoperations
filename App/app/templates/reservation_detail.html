@@ -372,7 +372,7 @@
   </div>
   {# WP23: the host filed this stay in the UbyPort web application. #}
   {% if hand_filing.count %}
-  <div class="ui-section" id="filed-by-hand">
+  <div class="ui-section ui-card" id="filed-by-hand">
     <p><strong>{{ t('stay.hand_filing.done', when=hand_filing.filed_at.strftime('%d.%m.%Y %H:%M')) }}</strong></p>
     {% if hand_filing.reference %}<p class="ui-sub">{{ t('stay.hand_filing.done_reference', reference=hand_filing.reference) }}</p>{% endif %}
     {% if hand_filing.can_undo %}
@@ -385,7 +385,7 @@
   </div>
   {% endif %}
   {% if hand_filing.candidates and not stay_inactive %}
-  <details class="ui-section" id="file-by-hand">
+  <details class="ui-section ui-card" id="file-by-hand">
     <summary>{{ t('stay.hand_filing.open') }}</summary>
     <p class="ui-sub">{{ t('stay.hand_filing.lede') }} <a href="/guide#manual-filing">{{ t('guide.reporting.manual_filing_title') }}</a></p>
     <form method="post" action="/reservations/{{ reservation.id }}/filed-by-hand" class="settings-grid">
