@@ -415,3 +415,12 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .wrap.with-sidebar > .ui-toolbar,
 .host-workspace .wrap.with-sidebar > .ui-sub[data-filter-summary],
 .host-workspace .wrap.with-sidebar > .list-filter { margin-left: auto; margin-right: auto; }
+
+/* 0141-fix-1: stacked tables without card roles show each cell's label; stacked metrics have no side line */
+@media (max-width: 1023px) {
+  .host-workspace .ui-table td[data-label]:not([data-card]) { display: flex; justify-content: space-between; gap: var(--space-3); font-size: var(--size-14); }
+  .host-workspace .ui-table td[data-label]:not([data-card])::before { content: attr(data-label); color: var(--ink-3); font-size: var(--size-13); }
+  .host-workspace .ui-table td[data-label]:not([data-card]):first-child { display: block; font-weight: 600; color: var(--ink); }
+  .host-workspace .ui-table td[data-label]:not([data-card]):first-child::before { content: none; }
+  .host-workspace .detail-metric { border-right: 0; }
+}

@@ -20,3 +20,9 @@ def test_alert_stack_is_one_card_without_shadows():
 def test_form_actions_wrap_and_mono_breaks():
     assert ".ui-form-actions { display: flex; flex-wrap: wrap;" in CSS
     assert "overflow-wrap: anywhere" in CSS
+
+
+def test_unroled_stacked_cells_show_labels():
+    block = CSS.split("/* 0141-fix-1:", 1)[1]
+    assert "td[data-label]:not([data-card])::before { content: attr(data-label);" in block
+    assert ".detail-metric { border-right: 0; }" in block
