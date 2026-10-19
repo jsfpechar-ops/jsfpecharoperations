@@ -24,6 +24,15 @@
   ],
   "hooks": ["sr-only", "skip-link", "grow", "hidden", "is-open", "is-on", "is-active", "row-menu", "row-menu-trigger", "row-menu-panel", "help-tip", "help-tip-btn", "help-tip-body", "toast", "toast-stack", "clickable-row", "row-menu-item", "row-menu-form", "row-action-send", "row-action-form", "send-all", "send-all-form", "sync-btn", "sync-cta", "sync-cta-form", "sync-cta-meta", "has-meta", "csv-in-filter", "btn-icon-label", "property-identity", "truncate", "guest-count", "inline", "source-badge", "dashboard-row", "dashboard-row-copy", "dashboard-row-task", "dashboard-row-actions", "dashboard-row-property", "dashboard-row-dates", "dashboard-missing-line", "ui-table-wrap"],
   "enforced_templates": ["App/app/templates/dev_ui.html", "App/app/templates/dashboard.html"],
-  "legacy": {},
+  "legacy": {
+    "App/app/templates/dashboard.html": [
+      "dashboard-stats",
+      "dashboard-stat",
+      "action",
+      "ready",
+      "overdue",
+      "is-positive"
+    ]
+  },
   "enforced_stylesheets": ["App/app/static/host2.css"]
 }

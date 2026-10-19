@@ -70,10 +70,10 @@
   {% else %}{% call ui_empty(t('onboarding.skipped_title'), t('onboarding.skipped_body'), t('apartments.add'), '/apartments/new') %}{{ ui_button(t('onboarding.open_checklist'), 'secondary', href='/onboarding') }}{% endcall %}{% endif %}
 {% else %}
   <div id="dashboard-more" class="ui-btn-group hidden" data-panel>{{ ui_button('+ ' ~ t('calendar.add_cleaning'), 'secondary', href='/cleaning/new') }}{% if feed_count %}{{ sync_calendars_button(return_to='/', last_sync=none) }}{% endif %}</div>
-  <nav class="ui-stats" aria-label="{{ t('nav.overview') }}" data-dashboard-refresh="stats">
-    <a class="ui-stat" href="#needs-action"><strong class="ui-num">{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
-    <a class="ui-stat" href="/reservations"><strong class="ui-num">{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
-    <a class="ui-stat" href="#needs-action"><strong class="ui-num">{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
+  <nav class="ui-stats dashboard-stats" aria-label="{{ t('nav.overview') }}" data-dashboard-refresh="stats">
+    <a class="dashboard-stat action ui-stat{{ ' is-positive' if counts.attention > 0 }}" href="#needs-action"><strong class="ui-num">{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
+    <a class="dashboard-stat ready ui-stat{{ ' is-positive' if counts.ready > 0 }}" href="/reservations"><strong class="ui-num">{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
+    <a class="dashboard-stat overdue ui-stat{{ ' is-positive' if counts.overdue > 0 }}" href="#needs-action"><strong class="ui-num">{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
   </nav>
   {% call ui_section('') %}{% include "_dashboard_calendar.html" %}{% endcall %}
   <div data-dashboard-refresh="work">
