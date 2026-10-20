@@ -2817,7 +2817,7 @@ async def refresh_codelists(apartment_id: int, request: Request):
 
 # --- reservations --------------------------------------------------------
 
-RESERVATION_PAGE_SIZE = 50
+RESERVATION_PAGE_SIZE = 15
 
 # Presets are what a host actually asks for; the two date boxes cover the rest.
 RESERVATION_RANGES = ("upcoming", "past", "all")

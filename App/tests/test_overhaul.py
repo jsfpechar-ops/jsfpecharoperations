@@ -247,14 +247,14 @@ def test_reservations_paginate_and_preserve_filters():
             )
 
         first = _browser().get(f"/reservations?range=all&apartment={apartment_id}")
-        assert "Showing 1–50 of 52 stays." in " ".join(first.text.split())
+        assert "Showing 1–15 of 52 stays." in " ".join(first.text.split())
         assert f"/reservations?range=all&amp;apartment={apartment_id}&amp;page=2" in first.text
 
         second = _browser().get(
             f"/reservations?range=all&apartment={apartment_id}&page=2"
         )
-        assert "Showing 51–52 of 52 stays." in " ".join(second.text.split())
-        assert "Page 2 of 2" in second.text
+        assert "Showing 16–30 of 52 stays." in " ".join(second.text.split())
+        assert "Page 2 of 4" in second.text
     finally:
         _cleanup()
 
