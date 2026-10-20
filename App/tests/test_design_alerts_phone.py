@@ -25,7 +25,11 @@ def test_form_actions_wrap_and_mono_breaks():
 def test_unroled_stacked_cells_show_labels():
     block = CSS.split("/* 0141-fix-1:", 1)[1]
     assert "td[data-label]:not([data-card])::before { content: attr(data-label);" in block
-    assert ".detail-metric { border-right: 0; }" in block
+    # 0189: metric tiles are separate bordered cards with a gap, so there is no
+    # shared side line left to remove when they stack; assert that design instead.
+    host = (Path(__file__).resolve().parents[1] / "app" / "static" / "host.css").read_text(encoding="utf-8")
+    assert ".host-workspace .stay-metrics { background: transparent; border: 0; gap: var(--space-3); }" in host
+    assert ".host-workspace .detail-metric { padding: 14px 20px; border: 1px solid var(--line); border-radius: var(--card-radius); }" in host
 
 
 def test_fee_layout_fixes():

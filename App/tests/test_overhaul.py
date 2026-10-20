@@ -523,8 +523,9 @@ def test_host_shell_is_workflow_grouped():
         assert page.status_code == 200
         rail = page.text.split('id="app-sidebar"', 1)[1].split('</aside>', 1)[0]
         assert 'class="nav-label"' not in rail
-        for destination in ('/reservations', '/apartments', '/invoices'):
+        for destination in ('/reservations', '/apartments', '/stay-fees'):  # 0192: Stay fees replaces Invoices in the sidebar
             assert f'href="{destination}"' in rail
+        assert 'href="/invoices"' not in rail
         assert "Dashboard" in rail
         assert 'data-command-open' in rail
     finally:
