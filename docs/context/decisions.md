@@ -59,3 +59,4 @@ Append-only.
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
+- 2026-10-20 | Watchdog digest interval is 72 h in the repository (closes K-OPS72) | owner | [OPERATIONS](../OPERATIONS.md)
