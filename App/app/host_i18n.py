@@ -1030,7 +1030,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         # WP23 filing watchdog: the operator digest. No guest names.
         "mail.deadline_digest.subject": "Filing watchdog: stays at risk (%(count)s)",
         "mail.deadline_digest.heading": "Stays that may miss the police deadline",
-        "mail.deadline_digest.intro": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 6 hours while any stay is at risk.",
+        "mail.deadline_digest.intro": "Each stay below has foreign guests that UbyPort has not accepted yet, and its deadline is less than 24 hours away or has passed. This digest is sent at most every 3 days while any stay is at risk.",
         "mail.deadline_digest.col_workspace": "Workspace",
         "mail.deadline_digest.col_property": "Property",
         "mail.deadline_digest.col_arrival": "Arrival",
@@ -2585,7 +2585,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail.deadline_at_risk.footer": "Tento e-mail dostanete jednou za pobyt, když do termínu hlášení policii zbývá méně než 24 hodin nebo už uplynul a pobyt stále není nahlášený.",
         "mail.deadline_digest.subject": "Hlídání hlášení: ohrožené pobyty (%(count)s)",
         "mail.deadline_digest.heading": "Pobyty, které mohou nestihnout termín hlášení policii",
-        "mail.deadline_digest.intro": "Každý pobyt níže má cizince, které UbyPort zatím nepřijal, a do termínu zbývá méně než 24 hodin nebo už uplynul. Tento přehled chodí nejvýše jednou za 6 hodin, dokud je některý pobyt ohrožený.",
+        "mail.deadline_digest.intro": "Každý pobyt níže má cizince, které UbyPort zatím nepřijal, a do termínu zbývá méně než 24 hodin nebo už uplynul. Tento přehled chodí nejvýše jednou za 3 dny, dokud je některý pobyt ohrožený.",
         "mail.deadline_digest.col_workspace": "Pracovní prostor",
         "mail.deadline_digest.col_property": "Ubytování",
         "mail.deadline_digest.col_arrival": "Příjezd",
