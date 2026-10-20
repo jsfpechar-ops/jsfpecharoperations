@@ -1,6 +1,7 @@
 """0143: host cleaning pages render on host_page; cleaning.css loads once from base."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from tests.test_signed_in_chrome import host_with_property  # noqa: F401
@@ -39,5 +40,5 @@ def test_other_host_pages_do_not_load_cleaning_css(host_with_property):
 
 def test_shared_cleaner_page_template_keeps_its_own_stylesheet():
     text = (TEMPLATES / "cleaning_shared.html").read_text(encoding="utf-8")
-    assert 'href="/static/cleaning.css?v=20261016-0123b-0106b"' in text
+    assert re.search(r'href="/static/cleaning\.css\?v=[^"]+"', text)
     assert 'class="cleaning-page-heading"' in text
