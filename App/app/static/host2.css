@@ -528,3 +528,7 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .copy-property-form .copyrow .field { margin: 0; }
 .host-workspace .copy-property-form .copyrow > .ui-btn { align-self: flex-end; }
 .host-workspace .settings-grid > .ui-form-actions { grid-column: 1 / -1; justify-self: start; }
+
+/* 0175: every pill gets a 1 px border in its own tone colour */
+.host-workspace .ui-badge { box-sizing: border-box; border: 1px solid var(--ui-dot, var(--st-action-dot)); }
+.host-workspace .ui-badge-neutral { border-color: var(--st-neutral-dot); }

@@ -1,0 +1,104 @@
+[
+ {
+  "page": "/reservations",
+  "width": 390,
+  "collapsed": false,
+  "shot": "reservations-390.png",
+  "problems": [],
+  "sheets": [
+   "/static/tokens.css?v=20261019-0153",
+   "/static/app.css?v=20261006a-0172",
+   "/static/components.css?v=20261014-0102c",
+   "/static/host.css?v=20261019-0172",
+   "/static/host-controls.css?v=20261014-0102d",
+   "/static/host-design0123.css?v=20261016-0123f",
+   "/static/host2.css?v=20261019-0175",
+   "/static/skeleton.css?v=20261014-0102c"
+  ]
+ },
+ {
+  "page": "/invoices",
+  "width": 390,
+  "collapsed": false,
+  "shot": "invoices-390.png",
+  "problems": [],
+  "sheets": [
+   "/static/tokens.css?v=20261019-0153",
+   "/static/app.css?v=20261006a-0172",
+   "/static/components.css?v=20261014-0102c",
+   "/static/host.css?v=20261019-0172",
+   "/static/host-controls.css?v=20261014-0102d",
+   "/static/host-design0123.css?v=20261016-0123f",
+   "/static/host2.css?v=20261019-0175",
+   "/static/skeleton.css?v=20261014-0102c"
+  ]
+ },
+ {
+  "page": "/reservations",
+  "width": 1280,
+  "collapsed": false,
+  "shot": "reservations-1280.png",
+  "problems": [],
+  "sheets": [
+   "/static/tokens.css?v=20261019-0153",
+   "/static/app.css?v=20261006a-0172",
+   "/static/components.css?v=20261014-0102c",
+   "/static/host.css?v=20261019-0172",
+   "/static/host-controls.css?v=20261014-0102d",
+   "/static/host-design0123.css?v=20261016-0123f",
+   "/static/host2.css?v=20261019-0175",
+   "/static/skeleton.css?v=20261014-0102c"
+  ]
+ },
+ {
+  "page": "/invoices",
+  "width": 1280,
+  "collapsed": false,
+  "shot": "invoices-1280.png",
+  "problems": [],
+  "sheets": [
+   "/static/tokens.css?v=20261019-0153",
+   "/static/app.css?v=20261006a-0172",
+   "/static/components.css?v=20261014-0102c",
+   "/static/host.css?v=20261019-0172",
+   "/static/host-controls.css?v=20261014-0102d",
+   "/static/host-design0123.css?v=20261016-0123f",
+   "/static/host2.css?v=20261019-0175",
+   "/static/skeleton.css?v=20261014-0102c"
+  ]
+ },
+ {
+  "page": "/reservations",
+  "width": 1280,
+  "collapsed": true,
+  "shot": "reservations-1280-collapsed.png",
+  "problems": [],
+  "sheets": [
+   "/static/tokens.css?v=20261019-0153",
+   "/static/app.css?v=20261006a-0172",
+   "/static/components.css?v=20261014-0102c",
+   "/static/host.css?v=20261019-0172",
+   "/static/host-controls.css?v=20261014-0102d",
+   "/static/host-design0123.css?v=20261016-0123f",
+   "/static/host2.css?v=20261019-0175",
+   "/static/skeleton.css?v=20261014-0102c"
+  ]
+ },
+ {
+  "page": "/invoices",
+  "width": 1280,
+  "collapsed": true,
+  "shot": "invoices-1280-collapsed.png",
+  "problems": [],
+  "sheets": [
+   "/static/tokens.css?v=20261019-0153",
+   "/static/app.css?v=20261006a-0172",
+   "/static/components.css?v=20261014-0102c",
+   "/static/host.css?v=20261019-0172",
+   "/static/host-controls.css?v=20261014-0102d",
+   "/static/host-design0123.css?v=20261016-0123f",
+   "/static/host2.css?v=20261019-0175",
+   "/static/skeleton.css?v=20261014-0102c"
+  ]
+ }
+]
