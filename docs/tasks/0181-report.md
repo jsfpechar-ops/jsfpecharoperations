@@ -1,6 +1,6 @@
 # 0181 report
 
-Status: blocked
+Status: review
 
 ## Files changed
 - App/app/static/host2.css (0181 block, min-width 1024 px)
@@ -17,7 +17,7 @@ Status: blocked
 
 ## Step status
 Done: steps 1 to 5 (5 partly: screenshots taken and reservations 390 and 1280 viewed, bordered rows aligned, no clipping seen).
-Left: step 6 (browser test run with 0 skipped, plus the 0102 cleanup), step 7 (final commit and PR, not pushed).
+Step 6: 17 passed, 0 skipped (three browser files, REQUIRE_BROWSER=1). No known failure appeared.
 
 ## Deviations
 - Step 5: the brief's `--new-app $PWD` fails because the tool needs the App dir (has .venv). Used `$PWD/App`.
