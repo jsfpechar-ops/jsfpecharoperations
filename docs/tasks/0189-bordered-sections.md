@@ -1,6 +1,6 @@
 # 0189: Bordered sections and stat tiles
 
-Status: in-progress
+Status: blocked
 Depends on: none | Base commit: 106d3bb | Branch: claude/project-thread-3xqb0b (PR #407, keep pushing there)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
