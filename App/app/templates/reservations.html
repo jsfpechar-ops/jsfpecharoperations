@@ -133,7 +133,6 @@
       <tr>
         <th class="stay-col-stay">{{ t('stays.table.stay') }}</th>
         <th class="stay-col-dates">{{ t('host.stay_dates') }}</th>
-        <th class="stay-col-property">{{ t('stays.table.apartment') }}</th>
         <th class="stay-col-guests">{{ t('stays.table.guests') }}</th>
         <th class="stay-col-reporting">{{ t('stays.table.reporting') }}</th>
         <th class="stay-col-actions"><span class="sr-only">{{ t('common.open') }}</span></th>
@@ -150,8 +149,9 @@
           tabindex="0" role="link"
           aria-label="{{ stay_label }} · {{ reservation.date_from | date_cz }} – {{ reservation.date_to | date_cz }}">
         <td class="ui-cell-first stay-col-stay" data-card="primary" data-label="{{ t('stays.table.stay') }}">
-          <a class="row-primary-link stay-identity-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ stay_label }}</a>
+          {{ property_identity(reservation.apartment_id, '') }}<a class="row-primary-link stay-identity-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ stay_label }}</a>
           <div class="ui-sub stay-col-source">{{ source_badge(reservation.source, source_label(reservation)) }}</div>
+          {% if stay_label != reservation.internal_name %}<div class="ui-sub">{{ reservation.internal_name }}</div>{% endif %}
         </td>
         <td class="nowrap stay-col-dates" data-card="secondary" data-label="{{ t('host.stay_dates') }}">
           <a class="stay-date-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ reservation.date_from | date_short }} – {{ reservation.date_to | date_short }}</a>
@@ -161,9 +161,6 @@
               &middot; <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stays.table.in_house') }}</span>
             {%- endif %}
           </div>
-        </td>
-        <td class="stay-col-property" data-card="meta" data-label="{{ t('stays.table.apartment') }}">
-          {{ property_identity(reservation.apartment_id, reservation.internal_name, true) }}
         </td>
         <td class="num stay-col-guests" data-card="meta" data-label="{{ t('stays.table.guests') }}">{{ guest_count(progress, placeholder=true) }}</td>
         <td class="stay-col-reporting" data-card="badge" data-label="{{ t('stays.table.reporting') }}">

@@ -53,8 +53,8 @@ def test_stay_detail_groups_facts_and_wraps(stay_actions_host, stay_actions_base
                     )
                     assert all(-1 <= left and right <= scroll_w + 1 and overflow in ("auto", "scroll") for left, right, scroll_w, overflow in extents), extents
                     if key != "incomplete":
-                        # Identity row and stay row, both visible on the page itself.
-                        assert page.locator(".guest-card .guest-facts").count() == 2
+                        # One fact grid (0179), visible on the page itself.
+                        assert page.locator(".guest-card .guest-facts").count() == 1
                         text = page.locator(".guest-card").first.inner_text()
                         assert "P-" in text and "1990" in text
                         for dd in page.locator(".guest-card dd").all():

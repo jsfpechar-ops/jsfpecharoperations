@@ -21,7 +21,7 @@ def test_signed_in_pages_carry_the_v2_shell_and_not_the_drawer(host_with_propert
 def test_the_sidebar_lists_every_destination_with_a_lucide_icon(host_with_property):
     page = host_with_property.get("/?lang=en").text
     sidebar = re.search(r'<aside class="ui-sidebar".*?</aside>', page, re.S).group(0)
-    for href, icon in (("/", "layout-dashboard"), ("/reservations", "calendar-days"), ("/apartments", "house"), ("/invoices", "receipt"),
+    for href, icon in (("/", "layout-dashboard"), ("/reservations", "calendar-days"), ("/apartments", "house"), ("/invoices", "invoice-slip"),
                        ("/cleaning", "brush-cleaning"), ("/settings", "settings"), ("/guide", "book-open")):
         assert re.search(rf'href="{re.escape(href)}"[^>]*>\s*<svg class="ui-icon"[^>]*data-icon="{icon}"', sidebar), href
     assert sidebar.count('aria-current="page"') == 1

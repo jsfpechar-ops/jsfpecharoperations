@@ -14,13 +14,8 @@
 .cleaning-page textarea:focus-visible, .cleaning-page select:focus-visible, .cleaning-page summary:focus-visible { outline:3px solid var(--brand-ink); outline-offset:3px; }
 .cleaning-skip { display:inline-flex; align-items:center; min-height:44px; margin-bottom:12px; font-size:1.0625rem; }
 .cleaning-skip:not(:focus) { position:absolute; width:1px; height:1px; min-height:0; margin:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
-.cleaning-period { display:flex; flex-wrap:wrap; gap:10px 12px; align-items:flex-end; padding:0; background:transparent; border:0; border-radius:0; margin:0 0 10px; }
-.cleaning-period .field { margin:0; min-width:0; flex:0 1 150px; }
-.cleaning-period label, .cleaning-form label { display:block; font-size:1rem; font-weight:600; margin-bottom:8px; }
-.cleaning-period label { font-size:12px; font-weight:600; color:var(--ink-secondary); margin-bottom:4px; }
-.cleaning-period input, .cleaning-form input:not([type=checkbox]), .cleaning-form select, .cleaning-form textarea { width:100%; max-width:100%; min-width:0; min-height:48px; padding:12px; font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--border-strong); border-radius:6px; }
-.cleaning-period input { min-height:36px; padding:6px 10px; font-size:13px; }
-.cleaning-period > a { display:flex; align-items:center; min-height:36px; font-size:13px; }
+.cleaning-form label { display:block; font-size:1rem; font-weight:600; margin-bottom:8px; }
+.cleaning-form input:not([type=checkbox]), .cleaning-form select, .cleaning-form textarea { width:100%; max-width:100%; min-width:0; min-height:48px; padding:12px; font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--border-strong); border-radius:6px; }
 .cleaning-legend { display:flex; flex-wrap:wrap; gap:14px; margin:6px 0 10px; font-size:12px; color:var(--ink-secondary); }
 .cleaning-legend span::before { content:""; display:inline-block; width:10px; height:10px; margin-right:6px; border-radius:3px; }
 .cleaning-legend-booking::before { background:var(--teal-bg); border:1px solid var(--teal); }
@@ -39,7 +34,7 @@
 .cleaning-card-heading { grid-area:head; display:block; min-width:0; }
 .cleaning-card h4 { font-size:15px; font-weight:650; line-height:1.3; margin:0; overflow-wrap:anywhere; }
 .cleaning-origin { display:block; font-size:12px; color:var(--ink-muted); }
-.cleaning-facts { grid-area:facts; display:flex; flex-wrap:wrap; gap:2px 24px; margin:0; }
+.cleaning-facts { grid-area:facts; display:grid; grid-template-columns:repeat(2, minmax(0, 17rem)); gap:2px 24px; margin:0; }
 .cleaning-facts dt { font-size:11px; font-weight:600; color:var(--ink-muted); margin:0; }
 .cleaning-facts dd { font-size:13px; line-height:1.35; margin:0; }
 .cleaning-access { display:flex; align-items:baseline; gap:10px; padding:6px 10px; background:var(--canvas-subtle); border-radius:6px; }
@@ -79,6 +74,9 @@
 @media (max-width:900px) {
   .cleaning-card { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"head acts" "facts facts"; }
 }
+@media (max-width:640px) {
+  .cleaning-facts { grid-template-columns:minmax(0, 1fr); }
+}
 @media (max-width:760px) {
   .cleaning-page-heading { flex-direction:column; gap:16px; }
   .cleaning-actions { width:100%; }
@@ -86,9 +84,6 @@
   .cleaning-form-row { grid-template-columns:1fr; gap:20px; }
   .cleaning-panel { padding:20px 16px; }
   .cleaning-public { padding:16px; }
-  .cleaning-period > button { flex:1 1 100%; }
-  .cleaning-period input { min-height:44px; padding:10px 12px; font-size:1rem; }
-  .cleaning-period > a { min-height:44px; }
   .cleaning-card { grid-template-columns:minmax(0,1fr); grid-template-areas:"head" "facts" "acts"; }
   .cleaning-card-actions { justify-self:start; }
   .cleaning-access { flex-wrap:wrap; row-gap:2px; }
@@ -96,7 +91,7 @@
   .cleaning-access .cleaning-code-source { font-size:12px; color:var(--ink-secondary); }
   .cleaning-card-actions .btn, .cleaning-card-actions > a:not(.btn) { min-height:44px; }
 }
-@media print { .cleaning-page .dashboard-calendar, .cleaning-actions, .cleaning-card-actions, .cleaning-period, .cleaning-skip { display:none!important; } .cleaning-card { break-inside:avoid; } }
+@media print { .cleaning-page .dashboard-calendar, .cleaning-actions, .cleaning-card-actions, .cleaning-skip { display:none!important; } .cleaning-card { break-inside:avoid; } }
 
 .cleaning-form-page > a:first-child { display:inline-flex; align-items:center; min-height:44px; }
 

@@ -24,8 +24,8 @@
     "v": "20260918a"
   },
   "cleaning.css": {
-    "sha256": "99a3f07a07384e4d89cd5a60f8077d80ba9534565bf68d30f59b13fc60bc203e",
-    "v": "20261019-0143"
+    "sha256": "650f5a1166cef3029455e73e51499d681da4ae49f3f76a7e9e0db5b7bd5177af",
+    "v": "20261020-0182a-0182"
   },
   "cleaning.js": {
     "sha256": "8c430853292b8dd39b0922b26ad4307d6005f057f9ff670e1847b545de16c904",
@@ -44,8 +44,8 @@
     "v": "20261019-0147"
   },
   "dashboard-calendar.js": {
-    "sha256": "8fedd7cfedc0fbcc90b5aead0e1544ed726583e1f23e9d8c95da4a08db75f8f1",
-    "v": "20261019-0147c"
+    "sha256": "f3acdc0718330f5f3d82802ad7cf9da78a3cb2155b5f021b27b809580dd33945",
+    "v": "20261019-0174"
   },
   "docs/ubyport-ws-credential-sample.pdf": {
     "sha256": "0c147cf9c5dd5326612bc4668c5bce853cf300171ca62e3a0bab688c09b75fe6",
@@ -80,8 +80,8 @@
     "v": "20261014-0102d"
   },
   "host2.css": {
-    "sha256": "8ea2364ae23a03288b16ac4a181005ba8c5e991b3760c2f191d44b66ce95eb7b",
-    "v": "20261019-0173"
+    "sha256": "f1c5fb79e738d119fcad61b462046391871b5dcc2392f797ccbfa4754a3f2f9d",
+    "v": "20261020-0183a-0183"
   },
   "landing.css": {
     "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",

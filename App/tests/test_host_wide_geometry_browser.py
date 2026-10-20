@@ -259,7 +259,7 @@ def _capture_geometry(page, result_selector):
           });
           const stayTracks = [...document.querySelectorAll('.stays-view tbody tr')].flatMap((row, rowIndex) =>
             ['.stay-col-stay .stay-identity-link', '.stay-col-dates > a',
-             '.stay-col-stay .stay-col-source', '.stay-col-property .property-identity',
+             '.stay-col-stay .stay-col-source',
              '.stay-col-guests', '.stay-col-reporting', '.stay-report-deadline'].flatMap(selector => {
               const content = row.querySelector(selector);
               const cell = content?.closest('td');

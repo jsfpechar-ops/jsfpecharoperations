@@ -14,7 +14,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth, db
+from app import auth, db, property_setup
 from app.main import app
 from fastapi.testclient import TestClient
 from tests.conftest import login_as
@@ -213,3 +213,219 @@ def test_admin_users_columns_start_on_one_line(wide_host, wide_base):
         db.execute("DELETE FROM audit WHERE owner_user_id = ? OR actor_user_id = ?", (admin_id, admin_id))
         db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (admin_id,))
         db.execute("DELETE FROM user_account WHERE id = ?", (admin_id,))
+
+
+def test_empty_state_action_is_centred_under_its_text(wide_host, wide_base):
+    """0176: the empty-state action sits on the text's centre line (ui_btn-group centres it)."""
+    cookie = wide_host["cookie"]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the empty-state test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/invoices?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        centres = page.evaluate(
+            """() => {
+                const main = document.querySelector('main') || document.body;
+                const wrap = document.createElement('div');
+                wrap.className = 'host-workspace';
+                wrap.innerHTML = '<div class="ui-empty" data-empty-state><h2>No invoices yet</h2>'
+                    + '<p>Generate your first invoice to get started.</p>'
+                    + '<div class="ui-btn-group"><a class="ui-btn ui-btn-secondary" href="#guard"><span>Generate invoice</span></a></div></div>';
+                main.prepend(wrap);
+                const empty = wrap.querySelector('.ui-empty');
+                const text = empty.querySelector('p').getBoundingClientRect();
+                const btn = empty.querySelector('a').getBoundingClientRect();
+                return { text: text.left + text.width / 2, button: btn.left + btn.width / 2 };
+            }"""
+        )
+        gap = abs(centres["button"] - centres["text"])
+        assert gap <= 2, f"empty-state action centre is {gap}px off the text centre"
+        context.close()
+        browser.close()
+
+
+def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
+    """0178: the setup checklist is a normal card (no tint, solid border, heading inside the padding)."""
+    cookie = wide_host["cookie"]
+    property_id = wide_host["configured_apartment"]
+    # The checklist shows only when the setup wizard is not active (_property_overview.html line 48):
+    # mark this property's wizard finished with the same helpers the app uses.
+    property_setup.start(property_id)
+    property_setup.finish(property_id)
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the setup checklist test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/apartments/{property_id}?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        # Fails the test if the checklist is absent: the configured fixture property must show it.
+        page.wait_for_selector("[data-setup-status]", timeout=5000)
+        facts = page.evaluate(
+            """() => {
+                const box = document.querySelector('.host-workspace .host-checklist[data-setup-status]');
+                if (!box) return null;
+                const other = document.querySelector('.host-workspace .panel:not(.host-checklist)');
+                const style = getComputedStyle(box);
+                const head = box.querySelector('.setup-status-head h2');
+                return {
+                    background: style.backgroundColor,
+                    expected: other ? getComputedStyle(other).backgroundColor : 'rgb(255, 255, 255)',
+                    borderStyle: style.borderTopStyle,
+                    headGap: head ? head.getBoundingClientRect().left - box.getBoundingClientRect().left : null,
+                };
+            }"""
+        )
+        assert facts is not None, "setup checklist card is not inside .host-workspace"
+        print(f"setup checklist measured: {facts}")
+        assert facts["background"] == facts["expected"], f"checklist background {facts['background']} is not the card background"
+        assert facts["borderStyle"] == "solid", f"checklist border is {facts['borderStyle']}, not solid"
+        assert facts["headGap"] is not None and facts["headGap"] >= 12, f"heading starts {facts['headGap']}px from the left edge"
+        context.close()
+        browser.close()
+
+
+def test_guest_card_facts_share_four_column_lines(wide_host, wide_base):
+    """0179: both rows of a guest card's facts start on the same four column lines."""
+    cookie = wide_host["cookie"]
+    reservation_id = wide_host["reservations"][0]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the guest card test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/reservations/{reservation_id}?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        page.wait_for_selector(".guest-card .guest-facts dt", timeout=5000)
+        lefts = page.evaluate(
+            """() => Array.from(document.querySelector('.guest-card').querySelectorAll('.guest-facts dt'))
+                .map(dt => dt.getBoundingClientRect().left)"""
+        )
+        context.close()
+        browser.close()
+    distinct = sorted({round(x / 2) * 2 for x in lefts})
+    print(f"guest card fact column lines: {distinct}")
+    assert len(lefts) >= 4, f"guest card shows only {len(lefts)} facts"
+    assert len(distinct) <= 4, f"guest card facts start on {len(distinct)} different lines: {distinct}"
+
+
+def test_table_rows_have_their_own_border_on_desktop(wide_host, wide_base):
+    """0181: on desktop each table row is its own bordered card, with a gap between rows."""
+    cookie = wide_host["cookie"]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the table row border test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/reservations?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        page.wait_for_selector(".host-workspace .ui-table tbody tr:nth-child(2) td", timeout=5000)
+        facts = page.evaluate(
+            """() => {
+                const rows = document.querySelectorAll('.host-workspace .ui-table tbody tr');
+                const first = rows[0].querySelector('td');
+                const style = getComputedStyle(first);
+                return {
+                    top: style.borderTopWidth,
+                    left: style.borderLeftWidth,
+                    gap: rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().bottom,
+                };
+            }"""
+        )
+        print(f"table row border measured: {facts}")
+        assert facts["top"] == "1px", f"row top border is {facts['top']}, not 1px"
+        assert facts["left"] == "1px", f"first cell left border is {facts['left']}, not 1px"
+        assert facts["gap"] >= 4, f"rows are only {facts['gap']}px apart"
+        context.close()
+        browser.close()
+
+
+def test_cleaning_card_facts_line_up_across_cards(wide_host, wide_base):
+    """0182: the first and second fact of every cleaning card start on the same x."""
+    cookie = wide_host["cookie"]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the cleaning facts test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/cleaning?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        page.wait_for_selector(".cleaning-card .cleaning-facts > div", timeout=5000)
+        lefts = page.evaluate(
+            """() => Array.from(document.querySelectorAll('.cleaning-card')).map(card =>
+                Array.from(card.querySelectorAll('.cleaning-facts > div')).map(d => d.getBoundingClientRect().left))"""
+        )
+        context.close()
+        browser.close()
+    assert len(lefts) >= 2, f"cleaning list shows only {len(lefts)} cards"
+    for index in (0, 1):
+        firsts = {round(card[index] / 2) * 2 for card in lefts if len(card) > index}
+        assert len(firsts) == 1, f"fact {index + 1} starts at different x across cards: {sorted(firsts)}"
+
+
+def test_sidebar_search_has_a_border(wide_host, wide_base):
+    """0183: the sidebar search row has a visible 1 px border, not a borderless grey fill."""
+    cookie = wide_host["cookie"]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the sidebar search border test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        page.wait_for_selector(".host-workspace .ui-search-row", timeout=5000)
+        facts = page.evaluate(
+            """() => {
+                const style = getComputedStyle(document.querySelector('.host-workspace .ui-search-row'));
+                return { top: style.borderTopWidth, color: style.borderTopColor };
+            }"""
+        )
+        print(f"sidebar search border measured: {facts}")
+        assert facts["top"] == "1px", f"search border-top-width is {facts['top']}, not 1px"
+        assert facts["color"] not in ("", "transparent", "rgba(0, 0, 0, 0)"), "search border is transparent"
+        context.close()
+        browser.close()

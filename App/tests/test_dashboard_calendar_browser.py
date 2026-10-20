@@ -28,9 +28,11 @@ def calendar_origin(calendar_workspace):
         make_stay(property_id, "2026-10-03", "2026-10-07",
                   summary=f"October booking {index + 1}", expected_guests_override=2)
     # Busy weeks must remain compact while every booking stays reachable.
-    for index in range(4):
+    for index, summary in enumerate(
+        ("Reserved", "! Reserved", "CLOSED - Not available", "Airbnb (Not available)", "Blocked")
+    ):
         make_stay(calendar_workspace["properties"][index % 3], "2026-10-14", "2026-10-19",
-                  summary="Reserved" if index % 2 == 0 else "! Reserved")
+                  summary=summary)
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -122,7 +124,8 @@ def test_auto_view_threshold_filter_and_manual_override(calendar_workspace, cale
         page.wait_for_selector(".cal-week")
         assert page.locator('[data-cal-view="calendar"]').get_attribute("aria-pressed") == "true"
         # Imported booking-state placeholders never become visible bar titles.
-        assert page.locator(".cal-week-events").get_by_text("Reserved", exact=False).count() == 0
+        for word in ("Reserved", "CLOSED", "Not available", "Blocked"):
+            assert page.locator(".cal-week-events").get_by_text(word, exact=False).count() == 0
         assert page.locator(".cal-event-mark").count() == 0
         assert len(set(page.locator(".cal-week-events .cal-event").evaluate_all(
             "nodes => nodes.map(node => getComputedStyle(node).backgroundColor)"

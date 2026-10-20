@@ -509,11 +509,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .property-summary-panel .property-inline-url { max-width: 11rem; }
 .host-workspace .property-summary-panel .property-inline-value { flex-wrap: wrap; }
 
-/* 0167: the cleaning period row aligns fields and button on one bottom line */
-.host-workspace .cleaning-period { align-items: flex-end; gap: var(--space-3); }
-.host-workspace .cleaning-period .ui-field { margin: 0; flex: 0 1 12rem; min-width: 0; }
-.host-workspace .cleaning-period > .ui-btn { align-self: flex-end; }
-.host-workspace .cleaning-period > a { align-self: flex-end; display: inline-flex; align-items: center; min-height: var(--control-h); }
 /* 0168: help buttons meet the 24 px target size; the 44 px hit area stays */
 .host-workspace .help-tip-btn { width: var(--space-6); height: var(--space-6); }
 /* 0169: keyboard focus is always visible (WCAG 2.4.7) */
@@ -528,3 +523,37 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .copy-property-form .copyrow .field { margin: 0; }
 .host-workspace .copy-property-form .copyrow > .ui-btn { align-self: flex-end; }
 .host-workspace .settings-grid > .ui-form-actions { grid-column: 1 / -1; justify-self: start; }
+
+/* 0175: every pill gets a 1 px border in its own tone colour */
+.host-workspace .ui-badge { box-sizing: border-box; border: 1px solid var(--ui-dot, var(--st-action-dot)); }
+.host-workspace .ui-badge-neutral { border-color: var(--st-neutral-dot); }
+
+/* 0176: the empty-state action sits centred under its text */
+.host-workspace .ui-empty .ui-btn-group { justify-content: center; }
+
+/* 0178: the setup checklist is a normal card, not a tinted dashed block */
+.host-workspace .host-checklist[data-setup-status] { margin-top: var(--space-6); padding: var(--card-p); background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); }
+.host-workspace .host-checklist[data-setup-status] .setup-status-head { margin-bottom: var(--space-4); }
+
+/* 0179: guest cards show one four-column fact grid; Staying only when the dates differ */
+.host-workspace .guest-card .guest-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); border: 0; overflow-wrap: anywhere; }
+.host-workspace .guest-card .guest-facts .fact-wide { grid-column: span 2; }
+@media (max-width: 639px) {
+  .host-workspace .guest-card .guest-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* 0181: on desktop every table row is its own bordered, rounded card with a gap between rows */
+@media (min-width: 1024px) {
+  .host-workspace .ui-table { border: 0; background: transparent; border-spacing: 0 var(--space-2); overflow: visible; }
+  .host-workspace .ui-table th { border-bottom: 0; }
+  .host-workspace .ui-table td { background: var(--surface); border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .host-workspace .ui-table td:first-child { border-left: 1px solid var(--line); border-top-left-radius: var(--card-radius); border-bottom-left-radius: var(--card-radius); }
+  .host-workspace .ui-table td:last-child { border-right: 1px solid var(--line); border-top-right-radius: var(--card-radius); border-bottom-right-radius: var(--card-radius); }
+  .host-workspace .ui-table tr:last-child td { border-bottom: 1px solid var(--line); }
+  .host-workspace .ui-table .ui-row:hover td, .host-workspace .ui-table .ui-row:focus-within td { background: var(--surface-2); }
+}
+
+/* 0183 */
+.host-workspace .ui-search-row { background: var(--surface); border: 1px solid var(--input-border); border-radius: var(--input-radius); }
+body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--control-h-phone); height: var(--control-h-phone); margin: 0 auto; }
+.host-workspace .ui-chip { border: 1px solid var(--input-border); }
