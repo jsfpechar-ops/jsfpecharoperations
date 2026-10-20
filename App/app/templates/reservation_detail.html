@@ -234,7 +234,7 @@
         </div>
       </div>
 
-      <dl class="guest-facts guest-facts-identity">
+      <dl class="guest-facts">
         <div>
           <dt>{{ t('stay.detail.guests.born') }}</dt>
           <dd>{{ format_birth_date(guest.birth_date) or '—' }}</dd>
@@ -252,8 +252,6 @@
           <dt>{{ t('stay.detail.guests.purpose') }}</dt>
           <dd>{{ purpose_label(guest.purpose or '', lang) or '—' }}</dd>
         </div>
-      </dl>
-      <dl class="guest-facts guest-facts-stay">
         <div class="fact-wide">
           <dt>{{ t('stay.detail.guests.residence') }}</dt>
           <dd>
@@ -265,11 +263,6 @@
           </dd>
         </div>
         <div>
-          <dt>{{ t('stay.detail.guests.staying') }}</dt>
-          <dd>{{ (guest.stay_from or reservation.date_from) | date_cz }} &ndash;
-            {{ (guest.stay_to or reservation.date_to) | date_cz }}</dd>
-        </div>
-        <div>
           <dt>{{ t('stay.detail.guests.signature') }}</dt>
           <dd>{{ t('stay.detail.guests.signed') if guest.signature_png else t('stay.detail.guests.not_signed') }}</dd>
         </div>
@@ -277,6 +270,13 @@
           <dt>{{ t('stay.detail.guests.entered_by') }}</dt>
           <dd>{{ entered_by_label(guest.entered_by) }}</dd>
         </div>
+        {% if (guest.stay_from or reservation.date_from) != reservation.date_from or (guest.stay_to or reservation.date_to) != reservation.date_to %}
+        <div class="fact-wide">
+          <dt>{{ t('stay.detail.guests.staying') }}</dt>
+          <dd>{{ (guest.stay_from or reservation.date_from) | date_cz }} &ndash;
+            {{ (guest.stay_to or reservation.date_to) | date_cz }}</dd>
+        </div>
+        {% endif %}
       </dl>
 
       {% if guest.note %}

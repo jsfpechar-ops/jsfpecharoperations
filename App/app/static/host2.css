@@ -539,3 +539,10 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 /* 0178: the setup checklist is a normal card, not a tinted dashed block */
 .host-workspace .host-checklist[data-setup-status] { margin-top: var(--space-6); padding: var(--card-p); background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); }
 .host-workspace .host-checklist[data-setup-status] .setup-status-head { margin-bottom: var(--space-4); }
+
+/* 0179: guest cards show one four-column fact grid; Staying only when the dates differ */
+.host-workspace .guest-card .guest-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); border: 0; overflow-wrap: anywhere; }
+.host-workspace .guest-card .guest-facts .fact-wide { grid-column: span 2; }
+@media (max-width: 639px) {
+  .host-workspace .guest-card .guest-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
