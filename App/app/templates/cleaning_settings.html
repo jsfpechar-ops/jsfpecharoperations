@@ -11,18 +11,18 @@
 <form class="cleaning-panel cleaning-form" method="post" action="/cleaning/properties/{{ home.id }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <div class="ui-field"><label for="property-instructions">{{ ct('instructions') }}</label><textarea id="property-instructions" name="instructions" rows="8" maxlength="10000" aria-describedby="property-instructions-hint">{{ prop.cleaning_instructions or '' }}</textarea><p id="property-instructions-hint">{{ ct('notes_hint') }}</p></div>
-<section class="cleaning-timing-summary ui-section" aria-labelledby="cleaning-property-times"><h2 id="cleaning-property-times">{{ ct('property_times') }}</h2><p>{{ ct('checkout') }}: <strong>{{ prop.effective_checkout_time or '—' }}</strong> · {{ ct('arrival') }}: <strong>{{ prop.effective_checkin_time or '—' }}</strong></p><p>{{ ct('property_times_hint') }}</p><a href="/apartments/{{ home.id }}?view=settings&amp;section=property#arrival-departure">{{ ct('edit_property_times') }}</a></section>
-<button class="ui-btn ui-btn-primary" type="submit">{{ ct('save') }}</button></form>
-<section class="cleaning-panel ui-section"><h2>{{ ct('code') }}</h2><p>{{ ct('code_hint') }}</p>
+<section class="cleaning-subsection" aria-labelledby="cleaning-property-times"><h2 id="cleaning-property-times">{{ ct('property_times') }}</h2><p>{{ ct('checkout') }}: <strong>{{ prop.effective_checkout_time or '—' }}</strong> · {{ ct('arrival') }}: <strong>{{ prop.effective_checkin_time or '—' }}</strong></p><p>{{ ct('property_times_hint') }}</p><a class="ui-btn ui-btn-quiet" href="/apartments/{{ home.id }}?view=settings&amp;section=property#arrival-departure">{{ ct('edit_property_times') }}</a></section>
+<div class="cleaning-actions"><button class="ui-btn ui-btn-primary" type="submit">{{ ct('save') }}</button></div></form>
+<section class="cleaning-panel cleaning-form"><h2>{{ ct('code') }}</h2><p>{{ ct('code_hint') }}</p>
 {% if codes_disabled %}<p class="cleaning-warning" role="status">{{ ct('login_required') }}</p>{% endif %}
 {% if code.value %}<strong class="cleaning-pin" translate="no">{{ code.value }}{{ '#' if code.source == 'ttlock' else '' }}</strong><p>{{ ct('permanent_code') if code.source == 'ttlock' else ct('manual_code') }}</p>{% endif %}
 {% if code.pending %}<p class="cleaning-warning" role="status">{{ ct('code_failed') if code.pending == 'failed' else ct('code_pending') }}</p>{% endif %}
 {% if failed_revoke %}<p class="cleaning-warning" role="alert">{{ ct('revocation_failed') }}</p>{% endif %}
-<form method="post" action="/cleaning/properties/{{ home.id }}/code/ttlock"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="ui-btn ui-btn-secondary" type="submit">{{ ct('create_code') }}</button></form>
-<p><a href="/apartments/{{ home.id }}?view=settings&amp;section=lock#lock">{{ ct('lock_link') }}</a></p>
+<form class="cleaning-actions" method="post" action="/cleaning/properties/{{ home.id }}/code/ttlock"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="ui-btn ui-btn-secondary" type="submit">{{ ct('create_code') }}</button></form>
+<div class="cleaning-actions"><a class="ui-btn ui-btn-quiet" href="/apartments/{{ home.id }}?view=settings&amp;section=lock#lock">{{ ct('lock_link') }}</a></div>
 {% if code.source == 'ttlock' and code.value %}<p>{{ ct('manual_replaces') }}</p>{% endif %}
 <form class="cleaning-form" method="post" action="/cleaning/properties/{{ home.id }}/code/manual"{% if code.source == 'ttlock' and code.value %} data-confirm data-confirm-message="{{ ct('manual_replaces') }}"{% endif %}><input type="hidden" name="_csrf" value="{{ csrf_token }}">
-<div class="ui-field"><label for="manual-code">{{ ct('manual_code') }}</label><input id="manual-code" name="code" type="text" maxlength="32" autocomplete="off" spellcheck="false" required aria-describedby="manual-code-hint"><p id="manual-code-hint">{{ ct('manual_hint') }}</p></div><button class="ui-btn ui-btn-secondary" type="submit">{{ ct('save') }}</button></form>
+<div class="ui-field"><label for="manual-code">{{ ct('manual_code') }}</label><input id="manual-code" name="code" type="text" maxlength="32" autocomplete="off" spellcheck="false" required aria-describedby="manual-code-hint"><p id="manual-code-hint">{{ ct('manual_hint') }}</p></div><div class="cleaning-actions"><button class="ui-btn ui-btn-secondary" type="submit">{{ ct('save') }}</button></div></form>
 {% if code.value or code.pending %}<details class="cleaning-remove"><summary>{{ ct('remove_code') }}</summary><p>{{ ct('remove_code_hint') }}</p><form action="/cleaning/properties/{{ home.id }}/code/remove" method="post" data-confirm data-confirm-message="{{ ct('remove_code_hint') }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="ui-btn ui-btn-danger" type="submit">{{ ct('remove_code') }}</button></form></details>{% endif %}
 </section></div>
 {% endblock %}

@@ -8,10 +8,10 @@
 {% block body %}
 <div class="cleaning-page cleaning-form-page">
 {% if error %}<p class="cleaning-warning" role="alert">{{ ct('property_error') if error == 'property' else ct(error) }}</p>{% endif %}
-{% if share_url %}<section class="cleaning-panel"><h2>{{ ct('share_ready') }}</h2><p>{{ ct('share_once') }}</p><a class="cleaning-share-url" href="{{ share_url }}">{{ share_url }}</a><p>{{ ct('share_caution') }}</p></section>{% endif %}
+{% if share_url %}<section class="cleaning-panel cleaning-form"><h2>{{ ct('share_ready') }}</h2><p>{{ ct('share_once') }}</p><a class="cleaning-share-url" href="{{ share_url }}">{{ share_url }}</a><p>{{ ct('share_caution') }}</p></section>{% endif %}
 <form class="cleaning-panel cleaning-form" method="post" action="/cleaning/shares"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <fieldset><legend>{{ ct('property') }}</legend>{% for home in homes %}<label class="cleaning-share-option"><input type="checkbox" name="properties" value="{{ home.id }}"><span>{{ home.internal_name }}</span></label>{% endfor %}</fieldset>
-<p>{{ ct('share_caution') }}</p><button class="ui-btn ui-btn-primary" type="submit">{{ ct('create_share') }}</button></form>
+<p class="cleaning-note">{{ ct('share_caution') }}</p><div class="cleaning-actions"><button class="ui-btn ui-btn-primary" type="submit">{{ ct('create_share') }}</button></div></form>
 {% for share in shares %}<div class="cleaning-panel cleaning-share-row"><div><strong>{{ ct('share_number') }} {{ share.id }}</strong><p>{{ ct('expires') }} {{ share.expires_at | datetime_local }}</p></div><form action="/cleaning/shares/{{ share.id }}/revoke" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="ui-btn ui-btn-secondary" type="submit">{{ ct('revoke') }}</button></form></div>{% endfor %}
 </div>
 {% endblock %}

@@ -139,7 +139,13 @@
     "ui-swatch-chip",
     "ui-type-sample",
     "ui-section-plain",
-    "ui-section-row"
+    "ui-section-row",
+    "cleaning-actions",
+    "cleaning-form",
+    "cleaning-link",
+    "cleaning-note",
+    "cleaning-readonly",
+    "cleaning-subsection"
   ],
   "hooks": [
     "sr-only",

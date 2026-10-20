@@ -24,8 +24,8 @@
     "v": "20260918a"
   },
   "cleaning.css": {
-    "sha256": "4ad933d62e048287d6b0b1922f7a998f3789905dcca9ef6c6874edcf17079c4c",
-    "v": "20261020-0193"
+    "sha256": "578022ae9a616504971adc7e94f3323e930fbc35c270ba573b8faa5d61b02b46",
+    "v": "20261020-0193d"
   },
   "cleaning.js": {
     "sha256": "8c430853292b8dd39b0922b26ad4307d6005f057f9ff670e1847b545de16c904",
@@ -40,8 +40,8 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "5aff51cfeccccbc29799b3da583f520e4defc4d3c9899c01acda608a196d9f5d",
-    "v": "20261020-0193"
+    "sha256": "4afd00d64f21d09069cb913ac174a5d318b13c22846b78a0045120b6a252e723",
+    "v": "20261020-0193d"
   },
   "dashboard-calendar.js": {
     "sha256": "c048b8719d738e607f44f89c86db703be655a6abcf6be9513266bda331b3206a",

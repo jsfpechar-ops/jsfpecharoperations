@@ -1,5 +1,5 @@
 {# Calendar data is fetched from an owner-scoped endpoint, never embedded in browser storage. #}
-<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261020-0193">
+<link rel="stylesheet" href="/static/dashboard-calendar.css?v=20261020-0193d">
 <section id="calendar" class="dashboard-calendar" data-calendar data-today="{{ today.isoformat() }}" data-source="{{ calendar_source | default('/dashboard/calendar') }}" data-cleaning="{{ 'true' if calendar_cleaning | default(false) else 'false' }}" data-readonly="{{ 'true' if calendar_readonly | default(false) else 'false' }}" data-calendar-date="{{ calendar_date | default('') }}" data-range-from="{{ calendar_from | default('') }}" data-range-to="{{ calendar_to | default('') }}" data-lang="{{ lang }}" aria-labelledby="calendar-title">
   <div class="cal-heading">
     <h2 id="calendar-title">{{ ct('schedule') if calendar_cleaning | default(false) else t('calendar.title') }}</h2>

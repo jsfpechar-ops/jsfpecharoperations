@@ -594,3 +594,97 @@ def test_cleaning_calendar_can_create_stay_and_refresh_turnover_in_place(workspa
         shot(page, "cleaning-calendar-created-stay-turnover")
         context.close()
         browser.close()
+
+
+CREATE_CENTRE_JS = """() => {
+  const r = document.querySelector('[data-cal-create]').getBoundingClientRect();
+  return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, top: r.top,
+           vx: document.documentElement.clientWidth / 2, vy: document.documentElement.clientHeight / 2 };
+}"""
+
+
+def _open_create_dialog(page, kind):
+    controls = page.locator(f'[data-calendar-add][data-cal-create-type="{kind}"]')
+    for index in range(controls.count()):
+        if controls.nth(index).is_visible():
+            controls.nth(index).click()
+            break
+    else:
+        # The secondary "Add stay" action is hidden in the phone action bar; its handler still opens the dialog.
+        controls.first.dispatch_event("click")
+    page.wait_for_selector("[data-cal-create][open]")
+
+
+def _assert_dialog_centred(page, label):
+    box = page.evaluate(CREATE_CENTRE_JS)
+    assert abs(box["cx"] - box["vx"]) <= 8 and abs(box["cy"] - box["vy"]) <= 8, (label, box)
+    return box
+
+
+@pytest.mark.parametrize(("width", "height"), [(1280, 800), (390, 844)])
+def test_add_stay_and_cleaning_dialogs_open_centred_in_both_tabs(workspace, origin, width, height):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width=width)
+        try:
+            page = context.new_page()
+            page.set_viewport_size({"width": width, "height": height})
+            page.goto(f"{origin}/cleaning?lang=en")
+            loaded(page)
+            for scrolled in (False, True):
+                page.evaluate("y => window.scrollTo(0, y)", 600 if scrolled else 0)
+                for kind, other in (("stay", "cleaning"), ("cleaning", "stay")):
+                    _open_create_dialog(page, kind)
+                    first = _assert_dialog_centred(page, f"{kind} scrolled={scrolled}")
+                    shot(page, f"add-{kind}-{width}{'-scrolled' if scrolled else ''}")
+                    page.locator(f'[data-cal-type-choice="{other}"]').click()
+                    second = _assert_dialog_centred(page, f"{other} tab scrolled={scrolled}")
+                    assert abs(first["top"] - second["top"]) <= 8, (first, second)
+                    page.locator("[data-cal-create] .cal-close").click()
+                    page.wait_for_function("() => !document.querySelector('[data-cal-create]').open")
+        finally:
+            browser.close()
+
+
+def test_cleaning_chip_label_starts_with_cleaning(workspace, origin):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width=1280)
+        try:
+            page = context.new_page()
+            page.goto(f"{origin}/cleaning?lang=en")
+            loaded(page)
+            labels = page.locator(".cal-cleaning-label")
+            assert labels.count() > 0
+            for index in range(labels.count()):
+                text = labels.nth(index).inner_text().strip()
+                assert text.startswith("Cleaning"), text
+            shot(page, "calendar-1280-chips")
+        finally:
+            browser.close()
+
+
+@pytest.mark.parametrize("width", [1280, 390])
+def test_cleaning_form_pages_fit_the_viewport_and_take_screenshots(workspace, origin, width):
+    ws = workspace
+    with sync_api.sync_playwright() as playwright:
+        browser, context = browser_context(playwright, ws, origin, width=width)
+        try:
+            page = context.new_page()
+            page.set_viewport_size({"width": width, "height": 844 if width == 390 else 800})
+            page.goto(f"{origin}/cleaning?lang=en")
+            loaded(page)
+            shot(page, f"calendar-{width}")
+            event_link = page.locator("a[href*='/cleaning/events/']").first.get_attribute("href")
+            pages = {
+                f"instructions-{width}": f"{origin}/cleaning/properties/{ws['home']}?lang=en",
+                f"share-{width}": f"{origin}/cleaning/shares?lang=en",
+                f"edit-{width}": f"{origin}{event_link}" if event_link else f"{origin}/cleaning/new?lang=en",
+            }
+            for name, url in pages.items():
+                page.goto(url)
+                page.wait_for_selector(".cleaning-form")
+                assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth"), name
+                shot(page, name)
+        finally:
+            browser.close()
