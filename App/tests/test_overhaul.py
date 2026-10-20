@@ -247,14 +247,14 @@ def test_reservations_paginate_and_preserve_filters():
             )
 
         first = _browser().get(f"/reservations?range=all&apartment={apartment_id}")
-        assert "Showing 1–15 of 52 stays." in " ".join(first.text.split())
+        assert "Showing 1–5 of 52 stays." in " ".join(first.text.split())
         assert f"/reservations?range=all&amp;apartment={apartment_id}&amp;page=2" in first.text
 
         second = _browser().get(
             f"/reservations?range=all&apartment={apartment_id}&page=2"
         )
-        assert "Showing 16–30 of 52 stays." in " ".join(second.text.split())
-        assert "Page 2 of 4" in second.text
+        assert "Showing 6–10 of 52 stays." in " ".join(second.text.split())
+        assert "Page 2 of 11" in second.text
     finally:
         _cleanup()
 
@@ -463,7 +463,7 @@ def test_the_receipt_download_moves_into_the_report_row_menu():
     try:
         submission_id = _seed_receipt_for(stays[0])
         body = _browser().get(f"/reservations/{stays[0]}").text
-        assert '<section id="reports">' in body
+        assert '<section class="ui-section" id="reports">' in body
         assert f'class="row-menu-item" href="/submissions/{submission_id}/receipt.pdf"' in body
         assert ">Receipt (Doručenka)</a>" in body
         assert f'class="btn small primary" href="/submissions/{submission_id}/receipt.pdf"' not in body
