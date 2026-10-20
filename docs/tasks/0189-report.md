@@ -2,14 +2,19 @@
 
 Status: blocked
 
-Done: steps 1 to 5. Left: smart-locks flat blocks, 1280/2000 screenshot review, full test rerun after screenshots.
+Done: steps 1 to 6 (shared classes, heading spacing, property sections, calendar CI, tests). Left: smart-locks screenshots (390, 1280, 2000) and visual check of the smart-lock rows.
 
-Files changed: App/app/static/host2.css (nested .ui-section rule, cleaning-panel rule, ?v=0189b), App/app/templates/base.html, App/tests/static_versions.json, App/app/templates/guide.html (ui-section-plain), App/app/templates/reservation_detail.html (guests, money, reports sections), App/app/templates/cleaning_settings.html (two sections), App/tests/test_design_guardrails_browser.py (test_host_sections_are_bordered_panels).
+Files changed: App/app/static/host2.css (nested rule excludes .ui-section-row; row margin; h2 spacing in panels; property-section panel rule; split-column padding-top kept only on non-panel columns; phone padding; ?v=20261020-0189d), App/app/static/host-design0123.css (property-section removed from border-top rule; ?v=20261020-0189c), App/app/templates/base.html, App/tests/static_versions.json, App/app/templates/_property_editor.html (ui-section on 10 property sections), App/app/templates/smart_locks.html (.smart-lock-row = ui-section ui-section-row), App/app/templates/dashboard.html (empty ui-section wrapper around the calendar removed; the calendar is already a bordered panel), App/app/templates/guide.html, App/app/templates/reservation_detail.html, App/app/templates/cleaning_settings.html, App/tests/test_design_guardrails_browser.py (from steps 1 to 5).
 
-Pages checked by the guardrail test: /settings, /housebook, /reservations/{id}, /apartments/{id}/setup/property, /setup/police, /setup/stay_fee (11 top-level panels on settings, 3 on reservation, 1 on housebook).
+Commands (last lines):
+- Browser set (5 files): `26 passed, 1 warning in 99.96s`, 0 skipped.
+- calendar-review (test_cleaning, test_cleaning_browser, test_dashboard_calendar, test_dashboard_calendar_browser): `104 passed in 69.44s`, 0 skipped. Earlier failure: the dashboard wrapper panel doubled the stats-to-calendar gap to 61 px (limit 44); fixed by removing the wrapper, threshold not changed.
+- test_static_versions: 3 passed.
+- context_lint.py: `context lint: OK` (warnings only).
 
-Screenshots at 390 px (scratch DB): stay-fees, settings, reservation-detail, admin-users, smart-locks in checkpoint-4-shell-fixes. 1280 and 2000 captured, not reviewed.
+Screenshots: checkpoint-4-shell-fixes bordered-{settings,reservation-detail,stay-fees,admin-users}-{1280,2000,390}.png from earlier, bordered-admin-users re-taken after the heading fix and reviewed at 1280 (no clipping, no double border). bordered-smart-locks: /smart-locks redirected to the Properties page in the test fixture, so the captured image is not the smart-locks page. Not reviewed at 2000 or 390 after changes.
 
-Findings: smart-locks property cards and guest-link blocks are still flat (no .ui-section). Admin users "Create a host" heading sits tight to the panel top edge.
+Pages changed (screenshot needed): smart-locks (not verified), admin-users (done), dashboard, property setup pages.
 
-Questions: property-section panels in _property_editor.html get border-top only and padding 20px 0 from host-design0123.css; not changed.
+Questions: none.
+Owner steps left: none. Next session: find why /smart-locks redirects for the fixture owner, retake bordered-smart-locks at 1280, 2000, 390, and check the .smart-lock-row panels.
