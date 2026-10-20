@@ -1,6 +1,6 @@
 # 0184: CI fix, a test still expects the removed Property column header
 
-Status: todo
+Status: review
 Depends on: 0183 | Branch: claude/project-thread-5hw8cf
 Executor: Haiku 5.5 | Fits one session
 
