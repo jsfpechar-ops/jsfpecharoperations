@@ -135,6 +135,19 @@ def _browser(playwright):
         pytest.skip("Chromium is required for stay action geometry coverage")
 
 
+def _stay_row(page, base, locale, reservation_id):
+    """The Stays list shows 5 rows per page: return the row, loading the page that holds it when needed."""
+    selector = f'tr[data-href^="/reservations/{reservation_id}?"]'
+    if page.locator(selector).count() == 1:
+        return page.locator(selector)
+    for page_no in (1, 2, 3):
+        page.goto(f"{base}/reservations?range=all&page={page_no}&lang={locale}")
+        page.wait_for_load_state("networkidle")
+        if page.locator(selector).count() == 1:
+            return page.locator(selector)
+    return page.locator(selector)
+
+
 def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_actions_host, stay_actions_base):
     shots = Path(__file__).resolve().parents[2] / "generated_images" / "0041-evidence"
     capture = os.environ.get("UBYHOST_CAPTURE_0041") == "1"
@@ -169,7 +182,7 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 page.goto(f"{stay_actions_base}/reservations?range=all&lang={locale}")
                 page.wait_for_load_state("networkidle")
                 for key, reservation_id in valid_ids.items():
-                    row = page.locator(f'tr[data-href^="/reservations/{reservation_id}?"]')
+                    row = _stay_row(page, stay_actions_base, locale, reservation_id)
                     assert row.count() == 1
                     status_pill = row.locator("td.stay-col-reporting [data-tone]")
                     assert status_pill.count() == 1
@@ -182,12 +195,12 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                     assert guest_link.count() == 1
                     assert source_value.endswith(guest_link.get_attribute("href")) or guest_link.get_attribute("href") in source_value
                     assert "/l/" in source_value and source_value.endswith(f"/{reservation_id}")
-                no_token = page.locator(f'tr[data-href^="/reservations/{stay_actions_host["ids"]["missing-token"]}?"]')
+                no_token = _stay_row(page, stay_actions_base, locale, stay_actions_host["ids"]["missing-token"])
                 assert no_token.count() == 1
                 assert no_token.locator('button[data-copy]').count() == 0
                 assert no_token.locator('a[href^="/l/"][target="_blank"]').count() == 0
 
-                ready_row = page.locator(f'tr[data-href^="/reservations/{stay_actions_host["ids"]["ready"]}?"]')
+                ready_row = _stay_row(page, stay_actions_base, locale, stay_actions_host["ids"]["ready"])
                 assert ready_row.locator(".row-action-send").count() == 0  # 0137: rows have the menu only
                 copy = ready_row.locator('button[data-copy]')
                 trigger = ready_row.locator(".row-menu-trigger")
