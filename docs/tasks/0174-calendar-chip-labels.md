@@ -10,18 +10,18 @@ The owner's production dashboard calendar shows chips like `CLOSED - Not availab
 
 ## 2. Context
 
-`icalsync.py` lines 205-230 hold `is_block` and the generic wording regexes (`_BLOCK_RE`, `_GENERIC_SUMMARY_RE`). The stored stay summary is not changed (sync, dedupe and the stay page stay as they are). Only the calendar chip label changes. Find where the chip text is built: `grep -rn "summary" App/app/*.py | grep -i "calendar\|chip\|event\|title" | cut -c1-170 | head -20`, and in `App/app/static/*.js` / templates for the dashboard calendar (`grep -rn "data-cal\|calendar" App/app/templates/dashboard.html | head`). The stays list already shows the property name, so the owner sees the stays pills as correct.
+The chip label is built in JavaScript: `labelFor(event)` in `App/app/static/dashboard-calendar.js` (about lines 196-205). Its `generic` regex only drops reserved, booked, reservation, rezervováno and rezervace. The detail dialog also reads `event.label` (about line 556): leave the dialog as it is. The existing browser test `App/tests/test_dashboard_calendar_browser.py` already seeds stays with `summary="Reserved"` / `"! Reserved"` (line 33) and asserts none shows as text (line 125).
 
 ## 3. Files
 
-The one Python (or JS) location that builds the chip label, one new test file `App/tests/test_calendar_chip_labels.py`, `docs/tasks/0174-*`; if a JS or CSS file changes, bump its `?v=` key in every template that references it and run `.venv/bin/python tests/test_static_versions.py --write` from `App/`.
+`App/app/static/dashboard-calendar.js`, `App/tests/test_dashboard_calendar_browser.py`, `App/app/templates/*.html` that reference `dashboard-calendar.js?v=` (new key), `App/tests/static_versions.json`, `docs/tasks/0174-*`.
 
 ## 4. Steps
 
-1. Find the chip label builder (see section 2). Read only that function and its caller.
-2. Add a small pure helper `chip_label(summary, property_name)` next to it: when `summary` is empty, matches `_GENERIC_SUMMARY_RE`, matches `^CLOSED\s*-\s*Not available$`, `^Reserved$`, `^Airbnb\s*\(Not available\)$`, `^Not available$` or `^Blocked$` (case-insensitive), return `property_name`; otherwise keep today's behaviour (a host-typed manual stay summary or a guest name hint still shows). Use it in the builder.
-3. Create `App/tests/test_calendar_chip_labels.py` with parametrised tests of the helper: each generic wording gives the property name; `"Mr Novak"` is kept; empty gives the property name.
-4. Run from `App/`: `.venv/bin/python -m pytest tests/test_calendar_chip_labels.py -q 2>&1 | tail -4`, then the existing tests that mention calendar chips: `grep -ln "CLOSED\|chip" tests/*.py | head`, run each file with `-q --tb=short -x 2>&1 | tail -4`. Report failures that are not in the known-failures list.
+1. In `labelFor`, extend the `generic` regex to also match, case-insensitively, optionally preceded by `!` or `⚠` and spaces: `closed - not available`, `closed – not available`, `closed`, `not available`, `blocked`, `airbnb (not available)`, `unavailable`, plus the existing words. Keep everything else.
+2. In `test_dashboard_calendar_browser.py` extend the seeding near line 33 so that some stays use `summary="CLOSED - Not available"`, `"Airbnb (Not available)"` and `"Blocked"` (keep the existing ones), and extend the assertion near line 125 so none of `CLOSED`, `Not available`, `Blocked` appears in `.cal-week-events` or the month chips. Read the surrounding test first; change only what the new words need.
+3. Bump the `dashboard-calendar.js` key: `grep -rn "dashboard-calendar.js?v=" App/app/templates | cut -c1-150`, give every reference the same new key ending `-0174`, then from `App/`: `.venv/bin/python tests/test_static_versions.py --write && .venv/bin/python -m pytest tests/test_static_versions.py -q 2>&1 | tail -3`.
+4. From `App/` run (foreground, timeout 600000, `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium`): `.venv/bin/python -m pytest tests/test_dashboard_calendar_browser.py -q -rs 2>&1 | tail -6`. Then from the repo root `git checkout -- docs/tasks/0102-evidence && git clean -fdq docs/tasks/0102-evidence` (skip if refused). Expected: all passed, 0 skipped.
 5. Commit: `git add App/app App/tests docs/tasks/0174-* && git commit` with message "0174: calendar chips show the property, not feed status words" and the two trailers given by the orchestrator.
 
 ## 5. Do not touch
