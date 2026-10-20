@@ -151,7 +151,7 @@
         <td class="ui-cell-first stay-col-stay" data-card="primary" data-label="{{ t('stays.table.stay') }}">
           {{ property_identity(reservation.apartment_id, '') }}<a class="row-primary-link stay-identity-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ stay_label }}</a>
           <div class="ui-sub stay-col-source">{{ source_badge(reservation.source, source_label(reservation)) }}</div>
-          {% if stay_label != reservation.internal_name %}<div class="ui-sub stay-col-property-name">{{ reservation.internal_name }}</div>{% endif %}
+          {% if stay_label != reservation.internal_name %}<div class="ui-sub">{{ reservation.internal_name }}</div>{% endif %}
         </td>
         <td class="nowrap stay-col-dates" data-card="secondary" data-label="{{ t('host.stay_dates') }}">
           <a class="stay-date-link" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}">{{ reservation.date_from | date_short }} – {{ reservation.date_to | date_short }}</a>

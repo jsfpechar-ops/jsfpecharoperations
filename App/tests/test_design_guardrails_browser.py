@@ -14,7 +14,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import auth, db
+from app import auth, db, property_setup
 from app.main import app
 from fastapi.testclient import TestClient
 from tests.conftest import login_as
@@ -256,7 +256,11 @@ def test_empty_state_action_is_centred_under_its_text(wide_host, wide_base):
 def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
     """0178: the setup checklist is a normal card (no tint, solid border, heading inside the padding)."""
     cookie = wide_host["cookie"]
-    property_id = wide_host["apartments"][0]
+    property_id = wide_host["configured_apartment"]
+    # The checklist shows only when the setup wizard is not active (_property_overview.html line 48):
+    # mark this property's wizard finished with the same helpers the app uses.
+    property_setup.start(property_id)
+    property_setup.finish(property_id)
     with sync_api.sync_playwright() as playwright:
         try:
             browser = playwright.chromium.launch(**chromium_launch_kwargs())
@@ -271,16 +275,12 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
         assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
         _wait_for_host_layout(page)
         _dismiss_optional_security_prompt(page)
-        try:
-            page.wait_for_selector("[data-setup-status]", timeout=2000)
-        except Exception:
-            print(f"setup checklist absent on /apartments/{property_id}; test body not run")
-            context.close()
-            browser.close()
-            return
+        # Fails the test if the checklist is absent: the configured fixture property must show it.
+        page.wait_for_selector("[data-setup-status]", timeout=5000)
         facts = page.evaluate(
             """() => {
                 const box = document.querySelector('.host-workspace .host-checklist[data-setup-status]');
+                if (!box) return null;
                 const other = document.querySelector('.host-workspace .panel:not(.host-checklist)');
                 const style = getComputedStyle(box);
                 const head = box.querySelector('.setup-status-head h2');
@@ -292,6 +292,8 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
                 };
             }"""
         )
+        assert facts is not None, "setup checklist card is not inside .host-workspace"
+        print(f"setup checklist measured: {facts}")
         assert facts["background"] == facts["expected"], f"checklist background {facts['background']} is not the card background"
         assert facts["borderStyle"] == "solid", f"checklist border is {facts['borderStyle']}, not solid"
         assert facts["headGap"] is not None and facts["headGap"] >= 12, f"heading starts {facts['headGap']}px from the left edge"
