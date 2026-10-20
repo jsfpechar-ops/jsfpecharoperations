@@ -57,7 +57,7 @@ def test_phone_tab_bar_is_fixed_at_the_bottom_with_five_44px_tabs(base):
         assert page.evaluate("document.documentElement.scrollWidth") <= 390
         page.click('[data-sheet-open="more-sheet"]')
         page.wait_for_selector("#more-sheet[open]")
-        assert page.locator('#more-sheet a[href="/invoices"]').is_visible()
+        assert page.locator('#more-sheet a[href="/stay-fees"]').is_visible()
         browser.close()
 
 

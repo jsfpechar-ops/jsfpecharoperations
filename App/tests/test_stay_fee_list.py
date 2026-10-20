@@ -218,13 +218,13 @@ def test_future_or_crafted_month_falls_back_to_default(host):
         assert 'value="2026-08"' in response.text
 
 
-def test_sidebar_link_waits_for_opt_in(host):
+def test_sidebar_has_a_stay_fees_item(host):
     client, _owner_id, _entity_id = host
 
     response = client.get("/stay-fees")
 
     assert response.status_code == 200
-    assert 'href="/stay-fees"' not in response.text.split('id="app-sidebar"', 1)[1].split('</aside>', 1)[0]
+    assert 'href="/stay-fees"' in response.text.split('id="app-sidebar"', 1)[1].split('</aside>', 1)[0]
     assert 'href="/stay-fees"' in response.text
     assert 'href="/apartments"' in response.text
 

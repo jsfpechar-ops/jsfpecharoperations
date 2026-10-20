@@ -664,7 +664,7 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             page.go_back()
             page.wait_for_url(re.compile(r"/stay-fees(\?.*)?$"))
             # Rail -> Invoices -> issued invoice -> its stay -> Back.
-            page.locator('.sidebar-nav a[href="/invoices"]').click()
+            page.locator('a[href="/invoices"]').first.click()
             page.wait_for_url(re.compile(r"/invoices(\?.*)?$"))
             page.goto(f"{base}/invoices/{acc['invoice']}?lang={lang}")
             page.locator(f'a[href^="/reservations/{acc["stay"]}"]').first.click()
@@ -708,7 +708,7 @@ def test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus(acc, base):
             seen.add(info["href"])
             if not (info["ring"] and info["inView"]):
                 unseen_focus.append(info)
-        assert {"/", "/reservations", "/apartments", "/invoices"} <= seen, seen
+        assert {"/", "/reservations", "/apartments", "/stay-fees"} <= seen, seen
         for view in ("overview", "bookings", "settings"):
             assert f"/apartments/{acc['p1']}?view={view}" in seen, (view, seen)
         assert {"permalink_pin", "guest_message"} <= seen, seen
