@@ -187,6 +187,7 @@ def test_lock_account_link_only_when_connected(host):
             patch("app.routes.admin._smart_lock_panel_context", return_value={"smart_locks_enabled": True, "account": None, "receiver": "", "locks": [], "fetched_at": None, "reauth": False, "return_to": "/smart-locks", "properties_using": {}}):
         page = host.get("/apartments?lang=en").text
         urls = {item.get("url") for item in host.get("/api/command-palette").json()["items"]}
+        assert "/smart-locks" not in urls
     main = page[page.index("<main") : page.index("</main>")]
     assert main.count('href="/smart-locks"') == 0 and 'id="smart-locks-how"' in main
 
