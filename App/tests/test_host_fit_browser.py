@@ -84,15 +84,19 @@ def test_stays_fit_lane_at_every_width_and_sidebar_state(stay_actions_host, stay
                     assert m["viewScroll"] <= m["viewClient"] + 1, (state, m["viewScroll"], m["viewClient"])
                     assert m["tableScroll"] <= m["viewClient"] + 1, state
                     assert m["docScroll"] <= width + 1, (state, m["docScroll"])
-                    assert len(m["rows"]) >= 7, state
-                    # One row per stay with a header at a lane of 900px or more, compact cards below.
-                    assert m["header"] == (lane >= 900), (state, lane)
+                    # The fixture holds 8 stays; the list shows one page of 5 (owner-approved page size).
+                    assert len(m["rows"]) >= 5, state
+                    # One row per stay with a header from the 1024px viewport breakpoint (the bordered panel narrows
+                    # the lane to 894-896px there), compact cards below.
+                    assert m["header"] == (width >= 1024), (state, lane)
                     heights = sorted(r["height"] for r in m["rows"])
                     median = heights[(len(heights) - 1) // 2]  # lower median: Send rows may wrap in CS
-                    assert median <= (72 if m["header"] else (160 if lane >= 600 else 200)), (state, lane, heights)
+                    # Roomy rows (0191): --row-h 80px plus 16px cell padding gives a one-line stay row of 98px
+                    # (old budget: 72px for a 64px row, the same 8px slack above the measured height).
+                    assert median <= (106 if m["header"] else (160 if lane >= 600 else 200)), (state, lane, heights)
                     if m["header"]:
                         assert heights[-1] <= 125, (state, heights)
-                        assert heights[0] >= 55, (state, heights)
+                        assert heights[0] >= 80, (state, heights)  # never shorter than the --row-h token
                     for row in m["rows"]:
                         for r in row["rects"]:
                             assert r["left"] >= m["viewLeft"] - 1 and r["right"] <= m["viewRight"] + 1, (state, r)
