@@ -104,9 +104,9 @@
 .host-task-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .host-workspace .stay-command-panel { border-left: 4px solid var(--brand); }
 .host-workspace .stay-command-note { font-size: 17px; font-weight: 650; line-height: 1.45; }
-.host-workspace .stay-metrics { background: transparent; border: 0; gap: 0; }
-.host-workspace .detail-metric { padding: 14px 20px; border-right: 1px solid var(--line); }
-.host-workspace .detail-metric:last-child { border-right: 0; }
+.host-workspace .stay-metrics { background: transparent; border: 0; gap: var(--space-3); }
+.host-workspace .stay-metrics .detail-metric, .host-workspace .stay-metrics .detail-metric + .detail-metric { border: 1px solid var(--line); border-radius: var(--card-radius); }
+.host-workspace .detail-metric { padding: 14px 20px; border: 1px solid var(--line); border-radius: var(--card-radius); }
 .host-workspace .metric-value { font-size: 25px; letter-spacing: -.025em; }
 .host-workspace .metric-value.small-value { font-size: 15px; }
 .host-workspace .guest-cards { gap: 12px; }

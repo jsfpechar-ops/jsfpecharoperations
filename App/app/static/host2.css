@@ -141,7 +141,8 @@
 /* ---- 5.4 body kinds, 7.4 table, 7.3 cards ---- */
 .host-workspace .ui-body-detail .ui-detail { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); align-items: start; }
 .host-workspace .ui-detail-side { position: sticky; top: var(--space-6); }
-.host-workspace .ui-section { margin-top: var(--section-gap); }
+.host-workspace .ui-section { margin-top: var(--section-gap); background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--space-5); }
+.host-workspace .ui-section-plain { background: none; border: 0; padding: 0; }
 .host-workspace .ui-section:first-child, .host-workspace .ui-body > .ui-section:first-child { margin-top: 0; }
 .host-workspace .ui-section-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin: 0 0 var(--space-3); }
 .host-workspace .ui-section-h h2 { margin: 0; font-size: var(--size-18); font-weight: 600; }
@@ -234,6 +235,7 @@
   .host-workspace .ui-cards { display: flex; flex-direction: column; gap: var(--space-2); }
   .host-workspace .ui-stats { gap: var(--space-2); }
   .host-workspace .ui-stat { padding: var(--space-3); }
+  .host-workspace .ui-section { padding: var(--space-4); }
   .host-workspace .ui-stat strong { font-size: var(--size-22); }
   .host-workspace .ui-body-detail .ui-detail, .host-workspace .ui-skel-detail { grid-template-columns: 1fr; }
   .host-workspace .ui-detail-side { position: static; order: -1; }
@@ -432,7 +434,6 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position:
   .host-workspace .ui-table td[data-label]:not([data-card])::before { content: attr(data-label); color: var(--ink-3); font-size: var(--size-13); }
   .host-workspace .ui-table td[data-label]:not([data-card]):first-child { display: block; font-weight: 600; color: var(--ink); }
   .host-workspace .ui-table td[data-label]:not([data-card]):first-child::before { content: none; }
-  .host-workspace .detail-metric { border-right: 0; }
 }
 
 /* 0142-cont-3: the invoice builder and detail use the page lane like every other page */
@@ -509,7 +510,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position:
 
 /* 0163: split columns start on one line; the manage form keeps a readable width */
 .host-workspace .split.wide > section, .host-workspace .split.wide > aside { margin-top: 0; padding-top: 0; }
-.host-workspace .split.wide > section > .ui-section:first-child, .host-workspace .split.wide > aside > :first-child { margin-top: 0; padding-top: 0; }
+.host-workspace .split.wide > section > .ui-section:first-child, .host-workspace .split.wide > aside > :first-child { margin-top: 0; }
 .host-workspace #user-manage { max-width: 40rem; }
 
 /* 0146 skeleton pause while the tab is hidden */
