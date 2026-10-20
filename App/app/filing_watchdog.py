@@ -7,7 +7,7 @@ with less than 24 hours left or the deadline already gone? It then
 - mails the host once per stay, the first time the stay is at risk
   (``deadline_at_risk``, a kind of its own: ``reminder_host`` is the check-in
   day nudge about missing guest forms and knows nothing about the deadline);
-- mails the operator (``config.OPERATOR_EMAIL``) at most one digest per six
+- mails the operator (``config.OPERATOR_EMAIL``) at most one digest per 72
   hours, listing every stay at risk across all workspaces, without guest names;
 - reports the overall answer to ``scheduler``, which pings the
   ``UBYHOST_HEARTBEAT_FILING_URL`` dead-man switch with it.
@@ -54,7 +54,7 @@ log = logging.getLogger("ubyhost.filing_watchdog")
 # A stay is at risk from this long before its deadline, and stays at risk
 # after the deadline until it is filed or no longer active.
 AT_RISK_WINDOW = timedelta(hours=24)
-DIGEST_INTERVAL = timedelta(hours=6)
+DIGEST_INTERVAL = timedelta(hours=72)
 DIGEST_SETTING = "filing_watchdog_digest_sent_at"
 # A stay with no guest on file drops off the lists this long after its
 # deadline. A known reportable guest never does; an empty stay that old is a
@@ -283,7 +283,7 @@ def send_operator_digest(
     now: Optional[datetime] = None,
     unknown: Optional[List[Dict[str, Any]]] = None,
 ) -> bool:
-    """Queue the operator digest unless one went out in the last six hours.
+    """Queue the operator digest unless one went out in the last 72 hours.
 
     ``unknown`` (stays with no guest on file) is listed in its own section.
     """
