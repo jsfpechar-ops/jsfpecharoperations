@@ -11,9 +11,9 @@
 <form class="cleaning-panel cleaning-form" method="post" action="/cleaning/properties/{{ home.id }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <div class="ui-field"><label for="property-instructions">{{ ct('instructions') }}</label><textarea id="property-instructions" name="instructions" rows="8" maxlength="10000" aria-describedby="property-instructions-hint">{{ prop.cleaning_instructions or '' }}</textarea><p id="property-instructions-hint">{{ ct('notes_hint') }}</p></div>
-<section class="cleaning-timing-summary" aria-labelledby="cleaning-property-times"><h2 id="cleaning-property-times">{{ ct('property_times') }}</h2><p>{{ ct('checkout') }}: <strong>{{ prop.effective_checkout_time or '—' }}</strong> · {{ ct('arrival') }}: <strong>{{ prop.effective_checkin_time or '—' }}</strong></p><p>{{ ct('property_times_hint') }}</p><a href="/apartments/{{ home.id }}?view=settings&amp;section=property#arrival-departure">{{ ct('edit_property_times') }}</a></section>
+<section class="cleaning-timing-summary ui-section" aria-labelledby="cleaning-property-times"><h2 id="cleaning-property-times">{{ ct('property_times') }}</h2><p>{{ ct('checkout') }}: <strong>{{ prop.effective_checkout_time or '—' }}</strong> · {{ ct('arrival') }}: <strong>{{ prop.effective_checkin_time or '—' }}</strong></p><p>{{ ct('property_times_hint') }}</p><a href="/apartments/{{ home.id }}?view=settings&amp;section=property#arrival-departure">{{ ct('edit_property_times') }}</a></section>
 <button class="ui-btn ui-btn-primary" type="submit">{{ ct('save') }}</button></form>
-<section class="cleaning-panel"><h2>{{ ct('code') }}</h2><p>{{ ct('code_hint') }}</p>
+<section class="cleaning-panel ui-section"><h2>{{ ct('code') }}</h2><p>{{ ct('code_hint') }}</p>
 {% if codes_disabled %}<p class="cleaning-warning" role="status">{{ ct('login_required') }}</p>{% endif %}
 {% if code.value %}<strong class="cleaning-pin" translate="no">{{ code.value }}{{ '#' if code.source == 'ttlock' else '' }}</strong><p>{{ ct('permanent_code') if code.source == 'ttlock' else ct('manual_code') }}</p>{% endif %}
 {% if code.pending %}<p class="cleaning-warning" role="status">{{ ct('code_failed') if code.pending == 'failed' else ct('code_pending') }}</p>{% endif %}

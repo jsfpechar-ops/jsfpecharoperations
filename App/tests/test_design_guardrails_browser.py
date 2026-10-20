@@ -429,3 +429,62 @@ def test_sidebar_search_has_a_border(wide_host, wide_base):
         assert facts["color"] not in ("", "transparent", "rgba(0, 0, 0, 0)"), "search border is transparent"
         context.close()
         browser.close()
+
+
+BORDERED_ROUTES = {
+    "settings": "/settings",
+    "housebook": "/housebook",
+    "reservation": "/reservations/{reservation_id}",
+    "setup-property": "/apartments/{property_id}/setup/property",
+    "setup-police": "/apartments/{property_id}/setup/police",
+    "setup-stay-fee": "/apartments/{property_id}/setup/stay_fee",
+}
+
+
+def test_host_sections_are_bordered_panels(wide_host, wide_base):
+    """0189: every top-level .ui-section (except .ui-section-plain) has a border and padding."""
+    cookie = wide_host["cookie"]
+    paths = {
+        key: path.format(
+            reservation_id=wide_host["reservations"][0],
+            property_id=wide_host["apartments"][0],
+        )
+        for key, path in BORDERED_ROUTES.items()
+    }
+    js = """() => Array.from(document.querySelectorAll('.ui-section:not(.ui-section-plain)'))
+        .filter(el => !el.parentElement || !el.parentElement.closest('.ui-section'))
+        .map(el => {
+          const cs = getComputedStyle(el);
+          const border = ['Top', 'Right', 'Bottom', 'Left'].reduce((n, side) => n + parseFloat(cs['border' + side + 'Width']), 0);
+          const pad = ['Top', 'Right', 'Bottom', 'Left'].reduce((n, side) => n + parseFloat(cs['padding' + side]), 0);
+          return {id: el.id || el.className, border, pad};
+        })"""
+    counts = {}
+    findings = []
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the bordered section test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        for name, path in paths.items():
+            separator = "&" if "?" in path else "?"
+            response = page.goto(f"{wide_base}{path}{separator}lang=en")
+            assert response and response.status < 400, f"{name}: HTTP {response.status if response else 'none'}"
+            _wait_for_host_layout(page)
+            _dismiss_optional_security_prompt(page)
+            sections = page.evaluate(js)
+            counts[name] = len(sections)
+            for section in sections:
+                if section["border"] <= 0 or section["pad"] <= 0:
+                    findings.append((name, section))
+        context.close()
+        browser.close()
+    print(f"bordered sections per page: {counts}")
+    assert len(paths) >= 6
+    assert sum(counts.values()) >= 6, f"too few .ui-section panels found: {counts}"
+    assert not findings, f"flat .ui-section panels: {findings[:20]}"

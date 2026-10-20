@@ -143,6 +143,8 @@
 .host-workspace .ui-detail-side { position: sticky; top: var(--space-6); }
 .host-workspace .ui-section { margin-top: var(--section-gap); background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--space-5); }
 .host-workspace .ui-section-plain { background: none; border: 0; padding: 0; }
+.host-workspace .ui-section .ui-section { background: none; border: 0; padding: 0; }
+body.host-workspace .ui-section.cleaning-panel { border: 1px solid var(--line); padding: var(--space-5); }
 .host-workspace .ui-section:first-child, .host-workspace .ui-body > .ui-section:first-child { margin-top: 0; }
 .host-workspace .ui-section-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin: 0 0 var(--space-3); }
 .host-workspace .ui-section-h h2 { margin: 0; font-size: var(--size-18); font-weight: 600; }
