@@ -137,7 +137,9 @@
     "ui-swatch-grid",
     "ui-swatch",
     "ui-swatch-chip",
-    "ui-type-sample"
+    "ui-type-sample",
+    "ui-section-plain",
+    "ui-section-row"
   ],
   "hooks": [
     "sr-only",
@@ -814,5 +816,9 @@
   },
   "enforced_stylesheets": [
     "App/app/static/host2.css"
-  ]
+  ],
+  "class_notes": {
+    "ui-section-plain": "Guide page section: a section with no border or fill, only spacing and a heading (MASTER 3, section rhythm).",
+    "ui-section-row": "Smart locks panel section laid out as a row of label and control (MASTER 7.3 row pattern)."
+  }
 }

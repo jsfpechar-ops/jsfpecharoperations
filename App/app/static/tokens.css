@@ -148,7 +148,7 @@
   /* 2.3 component */
   --control-h: 40px; --control-h-phone: 44px; --control-h-compact: 32px; --control-px: 14px; --control-radius: var(--radius-2); --control-font: var(--size-14); --control-weight: 600;
   --input-h: var(--control-h); --input-border: var(--line-strong); --input-radius: var(--radius-2); --input-px: 12px;
-  --row-h: 48px; --row-py: 12px; --row-px: 16px; --row-gap: 12px; --card-radius: var(--radius-3); --card-p: 16px;
+  --row-h: 80px; --row-py: 16px; --row-px: 20px; --row-gap: 16px; --card-radius: var(--radius-3); --card-p: 16px;
   --badge-h: 22px; --badge-px: 8px; --badge-font: var(--size-12); --badge-radius: var(--radius-pill);
   --nav-w: 240px; --nav-w-collapsed: 64px; --nav-item-h: 40px; --nav-icon: 20px; --tabbar-h: 56px; --topbar-h: 52px;
   --lane: 1080px; --lane-narrow: 720px; --gutter: 32px; --section-gap: 32px; --body-size: var(--size-16);
