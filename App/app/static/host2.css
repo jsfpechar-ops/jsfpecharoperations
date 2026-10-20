@@ -268,6 +268,12 @@ body.host-workspace.sidebar-collapsed .wrap.with-sidebar { margin-left: var(--na
 body.host-workspace.sidebar-collapsed .ui-sidebar :is(.brand-word, .ui-env, .ui-search-row span, .ui-search-row kbd, .ui-nav a > span:not(.ui-nav-count), .host-account-name) { display: none; }
 body.host-workspace.sidebar-collapsed .ui-sidebar .ui-nav a, body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { justify-content: center; padding: 0; }
 body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height: auto; gap: var(--space-2); }
+/* 0188: the rail clips overflow, so the account menu is fixed and anchored above its trigger. */
+.host-workspace .ui-sidebar .host-account { anchor-name: --host-acct; }
+body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position: fixed; position-anchor: --host-acct; left: calc(var(--nav-w-collapsed) + var(--space-2)); right: auto; bottom: 64px; width: 220px; max-height: 65vh; z-index: var(--z-drawer); }
+@supports (anchor-name: --host-acct) {
+  body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { bottom: anchor(top); margin-bottom: var(--space-2); }
+}
 
 @media (max-width: 1279px) and (min-width: 1024px) {
   .host-workspace .ui-sidebar { width: var(--nav-w-collapsed); padding: var(--space-3) var(--space-2); }
@@ -276,6 +282,10 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .ui-sidebar :is(.brand-word, .ui-env, .ui-search-row span, .ui-search-row kbd, .ui-nav a > span:not(.ui-nav-count), .host-account-name) { display: none; }
   .host-workspace .ui-sidebar .ui-nav a, .host-workspace .ui-sidebar .ui-search-row { justify-content: center; padding: 0; }
   .host-workspace .ui-brand { flex-direction: column; height: auto; gap: var(--space-2); }
+  .host-workspace .ui-sidebar .host-account-menu { position: fixed; position-anchor: --host-acct; left: calc(var(--nav-w-collapsed) + var(--space-2)); right: auto; bottom: 64px; width: 220px; max-height: 65vh; z-index: var(--z-drawer); }
+  @supports (anchor-name: --host-acct) {
+    .host-workspace .ui-sidebar .host-account-menu { bottom: anchor(top); margin-bottom: var(--space-2); }
+  }
 }
 @media (max-width: 1023px) {
   .host-workspace .ui-sidebar, .host-workspace .sidebar-expand { display: none; }

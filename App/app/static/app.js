@@ -807,6 +807,7 @@
       document.body.classList.toggle("sidebar-collapsed", collapsed);
       if (collapse) {
         collapse.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        collapse.setAttribute("aria-label", collapsed ? collapse.dataset.labelShow : collapse.dataset.labelHide);
       }
       try {
         localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0");
@@ -821,9 +822,9 @@
     } catch (error) {
       stored = null;
     }
-    if (stored === "1") document.body.classList.add("sidebar-collapsed");
+    if (stored === "1") setCollapsed(true);
 
-    if (collapse) collapse.addEventListener("click", function () { setCollapsed(true); });
+    if (collapse) collapse.addEventListener("click", function () { setCollapsed(!document.body.classList.contains("sidebar-collapsed")); });
     if (expand) expand.addEventListener("click", function () { setCollapsed(false); });
 
     toggles.forEach(function (button) {
