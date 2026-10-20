@@ -212,7 +212,7 @@ body.host-workspace .ui-section.cleaning-panel { border: 1px solid var(--line); 
 
 /* ---- phone ---- */
 @media (max-width: 1023px) {
-  .host-workspace .ui-ph { flex-direction: column; align-items: stretch; padding-bottom: var(--space-4); margin-bottom: var(--space-4); }
+  .host-workspace .ui-ph { flex-direction: column; align-items: stretch; padding-bottom: var(--space-4); margin-bottom: var(--space-6); }
   .host-workspace .ui-ph h1 { font-size: var(--size-22); }
   .host-workspace .ui-ph-acts { flex-direction: column; align-items: stretch; }
   .host-workspace .ui-ph-acts .ui-btn-secondary, .host-workspace .ui-ph-acts .ui-btn-quiet { display: none; }
