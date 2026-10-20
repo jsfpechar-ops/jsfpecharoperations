@@ -413,10 +413,6 @@ def _template_section_tabs(request: Request, section: str, current: str = "") ->
                 else "/entities"
             )
             items.append(("business", business, "host.business"))
-        from . import ttlock
-
-        if ttlock.enabled():
-            items.append(("lock", "/smart-locks", "properties.shared.lock"))
     elif section == "invoices":
         items = [
             ("invoices", "/invoices", "nav.invoices"),
@@ -457,8 +453,6 @@ def _template_page_tabs(context) -> list:
         if str(context.get("next_path") or "").startswith("/invoices"):
             return _template_section_tabs(request, "invoices", "settings")
         return _template_section_tabs(request, "properties", "business")
-    if nav == "smart_locks":
-        return _template_section_tabs(request, "properties", "lock")
     if nav in ("settings", "privacy_requests", "users", "incidents", "operations", "funnel"):
         current = (
             "settings" if nav == "settings" and path == "/settings"

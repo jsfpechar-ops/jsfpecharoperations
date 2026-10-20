@@ -38,7 +38,7 @@ LISTS = {
 # settings live per property, so there is no one page to link).
 TABS = {
     "stays": ["nav.stays", "tabs.stays.reports", "tabs.stays.register"],
-    "properties": ["nav.properties", "host.business", "properties.shared.lock"],
+    "properties": ["nav.properties", "host.business"],
     "invoices": ["nav.invoices", "host.invoice_settings"],
     "fees": [],
 }
@@ -166,7 +166,7 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
     cases = [
         ("/reservations", "nav.stays"), ("/submissions", "tabs.stays.reports"),
         ("/housebook", "tabs.stays.register"), ("/apartments", "nav.properties"),
-        ("/smart-locks", "properties.shared.lock"), ("/invoices", "nav.invoices"),
+        ("/invoices", "nav.invoices"),
         (f"/entities?edit={acc['e1']}&next=/apartments", "host.business"),
         (f"/entities?edit={acc['e1']}&next=/invoices/new", "host.invoice_settings"),
     ]

@@ -1,13 +1,4 @@
-{% extends "host_page.html" %}
-{% set nav = 'smart_locks' %}
-{% set body_kind = 'list' %}
-{# One coral button per state: setup (no account), share check (no locks yet), list check (locks). #}
 {% set cta = 'ui-btn ui-btn-primary' %}
-{% from "_ui_layout.html" import ui_section_tabs with context %}
-{% block title %}{{ t('smart_locks.title') }}{% endblock %}
-{% block meta %}{{ t('smart_locks.lede') }}{% endblock %}
-{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
-{% block body %}
 {% from "_components.html" import help_tip, copy_button with context %}
 
 {% if reauth %}<p class="ui-sub"><strong>{{ t('smart_locks.reauth') }}</strong></p>{% endif %}
@@ -76,4 +67,3 @@
 </section>
 {% endif %}
 {% endif %}
-{% endblock %}

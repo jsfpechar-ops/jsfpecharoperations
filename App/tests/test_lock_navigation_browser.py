@@ -235,7 +235,7 @@ def test_many_locks_list_and_add_more_sections(world):
         for width in (360, 390, 1280):
             for lang in ("en", "cs"):
                 context, page = _page(browser, world, width)
-                page.goto(f"{base}/smart-locks?lang={lang}")
+                page.goto(f"{base}/apartments?lang={lang}")
                 _settle(page)
                 page.locator("#smart-locks-list button[type=submit]").first.click()
                 _settle(page)
@@ -243,7 +243,7 @@ def test_many_locks_list_and_add_more_sections(world):
                 _in_view(page, "#smart-locks-list")
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
                 _shot(page, f"list-{width}-{lang}")
-                page.goto(f"{base}/smart-locks?lang={lang}#smart-locks-add-more")
+                page.goto(f"{base}/apartments?lang={lang}#smart-locks-add-more")
                 _settle(page)
                 assert page.locator("details#smart-locks-add-more").evaluate("d => d.open")
                 world["fake"].fail_kind = "budget"
