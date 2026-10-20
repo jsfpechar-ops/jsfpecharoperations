@@ -29,3 +29,19 @@ Owner: "the rows, for everything, dont have borders, it feels weird and ugly". O
 ## 5. Do not touch
 
 Phone card block, templates, copy, guard scripts; hard rules 1, 3, 8.
+
+## 6. Commands
+
+As in each step.
+
+## 7. Acceptance
+
+- [ ] Desktop rows have their own border and gap; new test passes; guard tests pass with 0 skipped.
+
+## 8. Stop and ask
+
+An anchor is missing, or a test fails twice.
+
+## 9. Report
+
+`docs/tasks/0181-report.md`, short; `Status: review`.

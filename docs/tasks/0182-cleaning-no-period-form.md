@@ -29,6 +29,22 @@ Owner: Cleaning shows a From / Until (exclusive) date form with "Show dates" and
 
 Routes, the shared (read-only) schedule page behaviour, copy outside the removed form; hard rules 1, 3, 8.
 
-## 6. Addendum (owner, same session): facts line up across cards
+### Addendum (owner, same session): facts line up across cards
 
 Owner: on the Cleaning list the "Next check-in" fact starts at a different x in each card (Wednesday card is further right), because `.cleaning-facts` (`App/app/static/cleaning.css` line 42) is `display:flex` and each fact is as wide as its own text. Fix: make `.cleaning-facts` a grid with equal fixed columns so "Checkout" and "Next check-in" start at the same x in every card, for example `display:grid; grid-template-columns: repeat(2, minmax(0, 17rem)); gap: 2px 24px`, adapting so the longest value ("Wednesday 28.10.2026 · 11:00") fits without wrapping at 1280 px and the facts stack to one column below 640 px. Keep `grid-area:facts`. Bump the `cleaning.css` `?v=` key (to one ending `-0182`) in every template that references it and run the static-versions `--write`. Add a browser test (in `test_design_guardrails_browser.py`, `wide_host` fixtures, 1280 px, `/cleaning?lang=en`) asserting the first `.cleaning-facts > div` of every `.cleaning-card` has the same `getBoundingClientRect().left`, and so does the second. Include the cleaning list in the 0182 screenshots. The commit message then reads "0182: Cleaning drops the From / Until form, facts line up".
+
+## 6. Commands
+
+As in each step.
+
+## 7. Acceptance
+
+- [ ] Cleaning has no From / Until form; facts line up across cards; new tests pass; guard tests pass with 0 skipped.
+
+## 8. Stop and ask
+
+An anchor is missing, or a test fails twice.
+
+## 9. Report
+
+`docs/tasks/0182-report.md`, short; `Status: review`.
