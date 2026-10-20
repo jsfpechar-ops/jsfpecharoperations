@@ -269,7 +269,8 @@ def test_host_copy_feedback_truth_and_geometry(base):
 
         # Command-palette success keeps the shared seven-second notification behavior.
         page.evaluate("window.__copyMode = 'success'")
-        opener = page.locator(".command-trigger")
+        # v2 shell: the palette opener is the sidebar search row (desktop) or the topbar icon (phone).
+        opener = page.locator("[data-command-open]:visible").first
         opener.click()
         page.locator("#command-dialog").wait_for(state="visible")
         page.get_by_role("option", name="Copy guest link").click()
