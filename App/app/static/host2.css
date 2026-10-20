@@ -535,3 +535,7 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 
 /* 0176: the empty-state action sits centred under its text */
 .host-workspace .ui-empty .ui-btn-group { justify-content: center; }
+
+/* 0178: the setup checklist is a normal card, not a tinted dashed block */
+.host-workspace .host-checklist[data-setup-status] { margin-top: var(--space-6); padding: var(--card-p); background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); }
+.host-workspace .host-checklist[data-setup-status] .setup-status-head { margin-bottom: var(--space-4); }
