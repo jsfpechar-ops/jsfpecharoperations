@@ -2,7 +2,7 @@
 
 Every run of the deadline job finds the stays that may miss their police
 deadline, warns the host once per stay, sends the operator a digest at most
-every six hours and pings an external dead-man switch: ``<url>`` when nothing
+every 72 hours and pings an external dead-man switch: ``<url>`` when nothing
 is at risk, ``<url>/fail`` when something is. Time is frozen by passing
 ``now`` explicitly, as the deadline code itself does.
 """
@@ -252,7 +252,7 @@ def test_the_host_mail_is_translated(lang):
 # --- operator digest ------------------------------------------------------------
 
 
-def test_the_operator_digest_is_throttled_to_one_per_six_hours(world, monkeypatch):
+def test_the_operator_digest_is_throttled_to_one_per_72_hours(world, monkeypatch):
     monkeypatch.setattr(mail, "mail_enabled", lambda: True)
     monkeypatch.setattr(config, "OPERATOR_EMAIL", "operator@example.invalid")
     rid = world["add_stay"]([("DEU", "pending")])
@@ -260,9 +260,9 @@ def test_the_operator_digest_is_throttled_to_one_per_six_hours(world, monkeypatc
     stays = list(_mine(filing_watchdog.at_risk_stays(start), {rid}).values())
 
     assert filing_watchdog.send_operator_digest(stays, start) is True
-    for minutes in (30, 60, 5 * 60 + 59):
+    for minutes in (30, 60, 71 * 60 + 59):
         assert filing_watchdog.send_operator_digest(stays, start + timedelta(minutes=minutes)) is False
-    assert filing_watchdog.send_operator_digest(stays, start + timedelta(hours=6)) is True
+    assert filing_watchdog.send_operator_digest(stays, start + timedelta(hours=72)) is True
 
     rows = _outbox("deadline_digest")
     assert len(rows) == 2
