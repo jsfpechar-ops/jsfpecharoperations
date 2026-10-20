@@ -5,7 +5,7 @@ Done: steps 1 to 5. Chip label, centred create dialog, form restyle of the prope
 
 Files: App/app/static/cleaning.css, App/app/static/dashboard-calendar.css, App/app/templates/base.html, App/app/templates/_dashboard_calendar.html, App/app/templates/cleaning_shared.html, App/app/templates/cleaning_settings.html, App/app/templates/cleaning_edit.html, App/app/templates/cleaning_shares.html, App/tests/test_cleaning_browser.py, App/tests/static_versions.json, docs/design/catalog.json.
 
-Found in screenshots: docs/... host-design0123.css line 76 (`body.host-workspace .cleaning-panel { padding:20px 0 }`) and line 77 (`.cleaning-page h2 { font-size:24px }`) overrode the form panels, so the panels had no side padding. New rules use the `body.host-workspace` prefix to beat them.
+Found in screenshots: App/app/static/host-design0123.css line 76 (`body.host-workspace .cleaning-panel { padding:20px 0 }`) and line 77 (`.cleaning-page h2 { font-size:24px }`) overrode the form panels, so the panels had no side padding. New rules use the `body.host-workspace` prefix to beat them.
 Dialog: the phone sheet is now centred; the form has min-height min(680px, 90dvh-24px) so Stay and Cleaning tabs keep the same top edge.
 
 Commands (last lines):
