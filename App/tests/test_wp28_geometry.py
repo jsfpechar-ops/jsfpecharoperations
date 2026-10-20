@@ -156,7 +156,15 @@ def test_stay_page_cards_hold_their_buttons(base, world, browser):
                 out.placeholders.push(Math.round(c.bottom - worst));
               });
               const filing = document.querySelector('#file-by-hand');
-              if (filing) out.filing = parseFloat(getComputedStyle(filing).paddingLeft);
+              if (filing) {
+                // The shared .ui-section panel flattens a nested section, so the hand-filing disclosure
+                // sits inside the bordered Police reporting panel: measure its clearance from that border.
+                let panel = filing;
+                while (panel && parseFloat(getComputedStyle(panel).borderLeftWidth) === 0) panel = panel.parentElement;
+                if (!panel) out.filing = 0;
+                else if (panel === filing) out.filing = parseFloat(getComputedStyle(filing).paddingLeft);
+                else out.filing = R(filing).left - R(panel).left - parseFloat(getComputedStyle(panel).borderLeftWidth);
+              }
               return out;
             }"""
         )
@@ -165,7 +173,7 @@ def test_stay_page_cards_hold_their_buttons(base, world, browser):
     assert measured["placeholders"], measured
     assert min(measured["placeholders"]) >= 8, f"a button sits on the card edge: {measured}"
     if measured["filing"] is not None:
-        assert measured["filing"] >= 12, "the hand-filing panel lost its padding"
+        assert measured["filing"] >= 12, "the hand-filing panel sits on its bordered panel edge"
 
 
 def test_overdue_deadline_is_a_pill_not_a_bar(base, world, browser):
