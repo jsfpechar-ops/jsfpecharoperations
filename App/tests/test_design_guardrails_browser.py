@@ -330,3 +330,41 @@ def test_guest_card_facts_share_four_column_lines(wide_host, wide_base):
     print(f"guest card fact column lines: {distinct}")
     assert len(lefts) >= 4, f"guest card shows only {len(lefts)} facts"
     assert len(distinct) <= 4, f"guest card facts start on {len(distinct)} different lines: {distinct}"
+
+
+def test_table_rows_have_their_own_border_on_desktop(wide_host, wide_base):
+    """0181: on desktop each table row is its own bordered card, with a gap between rows."""
+    cookie = wide_host["cookie"]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the table row border test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/reservations?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        page.wait_for_selector(".host-workspace .ui-table tbody tr:nth-child(2) td", timeout=5000)
+        facts = page.evaluate(
+            """() => {
+                const rows = document.querySelectorAll('.host-workspace .ui-table tbody tr');
+                const first = rows[0].querySelector('td');
+                const style = getComputedStyle(first);
+                return {
+                    top: style.borderTopWidth,
+                    left: style.borderLeftWidth,
+                    gap: rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().bottom,
+                };
+            }"""
+        )
+        print(f"table row border measured: {facts}")
+        assert facts["top"] == "1px", f"row top border is {facts['top']}, not 1px"
+        assert facts["left"] == "1px", f"first cell left border is {facts['left']}, not 1px"
+        assert facts["gap"] >= 4, f"rows are only {facts['gap']}px apart"
+        context.close()
+        browser.close()
