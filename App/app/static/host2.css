@@ -546,3 +546,14 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 @media (max-width: 639px) {
   .host-workspace .guest-card .guest-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* 0181: on desktop every table row is its own bordered, rounded card with a gap between rows */
+@media (min-width: 1024px) {
+  .host-workspace .ui-table { border: 0; background: transparent; border-spacing: 0 var(--space-2); overflow: visible; }
+  .host-workspace .ui-table th { border-bottom: 0; }
+  .host-workspace .ui-table td { background: var(--surface); border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .host-workspace .ui-table td:first-child { border-left: 1px solid var(--line); border-top-left-radius: var(--card-radius); border-bottom-left-radius: var(--card-radius); }
+  .host-workspace .ui-table td:last-child { border-right: 1px solid var(--line); border-top-right-radius: var(--card-radius); border-bottom-right-radius: var(--card-radius); }
+  .host-workspace .ui-table tr:last-child td { border-bottom: 1px solid var(--line); }
+  .host-workspace .ui-table .ui-row:hover td, .host-workspace .ui-table .ui-row:focus-within td { background: var(--surface-2); }
+}
