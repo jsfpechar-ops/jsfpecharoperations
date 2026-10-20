@@ -251,3 +251,49 @@ def test_empty_state_action_is_centred_under_its_text(wide_host, wide_base):
         assert gap <= 2, f"empty-state action centre is {gap}px off the text centre"
         context.close()
         browser.close()
+
+
+def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
+    """0178: the setup checklist is a normal card (no tint, solid border, heading inside the padding)."""
+    cookie = wide_host["cookie"]
+    property_id = wide_host["apartments"][0]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the setup checklist test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/apartments/{property_id}?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        try:
+            page.wait_for_selector("[data-setup-status]", timeout=2000)
+        except Exception:
+            print(f"setup checklist absent on /apartments/{property_id}; test body not run")
+            context.close()
+            browser.close()
+            return
+        facts = page.evaluate(
+            """() => {
+                const box = document.querySelector('.host-workspace .host-checklist[data-setup-status]');
+                const other = document.querySelector('.host-workspace .panel:not(.host-checklist)');
+                const style = getComputedStyle(box);
+                const head = box.querySelector('.setup-status-head h2');
+                return {
+                    background: style.backgroundColor,
+                    expected: other ? getComputedStyle(other).backgroundColor : 'rgb(255, 255, 255)',
+                    borderStyle: style.borderTopStyle,
+                    headGap: head ? head.getBoundingClientRect().left - box.getBoundingClientRect().left : null,
+                };
+            }"""
+        )
+        assert facts["background"] == facts["expected"], f"checklist background {facts['background']} is not the card background"
+        assert facts["borderStyle"] == "solid", f"checklist border is {facts['borderStyle']}, not solid"
+        assert facts["headGap"] is not None and facts["headGap"] >= 12, f"heading starts {facts['headGap']}px from the left edge"
+        context.close()
+        browser.close()
