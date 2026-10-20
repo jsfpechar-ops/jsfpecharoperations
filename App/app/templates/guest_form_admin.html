@@ -241,7 +241,7 @@
       {{ t('host.signature_locked') }}
     </p>
     {% else %}
-    <p class="ui-sub">{{ t('host.signature_help') }}</p>
+    <p class="ui-sub" id="sig-help">{{ t('host.signature_help') }}</p>
     <div class="signature-pad">
       <canvas id="sig-canvas" tabindex="0" role="img" aria-label="{{ t('host.signature_title') }}"
               aria-describedby="sig-help sig-status"></canvas>

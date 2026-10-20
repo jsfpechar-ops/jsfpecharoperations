@@ -10,7 +10,7 @@
 {% macro help_tip(id, text, guide_href='') %}
   <span class="help-tip" data-help-tip>
     <button type="button" class="help-tip-btn" aria-label="{{ t('help.tip.label') }}" aria-expanded="false" aria-controls="{{ id }}">?</button>
-    <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
+    <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
   </span>
 {% endmacro %}
 
@@ -295,7 +295,7 @@
 
 {# Copy a value straight from a list row, so chasing a guest is one click. #}
 {% macro copy_inline(target_id, value, label='', role='') %}
-  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}"{% if role %} tabindex="-1"{% endif %}>
+  <input class="sr-only" type="text" id="{{ target_id }}" readonly value="{{ value }}" tabindex="-1" aria-hidden="true">
   <button class="{{ 'row-menu-item' if role else 'btn small' }}" type="button" data-copy="{{ target_id }}" data-copy-label="{{ label or t('common.copy_link') }}"
           data-copied-label="{{ t('common.copied') }}"{% if role %} role="{{ role }}"{% endif %}
           title="{{ t('common.copy_guest_link') }}">{{ label or t('common.copy_link') }}</button>

@@ -184,8 +184,8 @@ def test_tabs_are_links_that_mark_the_open_page(acc):
     # 0101: Invoice settings with two businesses opens the list to pick one.
     invoices = client.get("/invoices").text
     assert re.search(r'<a class="(?:sub-tab|ui-tab)" href="/entities"', invoices) and "/invoices/settings" not in invoices
-    # Stay fees has no sub-pages (fee settings live in each property).
-    assert "data-sub-tabs" not in client.get("/stay-fees").text
+    # Stay fees is a tab of Invoices (0165).
+    assert "data-sub-tabs" in client.get("/stay-fees").text
     # Property pages keep their own local tabs, not the section tabs.
     assert "data-sub-tabs" not in client.get(f"/apartments/{acc['p1']}").text
 

@@ -84,7 +84,7 @@
       <li>{{ icon('calendar-days', 20) }}<div><strong>{{ t('property_create.next_calendar') }}</strong><small>{{ t('property_create.next_calendar_body') }}</small></div></li>
       <li>{{ icon('external-link', 20) }}<div><strong>{{ t('property_create.next_guests') }}</strong><small>{{ t('property_create.next_guests_body') }}</small></div></li>
       <li>{{ icon('send', 20) }}<div><strong>{{ t('property_create.next_reporting') }}</strong><small>{{ t('property_create.next_reporting_body') }}</small></div></li>
-      <li>{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong><small>{{ t('property_create.next_lock_body') }} <a href="/guide#door-codes">{{ t('help.tip.more') }}</a></small></div></li>
+      <li>{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong><small>{{ t('property_create.next_lock_body') }} <a href="/guide#door-codes" aria-label="{{ t('help.tip.more') }}: {{ t('property_create.next_lock_body') | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a></small></div></li>
     </ul>
     {% if copy_property_peers %}
     <form method="get" action="/apartments/new" class="property-create-copy">

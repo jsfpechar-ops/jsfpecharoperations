@@ -62,6 +62,19 @@
       else if (Math.abs((a.top + a.bottom) / 2 - (b.top + b.bottom) / 2) > 2) out.push(['buttons-misaligned', name(bs[i]), name(bs[j])]);
     }
   }
+  // 4b. a button and a field that share a row sit on one bottom line (a label above the field must not push it up)
+  const fieldSel = 'input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not(.sr-only),select,textarea';
+  const rowCtl = [...ws.querySelectorAll(btnSel + ',' + fieldSel)].filter((e) => vis(e) && !e.closest('[role=menu],dialog:not([open])') && !inScroller(e));
+  for (let i = 0; i < rowCtl.length; i++) for (let j = i + 1; j < rowCtl.length; j++) {
+    const a = rowCtl[i], b = rowCtl[j];
+    if (a.matches(fieldSel) === b.matches(fieldSel)) continue;
+    if (a.tagName === 'TEXTAREA' || b.tagName === 'TEXTAREA') continue;
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    const overlap = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+    if (overlap < Math.min(ra.height, rb.height) / 2) continue;
+    if (ra.right > rb.left && rb.right > ra.left) continue;
+    if (Math.abs(ra.bottom - rb.bottom) > 2 && Math.abs((ra.top + ra.bottom) / 2 - (rb.top + rb.bottom) / 2) > 2) out.push(['field-button-misaligned', name(a), name(b), Math.round(ra.bottom - rb.bottom)]);
+  }
   // 5. phone tap targets
   if (phone) {
     for (const el of ws.querySelectorAll('button,.ui-btn,input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,[role=menuitem],[role=tab]')) {

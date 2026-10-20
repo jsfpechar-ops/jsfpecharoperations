@@ -9,7 +9,7 @@
   <a href="/reservations" {% if stays_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('calendar-days', 24) }}</span><span>{{ t('nav.stays') }}</span></a>
   <a href="/apartments" {% if properties_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('house', 24) }}</span><span>{{ t('nav.properties') }}</span></a>
   <a href="/cleaning" {% if nav == 'cleaning' %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('brush-cleaning', 24) }}</span><span>{{ t('nav.cleaning') }}</span></a>
-  <a href="/settings" data-sheet-open="more-sheet" {% if more_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('ellipsis', 24) }}</span><span>{{ t('nav.more') }}</span></a>
+  <a href="/settings" data-sheet-open="more-sheet" aria-label="{{ t('nav.more_menu') }}" {% if more_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('ellipsis', 24) }}</span><span>{{ t('nav.more') }}</span></a>
 </nav>
 <dialog id="more-sheet" class="ui-dialog" aria-label="{{ t('nav.more') }}">
   <div class="ui-sheet">
@@ -17,8 +17,6 @@
     <nav class="ui-menu-panel ui-sheet-list" aria-label="{{ t('nav.more') }}">
       <button class="ui-menu-item" type="button" data-command-open>{{ icon('search', 16) }}{{ t('host.search') }}</button>
       <a class="ui-menu-item" href="/invoices">{{ icon('receipt', 16) }}{{ t('nav.invoices') }}</a>
-      <a class="ui-menu-item" href="/stay-fees">{{ icon('coins', 16) }}{{ t('nav.stay_fees') }}</a>
-      <a class="ui-menu-item" href="/smart-locks">{{ icon('key-round', 16) }}{{ t('nav.smart_locks') }}</a>
       <a class="ui-menu-item" href="/settings">{{ icon('settings', 16) }}{{ t('nav.settings') }}</a>
       <a class="ui-menu-item" href="/guide">{{ icon('book-open', 16) }}{{ t('nav.guide') }}</a>
       {% if current_user and current_user.role == 'admin' %}<a class="ui-menu-item" href="/admin/users">{{ icon('shield', 16) }}{{ t('nav.admin') }}</a>{% endif %}

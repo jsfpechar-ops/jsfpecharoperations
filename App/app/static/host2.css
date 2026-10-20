@@ -508,3 +508,23 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 /* 0164: the guest-link cell in the property summary may wrap its icons under the URL */
 .host-workspace .property-summary-panel .property-inline-url { max-width: 11rem; }
 .host-workspace .property-summary-panel .property-inline-value { flex-wrap: wrap; }
+
+/* 0167: the cleaning period row aligns fields and button on one bottom line */
+.host-workspace .cleaning-period { align-items: flex-end; gap: var(--space-3); }
+.host-workspace .cleaning-period .ui-field { margin: 0; flex: 0 1 12rem; min-width: 0; }
+.host-workspace .cleaning-period > .ui-btn { align-self: flex-end; }
+.host-workspace .cleaning-period > a { align-self: flex-end; display: inline-flex; align-items: center; min-height: var(--control-h); }
+/* 0168: help buttons meet the 24 px target size; the 44 px hit area stays */
+.host-workspace .help-tip-btn { width: var(--space-6); height: var(--space-6); }
+/* 0169: keyboard focus is always visible (WCAG 2.4.7) */
+.host-workspace :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
+
+/* 0171 */
+.host-workspace input:focus-visible, .host-workspace input:focus { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
+.host-workspace :is(label, .btn):has(+ input:focus-visible), .host-workspace :is(label, .btn):has(> input:focus-visible), .host-workspace input:focus-visible + :is(label, .btn) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
+
+/* 0170 */
+.host-workspace .copy-property-form .copyrow { display: flex; align-items: flex-end; gap: var(--space-3); }
+.host-workspace .copy-property-form .copyrow .field { margin: 0; }
+.host-workspace .copy-property-form .copyrow > .ui-btn { align-self: flex-end; }
+.host-workspace .settings-grid > .ui-form-actions { grid-column: 1 / -1; justify-self: start; }

@@ -305,6 +305,7 @@ Added 2026-10-19 after the owner found broken screens that every earlier check h
    - Content spills out of its table row.
    - A table cell does not sit under its column header.
    - Two buttons in one row differ in height by more than 2 px, or their centre lines differ.
+   - a button and a field in one row that do not share a bottom or centre line (field-button-misaligned);
    - A control is smaller than 44 × 44 px at 390.
    - A row menu opens off screen or holds a form field.
 2. Test data uses long real-world property names (35 characters or more, such as "Vivus Apartment with Balcony & Garage"). Short demo names hide wrapping and overlap.
@@ -313,6 +314,13 @@ Added 2026-10-19 after the owner found broken screens that every earlier check h
 5. There is no allowlist and no skip. A failing check is fixed in the page, never excluded or loosened.
 6. Every changed CSS or JS file gets a new `?v=` key (`App/tests/test_static_versions.py`).
 7. A page is done only when its 390, 1280 and 2000 px screenshots (open and collapsed) are saved, and the orchestrator has opened them and listed in the report what it checked. That list covers: button heights and alignment in each row, wrapping in tables, the empty state, each opened menu, and the header actions on phone.
+
+### 11.1 Accessibility (WCAG 2.2 AA, as the UK public sector requires)
+
+- The standard is WCAG 2.2 AA.
+- `test_a11y_guard_browser.py` fails the build on missing page language or title, not exactly one h1, skipped heading levels, no skip link, controls without a name, generic link text, text below 4.5:1 (3:1 for large text), targets under 24 by 24 CSS px, focus that is invisible or covered, sideways scroll at 320 px, and clipped text under wide text spacing.
+- Every page works with the keyboard alone and every form error names the field and says how to fix it (checked by hand when a form changes).
+- No allowlist and no skip.
 
 ### 11.1 Lint (`scripts/design_lint.py`, runs in CI, fails the build)
 

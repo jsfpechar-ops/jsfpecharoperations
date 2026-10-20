@@ -20,7 +20,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--brand); text-underline-offset: 2px; }
+a { color: var(--coral-600); text-underline-offset: 2px; }
 a.plain { color: inherit; text-decoration: none; }
 
 :focus-visible {
@@ -1019,7 +1019,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 form.inline { display: inline; }
 label { display: block; font-size: 13.5px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
-label .opt { font-weight: 400; color: var(--faint); text-transform: none; }
+label .opt { font-weight: 400; color: var(--ink-500); text-transform: none; }
 
 input:not([type]), input[type=text], input[type=password], input[type=date], input[type=number],
 input[type=email], input[type=url], input[type=file], input[type=tel],

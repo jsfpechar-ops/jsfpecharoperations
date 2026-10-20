@@ -12,7 +12,7 @@ Updated: 2026-10-19.
 
 ## Now
 
-- Host design reset: PR #402 (branch claude/project-thread-5hw8cf) finishes 0138-0146 and 0154-0163; every host and admin page passes the CI layout guard (MASTER 11.0), shots in project files design-reset/checkpoint-3. Waiting on owner review and merge.
+- Host design reset follow-up (0165-0173): six-item sidebar, WCAG 2.2 AA check, aligned field rows. **Deploy needed:** new host.css/app.css `?v=` keys (0172); production still serves an old host.css. Shots: design-reset/checkpoint-4.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 - Host #397: b51e0bb; CI 8/8, zero browser skips ([brief](../tasks/0123-dashboard-stays-only.md)).
 

@@ -17,7 +17,7 @@
 {% set stay_lede %}{{ (reservation.date_from | date_cz) ~ ' – ' ~ (reservation.date_to | date_cz) ~ ' · ' ~ tp('stays.table.nights', nights(reservation.date_from, reservation.date_to)) ~ ' · ' }}{{ source_badge(reservation.source, source_label(reservation)) }}{% endset %}
 {% block meta %}{{ stay_lede }}{% endblock %}
 {% block body %}
-<input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}">
+<input class="sr-only" type="text" id="stay-link" readonly value="{{ guest_link }}" tabindex="-1" aria-hidden="true">
 
 <div class="host-stay-detail">
 {% set stay_inactive = reservation.status != 'active' or reservation.archived_at %}

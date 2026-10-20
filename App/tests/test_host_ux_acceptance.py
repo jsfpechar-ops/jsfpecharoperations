@@ -708,7 +708,7 @@ def test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus(acc, base):
             seen.add(info["href"])
             if not (info["ring"] and info["inView"]):
                 unseen_focus.append(info)
-        assert {"/", "/reservations", "/apartments", "/invoices", "/stay-fees"} <= seen, seen
+        assert {"/", "/reservations", "/apartments", "/invoices"} <= seen, seen
         for view in ("overview", "bookings", "settings"):
             assert f"/apartments/{acc['p1']}?view={view}" in seen, (view, seen)
         assert {"permalink_pin", "guest_message"} <= seen, seen
