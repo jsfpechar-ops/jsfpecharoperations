@@ -245,7 +245,7 @@
     link.setAttribute("aria-label", link.title);
     if (isCleaning) {
       appendCleaningIcon(link);
-      link.append(el("span", "cal-cleaning-label", cleaningLabels.title || labels.cleaning));
+      link.append(el("span", "cal-cleaning-label", (cleaningLabels.title || labels.cleaning) + " · "));
       link.append(el("span", "cal-cleaning-property", event.property || ""));
       link.append(el("span", "cal-cleaning-count", "1"));
     } else {
@@ -615,24 +615,10 @@
   if (typeof ResizeObserver === "function") {
     new ResizeObserver(() => { if (createDialog.open) placeCreate(createAnchor); }).observe(createDialog);
   }
-  function placeCreate(anchor) {
-    if (!createDialog.open) return;
-    if (matchMedia("(max-width:760px)").matches) {
-      createDialog.style.removeProperty("left");
-      createDialog.style.removeProperty("top");
-      return;
-    }
-    const liveAnchor = anchor && anchor.isConnected ? anchor :
-      Array.from(root.querySelectorAll("[data-date]")).find(node => node.dataset.date === createAnchorDate);
-    const box = createDialog.getBoundingClientRect();
-    const target = liveAnchor && liveAnchor.getBoundingClientRect ? liveAnchor.getBoundingClientRect() : null;
-    let left = target ? target.left : (innerWidth - box.width) / 2;
-    let top = target ? target.bottom + 8 : (innerHeight - box.height) / 2;
-    left = Math.max(12, Math.min(left, innerWidth - box.width - 12));
-    if (top + box.height > innerHeight - 12 && target) top = target.top - box.height - 8;
-    top = Math.max(12, Math.min(top, innerHeight - box.height - 12));
-    createDialog.style.left = Math.round(left) + "px";
-    createDialog.style.top = Math.round(top) + "px";
+  function placeCreate() {
+    // The creation dialog is centred in the viewport by CSS (inset 0, margin auto); no inline position.
+    createDialog.style.removeProperty("left");
+    createDialog.style.removeProperty("top");
   }
   function openCreate(start, end, property, kind = (cleaningMode ? "cleaning" : "stay"), anchor = null) {
     if (readOnly) { openDay(start); return; }

@@ -61,6 +61,11 @@
 .cleaning-form p { font-size:1rem; margin:8px 0 0; }
 .cleaning-form > button { align-self:flex-start; }
 .cleaning-form-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.cleaning-form fieldset { min-width:0; margin:0; padding:16px; border:1px solid var(--border-strong); border-radius:10px; background:var(--surface); }
+.cleaning-form legend { padding:0 6px; font-size:1rem; font-weight:600; color:var(--ink); }
+.cleaning-form fieldset .cleaning-share-option { display:flex; align-items:center; gap:10px; min-height:44px; padding:10px 12px; margin:0 0 8px; border:1px solid var(--border-strong); border-radius:8px; background:var(--surface); cursor:pointer; }
+.cleaning-form fieldset .cleaning-share-option:last-child { margin-bottom:0; }
+.cleaning-form fieldset .cleaning-share-option input { width:20px; height:20px; margin:0; flex:0 0 auto; }
 .cleaning-remove summary { cursor:pointer; font-size:1.0625rem; min-height:44px; padding:10px 0; }
 .cleaning-share-url { display:block; overflow-wrap:anywhere; font:1.125rem/1.6 var(--font-mono); padding:16px; background:var(--canvas-subtle); border-radius:6px; }
 .cleaning-share-option { display:flex!important; align-items:center; gap:12px; min-height:48px; padding:8px 0; }

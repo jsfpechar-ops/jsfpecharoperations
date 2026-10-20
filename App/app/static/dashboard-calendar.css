@@ -343,7 +343,7 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 }
 .dashboard-calendar .cal-event.is-cleaning-marker:hover { background:var(--status-action-bg); filter:none; color:var(--status-action-ink); }
 .dashboard-calendar .cal-cleaning-icon { flex:0 0 12px; width:12px; height:12px; color:var(--amber); }
-.dashboard-calendar .cal-cleaning-label { display:none; }              /* the icon plus aria-label/title carry "Cleaning" */
+.dashboard-calendar .cal-cleaning-label { display:inline; flex:0 0 auto; white-space:nowrap; font-weight:650; }
 .dashboard-calendar .cal-cleaning-property { display:block; flex:1 1 auto; min-width:0; max-width:none; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .dashboard-calendar .cal-cleaning-count { display:none; }
 @media (min-width:761px) {
@@ -458,11 +458,11 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 /* One shared light creation popover for stays and cleanings. */
 .cal-create-popover {
   position:fixed;
-  margin:0;
-  left:12px;
-  top:12px;
+  inset:0;
+  margin:auto;
+  height:fit-content;
   width:min(480px,calc(100vw - 24px));
-  max-height:calc(100dvh - 24px);
+  max-height:min(90dvh,calc(100dvh - 24px));
   overflow:auto;
 }
 .cal-create-popover .cal-dialog-heading { margin-bottom:10px; }
