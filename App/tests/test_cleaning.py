@@ -161,6 +161,17 @@ def test_normal_cleaning_editor_has_no_duplicate_time_fields(workspace):
     assert 'href="/apartments/"' in new_response.text
 
 
+def test_host_cleaning_list_has_no_period_form_but_range_params_still_work(workspace):
+    ws = workspace
+    stay(ws["home"])
+    response = ws["client"].get("/cleaning?lang=en")
+    assert response.status_code == 200
+    assert 'id="cleaning-from"' not in response.text
+    assert 'class="cleaning-period"' not in response.text
+    ranged = ws["client"].get("/cleaning", params={"from": "2026-10-17", "to": "2026-10-20", "lang": "en"})
+    assert ranged.status_code == 200
+
+
 def test_notes_edit_preserves_automatic_date_following(workspace):
     ws = workspace
     booking = stay(ws["home"])
