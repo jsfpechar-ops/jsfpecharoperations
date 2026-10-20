@@ -34,14 +34,16 @@ LISTS = {
     "invoices": "/invoices",
     "fees": "/stay-fees",
 }
-# The tab labels each list shows, in order (Stay fees has no sub-pages: fee
-# settings live per property, so there is no one page to link).
+# The tab labels each list shows, in order. Stay fees is a tab of Invoices
+# (0165, 0192), so Invoices and Stay fees share one strip; CURRENT is the
+# index of the open tab.
 TABS = {
     "stays": ["nav.stays", "tabs.stays.reports", "tabs.stays.register"],
     "properties": ["nav.properties", "host.business"],
-    "invoices": ["nav.invoices", "host.invoice_settings"],
-    "fees": [],
+    "invoices": ["nav.invoices", "nav.stay_fees", "host.invoice_settings"],
+    "fees": ["nav.invoices", "nav.stay_fees", "host.invoice_settings"],
 }
+CURRENT = {"fees": 1}
 FILLED = ".btn.primary, .btn.accent, .btn.send-all, .ui-btn-primary"
 
 _LAYOUT_JS = """(filled) => {
@@ -118,7 +120,7 @@ def test_list_pages_share_order_edges_and_rhythm(acc, base):
                     edges["first tab"] = r["firstTab"]
                     if r["tabTexts"] != expected:
                         failures.append((label, "tabs", r["tabTexts"], expected))
-                    if r["current"] != [expected[0]]:
+                    if r["current"] != [expected[CURRENT.get(name, 0)]]:
                         failures.append((label, "current tab", r["current"]))
                     gap = round(r["tabs"]["top"] - r["title"]["bottom"])
                     gaps["tabs"].add(gap)

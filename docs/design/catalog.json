@@ -226,7 +226,7 @@
     "App/app/templates/setup_wizard/property.html",
     "App/app/templates/setup_wizard/stay_fee.html",
     "App/app/templates/setup_wizard/try_it.html",
-    "App/app/templates/smart_locks.html",
+    "App/app/templates/_smart_locks_panel.html",
     "App/app/templates/users.html",
     "App/app/templates/admin_incidents.html",
     "App/app/templates/admin_operations.html",
@@ -796,7 +796,7 @@
       "setup-wizard-lede",
       "setup-wizard-skip"
     ],
-    "App/app/templates/smart_locks.html": [
+    "App/app/templates/_smart_locks_panel.html": [
       "action-group",
       "checkline",
       "guide-steps",

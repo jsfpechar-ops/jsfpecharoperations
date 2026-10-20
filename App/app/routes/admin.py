@@ -529,10 +529,9 @@ def smart_locks_page(request: Request):
         return guard
     if not ttlock.enabled():
         return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
-    return_to = _smart_locks_return_to(_safe_return_to(request, "/smart-locks"))
+    # The lock panel lives on the Properties page, so every flow lands there.
     anchor = "smart-locks-list" if ttlock.account_for(access.owner_id(request)) else "smart-locks-how"
-    target = return_to if return_to.startswith("/apartments/") else f"/apartments#{anchor}"
-    return RedirectResponse(target, status_code=303)
+    return RedirectResponse(f"/apartments#{anchor}", status_code=303)
 
 
 @router.post("/smart-locks/setup")
