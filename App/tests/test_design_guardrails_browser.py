@@ -398,3 +398,34 @@ def test_cleaning_card_facts_line_up_across_cards(wide_host, wide_base):
     for index in (0, 1):
         firsts = {round(card[index] / 2) * 2 for card in lefts if len(card) > index}
         assert len(firsts) == 1, f"fact {index + 1} starts at different x across cards: {sorted(firsts)}"
+
+
+def test_sidebar_search_has_a_border(wide_host, wide_base):
+    """0183: the sidebar search row has a visible 1 px border, not a borderless grey fill."""
+    cookie = wide_host["cookie"]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the sidebar search border test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        page.wait_for_selector(".host-workspace .ui-search-row", timeout=5000)
+        facts = page.evaluate(
+            """() => {
+                const style = getComputedStyle(document.querySelector('.host-workspace .ui-search-row'));
+                return { top: style.borderTopWidth, color: style.borderTopColor };
+            }"""
+        )
+        print(f"sidebar search border measured: {facts}")
+        assert facts["top"] == "1px", f"search border-top-width is {facts['top']}, not 1px"
+        assert facts["color"] not in ("", "transparent", "rgba(0, 0, 0, 0)"), "search border is transparent"
+        context.close()
+        browser.close()

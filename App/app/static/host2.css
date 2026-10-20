@@ -552,3 +552,8 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .ui-table tr:last-child td { border-bottom: 1px solid var(--line); }
   .host-workspace .ui-table .ui-row:hover td, .host-workspace .ui-table .ui-row:focus-within td { background: var(--surface-2); }
 }
+
+/* 0183 */
+.host-workspace .ui-search-row { background: var(--surface); border: 1px solid var(--input-border); border-radius: var(--input-radius); }
+body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--control-h-phone); height: var(--control-h-phone); margin: 0 auto; }
+.host-workspace .ui-chip { border: 1px solid var(--input-border); }
