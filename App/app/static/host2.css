@@ -571,4 +571,4 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 @media (prefers-reduced-motion: reduce) { .host-workspace *, .host-workspace *::before, .host-workspace *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
 
 /* 0188: a focused file input keeps a visible focus ring on its own control (text fields get none on their labels). */
-.host-workspace input[type=file]:focus-visible + :is(label, .btn), .host-workspace :is(label, .btn):has(> input[type=file]:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
+.host-workspace :is(label, .btn):has(+ input[type=file]:focus-visible), .host-workspace input[type=file]:focus-visible + :is(label, .btn) { outline: 2px solid var(--coral-600); outline-offset: 2px; }

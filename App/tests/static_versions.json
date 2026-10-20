@@ -5,7 +5,7 @@
   },
   "app.css": {
     "sha256": "6c1cc8329082852628f0a2deefbdea45b92f63ec226b4e9caa7eb203fa98710b",
-    "v": "20261020-0188d"
+    "v": "20261020-0188e"
   },
   "app.js": {
     "sha256": "cdfa6cedc1da60b075b980a5d94744a395f9fc433e801cefb587ff94a20506bf",
@@ -80,8 +80,8 @@
     "v": "20261014-0102d"
   },
   "host2.css": {
-    "sha256": "4a1e943e97ccb4959807e8e6daf4cb2c3fdefd6d026afbf2ec4691588fbfabf7",
-    "v": "20261020-0188d"
+    "sha256": "b08326e2f3c78359af70749b2f572b5dc8c42be52f0cc8e4409947bcaf608d68",
+    "v": "20261020-0188e"
   },
   "landing.css": {
     "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",
