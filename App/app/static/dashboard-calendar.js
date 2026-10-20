@@ -197,7 +197,7 @@
     const parts = [];
     const label = (event.label || "").trim();
     // Imported placeholders are booking state, not a useful stay title.
-    const generic = /^(?:[!⚠]\s*)?(?:reserved|booked|reservation|rezervováno|rezervace)$/iu.test(label);
+    const generic = /^(?:[!⚠]\s*)?(?:reserved|booked|reservation|rezervováno|rezervace|closed(?:\s*[-–]\s*not available)?|not available|airbnb\s*\(not available\)|blocked|unavailable)$/iu.test(label);
     if (state.display.label && label && !generic) parts.push(label);
     if (state.display.property) parts.push(event.property);
     if (state.display.guests && event.expected !== null) parts.push(String(event.expected));
