@@ -532,3 +532,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 /* 0175: every pill gets a 1 px border in its own tone colour */
 .host-workspace .ui-badge { box-sizing: border-box; border: 1px solid var(--ui-dot, var(--st-action-dot)); }
 .host-workspace .ui-badge-neutral { border-color: var(--st-neutral-dot); }
+
+/* 0176: the empty-state action sits centred under its text */
+.host-workspace .ui-empty .ui-btn-group { justify-content: center; }

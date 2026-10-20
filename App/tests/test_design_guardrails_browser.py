@@ -213,3 +213,41 @@ def test_admin_users_columns_start_on_one_line(wide_host, wide_base):
         db.execute("DELETE FROM audit WHERE owner_user_id = ? OR actor_user_id = ?", (admin_id, admin_id))
         db.execute("DELETE FROM legal_acceptance WHERE user_account_id = ?", (admin_id,))
         db.execute("DELETE FROM user_account WHERE id = ?", (admin_id,))
+
+
+def test_empty_state_action_is_centred_under_its_text(wide_host, wide_base):
+    """0176: the empty-state action sits on the text's centre line (ui_btn-group centres it)."""
+    cookie = wide_host["cookie"]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the empty-state test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/invoices?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        centres = page.evaluate(
+            """() => {
+                const main = document.querySelector('main') || document.body;
+                const wrap = document.createElement('div');
+                wrap.className = 'host-workspace';
+                wrap.innerHTML = '<div class="ui-empty" data-empty-state><h2>No invoices yet</h2>'
+                    + '<p>Generate your first invoice to get started.</p>'
+                    + '<div class="ui-btn-group"><a class="ui-btn ui-btn-secondary" href="#guard"><span>Generate invoice</span></a></div></div>';
+                main.prepend(wrap);
+                const empty = wrap.querySelector('.ui-empty');
+                const text = empty.querySelector('p').getBoundingClientRect();
+                const btn = empty.querySelector('a').getBoundingClientRect();
+                return { text: text.left + text.width / 2, button: btn.left + btn.width / 2 };
+            }"""
+        )
+        gap = abs(centres["button"] - centres["text"])
+        assert gap <= 2, f"empty-state action centre is {gap}px off the text centre"
+        context.close()
+        browser.close()
