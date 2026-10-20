@@ -54,7 +54,7 @@
 </details>
 <section class="ui-section" id="smart-locks-list">
   {% for lock in locks %}
-  <div class="smart-lock-row">
+  <div class="smart-lock-row ui-section ui-section-row">
     <p><strong>{{ lock.alias }}</strong> · {{ t('smart_locks.lock_id', id=lock.lock_id) }}
       {% if lock.battery is not none %} · {{ t('smart_locks.battery', percent=lock.battery) }}{% endif %}</p>
     <p class="ui-sub">✓ {{ t('smart_locks.connected') }}</p>

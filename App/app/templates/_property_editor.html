@@ -63,7 +63,7 @@
   {# ---- Property information ---------------------------------------- #}
   <div class="property-settings-group{% if settings_section == 'property' %} is-active{% endif %}" data-settings-group="property" id="settings-property">
     <h2 class="property-group-title">{{ t('property_nav.group.property') }}</h2>
-    <section class="panel property-section" id="basics">
+    <section class="panel property-section ui-section" id="basics">
       <h3 class="property-section-title">{{ t('apartment.form.basics.title') }}</h3>
       {% include "_property_identity_fields.html" %}
       {% set operator_current = apartment.legal_entity_id %}
@@ -82,7 +82,7 @@
       </div>
     </section>
 
-    <section class="panel property-section" id="arrival-departure">
+    <section class="panel property-section ui-section" id="arrival-departure">
       <h3 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h3>
       <p class="ui-sub">{{ t('host.property_times_hint') }}</p>
       {% if shared_time_error %}<p class="err-text" role="alert">{{ t(shared_time_error) }}</p>{% endif %}
@@ -96,12 +96,12 @@
       </div>
     </section>
 
-    <section class="panel property-section" id="address">
+    <section class="panel property-section ui-section" id="address">
       <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
       {% include "_property_address_fields.html" %}
     </section>
 
-    <section class="panel property-section" id="notes-section">
+    <section class="panel property-section ui-section" id="notes-section">
       <h3 class="property-section-title">{{ t('apartment.form.notes.title') }}</h3>
       <div class="field">
         {{ field_label('notes', t('apartment.form.notes.label'), t('apartment.form.notes.hint')) }}
@@ -109,7 +109,7 @@
       </div>
     </section>
 
-    <section class="panel property-section property-archive" id="archive">
+    <section class="panel property-section ui-section property-archive" id="archive">
       {% if apartment.archived_at %}
       <div class="setup-item">
         <div class="grow">
@@ -136,7 +136,7 @@
   {# ---- Guest experience ---------------------------------------------- #}
   <div class="property-settings-group{% if settings_section == 'guests' %} is-active{% endif %}" data-settings-group="guests" id="settings-guests">
     <h2 class="property-group-title">{{ t('property_nav.group.guests') }}</h2>
-    <section class="panel property-section" id="communication">
+    <section class="panel property-section ui-section" id="communication">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('nav.guest_links') }}</h3>{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</div>
       <div class="guest-link-top">
         <div class="field guest-link-url">
@@ -203,7 +203,7 @@
   <div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock">
     <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
     <p class="property-group-intro">{{ t('property_nav.lock_intro') }}</p>
-    <section class="panel property-section" id="door-code">
+    <section class="panel property-section ui-section" id="door-code">
       <p class="ui-sub">{{ t('host.property_times_hint') }}
           {{ t('apartment.form.door_code.checkin') }} {{ '%02d:00' | format(apartment.checkin_hour) if apartment.checkin_hour is not none else '—' }} ·
           {{ t('apartment.form.door_code.checkout') }} {{ '%02d:00' | format(apartment.checkout_hour) if apartment.checkout_hour is not none else '—' }}.
@@ -247,7 +247,7 @@
   {# ---- Reporting & fees ---------------------------------------------- #}
   <div class="property-settings-group{% if settings_section == 'reporting' %} is-active{% endif %}" data-settings-group="reporting" id="settings-reporting">
     <h2 class="property-group-title">{{ t('property_nav.group.reporting') }}</h2>
-    <section class="panel property-section" id="ubyport">
+    <section class="panel property-section ui-section" id="ubyport">
       <div class="field-label-row police-section-head"><h3 class="property-section-title">{{ t('host.reporting') }}</h3>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
@@ -284,7 +284,7 @@
       </div>
     </section>
 
-    <section class="panel property-section" id="stay-fee-settings">
+    <section class="panel property-section ui-section" id="stay-fee-settings">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}</h3>{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</div>
       {% if fee_return_to %}
       <p class="small fee-return-note"><a href="{{ fee_return_to }}"> {{ t('stay_fees.setup.back_to_report') }}</a></p>
@@ -330,7 +330,7 @@
   {# ---- Automation ---------------------------------------------------- #}
   <div class="property-settings-group{% if settings_section == 'automation' %} is-active{% endif %}" data-settings-group="automation" id="settings-automation">
     <h2 class="property-group-title">{{ t('property_nav.group.automation') }}</h2>
-    <section class="panel property-section" id="automation">
+    <section class="panel property-section ui-section" id="automation">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('automation.timing_title') }}</h3>{{ help_tip('automation-help', t('automation.timing_help'), '/guide#reporting') }}</div>
       <div class="grid two">
         <div class="field">

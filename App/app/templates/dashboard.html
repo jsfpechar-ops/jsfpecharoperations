@@ -67,7 +67,7 @@
     <a class="dashboard-stat ready ui-stat{{ ' is-positive' if counts.ready > 0 }}" href="/reservations"><strong class="ui-num">{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
     <a class="dashboard-stat overdue ui-stat{{ ' is-positive' if counts.overdue > 0 }}" href="#needs-action"><strong class="ui-num">{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
   </nav>
-  {% call ui_section('') %}{% include "_dashboard_calendar.html" %}{% endcall %}
+  {% include "_dashboard_calendar.html" %}
   <div data-dashboard-refresh="work">
   {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
   {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
