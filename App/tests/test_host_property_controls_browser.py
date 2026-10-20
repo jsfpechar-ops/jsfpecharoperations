@@ -200,7 +200,17 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
                 input_tops = fields.evaluate_all("""(fields) => [...fields].map((field) =>
                   Math.round(field.querySelector('input').getBoundingClientRect().top))""")
                 assert input_tops == sorted(input_tops)
-                assert page.locator("#address").evaluate("el => el.scrollWidth <= el.clientWidth")
+                # scrollWidth also counts the invisible 44px tap area (::after) that every help tip
+                # extends 11px past its 22px button, so the right-most tip made it 10px too wide in English.
+                # Compare the visible boxes instead: no label, input or help button may leave the panel.
+                assert page.locator("#address").evaluate("""el => {
+                  const panel = el.getBoundingClientRect();
+                  const inside = [...el.querySelectorAll('label, input:not([type=hidden]), select, .help-tip-btn')].every(item => {
+                    const r = item.getBoundingClientRect();
+                    return r.left >= panel.left - 1 && r.right <= panel.right + 1;
+                  });
+                  return inside && document.documentElement.scrollWidth <= innerWidth + 1;
+                }"""), f"the address fields leave their panel at {width}px ({lang})"
                 page.goto(f"{base}/entities?lang={lang}")
                 _capture_review(page, f"operators-{width}-{lang}")
                 linked_row = page.locator(".entities-page tbody tr").filter(has_text="Linked Operator")
@@ -218,12 +228,13 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
         page.goto(f"{base}/apartments?lang=en")
         # 0099: the list shows the Properties section tabs (one component),
         # with the list itself as the open tab; property pages show none.
-        assert page.locator(".host-local-nav").count() == 1
+        assert page.locator(".ui-tabs").count() == 1  # the v2 shell renders the section tabs as .ui-tabs
         assert page.locator('.ui-tabs a[aria-current="page"]').inner_text() == "Properties"
         assert page.locator(".host-tools").count() == 0
         page.goto(f"{base}/apartments/{host['apartment']}?lang=en")
         assert page.locator(".host-tools").count() == 0
         assert page.locator(".host-local-nav").count() == 0
+        assert page.locator('.ui-tabs a[href="/apartments"]').count() == 0  # no Properties section tab on a property page
         assert page.locator('[data-copy="overview-guest-url"]').count() > 0
         browser.close()
 
