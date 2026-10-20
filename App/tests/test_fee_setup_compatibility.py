@@ -404,8 +404,11 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 for box in (section.bounding_box(), back.bounding_box()):
                     assert box and box["x"] >= -1 and box["x"] + box["width"] <= width + 1, (width, locale, box)
                 help_button = page.locator('[aria-controls="stay_fee_authority_databox-help"]')
+                # Park the pointer first: it still rests where the "Set up" link was clicked, and
+                # focus() scrolls the page so another "?" tip can end up under it and take the open state.
+                page.mouse.move(0, 0)
                 help_button.focus()
-                assert page.locator("#stay_fee_authority_databox-help").is_visible()
+                assert page.locator("#stay_fee_authority_databox-help").is_visible(), (width, locale)
                 help_button.blur()
                 if capture:
                     page.evaluate("document.getElementById('stay-fee-settings').scrollIntoView({block: 'start'}); window.scrollBy(0, -88)")
