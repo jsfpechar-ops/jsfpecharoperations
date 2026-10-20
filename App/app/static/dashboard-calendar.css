@@ -343,7 +343,7 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 }
 .dashboard-calendar .cal-event.is-cleaning-marker:hover { background:var(--status-action-bg); filter:none; color:var(--status-action-ink); }
 .dashboard-calendar .cal-cleaning-icon { flex:0 0 12px; width:12px; height:12px; color:var(--amber); }
-.dashboard-calendar .cal-cleaning-label { display:none; }              /* the icon plus aria-label/title carry "Cleaning" */
+.dashboard-calendar .cal-cleaning-label { display:inline; flex:0 0 auto; white-space:nowrap; font-weight:650; }
 .dashboard-calendar .cal-cleaning-property { display:block; flex:1 1 auto; min-width:0; max-width:none; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .dashboard-calendar .cal-cleaning-count { display:none; }
 @media (min-width:761px) {
@@ -458,13 +458,14 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 /* One shared light creation popover for stays and cleanings. */
 .cal-create-popover {
   position:fixed;
-  margin:0;
-  left:12px;
-  top:12px;
+  inset:0;
+  margin:auto;
+  height:fit-content;
   width:min(480px,calc(100vw - 24px));
-  max-height:calc(100dvh - 24px);
+  max-height:min(90dvh,calc(100dvh - 24px));
   overflow:auto;
 }
+.cal-create-popover > form { min-height:min(680px,calc(90dvh - 24px)); }
 .cal-create-popover .cal-dialog-heading { margin-bottom:10px; }
 .cal-create-types { display:flex; gap:6px; margin:0 0 14px; }
 .cal-create-types .btn { min-height:42px; }
@@ -474,10 +475,11 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
 .cal-create-popover [data-cal-stay-fields][hidden] { display:none; }
 @media (max-width:760px) {
   .cal-create-popover {
-    inset:auto 8px 8px;
-    width:auto;
+    inset:0;
+    margin:auto;
+    width:min(480px,calc(100vw - 16px));
     max-width:none;
-    max-height:min(78dvh,calc(100dvh - 16px));
+    max-height:min(90dvh,calc(100dvh - 16px));
     border-radius:14px;
   }
   .cal-create-types .btn { min-height:44px; flex:1 1 0; }

@@ -13,14 +13,14 @@
   </nav>
 
   <div class="guide-content">
-    <section class="guide-section ui-section" id="overview">
+    <section class="guide-section ui-section ui-section-plain" id="overview">
       <h2>{{ t('guide.nav.overview') }}</h2>
       <p>{{ t('guide.overview.body') }}</p>
       <p>{{ t('guide.overview.count') }}</p>
       <p>{{ t('guide.overview.deadline') }}</p>
     </section>
 
-    <section class="guide-section ui-section" id="statuses">
+    <section class="guide-section ui-section ui-section-plain" id="statuses">
       <h2>{{ t('guide.nav.statuses') }}</h2>
       <p>{{ t('guide.statuses.lede') }}</p>
       <dl class="kv guide-statuses">
@@ -38,7 +38,7 @@
       <p class="ui-sub">{{ t('guide.statuses.other') }}</p>
     </section>
 
-    <section class="guide-section ui-section" id="setup">
+    <section class="guide-section ui-section ui-section-plain" id="setup">
       <h2>{{ t('guide.nav.setup') }}</h2>
       <ol class="guide-steps">
         {% for n in range(1, 6) %}
@@ -47,7 +47,7 @@
       </ol>
     </section>
 
-    <section class="guide-section ui-section" id="stays">
+    <section class="guide-section ui-section ui-section-plain" id="stays">
       <h2>{{ t('guide.nav.stays') }}</h2>
       <p>{{ t('guide.stays.body') }}</p>
       <p>{{ t('guide.stays.detail') }}</p>
@@ -55,7 +55,7 @@
       <p class="ui-sub">{{ t('guide.stays.cancelled') }}</p>
     </section>
 
-    <section class="guide-section ui-section" id="guests">
+    <section class="guide-section ui-section ui-section-plain" id="guests">
       <h2>{{ t('guide.nav.guests') }}</h2>
       <p>{{ t('guide.guests.body') }}</p>
       <ol class="guide-steps">
@@ -67,7 +67,7 @@
       <p class="ui-sub">{{ t('guide.guests.cookies') }}</p>
     </section>
 
-    <section class="guide-section ui-section" id="reporting">
+    <section class="guide-section ui-section ui-section-plain" id="reporting">
       <h2>{{ t('guide.nav.reporting') }}</h2>
       <p>{{ t('guide.reporting.body') }}</p>
       <dl class="kv">
@@ -100,7 +100,7 @@
       <p class="ui-sub">{{ t('apartment.form.ubyport.mismatch_help') }}</p>
     </section>
 
-    <section class="guide-section ui-section" id="filters">
+    <section class="guide-section ui-section ui-section-plain" id="filters">
       <h2>{{ t('guide.nav.filters') }}</h2>
       <p>{{ t('guide.filters.body') }}</p>
       <ul class="guide-steps">
@@ -108,7 +108,7 @@
       </ul>
     </section>
 
-    <section class="guide-section ui-section" id="housebook">
+    <section class="guide-section ui-section ui-section-plain" id="housebook">
       <h2>{{ t('guide.nav.housebook') }}</h2>
       <p>{{ t('guide.housebook.body') }}</p>
       <p class="ui-sub">{{ t('housebook.legal_body') }}</p>
@@ -119,20 +119,20 @@
       <p class="ui-sub legal-fineprint">{{ t('housebook.legal_footnote') }}</p>
     </section>
 
-    <section class="guide-section ui-section" id="stay_fee">
+    <section class="guide-section ui-section ui-section-plain" id="stay_fee">
       <h2>{{ t('guide.nav.stay_fee') }}</h2>
       <p>{{ t('guide.stay_fee.body') }}</p>
       <p>{{ t('guide.stay_fee.rules') }}</p>
       <p>{{ t('guide.stay_fee.save') }}</p>
     </section>
 
-    <section class="guide-section ui-section" id="invoices">
+    <section class="guide-section ui-section ui-section-plain" id="invoices">
       <h2>{{ t('guide.nav.invoices') }}</h2>
       <p>{{ t('guide.invoices.body') }}</p>
       <p>{{ t('guide.invoices.flow') }}</p>
     </section>
 
-    <section class="guide-section ui-section" id="settings">
+    <section class="guide-section ui-section ui-section-plain" id="settings">
       <h2>{{ t('guide.nav.settings') }}</h2>
       <p>{{ t('guide.settings.body') }}</p>
       <ul class="guide-steps">
@@ -140,7 +140,7 @@
       </ul>
     </section>
 
-    <section class="guide-section ui-section" id="door-codes">
+    <section class="guide-section ui-section ui-section-plain" id="door-codes">
       <h2>{{ t('guide.nav.door_codes') }}</h2>
       <p>{{ t('guide.door_codes.lede') }}</p>
       <h3>{{ t('guide.door_codes.need_title') }}</h3>
@@ -157,7 +157,7 @@
       <ol>{% for n in range(1, 10) %}<li>{{ t('guide.door_codes.terms' ~ n) }}</li>{% endfor %}</ol>
     </section>
 
-    <section class="guide-section ui-section" id="faster">
+    <section class="guide-section ui-section ui-section-plain" id="faster">
       <h2>{{ t('guide.nav.faster') }}</h2>
       <ul class="guide-steps">
         <li>{{ t('guide.faster.search') }}</li>
@@ -165,7 +165,7 @@
       </ul>
     </section>
 
-    <section class="guide-section ui-section" id="faq">
+    <section class="guide-section ui-section ui-section-plain" id="faq">
       <h2>{{ t('guide.nav.faq') }}</h2>
       <dl class="kv">
         {% for item in ['link', 'count', 'czech', 'twice', 'edit'] %}
@@ -175,7 +175,7 @@
       </dl>
     </section>
 
-    <section class="guide-section ui-section guide-legal" id="legal">
+    <section class="guide-section ui-section ui-section-plain guide-legal" id="legal">
       <h2>{{ t('guide.nav.legal') }}</h2>
       <p class="lede">{{ t('guide.legal.lede') }}</p>
       {% for item in ['housebook', 'paper', 'signature', 'verification', 'reporting', 'retention'] %}
@@ -189,7 +189,7 @@
     </section>
 
     {% if demo_available %}
-    <section class="guide-section ui-section" id="demo">
+    <section class="guide-section ui-section ui-section-plain" id="demo">
       <h2>{{ t('guide.nav.demo') }}</h2>
       <p>{{ t('guide.demo.body') }}</p>
       <form method="post" action="/demo" class="inline">

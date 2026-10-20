@@ -351,7 +351,7 @@ def test_each_property_setting_has_exactly_one_editable_control_in_the_whole_hos
         if key in ("business-editor", "businesses"):
             # The entity editor's own invoice account fields share the generic part names (0075).
             allowed = allowed | {"account_prefix", "account_number", "account_bank"}
-        if key == "properties":
+        if key in ("properties", "smart-locks"):  # /smart-locks lands on the Properties page (0190)
             allowed = allowed | INLINE_TIMING_0098
         stray = sorted((names & PROPERTY_SETTINGS) - allowed)
         assert not stray, f"{key}: property setting editable outside the property page: {stray}"
@@ -363,7 +363,7 @@ def test_guest_link_automation_and_fee_have_no_copied_editor(acc):
         if key.startswith("property-") and key != "property-new":
             continue
         names = set(_editable(_inventory(html)))
-        if key == "properties":
+        if key in ("properties", "smart-locks"):  # /smart-locks lands on the Properties page (0190)
             names -= INLINE_TIMING_0098
         assert not names & GUEST_LINK_AND_AUTOMATION, (key, names & GUEST_LINK_AND_AUTOMATION)
         assert not names & FEE_FIELDS, (key, names & FEE_FIELDS)
@@ -636,7 +636,7 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             # Rail -> Properties -> Open the long-named property.
             page.locator('.sidebar-nav a[href="/apartments"]').click()
             page.wait_for_url(re.compile(r"/apartments(\?.*)?$"))
-            page.locator(f'a.btn[href^="/apartments/{p1}"]').first.click()
+            page.locator(f'a.row-primary-link[href^="/apartments/{p1}"]').first.click()
             page.wait_for_url(re.compile(rf"/apartments/{p1}"))
             _settle(page)
             assert page.locator(".property-tabs").is_visible()
@@ -653,7 +653,7 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             _settle(page)
             assert page.locator('[data-property-view="overview"]').is_visible()
             # Search -> Stay fees -> report period -> Back.
-            page.locator(".command-trigger").click()
+            page.locator(".ui-search-row[data-command-open]").click()
             page.locator("[data-command-input]").fill(search_term)
             page.wait_for_timeout(150)
             page.keyboard.press("Enter")
@@ -664,7 +664,7 @@ def test_page_families_through_rail_cards_search_and_back(acc, base):
             page.go_back()
             page.wait_for_url(re.compile(r"/stay-fees(\?.*)?$"))
             # Rail -> Invoices -> issued invoice -> its stay -> Back.
-            page.locator('.sidebar-nav a[href="/invoices"]').click()
+            page.locator('a[href="/invoices"]').first.click()
             page.wait_for_url(re.compile(r"/invoices(\?.*)?$"))
             page.goto(f"{base}/invoices/{acc['invoice']}?lang={lang}")
             page.locator(f'a[href^="/reservations/{acc["stay"]}"]').first.click()
@@ -708,7 +708,7 @@ def test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus(acc, base):
             seen.add(info["href"])
             if not (info["ring"] and info["inView"]):
                 unseen_focus.append(info)
-        assert {"/", "/reservations", "/apartments", "/invoices"} <= seen, seen
+        assert {"/", "/reservations", "/apartments", "/stay-fees"} <= seen, seen
         for view in ("overview", "bookings", "settings"):
             assert f"/apartments/{acc['p1']}?view={view}" in seen, (view, seen)
         assert {"permalink_pin", "guest_message"} <= seen, seen
@@ -732,12 +732,12 @@ def test_keyboard_reaches_rail_tabs_and_editor_with_visible_focus(acc, base):
                 break
         assert reached and reached["id"] == "door_codes" and reached["inView"] and reached["ring"], reached
         # Search opens from the keyboard and Escape returns focus to the trigger.
-        page.locator(".command-trigger").focus()
+        page.locator(".ui-search-row[data-command-open]").focus()
         page.keyboard.press("Enter")
         page.locator("#command-dialog[open]").wait_for()
         page.keyboard.press("Escape")
         page.wait_for_function("() => !document.getElementById('command-dialog').open")
-        assert page.evaluate("() => document.activeElement.classList.contains('command-trigger')")
+        assert page.evaluate("() => document.activeElement.classList.contains('ui-search-row')")
         browser.close()
 
 

@@ -309,7 +309,6 @@ body.sidebar-collapsed .wrap.with-sidebar { margin-left: 0; }
 .wrap.with-sidebar {
   margin-left: var(--sidebar);
   max-width: none;
-  transition: margin-left 0.26s var(--ease);
 }
 /* Auto margins only centre block-level children, so a page section must not be
    an inline-level box or it drifts to the far left of the column. */

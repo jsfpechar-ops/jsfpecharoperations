@@ -6,7 +6,7 @@
 <aside class="ui-sidebar" id="app-sidebar">
   <div class="ui-brand">
     <a class="brand plain" href="/" aria-label="UbyHost"><img class="brand-logo" src="/static/ubyhost-mark.png?v=20261004a" alt=""><span class="brand-word">UbyHost</span></a>
-    <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact sidebar-collapse" type="button" data-sidebar-collapse aria-expanded="true" aria-label="{{ t('a11y.hide_menu') }}">{{ icon('panel-left', 16) }}</button>
+    <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact sidebar-collapse" type="button" data-sidebar-collapse data-label-hide="{{ t('a11y.hide_menu') }}" data-label-show="{{ t('a11y.show_menu') }}" aria-expanded="true" aria-label="{{ t('a11y.hide_menu') }}">{{ icon('panel-left', 16) }}</button>
   </div>
   <span class="env-badge ui-env {{ ubyport_env }}" title="{{ t('env.where_reports_go') }}">{{ t('env.' ~ ubyport_env) }}</span>
   <button class="ui-search-row" type="button" data-command-open>{{ icon('search', 16) }}<span>{{ t('host.search') }}</span><kbd data-command-shortcut>Ctrl K</kbd></button>
@@ -15,7 +15,7 @@
         ('/', 'layout-dashboard', t('nav.overview'), nav == 'dashboard'),
         ('/reservations', 'calendar-days', t('nav.stays'), stays_nav),
         ('/apartments', 'house', t('nav.properties'), properties_nav),
-        ('/invoices', 'invoice-slip', t('nav.invoices_fees'), nav in ('invoices', 'stay_fees')),
+        ('/stay-fees', 'invoice-slip', t('nav.stay_fees'), nav == 'stay_fees'),
         ('/cleaning', 'brush-cleaning', t('nav.cleaning'), nav == 'cleaning')] %}
     <a href="{{ href }}" title="{{ label }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name, 20) }}<span>{{ label }}</span>{% if href == '/' and nav_action_count is defined and nav_action_count %}<span class="ui-nav-count">{{ nav_action_count if nav_action_count < 10 else '9+' }}</span>{% endif %}</a>
     {% endfor %}

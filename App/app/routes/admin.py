@@ -150,7 +150,9 @@ _SMART_LOCK_SECTIONS = {
 def _smart_locks_url(return_to: str, section: str) -> str:
     """The lock page, keeping the sanitized return path, at a real section."""
     anchor = _SMART_LOCK_SECTIONS.get(section, "smart-locks-how")
-    return f"/smart-locks?return_to={quote(return_to, safe='')}#{anchor}"
+    if return_to.startswith("/apartments/"):
+        return f"/smart-locks?return_to={quote(return_to, safe='')}#{anchor}"
+    return f"/apartments#{anchor}"
 
 
 def _smart_locks_section(form, has_locks: bool) -> str:
@@ -489,13 +491,10 @@ def guest_links(request: Request):
     return _property_hub_redirect(request)
 
 
-@router.get("/smart-locks")
-def smart_locks_page(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
+def _smart_lock_panel_context(request: Request) -> dict:
+    """0190: the door lock account shown as a section on Properties, not a tab."""
     if not ttlock.enabled():
-        return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
+        return {"smart_locks_enabled": False}
     owner_id = access.owner_id(request)
     account = ttlock.account_for(owner_id)
     locks = ttlock.locks_of(account) if account else []
@@ -510,19 +509,29 @@ def smart_locks_page(request: Request):
             )
         ]
         properties_using[lock["lock_id"]] = names
-    return render(
-        request,
-        "smart_locks.html",
-        {
-            "account": account,
-            "receiver": ttlock.receiver_name(account) if account else "",
-            "locks": locks,
-            "fetched_at": account["locks_fetched_at"] if account else None,
-            "reauth": bool(account and account["status"] != "ok"),
-            "return_to": _smart_locks_return_to(_safe_return_to(request, "/smart-locks")),
-            "properties_using": properties_using,
-        },
-    )
+    return {
+        "smart_locks_enabled": True,
+        "account": account,
+        "receiver": ttlock.receiver_name(account) if account else "",
+        "locks": locks,
+        "fetched_at": account["locks_fetched_at"] if account else None,
+        "reauth": bool(account and account["status"] != "ok"),
+        "return_to": "/smart-locks",
+        "properties_using": properties_using,
+    }
+
+
+@router.get("/smart-locks")
+def smart_locks_page(request: Request):
+    """0190: the lock account lives on Properties now; old links land there."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    if not ttlock.enabled():
+        return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
+    # The lock panel lives on the Properties page, so every flow lands there.
+    anchor = "smart-locks-list" if ttlock.account_for(access.owner_id(request)) else "smart-locks-how"
+    return RedirectResponse(f"/apartments#{anchor}", status_code=303)
 
 
 @router.post("/smart-locks/setup")
@@ -1141,6 +1150,7 @@ def apartments_list(request: Request):
         request,
         "apartments.html",
         {
+            **_smart_lock_panel_context(request),
             "rows": enriched,
             "archived_rows": archived_rows,
             # With no operator there is nothing the property form can attach to,
@@ -2817,7 +2827,7 @@ async def refresh_codelists(apartment_id: int, request: Request):
 
 # --- reservations --------------------------------------------------------
 
-RESERVATION_PAGE_SIZE = 15
+RESERVATION_PAGE_SIZE = 5
 
 # Presets are what a host actually asks for; the two date boxes cover the rest.
 RESERVATION_RANGES = ("upcoming", "past", "all")

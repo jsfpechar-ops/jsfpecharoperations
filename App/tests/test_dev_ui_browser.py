@@ -62,9 +62,20 @@ def test_catalog_page_fits_the_viewport_and_the_coral_budget(base, width):
                 .filter(el => el.offsetParent !== null)
                 .map(el => el.getBoundingClientRect().height).filter(h => h < 43.5)""")
             assert short == [], f"targets under 44 px at 390: {short}"
+        # Every .ui-section is a bordered panel with padding, so the skeleton
+        # spans the panel's content box and the panel spans the lane.
         lane = page.evaluate("document.querySelector('.ui-page').getBoundingClientRect().width")
+        section = page.evaluate("document.querySelector('#skeletons').getBoundingClientRect().width")
+        inner = page.evaluate("""() => {
+            const el = document.querySelector('#skeletons');
+            const cs = getComputedStyle(el);
+            return el.getBoundingClientRect().width
+                - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+                - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth);
+        }""")
         skel = page.evaluate("document.querySelector('[data-skeleton-kind=\"list\"]').getBoundingClientRect().width")
-        assert abs(lane - skel) <= 8, "the skeleton must span the lane"
+        assert abs(lane - section) <= 8, "the skeleton panel must span the lane"
+        assert abs(inner - skel) <= 2, "the skeleton must span its panel"
         shot = page.screenshot(full_page=False)
         shots = os.environ.get("UBYHOST_SHOTS_DIR")
         if shots:

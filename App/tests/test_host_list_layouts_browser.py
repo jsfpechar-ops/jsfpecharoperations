@@ -86,6 +86,11 @@ ONE_LINE = """() => [...document.querySelectorAll('.stays-view tbody tr')].map(t
 })"""
 
 
+# The roomier list rows (--row-h 80px plus td padding) measure 98px on every width and locale;
+# a row that wraps its actions or pill grows by a whole text line, so 100 still catches it.
+SHORT_ROW_MAX = 100
+
+
 def test_stays_pills_and_deadlines_stay_on_one_line(stay_actions_host, stay_actions_base):
     cookie = stay_actions_host["client"].cookies.get(auth.SESSION_COOKIE)
     with sync_api.sync_playwright() as playwright:
@@ -95,13 +100,19 @@ def test_stays_pills_and_deadlines_stay_on_one_line(stay_actions_host, stay_acti
                 context = browser.new_context(viewport={"width": width, "height": 900})
                 context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": stay_actions_base + "/"}])
                 page = context.new_page()
-                page.goto(f"{stay_actions_base}/reservations?range=all&lang={locale}")
-                page.wait_for_load_state("networkidle")
-                rows = page.evaluate(ONE_LINE)
+                rows = []
+                for page_no in (1, 2, 3):  # the Stays list shows 5 rows per page, so walk the pages
+                    page.goto(f"{stay_actions_base}/reservations?range=all&page={page_no}&lang={locale}")
+                    page.wait_for_load_state("networkidle")
+                    page_rows = page.evaluate(ONE_LINE)
+                    assert len(page_rows) <= 5, (locale, width, page_no, len(page_rows))
+                    rows.extend(page_rows)
+                    if len(page_rows) < 5:
+                        break
                 assert len(rows) >= 7
                 for row in rows:
                     assert row["pill"] and row["deadline"], (locale, width, row)
                     if row["name"] <= 24 and not row["send"]:  # short rows stay compact after secondary actions move into the menu
-                        assert row["height"] <= 72, (locale, width, row)
+                        assert row["height"] <= SHORT_ROW_MAX, (locale, width, row)
                 context.close()
         browser.close()

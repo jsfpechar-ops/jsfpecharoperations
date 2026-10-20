@@ -35,7 +35,7 @@ def _rendered_text(text: str) -> str:
 
 
 def _automation_panel(text: str) -> str:
-    start = text.index('<section class="panel property-section" id="automation"')
+    start = text.index('<section class="panel property-section ui-section" id="automation"')
     return text[start:text.index('</section>', start)]
 
 

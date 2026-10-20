@@ -141,7 +141,13 @@
 /* ---- 5.4 body kinds, 7.4 table, 7.3 cards ---- */
 .host-workspace .ui-body-detail .ui-detail { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-6); align-items: start; }
 .host-workspace .ui-detail-side { position: sticky; top: var(--space-6); }
-.host-workspace .ui-section { margin-top: var(--section-gap); }
+.host-workspace .ui-section { margin-top: var(--section-gap); background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--space-5); }
+.host-workspace .ui-section-plain { background: none; border: 0; padding: 0; }
+.host-workspace .ui-section .ui-section:not(.ui-section-row) { background: none; border: 0; padding: 0; }
+.host-workspace .ui-section .ui-section-row { margin-top: var(--space-3); }
+.host-workspace .ui-section > h2:first-child, .host-workspace .ui-section > h3:first-child { margin: 0 0 var(--space-3); }
+.host-workspace .panel.property-section.ui-section { margin-top: var(--section-gap); border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--surface); padding: var(--space-5); }
+body.host-workspace .ui-section.cleaning-panel { border: 1px solid var(--line); padding: var(--space-5); }
 .host-workspace .ui-section:first-child, .host-workspace .ui-body > .ui-section:first-child { margin-top: 0; }
 .host-workspace .ui-section-h { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin: 0 0 var(--space-3); }
 .host-workspace .ui-section-h h2 { margin: 0; font-size: var(--size-18); font-weight: 600; }
@@ -151,13 +157,19 @@
 .host-workspace .ui-stat span { color: var(--ink-2); font-size: var(--size-14); }
 .host-workspace .ui-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); overflow: hidden; }
 .host-workspace .ui-table th { text-align: left; font-size: var(--size-13); font-weight: 500; color: var(--ink-3); height: var(--control-h); padding: 0 var(--row-px); border-bottom: 1px solid var(--line); }
-.host-workspace .ui-table td { height: var(--row-h); padding: 0 var(--row-px); border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--ink-2); font-size: var(--body-size); }
+.host-workspace .ui-table td { height: var(--row-h); padding: var(--space-4) var(--space-4); border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--ink-2); font-size: var(--body-size); }
 .host-workspace .ui-table tr:last-child td { border-bottom: 0; }
 .host-workspace .ui-table .ui-row:hover, .host-workspace .ui-table .ui-row:focus-within { background: var(--surface-2); }
 .host-workspace .ui-table .ui-cell-first, .host-workspace .ui-table .ui-cell-first a { color: var(--ink); font-weight: 600; text-decoration: none; }
 .host-workspace .ui-sub { display: block; font-size: var(--size-13); color: var(--ink-3); font-weight: 400; }
 .host-workspace .ui-table .ui-cell-r { text-align: right; }
 .host-workspace .ui-table .ui-cell-acts { text-align: right; white-space: nowrap; }
+/* 0190: comfy rows. Two-line cells get air between name and sub line; badges keep a clear gap (desktop only, phone keeps 0 margin). */
+.host-workspace .ui-table td .ui-sub { margin-top: var(--space-1); }
+@media (min-width: 1024px) {
+  .host-workspace .ui-table td .ui-badge { margin: var(--space-1) 0; }
+  .host-workspace .ui-table td .ui-badge + .ui-badge { margin-left: var(--space-2); }
+}
 .host-workspace .ui-cards { display: none; }
 .host-workspace .ui-card { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--card-radius); padding: var(--row-py) var(--row-px); min-height: calc(var(--row-h) + var(--space-6) + var(--space-1)); text-decoration: none; color: inherit; position: relative; }
 .host-workspace .ui-card-l1 { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); font-weight: 600; font-size: var(--size-16); color: var(--ink); }
@@ -200,7 +212,7 @@
 
 /* ---- phone ---- */
 @media (max-width: 1023px) {
-  .host-workspace .ui-ph { flex-direction: column; align-items: stretch; padding-bottom: var(--space-4); margin-bottom: var(--space-4); }
+  .host-workspace .ui-ph { flex-direction: column; align-items: stretch; padding-bottom: var(--space-4); margin-bottom: var(--space-6); }
   .host-workspace .ui-ph h1 { font-size: var(--size-22); }
   .host-workspace .ui-ph-acts { flex-direction: column; align-items: stretch; }
   .host-workspace .ui-ph-acts .ui-btn-secondary, .host-workspace .ui-ph-acts .ui-btn-quiet { display: none; }
@@ -234,6 +246,8 @@
   .host-workspace .ui-cards { display: flex; flex-direction: column; gap: var(--space-2); }
   .host-workspace .ui-stats { gap: var(--space-2); }
   .host-workspace .ui-stat { padding: var(--space-3); }
+  .host-workspace .ui-section { padding: var(--space-4); }
+  .host-workspace .panel.property-section.ui-section { padding: var(--space-4); }
   .host-workspace .ui-stat strong { font-size: var(--size-22); }
   .host-workspace .ui-body-detail .ui-detail, .host-workspace .ui-skel-detail { grid-template-columns: 1fr; }
   .host-workspace .ui-detail-side { position: static; order: -1; }
@@ -268,6 +282,12 @@ body.host-workspace.sidebar-collapsed .wrap.with-sidebar { margin-left: var(--na
 body.host-workspace.sidebar-collapsed .ui-sidebar :is(.brand-word, .ui-env, .ui-search-row span, .ui-search-row kbd, .ui-nav a > span:not(.ui-nav-count), .host-account-name) { display: none; }
 body.host-workspace.sidebar-collapsed .ui-sidebar .ui-nav a, body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { justify-content: center; padding: 0; }
 body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height: auto; gap: var(--space-2); }
+/* 0188: the rail clips overflow, so the account menu is fixed and anchored above its trigger. */
+.host-workspace .ui-sidebar .host-account { anchor-name: --host-acct; }
+body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position: fixed; position-anchor: --host-acct; left: calc(var(--nav-w-collapsed) + var(--space-2)); right: auto; bottom: 64px; width: 220px; max-height: 65vh; z-index: var(--z-drawer); }
+@supports (anchor-name: --host-acct) {
+  body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { bottom: anchor(top); margin-bottom: var(--space-2); }
+}
 
 @media (max-width: 1279px) and (min-width: 1024px) {
   .host-workspace .ui-sidebar { width: var(--nav-w-collapsed); padding: var(--space-3) var(--space-2); }
@@ -276,6 +296,10 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .ui-sidebar :is(.brand-word, .ui-env, .ui-search-row span, .ui-search-row kbd, .ui-nav a > span:not(.ui-nav-count), .host-account-name) { display: none; }
   .host-workspace .ui-sidebar .ui-nav a, .host-workspace .ui-sidebar .ui-search-row { justify-content: center; padding: 0; }
   .host-workspace .ui-brand { flex-direction: column; height: auto; gap: var(--space-2); }
+  .host-workspace .ui-sidebar .host-account-menu { position: fixed; position-anchor: --host-acct; left: calc(var(--nav-w-collapsed) + var(--space-2)); right: auto; bottom: 64px; width: 220px; max-height: 65vh; z-index: var(--z-drawer); }
+  @supports (anchor-name: --host-acct) {
+    .host-workspace .ui-sidebar .host-account-menu { bottom: anchor(top); margin-bottom: var(--space-2); }
+  }
 }
 @media (max-width: 1023px) {
   .host-workspace .ui-sidebar, .host-workspace .sidebar-expand { display: none; }
@@ -422,7 +446,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
   .host-workspace .ui-table td[data-label]:not([data-card])::before { content: attr(data-label); color: var(--ink-3); font-size: var(--size-13); }
   .host-workspace .ui-table td[data-label]:not([data-card]):first-child { display: block; font-weight: 600; color: var(--ink); }
   .host-workspace .ui-table td[data-label]:not([data-card]):first-child::before { content: none; }
-  .host-workspace .detail-metric { border-right: 0; }
 }
 
 /* 0142-cont-3: the invoice builder and detail use the page lane like every other page */
@@ -498,8 +521,9 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 }
 
 /* 0163: split columns start on one line; the manage form keeps a readable width */
-.host-workspace .split.wide > section, .host-workspace .split.wide > aside { margin-top: 0; padding-top: 0; }
-.host-workspace .split.wide > section > .ui-section:first-child, .host-workspace .split.wide > aside > :first-child { margin-top: 0; padding-top: 0; }
+.host-workspace .split.wide > section, .host-workspace .split.wide > aside { margin-top: 0; }
+.host-workspace .split.wide > section:not(.ui-section), .host-workspace .split.wide > aside:not(.ui-section) { padding-top: 0; }
+.host-workspace .split.wide > section > .ui-section:first-child, .host-workspace .split.wide > aside > :first-child { margin-top: 0; }
 .host-workspace #user-manage { max-width: 40rem; }
 
 /* 0146 skeleton pause while the tab is hidden */
@@ -516,7 +540,6 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 
 /* 0171 */
 .host-workspace input:focus-visible, .host-workspace input:focus { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
-.host-workspace :is(label, .btn):has(+ input:focus-visible), .host-workspace :is(label, .btn):has(> input:focus-visible), .host-workspace input:focus-visible + :is(label, .btn) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
 
 /* 0170 */
 .host-workspace .copy-property-form .copyrow { display: flex; align-items: flex-end; gap: var(--space-3); }
@@ -557,3 +580,9 @@ body.host-workspace.sidebar-collapsed .ui-brand { flex-direction: column; height
 .host-workspace .ui-search-row { background: var(--surface); border: 1px solid var(--input-border); border-radius: var(--input-radius); }
 body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--control-h-phone); height: var(--control-h-phone); margin: 0 auto; }
 .host-workspace .ui-chip { border: 1px solid var(--input-border); }
+
+/* 0188: every host motion collapses under reduced motion; tab and rail switches never animate. */
+@media (prefers-reduced-motion: reduce) { .host-workspace *, .host-workspace *::before, .host-workspace *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+
+/* 0188: a focused file input keeps a visible focus ring on its own control (text fields get none on their labels). */
+.host-workspace :is(label, .btn):has(+ input[type=file]:focus-visible), .host-workspace input[type=file]:focus-visible + :is(label, .btn) { outline: 2px solid var(--coral-600); outline-offset: 2px; }

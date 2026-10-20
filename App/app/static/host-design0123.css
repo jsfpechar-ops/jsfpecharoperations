@@ -73,7 +73,7 @@ body.host-workspace .host-stay-detail .guest-facts-identity,
 body.host-workspace .host-stay-detail .guest-facts-stay { background:#fff; }
 body.host-workspace .host-stay-detail .stay-command-panel { border-left-width:3px; border-left-style:solid; border-radius:0; padding:18px 20px; background:#fff; }
 body.host-workspace .host-stay-detail .stay-command-panel:not(.outcome-done):not(.outcome-action):not(.outcome-critical):not(.outcome-waiting):not(.outcome-neutral) { border-left-color:#c85a52; }
-body.host-workspace .property-section, body.host-workspace .cleaning-panel { border-top:1px solid var(--line); padding:20px 0; }
+body.host-workspace .cleaning-panel { border-top:1px solid var(--line); padding:20px 0; }
 body.host-workspace .cleaning-page h2 { font-size:24px; }
 body.host-workspace .cleaning-page .cleaning-date-group > h3 { font-size:clamp(24px,3vw,28px); }
 body.host-workspace .setup-wizard-head h1, body.host-workspace .setup-wizard-fee-intro { font-size:22px; font-weight:800; line-height:1.16; letter-spacing:-.05em; }

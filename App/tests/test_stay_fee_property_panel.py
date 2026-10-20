@@ -114,7 +114,7 @@ def test_edit_page_has_stay_fee_panel_and_create_page_does_not(host):
 
     assert edit.status_code == 200
     # 0094: an ordinary visible section in Settings → Reporting & fees.
-    assert '<section class="panel property-section" id="stay-fee-settings"' in edit.text
+    assert '<section class="panel property-section ui-section" id="stay-fee-settings"' in edit.text
     assert '#stay-fee-settings"' in edit.text
     assert 'Optional stay fee' in edit.text
     assert create.status_code == 200

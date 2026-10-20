@@ -61,7 +61,7 @@ def _client(username: str) -> TestClient:
 
 
 def test_before_connecting_the_page_explains_and_names_ttlock(hosts):
-    page = _client(USERS[0]).get("/smart-locks").text
+    page = _client(USERS[0]).get("/apartments").text
     assert "Digital door lock" in page
     assert "only with TTLock" in page
     assert "How it works" in page
@@ -72,7 +72,7 @@ def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts):
     """0090: the lock page shows three essentials; the Guide keeps every tap."""
     _connect(hosts[0], "hjhfa_uhaaaa")
     client = _client(USERS[0])
-    page = client.get("/smart-locks").text
+    page = client.get("/apartments").text
     assert "hjhfa_uhaaaa" in page
     for words in (
         "Open your lock in TTLock.",
@@ -90,7 +90,7 @@ def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts):
     assert 'id="door-codes-share"' in guide
     for words in ("Authorized Admin", "Create Admin", "Manage their own users only", "Tap Recipient and paste the name"):
         assert words in guide
-    cs = client.get("/smart-locks?lang=cs").text
+    cs = client.get("/apartments?lang=cs").text
     assert "Otevřete svůj zámek v TTLock." in cs
     assert "Vraťte se sem a vyhledejte zámky." in cs
 
@@ -170,7 +170,7 @@ def test_found_locks_return_to_the_hosts_own_property_lock_section(hosts, monkey
         for bad in (f"/apartments/{foreign}", "https://evil.example/apartments/1", "//evil.example"):
             response = _post(client, "/smart-locks/refresh", return_to=bad, section="share")
             location = response.headers["location"]
-            assert location.startswith("/smart-locks?"), location
+            assert location.startswith(("/smart-locks?", "/apartments")), location
             assert location.endswith("#smart-locks-list")
             assert "evil" not in location
     finally:
@@ -213,8 +213,8 @@ def test_an_admin_key_shows_the_lock_as_connected(hosts, monkeypatch):
 def test_each_host_has_their_own_name_and_never_sees_anothers_locks(hosts):
     _connect(hosts[0], "hjhfa_uhaaaa", [{"lock_id": "1", "alias": "Door A", "battery": 90, "tz_offset_ms": 3600000}])
     _connect(hosts[1], "hjhfa_uhbbbb", [{"lock_id": "2", "alias": "Door B", "battery": 80, "tz_offset_ms": 3600000}])
-    page_a = _client(USERS[0]).get("/smart-locks").text
-    page_b = _client(USERS[1]).get("/smart-locks").text
+    page_a = _client(USERS[0]).get("/apartments").text
+    page_b = _client(USERS[1]).get("/apartments").text
     assert "Door A" in page_a and "Door B" not in page_a
     assert "Door B" in page_b and "Door A" not in page_b
 

@@ -137,7 +137,15 @@
     "ui-swatch-grid",
     "ui-swatch",
     "ui-swatch-chip",
-    "ui-type-sample"
+    "ui-type-sample",
+    "ui-section-plain",
+    "ui-section-row",
+    "cleaning-actions",
+    "cleaning-form",
+    "cleaning-link",
+    "cleaning-note",
+    "cleaning-readonly",
+    "cleaning-subsection"
   ],
   "hooks": [
     "sr-only",
@@ -224,7 +232,7 @@
     "App/app/templates/setup_wizard/property.html",
     "App/app/templates/setup_wizard/stay_fee.html",
     "App/app/templates/setup_wizard/try_it.html",
-    "App/app/templates/smart_locks.html",
+    "App/app/templates/_smart_locks_panel.html",
     "App/app/templates/users.html",
     "App/app/templates/admin_incidents.html",
     "App/app/templates/admin_operations.html",
@@ -794,7 +802,7 @@
       "setup-wizard-lede",
       "setup-wizard-skip"
     ],
-    "App/app/templates/smart_locks.html": [
+    "App/app/templates/_smart_locks_panel.html": [
       "action-group",
       "checkline",
       "guide-steps",
@@ -814,5 +822,9 @@
   },
   "enforced_stylesheets": [
     "App/app/static/host2.css"
-  ]
+  ],
+  "class_notes": {
+    "ui-section-plain": "Guide page section: a section with no border or fill, only spacing and a heading (MASTER 3, section rhythm).",
+    "ui-section-row": "Smart locks panel section laid out as a row of label and control (MASTER 7.3 row pattern)."
+  }
 }

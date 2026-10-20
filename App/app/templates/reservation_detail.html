@@ -169,7 +169,7 @@
 </section>
 
 {# --- 2. Guests --------------------------------------------------------- #}
-<section id="guests">
+<section class="ui-section" id="guests">
 <div class="ui-section-h"><h2>{{ t('stay.detail.guests.title') }} {{ guest_count(progress, placeholder=true) }}</h2>
   <div class="ui-form-actions"><a href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
 </div>
@@ -321,14 +321,14 @@
    page. The heading renders only when a child panel joins the group. #}
 {% set money_panels = [] %}
 {% if money_panels %}
-<section id="money">
+<section class="ui-section" id="money">
   <div class="ui-section-h"><h2>{{ t('stay.detail.money.title') }}</h2></div>
   {% for money_panel in money_panels %}{{ money_panel }}{% endfor %}
 </section>
 {% endif %}
 
 {# --- 4. Police reporting ----------------------------------------------- #}
-<section id="reports">
+<section class="ui-section" id="reports">
   <div class="ui-section-h"><h2>{{ t('host.reporting') }}</h2></div>
   <div class="panel tight">
   <div class="stay-metrics detail-hero{% if stay_inactive %} inactive{% endif %}">

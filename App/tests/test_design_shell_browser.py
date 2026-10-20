@@ -57,5 +57,90 @@ def test_phone_tab_bar_is_fixed_at_the_bottom_with_five_44px_tabs(base):
         assert page.evaluate("document.documentElement.scrollWidth") <= 390
         page.click('[data-sheet-open="more-sheet"]')
         page.wait_for_selector("#more-sheet[open]")
-        assert page.locator('#more-sheet a[href="/invoices"]').is_visible()
+        assert page.locator('#more-sheet a[href="/stay-fees"]').is_visible()
+        browser.close()
+
+
+FORM_PAGES = ("/apartments/new?lang=en", "/cleaning/new?lang=en")
+
+
+def test_collapsed_rail_expands_again_with_the_same_button(base):
+    with sync_api.sync_playwright() as playwright:
+        browser, page = _open(playwright, base, 1280)
+        page.goto(base + "/invoices?lang=en")
+        page.wait_for_selector("#main-content")
+        button = page.locator("button[data-sidebar-collapse]")
+        button.click()
+        page.wait_for_function("document.body.classList.contains('sidebar-collapsed')")
+        assert button.get_attribute("aria-expanded") == "false"
+        assert round(page.evaluate("document.querySelector('.ui-sidebar').getBoundingClientRect().width")) == 64
+        button.click()
+        page.wait_for_function("!document.body.classList.contains('sidebar-collapsed')")
+        assert button.get_attribute("aria-expanded") == "true"
+        assert round(page.evaluate("document.querySelector('.ui-sidebar').getBoundingClientRect().width")) == 240
+        browser.close()
+
+
+def test_collapsed_account_menu_is_whole_inside_the_viewport(base):
+    for width in (1280, 2000):
+        with sync_api.sync_playwright() as playwright:
+            browser, page = _open(playwright, base, width)
+            page.goto(base + "/invoices?lang=en")
+            page.wait_for_selector("#main-content")
+            page.locator("button[data-sidebar-collapse]").click()
+            page.wait_for_function("document.body.classList.contains('sidebar-collapsed')")
+            page.locator("[data-host-account] summary").click()
+            page.wait_for_selector("[data-host-account][open] .host-account-menu")
+            box = page.locator(".host-account-menu").bounding_box()
+            viewport = page.viewport_size
+            assert box["x"] >= 0 and box["y"] >= 0, (width, box)
+            assert box["x"] + box["width"] <= viewport["width"], (width, box)
+            assert box["y"] + box["height"] <= viewport["height"], (width, box)
+            covered = page.evaluate(
+                """(() => { const r = document.querySelector('.host-account-menu').getBoundingClientRect();
+                    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+                    return !!(hit && hit.closest('.host-account-menu')); })()"""
+            )
+            assert covered, width
+            clipped = page.evaluate("(() => { const m = document.querySelector('.host-account-menu'); return m.scrollWidth > m.clientWidth + 1; })()")
+            assert not clipped, width
+            browser.close()
+
+
+def test_invoice_settings_tab_switch_does_not_move_the_page(base):
+    with sync_api.sync_playwright() as playwright:
+        browser, page = _open(playwright, base, 1280)
+        page.goto(base + "/invoices?lang=en")
+        page.wait_for_selector("#main-content")
+        page.locator(".ui-tabs a", has_text="Invoice settings").first.click()
+        page.wait_for_url("**/entities**")
+        page.wait_for_selector("#main-content")
+        samples = page.evaluate(
+            """async () => { const out = [];
+                for (let i = 0; i < 20; i++) {
+                    const m = document.querySelector('#main-content');
+                    const t = document.querySelector('.ui-tabs');
+                    out.push([getComputedStyle(m).transform, Math.round(m.getBoundingClientRect().left),
+                              t ? t.scrollLeft : 0, window.scrollY]);
+                    await new Promise(r => setTimeout(r, 30));
+                }
+                return out; }"""
+        )
+        assert all(row[0] == "none" and row[2] == 0 and row[3] == 0 for row in samples), samples
+        assert len({row[1] for row in samples}) == 1, samples
+        browser.close()
+
+
+def test_focused_form_fields_do_not_outline_their_labels(base):
+    with sync_api.sync_playwright() as playwright:
+        browser, page = _open(playwright, base, 1280)
+        for path in FORM_PAGES:
+            page.goto(base + path)
+            page.wait_for_selector("#main-content")
+            field = page.locator("#main-content input:not([type=hidden]):not([type=checkbox]):not([type=radio]), #main-content select, #main-content textarea").first
+            field.focus()
+            outlined = page.evaluate(
+                "[...document.querySelectorAll('#main-content label')].map(l => getComputedStyle(l).outlineStyle).filter(s => s !== 'none')"
+            )
+            assert outlined == [], (path, outlined)
         browser.close()

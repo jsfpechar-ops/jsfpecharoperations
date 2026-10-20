@@ -202,11 +202,15 @@ def test_lock_setup_flow_keeps_its_place(world):
             world["fake"].next_locks = [LOCK_A]
             page.locator("#smart-locks-share button[type=submit]").click()
             _settle(page)
-            assert f"/apartments/{apartment}" in page.url and page.url.endswith("#door-code")
-            assert page.locator("#door-code").is_visible()  # 0094: Settings → Guest experience, no fold
-            _in_view(page, "#door-code")
+            # 0190: the lock flows return to the Properties page section, not the property.
+            assert "/apartments?" in page.url and page.url.endswith("#smart-locks-list")
+            assert page.locator("#smart-locks-list").is_visible()
+            _in_view(page, "#smart-locks-list")
             row = db.query_one("SELECT lock_provider FROM apartment WHERE id = ?", (apartment,))
             assert row["lock_provider"] is None  # nothing assigned or switched on
+            page.goto(f"{base}/apartments/{apartment}?view=settings&section=lock&lang={lang}#door-code")
+            _settle(page)
+            _in_view(page, "#door-code")
             _shot(page, f"property-door-code-1280-{lang}")
             page.select_option("#lock_id", LOCK_A["lock_id"])
             page.locator(".host-property-save button[type=submit]").click()
@@ -235,7 +239,7 @@ def test_many_locks_list_and_add_more_sections(world):
         for width in (360, 390, 1280):
             for lang in ("en", "cs"):
                 context, page = _page(browser, world, width)
-                page.goto(f"{base}/smart-locks?lang={lang}")
+                page.goto(f"{base}/apartments?lang={lang}")
                 _settle(page)
                 page.locator("#smart-locks-list button[type=submit]").first.click()
                 _settle(page)
@@ -243,7 +247,7 @@ def test_many_locks_list_and_add_more_sections(world):
                 _in_view(page, "#smart-locks-list")
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
                 _shot(page, f"list-{width}-{lang}")
-                page.goto(f"{base}/smart-locks?lang={lang}#smart-locks-add-more")
+                page.goto(f"{base}/apartments?lang={lang}#smart-locks-add-more")
                 _settle(page)
                 assert page.locator("details#smart-locks-add-more").evaluate("d => d.open")
                 world["fake"].fail_kind = "budget"
@@ -283,7 +287,7 @@ def test_share_section_without_javascript_and_foreign_returns(world):
         page.goto(f"{base}/smart-locks?return_to=/apartments/{world['foreign']}")
         page.locator("#smart-locks-share button[type=submit]").click()
         _settle(page)
-        assert "/smart-locks" in page.url and page.url.endswith("#smart-locks-list")
+        assert "/apartments?" in page.url and page.url.endswith("#smart-locks-list")
         assert f"/apartments/{world['foreign']}#" not in page.url
         context.close()
         browser.close()
