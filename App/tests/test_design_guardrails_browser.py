@@ -299,3 +299,34 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
         assert facts["headGap"] is not None and facts["headGap"] >= 12, f"heading starts {facts['headGap']}px from the left edge"
         context.close()
         browser.close()
+
+
+def test_guest_card_facts_share_four_column_lines(wide_host, wide_base):
+    """0179: both rows of a guest card's facts start on the same four column lines."""
+    cookie = wide_host["cookie"]
+    reservation_id = wide_host["reservations"][0]
+    with sync_api.sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        except Exception:
+            if REQUIRE_BROWSER:
+                raise
+            pytest.skip("Chromium is required for the guest card test")
+        context = browser.new_context(viewport={"width": 1280, "height": 1000})
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": wide_base + "/"}])
+        page = context.new_page()
+        response = page.goto(f"{wide_base}/reservations/{reservation_id}?lang=en")
+        assert response and response.status < 400, f"HTTP {response.status if response else 'none'}"
+        _wait_for_host_layout(page)
+        _dismiss_optional_security_prompt(page)
+        page.wait_for_selector(".guest-card .guest-facts dt", timeout=5000)
+        lefts = page.evaluate(
+            """() => Array.from(document.querySelector('.guest-card').querySelectorAll('.guest-facts dt'))
+                .map(dt => dt.getBoundingClientRect().left)"""
+        )
+        context.close()
+        browser.close()
+    distinct = sorted({round(x / 2) * 2 for x in lefts})
+    print(f"guest card fact column lines: {distinct}")
+    assert len(lefts) >= 4, f"guest card shows only {len(lefts)} facts"
+    assert len(distinct) <= 4, f"guest card facts start on {len(distinct)} different lines: {distinct}"
