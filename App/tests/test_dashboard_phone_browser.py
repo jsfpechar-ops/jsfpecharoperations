@@ -45,14 +45,15 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
                 page.wait_for_selector(".cal-week.is-dots")
                 assert page.locator(".cal-week-events .cal-event").count() == 0
                 assert page.locator(".cal-dots .cal-dot").count() >= 3
-                assert page.locator(".cal-dot-more").first.inner_text() == "+1"
+                # The shared fixture puts five stays on 14-19 October: three dots plus "+2".
+                assert page.locator(".cal-dot-more").first.inner_text() == "+2"
                 for selector in HIDDEN_ON_PHONE:
                     assert visible_count(page, selector) == 0, selector
                 for selector in SHOWN_ON_PHONE:
                     assert visible_count(page, selector) >= 1, selector
                 page.locator('[data-cal-day="2026-10-15"]').click()
                 assert page.locator("[data-cal-day-dialog]").is_visible()
-                assert page.locator("[data-cal-day-list] .cal-event").count() == 4
+                assert page.locator("[data-cal-day-list] .cal-event").count() == 5
                 page.locator("[data-cal-day-dialog] [data-cal-close]").click()
                 names = seed_pin_alerts(calendar_workspace)
                 page.reload()
