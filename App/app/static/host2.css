@@ -566,3 +566,9 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position:
 .host-workspace .ui-search-row { background: var(--surface); border: 1px solid var(--input-border); border-radius: var(--input-radius); }
 body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--control-h-phone); height: var(--control-h-phone); margin: 0 auto; }
 .host-workspace .ui-chip { border: 1px solid var(--input-border); }
+
+/* 0188: every host motion collapses under reduced motion; tab and rail switches never animate. */
+@media (prefers-reduced-motion: reduce) { .host-workspace *, .host-workspace *::before, .host-workspace *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+
+/* 0188: a focused file input keeps a visible focus ring on its own control (text fields get none on their labels). */
+.host-workspace input[type=file]:focus-visible + :is(label, .btn), .host-workspace :is(label, .btn):has(> input[type=file]:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }

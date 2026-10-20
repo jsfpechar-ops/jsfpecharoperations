@@ -14,3 +14,6 @@ Executor: Haiku 5.5. Work on branch claude/project-thread-3xqb0b. Three host-app
 - Run only: `cd App && .venv/bin/python -m pytest tests/test_design_shell_browser.py tests/test_design_shell.py tests/test_static_versions.py tests/test_a11y_guard_browser.py -q --tb=short -x 2>&1 | tail -30` and `python3 scripts/context_lint.py | tail -30`. 0 skipped in the browser tests.
 - Screenshots (save to /mnt/project-files/design-reset/checkpoint-4-shell-fixes/): Invoices page, Stay fees tab, Invoice settings tab, and the open account menu, at 390, 1280 and 2000 px, sidebar open and collapsed (390 px only once), demo data, plus one reload with a stale cache.
 - Commit, push to claude/project-thread-3xqb0b, do NOT open a PR. Report in under 15 lines: cause of bug 3, files changed, test output tail, screenshot paths.
+
+
+Status: blocked
