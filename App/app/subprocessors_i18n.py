@@ -105,6 +105,11 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         "subprocessors.recipient_municipality": (
             "The municipality (stay-fee reports, if the host uses that feature)"
         ),
+        "subprocessors.recipient_push": (
+            "The push service of the host's browser maker (Apple, Google, Mozilla or Microsoft): "
+            "delivers urgent alerts the host turned on, end-to-end encrypted; chosen by the "
+            "browser, not by UbyHost; no guest names"
+        ),
         "subprocessors.recipient_ttlock": (
             "TTLock (Hangzhou Sciener Intelligent Control Technology Co., Ltd., China; data stored "
             "in Germany): the host's own lock provider, only for properties with door codes on. On "
@@ -222,6 +227,11 @@ SUBPROCESSOR_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "subprocessors.recipient_municipality": (
             "Obec (hlášení k poplatku z pobytu, pokud ubytovatel tuto funkci používá)"
+        ),
+        "subprocessors.recipient_push": (
+            "Push služba výrobce prohlížeče ubytovatele (Apple, Google, Mozilla nebo Microsoft): "
+            "doručuje naléhavá upozornění, která ubytovatel zapnul, koncově šifrovaná; volí ji "
+            "prohlížeč, ne UbyHost; žádná jména hostů"
         ),
         "subprocessors.recipient_ttlock": (
             "TTLock (Hangzhou Sciener Intelligent Control Technology Co., Ltd., Čína; údaje uložené "
