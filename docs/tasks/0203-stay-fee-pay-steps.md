@@ -23,6 +23,7 @@ On `/stay-fees` (already filtered to one month), each set-up property gets a sec
 | App/app/templates/stay_fees.html | edit | pay-step sections above the table |
 | App/app/static/host2.css | edit | append the step styles |
 | App/app/templates/base.html | edit | bump host2.css `?v=` |
+| App/tests/static_versions.json | regenerate | `.venv/bin/python tests/test_static_versions.py --write` after the CSS change |
 | App/app/host_i18n.py | edit | en and cs keys |
 | App/app/host_vi_i18n.py | edit | vi keys |
 | docs/design/catalog.json | edit | new classes for stay_fees.html |
