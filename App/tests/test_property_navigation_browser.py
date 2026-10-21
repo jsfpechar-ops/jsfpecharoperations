@@ -50,7 +50,7 @@ SETTINGS_NAMES = {
     "uby_name", "uby_contact", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "account_prefix",
     "account_number", "account_bank", "_stay_fee_account_existing", "stay_fee_authority_name",
     "stay_fee_authority_address", "stay_fee_authority_contact", "stay_fee_authority_databox",
-    "stay_fee_payee", "stay_fee_instruction", "automation_mode", "submit_after_hours", "default_purpose",
+    "automation_mode", "submit_after_hours", "default_purpose",
 }
 
 
