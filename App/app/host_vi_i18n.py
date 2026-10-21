@@ -3132,3 +3132,8 @@ STRINGS.update({
     "why.times_missing": "Thiếu giờ nhận phòng và trả phòng, nên mã cửa chưa thể hoạt động. Hãy đặt chúng trước.",
     "wizard.times_change": "Đổi ở bước 1",
 })
+
+# 0209: signature moved to the stay fee.
+STRINGS.update({
+    "entity.signature.moved": "Chữ ký trên báo cáo phí lưu trú giờ được đặt cùng phần phí lưu trú, trong mục Báo cáo và phí của từng chỗ ở.",
+})

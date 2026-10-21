@@ -42,7 +42,7 @@ def _canonical_query(view, group):
     return f"view={view}" + (f"&section={group}" if group else "")
 # The successful controls of the one property form, by name.
 SETTINGS_NAMES = {
-    "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
+    "fee_signature_section", "signature_file", "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
     "permalink_reachback_days", "passport_photo_policy", "door_code_section", "door_codes_fields", "door_codes",

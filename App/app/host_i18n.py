@@ -6868,6 +6868,17 @@ _ONBOARDING_TEST_0210_STRINGS = {
 for _lang, _strings in _ONBOARDING_TEST_0210_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+_ONBOARDING_TEST_0209_STRINGS = {
+    "en": {
+        "entity.signature.moved": "The signature for stay-fee reports is now set with the stay fee, in each property's Reporting & fees.",
+    },
+    "cs": {
+        "entity.signature.moved": "Podpis na hlášení poplatku z pobytu nastavíte u poplatku, v části Hlášení a poplatky u ubytování.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0209_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 

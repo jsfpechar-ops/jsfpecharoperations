@@ -126,6 +126,10 @@ def _wizard_context(
         "setup_hidden": bool(state and state.get("hidden") and not state.get("finished")),
         "door_code": door_code,
         "lock_available": lock_available,
+        # 0209: the report signature sits with the stay fee it is printed on.
+        "fee_signature": (
+            admin_routes._fee_signature_context(request, apartment) if step == "stay_fee" else None
+        ),
         # 0203: the lock step shows the lock panel itself, so connecting a lock
         # never leaves the wizard.
         "lock_panel": (

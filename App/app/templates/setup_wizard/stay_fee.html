@@ -5,7 +5,7 @@
 <p class="err-text" role="alert">{{ t('flash.stay_fees.account_invalid') }}</p>
 {% endif %}
 <p class="setup-wizard-lede setup-wizard-fee-intro">{{ t('why.stay_fee') }} {{ t('why.stay_fee_skip') }}</p>
-<form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="stay-fee-form">
+<form method="post" action="/apartments/{{ apartment.id }}" enctype="multipart/form-data" class="setup-wizard-form" id="stay-fee-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
   <input type="hidden" name="setup_step" value="stay_fee">

@@ -1766,6 +1766,16 @@ def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]
     }
 
 
+def _fee_signature_context(request: Request, apartment) -> Optional[Dict[str, Any]]:
+    """0209: the operator's stay-fee report signature, shown with the stay fee."""
+    entity_id = dict(apartment).get("legal_entity_id")
+    entity = access.entity(request, int(entity_id)) if entity_id else None
+    if not entity:
+        return None
+    preview = db.decrypt_field(entity["signature_png_enc"]) if entity["signature_png_enc"] else ""
+    return {"entity": entity, "preview": preview or ""}
+
+
 def _render_apartment_detail(
     request: Request,
     apartment: Dict[str, Any],
@@ -1804,6 +1814,7 @@ def _render_apartment_detail(
         "apartment_form.html",
         {
             "apartment": apartment,
+            "fee_signature": _fee_signature_context(request, apartment),
             "door_code": door_code,
             "lock_panel": (
                 {**_smart_lock_panel_context(request), "return_to": f"/apartments/{apartment_id}?view=settings&section=lock"}
@@ -1999,6 +2010,24 @@ async def apartment_update(apartment_id: int, request: Request):
     rejected, _address_mismatch = _save_apartment_form(apartment_id, request, form)
     if rejected:
         return rejected
+    # 0209: the stay-fee signature is saved to the property's operator.
+    if _form_str(form, "fee_signature_section") == "1":
+        saved = access.apartment(request, apartment_id)
+        entity = (
+            access.entity(request, saved["legal_entity_id"])
+            if saved and saved["legal_entity_id"] else None
+        )
+        if entity:
+            signature = await _signature_payload(form)
+            if signature is None:
+                back = (
+                    property_setup.wizard_url(apartment_id, "stay_fee")
+                    if _form_str(form, "setup_step") == "stay_fee"
+                    else f"/apartments/{apartment_id}?view=settings&section=reporting#stay-fee-settings"
+                )
+                return _back(back, err=_flash(request, "flash.entities.signature_invalid"))
+            if signature:
+                db.update("legal_entity", entity["id"], signature)
     # "Saved." said nothing about whether the property can actually report, so
     # the confirmation names what is still missing, or says there is nothing.
     apartment = access.apartment(request, apartment_id)

@@ -76,8 +76,7 @@ GUEST_LINK_AND_AUTOMATION = {"permalink_pin", "guest_message", "permalink_window
 # entry point to the Automation save (one normaliser). Nothing else is allowed.
 INLINE_TIMING_0098 = {"automation_mode", "submit_after_hours"}
 FEE_FIELDS = {n for n in PROPERTY_SETTINGS if n.startswith("stay_fee_")}
-BUSINESS_FIELDS = {"name", "seat", "ico", "dic", "contact_email", "contact_phone",
-                   "signature_file", "signature_name"}
+BUSINESS_FIELDS = {"name", "seat", "ico", "dic", "contact_email", "contact_phone"}
 INVOICE_DETAIL_FIELDS = {"vat_status", "registry_entry", "invoice_prefix", "invoice_next_number",
                          "invoice_due_days", "bic"}
 
