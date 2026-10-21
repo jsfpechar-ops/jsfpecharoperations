@@ -377,7 +377,7 @@ def test_the_remove_checkbox_only_shows_with_a_stored_signature(host):
     assert 'name="signature_remove"' not in page
     db.update("legal_entity", entity_id, {"signature_png_enc": db.encrypt_field(_drawn())})
     page = host.get(f"/entities?edit={entity_id}&lang=en").text
-    assert page.count('name="signature_remove"') == 1
+    assert 'name="signature_remove"' not in page  # 0209: the signature is edited with the stay fee
 
 
 # --- issued invoices are never touched --------------------------------------
@@ -436,8 +436,6 @@ def test_the_entity_forms_keep_their_contract(host):
         "ico": ('type="text"', True), "dic": ('type="text"', False),
         "contact_email": ('type="email"', True), "contact_phone": ('type="tel"', False),
         "contact_phone_country_code": ('type="text"', False),
-        "signature_name": ('type="text"', False), "signature_file": ('type="file"', False),
-        "signature_drawn": ('type="hidden"', False),
     }
     # 0076: the edit panel also holds Invoice details; check each business form alone.
     forms = (
@@ -454,8 +452,7 @@ def test_the_entity_forms_keep_their_contract(host):
             assert (" required" in tag) is required, (name, tag)
             field_id = "signature" if name == "signature_drawn" else name
             assert f'id="{prefix}{field_id}"' in tag, (name, tag)
-    assert 'accept="image/png,image/jpeg"' in _tag(page, "signature_file")
-    assert 'maxlength="80"' in _tag(page, "signature_name")
+    assert "sig-canvas" not in page  # 0209
     # Business details + the Invoice details lookup + Add business.
     assert page.count('name="fill_from_register" value="1" formnovalidate') == 3
 
@@ -567,12 +564,11 @@ def test_entity_lookup_keeps_typed_identity(host):
         response = _post_entity(host, entity_id, {
             "fill_from_register": "1", "ico": ICO, "name": "Typed name", "seat": "",
             "dic": "", "contact_email": "typed@example.test", "contact_phone": "+420 1",
-            "signature_name": "Typed signer",
         })
     page = response.text
     assert response.status_code == 200
     for typed in ('value="Typed name"', 'value="typed@example.test"',
-                  'value="Typed signer"', 'value="CZ04656679"', "Václavské náměstí"):
+                  'value="CZ04656679"', "Václavské náměstí"):
         assert typed in page, typed
     assert 'value="420"' in _tag(page, "contact_phone_country_code")
     assert 'value="1"' in _tag(page, "contact_phone")

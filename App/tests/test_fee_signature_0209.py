@@ -57,6 +57,17 @@ def test_business_details_no_longer_hold_the_signature(host):
     assert "The signature for stay-fee reports is now set with the stay fee" in page.text
 
 
+def test_settings_reporting_remove_checkbox_follows_the_stored_signature(host):
+    client, apartment_id = host
+    url = f"/apartments/{apartment_id}?view=settings&section=reporting&lang=en"
+    assert 'name="signature_remove"' not in client.get(url).text
+    db.update("legal_entity", int(_operator_id()), {"signature_png_enc": db.encrypt_field(PNG_URL)})
+    page = client.get(url).text
+    assert page.count('name="signature_remove"') == 1
+    assert 'accept="image/png,image/jpeg"' in page
+    assert 'maxlength="80"' in page
+
+
 def test_fee_form_with_a_signature_saves_it_to_the_operator(host):
     client, apartment_id = host
     data = _form_data(**_stay_fee_data(stay_fee_rate_czk="25"))
