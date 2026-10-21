@@ -5860,6 +5860,58 @@ _PUSH_MESSAGE_STRINGS = {
 for _lang, _strings in _PUSH_MESSAGE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# Brief 0205: Settings > Phone app > urgent alerts on this device.
+_PUSH_SETTINGS_STRINGS = {
+    "en": {
+        "push.title": "Urgent alerts on this device",
+        "push.help": "Only problems that need you now: a police report that failed, a police deadline at risk, a missing door code, or a cancelled stay whose guests had registered. You still get every e-mail. Logging out turns alerts off on that device.",
+        "push.on": "Turn on",
+        "push.off": "Turn off",
+        "push.test": "Send a test",
+        "push.state_on": "On",
+        "push.ios_first": "On iPhone, add UbyHost to your Home Screen first (above), then open it from there to turn on alerts.",
+        "push.unsupported": "This browser cannot show alerts. Use Chrome, Edge, Firefox or Safari, or on iPhone the app from your Home Screen.",
+        "push.denied": "Alerts are blocked for UbyHost. Allow notifications for this site in the browser or phone settings, then reload this page.",
+        "push.test_sent": "Test sent. It should arrive within a minute.",
+        "push.devices": "Devices with alerts on",
+        "push.device_added": "Added %(date)s",
+        "push.device_unknown": "Device",
+        "push.device_remove": "Remove",
+        "push.error.failed": "Could not turn on alerts. Try again.",
+        "push.error.too_many": "Alerts are on for 10 devices already. Remove one below first.",
+        "push.error.signed_out": "Log in again, then try once more.",
+        "push.error.rate_limited": "Too many tests in a row. Try again in an hour.",
+        "push.error.test_failed": "The test did not go through. Turn alerts off and on again.",
+        "flash.push.device_removed": "That device no longer gets alerts.",
+        "flash.push.signed_out": "Log in again, then try once more.",
+    },
+    "cs": {
+        "push.title": "Naléhavá upozornění na tomto zařízení",
+        "push.help": "Jen problémy, které potřebují vás hned: nepřijaté hlášení policii, hrozící zmeškání lhůty, chybějící kód ke dveřím nebo zrušený pobyt s registrovanými hosty. E-maily chodí dál. Odhlášením se upozornění na daném zařízení vypnou.",
+        "push.on": "Zapnout",
+        "push.off": "Vypnout",
+        "push.test": "Poslat zkoušku",
+        "push.state_on": "Zapnuto",
+        "push.ios_first": "Na iPhonu si nejdřív přidejte UbyHost na plochu (výše) a upozornění zapněte v aplikaci otevřené z plochy.",
+        "push.unsupported": "Tento prohlížeč upozornění zobrazit neumí. Použijte Chrome, Edge, Firefox nebo Safari, na iPhonu aplikaci z plochy.",
+        "push.denied": "Upozornění od UbyHost jsou zablokovaná. Povolte oznámení pro tento web v nastavení prohlížeče nebo telefonu a stránku načtěte znovu.",
+        "push.test_sent": "Zkouška odeslána. Měla by dorazit do minuty.",
+        "push.devices": "Zařízení se zapnutými upozorněními",
+        "push.device_added": "Přidáno %(date)s",
+        "push.device_unknown": "Zařízení",
+        "push.device_remove": "Odebrat",
+        "push.error.failed": "Upozornění se nepodařilo zapnout. Zkuste to znovu.",
+        "push.error.too_many": "Upozornění už máte na 10 zařízeních. Nejdřív jedno níže odeberte.",
+        "push.error.signed_out": "Přihlaste se znovu a zkuste to ještě jednou.",
+        "push.error.rate_limited": "Příliš mnoho zkoušek za sebou. Zkuste to za hodinu.",
+        "push.error.test_failed": "Zkouška neprošla. Upozornění vypněte a znovu zapněte.",
+        "flash.push.device_removed": "Toto zařízení už upozornění nedostává.",
+        "flash.push.signed_out": "Přihlaste se znovu a zkuste to ještě jednou.",
+    },
+}
+for _lang, _strings in _PUSH_SETTINGS_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 # 0080: stay detail grouping and in-page navigation.
 _STAY_DETAIL_0080_STRINGS = {
     "en": {
