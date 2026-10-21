@@ -59,4 +59,3 @@ Append-only.
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
-- 2026-10-21 Languages 0196: Vietnamese in the host app only, Ukrainian on the guest form only. Public, legal and consent texts and guest message templates stay EN/CS (`PUBLIC_LANGUAGES`) (owner).
