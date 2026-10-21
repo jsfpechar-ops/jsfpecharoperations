@@ -1,7 +1,7 @@
 # 0205: Simpler stay fee, police abbreviation filled by itself, clearer TTLock steps
 
 Status: todo
-Depends on: 0204 (same branch, run after it) | Base commit: after 0204 | Branch: claude/project-thread-cf47ju
+Depends on: 0204 (same branch, run after it) | Base commit: db2372c | Branch: claude/project-thread-cf47ju
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective

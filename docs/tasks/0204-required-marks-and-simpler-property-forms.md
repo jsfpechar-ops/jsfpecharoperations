@@ -1,6 +1,6 @@
 # 0204: Required-field asterisks and simpler property and business forms
 
-Status: todo
+Status: done
 Depends on: 0203 (same branch, run after it) | Base commit: ebe3109 | Branch: claude/project-thread-cf47ju
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
