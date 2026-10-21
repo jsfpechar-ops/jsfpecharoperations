@@ -10,6 +10,7 @@ Updated: 2026-10-21.
 
 ## Now
 
+- Stay-fee email 0220-0224: built, owner staging test.
 - 0203 #419: fee list pay steps. Data box send on hold (DIA).
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
@@ -41,4 +42,3 @@ Updated: 2026-10-21.
 
 - SES, Turnstile, healthchecks, Better Stack, Cloudflare, autopurge, Render staging, backup drill, 0001 (#281), magic-link/0007 phase 2 (Oct 2026).
 
-- [UI 0041](../tasks/0041-host-stay-actions.md): Paused; #338 CI imports: 0042; UI failures remain.

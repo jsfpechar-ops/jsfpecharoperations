@@ -26,6 +26,7 @@ from . import (
     reporting,
     retention,
     signup,
+    stay_fee_auto,
 )
 
 log = logging.getLogger("ubyhost.scheduler")
@@ -43,6 +44,7 @@ _JOB_LEVELS = {
     "retention": "warning",
     "meta_capi": "warning",
     "door_codes": "warning",
+    "stay_fee_mail": "warning",
 }
 
 
@@ -78,6 +80,7 @@ def job_intervals() -> dict:
         "retention": 24 * 60,
         "door_codes": 1,
         "posthog": 15,
+        "stay_fee_mail": 24 * 60,
     }
 
 
@@ -339,6 +342,20 @@ def _job_door_codes() -> None:
     _log_run("door_codes", started, True, summary)
 
 
+def _job_stay_fee_mail() -> None:
+    """Seal clean stay-fee periods and email the reports (0223). Runs daily at 07:00."""
+    started = time.perf_counter()
+    try:
+        counts = stay_fee_auto.run()
+    except Exception:
+        log.exception("stay-fee mail run failed")
+        _job_failed("stay_fee_mail")
+        _log_run("stay_fee_mail", started, False)
+        return
+    _job_ok("stay_fee_mail")
+    _log_run("stay_fee_mail", started, True, counts)
+
+
 def _job_retention() -> None:
     """Compute (and, once enabled, apply) the retention schedule.
 
@@ -417,6 +434,10 @@ def start() -> bool:
     )
     _scheduler.add_job(
         _job_retention, "cron", hour=3, minute=30, id="retention",
+        max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_stay_fee_mail, "cron", hour=7, minute=0, id="stay_fee_mail",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(

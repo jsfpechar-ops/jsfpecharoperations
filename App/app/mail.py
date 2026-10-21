@@ -34,6 +34,9 @@ KINDS = (
     "submission_problem",
     "invoice_issued",
     "workspace_deletion",
+    # 0222: monthly stay-fee email (plan stay-fee-monthly-email).
+    "stay_fee_report",
+    "stay_fee_blocked",
     "cancelled_with_guests",
     "deadline_at_risk",
     "deadline_digest",
@@ -95,6 +98,9 @@ HOST_KINDS = (
     "email_confirm",
     "passkey_added",
     "door_code_notice",
+    # 0222: monthly stay-fee email (plan stay-fee-monthly-email).
+    "stay_fee_report",
+    "stay_fee_blocked",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.
@@ -321,6 +327,70 @@ def delivery_html(payload: Dict[str, Any]) -> str:
     return _with_door_code(_with_secret(stored_html(payload), payload), payload)
 
 
+# 0220: files built at send time from a reference in the payload. The outbox
+# never holds file bytes; a row whose file is gone fails and retries like any
+# other send error.
+STAY_FEE_FILING_KEY = "stay_fee_filing_id"
+QR_SPAYD_KEY = "qr_spayd"
+QR_CONTENT_ID = "stayfeeqr"
+
+
+def attachments(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """``[{filename, maintype, subtype, data, cid}]``; ``cid`` set = inline image."""
+    parts: List[Dict[str, Any]] = []
+    filing_id = payload.get(STAY_FEE_FILING_KEY)
+    if filing_id:
+        from . import stay_fee_filing
+
+        row = db.query_one("SELECT * FROM stay_fee_filing WHERE id = ?", (int(filing_id),))
+        data = stay_fee_filing.pdf_bytes(row) if row else b""
+        if not data:
+            raise MailConfigError("stay fee filing PDF is missing")
+        name = str(payload.get("attachment_name") or f"poplatek-z-pobytu-{row['period_key']}.pdf")
+        parts.append({"filename": name, "maintype": "application", "subtype": "pdf",
+                      "data": data, "cid": None})
+    spayd = str(payload.get(QR_SPAYD_KEY) or "")
+    if spayd:
+        from . import payments
+
+        parts.append({"filename": "qr-platba.png", "maintype": "image", "subtype": "png",
+                      "data": payments.qr_png_bytes(spayd), "cid": QR_CONTENT_ID})
+    return parts
+
+
+def _raw_message(row, payload: Dict[str, Any], body: str, html: str,
+                 reply_to: str, headers: List[Dict[str, str]],
+                 parts: List[Dict[str, Any]]) -> bytes:
+    """The MIME message for SES SendRawEmail: text, HTML, inline cid images, files."""
+    import email.policy
+    from email.message import EmailMessage
+
+    msg = EmailMessage(policy=email.policy.SMTP)
+    msg["From"] = display_from()
+    msg["To"] = row["to_email"]
+    cc = normalise_email(row["cc_email"] or "")
+    if cc:
+        msg["Cc"] = cc
+    msg["Subject"] = row["subject"] or ""
+    if reply_to:
+        msg["Reply-To"] = reply_to
+    for header in headers:
+        msg[header["Name"]] = header["Value"]
+    msg.set_content(body)
+    if html:
+        msg.add_alternative(html, subtype="html")
+        for part in parts:
+            if part["cid"]:
+                msg.get_payload()[1].add_related(
+                    part["data"], maintype=part["maintype"], subtype=part["subtype"],
+                    cid=f"<{part['cid']}>", filename=part["filename"])
+    for part in parts:
+        if not part["cid"]:
+            msg.add_attachment(part["data"], maintype=part["maintype"],
+                               subtype=part["subtype"], filename=part["filename"])
+    return msg.as_bytes()
+
+
 def _reveal_claim_secret(body: str, payload_json: Optional[str]) -> str:
     """Put the claim secret back for the owner reading the console log.
 
@@ -349,6 +419,10 @@ def _send_console(row) -> str:
     # stored form, so the copy that lives for 14 days holds no working link.
     delivery_body(payload)
     delivery_html(payload)
+    parts = attachments(payload)
+    note = ""
+    if parts:
+        note = "\n\n[Attachments: " + ", ".join(p["filename"] for p in parts) + "]"
     db.insert(
         "console_mail_log",
         {
@@ -356,17 +430,18 @@ def _send_console(row) -> str:
             "to_email": row["to_email"],
             "cc_email": row["cc_email"],
             "subject": row["subject"],
-            "body_text": stored_body(payload),
+            "body_text": stored_body(payload) + note,
             "body_html": stored_html(payload) or None,
             "created_at": db.utcnow(),
         },
     )
     log.info(
-        "console mail id=%s kind=%s to=%s subject=%s",
+        "console mail id=%s kind=%s to=%s subject=%s attachments=%d",
         row["id"],
         row["kind"],
         mask_email(row["to_email"]),
         row["subject"],
+        len(parts),
     )
     _log_staging_link(row, payload)
     return f"console:{row['id']}"
@@ -494,7 +569,14 @@ def _send_ses(row) -> str:
         kwargs["ReplyToAddresses"] = [reply_to]
 
     headers = list_unsubscribe_headers(row, payload)
-    if headers:
+    parts = attachments(payload)
+    if parts:
+        response = _sesv2_client().send_email(
+            FromEmailAddress=display_from(),
+            Destination=destination,
+            Content={"Raw": {"Data": _raw_message(row, payload, body, html, reply_to, headers, parts)}},
+        )
+    elif headers:
         v2: Dict[str, Any] = {
             "FromEmailAddress": kwargs["Source"],
             "Destination": destination,
