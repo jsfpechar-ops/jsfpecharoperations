@@ -11,8 +11,6 @@
            aria-describedby="internal_name-help{% if name_error %} internal_name-error{% endif %}"{% if name_error %} aria-invalid="true" autofocus{% endif %}>
     {% if name_error %}<p class="err-text" id="internal_name-error" role="alert">{{ t('flash.error.name_required') }}</p>{% endif %}
   </div>
-  <div class="field">
-    {{ field_label('city_en', t('apartment.form.city_en.label'), t('apartment.form.city_en.hint'), true) }}
-    <input type="text" id="city_en" name="city_en" value="{{ pv.city_en or '' }}" aria-describedby="city_en-help">
-  </div>
+  {#- 0204: guests see the town from the address; the server sets city_en on save. -#}
+  <input type="hidden" id="city_en" name="city_en" value="{{ pv.city_en or '' }}">
 </div>
