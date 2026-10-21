@@ -199,7 +199,7 @@ def test_czech_manual_detail_has_no_english_button():
 
 Check how other tests import `host_i18n` (`grep -n "import host_i18n" App/tests/test_host_i18n.py | head -3`) and match it if it differs.
 
-Run (from `App/`): `.venv/bin/python -m pytest tests/test_onboarding_why_0206.py tests/test_calendar_platform_required.py tests/test_onboarding_wizard.py tests/test_property_readiness.py -q --tb=short 2>&1 | tail -30`.
+Run (from `App/`): `.venv/bin/python -m pytest tests/test_onboarding_why_0206.py tests/test_calendar_platform_required.py tests/test_onboarding_wizard_survival.py tests/test_fee_setup_compatibility.py tests/test_property_readiness.py -q --tb=short 2>&1 | tail -30`.
 
 If `test_calendar_platform_required.py` fails only because it looks for `"Paste the calendar link."` on the wizard calendar step, change that pin to `"every new booking appears here by itself"`. Any other failure that pins an old lede text: update the pin to a phrase of the new `why.*` English text and list each in the report. A failure of any other kind: STOP (§8).
 
@@ -214,7 +214,7 @@ Guest templates, filing code (`reporting.py`, `ubyport*`), CSS, JS, every file n
 ## 6. Commands
 
 1. From `App/`: Step 6 command → all pass.
-2. From `App/`: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_onboarding_wizard_browser.py tests/test_host_ux_acceptance.py -q --tb=line -rs 2>&1 | tail -30` (0 skipped; list every failure by name). A failure that pins old text: update the pin as in Step 6.
+2. From `App/`: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_onboarding_wizard_browser.py tests/test_design_setup_wizard_browser.py tests/test_host_ux_acceptance.py -q --tb=line -rs 2>&1 | tail -30` (0 skipped; list every failure by name). A failure that pins old text: update the pin as in Step 6.
 3. From the repo root: `python3 scripts/design_lint.py 2>&1 | tail -10` → `OK`
 4. From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -10`
 5. From `App/`: `.venv/bin/python -m pytest tests/test_host_i18n.py -q --tb=line 2>&1 | tail -15`. Known failures on main, not ours: three tests about the language endpoint and Vietnamese. Report any other.
