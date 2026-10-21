@@ -54,6 +54,7 @@ On a refused save the page re-renders with a `draft` dict as `apartment` (wizard
 | App/tests/test_host_ux_acceptance.py | edit | field names |
 | App/tests/test_property_navigation_browser.py | edit | field names |
 | App/tests/test_fee_one_box_0208.py | create | new tests |
+| App/tests/test_fee_setup_compatibility.py | edit | step 9 pins |
 
 No other file may change.
 
@@ -195,6 +196,33 @@ Copy the fixtures/helpers you need from `tests/test_fee_form_partial.py` (read i
 ### Step 8. Commit
 
 `0208 one-box fee account`, only §3 files, trailers from your prompt, never PNGs.
+
+### Step 9 (follow-up). Two more pins, and are the navigation failures ours?
+
+a) `App/tests/test_fee_setup_compatibility.py` (add it to §3):
+- `    assert "Enter a valid Czech bank account or IBAN." in text` → `    assert "This account number does not add up." in text  # 0208 copy`
+- `    assert 'value="777"' in text and 'value="1234567890"' in text` → `    assert 'value="777"' in text  # 0208: the old three-box post is not echoed into the one box`
+- replace the two lines
+```
+    for name in ("account_prefix", "account_number", "account_bank", "_stay_fee_account_existing"):
+        assert page.count(f'name="{name}"') == 1
+```
+with
+```
+    for name in ("stay_fee_council_account", "_stay_fee_account_existing"):
+        assert page.count(f'name="{name}"') == 1
+```
+Rerun `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_fee_setup_compatibility.py -q --tb=short 2>&1 | tail -15`.
+
+b) `test_property_navigation_browser.py` failed at line 196 (`<details` in content) and at line 527 (timeout on `.setup-wizard-skip .link-button`). Check them on main, do not fix:
+```
+git worktree add /tmp/ubyhost-main origin/main 2>&1 | tail -2
+cd /tmp/ubyhost-main/App && UBYHOST_REQUIRE_BROWSER=1 /home/user/jsfpecharoperations/App/.venv/bin/python -m pytest tests/test_property_navigation_browser.py -q --tb=line -rs 2>&1 | tail -10
+cd /home/user/jsfpecharoperations && git worktree remove --force /tmp/ubyhost-main
+```
+(`git fetch origin main` first if `origin/main` is missing.) Then on the branch run `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_property_navigation_browser.py -q --tb=short -k "not fit_every_width" 2>&1 | tail -40` and paste, for each failure, the assertion text plus what the page has instead (for 196: which `<details ...>` tag is in `content`, e.g. `grep -o '<details[^>]*>'` on the rendered HTML; for 527: what classes the skip button on that wizard step has now). Report both runs.
+
+Commit `0208 step 9`.
 
 ## 5. Do not touch
 
