@@ -528,7 +528,17 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "zůstává výhradním vlastnictvím Provozovatele a jeho licencorů. Práva se udělují jen dle "
             "těchto Podmínek. Ubytovatel vlastní nahraný Obsah, ale uděluje Provozovateli nevýhradní "
             "celosvětovou bezúplatnou licenci k hostování, kopírování, přenosu, zobrazení a zpracování "
-            "Obsahu výhradně pro poskytování a zlepšování Služby, plnění zákona a vymáhání Podmínek."
+            "Obsahu výhradně pro poskytování a zlepšování Služby, plnění zákona a vymáhání Podmínek. "
+            "Bez předchozího písemného souhlasu Provozovatele nesmí nikdo, ať už má Účet, nebo ne: "
+            "(a) automatizovaně procházet, stahovat nebo vytěžovat Službu, její web či obsah pomocí "
+            "robotů, crawlerů, skriptů nebo jiných automatizovaných prostředků, s výjimkou funkcí, "
+            "které Služba sama nabízí (např. export dat), a vyhledávačů indexujících veřejné stránky "
+            "v rozsahu povoleném souborem robots.txt; (b) je používat k vytěžování textů a dat, "
+            "automatizované analýze nebo k trénování, dolaďování, testování či napájení systémů umělé "
+            "inteligence nebo strojového učení; ani (c) z nich vytvářet konkurenční produkt nebo "
+            "datovou sadu. Provozovatel si výslovně vyhrazuje vytěžování textů a dat podle čl. 4 "
+            "odst. 3 směrnice (EU) 2019/790 a autorského zákona (č. 121/2000 Sb.); výhrada je "
+            "uvedena i ve strojově čitelné podobě v souborech robots.txt a /.well-known/tdmrep.json."
         ),
         "terms.s12_title": "12. Licence k používání Služby",
         "terms.s12_body": (
