@@ -1,6 +1,6 @@
 # 0206: Urgent alerts switch in Settings (markup, pwa.js, logout, browser test)
 
-Status: blocked
+Status: review
 Depends on: 0205 | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

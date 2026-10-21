@@ -48,3 +48,4 @@ Status: blocked (one layout check, see Deviations)
 
 ## Deviations
 Status: blocked. Done: steps 1 to 5 and §6.1. Left: §6.2 and §6.3 pass. Design lint fails because the new class `settings-row-actions` (step 1 and step 2) is not in `docs/design/catalog.json`. The brief says no other file may change, so the catalog was not edited.
+- Orchestrator: added `settings-row-actions` to docs/design/catalog.json; design lint OK, test_design_lint 3 passed. Screenshots checked.
