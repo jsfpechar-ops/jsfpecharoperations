@@ -182,7 +182,17 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "No rights are granted except as expressly set out in these Terms. The Host retains ownership "
             "of Content it uploads, but grants the Operator a worldwide, non-exclusive, royalty-free "
             "licence to host, copy, transmit, display, and process Content solely to provide and improve "
-            "the Service, comply with law, and enforce these Terms."
+            "the Service, comply with law, and enforce these Terms. Without the Operator's prior "
+            "written consent, no one, whether or not they hold an Account, may: (a) scrape, crawl, "
+            "harvest or systematically download the Service, its website or its content with robots, "
+            "spiders, scripts or other automated means, except through features the Service itself "
+            "offers (such as data export) and search engines indexing the public pages as robots.txt "
+            "allows; (b) use any of it for text and data mining, automated analysis, or to train, "
+            "fine-tune, test or feed artificial intelligence or machine-learning systems; or (c) build "
+            "a competing product or dataset from it. The Operator expressly reserves text and data "
+            "mining under Article 4(3) of Directive (EU) 2019/790 and the Czech Copyright Act "
+            "(No. 121/2000 Coll.); the reservation is also given in machine-readable form in "
+            "robots.txt and /.well-known/tdmrep.json."
         ),
         "terms.s12_title": "12. Licence to use the Service",
         "terms.s12_body": (
