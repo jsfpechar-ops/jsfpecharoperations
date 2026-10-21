@@ -1,6 +1,6 @@
 # 0203: Onboarding flow fixes from the first user test
 
-Status: todo
+Status: done (test follow-up in 0204 step 0)
 Depends on: none | Base commit: 2f043c8 | Branch: claude/project-thread-cf47ju
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
