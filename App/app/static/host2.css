@@ -589,19 +589,19 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 
 /* 0200: action rows stack full width on phone (GOV.UK). Input rows (a text input in the row) are not action rows. Excluded: the stay Guests header (0199) and the stay page command row. */
 @media (max-width: 760px) {
-  .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); }
   .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > .ui-btn:not(.ui-btn-icon, .row-menu-trigger),
-  .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > form > .ui-btn:not(.ui-btn-icon, .row-menu-trigger) { width: 100%; justify-content: center; min-height: 44px; }
+  .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > form > .ui-btn:not(.ui-btn-icon, .row-menu-trigger) { width: 100%; justify-content: center; min-height: var(--control-h-phone); }
   .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > form { width: 100%; margin: 0; }
   .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > :is(.ui-btn-icon, .row-menu-trigger, .help-tip, .help-tip-btn) { align-self: flex-end; }
-  .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > a:not(.ui-btn) { align-self: center; min-height: 44px; display: inline-flex; align-items: center; }
+  .host-workspace :is(.actions, .action-group, .host-property-save, .setup-wizard-foot, .ui-form-actions, .stay-command-actions):not(:has(> input[type=text])):not(.host-stay-detail #guests .ui-form-actions):not(.host-stay-detail .stay-command-actions) > a:not(.ui-btn) { align-self: center; min-height: var(--control-h-phone); display: inline-flex; align-items: center; }
   .host-workspace .host-property-save { width: auto; }
 }
 /* 0200: card lists (.table-cards, card layout below 720 px) with a row menu put the menu at the card's top-right corner */
 @media (max-width: 720px) {
   .host-workspace .table-cards tr:has(.row-primary-link):has(.row-menu):not(.lc-fees *) { position: relative; }
   .host-workspace .table-cards tr:has(.row-primary-link):has(.row-menu):not(.lc-fees *) > td.row-actions:not([data-card]) { position: absolute; top: 0; right: 0; width: auto; }
-  .host-workspace .table-cards tr:has(.row-primary-link):has(.row-menu):not(.lc-fees *) > td:first-child { padding-right: 44px; }
+  .host-workspace .table-cards tr:has(.row-primary-link):has(.row-menu):not(.lc-fees *) > td:first-child { padding-right: var(--control-h-phone); }
   .host-workspace .table-cards.properties-table tr:has(.row-primary-link):has(.row-menu):not(.lc-fees *) > td.row-actions:not([data-card]) { top: 10px; }
 }
 /* 0200: a banner title and its message stack (was "Chyba přenosuSynthetic...") */
@@ -611,11 +611,11 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0200-d: invoice detail actions (.stay-command-actions outside the stay page) are a full-width column on phone; the nested .ui-btn-group stacks its text buttons and links */
 @media (max-width: 760px) {
   .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) { width: 100%; align-self: stretch; }
-  .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group { display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; }
+  .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); width: 100%; }
   .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group > .ui-btn:not(.ui-btn-icon, .row-menu-trigger),
-  .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group > form > .ui-btn:not(.ui-btn-icon, .row-menu-trigger) { width: 100%; justify-content: center; min-height: 44px; }
+  .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group > form > .ui-btn:not(.ui-btn-icon, .row-menu-trigger) { width: 100%; justify-content: center; min-height: var(--control-h-phone); }
   .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group > form { width: 100%; margin: 0; }
-  .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group > a:not(.ui-btn) { align-self: center; min-height: 44px; display: inline-flex; align-items: center; }
+  .host-workspace .stay-command-actions:not(.host-stay-detail .stay-command-actions) > .ui-btn-group > a:not(.ui-btn) { align-self: center; min-height: var(--control-h-phone); display: inline-flex; align-items: center; }
   /* 0200-d: setup wizard footer on phone: primary first, Skip in the middle, quiet Back last; no margin-left:auto offset */
   .host-workspace .setup-wizard-foot > :is(.ui-btn-primary, form:has(.ui-btn-primary)) { order: -1; }
   .host-workspace .setup-wizard-foot > .ui-btn-primary { margin-left: 0; }
