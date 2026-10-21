@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f7f5">
+  <meta name="robots" content="noindex">
+  <title>{{ t('offline.title') }} · UbyHost</title>
+  {# Brief 0203: self-contained on purpose. The service worker stores only this
+     one response, so it cannot depend on a stylesheet. The values are copied
+     from tokens.css (--canvas, --ink, --ink-secondary, --brand-action,
+     --font-sans), the same way the e-mail templates do it. #}
+  <style>
+    html { background: #f7f7f5; color: #20201e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; box-sizing: border-box; padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); }
+    main { max-width: 26rem; text-align: center; }
+    h1 { font-size: 1.375rem; line-height: 1.3; margin: 0 0 12px; }
+    p { margin: 0 0 24px; line-height: 1.5; color: #50504c; }
+    a { display: inline-block; min-height: 44px; box-sizing: border-box; padding: 11px 20px; border-radius: 8px; background: #ad4942; color: #ffffff; font-weight: 600; text-decoration: none; }
+    a:focus-visible { outline: 3px solid #20201e; outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>{{ t('offline.title') }}</h1>
+    <p>{{ t('offline.body') }}</p>
+    {# An empty href reloads the address the host was trying to open. #}
+    <a href="">{{ t('offline.retry') }}</a>
+  </main>
+</body>
+</html>
