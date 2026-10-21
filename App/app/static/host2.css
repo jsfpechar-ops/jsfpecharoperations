@@ -631,3 +631,25 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .ui-topbar { padding-left: calc(var(--space-4) + env(safe-area-inset-left)); padding-right: calc(var(--space-2) + env(safe-area-inset-right)); }
   .host-workspace .ui-sticky-actions { bottom: calc(var(--tabbar-h) + var(--tabbar-safe)); }
 }
+
+/* 0203: the setup wizard's finish screen. A short one-time burst; none for reduced motion. */
+.host-workspace .setup-wizard-celebrate { position: relative; overflow: hidden; background: var(--green-bg); border: 1px solid var(--green-300); }
+.host-workspace .setup-wizard-confetti { position: absolute; inset: 0; pointer-events: none; }
+.host-workspace .setup-wizard-confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; background: var(--brand); opacity: 0; animation: setup-wizard-confetti 1.8s ease-out 1 forwards; }
+.host-workspace .setup-wizard-confetti i:nth-child(3n) { background: var(--green); }
+.host-workspace .setup-wizard-confetti i:nth-child(3n+1) { background: var(--amber); }
+.host-workspace .setup-wizard-confetti i:nth-child(1) { left: 4%; }
+.host-workspace .setup-wizard-confetti i:nth-child(2) { left: 12%; animation-delay: .15s; }
+.host-workspace .setup-wizard-confetti i:nth-child(3) { left: 20%; animation-delay: .3s; }
+.host-workspace .setup-wizard-confetti i:nth-child(4) { left: 28%; animation-delay: .05s; }
+.host-workspace .setup-wizard-confetti i:nth-child(5) { left: 36%; animation-delay: .25s; }
+.host-workspace .setup-wizard-confetti i:nth-child(6) { left: 44%; animation-delay: .1s; }
+.host-workspace .setup-wizard-confetti i:nth-child(7) { left: 52%; animation-delay: .35s; }
+.host-workspace .setup-wizard-confetti i:nth-child(8) { left: 60%; animation-delay: .2s; }
+.host-workspace .setup-wizard-confetti i:nth-child(9) { left: 68%; animation-delay: .05s; }
+.host-workspace .setup-wizard-confetti i:nth-child(10) { left: 76%; animation-delay: .3s; }
+.host-workspace .setup-wizard-confetti i:nth-child(11) { left: 84%; animation-delay: .15s; }
+.host-workspace .setup-wizard-confetti i:nth-child(12) { left: 92%; animation-delay: .25s; }
+@keyframes setup-wizard-confetti { 0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(72px) rotate(300deg); } }
+@media (prefers-reduced-motion: reduce) { .host-workspace .setup-wizard-confetti { display: none; } }
+.host-workspace .setup-wizard-lock-panel { margin-top: var(--space-6); }
