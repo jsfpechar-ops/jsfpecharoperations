@@ -635,7 +635,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0203: the setup wizard's finish screen. A short one-time burst; none for reduced motion. */
 .host-workspace .setup-wizard-celebrate { position: relative; overflow: hidden; background: var(--green-bg); border: 1px solid var(--green-300); }
 .host-workspace .setup-wizard-confetti { position: absolute; inset: 0; pointer-events: none; }
-.host-workspace .setup-wizard-confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; background: var(--brand); opacity: 0; animation: setup-wizard-confetti 1.8s ease-out 1 forwards; }
+.host-workspace .setup-wizard-confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: var(--radius-xs); background: var(--brand); opacity: 0; animation: setup-wizard-confetti 1.8s ease-out 1 forwards; }
 .host-workspace .setup-wizard-confetti i:nth-child(3n) { background: var(--green); }
 .host-workspace .setup-wizard-confetti i:nth-child(3n+1) { background: var(--amber); }
 .host-workspace .setup-wizard-confetti i:nth-child(1) { left: 4%; }
@@ -658,5 +658,5 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
    Screen readers already say "required", so the star is hidden from them. */
 .host-workspace .field:has(:is(input, select, textarea)[required]) > label::after,
 .host-workspace .field:has(:is(input, select, textarea)[required]) > .field-label-row > label::after { content: " *" / ""; color: var(--danger); font-weight: 700; }
-.host-workspace .required-legend { margin: 0 0 var(--space-3); color: var(--ink-muted); font-size: 14px; }
+.host-workspace .required-legend { margin: 0 0 var(--space-3); color: var(--ink-muted); font-size: var(--text-sm); }
 .host-workspace .setup-wizard-message-steps { margin: var(--space-2) 0 var(--space-3); padding-left: var(--space-5); }
