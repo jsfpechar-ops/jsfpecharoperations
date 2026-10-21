@@ -139,6 +139,11 @@ def stay_fees_list(request: Request):
             "total_display": stay_fee.format_czk(period["total_czk"]),
             "issues": issues,
             "unset": False,
+            # 0203: the pay steps on the list need the same payment data as the report.
+            "period_label": _ui_period_label(request, group["cadence"], selected_month),
+            "pay": stay_fee.payment_details(group) if period.get("frozen") else None,
+            "pay_total_czk": group["total_czk"],
+            "pay_total_display": stay_fee.format_czk(group["total_czk"]),
         })
     configured = {row["apartment"]["id"] for row in rows}
     for apartment in apartments:
@@ -722,6 +727,8 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     form = await request.form()
     month = stay_fee.parse_month(_form_str(form, "month")) or _default_month(today)
     back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}"
+    # 0203: the confirm button on the fee list comes back to the list.
+    back_path = fee_return_path(_form_str(form, "return_to"), apartment_id) or back_path
     correcting = _form_str(form, "correct") == "1"
     sealed = stay_fee_filing.covering(apartment["id"], month)
     if correcting:
