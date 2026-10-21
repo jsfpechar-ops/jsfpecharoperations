@@ -1,6 +1,6 @@
 # 0204: Push engine (keys, encryption, device list, queue, delivery, retention)
 
-Status: todo
+Status: blocked
 Depends on: 0203 | Base commit: after 0203 on claude/project-thread-w35ftw | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

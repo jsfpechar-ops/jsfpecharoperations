@@ -1,36 +1,38 @@
-# 0204 report
+# 0204 report (push engine, steps 5 to 12)
 
 Status: blocked
 
-## Files changed
+## Done
+- Step 5: `App/app/push.py` created verbatim from brief (commit 5588290). `import app.push` OK.
+- Steps 6 and 7: `App/app/retention.py` push cleanup, `_push_step`, STEPS entry, cutoff text (one commit, 4d4b4e2).
+- Step 8: `App/app/scheduler.py` four edits, `_job_push`, push job every 1 min (10fd842). Import OK.
+- Step 9: `App/app/host_i18n.py` alert strings EN/CS (f4cc7aa's sibling 5515a20). Import OK.
+- Step 10: `App/app/host_vi_i18n.py` alert strings VI (f4cc7aa).
+- Step 11: `docs/ENVIRONMENT.md` section "Urgent alerts (web push)" (b9fe9e4).
+- Step 12: `App/tests/test_push.py` created verbatim from brief.
 
-- `App/app/webpush.py` (new, step 1), commit `0bd69df`
-- `App/tests/test_webpush.py` (new, step 2), commit `3c202ee`
-- `App/app/migrations/0011_web_push.sql` (new, step 3), commit `a659777`
-- `App/app/config.py` (step 4, commit `39f65a8`: `WEB_PUSH` flag after `TTLOCK_MONTHLY_CALLS`)
+Steps 9 to 11 and 12 were inserted from the brief's own code blocks by script, with each anchor asserted to occur once. Step 6 and 7 share one commit.
 
-## Commands
-
-- Step 2: `cd App && .venv/bin/python -m pytest tests/test_webpush.py -q --tb=short -x 2>&1 | tail -30`
-  Last lines: `10 passed, 1 warning in 0.12s`
-- Step 3: `cd App && .venv/bin/python -m pytest tests/test_migrations.py -q --tb=short -x 2>&1 | tail -30`
-  Last lines: `13 passed, 1 warning in 1.92s`
-- Step 4: no test command in the brief for this step.
-
-## Section 7 (acceptance)
-
-Not ticked. Steps 1 to 4 are done; the rest of section 7 needs steps 5 to 12.
+## Commands (§6)
+1. `pytest tests/test_webpush.py tests/test_push.py tests/test_migrations.py tests/test_db_*.py -q -x`: 63 passed.
+2. `pytest tests/test_retention*.py tests/test_privacy_*.py ... -q -x`: 119 passed.
+3. `pytest tests/test_host_i18n.py tests/test_no_em_dashes.py tests/test_meta_capi.py -q -x`: FAILED.
+   `test_host_i18n.py::test_language_endpoint_sets_cookie_and_rejects_open_redirects` fails in the
+   CSRF primer GET (`tests/conftest.py:142`) with `sqlite3.OperationalError: no such table: apartment`.
+   It fails when run alone too. Not verified whether it also fails before 0204.
+   The other two files were not reached because of `-x`.
+4. `python3 scripts/context_lint.py`: FAIL, not caused by code.
+   - `docs/tasks/0204-push-engine.md` is about 13992 tokens, over the 12000 cap.
+   - `docs/tasks/0204-cont-1.md` lacks the numbered `## N.` sections the lint expects.
 
 ## Deviations
-
-- Checkpoint reached: `Done: steps 1 to 4. Left: steps 5 to 12.` Step 5 (`App/app/push.py`, about 460 lines) was not started because the executor token budget was nearly used up. Brief lines 520 to 854 were not read.
-- HEAD was already `2f69016 Brief 0204: push engine` when this session started. Commits here start after it.
-- No PR opened, as instructed. Other working-tree files were not touched; the only untracked file present was `App/app/webpush.py`, which is now committed.
+- Stopped at the tool-call checkpoint with command 3 failing. Did not fix code, since the failure is in a CSRF/DB setup path outside §3 and needs a decision.
+- Brief Status set to `blocked` (not `review`) because §6 command 3 and the lint are not green.
+- Untracked `docs/tasks/0205-push-endpoints.md` and `0206-push-settings-ui.md` were already present and left alone.
 
 ## Questions
-
-- None.
+- Should the owner or orchestrator confirm the `test_host_i18n` failure is pre-existing (run the same file at commit b4b3c48), or allow a fix in the test DB setup?
+- Should the two 0204 briefs be split or compacted to pass the lint?
 
 ## Owner steps left
-
-- None yet. A new executor session should continue from step 5 (`App/app/push.py`), then steps 6 to 12, and then set `Status: review`.
+- None until the questions above are answered. Then run §6 commands 3 and 4 and the §7 check `git diff --stat` against §3.
