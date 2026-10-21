@@ -169,6 +169,24 @@
     </div>
 {% endcall %}
 
+{% call settings_group('phone', t('settings.group.phone')) %}
+    <div class="ui-section" id="settings-phone">
+      <div class="settings-action-list" id="settings-install" data-pwa-install-row>
+        <div class="settings-action-row">
+          <div>
+            <strong>{{ t('pwa.install.title') }}</strong>
+            <small>{{ t('pwa.install.help') }}</small>
+          </div>
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-pwa-install hidden>{{ t('pwa.install.button') }}</button>
+          <span class="ui-badge ui-badge-done" data-tone="green" data-pwa-installed hidden>{{ t('pwa.install.installed') }}</span>
+        </div>
+        <p class="ui-sub" data-pwa-ios hidden>{{ t('pwa.install.ios') }}</p>
+        {% if passkeys_available %}<p class="ui-sub" data-pwa-ios hidden>{{ t('pwa.install.ios_passkey') }}</p>{% endif %}
+        <p class="ui-sub" data-pwa-other>{{ t('pwa.install.other') }}</p>
+      </div>
+    </div>
+{% endcall %}
+
 {% call settings_group('data', t('settings.group.data')) %}
     <div class="ui-section" id="settings-archive">
       {{ settings_heading('archive', t('settings.nav.archive'), t('settings.archive_hint_extended')) }}
