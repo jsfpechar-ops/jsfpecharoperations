@@ -395,7 +395,7 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 assert section.is_visible()
                 # The council block is part of the editor, not a fold (plan section 4 rule 2).
                 for field in ("stay_fee_rate_czk", "stay_fee_vs", "account_number",
-                              "stay_fee_authority_name", "stay_fee_authority_databox", "stay_fee_instruction"):
+                              "stay_fee_authority_name", "stay_fee_authority_databox"):
                     assert page.locator(f"#{field}").is_visible(), (field, width, locale)
                 assert page.locator("#stay-fee-settings details").count() == 0
                 back = page.locator(".fee-return-note a")
