@@ -138,6 +138,10 @@ def test_the_alerts_row_fits_wide_layouts(base, width, collapsed):
             )
             assert overflow == 0
             assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+            badge = page.locator("[data-push-state-on]").bounding_box()
+            test_button = page.locator("[data-push-test]").bounding_box()
+            assert abs((badge["y"] + badge["height"] / 2) - (test_button["y"] + test_button["height"] / 2)) < 8
+            assert test_button["x"] > badge["x"]
             _shot(page, f"alerts-on-{width}{'-collapsed' if collapsed else ''}-en")
         finally:
             browser.close()
