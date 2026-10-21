@@ -52,6 +52,7 @@ from .. import (
     security,
     signup,
     stay_fee,
+    stay_fee_auto,
     ttlock,
     validation,
 )
@@ -4350,6 +4351,7 @@ def settings_view(request: Request):
             )["n"],
             "backup_status": _backup_status(request),
             "onboarding_emails": _onboarding_emails(request),
+            "stay_fee_emails": _stay_fee_emails(request),
             # WP20: Settings > Privacy, the ad measurement consents given at sign-up.
             "ad_consents": (
                 signup.consents_for(access.owner_id(request))
@@ -4393,6 +4395,22 @@ def _onboarding_emails(request: Request):
     if workspace and workspace["id"] != account["id"]:
         return None
     return not account["onboarding_emails_opt_out"]
+
+
+def _stay_fee_emails(request: Request):
+    """The "Stay fee report by e-mail" toggle: True or False, None when hidden.
+
+    Same guards as the onboarding switch, and hidden without a fee property.
+    """
+    account = auth.current_user(request)
+    workspace = auth.workspace_user(request)
+    if not account or account["role"] != "host":
+        return None
+    if workspace and workspace["id"] != account["id"]:
+        return None
+    if not stay_fee_auto.workspace_has_fee_property(account["id"]):
+        return None
+    return stay_fee_auto.emails_enabled(account["id"])
 
 
 def _backup_status(request: Request):

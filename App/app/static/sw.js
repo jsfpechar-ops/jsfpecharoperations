@@ -1,4 +1,4 @@
-/* UbyHost service worker (brief 0203). Served from /sw.js so its scope is the
+/* UbyHost service worker (brief 0219). Served from /sw.js so its scope is the
    whole app.
 
    It stores exactly one response: the offline page, in the host's language.

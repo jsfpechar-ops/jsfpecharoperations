@@ -362,7 +362,7 @@ def robots():
 def tdmrep():
     return Response(seo.TDMREP_JSON, media_type="application/json")
 
-# Brief 0203: the installable app. The manifest and the service worker sit at
+# Brief 0219: the installable app. The manifest and the service worker sit at
 # the root so the worker's scope covers the whole app. Both are public, like
 # robots.txt, and carry nothing about any account.
 _PWA_ICON_KEY = "20261021-0203"

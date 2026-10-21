@@ -1,7 +1,7 @@
 # 0204: Push engine (keys, encryption, device list, queue, delivery, retention)
 
 Status: done
-Depends on: 0203 | Base commit: after 0203 on claude/project-thread-w35ftw | Branch: claude/project-thread-w35ftw
+Depends on: 0219 | Base commit: after 0219 on claude/project-thread-w35ftw | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -14,7 +14,7 @@ Add the server side of urgent alerts on the host's phone: the server's signing k
 - **No new dependency.** Web Push is built on `cryptography` and `requests`, which are already in `requirements.txt`. The orchestrator checked the encryption code against the RFC 8291 example byte for byte; `tests/test_webpush.py` keeps that check.
 - **Outbound requests** go only to the four browser push services (`PUSH_HOST_SUFFIXES`). Any other subscription address is refused, so nobody can make the server call an address they chose (SSRF).
 - **Privacy:** the push address and keys are stored encrypted (`db.encrypt_secret`). A queued alert holds a property name and dates, never a guest name. Queue rows are deleted after 30 days, and devices not seen for 180 days. Deleting a workspace deletes both. Never log an endpoint; log ids and status codes only.
-- **Database:** new tables only through `App/app/migrations/0011_web_push.sql`, Postgres-portable SQL, `ON CONFLICT ... DO NOTHING`, never `INSERT OR IGNORE`.
+- **Database:** new tables only through `App/app/migrations/0012_web_push.sql`, Postgres-portable SQL, `ON CONFLICT ... DO NOTHING`, never `INSERT OR IGNORE`.
 - **Key:** the VAPID key pair is made by the app on first use and stored encrypted in `settings` (`web_push_vapid_private`). No env var is needed. `UBYHOST_WEB_PUSH=0` switches everything off.
 - `db.execute` returns the row count. `db.utcnow()` returns `YYYY-MM-DDTHH:MM:SS+00:00`; every time string here uses the same format so string comparison works.
 
@@ -24,7 +24,7 @@ Add the server side of urgent alerts on the host's phone: the server's signing k
 |---|---|---|
 | `App/app/webpush.py` | new | VAPID + RFC 8291 encryption + POST |
 | `App/app/push.py` | new | key, subscriptions, queue, delivery, purge |
-| `App/app/migrations/0011_web_push.sql` | new | two tables |
+| `App/app/migrations/0012_web_push.sql` | new | two tables |
 | `App/app/config.py` | edit | `WEB_PUSH` flag |
 | `App/app/retention.py` | edit | purge step, workspace deletion |
 | `App/app/scheduler.py` | edit | `push` job every minute |
@@ -327,7 +327,7 @@ def test_an_unreachable_push_service_is_a_transport_error(monkeypatch):
 
 Run: `cd App && .venv/bin/python -m pytest tests/test_webpush.py -q --tb=short -x 2>&1 | tail -5`. Expected: 10 passed.
 
-**Step 3.** Create `App/app/migrations/0011_web_push.sql` with exactly:
+**Step 3.** Create `App/app/migrations/0012_web_push.sql` with exactly:
 
 ```sql
 -- Brief 0204: urgent alerts on the host's phone (Web Push).
@@ -476,7 +476,7 @@ Insert after it:
 
 Run: `cd App && .venv/bin/python -c "import app.scheduler" 2>&1 | tail -3`. Expected: no error.
 
-**Step 9.** `App/app/host_i18n.py`. Anchor (added by 0203):
+**Step 9.** `App/app/host_i18n.py`. Anchor (added by 0219):
 
 ```python
 for _lang, _strings in _PWA_STRINGS.items():
@@ -520,7 +520,7 @@ for _lang, _strings in _PUSH_MESSAGE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 ```
 
-**Step 10.** `App/app/host_vi_i18n.py`. Anchor (added by 0203): `    "offline.retry": "Thử lại",`. Insert after it:
+**Step 10.** `App/app/host_vi_i18n.py`. Anchor (added by 0219): `    "offline.retry": "Thử lại",`. Insert after it:
 
 ```python
     # Brief 0204: urgent alerts.
@@ -587,7 +587,7 @@ As in TEMPLATE §8. Also stop if a retention or privacy test outside §3 needs a
 
 ## Risk list (for the reviewer)
 
-`App/app/webpush.py`, `App/app/push.py` (SSRF allowlist, claim, retry, cap), `App/app/migrations/0011_web_push.sql`, `App/app/retention.py`.
+`App/app/webpush.py`, `App/app/push.py` (SSRF allowlist, claim, retry, cap), `App/app/migrations/0012_web_push.sql`, `App/app/retention.py`.
 
 ## Owner steps
 

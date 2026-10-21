@@ -13,7 +13,7 @@ Master version: 2.0.0. Adds only.
   - Privacy: privacy requests link; retention policy link; PostHog note stays as text
   - Notifications and mail: digest toggles; destination address
   - Help: guide, support e-mail, shortcuts, legal links
-  - Phone app (`settings_group('phone')`, 0203/0206): install row (state per platform: installed, Add to Home Screen steps on iPhone, Install button where the browser offers one); urgent alerts row ("Turn on" / "Send a test" / "Turn off", `On` badge, iPhone hint to open from the Home Screen first); device list with Remove behind `data-confirm`. Only the four critical alerts exist; no per-kind toggles.
+  - Phone app (`settings_group('phone')`, 0219/0206): install row (state per platform: installed, Add to Home Screen steps on iPhone, Install button where the browser offers one); urgent alerts row ("Turn on" / "Send a test" / "Turn off", `On` badge, iPhone hint to open from the Home Screen first); device list with Remove behind `data-confirm`. Only the four critical alerts exist; no per-kind toggles.
 - badges: `attention` = no second factor; `done` = passkey added; `neutral` = default
 - dangerous rows (delete workspace) sit last in a `section` with a `danger` button behind a confirm dialog
 

@@ -1,4 +1,4 @@
-"""0203: the service worker installs, and a lost connection shows the offline page."""
+"""0219: the service worker installs, and a lost connection shows the offline page."""
 import os
 import secrets
 from pathlib import Path

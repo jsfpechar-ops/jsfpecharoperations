@@ -1,4 +1,4 @@
-"""Brief 0203: the installable app (manifest, icons, service worker, offline page)."""
+"""Brief 0219: the installable app (manifest, icons, service worker, offline page)."""
 from __future__ import annotations
 
 import secrets

@@ -1,4 +1,4 @@
-# 0203: Installable phone app (manifest, icons, service worker, offline page)
+# 0219 (was 0203): Installable phone app (manifest, icons, service worker, offline page)
 
 Status: todo
 Depends on: none | Base commit: 2f043c8 | Branch: claude/project-thread-w35ftw
@@ -773,7 +773,7 @@ As in TEMPLATE §8. Also stop if any anchor is missing, or if a test outside §6
 
 ## 9. Report
 
-`docs/tasks/0203-report.md` per TEMPLATE §9; set `Status: review`. Do not open a PR; the orchestrator does after 0206.
+`docs/tasks/0219-report.md` per TEMPLATE §9; set `Status: review`. Do not open a PR; the orchestrator does after 0206.
 
 ## Risk list (for the reviewer)
 

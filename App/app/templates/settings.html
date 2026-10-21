@@ -58,6 +58,18 @@
             <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.onboarding_emails_save') }}</button>
           </form>
         {% endif %}
+        {% if stay_fee_emails is not none %}
+          <form method="post" action="/account/stay-fee-emails" class="settings-action-row" id="settings-stay-fee-emails">
+            <div>
+              <label class="checkline">
+                <input type="checkbox" name="enabled" value="1"{% if stay_fee_emails %} checked{% endif %}>
+                <strong>{{ t('settings.account.stay_fee_emails') }}</strong>
+              </label>
+              <small>{{ t('settings.account.stay_fee_emails_help') }}</small>
+            </div>
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('settings.account.stay_fee_emails_save') }}</button>
+          </form>
+        {% endif %}
         {% if current_user.role == 'admin' %}
           <div class="settings-action-row">
             <div>

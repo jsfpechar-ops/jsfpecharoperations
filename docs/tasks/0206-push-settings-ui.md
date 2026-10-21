@@ -35,7 +35,7 @@ No other file may change.
 
 ## 4. Steps
 
-**Step 1.** `App/app/templates/settings.html`. Anchor (from 0203):
+**Step 1.** `App/app/templates/settings.html`. Anchor (from 0219):
 
 ```html
         <p class="ui-sub" data-pwa-other>{{ t('pwa.install.other') }}</p>

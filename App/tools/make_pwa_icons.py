@@ -1,4 +1,4 @@
-"""Build the installable-app icons from static/ubyhost-mark.png (brief 0203).
+"""Build the installable-app icons from static/ubyhost-mark.png (brief 0219).
 
 Run from App/: .venv/bin/python tools/make_pwa_icons.py
 """
