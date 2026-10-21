@@ -1,6 +1,6 @@
 # 0207: Wire the four critical alerts
 
-Status: todo
+Status: review
 Depends on: 0204 | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
