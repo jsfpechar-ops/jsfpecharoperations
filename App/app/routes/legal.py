@@ -32,11 +32,14 @@ SUBPROCESSOR_IDS = (
 # UBYHOST_SIGNUP_ENABLED is on (recipient_ids()).
 # "meta_ads" (WP21) is listed only while sign-up is on and the Meta
 # Conversions API is configured.
-RECIPIENT_IDS = ("google_ads", "meta_ads", "police", "municipality", "ttlock")
+# "push" (0208) is listed only while urgent alerts are on (UBYHOST_WEB_PUSH).
+RECIPIENT_IDS = ("google_ads", "meta_ads", "police", "municipality", "ttlock", "push")
 
 
 def recipient_ids() -> tuple:
     hidden = set()
+    if not config.WEB_PUSH:
+        hidden.add("push")
     if not signup.enabled():
         hidden.update(("google_ads", "meta_ads"))
     elif not config.meta_capi_enabled():
