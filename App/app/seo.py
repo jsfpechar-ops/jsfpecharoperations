@@ -143,7 +143,10 @@ def head_links(request: Request) -> Dict[str, Any]:
 
 
 def robots_txt() -> str:
-    lines = ["User-agent: *"]
+    lines = [TDM_NOTICE, ""]
+    lines += [f"User-agent: {agent}" for agent in AI_AND_SCRAPER_AGENTS]
+    lines += ["Disallow: /", "", "User-agent: *"]
+    lines += ["Content-Signal: search=yes, ai-train=no, ai-input=no"]
     lines += [f"Disallow: {prefix}" for prefix in PRIVATE_PREFIXES]
     lines += ["", f"Sitemap: {config.PUBLIC_BASE_URL}/sitemap.xml", ""]
     return "\n".join(lines)
