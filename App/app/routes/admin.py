@@ -1416,6 +1416,7 @@ def _wizard_step_payload(form, step: str) -> Dict[str, Any]:
                 payload[field] = _form_str(form, field)
         if "addr_zip" in payload:
             payload["addr_zip"] = validation.normalise_zip(payload.get("addr_zip", ""))
+        payload["city_en"] = property_setup.guest_city(payload.get("addr_obec", ""))
         payload["legal_entity_id"] = _form_int(form, "legal_entity_id")
         payload["data_controller_entity_id"] = _form_int(form, "data_controller_entity_id")
         purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
@@ -1453,6 +1454,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["guest_message"] = payload["guest_message"][:1000]
     payload["uby_mark"] = payload["uby_mark"].upper()
     payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
+    payload["city_en"] = property_setup.guest_city(payload["addr_obec"])
     payload["legal_entity_id"] = _form_int(form, "legal_entity_id")
     payload["data_controller_entity_id"] = _form_int(
         form, "data_controller_entity_id"
@@ -2277,6 +2279,9 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             if field not in form:
                 # A section form without address inputs must not blank the address.
                 payload.pop(field, None)
+        if "addr_obec" not in form:
+            # 0204: no town posted, so the guest-facing city stays as it is.
+            payload.pop("city_en", None)
     if setup_step == "property" or (
         not setup_step and any(field in form for field in _ADDRESS_ONLY_FIELDS)
     ):
