@@ -1471,7 +1471,7 @@ def _apartment_payload(form) -> Dict[str, Any]:
         form, "data_controller_entity_id"
     )
     payload.update(_automation_timing_values(form))
-    payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
+    payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 1  # 0211: default 1 day
     payload["permalink_reachback_days"] = validation.normalise_reachback_days(
         _form_int(form, "permalink_reachback_days")
     )
