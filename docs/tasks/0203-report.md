@@ -1,25 +1,66 @@
 # 0203 report
 
-Status: blocked
-Done: steps 1 to 16 applied, one commit per step, in order. Left: the browser test fix below (outside brief §3) and the 390 px screenshots.
+Status: review
+Branch: claude/project-thread-graf3i (not pushed, no PR)
 
-## Files changed (all in brief §3)
-App/app/routes/passkeys.py, App/app/templates/base.html, App/app/templates/login.html, App/app/static/passkeys.js, App/app/routes/admin.py, App/app/routes/onboarding_wizard.py, App/app/templates/setup_wizard/door_lock.html, App/app/templates/setup_wizard/done.html, App/app/templates/setup_wizard/try_it.html, App/app/static/host.js, App/app/static/host2.css, App/app/host_i18n.py, App/app/host_vi_i18n.py, App/tests/test_passkeys.py, App/tests/test_smart_locks_page.py, App/tests/static_versions.json (regenerated, 32 files).
+## Files changed
 
-## Commands (last lines)
-- 6.1 `UBYHOST_REQUIRE_BROWSER=1 ... pytest tests/test_passkeys.py ... -rs`: `105 passed, 1 warning in 6.15s`. No skips. Both new tests included.
-- 6.2 browser files, `-rs`: `12 failed, 75 passed, 1 warning in 530.97s`. 0 skipped. All 12 are `test_wizard_polish_and_overview_cards` (2 languages x 3 widths x 2 variants).
-- 6.3 `test_host_i18n.py`: `3 failed, 11 passed`. The same 3 fail on base commit 2f043c8, checked in a temporary worktree (removed). Not caused by this brief.
-- 6.3 `test_no_em_dashes.py test_copy_cleanup.py`: `13 passed`.
+- App/app/routes/stay_fees.py: step 1, commit 5469478.
+- App/app/templates/stay_fees.html: step 2 (commit 705b287); step 6 fix, pay button always secondary (commit 8424561).
+- App/app/static/host2.css, App/app/templates/base.html, App/tests/static_versions.json: step 3, commit 36e1c0c.
+- App/app/host_i18n.py, App/app/host_vi_i18n.py: step 4, commit 72fa3ef.
+- docs/design/catalog.json, docs/design/pages/stay-fees.md: step 5, commit cbe4b94; step 6 fix reworded the pay-steps line (commit 8424561).
+- App/tests/test_design_fees.py: step 6a, original assertion restored in 8424561 (no net change).
+- App/tests/test_stay_fee_pay_steps.py (new), App/tests/test_stay_fee_pay_steps_browser.py (new): step 6, commit 99c1f55; teardown fix in 8424561.
+- docs/tasks/0203-report.md: this report.
+
+## Commands
+
+Step 6, command 1: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_UBYPORT_ENV=mock UBYHOST_DEPLOYMENT=staging UBYHOST_ENABLE_SCHEDULER=0 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium .venv/bin/python -m pytest tests/test_invoice_*.py tests/test_stay_fee*.py tests/test_design_fees.py tests/test_host_fee_navigation.py -q --tb=short -x 2>&1 | tail -30`
+- Last 5 lines:
+```
+........................................................................ [ 96%]
+.........                                                                [100%]
+=============================== warnings summary ===============================
+  from starlette.testclient import TestClient as TestClient  # noqa
+
+224 passed, 1 skipped, 1 warning in 45.92s
+```
+- The 1 skip is tests/test_invoice_autofill.py:300 (set UBYHOST_SHOTS_DIR to capture acceptance screenshots). Existing, env only; it is not in command 2.
+
+Step 6, command 2 (with UBYHOST_CAPTURE_0203=1): `... .venv/bin/python -m pytest tests/test_stay_fee_pay_steps_browser.py tests/test_host_list_cards_browser.py tests/test_host_geometry.py tests/test_design_guardrails_browser.py -q --tb=short -x -rs 2>&1 | tail -30`
+- Last 5 lines:
+```
+..............                                                           [100%]
+=============================== warnings summary ===============================
+  from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+14 passed, 1 warning in 74.03s (0:01:14)
+```
+- 0 skipped.
+
+Lint: `python3 scripts/context_lint.py 2>&1 | tail -5` last line `context lint: OK`. `python3 scripts/design_lint.py 2>&1 | tail -5` last line `design lint: OK`.
+
+## Screenshots (390 px, en)
+
+- /mnt/project-files/design-reset/stay-fee-steps/stay-fees-before-en-390.png
+- /mnt/project-files/design-reset/stay-fee-steps/stay-fees-after-en-390.png
+- Also written: 1280 and 2000 px for before and after, en/cs/vi, in the same folder.
+
+## Fix history
+
+- 6c failed with "more than one primary" (filter Apply plus the step-1 button). Owner/coordinator decision (a): every step button is secondary. Fixed in 8424561.
+- The `acc` teardown raised `sqlite3.IntegrityError: FOREIGN KEY constraint failed`. Fixed by deleting the test's stay_fee_filing rows in a finally block (8424561). No other table needed deleting.
 
 ## Deviations
-1. **Brief conflict (stopped).** Step 8b points the done button to `/`, as the brief says. `App/tests/test_onboarding_wizard_browser.py` line 1355 still waits for `**/apartments/*?view=overview**` after that button, so all 12 cases fail. That file is not in brief §3 ("No other file may change"), so I did not edit it. Needed: add that file to §3 and change the wait to the dashboard URL (`/`), then rerun §6.2.
-2. **Screenshots not taken.** Hard rule 7 needs one 390 px screenshot per changed page (done, try_it, door_lock, base pop-up). Not done.
-3. Pre-existing unstaged PNG changes under `docs/tasks/0102-evidence/` were in the tree before the run. Not committed.
-4. Step 16 cache keys regenerated with `--write`.
+
+- None to the brief content. The 6c check and the test were not loosened or skipped.
 
 ## Questions
-Should the one-line test change above be added to §3 and applied?
+
+- None.
 
 ## Owner steps left
-After the test fix merges, deploy as usual. The new cache keys ship with it.
+
+- Review and merge the branch (not pushed here). Production deploy is manual.

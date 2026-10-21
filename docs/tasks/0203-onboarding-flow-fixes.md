@@ -369,7 +369,7 @@ As in TEMPLATE.md §8.
 
 ## 9. Report
 
-`docs/tasks/0203-report.md`, as in TEMPLATE.md §9.
+`docs/tasks/0203-onboarding-report.md`, as in TEMPLATE.md §9.
 
 ## Risk list (for the reviewer)
 

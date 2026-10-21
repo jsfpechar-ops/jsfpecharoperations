@@ -10,10 +10,11 @@ Updated: 2026-10-21.
 
 ## Now
 
-- #418 onboarding user-test fixes 0203-0212; address form open.
+- #418 onboarding fixes 0203-0212; address open.
+- 0203 #419: fee list pay steps. Data box send on hold (DIA).
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
-- AI/scraper crawler block (0195): robots.txt AI group, `/.well-known/tdmrep.json`, Terms §11 TDM clause en+cs (TERMS_VERSION kept 1.7; lawyer to confirm).
+- AI crawler block (0195): robots.txt, tdmrep.json, Terms §11 TDM (v1.7; lawyer to confirm).
 - Host design reset follow-up (0165-0183): six-item sidebar, WCAG 2.2 AA check, bordered rows and controls, Stays/Cleaning/guest-card (PR #405). **Deploy needed:** new `?v=` keys. Shots: design-reset/
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 
