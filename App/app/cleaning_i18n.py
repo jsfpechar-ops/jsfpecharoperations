@@ -348,4 +348,7 @@ WORDS = {
 
 def translator(lang: str):
     index = 1 if lang == "cs" else 0
+    if lang == "vi":
+        from . import host_vi_i18n
+        return lambda key: host_vi_i18n.CLEANING_WORDS.get(key) or WORDS.get(key, (key, key))[0]
     return lambda key: WORDS.get(key, (key, key))[index]

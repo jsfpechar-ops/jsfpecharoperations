@@ -28,7 +28,7 @@ from app.main import app
 from app.routes import guest
 from tests.test_claim_mail import TOKEN, _cleanup, _seed
 
-NEW = ("de", "es", "fr")
+NEW = ("de", "es", "fr", "uk")
 TEMPLATES = pathlib.Path(__file__).resolve().parents[1] / "app" / "templates" / "guest"
 _PLACEHOLDER = re.compile(r"%\((\w+)\)s")
 
@@ -43,7 +43,7 @@ def _template_keys(*names: str):
 # --- catalog parity ------------------------------------------------------------
 
 def test_every_guest_key_exists_in_all_five_languages():
-    assert i18n.LANGUAGES == ("en", "cs", "de", "es", "fr")
+    assert i18n.LANGUAGES == ("en", "cs", "de", "es", "fr", "uk")
     english = i18n.STRINGS["en"]
     for lang in i18n.LANGUAGES:
         table = i18n.STRINGS[lang]
@@ -82,8 +82,8 @@ def test_the_legal_facts_survive_translation(lang):
     assert "326/1999" in table["why_law"]
     assert "101" in table["legal_notice_retention_body"]
     assert "326/1999" in table["privacy_basis_body"]
-    assert ("DSGVO" if lang == "de" else "RGPD") in table["privacy_basis_body"]
-    six = {"de": "sechs", "es": "seis", "fr": "six"}[lang]
+    assert {"de": "DSGVO", "es": "RGPD", "fr": "RGPD", "uk": "GDPR"}[lang] in table["privacy_basis_body"]
+    six = {"de": "sechs", "es": "seis", "fr": "six", "uk": "шість"}[lang]
     assert six in table["legal_notice_retention_body"]
     assert six in table["privacy"]
 
@@ -268,7 +268,10 @@ def test_reminder_and_receipt_are_built_in_the_stored_language(lang):
 
 @pytest.mark.parametrize(
     ("lang", "germany", "czechia"),
-    [("de", "Deutschland", "Tschechien"), ("es", "Alemania", "Chequia"), ("fr", "Allemagne", "Tchéquie")],
+    [
+        ("de", "Deutschland", "Tschechien"), ("es", "Alemania", "Chequia"), ("fr", "Allemagne", "Tchéquie"),
+        ("uk", "Німеччина", "Чехія"),
+    ],
 )
 def test_country_names_and_purposes_follow_the_guest_language(lang, germany, czechia):
     assert validation.country_name("DEU", lang) == germany
@@ -326,8 +329,9 @@ def test_the_cookie_table_and_ticket_dates_cover_every_guest_language():
 # --- the host app stays EN/CS ------------------------------------------------
 
 def test_the_host_app_still_speaks_only_english_and_czech():
-    assert host_i18n.LANGUAGES == ("en", "cs")
+    assert host_i18n.LANGUAGES == ("en", "cs", "vi")
     assert host_i18n.supported_language("de") is None
+    assert host_i18n.supported_language("uk") is None
     client = TestClient(app)
     for path in ("/login", "/login?lang=de", "/login?lang=fr"):
         page = client.get(path, headers={"Accept-Language": "de-DE,de;q=0.9"})

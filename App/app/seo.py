@@ -117,7 +117,7 @@ def page_url(path: str, lang: str | None = None) -> str:
 
 def alternates(path: str) -> list[tuple[str, str]]:
     """hreflang pairs, plus the negotiated URL as the default."""
-    links = [(lang, page_url(path, lang)) for lang in host_i18n.LANGUAGES]
+    links = [(lang, page_url(path, lang)) for lang in host_i18n.PUBLIC_LANGUAGES]
     links.append(("x-default", page_url(path)))
     return links
 
@@ -128,6 +128,8 @@ def head_links(request: Request) -> Dict[str, Any]:
     if path not in INDEXABLE_PATHS:
         return {}
     requested = host_i18n.supported_language(request.query_params.get("lang"))
+    if requested not in host_i18n.PUBLIC_LANGUAGES:
+        requested = None
     return {
         "canonical_url": page_url(path, requested),
         "alternate_urls": alternates(path),
@@ -151,7 +153,7 @@ def sitemap_xml() -> str:
         'xmlns:xhtml="http://www.w3.org/1999/xhtml">',
     ]
     for path in INDEXABLE_PATHS:
-        for lang in host_i18n.LANGUAGES:
+        for lang in host_i18n.PUBLIC_LANGUAGES:
             lines.append("  <url>")
             lines.append(f"    <loc>{page_url(path, lang)}</loc>")
             for code, href in alternates(path):

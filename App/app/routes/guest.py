@@ -26,7 +26,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, door_codes, guest_slug, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, door_codes, guest_slug, guest_uk_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -95,6 +95,7 @@ PASSPORT_UPLOAD_MESSAGES: Dict[str, Dict[str, str]] = {
         "The photo has too many pixels. Take it again at the normal camera setting.": "La photo comporte trop de pixels. Reprenez-la avec le réglage normal de l'appareil photo.",
     },
 }
+PASSPORT_UPLOAD_MESSAGES["uk"] = dict(guest_uk_i18n.PASSPORT_UPLOAD)
 
 def _serializer() -> URLSafeSerializer:
     return URLSafeSerializer(config.secret_key(), salt="ubyhost-guest-owned")
@@ -359,6 +360,7 @@ _GUEST_ISSUE_MESSAGES = {
         "de": "Geben Sie die Pass- oder Ausweisnummer des Elternteils ein.",
         "es": "Introduzca el número de pasaporte o documento de identidad del padre o la madre.",
         "fr": "Saisissez le numéro de passeport ou de carte d'identité du parent.",
+        "uk": guest_uk_i18n.ISSUE_NOTE,
     },
 }
 

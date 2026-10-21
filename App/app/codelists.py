@@ -146,7 +146,7 @@ def _all_countries(lang: str) -> List[Dict[str, str]]:
                 )
             options.append({"code": row["code"], "label": label})
         return sorted(options, key=lambda o: _fold(o["label"]))
-    label_key = lang if lang in ("cs", "de", "es", "fr") else "en"
+    label_key = lang if lang in ("cs", "de", "es", "fr", "uk") else "en"
     return sorted(
         (
             {"code": c["code"], "label": c.get(label_key) or c["en"]}

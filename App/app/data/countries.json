@@ -5,7 +5,8 @@
 "cs": "Aruba",
 "de": "Aruba",
 "es": "Aruba",
-"fr": "Aruba"
+"fr": "Aruba",
+"uk": "Аруба"
 },
 {
 "code": "AFG",
@@ -13,7 +14,8 @@
 "cs": "Afghánistán",
 "de": "Afghanistan",
 "es": "Afganistán",
-"fr": "Afghanistan"
+"fr": "Afghanistan",
+"uk": "Афганістан"
 },
 {
 "code": "AGO",
@@ -21,7 +23,8 @@
 "cs": "Angola",
 "de": "Angola",
 "es": "Angola",
-"fr": "Angola"
+"fr": "Angola",
+"uk": "Ангола"
 },
 {
 "code": "AIA",
@@ -29,7 +32,8 @@
 "cs": "Anguilla",
 "de": "Anguilla",
 "es": "Anguila",
-"fr": "Anguilla"
+"fr": "Anguilla",
+"uk": "Ангілья"
 },
 {
 "code": "ALA",
@@ -37,7 +41,8 @@
 "cs": "Ålandské ostrovy",
 "de": "Ålandinseln",
 "es": "Islas Åland",
-"fr": "Îles Åland"
+"fr": "Îles Åland",
+"uk": "Аландські острови"
 },
 {
 "code": "ALB",
@@ -45,7 +50,8 @@
 "cs": "Albánie",
 "de": "Albanien",
 "es": "Albania",
-"fr": "Albanie"
+"fr": "Albanie",
+"uk": "Албанія"
 },
 {
 "code": "AND",
@@ -53,7 +59,8 @@
 "cs": "Andorra",
 "de": "Andorra",
 "es": "Andorra",
-"fr": "Andorre"
+"fr": "Andorre",
+"uk": "Андорра"
 },
 {
 "code": "ARE",
@@ -61,7 +68,8 @@
 "cs": "Spojené arabské emiráty",
 "de": "Vereinigte Arabische Emirate",
 "es": "Emiratos Árabes Unidos",
-"fr": "Émirats arabes unis"
+"fr": "Émirats arabes unis",
+"uk": "Об’єднані Арабські Емірати"
 },
 {
 "code": "ARG",
@@ -69,7 +77,8 @@
 "cs": "Argentina",
 "de": "Argentinien",
 "es": "Argentina",
-"fr": "Argentine"
+"fr": "Argentine",
+"uk": "Аргентина"
 },
 {
 "code": "ARM",
@@ -77,7 +86,8 @@
 "cs": "Arménie",
 "de": "Armenien",
 "es": "Armenia",
-"fr": "Arménie"
+"fr": "Arménie",
+"uk": "Вірменія"
 },
 {
 "code": "ASM",
@@ -85,7 +95,8 @@
 "cs": "Americká Samoa",
 "de": "Amerikanisch-Samoa",
 "es": "Samoa Americana",
-"fr": "Samoa américaines"
+"fr": "Samoa américaines",
+"uk": "Американське Самоа"
 },
 {
 "code": "ATA",
@@ -93,7 +104,8 @@
 "cs": "Antarktida",
 "de": "Antarktis",
 "es": "Antártida",
-"fr": "Antarctique"
+"fr": "Antarctique",
+"uk": "Антарктида"
 },
 {
 "code": "ATF",
@@ -101,7 +113,8 @@
 "cs": "Francouzská jižní území",
 "de": "Französische Süd- und Antarktisgebiete",
 "es": "Territorios Australes Franceses",
-"fr": "Terres australes françaises"
+"fr": "Terres australes françaises",
+"uk": "Французькі Південні території"
 },
 {
 "code": "ATG",
@@ -109,7 +122,8 @@
 "cs": "Antigua a Barbuda",
 "de": "Antigua und Barbuda",
 "es": "Antigua y Barbuda",
-"fr": "Antigua-et-Barbuda"
+"fr": "Antigua-et-Barbuda",
+"uk": "Антигуа і Барбуда"
 },
 {
 "code": "AUS",
@@ -117,7 +131,8 @@
 "cs": "Austrálie",
 "de": "Australien",
 "es": "Australia",
-"fr": "Australie"
+"fr": "Australie",
+"uk": "Австралія"
 },
 {
 "code": "AUT",
@@ -125,7 +140,8 @@
 "cs": "Rakousko",
 "de": "Österreich",
 "es": "Austria",
-"fr": "Autriche"
+"fr": "Autriche",
+"uk": "Австрія"
 },
 {
 "code": "AZE",
@@ -133,7 +149,8 @@
 "cs": "Ázerbájdžán",
 "de": "Aserbaidschan",
 "es": "Azerbaiyán",
-"fr": "Azerbaïdjan"
+"fr": "Azerbaïdjan",
+"uk": "Азербайджан"
 },
 {
 "code": "BDI",
@@ -141,7 +158,8 @@
 "cs": "Burundi",
 "de": "Burundi",
 "es": "Burundi",
-"fr": "Burundi"
+"fr": "Burundi",
+"uk": "Бурунді"
 },
 {
 "code": "BEL",
@@ -149,7 +167,8 @@
 "cs": "Belgie",
 "de": "Belgien",
 "es": "Bélgica",
-"fr": "Belgique"
+"fr": "Belgique",
+"uk": "Бельгія"
 },
 {
 "code": "BEN",
@@ -157,7 +176,8 @@
 "cs": "Benin",
 "de": "Benin",
 "es": "Benín",
-"fr": "Bénin"
+"fr": "Bénin",
+"uk": "Бенін"
 },
 {
 "code": "BES",
@@ -165,7 +185,8 @@
 "cs": "Bonaire, Svatý Eustach a Saba",
 "de": "Bonaire, Sint Eustatius und Saba",
 "es": "Caribe neerlandés",
-"fr": "Pays-Bas caribéens"
+"fr": "Pays-Bas caribéens",
+"uk": "Бонайре, Сінт-Естатіус і Саба"
 },
 {
 "code": "BFA",
@@ -173,7 +194,8 @@
 "cs": "Burkina Faso",
 "de": "Burkina Faso",
 "es": "Burkina Faso",
-"fr": "Burkina Faso"
+"fr": "Burkina Faso",
+"uk": "Буркіна-Фасо"
 },
 {
 "code": "BGD",
@@ -181,7 +203,8 @@
 "cs": "Bangladéš",
 "de": "Bangladesch",
 "es": "Bangladés",
-"fr": "Bangladesh"
+"fr": "Bangladesh",
+"uk": "Бангладеш"
 },
 {
 "code": "BGR",
@@ -189,7 +212,8 @@
 "cs": "Bulharsko",
 "de": "Bulgarien",
 "es": "Bulgaria",
-"fr": "Bulgarie"
+"fr": "Bulgarie",
+"uk": "Болгарія"
 },
 {
 "code": "BHR",
@@ -197,7 +221,8 @@
 "cs": "Bahrajn",
 "de": "Bahrain",
 "es": "Baréin",
-"fr": "Bahreïn"
+"fr": "Bahreïn",
+"uk": "Бахрейн"
 },
 {
 "code": "BHS",
@@ -205,7 +230,8 @@
 "cs": "Bahamy",
 "de": "Bahamas",
 "es": "Bahamas",
-"fr": "Bahamas"
+"fr": "Bahamas",
+"uk": "Багамські Острови"
 },
 {
 "code": "BIH",
@@ -213,7 +239,8 @@
 "cs": "Bosna a Hercegovina",
 "de": "Bosnien und Herzegowina",
 "es": "Bosnia y Herzegovina",
-"fr": "Bosnie-Herzégovine"
+"fr": "Bosnie-Herzégovine",
+"uk": "Боснія і Герцеговина"
 },
 {
 "code": "BLM",
@@ -221,7 +248,8 @@
 "cs": "Svatý Bartoloměj",
 "de": "St. Barthélemy",
 "es": "San Bartolomé",
-"fr": "Saint-Barthélemy"
+"fr": "Saint-Barthélemy",
+"uk": "Сен-Бартелемі"
 },
 {
 "code": "BLR",
@@ -229,7 +257,8 @@
 "cs": "Bělorusko",
 "de": "Belarus",
 "es": "Bielorrusia",
-"fr": "Biélorussie"
+"fr": "Biélorussie",
+"uk": "Білорусь"
 },
 {
 "code": "BLZ",
@@ -237,7 +266,8 @@
 "cs": "Belize",
 "de": "Belize",
 "es": "Belice",
-"fr": "Belize"
+"fr": "Belize",
+"uk": "Беліз"
 },
 {
 "code": "BMU",
@@ -245,7 +275,8 @@
 "cs": "Bermudy",
 "de": "Bermuda",
 "es": "Bermudas",
-"fr": "Bermudes"
+"fr": "Bermudes",
+"uk": "Бермудські Острови"
 },
 {
 "code": "BOL",
@@ -253,7 +284,8 @@
 "cs": "Mnohonárodní stát Bolívie",
 "de": "Bolivien",
 "es": "Bolivia",
-"fr": "Bolivie"
+"fr": "Bolivie",
+"uk": "Болівія"
 },
 {
 "code": "BRA",
@@ -261,7 +293,8 @@
 "cs": "Brazílie",
 "de": "Brasilien",
 "es": "Brasil",
-"fr": "Brésil"
+"fr": "Brésil",
+"uk": "Бразилія"
 },
 {
 "code": "BRB",
@@ -269,7 +302,8 @@
 "cs": "Barbados",
 "de": "Barbados",
 "es": "Barbados",
-"fr": "Barbade"
+"fr": "Barbade",
+"uk": "Барбадос"
 },
 {
 "code": "BRN",
@@ -277,7 +311,8 @@
 "cs": "Brunej",
 "de": "Brunei Darussalam",
 "es": "Brunéi",
-"fr": "Brunéi Darussalam"
+"fr": "Brunéi Darussalam",
+"uk": "Бруней"
 },
 {
 "code": "BTN",
@@ -285,7 +320,8 @@
 "cs": "Bhútán",
 "de": "Bhutan",
 "es": "Bután",
-"fr": "Bhoutan"
+"fr": "Bhoutan",
+"uk": "Бутан"
 },
 {
 "code": "BVT",
@@ -293,7 +329,8 @@
 "cs": "Bouvetův ostrov",
 "de": "Bouvetinsel",
 "es": "Isla Bouvet",
-"fr": "Île Bouvet"
+"fr": "Île Bouvet",
+"uk": "Острів Буве"
 },
 {
 "code": "BWA",
@@ -301,7 +338,8 @@
 "cs": "Botswana",
 "de": "Botsuana",
 "es": "Botsuana",
-"fr": "Botswana"
+"fr": "Botswana",
+"uk": "Ботсвана"
 },
 {
 "code": "CAF",
@@ -309,7 +347,8 @@
 "cs": "Středoafrická republika",
 "de": "Zentralafrikanische Republik",
 "es": "República Centroafricana",
-"fr": "République centrafricaine"
+"fr": "République centrafricaine",
+"uk": "Центральноафриканська Республіка"
 },
 {
 "code": "CAN",
@@ -317,7 +356,8 @@
 "cs": "Kanada",
 "de": "Kanada",
 "es": "Canadá",
-"fr": "Canada"
+"fr": "Canada",
+"uk": "Канада"
 },
 {
 "code": "CCK",
@@ -325,7 +365,8 @@
 "cs": "Kokosové ostrovy",
 "de": "Kokosinseln",
 "es": "Islas Cocos",
-"fr": "Îles Cocos"
+"fr": "Îles Cocos",
+"uk": "Кокосові (Кілінг) Острови"
 },
 {
 "code": "CHE",
@@ -333,7 +374,8 @@
 "cs": "Švýcarsko",
 "de": "Schweiz",
 "es": "Suiza",
-"fr": "Suisse"
+"fr": "Suisse",
+"uk": "Швейцарія"
 },
 {
 "code": "CHL",
@@ -341,7 +383,8 @@
 "cs": "Chile",
 "de": "Chile",
 "es": "Chile",
-"fr": "Chili"
+"fr": "Chili",
+"uk": "Чилі"
 },
 {
 "code": "CHN",
@@ -349,7 +392,8 @@
 "cs": "Čína",
 "de": "China",
 "es": "China",
-"fr": "Chine"
+"fr": "Chine",
+"uk": "Китай"
 },
 {
 "code": "CIV",
@@ -357,7 +401,8 @@
 "cs": "Pobřeží slonoviny",
 "de": "Côte d’Ivoire",
 "es": "Côte d’Ivoire",
-"fr": "Côte d’Ivoire"
+"fr": "Côte d’Ivoire",
+"uk": "Кот-д’Івуар"
 },
 {
 "code": "CMR",
@@ -365,7 +410,8 @@
 "cs": "Kamerun",
 "de": "Kamerun",
 "es": "Camerún",
-"fr": "Cameroun"
+"fr": "Cameroun",
+"uk": "Камерун"
 },
 {
 "code": "COD",
@@ -373,7 +419,8 @@
 "cs": "Konžská demokratická republika",
 "de": "Kongo-Kinshasa",
 "es": "República Democrática del Congo",
-"fr": "Congo-Kinshasa"
+"fr": "Congo-Kinshasa",
+"uk": "Демократична Республіка Конго"
 },
 {
 "code": "COG",
@@ -381,7 +428,8 @@
 "cs": "Kongo",
 "de": "Kongo-Brazzaville",
 "es": "Congo",
-"fr": "Congo-Brazzaville"
+"fr": "Congo-Brazzaville",
+"uk": "Конго"
 },
 {
 "code": "COK",
@@ -389,7 +437,8 @@
 "cs": "Cookovy ostrovy",
 "de": "Cookinseln",
 "es": "Islas Cook",
-"fr": "Îles Cook"
+"fr": "Îles Cook",
+"uk": "Острови Кука"
 },
 {
 "code": "COL",
@@ -397,7 +446,8 @@
 "cs": "Kolumbie",
 "de": "Kolumbien",
 "es": "Colombia",
-"fr": "Colombie"
+"fr": "Colombie",
+"uk": "Колумбія"
 },
 {
 "code": "COM",
@@ -405,7 +455,8 @@
 "cs": "Komory",
 "de": "Komoren",
 "es": "Comoras",
-"fr": "Comores"
+"fr": "Comores",
+"uk": "Коморські Острови"
 },
 {
 "code": "CPV",
@@ -413,7 +464,8 @@
 "cs": "Kapverdské ostrovy",
 "de": "Cabo Verde",
 "es": "Cabo Verde",
-"fr": "Cap-Vert"
+"fr": "Cap-Vert",
+"uk": "Кабо-Верде"
 },
 {
 "code": "CRI",
@@ -421,7 +473,8 @@
 "cs": "Kostarika",
 "de": "Costa Rica",
 "es": "Costa Rica",
-"fr": "Costa Rica"
+"fr": "Costa Rica",
+"uk": "Коста-Рика"
 },
 {
 "code": "CUB",
@@ -429,7 +482,8 @@
 "cs": "Kuba",
 "de": "Kuba",
 "es": "Cuba",
-"fr": "Cuba"
+"fr": "Cuba",
+"uk": "Куба"
 },
 {
 "code": "CUW",
@@ -437,7 +491,8 @@
 "cs": "Curaçao",
 "de": "Curaçao",
 "es": "Curazao",
-"fr": "Curaçao"
+"fr": "Curaçao",
+"uk": "Кюрасао"
 },
 {
 "code": "CXR",
@@ -445,7 +500,8 @@
 "cs": "Vánoční ostrov",
 "de": "Weihnachtsinsel",
 "es": "Isla de Navidad",
-"fr": "Île Christmas"
+"fr": "Île Christmas",
+"uk": "Острів Різдва"
 },
 {
 "code": "CYM",
@@ -453,7 +509,8 @@
 "cs": "Kajmanské ostrovy",
 "de": "Kaimaninseln",
 "es": "Islas Caimán",
-"fr": "Îles Caïmans"
+"fr": "Îles Caïmans",
+"uk": "Кайманові Острови"
 },
 {
 "code": "CYP",
@@ -461,7 +518,8 @@
 "cs": "Kypr",
 "de": "Zypern",
 "es": "Chipre",
-"fr": "Chypre"
+"fr": "Chypre",
+"uk": "Кіпр"
 },
 {
 "code": "CZE",
@@ -469,7 +527,8 @@
 "cs": "Česko",
 "de": "Tschechien",
 "es": "Chequia",
-"fr": "Tchéquie"
+"fr": "Tchéquie",
+"uk": "Чехія"
 },
 {
 "code": "DEU",
@@ -477,7 +536,8 @@
 "cs": "Německo",
 "de": "Deutschland",
 "es": "Alemania",
-"fr": "Allemagne"
+"fr": "Allemagne",
+"uk": "Німеччина"
 },
 {
 "code": "DJI",
@@ -485,7 +545,8 @@
 "cs": "Džibutsko",
 "de": "Dschibuti",
 "es": "Yibuti",
-"fr": "Djibouti"
+"fr": "Djibouti",
+"uk": "Джибуті"
 },
 {
 "code": "DMA",
@@ -493,7 +554,8 @@
 "cs": "Dominika",
 "de": "Dominica",
 "es": "Dominica",
-"fr": "Dominique"
+"fr": "Dominique",
+"uk": "Домініка"
 },
 {
 "code": "DNK",
@@ -501,7 +563,8 @@
 "cs": "Dánsko",
 "de": "Dänemark",
 "es": "Dinamarca",
-"fr": "Danemark"
+"fr": "Danemark",
+"uk": "Данія"
 },
 {
 "code": "DOM",
@@ -509,7 +572,8 @@
 "cs": "Dominikánská republika",
 "de": "Dominikanische Republik",
 "es": "República Dominicana",
-"fr": "République dominicaine"
+"fr": "République dominicaine",
+"uk": "Домініканська Республіка"
 },
 {
 "code": "DZA",
@@ -517,7 +581,8 @@
 "cs": "Alžírsko",
 "de": "Algerien",
 "es": "Argelia",
-"fr": "Algérie"
+"fr": "Algérie",
+"uk": "Алжир"
 },
 {
 "code": "ECU",
@@ -525,7 +590,8 @@
 "cs": "Ekvádor",
 "de": "Ecuador",
 "es": "Ecuador",
-"fr": "Équateur"
+"fr": "Équateur",
+"uk": "Еквадор"
 },
 {
 "code": "EGY",
@@ -533,7 +599,8 @@
 "cs": "Egypt",
 "de": "Ägypten",
 "es": "Egipto",
-"fr": "Égypte"
+"fr": "Égypte",
+"uk": "Єгипет"
 },
 {
 "code": "ERI",
@@ -541,7 +608,8 @@
 "cs": "Eritrea",
 "de": "Eritrea",
 "es": "Eritrea",
-"fr": "Érythrée"
+"fr": "Érythrée",
+"uk": "Еритрея"
 },
 {
 "code": "ESH",
@@ -549,7 +617,8 @@
 "cs": "Západní Sahara",
 "de": "Westsahara",
 "es": "Sáhara Occidental",
-"fr": "Sahara occidental"
+"fr": "Sahara occidental",
+"uk": "Західна Сахара"
 },
 {
 "code": "ESP",
@@ -557,7 +626,8 @@
 "cs": "Španělsko",
 "de": "Spanien",
 "es": "España",
-"fr": "Espagne"
+"fr": "Espagne",
+"uk": "Іспанія"
 },
 {
 "code": "EST",
@@ -565,7 +635,8 @@
 "cs": "Estonsko",
 "de": "Estland",
 "es": "Estonia",
-"fr": "Estonie"
+"fr": "Estonie",
+"uk": "Естонія"
 },
 {
 "code": "ETH",
@@ -573,7 +644,8 @@
 "cs": "Etiopie",
 "de": "Äthiopien",
 "es": "Etiopía",
-"fr": "Éthiopie"
+"fr": "Éthiopie",
+"uk": "Ефіопія"
 },
 {
 "code": "FIN",
@@ -581,7 +653,8 @@
 "cs": "Finsko",
 "de": "Finnland",
 "es": "Finlandia",
-"fr": "Finlande"
+"fr": "Finlande",
+"uk": "Фінляндія"
 },
 {
 "code": "FJI",
@@ -589,7 +662,8 @@
 "cs": "Fidži",
 "de": "Fidschi",
 "es": "Fiyi",
-"fr": "Fidji"
+"fr": "Fidji",
+"uk": "Фіджі"
 },
 {
 "code": "FLK",
@@ -597,7 +671,8 @@
 "cs": "Falkandské ostrovy (Malvíny)",
 "de": "Falklandinseln",
 "es": "Islas Malvinas",
-"fr": "Îles Malouines"
+"fr": "Îles Malouines",
+"uk": "Фолклендські (Мальвінські) Острови"
 },
 {
 "code": "FRA",
@@ -605,7 +680,8 @@
 "cs": "Francie",
 "de": "Frankreich",
 "es": "Francia",
-"fr": "France"
+"fr": "France",
+"uk": "Франція"
 },
 {
 "code": "FRO",
@@ -613,7 +689,8 @@
 "cs": "Faerské ostrovy",
 "de": "Färöer",
 "es": "Islas Feroe",
-"fr": "Îles Féroé"
+"fr": "Îles Féroé",
+"uk": "Фарерські Острови"
 },
 {
 "code": "FSM",
@@ -621,7 +698,8 @@
 "cs": "Mikronésie, federativní státy",
 "de": "Mikronesien",
 "es": "Micronesia",
-"fr": "États fédérés de Micronésie"
+"fr": "États fédérés de Micronésie",
+"uk": "Мікронезія"
 },
 {
 "code": "GAB",
@@ -629,7 +707,8 @@
 "cs": "Gabon",
 "de": "Gabun",
 "es": "Gabón",
-"fr": "Gabon"
+"fr": "Gabon",
+"uk": "Габон"
 },
 {
 "code": "GBR",
@@ -637,7 +716,8 @@
 "cs": "Spojené království",
 "de": "Vereinigtes Königreich",
 "es": "Reino Unido",
-"fr": "Royaume-Uni"
+"fr": "Royaume-Uni",
+"uk": "Велика Британія"
 },
 {
 "code": "GEO",
@@ -645,7 +725,8 @@
 "cs": "Gruzie",
 "de": "Georgien",
 "es": "Georgia",
-"fr": "Géorgie"
+"fr": "Géorgie",
+"uk": "Грузія"
 },
 {
 "code": "GGY",
@@ -653,7 +734,8 @@
 "cs": "Guernsey",
 "de": "Guernsey",
 "es": "Guernsey",
-"fr": "Guernesey"
+"fr": "Guernesey",
+"uk": "Гернсі"
 },
 {
 "code": "GHA",
@@ -661,7 +743,8 @@
 "cs": "Ghana",
 "de": "Ghana",
 "es": "Ghana",
-"fr": "Ghana"
+"fr": "Ghana",
+"uk": "Гана"
 },
 {
 "code": "GIB",
@@ -669,7 +752,8 @@
 "cs": "Gibraltar",
 "de": "Gibraltar",
 "es": "Gibraltar",
-"fr": "Gibraltar"
+"fr": "Gibraltar",
+"uk": "Гібралтар"
 },
 {
 "code": "GIN",
@@ -677,7 +761,8 @@
 "cs": "Guinea",
 "de": "Guinea",
 "es": "Guinea",
-"fr": "Guinée"
+"fr": "Guinée",
+"uk": "Гвінея"
 },
 {
 "code": "GLP",
@@ -685,7 +770,8 @@
 "cs": "Guadeloupe",
 "de": "Guadeloupe",
 "es": "Guadalupe",
-"fr": "Guadeloupe"
+"fr": "Guadeloupe",
+"uk": "Гваделупа"
 },
 {
 "code": "GMB",
@@ -693,7 +779,8 @@
 "cs": "Gambie",
 "de": "Gambia",
 "es": "Gambia",
-"fr": "Gambie"
+"fr": "Gambie",
+"uk": "Гамбія"
 },
 {
 "code": "GNB",
@@ -701,7 +788,8 @@
 "cs": "Guinea-Bissau",
 "de": "Guinea-Bissau",
 "es": "Guinea-Bisáu",
-"fr": "Guinée-Bissau"
+"fr": "Guinée-Bissau",
+"uk": "Гвінея-Бісау"
 },
 {
 "code": "GNQ",
@@ -709,7 +797,8 @@
 "cs": "Rovníková Guinea",
 "de": "Äquatorialguinea",
 "es": "Guinea Ecuatorial",
-"fr": "Guinée équatoriale"
+"fr": "Guinée équatoriale",
+"uk": "Екваторіальна Гвінея"
 },
 {
 "code": "GRC",
@@ -717,7 +806,8 @@
 "cs": "Řecko",
 "de": "Griechenland",
 "es": "Grecia",
-"fr": "Grèce"
+"fr": "Grèce",
+"uk": "Греція"
 },
 {
 "code": "GRD",
@@ -725,7 +815,8 @@
 "cs": "Grenada",
 "de": "Grenada",
 "es": "Granada",
-"fr": "Grenade"
+"fr": "Grenade",
+"uk": "Гренада"
 },
 {
 "code": "GRL",
@@ -733,7 +824,8 @@
 "cs": "Grónsko",
 "de": "Grönland",
 "es": "Groenlandia",
-"fr": "Groenland"
+"fr": "Groenland",
+"uk": "Гренландія"
 },
 {
 "code": "GTM",
@@ -741,7 +833,8 @@
 "cs": "Guatemala",
 "de": "Guatemala",
 "es": "Guatemala",
-"fr": "Guatemala"
+"fr": "Guatemala",
+"uk": "Гватемала"
 },
 {
 "code": "GUF",
@@ -749,7 +842,8 @@
 "cs": "Francouzská Guayana",
 "de": "Französisch-Guayana",
 "es": "Guayana Francesa",
-"fr": "Guyane française"
+"fr": "Guyane française",
+"uk": "Французька Гвіана"
 },
 {
 "code": "GUM",
@@ -757,7 +851,8 @@
 "cs": "Guam",
 "de": "Guam",
 "es": "Guam",
-"fr": "Guam"
+"fr": "Guam",
+"uk": "Гуам"
 },
 {
 "code": "GUY",
@@ -765,7 +860,8 @@
 "cs": "Guyana",
 "de": "Guyana",
 "es": "Guyana",
-"fr": "Guyana"
+"fr": "Guyana",
+"uk": "Гаяна"
 },
 {
 "code": "HKG",
@@ -773,7 +869,8 @@
 "cs": "Hongkong",
 "de": "Sonderverwaltungsregion Hongkong",
 "es": "RAE de Hong Kong (China)",
-"fr": "R.A.S. chinoise de Hong Kong"
+"fr": "R.A.S. chinoise de Hong Kong",
+"uk": "Гонконг"
 },
 {
 "code": "HMD",
@@ -781,7 +878,8 @@
 "cs": "Heardův a McDonaldovy ostrovy",
 "de": "Heard und McDonaldinseln",
 "es": "Islas Heard y McDonald",
-"fr": "Îles Heard et McDonald"
+"fr": "Îles Heard et McDonald",
+"uk": "Острів Херд і острови Макдональд"
 },
 {
 "code": "HND",
@@ -789,7 +887,8 @@
 "cs": "Honduras",
 "de": "Honduras",
 "es": "Honduras",
-"fr": "Honduras"
+"fr": "Honduras",
+"uk": "Гондурас"
 },
 {
 "code": "HRV",
@@ -797,7 +896,8 @@
 "cs": "Chorvatsko",
 "de": "Kroatien",
 "es": "Croacia",
-"fr": "Croatie"
+"fr": "Croatie",
+"uk": "Хорватія"
 },
 {
 "code": "HTI",
@@ -805,7 +905,8 @@
 "cs": "Haiti",
 "de": "Haiti",
 "es": "Haití",
-"fr": "Haïti"
+"fr": "Haïti",
+"uk": "Гаїті"
 },
 {
 "code": "HUN",
@@ -813,7 +914,8 @@
 "cs": "Maďarsko",
 "de": "Ungarn",
 "es": "Hungría",
-"fr": "Hongrie"
+"fr": "Hongrie",
+"uk": "Угорщина"
 },
 {
 "code": "IDN",
@@ -821,7 +923,8 @@
 "cs": "Indonésie",
 "de": "Indonesien",
 "es": "Indonesia",
-"fr": "Indonésie"
+"fr": "Indonésie",
+"uk": "Індонезія"
 },
 {
 "code": "IMN",
@@ -829,7 +932,8 @@
 "cs": "Ostrov Man",
 "de": "Isle of Man",
 "es": "Isla de Man",
-"fr": "Île de Man"
+"fr": "Île de Man",
+"uk": "Острів Мен"
 },
 {
 "code": "IND",
@@ -837,7 +941,8 @@
 "cs": "Indie",
 "de": "Indien",
 "es": "India",
-"fr": "Inde"
+"fr": "Inde",
+"uk": "Індія"
 },
 {
 "code": "IOT",
@@ -845,7 +950,8 @@
 "cs": "Britské indickooceánské území",
 "de": "Britisches Territorium im Indischen Ozean",
 "es": "Territorio Británico del Océano Índico",
-"fr": "Territoire britannique de l’océan Indien"
+"fr": "Territoire britannique de l’océan Indien",
+"uk": "Британська територія в Індійському океані"
 },
 {
 "code": "IRL",
@@ -853,7 +959,8 @@
 "cs": "Irsko",
 "de": "Irland",
 "es": "Irlanda",
-"fr": "Irlande"
+"fr": "Irlande",
+"uk": "Ірландія"
 },
 {
 "code": "IRN",
@@ -861,7 +968,8 @@
 "cs": "Írán, islámská republika",
 "de": "Iran",
 "es": "Irán",
-"fr": "Iran"
+"fr": "Iran",
+"uk": "Іран"
 },
 {
 "code": "IRQ",
@@ -869,7 +977,8 @@
 "cs": "Irák",
 "de": "Irak",
 "es": "Irak",
-"fr": "Irak"
+"fr": "Irak",
+"uk": "Ірак"
 },
 {
 "code": "ISL",
@@ -877,7 +986,8 @@
 "cs": "Island",
 "de": "Island",
 "es": "Islandia",
-"fr": "Islande"
+"fr": "Islande",
+"uk": "Ісландія"
 },
 {
 "code": "ISR",
@@ -885,7 +995,8 @@
 "cs": "Izrael",
 "de": "Israel",
 "es": "Israel",
-"fr": "Israël"
+"fr": "Israël",
+"uk": "Ізраїль"
 },
 {
 "code": "ITA",
@@ -893,7 +1004,8 @@
 "cs": "Itálie",
 "de": "Italien",
 "es": "Italia",
-"fr": "Italie"
+"fr": "Italie",
+"uk": "Італія"
 },
 {
 "code": "JAM",
@@ -901,7 +1013,8 @@
 "cs": "Jamajka",
 "de": "Jamaika",
 "es": "Jamaica",
-"fr": "Jamaïque"
+"fr": "Jamaïque",
+"uk": "Ямайка"
 },
 {
 "code": "JEY",
@@ -909,7 +1022,8 @@
 "cs": "Jersey",
 "de": "Jersey",
 "es": "Jersey",
-"fr": "Jersey"
+"fr": "Jersey",
+"uk": "Джерсі"
 },
 {
 "code": "JOR",
@@ -917,7 +1031,8 @@
 "cs": "Jordánsko",
 "de": "Jordanien",
 "es": "Jordania",
-"fr": "Jordanie"
+"fr": "Jordanie",
+"uk": "Йорданія"
 },
 {
 "code": "JPN",
@@ -925,7 +1040,8 @@
 "cs": "Japonsko",
 "de": "Japan",
 "es": "Japón",
-"fr": "Japon"
+"fr": "Japon",
+"uk": "Японія"
 },
 {
 "code": "KAZ",
@@ -933,7 +1049,8 @@
 "cs": "Kazachstán",
 "de": "Kasachstan",
 "es": "Kazajistán",
-"fr": "Kazakhstan"
+"fr": "Kazakhstan",
+"uk": "Казахстан"
 },
 {
 "code": "KEN",
@@ -941,7 +1058,8 @@
 "cs": "Keňa",
 "de": "Kenia",
 "es": "Kenia",
-"fr": "Kenya"
+"fr": "Kenya",
+"uk": "Кенія"
 },
 {
 "code": "KGZ",
@@ -949,7 +1067,8 @@
 "cs": "Kyrgyzstán",
 "de": "Kirgisistan",
 "es": "Kirguistán",
-"fr": "Kirghizistan"
+"fr": "Kirghizistan",
+"uk": "Киргизстан"
 },
 {
 "code": "KHM",
@@ -957,7 +1076,8 @@
 "cs": "Kambodža",
 "de": "Kambodscha",
 "es": "Camboya",
-"fr": "Cambodge"
+"fr": "Cambodge",
+"uk": "Камбоджа"
 },
 {
 "code": "KIR",
@@ -965,7 +1085,8 @@
 "cs": "Kiribati",
 "de": "Kiribati",
 "es": "Kiribati",
-"fr": "Kiribati"
+"fr": "Kiribati",
+"uk": "Кірибаті"
 },
 {
 "code": "KNA",
@@ -973,7 +1094,8 @@
 "cs": "Svatý Kryštof a Nevis",
 "de": "St. Kitts und Nevis",
 "es": "San Cristóbal y Nieves",
-"fr": "Saint-Christophe-et-Niévès"
+"fr": "Saint-Christophe-et-Niévès",
+"uk": "Сент-Кіттс і Невіс"
 },
 {
 "code": "KOR",
@@ -981,7 +1103,8 @@
 "cs": "Korea, republika",
 "de": "Südkorea",
 "es": "Corea del Sur",
-"fr": "Corée du Sud"
+"fr": "Corée du Sud",
+"uk": "Південна Корея"
 },
 {
 "code": "KWT",
@@ -989,7 +1112,8 @@
 "cs": "Kuvajt",
 "de": "Kuwait",
 "es": "Kuwait",
-"fr": "Koweït"
+"fr": "Koweït",
+"uk": "Кувейт"
 },
 {
 "code": "LAO",
@@ -997,7 +1121,8 @@
 "cs": "Laoská lidově demokratická republika",
 "de": "Laos",
 "es": "Laos",
-"fr": "Laos"
+"fr": "Laos",
+"uk": "Лаос"
 },
 {
 "code": "LBN",
@@ -1005,7 +1130,8 @@
 "cs": "Libanon",
 "de": "Libanon",
 "es": "Líbano",
-"fr": "Liban"
+"fr": "Liban",
+"uk": "Ліван"
 },
 {
 "code": "LBR",
@@ -1013,7 +1139,8 @@
 "cs": "Libérie",
 "de": "Liberia",
 "es": "Liberia",
-"fr": "Libéria"
+"fr": "Libéria",
+"uk": "Ліберія"
 },
 {
 "code": "LBY",
@@ -1021,7 +1148,8 @@
 "cs": "Libye",
 "de": "Libyen",
 "es": "Libia",
-"fr": "Libye"
+"fr": "Libye",
+"uk": "Лівія"
 },
 {
 "code": "LCA",
@@ -1029,7 +1157,8 @@
 "cs": "Svatá Lucie",
 "de": "St. Lucia",
 "es": "Santa Lucía",
-"fr": "Sainte-Lucie"
+"fr": "Sainte-Lucie",
+"uk": "Сент-Люсія"
 },
 {
 "code": "LIE",
@@ -1037,7 +1166,8 @@
 "cs": "Lichtenštejnsko",
 "de": "Liechtenstein",
 "es": "Liechtenstein",
-"fr": "Liechtenstein"
+"fr": "Liechtenstein",
+"uk": "Ліхтенштейн"
 },
 {
 "code": "LKA",
@@ -1045,7 +1175,8 @@
 "cs": "Šrí Lanka",
 "de": "Sri Lanka",
 "es": "Sri Lanka",
-"fr": "Sri Lanka"
+"fr": "Sri Lanka",
+"uk": "Шрі-Ланка"
 },
 {
 "code": "LSO",
@@ -1053,7 +1184,8 @@
 "cs": "Lesotho",
 "de": "Lesotho",
 "es": "Lesoto",
-"fr": "Lesotho"
+"fr": "Lesotho",
+"uk": "Лесото"
 },
 {
 "code": "LTU",
@@ -1061,7 +1193,8 @@
 "cs": "Litva",
 "de": "Litauen",
 "es": "Lituania",
-"fr": "Lituanie"
+"fr": "Lituanie",
+"uk": "Литва"
 },
 {
 "code": "LUX",
@@ -1069,7 +1202,8 @@
 "cs": "Lucembursko",
 "de": "Luxemburg",
 "es": "Luxemburgo",
-"fr": "Luxembourg"
+"fr": "Luxembourg",
+"uk": "Люксембург"
 },
 {
 "code": "LVA",
@@ -1077,7 +1211,8 @@
 "cs": "Lotyšsko",
 "de": "Lettland",
 "es": "Letonia",
-"fr": "Lettonie"
+"fr": "Lettonie",
+"uk": "Латвія"
 },
 {
 "code": "MAC",
@@ -1085,7 +1220,8 @@
 "cs": "Macao",
 "de": "Sonderverwaltungsregion Macau",
 "es": "RAE de Macao (China)",
-"fr": "R.A.S. chinoise de Macao"
+"fr": "R.A.S. chinoise de Macao",
+"uk": "Макао"
 },
 {
 "code": "MAF",
@@ -1093,7 +1229,8 @@
 "cs": "Svatý Martin (francouzská část)",
 "de": "St. Martin",
 "es": "San Martín",
-"fr": "Saint-Martin"
+"fr": "Saint-Martin",
+"uk": "Сен-Мартен (французька частина)"
 },
 {
 "code": "MAR",
@@ -1101,7 +1238,8 @@
 "cs": "Maroko",
 "de": "Marokko",
 "es": "Marruecos",
-"fr": "Maroc"
+"fr": "Maroc",
+"uk": "Марокко"
 },
 {
 "code": "MCO",
@@ -1109,7 +1247,8 @@
 "cs": "Monako",
 "de": "Monaco",
 "es": "Mónaco",
-"fr": "Monaco"
+"fr": "Monaco",
+"uk": "Монако"
 },
 {
 "code": "MDA",
@@ -1117,7 +1256,8 @@
 "cs": "Moldavská republika",
 "de": "Republik Moldau",
 "es": "Moldavia",
-"fr": "Moldavie"
+"fr": "Moldavie",
+"uk": "Молдова"
 },
 {
 "code": "MDG",
@@ -1125,7 +1265,8 @@
 "cs": "Madagaskar",
 "de": "Madagaskar",
 "es": "Madagascar",
-"fr": "Madagascar"
+"fr": "Madagascar",
+"uk": "Мадагаскар"
 },
 {
 "code": "MDV",
@@ -1133,7 +1274,8 @@
 "cs": "Maledivy",
 "de": "Malediven",
 "es": "Maldivas",
-"fr": "Maldives"
+"fr": "Maldives",
+"uk": "Мальдіви"
 },
 {
 "code": "MEX",
@@ -1141,7 +1283,8 @@
 "cs": "Mexiko",
 "de": "Mexiko",
 "es": "México",
-"fr": "Mexique"
+"fr": "Mexique",
+"uk": "Мексика"
 },
 {
 "code": "MHL",
@@ -1149,7 +1292,8 @@
 "cs": "Marshallovy ostrovy",
 "de": "Marshallinseln",
 "es": "Islas Marshall",
-"fr": "Îles Marshall"
+"fr": "Îles Marshall",
+"uk": "Маршаллові Острови"
 },
 {
 "code": "MKD",
@@ -1157,7 +1301,8 @@
 "cs": "Severní Makedonie",
 "de": "Nordmazedonien",
 "es": "Macedonia del Norte",
-"fr": "Macédoine du Nord"
+"fr": "Macédoine du Nord",
+"uk": "Північна Македонія"
 },
 {
 "code": "MLI",
@@ -1165,7 +1310,8 @@
 "cs": "Mali",
 "de": "Mali",
 "es": "Mali",
-"fr": "Mali"
+"fr": "Mali",
+"uk": "Малі"
 },
 {
 "code": "MLT",
@@ -1173,7 +1319,8 @@
 "cs": "Malta",
 "de": "Malta",
 "es": "Malta",
-"fr": "Malte"
+"fr": "Malte",
+"uk": "Мальта"
 },
 {
 "code": "MMR",
@@ -1181,7 +1328,8 @@
 "cs": "Myanmar",
 "de": "Myanmar",
 "es": "Myanmar (Birmania)",
-"fr": "Myanmar (Birmanie)"
+"fr": "Myanmar (Birmanie)",
+"uk": "М’янма"
 },
 {
 "code": "MNE",
@@ -1189,7 +1337,8 @@
 "cs": "Černá Hora",
 "de": "Montenegro",
 "es": "Montenegro",
-"fr": "Monténégro"
+"fr": "Monténégro",
+"uk": "Чорногорія"
 },
 {
 "code": "MNG",
@@ -1197,7 +1346,8 @@
 "cs": "Mongolsko",
 "de": "Mongolei",
 "es": "Mongolia",
-"fr": "Mongolie"
+"fr": "Mongolie",
+"uk": "Монголія"
 },
 {
 "code": "MNP",
@@ -1205,7 +1355,8 @@
 "cs": "Severní Mariany",
 "de": "Nördliche Marianen",
 "es": "Islas Marianas del Norte",
-"fr": "Îles Mariannes du Nord"
+"fr": "Îles Mariannes du Nord",
+"uk": "Північні Маріанські Острови"
 },
 {
 "code": "MOZ",
@@ -1213,7 +1364,8 @@
 "cs": "Mosambik",
 "de": "Mosambik",
 "es": "Mozambique",
-"fr": "Mozambique"
+"fr": "Mozambique",
+"uk": "Мозамбік"
 },
 {
 "code": "MRT",
@@ -1221,7 +1373,8 @@
 "cs": "Mauritánie",
 "de": "Mauretanien",
 "es": "Mauritania",
-"fr": "Mauritanie"
+"fr": "Mauritanie",
+"uk": "Мавританія"
 },
 {
 "code": "MSR",
@@ -1229,7 +1382,8 @@
 "cs": "Montserrat",
 "de": "Montserrat",
 "es": "Montserrat",
-"fr": "Montserrat"
+"fr": "Montserrat",
+"uk": "Монтсеррат"
 },
 {
 "code": "MTQ",
@@ -1237,7 +1391,8 @@
 "cs": "Martinik",
 "de": "Martinique",
 "es": "Martinica",
-"fr": "Martinique"
+"fr": "Martinique",
+"uk": "Мартиніка"
 },
 {
 "code": "MUS",
@@ -1245,7 +1400,8 @@
 "cs": "Mauricius",
 "de": "Mauritius",
 "es": "Mauricio",
-"fr": "Maurice"
+"fr": "Maurice",
+"uk": "Маврикій"
 },
 {
 "code": "MWI",
@@ -1253,7 +1409,8 @@
 "cs": "Malawi",
 "de": "Malawi",
 "es": "Malaui",
-"fr": "Malawi"
+"fr": "Malawi",
+"uk": "Малаві"
 },
 {
 "code": "MYS",
@@ -1261,7 +1418,8 @@
 "cs": "Malajsie",
 "de": "Malaysia",
 "es": "Malasia",
-"fr": "Malaisie"
+"fr": "Malaisie",
+"uk": "Малайзія"
 },
 {
 "code": "MYT",
@@ -1269,7 +1427,8 @@
 "cs": "Mayotte",
 "de": "Mayotte",
 "es": "Mayotte",
-"fr": "Mayotte"
+"fr": "Mayotte",
+"uk": "Майотта"
 },
 {
 "code": "NAM",
@@ -1277,7 +1436,8 @@
 "cs": "Namibie",
 "de": "Namibia",
 "es": "Namibia",
-"fr": "Namibie"
+"fr": "Namibie",
+"uk": "Намібія"
 },
 {
 "code": "NCL",
@@ -1285,7 +1445,8 @@
 "cs": "Nová Kaledonie",
 "de": "Neukaledonien",
 "es": "Nueva Caledonia",
-"fr": "Nouvelle-Calédonie"
+"fr": "Nouvelle-Calédonie",
+"uk": "Нова Каледонія"
 },
 {
 "code": "NER",
@@ -1293,7 +1454,8 @@
 "cs": "Niger",
 "de": "Niger",
 "es": "Níger",
-"fr": "Niger"
+"fr": "Niger",
+"uk": "Нігер"
 },
 {
 "code": "NFK",
@@ -1301,7 +1463,8 @@
 "cs": "Norfolkský ostrov",
 "de": "Norfolkinsel",
 "es": "Isla Norfolk",
-"fr": "Île Norfolk"
+"fr": "Île Norfolk",
+"uk": "Острів Норфолк"
 },
 {
 "code": "NGA",
@@ -1309,7 +1472,8 @@
 "cs": "Nigérie",
 "de": "Nigeria",
 "es": "Nigeria",
-"fr": "Nigéria"
+"fr": "Nigéria",
+"uk": "Нігерія"
 },
 {
 "code": "NIC",
@@ -1317,7 +1481,8 @@
 "cs": "Nikaragua",
 "de": "Nicaragua",
 "es": "Nicaragua",
-"fr": "Nicaragua"
+"fr": "Nicaragua",
+"uk": "Нікарагуа"
 },
 {
 "code": "NIU",
@@ -1325,7 +1490,8 @@
 "cs": "Niue",
 "de": "Niue",
 "es": "Niue",
-"fr": "Niue"
+"fr": "Niue",
+"uk": "Ніуе"
 },
 {
 "code": "NLD",
@@ -1333,7 +1499,8 @@
 "cs": "Nizozemsko",
 "de": "Niederlande",
 "es": "Países Bajos",
-"fr": "Pays-Bas"
+"fr": "Pays-Bas",
+"uk": "Нідерланди"
 },
 {
 "code": "NOR",
@@ -1341,7 +1508,8 @@
 "cs": "Norsko",
 "de": "Norwegen",
 "es": "Noruega",
-"fr": "Norvège"
+"fr": "Norvège",
+"uk": "Норвегія"
 },
 {
 "code": "NPL",
@@ -1349,7 +1517,8 @@
 "cs": "Nepál",
 "de": "Nepal",
 "es": "Nepal",
-"fr": "Népal"
+"fr": "Népal",
+"uk": "Непал"
 },
 {
 "code": "NRU",
@@ -1357,7 +1526,8 @@
 "cs": "Nauru",
 "de": "Nauru",
 "es": "Nauru",
-"fr": "Nauru"
+"fr": "Nauru",
+"uk": "Науру"
 },
 {
 "code": "NZL",
@@ -1365,7 +1535,8 @@
 "cs": "Nový Zéland",
 "de": "Neuseeland",
 "es": "Nueva Zelanda",
-"fr": "Nouvelle-Zélande"
+"fr": "Nouvelle-Zélande",
+"uk": "Нова Зеландія"
 },
 {
 "code": "OMN",
@@ -1373,7 +1544,8 @@
 "cs": "Omán",
 "de": "Oman",
 "es": "Omán",
-"fr": "Oman"
+"fr": "Oman",
+"uk": "Оман"
 },
 {
 "code": "PAK",
@@ -1381,7 +1553,8 @@
 "cs": "Pákistán",
 "de": "Pakistan",
 "es": "Pakistán",
-"fr": "Pakistan"
+"fr": "Pakistan",
+"uk": "Пакистан"
 },
 {
 "code": "PAN",
@@ -1389,7 +1562,8 @@
 "cs": "Panama",
 "de": "Panama",
 "es": "Panamá",
-"fr": "Panama"
+"fr": "Panama",
+"uk": "Панама"
 },
 {
 "code": "PCN",
@@ -1397,7 +1571,8 @@
 "cs": "Pitcairnovy ostrovy",
 "de": "Pitcairninseln",
 "es": "Islas Pitcairn",
-"fr": "Îles Pitcairn"
+"fr": "Îles Pitcairn",
+"uk": "Острови Піткерн"
 },
 {
 "code": "PER",
@@ -1405,7 +1580,8 @@
 "cs": "Peru",
 "de": "Peru",
 "es": "Perú",
-"fr": "Pérou"
+"fr": "Pérou",
+"uk": "Перу"
 },
 {
 "code": "PHL",
@@ -1413,7 +1589,8 @@
 "cs": "Filipíny",
 "de": "Philippinen",
 "es": "Filipinas",
-"fr": "Philippines"
+"fr": "Philippines",
+"uk": "Філіппіни"
 },
 {
 "code": "PLW",
@@ -1421,7 +1598,8 @@
 "cs": "Palau",
 "de": "Palau",
 "es": "Palaos",
-"fr": "Palaos"
+"fr": "Palaos",
+"uk": "Палау"
 },
 {
 "code": "PNG",
@@ -1429,7 +1607,8 @@
 "cs": "Papua Nová Guinea",
 "de": "Papua-Neuguinea",
 "es": "Papúa Nueva Guinea",
-"fr": "Papouasie-Nouvelle-Guinée"
+"fr": "Papouasie-Nouvelle-Guinée",
+"uk": "Папуа Нова Гвінея"
 },
 {
 "code": "POL",
@@ -1437,7 +1616,8 @@
 "cs": "Polsko",
 "de": "Polen",
 "es": "Polonia",
-"fr": "Pologne"
+"fr": "Pologne",
+"uk": "Польща"
 },
 {
 "code": "PRI",
@@ -1445,7 +1625,8 @@
 "cs": "Portoriko",
 "de": "Puerto Rico",
 "es": "Puerto Rico",
-"fr": "Porto Rico"
+"fr": "Porto Rico",
+"uk": "Пуерто-Рико"
 },
 {
 "code": "PRK",
@@ -1453,7 +1634,8 @@
 "cs": "Korea, lidově demokratická republika",
 "de": "Nordkorea",
 "es": "Corea del Norte",
-"fr": "Corée du Nord"
+"fr": "Corée du Nord",
+"uk": "Північна Корея"
 },
 {
 "code": "PRT",
@@ -1461,7 +1643,8 @@
 "cs": "Portugalsko",
 "de": "Portugal",
 "es": "Portugal",
-"fr": "Portugal"
+"fr": "Portugal",
+"uk": "Португалія"
 },
 {
 "code": "PRY",
@@ -1469,7 +1652,8 @@
 "cs": "Paraguay",
 "de": "Paraguay",
 "es": "Paraguay",
-"fr": "Paraguay"
+"fr": "Paraguay",
+"uk": "Парагвай"
 },
 {
 "code": "PSE",
@@ -1477,7 +1661,8 @@
 "cs": "Palestinský stát",
 "de": "Palästinensische Autonomiegebiete",
 "es": "Territorios Palestinos",
-"fr": "Territoires palestiniens"
+"fr": "Territoires palestiniens",
+"uk": "Палестина"
 },
 {
 "code": "PYF",
@@ -1485,7 +1670,8 @@
 "cs": "Francouzská Polynésie",
 "de": "Französisch-Polynesien",
 "es": "Polinesia Francesa",
-"fr": "Polynésie française"
+"fr": "Polynésie française",
+"uk": "Французька Полінезія"
 },
 {
 "code": "QAT",
@@ -1493,7 +1679,8 @@
 "cs": "Katar",
 "de": "Katar",
 "es": "Catar",
-"fr": "Qatar"
+"fr": "Qatar",
+"uk": "Катар"
 },
 {
 "code": "REU",
@@ -1501,7 +1688,8 @@
 "cs": "Réunion",
 "de": "Réunion",
 "es": "Reunión",
-"fr": "La Réunion"
+"fr": "La Réunion",
+"uk": "Реюньйон"
 },
 {
 "code": "ROU",
@@ -1509,7 +1697,8 @@
 "cs": "Rumunsko",
 "de": "Rumänien",
 "es": "Rumanía",
-"fr": "Roumanie"
+"fr": "Roumanie",
+"uk": "Румунія"
 },
 {
 "code": "RUS",
@@ -1517,7 +1706,8 @@
 "cs": "Ruská federace",
 "de": "Russland",
 "es": "Rusia",
-"fr": "Russie"
+"fr": "Russie",
+"uk": "Росія"
 },
 {
 "code": "RWA",
@@ -1525,7 +1715,8 @@
 "cs": "Rwanda",
 "de": "Ruanda",
 "es": "Ruanda",
-"fr": "Rwanda"
+"fr": "Rwanda",
+"uk": "Руанда"
 },
 {
 "code": "SAU",
@@ -1533,7 +1724,8 @@
 "cs": "Saúdská Arábie",
 "de": "Saudi-Arabien",
 "es": "Arabia Saudí",
-"fr": "Arabie saoudite"
+"fr": "Arabie saoudite",
+"uk": "Саудівська Аравія"
 },
 {
 "code": "SDN",
@@ -1541,7 +1733,8 @@
 "cs": "Súdán",
 "de": "Sudan",
 "es": "Sudán",
-"fr": "Soudan"
+"fr": "Soudan",
+"uk": "Судан"
 },
 {
 "code": "SEN",
@@ -1549,7 +1742,8 @@
 "cs": "Senegal",
 "de": "Senegal",
 "es": "Senegal",
-"fr": "Sénégal"
+"fr": "Sénégal",
+"uk": "Сенегал"
 },
 {
 "code": "SGP",
@@ -1557,7 +1751,8 @@
 "cs": "Singapur",
 "de": "Singapur",
 "es": "Singapur",
-"fr": "Singapour"
+"fr": "Singapour",
+"uk": "Сінгапур"
 },
 {
 "code": "SGS",
@@ -1565,7 +1760,8 @@
 "cs": "Jižní Georgie a Jižní Sandwichovy ostrovy",
 "de": "Südgeorgien und die Südlichen Sandwichinseln",
 "es": "Islas Georgia del Sur y Sandwich del Sur",
-"fr": "Géorgie du Sud et îles Sandwich du Sud"
+"fr": "Géorgie du Sud et îles Sandwich du Sud",
+"uk": "Південна Джорджія та Південні Сандвічеві Острови"
 },
 {
 "code": "SHN",
@@ -1573,7 +1769,8 @@
 "cs": "Svatá Helena, Ascension a Tristan da Cunha",
 "de": "St. Helena",
 "es": "Santa Elena",
-"fr": "Sainte-Hélène"
+"fr": "Sainte-Hélène",
+"uk": "Острови Святої Єлени, Вознесіння і Тристан-да-Кунья"
 },
 {
 "code": "SJM",
@@ -1581,7 +1778,8 @@
 "cs": "Svalbard a Jan Mayen",
 "de": "Spitzbergen und Jan Mayen",
 "es": "Svalbard y Jan Mayen",
-"fr": "Svalbard et Jan Mayen"
+"fr": "Svalbard et Jan Mayen",
+"uk": "Шпіцберген і Ян-Маєн"
 },
 {
 "code": "SLB",
@@ -1589,7 +1787,8 @@
 "cs": "Šalamounovy ostrovy",
 "de": "Salomonen",
 "es": "Islas Salomón",
-"fr": "Îles Salomon"
+"fr": "Îles Salomon",
+"uk": "Соломонові Острови"
 },
 {
 "code": "SLE",
@@ -1597,7 +1796,8 @@
 "cs": "Sierra Leone",
 "de": "Sierra Leone",
 "es": "Sierra Leona",
-"fr": "Sierra Leone"
+"fr": "Sierra Leone",
+"uk": "Сьєрра-Леоне"
 },
 {
 "code": "SLV",
@@ -1605,7 +1805,8 @@
 "cs": "Salvador",
 "de": "El Salvador",
 "es": "El Salvador",
-"fr": "Salvador"
+"fr": "Salvador",
+"uk": "Сальвадор"
 },
 {
 "code": "SMR",
@@ -1613,7 +1814,8 @@
 "cs": "San Marino",
 "de": "San Marino",
 "es": "San Marino",
-"fr": "Saint-Marin"
+"fr": "Saint-Marin",
+"uk": "Сан-Марино"
 },
 {
 "code": "SOM",
@@ -1621,7 +1823,8 @@
 "cs": "Somálsko",
 "de": "Somalia",
 "es": "Somalia",
-"fr": "Somalie"
+"fr": "Somalie",
+"uk": "Сомалі"
 },
 {
 "code": "SPM",
@@ -1629,7 +1832,8 @@
 "cs": "Svatý Pierre a Miquelon",
 "de": "St. Pierre und Miquelon",
 "es": "San Pedro y Miquelón",
-"fr": "Saint-Pierre-et-Miquelon"
+"fr": "Saint-Pierre-et-Miquelon",
+"uk": "Сен-П’єр і Мікелон"
 },
 {
 "code": "SRB",
@@ -1637,7 +1841,8 @@
 "cs": "Srbsko",
 "de": "Serbien",
 "es": "Serbia",
-"fr": "Serbie"
+"fr": "Serbie",
+"uk": "Сербія"
 },
 {
 "code": "SSD",
@@ -1645,7 +1850,8 @@
 "cs": "Jižní Súdán",
 "de": "Südsudan",
 "es": "Sudán del Sur",
-"fr": "Soudan du Sud"
+"fr": "Soudan du Sud",
+"uk": "Південний Судан"
 },
 {
 "code": "STP",
@@ -1653,7 +1859,8 @@
 "cs": "Svatý Tomáš a Princův ostrov",
 "de": "São Tomé und Príncipe",
 "es": "Santo Tomé y Príncipe",
-"fr": "Sao Tomé-et-Principe"
+"fr": "Sao Tomé-et-Principe",
+"uk": "Сан-Томе і Принсіпі"
 },
 {
 "code": "SUR",
@@ -1661,7 +1868,8 @@
 "cs": "Surinam",
 "de": "Suriname",
 "es": "Surinam",
-"fr": "Suriname"
+"fr": "Suriname",
+"uk": "Суринам"
 },
 {
 "code": "SVK",
@@ -1669,7 +1877,8 @@
 "cs": "Slovensko",
 "de": "Slowakei",
 "es": "Eslovaquia",
-"fr": "Slovaquie"
+"fr": "Slovaquie",
+"uk": "Словаччина"
 },
 {
 "code": "SVN",
@@ -1677,7 +1886,8 @@
 "cs": "Slovinsko",
 "de": "Slowenien",
 "es": "Eslovenia",
-"fr": "Slovénie"
+"fr": "Slovénie",
+"uk": "Словенія"
 },
 {
 "code": "SWE",
@@ -1685,7 +1895,8 @@
 "cs": "Švédsko",
 "de": "Schweden",
 "es": "Suecia",
-"fr": "Suède"
+"fr": "Suède",
+"uk": "Швеція"
 },
 {
 "code": "SWZ",
@@ -1693,7 +1904,8 @@
 "cs": "Svazijsko",
 "de": "Eswatini",
 "es": "Esuatini",
-"fr": "Eswatini"
+"fr": "Eswatini",
+"uk": "Есватіні"
 },
 {
 "code": "SXM",
@@ -1701,7 +1913,8 @@
 "cs": "Svatý Martin (nizozemská část)",
 "de": "Sint Maarten",
 "es": "Sint Maarten",
-"fr": "Saint-Martin (partie néerlandaise)"
+"fr": "Saint-Martin (partie néerlandaise)",
+"uk": "Сінт-Мартен (нідерландська частина)"
 },
 {
 "code": "SYC",
@@ -1709,7 +1922,8 @@
 "cs": "Seychely",
 "de": "Seychellen",
 "es": "Seychelles",
-"fr": "Seychelles"
+"fr": "Seychelles",
+"uk": "Сейшельські Острови"
 },
 {
 "code": "SYR",
@@ -1717,7 +1931,8 @@
 "cs": "Syrská arabská republika",
 "de": "Syrien",
 "es": "Siria",
-"fr": "Syrie"
+"fr": "Syrie",
+"uk": "Сирія"
 },
 {
 "code": "TCA",
@@ -1725,7 +1940,8 @@
 "cs": "Turks a Caicos",
 "de": "Turks- und Caicosinseln",
 "es": "Islas Turcas y Caicos",
-"fr": "Îles Turques-et-Caïques"
+"fr": "Îles Turques-et-Caïques",
+"uk": "Острови Теркс і Кайкос"
 },
 {
 "code": "TCD",
@@ -1733,7 +1949,8 @@
 "cs": "Čad",
 "de": "Tschad",
 "es": "Chad",
-"fr": "Tchad"
+"fr": "Tchad",
+"uk": "Чад"
 },
 {
 "code": "TGO",
@@ -1741,7 +1958,8 @@
 "cs": "Togo",
 "de": "Togo",
 "es": "Togo",
-"fr": "Togo"
+"fr": "Togo",
+"uk": "Того"
 },
 {
 "code": "THA",
@@ -1749,7 +1967,8 @@
 "cs": "Thajsko",
 "de": "Thailand",
 "es": "Tailandia",
-"fr": "Thaïlande"
+"fr": "Thaïlande",
+"uk": "Таїланд"
 },
 {
 "code": "TJK",
@@ -1757,7 +1976,8 @@
 "cs": "Tádžikistán",
 "de": "Tadschikistan",
 "es": "Tayikistán",
-"fr": "Tadjikistan"
+"fr": "Tadjikistan",
+"uk": "Таджикистан"
 },
 {
 "code": "TKL",
@@ -1765,7 +1985,8 @@
 "cs": "Tokelau",
 "de": "Tokelau",
 "es": "Tokelau",
-"fr": "Tokelau"
+"fr": "Tokelau",
+"uk": "Токелау"
 },
 {
 "code": "TKM",
@@ -1773,7 +1994,8 @@
 "cs": "Turkmenistán",
 "de": "Turkmenistan",
 "es": "Turkmenistán",
-"fr": "Turkménistan"
+"fr": "Turkménistan",
+"uk": "Туркменістан"
 },
 {
 "code": "TLS",
@@ -1781,7 +2003,8 @@
 "cs": "Východní Timor",
 "de": "Timor-Leste",
 "es": "Timor-Leste",
-"fr": "Timor oriental"
+"fr": "Timor oriental",
+"uk": "Східний Тимор"
 },
 {
 "code": "TON",
@@ -1789,7 +2012,8 @@
 "cs": "Tonga",
 "de": "Tonga",
 "es": "Tonga",
-"fr": "Tonga"
+"fr": "Tonga",
+"uk": "Тонга"
 },
 {
 "code": "TTO",
@@ -1797,7 +2021,8 @@
 "cs": "Trinidad a Tobago",
 "de": "Trinidad und Tobago",
 "es": "Trinidad y Tobago",
-"fr": "Trinité-et-Tobago"
+"fr": "Trinité-et-Tobago",
+"uk": "Тринідад і Тобаго"
 },
 {
 "code": "TUN",
@@ -1805,7 +2030,8 @@
 "cs": "Tunisko",
 "de": "Tunesien",
 "es": "Túnez",
-"fr": "Tunisie"
+"fr": "Tunisie",
+"uk": "Туніс"
 },
 {
 "code": "TUR",
@@ -1813,7 +2039,8 @@
 "cs": "Turecko",
 "de": "Türkei",
 "es": "Turquía",
-"fr": "Turquie"
+"fr": "Turquie",
+"uk": "Туреччина"
 },
 {
 "code": "TUV",
@@ -1821,7 +2048,8 @@
 "cs": "Tuvalu",
 "de": "Tuvalu",
 "es": "Tuvalu",
-"fr": "Tuvalu"
+"fr": "Tuvalu",
+"uk": "Тувалу"
 },
 {
 "code": "TWN",
@@ -1829,7 +2057,8 @@
 "cs": "Tchaj-wan, provincie Číny",
 "de": "Taiwan",
 "es": "Taiwán",
-"fr": "Taïwan"
+"fr": "Taïwan",
+"uk": "Тайвань"
 },
 {
 "code": "TZA",
@@ -1837,7 +2066,8 @@
 "cs": "Tanzanie, sjednocená republika",
 "de": "Tansania",
 "es": "Tanzania",
-"fr": "Tanzanie"
+"fr": "Tanzanie",
+"uk": "Танзанія"
 },
 {
 "code": "UGA",
@@ -1845,7 +2075,8 @@
 "cs": "Uganda",
 "de": "Uganda",
 "es": "Uganda",
-"fr": "Ouganda"
+"fr": "Ouganda",
+"uk": "Уганда"
 },
 {
 "code": "UKR",
@@ -1853,7 +2084,8 @@
 "cs": "Ukrajina",
 "de": "Ukraine",
 "es": "Ucrania",
-"fr": "Ukraine"
+"fr": "Ukraine",
+"uk": "Україна"
 },
 {
 "code": "UMI",
@@ -1861,7 +2093,8 @@
 "cs": "Menší odlehlé ostrovy Spojených států",
 "de": "Amerikanische Überseeinseln",
 "es": "Islas menores alejadas de EE. UU.",
-"fr": "Îles mineures éloignées des États-Unis"
+"fr": "Îles mineures éloignées des États-Unis",
+"uk": "Зовнішні малі острови США"
 },
 {
 "code": "URY",
@@ -1869,7 +2102,8 @@
 "cs": "Uruguay",
 "de": "Uruguay",
 "es": "Uruguay",
-"fr": "Uruguay"
+"fr": "Uruguay",
+"uk": "Уругвай"
 },
 {
 "code": "USA",
@@ -1877,7 +2111,8 @@
 "cs": "Spojené státy",
 "de": "Vereinigte Staaten",
 "es": "Estados Unidos",
-"fr": "États-Unis"
+"fr": "États-Unis",
+"uk": "Сполучені Штати Америки"
 },
 {
 "code": "UZB",
@@ -1885,7 +2120,8 @@
 "cs": "Uzbekistán",
 "de": "Usbekistan",
 "es": "Uzbekistán",
-"fr": "Ouzbékistan"
+"fr": "Ouzbékistan",
+"uk": "Узбекистан"
 },
 {
 "code": "VAT",
@@ -1893,7 +2129,8 @@
 "cs": "Svatý stolec (Vatikánský městský stát)",
 "de": "Vatikanstadt",
 "es": "Ciudad del Vaticano",
-"fr": "État de la Cité du Vatican"
+"fr": "État de la Cité du Vatican",
+"uk": "Ватикан"
 },
 {
 "code": "VCT",
@@ -1901,7 +2138,8 @@
 "cs": "Svatý Vincenc a Grenadiny",
 "de": "St. Vincent und die Grenadinen",
 "es": "San Vicente y las Granadinas",
-"fr": "Saint-Vincent-et-les-Grenadines"
+"fr": "Saint-Vincent-et-les-Grenadines",
+"uk": "Сент-Вінсент і Гренадини"
 },
 {
 "code": "VEN",
@@ -1909,7 +2147,8 @@
 "cs": "Bolívarovská republika Venezuela",
 "de": "Venezuela",
 "es": "Venezuela",
-"fr": "Venezuela"
+"fr": "Venezuela",
+"uk": "Венесуела"
 },
 {
 "code": "VGB",
@@ -1917,7 +2156,8 @@
 "cs": "Panenské ostrovy, britské",
 "de": "Britische Jungferninseln",
 "es": "Islas Vírgenes Británicas",
-"fr": "Îles Vierges britanniques"
+"fr": "Îles Vierges britanniques",
+"uk": "Британські Віргінські Острови"
 },
 {
 "code": "VIR",
@@ -1925,7 +2165,8 @@
 "cs": "Panenské ostrovy, americké",
 "de": "Amerikanische Jungferninseln",
 "es": "Islas Vírgenes de EE. UU.",
-"fr": "Îles Vierges des États-Unis"
+"fr": "Îles Vierges des États-Unis",
+"uk": "Віргінські Острови (США)"
 },
 {
 "code": "VNM",
@@ -1933,7 +2174,8 @@
 "cs": "Vietnam",
 "de": "Vietnam",
 "es": "Vietnam",
-"fr": "Vietnam"
+"fr": "Vietnam",
+"uk": "В’єтнам"
 },
 {
 "code": "VUT",
@@ -1941,7 +2183,8 @@
 "cs": "Vanuatu",
 "de": "Vanuatu",
 "es": "Vanuatu",
-"fr": "Vanuatu"
+"fr": "Vanuatu",
+"uk": "Вануату"
 },
 {
 "code": "WLF",
@@ -1949,7 +2192,8 @@
 "cs": "Wallis a Futuna",
 "de": "Wallis und Futuna",
 "es": "Wallis y Futuna",
-"fr": "Wallis-et-Futuna"
+"fr": "Wallis-et-Futuna",
+"uk": "Волліс і Футуна"
 },
 {
 "code": "WSM",
@@ -1957,7 +2201,8 @@
 "cs": "Samoa",
 "de": "Samoa",
 "es": "Samoa",
-"fr": "Samoa"
+"fr": "Samoa",
+"uk": "Самоа"
 },
 {
 "code": "XXK",
@@ -1965,7 +2210,8 @@
 "cs": "Kosovo",
 "de": "Kosovo",
 "es": "Kosovo",
-"fr": "Kosovo"
+"fr": "Kosovo",
+"uk": "Косово"
 },
 {
 "code": "XXA",
@@ -1973,7 +2219,8 @@
 "cs": "Osoba bez státní příslušnosti",
 "de": "Staatenlos",
 "es": "Apátrida",
-"fr": "Apatride"
+"fr": "Apatride",
+"uk": "Особа без громадянства"
 },
 {
 "code": "XXB",
@@ -1981,7 +2228,8 @@
 "cs": "Uprchlík (Konvence 1951)",
 "de": "Flüchtling (Konvention von 1951)",
 "es": "Refugiado (Convención de 1951)",
-"fr": "Réfugié (Convention de 1951)"
+"fr": "Réfugié (Convention de 1951)",
+"uk": "Біженець (Конвенція 1951 року)"
 },
 {
 "code": "XXC",
@@ -1989,7 +2237,8 @@
 "cs": "Uprchlík (jiný)",
 "de": "Flüchtling (sonstige)",
 "es": "Refugiado (otro)",
-"fr": "Réfugié (autre)"
+"fr": "Réfugié (autre)",
+"uk": "Біженець (інше)"
 },
 {
 "code": "XXX",
@@ -1997,7 +2246,8 @@
 "cs": "Neurčená státní příslušnost",
 "de": "Staatsangehörigkeit nicht angegeben",
 "es": "Nacionalidad no especificada",
-"fr": "Nationalité non précisée"
+"fr": "Nationalité non précisée",
+"uk": "Громадянство не визначено"
 },
 {
 "code": "YEM",
@@ -2005,7 +2255,8 @@
 "cs": "Jemen",
 "de": "Jemen",
 "es": "Yemen",
-"fr": "Yémen"
+"fr": "Yémen",
+"uk": "Ємен"
 },
 {
 "code": "ZAF",
@@ -2013,7 +2264,8 @@
 "cs": "Jihoafrická republika",
 "de": "Südafrika",
 "es": "Sudáfrica",
-"fr": "Afrique du Sud"
+"fr": "Afrique du Sud",
+"uk": "Південно-Африканська Республіка"
 },
 {
 "code": "ZMB",
@@ -2021,7 +2273,8 @@
 "cs": "Zambie",
 "de": "Sambia",
 "es": "Zambia",
-"fr": "Zambie"
+"fr": "Zambie",
+"uk": "Замбія"
 },
 {
 "code": "ZWE",
@@ -2029,6 +2282,7 @@
 "cs": "Zimbabwe",
 "de": "Simbabwe",
 "es": "Zimbabue",
-"fr": "Zimbabwe"
+"fr": "Zimbabwe",
+"uk": "Зімбабве"
 }
 ]

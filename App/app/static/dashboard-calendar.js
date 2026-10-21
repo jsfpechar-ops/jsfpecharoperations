@@ -80,7 +80,7 @@
   const $ = selector => root.querySelector(selector);
   const $$ = selector => Array.from(root.querySelectorAll(selector));
   const labels = JSON.parse($("[data-cal-labels]").textContent);
-  const locale = root.dataset.lang === "cs" ? "cs-CZ" : "en-GB";
+  const locale = { cs: "cs-CZ", vi: "vi-VN" }[root.dataset.lang] || "en-GB";
   const format = (key, values = {}) => Object.entries(values).reduce((text, [name, value]) =>
     text.replace("%(" + name + ")s", String(value)), labels[key] || key);
   const shortDate = value => new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone: "UTC" }).format(dateValue(value));
