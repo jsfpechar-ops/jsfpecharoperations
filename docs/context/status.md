@@ -10,13 +10,12 @@ Updated: 2026-10-21.
 
 ## Now
 
-- 0203 (#419, draft): stay fees list shows confirm / PDF / QR steps. Data box send (ISDS Odesílací brána) on hold until DIA answers the owner.
+- 0203 #419: fee list pay steps. Data box send on hold (DIA).
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
 - AI/scraper crawler block (0195): robots.txt AI group, `/.well-known/tdmrep.json`, Terms §11 TDM clause en+cs (TERMS_VERSION kept 1.7; lawyer to confirm).
 - Host design reset follow-up (0165-0183): six-item sidebar, WCAG 2.2 AA check, bordered rows and controls, Stays/Cleaning/guest-card (PR #405). **Deploy needed:** new `?v=` keys. Shots: design-reset/
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
-- Host #397: b51e0bb; CI 8/8, zero browser skips ([brief](../tasks/0123-dashboard-stays-only.md)).
 
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
