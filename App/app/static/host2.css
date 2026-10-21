@@ -631,3 +631,17 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .ui-topbar { padding-left: calc(var(--space-4) + env(safe-area-inset-left)); padding-right: calc(var(--space-2) + env(safe-area-inset-right)); }
   .host-workspace .ui-sticky-actions { bottom: calc(var(--tabbar-h) + var(--tabbar-safe)); }
 }
+/* 0203: stay fees list, the three pay steps per property. */
+.host-workspace .fee-steps { list-style: none; margin: var(--space-4) 0 0; padding: 0; display: grid; gap: var(--space-5); }
+.host-workspace .fee-step { min-width: 0; }
+.host-workspace .fee-step h3 { margin: 0 0 var(--space-2); font-size: var(--size-16); font-weight: 600; }
+.host-workspace .fee-step > p { margin: 0 0 var(--space-2); }
+.host-workspace .fee-step .fee-qr { flex-wrap: wrap; margin-top: 0; }
+.host-workspace .fee-step .fee-qr p { margin: 0 0 var(--space-1); }
+.host-workspace .fee-step-issues { margin: 0 0 var(--space-3); padding-left: var(--space-5); }
+.host-workspace .fee-step-locked { border: 1px dashed var(--line-2); border-radius: var(--radius-2); background: var(--surface-2); color: var(--ink-3); padding: var(--space-4); }
+.host-workspace .fee-step-locked p { margin: 0; }
+.host-workspace .fee-step-locked-qr { width: 11rem; height: 11rem; display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--space-3); }
+@media (min-width: 1024px) {
+  .host-workspace .fee-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

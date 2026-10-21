@@ -5898,6 +5898,48 @@ _FEE_0082_STRINGS = {
 for _lang, _strings in _FEE_0082_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0203: the three pay steps on the fee list.
+_FEE_0203_STRINGS = {
+    "en": {
+        "stay_fees.pay.lede": "%(period)s. Three steps: confirm the figures, send the PDF to the council, then pay with the QR code.",
+        "stay_fees.pay.step": "Step %(n)s of 3",
+        "stay_fees.pay.step1": "Check and confirm the figures",
+        "stay_fees.pay.step2": "Download the PDF for the council",
+        "stay_fees.pay.step3": "Pay with the QR code",
+        "stay_fees.pay.confirm_why": "Confirming freezes the numbers, so the PDF and the payment match what the council sees.",
+        "stay_fees.pay.confirm": "Confirm figures",
+        "stay_fees.pay.confirmed": "Confirmed",
+        "stay_fees.pay.confirmed_help": "To change something, open the report and correct it there.",
+        "stay_fees.pay.fix": "Fix in the report",
+        "stay_fees.pay.locked": "Appears after step 1, once the figures are confirmed.",
+        "stay_fees.pay.send_to": "Send it from your data box to the council's data box %(databox)s.",
+        "stay_fees.pay.send": "Send it to the council, for example from your data box.",
+        "stay_fees.pay.nothing": "Nothing to pay for this period. The council still needs the PDF.",
+        "stay_fees.pay.no_account": "Add the council's bank account and the QR code appears here.",
+        "stay_fees.pay.add_account": "Add bank account",
+    },
+    "cs": {
+        "stay_fees.pay.lede": "%(period)s. Tři kroky: potvrďte čísla, pošlete PDF úřadu a zaplaťte QR kódem.",
+        "stay_fees.pay.step": "Krok %(n)s ze 3",
+        "stay_fees.pay.step1": "Zkontrolujte a potvrďte čísla",
+        "stay_fees.pay.step2": "Stáhněte PDF pro úřad",
+        "stay_fees.pay.step3": "Zaplaťte QR kódem",
+        "stay_fees.pay.confirm_why": "Potvrzením se čísla uzamknou, takže PDF i platba odpovídají tomu, co uvidí úřad.",
+        "stay_fees.pay.confirm": "Potvrdit čísla",
+        "stay_fees.pay.confirmed": "Potvrzeno",
+        "stay_fees.pay.confirmed_help": "Chcete-li něco změnit, otevřete hlášení a opravte ho tam.",
+        "stay_fees.pay.fix": "Opravit v hlášení",
+        "stay_fees.pay.locked": "Zobrazí se po kroku 1, až potvrdíte čísla.",
+        "stay_fees.pay.send_to": "Pošlete ho ze své datové schránky do datové schránky úřadu %(databox)s.",
+        "stay_fees.pay.send": "Pošlete ho úřadu, například ze své datové schránky.",
+        "stay_fees.pay.nothing": "Za toto období se nic neplatí. Úřad ale PDF potřebuje.",
+        "stay_fees.pay.no_account": "Doplňte bankovní účet úřadu a QR kód se zobrazí zde.",
+        "stay_fees.pay.add_account": "Doplnit účet",
+    },
+}
+for _lang, _strings in _FEE_0203_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 
 # 0088: required property operator, controller defaults to the operator.
 _PROPERTY_OPERATOR_STRINGS = {
