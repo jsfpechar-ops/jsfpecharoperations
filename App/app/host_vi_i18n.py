@@ -3117,4 +3117,5 @@ STRINGS: Dict[str, str] = {
     "push.error.test_failed": "Gửi thử không thành công. Hãy tắt rồi bật lại cảnh báo.",
     "flash.push.device_removed": "Thiết bị đó sẽ không nhận cảnh báo nữa.",
     "flash.push.signed_out": "Hãy đăng nhập lại rồi thử lần nữa.",
+    "push.device_remove_confirm": "Dừng cảnh báo trên %(name)s?",
 }
