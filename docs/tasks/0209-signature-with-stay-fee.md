@@ -61,10 +61,15 @@ The wizard stay-fee form tag (`setup_wizard/stay_fee.html`, verbatim):
 | App/tests/test_host_ux_acceptance.py | edit | business field list |
 | App/tests/test_property_navigation_browser.py | edit | settings field names |
 | App/tests/test_fee_signature_0209.py | create | tests |
+| App/tests/test_stay_fee_property_panel.py | edit | Step 0 pin |
 
 No other file may change.
 
 ## 4. Steps
+
+### Step 0. CI fix first (PR #418 CI red after 0208)
+
+`App/tests/test_stay_fee_property_panel.py`: replace `    assert "Enter a valid Czech bank account or IBAN." in invalid.text` with `    assert "This account number does not add up." in invalid.text  # 0208 copy`. Run `.venv/bin/python -m pytest tests/test_stay_fee_property_panel.py -q --tb=short 2>&1 | tail -10` from `App/`. Commit `0209 step 0`.
 
 ### Step 1. `App/app/templates/_fee_signature_fields.html` (new)
 
