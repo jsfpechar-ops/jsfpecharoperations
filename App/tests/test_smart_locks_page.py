@@ -264,3 +264,21 @@ def test_the_setup_wizard_lock_step_gets_every_lock_answer_back(hosts, flats, mo
     foreign = f"/apartments/{flats[1]}/setup/door_lock"
     response = _post(client, "/smart-locks/refresh", return_to=foreign, section="share")
     assert f"/apartments/{flats[1]}" not in response.headers["location"]
+
+
+def test_lock_card_accepts_prague_summer_time(hosts, flats):
+    """0211: UTC+2 is Prague summer time; only a real other zone gets the warning."""
+    warning = "Time zone is not Prague."
+    _connect(hosts[0], "hjhfa_uhaaaa", [
+        {"lock_id": "1", "alias": "Summer door", "battery": 90, "tz_offset_ms": 7200000},
+    ])
+    client = _client(USERS[0])
+    page = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
+    assert "Summer door" in page
+    assert warning not in page
+    db.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (hosts[0],))
+    _connect(hosts[0], "hjhfa_uhaaaa", [
+        {"lock_id": "1", "alias": "London door", "battery": 90, "tz_offset_ms": 0},
+    ])
+    page = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
+    assert warning in page
