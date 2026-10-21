@@ -54,7 +54,7 @@ self.addEventListener("fetch", function (event) {
   if (req.mode !== "navigate" || req.method !== "GET") return;
   var url = new URL(req.url);
   // Guest links (/l/...) belong to the guest, never to the host's app.
-  if (url.origin !== self.location.origin || url.pathname === "/l" || url.pathname.indexOf("/l/") === 0) return;
+  if (url.origin !== self.location.origin || /^\/l(\/|$)/.test(url.pathname)) return;
   event.respondWith(Promise.resolve(event.preloadResponse).then(function (preloaded) {
     return preloaded || fetch(req);
   }).catch(function () {

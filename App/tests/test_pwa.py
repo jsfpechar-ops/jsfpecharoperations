@@ -68,7 +68,7 @@ def test_the_service_worker_stores_only_the_offline_page():
     assert "cache.put(OFFLINE_URL, response)" in source
     assert "addAll(" not in source and "cache.add(" not in source
     assert 'req.mode !== "navigate"' in source
-    assert '"/l/"' in source
+    assert "/^\\/l(\\/|$)/.test(url.pathname)" in source
 
 
 @pytest.mark.parametrize(
