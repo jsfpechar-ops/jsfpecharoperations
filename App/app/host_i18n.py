@@ -6778,6 +6778,31 @@ _ONBOARDING_TEST_0204_STRINGS = {
 for _lang, _strings in _ONBOARDING_TEST_0204_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0205: onboarding user test (2026-10-21): the abbreviation fills itself, a
+# pasted account splits itself, and the TTLock steps name the exact buttons.
+_ONBOARDING_TEST_0205_STRINGS = {
+    "en": {
+        "apartment.form.ubyport.mark_hint": "Fills in by itself from your login: the part after UBY-WS_. Change it only if the police letter gives a different “Zkratka ubytovacího zařízení”.",
+        "apartment.form.stay_fee.account_help": "The town's bank account for the stay fee, from its website or letter. Paste the whole account (19-2000145399/0800) or an IBAN into any box and it splits itself. Used for the payment QR code.",
+        "smart_locks.essential1": "In the TTLock app, open your lock and tap Authorized Admin (eAdmin in some app versions).",
+        "smart_locks.essential2": "Tap Create Admin. In the Recipient field, where TTLock expects an e-mail or phone number, paste your UbyHost name from above. Leave Permanent on and tap Send.",
+        "smart_locks.essential3": "Come back here and tap Check connection.",
+        "smart_locks.s4": "Tap Authorized Admin (eAdmin in some app versions). It is the icon with a person and a tick, in the grid under the padlock.",
+        "smart_locks.s6": "Leave Permanent switched on. In Recipient, where TTLock expects an e-mail or phone number, paste your UbyHost name. In Name type UbyHost.",
+    },
+    "cs": {
+        "apartment.form.ubyport.mark_hint": "Vyplní se samo z přihlašovacího jména: je to část za UBY-WS_. Změňte ji, jen když dopis od policie uvádí jinou „Zkratku ubytovacího zařízení“.",
+        "apartment.form.stay_fee.account_help": "Bankovní účet obce pro poplatek z pobytu, z jejího webu nebo dopisu. Vložte celé číslo účtu (19-2000145399/0800) nebo IBAN do kteréhokoli pole a rozdělí se samo. Použije se pro platební QR kód.",
+        "smart_locks.essential1": "V aplikaci TTLock otevřete zámek a klepněte na Autorizovaný správce (anglicky Authorized Admin, v některých verzích eAdmin).",
+        "smart_locks.essential2": "Klepněte na Vytvořit správce (Create Admin). Do pole Příjemce (Recipient), kde TTLock čeká e-mail nebo telefon, vložte svůj název UbyHost z řádku výše. Nechte zapnuto Trvalý (Permanent) a klepněte na Odeslat (Send).",
+        "smart_locks.essential3": "Vraťte se sem a klepněte na Zkontrolovat připojení.",
+        "smart_locks.s4": "Klepněte na Autorizovaný správce (Authorized Admin, v některých verzích eAdmin). Je to ikona s osobou a fajfkou v mřížce pod zámkem.",
+        "smart_locks.s6": "Nechte zapnuto Trvalý (Permanent). Do pole Příjemce (Recipient), kde TTLock čeká e-mail nebo telefon, vložte svůj název UbyHost. Do pole Jméno (Name) napište UbyHost.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0205_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
