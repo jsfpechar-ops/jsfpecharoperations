@@ -14,6 +14,7 @@ Researched 3 October 2026. Anything I could not open or confirm in a primary sou
 | 4 | Retention | Guest book 6 years (§ 101(4) zákon 326/1999 Sb.). Stay-fee book 6 years (§ 3g(4) zákon 565/1990 Sb.). Invoices 10 years. Passport photos: delete within 7 days. UbyPort raw XML: 90 days. | Scheduled deletion jobs per data class. |
 | 5 | Roles and subprocessors | Processor for guest data, controller for host accounts, analytics and ads data. Google is an independent controller. | Publish a subprocessor list and a DPA (zpracovatelská smlouva) for hosts. |
 | 6 | Meta Conversions API (fbclid) | Needs prior, explicit, optional consent, as for gclid. Meta Platforms Ireland is joint controller for collection and sending, independent controller afterwards. | Separate unchecked box shown only with `fbclid` ("came from Facebook or Instagram"). One server-side `CompleteRegistration` event with `fbc` only, `opt_out=true`. Delete `fbc` 7 days after sending, 90 days after the click at most. |
+| 7 | Urgent alerts (web push) on the host's phone | No consent beyond the host's own "Turn on" and the browser prompt. Basis: contract. Push services are recipients chosen by the host's browser, not our subprocessors. | Privacy policy sentences in §4, §7, §9 and §11 (brief 0208). No guest names in alerts. No re-acceptance. |
 
 ---
 
@@ -402,6 +403,42 @@ Recipient line (privacy policy and /subprocessors, "recipients that are not subp
 
 ---
 
+## 7. Urgent alerts (web push) on the host's phone
+
+Decided 2026-10-21 (orchestrator, at the owner's request: "you are the lawyer, research it"). Research memo, not advice from a licensed lawyer.
+
+### Position
+
+The host turns alerts on for one device. No separate consent box, no banner, no new acceptance round. Legal basis Art. 6(1)(b) GDPR (a feature the host asks for under the contract). The push service of the host's browser (Apple, Google, Mozilla or Microsoft) is a recipient named in the privacy policy, not a UbyHost subprocessor.
+
+### Reasoning
+
+- **Storage on the device (Art. 5(3) ePrivacy, § 89(3) zákon 127/2005 Sb.).** The service worker and the push subscription are stored only after the host presses "Turn on" and accepts the browser's own permission prompt. That is storage "strictly necessary in order for the provider of an information society service explicitly requested by the subscriber or user to provide the service", so the exemption applies. The worker's only cache is the offline page, also strictly necessary for the app the host installed.
+- **Who the push service is.** The host's browser picks the push service; UbyHost cannot choose or instruct it and only posts an encrypted message to the address the browser hands over. It acts for the browser maker under the host's own agreement with that maker, as the host's e-mail provider does for our e-mails. So it is not our processor (Art. 28) and not on /subprocessors, but Art. 13(1)(e) asks us to name it as a recipient.
+- **What it can see.** Content is end-to-end encrypted (RFC 8291) and signed (RFC 8292). The push service sees the device address, time, size, our server's IP address and our contact address support@ubyhost.com. It cannot read the text.
+- **Transfers.** The browser maker may route through the US. Google LLC and Microsoft Corporation are active under the EU-U.S. Data Privacy Framework; Apple and Mozilla were not confirmed in this research. Because the host's browser chooses the service and the content is encrypted, the policy says so plainly instead of promising EEA-only processing.
+- **Minimisation.** Alerts carry the property name and a date only, never a guest name, document or door code: a lock screen can be seen by others. Four alert kinds, 12 per device per day at most.
+- **Retention.** Device rows go 180 days after the last visit, or at once on "Turn off", Remove, logout on that device, or when the push service says the address is dead. Queued alerts 30 days. Both go with the workspace.
+- **No re-acceptance.** The feature is new and optional and processes nothing until the host turns it on, so it is not a "material change" to existing processing (privacy policy §20). The text is updated and PRIVACY_VERSION stays 1.7, the same approach as the 0195 Terms clause.
+
+### What the product must do
+
+- Brief 0208: privacy policy sentences (EN, CS) in §4 (data), §7 (storage on the device), §9 (recipients) and §11 (retention).
+- Keep alert texts free of guest names, document numbers and door codes (`push.msg.*`); a new alert kind needs the owner's OK.
+- RETENTION and ROPA rows (done in 0204 review).
+
+### Residual risk
+
+**Low.** A regulator could call the push service our subprocessor. The fix would be one row on /subprocessors; the processing itself would not change. Apple and Mozilla DPF status is unconfirmed (see open items).
+
+### Sources
+
+- Directive 2002/58/EC Art. 5(3), quoted in EDPB Guidelines 2/2023 on the technical scope of Art. 5(3), v2.0 (7 Oct 2024): https://edpb.europa.eu/system/files/2024-10/edpb_guidelines_202302_technical_scope_art_53_eprivacydirective_v2_en_0.pdf
+- RFC 8291 Message Encryption for Web Push: https://rfc-editor.org/rfc/rfc8291
+- IETF, privacy and trustworthiness for web notifications: https://www.ietf.org/blog/privacy-and-trustworthiness-web-notifications/
+- DPF participant Google LLC (active, next due 13 Sep 2027): https://www.dataprivacyframework.gov/participant/5780 ; Microsoft Corporation: https://www.dataprivacyframework.gov/participant/6474
+- Mozilla push design notes: https://wiki.mozilla.org/Privacy/Reviews/Push_API
+
 ## Open items to verify before go-live
 1. Read the Umami Cloud DPA: SCCs or DPF, no own-purpose use, retention. If unclear, self-host Umami.
 2. Confirm the Lightsail region is eu-central-1.
@@ -412,3 +449,4 @@ Recipient line (privacy policy and /subprocessors, "recipients that are not subp
 7. First staging send to Meta with `UBYHOST_META_TEST_EVENT_CODE`: confirm that the `website` event with `fbc` and `client_user_agent` is accepted and matched (section 6).
 8. Read the Meta Data Processing Terms and the European Data Transfer Addendum before go-live of the Meta integration (section 6).
 9. Check in Google Ads (Goals > Conversions > Uploads > template) whether the legacy click-conversion file has GBRAID/WBRAID columns; until then, gbraid/wbraid are stored with consent but not exported (section 3).
+10. Web push (section 7): check Apple Inc. and Mozilla Corporation on https://www.dataprivacyframework.gov/list ; if absent, the policy wording already covers it.
