@@ -245,3 +245,22 @@ def test_a_new_account_gets_a_random_name_each_time():
     import inspect
 
     assert 'secrets.token_hex(8)' in inspect.getsource(ttlock.create_account)
+
+
+
+def test_the_setup_wizard_lock_step_gets_every_lock_answer_back(hosts, flats, monkeypatch):
+    """0203: a lock connected from the setup wizard returns to the wizard, not to Settings."""
+    _connect(hosts[0], "hjhfa_uhaaaa")
+    wizard = f"/apartments/{flats[0]}/setup/door_lock"
+    client = _client(USERS[0])
+    monkeypatch.setattr(ttlock, "check_locks", lambda _id: ([], []))
+    response = _post(client, "/smart-locks/refresh", return_to=wizard, section="share")
+    location = response.headers["location"]
+    assert location.startswith(wizard) and location.endswith("#smart-locks-share"), location
+    found = [{"lock_id": "1", "alias": "Door A", "battery": 90, "tz_offset_ms": 3600000}]
+    monkeypatch.setattr(ttlock, "check_locks", lambda _id: (found, []))
+    response = _post(client, "/smart-locks/refresh", return_to=wizard, section="share")
+    assert response.headers["location"].startswith(wizard), response.headers["location"]
+    foreign = f"/apartments/{flats[1]}/setup/door_lock"
+    response = _post(client, "/smart-locks/refresh", return_to=foreign, section="share")
+    assert f"/apartments/{flats[1]}" not in response.headers["location"]
