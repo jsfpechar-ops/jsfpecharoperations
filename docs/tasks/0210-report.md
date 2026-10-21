@@ -1,6 +1,6 @@
 # 0210 report
 
-Status: blocked
+Status: review
 
 ## Files changed
 - App/app/templates/setup_wizard/property.html (step 1)
@@ -30,3 +30,7 @@ Left: design_lint (brief §6.3), 390 px screenshot (§6.4), and §7 check for th
 
 ## Owner steps left
 - None before review. Run design_lint and the screenshot in a new session.
+
+## Orchestrator follow-up
+
+Design lint flagged `grid` and `two` on `setup_wizard/door_lock.html` (the same legacy grid `property.html` uses). Registered them in the template's `legacy` list in `docs/design/catalog.json`; design lint OK. Test 3 dropped as reported is fine: the 400 re-render covers `required`.

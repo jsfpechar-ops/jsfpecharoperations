@@ -742,12 +742,14 @@
       "feature-switch",
       "feature-switch-row",
       "field",
+      "grid",
       "setup-wizard-form",
       "setup-wizard-instruction",
       "setup-wizard-lede",
       "setup-wizard-lock-field",
       "setup-wizard-skip",
-      "switch"
+      "switch",
+      "two"
     ],
     "App/app/templates/setup_wizard/guest_link.html": [
       "field-label-row",
