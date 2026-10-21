@@ -362,6 +362,59 @@ def robots():
 def tdmrep():
     return Response(seo.TDMREP_JSON, media_type="application/json")
 
+# Brief 0203: the installable app. The manifest and the service worker sit at
+# the root so the worker's scope covers the whole app. Both are public, like
+# robots.txt, and carry nothing about any account.
+_PWA_ICON_KEY = "20261021-0203"
+_MANIFEST = {
+    "id": "/",
+    "name": "UbyHost",
+    "short_name": "UbyHost",
+    "description": "Guest registration and police reports for short-term rentals.",
+    "lang": "en",
+    # /login sends a signed-in host straight to the dashboard and never shows
+    # the public landing page inside the app.
+    "start_url": "/login",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#f7f7f5",
+    "theme_color": "#f7f7f5",
+    "icons": [
+        {"src": f"/static/icons/icon-192.png?v={_PWA_ICON_KEY}", "sizes": "192x192",
+         "type": "image/png", "purpose": "any"},
+        {"src": f"/static/icons/icon-512.png?v={_PWA_ICON_KEY}", "sizes": "512x512",
+         "type": "image/png", "purpose": "any"},
+        {"src": f"/static/icons/icon-maskable-512.png?v={_PWA_ICON_KEY}", "sizes": "512x512",
+         "type": "image/png", "purpose": "maskable"},
+    ],
+}
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def web_manifest():
+    response = Response(json.dumps(_MANIFEST), media_type="application/manifest+json")
+    response.headers["Cache-Control"] = "public, max-age=86400"
+    return response
+
+
+@app.get("/sw.js", include_in_schema=False)
+def service_worker():
+    # no-cache: the browser asks for a new worker on every visit, so a fix
+    # reaches installed phones the next time they open the app.
+    body = (config.BASE_DIR / "static" / "sw.js").read_text(encoding="utf-8")
+    response = Response(body, media_type="text/javascript; charset=utf-8")
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@app.get("/offline", include_in_schema=False)
+def offline_page(request: Request):
+    # The service worker keeps this page and shows it when a page load fails.
+    response = templating.render(request, "offline.html", {"show_nav": False, "open_alerts": []})
+    response.headers["Content-Language"] = request.state.lang
+    response.headers["X-Robots-Tag"] = "noindex"
+    return response
+
 
 @app.get("/sitemap.xml", include_in_schema=False)
 def sitemap():
