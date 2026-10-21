@@ -20,6 +20,7 @@ from .. import (
     security,
     stay_fee,
     stay_fee_adjustment,
+    stay_fee_auto,
     stay_fee_filing,
     validation,
 )
@@ -163,6 +164,7 @@ def stay_fees_list(request: Request):
         "periods": rows,
         "selected_month": selected_month,
         "has_properties": bool(apartments),
+        "stay_fee_emails": stay_fee_auto.emails_enabled(owner_id),
         **_fee_links(_list_return(request)),
         **list_filter.context(
             view,
@@ -744,16 +746,11 @@ async def stay_fee_finalize(apartment_id: int, request: Request):
     else:
         cadence = stay_fee.cadence_of(apartment)
         calc_month = month
-    period = stay_fee.property_period(
-        apartment, calc_month, live_only=True, cadence=cadence,
+    checked = stay_fee_auto.check(
+        apartment, calc_month, today, cadence=cadence,
         rate=sealed["rate_czk"] if correcting else None,
     )
-    group = stay_fee.report_group(
-        apartment, calc_month, live_only=True, period=period, cadence=cadence
-    )
-    issues = stay_fee.report_issues(group, today)
-    if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"], period):
-        issues.append("stay_fees.issue.unsigned")
+    period, group, issues = checked["period"], checked["group"], checked["issues"]
     if issues:
         return _back(back_path, err=_flash(request, "flash.stay_fees.report_blocked"))
     key = stay_fee_filing.period_key(group["cadence"], group["first"])

@@ -91,6 +91,7 @@
   {% set ns_count = namespace(ready=0) %}{% for period in periods %}{% if not period.unset %}{% set ns_count.ready = ns_count.ready + 1 %}{% endif %}{% endfor %}
   {{ t('stay_fees.list.summary', period=(t('month.' ~ selected_month.month) ~ ' ' ~ selected_month.year), count=periods|length, set_up=ns_count.ready) }}
 </p>
+<p class="ui-sub" id="fee-list-email">{{ t('stay_fees.list.email_on' if stay_fee_emails else 'stay_fees.list.email_off') }} <a href="/settings#settings-stay-fee-emails">{{ t('stay_fees.list.email_change') }}</a></p>
 <div class="panel tight scroll-x list-cards lc-fees fee-periods{% if fee_list.all_unset %} fee-periods-unset{% endif %}">
   <table class="table-cards{% if fee_list.all_unset %} fee-periods-table-unset{% endif %}">
     <thead>

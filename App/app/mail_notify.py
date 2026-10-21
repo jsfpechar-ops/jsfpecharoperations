@@ -954,6 +954,174 @@ def build_workspace_deletion(*, stage: str, date: str, lang: Optional[str] = Non
     }
 
 
+# --- stay-fee monthly email ---
+# 0222: the finished report (PDF attached, QR inline) and the "what to fix" notice
+# (plan stay-fee-monthly-email). Both go to the legal entity's contact address.
+
+
+def build_stay_fee_report(
+    *, lang: Optional[str], property_name: str, period: str, amount: str, total_czk: int,
+    authority: str, databox: str, account: str, vs: str, has_qr: bool, report_url: str,
+) -> Dict[str, str]:
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    zero = total_czk == 0
+    if zero:
+        subject = _text(lang, "mail.stay_fee.subject_zero", period=period, property=property_name)
+    else:
+        subject = _text(lang, "mail.stay_fee.subject", period=period, amount=amount,
+                        property=property_name)
+    intro = _text(lang, "mail.stay_fee.intro", period=period, property=property_name)
+    if databox:
+        step_send = _text(lang, "mail.stay_fee.step_send", authority=authority, databox=databox)
+    else:
+        step_send = _text(lang, "mail.stay_fee.step_send_plain", authority=authority)
+    if zero:
+        step_pay = _text(lang, "mail.stay_fee.zero")
+    elif has_qr:
+        step_pay = _text(lang, "mail.stay_fee.step_pay", amount=amount, account=account, vs=vs)
+    else:
+        step_pay = _text(lang, "mail.stay_fee.step_pay_plain", amount=amount, vs=vs)
+    qr_alt = _text(lang, "mail.stay_fee.qr_alt")
+    fix = _text(lang, "mail.stay_fee.fix")
+    open_label = _text(lang, "mail.stay_fee.open")
+    footer = _text(lang, "mail.stay_fee.footer")
+    turn_off = _text(lang, "mail.stay_fee.turn_off")
+    turn_off_url = _public("/settings#settings-stay-fee-emails")
+    show_qr = has_qr and not zero
+    text_lines = [intro, "", step_send, step_pay]
+    if show_qr:
+        text_lines.append(qr_alt)
+    text_lines += ["", fix, report_url, "", "--", "UbyHost", footer, f"{turn_off}: {turn_off_url}"]
+    blocks = [_block_paragraph(intro), _block_paragraph(step_send), _block_paragraph(step_pay)]
+    if show_qr:
+        blocks.append(
+            f'<tr><td style="padding:8px 24px 0 24px;">'
+            f'<img src="cid:{mail.QR_CONTENT_ID}" width="200" height="200" alt="{_esc(qr_alt)}" '
+            f'style="display:block;border:0;width:200px;height:200px;"></td></tr>'
+        )
+    blocks += [_block_paragraph(fix), _block_button(report_url, open_label)]
+    return {
+        "subject": subject,
+        "text": "\n".join(text_lines),
+        "html": _shell(
+            lang=lang,
+            title=property_name,
+            preheader=intro,
+            blocks=blocks,
+            footer_lines=["UbyHost", footer, [_FooterLink(turn_off, turn_off_url)]],
+        ),
+    }
+
+
+def queue_stay_fee_report(apartment, filing_row, lang: Optional[str] = None) -> Optional[int]:
+    from . import stay_fee, stay_fee_auto, stay_fee_filing
+
+    to_email = _entity_contact_email(apartment["legal_entity_id"])
+    if not to_email:
+        return None
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    month = stay_fee_filing.period_anchor(filing_row)
+    total = int(filing_row["total_due_czk"] or 0)
+    group = {"anchor": apartment, "vs": stay_fee.vs_of(apartment), "total_czk": total}
+    details = stay_fee.payment_details(group)
+    has_qr = bool(details and details.get("spayd"))
+    report_url = _public(f"/stay-fees/{apartment['id']}?month={stay_fee.month_key(month)}")
+    built = build_stay_fee_report(
+        lang=lang,
+        property_name=apartment["internal_name"] or "UbyHost",
+        period=stay_fee_auto.period_label(lang, filing_row["cadence"], month),
+        amount=stay_fee.format_czk(total),
+        total_czk=total,
+        authority=apartment["stay_fee_authority_name"] or "",
+        databox=apartment["stay_fee_authority_databox"] or "",
+        account=(details or {}).get("account") or "",
+        vs=(details or {}).get("vs") or group["vs"],
+        has_qr=has_qr,
+        report_url=report_url,
+    )
+    payload: Dict[str, Any] = {
+        "text": built["text"],
+        "html": built["html"],
+        "lang": lang,
+        mail.STAY_FEE_FILING_KEY: filing_row["id"],
+    }
+    if has_qr:
+        payload[mail.QR_SPAYD_KEY] = details["spayd"]
+    return mail.enqueue(
+        kind="stay_fee_report",
+        idempotency_key=(
+            f"stay_fee_report:{apartment['id']}:{filing_row['period_key']}:v{filing_row['version']}"
+        ),
+        to_email=to_email,
+        subject=built["subject"],
+        payload=payload,
+        apartment_id=apartment["id"],
+        owner_user_id=apartment["owner_user_id"],
+    )
+
+
+def build_stay_fee_blocked(
+    *, lang: Optional[str], property_name: str, period: str, issues: List[str], report_url: str,
+) -> Dict[str, str]:
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    subject = _text(lang, "mail.stay_fee_blocked.subject", period=period, property=property_name)
+    intro = _text(lang, "mail.stay_fee_blocked.intro", period=period, property=property_name)
+    items = [_text(lang, key) for key in issues]
+    after = _text(lang, "mail.stay_fee_blocked.after")
+    open_label = _text(lang, "mail.stay_fee.open")
+    footer = _text(lang, "mail.stay_fee.footer")
+    turn_off = _text(lang, "mail.stay_fee.turn_off")
+    turn_off_url = _public("/settings#settings-stay-fee-emails")
+    text = "\n".join(
+        [
+            intro, "", *[f"- {item}" for item in items], "", after, report_url, "", "--", "UbyHost",
+            footer, f"{turn_off}: {turn_off_url}",
+        ]
+    )
+    blocks = [_block_paragraph(intro)]
+    blocks += [_block_paragraph(item) for item in items]
+    blocks += [_block_paragraph(after), _block_button(report_url, open_label)]
+    return {
+        "subject": subject,
+        "text": text,
+        "html": _shell(
+            lang=lang,
+            title=property_name,
+            preheader=intro,
+            blocks=blocks,
+            footer_lines=["UbyHost", footer, [_FooterLink(turn_off, turn_off_url)]],
+        ),
+    }
+
+
+def queue_stay_fee_blocked(apartment, group, issues, lang: Optional[str] = None) -> Optional[int]:
+    from . import stay_fee, stay_fee_auto, stay_fee_filing
+
+    to_email = _entity_contact_email(apartment["legal_entity_id"])
+    if not to_email:
+        return None
+    lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
+    key = stay_fee_filing.period_key(group["cadence"], group["first"])
+    report_url = _public(f"/stay-fees/{apartment['id']}?month={stay_fee.month_key(group['first'])}")
+    built = build_stay_fee_blocked(
+        lang=lang,
+        property_name=apartment["internal_name"] or "UbyHost",
+        period=stay_fee_auto.period_label(lang, group["cadence"], group["first"]),
+        issues=list(issues),
+        report_url=report_url,
+    )
+    return mail.enqueue(
+        kind="stay_fee_blocked",
+        idempotency_key=f"stay_fee_blocked:{apartment['id']}:{key}",
+        to_email=to_email,
+        subject=built["subject"],
+        payload={"text": built["text"], "html": built["html"], "lang": lang},
+        apartment_id=apartment["id"],
+        owner_user_id=apartment["owner_user_id"],
+    )
+
+
+
 def cancelled_with_guests(apartment_id: int, reservation_id: int, variant: str) -> Optional[int]:
     """Tell the host by e-mail that a cancelled stay still had guest forms."""
     try:
