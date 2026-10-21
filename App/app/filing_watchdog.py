@@ -47,7 +47,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
 
-from . import config, db, deadlines, mail, mail_notify, reporting, validation
+from . import config, db, deadlines, mail, mail_notify, push, reporting, validation
 
 log = logging.getLogger("ubyhost.filing_watchdog")
 
@@ -235,6 +235,9 @@ def notify_hosts(stays: List[Dict[str, Any]], now: Optional[datetime] = None) ->
     for stay in stays:
         if stay.get("mailed_at"):
             continue
+        # Brief 0207: also on the host's phone. Queued once per stay, even when
+        # there is no address to mail and this loop sees the stay again.
+        push.deadline_at_risk(stay)
         try:
             to_email = mail_notify._entity_contact_email(stay["legal_entity_id"])
             if not to_email:
