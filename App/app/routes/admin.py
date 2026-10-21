@@ -1948,6 +1948,9 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
     fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
     account_draft = stay_fee_routes.fee_account_draft(form)
     draft.update(fee_draft)
+    if "stay_fee_council_account" in form:
+        draft["stay_fee_council_account"] = _form_str(form, "stay_fee_council_account")
+        draft["stay_fee_council_iban"] = None
     return_to = _form_str(form, "return_to")
     if return_to.startswith(wizard_setup_prefix(apartment["id"])):
         return render_wizard(

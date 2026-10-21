@@ -239,6 +239,9 @@ def refuse_setup_save(
         for key in ("account_prefix", "account_number", "account_bank"):
             if key in form:
                 draft[key] = _form_str(form, key)
+        if "stay_fee_council_account" in form:
+            draft["stay_fee_council_account"] = _form_str(form, "stay_fee_council_account")
+            draft["stay_fee_council_iban"] = None
     if step == "automation":
         draft["automation_mode"] = _form_str(form, "automation_mode")
         draft["submit_after_hours"] = _form_str(form, "submit_after_hours")
