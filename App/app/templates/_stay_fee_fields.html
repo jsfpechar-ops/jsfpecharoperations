@@ -28,10 +28,13 @@
   {% if fee_account_error %}
   <p class="err-text small" id="stay-fee-account-error" role="alert">{{ t('flash.stay_fees.account_invalid') }}</p>
   {% endif %}
-  <div class="field-label-row fee-account-label"><span class="field-group-label" id="stay-fee-account-label">{{ t('apartment.form.stay_fee.account_label') }}</span>{{ help_tip('stay-fee-account-help', t('apartment.form.stay_fee.account_help')) }}</div>
-  {% set prefix = '' %}
-  {% set account_required = fee_required %}
-  {% include "_account_parts.html" %}
+  {#- 0208: one box; the server splits and checks it (payments.normalise_account). -#}
+  <div class="field">
+    {{ field_label('stay_fee_council_account', t('apartment.form.stay_fee.account_label'), t('apartment.form.stay_fee.account_help')) }}
+    <input type="text" id="stay_fee_council_account" name="stay_fee_council_account" autocomplete="off" spellcheck="false" maxlength="42"
+           aria-describedby="stay_fee_council_account-help{% if fee_account_error %} stay-fee-account-error{% endif %}"
+           value="{{ apartment.stay_fee_council_account or apartment.stay_fee_council_iban or '' }}"{% if fee_required %} required{% endif %}{% if fee_account_error %} aria-invalid="true"{% endif %}>
+  </div>
 </div>
 {#- 0205: the wizard asks only rate, period, symbol and account; the office details are asked in Settings when the first report needs them. -#}
 {% if not fee_required %}<div class="fee-setup-section" id="stay-fee-council">
