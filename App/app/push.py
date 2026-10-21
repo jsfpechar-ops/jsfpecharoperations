@@ -452,6 +452,102 @@ def _finish(outbox_id: int, state: str, status: Optional[int], moment: datetime)
     )
 
 
+# --- the four urgent events (brief 0207) ----------------------------------------
+# Each runs next to the e-mail for the same event and never raises: an alert
+# that cannot be queued must never be the reason a filing, a calendar sync or a
+# door-code run fails.
+
+
+def _day(value: Any) -> str:
+    try:
+        return datetime.fromisoformat(str(value)).strftime("%d.%m.%Y")
+    except ValueError:
+        return str(value or "")
+
+
+def filing_problem(apartment: Any, submission_id: Optional[int]) -> int:
+    """UbyPort did not accept a report. One push per property and local day."""
+    try:
+        from . import deadlines, mail_notify
+
+        stays = mail_notify.stays_for_submission(submission_id)
+        return notify(
+            apartment["owner_user_id"],
+            "filing_problem",
+            key=f"{apartment['id']}:{deadlines.local_now().date().isoformat()}",
+            url=f"/reservations/{stays[0]['id']}" if len(stays) == 1 else "/reservations",
+            params={"property": apartment["internal_name"] or ""},
+        )
+    except Exception:
+        log.exception("push_filing_problem_failed submission_id=%s", submission_id)
+        return 0
+
+
+def deadline_at_risk(stay: Dict[str, Any]) -> int:
+    """A stay is about to miss the police deadline (filing_watchdog). Once per stay."""
+    try:
+        deadline = stay["deadline"]
+        return notify(
+            stay["owner_user_id"],
+            "deadline_at_risk",
+            key=str(stay["reservation_id"]),
+            url=f"/reservations/{stay['reservation_id']}",
+            params={
+                "property": stay["property"],
+                "date": stay["arrival"].strftime("%d.%m.%Y"),
+                "deadline": f"{deadline.strftime('%d.%m.%Y')} {deadline.strftime('%H:%M')}",
+            },
+        )
+    except Exception:
+        log.exception("push_deadline_failed reservation_id=%s", stay.get("reservation_id"))
+        return 0
+
+
+def door_code_missing(reservation_id: int) -> int:
+    """Registered guests still have no door code. Once per stay."""
+    try:
+        row = db.query_one(
+            "SELECT r.id, r.date_from, a.owner_user_id, a.internal_name "
+            "FROM reservation r JOIN apartment a ON a.id = r.apartment_id WHERE r.id = ?",
+            (reservation_id,),
+        )
+        if not row:
+            return 0
+        return notify(
+            row["owner_user_id"],
+            "door_code",
+            key=str(row["id"]),
+            url=f"/reservations/{row['id']}",
+            params={"property": row["internal_name"] or "", "date": _day(row["date_from"])},
+        )
+    except Exception:
+        log.exception("push_door_code_failed reservation_id=%s", reservation_id)
+        return 0
+
+
+def cancelled_with_guests(apartment_id: int, reservation_id: int) -> int:
+    """The calendar cancelled a stay whose guests had registered. Once per stay."""
+    try:
+        row = db.query_one(
+            "SELECT r.id, r.date_from, a.owner_user_id, a.internal_name "
+            "FROM reservation r JOIN apartment a ON a.id = r.apartment_id "
+            "WHERE r.id = ? AND a.id = ?",
+            (reservation_id, apartment_id),
+        )
+        if not row:
+            return 0
+        return notify(
+            row["owner_user_id"],
+            "cancelled_with_guests",
+            key=str(row["id"]),
+            url=f"/reservations/{row['id']}",
+            params={"property": row["internal_name"] or "", "date": _day(row["date_from"])},
+        )
+    except Exception:
+        log.exception("push_cancelled_failed reservation_id=%s", reservation_id)
+        return 0
+
+
 # --- retention ------------------------------------------------------------------
 
 
