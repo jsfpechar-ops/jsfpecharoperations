@@ -126,6 +126,15 @@ def _wizard_context(
         "setup_hidden": bool(state and state.get("hidden") and not state.get("finished")),
         "door_code": door_code,
         "lock_available": lock_available,
+        # 0203: the lock step shows the lock panel itself, so connecting a lock
+        # never leaves the wizard.
+        "lock_panel": (
+            {
+                **admin_routes._smart_lock_panel_context(request),
+                "return_to": f"/apartments/{apartment_id}/setup/door_lock",
+            }
+            if step == "door_lock" else None
+        ),
         "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
         "link_key": link_key,
         "pin": apartment["permalink_pin"] or "",
