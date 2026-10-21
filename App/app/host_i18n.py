@@ -5911,6 +5911,8 @@ _PUSH_SETTINGS_STRINGS = {
 }
 for _lang, _strings in _PUSH_SETTINGS_STRINGS.items():
     STRINGS[_lang].update(_strings)
+STRINGS["en"]["push.device_remove_confirm"] = "Stop alerts on %(name)s?"
+STRINGS["cs"]["push.device_remove_confirm"] = "Zastavit upozornění na zařízení %(name)s?"
 
 # 0080: stay detail grouping and in-page navigation.
 _STAY_DETAIL_0080_STRINGS = {
