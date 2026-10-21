@@ -29,3 +29,18 @@ Done: steps 1 to 7. Left: fix or confirm the 3 failures above (test_fee_setup_co
 ## Owner steps left
 
 None on the server. Merge via scripts/merge-pr-on-green.sh after the fixes.
+
+## Follow-up (step 9)
+
+- Fee test: `App/tests/test_fee_setup_compatibility.py` edited (2 asserts and the name-loop pins per brief). Last line: `18 passed, 1 warning in 13.00s`.
+- Navigation, branch (`-k "not fit_every_width"`): `2 failed, 9 passed, 1 deselected`.
+- Navigation, origin/main (all tests): `3 failed, 9 passed`. Failing on main: `test_three_views_four_groups_one_editor_and_unique_ids`, `test_create_offers_the_calendar_first_and_works_without_js`, `test_property_views_fit_every_width_and_sidebar` (360 px: "Reporting & fees", "Door lock", "Automation" tabs overflow).
+- Conclusion: the two branch failures also fail on main, so they are not caused by this branch. Not fixed, per brief.
+
+Branch failure 1, line 196 (`test_three_views_four_groups_one_editor_and_unique_ids`):
+- Assertion: `assert "<details" not in content.replace('<details class="fee-setup-section">', "")`
+- Page has instead: `<details class="setup-readiness-help">` with `<summary>... Checklist details</summary>` after the nav list.
+
+Branch failure 2, line 527 (`test_create_offers_the_calendar_first_and_works_without_js`):
+- Assertion: Playwright `page.locator(".setup-wizard-skip .link-button").click()` times out (waiting for locator).
+- Page has instead: `templates/setup_wizard/calendar.html` line 39 `<form class="inline setup-wizard-skip">` with `<button class="ui-btn ui-btn-secondary" type="submit" name="action" value="skip">`. No `.link-button` class.

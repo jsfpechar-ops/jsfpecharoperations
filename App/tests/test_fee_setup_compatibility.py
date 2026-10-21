@@ -283,8 +283,8 @@ def test_invalid_account_saves_nothing_and_keeps_what_was_typed(host):
     assert _row(apartment_id) == before
     text = response.text
     assert 'id="stay-fee-account-error"' in text
-    assert "Enter a valid Czech bank account or IBAN." in text
-    assert 'value="777"' in text and 'value="1234567890"' in text
+    assert "This account number does not add up." in text  # 0208 copy
+    assert 'value="777"' in text  # 0208: the old three-box post is not echoed into the one box
     assert 'value="Council office"' in text
     assert f'name="fee_return_to" value="{back}"' in text
     assert re.search(r'data-settings-group="reporting"[^>]*>|is-active" data-settings-group="reporting"', text)
@@ -306,7 +306,7 @@ def test_fee_editor_is_the_only_one_and_shows_the_council_block(host):
     assert page.count('name="stay_fee_authority_name"') == 1
     assert 'aria-describedby="stay_fee_authority_databox-help"' in section
     assert 'id="stay_fee_authority_databox-help"' in section
-    for name in ("account_prefix", "account_number", "account_bank", "_stay_fee_account_existing"):
+    for name in ("stay_fee_council_account", "_stay_fee_account_existing"):
         assert page.count(f'name="{name}"') == 1
 
 
