@@ -1,16 +1,16 @@
 # Status
 
-Updated: 2026-10-20.
+Updated: 2026-10-21.
 
 ## Production
 
 
 - **Magic-link:** phases 1–2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)); e-mail login, `.env` admin/SES, access log off, properties tested.
-- **112 reconcile:** dry run `guests answered with accepted codes only: 0` — no `--apply` needed (Oct 2026).
 - Live app `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
 
+- Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
 - AI/scraper crawler block (0195): robots.txt AI group, `/.well-known/tdmrep.json`, Terms §11 TDM clause en+cs (TERMS_VERSION kept 1.7; lawyer to confirm).
 
 - Host design reset follow-up (0165-0183): six-item sidebar, WCAG 2.2 AA check, bordered rows and controls, Stays/Cleaning/guest-card cleanups (PR #405). **Deploy needed:** new `?v=` keys. Shots: design-reset/
