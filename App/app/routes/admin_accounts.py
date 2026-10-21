@@ -344,7 +344,7 @@ async def onboarding_emails_submit(request: Request):
 
 @router.post("/account/stay-fee-emails")
 async def stay_fee_emails_submit(request: Request):
-    """The Settings toggle "Stay fee report by email" (0205, plan stay-fee-monthly-email).
+    """The Settings toggle "Stay fee report by email" (0221, plan stay-fee-monthly-email).
 
     Only the account holder changes it, as for the onboarding e-mails.
     """

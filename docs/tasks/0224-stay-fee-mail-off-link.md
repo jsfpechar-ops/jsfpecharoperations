@@ -1,13 +1,13 @@
-# 0208: One-click link to the off switch in both stay-fee emails
+# 0224: One-click link to the off switch in both stay-fee emails
 
 Status: done
-Depends on: 0206 | Base commit: 7f26a6d | Branch: claude/project-thread-9ov0nz
+Depends on: 0222 | Base commit: 7f26a6d | Branch: claude/project-thread-9ov0nz
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [stay-fee-monthly-email](../plans/stay-fee-monthly-email.md)
 
 ## 1. Objective
 
-Owner asked (2026-10-21) that a host who does not want these emails can stop them easily. Add a "Turn these emails off" link to the Settings switch (`/settings#settings-stay-fee-emails`, 0205) under the footer line of both stay-fee emails.
+Owner asked (2026-10-21) that a host who does not want these emails can stop them easily. Add a "Turn these emails off" link to the Settings switch (`/settings#settings-stay-fee-emails`, 0221) under the footer line of both stay-fee emails.
 
 ## 2. Context
 
@@ -49,7 +49,7 @@ As in [TEMPLATE](TEMPLATE.md) §8.
 
 ## 9. Report
 
-Write `docs/tasks/0208-report.md` (300 tokens at most), set `Status: review`.
+Write `docs/tasks/0224-report.md` (300 tokens at most), set `Status: review`.
 
 ## Owner steps
 

@@ -1,6 +1,6 @@
 """Monthly stay-fee email (plan: docs/plans/stay-fee-monthly-email.md).
 
-0205: the host's switch. 0206/0207 add the shared confirm step and the daily job.
+0221: the host's switch. 0222/0223 add the shared confirm step and the daily job.
 """
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ def due_month(cadence: str, today: date) -> Optional[date]:
 
 
 def run(today: Optional[date] = None) -> dict:
-    """The daily job (0207): seal clean periods, queue the reports and the blocked mails."""
+    """The daily job (0223): seal clean periods, queue the reports and the blocked mails."""
     today = today or claim.prague_today()
     counts = {"confirmed": 0, "reports": 0, "blocked": 0}
     cutoff = (datetime.now(timezone.utc) - timedelta(days=3)).replace(microsecond=0).isoformat()

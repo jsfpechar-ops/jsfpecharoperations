@@ -1,13 +1,13 @@
-# 0205: On/off switch for the monthly stay-fee email
+# 0221: On/off switch for the monthly stay-fee email
 
 Status: done
-Depends on: none (0204 may land first) | Base commit: 2f043c8 | Branch: claude/project-thread-9ov0nz
+Depends on: none (0220 may land first) | Base commit: 2f043c8 | Branch: claude/project-thread-9ov0nz
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [stay-fee-monthly-email](../plans/stay-fee-monthly-email.md) (brief 2 of 4)
 
 ## 1. Objective
 
-From 0207 on, UbyHost confirms each complete stay-fee period on the 2nd day after it ends and emails the operator the PDF and QR. Add the host's switch for it (on by default) in Settings, and one short status line on the Stay fees list, so a host who prefers to do it by hand can turn it off.
+From 0223 on, UbyHost confirms each complete stay-fee period on the 2nd day after it ends and emails the operator the PDF and QR. Add the host's switch for it (on by default) in Settings, and one short status line on the Stay fees list, so a host who prefers to do it by hand can turn it off.
 
 ## 2. Context
 
@@ -44,7 +44,7 @@ ALTER TABLE user_account ADD COLUMN stay_fee_emails_opt_out_at TEXT;
 ```python
 """Monthly stay-fee email (plan: docs/plans/stay-fee-monthly-email.md).
 
-0205: the host's switch. 0206/0207 add the shared confirm step and the daily job.
+0221: the host's switch. 0222/0223 add the shared confirm step and the daily job.
 """
 from __future__ import annotations
 
@@ -120,7 +120,7 @@ As in [TEMPLATE](TEMPLATE.md) §8.
 
 ## 9. Report
 
-Write `docs/tasks/0205-report.md` (600 tokens at most), set `Status: review`.
+Write `docs/tasks/0221-report.md` (600 tokens at most), set `Status: review`.
 
 ## Risk list (for the reviewer)
 

@@ -680,6 +680,7 @@ STRINGS: Dict[str, str] = {
     "notification.job_name.mail": "hàng đợi email",
     "notification.job_name.photo_sweep": "dọn ảnh hộ chiếu",
     "notification.job_name.retention": "lưu giữ dữ liệu",
+    "notification.job_name.stay_fee_mail": "email phí lưu trú hằng tháng",
     "notification.retention_due.title": "%(count)s hồ sơ khách sắp hết thời hạn lưu giữ",
     "notification.retention_due.detail": "Các hồ sơ này đến hạn trong %(days)s ngày tới. Hãy xem lại sổ khách lưu trú và xuất những gì bạn còn cần: /housebook",
     "notification.cancelled_after_report.title.cancelled": "Một lượt lưu trú từ %(date)s đã bị hủy trong lịch sau khi đã khai báo với cảnh sát.",

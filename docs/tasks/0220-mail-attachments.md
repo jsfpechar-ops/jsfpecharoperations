@@ -1,4 +1,4 @@
-# 0204: Mail outbox can send a PDF and an inline QR image
+# 0220: Mail outbox can send a PDF and an inline QR image
 
 Status: done
 Depends on: none | Base commit: 2f043c8 | Branch: claude/project-thread-9ov0nz
@@ -7,7 +7,7 @@ Plan: [stay-fee-monthly-email](../plans/stay-fee-monthly-email.md) (brief 1 of 4
 
 ## 1. Objective
 
-The monthly stay-fee mail (0206/0207) must carry the sealed PDF as an attachment and the payment QR as an inline image (Gmail blocks `data:` images). Teach `app/mail.py` to build those parts at send time from a reference in the payload, so the outbox never stores file bytes.
+The monthly stay-fee mail (0222/0223) must carry the sealed PDF as an attachment and the payment QR as an inline image (Gmail blocks `data:` images). Teach `app/mail.py` to build those parts at send time from a reference in the payload, so the outbox never stores file bytes.
 
 ## 2. Context
 
@@ -31,7 +31,7 @@ No other file may change.
 1. In `mail.py`, add near `delivery_html`:
 
 ```python
-# 0204: files built at send time from a reference in the payload. The outbox
+# 0220: files built at send time from a reference in the payload. The outbox
 # never holds file bytes; a row whose file is gone fails and retries like any
 # other send error.
 STAY_FEE_FILING_KEY = "stay_fee_filing_id"
@@ -91,7 +91,7 @@ As in [TEMPLATE](TEMPLATE.md) §8.
 
 ## 9. Report
 
-Write `docs/tasks/0204-report.md` (600 tokens at most), set `Status: review`.
+Write `docs/tasks/0220-report.md` (600 tokens at most), set `Status: review`.
 
 ## Risk list (for the reviewer)
 
@@ -99,5 +99,5 @@ Write `docs/tasks/0204-report.md` (600 tokens at most), set `Status: review`.
 
 ## Owner steps
 
-1. After deploy to staging, trigger one stay-fee mail (0207) and look at it in your inbox.
+1. After deploy to staging, trigger one stay-fee mail (0223) and look at it in your inbox.
 2. If the log shows `AccessDenied` for the send, open AWS IAM, find the UbyHost SES user's policy, and add the action `ses:SendRawEmail` next to `ses:SendEmail`.

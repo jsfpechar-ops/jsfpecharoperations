@@ -34,7 +34,7 @@ KINDS = (
     "submission_problem",
     "invoice_issued",
     "workspace_deletion",
-    # 0206: monthly stay-fee email (plan stay-fee-monthly-email).
+    # 0222: monthly stay-fee email (plan stay-fee-monthly-email).
     "stay_fee_report",
     "stay_fee_blocked",
     "cancelled_with_guests",
@@ -98,7 +98,7 @@ HOST_KINDS = (
     "email_confirm",
     "passkey_added",
     "door_code_notice",
-    # 0206: monthly stay-fee email (plan stay-fee-monthly-email).
+    # 0222: monthly stay-fee email (plan stay-fee-monthly-email).
     "stay_fee_report",
     "stay_fee_blocked",
 )
@@ -327,7 +327,7 @@ def delivery_html(payload: Dict[str, Any]) -> str:
     return _with_door_code(_with_secret(stored_html(payload), payload), payload)
 
 
-# 0204: files built at send time from a reference in the payload. The outbox
+# 0220: files built at send time from a reference in the payload. The outbox
 # never holds file bytes; a row whose file is gone fails and retries like any
 # other send error.
 STAY_FEE_FILING_KEY = "stay_fee_filing_id"

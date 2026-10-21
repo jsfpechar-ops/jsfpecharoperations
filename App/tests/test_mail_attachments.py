@@ -1,4 +1,4 @@
-"""0204: stay-fee mail carries the sealed PDF and an inline QR image (mocked SES)."""
+"""0220: stay-fee mail carries the sealed PDF and an inline QR image (mocked SES)."""
 from __future__ import annotations
 
 import email

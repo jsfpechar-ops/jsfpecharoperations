@@ -1,4 +1,4 @@
-"""0205: the host's switch for the monthly stay-fee email."""
+"""0221: the host's switch for the monthly stay-fee email."""
 from __future__ import annotations
 
 from datetime import date

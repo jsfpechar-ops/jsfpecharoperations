@@ -1,20 +1,20 @@
-# 0206: One confirm step for button and job, plus the two stay-fee emails
+# 0222: One confirm step for button and job, plus the two stay-fee emails
 
 Status: done
-Depends on: 0204, 0205 | Base commit: ffacd5e + 0205 | Branch: claude/project-thread-9ov0nz
+Depends on: 0220, 0221 | Base commit: ffacd5e + 0221 | Branch: claude/project-thread-9ov0nz
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [stay-fee-monthly-email](../plans/stay-fee-monthly-email.md) (brief 3 of 4)
 
 ## 1. Objective
 
-The "Save period" button and the coming daily job (0207) must apply exactly the same checks before a period is sealed. Move those checks into `stay_fee_auto.check()`, add `stay_fee_auto.confirm()` for a clean period, and add the two mails: the finished report (PDF + QR + how to pay) and the "what to fix" notice.
+The "Save period" button and the coming daily job (0223) must apply exactly the same checks before a period is sealed. Move those checks into `stay_fee_auto.check()`, add `stay_fee_auto.confirm()` for a clean period, and add the two mails: the finished report (PDF + QR + how to pay) and the "what to fix" notice.
 
 ## 2. Context
 
 - Checks today, inline in `App/app/routes/stay_fees.py` `stay_fee_finalize` (~line 713): `period = stay_fee.property_period(apartment, calc_month, live_only=True, cadence=cadence, rate=...)`, `group = stay_fee.report_group(apartment, calc_month, live_only=True, period=period, cadence=cadence)`, `issues = stay_fee.report_issues(group, today)`, plus `"stay_fees.issue.unsigned"` when `stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"], period)`. Seal: `stay_fee_filing.save(apartment, group["first"], rate_czk=rate, collected=..., issued_on=today, cadence=group["cadence"], replacing_id=...)`; rate = `period["rate_czk"] if period else stay_fee.clamp_rate(apartment["stay_fee_rate_czk"])`.
 - Payment data: `stay_fee.payment_details(group)` needs `group["anchor"]` (the apartment), `group["vs"]`, `group["total_czk"]`; returns `None` without a council IBAN, else `{account, iban, iban_display, vs, spayd, ...}` (`spayd` empty when total is 0 or no VS). `stay_fee.format_czk(n)`.
 - Period names in the host's language: copy the body of `_ui_period_label` (`routes/stay_fees.py:51`) into `stay_fee_auto.period_label(lang, cadence, month)` (keys `month.<n>`, `stay_fees.quarter`). Do not change `_ui_period_label` (PR #419 edits that file).
-- Mail: `mail.enqueue(kind=, idempotency_key=, to_email=, subject=, payload=, apartment_id=, owner_user_id=)`; new kinds must go in `mail.KINDS` and `mail.HOST_KINDS` (`test_mail.py`-style guard). 0204 payload keys: `mail.STAY_FEE_FILING_KEY`, `mail.QR_SPAYD_KEY`, `mail.QR_CONTENT_ID`, optional `"attachment_name"`.
+- Mail: `mail.enqueue(kind=, idempotency_key=, to_email=, subject=, payload=, apartment_id=, owner_user_id=)`; new kinds must go in `mail.KINDS` and `mail.HOST_KINDS` (`test_mail.py`-style guard). 0220 payload keys: `mail.STAY_FEE_FILING_KEY`, `mail.QR_SPAYD_KEY`, `mail.QR_CONTENT_ID`, optional `"attachment_name"`.
 - Composer to copy: `mail_notify.build_workspace_deletion` (~line 929) and its queue function: `_text(lang, key, **kw)`, `_shell(lang=, title=, preheader=, blocks=, footer_lines=)`, `_button(url, label)`, `_public(path)`, `_esc`, recipient `_entity_contact_email(apartment["legal_entity_id"])`, language `host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)`.
 - Keys go in `App/app/host_i18n.py` (`en`, `cs`) and `App/app/host_vi_i18n.py`, one block each next to the other `mail.*` keys. Placeholders use `%(name)s` like the existing mail keys.
 
@@ -64,9 +64,9 @@ def confirm(apartment, month, today) -> Optional[int]:
     db.audit("stay_fee_auto_finalize", f"apartment_id={apartment['id']} period={checked['key']}")
     return filing_id
 ```
-   (imports: `sqlite3`, `Optional`, `stay_fee`, `stay_fee_filing`; match `db.audit` to how 0205 called it.)
+   (imports: `sqlite3`, `Optional`, `stay_fee`, `stay_fee_filing`; match `db.audit` to how 0221 called it.)
 2. `stay_fee_finalize`: replace the `period = ...` / `group = ...` / `issues = ...` / unsigned lines with `checked = stay_fee_auto.check(apartment, calc_month, today, cadence=cadence, rate=sealed["rate_czk"] if correcting else None)` and `period, group, issues = checked["period"], checked["group"], checked["issues"]`. Behaviour must stay identical; `tests/test_stay_fee_finalize.py` proves it.
-3. `mail.py`: add `"stay_fee_report"` and `"stay_fee_blocked"` to `KINDS` and to `HOST_KINDS` with a `# 0206: monthly stay-fee email (plan stay-fee-monthly-email).` comment.
+3. `mail.py`: add `"stay_fee_report"` and `"stay_fee_blocked"` to `KINDS` and to `HOST_KINDS` with a `# 0222: monthly stay-fee email (plan stay-fee-monthly-email).` comment.
 4. `mail_notify.py`, a `# --- stay-fee monthly email ---` section with:
    - `build_stay_fee_report(*, lang, property_name, period, amount, total_czk, authority, databox, account, vs, has_qr, report_url) -> {subject, text, html}`. Text and HTML from the same strings: intro, step 1 (with or without data box), step 2 (with QR / without QR) or the zero line when `total_czk == 0`, the fix line + button, footer line `mail.stay_fee.footer`. When `has_qr`, the HTML has `<img src="cid:stayfeeqr" width="200" height="200" alt="{qr_alt}">` right after step 2, and the text part says "(QR code attached)" via `mail.stay_fee.qr_alt`.
    - `queue_stay_fee_report(apartment, filing_row, lang=None) -> Optional[int]`: recipient `_entity_contact_email`; none → return None. `month = stay_fee_filing.period_anchor(filing_row)`; group-like dict `{"anchor": apartment, "vs": stay_fee.vs_of(apartment), "total_czk": filing_row["total_due_czk"]}` for `payment_details`; `report_url = _public(f"/stay-fees/{apartment['id']}?month={stay_fee.month_key(month)}")`. Payload: `text`, `html`, `lang`, `mail.STAY_FEE_FILING_KEY: filing_row["id"]`, `mail.QR_SPAYD_KEY: details["spayd"]` only when present. Key `f"stay_fee_report:{apartment['id']}:{filing_row['period_key']}:v{filing_row['version']}"`.
@@ -91,7 +91,7 @@ def confirm(apartment, month, today) -> Optional[int]:
 | `mail.stay_fee_blocked.intro` | We could not confirm the stay fee report for %(period)s at %(property)s yet, because: | Hlášení poplatku za %(period)s pro %(property)s zatím nemůžeme potvrdit, protože: | Chúng tôi chưa thể xác nhận báo cáo phí lưu trú kỳ %(period)s cho %(property)s, vì: |
 | `mail.stay_fee_blocked.after` | Fix this on the report page. We check again every morning and email you the finished report as soon as nothing is missing. | Opravte to na stránce hlášení. Každé ráno to znovu zkontrolujeme a hotové hlášení vám pošleme, jakmile nic nebude chybět. | Hãy sửa trên trang báo cáo. Mỗi sáng chúng tôi kiểm tra lại và gửi báo cáo hoàn chỉnh ngay khi không còn thiếu gì. |
 
-   Before adding, grep that `settings.account.stay_fee_emails` (0205) has the same title as quoted in `mail.stay_fee.footer`; if 0205 changed it, quote the actual title.
+   Before adding, grep that `settings.account.stay_fee_emails` (0221) has the same title as quoted in `mail.stay_fee.footer`; if 0221 changed it, quote the actual title.
 6. Tests `test_stay_fee_auto.py` (fixture: copy from `tests/test_stay_fee_finalize.py`, which builds a fee property with a finished month):
    - `check` on a clean finished month → no issues; on the running month → `stay_fees.issue.period_running`.
    - `confirm` seals once (row in `stay_fee_filing`, audit `stay_fee_auto_finalize`), second call returns None.
@@ -102,7 +102,7 @@ def confirm(apartment, month, today) -> Optional[int]:
 
 ## 5. Do not touch
 
-Anything else in `routes/stay_fees.py`, the stay-fee bank fields, templates, CSS. No scheduler change (0207). No git commit/stash/checkout/reset/clean.
+Anything else in `routes/stay_fees.py`, the stay-fee bank fields, templates, CSS. No scheduler change (0223). No git commit/stash/checkout/reset/clean.
 
 ## 6. Commands
 
@@ -121,7 +121,7 @@ As in [TEMPLATE](TEMPLATE.md) §8.
 
 ## 9. Report
 
-Write `docs/tasks/0206-report.md` (600 tokens at most), set `Status: review`.
+Write `docs/tasks/0222-report.md` (600 tokens at most), set `Status: review`.
 
 ## Risk list (for the reviewer)
 

@@ -1,4 +1,4 @@
-"""0206: the shared stay-fee check, the confirm step and the two stay-fee mails."""
+"""0222: the shared stay-fee check, the confirm step and the two stay-fee mails."""
 from __future__ import annotations
 
 import json

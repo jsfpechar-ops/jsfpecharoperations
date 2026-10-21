@@ -955,7 +955,7 @@ def build_workspace_deletion(*, stage: str, date: str, lang: Optional[str] = Non
 
 
 # --- stay-fee monthly email ---
-# 0206: the finished report (PDF attached, QR inline) and the "what to fix" notice
+# 0222: the finished report (PDF attached, QR inline) and the "what to fix" notice
 # (plan stay-fee-monthly-email). Both go to the legal entity's contact address.
 
 

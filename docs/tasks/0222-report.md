@@ -1,4 +1,4 @@
-# 0206 report
+# 0222 report
 
 Status: review
 
@@ -34,7 +34,7 @@ Not committed (per orchestrator instruction).
 ## Deviations
 
 1. The first run's deviations 1 and 2 are resolved by Addendum 7 and 8. The pinned-kinds test and the `mail_kind` copy now pass.
-2. `tests/test_host_i18n.py` (and the other i18n files) fail when run alone with "no such table: apartment". The schema is created by an earlier test file, so the file passes after `test_stay_fee_auto.py`. This is order dependence, not caused by 0206. Not changed.
+2. `tests/test_host_i18n.py` (and the other i18n files) fail when run alone with "no such table: apartment". The schema is created by an earlier test file, so the file passes after `test_stay_fee_auto.py`. This is order dependence, not caused by 0222. Not changed.
 3. `period_label` added to `stay_fee_auto.py` as the brief states; the mail builders use `_block_button` (the wrapped row) rather than `_button`, as `build_workspace_deletion` does.
 
 ## Questions

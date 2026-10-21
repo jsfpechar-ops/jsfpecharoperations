@@ -343,7 +343,7 @@ def _job_door_codes() -> None:
 
 
 def _job_stay_fee_mail() -> None:
-    """Seal clean stay-fee periods and email the reports (0207). Runs daily at 07:00."""
+    """Seal clean stay-fee periods and email the reports (0223). Runs daily at 07:00."""
     started = time.perf_counter()
     try:
         counts = stay_fee_auto.run()

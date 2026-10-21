@@ -1,4 +1,4 @@
-# 0204 report
+# 0220 report
 
 Status: review
 
@@ -6,9 +6,9 @@ Status: review
 
 - `App/app/mail.py`: added `STAY_FEE_FILING_KEY`, `QR_SPAYD_KEY`, `QR_CONTENT_ID`, `attachments(payload)`, `_raw_message(...)`; `_send_ses` sends a raw MIME message when the payload has a filing id or a spayd string; `_send_console` appends an attachment note to `body_text` and logs `attachments=%d`.
 - `App/tests/test_mail_attachments.py`: new, 4 tests (SES raw message with PDF, inline QR and Reply-To; v1 path unchanged without attachments; missing filing raises `MailConfigError`; console note).
-- `docs/tasks/0204-report.md`: this file.
+- `docs/tasks/0220-report.md`: this file.
 
-`test_ses_mail.py` is unchanged. `git status` shows no other changes from this task. The untracked `docs/plans/`, `docs/tasks/0205-*` and `0204-mail-attachments.md` files were already there before I started.
+`test_ses_mail.py` is unchanged. `git status` shows no other changes from this task. The untracked `docs/plans/`, `docs/tasks/0221-*` and `0220-mail-attachments.md` files were already there before I started.
 
 ## Commands
 
@@ -35,5 +35,5 @@ None.
 
 ## Owner steps left
 
-1. After deploy to staging, trigger one stay-fee mail (0207) and check the inbox.
+1. After deploy to staging, trigger one stay-fee mail (0223) and check the inbox.
 2. If the log shows `AccessDenied` on the send, add `ses:SendRawEmail` to the UbyHost SES user's IAM policy next to `ses:SendEmail`. The raw path needs it and the old path did not.

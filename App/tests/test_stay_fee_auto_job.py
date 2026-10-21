@@ -1,4 +1,4 @@
-"""0207: the daily stay-fee job seals clean periods, queues the reports and the blocked mails."""
+"""0223: the daily stay-fee job seals clean periods, queues the reports and the blocked mails."""
 from __future__ import annotations
 
 from datetime import date

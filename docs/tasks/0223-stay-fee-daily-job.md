@@ -1,17 +1,17 @@
-# 0207: Daily job that confirms clean stay-fee periods and emails them
+# 0223: Daily job that confirms clean stay-fee periods and emails them
 
 Status: done
-Depends on: 0206 | Base commit: after 0206 | Branch: claude/project-thread-9ov0nz
+Depends on: 0222 | Base commit: after 0222 | Branch: claude/project-thread-9ov0nz
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [stay-fee-monthly-email](../plans/stay-fee-monthly-email.md) (brief 4 of 4)
 
 ## 1. Objective
 
-Every morning, for hosts with the switch on (0205): seal each fee property's last period once it is clean, from the 2nd day after it ends, and email the report (0206). A blocked period gets one "what to fix" email and is checked again daily. A period the host saved or corrected by hand is emailed too, so every confirmed report reaches the operator's inbox.
+Every morning, for hosts with the switch on (0221): seal each fee property's last period once it is clean, from the 2nd day after it ends, and email the report (0222). A blocked period gets one "what to fix" email and is checked again daily. A period the host saved or corrected by hand is emailed too, so every confirmed report reaches the operator's inbox.
 
 ## 2. Context
 
-- `stay_fee_auto.emails_enabled(user_id)`, `check`, `confirm`, `period_label` (0205/0206). `mail_notify.queue_stay_fee_report(apartment, filing_row)`, `queue_stay_fee_blocked(apartment, group, issues)`.
+- `stay_fee_auto.emails_enabled(user_id)`, `check`, `confirm`, `period_label` (0221/0222). `mail_notify.queue_stay_fee_report(apartment, filing_row)`, `queue_stay_fee_blocked(apartment, group, issues)`.
 - `stay_fee.cadence_of(apartment)`, `stay_fee.is_active(apartment)`, `stay_fee.previous_month(today)`, `stay_fee.period_bounds(cadence, month) -> (first, last)`, `stay_fee.shift_month(month, delta)`. `stay_fee_filing.latest(apartment_id, key)`, `stay_fee_filing.period_key(cadence, month)`. Prague date: `claim.prague_today()`.
 - Scheduler: `App/app/scheduler.py`. Copy `_job_retention` (try / `_job_failed` / `_job_ok` / `_log_run`), add a key to `job_intervals()`, and an `add_job(..., "cron", hour=7, minute=0, id="stay_fee_mail", max_instances=1, coalesce=True)` in `start()`.
 
@@ -36,7 +36,7 @@ No other file may change.
      b. Every live filing of this apartment (`superseded_at IS NULL`) with `created_at` in the last 3 days (`db.utcnow()` format; compare as ISO strings) → `queue_stay_fee_report(a, row)`, count `reports` when it returned an id. (The key includes the version, so a repeated run or a later day sends nothing twice, and a correction sends the new version.)
    - Wrap each apartment in `try/except Exception: log.exception(...)` so one broken property never stops the rest.
 3. `scheduler.py`: `_job_stay_fee_mail()` calling `stay_fee_auto.run()`; `"stay_fee_mail": 24 * 60` in `job_intervals()`; cron at 07:00 (scheduler timezone is already Prague).
-4. Tests `test_stay_fee_auto_job.py` (fixture from `tests/test_stay_fee_finalize.py`; console mail enabled as in 0206's tests). Pass `today` explicitly:
+4. Tests `test_stay_fee_auto_job.py` (fixture from `tests/test_stay_fee_finalize.py`; console mail enabled as in 0222's tests). Pass `today` explicitly:
    - `due_month("monthly", date(2026,11,1))` is None; `date(2026,11,2)` → `date(2026,10,1)`; `date(2026,11,16)` → None. Quarterly `date(2026,10,2)` → `date(2026,7,1)`.
    - Clean period on the 2nd: one filing sealed, one `stay_fee_report` outbox row with the filing id; second `run` same day adds nothing.
    - Switch off (`stay_fee_auto.set_emails_enabled(uid, False, actor="t")`): nothing sealed, nothing queued.
@@ -62,7 +62,7 @@ As in [TEMPLATE](TEMPLATE.md) §8.
 
 ## 9. Report
 
-Write `docs/tasks/0207-report.md` (600 tokens at most), set `Status: review`.
+Write `docs/tasks/0223-report.md` (600 tokens at most), set `Status: review`.
 
 ## Risk list (for the reviewer)
 
@@ -71,3 +71,7 @@ Write `docs/tasks/0207-report.md` (600 tokens at most), set `Status: review`.
 ## Owner steps
 
 1. After deploy, check `/admin` Operations shows the job `stay_fee_mail` with a run time after 07:00 the next morning.
+
+## Addendum (orchestrator)
+
+10. Add `notification.job_name.stay_fee_mail` next to `notification.job_name.retention` in `App/app/host_i18n.py` (en "monthly stay fee email", cs "měsíční e-mail s poplatkem z pobytu") and `App/app/host_vi_i18n.py` (vi "email phí lưu trú hằng tháng"). Run `.venv/bin/python -m pytest tests/test_scheduler.py tests/test_notification_copy.py tests/test_stay_fee_auto_job.py -q --tb=short 2>&1 | tail -30` from `App/`. No other change.
