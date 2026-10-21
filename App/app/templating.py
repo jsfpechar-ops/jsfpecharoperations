@@ -24,6 +24,7 @@ from . import (
     contact_phone,
     db,
     deadlines,
+    guest_uk_i18n,
     host_i18n,
     icalsync,
     i18n,
@@ -62,14 +63,14 @@ def _nights(date_from: Optional[str], date_to: Optional[str]) -> int:
     return (end - start).days if start and end else 0
 
 
-def _nights_key(count: int) -> str:
+def _nights_key(count: int, lang: str = "") -> str:
     """One/few/many already lives in ``host_i18n``; this only renames its suffix.
 
     Czech picks its form from the count and English follows the same rule, so
     the decision is shared rather than written twice. A-13 fixes the guest key
     names, so ``nights.one`` becomes ``night_one``.
     """
-    suffix = host_i18n.plural_key("night", count).rpartition(".")[2]
+    suffix = host_i18n.plural_key("night", count, lang).rpartition(".")[2]
     return {
         "one": "night_one",
         "few": "nights_few",
@@ -84,7 +85,7 @@ def _nights_label(context, date_from: Optional[str], date_to: Optional[str]) -> 
     lang = context.get("lang") or (
         host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
     )
-    return i18n.translator(lang)(_nights_key(count), n=count)
+    return i18n.translator(lang)(_nights_key(count, lang), n=count)
 
 
 def _from_json(value: Optional[str]) -> Any:
@@ -304,6 +305,7 @@ _PASS_MONTHS = {
     "de": ("Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"),
     "es": ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"),
     "fr": ("janv", "févr", "mars", "avr", "mai", "juin", "juil", "août", "sept", "oct", "nov", "déc"),
+    "uk": guest_uk_i18n.PASS_MONTHS,
 }
 _PASS_WEEKDAYS = {
     "en": ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
@@ -311,6 +313,7 @@ _PASS_WEEKDAYS = {
     "de": ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"),
     "es": ("lun", "mar", "mié", "jue", "vie", "sáb", "dom"),
     "fr": ("lun", "mar", "mer", "jeu", "ven", "sam", "dim"),
+    "uk": guest_uk_i18n.PASS_WEEKDAYS,
 }
 
 
