@@ -62,6 +62,7 @@ The wizard stay-fee form tag (`setup_wizard/stay_fee.html`, verbatim):
 | App/tests/test_property_navigation_browser.py | edit | settings field names |
 | App/tests/test_fee_signature_0209.py | create | tests |
 | App/tests/test_stay_fee_property_panel.py | edit | Step 0 pin |
+| App/tests/test_entity_editor_fields.py | edit | Step 11 pins |
 
 No other file may change.
 
@@ -193,6 +194,26 @@ Reuse fixtures from `tests/test_fee_form_partial.py` (it posts a fee form for a 
 ### Step 10. Commit
 
 `0209 signature with stay fee`, only §3 files, trailers from your prompt, never PNGs.
+
+### Step 11 (follow-up). Business-page signature pins in `App/tests/test_entity_editor_fields.py`
+
+The signature left Business details on purpose (Step 4), so these pins move. Add the file to §3.
+
+a) `test_the_remove_checkbox_only_shows_with_a_stored_signature`: replace its last line `    assert page.count('name="signature_remove"') == 1` with `    assert 'name="signature_remove"' not in page  # 0209: the signature is edited with the stay fee`. Then in `App/tests/test_fee_signature_0209.py` add one test: on the property settings page (`?view=settings&section=reporting&lang=en`) `name="signature_remove"` is absent while the operator has no signature, and present exactly once after `db.update("legal_entity", <id>, {"signature_png_enc": db.encrypt_field(<valid PNG data URL>)})`. That test also asserts `'accept="image/png,image/jpeg"' in page` and `'maxlength="80"' in page`.
+
+b) `test_the_entity_forms_keep_their_contract`: delete the two `expected` entries lines
+```
+        "signature_name": ('type="text"', False), "signature_file": ('type="file"', False),
+        "signature_drawn": ('type="hidden"', False),
+```
+then delete the two lines `    assert 'accept="image/png,image/jpeg"' in _tag(page, "signature_file")` and `    assert 'maxlength="80"' in _tag(page, "signature_name")`. Add, after the `for form, prefix in forms:` loop, `    assert "sig-canvas" not in page  # 0209`.
+   The `field_id = "signature" if ...` line may stay.
+
+c) `test_entity_lookup_keeps_typed_identity`: remove `            "signature_name": "Typed signer",` from the posted dict and `'value="Typed signer"', ` from the `typed` tuple.
+
+d) Run `.venv/bin/python -m pytest tests/test_entity_editor_fields.py tests/test_fee_signature_0209.py -q --tb=short 2>&1 | tail -30` from `App/`. If a fourth failure remains, and it pins the signature on Business details, change it the same way (absent instead of present) and list it; anything else: STOP.
+
+Commit `0209 step 11`.
 
 ## 5. Do not touch
 
