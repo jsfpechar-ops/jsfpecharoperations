@@ -28,6 +28,8 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Rate-limit events | `rate_limit_event` | created | 24 hours (G-D7) | `retention.py` rate-limit step | Security |
 | Login links | `login_token` (hash, account, address, purpose, times) | expiry | 1 day after expiry; deleted with the account | `retention.py` login-token step (`login_link.purge`) | Security |
 | Passkeys | `passkey` | created | until removed by the host or the account is deleted | `retention.py` workspace deletion; cascade | Contract |
+| Urgent-alert devices (push address and keys, encrypted; language; device family; last visit) | `push_subscription` | last visit | 180 days unseen; at once when the host turns alerts off, removes the device, logs out on it, or the push service says it is gone; deleted with the account | `retention.py` push step (`push.purge`); workspace deletion | Contract |
+| Queued urgent alerts (kind, stay date, property name) | `push_outbox` | created | 30 days | `retention.py` push step; workspace deletion | Operations |
 | WebAuthn challenges | `webauthn_challenge` | expiry (5 min) | 1 day after expiry | `retention.py` webauthn-challenge step (`passkeys.purge`) | Security |
 | Door code PIN | `door_code.pin_enc` | code expiry | 1 day after the code expires | `retention.py` door-code-PIN step | Minimisation |
 | TTLock connection (UbyHost-made TTLock user, its encrypted password and tokens, cached lock list) | `lock_account` | host removes it, or the account is deleted | until then | Smart locks page Remove; cascade from user_account | Contract |
