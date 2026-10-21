@@ -27,6 +27,14 @@
 {% endmacro %}
 
 {% macro business_fields(prefix, entity) %}
+  {#- 0204: IČO and the register lookup come first; the lookup fills the rest. -#}
+  <div class="grid">
+    {{ ico_field(prefix ~ 'ico', entity.ico if entity else '', 'business') }}
+    <div class="field">
+      <label for="{{ prefix }}dic">{{ t('entities.dic') }}</label>
+      <input type="text" id="{{ prefix }}dic" name="dic" value="{{ (entity.dic or '') if entity else '' }}">
+    </div>
+  </div>
   <div class="field">
     <label for="{{ prefix }}name">{{ t('entities.name') }}</label>
     <input type="text" id="{{ prefix }}name" name="name" required
@@ -40,20 +48,13 @@
            placeholder="{{ t('entities.seat_placeholder') }}">
   </div>
   <div class="grid">
-    {{ ico_field(prefix ~ 'ico', entity.ico if entity else '', 'business') }}
-    <div class="field">
-      <label for="{{ prefix }}dic">{{ t('entities.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
-      <input type="text" id="{{ prefix }}dic" name="dic" value="{{ (entity.dic or '') if entity else '' }}">
-    </div>
-  </div>
-  <div class="grid">
     <div class="field">
       <div class="field-label-row"><label for="{{ prefix }}contact_email">{{ t('entities.email') }}</label>{{ help_tip(prefix ~ 'contact-email-help', t('entities.email_hint')) }}</div>
       <input type="email" id="{{ prefix }}contact_email" name="contact_email" required
              value="{{ (entity.contact_email or '') if entity else '' }}">
     </div>
     <div class="field">
-      <label for="{{ prefix }}contact_phone">{{ t('entities.phone') }} <span class="opt">{{ t('common.optional') }}</span></label>
+      <label for="{{ prefix }}contact_phone">{{ t('entities.phone') }}</label>
       {% set phone = phone_form_parts((entity.contact_phone or '') if entity else '') %}
       <div class="operator-phone">
         <span class="operator-phone-prefix">
@@ -96,6 +97,7 @@
     edit post different targets; the caller owns the <form> element, its
     action and the multipart encoding the signature upload needs. -#}
 {% macro business_form_body(prefix, entity, preview='', ares_error=none, ares_note=none) %}
+  <p class="required-legend">{{ t('common.required_legend') }}</p>
   {{ register_messages(ares_error, ares_note) }}
   {{ business_fields(prefix, entity) }}
   {{ signature_fields(prefix, entity, preview) }}
