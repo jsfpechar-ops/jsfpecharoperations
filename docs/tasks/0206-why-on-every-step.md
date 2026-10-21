@@ -1,6 +1,6 @@
 # 0206: Say why on every setup step and settings section
 
-Status: todo
+Status: review
 Depends on: 0207 | Base commit: 2a32c64 | Branch: claude/project-thread-cf47ju
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
