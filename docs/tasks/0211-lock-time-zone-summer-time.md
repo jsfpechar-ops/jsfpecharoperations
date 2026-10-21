@@ -1,6 +1,6 @@
 # 0211: Lock card wrongly says "Time zone is not Prague" in summer time
 
-Status: todo
+Status: review
 Depends on: 0206 | Base commit: f547ef0 | Branch: claude/project-thread-cf47ju
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
