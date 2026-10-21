@@ -1,16 +1,17 @@
 # 0203 report
 
-Status: blocked
+Status: review
 Branch: claude/project-thread-graf3i (not pushed, no PR)
 
 ## Files changed
 
 - App/app/routes/stay_fees.py: step 1, commit 5469478.
-- App/app/templates/stay_fees.html: step 2, commit 705b287.
+- App/app/templates/stay_fees.html: step 2 (commit 705b287); step 6 fix, pay button always secondary (commit 8424561).
 - App/app/static/host2.css, App/app/templates/base.html, App/tests/static_versions.json: step 3, commit 36e1c0c.
 - App/app/host_i18n.py, App/app/host_vi_i18n.py: step 4, commit 72fa3ef.
-- docs/design/catalog.json, docs/design/pages/stay-fees.md: step 5, commit cbe4b94 (9 class names added, page line added, 29 lines).
-- App/tests/test_design_fees.py (6a), App/tests/test_stay_fee_pay_steps.py (6b, new), App/tests/test_stay_fee_pay_steps_browser.py (6c, new): step 6, commit 99c1f55. The browser test fails (see below).
+- docs/design/catalog.json, docs/design/pages/stay-fees.md: step 5, commit cbe4b94; step 6 fix reworded the pay-steps line (commit 8424561).
+- App/tests/test_design_fees.py: step 6a, original assertion restored in 8424561 (no net change).
+- App/tests/test_stay_fee_pay_steps.py (new), App/tests/test_stay_fee_pay_steps_browser.py (new): step 6, commit 99c1f55; teardown fix in 8424561.
 - docs/tasks/0203-report.md: this report.
 
 ## Commands
@@ -18,35 +19,48 @@ Branch: claude/project-thread-graf3i (not pushed, no PR)
 Step 6, command 1: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_UBYPORT_ENV=mock UBYHOST_DEPLOYMENT=staging UBYHOST_ENABLE_SCHEDULER=0 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium .venv/bin/python -m pytest tests/test_invoice_*.py tests/test_stay_fee*.py tests/test_design_fees.py tests/test_host_fee_navigation.py -q --tb=short -x 2>&1 | tail -30`
 - Last 5 lines:
 ```
-=========================== short test summary info ============================
-FAILED tests/test_stay_fee_pay_steps_browser.py::test_pay_steps_fit_every_width_and_language
-ERROR tests/test_stay_fee_pay_steps_browser.py::test_pay_steps_fit_every_width_and_language
-!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 2 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
-1 failed, 197 passed, 1 skipped, 1 warning, 1 error in 29.90s
+........................................................................ [ 96%]
+.........                                                                [100%]
+=============================== warnings summary ===============================
+  from starlette.testclient import TestClient as TestClient  # noqa
+
+224 passed, 1 skipped, 1 warning in 45.92s
 ```
-- Same set without the browser test (`--deselect` of that one test): `223 passed, 1 skipped, 1 deselected, 1 warning in 40.95s`. The skip is tests/test_invoice_autofill.py:300 "set UBYHOST_SHOTS_DIR to capture acceptance screenshots" (existing test, env only).
+- The 1 skip is tests/test_invoice_autofill.py:300 (set UBYHOST_SHOTS_DIR to capture acceptance screenshots). Existing, env only; it is not in command 2.
 
-Step 6, command 2: not run (stopped at command 1 failure).
+Step 6, command 2 (with UBYHOST_CAPTURE_0203=1): `... .venv/bin/python -m pytest tests/test_stay_fee_pay_steps_browser.py tests/test_host_list_cards_browser.py tests/test_host_geometry.py tests/test_design_guardrails_browser.py -q --tb=short -x -rs 2>&1 | tail -30`
+- Last 5 lines:
+```
+..............                                                           [100%]
+=============================== warnings summary ===============================
+  from starlette.testclient import TestClient as TestClient  # noqa
 
-Lint: `python3 scripts/context_lint.py` last line: `context lint: OK`. `python3 scripts/design_lint.py` last line: `design lint: OK`.
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+14 passed, 1 warning in 74.03s (0:01:14)
+```
+- 0 skipped.
 
-## Failure text (browser test, 6c)
+Lint: `python3 scripts/context_lint.py 2>&1 | tail -5` last line `context lint: OK`. `python3 scripts/design_lint.py 2>&1 | tail -5` last line `design lint: OK`.
 
-Run alone: `test_pay_steps_fit_every_width_and_language` fails with
-`AssertionError: [(('before', 'en', 390), 'more than one primary'), (('before', 'en', 1280), 'more than one primary'), ...]`
-Every width and language fails in the "before" state. The check counts every `.ui-btn-primary`. The page already has the filter apply button with `ui-btn-primary filter-apply` (asserted in test_design_fees.py), and step 1 is primary when one property is shown (`pay_btn`, stay_fees.html line 13). So one property gives two primaries. No sideways scroll and no missing steps were reported.
-The teardown of the module-scoped `acc` fixture also errors: `sqlite3.IntegrityError: FOREIGN KEY constraint failed` (seen when the browser file runs alone). Not investigated.
+## Screenshots (390 px, en)
+
+- /mnt/project-files/design-reset/stay-fee-steps/stay-fees-before-en-390.png
+- /mnt/project-files/design-reset/stay-fee-steps/stay-fees-after-en-390.png
+- Also written: 1280 and 2000 px for before and after, en/cs/vi, in the same folder.
+
+## Fix history
+
+- 6c failed with "more than one primary" (filter Apply plus the step-1 button). Owner/coordinator decision (a): every step button is secondary. Fixed in 8424561.
+- The `acc` teardown raised `sqlite3.IntegrityError: FOREIGN KEY constraint failed`. Fixed by deleting the test's stay_fee_filing rows in a finally block (8424561). No other table needed deleting.
 
 ## Deviations
 
-- Done: steps 1 to 5 committed, step 6 written and committed. Left: step 6 browser test (fails), step 6 command 2, the browser screenshots (not taken), and the step 7 acceptance tick.
-- The browser test was not loosened or skipped. The 6c check and the page are unchanged.
+- None to the brief content. The 6c check and the test were not loosened or skipped.
 
 ## Questions
 
-- Owner decision: which primary rule wins? Options: (a) step 1 is always secondary on this page; (b) the filter apply button becomes secondary; (c) the 6c check counts only pay-step primaries. The brief's §7 says at most one primary, so (c) would change the rule the brief sets. I did not pick one.
-- Teardown FK error in the `acc` fixture: is it known?
+- None.
 
 ## Owner steps left
 
-- Decide the primary rule above, then the executor (or you) reruns step 6 command 1 and command 2.
+- Review and merge the branch (not pushed here). Production deploy is manual.
