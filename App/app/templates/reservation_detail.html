@@ -64,6 +64,7 @@
   <div class="stay-command-main">
     <div>
       <div class="eyebrow">{{ t('stay.detail.next_step') }}</div>
+      {% set ns = namespace(count_edit=false) %}
       <p class="stay-command-note">
         {% if progress.status == 'failed' %}
           {{ t('hint.failed') }}
@@ -71,11 +72,11 @@
           {{ tp('stay.detail.ready_count', send_controls.pending_count) }}
         {% elif progress.not_registered %}
           {{ tp('host.missing', progress.not_registered) }}
-          <a href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a>
+          {% set ns.count_edit = true %}
         {% else %}
           {{ t(send_controls.send_hint_key, filled=progress.filled, expected=progress.expected) }}
           {% if send_controls.send_hint_key == 'hint.missing_guests' %}
-            <a href="#stay-quick-edit" data-open-details>{{ t('stay.detail.change_guest_count') }}</a>
+            {% set ns.count_edit = true %}
           {% endif %}
         {% endif %}
       </p>
@@ -88,6 +89,7 @@
       </p>{% endif %}
     </div>
     <div class="stay-command-actions">
+      {% if ns.count_edit %}<a class="ui-btn ui-btn-secondary" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a>{% endif %}
       {% if send_controls.send_enabled %}
         {% if progress.status == 'failed' %}
           {# Fix-first: the coral leads to the refusal, and "Send again" only
@@ -171,7 +173,7 @@
 {# --- 2. Guests --------------------------------------------------------- #}
 <section class="ui-section" id="guests">
 <div class="ui-section-h"><h2>{{ t('stay.detail.guests.title') }} {{ guest_count(progress, placeholder=true) }}</h2>
-  <div class="ui-form-actions"><a href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
+  <div class="ui-form-actions"><a class="ui-btn ui-btn-secondary ui-btn-compact" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
 </div>
 
 {% if stay_claim and (stay_claim.state != 'unclaimed' or stay_claim.guest_access_locked_at) %}

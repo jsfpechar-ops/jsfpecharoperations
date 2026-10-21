@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-20.
+Updated: 2026-10-21.
 
 ## Production
 
@@ -11,6 +11,7 @@ Updated: 2026-10-20.
 
 ## Now
 
+- 0195-0197: door lock moved into each property's Door lock tab, stay page buttons on one grid, clipped cleaning calendar selects fixed. Shots: design-reset/checkpoint-6/
 - Host design reset follow-up (0165-0183): six-item sidebar, WCAG 2.2 AA check, bordered rows and controls, Stays/Cleaning/guest-card cleanups (PR #405). **Deploy needed:** new `?v=` keys. Shots: design-reset/
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 - Host #397: b51e0bb; CI 8/8, zero browser skips ([brief](../tasks/0123-dashboard-stays-only.md)).

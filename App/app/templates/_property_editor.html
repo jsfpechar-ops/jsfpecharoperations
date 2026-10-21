@@ -203,6 +203,7 @@
   <div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock">
     <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
     <p class="property-group-intro">{{ t('property_nav.lock_intro') }}</p>
+    {% if door_code.account and door_code.locks %}
     <section class="panel property-section ui-section" id="door-code">
       <p class="ui-sub">{{ t('host.property_times_hint') }}
           {{ t('apartment.form.door_code.checkin') }} {{ '%02d:00' | format(apartment.checkin_hour) if apartment.checkin_hour is not none else '—' }} ·
@@ -210,14 +211,6 @@
           <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
         </p>
       <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.margin', hours=door_code.buffer) ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
-      <input type="hidden" name="door_code_section" value="1">
-      {% if not door_code.account %}
-        <p class="ui-sub">{{ t('apartment.form.door_code.connect_first') }}</p>
-        <a class="ui-btn ui-btn-secondary" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
-      {% elif not door_code.locks %}
-        <p class="ui-sub">{{ t('apartment.form.door_code.no_locks') }}</p>
-        <a class="ui-btn ui-btn-secondary" href="/smart-locks?return_to=/apartments/{{ apartment.id }}%23door-code#smart-locks-share">{{ t('smart_locks.title') }}</a>
-      {% else %}
         {% if door_code.test_mode %}<p class="ui-sub"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
         <input type="hidden" name="door_codes_fields" value="1">
         <div class="feature-switch-row">
@@ -239,8 +232,9 @@
         
         <p class="ui-sub">{{ t('apartment.form.door_code.first_use') }}</p>
         {% if door_code.overlap %}<p class="ui-sub"><strong>{{ t('apartment.form.door_code.overlap') }}</strong></p>{% endif %}
-      {% endif %}
     </section>
+    {% endif %}
+    <input type="hidden" name="door_code_section" value="1">
   </div>
   {% endif %}
 
@@ -369,4 +363,17 @@
     <a class="ui-btn ui-btn-secondary" href="/apartments">{{ t('apartment.form.back_list') }}</a>
   </div>
 </form>
+{% if door_code and lock_panel and lock_panel.smart_locks_enabled %}
+<div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock-account">
+  <section class="panel property-section ui-section" id="{% if door_code.account and door_code.locks %}smart-locks{% else %}door-code{% endif %}">
+    {% if not (door_code.account and door_code.locks) %}
+    <h3 class="property-section-title">{{ t('smart_locks.title') }}</h3>
+    <p class="ui-sub">{{ t('smart_locks.lede') }}</p>
+    {% endif %}
+    {% with account=lock_panel.account, receiver=lock_panel.receiver, locks=lock_panel.locks, fetched_at=lock_panel.fetched_at, reauth=lock_panel.reauth, return_to=lock_panel.return_to, properties_using=lock_panel.properties_using %}
+    {% include "_smart_locks_panel.html" %}
+    {% endwith %}
+  </section>
+</div>
+{% endif %}
 </div>

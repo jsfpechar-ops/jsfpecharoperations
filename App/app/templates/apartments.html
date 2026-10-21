@@ -145,11 +145,5 @@
   {% endif %}
 {% endif %}
 
-{% if smart_locks_enabled %}
-<h2 id="smart-locks-title">{{ t('smart_locks.title') }}</h2>
-<p class="ui-sub">{{ t('smart_locks.lede') }}</p>
-{% include "_smart_locks_panel.html" %}
-{% endif %}
-
 {# Archived properties live in Settings › Data & archive › Archived, off the working list (owner, 2026-10-13). #}
 {% endblock %}

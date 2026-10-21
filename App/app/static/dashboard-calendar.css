@@ -569,3 +569,11 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
   .dashboard-calendar[data-cleaning="false"] [data-cal-month],
   .dashboard-calendar[data-cleaning="false"] [data-cal-year] { display:none !important; }
 }
+/* 0197: shared cleaning page selects use the same compact box as the host calendar, so text is never clipped. */
+.cleaning-page .dashboard-calendar :is(.cal-heading,.cal-toolbar) select {
+  min-width:0; width:auto; max-width:100%; margin:0; box-sizing:border-box;
+  font:inherit; font-size:14px; line-height:1.2;
+  padding-top:0; padding-bottom:0; padding-left:10px; padding-right:30px;
+  border:1px solid var(--cal-line); border-radius:8px;
+}
+.cleaning-page .dashboard-calendar .cal-heading select[data-cal-property] { width:100%; }
