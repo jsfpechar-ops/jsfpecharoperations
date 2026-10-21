@@ -5828,6 +5828,38 @@ _PWA_STRINGS = {
 for _lang, _strings in _PWA_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# Brief 0204: the urgent alerts. Short: a lock screen shows about two lines.
+_PUSH_MESSAGE_STRINGS = {
+    "en": {
+        "push.msg.filing_problem.title": "Police report not accepted",
+        "push.msg.filing_problem.body": "%(property)s: UbyPort did not accept the report. Open UbyHost to see why and send it again.",
+        "push.msg.deadline_at_risk.title": "Police deadline at risk",
+        "push.msg.deadline_at_risk.body": "%(property)s, arrival %(date)s: guests are not reported yet. Deadline %(deadline)s.",
+        "push.msg.door_code.title": "Door code missing",
+        "push.msg.door_code.body": "%(property)s, arrival %(date)s: the guests have no door code yet. See the e-mail we sent you.",
+        "push.msg.cancelled_with_guests.title": "Cancelled stay had registered guests",
+        "push.msg.cancelled_with_guests.body": "%(property)s, %(date)s: nothing will be reported for it. If the booking only moved, set the stay back to Active.",
+        "push.msg.test.title": "Alerts are on",
+        "push.msg.test.body": "This device will get urgent UbyHost alerts.",
+        "notification.job_name.push": "urgent alerts",
+    },
+    "cs": {
+        "push.msg.filing_problem.title": "Hlášení policii nepřijato",
+        "push.msg.filing_problem.body": "%(property)s: UbyPort hlášení nepřijal. Otevřete UbyHost, zjistěte proč a odešlete ho znovu.",
+        "push.msg.deadline_at_risk.title": "Hrozí zmeškání lhůty pro policii",
+        "push.msg.deadline_at_risk.body": "%(property)s, příjezd %(date)s: hosté zatím nejsou nahlášeni. Termín %(deadline)s.",
+        "push.msg.door_code.title": "Chybí kód ke dveřím",
+        "push.msg.door_code.body": "%(property)s, příjezd %(date)s: hosté zatím nemají kód ke dveřím. Podívejte se do e-mailu, který jsme vám poslali.",
+        "push.msg.cancelled_with_guests.title": "Zrušený pobyt měl registrované hosty",
+        "push.msg.cancelled_with_guests.body": "%(property)s, %(date)s: nic se za něj nenahlásí. Pokud se rezervace jen přesunula, nastavte pobyt zpět na Aktivní.",
+        "push.msg.test.title": "Upozornění jsou zapnutá",
+        "push.msg.test.body": "Toto zařízení bude dostávat naléhavá upozornění UbyHost.",
+        "notification.job_name.push": "naléhavá upozornění",
+    },
+}
+for _lang, _strings in _PUSH_MESSAGE_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 # 0080: stay detail grouping and in-page navigation.
 _STAY_DETAIL_0080_STRINGS = {
     "en": {
