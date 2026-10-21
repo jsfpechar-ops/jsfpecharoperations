@@ -1,6 +1,6 @@
 # 0207 report
 
-Status: blocked
+Status: review
 Branch: claude/project-thread-cf47ju | Base: 40b1947 (brief commit)
 
 ## Files changed
@@ -80,3 +80,31 @@ Not run: `tests/test_onboarding_wizard_browser.py` (brief §6 item 5) was not in
 Evidence: working tree clean after the runs; no PNGs committed.
 
 Left for the owner or the next session: fix the Czech copy assertion at `App/tests/test_smart_locks_page.py:111` (decide whether the copy or the assertion is wrong), then rerun the first command, then set Status to `review`.
+
+## Follow-up (step 10)
+
+Changed: `App/tests/test_smart_locks_page.py` (lines 111-112, Czech TTLock assertions replaced as the brief states).
+
+`cd App && .venv/bin/python -m pytest tests/test_reporting_help_0097.py tests/test_smart_locks_page.py -q --tb=short 2>&1 | tail -15`
+
+```
+.venv/lib/python3.13/site-packages/fastapi/testclient.py:1
+  /home/user/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+19 passed, 1 warning in 14.56s
+```
+
+`cd App && UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_onboarding_wizard_browser.py -q --tb=line -rs 2>&1 | tail -15`
+
+```
+.venv/lib/python3.13/site-packages/fastapi/testclient.py:1
+  /home/user/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+70 passed, 1 warning in 117.55s (0:01:57)
+```
+
+Both green, 0 skipped. Status set to `review`. No PNGs committed.
