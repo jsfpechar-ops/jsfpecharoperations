@@ -288,7 +288,7 @@ def test_the_optional_address_fields_are_not_tagged(host):
 
     page = client.get(f"/apartments/{apartment_id}?lang=en")
 
-    for field in ("addr_street", "addr_obec_cast", "addr_orient_no", "city_en", "uby_contact"):
+    for field in ("addr_street", "addr_obec_cast", "addr_orient_no", "uby_contact"):  # 0204: city_en is hidden now
         assert "needed to report" not in _label(page.text, field), field
 
 
