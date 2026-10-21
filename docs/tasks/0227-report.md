@@ -1,4 +1,4 @@
-# 0206 report: urgent alerts switch in Settings
+# 0227 report: urgent alerts switch in Settings
 
 Status: blocked (one layout check, see Deviations)
 
@@ -9,7 +9,7 @@ Status: blocked (one layout check, see Deviations)
 - App/app/templates/base.html, App/app/templates/auth_base.html (key 20261021-0206)
 - App/tests/static_versions.json (regenerated, 33 files)
 - App/tests/test_push_settings_browser.py (new)
-- docs/tasks/0206-report.md, docs/tasks/0206-push-settings-ui.md (Status only)
+- docs/tasks/0227-report.md, docs/tasks/0227-push-settings-ui.md (Status only)
 
 ## Commands (last 5 lines)
 - `node --check App/app/static/pwa.js`: no output, exit 0
@@ -20,7 +20,7 @@ Status: blocked (one layout check, see Deviations)
 
 ## Acceptance (§7)
 - [x] §6 passes, 0 skipped
-- [x] 14 screenshots in /mnt/project-files/pwa/0206/, each viewed once; nothing cut off at 390 in en, cs, vi; labels fit
+- [x] 14 screenshots in /mnt/project-files/pwa/0227/, each viewed once; nothing cut off at 390 in en, cs, vi; labels fit
 - [ ] On badge and the two buttons on one line at 1280 and 2000: not met (see below)
 - [x] Only §3 files changed (pre-existing uncommitted docs edits in the tree were left alone, not committed)
 
@@ -36,11 +36,11 @@ Status: blocked (one layout check, see Deviations)
 - None from this brief.
 
 ## Fix 1
-- Commits: `0206-fix-1 step 1` (b68e497), `step 2` (c6802c2), `step 3` (5a326dc, base.html key `0206f`, static_versions regenerated), `step 4` (1505158).
+- Commits: `0227-fix-1 step 1` (b68e497), `step 2` (c6802c2), `step 3` (5a326dc, base.html key `0227f`, static_versions regenerated), `step 4` (1505158).
 - §6.1: `UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium UBYHOST_REQUIRE_BROWSER=1 ... -rs` → `15 passed` (0 skipped). The env var is needed because Playwright's default headless shell is not installed.
 - §6.2: `27 passed, 1 failed`. Failing: `test_design_lint.py` (see below).
 - §6.3: `design_lint.py` FAIL: `App/app/templates/settings.html: T3 class not in catalog: settings-row-actions` (2 lines). `context_lint.py` OK.
-- Screenshots: 13 present in `/mnt/project-files/pwa/0206/`. Viewed:
+- Screenshots: 13 present in `/mnt/project-files/pwa/0227/`. Viewed:
   - `alerts-on-1280-en.png`: badge and both buttons on one line, right of the text; no stray strip above "Add UbyHost to your home screen".
   - `alerts-on-2000-collapsed-en.png`: same as 1280.
   - `alerts-on-390-vi.png`: badge and buttons under the text, left-aligned, nothing cut off.

@@ -1768,7 +1768,7 @@ def submit_batch(
             state=state,
             reason=" ".join(detail_bits),
         )
-        # Brief 0207: the same news on the host's phone, once per property a day.
+        # Brief 0228: the same news on the host's phone, once per property a day.
         push.filing_problem(apartment, submission_id)
 
     # The third product promise: the Dorucenka is kept. A first-time accept that

@@ -1,7 +1,7 @@
-# 0207: Wire the four critical alerts
+# 0228: Wire the four critical alerts
 
 Status: review
-Depends on: 0204 | Branch: claude/project-thread-w35ftw
+Depends on: 0225 | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -15,7 +15,7 @@ Queue a push next to the existing e-mail for exactly four events: UbyPort did no
 - Each helper never raises: a push that cannot be queued must never be the reason a filing, a calendar sync or a door-code run fails (same contract as `mail_notify.submission_problem`).
 - One push per event per device: keys are the stay id, or the property id plus the local day for filing problems (the same rule as that e-mail).
 - Click targets are app paths only: `/reservations/<id>`, or `/reservations` when several stays are affected.
-- `push.notify(owner_user_id, kind, *, key, url, params)` from 0204 does the queueing.
+- `push.notify(owner_user_id, kind, *, key, url, params)` from 0225 does the queueing.
 
 ## 3. Files
 
@@ -35,7 +35,7 @@ No other file may change.
 **Step 1.** `App/app/push.py`. Anchor: `# --- retention ---`. Insert BEFORE that line:
 
 ```python
-# --- the four urgent events (brief 0207) ----------------------------------------
+# --- the four urgent events (brief 0228) ----------------------------------------
 # Each runs next to the e-mail for the same event and never raises: an alert
 # that cannot be queued must never be the reason a filing, a calendar sync or a
 # door-code run fails.
@@ -149,7 +149,7 @@ Run: `cd App && .venv/bin/python -c "import app.push" 2>&1 | tail -3`. Expected:
 Insert after it:
 
 ```python
-        # Brief 0207: the same news on the host's phone, once per property a day.
+        # Brief 0228: the same news on the host's phone, once per property a day.
         push.filing_problem(apartment, submission_id)
 ```
 
@@ -168,7 +168,7 @@ Replace with:
 ```python
         if stay.get("mailed_at"):
             continue
-        # Brief 0207: also on the host's phone. Queued once per stay, even when
+        # Brief 0228: also on the host's phone. Queued once per stay, even when
         # there is no address to mail and this loop sees the stay again.
         push.deadline_at_risk(stay)
         try:
@@ -203,7 +203,7 @@ Run: `cd App && .venv/bin/python -c "import app.main" 2>&1 | tail -3`. Expected:
 **Step 6.** Create `App/tests/test_push_events.py` with exactly:
 
 ```python
-"""Brief 0207: exactly four events reach the host's phone, once each."""
+"""Brief 0228: exactly four events reach the host's phone, once each."""
 from __future__ import annotations
 
 import secrets
@@ -332,7 +332,7 @@ As in TEMPLATE §8. Also stop if any filing, door-code or calendar test fails af
 
 ## 9. Report
 
-`docs/tasks/0207-report.md` per TEMPLATE §9; set `Status: review`.
+`docs/tasks/0228-report.md` per TEMPLATE §9; set `Status: review`.
 
 ## Risk list (for the reviewer)
 

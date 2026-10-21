@@ -325,7 +325,7 @@ def _delete_workspace(owner_id: int) -> None:
         # Task 0004: passkeys and their ceremonies (also cascade).
         cur.execute("DELETE FROM passkey WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM webauthn_challenge WHERE user_account_id = ?", (owner_id,))
-        # Brief 0204: urgent-alert devices and their queue (also cascade).
+        # Brief 0225: urgent-alert devices and their queue (also cascade).
         cur.execute("DELETE FROM push_outbox WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM push_subscription WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
@@ -419,7 +419,7 @@ def _cleaning_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> 
 
 
 def _push_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
-    """Brief 0204: alerts 30 days after they were queued; devices unseen 180 days."""
+    """Brief 0225: alerts 30 days after they were queued; devices unseen 180 days."""
     from . import push
     return push.purge(dry_run=dry_run, owner_user_id=owner_user_id)
 

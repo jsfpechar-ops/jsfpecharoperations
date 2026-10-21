@@ -1,4 +1,4 @@
-# 0207 report: four critical push alerts
+# 0228 report: four critical push alerts
 
 Status: review
 Done: steps 1 to 6. Left: none.
@@ -10,8 +10,8 @@ Done: steps 1 to 6. Left: none.
 - App/app/door_codes.py: import plus hook after door_code_delayed_notice.
 - App/app/icalsync.py: import plus hook after cancelled_with_guests.
 - App/tests/test_push_events.py: new, 6 tests.
-- docs/tasks/0207-push-critical-events.md: Status set to review.
-- docs/tasks/0207-report.md: this file.
+- docs/tasks/0228-push-critical-events.md: Status set to review.
+- docs/tasks/0228-report.md: this file.
 
 Commits: bd43e9b c6b2393 4101252 c1fad7c 0436e26 758a605(one per step, 6 included; the report commit follows).
 Diff stat of App/ and docs/ since step 1 base: 6 files changed, 209 insertions(+), 4 deletions(-)

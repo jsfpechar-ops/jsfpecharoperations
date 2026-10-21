@@ -10,7 +10,7 @@ Updated: 2026-10-21.
 
 ## Now
 
-- Phone app + urgent alerts (0219, 0204-0208, #421). **Owner:** deploy, test on iPhone and Android.
+- Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
 - Stay-fee email 0220-0224: built, owner staging test.
 - 0203 #419: fee list pay steps. Data box send on hold (DIA).
 - #416: lock tab, stay buttons, phone pass (0196-0201).

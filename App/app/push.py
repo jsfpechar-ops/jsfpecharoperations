@@ -1,4 +1,4 @@
-"""Urgent alerts on the host's phone (Web Push, briefs 0204-0206).
+"""Urgent alerts on the host's phone (Web Push, briefs 0225-0227).
 
 Only problems that need the host now become a push (owner decision
 2026-10-21): a police report UbyPort did not accept, a police deadline at
@@ -452,7 +452,7 @@ def _finish(outbox_id: int, state: str, status: Optional[int], moment: datetime)
     )
 
 
-# --- the four urgent events (brief 0207) ----------------------------------------
+# --- the four urgent events (brief 0228) ----------------------------------------
 # Each runs next to the e-mail for the same event and never raises: an alert
 # that cannot be queued must never be the reason a filing, a calendar sync or a
 # door-code run fails.

@@ -1,4 +1,4 @@
-"""Brief 0207: exactly four events reach the host's phone, once each."""
+"""Brief 0228: exactly four events reach the host's phone, once each."""
 from __future__ import annotations
 
 import secrets

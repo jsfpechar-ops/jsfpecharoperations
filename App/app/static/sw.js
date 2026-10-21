@@ -78,7 +78,7 @@ self.addEventListener("message", function (event) {
   }));
 });
 
-// Urgent alerts (0204-0206). Every push shows a notification: Safari stops
+// Urgent alerts (0225-0227). Every push shows a notification: Safari stops
 // delivering to a site that pushes silently. A rotated subscription needs no
 // pushsubscriptionchange handler: pwa.js sends the current one on every visit.
 self.addEventListener("push", function (event) {

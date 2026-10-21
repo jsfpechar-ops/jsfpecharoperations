@@ -1,4 +1,4 @@
--- Brief 0204: urgent alerts on the host's phone (Web Push).
+-- Brief 0225: urgent alerts on the host's phone (Web Push).
 --
 -- push_subscription: one row per browser that turned alerts on. The endpoint is
 -- the push service address the browser gave; with the two keys it is enough to

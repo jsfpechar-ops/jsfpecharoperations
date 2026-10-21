@@ -1,4 +1,4 @@
-"""Brief 0204: urgent alerts on the host's phone: devices, queue and delivery."""
+"""Brief 0225: urgent alerts on the host's phone: devices, queue and delivery."""
 from __future__ import annotations
 
 import json

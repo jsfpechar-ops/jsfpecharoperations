@@ -5882,7 +5882,7 @@ _PWA_STRINGS = {
 for _lang, _strings in _PWA_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
-# Brief 0204: the urgent alerts. Short: a lock screen shows about two lines.
+# Brief 0225: the urgent alerts. Short: a lock screen shows about two lines.
 _PUSH_MESSAGE_STRINGS = {
     "en": {
         "push.msg.filing_problem.title": "Police report not accepted",
@@ -5914,7 +5914,7 @@ _PUSH_MESSAGE_STRINGS = {
 for _lang, _strings in _PUSH_MESSAGE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
-# Brief 0205: Settings > Phone app > urgent alerts on this device.
+# Brief 0226: Settings > Phone app > urgent alerts on this device.
 _PUSH_SETTINGS_STRINGS = {
     "en": {
         "push.title": "Urgent alerts on this device",

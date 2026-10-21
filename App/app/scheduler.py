@@ -346,7 +346,7 @@ def _job_door_codes() -> None:
 
 
 def _job_push() -> None:
-    """Brief 0204: send the urgent alerts that are due."""
+    """Brief 0225: send the urgent alerts that are due."""
     started = time.perf_counter()
     try:
         summary = push.drain()

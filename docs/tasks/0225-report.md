@@ -1,4 +1,4 @@
-# 0204 report (push engine, steps 5 to 12)
+# 0225 report (push engine, steps 5 to 12)
 
 Status: done
 
@@ -19,20 +19,20 @@ Steps 9 to 11 and 12 were inserted from the brief's own code blocks by script, w
 3. `pytest tests/test_host_i18n.py tests/test_no_em_dashes.py tests/test_meta_capi.py -q -x`: FAILED.
    `test_host_i18n.py::test_language_endpoint_sets_cookie_and_rejects_open_redirects` fails in the
    CSRF primer GET (`tests/conftest.py:142`) with `sqlite3.OperationalError: no such table: apartment`.
-   It fails when run alone too. Not verified whether it also fails before 0204.
+   It fails when run alone too. Not verified whether it also fails before 0225.
    The other two files were not reached because of `-x`.
 4. `python3 scripts/context_lint.py`: FAIL, not caused by code.
-   - `docs/tasks/0204-push-engine.md` is about 13992 tokens, over the 12000 cap.
-   - `docs/tasks/0204-cont-1.md` lacks the numbered `## N.` sections the lint expects.
+   - `docs/tasks/0225-push-engine.md` is about 13992 tokens, over the 12000 cap.
+   - `docs/tasks/0225-cont-1.md` lacks the numbered `## N.` sections the lint expects.
 
 ## Deviations
 - Stopped at the tool-call checkpoint with command 3 failing. Did not fix code, since the failure is in a CSRF/DB setup path outside §3 and needs a decision.
 - Brief Status set to `blocked` (not `review`) because §6 command 3 and the lint are not green.
-- Untracked `docs/tasks/0205-push-endpoints.md` and `0206-push-settings-ui.md` were already present and left alone.
+- Untracked `docs/tasks/0226-push-endpoints.md` and `0227-push-settings-ui.md` were already present and left alone.
 
 ## Questions
 - Should the owner or orchestrator confirm the `test_host_i18n` failure is pre-existing (run the same file at commit b4b3c48), or allow a fix in the test DB setup?
-- Should the two 0204 briefs be split or compacted to pass the lint?
+- Should the two 0225 briefs be split or compacted to pass the lint?
 
 ## Owner steps left
 - None until the questions above are answered. Then run §6 commands 3 and 4 and the §7 check `git diff --stat` against §3.

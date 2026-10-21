@@ -1,7 +1,7 @@
-# 0208: Privacy policy and recipient list for urgent alerts
+# 0229: Privacy policy and recipient list for urgent alerts
 
 Status: review
-Depends on: 0207 | Base commit: HEAD of the branch | Branch: claude/project-thread-w35ftw
+Depends on: 0228 | Base commit: HEAD of the branch | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 40k tokens
 
 ## 1. Objective
@@ -33,7 +33,7 @@ def recipient_ids() -> tuple:
 | `App/app/subprocessors_i18n.py` | edit | step 2 |
 | `App/app/routes/legal.py` | edit | step 3 |
 | `App/tests/test_privacy_legal_positions.py` | edit | step 4 |
-| `docs/tasks/0208-push-privacy-text.md`, `docs/tasks/0208-report.md` | edit/create | Status, report |
+| `docs/tasks/0229-push-privacy-text.md`, `docs/tasks/0229-report.md` | edit/create | Status, report |
 
 No other file may change. `PRIVACY_VERSION` stays as it is (decision in section 7).
 
@@ -58,7 +58,7 @@ No other file may change. `PRIVACY_VERSION` stays as it is (decision in section 
 8. old `"účtu. Auditní záznamy se uchovávají 3 roky. Údaje hostů řídí nastavení a povinnosti "`
    new `"účtu. Auditní záznamy se uchovávají 3 roky. Zařízení s naléhavými upozorněními mažeme při vypnutí upozornění, odebrání zařízení nebo odhlášení na něm, nebo po 180 dnech bez návštěvy; připravená upozornění po 30 dnech. Údaje hostů řídí nastavení a povinnosti "`
 
-In replacement 1 the `\"` is a backslash-escaped quote inside the Python string literal in the file (write the two characters `\` and `"`). Then `cd App && .venv/bin/python -c "import app.privacy_policy_i18n"`. Commit `0208 step 1`.
+In replacement 1 the `\"` is a backslash-escaped quote inside the Python string literal in the file (write the two characters `\` and `"`). Then `cd App && .venv/bin/python -c "import app.privacy_policy_i18n"`. Commit `0229 step 1`.
 
 **Step 2.** In `App/app/subprocessors_i18n.py`, directly before each `"subprocessors.recipient_ttlock": (` line, insert (EN block under `"en"`, CS under `"cs"`):
 
@@ -80,7 +80,7 @@ CS:
         ),
 ```
 
-Commit `0208 step 2`.
+Commit `0229 step 2`.
 
 **Step 3.** In `App/app/routes/legal.py` replace the §2 block with:
 
@@ -95,7 +95,7 @@ def recipient_ids() -> tuple:
     if not signup.enabled():
 ```
 
-and add one comment line directly above `RECIPIENT_IDS`: `# "push" (0208) is listed only while urgent alerts are on (UBYHOST_WEB_PUSH).` Commit `0208 step 3`.
+and add one comment line directly above `RECIPIENT_IDS`: `# "push" (0229) is listed only while urgent alerts are on (UBYHOST_WEB_PUSH).` Commit `0229 step 3`.
 
 **Step 4.** Append to `App/tests/test_privacy_legal_positions.py`:
 
@@ -115,7 +115,7 @@ def test_urgent_alerts_are_explained_and_their_push_services_listed(monkeypatch)
         assert SUBPROCESSOR_STRINGS[lang]["subprocessors.recipient_push"][:20] not in html, lang
 ```
 
-If an assertion fails only because the page HTML-escapes a character in the first 20 characters, STOP and report (do not change the wording). Commit `0208 step 4`.
+If an assertion fails only because the page HTML-escapes a character in the first 20 characters, STOP and report (do not change the wording). Commit `0229 step 4`.
 
 ## 5. Do not touch
 
@@ -137,4 +137,4 @@ An anchor not found exactly once, or any test failure: stop and report.
 
 ## 9. Report
 
-`docs/tasks/0208-report.md` (under 1500 tokens): commits, §6 last lines, deviations. Set Status to `review` or `blocked`. Commit.
+`docs/tasks/0229-report.md` (under 1500 tokens): commits, §6 last lines, deviations. Set Status to `review` or `blocked`. Commit.

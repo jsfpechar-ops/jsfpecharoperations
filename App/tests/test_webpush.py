@@ -1,4 +1,4 @@
-"""Brief 0204: Web Push encryption and VAPID, checked against the RFCs."""
+"""Brief 0225: Web Push encryption and VAPID, checked against the RFCs."""
 from __future__ import annotations
 
 import json

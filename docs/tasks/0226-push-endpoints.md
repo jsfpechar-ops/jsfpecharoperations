@@ -1,16 +1,16 @@
-# 0205: Push endpoints and Settings data (turn on, refresh, test, turn off, remove)
+# 0226: Push endpoints and Settings data (turn on, refresh, test, turn off, remove)
 
 Status: review
-Depends on: 0204 | Branch: claude/project-thread-w35ftw
+Depends on: 0225 | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-Add the endpoints that `static/pwa.js` (brief 0206) calls to turn urgent alerts on and off for this device, keep it current, and send a test; a no-JavaScript form to remove a device; the Settings page data; and all Settings copy in EN, CS and VI.
+Add the endpoints that `static/pwa.js` (brief 0227) calls to turn urgent alerts on and off for this device, keep it current, and send a test; a no-JavaScript form to remove a device; the Settings page data; and all Settings copy in EN, CS and VI.
 
 ## 2. Context
 
-- `App/app/push.py` (0204) has `save_subscription`, `remove`, `remove_endpoint`, `send_test`, `devices_for`, `count_for`, `public_key`, `enabled`, `SubscriptionError` (message `"too many devices"` when the account has 10).
+- `App/app/push.py` (0225) has `save_subscription`, `remove`, `remove_endpoint`, `send_test`, `devices_for`, `count_for`, `public_key`, `enabled`, `SubscriptionError` (message `"too many devices"` when the account has 10).
 - Pattern to copy: `App/app/routes/passkeys.py` (JSON endpoints with `X-CSRF-Token`, included by `routes/admin.py`, whose router adds the CSRF check). `device_label(user_agent, lang)` in that file gives "iPhone", "Android", "Mac"…, or the passkey fallback name, which we turn into an empty string.
 - Alerts are per person: every endpoint acts on the signed-in account and refuses while an admin previews someone else's workspace (`auth.workspace_user(request)["id"] != auth.current_user(request)["id"]`). Alerts about another host's stays must never reach the admin's phone.
 - **Refresh never creates a device**: a device removed in Settings stays removed until its owner presses "Turn on" again on it.
@@ -60,7 +60,7 @@ def refresh(account_id: int, endpoint: str, *, lang: str) -> bool:
 **Step 2.** Create `App/app/routes/push.py` with exactly:
 
 ```python
-"""Urgent alerts on this device (brief 0205): turn on, refresh, test, turn off.
+"""Urgent alerts on this device (brief 0226): turn on, refresh, test, turn off.
 
 JSON endpoints for static/pwa.js, with the CSRF token in X-CSRF-Token, and one
 plain form (remove a device) that works without JavaScript. They always act on
@@ -214,7 +214,7 @@ c. Anchor `router.include_router(passkey_routes.router)`. Insert after it: `rout
 d. Anchor `            "passkeys_available": passkeys.available(),`. Insert after it:
 
 ```python
-            # Brief 0205: Settings > Phone app, urgent alerts on this device.
+            # Brief 0226: Settings > Phone app, urgent alerts on this device.
             "push_available": _push_available(request),
             "push_key": push.public_key() if _push_available(request) else "",
             "push_devices": _own_push_devices(request),
@@ -237,7 +237,7 @@ def _own_push_devices(request: Request):
 
 Run: `cd App && .venv/bin/python -c "import app.main" 2>&1 | tail -3`. Expected: no error.
 
-**Step 4.** `App/app/host_i18n.py`. Anchor (added by 0204):
+**Step 4.** `App/app/host_i18n.py`. Anchor (added by 0225):
 
 ```python
 for _lang, _strings in _PUSH_MESSAGE_STRINGS.items():
@@ -248,7 +248,7 @@ Insert after it:
 
 ```python
 
-# Brief 0205: Settings > Phone app > urgent alerts on this device.
+# Brief 0226: Settings > Phone app > urgent alerts on this device.
 _PUSH_SETTINGS_STRINGS = {
     "en": {
         "push.title": "Urgent alerts on this device",
@@ -301,10 +301,10 @@ for _lang, _strings in _PUSH_SETTINGS_STRINGS.items():
     STRINGS[_lang].update(_strings)
 ```
 
-**Step 5.** `App/app/host_vi_i18n.py`. Anchor (added by 0204): `    "notification.job_name.push": "cảnh báo khẩn",`. Insert after it:
+**Step 5.** `App/app/host_vi_i18n.py`. Anchor (added by 0225): `    "notification.job_name.push": "cảnh báo khẩn",`. Insert after it:
 
 ```python
-    # Brief 0205: Settings > urgent alerts.
+    # Brief 0226: Settings > urgent alerts.
     "push.title": "Cảnh báo khẩn trên thiết bị này",
     "push.help": "Chỉ những sự cố cần bạn xử lý ngay: báo cáo cảnh sát bị lỗi, sắp trễ hạn khai báo, thiếu mã cửa, hoặc lượt lưu trú bị hủy đã có khách đăng ký. Bạn vẫn nhận mọi email. Đăng xuất sẽ tắt cảnh báo trên thiết bị đó.",
     "push.on": "Bật",
@@ -333,7 +333,7 @@ Run: `cd App && .venv/bin/python -m pytest tests/test_host_i18n.py tests/test_no
 **Step 6.** Create `App/tests/test_push_routes.py` with exactly:
 
 ```python
-"""Brief 0205: the urgent-alert endpoints behind Settings > Phone app."""
+"""Brief 0226: the urgent-alert endpoints behind Settings > Phone app."""
 from __future__ import annotations
 
 import secrets
@@ -471,7 +471,7 @@ Run: `cd App && .venv/bin/python -m pytest tests/test_push_routes.py -q --tb=sho
 
 ## 5. Do not touch
 
-Templates and static files (brief 0206 adds the Settings markup and `pwa.js`), `push.KINDS`, everything that calls `push.notify`. Hard rules: no new dependency; never log or audit an endpoint; no em dashes.
+Templates and static files (brief 0227 adds the Settings markup and `pwa.js`), `push.KINDS`, everything that calls `push.notify`. Hard rules: no new dependency; never log or audit an endpoint; no em dashes.
 
 ## 6. Commands
 
@@ -492,7 +492,7 @@ As in TEMPLATE §8.
 
 ## 9. Report
 
-`docs/tasks/0205-report.md` per TEMPLATE §9; set `Status: review`.
+`docs/tasks/0226-report.md` per TEMPLATE §9; set `Status: review`.
 
 ## Risk list (for the reviewer)
 

@@ -1,4 +1,4 @@
-"""Brief 0205: the urgent-alert endpoints behind Settings > Phone app."""
+"""Brief 0226: the urgent-alert endpoints behind Settings > Phone app."""
 from __future__ import annotations
 
 import secrets

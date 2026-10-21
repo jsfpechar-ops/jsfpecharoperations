@@ -1,7 +1,7 @@
-# 0206: Urgent alerts switch in Settings (markup, pwa.js, logout, browser test)
+# 0227: Urgent alerts switch in Settings (markup, pwa.js, logout, browser test)
 
 Status: review
-Depends on: 0205 | Branch: claude/project-thread-w35ftw
+Depends on: 0226 | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -10,13 +10,13 @@ Settings > Phone app gets the "Urgent alerts on this device" row: Turn on (asks 
 
 ## 2. Context
 
-- Endpoints from 0205: `POST /account/push/subscribe {subscription, lang}`, `/refresh {endpoint, lang}` → `{known}`, `/unsubscribe {endpoint}`, `/test {endpoint}` → `{ok, message}` or `{error}`, form `POST /account/push/devices/{id}/delete`. JSON posts need header `X-CSRF-Token` from `<meta name="csrf-token">`.
-- Settings context from 0205: `push_available` (False while an admin previews), `push_key` (base64url VAPID public key), `push_devices` (rows: `id`, `device`, `created_at`).
+- Endpoints from 0226: `POST /account/push/subscribe {subscription, lang}`, `/refresh {endpoint, lang}` → `{known}`, `/unsubscribe {endpoint}`, `/test {endpoint}` → `{ok, message}` or `{error}`, form `POST /account/push/devices/{id}/delete`. JSON posts need header `X-CSRF-Token` from `<meta name="csrf-token">`.
+- Settings context from 0226: `push_available` (False while an admin previews), `push_key` (base64url VAPID public key), `push_devices` (rows: `id`, `device`, `created_at`).
 - iPhone: push works only in the app opened from the Home Screen (iOS 16.4+), and `Notification.requestPermission()` must run directly inside the click. `pwa.js` already has `ios`, `standalone`, `show()` and `workerReady`.
 - Without JavaScript only the help text, the "unsupported" line and the device list with Remove are visible.
 - Design lint on `settings.html`: no `style=`, catalog classes only, every new button `ui-btn-secondary` (one primary per template already used). `test_destructive_confirm.py`: a form whose action contains "delete" needs `data-confirm` and `data-confirm-message`.
 - Cache rule: `pwa.js` changes, so its `?v=` key changes in `base.html` and `auth_base.html`, and `tests/static_versions.json` is regenerated.
-- Screenshots go to `/mnt/project-files/pwa/0206/` (network mount: trailing slash, never search it).
+- Screenshots go to `/mnt/project-files/pwa/0227/` (network mount: trailing slash, never search it).
 
 ## 3. Files
 
@@ -85,7 +85,7 @@ Insert directly after those two lines:
 
 Run: `python3 scripts/design_lint.py 2>&1 | tail -5` (repo root). Expected: `OK`.
 
-**Step 2.** `App/app/host_i18n.py`. Anchor (from 0205):
+**Step 2.** `App/app/host_i18n.py`. Anchor (from 0226):
 
 ```python
 for _lang, _strings in _PUSH_SETTINGS_STRINGS.items():
@@ -99,7 +99,7 @@ STRINGS["en"]["push.device_remove_confirm"] = "Stop alerts on %(name)s?"
 STRINGS["cs"]["push.device_remove_confirm"] = "Zastavit upozornění na zařízení %(name)s?"
 ```
 
-**Step 3.** `App/app/host_vi_i18n.py`. Anchor (from 0205): `    "flash.push.signed_out": "Hãy đăng nhập lại rồi thử lần nữa.",`. Insert after it:
+**Step 3.** `App/app/host_vi_i18n.py`. Anchor (from 0226): `    "flash.push.signed_out": "Hãy đăng nhập lại rồi thử lần nữa.",`. Insert after it:
 
 ```python
     "push.device_remove_confirm": "Dừng cảnh báo trên %(name)s?",
@@ -117,7 +117,7 @@ Replace them with:
 ```js
   paintInstall();
 
-  // --- Settings > urgent alerts (brief 0206) --------------------------------
+  // --- Settings > urgent alerts (brief 0227) --------------------------------
 
   var pushRow = document.querySelector("[data-push-row]");
   var pushSupported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
@@ -308,7 +308,7 @@ Run: `node --check App/app/static/pwa.js 2>&1 | tail -3`. Expected: no output.
 **Step 6.** Create `App/tests/test_push_settings_browser.py` with exactly:
 
 ```python
-"""0206: Settings > Phone app > urgent alerts, in a real browser.
+"""0227: Settings > Phone app > urgent alerts, in a real browser.
 
 The browser's push service is not reachable from CI, so an init script stands
 in for PushManager (it hands out the subscription of a test Browser from
@@ -333,7 +333,7 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 from tests.test_push import Browser, PushService
 
-SHOT_DIR = "/mnt/project-files/pwa/0206/"
+SHOT_DIR = "/mnt/project-files/pwa/0227/"
 IPHONE = (
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 "
     "(KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"
@@ -491,7 +491,7 @@ def test_logging_out_turns_alerts_off_on_this_device(base):
 
 Run: `cd App && UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium .venv/bin/python -m pytest tests/test_push_settings_browser.py -q -rs --tb=short -x 2>&1 | tail -20`. Expected: 11 passed, 0 skipped. Fix the code once if needed (never weaken the test); a second failure: STOP and report.
 
-**Step 7.** Look at each screenshot in `/mnt/project-files/pwa/0206/` once (Read tool). Check: nothing cut off, the On badge and the two buttons sit on one line at 1280/2000, labels fit at 390 in VI. If a measured layout fault needs CSS, STOP and report it (no CSS file is in §3).
+**Step 7.** Look at each screenshot in `/mnt/project-files/pwa/0227/` once (Read tool). Check: nothing cut off, the On badge and the two buttons sit on one line at 1280/2000, labels fit at 390 in VI. If a measured layout fault needs CSS, STOP and report it (no CSS file is in §3).
 
 ## 5. Do not touch
 
@@ -508,7 +508,7 @@ From `App/`, each ending `2>&1 | tail -30`:
 ## 7. Acceptance
 
 - [ ] §6 passes, 0 skipped.
-- [ ] Screenshots in `/mnt/project-files/pwa/0206/`: `alerts-off-390-{en,cs,vi}`, `alerts-on-390-{en,cs,vi}`, `alerts-on-{1280,2000}[-collapsed]-en`, `iphone-390-{en,cs,vi}`, each looked at once.
+- [ ] Screenshots in `/mnt/project-files/pwa/0227/`: `alerts-off-390-{en,cs,vi}`, `alerts-on-390-{en,cs,vi}`, `alerts-on-{1280,2000}[-collapsed]-en`, `iphone-390-{en,cs,vi}`, each looked at once.
 - [ ] `git diff --stat` lists only §3 files.
 
 ## 8. Stop and ask
@@ -517,7 +517,7 @@ As in TEMPLATE §8.
 
 ## 9. Report
 
-`docs/tasks/0206-report.md` per TEMPLATE §9; set `Status: review`.
+`docs/tasks/0227-report.md` per TEMPLATE §9; set `Status: review`.
 
 ## Risk list (for the reviewer)
 

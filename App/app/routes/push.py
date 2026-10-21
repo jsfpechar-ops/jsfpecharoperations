@@ -1,4 +1,4 @@
-"""Urgent alerts on this device (brief 0205): turn on, refresh, test, turn off.
+"""Urgent alerts on this device (brief 0226): turn on, refresh, test, turn off.
 
 JSON endpoints for static/pwa.js, with the CSRF token in X-CSRF-Token, and one
 plain form (remove a device) that works without JavaScript. They always act on

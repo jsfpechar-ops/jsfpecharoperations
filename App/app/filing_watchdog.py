@@ -235,7 +235,7 @@ def notify_hosts(stays: List[Dict[str, Any]], now: Optional[datetime] = None) ->
     for stay in stays:
         if stay.get("mailed_at"):
             continue
-        # Brief 0207: also on the host's phone. Queued once per stay, even when
+        # Brief 0228: also on the host's phone. Queued once per stay, even when
         # there is no address to mail and this loop sees the stay again.
         push.deadline_at_risk(stay)
         try:

@@ -10,7 +10,7 @@ Make the host app installable: "Add to Home Screen" on iPhone and "Install app" 
 
 ## 2. Context
 
-- Owner decision 2026-10-21: an installable web app (PWA), not Flutter. Push notifications follow in 0204-0206, so `sw.js` already contains the push handlers.
+- Owner decision 2026-10-21: an installable web app (PWA), not Flutter. Push notifications follow in 0225-0227, so `sw.js` already contains the push handlers.
 - **Caching rule (static-cache-keys, PR #401 stale-CSS bug):** the service worker stores exactly ONE response, the offline page. It never stores app pages (they are `no-store` and carry passport numbers, see `App/app/main.py` middleware) and never stores `/static` files (they are versioned with `?v=` and cached by the browser). `/sw.js` is served with `Cache-Control: no-cache`, so a fix reaches phones on their next open.
 - Guest links (`/l/...`) are never handled by the worker. Guest pages (`templates/guest/`) get no manifest.
 - The CSP (`main.py` `_csp`) has `default-src 'self'`, which already allows a same-origin manifest and worker. Do not change it.
@@ -191,7 +191,7 @@ self.addEventListener("message", function (event) {
   }));
 });
 
-// Urgent alerts (0204-0206). Every push shows a notification: Safari stops
+// Urgent alerts (0225-0227). Every push shows a notification: Safari stops
 // delivering to a site that pushes silently. A rotated subscription needs no
 // pushsubscriptionchange handler: pwa.js sends the current one on every visit.
 self.addEventListener("push", function (event) {
@@ -773,7 +773,7 @@ As in TEMPLATE §8. Also stop if any anchor is missing, or if a test outside §6
 
 ## 9. Report
 
-`docs/tasks/0219-report.md` per TEMPLATE §9; set `Status: review`. Do not open a PR; the orchestrator does after 0206.
+`docs/tasks/0219-report.md` per TEMPLATE §9; set `Status: review`. Do not open a PR; the orchestrator does after 0227.
 
 ## Risk list (for the reviewer)
 

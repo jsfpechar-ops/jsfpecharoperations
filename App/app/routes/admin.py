@@ -4360,7 +4360,7 @@ def settings_view(request: Request):
             # Task 0004: Settings > Security lists the real account's passkeys.
             "passkeys": _own_passkeys(request),
             "passkeys_available": passkeys.available(),
-            # Brief 0205: Settings > Phone app, urgent alerts on this device.
+            # Brief 0226: Settings > Phone app, urgent alerts on this device.
             "push_available": _push_available(request),
             "push_key": push.public_key() if _push_available(request) else "",
             "push_devices": _own_push_devices(request),

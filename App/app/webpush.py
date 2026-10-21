@@ -1,4 +1,4 @@
-"""Web Push with no library beyond ``cryptography`` and ``requests`` (brief 0204).
+"""Web Push with no library beyond ``cryptography`` and ``requests`` (brief 0225).
 
 Two small standards:
 

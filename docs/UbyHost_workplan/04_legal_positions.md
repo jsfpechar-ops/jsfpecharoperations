@@ -14,7 +14,7 @@ Researched 3 October 2026. Anything I could not open or confirm in a primary sou
 | 4 | Retention | Guest book 6 years (§ 101(4) zákon 326/1999 Sb.). Stay-fee book 6 years (§ 3g(4) zákon 565/1990 Sb.). Invoices 10 years. Passport photos: delete within 7 days. UbyPort raw XML: 90 days. | Scheduled deletion jobs per data class. |
 | 5 | Roles and subprocessors | Processor for guest data, controller for host accounts, analytics and ads data. Google is an independent controller. | Publish a subprocessor list and a DPA (zpracovatelská smlouva) for hosts. |
 | 6 | Meta Conversions API (fbclid) | Needs prior, explicit, optional consent, as for gclid. Meta Platforms Ireland is joint controller for collection and sending, independent controller afterwards. | Separate unchecked box shown only with `fbclid` ("came from Facebook or Instagram"). One server-side `CompleteRegistration` event with `fbc` only, `opt_out=true`. Delete `fbc` 7 days after sending, 90 days after the click at most. |
-| 7 | Urgent alerts (web push) on the host's phone | No consent beyond the host's own "Turn on" and the browser prompt. Basis: contract. Push services are recipients chosen by the host's browser, not our subprocessors. | Privacy policy sentences in §4, §7, §9 and §11 (brief 0208). No guest names in alerts. No re-acceptance. |
+| 7 | Urgent alerts (web push) on the host's phone | No consent beyond the host's own "Turn on" and the browser prompt. Basis: contract. Push services are recipients chosen by the host's browser, not our subprocessors. | Privacy policy sentences in §4, §7, §9 and §11 (brief 0229). No guest names in alerts. No re-acceptance. |
 
 ---
 
@@ -423,9 +423,9 @@ The host turns alerts on for one device. No separate consent box, no banner, no 
 
 ### What the product must do
 
-- Brief 0208: privacy policy sentences (EN, CS) in §4 (data), §7 (storage on the device), §9 (recipients) and §11 (retention).
+- Brief 0229: privacy policy sentences (EN, CS) in §4 (data), §7 (storage on the device), §9 (recipients) and §11 (retention).
 - Keep alert texts free of guest names, document numbers and door codes (`push.msg.*`); a new alert kind needs the owner's OK.
-- RETENTION and ROPA rows (done in 0204 review).
+- RETENTION and ROPA rows (done in 0225 review).
 
 ### Residual risk
 

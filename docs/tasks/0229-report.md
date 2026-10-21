@@ -1,13 +1,13 @@
-# 0208 report: push privacy text
+# 0229 report: push privacy text
 
 Status: review
 
 ## Commits (branch claude/project-thread-w35ftw)
 
-- 0208 step 1: privacy_policy_i18n.py, 8 replacements (EN and CS), each anchor asserted once.
-- 0208 step 2: subprocessors_i18n.py, `subprocessors.recipient_push` added before each `recipient_ttlock` entry (EN, CS).
-- 0208 step 3: routes/legal.py, "push" added to RECIPIENT_IDS, hidden when `config.WEB_PUSH` is off, comment line added.
-- 0208 step 4: tests/test_privacy_legal_positions.py, one new test.
+- 0229 step 1: privacy_policy_i18n.py, 8 replacements (EN and CS), each anchor asserted once.
+- 0229 step 2: subprocessors_i18n.py, `subprocessors.recipient_push` added before each `recipient_ttlock` entry (EN, CS).
+- 0229 step 3: routes/legal.py, "push" added to RECIPIENT_IDS, hidden when `config.WEB_PUSH` is off, comment line added.
+- 0229 step 4: tests/test_privacy_legal_positions.py, one new test.
 - Report and Status commit (this file).
 
 ## Commands

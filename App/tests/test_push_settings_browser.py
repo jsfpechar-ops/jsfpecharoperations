@@ -1,4 +1,4 @@
-"""0206: Settings > Phone app > urgent alerts, in a real browser.
+"""0227: Settings > Phone app > urgent alerts, in a real browser.
 
 The browser's push service is not reachable from CI, so an init script stands
 in for PushManager (it hands out the subscription of a test Browser from
@@ -23,7 +23,7 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 from tests.test_push import Browser, PushService
 
-SHOT_DIR = "/mnt/project-files/pwa/0206/"
+SHOT_DIR = "/mnt/project-files/pwa/0227/"
 IPHONE = (
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 "
     "(KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"

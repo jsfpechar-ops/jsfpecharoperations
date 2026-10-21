@@ -3110,7 +3110,7 @@ STRINGS: Dict[str, str] = {
     "offline.title": "Bạn đang ngoại tuyến",
     "offline.body": "UbyHost cần kết nối Internet. Hãy kiểm tra Wi-Fi hoặc dữ liệu di động, rồi thử lại.",
     "offline.retry": "Thử lại",
-    # Brief 0204: urgent alerts.
+    # Brief 0225: urgent alerts.
     "push.msg.filing_problem.title": "Báo cáo cho cảnh sát không được chấp nhận",
     "push.msg.filing_problem.body": "%(property)s: UbyPort không chấp nhận báo cáo. Mở UbyHost để xem lý do và gửi lại.",
     "push.msg.deadline_at_risk.title": "Sắp trễ hạn khai báo cảnh sát",
@@ -3122,7 +3122,7 @@ STRINGS: Dict[str, str] = {
     "push.msg.test.title": "Đã bật cảnh báo",
     "push.msg.test.body": "Thiết bị này sẽ nhận cảnh báo khẩn từ UbyHost.",
     "notification.job_name.push": "cảnh báo khẩn",
-    # Brief 0205: Settings > urgent alerts.
+    # Brief 0226: Settings > urgent alerts.
     "push.title": "Cảnh báo khẩn trên thiết bị này",
     "push.help": "Chỉ những sự cố cần bạn xử lý ngay: báo cáo cảnh sát bị lỗi, sắp trễ hạn khai báo, thiếu mã cửa, hoặc lượt lưu trú bị hủy đã có khách đăng ký. Bạn vẫn nhận mọi email. Đăng xuất sẽ tắt cảnh báo trên thiết bị đó.",
     "push.on": "Bật",

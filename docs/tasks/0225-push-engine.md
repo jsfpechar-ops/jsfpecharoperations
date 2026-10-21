@@ -1,4 +1,4 @@
-# 0204: Push engine (keys, encryption, device list, queue, delivery, retention)
+# 0225: Push engine (keys, encryption, device list, queue, delivery, retention)
 
 Status: done
 Depends on: 0219 | Base commit: after 0219 on claude/project-thread-w35ftw | Branch: claude/project-thread-w35ftw
@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-Add the server side of urgent alerts on the host's phone: the server's signing key, storage of each device's push subscription, a queue with retries, delivery through the browser's push service with end-to-end encryption, and retention. No screen and no event uses it yet (0205 adds Settings, 0206 the four alerts).
+Add the server side of urgent alerts on the host's phone: the server's signing key, storage of each device's push subscription, a queue with retries, delivery through the browser's push service with end-to-end encryption, and retention. No screen and no event uses it yet (0226 adds Settings, 0227 the four alerts).
 
 ## 2. Context
 
@@ -41,7 +41,7 @@ No other file may change.
 **Step 1.** Create `App/app/webpush.py` with exactly:
 
 ```python
-"""Web Push with no library beyond ``cryptography`` and ``requests`` (brief 0204).
+"""Web Push with no library beyond ``cryptography`` and ``requests`` (brief 0225).
 
 Two small standards:
 
@@ -199,7 +199,7 @@ def send(
 **Step 2.** Create `App/tests/test_webpush.py` with exactly:
 
 ```python
-"""Brief 0204: Web Push encryption and VAPID, checked against the RFCs."""
+"""Brief 0225: Web Push encryption and VAPID, checked against the RFCs."""
 from __future__ import annotations
 
 import json
@@ -330,7 +330,7 @@ Run: `cd App && .venv/bin/python -m pytest tests/test_webpush.py -q --tb=short -
 **Step 3.** Create `App/app/migrations/0012_web_push.sql` with exactly:
 
 ```sql
--- Brief 0204: urgent alerts on the host's phone (Web Push).
+-- Brief 0225: urgent alerts on the host's phone (Web Push).
 --
 -- push_subscription: one row per browser that turned alerts on. The endpoint is
 -- the push service address the browser gave; with the two keys it is enough to
@@ -382,7 +382,7 @@ Run: `cd App && .venv/bin/python -m pytest tests/test_migrations.py -q --tb=shor
 
 ```python
 
-# Web push (briefs 0204-0206): urgent alerts on the host's phone. On unless
+# Web push (briefs 0225-0227): urgent alerts on the host's phone. On unless
 # UBYHOST_WEB_PUSH=0. The signing key is made by the app and kept encrypted.
 WEB_PUSH = os.environ.get("UBYHOST_WEB_PUSH", "1").strip().lower() not in ("0", "false", "no")
 ```
@@ -398,7 +398,7 @@ Run: `cd App && .venv/bin/python -c "import app.push" 2>&1 | tail -3`. Expected:
 **Step 6.** `App/app/retention.py`. Anchor: `        cur.execute("DELETE FROM webauthn_challenge WHERE user_account_id = ?", (owner_id,))`. Insert after it:
 
 ```python
-        # Brief 0204: urgent-alert devices and their queue (also cascade).
+        # Brief 0225: urgent-alert devices and their queue (also cascade).
         cur.execute("DELETE FROM push_outbox WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM push_subscription WHERE user_account_id = ?", (owner_id,))
 ```
@@ -407,7 +407,7 @@ Run: `cd App && .venv/bin/python -c "import app.push" 2>&1 | tail -3`. Expected:
 
 ```python
 def _push_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
-    """Brief 0204: alerts 30 days after they were queued; devices unseen 180 days."""
+    """Brief 0225: alerts 30 days after they were queued; devices unseen 180 days."""
     from . import push
     return push.purge(dry_run=dry_run, owner_user_id=owner_user_id)
 
@@ -439,7 +439,7 @@ d. Anchor `def _job_retention() -> None:`. Insert before it:
 
 ```python
 def _job_push() -> None:
-    """Brief 0204: send the urgent alerts that are due."""
+    """Brief 0225: send the urgent alerts that are due."""
     started = time.perf_counter()
     try:
         summary = push.drain()
@@ -487,7 +487,7 @@ Insert after it:
 
 ```python
 
-# Brief 0204: the urgent alerts. Short: a lock screen shows about two lines.
+# Brief 0225: the urgent alerts. Short: a lock screen shows about two lines.
 _PUSH_MESSAGE_STRINGS = {
     "en": {
         "push.msg.filing_problem.title": "Police report not accepted",
@@ -523,7 +523,7 @@ for _lang, _strings in _PUSH_MESSAGE_STRINGS.items():
 **Step 10.** `App/app/host_vi_i18n.py`. Anchor (added by 0219): `    "offline.retry": "Thử lại",`. Insert after it:
 
 ```python
-    # Brief 0204: urgent alerts.
+    # Brief 0225: urgent alerts.
     "push.msg.filing_problem.title": "Báo cáo cho cảnh sát không được chấp nhận",
     "push.msg.filing_problem.body": "%(property)s: UbyPort không chấp nhận báo cáo. Mở UbyHost để xem lý do và gửi lại.",
     "push.msg.deadline_at_risk.title": "Sắp trễ hạn khai báo cảnh sát",
@@ -560,7 +560,7 @@ Run: `cd App && .venv/bin/python -m pytest tests/test_push.py -q --tb=short -x 2
 
 ## 5. Do not touch
 
-Anything that calls `push.notify` (0206 wires the events), any template, any static file, `requirements*.txt`. Hard rules: no new dependency; SQL through `db` helpers and Postgres-portable; never log an endpoint, a key or a guest field; no em dashes in copy.
+Anything that calls `push.notify` (0227 wires the events), any template, any static file, `requirements*.txt`. Hard rules: no new dependency; SQL through `db` helpers and Postgres-portable; never log an endpoint, a key or a guest field; no em dashes in copy.
 
 ## 6. Commands
 
@@ -583,7 +583,7 @@ As in TEMPLATE §8. Also stop if a retention or privacy test outside §3 needs a
 
 ## 9. Report
 
-`docs/tasks/0204-report.md` per TEMPLATE §9; set `Status: review`.
+`docs/tasks/0225-report.md` per TEMPLATE §9; set `Status: review`.
 
 ## Risk list (for the reviewer)
 

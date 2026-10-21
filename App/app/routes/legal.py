@@ -32,7 +32,7 @@ SUBPROCESSOR_IDS = (
 # UBYHOST_SIGNUP_ENABLED is on (recipient_ids()).
 # "meta_ads" (WP21) is listed only while sign-up is on and the Meta
 # Conversions API is configured.
-# "push" (0208) is listed only while urgent alerts are on (UBYHOST_WEB_PUSH).
+# "push" (0229) is listed only while urgent alerts are on (UBYHOST_WEB_PUSH).
 RECIPIENT_IDS = ("google_ads", "meta_ads", "police", "municipality", "ttlock", "push")
 
 

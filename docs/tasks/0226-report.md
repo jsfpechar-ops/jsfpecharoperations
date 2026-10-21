@@ -1,4 +1,4 @@
-# 0205 report (executor: Haiku 5.5)
+# 0226 report (executor: Haiku 5.5)
 
 Status: blocked
 
@@ -10,8 +10,8 @@ Status: blocked
 - `App/app/host_i18n.py`: Settings copy EN and CS (step 4). Commit cf08bfb.
 - `App/app/host_vi_i18n.py`: Settings copy VI (step 5). Commit 477e058.
 - `App/tests/test_push_routes.py`: new, endpoint tests (step 6). Commit in the same branch.
-- `docs/tasks/0205-push-endpoints.md`: Status set to blocked.
-- `docs/tasks/0205-report.md`: this report.
+- `docs/tasks/0226-push-endpoints.md`: Status set to blocked.
+- `docs/tasks/0226-report.md`: this report.
 
 `import app.main` passes.
 
@@ -25,7 +25,7 @@ Status: blocked
        outbox_id = db.insert("push_outbox", {
      sqlite3.IntegrityError: UNIQUE constraint failed: push_outbox.idempotency_key
      ```
-   - Cause: `send_test` (0204 code) builds the key as `TEST_KIND:<stamp to the second>:<subscription id>`. Five test sends in one second collide, and `db.insert` has no `ON CONFLICT` guard, so the second send raises. The same would happen in production if two "Send a test" taps land in the same second.
+   - Cause: `send_test` (0225 code) builds the key as `TEST_KIND:<stamp to the second>:<subscription id>`. Five test sends in one second collide, and `db.insert` has no `ON CONFLICT` guard, so the second send raises. The same would happen in production if two "Send a test" taps land in the same second.
    - Not fixed: the fix belongs in `push.py` `send_test` (the brief names only `refresh()` there), so I stopped rather than change it or the test.
    - Pre-existing (per brief): the 3 `test_host_i18n.py` failures (language endpoint, Vietnamese dashboard, "no such table: apartment") are present and not fixed.
 2. `tests/test_security*.py tests/test_auth_*.py`: not run (stopped at step 1 of the failing command).
@@ -47,12 +47,12 @@ None until the question is decided. Then run from `App/`:
 
 ## Fix 1
 
-Brief: `docs/tasks/0205-fix-1.md`. Commit `0205-fix-1: random key for each test alert`.
+Brief: `docs/tasks/0226-fix-1.md`. Commit `0226-fix-1: random key for each test alert`.
 
 - Change: `App/app/push.py` imports `secrets`; `send_test` key is now `f"{TEST_KIND}:{secrets.token_hex(8)}:{row['id']}"`. `grep -n token_hex` shows one line.
 - Command 1 (`test_push_routes`, `test_push`, `test_passkeys`, `test_flash_literals`, `test_no_em_dashes`): `87 passed, 1 warning`.
 - Command 2 (`test_host_i18n.py`): `3 failed, 11 passed`. The 3 failures are the known K-T01 set: `test_language_endpoint_sets_cookie_and_rejects_open_redirects`, `test_a_signed_in_dashboard_keeps_vietnamese`, `test_language_endpoint_accepts_vietnamese`.
 - Command 3 (`test_security*`, `test_auth_*`): `61 passed, 1 warning`.
 - `python3 scripts/context_lint.py`: `context lint: OK`.
-- Status: `0205-push-endpoints.md` and `0205-fix-1.md` set to `Status: review`.
+- Status: `0226-push-endpoints.md` and `0226-fix-1.md` set to `Status: review`.
 - No PR opened, no push (per owner instruction).

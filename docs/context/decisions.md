@@ -57,5 +57,5 @@ Append-only.
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
-- 2026-10-21 Phone app = PWA; web push only for 4 critical alerts, own RFC 8291/8292 code, no pywebpush (owner, 0219, 0204-0208).
+- 2026-10-21 Phone app = PWA; web push only for 4 critical alerts, own RFC 8291/8292 code, no pywebpush (owner, 0219, 0225-0229).
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)
