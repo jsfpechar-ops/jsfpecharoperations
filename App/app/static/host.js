@@ -118,6 +118,15 @@
     });
   }
 
+  // 0203: while the demo stay waits for its registration, coming back to this
+  // tab reloads the step, so a finished demo shows "Continue" at once.
+  // Only on a tab switch: a reload on load or focus could loop.
+  if (document.querySelector('[data-wizard-demo-wait]')) {
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') window.location.reload();
+    });
+  }
+
   document.querySelectorAll('[data-phone-country-code]').forEach(function (input) {
     function digits(value) { return value.replace(/\D/g, '').slice(0, 3); }
     input.addEventListener('input', function () { input.value = digits(input.value); });
