@@ -89,6 +89,16 @@ router.include_router(signup_routes.router)
 _PRAGUE_TZ_OFFSETS_MS = frozenset({3_600_000, 7_200_000})
 
 
+def _lock_tz_wrong(offset) -> bool:
+    """0211: TTLock reports Prague as UTC+1 or, in summer time, UTC+2; anything else is wrong."""
+    if offset is None:
+        return False
+    try:
+        return int(offset) not in _PRAGUE_TZ_OFFSETS_MS
+    except (TypeError, ValueError):
+        return False
+
+
 def _properties_using_lock(owner_id, lock_id: str, except_apartment_id: Optional[int] = None) -> List[str]:
     """Names of the owner's other properties that already send codes on this lock."""
     rows = db.query(
@@ -513,6 +523,7 @@ def _smart_lock_panel_context(request: Request) -> dict:
     locks = ttlock.locks_of(account) if account else []
     properties_using: Dict[str, List[str]] = {}
     for lock in locks:
+        lock["tz_wrong"] = _lock_tz_wrong(lock.get("tz_offset_ms"))
         names = [
             row["internal_name"]
             for row in db.query(
@@ -1748,9 +1759,7 @@ def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]
         "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
         "checkin_hour": cin,
         "checkout_hour": cout,
-        "tz_warning": bool(
-            selected and selected["tz_offset_ms"] not in (None, *_PRAGUE_TZ_OFFSETS_MS)
-        ),
+        "tz_warning": bool(selected and _lock_tz_wrong(selected["tz_offset_ms"])),
         "overlap": _door_code_hours_overlap(cin, cout),
         "buffer": config.DOOR_CODE_BUFFER_HOURS,
         "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
