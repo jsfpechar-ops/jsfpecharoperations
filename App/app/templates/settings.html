@@ -191,12 +191,14 @@
             <strong>{{ t('push.title') }}</strong>
             <small>{{ t('push.help') }}</small>
           </div>
-          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-on hidden>{{ t('push.on') }}</button>
-          <span class="ui-badge ui-badge-done" data-tone="green" data-push-state-on hidden>{{ t('push.state_on') }}</span>
-        </div>
-        <div class="ui-form-actions" data-push-controls hidden>
-          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-test>{{ t('push.test') }}</button>
-          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-off>{{ t('push.off') }}</button>
+          <div class="settings-row-actions">
+            <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-on hidden>{{ t('push.on') }}</button>
+            <span class="ui-badge ui-badge-done" data-tone="green" data-push-state-on hidden>{{ t('push.state_on') }}</span>
+            <span class="settings-row-actions" data-push-controls hidden>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-test>{{ t('push.test') }}</button>
+              <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-push-off>{{ t('push.off') }}</button>
+            </span>
+          </div>
         </div>
         <p class="ui-sub" data-push-unsupported>{{ t('push.unsupported') }}</p>
         <p class="ui-sub" data-push-ios-first hidden>{{ t('push.ios_first') }}</p>
