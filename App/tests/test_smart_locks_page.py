@@ -108,8 +108,8 @@ def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts, fla
     for words in ("Authorized Admin", "Create Admin", "Manage their own users only", "paste your UbyHost name"):
         assert words in guide
     cs = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=cs").text
-    assert "Otevřete svůj zámek v TTLock." in cs
-    assert "Vraťte se sem a vyhledejte zámky." in cs
+    assert "klepněte na Autorizovaný správce" in cs  # 0205 TTLock wording
+    assert "Vraťte se sem a klepněte na Zkontrolovat připojení." in cs
 
 
 def _post(client, path, **data):
