@@ -3071,3 +3071,11 @@ STRINGS: Dict[str, str] = {
     "calendar.time_missing": "Chưa đặt giờ",
     "calendar.cleaning_timing_unavailable": "Đặt giờ hợp lệ cho chỗ ở để hiển thị khung giờ dọn dẹp.",
 }
+
+# 0203: onboarding user test (2026-10-21).
+STRINGS.update({
+    "wizard.try_it.skip": "Tiếp tục mà không dùng bản mẫu",
+    "wizard.try_it.keep": "Tiếp tục",
+    "wizard.done.go": "Đến trang tổng quan",
+    "wizard.done.celebrate": "Xong. Chỗ ở của bạn đã sẵn sàng đón khách.",
+})
