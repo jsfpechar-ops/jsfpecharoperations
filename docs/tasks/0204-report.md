@@ -39,5 +39,5 @@ Steps 9 to 11 and 12 were inserted from the brief's own code blocks by script, w
 
 ## Orchestrator review
 - Steps 5 to 12 ran from a continuation note (now removed; the brief is compacted to pass the lint cap).
-- The `test_host_i18n.py` failures (3 tests, "no such table: apartment") also fail at 0ab1834, before any push code: pre-existing, logged in known-issues.
+- The `test_host_i18n.py` failures (3 tests, "no such table: apartment") also fail at 0ab1834, before any push code: pre-existing, logged under K-T01.
 - Commands 1 and 2 pass (63 and 119); `test_no_em_dashes.py` and `test_meta_capi.py` pass (33).
