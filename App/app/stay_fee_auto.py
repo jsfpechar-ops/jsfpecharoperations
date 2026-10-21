@@ -4,7 +4,11 @@
 """
 from __future__ import annotations
 
-from . import db
+import sqlite3
+from datetime import date
+from typing import Optional
+
+from . import db, host_i18n, stay_fee, stay_fee_filing
 
 
 def emails_enabled(user_id: int) -> bool:
@@ -28,3 +32,45 @@ def workspace_has_fee_property(user_id: int) -> bool:
         (user_id,),
     )
     return bool(row)
+
+
+def period_label(lang: str, cadence: str, month: date) -> str:
+    """Host-language period name, the same wording as the Stay fee page."""
+    if cadence == "quarterly":
+        return host_i18n.translate(
+            lang,
+            "stay_fees.quarter",
+            n=(month.month - 1) // 3 + 1,
+            year=month.year,
+        )
+    return f"{host_i18n.translate(lang, f'month.{month.month}')} {month.year}"
+
+
+def check(apartment, month, today, *, cadence=None, rate=None) -> dict:
+    """Everything that blocks sealing ``month``. The button and the job both call this."""
+    cadence = cadence or stay_fee.cadence_of(apartment)
+    period = stay_fee.property_period(apartment, month, live_only=True, cadence=cadence, rate=rate)
+    group = stay_fee.report_group(apartment, month, live_only=True, period=period, cadence=cadence)
+    issues = stay_fee.report_issues(group, today)
+    if stay_fee.unsigned_stays(apartment["id"], group["first"], group["last"], period):
+        issues.append("stay_fees.issue.unsigned")
+    return {"period": period, "group": group, "issues": issues,
+            "key": stay_fee_filing.period_key(group["cadence"], group["first"])}
+
+
+def confirm(apartment, month, today) -> Optional[int]:
+    """Seal a clean period with the fee as calculated (job only). None when blocked or saved."""
+    checked = check(apartment, month, today)
+    if checked["issues"] or stay_fee_filing.latest(apartment["id"], checked["key"]):
+        return None
+    period, group = checked["period"], checked["group"]
+    rate = period["rate_czk"] if period else stay_fee.clamp_rate(apartment["stay_fee_rate_czk"])
+    collected = {line["guest_id"]: line["amount_czk"] for line in (period or {}).get("lines") or []}
+    try:
+        filing_id = stay_fee_filing.save(apartment, group["first"], rate_czk=rate,
+                                         collected=collected, issued_on=today,
+                                         cadence=group["cadence"])
+    except (ValueError, sqlite3.IntegrityError):
+        return None
+    db.audit("stay_fee_auto_finalize", f"apartment_id={apartment['id']} period={checked['key']}")
+    return filing_id

@@ -1829,6 +1829,9 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "passkey_added",
         "door_code",
         "door_code_notice",
+        # 0206: monthly stay-fee report and the blocked notice.
+        "stay_fee_report",
+        "stay_fee_blocked",
     }
 
 

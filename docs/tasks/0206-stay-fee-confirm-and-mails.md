@@ -1,6 +1,6 @@
 # 0206: One confirm step for button and job, plus the two stay-fee emails
 
-Status: todo
+Status: done
 Depends on: 0204, 0205 | Base commit: ffacd5e + 0205 | Branch: claude/project-thread-9ov0nz
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Plan: [stay-fee-monthly-email](../plans/stay-fee-monthly-email.md) (brief 3 of 4)
@@ -130,3 +130,17 @@ Write `docs/tasks/0206-report.md` (600 tokens at most), set `Status: review`.
 ## Owner steps
 
 None.
+
+## Addendum (orchestrator, after the first run was blocked)
+
+The first run applied §4 steps 1-6; do not redo them. Finish with:
+
+7. `App/tests/test_claim_mail.py`: add `"stay_fee_report"` and `"stay_fee_blocked"` to the pinned kinds set in `test_the_registered_mail_kinds_are_the_ones_the_app_can_send` (add only, change nothing else).
+8. Add next to `notification.mail_kind.door_code_notice` in each dict:
+
+| key | en | cs | vi |
+|---|---|---|---|
+| `notification.mail_kind.stay_fee_report` | monthly stay fee report | měsíční hlášení poplatku z pobytu | báo cáo phí lưu trú hằng tháng |
+| `notification.mail_kind.stay_fee_blocked` | stay fee report that needs fixing | hlášení poplatku, které je třeba doplnit | báo cáo phí lưu trú cần bổ sung |
+
+9. Run the §6 mail row again. If `test_no_outbox_code_ever_reaches_the_card[stay_fee_*]` still fails, read that test and fix the cause in the files of §3 only; else stop.

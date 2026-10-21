@@ -34,6 +34,9 @@ KINDS = (
     "submission_problem",
     "invoice_issued",
     "workspace_deletion",
+    # 0206: monthly stay-fee email (plan stay-fee-monthly-email).
+    "stay_fee_report",
+    "stay_fee_blocked",
     "cancelled_with_guests",
     "deadline_at_risk",
     "deadline_digest",
@@ -95,6 +98,9 @@ HOST_KINDS = (
     "email_confirm",
     "passkey_added",
     "door_code_notice",
+    # 0206: monthly stay-fee email (plan stay-fee-monthly-email).
+    "stay_fee_report",
+    "stay_fee_blocked",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.
