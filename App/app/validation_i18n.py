@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 from typing import Dict, List, Tuple
 
-from . import validation
+from . import guest_uk_i18n, host_vi_i18n, validation
 
 CS_MESSAGES: Dict[str, str] = {
     # Guest form: identity
@@ -295,6 +295,8 @@ GUEST_MESSAGES: Dict[str, Dict[str, str]] = {
     },
 }
 
+GUEST_MESSAGES["uk"] = dict(guest_uk_i18n.VALIDATION)
+
 # Sentences that embed a value the host typed, so they cannot be dictionary keys.
 CS_PATTERNS: Tuple[Tuple[re.Pattern, str], ...] = (
     (
@@ -310,6 +312,17 @@ CS_PATTERNS: Tuple[Tuple[re.Pattern, str], ...] = (
 
 def localize(message: str, lang: str = "cs") -> str:
     """The message in the reader's language, or the message itself."""
+    if lang == "vi":
+        if not message:
+            return message
+        translated = host_vi_i18n.VALIDATION.get(message)
+        if translated:
+            return translated
+        for index, (pattern, _template) in enumerate(CS_PATTERNS):
+            match = pattern.match(message)
+            if match and index < len(host_vi_i18n.VALIDATION_PATTERNS):
+                return host_vi_i18n.VALIDATION_PATTERNS[index].format(**match.groupdict())
+        return message
     if lang != "cs" or not message:
         return message
     translated = CS_MESSAGES.get(message)
