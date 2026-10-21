@@ -1005,6 +1005,7 @@ def test_review_fixes_in_the_browser(host, base_url):
         page.fill("#uby_ws_user", POLICE["uby_ws_user"])
         page.fill("#uby_mark", POLICE["uby_mark"])
         page.fill("#uby_name", "Typed Facility")
+        page.fill("#uby_ws_password", "typed-password")  # 0205: required until one is stored
         page.locator('button[form="police-form"]').click()
         page.wait_for_load_state("networkidle")
         assert page.locator("[data-setup-step=police]").is_visible()
