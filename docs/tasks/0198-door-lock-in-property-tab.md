@@ -1,4 +1,4 @@
-# 0195: Door lock account lives in each property's Door lock tab
+# 0198 (code comments: 0195): Door lock account lives in each property's Door lock tab
 
 Status: done
 Depends on: none | Base commit: fea8bee | Branch: claude/project-thread-xo8dql
@@ -88,4 +88,4 @@ If an excerpt is not found, or a test outside the list fails, stop and report. D
 
 ## 9. Report
 
-[0195-report.md](0195-report.md)
+[0198-report.md](0198-report.md)
