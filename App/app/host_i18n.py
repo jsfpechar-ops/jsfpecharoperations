@@ -6803,6 +6803,43 @@ _ONBOARDING_TEST_0205_STRINGS = {
 for _lang, _strings in _ONBOARDING_TEST_0205_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+_ONBOARDING_TEST_0206_STRINGS = {
+    "en": {
+        "why.business": "The operator is whoever runs the accommodation: you as a person (sole trader) or your company. These details are printed on the reports for the police and the town, and on invoices. Type your IČO and tap Fill from register, and we fill in the rest.",
+        "why.property": "Here you tell UbyHost which accommodation this is: what you call it, when guests arrive and leave, who runs it and where it is. You only fill this in once.",
+        "why.address": "The police and the town need the exact address where your guests stay. Copy it from the police letter or from the land register extract.",
+        "why.times": "UbyHost uses these times to decide when a guest's door code starts and stops working, and when cleaning can come. Door codes do not work without them.",
+        "why.calendar": "When you connect your Airbnb or Booking.com calendar, every new booking appears here by itself and you do not retype anything. You find the link in your listing settings, under Export calendar (iCal).",
+        "why.guest_link": "Every guest has to give their details for the police. Send them this link and PIN, and they fill them in on their own phone before they arrive. You retype nothing.",
+        "why.try": "See what your guests will see. Fill in the form yourself with made-up details. Nothing is sent to the police, and you can delete the demo afterwards.",
+        "why.police": "Every foreign guest has to be reported to the police within three working days of arrival. UbyHost does it for you through Ubyport. It needs the login the police sent you by letter.",
+        "why.police_wait": "Don't have it yet? Tap “I'm still waiting for my police login” and carry on.",
+        "why.stay_fee": "Most towns charge guests a stay fee (at most 50 CZK per person per night) and want a regular report about it. UbyHost works out the fee for every stay and prepares the report and a QR code for the payment. You find the rate, the variable symbol and the account on your town's website or in your registration letter.",
+        "why.stay_fee_skip": "Your town does not charge it? Skip this step.",
+        "why.door_lock": "Optional. Do you have a TTLock smart lock with a gateway? Then UbyHost makes a door code for each stay that works only during that stay. The guest gets it once everyone has registered, so you never hand over keys.",
+        "why.automation": "Choose when UbyHost reports your guests to the police. We recommend the delay: you have time to check the details and you never miss the three-day deadline. You can change this at any time.",
+        "wizard.automation.manual_detail": "You press Send when a stay is ready to report.",
+    },
+    "cs": {
+        "why.business": "Provozovatel je ten, kdo ubytování provozuje: vy jako osoba (OSVČ), nebo vaše firma. Jeho údaje se tisknou na hlášení pro policii a obec a na faktury. Zadejte IČO a klepněte na Vyplnit z registru, zbytek doplníme za vás.",
+        "why.property": "Tady UbyHostu řeknete, o jaké ubytování jde: jak mu říkáte, kdy hosté přijíždějí a odjíždějí, kdo ho provozuje a kde je. Vyplníte to jen jednou.",
+        "why.address": "Policie i obec potřebují přesnou adresu, kde vaši hosté bydlí. Opište ji z dopisu od policie nebo z listu vlastnictví.",
+        "why.times": "Podle těchto časů UbyHost nastaví, od kdy do kdy platí vstupní kód hosta a kdy může přijít úklid. Bez nich kódy ke dveřím nefungují.",
+        "why.calendar": "Když připojíte kalendář z Airbnb nebo Booking.com, každá nová rezervace se tu objeví sama a nemusíte nic opisovat. Odkaz najdete v nastavení inzerátu pod názvem Export kalendáře (iCal).",
+        "why.guest_link": "Každý host musí vyplnit své údaje pro policii. Pošlete mu tento odkaz a PIN a host je vyplní sám na svém telefonu, ještě před příjezdem. Vy nic nepřepisujete.",
+        "why.try": "Podívejte se, co uvidí váš host. Vyplňte formulář sami s vymyšlenými údaji. Nic se neodešle policii a ukázku pak můžete smazat.",
+        "why.police": "Každého cizince musíte nahlásit policii do tří pracovních dnů od příjezdu. UbyHost to udělá za vás přes Ubyport. Potřebuje k tomu přihlašovací údaje, které vám policie poslala dopisem.",
+        "why.police_wait": "Ještě je nemáte? Klepněte na „Na přihlašovací údaje od policie ještě čekám“ a pokračujte.",
+        "why.stay_fee": "Většina obcí vybírá od hostů poplatek z pobytu (nejvýš 50 Kč za osobu a noc) a chce za něj pravidelné hlášení. UbyHost poplatek spočítá u každého pobytu a připraví hlášení i QR kód pro platbu. Sazbu, variabilní symbol a účet najdete na webu obce nebo v dopise o registraci.",
+        "why.stay_fee_skip": "Obec poplatek nevybírá? Tento krok přeskočte.",
+        "why.door_lock": "Nepovinné. Máte chytrý zámek TTLock s bránou? UbyHost pak každému pobytu vytvoří vlastní vstupní kód, platný jen po dobu pobytu. Host ho dostane, jakmile se všichni zaregistrují, a vy nemusíte předávat klíče.",
+        "why.automation": "Vyberte, kdy má UbyHost hosty nahlásit policii. Doporučujeme odeslání s prodlevou: máte čas údaje zkontrolovat a lhůtu tří pracovních dnů nezmeškáte. Volbu můžete kdykoli změnit.",
+        "wizard.automation.manual_detail": "Odeslání spustíte tlačítkem Odeslat, až je pobyt připraven.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0206_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
