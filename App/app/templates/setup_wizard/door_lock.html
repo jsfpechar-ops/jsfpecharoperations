@@ -13,11 +13,24 @@
   <input type="hidden" name="legal_entity_id" value="{{ apartment.legal_entity_id }}">
   <input type="hidden" name="city_en" value="{{ apartment.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
-  <p class="setup-wizard-instruction">{{ t('why.times') }}
+  <p class="setup-wizard-instruction">{{ t('why.times') }}</p>
+  {% if door_code.account and door_code.locks %}
+  {#- 0210: set or change the times here, without leaving the wizard. -#}
+  <div class="grid two">
+    {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
+    <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
+      <select id="{{ name }}" name="{{ name }}" required><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+        {% for h in range(24) %}<option value="{{ h }}" {% if apartment[name]|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
+      </select></div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="setup-wizard-instruction">
     {{ t('apartment.form.door_code.checkin') }} {{ '%02d:00' | format(apartment.checkin_hour) if apartment.checkin_hour is not none else '—' }} ·
     {{ t('apartment.form.door_code.checkout') }} {{ '%02d:00' | format(apartment.checkout_hour) if apartment.checkout_hour is not none else '—' }}.
-    <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
+    <a href="/apartments/{{ apartment.id }}/setup/property">{{ t('wizard.times_change') }}</a>
   </p>
+  {% endif %}
   {% if not (door_code.account and door_code.locks) %}
   {#- 0203: no lock yet; the lock panel under this form connects one. -#}
   {% else %}
