@@ -45,3 +45,38 @@ Branch: claude/project-thread-cf47ju | Base: 40b1947 (brief commit)
 
 - Decide questions 1 to 3 above, then re-run the failing commands 4 and 5.
 - Confirm whether the 360 px tab overflow is tracked as its own brief (it fails on main).
+
+## Follow-up (step 9)
+
+Step 9 a) and b) applied (one exact match each), committed as `0207 step 9` (0db03b4). Status stays `blocked`: one test still fails.
+
+Commands (last lines):
+
+1. `.venv/bin/python -m pytest tests/test_reporting_help_0097.py tests/test_smart_locks_page.py -q --tb=short` (From App/)
+```
+FAILED tests/test_smart_locks_page.py::test_after_connecting_three_essentials_and_every_tap_in_the_guide
+1 failed, 18 passed, 1 warning in 14.94s
+```
+Failure: `tests/test_smart_locks_page.py:111`: `assert "Otevřete svůj zámek v TTLock." in cs` (the Czech `/apartments/…?view=settings&section=lock&lang=cs` page does not contain this string). Not caused by step 9 a): that edit changed only the guide-English assertion on line 106. The copy lives in `App/app/host_i18n.py` / `App/app/guide_i18n.py`, which the brief does not name. Not fixed here.
+
+2. `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_host_ux_acceptance.py -q --tb=line -rs` (From App/)
+```
+12 passed, 1 warning in 116.48s (0:01:56)
+```
+0 skipped. Step 9 b) is covered by this run.
+
+3. `python3 scripts/design_lint.py` (repo root)
+```
+design lint: OK
+```
+
+4. `python3 scripts/context_lint.py | grep -i error` (repo root)
+```
+(no output: no error lines)
+```
+
+Not run: `tests/test_onboarding_wizard_browser.py` (brief §6 item 5) was not in this follow-up's command list.
+
+Evidence: working tree clean after the runs; no PNGs committed.
+
+Left for the owner or the next session: fix the Czech copy assertion at `App/tests/test_smart_locks_page.py:111` (decide whether the copy or the assertion is wrong), then rerun the first command, then set Status to `review`.
