@@ -794,6 +794,9 @@ body.host-workspace {
 .settings-email-form { padding: 12px 0 16px; border-bottom: 1px solid var(--line); max-width: none; }
 .settings-email-form .field { max-width: 420px; }
 .settings-groups .settings-action-row .btn { white-space: normal; }
+.settings-row-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+#settings-phone > .settings-action-list:first-child { border-top: 0; }
+@media (max-width: 720px) { .settings-row-actions { justify-content: flex-start; } }
 @media (max-width: 640px) { .settings-groups { gap: 22px; } }
 
 

@@ -168,6 +168,10 @@ TTLOCK_API_BASE = os.environ.get("UBYHOST_TTLOCK_API_BASE", "https://euapi.ttloc
 TTLOCK_CLIENT_ID = os.environ.get("UBYHOST_TTLOCK_CLIENT_ID", "").strip()
 TTLOCK_CLIENT_SECRET = os.environ.get("UBYHOST_TTLOCK_CLIENT_SECRET", "").strip()
 TTLOCK_MONTHLY_CALLS = int(os.environ.get("UBYHOST_TTLOCK_MONTHLY_CALLS", "30000"))
+
+# Web push (briefs 0225-0227): urgent alerts on the host's phone. On unless
+# UBYHOST_WEB_PUSH=0. The signing key is made by the app and kept encrypted.
+WEB_PUSH = os.environ.get("UBYHOST_WEB_PUSH", "1").strip().lower() not in ("0", "false", "no")
 # Codes work from 1 h before check-in to 1 h after check-out: covers lock clock
 # drift and any daylight-saving mismatch in the lock. Hours have no default; the host sets them.
 DOOR_CODE_BUFFER_HOURS = 1

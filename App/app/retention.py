@@ -325,6 +325,9 @@ def _delete_workspace(owner_id: int) -> None:
         # Task 0004: passkeys and their ceremonies (also cascade).
         cur.execute("DELETE FROM passkey WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM webauthn_challenge WHERE user_account_id = ?", (owner_id,))
+        # Brief 0225: urgent-alert devices and their queue (also cascade).
+        cur.execute("DELETE FROM push_outbox WHERE user_account_id = ?", (owner_id,))
+        cur.execute("DELETE FROM push_subscription WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
@@ -415,6 +418,12 @@ def _cleaning_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> 
     return cleaning.purge(today, dry_run, owner_user_id)
 
 
+def _push_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Brief 0225: alerts 30 days after they were queued; devices unseen 180 days."""
+    from . import push
+    return push.purge(dry_run=dry_run, owner_user_id=owner_user_id)
+
+
 # Each step takes (today, dry_run, owner_user_id) and returns the affected count.
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
@@ -431,6 +440,7 @@ STEPS: List[tuple] = [
     ("webauthn_challenges", _webauthn_challenge_step),
     ("door_code_pins", _door_code_pin_step),
     ("cleaning", _cleaning_step),
+    ("push", _push_step),
     ("legal_acceptance", _acceptance_retention_step),
     ("workspaces", _workspace_deletion_step),
 ]
@@ -457,6 +467,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "webauthn_challenges": "expired more than 1 day ago",
         "door_code_pins": "valid_to more than 1 day ago",
         "cleaning": f"event or link expiry before {(today - timedelta(days=30)).isoformat()}",
+        "push": "alert queued over 30 days ago, or device unseen for 180 days",
         "legal_acceptance": (
             f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
         ),

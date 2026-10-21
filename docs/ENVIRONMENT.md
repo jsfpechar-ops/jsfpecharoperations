@@ -162,6 +162,15 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 `UBYHOST_DOOR_CODES_LIVE` off, and use console mail for the door-code PIN. See
 [DEPLOYMENT.md](DEPLOYMENT.md#door-codes-on-render-staging).
 
+## Urgent alerts (web push)
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `UBYHOST_WEB_PUSH` | `1` | `0`, `false` or `no` switches phone alerts off: nothing is queued or sent, and Settings hides the switch. |
+
+No key to set: the app makes its push signing key (VAPID) on first use and keeps it encrypted with `UBYHOST_SECRET_KEY` in the `settings` table. Rotating the secret key makes a new push key, and every host turns alerts on again in Settings. Outbound: HTTPS POST to the browser's push service only (`fcm.googleapis.com`, `*.push.services.mozilla.com`, `web.push.apple.com`, `*.notify.windows.com`), body end-to-end encrypted.
+
+
 ## Accounts
 
 | Variable | Default | Notes |

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional, Tuple
 from zoneinfo import ZoneInfo
 
-from . import alerts, config, db, deadlines, mail, mail_notify, ttlock
+from . import alerts, config, db, deadlines, mail, mail_notify, push, ttlock
 
 log = logging.getLogger(__name__)
 
@@ -1130,6 +1130,7 @@ def _alert_delayed() -> int:
         )
         # One mail to the host (support in copy), once per stay. Never to the guest.
         mail_notify.door_code_delayed_notice(int(row["reservation_id"]), reason)
+        push.door_code_missing(int(row["reservation_id"]))
         mail.drain(limit=4)
     return len(rows)
 

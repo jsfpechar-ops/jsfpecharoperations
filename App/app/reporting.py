@@ -38,7 +38,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 from zoneinfo import ZoneInfo
 
-from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, validation
+from . import access, alerts, codelists, config, db, deadlines, mail_notify, passport_photos, push, validation
 from .ubyport import errors as uby_errors
 from .ubyport.client import SubmissionResult, UbyportAuthError, UbyportClient, UbyportError, UbyportOutcomeUnknownError, UbyportTransportError
 
@@ -1768,6 +1768,8 @@ def submit_batch(
             state=state,
             reason=" ".join(detail_bits),
         )
+        # Brief 0228: the same news on the host's phone, once per property a day.
+        push.filing_problem(apartment, submission_id)
 
     # The third product promise: the Dorucenka is kept. A first-time accept that
     # came back with neither a stamp nor a confirmation document means the

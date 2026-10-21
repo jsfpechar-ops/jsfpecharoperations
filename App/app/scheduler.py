@@ -23,6 +23,7 @@ from . import (
     meta_capi,
     posthog_sync,
     passport_photos,
+    push,
     reporting,
     retention,
     signup,
@@ -44,6 +45,7 @@ _JOB_LEVELS = {
     "retention": "warning",
     "meta_capi": "warning",
     "door_codes": "warning",
+    "push": "warning",
     "stay_fee_mail": "warning",
 }
 
@@ -80,6 +82,7 @@ def job_intervals() -> dict:
         "retention": 24 * 60,
         "door_codes": 1,
         "posthog": 15,
+        "push": 1,
         "stay_fee_mail": 24 * 60,
     }
 
@@ -342,6 +345,22 @@ def _job_door_codes() -> None:
     _log_run("door_codes", started, True, summary)
 
 
+def _job_push() -> None:
+    """Brief 0225: send the urgent alerts that are due."""
+    started = time.perf_counter()
+    try:
+        summary = push.drain()
+        if summary:
+            log.info("push: %s", summary)
+    except Exception:
+        log.exception("push job failed")
+        _job_failed("push")
+        _log_run("push", started, False)
+        return
+    _job_ok("push")
+    _log_run("push", started, True, summary)
+
+
 def _job_stay_fee_mail() -> None:
     """Seal clean stay-fee periods and email the reports (0223). Runs daily at 07:00."""
     started = time.perf_counter()
@@ -447,6 +466,10 @@ def start() -> bool:
     _scheduler.add_job(
         _job_posthog, "interval", minutes=minutes["posthog"],
         id="posthog", max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_push, "interval", minutes=minutes["push"],
+        id="push", max_instances=1, coalesce=True,
     )
     _scheduler.start()
     log.info(

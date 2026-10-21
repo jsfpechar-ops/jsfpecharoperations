@@ -47,7 +47,7 @@ from zoneinfo import ZoneInfo
 
 from icalendar import Calendar
 
-from . import alerts, config, db, deadlines, host_i18n, mail_notify, reporting
+from . import alerts, config, db, deadlines, host_i18n, mail_notify, push, reporting
 from .feed_fetch import CalendarFetchError, fetch_calendar
 from .feed_url import FeedUrlError
 
@@ -486,6 +486,7 @@ def _warn_if_guests_registered(reservation, apartment_id: int, variant: str) -> 
         params={"date": reservation["date_from"], "variant": variant},
     )
     mail_notify.cancelled_with_guests(apartment_id, reservation["id"], variant)
+    push.cancelled_with_guests(apartment_id, reservation["id"])
 
 
 def _cancel_existing_stay(apartment_id: int, uid: str, date_from: str, now: str, stats: Dict[str, Any]) -> None:

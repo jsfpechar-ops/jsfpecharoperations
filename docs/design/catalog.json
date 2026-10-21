@@ -665,6 +665,7 @@
       "scroll-x",
       "settings-action-list",
       "settings-action-row",
+      "settings-row-actions",
       "settings-email-form",
       "settings-email-row",
       "settings-groups",

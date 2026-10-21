@@ -72,8 +72,8 @@
     "v": "20261021-0199"
   },
   "host.css": {
-    "sha256": "5eaea863de8f05f48fd55f3be58c2c7e1b8c52ba41ab53916889ee3e588f3438",
-    "v": "20261021-0199"
+    "sha256": "a15b4600a9c1e32369cf7dbd6f9ea1ac8a770a9e95fb090f7ef84d7a469510cc",
+    "v": "20261021-0206f"
   },
   "host.js": {
     "sha256": "aab97ff2c2233deaf39f19eb2418aa4a2fcdac968acdadc732a7fd91acf68f9f",
@@ -94,6 +94,10 @@
   "passkeys.js": {
     "sha256": "9433b733f839dc5211e7e1759f3dced892681013c78d75e9d17e9f057926325f",
     "v": "20261021-0203"
+  },
+  "pwa.js": {
+    "sha256": "42c47bb36919fa186885e4e913823c5447a6ab8e0dd8709a74bd3a216a06a9ce",
+    "v": "20261021-0206"
   },
   "shell.js": {
     "sha256": "8300b8b36398d7e956f5677f46506021918e563f9d536e25f1e6f80340c52387",

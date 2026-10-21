@@ -5848,6 +5848,126 @@ _PASSKEY_STRINGS = {
 for _lang, _strings in _PASSKEY_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# Brief 0219: the installable app (Settings > Phone app, login hint, offline page).
+_PWA_STRINGS = {
+    "en": {
+        "settings.group.phone": "Phone app",
+        "pwa.install.title": "Add UbyHost to your home screen",
+        "pwa.install.help": "It opens full screen, like any other app, and can show urgent alerts.",
+        "pwa.install.button": "Install app",
+        "pwa.install.installed": "Installed",
+        "pwa.install.ios": "In Safari, tap Share (the square with an arrow), then Add to Home Screen.",
+        "pwa.install.ios_passkey": "Add a passkey first (under Security). In the app you log in with it, because a login link from your e-mail opens in Safari.",
+        "pwa.install.other": "Open this page on your phone, in Safari on iPhone or Chrome on Android, to add UbyHost to the home screen.",
+        "pwa.login_hint": "In the app, log in with your passkey. A login link from your e-mail opens in your browser instead.",
+        "offline.title": "You are offline",
+        "offline.body": "UbyHost needs an internet connection. Check Wi-Fi or mobile data, then try again.",
+        "offline.retry": "Try again",
+    },
+    "cs": {
+        "settings.group.phone": "Aplikace v telefonu",
+        "pwa.install.title": "Přidejte si UbyHost na plochu",
+        "pwa.install.help": "Otevře se přes celou obrazovku jako běžná aplikace a může zobrazovat naléhavá upozornění.",
+        "pwa.install.button": "Nainstalovat aplikaci",
+        "pwa.install.installed": "Nainstalováno",
+        "pwa.install.ios": "V Safari klepněte na Sdílet (čtverec se šipkou) a pak na Přidat na plochu.",
+        "pwa.install.ios_passkey": "Nejdřív si přidejte přístupový klíč (v části Zabezpečení). V aplikaci se přihlásíte právě jím, protože odkaz z e-mailu se otevře v Safari.",
+        "pwa.install.other": "Otevřete tuto stránku v telefonu, na iPhonu v Safari nebo na Androidu v Chrome, a přidejte si UbyHost na plochu.",
+        "pwa.login_hint": "V aplikaci se přihlaste přístupovým klíčem. Odkaz z e-mailu se otevře v prohlížeči, ne tady.",
+        "offline.title": "Jste offline",
+        "offline.body": "UbyHost potřebuje připojení k internetu. Zkontrolujte Wi-Fi nebo mobilní data a zkuste to znovu.",
+        "offline.retry": "Zkusit znovu",
+    },
+}
+for _lang, _strings in _PWA_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# Brief 0225: the urgent alerts. Short: a lock screen shows about two lines.
+_PUSH_MESSAGE_STRINGS = {
+    "en": {
+        "push.msg.filing_problem.title": "Police report not accepted",
+        "push.msg.filing_problem.body": "%(property)s: UbyPort did not accept the report. Open UbyHost to see why and send it again.",
+        "push.msg.deadline_at_risk.title": "Police deadline at risk",
+        "push.msg.deadline_at_risk.body": "%(property)s, arrival %(date)s: guests are not reported yet. Deadline %(deadline)s.",
+        "push.msg.door_code.title": "Door code missing",
+        "push.msg.door_code.body": "%(property)s, arrival %(date)s: the guests have no door code yet. See the e-mail we sent you.",
+        "push.msg.cancelled_with_guests.title": "Cancelled stay had registered guests",
+        "push.msg.cancelled_with_guests.body": "%(property)s, %(date)s: nothing will be reported for it. If the booking only moved, set the stay back to Active.",
+        "push.msg.test.title": "Alerts are on",
+        "push.msg.test.body": "This device will get urgent UbyHost alerts.",
+        "notification.job_name.push": "urgent alerts",
+    },
+    "cs": {
+        "push.msg.filing_problem.title": "Hlášení policii nepřijato",
+        "push.msg.filing_problem.body": "%(property)s: UbyPort hlášení nepřijal. Otevřete UbyHost, zjistěte proč a odešlete ho znovu.",
+        "push.msg.deadline_at_risk.title": "Hrozí zmeškání lhůty pro policii",
+        "push.msg.deadline_at_risk.body": "%(property)s, příjezd %(date)s: hosté zatím nejsou nahlášeni. Termín %(deadline)s.",
+        "push.msg.door_code.title": "Chybí kód ke dveřím",
+        "push.msg.door_code.body": "%(property)s, příjezd %(date)s: hosté zatím nemají kód ke dveřím. Podívejte se do e-mailu, který jsme vám poslali.",
+        "push.msg.cancelled_with_guests.title": "Zrušený pobyt měl registrované hosty",
+        "push.msg.cancelled_with_guests.body": "%(property)s, %(date)s: nic se za něj nenahlásí. Pokud se rezervace jen přesunula, nastavte pobyt zpět na Aktivní.",
+        "push.msg.test.title": "Upozornění jsou zapnutá",
+        "push.msg.test.body": "Toto zařízení bude dostávat naléhavá upozornění UbyHost.",
+        "notification.job_name.push": "naléhavá upozornění",
+    },
+}
+for _lang, _strings in _PUSH_MESSAGE_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# Brief 0226: Settings > Phone app > urgent alerts on this device.
+_PUSH_SETTINGS_STRINGS = {
+    "en": {
+        "push.title": "Urgent alerts on this device",
+        "push.help": "Only problems that need you now: a police report that failed, a police deadline at risk, a missing door code, or a cancelled stay whose guests had registered. You still get every e-mail. Logging out turns alerts off on that device.",
+        "push.on": "Turn on",
+        "push.off": "Turn off",
+        "push.test": "Send a test",
+        "push.state_on": "On",
+        "push.ios_first": "On iPhone, add UbyHost to your Home Screen first (above), then open it from there to turn on alerts.",
+        "push.unsupported": "This browser cannot show alerts. Use Chrome, Edge, Firefox or Safari, or on iPhone the app from your Home Screen.",
+        "push.denied": "Alerts are blocked for UbyHost. Allow notifications for this site in the browser or phone settings, then reload this page.",
+        "push.test_sent": "Test sent. It should arrive within a minute.",
+        "push.devices": "Devices with alerts on",
+        "push.device_added": "Added %(date)s",
+        "push.device_unknown": "Device",
+        "push.device_remove": "Remove",
+        "push.error.failed": "Could not turn on alerts. Try again.",
+        "push.error.too_many": "Alerts are on for 10 devices already. Remove one below first.",
+        "push.error.signed_out": "Log in again, then try once more.",
+        "push.error.rate_limited": "Too many tests in a row. Try again in an hour.",
+        "push.error.test_failed": "The test did not go through. Turn alerts off and on again.",
+        "flash.push.device_removed": "That device no longer gets alerts.",
+        "flash.push.signed_out": "Log in again, then try once more.",
+    },
+    "cs": {
+        "push.title": "Naléhavá upozornění na tomto zařízení",
+        "push.help": "Jen problémy, které potřebují vás hned: nepřijaté hlášení policii, hrozící zmeškání lhůty, chybějící kód ke dveřím nebo zrušený pobyt s registrovanými hosty. E-maily chodí dál. Odhlášením se upozornění na daném zařízení vypnou.",
+        "push.on": "Zapnout",
+        "push.off": "Vypnout",
+        "push.test": "Poslat zkoušku",
+        "push.state_on": "Zapnuto",
+        "push.ios_first": "Na iPhonu si nejdřív přidejte UbyHost na plochu (výše) a upozornění zapněte v aplikaci otevřené z plochy.",
+        "push.unsupported": "Tento prohlížeč upozornění zobrazit neumí. Použijte Chrome, Edge, Firefox nebo Safari, na iPhonu aplikaci z plochy.",
+        "push.denied": "Upozornění od UbyHost jsou zablokovaná. Povolte oznámení pro tento web v nastavení prohlížeče nebo telefonu a stránku načtěte znovu.",
+        "push.test_sent": "Zkouška odeslána. Měla by dorazit do minuty.",
+        "push.devices": "Zařízení se zapnutými upozorněními",
+        "push.device_added": "Přidáno %(date)s",
+        "push.device_unknown": "Zařízení",
+        "push.device_remove": "Odebrat",
+        "push.error.failed": "Upozornění se nepodařilo zapnout. Zkuste to znovu.",
+        "push.error.too_many": "Upozornění už máte na 10 zařízeních. Nejdřív jedno níže odeberte.",
+        "push.error.signed_out": "Přihlaste se znovu a zkuste to ještě jednou.",
+        "push.error.rate_limited": "Příliš mnoho zkoušek za sebou. Zkuste to za hodinu.",
+        "push.error.test_failed": "Zkouška neprošla. Upozornění vypněte a znovu zapněte.",
+        "flash.push.device_removed": "Toto zařízení už upozornění nedostává.",
+        "flash.push.signed_out": "Přihlaste se znovu a zkuste to ještě jednou.",
+    },
+}
+for _lang, _strings in _PUSH_SETTINGS_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+STRINGS["en"]["push.device_remove_confirm"] = "Stop alerts on %(name)s?"
+STRINGS["cs"]["push.device_remove_confirm"] = "Zastavit upozornění na zařízení %(name)s?"
+
 # 0080: stay detail grouping and in-page navigation.
 _STAY_DETAIL_0080_STRINGS = {
     "en": {

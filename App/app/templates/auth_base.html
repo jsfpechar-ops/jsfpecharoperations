@@ -9,6 +9,11 @@
   {% include "_seo_head.html" %}
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="UbyHost">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="/static/tokens.css?v=20261019-0153">
   <link rel="stylesheet" href="/static/app.css?v=20261006a-0172">
   <link rel="stylesheet" href="/static/components.css?v=20261002a">
@@ -86,5 +91,6 @@
   </div>
   <script src="/static/csrf.js?v=20260915a"></script>
   <script src="/static/auth.js?v=20260925a"></script>
+  <script src="/static/pwa.js?v=20261021-0206" defer></script>
 </body>
 </html>
