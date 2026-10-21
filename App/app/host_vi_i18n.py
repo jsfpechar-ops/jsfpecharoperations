@@ -3125,3 +3125,10 @@ STRINGS.update({
     "apartment.form.stay_fee.account_help": "Tài khoản ngân hàng của địa phương để nộp phí lưu trú, có trên trang web hoặc trong thư của địa phương. Chép lại đúng như bạn có, ví dụ 19-2000145399/0800, hoặc dạng IBAN. Dấu cách hay gạch ngang đều được; chúng tôi sẽ kiểm tra số. Số này dùng cho mã QR thanh toán.",
     "flash.stay_fees.account_invalid": "Số tài khoản này không hợp lệ. Hãy kiểm tra lại theo trang web của địa phương, ví dụ 19-2000145399/0800, hoặc dán IBAN.",
 })
+
+# 0210: times are required.
+STRINGS.update({
+    "flash.error.times_required": "Hãy chọn giờ nhận phòng và trả phòng. UbyHost cần chúng cho mã cửa và lịch dọn dẹp.",
+    "why.times_missing": "Thiếu giờ nhận phòng và trả phòng, nên mã cửa chưa thể hoạt động. Hãy đặt chúng trước.",
+    "wizard.times_change": "Đổi ở bước 1",
+})

@@ -6853,6 +6853,21 @@ _ONBOARDING_TEST_0208_STRINGS = {
 for _lang, _strings in _ONBOARDING_TEST_0208_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+_ONBOARDING_TEST_0210_STRINGS = {
+    "en": {
+        "flash.error.times_required": "Choose the check-in and check-out time. UbyHost needs them for door codes and cleaning.",
+        "why.times_missing": "Check-in and check-out times are missing, so door codes cannot work yet. Set them first.",
+        "wizard.times_change": "Change in step 1",
+    },
+    "cs": {
+        "flash.error.times_required": "Vyberte čas příjezdu a odjezdu. UbyHost je potřebuje pro kódy ke dveřím a úklid.",
+        "why.times_missing": "Chybí čas příjezdu a odjezdu, takže kódy ke dveřím zatím nemohou fungovat. Nejdřív je nastavte.",
+        "wizard.times_change": "Změnit v kroku 1",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0210_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
