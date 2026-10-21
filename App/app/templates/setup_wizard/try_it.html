@@ -3,7 +3,7 @@
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% from "_components.html" import help_tip, progress_pill, guest_count with context %}
 {% block wizard_content %}
-<p class="setup-wizard-lede">{{ t('setup_guide.try.text') }} {{ help_tip('setup-try-help', t('setup_guide.try.help')) }}</p>
+<p class="setup-wizard-lede">{{ t('why.try') }} {{ help_tip('setup-try-help', t('setup_guide.try.help')) }}</p>
 {% set demo_state = setup_demo.state if setup_demo else 'none' %}
 <section class="setup-wizard-demo" aria-labelledby="demo-property-heading">
   <h2 id="demo-property-heading">{{ t('wizard.try_it.property') }}</h2>

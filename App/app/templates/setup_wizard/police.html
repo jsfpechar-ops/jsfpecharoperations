@@ -20,7 +20,7 @@
   {{ help_tip('wizard-police-credentials-help', t('apartment.form.ubyport.no_credentials'), 'https://policie.gov.cz/reditelstvi-sluzby-cizinecke-policie/jake-jsou-moznosti-zasilani-dat-aplikaci-ubyport') }}
   <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a>
 </div>
-<p class="setup-wizard-lede">{{ t('setup_guide.reporting.text') }}</p>
+<p class="setup-wizard-lede">{{ t('why.police') }} {{ t('why.police_wait') }}</p>
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="police-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
