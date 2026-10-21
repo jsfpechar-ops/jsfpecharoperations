@@ -10,7 +10,7 @@
 {% block body %}
 {% if periods %}
 {% set pay_rows = periods | rejectattr('unset') | list %}
-{% set pay_btn = 'ui-btn ui-btn-primary' if pay_rows | length == 1 else 'ui-btn ui-btn-secondary' %}
+{% set pay_btn = 'ui-btn ui-btn-secondary' %}
 {% for period in pay_rows %}
 {% set apartment = period.apartment %}
 {% set month_q = selected_month.strftime('%Y-%m') %}
