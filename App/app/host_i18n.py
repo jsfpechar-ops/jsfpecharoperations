@@ -6751,6 +6751,33 @@ _ONBOARDING_TEST_0203_STRINGS = {
 for _lang, _strings in _ONBOARDING_TEST_0203_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0204: onboarding user test (2026-10-21): required marks, the signature and
+# the guest message template explained, the street explained.
+_ONBOARDING_TEST_0204_STRINGS = {
+    "en": {
+        "common.required_legend": "Fields marked * are required.",
+        "entity.signature.heading": "Your signature on stay-fee reports",
+        "entity.signature.scope": "Optional. The town wants the stay-fee report signed. Draw your signature once and UbyHost adds it to every report, so you do not print and sign it by hand. Without it, your typed name is printed.",
+        "apartment.form.addr.street_hint": "Fill it in if the street has a name. In villages without streets, the house number is enough.",
+        "wizard.guest_link.message_title": "Message template for guests",
+        "wizard.guest_link.message_step1": "Replace the parts in [square brackets] with your own details: key handover, directions, quiet hours.",
+        "wizard.guest_link.message_step2": "Paste it into the automatic message Airbnb or Booking.com sends after each booking. UbyHost does not send it.",
+        "wizard.guest_link.done": "Continue",
+    },
+    "cs": {
+        "common.required_legend": "Pole označená * jsou povinná.",
+        "entity.signature.heading": "Váš podpis na hlášení poplatku z pobytu",
+        "entity.signature.scope": "Nepovinné. Obec chce hlášení poplatku z pobytu podepsané. Nakreslete podpis jednou a UbyHost ho vloží do každého hlášení, takže ho nemusíte tisknout a podepisovat ručně. Bez podpisu se vytiskne vaše jméno.",
+        "apartment.form.addr.street_hint": "Vyplňte, pokud ulice existuje. V obcích bez ulic stačí číslo popisné.",
+        "wizard.guest_link.message_title": "Šablona zprávy pro hosty",
+        "wizard.guest_link.message_step1": "Části v [hranatých závorkách] nahraďte svými údaji: předání klíčů, cesta, noční klid.",
+        "wizard.guest_link.message_step2": "Vložte ji do automatické zprávy, kterou Airbnb nebo Booking.com posílá po každé rezervaci. UbyHost ji neposílá.",
+        "wizard.guest_link.done": "Pokračovat",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0204_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
