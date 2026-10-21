@@ -577,3 +577,7 @@ body.host-workspace .dashboard-calendar .cal-heading .cal-segment,
   border:1px solid var(--cal-line); border-radius:8px;
 }
 .cleaning-page .dashboard-calendar .cal-heading select[data-cal-property] { width:100%; }
+/* 0199: H - shared cleaning calendar: prev / Today / next get the 8 px corners of the selects beside them on phone. */
+@media (max-width: 760px) {
+  .cleaning-page .dashboard-calendar .cal-navigation .btn { border-radius: 8px; }
+}

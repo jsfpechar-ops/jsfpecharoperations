@@ -341,7 +341,8 @@ def test_each_property_setting_has_exactly_one_editable_control_in_the_whole_hos
         for part in ("account_prefix", "account_number", "account_bank"):
             assert counts[part] == 1, (view, part, counts[part])
     for key, html in pages.items():
-        if key.startswith("property-") and key not in ("property-new",):
+        # 0195: /smart-locks now redirects to a property's Door lock tab, a property page.
+        if (key.startswith("property-") and key not in ("property-new",)) or key == "smart-locks":
             continue
         names = set(_editable(_inventory(html)))
         allowed = CREATE_FIELDS if key == "property-new" else set()
@@ -360,7 +361,8 @@ def test_each_property_setting_has_exactly_one_editable_control_in_the_whole_hos
 def test_guest_link_automation_and_fee_have_no_copied_editor(acc):
     pages = _pages(acc)
     for key, html in pages.items():
-        if key.startswith("property-") and key != "property-new":
+        # 0195: /smart-locks now redirects to a property's Door lock tab, a property page.
+        if (key.startswith("property-") and key != "property-new") or key == "smart-locks":
             continue
         names = set(_editable(_inventory(html)))
         if key in ("properties", "smart-locks"):  # /smart-locks lands on the Properties page (0190)

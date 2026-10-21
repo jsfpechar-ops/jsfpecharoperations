@@ -117,10 +117,22 @@ body.host-workspace .host-stay-detail .stay-command-panel { border-top:1px solid
 @media (max-width:760px) {
   body.host-workspace .host-stay-detail .stay-command-main { flex-direction:column; align-items:stretch; text-align:left; gap:12px; }
   body.host-workspace .host-stay-detail .stay-command-main > div:first-child { text-align:left; }
-  body.host-workspace .host-stay-detail .stay-command-actions { justify-content:flex-start; flex-wrap:nowrap; width:100%; }
+  /* 0199: B - the first action takes the row, the rest share the next one, the menu stays 44 px at the end; labels never wrap. */
+  body.host-workspace .host-stay-detail .stay-command-actions { justify-content:flex-start; flex-wrap:wrap; width:100%; }
   body.host-workspace .host-stay-detail .stay-command-actions > :not(.row-menu) { flex:1 1 0; min-width:0; }
+  body.host-workspace .host-stay-detail .stay-command-actions > :first-child:not(.row-menu) { flex:1 1 100%; }
   body.host-workspace .host-stay-detail .stay-command-actions > form > .ui-btn,
-  body.host-workspace .host-stay-detail .stay-command-actions > .ui-btn { width:100%; white-space:normal; }
+  body.host-workspace .host-stay-detail .stay-command-actions > .ui-btn { width:100%; }
+  body.host-workspace .host-stay-detail .stay-command-actions :is(.ui-btn,.btn) { height:44px; min-height:44px; white-space:nowrap; }
   body.host-workspace .host-stay-detail .stay-command-actions > .row-menu { flex:0 0 auto; }
   body.host-workspace .host-stay-detail .stay-command-actions .row-menu-trigger { width:44px; height:44px; min-height:44px; }
+  /* 0199: A - the Next step panel content starts at the Guests heading edge. */
+  body.host-workspace .host-stay-detail .stay-command-panel { padding-left:0; }
+  body.host-workspace .host-stay-detail .stay-command-main { padding-left:4px; }
+  /* 0199: C - the two Guests header buttons share the full row, 44 px tall. */
+  body.host-workspace .host-stay-detail #guests .ui-section-h .ui-form-actions { width:100%; }
+  body.host-workspace .host-stay-detail #guests .ui-section-h .ui-form-actions > :is(a,button) { flex:1 1 0; min-width:0; height:44px; min-height:44px; white-space:nowrap; box-sizing:border-box; }
+  /* 0199: D - the bottom Save of stay settings fills the form. */
+  body.host-workspace .host-stay-detail #stay-quick-edit form.settings-grid > .ui-form-actions { width:100%; }
+  body.host-workspace .host-stay-detail #stay-quick-edit form.settings-grid > .ui-form-actions > .ui-btn { width:100%; }
 }

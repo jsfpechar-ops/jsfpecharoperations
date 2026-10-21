@@ -7,7 +7,7 @@ from pathlib import Path
 
 from app import db
 
-from tests.test_smart_locks_page import _client, _connect, hosts, USERS  # noqa: F401
+from tests.test_smart_locks_page import _client, _connect, flats, hosts, USERS  # noqa: F401
 
 TEMPLATES = ("users.html", "admin_incidents.html", "admin_operations.html", "admin_funnel.html")
 LOCK = {"lock_id": "1", "alias": "Door A", "battery": 80, "tz_offset_ms": 3600000}
@@ -18,7 +18,7 @@ def _main(page: str) -> str:
     return page.split('<div class="ui-page"', 1)[1].split("<dialog", 1)[0]
 
 
-def test_smart_locks_has_the_v2_shell_and_one_primary_in_every_state(hosts):
+def test_smart_locks_has_the_v2_shell_and_one_primary_in_every_state(hosts, flats):
     client = _client(USERS[0])
     states = [client.get("/apartments?lang=en").text]
     _connect(hosts[0], "hjhfa_uhaaaa")
@@ -30,7 +30,9 @@ def test_smart_locks_has_the_v2_shell_and_one_primary_in_every_state(hosts):
         assert main.count("<h1") == 1, index
         assert 'style="' not in main and not re.search(r'class="(btn|pill)[ "]', main), index
         assert 'href="/apartments" aria-current="page"' in main, index
-    assert 'action="/smart-locks/remove"' in states[2] and "data-confirm" in states[2]
+    # 0195: the lock panel lives on the property's Door lock tab, not on /apartments.
+    lock_tab = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
+    assert 'action="/smart-locks/remove"' in lock_tab and "data-confirm" in lock_tab
 
 
 def test_templates_have_no_raw_style_or_legacy_control():

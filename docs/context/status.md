@@ -11,7 +11,7 @@ Updated: 2026-10-21.
 
 ## Now
 
-- #416: lock tab, stay buttons, cleaning selects (0196-0198).
+- #416: lock tab, stay buttons, phone pass (0196-0200).
 - AI/scraper crawler block (0195): robots.txt AI group, `/.well-known/tdmrep.json`, Terms §11 TDM clause en+cs (TERMS_VERSION kept 1.7; lawyer to confirm).
 - Host design reset follow-up (0165-0183): six-item sidebar, WCAG 2.2 AA check, bordered rows and controls, Stays/Cleaning/guest-card (PR #405). **Deploy needed:** new `?v=` keys. Shots: design-reset/
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.

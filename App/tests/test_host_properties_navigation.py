@@ -189,7 +189,7 @@ def test_lock_account_link_only_when_connected(host):
         urls = {item.get("url") for item in host.get("/api/command-palette").json()["items"]}
         assert "/smart-locks" not in urls
     main = page[page.index("<main") : page.index("</main>")]
-    assert main.count('href="/smart-locks"') == 0 and 'id="smart-locks-how"' in main
+    assert main.count('href="/smart-locks"') == 0 and 'id="smart-locks-how"' not in main
 
 
 # --- legacy hub URLs and Search ----------------------------------------------------
