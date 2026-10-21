@@ -88,3 +88,16 @@ def test_the_register_names_the_recipients_that_are_not_subprocessors(monkeypatc
         monkeypatch.setattr(config, "SIGNUP_ENABLED", False)
         html = _get(f"/subprocessors?lang={lang}")
         assert "Google Ireland Ltd." not in html and "Policie ČR, UbyPort" in html, lang
+
+
+def test_urgent_alerts_are_explained_and_their_push_services_listed(monkeypatch):
+    """04_legal_positions.md section 7: recipients, storage and retention."""
+    for lang, word in (("en", "Urgent-alert devices"), ("cs", "naléhavými upozorněními")):
+        html = _get(f"/privacy?lang={lang}")
+        assert "Mozilla" in html and "180" in html and word in html, lang
+        monkeypatch.setattr(config, "WEB_PUSH", True)
+        html = _get(f"/subprocessors?lang={lang}")
+        assert SUBPROCESSOR_STRINGS[lang]["subprocessors.recipient_push"][:20] in html, lang
+        monkeypatch.setattr(config, "WEB_PUSH", False)
+        html = _get(f"/subprocessors?lang={lang}")
+        assert SUBPROCESSOR_STRINGS[lang]["subprocessors.recipient_push"][:20] not in html, lang
