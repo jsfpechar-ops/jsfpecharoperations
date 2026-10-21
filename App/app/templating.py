@@ -559,6 +559,9 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     )
     # Macros reach the language through the request, not this context.
     request.state.lang = host_i18n.resolve_language(request, default=fallback)
+    # Public and legal pages exist in EN and CS only.
+    if request.url.path in seo.INDEXABLE_PATHS and request.url.path != "/login" and request.state.lang not in host_i18n.PUBLIC_LANGUAGES:
+        request.state.lang = "en"
     data["lang"] = request.state.lang
     for key, value in seo.head_links(request).items():
         data.setdefault(key, value)
