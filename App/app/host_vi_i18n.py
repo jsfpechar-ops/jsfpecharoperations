@@ -3083,4 +3083,16 @@ STRINGS: Dict[str, str] = {
     "offline.title": "Bạn đang ngoại tuyến",
     "offline.body": "UbyHost cần kết nối Internet. Hãy kiểm tra Wi-Fi hoặc dữ liệu di động, rồi thử lại.",
     "offline.retry": "Thử lại",
+    # Brief 0204: urgent alerts.
+    "push.msg.filing_problem.title": "Báo cáo cho cảnh sát không được chấp nhận",
+    "push.msg.filing_problem.body": "%(property)s: UbyPort không chấp nhận báo cáo. Mở UbyHost để xem lý do và gửi lại.",
+    "push.msg.deadline_at_risk.title": "Sắp trễ hạn khai báo cảnh sát",
+    "push.msg.deadline_at_risk.body": "%(property)s, ngày đến %(date)s: khách chưa được khai báo. Hạn chót %(deadline)s.",
+    "push.msg.door_code.title": "Thiếu mã cửa",
+    "push.msg.door_code.body": "%(property)s, ngày đến %(date)s: khách chưa có mã cửa. Hãy xem email chúng tôi đã gửi cho bạn.",
+    "push.msg.cancelled_with_guests.title": "Lượt lưu trú bị hủy đã có khách đăng ký",
+    "push.msg.cancelled_with_guests.body": "%(property)s, %(date)s: sẽ không có gì được khai báo. Nếu đặt phòng chỉ bị dời, hãy đặt lượt lưu trú về Đang hoạt động.",
+    "push.msg.test.title": "Đã bật cảnh báo",
+    "push.msg.test.body": "Thiết bị này sẽ nhận cảnh báo khẩn từ UbyHost.",
+    "notification.job_name.push": "cảnh báo khẩn",
 }
