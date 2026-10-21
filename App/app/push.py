@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 from urllib.parse import urlsplit
@@ -342,7 +343,7 @@ def send_test(account_id: int, endpoint: str) -> str:
         return "gone"
     moment = _now()
     outbox_id = db.insert("push_outbox", {
-        "idempotency_key": f"{TEST_KIND}:{_stamp(moment)}:{row['id']}",
+        "idempotency_key": f"{TEST_KIND}:{secrets.token_hex(8)}:{row['id']}",
         "subscription_id": row["id"],
         "user_account_id": account_id,
         "kind": TEST_KIND,
