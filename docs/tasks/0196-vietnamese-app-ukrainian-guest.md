@@ -73,3 +73,7 @@ From `App/`: `.venv/bin/python -m pytest tests/test_guest_languages.py tests/tes
 ## 8. Stop and ask
 
 An anchor is missing, a circular import appears that a local import cannot fix, or a test outside §6 fails.
+
+## 9. Report
+
+Steps 1 to 13 landed in commits "0196 step 1" to "0196 step 13". Step 14 (tests) and the screenshots follow; the orchestrator writes the PR body.
