@@ -41,7 +41,7 @@ os.environ.setdefault("UBYHOST_MAIL_BACKEND", "console")
 os.environ["UBYHOST_MOCK_URL"] = f"http://127.0.0.1:{MOCK_PORT}/ws_uby/ws_uby.svc"
 os.environ.setdefault("UBYHOST_ICAL_ALLOW_PRIVATE", "1")
 # The suite exercises every guest catalog; production defaults to en,cs (WP33).
-os.environ.setdefault("UBYHOST_GUEST_LANGS", "en,cs,de,es,fr")
+os.environ.setdefault("UBYHOST_GUEST_LANGS", "en,cs,de,es,fr,uk")
 os.environ["MOCK_UBYPORT_STATE"] = str(_TMP / "mock_state.json")
 os.environ["MOCK_UBYPORT_PORT"] = str(MOCK_PORT)
 

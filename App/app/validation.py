@@ -200,7 +200,7 @@ def country_name(code: str, lang: str = "en") -> str:
     entry = country_codes().get((code or "").upper())
     if not entry:
         return code or ""
-    if lang in ("cs", "de", "es", "fr") and entry.get(lang):
+    if lang in ("cs", "de", "es", "fr", "uk") and entry.get(lang):
         return entry[lang]
     return entry.get("en", code)
 
