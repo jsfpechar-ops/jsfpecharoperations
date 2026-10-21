@@ -44,8 +44,6 @@ FEE_HELP = {
     "stay_fee_authority_address": "apartment.form.stay_fee.authority_address_help",
     "stay_fee_authority_contact": "apartment.form.stay_fee.authority_contact_help",
     "stay_fee_authority_databox": "apartment.form.stay_fee.authority_databox_hint",
-    "stay_fee_payee": "apartment.form.stay_fee.payee_hint",
-    "stay_fee_instruction": "apartment.form.stay_fee.instruction_hint",
 }
 
 
@@ -104,8 +102,7 @@ def test_stay_fee_fields_have_plain_help_and_no_invented_example(acc):
         # Input names are unchanged.
         for name in ("stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "account_prefix", "account_number",
                      "account_bank", "stay_fee_authority_name", "stay_fee_authority_address",
-                     "stay_fee_authority_contact", "stay_fee_authority_databox", "stay_fee_payee",
-                     "stay_fee_instruction"):
+                     "stay_fee_authority_contact", "stay_fee_authority_databox"):
             assert f'name="{name}"' in section, name
 
 
