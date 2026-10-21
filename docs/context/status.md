@@ -10,6 +10,7 @@ Updated: 2026-10-21.
 
 ## Now
 
+- #418 onboarding user-test fixes (0203-0212): passkey return, TTLock stays in wizard, required stars, why-ledes, one-box fee account, signature with stay fee, times required, lock summer time, guest window default 1. Address form (decision card) still open.
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
 - AI/scraper crawler block (0195): robots.txt AI group, `/.well-known/tdmrep.json`, Terms §11 TDM clause en+cs (TERMS_VERSION kept 1.7; lawyer to confirm).

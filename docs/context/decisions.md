@@ -59,3 +59,4 @@ Append-only.
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
+- 2026-10-21 | Onboarding copy: every wizard step and settings section opens with a plain why-lede (0206); ledes are regular weight (0212); fee-report signature is edited with the stay fee, stored on the operator (0209); new properties list stays starting within 1 day (0211); check-in/out required in the wizard (0210) | owner | [0206](../tasks/0206-why-on-every-step.md)
