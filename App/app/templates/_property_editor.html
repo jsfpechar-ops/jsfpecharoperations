@@ -85,7 +85,7 @@
 
     <section class="panel property-section ui-section" id="arrival-departure">
       <h3 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h3>
-      <p class="ui-sub">{{ t('host.property_times_hint') }}</p>
+      <p class="ui-sub">{{ t('why.times') }}</p>
       {% if shared_time_error %}<p class="err-text" role="alert">{{ t(shared_time_error) }}</p>{% endif %}
       <div class="grid two">
         {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
@@ -99,6 +99,7 @@
 
     <section class="panel property-section ui-section" id="address">
       <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
+      <p class="ui-sub">{{ t('why.address') }}</p>
       {% include "_property_address_fields.html" %}
     </section>
 
@@ -139,6 +140,7 @@
     <h2 class="property-group-title">{{ t('property_nav.group.guests') }}</h2>
     <section class="panel property-section ui-section" id="communication">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('nav.guest_links') }}</h3>{{ help_tip('communication-help', t('guest_links.lede') ~ ' ' ~ t('apartment.form.guest_link.message_help'), '/guide#guests') }}</div>
+      <p class="ui-sub">{{ t('why.guest_link') }}</p>
       <div class="guest-link-top">
         <div class="field guest-link-url">
           <label for="permalink">{{ t('property_nav.guest_link') }}</label>
@@ -203,10 +205,10 @@
   {% if door_code %}
   <div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock">
     <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
-    <p class="property-group-intro">{{ t('property_nav.lock_intro') }}</p>
+    <p class="property-group-intro">{{ t('why.door_lock') }}</p>
     {% if door_code.account and door_code.locks %}
     <section class="panel property-section ui-section" id="door-code">
-      <p class="ui-sub">{{ t('host.property_times_hint') }}
+      <p class="ui-sub">{{ t('why.times') }}
           {{ t('apartment.form.door_code.checkin') }} {{ '%02d:00' | format(apartment.checkin_hour) if apartment.checkin_hour is not none else '—' }} ·
           {{ t('apartment.form.door_code.checkout') }} {{ '%02d:00' | format(apartment.checkout_hour) if apartment.checkout_hour is not none else '—' }}.
           <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
@@ -245,6 +247,7 @@
     <section class="panel property-section ui-section" id="ubyport">
       <div class="field-label-row police-section-head"><h3 class="property-section-title">{{ t('host.reporting') }}</h3>{{ help_tip('ubyport-help', t('apartment.form.ubyport.credentials_help_heading'), '/guide#ubyport-credentials') }}
         <a class="ui-btn ui-btn-secondary ui-btn-compact police-sample-link" id="police-sample-link" href="/static/docs/ubyport-ws-credential-sample.pdf?v=20261004a" target="_blank" rel="noopener">{{ t('apartment.form.ubyport.sample_link') }}</a></div>
+      <p class="ui-sub">{{ t('why.police') }}</p>
       <p class="ui-sub"><a href="{{ base_url }}?view=settings&amp;section=automation#automation">{{ t('automation.timing_title') }} </a></p>
       <div class="grid">
         {{ text_field('uby_idub', 'IDUB', apartment.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
@@ -281,6 +284,7 @@
 
     <section class="panel property-section ui-section" id="stay-fee-settings">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('apartment.form.stay_fee.heading') }}</h3>{{ help_tip('stay-fee-help', t('apartment.form.stay_fee.lede')) }}</div>
+      <p class="ui-sub">{{ t('why.stay_fee') }}</p>
       {% if fee_return_to %}
       <p class="small fee-return-note"><a href="{{ fee_return_to }}"> {{ t('stay_fees.setup.back_to_report') }}</a></p>
       {% endif %}
@@ -327,6 +331,7 @@
     <h2 class="property-group-title">{{ t('property_nav.group.automation') }}</h2>
     <section class="panel property-section ui-section" id="automation">
       <div class="field-label-row"><h3 class="property-section-title">{{ t('automation.timing_title') }}</h3>{{ help_tip('automation-help', t('automation.timing_help'), '/guide#reporting') }}</div>
+      <p class="ui-sub">{{ t('why.automation') }}</p>
       <div class="grid two">
         <div class="field">
           <label for="automation_mode">{{ t('automation.timing_label') }}</label>
