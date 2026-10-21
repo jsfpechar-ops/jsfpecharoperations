@@ -58,6 +58,65 @@ PRIVATE_PREFIXES = (
     "/sync",
 )
 
+# Bots that collect pages for AI training, AI answers or bulk resale. They get
+# nothing, public pages included; ordinary search engines keep the rules for
+# "*". robots.txt is advisory: well-behaved bots honour it, others need the
+# Cloudflare bot rules.
+AI_AND_SCRAPER_AGENTS = (
+    "GPTBot",
+    "ChatGPT-User",
+    "OAI-SearchBot",
+    "ClaudeBot",
+    "Claude-User",
+    "Claude-SearchBot",
+    "Claude-Web",
+    "anthropic-ai",
+    "Google-Extended",
+    "Google-CloudVertexBot",
+    "Applebot-Extended",
+    "CCBot",
+    "PerplexityBot",
+    "Perplexity-User",
+    "Bytespider",
+    "TikTokSpider",
+    "Amazonbot",
+    "meta-externalagent",
+    "meta-externalfetcher",
+    "FacebookBot",
+    "cohere-ai",
+    "cohere-training-data-crawler",
+    "MistralAI-User",
+    "DuckAssistBot",
+    "YouBot",
+    "AI2Bot",
+    "Ai2Bot-Dolma",
+    "Diffbot",
+    "ImagesiftBot",
+    "Omgilibot",
+    "Omgili",
+    "Webzio-Extended",
+    "Timpibot",
+    "PanguBot",
+    "img2dataset",
+    "Scrapy",
+    "AhrefsBot",
+    "SemrushBot",
+    "MJ12bot",
+    "DotBot",
+    "DataForSeoBot",
+    "BLEXBot",
+)
+
+TDM_NOTICE = (
+    "# Text and data mining, AI training and automated scraping of this site\n"
+    "# are not permitted. Rights reserved under Art. 4(3) of Directive (EU)\n"
+    "# 2019/790 and the Czech Copyright Act (No. 121/2000 Coll.).\n"
+    "# Terms: /terms#s11"
+)
+
+# TDMRep (W3C community report): the same reservation, machine-readable.
+TDMREP_JSON = '[{"location": "/*", "tdm-reservation": 1}]\n'
+
 
 def page_url(path: str, lang: str | None = None) -> str:
     base = f"{config.PUBLIC_BASE_URL}{path}"
