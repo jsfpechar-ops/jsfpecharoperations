@@ -3091,3 +3091,14 @@ STRINGS.update({
     "wizard.guest_link.message_step2": "Dán vào tin nhắn tự động mà Airbnb hoặc Booking.com gửi sau mỗi lượt đặt. UbyHost không gửi tin nhắn này.",
     "wizard.guest_link.done": "Tiếp tục",
 })
+
+# 0205: onboarding user test (2026-10-21).
+STRINGS.update({
+    "apartment.form.ubyport.mark_hint": "Tự điền từ tên đăng nhập: phần sau UBY-WS_. Chỉ sửa nếu thư của cảnh sát ghi “Zkratka ubytovacího zařízení” khác.",
+    "apartment.form.stay_fee.account_help": "Tài khoản ngân hàng của thành phố cho phí lưu trú, lấy từ trang web hoặc thư của họ. Dán cả số tài khoản (19-2000145399/0800) hoặc IBAN vào ô bất kỳ, hệ thống sẽ tự tách. Dùng cho mã QR thanh toán.",
+    "smart_locks.essential1": "Trong ứng dụng TTLock, mở khóa của bạn và bấm Authorized Admin (một số phiên bản ghi eAdmin).",
+    "smart_locks.essential2": "Bấm Create Admin. Ở ô Recipient, nơi TTLock chờ email hoặc số điện thoại, dán tên UbyHost của bạn ở trên. Để nguyên Permanent bật và bấm Send.",
+    "smart_locks.essential3": "Quay lại đây và bấm Kiểm tra kết nối.",
+    "smart_locks.s4": "Bấm Authorized Admin (một số phiên bản ghi eAdmin). Đó là biểu tượng hình người có dấu tích, trong lưới bên dưới ổ khóa.",
+    "smart_locks.s6": "Để nguyên Permanent ở trạng thái bật. Ở ô Recipient, nơi TTLock chờ email hoặc số điện thoại, dán tên UbyHost của bạn. Ở ô Name, nhập UbyHost.",
+})
