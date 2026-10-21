@@ -5794,6 +5794,40 @@ _PASSKEY_STRINGS = {
 for _lang, _strings in _PASSKEY_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# Brief 0203: the installable app (Settings > Phone app, login hint, offline page).
+_PWA_STRINGS = {
+    "en": {
+        "settings.group.phone": "Phone app",
+        "pwa.install.title": "Add UbyHost to your home screen",
+        "pwa.install.help": "It opens full screen, like any other app, and can show urgent alerts.",
+        "pwa.install.button": "Install app",
+        "pwa.install.installed": "Installed",
+        "pwa.install.ios": "In Safari, tap Share (the square with an arrow), then Add to Home Screen.",
+        "pwa.install.ios_passkey": "Add a passkey first (under Security). In the app you log in with it, because a login link from your e-mail opens in Safari.",
+        "pwa.install.other": "Open this page on your phone, in Safari on iPhone or Chrome on Android, to add UbyHost to the home screen.",
+        "pwa.login_hint": "In the app, log in with your passkey. A login link from your e-mail opens in your browser instead.",
+        "offline.title": "You are offline",
+        "offline.body": "UbyHost needs an internet connection. Check Wi-Fi or mobile data, then try again.",
+        "offline.retry": "Try again",
+    },
+    "cs": {
+        "settings.group.phone": "Aplikace v telefonu",
+        "pwa.install.title": "Přidejte si UbyHost na plochu",
+        "pwa.install.help": "Otevře se přes celou obrazovku jako běžná aplikace a může zobrazovat naléhavá upozornění.",
+        "pwa.install.button": "Nainstalovat aplikaci",
+        "pwa.install.installed": "Nainstalováno",
+        "pwa.install.ios": "V Safari klepněte na Sdílet (čtverec se šipkou) a pak na Přidat na plochu.",
+        "pwa.install.ios_passkey": "Nejdřív si přidejte přístupový klíč (v části Zabezpečení). V aplikaci se přihlásíte právě jím, protože odkaz z e-mailu se otevře v Safari.",
+        "pwa.install.other": "Otevřete tuto stránku v telefonu, na iPhonu v Safari nebo na Androidu v Chrome, a přidejte si UbyHost na plochu.",
+        "pwa.login_hint": "V aplikaci se přihlaste přístupovým klíčem. Odkaz z e-mailu se otevře v prohlížeči, ne tady.",
+        "offline.title": "Jste offline",
+        "offline.body": "UbyHost potřebuje připojení k internetu. Zkontrolujte Wi-Fi nebo mobilní data a zkuste to znovu.",
+        "offline.retry": "Zkusit znovu",
+    },
+}
+for _lang, _strings in _PWA_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 # 0080: stay detail grouping and in-page navigation.
 _STAY_DETAIL_0080_STRINGS = {
     "en": {
