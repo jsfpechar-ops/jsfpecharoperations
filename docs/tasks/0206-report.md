@@ -34,3 +34,17 @@ Status: blocked (one layout check, see Deviations)
 
 ## Owner steps left
 - None from this brief.
+
+## Fix 1
+- Commits: `0206-fix-1 step 1` (b68e497), `step 2` (c6802c2), `step 3` (5a326dc, base.html key `0206f`, static_versions regenerated), `step 4` (1505158).
+- §6.1: `UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium UBYHOST_REQUIRE_BROWSER=1 ... -rs` → `15 passed` (0 skipped). The env var is needed because Playwright's default headless shell is not installed.
+- §6.2: `27 passed, 1 failed`. Failing: `test_design_lint.py` (see below).
+- §6.3: `design_lint.py` FAIL: `App/app/templates/settings.html: T3 class not in catalog: settings-row-actions` (2 lines). `context_lint.py` OK.
+- Screenshots: 13 present in `/mnt/project-files/pwa/0206/`. Viewed:
+  - `alerts-on-1280-en.png`: badge and both buttons on one line, right of the text; no stray strip above "Add UbyHost to your home screen".
+  - `alerts-on-2000-collapsed-en.png`: same as 1280.
+  - `alerts-on-390-vi.png`: badge and buttons under the text, left-aligned, nothing cut off.
+  - `alerts-on-390-cs.png`: same as vi.
+
+## Deviations
+Status: blocked. Done: steps 1 to 5 and §6.1. Left: §6.2 and §6.3 pass. Design lint fails because the new class `settings-row-actions` (step 1 and step 2) is not in `docs/design/catalog.json`. The brief says no other file may change, so the catalog was not edited.
