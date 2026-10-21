@@ -1332,9 +1332,10 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
             const s = getComputedStyle(el);
             return [s.fontFamily, s.fontSize, s.fontWeight, s.lineHeight, s.letterSpacing, s.color];
         }"""
-        assert page.locator(".setup-wizard-fee-intro").evaluate(typography) == page.locator(
+        # 0212: the fee lede looks like every other step's lede.
+        assert page.locator(".setup-wizard-lede").first.evaluate(typography)[1:4] != page.locator(
             ".ui-ph h1"
-        ).evaluate(typography)
+        ).evaluate(typography)[1:4]
         assert page.evaluate(_overflow_js())
         _shot(page, f"24-fee-intro-{tag}.png")
         page.locator(".setup-wizard-skip button").click()
@@ -1472,7 +1473,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         page.wait_for_url("**/setup/try_it**")
         assert page.get_by_role("button", name=_t(lang, "wizard.try_it.skip"), exact=True).is_visible()
         lede = page.locator(".setup-wizard-lede").first
-        assert int(lede.evaluate("(el) => getComputedStyle(el).fontWeight")) >= 700
+        assert int(lede.evaluate("(el) => getComputedStyle(el).fontWeight")) == 400  # 0212
         assert lede.evaluate("(el) => getComputedStyle(el).color") == page.locator(
             ".ui-ph h1"
         ).evaluate("(el) => getComputedStyle(el).color")
