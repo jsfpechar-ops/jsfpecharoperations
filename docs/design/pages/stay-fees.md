@@ -13,6 +13,7 @@ Master version: 2.0.0. Adds only. Calculations and legal data belong to the fee 
 - phone card: line 1 property + badge; line 2 period; line 3 liable, exempt, total
 - badges: `action` = "Report not ready" with the blocker named in the detail; `attention` = period open, nights still changing; `done` = "Finalised" snapshot; `neutral` = "Not set up"
 - row menu: Open, Download PDF, Download CSV, Set up fee (-> property settings)
+- pay steps (0203): above the table, one `ui-section` per set-up property with an `ol` of three steps (confirm figures, Download PDF, QR Platba). Before the period is saved, steps 2 and 3 show a dashed `fee-step-locked` placeholder ("appears after step 1"). Step buttons are primary only when one property is shown, else secondary. No paid button.
 
 ## Fee detail
 - body_kind: `detail`; title: property name and period; back link: `stay_fees.title`
