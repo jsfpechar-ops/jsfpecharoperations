@@ -1,6 +1,6 @@
 # 0208 report: one box for the stay-fee account
 
-Status: blocked (executor, Haiku 5.5). Steps 1 to 7 done and committed one by one (b2f9b11, 7fada55, f40aefb, 1010a76, 8e054f3, 4dded22, 8e4a4e5). Step 8 is the per-step commits. Screenshots (§6.5) skipped: tool budget.
+Status: review (executor, Haiku 5.5). Steps 1 to 7 done and committed one by one (b2f9b11, 7fada55, f40aefb, 1010a76, 8e054f3, 4dded22, 8e4a4e5). Step 8 is the per-step commits. Screenshots (§6.5) skipped: tool budget.
 
 ## Files changed (§3 list only)
 
