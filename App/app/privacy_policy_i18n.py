@@ -70,7 +70,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "links, invitation, e-mail confirmation, e-mail change notice, and passkey-added notice "
             "are sent on the basis of your account action and are not marketing); and billing or plan "
             "information if fees apply. We do not require Host Users to provide special categories "
-            "of data about themselves unless you voluntarily include such information in free-text fields."
+            "of data about themselves unless you voluntarily include such information in free-text fields. If you turn on urgent alerts on a device, we also keep that device's push address and keys (encrypted), its language, its device family (such as \"iPhone\"), the time of its last visit, and the alerts queued for it."
         ),
         "privacy.s05_title": "5. Guest Data processed on your instructions",
         "privacy.s05_body": (
@@ -112,7 +112,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "We do not use third-party analytics or advertising cookies in the application as shipped. "
             "You can control cookies through browser settings; disabling session cookies will prevent "
             "login. Browsers may also honour HTTP Strict Transport Security (HSTS) so this hostname "
-            "is opened only over HTTPS for a limited period."
+            "is opened only over HTTPS for a limited period. If you install the app or turn on urgent alerts, the browser also stores a small service worker, a copy of the offline page and the push subscription; this happens only at your request and is needed for that feature."
         ),
         # WP09: owner's final wording from 04_legal_positions.md, sections 1, 4
         # and 5. analytics_* and optout_* are shown on /privacy only while
@@ -179,7 +179,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "privacy.s09_title": "9. Recipients and subprocessors",
         "privacy.s09_body": (
-            "Personal data is accessed by authorised Operator personnel and contractors bound by confidentiality. We use infrastructure subprocessors to host the Service, including Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), Render.com (demo hosting), DNS or CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential mitigation, client-side script monitoring, and HSTS when enabled for the production zone), Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a transactional e-mail provider (including Amazon SES when enabled) or support tools. Completion receipts may disclose the guest recipient address to the Host copied on the message. Guest Data may be transmitted to the Czech Police UbyPort systems or related endpoints when a Host enables reporting. That transmission occurs on the Host's instructions as processor. We require subprocessors that process personal data on our behalf to provide appropriate safeguards (GDPR Art. 28). The current register, purposes, possible data and transfer notes are at /subprocessors. Material changes are published there and reflected in this Policy."
+            "Personal data is accessed by authorised Operator personnel and contractors bound by confidentiality. We use infrastructure subprocessors to host the Service, including Amazon Web Services (AWS Lightsail or comparable hosting in the EEA for production), Render.com (demo hosting), DNS or CDN providers such as Cloudflare (including Turnstile, managed challenges, leaked-credential mitigation, client-side script monitoring, and HSTS when enabled for the production zone), Google Drive and/or Amazon S3 when the Operator configures off-site backups, and a transactional e-mail provider (including Amazon SES when enabled) or support tools. Completion receipts may disclose the guest recipient address to the Host copied on the message. Guest Data may be transmitted to the Czech Police UbyPort systems or related endpoints when a Host enables reporting. That transmission occurs on the Host's instructions as processor. We require subprocessors that process personal data on our behalf to provide appropriate safeguards (GDPR Art. 28). The current register, purposes, possible data and transfer notes are at /subprocessors. Material changes are published there and reflected in this Policy. Urgent alerts you turn on are delivered through the push service of your browser's maker (Apple for Safari on iPhone, Google for Chrome, Mozilla for Firefox, Microsoft for Edge). Your browser chooses that service, not us. It receives each alert end-to-end encrypted, with the device address, the time and our contact address, and cannot read the text. It is a recipient under the browser maker's own terms, may process data outside the EEA, and is not our subprocessor. Alerts name the property and a date, never a guest."
         ),
         "privacy.s10_title": "10. International transfers",
         "privacy.s10_body": (
@@ -196,7 +196,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "token hashes are deleted 1 day after the link expires. WebAuthn challenge hashes are "
             "deleted 1 day after the challenge expires. Passkey records (public key, display name, "
             "dates, counter) are kept until removed by the Host or the account is deleted. Audit "
-            "logs are kept for 3 years. Guest Data "
+            "logs are kept for 3 years. Urgent-alert devices are deleted when you turn alerts off, remove the device or log out on it, or after 180 days without a visit; queued alerts after 30 days. Guest Data "
             "retention is controlled by Host settings and legal obligations (including typical "
             "six-year house book rules); the Operator may retain encrypted database and key backups "
             "on the server and, when configured, encrypted off-site copies (for example weekly to "
@@ -361,7 +361,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "s námi; záznamy o doručení transakčních e-mailů (e-maily k účtu, jako přihlašovací "
             "odkaz, pozvánka, potvrzení e-mailu, oznámení o změně e-mailu a upozornění na přidaný "
             "passkey, jsou odesílány na základě akce v účtu a nejde o marketing); fakturační údaje. "
-            "Zvláštní kategorie údajů o ubytovateli nevyžadujeme, pokud je sami nezadáte v textových polích."
+            "Zvláštní kategorie údajů o ubytovateli nevyžadujeme, pokud je sami nezadáte v textových polích. Pokud na zařízení zapnete naléhavá upozornění, uchováváme také push adresu a klíče tohoto zařízení (šifrovaně), jeho jazyk, typ zařízení (např. „iPhone“), čas poslední návštěvy a upozornění pro něj připravená."
         ),
         "privacy.s05_title": "5. Údaje hostů na pokyn ubytovatele",
         "privacy.s05_body": (
@@ -396,7 +396,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "(např. IP) podle podmínek Cloudflare; nejde o reklamu. V aplikaci v základní podobě "
             "nepoužíváme reklamní ani analytické cookies třetích stran. Cookies lze omezit v prohlížeči; "
             "bez relačního cookie přihlášení nefunguje. Prohlížeče mohou také dodržovat HTTP Strict "
-            "Transport Security (HSTS), takže se tato doména po omezenou dobu otevírá jen přes HTTPS."
+            "Transport Security (HSTS), takže se tato doména po omezenou dobu otevírá jen přes HTTPS. Pokud si aplikaci nainstalujete nebo zapnete naléhavá upozornění, prohlížeč uloží také malý service worker, kopii offline stránky a push odběr; děje se to jen na vaši žádost a je to pro tuto funkci nezbytné."
         ),
         # WP09: konečné znění provozovatele z 04_legal_positions.md, oddíly 1,
         # 4 a 5. analytics_* a optout_* jen při zapnutém PostHogu.
@@ -468,7 +468,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "hosta uvedenou jako příjemce. Údaje hostů mohou být přeneseny do "
             "UbyPort Policie ČR na pokyn ubytovatele jako zpracovatele. Subzpracovatelé musí mít "
             "vhodné záruky (čl. 28 GDPR). Aktuální seznam, účely, možné údaje a informace o předání "
-            "jsou na /subprocessors. Podstatné změny zveřejníme tam a promítneme do těchto Zásad."
+            "jsou na /subprocessors. Podstatné změny zveřejníme tam a promítneme do těchto Zásad. Naléhavá upozornění, která zapnete, doručuje push služba výrobce vašeho prohlížeče (Apple u Safari na iPhonu, Google u Chrome, Mozilla u Firefoxu, Microsoft u Edge). Tuto službu volí váš prohlížeč, ne my. Každé upozornění dostává koncově šifrované, s adresou zařízení, časem a naší kontaktní adresou, a jeho text přečíst nemůže. Je příjemcem podle podmínek výrobce prohlížeče, může údaje zpracovávat mimo EHP a není naším subzpracovatelem. Upozornění uvádí ubytování a datum, nikdy jméno hosta."
         ),
         "privacy.s10_title": "10. Přeshraniční přenosy",
         "privacy.s10_body": (
@@ -483,7 +483,7 @@ PRIVACY_STRINGS: Dict[str, Dict[str, str]] = {
             "a zákonu. Hashe tokenů přihlašovacích odkazů se mažou 1 den po uplynutí platnosti odkazu. "
             "Hashe WebAuthn výzev se mažou 1 den po uplynutí platnosti výzvy. Záznamy passkey (veřejný "
             "klíč, název, data, čítač) se uchovávají do jejich odebrání Ubytovatelem nebo smazání "
-            "účtu. Auditní záznamy se uchovávají 3 roky. Údaje hostů řídí nastavení a povinnosti "
+            "účtu. Auditní záznamy se uchovávají 3 roky. Zařízení s naléhavými upozorněními mažeme při vypnutí upozornění, odebrání zařízení nebo odhlášení na něm, nebo po 180 dnech bez návštěvy; připravená upozornění po 30 dnech. Údaje hostů řídí nastavení a povinnosti "
             "ubytovatele (včetně typické šestileté domovní knihy); Provozovatel může uchovávat "
             "šifrované zálohy databáze a klíčů na serveru a při nastavení off-site kopie (např. týdně "
             "na Google Drive a měsíčně na Amazon S3) pro obnovu po havárii po omezenou dobu. "
