@@ -52,6 +52,7 @@
 </nav>
 
 <form method="post" action="{{ base_url }}" class="property-settings-form" id="property-settings-form" data-property-settings-form data-unsaved-guard>
+  <p class="required-legend">{{ t('common.required_legend') }}</p>
   <input type="hidden" name="return_to" value="{{ base_url }}?view=settings&amp;section={{ settings_section }}" data-property-return>
   {% if fee_return_to %}<input type="hidden" name="fee_return_to" value="{{ fee_return_to }}">{% endif %}
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
