@@ -39,7 +39,7 @@ FEE_HELP = {
     "stay_fee_rate_czk": "apartment.form.stay_fee.rate_help",
     "stay_fee_cadence": "apartment.form.stay_fee.cadence_help",
     "stay_fee_vs": "apartment.form.stay_fee.vs_help",
-    "stay-fee-account": "apartment.form.stay_fee.account_help",
+    "stay_fee_council_account": "apartment.form.stay_fee.account_help",
     "stay_fee_authority_name": "apartment.form.stay_fee.authority_name_help",
     "stay_fee_authority_address": "apartment.form.stay_fee.authority_address_help",
     "stay_fee_authority_contact": "apartment.form.stay_fee.authority_contact_help",
@@ -100,8 +100,8 @@ def test_stay_fee_fields_have_plain_help_and_no_invented_example(acc):
         # No annotated fee example ever existed; none is linked.
         assert ".pdf" not in section
         # Input names are unchanged.
-        for name in ("stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "account_prefix", "account_number",
-                     "account_bank", "stay_fee_authority_name", "stay_fee_authority_address",
+        for name in ("stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "stay_fee_council_account",
+                     "stay_fee_authority_name", "stay_fee_authority_address",
                      "stay_fee_authority_contact", "stay_fee_authority_databox"):
             assert f'name="{name}"' in section, name
 

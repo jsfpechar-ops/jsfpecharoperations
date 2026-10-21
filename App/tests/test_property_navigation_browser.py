@@ -47,8 +47,8 @@ SETTINGS_NAMES = {
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
     "permalink_reachback_days", "passport_photo_policy", "door_code_section", "door_codes_fields", "door_codes",
     "lock_id", "checkin_hour", "checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark",
-    "uby_name", "uby_contact", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "account_prefix",
-    "account_number", "account_bank", "_stay_fee_account_existing", "stay_fee_authority_name",
+    "uby_name", "uby_contact", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "stay_fee_council_account",
+    "_stay_fee_account_existing", "stay_fee_authority_name",
     "stay_fee_authority_address", "stay_fee_authority_contact", "stay_fee_authority_databox",
     "automation_mode", "submit_after_hours", "default_purpose",
 }

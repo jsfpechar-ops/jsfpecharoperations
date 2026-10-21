@@ -394,7 +394,7 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 section = page.locator("#stay-fee-settings")
                 assert section.is_visible()
                 # The council block is part of the editor, not a fold (plan section 4 rule 2).
-                for field in ("stay_fee_rate_czk", "stay_fee_vs", "account_number",
+                for field in ("stay_fee_rate_czk", "stay_fee_vs", "stay_fee_council_account",
                               "stay_fee_authority_name", "stay_fee_authority_databox"):
                     assert page.locator(f"#{field}").is_visible(), (field, width, locale)
                 assert page.locator("#stay-fee-settings details").count() == 0
@@ -418,16 +418,14 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
             # One refused and one good save per locale: the way back survives the refusal.
             page.set_viewport_size({"width": 1280, "height": 900})
             page.fill("#stay_fee_rate_czk", "0")
-            page.fill("#account_number", "1234567890")
-            page.fill("#account_bank", "0800")
+            page.fill("#stay_fee_council_account", "1234567890/0800")
             _save(page)
             assert page.locator("#stay-fee-account-error").is_visible()
-            assert page.input_value("#account_number") == "1234567890"
+            assert page.input_value("#stay_fee_council_account") == "1234567890/0800"
             if capture:
                 page.locator("#stay-fee-payment").scroll_into_view_if_needed()
                 page.screenshot(path=str(EVIDENCE / f"fee-editor-refused-{locale}-1280.png"))
-            page.fill("#account_number", "")
-            page.fill("#account_bank", "")
+            page.fill("#stay_fee_council_account", "")
             _save(page)
             assert f"/stay-fees?month={month}" in page.url, page.url
             if capture:

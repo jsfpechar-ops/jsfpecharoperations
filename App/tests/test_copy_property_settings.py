@@ -154,7 +154,7 @@ def test_allowed_settings_are_copied_on_edit(host_pair):
     assert 'name="stay_fee_rate_czk"' in text
     assert 'value="21"' in text
     assert "City office" in text
-    assert 'name="account_number"' in text
+    assert 'name="stay_fee_council_account"' in text
     assert "123456" in text
     assert "IDUB-SOURCE" not in text
     assert "MARK1" not in text

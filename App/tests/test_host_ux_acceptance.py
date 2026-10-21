@@ -61,8 +61,8 @@ PROPERTY_SETTINGS = {
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
     "permalink_reachback_days", "passport_photo_policy", "door_codes", "lock_id", "checkin_hour",
     "checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark", "uby_name", "uby_contact",
-    "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "account_prefix", "account_number",
-    "account_bank", "stay_fee_authority_name", "stay_fee_authority_address", "stay_fee_authority_contact",
+    "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "stay_fee_council_account",
+    "stay_fee_authority_name", "stay_fee_authority_address", "stay_fee_authority_contact",
     "stay_fee_authority_databox", "automation_mode",
     "submit_after_hours", "default_purpose",
 }
@@ -334,12 +334,9 @@ def test_each_property_setting_has_exactly_one_editable_control_in_the_whole_hos
         names = _editable(_inventory(pages[view]))
         counts = {n: names.count(n) for n in PROPERTY_SETTINGS}
         missing = sorted(n for n, c in counts.items() if c == 0)
-        doubled = sorted(n for n, c in counts.items() if c > 1 and n not in ("account_prefix", "account_number", "account_bank"))
+        doubled = sorted(n for n, c in counts.items() if c > 1)
         assert not doubled, f"{view}: setting rendered twice {doubled}"
         assert not missing, f"{view}: setting has no editor {missing}"
-        # The fee account parts are one set of three on the property page.
-        for part in ("account_prefix", "account_number", "account_bank"):
-            assert counts[part] == 1, (view, part, counts[part])
     for key, html in pages.items():
         # 0195: /smart-locks now redirects to a property's Door lock tab, a property page.
         if (key.startswith("property-") and key not in ("property-new",)) or key == "smart-locks":
