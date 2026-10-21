@@ -20,6 +20,7 @@ from .. import (
     security,
     stay_fee,
     stay_fee_adjustment,
+    stay_fee_auto,
     stay_fee_filing,
     validation,
 )
@@ -158,6 +159,7 @@ def stay_fees_list(request: Request):
         "periods": rows,
         "selected_month": selected_month,
         "has_properties": bool(apartments),
+        "stay_fee_emails": stay_fee_auto.emails_enabled(owner_id),
         **_fee_links(_list_return(request)),
         **list_filter.context(
             view,

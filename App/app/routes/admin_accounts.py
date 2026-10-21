@@ -29,6 +29,7 @@ from .. import (
     rate_limit,
     security,
     signup,
+    stay_fee_auto,
     turnstile,
     workspace_export,
 )
@@ -339,6 +340,25 @@ async def onboarding_emails_submit(request: Request):
         lifecycle_mail.set_opt_out(int(account["id"]), True, actor=account["username"])
         key = "flash.accounts.onboarding_emails_off"
     return _back("/settings#settings-account", msg=_flash(request, key))
+
+
+@router.post("/account/stay-fee-emails")
+async def stay_fee_emails_submit(request: Request):
+    """The Settings toggle "Stay fee report by email" (0205, plan stay-fee-monthly-email).
+
+    Only the account holder changes it, as for the onboarding e-mails.
+    """
+    account = auth.current_user(request)
+    if not account:
+        return RedirectResponse("/login", status_code=303)
+    workspace = auth.workspace_user(request)
+    if account["role"] != "host" or (workspace and workspace["id"] != account["id"]):
+        return _back("/settings#settings-stay-fee-emails")
+    form = await request.form()
+    wanted = str(form.get("enabled", "")) == "1"
+    stay_fee_auto.set_emails_enabled(int(account["id"]), wanted, actor=account["username"])
+    key = "flash.accounts.stay_fee_emails_on" if wanted else "flash.accounts.stay_fee_emails_off"
+    return _back("/settings#settings-stay-fee-emails", msg=_flash(request, key))
 
 
 def _pending_doc_rows(docs) -> list:
