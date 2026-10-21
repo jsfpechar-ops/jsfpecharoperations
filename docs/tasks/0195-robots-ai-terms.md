@@ -1,6 +1,6 @@
 # 0195: Keep AI and scraping crawlers out (robots.txt, tdmrep, Terms)
 
-Status: ready
+Status: review
 Depends on: none | Branch: claude/project-thread-1u1cuj
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -227,11 +227,11 @@ def test_terms_reserve_scraping_and_ai_training_in_both_languages():
     assert "2019/790" in TERMS_STRINGS["cs"]["terms.s11_body"]
 ```
 
-## 5. Commit
+## 5. Do not touch
 
-One commit per step: `0195 step k`.
+Anything not in §3. One commit per step: `0195 step k`.
 
-## 6. Test
+## 6. Commands
 
 From `App/`:
 
@@ -239,13 +239,17 @@ From `App/`:
 
 From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`
 
-## 7. Done when
+## 7. Acceptance
 
 - [ ] All §6 tests pass.
 - [ ] `/robots.txt` starts with the notice, then the AI group with `Disallow: /`, then `User-agent: *`.
 - [ ] `/.well-known/tdmrep.json` returns the JSON.
 - [ ] Terms §11 has the clause in English and Czech.
 
-## 8. Stop if
+## 8. Stop and ask
 
 An anchor is not found, or a §6 test fails twice. Report, do not guess.
+
+## 9. Report
+
+[0195-report.md](0195-report.md)
