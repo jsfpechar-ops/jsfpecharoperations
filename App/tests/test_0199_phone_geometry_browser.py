@@ -131,7 +131,7 @@ def test_stay(stay_actions_host, stay_actions_base):
         pg = c.new_page()
         for w in PHONE:
             pg.set_viewport_size({"width": w, "height": 844})
-            for lang in ("en", "cs"):
+            for lang in ("en", "cs", "vi"):
                 for key in ("incomplete", "ready", "failed"):
                     name = f"stay-{key}-{lang}-{w}"
                     _check_stay(_measure(pg, f"{stay_actions_base}/reservations/{ids[key]}?lang={lang}", name), name)
@@ -150,7 +150,7 @@ def test_lock(world):
         pg = c.new_page()
         for w in PHONE:
             pg.set_viewport_size({"width": w, "height": 844})
-            for lang in ("en", "cs"):
+            for lang in ("en", "cs", "vi"):
                 name = f"lock-{lang}-{w}"
                 _check_lock(_measure(pg, f"{world['base']}/apartments/{world['apartment']}?view=settings&section=lock&lang={lang}", name), name)
                 _measure(pg, f"{world['base']}/apartments?lang={lang}", f"properties-{lang}-{w}", shot=True)
@@ -166,7 +166,7 @@ def test_cleaning(workspace, origin):
         for w in PHONE:
             b, c = browser_context(p, workspace, origin, width=w)
             pg = c.new_page()
-            for lang in ("en", "cs"):
+            for lang in ("en", "cs", "vi"):
                 name = f"cleaning-host-{lang}-{w}"
                 m = _measure(pg, f"{origin}/cleaning?lang={lang}", name)
                 _ok(m, name)

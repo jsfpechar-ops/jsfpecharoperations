@@ -36,7 +36,7 @@ def _open(playwright, base, width, height, target):
 
 
 @pytest.mark.parametrize("path", ["/", "/stay-fees"])
-@pytest.mark.parametrize("lang", ["en", "cs"])
+@pytest.mark.parametrize("lang", ["en", "cs", "vi"])
 @pytest.mark.parametrize("width,height", [(390, 844), (360, 780)])
 def test_phone_tab_bar_clears_the_home_indicator(base, width, height, lang, path):
     with sync_api.sync_playwright() as playwright:
