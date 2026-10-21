@@ -118,6 +118,72 @@
     });
   }
 
+  // 0203: while the demo stay waits for its registration, coming back to this
+  // tab reloads the step, so a finished demo shows "Continue" at once.
+  // Only on a tab switch: a reload on load or focus could loop.
+  if (document.querySelector('[data-wizard-demo-wait]')) {
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') window.location.reload();
+    });
+  }
+
+  // 0205: a whole account pasted into any of the three boxes splits itself:
+  // 19-2000145399/0800, 2000145399/0800 or a Czech IBAN.
+  document.querySelectorAll('[data-account-parts]').forEach(function (group) {
+    var prefix = group.querySelector('[name="account_prefix"]');
+    var number = group.querySelector('[name="account_number"]');
+    var bank = group.querySelector('[name="account_bank"]');
+    if (!prefix || !number || !bank) return;
+    function strip(digits) { return digits.replace(/^0+/, ''); }
+    function split(text) {
+      var plain = text.replace(/\s+/g, '').toUpperCase();
+      var local = plain.match(/^(?:(\d{1,6})-)?(\d{2,10})\/(\d{4})$/);
+      if (local) return [local[1] || '', local[2], local[3]];
+      var iban = plain.match(/^CZ\d{2}(\d{4})(\d{6})(\d{10})$/);
+      if (iban) return [strip(iban[2]), strip(iban[3]), iban[1]];
+      return null;
+    }
+    [prefix, number, bank].forEach(function (input) {
+      input.addEventListener('paste', function (event) {
+        var text = event.clipboardData ? event.clipboardData.getData('text') : '';
+        var parts = split(text || '');
+        if (!parts) return;
+        event.preventDefault();
+        prefix.value = parts[0];
+        number.value = parts[1];
+        bank.value = parts[2];
+        [prefix, number, bank].forEach(function (field) {
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+      });
+    });
+  });
+
+  // 0205: the police abbreviation follows the web-service login as it is
+  // typed (UBY-WS_ABCDE gives ABCDE), the rule of validation.mark_from_ws_user.
+  // A value the host typed themselves is never replaced.
+  var wsUser = document.getElementById('uby_ws_user');
+  var ubyMark = document.getElementById('uby_mark');
+  if (wsUser && ubyMark) {
+    var markFrom = function (login) {
+      var value = (login || '').trim();
+      var lower = value.toLowerCase();
+      if (lower.indexOf('uby-tws') === 0) return '';
+      if (lower.indexOf('uby-ws_') === 0) return value.slice(7).toUpperCase().slice(0, 6);
+      if (lower.indexOf('uby-ws') === 0) return value.slice(6).toUpperCase().slice(0, 6);
+      return '';
+    };
+    var autoMark = !ubyMark.value || ubyMark.value === markFrom(wsUser.value);
+    ubyMark.addEventListener('input', function (event) {
+      if (event.isTrusted) autoMark = !ubyMark.value;
+    });
+    wsUser.addEventListener('input', function () {
+      if (!autoMark) return;
+      ubyMark.value = markFrom(wsUser.value);
+      ubyMark.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
+
   document.querySelectorAll('[data-phone-country-code]').forEach(function (input) {
     function digits(value) { return value.replace(/\D/g, '').slice(0, 3); }
     input.addEventListener('input', function () { input.value = digits(input.value); });

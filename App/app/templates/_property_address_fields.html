@@ -19,13 +19,13 @@
   </div>
 {% endmacro %}
 <div class="grid property-address-grid">
-  {{ address_input('addr_okres', t('apartment.form.addr.okres'), t('apartment.form.addr.okres_hint'), true, 32) }}
-  {{ address_input('addr_obec', t('apartment.form.addr.obec'), '', false, 48, '', true) }}
-  {{ address_input('addr_obec_cast', t('apartment.form.addr.obec_cast'), '', true, 48) }}
-</div>
-<div class="grid property-address-grid">
-  {{ address_input('addr_street', t('apartment.form.addr.street'), '', true, 48) }}
+  {{ address_input('addr_street', t('apartment.form.addr.street'), t('apartment.form.addr.street_hint'), true, 48) }}
   {{ address_input('addr_house_no', t('apartment.form.addr.house_no'), t('apartment.form.addr.house_no_hint'), false, 5, '', true) }}
   {{ address_input('addr_orient_no', t('apartment.form.addr.orient_no'), t('apartment.form.addr.orient_no_hint'), true, 4) }}
   {{ address_input('addr_zip', t('apartment.form.addr.zip'), t('apartment.form.addr.zip_hint'), false, 6, 'numeric', true) }}
+</div>
+<div class="grid property-address-grid">
+  {{ address_input('addr_obec', t('apartment.form.addr.obec'), '', false, 48, '', true) }}
+  {{ address_input('addr_obec_cast', t('apartment.form.addr.obec_cast'), '', true, 48) }}
+  {{ address_input('addr_okres', t('apartment.form.addr.okres'), t('apartment.form.addr.okres_hint'), true, 32) }}
 </div>

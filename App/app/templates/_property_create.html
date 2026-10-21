@@ -16,6 +16,7 @@
       {% if property_prefill.get('stay_fee_rate_czk') %}<br><span class="ui-sub">{{ t('apartment.form.copy_from.vs_hint') }}</span>{% endif %}</p>
     {% endif %}
     <form method="post" action="/apartments" class="property-create-form" id="property-create-form">
+      <p class="required-legend">{{ t('common.required_legend') }}</p>
       {# Enter in any field creates the property, never "Check again". #}
       <button type="submit" hidden tabindex="-1" aria-hidden="true"></button>
       {# Works without JavaScript too: csrf.js would add the same token. #}

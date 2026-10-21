@@ -90,6 +90,16 @@ router.include_router(signup_routes.router)
 _PRAGUE_TZ_OFFSETS_MS = frozenset({3_600_000, 7_200_000})
 
 
+def _lock_tz_wrong(offset) -> bool:
+    """0211: TTLock reports Prague as UTC+1 or, in summer time, UTC+2; anything else is wrong."""
+    if offset is None:
+        return False
+    try:
+        return int(offset) not in _PRAGUE_TZ_OFFSETS_MS
+    except (TypeError, ValueError):
+        return False
+
+
 def _properties_using_lock(owner_id, lock_id: str, except_apartment_id: Optional[int] = None) -> List[str]:
     """Names of the owner's other properties that already send codes on this lock."""
     rows = db.query(
@@ -175,12 +185,16 @@ def _smart_locks_section(form, has_locks: bool) -> str:
 
 def _lock_property_return(request: Request, return_to: str) -> Optional[str]:
     """The property's Door lock settings when return_to names the host's own property."""
-    match = re.fullmatch(r"/apartments/(\d+)", return_to.split("?", 1)[0])
+    path = return_to.split("#", 1)[0].split("?", 1)[0]
+    match = re.fullmatch(r"/apartments/(\d+)(/setup/door_lock)?", path)
     if not match:
         return None
     apartment_id = int(match.group(1))
     if not access.apartment(request, apartment_id):
         return None
+    if match.group(2):
+        # 0203: the setup wizard's lock step; every lock answer returns to it.
+        return f"/apartments/{apartment_id}/setup/door_lock"
     return f"/apartments/{apartment_id}?view=settings&section=lock#door-code"
 
 
@@ -510,6 +524,7 @@ def _smart_lock_panel_context(request: Request) -> dict:
     locks = ttlock.locks_of(account) if account else []
     properties_using: Dict[str, List[str]] = {}
     for lock in locks:
+        lock["tz_wrong"] = _lock_tz_wrong(lock.get("tz_offset_ms"))
         names = [
             row["internal_name"]
             for row in db.query(
@@ -1413,6 +1428,7 @@ def _wizard_step_payload(form, step: str) -> Dict[str, Any]:
                 payload[field] = _form_str(form, field)
         if "addr_zip" in payload:
             payload["addr_zip"] = validation.normalise_zip(payload.get("addr_zip", ""))
+        payload["city_en"] = property_setup.guest_city(payload.get("addr_obec", ""))
         payload["legal_entity_id"] = _form_int(form, "legal_entity_id")
         payload["data_controller_entity_id"] = _form_int(form, "data_controller_entity_id")
         purpose = _form_str(form, "default_purpose", validation.DEFAULT_PURPOSE)
@@ -1450,12 +1466,13 @@ def _apartment_payload(form) -> Dict[str, Any]:
     payload["guest_message"] = payload["guest_message"][:1000]
     payload["uby_mark"] = payload["uby_mark"].upper()
     payload["addr_zip"] = validation.normalise_zip(payload["addr_zip"])
+    payload["city_en"] = property_setup.guest_city(payload["addr_obec"])
     payload["legal_entity_id"] = _form_int(form, "legal_entity_id")
     payload["data_controller_entity_id"] = _form_int(
         form, "data_controller_entity_id"
     )
     payload.update(_automation_timing_values(form))
-    payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 2
+    payload["permalink_window_days"] = _form_int(form, "permalink_window_days") or 1  # 0211: default 1 day
     payload["permalink_reachback_days"] = validation.normalise_reachback_days(
         _form_int(form, "permalink_reachback_days")
     )
@@ -1743,13 +1760,21 @@ def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]
         "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
         "checkin_hour": cin,
         "checkout_hour": cout,
-        "tz_warning": bool(
-            selected and selected["tz_offset_ms"] not in (None, *_PRAGUE_TZ_OFFSETS_MS)
-        ),
+        "tz_warning": bool(selected and _lock_tz_wrong(selected["tz_offset_ms"])),
         "overlap": _door_code_hours_overlap(cin, cout),
         "buffer": config.DOOR_CODE_BUFFER_HOURS,
         "test_mode": not getattr(config, "DOOR_CODES_LIVE", False),
     }
+
+
+def _fee_signature_context(request: Request, apartment) -> Optional[Dict[str, Any]]:
+    """0209: the operator's stay-fee report signature, shown with the stay fee."""
+    entity_id = dict(apartment).get("legal_entity_id")
+    entity = access.entity(request, int(entity_id)) if entity_id else None
+    if not entity:
+        return None
+    preview = db.decrypt_field(entity["signature_png_enc"]) if entity["signature_png_enc"] else ""
+    return {"entity": entity, "preview": preview or ""}
 
 
 def _render_apartment_detail(
@@ -1790,6 +1815,7 @@ def _render_apartment_detail(
         "apartment_form.html",
         {
             "apartment": apartment,
+            "fee_signature": _fee_signature_context(request, apartment),
             "door_code": door_code,
             "lock_panel": (
                 {**_smart_lock_panel_context(request), "return_to": f"/apartments/{apartment_id}?view=settings&section=lock"}
@@ -1934,6 +1960,9 @@ def refuse_fee_save(request: Request, apartment: Dict[str, Any], form):
     fee_draft.pop(stay_fee_routes.FEE_ACCOUNT_RAW, None)
     account_draft = stay_fee_routes.fee_account_draft(form)
     draft.update(fee_draft)
+    if "stay_fee_council_account" in form:
+        draft["stay_fee_council_account"] = _form_str(form, "stay_fee_council_account")
+        draft["stay_fee_council_iban"] = None
     return_to = _form_str(form, "return_to")
     if return_to.startswith(wizard_setup_prefix(apartment["id"])):
         return render_wizard(
@@ -1982,6 +2011,24 @@ async def apartment_update(apartment_id: int, request: Request):
     rejected, _address_mismatch = _save_apartment_form(apartment_id, request, form)
     if rejected:
         return rejected
+    # 0209: the stay-fee signature is saved to the property's operator.
+    if _form_str(form, "fee_signature_section") == "1":
+        saved = access.apartment(request, apartment_id)
+        entity = (
+            access.entity(request, saved["legal_entity_id"])
+            if saved and saved["legal_entity_id"] else None
+        )
+        if entity:
+            signature = await _signature_payload(form)
+            if signature is None:
+                back = (
+                    property_setup.wizard_url(apartment_id, "stay_fee")
+                    if _form_str(form, "setup_step") == "stay_fee"
+                    else f"/apartments/{apartment_id}?view=settings&section=reporting#stay-fee-settings"
+                )
+                return _back(back, err=_flash(request, "flash.entities.signature_invalid"))
+            if signature:
+                db.update("legal_entity", entity["id"], signature)
     # "Saved." said nothing about whether the property can actually report, so
     # the confirmation names what is still missing, or says there is nothing.
     apartment = access.apartment(request, apartment_id)
@@ -2189,6 +2236,11 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     hour_values, hour_error = (
         _property_hour_changes(form, apartment_data) if owns_shared_hours else ({}, None)
     )
+    # 0210: wizard step 1 needs both times; a blank posted select is refused.
+    if not hour_error and setup_step == "property" and any(
+        name in form and hour_values.get(name) is None for name in ("checkin_hour", "checkout_hour")
+    ):
+        hour_error = "flash.error.times_required"
     if hour_error:
         if setup_step:
             draft = dict(apartment_data)
@@ -2274,6 +2326,9 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             if field not in form:
                 # A section form without address inputs must not blank the address.
                 payload.pop(field, None)
+        if "addr_obec" not in form:
+            # 0204: no town posted, so the guest-facing city stays as it is.
+            payload.pop("city_en", None)
     if setup_step == "property" or (
         not setup_step and any(field in form for field in _ADDRESS_ONLY_FIELDS)
     ):

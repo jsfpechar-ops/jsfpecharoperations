@@ -283,8 +283,8 @@ def test_invalid_account_saves_nothing_and_keeps_what_was_typed(host):
     assert _row(apartment_id) == before
     text = response.text
     assert 'id="stay-fee-account-error"' in text
-    assert "Enter a valid Czech bank account or IBAN." in text
-    assert 'value="777"' in text and 'value="1234567890"' in text
+    assert "This account number does not add up." in text  # 0208 copy
+    assert 'value="777"' in text  # 0208: the old three-box post is not echoed into the one box
     assert 'value="Council office"' in text
     assert f'name="fee_return_to" value="{back}"' in text
     assert re.search(r'data-settings-group="reporting"[^>]*>|is-active" data-settings-group="reporting"', text)
@@ -306,7 +306,7 @@ def test_fee_editor_is_the_only_one_and_shows_the_council_block(host):
     assert page.count('name="stay_fee_authority_name"') == 1
     assert 'aria-describedby="stay_fee_authority_databox-help"' in section
     assert 'id="stay_fee_authority_databox-help"' in section
-    for name in ("account_prefix", "account_number", "account_bank", "_stay_fee_account_existing"):
+    for name in ("stay_fee_council_account", "_stay_fee_account_existing"):
         assert page.count(f'name="{name}"') == 1
 
 
@@ -394,8 +394,8 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 section = page.locator("#stay-fee-settings")
                 assert section.is_visible()
                 # The council block is part of the editor, not a fold (plan section 4 rule 2).
-                for field in ("stay_fee_rate_czk", "stay_fee_vs", "account_number",
-                              "stay_fee_authority_name", "stay_fee_authority_databox", "stay_fee_instruction"):
+                for field in ("stay_fee_rate_czk", "stay_fee_vs", "stay_fee_council_account",
+                              "stay_fee_authority_name", "stay_fee_authority_databox"):
                     assert page.locator(f"#{field}").is_visible(), (field, width, locale)
                 assert page.locator("#stay-fee-settings details").count() == 0
                 back = page.locator(".fee-return-note a")
@@ -418,16 +418,14 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
             # One refused and one good save per locale: the way back survives the refusal.
             page.set_viewport_size({"width": 1280, "height": 900})
             page.fill("#stay_fee_rate_czk", "0")
-            page.fill("#account_number", "1234567890")
-            page.fill("#account_bank", "0800")
+            page.fill("#stay_fee_council_account", "1234567890/0800")
             _save(page)
             assert page.locator("#stay-fee-account-error").is_visible()
-            assert page.input_value("#account_number") == "1234567890"
+            assert page.input_value("#stay_fee_council_account") == "1234567890/0800"
             if capture:
                 page.locator("#stay-fee-payment").scroll_into_view_if_needed()
                 page.screenshot(path=str(EVIDENCE / f"fee-editor-refused-{locale}-1280.png"))
-            page.fill("#account_number", "")
-            page.fill("#account_bank", "")
+            page.fill("#stay_fee_council_account", "")
             _save(page)
             assert f"/stay-fees?month={month}" in page.url, page.url
             if capture:

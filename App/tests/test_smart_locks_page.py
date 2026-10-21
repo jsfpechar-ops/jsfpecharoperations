@@ -92,9 +92,9 @@ def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts, fla
     page = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
     assert "hjhfa_uhaaaa" in page
     for words in (
-        "Open your lock in TTLock.",
-        "Share administrator access with the account above.",
-        "Return here and check for locks.",
+        "In the TTLock app, open your lock and tap Authorized Admin (eAdmin in some app versions).",
+        "In the Recipient field, where TTLock expects an e-mail or phone number, paste your UbyHost name from above.",
+        "Come back here and tap Check connection.",
         "Check connection",
         "Only the owner of the lock can do this.",
         "Do not use eKeys or Send eKey.",
@@ -105,11 +105,11 @@ def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts, fla
     assert "Send eKey and enter" not in page
     guide = client.get("/guide?lang=en").text
     assert 'id="door-codes-share"' in guide
-    for words in ("Authorized Admin", "Create Admin", "Manage their own users only", "Tap Recipient and paste the name"):
+    for words in ("Authorized Admin", "Create Admin", "Manage their own users only", "paste your UbyHost name"):
         assert words in guide
     cs = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=cs").text
-    assert "Otevřete svůj zámek v TTLock." in cs
-    assert "Vraťte se sem a vyhledejte zámky." in cs
+    assert "klepněte na Autorizovaný správce" in cs  # 0205 TTLock wording
+    assert "Vraťte se sem a klepněte na Zkontrolovat připojení." in cs
 
 
 def _post(client, path, **data):
@@ -245,3 +245,40 @@ def test_a_new_account_gets_a_random_name_each_time():
     import inspect
 
     assert 'secrets.token_hex(8)' in inspect.getsource(ttlock.create_account)
+
+
+
+def test_the_setup_wizard_lock_step_gets_every_lock_answer_back(hosts, flats, monkeypatch):
+    """0203: a lock connected from the setup wizard returns to the wizard, not to Settings."""
+    _connect(hosts[0], "hjhfa_uhaaaa")
+    wizard = f"/apartments/{flats[0]}/setup/door_lock"
+    client = _client(USERS[0])
+    monkeypatch.setattr(ttlock, "check_locks", lambda _id: ([], []))
+    response = _post(client, "/smart-locks/refresh", return_to=wizard, section="share")
+    location = response.headers["location"]
+    assert location.startswith(wizard) and location.endswith("#smart-locks-share"), location
+    found = [{"lock_id": "1", "alias": "Door A", "battery": 90, "tz_offset_ms": 3600000}]
+    monkeypatch.setattr(ttlock, "check_locks", lambda _id: (found, []))
+    response = _post(client, "/smart-locks/refresh", return_to=wizard, section="share")
+    assert response.headers["location"].startswith(wizard), response.headers["location"]
+    foreign = f"/apartments/{flats[1]}/setup/door_lock"
+    response = _post(client, "/smart-locks/refresh", return_to=foreign, section="share")
+    assert f"/apartments/{flats[1]}" not in response.headers["location"]
+
+
+def test_lock_card_accepts_prague_summer_time(hosts, flats):
+    """0211: UTC+2 is Prague summer time; only a real other zone gets the warning."""
+    warning = "Time zone is not Prague."
+    _connect(hosts[0], "hjhfa_uhaaaa", [
+        {"lock_id": "1", "alias": "Summer door", "battery": 90, "tz_offset_ms": 7200000},
+    ])
+    client = _client(USERS[0])
+    page = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
+    assert "Summer door" in page
+    assert warning not in page
+    db.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (hosts[0],))
+    _connect(hosts[0], "hjhfa_uhaaaa", [
+        {"lock_id": "1", "alias": "London door", "battery": 90, "tz_offset_ms": 0},
+    ])
+    page = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
+    assert warning in page

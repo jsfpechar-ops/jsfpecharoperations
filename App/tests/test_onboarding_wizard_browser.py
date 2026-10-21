@@ -1005,6 +1005,7 @@ def test_review_fixes_in_the_browser(host, base_url):
         page.fill("#uby_ws_user", POLICE["uby_ws_user"])
         page.fill("#uby_mark", POLICE["uby_mark"])
         page.fill("#uby_name", "Typed Facility")
+        page.fill("#uby_ws_password", "typed-password")  # 0205: required until one is stored
         page.locator('button[form="police-form"]').click()
         page.wait_for_load_state("networkidle")
         assert page.locator("[data-setup-step=police]").is_visible()
@@ -1331,9 +1332,10 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
             const s = getComputedStyle(el);
             return [s.fontFamily, s.fontSize, s.fontWeight, s.lineHeight, s.letterSpacing, s.color];
         }"""
-        assert page.locator(".setup-wizard-fee-intro").evaluate(typography) == page.locator(
+        # 0212: the fee lede looks like every other step's lede.
+        assert page.locator(".setup-wizard-lede").first.evaluate(typography)[1:4] != page.locator(
             ".ui-ph h1"
-        ).evaluate(typography)
+        ).evaluate(typography)[1:4]
         assert page.evaluate(_overflow_js())
         _shot(page, f"24-fee-intro-{tag}.png")
         page.locator(".setup-wizard-skip button").click()
@@ -1351,8 +1353,11 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         assert police.locator("a").is_visible()
         assert page.evaluate(_overflow_js())
         _shot(page, f"25-summary-cards-{tag}.png")
-        page.locator(".setup-wizard-foot .ui-btn-primary").click()
-        page.wait_for_url("**/apartments/*?view=overview**")
+        with page.expect_navigation():
+            page.locator(".setup-wizard-foot .ui-btn-primary").click()
+        # 0203: the finish button goes to the dashboard, not the property.
+        assert "/setup" not in page.url and "/apartments/" not in page.url, page.url
+        page.goto(f"{base_url}/apartments/{flat['id']}?view=overview&lang={lang}")
         overview = page.locator(".host-property-grid").first
         assert overview.get_by_text(_t(lang, "wizard.overview.calendars"), exact=True).is_visible()
         heights = overview.locator(".host-property-card").evaluate_all(
@@ -1468,7 +1473,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         page.wait_for_url("**/setup/try_it**")
         assert page.get_by_role("button", name=_t(lang, "wizard.try_it.skip"), exact=True).is_visible()
         lede = page.locator(".setup-wizard-lede").first
-        assert int(lede.evaluate("(el) => getComputedStyle(el).fontWeight")) >= 700
+        assert int(lede.evaluate("(el) => getComputedStyle(el).fontWeight")) == 400  # 0212
         assert lede.evaluate("(el) => getComputedStyle(el).color") == page.locator(
             ".ui-ph h1"
         ).evaluate("(el) => getComputedStyle(el).color")

@@ -6828,6 +6828,153 @@ _CALENDAR_STRINGS = {
 for _lang, _strings in _CALENDAR_STRINGS.items():
     STRINGS[_lang].update(_strings)
 from .host_vi_i18n import STRINGS as _VI_STRINGS
+# 0203: onboarding user test (2026-10-21): the demo step says "Continue" once
+# done, and the wizard ends on the dashboard.
+_ONBOARDING_TEST_0203_STRINGS = {
+    "en": {
+        "wizard.try_it.skip": "Continue without the demo",
+        "wizard.try_it.keep": "Continue",
+        "wizard.done.go": "Go to the overview",
+        "wizard.done.celebrate": "All set. Your property is ready for guests.",
+    },
+    "cs": {
+        "wizard.try_it.skip": "Pokračovat bez ukázky",
+        "wizard.try_it.keep": "Pokračovat",
+        "wizard.done.go": "Přejít na přehled",
+        "wizard.done.celebrate": "Hotovo. Vaše ubytování je připravené na hosty.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0203_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0204: onboarding user test (2026-10-21): required marks, the signature and
+# the guest message template explained, the street explained.
+_ONBOARDING_TEST_0204_STRINGS = {
+    "en": {
+        "common.required_legend": "Fields marked * are required.",
+        "entity.signature.heading": "Your signature on stay-fee reports",
+        "entity.signature.scope": "Optional. The town wants the stay-fee report signed. Draw your signature once and UbyHost adds it to every report, so you do not print and sign it by hand. Without it, your typed name is printed.",
+        "apartment.form.addr.street_hint": "Fill it in if the street has a name. In villages without streets, the house number is enough.",
+        "wizard.guest_link.message_title": "Message template for guests",
+        "wizard.guest_link.message_step1": "Replace the parts in [square brackets] with your own details: key handover, directions, quiet hours.",
+        "wizard.guest_link.message_step2": "Paste it into the automatic message Airbnb or Booking.com sends after each booking. UbyHost does not send it.",
+        "wizard.guest_link.done": "Continue",
+    },
+    "cs": {
+        "common.required_legend": "Pole označená * jsou povinná.",
+        "entity.signature.heading": "Váš podpis na hlášení poplatku z pobytu",
+        "entity.signature.scope": "Nepovinné. Obec chce hlášení poplatku z pobytu podepsané. Nakreslete podpis jednou a UbyHost ho vloží do každého hlášení, takže ho nemusíte tisknout a podepisovat ručně. Bez podpisu se vytiskne vaše jméno.",
+        "apartment.form.addr.street_hint": "Vyplňte, pokud ulice existuje. V obcích bez ulic stačí číslo popisné.",
+        "wizard.guest_link.message_title": "Šablona zprávy pro hosty",
+        "wizard.guest_link.message_step1": "Části v [hranatých závorkách] nahraďte svými údaji: předání klíčů, cesta, noční klid.",
+        "wizard.guest_link.message_step2": "Vložte ji do automatické zprávy, kterou Airbnb nebo Booking.com posílá po každé rezervaci. UbyHost ji neposílá.",
+        "wizard.guest_link.done": "Pokračovat",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0204_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0205: onboarding user test (2026-10-21): the abbreviation fills itself, a
+# pasted account splits itself, and the TTLock steps name the exact buttons.
+_ONBOARDING_TEST_0205_STRINGS = {
+    "en": {
+        "apartment.form.ubyport.mark_hint": "Fills in by itself from your login: the part after UBY-WS_. Change it only if the police letter gives a different “Zkratka ubytovacího zařízení”.",
+        "apartment.form.stay_fee.account_help": "The town's bank account for the stay fee, from its website or letter. Paste the whole account (19-2000145399/0800) or an IBAN into any box and it splits itself. Used for the payment QR code.",
+        "smart_locks.essential1": "In the TTLock app, open your lock and tap Authorized Admin (eAdmin in some app versions).",
+        "smart_locks.essential2": "Tap Create Admin. In the Recipient field, where TTLock expects an e-mail or phone number, paste your UbyHost name from above. Leave Permanent on and tap Send.",
+        "smart_locks.essential3": "Come back here and tap Check connection.",
+        "smart_locks.s4": "Tap Authorized Admin (eAdmin in some app versions). It is the icon with a person and a tick, in the grid under the padlock.",
+        "smart_locks.s6": "Leave Permanent switched on. In Recipient, where TTLock expects an e-mail or phone number, paste your UbyHost name. In Name type UbyHost.",
+    },
+    "cs": {
+        "apartment.form.ubyport.mark_hint": "Vyplní se samo z přihlašovacího jména: je to část za UBY-WS_. Změňte ji, jen když dopis od policie uvádí na řádku „Zkratka ubytovacího zařízení“ něco jiného.",
+        "apartment.form.stay_fee.account_help": "Bankovní účet obce pro poplatek z pobytu, z jejího webu nebo dopisu. Vložte celé číslo účtu (19-2000145399/0800) nebo IBAN do kteréhokoli pole a rozdělí se samo. Použije se pro platební QR kód.",
+        "smart_locks.essential1": "V aplikaci TTLock otevřete zámek a klepněte na Autorizovaný správce (anglicky Authorized Admin, v některých verzích eAdmin).",
+        "smart_locks.essential2": "Klepněte na Vytvořit správce (Create Admin). Do pole Příjemce (Recipient), kde TTLock čeká e-mail nebo telefon, vložte svůj název UbyHost z řádku výše. Nechte zapnuto Trvalý (Permanent) a klepněte na Odeslat (Send).",
+        "smart_locks.essential3": "Vraťte se sem a klepněte na Zkontrolovat připojení.",
+        "smart_locks.s4": "Klepněte na Autorizovaný správce (Authorized Admin, v některých verzích eAdmin). Je to ikona s osobou a fajfkou v mřížce pod zámkem.",
+        "smart_locks.s6": "Nechte zapnuto Trvalý (Permanent). Do pole Příjemce (Recipient), kde TTLock čeká e-mail nebo telefon, vložte svůj název UbyHost. Do pole Jméno (Name) napište UbyHost.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0205_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+_ONBOARDING_TEST_0206_STRINGS = {
+    "en": {
+        "why.business": "The operator is whoever runs the accommodation: you as a person (sole trader) or your company. These details are printed on the reports for the police and the town, and on invoices. Type your IČO and tap Fill from register, and we fill in the rest.",
+        "why.property": "Here you tell UbyHost which accommodation this is: what you call it, when guests arrive and leave, who runs it and where it is. You only fill this in once.",
+        "why.address": "The police and the town need the exact address where your guests stay. Copy it from the police letter or from the land register extract.",
+        "why.times": "UbyHost uses these times to decide when a guest's door code starts and stops working, and when cleaning can come. Door codes do not work without them.",
+        "why.calendar": "When you connect your Airbnb or Booking.com calendar, every new booking appears here by itself and you do not retype anything. You find the link in your listing settings, under Export calendar (iCal).",
+        "why.guest_link": "Every guest has to give their details for the police. Send them this link and PIN, and they fill them in on their own phone before they arrive. You retype nothing.",
+        "why.try": "See what your guests will see. Fill in the form yourself with made-up details. Nothing is sent to the police, and you can delete the demo afterwards.",
+        "why.police": "Every foreign guest has to be reported to the police within three working days of arrival. UbyHost does it for you through Ubyport. It needs the login the police sent you by letter.",
+        "why.police_wait": "Don't have it yet? Tap “I'm still waiting for my police login” and carry on.",
+        "why.stay_fee": "Most towns charge guests a stay fee (at most 50 CZK per person per night) and want a regular report about it. UbyHost works out the fee for every stay and prepares the report and a QR code for the payment. You find the rate, the variable symbol and the account on your town's website or in your registration letter.",
+        "why.stay_fee_skip": "Your town does not charge it? Skip this step.",
+        "why.door_lock": "Optional. Do you have a TTLock smart lock with a gateway? Then UbyHost makes a door code for each stay that works only during that stay. The guest gets it once everyone has registered, so you never hand over keys.",
+        "why.automation": "Choose when UbyHost reports your guests to the police. We recommend the delay: you have time to check the details and you never miss the three-day deadline. You can change this at any time.",
+        "wizard.automation.manual_detail": "You press Send when a stay is ready to report.",
+    },
+    "cs": {
+        "why.business": "Provozovatel je ten, kdo ubytování provozuje: vy jako osoba (OSVČ), nebo vaše firma. Jeho údaje se tisknou na hlášení pro policii a obec a na faktury. Zadejte IČO a klepněte na Vyplnit z registru, zbytek doplníme za vás.",
+        "why.property": "Tady UbyHostu řeknete, o jaké ubytování jde: jak mu říkáte, kdy hosté přijíždějí a odjíždějí, kdo ho provozuje a kde je. Vyplníte to jen jednou.",
+        "why.address": "Policie i obec potřebují přesnou adresu, kde vaši hosté bydlí. Opište ji z dopisu od policie nebo z listu vlastnictví.",
+        "why.times": "Podle těchto časů UbyHost nastaví, od kdy do kdy platí vstupní kód hosta a kdy může přijít úklid. Bez nich kódy ke dveřím nefungují.",
+        "why.calendar": "Když připojíte kalendář z Airbnb nebo Booking.com, každá nová rezervace se tu objeví sama a nemusíte nic opisovat. Odkaz najdete v nastavení inzerátu pod názvem Export kalendáře (iCal).",
+        "why.guest_link": "Každý host musí vyplnit své údaje pro policii. Pošlete mu tento odkaz a PIN a host je vyplní sám na svém telefonu, ještě před příjezdem. Vy nic nepřepisujete.",
+        "why.try": "Podívejte se, co uvidí váš host. Vyplňte formulář sami s vymyšlenými údaji. Nic se neodešle policii a ukázku pak můžete smazat.",
+        "why.police": "Každého cizince musíte nahlásit policii do tří pracovních dnů od příjezdu. UbyHost to udělá za vás přes Ubyport. Potřebuje k tomu přihlašovací údaje, které vám policie poslala dopisem.",
+        "why.police_wait": "Ještě je nemáte? Klepněte na „Na přihlašovací údaje od policie ještě čekám“ a pokračujte.",
+        "why.stay_fee": "Většina obcí vybírá od hostů poplatek z pobytu (nejvýš 50 Kč za osobu a noc) a chce za něj pravidelné hlášení. UbyHost poplatek spočítá u každého pobytu a připraví hlášení i QR kód pro platbu. Sazbu, variabilní symbol a účet najdete na webu obce nebo v dopise o registraci.",
+        "why.stay_fee_skip": "Obec poplatek nevybírá? Tento krok přeskočte.",
+        "why.door_lock": "Nepovinné. Máte chytrý zámek TTLock s bránou? UbyHost pak každému pobytu vytvoří vlastní vstupní kód, platný jen po dobu pobytu. Host ho dostane, jakmile se všichni zaregistrují, a vy nemusíte předávat klíče.",
+        "why.automation": "Vyberte, kdy má UbyHost hosty nahlásit policii. Doporučujeme odeslání s prodlevou: máte čas údaje zkontrolovat a lhůtu tří pracovních dnů nezmeškáte. Volbu můžete kdykoli změnit.",
+        "wizard.automation.manual_detail": "Odeslání spustíte tlačítkem Odeslat, až je pobyt připraven.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0206_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+_ONBOARDING_TEST_0208_STRINGS = {
+    "en": {
+        "apartment.form.stay_fee.account_help": "The town's bank account for the stay fee, from its website or letter. Copy it as you have it, for example 19-2000145399/0800, or as an IBAN. Spaces and dashes are fine; we check the number. It goes into the payment QR code.",
+        "flash.stay_fees.account_invalid": "This account number does not add up. Check it against the town's website, for example 19-2000145399/0800, or paste the IBAN.",
+    },
+    "cs": {
+        "apartment.form.stay_fee.account_help": "Bankovní účet obce pro poplatek z pobytu najdete na webu obce nebo v dopise. Opište ho tak, jak ho máte, například 19-2000145399/0800, nebo jako IBAN. Mezery ani pomlčky nevadí, číslo zkontrolujeme. Použije se pro platební QR kód.",
+        "flash.stay_fees.account_invalid": "Číslo účtu nesedí. Zkontrolujte ho podle webu obce, například 19-2000145399/0800, nebo vložte IBAN.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0208_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+_ONBOARDING_TEST_0210_STRINGS = {
+    "en": {
+        "flash.error.times_required": "Choose the check-in and check-out time. UbyHost needs them for door codes and cleaning.",
+        "why.times_missing": "Check-in and check-out times are missing, so door codes cannot work yet. Set them first.",
+        "wizard.times_change": "Change in step 1",
+    },
+    "cs": {
+        "flash.error.times_required": "Vyberte čas příjezdu a odjezdu. UbyHost je potřebuje pro kódy ke dveřím a úklid.",
+        "why.times_missing": "Chybí čas příjezdu a odjezdu, takže kódy ke dveřím zatím nemohou fungovat. Nejdřív je nastavte.",
+        "wizard.times_change": "Změnit v kroku 1",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0210_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+_ONBOARDING_TEST_0209_STRINGS = {
+    "en": {
+        "entity.signature.moved": "The signature for stay-fee reports is now set with the stay fee, in each property's Reporting & fees.",
+    },
+    "cs": {
+        "entity.signature.moved": "Podpis na hlášení poplatku z pobytu nastavíte u poplatku, v části Hlášení a poplatky u ubytování.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0209_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 

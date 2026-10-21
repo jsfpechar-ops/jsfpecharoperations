@@ -678,10 +678,12 @@
       });
       var account = (option.getAttribute("data-account") || "").replace(/\s/g, "");
       var parsed = /^(?:(\d{1,6})-)?(\d{2,10})\/(\d{4})$/.exec(account);
+      var oneBox = document.getElementById("stay_fee_council_account");
+      if (oneBox) oneBox.value = account;
       var prefixField = document.getElementById("account_prefix");
       var numberField = document.getElementById("account_number");
       var bankField = document.getElementById("account_bank");
-      if (prefixField && numberField && bankField) {
+      if (!oneBox && prefixField && numberField && bankField) {
         prefixField.value = parsed && parsed[1] ? parsed[1] : "";
         numberField.value = parsed ? parsed[2] : "";
         bankField.value = parsed ? parsed[3] : "";

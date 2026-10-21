@@ -5,7 +5,7 @@
 {% set address_errors = address_errors or {} %}
 {% set operator_current = apartment.legal_entity_id %}
 {% block wizard_content %}
-<p class="setup-wizard-lede">{{ t('apartment.form.basics.title') }}</p>
+<p class="setup-wizard-lede">{{ t('why.property') }}</p>
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="property-details-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
@@ -13,11 +13,11 @@
   <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
   {% include "_property_identity_fields.html" %}
   <h3 class="property-section-title">{{ t('apartment.form.door_code.checkin') }} / {{ t('apartment.form.door_code.checkout') }}</h3>
-  <p class="setup-wizard-instruction">{{ t('host.property_times_hint') }}</p>
+  <p class="setup-wizard-instruction">{{ t('why.times') }}</p>
   <div class="grid two">
     {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
     <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
-      <select id="{{ name }}" name="{{ name }}"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+      <select id="{{ name }}" name="{{ name }}" required><option value="">{{ t('apartment.form.door_code.choose') }}</option>
         {% for h in range(24) %}<option value="{{ h }}" {% if apartment[name]|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
       </select></div>
     {% endfor %}
@@ -25,6 +25,7 @@
   {% include "_property_operator.html" %}
   {% if entities %}<div class="setup-wizard-instruction property-operator-hint"><a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
   <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>
+  <p class="setup-wizard-instruction">{{ t('why.address') }}</p>
   {% include "_property_address_fields.html" %}
 </form>
 {% endblock %}

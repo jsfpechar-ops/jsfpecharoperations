@@ -133,7 +133,10 @@
         return navigator.credentials.create({ publicKey: creationOptions(json) });
       })
       .then(function (credential) {
-        return post("/account/passkeys", { credential: serialise(credential) });
+        return post("/account/passkeys", {
+          credential: serialise(credential),
+          return_to: button.getAttribute("data-passkey-return") || ""
+        });
       })
       .then(function (data) {
         window.location.assign(data.redirect || "/settings#settings-security");

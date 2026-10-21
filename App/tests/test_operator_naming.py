@@ -286,7 +286,7 @@ def test_the_optional_fields_stay_optional(host):
     for field_id in ("new_dic", "new_contact_phone"):
         tag = _input_tag(page.text, field_id)
         assert "required" not in tag, f"{field_id} should stay optional: {tag}"
-        assert "optional" in _label_for(page.text, field_id).lower()
+        assert "*" not in _label_for(page.text, field_id)  # 0204: only required fields carry the star
 
 
 def test_the_contact_email_explains_where_it_shows(host):

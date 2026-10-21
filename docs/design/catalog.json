@@ -145,7 +145,12 @@
     "cleaning-link",
     "cleaning-note",
     "cleaning-readonly",
-    "cleaning-subsection"
+    "cleaning-subsection",
+    "required-legend",
+    "setup-wizard-celebrate",
+    "setup-wizard-confetti",
+    "setup-wizard-lock-panel",
+    "setup-wizard-message-steps"
   ],
   "hooks": [
     "sr-only",
@@ -746,12 +751,14 @@
       "feature-switch",
       "feature-switch-row",
       "field",
+      "grid",
       "setup-wizard-form",
       "setup-wizard-instruction",
       "setup-wizard-lede",
       "setup-wizard-lock-field",
       "setup-wizard-skip",
-      "switch"
+      "switch",
+      "two"
     ],
     "App/app/templates/setup_wizard/guest_link.html": [
       "field-label-row",
@@ -834,6 +841,11 @@
   ],
   "class_notes": {
     "ui-section-plain": "Guide page section: a section with no border or fill, only spacing and a heading (MASTER 3, section rhythm).",
-    "ui-section-row": "Smart locks panel section laid out as a row of label and control (MASTER 7.3 row pattern)."
+    "ui-section-row": "Smart locks panel section laid out as a row of label and control (MASTER 7.3 row pattern).",
+    "required-legend": "One line above a form: fields marked * are required (0204; the star comes from the required attribute in host2.css).",
+    "setup-wizard-celebrate": "Setup wizard finish banner, green, holds the one-time confetti (0203).",
+    "setup-wizard-confetti": "Decorative confetti pieces inside setup-wizard-celebrate; aria-hidden, off for reduced motion (0203).",
+    "setup-wizard-lock-panel": "Setup wizard lock step: wraps the smart locks panel so connecting a lock stays in the wizard (0203).",
+    "setup-wizard-message-steps": "Setup wizard guest message: the numbered steps that say how to use the template (0204)."
   }
 }

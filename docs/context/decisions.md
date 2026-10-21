@@ -23,7 +23,9 @@ Append-only.
 - 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in one day found the same issues | [workflow](workflow.md)
 - 2026-10-06 | Cloudflare MCP servers removed from the local Cursor MCP config | context cost in every chat, and production DNS/WAF access for agents | task 0001
 - 2026-10-06 | Cursor automations (regression coverage, bug sweep) stay as they are and read known-issues.md | owner choice | [prompts](prompts.md#bug-hunt-automation)
-- 2026-10-06 | [workflow] Every chat AI orchestrates within token budget; Cursor writes code; pointers use AGENTS.md | one session used ~320k tokens | [workflow](workflow.md#token-budget-every-ai-every-session)
+- 2026-10-06 | [workflow] Task 0001 merged (#281) before orchestrator review; review post-merge approved; stale PR cleanup remains owner-run | owner merged early | [0001 report](../tasks/0001-report.md)
+- 2026-10-06 | [workflow] Context-rollout bundle: flat files only; MANIFEST at root | place_files paths | [TEMPLATE](../tasks/TEMPLATE.md)
+- 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
 - 2026-10-06 | New dependency `webauthn==3.0.1` plus transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned | passkeys must not be hand-rolled; owner approved all five | task 0004
 - 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
 - 2026-10-06 | Downloads skip the navigation skeleton (`download`, `data-no-skeleton`, path-ending rule), pinned by a template scan test | a stay-fee PDF click blanked the page for 15 s | skeleton.js
@@ -51,10 +53,11 @@ Append-only.
 - 2026-10-12 | TTLock: -1026 = created/deleted; host provider, no SCCs; same-period reuse needs custom PIN/mail; retry deletion to end (0067–69) | [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
 - 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
-- 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning day markers; in-page creation | owner | [PR](https://github.com/jsfpechar-ops/jsfpecharoperations/pull/397)
+- 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning day markers; in-page creation | owner | PR #397
 - 2026-10-17 | [workflow] Haiku 5.5 only executor (replaces Cursor, Kimi, GLM, Luna); 100k cap per chat; scoped tests from test-map, no audits or full suite unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
-- 2026-10-19 | Design reset v2: `docs/design/MASTER.md` is the single host design source (host sections of DESIGN.md and HOST_APP_DESIGN.md superseded); Lucide icons vendored as inline SVG (ISC, no runtime dependency); CI lint blocks raw colours, inline styles and page CSS in host templates; phone bottom tab bar replaces the slide-out menu | owner | [plan](../plans/design-v2.md)
+- 2026-10-19 | Design reset v2: `docs/design/MASTER.md` is the single host design source (supersedes DESIGN.md host parts); Lucide icons as inline SVG (ISC, no dependency); CI lint blocks raw colours, inline styles and page CSS in host templates; phone tab bar replaces slide-out menu | owner | [plan](../plans/design-v2.md)
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
+- 2026-10-21 | Why-ledes; signature with stay fee; guest window 1 day | owner
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)

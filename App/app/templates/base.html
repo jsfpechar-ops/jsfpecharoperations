@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="/static/host-controls.css?v=20261014-0102d">
   <link rel="stylesheet" href="/static/host-design0123.css?v=20261021-0199">
   {% if nav | default('') == 'cleaning' %}<link rel="stylesheet" href="/static/cleaning.css?v=20261020-0193d">{% endif %}
-  <link rel="stylesheet" href="/static/host2.css?v=20261021-0203a">
+  <link rel="stylesheet" href="/static/host2.css?v=20261021-0418m">
   {% endif %}
   <link rel="stylesheet" href="/static/skeleton.css?v=20261014-0102c">
 </head>
@@ -214,7 +214,7 @@
     <div class="security-prompt-options">
       {% if prompt.passkeys %}
         <div class="security-prompt-option" data-passkey-supported hidden>
-          <button class="btn primary" type="button" data-passkey-add>{{ t('security_prompt.passkey') }}</button>
+          <button class="btn primary" type="button" data-passkey-add data-passkey-return="{{ request.url.path }}">{{ t('security_prompt.passkey') }}</button>
           <small>{{ t('security_prompt.passkey_help') }}</small>
           <p class="small err-text" data-passkey-error data-generic="{{ t('passkeys.error.failed') }}" role="alert" hidden></p>
         </div>
@@ -234,9 +234,9 @@
 
 <script src="/static/csrf.js?v=20260915a"></script>
 <script src="/static/skeleton.js?v=20261019-0146"></script>
-<script src="/static/app.js?v=20261020-0188"></script>
-{% if show_nav | default(true) %}<script src="/static/host.js?v=20261014-0102d" defer></script>{% endif %}
-{% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261006a" defer></script>{% endif %}
+<script src="/static/app.js?v=20261021-0208"></script>
+{% if show_nav | default(true) %}<script src="/static/host.js?v=20261021-0205" defer></script>{% endif %}
+{% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261021-0203" defer></script>{% endif %}
 {% if show_nav | default(true) %}{% include "_shell_tabbar.html" %}<script src="/static/shell.js?v=20261019-v2a" defer></script>{% endif %}
 </body>
 </html>

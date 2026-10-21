@@ -134,7 +134,7 @@ def test_remove_signature_and_save_typed_name(host):
     assert entity is not None
 
     page = host.get(f"/entities?edit={entity['id']}&lang=en")
-    assert "data:image/png;base64," in page.text
+    assert "data:image/png;base64," not in page.text  # 0209: the signature is edited with the stay fee
     response = host.post(
         f"/entities/{entity['id']}?lang=en",
         data={**_entity_form("Remove Signature s.r.o."),
