@@ -56,7 +56,7 @@ LOCK = {"lock_id": "70840001", "alias": "Synthetic Acceptance Door", "battery": 
 
 # Property settings: their one editable home is Settings on the property page.
 PROPERTY_SETTINGS = {
-    "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
+    "internal_name", "legal_entity_id", "data_controller_entity_id",  # 0204: city_en follows the address town
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
     "permalink_reachback_days", "passport_photo_policy", "door_codes", "lock_id", "checkin_hour",

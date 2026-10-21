@@ -105,7 +105,7 @@ def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts, fla
     assert "Send eKey and enter" not in page
     guide = client.get("/guide?lang=en").text
     assert 'id="door-codes-share"' in guide
-    for words in ("Authorized Admin", "Create Admin", "Manage their own users only", "Tap Recipient and paste the name"):
+    for words in ("Authorized Admin", "Create Admin", "Manage their own users only", "paste your UbyHost name"):
         assert words in guide
     cs = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=cs").text
     assert "Otevřete svůj zámek v TTLock." in cs
