@@ -10,7 +10,7 @@ Updated: 2026-10-21.
 
 ## Now
 
-- Phone app + urgent alerts (0203-0207, draft PR). **Owner:** deploy, test on iPhone and Android. Lawyer: K-P09.
+- Phone app + urgent alerts (0203-0207, draft PR). **Owner:** deploy, test on iPhone and Android.
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
 - AI/scraper crawler block (0195): robots.txt AI group, `/.well-known/tdmrep.json`, Terms §11 TDM clause en+cs (TERMS_VERSION kept 1.7; lawyer to confirm).
