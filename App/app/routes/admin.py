@@ -174,12 +174,16 @@ def _smart_locks_section(form, has_locks: bool) -> str:
 
 def _lock_property_return(request: Request, return_to: str) -> Optional[str]:
     """The property's Door lock settings when return_to names the host's own property."""
-    match = re.fullmatch(r"/apartments/(\d+)", return_to.split("?", 1)[0])
+    path = return_to.split("#", 1)[0].split("?", 1)[0]
+    match = re.fullmatch(r"/apartments/(\d+)(/setup/door_lock)?", path)
     if not match:
         return None
     apartment_id = int(match.group(1))
     if not access.apartment(request, apartment_id):
         return None
+    if match.group(2):
+        # 0203: the setup wizard's lock step; every lock answer returns to it.
+        return f"/apartments/{apartment_id}/setup/door_lock"
     return f"/apartments/{apartment_id}?view=settings&section=lock#door-code"
 
 
