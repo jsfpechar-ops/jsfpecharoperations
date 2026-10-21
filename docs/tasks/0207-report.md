@@ -41,3 +41,4 @@ Acceptance (§7): §6 commands 1, 2 and 4 pass. Command 3 has one failure from t
 
 ## Owner steps left
 - None from the brief. Merge and deploy are the owner's, after review.
+- Orchestrator review: hooks checked (one each, after the mail call). 166 push/PWA/retention/privacy tests pass together. test_feed_dns_pinning IPv6 failure is the container (no AF_INET6), CI to confirm.

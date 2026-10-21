@@ -10,6 +10,7 @@ Updated: 2026-10-21.
 
 ## Now
 
+- Phone app + urgent alerts (0203-0207, draft PR). **Owner:** deploy, test on iPhone and Android. Lawyer: K-P09.
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
 - AI/scraper crawler block (0195): robots.txt AI group, `/.well-known/tdmrep.json`, Terms §11 TDM clause en+cs (TERMS_VERSION kept 1.7; lawyer to confirm).
@@ -30,7 +31,7 @@ Updated: 2026-10-21.
 - TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).
 
 - Doručenka smoke on a new filing after this cutover.
-- TTLock on Render staging, 2026-10-08: lock shared as authorized admin, hand-added stay completed, PIN issued, TTLock window matched UbyHost (09:00 to 16:00) and **the code opened the lock** (owner-tested). Lock has a gateway. Delete of a never-typed code tested 2026-10-10 (stops working). Not yet tested: change, calendar stays, daylight saving.
+- TTLock staging (2026-10-08/10): issue and delete work, code opened the lock. Untested: change, calendar stays, DST.
 
 ## Blocked: needs owner, lawyer or council
 
