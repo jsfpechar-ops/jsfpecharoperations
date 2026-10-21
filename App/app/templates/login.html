@@ -50,6 +50,7 @@
     {% if passkeys_enabled() %}
       <div class="auth-passkey" data-passkey-login data-passkey-supported hidden>
         <button class="auth-submit" type="button" data-passkey-login-button>{{ t('login.passkey') }}</button>
+        <p class="auth-hint" data-pwa-standalone hidden>{{ t('pwa.login_hint') }}</p>
         <p class="auth-alert" data-passkey-error data-generic="{{ t('passkeys.error.login_failed') }}" role="alert" hidden></p>
         <p class="auth-divider"><span>{{ t('login.passkey_or') }}</span></p>
       </div>
