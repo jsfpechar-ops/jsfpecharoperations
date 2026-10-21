@@ -19,15 +19,16 @@ def _lang(request: Request) -> str:
 
 
 def _context(request: Request, **values) -> dict:
+    from .. import host_vi_i18n
     lang = _lang(request)
-    weekdays = (("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday") if lang == "en"
+    weekdays = host_vi_i18n.WEEKDAYS if lang == "vi" else (("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday") if lang == "en"
                 else ("Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota", "Neděle"))
 
     def full_date(value):
         day = date.fromisoformat(value)
         return f"{weekdays[day.weekday()]} {day.day}.{day.month}.{day.year}"
 
-    return {"cleaning_labels": {key: pair[1 if lang == "cs" else 0] for key, pair in cleaning_i18n.WORDS.items()},
+    return {"cleaning_labels": {key: (host_vi_i18n.CLEANING_WORDS.get(key) or pair[0]) if lang == "vi" else pair[1 if lang == "cs" else 0] for key, pair in cleaning_i18n.WORDS.items()},
             "nav": "cleaning", "ct": cleaning_i18n.translator(lang),
             "cleaning_date": full_date, "lang": lang, **values}
 
