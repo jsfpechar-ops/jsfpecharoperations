@@ -985,11 +985,13 @@ def build_stay_fee_report(
     fix = _text(lang, "mail.stay_fee.fix")
     open_label = _text(lang, "mail.stay_fee.open")
     footer = _text(lang, "mail.stay_fee.footer")
+    turn_off = _text(lang, "mail.stay_fee.turn_off")
+    turn_off_url = _public("/settings#settings-stay-fee-emails")
     show_qr = has_qr and not zero
     text_lines = [intro, "", step_send, step_pay]
     if show_qr:
         text_lines.append(qr_alt)
-    text_lines += ["", fix, report_url, "", "--", "UbyHost", footer]
+    text_lines += ["", fix, report_url, "", "--", "UbyHost", footer, f"{turn_off}: {turn_off_url}"]
     blocks = [_block_paragraph(intro), _block_paragraph(step_send), _block_paragraph(step_pay)]
     if show_qr:
         blocks.append(
@@ -1006,7 +1008,7 @@ def build_stay_fee_report(
             title=property_name,
             preheader=intro,
             blocks=blocks,
-            footer_lines=["UbyHost", footer],
+            footer_lines=["UbyHost", footer, [_FooterLink(turn_off, turn_off_url)]],
         ),
     }
 
@@ -1068,8 +1070,13 @@ def build_stay_fee_blocked(
     after = _text(lang, "mail.stay_fee_blocked.after")
     open_label = _text(lang, "mail.stay_fee.open")
     footer = _text(lang, "mail.stay_fee.footer")
+    turn_off = _text(lang, "mail.stay_fee.turn_off")
+    turn_off_url = _public("/settings#settings-stay-fee-emails")
     text = "\n".join(
-        [intro, "", *[f"- {item}" for item in items], "", after, report_url, "", "--", "UbyHost", footer]
+        [
+            intro, "", *[f"- {item}" for item in items], "", after, report_url, "", "--", "UbyHost",
+            footer, f"{turn_off}: {turn_off_url}",
+        ]
     )
     blocks = [_block_paragraph(intro)]
     blocks += [_block_paragraph(item) for item in items]
@@ -1082,7 +1089,7 @@ def build_stay_fee_blocked(
             title=property_name,
             preheader=intro,
             blocks=blocks,
-            footer_lines=["UbyHost", footer],
+            footer_lines=["UbyHost", footer, [_FooterLink(turn_off, turn_off_url)]],
         ),
     }
 

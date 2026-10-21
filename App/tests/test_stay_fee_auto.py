@@ -214,3 +214,21 @@ def test_cs_and_vi_builds_are_complete(lang):
         for part in ("subject", "text", "html"):
             assert built[part].strip()
             assert "mail.stay_fee" not in built[part]
+
+
+def test_en_stay_fee_mails_link_to_the_off_switch():
+    url = f"{config.PUBLIC_BASE_URL}/settings#settings-stay-fee-emails"
+    report = mail_notify.build_stay_fee_report(
+        lang="en", property_name="Auto Flat", period="8/2026", amount="500 Kč",
+        total_czk=500, authority="Úřad", databox="abc1234", account="19-2000781379/0800",
+        vs="654321", has_qr=True, report_url="https://example.test/stay-fees/1",
+    )
+    blocked = mail_notify.build_stay_fee_blocked(
+        lang="en", property_name="Auto Flat", period="8/2026",
+        issues=["stay_fees.issue.period_running"], report_url="https://example.test/stay-fees/1",
+    )
+    for built in (report, blocked):
+        assert f'href="{url}"' in built["html"]
+        assert "Turn these emails off" in built["html"]
+        assert url in built["text"]
+        assert "Turn these emails off: " + url in built["text"]

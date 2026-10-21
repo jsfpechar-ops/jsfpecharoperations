@@ -936,6 +936,7 @@ STRINGS: Dict[str, str] = {
     "mail.stay_fee.fix": "Có gì sai? Mở báo cáo, sửa lại và chúng tôi sẽ gửi email phiên bản mới cho bạn.",
     "mail.stay_fee.open": "Mở báo cáo",
     "mail.stay_fee.footer": "Bạn nhận email này vì mục \"Báo cáo phí lưu trú qua email\" đang bật trong Cài đặt.",
+    "mail.stay_fee.turn_off": "Tắt các email này",
     "mail.stay_fee_blocked.subject": "Phí lưu trú kỳ %(period)s cần bạn bổ sung – %(property)s",
     "mail.stay_fee_blocked.intro": "Chúng tôi chưa thể xác nhận báo cáo phí lưu trú kỳ %(period)s cho %(property)s, vì:",
     "mail.stay_fee_blocked.after": "Hãy sửa trên trang báo cáo. Mỗi sáng chúng tôi kiểm tra lại và gửi báo cáo hoàn chỉnh ngay khi không còn thiếu gì.",
