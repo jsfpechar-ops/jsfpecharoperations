@@ -1,11 +1,12 @@
 {% extends "setup_wizard/_layout.html" %}
 {% set values = draft if draft is defined else apartment %}
 {% from "_components.html" import field_label, help_tip with context %}
-{% macro text_field(name, label, value, help='', optional=false, maxlength=none) %}
+{% macro text_field(name, label, value, help='', optional=false, maxlength=none, required=false) %}
   <div class="field">
     {{ field_label(name, label, help, optional) }}
     <input type="text" id="{{ name }}" name="{{ name }}" value="{{ value or '' }}"
-           {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}>
+           {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+           {%- if required %} required{% endif %}>
   </div>
 {% endmacro %}
 {% set police_errors = police_errors or {} %}
@@ -28,18 +29,18 @@
   <input type="hidden" name="legal_entity_id" value="{{ values.legal_entity_id }}">
   <input type="hidden" name="city_en" value="{{ values.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ values.default_purpose or '10' }}">
-  <div class="grid">{{ text_field('uby_idub', 'IDUB', values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14) }}
+  <div class="grid">{{ text_field('uby_idub', 'IDUB', values.uby_idub, t('apartment.form.ubyport.idub_hint'), false, 14, true) }}
   </div>
   <div class="grid two">
-    {{ text_field('uby_ws_user', t('automation.login'), values.uby_ws_user, t('apartment.form.ubyport.login_hint')) }}
+    {{ text_field('uby_ws_user', t('automation.login'), values.uby_ws_user, t('apartment.form.ubyport.login_hint'), false, none, true) }}
     <div class="field">
       {{ field_label('uby_ws_password', t('automation.password'), t('apartment.form.ubyport.password_help')) }}
-      <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"{% if has_password %} placeholder="••••••••"{% endif %}>
+      <input type="password" id="uby_ws_password" name="uby_ws_password" autocomplete="new-password"{% if has_password %} placeholder="••••••••"{% else %} required{% endif %}>
     </div>
   </div>
   <div class="grid">{{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), values.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}</div>
   <div class="grid two">
-    {{ text_field('uby_name', t('automation.facility_name'), values.uby_name, t('apartment.form.ubyport.name_hint'), false, 35) }}
+    {{ text_field('uby_name', t('automation.facility_name'), values.uby_name, t('apartment.form.ubyport.name_hint'), false, 35, true) }}
     {{ text_field('uby_contact', t('automation.contact'), values.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
   </div>
 </form>
