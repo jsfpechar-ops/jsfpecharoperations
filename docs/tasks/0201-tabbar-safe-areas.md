@@ -69,3 +69,5 @@ If a listed test fails for a reason other than the 56 -> 64 px bar height, stop 
 ## 9. Report
 
 [0201-report.md](0201-report.md)
+
+Follow-up: 8 px minimum dropped (bar is 56 px + the phone's inset). CI showed the wizard's Add calendar button under the bar: `--tabbar-safe` was set on body but read on html, so scroll-padding-bottom fell to 0. Now set on :root.

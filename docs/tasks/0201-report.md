@@ -37,3 +37,5 @@ Measured, `/stay-fees` (4 passed, en and cs at 360 and 390):
 ## Orchestrator follow-up
 
 The host dashboard is `/`, not `/dashboard`. Test paths changed to `/`; the brief set now passes: 32 passed, 0 skipped. Screenshots saved.
+
+Follow-up: 8 px minimum dropped (bar is 56 px + the phone's inset). CI showed the wizard's Add calendar button under the bar: `--tabbar-safe` was set on body but read on html, so scroll-padding-bottom fell to 0. Now set on :root.

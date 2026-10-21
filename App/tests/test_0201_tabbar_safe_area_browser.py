@@ -47,11 +47,12 @@ def test_phone_tab_bar_clears_the_home_indicator(base, width, height, lang, path
             inner_h = page.evaluate("window.innerHeight")
             bar = page.evaluate("(() => { const r = document.querySelector('.ui-tabbar').getBoundingClientRect(); return {top: r.top, bottom: r.bottom, h: r.height}; })()")
             assert abs(bar["bottom"] - inner_h) <= 1
-            assert round(bar["h"]) == 64
+            assert round(bar["h"]) == 56
+            assert page.evaluate("getComputedStyle(document.documentElement).scrollPaddingBottom") == "56px"
             link_bottoms = page.evaluate("[...document.querySelectorAll('.ui-tabbar a')].map(a => a.getBoundingClientRect().bottom)")
             assert len(link_bottoms) == 5
             max_link_bottom = max(link_bottoms)
-            assert max_link_bottom <= bar["bottom"] - 8 + 0.5
+            assert max_link_bottom <= bar["bottom"] + 0.5
             page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
             page.wait_for_timeout(100)
             content_bottom = page.evaluate("Math.max(...[...document.querySelectorAll('#main-content *')].filter(e => e.getBoundingClientRect().height > 0).map(e => e.getBoundingClientRect().bottom))")
