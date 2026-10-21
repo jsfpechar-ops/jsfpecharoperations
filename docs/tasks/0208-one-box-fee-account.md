@@ -1,6 +1,6 @@
 # 0208: One forgiving box for the town's bank account
 
-Status: todo
+Status: blocked
 Depends on: 0211 | Base commit: f547ef0 | Branch: claude/project-thread-cf47ju
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
