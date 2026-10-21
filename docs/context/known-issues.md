@@ -93,4 +93,4 @@ Grep. **HR**: owner decides.
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 
 - K-UI-CACHE: a static file changed without a new `?v=` key stays stale a year; guard 0172.
-- K-NAV-418: on main too: `test_property_navigation_browser.py` fit_every_width (360 px tabs overflow), three_views_four_groups (`<details class="setup-readiness-help">`), create_offers_the_calendar_first (`.link-button` gone); 3 `test_host_i18n.py` tests (language endpoint, vi dashboard). Found in #418.
+- K-NAV-418: fail on main: 3 nav browser tests (360 px tabs, details, .link-button), 3 host_i18n tests.
