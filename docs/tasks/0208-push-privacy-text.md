@@ -1,6 +1,6 @@
 # 0208: Privacy policy and recipient list for urgent alerts
 
-Status: todo
+Status: review
 Depends on: 0207 | Base commit: HEAD of the branch | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 20 tool calls, 40k tokens
 
