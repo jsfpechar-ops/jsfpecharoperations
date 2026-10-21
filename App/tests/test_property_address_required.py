@@ -193,4 +193,4 @@ def test_create_page_marks_the_three_parts_required_and_the_rest_optional():
             tag = re.search(rf'<input[^>]*id="{field}"[^>]*>', page).group(0)
             assert " required" not in tag, (lang, field)
             label = re.search(rf'<label for="{field}">(.*?)</label>', page, re.S).group(1)
-            assert optional in label, (lang, field)
+            assert optional not in label, (lang, field)  # 0204: the asterisk marks required fields instead
