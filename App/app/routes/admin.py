@@ -42,6 +42,7 @@ from .. import (
     invoices,
     mail,
     passkeys,
+    push,
     passport_photos,
     payments,
     property_setup,
@@ -58,6 +59,7 @@ from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, dashboard_calendar, exports, guest, onboarding, privacy_requests
 from . import passkeys as passkey_routes
+from . import push as push_routes
 from . import signup as signup_routes
 from . import stay_fees as stay_fee_routes
 from .admin_helpers import back as _back
@@ -75,6 +77,7 @@ router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 router.include_router(admin_accounts.router)
 router.include_router(dashboard_calendar.router)
 router.include_router(passkey_routes.router)
+router.include_router(push_routes.router)
 router.include_router(api.router)
 router.include_router(onboarding.router)
 router.include_router(signup_routes.router)
@@ -4355,8 +4358,22 @@ def settings_view(request: Request):
             # Task 0004: Settings > Security lists the real account's passkeys.
             "passkeys": _own_passkeys(request),
             "passkeys_available": passkeys.available(),
+            # Brief 0205: Settings > Phone app, urgent alerts on this device.
+            "push_available": _push_available(request),
+            "push_key": push.public_key() if _push_available(request) else "",
+            "push_devices": _own_push_devices(request),
         },
     )
+
+
+def _push_available(request: Request) -> bool:
+    """Alerts are per person: off while an admin previews another workspace."""
+    return bool(push.enabled() and push_routes.own_account(request))
+
+
+def _own_push_devices(request: Request):
+    account = push_routes.own_account(request)
+    return push.devices_for(account["id"]) if account and push.enabled() else []
 
 
 def _own_passkeys(request: Request):
