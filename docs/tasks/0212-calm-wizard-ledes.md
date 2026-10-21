@@ -1,6 +1,6 @@
 # 0212: Calm, readable wizard ledes
 
-Status: todo
+Status: review
 Depends on: 0209 | Base commit: e5d5a47 | Branch: claude/project-thread-cf47ju
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
