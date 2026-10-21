@@ -653,3 +653,10 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 @keyframes setup-wizard-confetti { 0% { opacity: 1; transform: translateY(0) rotate(0deg); } 100% { opacity: 0; transform: translateY(72px) rotate(300deg); } }
 @media (prefers-reduced-motion: reduce) { .host-workspace .setup-wizard-confetti { display: none; } }
 .host-workspace .setup-wizard-lock-panel { margin-top: var(--space-6); }
+
+/* 0204: a required field carries a red asterisk, read from its own required attribute.
+   Screen readers already say "required", so the star is hidden from them. */
+.host-workspace .field:has(:is(input, select, textarea)[required]) > label::after,
+.host-workspace .field:has(:is(input, select, textarea)[required]) > .field-label-row > label::after { content: " *" / ""; color: var(--danger); font-weight: 700; }
+.host-workspace .required-legend { margin: 0 0 var(--space-3); color: var(--ink-muted); font-size: 14px; }
+.host-workspace .setup-wizard-message-steps { margin: var(--space-2) 0 var(--space-3); padding-left: var(--space-5); }
