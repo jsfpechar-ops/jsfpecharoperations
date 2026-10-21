@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Dict, Tuple
 
+from . import guest_uk_i18n
+
 COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
     {
         "name": "ubyhost_session",
@@ -409,6 +411,10 @@ _GUEST_LANGUAGE_TEXT: Dict[str, Dict[str, Dict[str, str]]] = {
 for _row in COOKIE_INVENTORY:
     for _field, _texts in _GUEST_LANGUAGE_TEXT.get(str(_row["name"]), {}).items():
         _row[_field].update(_texts)  # type: ignore[union-attr]
+
+for _row in COOKIE_INVENTORY:
+    if "purpose" in _row:
+        _row["purpose"]["uk"], _row["lifetime"]["uk"] = guest_uk_i18n.COOKIES[str(_row["name"])]  # type: ignore[index]
 
 
 def names() -> Tuple[str, ...]:
