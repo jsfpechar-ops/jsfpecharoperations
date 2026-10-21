@@ -97,6 +97,7 @@
     edit post different targets; the caller owns the <form> element, its
     action and the multipart encoding the signature upload needs. -#}
 {% macro business_form_body(prefix, entity, preview='', ares_error=none, ares_note=none) %}
+  <p class="ui-sub">{{ t('why.business') }}</p>
   <p class="required-legend">{{ t('common.required_legend') }}</p>
   {{ register_messages(ares_error, ares_note) }}
   {{ business_fields(prefix, entity) }}
