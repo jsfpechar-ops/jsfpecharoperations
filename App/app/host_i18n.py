@@ -14,7 +14,9 @@ from .terms_i18n import TERMS_STRINGS
 
 LANG_COOKIE = "ubyhost_lang"
 LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 180
-LANGUAGES = ("en", "cs")
+LANGUAGES = ("en", "cs", "vi")
+# The public and legal pages are written in these only.
+PUBLIC_LANGUAGES = ("en", "cs")
 DEFAULT_LANGUAGE = "en"
 # Signed-out pages are what visitors and search engines see first, and UbyHost
 # is built for Czech hosts, so they are Czech unless the visitor says otherwise.
@@ -24,6 +26,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
     "en": {
         "lang.en": "EN",
         "lang.cs": "CS",
+        "lang.vi": "VI",
         "lang.switch": "Language",
         "nav.guide": "Help",
         "help.tip.label": "Help",
@@ -1583,6 +1586,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
     "cs": {
         "lang.en": "EN",
         "lang.cs": "CS",
+        "lang.vi": "VI",
         "lang.switch": "Jazyk",
         "nav.operations": "Provoz",
         "nav.records": "Evidence",
@@ -6727,6 +6731,8 @@ _CALENDAR_STRINGS = {
 }
 for _lang, _strings in _CALENDAR_STRINGS.items():
     STRINGS[_lang].update(_strings)
+from .host_vi_i18n import STRINGS as _VI_STRINGS
+STRINGS["vi"] = dict(_VI_STRINGS)
 
 
 def normalise_language(value: str | None) -> str:
@@ -6799,7 +6805,7 @@ def translate(lang: str, key: str, **kwargs) -> str:
     )
 
 
-def plural_key(base: str, n: int) -> str:
+def plural_key(base: str, n: int, lang: str = "") -> str:
     """The one/few/many form a count needs.
 
     Czech has three forms where English has two, so a counted key ships as
@@ -6807,6 +6813,12 @@ def plural_key(base: str, n: int) -> str:
     Czech and "1 nights" is wrong English; both come from printing one form of
     the key whatever the number was.
     """
+    if lang == "uk":
+        if n % 10 == 1 and n % 100 != 11:
+            return f"{base}.one"
+        if n % 10 in (2, 3, 4) and n % 100 not in (12, 13, 14):
+            return f"{base}.few"
+        return base
     if n == 1:
         return f"{base}.one"
     if 2 <= n <= 4:
@@ -6822,7 +6834,7 @@ def translate_plural(lang: str, base: str, n: int, **kwargs) -> str:
     """
     kwargs.setdefault("count", n)
     kwargs.setdefault("n", n)
-    return translate(lang, plural_key(base, n), **kwargs)
+    return translate(lang, plural_key(base, n, lang), **kwargs)
 
 
 def bilingual_message(key: str, languages: Optional[List[str]] = None, **kwargs) -> str:

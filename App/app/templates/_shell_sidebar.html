@@ -51,6 +51,7 @@
           <input type="hidden" name="next" value="{{ request.url.path }}">
           <button type="submit" name="lang" value="en" class="{{ 'is-active' if lang == 'en' }}">{{ t('lang.en') }}</button>
           <button type="submit" name="lang" value="cs" class="{{ 'is-active' if lang == 'cs' }}">{{ t('lang.cs') }}</button>
+          <button type="submit" name="lang" value="vi" class="{{ 'is-active' if lang == 'vi' }}">{{ t('lang.vi') }}</button>
         </form>
         <button class="nav-button" type="button" data-shortcuts-open>{{ t('shortcuts.open') }}</button>
         <form method="post" action="/logout"><button class="nav-button" type="submit">{{ t('nav.logout') }}</button></form>

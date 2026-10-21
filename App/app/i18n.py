@@ -1,9 +1,9 @@
-"""Guest-facing strings in English, Czech, German, Spanish and French.
+"""Guest-facing strings in English, Czech, German, Spanish, French and Ukrainian.
 
 Guests are by definition foreigners, so English is the catalog a missing key
 falls back to, and the language the form speaks when the guest's browser asks
 for nothing we speak. Only the guest side has more than two languages; the host
-app stays English and Czech (``host_i18n.LANGUAGES``).
+app has its own languages (``host_i18n.LANGUAGES``).
 
 WP26: the guest's language is chosen in this order, privacy first -- no IP
 lookup, no outside service, nothing new stored about the guest:
@@ -23,9 +23,9 @@ from __future__ import annotations
 import os
 from typing import Dict, Optional, Tuple
 
-from . import host_i18n
+from . import guest_uk_i18n, host_i18n
 
-LANGUAGES = ("en", "cs", "de", "es", "fr")
+LANGUAGES = ("en", "cs", "de", "es", "fr", "uk")
 DEFAULT_LANGUAGE = "en"
 ALWAYS_ON = ("en", "cs")
 DEFAULT_GUEST_LANGS = "en,cs"
@@ -49,6 +49,7 @@ ENDONYMS: Dict[str, str] = {
     "de": "Deutsch",
     "es": "Español",
     "fr": "Français",
+    "uk": guest_uk_i18n.ENDONYM,
 }
 
 # Browser language prefixes that map onto a catalog we have. Slovak readers
@@ -2177,6 +2178,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
 
     },
 }
+
+STRINGS["uk"] = dict(guest_uk_i18n.STRINGS)
 
 
 def translator(lang: str):

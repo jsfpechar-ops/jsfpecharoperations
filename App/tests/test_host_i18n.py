@@ -1,6 +1,8 @@
 """Host UI language selection and translation."""
 from __future__ import annotations
 
+import re
+
 from fastapi.testclient import TestClient
 
 from app import host_i18n
@@ -137,3 +139,58 @@ def test_the_page_default_follows_the_guests_own_phone():
     assert _language(_Guest(cookie="it")) == "en"
     assert _language(_Guest(lang="en", accept="cs-CZ")) == "en"
     assert _language(_Guest(cookie="en", accept="cs-CZ")) == "en"
+
+
+_PLACEHOLDER = re.compile(r"%\((\w+)\)s")
+
+
+def test_every_vietnamese_key_exists_in_english_with_the_same_placeholders():
+    english = host_i18n.STRINGS["en"]
+    for key, text in host_i18n.STRINGS["vi"].items():
+        assert key in english, f"vi has unknown key {key}"
+        assert text.strip(), f"vi:{key} is empty"
+        assert sorted(_PLACEHOLDER.findall(text)) == sorted(
+            _PLACEHOLDER.findall(english[key])
+        ), f"vi:{key} placeholders differ from English"
+
+
+def test_a_signed_out_page_ignores_the_vietnamese_cookie():
+    client = TestClient(app)
+    page = client.get("/", cookies={host_i18n.LANG_COOKIE: "vi"})
+    assert re.search(r'<html lang="en"', page.text), page.status_code
+
+
+def test_a_signed_in_dashboard_keeps_vietnamese():
+    import secrets
+
+    from app import auth
+    from tests.conftest import login_as
+
+    username = f"vidash{secrets.token_hex(4)}"
+    auth.create_account(f"{username}@example.test", "Vi", role="host", username=username)
+    client = TestClient(app)
+    login_as(client, username, url="/login?lang=vi")
+    page = client.get("/?lang=vi")
+    assert page.status_code == 200
+    assert re.search(r'<html lang="vi"', page.text)
+
+
+def test_the_sitemap_offers_no_vietnamese_alternates():
+    client = TestClient(app)
+    assert "lang=vi" not in client.get("/sitemap.xml").text
+
+
+def test_language_endpoint_accepts_vietnamese():
+    client = TestClient(app)
+    response = client.post(
+        "/language",
+        data={"lang": "vi", "next": "/stays"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert client.cookies.get(host_i18n.LANG_COOKIE) == "vi"
+
+
+def test_ukrainian_plural_forms_follow_the_three_form_rule():
+    assert host_i18n.plural_key("night", 21, "uk") == "night.one"
+    assert host_i18n.plural_key("night", 12, "uk") == "night"

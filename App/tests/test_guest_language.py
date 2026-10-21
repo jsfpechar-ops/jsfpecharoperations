@@ -190,8 +190,8 @@ def test_the_guest_engine_has_its_own_languages_and_the_host_keeps_two():
     German guest must get German while ``host_i18n`` must keep turning "de"
     into its own default.
     """
-    assert i18n.LANGUAGES == ("en", "cs", "de", "es", "fr")
-    assert host_i18n.LANGUAGES == ("en", "cs")
+    assert i18n.LANGUAGES == ("en", "cs", "de", "es", "fr", "uk")
+    assert host_i18n.LANGUAGES == ("en", "cs", "vi")
     for value, expected in (
         ("en", "en"), ("cs", "cs"), ("CS", "cs"), ("cs-CZ", "cs"), ("sk", "cs"),
         ("de", "de"), ("de-AT", "de"), ("es_MX", "es"), ("fr-CA", "fr"),
