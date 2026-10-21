@@ -1,6 +1,6 @@
 # 0205: Push endpoints and Settings data (turn on, refresh, test, turn off, remove)
 
-Status: blocked
+Status: review
 Depends on: 0204 | Branch: claude/project-thread-w35ftw
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

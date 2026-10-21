@@ -44,3 +44,15 @@ Done: steps 1 to 6. Left: the failing test and the `send_test` idempotency key.
 
 None until the question is decided. Then run from `App/`:
 `.venv/bin/python -m pytest tests/test_push_routes.py -q --tb=short 2>&1 | tail -30`
+
+## Fix 1
+
+Brief: `docs/tasks/0205-fix-1.md`. Commit `0205-fix-1: random key for each test alert`.
+
+- Change: `App/app/push.py` imports `secrets`; `send_test` key is now `f"{TEST_KIND}:{secrets.token_hex(8)}:{row['id']}"`. `grep -n token_hex` shows one line.
+- Command 1 (`test_push_routes`, `test_push`, `test_passkeys`, `test_flash_literals`, `test_no_em_dashes`): `87 passed, 1 warning`.
+- Command 2 (`test_host_i18n.py`): `3 failed, 11 passed`. The 3 failures are the known K-T01 set: `test_language_endpoint_sets_cookie_and_rejects_open_redirects`, `test_a_signed_in_dashboard_keeps_vietnamese`, `test_language_endpoint_accepts_vietnamese`.
+- Command 3 (`test_security*`, `test_auth_*`): `61 passed, 1 warning`.
+- `python3 scripts/context_lint.py`: `context lint: OK`.
+- Status: `0205-push-endpoints.md` and `0205-fix-1.md` set to `Status: review`.
+- No PR opened, no push (per owner instruction).
