@@ -14,6 +14,7 @@
   <input type="hidden" name="city_en" value="{{ apartment.city_en or '' }}">
   <input type="hidden" name="default_purpose" value="{{ apartment.default_purpose or '10' }}">
   {% set account = fee_account %}
+  {% set fee_required = true %}
   {% include "_stay_fee_fields.html" %}
 </form>
 {% endblock %}
