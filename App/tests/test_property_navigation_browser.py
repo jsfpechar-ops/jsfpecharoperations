@@ -360,7 +360,7 @@ def _sidebar(page, collapsed):
 _STATE_JS = """() => ({
   view: [...document.querySelectorAll('[data-property-view].is-active')].map(e => e.dataset.propertyView),
   visibleViews: [...document.querySelectorAll('[data-property-view]')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.dataset.propertyView),
-  visibleGroups: [...document.querySelectorAll('[data-settings-group]')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.dataset.settingsGroup),
+  visibleGroups: [...new Set([...document.querySelectorAll('[data-settings-group]')].filter(e => getComputedStyle(e).display !== 'none').map(e => e.dataset.settingsGroup))],
   marker: window.__navMarker || null,
   scroll: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth,
 })"""

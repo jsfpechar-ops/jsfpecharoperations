@@ -3,7 +3,7 @@
 <html lang="{{ lang | default('en') }}">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f7f7f5">
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}UbyHost{% endblock %}</title>
@@ -14,11 +14,11 @@
   <link rel="stylesheet" href="/static/app.css?v=20261020-0188e">
   <link rel="stylesheet" href="/static/components.css?v=20261014-0102c">
   {% if show_nav | default(true) %}
-  <link rel="stylesheet" href="/static/host.css?v=20261020-0189a">
+  <link rel="stylesheet" href="/static/host.css?v=20261021-0199">
   <link rel="stylesheet" href="/static/host-controls.css?v=20261014-0102d">
-  <link rel="stylesheet" href="/static/host-design0123.css?v=20261020-0189c">
+  <link rel="stylesheet" href="/static/host-design0123.css?v=20261021-0199">
   {% if nav | default('') == 'cleaning' %}<link rel="stylesheet" href="/static/cleaning.css?v=20261020-0193d">{% endif %}
-  <link rel="stylesheet" href="/static/host2.css?v=20261020-0191a">
+  <link rel="stylesheet" href="/static/host2.css?v=20261021-0201d">
   {% endif %}
   <link rel="stylesheet" href="/static/skeleton.css?v=20261014-0102c">
 </head>

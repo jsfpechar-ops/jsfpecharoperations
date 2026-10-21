@@ -40,8 +40,8 @@
     "v": "20260915a"
   },
   "dashboard-calendar.css": {
-    "sha256": "4afd00d64f21d09069cb913ac174a5d318b13c22846b78a0045120b6a252e723",
-    "v": "20261020-0193d"
+    "sha256": "be5112e17f37f97569ff6b0d7cb162ec69579d3d487ba019e0fb268da26dbe2a",
+    "v": "20261021-0199b"
   },
   "dashboard-calendar.js": {
     "sha256": "41fb6ceebcaad70e6a27817b2e8bd4c448c813f89a3eb4c4d5b3c26c6c71a733",
@@ -68,20 +68,20 @@
     "v": "20261014-0102d"
   },
   "host-design0123.css": {
-    "sha256": "2a618a5346095708675fadb4405cd21f7690fb4930186533fda76530ed35bf4a",
-    "v": "20261020-0189c"
+    "sha256": "24fa0de9f9663f3b533325795e618d354855a118727173fbb18e01fb4e0cba4d",
+    "v": "20261021-0199"
   },
   "host.css": {
-    "sha256": "2869abcee7297805847a35d707575201c3e0911632f9efed8b24c1a5a0a5f2ae",
-    "v": "20261020-0189a"
+    "sha256": "5eaea863de8f05f48fd55f3be58c2c7e1b8c52ba41ab53916889ee3e588f3438",
+    "v": "20261021-0199"
   },
   "host.js": {
     "sha256": "e33ebd32562ff579a849052dfd49e9a0aec1f6882cfff7e13d43b2f75be27bb7",
     "v": "20261014-0102d"
   },
   "host2.css": {
-    "sha256": "6631f4475b316e0bc7ed6d09d4d9bed001e9c928e43ba41de52355aa72040109",
-    "v": "20261020-0191a"
+    "sha256": "63734ebb306c40604e8ae8fdbdeeddad99ba319ff558cc49a3843b0c76d41e2e",
+    "v": "20261021-0201d"
   },
   "landing.css": {
     "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",

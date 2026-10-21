@@ -15,7 +15,7 @@ import secrets
 import time
 from datetime import date, timedelta
 from typing import Any, Dict, List, Optional
-from urllib.parse import parse_qsl, quote, unquote, urlencode, urlparse, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
@@ -147,12 +147,21 @@ _SMART_LOCK_SECTIONS = {
 }
 
 
-def _smart_locks_url(return_to: str, section: str) -> str:
-    """The lock page, keeping the sanitized return path, at a real section."""
+def _lock_tab_url(request: Request, return_to: str, anchor: str) -> str:
+    """0195: lock feedback lands on a Door lock tab: the named own property, else the first active one."""
+    own = _lock_property_return(request, return_to)
+    if own:
+        return f"{own.split('#', 1)[0]}#{anchor}"
+    first = next((row for row in access.apartments(request) if row["active"]), None)
+    if first is None:
+        return "/apartments"
+    return f"/apartments/{first['id']}?view=settings&section=lock#{anchor}"
+
+
+def _smart_locks_url(request: Request, return_to: str, section: str) -> str:
+    """The property's Door lock tab at a real section (0195)."""
     anchor = _SMART_LOCK_SECTIONS.get(section, "smart-locks-how")
-    if return_to.startswith("/apartments/"):
-        return f"/smart-locks?return_to={quote(return_to, safe='')}#{anchor}"
-    return f"/apartments#{anchor}"
+    return _lock_tab_url(request, return_to, anchor)
 
 
 def _smart_locks_section(form, has_locks: bool) -> str:
@@ -529,9 +538,13 @@ def smart_locks_page(request: Request):
         return guard
     if not ttlock.enabled():
         return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
-    # The lock panel lives on the Properties page, so every flow lands there.
+    # 0195: the lock panel lives on each property's Door lock tab; old links land there.
     anchor = "smart-locks-list" if ttlock.account_for(access.owner_id(request)) else "smart-locks-how"
-    return RedirectResponse(f"/apartments#{anchor}", status_code=303)
+    return_to = request.query_params.get("return_to") or ""
+    return RedirectResponse(
+        _lock_tab_url(request, security.safe_local_path(return_to, "/apartments"), anchor),
+        status_code=303,
+    )
 
 
 @router.post("/smart-locks/setup")
@@ -543,7 +556,7 @@ async def smart_locks_setup(request: Request):
         return _back("/apartments", err=_flash(request, "flash.error.smart_locks_unavailable"))
     form = await request.form()
     return_to = _smart_locks_return_to(_form_return_to(form, "/smart-locks"))
-    setup_page = _smart_locks_url(return_to, "how")
+    setup_page = _smart_locks_url(request, return_to, "how")
     if _form_str(form, "terms") != "1":
         return _back(setup_page, err=_flash(request, "flash.error.smart_locks_terms"))
     owner_id = access.owner_id(request)
@@ -559,7 +572,7 @@ async def smart_locks_setup(request: Request):
         f"version={ttlock.DOOR_CODE_TERMS_VERSION}",
     )
     return _back(
-        _smart_locks_url(return_to, "share"),
+        _smart_locks_url(request, return_to, "share"),
         msg=_flash(request, "flash.ok.smart_locks_ready"),
     )
 
@@ -577,11 +590,11 @@ async def smart_locks_refresh(request: Request):
     account = ttlock.account_for(owner_id)
     if not account:
         return _back(
-            _smart_locks_url(return_to, "how"),
+            _smart_locks_url(request, return_to, "how"),
             err=_flash(request, "flash.error.smart_locks_missing_account"),
         )
     # Failures stay on the section the host acted in, with the real error.
-    here = _smart_locks_url(return_to, _smart_locks_section(form, bool(ttlock.locks_of(account))))
+    here = _smart_locks_url(request, return_to, _smart_locks_section(form, bool(ttlock.locks_of(account))))
     try:
         locks, plain_keys = ttlock.check_locks(int(account["id"]))
     except ttlock.TTLockError as exc:
@@ -591,7 +604,7 @@ async def smart_locks_refresh(request: Request):
             return _back(here, err=_flash(request, "flash.error.smart_locks_reauth"))
         return _back(here, err=_flash(request, "flash.error.smart_locks_failed"))
     # No usable lock now means the page shows the sharing steps again.
-    share = _smart_locks_url(return_to, "share")
+    share = _smart_locks_url(request, return_to, "share")
     if not locks and plain_keys:
         return _back(share, err=_flash(request, "flash.error.smart_locks_plain_key"))
     if not locks:
@@ -599,7 +612,7 @@ async def smart_locks_refresh(request: Request):
     count = len(locks)
     # Found from a property: back to that property's lock section to choose
     # one. Nothing is assigned or switched on here.
-    target = _lock_property_return(request, return_to) or _smart_locks_url(return_to, "list")
+    target = _lock_property_return(request, return_to) or _smart_locks_url(request, return_to, "list")
     return _back(
         target,
         msg=_flash_plural(request, "flash.ok.smart_locks_found", count, count=count),
@@ -619,7 +632,7 @@ async def smart_locks_remove(request: Request):
     account = ttlock.account_for(owner_id)
     if not account:
         return _back(
-            _smart_locks_url(return_to, "how"),
+            _smart_locks_url(request, return_to, "how"),
             err=_flash(request, "flash.error.smart_locks_missing_account"),
         )
     local_only = False
@@ -635,7 +648,7 @@ async def smart_locks_remove(request: Request):
         local_only = True
     db.audit("smart_locks_removed", "")
     key = "flash.ok.smart_locks_removed_local" if local_only else "flash.ok.smart_locks_removed"
-    return _back(_smart_locks_url(return_to, "how"), msg=_flash(request, key))
+    return _back(_smart_locks_url(request, return_to, "how"), msg=_flash(request, key))
 
 
 # --- legal entities ------------------------------------------------------
@@ -1150,7 +1163,6 @@ def apartments_list(request: Request):
         request,
         "apartments.html",
         {
-            **_smart_lock_panel_context(request),
             "rows": enriched,
             "archived_rows": archived_rows,
             # With no operator there is nothing the property form can attach to,
@@ -1778,6 +1790,11 @@ def _render_apartment_detail(
         {
             "apartment": apartment,
             "door_code": door_code,
+            "lock_panel": (
+                {**_smart_lock_panel_context(request), "return_to": f"/apartments/{apartment_id}?view=settings&section=lock"}
+                if door_code is not None
+                else None
+            ),
             "entities": entities,
             "feeds": feeds,
             "issues": issues,

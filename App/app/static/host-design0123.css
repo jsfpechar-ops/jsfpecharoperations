@@ -102,3 +102,37 @@ body.host-workspace .row-menu-panel, body.host-workspace dialog, body.host-works
 @media (max-width:380px) {
   body.host-workspace .dashboard-row-dates { gap:5px; }
 }
+
+/* 0196: stay page actions on one grid. */
+body.host-workspace .host-stay-detail .stay-command-main { align-items:center; }
+body.host-workspace .host-stay-detail .stay-command-actions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+body.host-workspace .host-stay-detail .stay-command-actions > :is(a,button,form,details,.row-menu) { margin:0; }
+body.host-workspace .host-stay-detail .stay-command-actions :is(.ui-btn,.btn) { min-height:40px; }
+body.host-workspace .host-stay-detail #guests .ui-section-h { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+body.host-workspace .host-stay-detail #guests .ui-section-h .ui-form-actions { display:flex; align-items:center; gap:8px; margin:0; }
+/* 0196: the menu trigger reads as a button; guest rows share the heading's edges; the Now panel keeps a full border. */
+body.host-workspace .host-stay-detail .stay-command-actions .row-menu-trigger { width:40px; height:40px; min-height:40px; border:1px solid var(--line-strong); background:var(--surface); }
+body.host-workspace .host-stay-detail .guest-card-head { padding-left:0; padding-right:0; }
+body.host-workspace .host-stay-detail .stay-command-panel { border-top:1px solid var(--line); border-right:1px solid var(--line); border-bottom:1px solid var(--line); border-left-width:4px; border-left-style:solid; border-radius:12px; }
+@media (max-width:760px) {
+  body.host-workspace .host-stay-detail .stay-command-main { flex-direction:column; align-items:stretch; text-align:left; gap:12px; }
+  body.host-workspace .host-stay-detail .stay-command-main > div:first-child { text-align:left; }
+  /* 0199: B - the first action takes the row, the rest share the next one, the menu stays 44 px at the end; labels never wrap. */
+  body.host-workspace .host-stay-detail .stay-command-actions { justify-content:flex-start; flex-wrap:wrap; width:100%; }
+  body.host-workspace .host-stay-detail .stay-command-actions > :not(.row-menu) { flex:1 1 0; min-width:0; }
+  body.host-workspace .host-stay-detail .stay-command-actions > :first-child:not(.row-menu) { flex:1 1 100%; }
+  body.host-workspace .host-stay-detail .stay-command-actions > form > .ui-btn,
+  body.host-workspace .host-stay-detail .stay-command-actions > .ui-btn { width:100%; }
+  body.host-workspace .host-stay-detail .stay-command-actions :is(.ui-btn,.btn) { height:44px; min-height:44px; white-space:nowrap; }
+  body.host-workspace .host-stay-detail .stay-command-actions > .row-menu { flex:0 0 auto; }
+  body.host-workspace .host-stay-detail .stay-command-actions .row-menu-trigger { width:44px; height:44px; min-height:44px; }
+  /* 0199: A - the Next step panel content starts at the Guests heading edge. */
+  body.host-workspace .host-stay-detail .stay-command-panel { padding-left:0; }
+  body.host-workspace .host-stay-detail .stay-command-main { padding-left:4px; }
+  /* 0199: C - the two Guests header buttons share the full row, 44 px tall. */
+  body.host-workspace .host-stay-detail #guests .ui-section-h .ui-form-actions { width:100%; }
+  body.host-workspace .host-stay-detail #guests .ui-section-h .ui-form-actions > :is(a,button) { flex:1 1 0; min-width:0; height:44px; min-height:44px; white-space:nowrap; box-sizing:border-box; }
+  /* 0199: D - the bottom Save of stay settings fills the form. */
+  body.host-workspace .host-stay-detail #stay-quick-edit form.settings-grid > .ui-form-actions { width:100%; }
+  body.host-workspace .host-stay-detail #stay-quick-edit form.settings-grid > .ui-form-actions > .ui-btn { width:100%; }
+}

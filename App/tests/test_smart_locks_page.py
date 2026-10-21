@@ -29,6 +29,21 @@ def hosts(monkeypatch):
     _cleanup()
 
 
+@pytest.fixture
+def flats(hosts):
+    """One active property per host; the lock panel lives on its Door lock tab."""
+    ids = [
+        db.insert("apartment", {
+            "internal_name": f"Lock tab flat {n}", "owner_user_id": owner, "permalink_token": f"smartpagetab{n}",
+            "permalink_pin": "123456", "active": 1, "created_at": db.utcnow(),
+        })
+        for n, owner in enumerate(hosts)
+    ]
+    yield ids
+    db.execute("DELETE FROM apartment_slug WHERE apartment_id IN (?, ?)", tuple(ids))
+    db.execute("DELETE FROM apartment WHERE id IN (?, ?)", tuple(ids))
+
+
 def _cleanup():
     for name in USERS:
         row = db.query_one("SELECT id FROM user_account WHERE username = ?", (name,))
@@ -60,19 +75,21 @@ def _client(username: str) -> TestClient:
     return client
 
 
-def test_before_connecting_the_page_explains_and_names_ttlock(hosts):
-    page = _client(USERS[0]).get("/apartments").text
+def test_before_connecting_the_page_explains_and_names_ttlock(hosts, flats):
+    client = _client(USERS[0])
+    assert 'id="smart-locks-how"' not in client.get("/apartments?lang=en").text
+    page = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
     assert "Digital door lock" in page
     assert "only with TTLock" in page
     assert "How it works" in page
     assert "Connect my lock" in page
 
 
-def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts):
+def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts, flats):
     """0090: the lock page shows three essentials; the Guide keeps every tap."""
     _connect(hosts[0], "hjhfa_uhaaaa")
     client = _client(USERS[0])
-    page = client.get("/apartments").text
+    page = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
     assert "hjhfa_uhaaaa" in page
     for words in (
         "Open your lock in TTLock.",
@@ -90,7 +107,7 @@ def test_after_connecting_three_essentials_and_every_tap_in_the_guide(hosts):
     assert 'id="door-codes-share"' in guide
     for words in ("Authorized Admin", "Create Admin", "Manage their own users only", "Tap Recipient and paste the name"):
         assert words in guide
-    cs = client.get("/apartments?lang=cs").text
+    cs = client.get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=cs").text
     assert "Otevřete svůj zámek v TTLock." in cs
     assert "Vraťte se sem a vyhledejte zámky." in cs
 
@@ -99,10 +116,11 @@ def _post(client, path, **data):
     return client.post(path, data=data, follow_redirects=False)
 
 
-def test_setup_lands_on_the_sharing_section_and_errors_stay_on_setup(hosts, monkeypatch):
+def test_setup_lands_on_the_sharing_section_and_errors_stay_on_setup(hosts, flats, monkeypatch):
     client = _client(USERS[0])
     refused = _post(client, "/smart-locks/setup", return_to="/smart-locks")
     assert refused.status_code == 303
+    assert refused.headers["location"].startswith(f"/apartments/{flats[0]}?view=settings&section=lock")
     assert refused.headers["location"].endswith("#smart-locks-how")
     assert "err=" in refused.headers["location"]
 
@@ -111,6 +129,7 @@ def test_setup_lands_on_the_sharing_section_and_errors_stay_on_setup(hosts, monk
 
     monkeypatch.setattr(ttlock, "create_account", fake_create)
     done = _post(client, "/smart-locks/setup", return_to="/smart-locks", terms="1")
+    assert done.headers["location"].startswith(f"/apartments/{flats[0]}?view=settings&section=lock")
     assert done.headers["location"].endswith("#smart-locks-share")
     assert "msg=" in done.headers["location"]
 
@@ -124,7 +143,7 @@ def test_setup_lands_on_the_sharing_section_and_errors_stay_on_setup(hosts, monk
         ("failed", "/evil#x", "#smart-locks-share"),
     ],
 )
-def test_refresh_failures_stay_on_the_section_acted_in(hosts, monkeypatch, kind, section, anchor):
+def test_refresh_failures_stay_on_the_section_acted_in(hosts, flats, monkeypatch, kind, section, anchor):
     _connect(hosts[0], "hjhfa_uhaaaa")
 
     def fail(_account_id):
@@ -135,16 +154,19 @@ def test_refresh_failures_stay_on_the_section_acted_in(hosts, monkeypatch, kind,
         _client(USERS[0]), "/smart-locks/refresh", return_to="/apartments/999999", section=section
     )
     location = response.headers["location"]
-    assert location.startswith("/smart-locks?return_to=%2Fapartments%2F999999")
+    # 0195: a foreign or unknown return_to lands on the host's own first lock tab.
+    assert location.startswith(f"/apartments/{flats[0]}?view=settings&section=lock")
+    assert "/apartments/999999" not in location
     assert location.endswith(anchor)
     assert "err=" in location
     assert "evil" not in location
 
 
-def test_no_lock_yet_stays_on_sharing(hosts, monkeypatch):
+def test_no_lock_yet_stays_on_sharing(hosts, flats, monkeypatch):
     _connect(hosts[0], "hjhfa_uhaaaa")
     monkeypatch.setattr(ttlock, "check_locks", lambda _id: ([], []))
     response = _post(_client(USERS[0]), "/smart-locks/refresh", return_to="/smart-locks", section="share")
+    assert response.headers["location"].startswith(f"/apartments/{flats[0]}?view=settings&section=lock")
     assert response.headers["location"].endswith("#smart-locks-share")
 
 
@@ -170,7 +192,9 @@ def test_found_locks_return_to_the_hosts_own_property_lock_section(hosts, monkey
         for bad in (f"/apartments/{foreign}", "https://evil.example/apartments/1", "//evil.example"):
             response = _post(client, "/smart-locks/refresh", return_to=bad, section="share")
             location = response.headers["location"]
-            assert location.startswith(("/smart-locks?", "/apartments")), location
+            # 0195: never a foreign property id; the host's own first property's lock tab.
+            assert location.startswith(f"/apartments/{own}?view=settings&section=lock"), location
+            assert f"/apartments/{foreign}" not in location
             assert location.endswith("#smart-locks-list")
             assert "evil" not in location
     finally:
@@ -178,43 +202,39 @@ def test_found_locks_return_to_the_hosts_own_property_lock_section(hosts, monkey
         db.execute("DELETE FROM apartment WHERE id IN (?, ?)", (own, foreign))
 
 
-def test_property_lock_links_point_at_the_right_section(hosts):
-    own = db.insert("apartment", {
-        "internal_name": "Lock link flat", "owner_user_id": hosts[0], "permalink_token": "smartlocklink1",
-        "permalink_pin": "123456", "active": 1, "created_at": db.utcnow(),
-    })
-    try:
-        client = _client(USERS[0])
-        page = client.get(f"/apartments/{own}?lang=en").text
-        assert f"/smart-locks?return_to=/apartments/{own}%23door-code#smart-locks-how" in page
-        _connect(hosts[0], "hjhfa_uhaaaa")
-        page = client.get(f"/apartments/{own}?lang=en").text
-        assert f"/smart-locks?return_to=/apartments/{own}%23door-code#smart-locks-share" in page
-    finally:
-        db.execute("DELETE FROM apartment_slug WHERE apartment_id = ?", (own,))
-        db.execute("DELETE FROM apartment WHERE id = ?", (own,))
+def test_property_lock_tab_has_the_panel_and_the_list_has_none(hosts, flats):
+    own = flats[0]
+    client = _client(USERS[0])
+    page = client.get(f"/apartments/{own}?lang=en").text
+    assert "/smart-locks?" not in page
+    assert 'id="smart-locks-how"' in page
+    _connect(hosts[0], "hjhfa_uhaaaa")
+    page = client.get(f"/apartments/{own}?view=settings&section=lock&lang=en").text
+    assert "/smart-locks?" not in page
+    assert f"/apartments/{own}?view=settings&amp;section=lock" in page
+    assert 'id="smart-locks-how"' not in client.get("/apartments?lang=en").text
 
 
-def test_a_plain_key_is_called_out_not_ignored(hosts, monkeypatch):
+def test_a_plain_key_is_called_out_not_ignored(hosts, flats, monkeypatch):
     _connect(hosts[0], "hjhfa_uhaaaa")
     monkeypatch.setattr(ttlock, "_call", lambda *a, **k: {"list": [PLAIN_KEY], "pages": 1})
-    page = _client(USERS[0]).post("/smart-locks/refresh", data={"return_to": "/smart-locks"}).text
+    page = _client(USERS[0]).post("/smart-locks/refresh", data={"return_to": f"/apartments/{flats[0]}"}).text
     assert "not an admin key" in page
 
 
-def test_an_admin_key_shows_the_lock_as_connected(hosts, monkeypatch):
+def test_an_admin_key_shows_the_lock_as_connected(hosts, flats, monkeypatch):
     _connect(hosts[0], "hjhfa_uhaaaa")
     monkeypatch.setattr(ttlock, "_call", lambda *a, **k: {"list": [ADMIN_KEY], "pages": 1})
-    page = _client(USERS[0]).post("/smart-locks/refresh", data={"return_to": "/smart-locks"}).text
+    page = _client(USERS[0]).post("/smart-locks/refresh", data={"return_to": f"/apartments/{flats[0]}"}).text
     assert "Door A" in page
     assert "UbyHost can create door codes on this lock" in page
 
 
-def test_each_host_has_their_own_name_and_never_sees_anothers_locks(hosts):
+def test_each_host_has_their_own_name_and_never_sees_anothers_locks(hosts, flats):
     _connect(hosts[0], "hjhfa_uhaaaa", [{"lock_id": "1", "alias": "Door A", "battery": 90, "tz_offset_ms": 3600000}])
     _connect(hosts[1], "hjhfa_uhbbbb", [{"lock_id": "2", "alias": "Door B", "battery": 80, "tz_offset_ms": 3600000}])
-    page_a = _client(USERS[0]).get("/apartments").text
-    page_b = _client(USERS[1]).get("/apartments").text
+    page_a = _client(USERS[0]).get(f"/apartments/{flats[0]}?view=settings&section=lock&lang=en").text
+    page_b = _client(USERS[1]).get(f"/apartments/{flats[1]}?view=settings&section=lock&lang=en").text
     assert "Door A" in page_a and "Door B" not in page_a
     assert "Door B" in page_b and "Door A" not in page_b
 

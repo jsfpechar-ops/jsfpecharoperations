@@ -1509,3 +1509,23 @@ body.host-workspace {
 .setup-readiness-help > summary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink); font-weight: 650; cursor: pointer; list-style: none; }
 .setup-readiness-help > summary::before, .setup-readiness-help > summary::-webkit-details-marker { display: none; }
 .setup-readiness-help > summary > span { display: inline-grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); }
+/* 0195: the lock account panel sits under the Door lock form, in the content column. */
+@container property-lane (min-width: 860px) {
+  .property-settings > #settings-lock-account { grid-column: 2; }
+  .property-settings > .property-settings-nav { grid-row: span 2; }
+}
+/* 0195: with no lock to pick, the Door lock tab has nothing to save; panel headings sit under its title. */
+.property-settings:has(#settings-lock.is-active):not(:has(#settings-lock #door-code)) .host-property-save { display: none; }
+#settings-lock-account .ui-section h2 { font-size: 17px; line-height: 1.3; margin: 20px 0 8px; }
+#settings-lock-account .ui-section h2:first-child { margin-top: 0; }
+
+/* 0199: E - below the 860 px lane the five Door lock chips are one horizontally scrolling row, 44 px tall. */
+@container property-lane (max-width: 859px) {
+  .property-settings > .property-settings-nav { flex-wrap: nowrap; overflow-x: auto; min-width: 0; max-width: 100%; }
+  .property-settings-nav a { flex: 0 0 auto; min-height: 44px; }
+}
+@media (max-width: 760px) {
+  /* 0199: F - the Door lock intro sits 16 px above the Digital door lock panel (the panel's own 32 px top margin is removed on phone). */
+  .property-settings-group[data-settings-group=lock] .property-group-intro { margin-bottom: 0; }
+  #settings-lock-account #door-code { margin-top: 0; }
+}

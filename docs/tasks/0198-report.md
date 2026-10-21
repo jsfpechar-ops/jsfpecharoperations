@@ -1,0 +1,3 @@
+# 0198 report (code comments call it 0195)
+
+Done (Haiku, 4 follow-ups). Properties list no longer shows the lock panel; the property Door lock tab shows the lock form only when an account has locks, plus the account panel after the form (own grid cell, own forms). `/smart-locks` and every lock POST land on an owned property's tab (`_lock_tab_url`), never a foreign id. Save bar hidden when the tab has nothing to save. Tests: smart locks, door codes, ttlock, property hub, lock navigation browser pass. Pre-existing on main (not fixed): `test_property_navigation_browser.py` `<details` and wizard skip timeout. Shots: design-reset/checkpoint-6/door-lock/.
