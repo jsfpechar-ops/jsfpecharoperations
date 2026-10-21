@@ -216,6 +216,25 @@ def remove(account_id: int, subscription_id: int) -> bool:
     return True
 
 
+def refresh(account_id: int, endpoint: str, *, lang: str) -> bool:
+    """A visit from a device that has alerts on: keep its language and last visit.
+
+    Never creates a row: a device removed in Settings stays removed until its
+    owner turns alerts on again on it. False when this account has no such device.
+    """
+    row = db.query_one(
+        "SELECT id FROM push_subscription WHERE endpoint_hash = ? AND user_account_id = ?",
+        (_hash(str(endpoint or "")), account_id),
+    )
+    if not row:
+        return False
+    db.execute(
+        "UPDATE push_subscription SET lang = ?, last_seen_at = ? WHERE id = ?",
+        (host_i18n.normalise_language(lang), db.utcnow(), row["id"]),
+    )
+    return True
+
+
 def remove_endpoint(account_id: int, endpoint: str) -> bool:
     """Forget the device with this push address (Settings > Turn off)."""
     row = db.query_one(
