@@ -160,6 +160,21 @@ def test_a_signed_out_page_ignores_the_vietnamese_cookie():
     assert re.search(r'<html lang="en"', page.text), page.status_code
 
 
+def test_a_signed_in_dashboard_keeps_vietnamese():
+    import secrets
+
+    from app import auth
+    from tests.conftest import login_as
+
+    username = f"vidash{secrets.token_hex(4)}"
+    auth.create_account(f"{username}@example.test", "Vi", role="host", username=username)
+    client = TestClient(app)
+    login_as(client, username, url="/login?lang=vi")
+    page = client.get("/?lang=vi")
+    assert page.status_code == 200
+    assert re.search(r'<html lang="vi"', page.text)
+
+
 def test_the_sitemap_offers_no_vietnamese_alternates():
     client = TestClient(app)
     assert "lang=vi" not in client.get("/sitemap.xml").text

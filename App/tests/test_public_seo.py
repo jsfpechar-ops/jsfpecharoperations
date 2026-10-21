@@ -212,7 +212,7 @@ def test_every_public_page_offers_both_languages_to_search_engines():
     for path in PUBLIC_PAGES:
         html = client.get(path).text
         assert f'<link rel="canonical" href="{config.PUBLIC_BASE_URL}{path}">' in html, path
-        for lang in host_i18n.LANGUAGES:
+        for lang in host_i18n.PUBLIC_LANGUAGES:
             expected = (
                 f'<link rel="alternate" hreflang="{lang}" '
                 f'href="{config.PUBLIC_BASE_URL}{path}?lang={lang}">'
@@ -300,10 +300,10 @@ def test_the_sitemap_lists_both_languages_of_every_public_page():
 
     assert response.status_code == 200
     body = response.text
-    for lang in host_i18n.LANGUAGES:
+    for lang in host_i18n.PUBLIC_LANGUAGES:
         assert f"<loc>{config.PUBLIC_BASE_URL}/?lang={lang}</loc>" in body
     for path in PUBLIC_PAGES:
-        for lang in host_i18n.LANGUAGES:
+        for lang in host_i18n.PUBLIC_LANGUAGES:
             assert f"<loc>{config.PUBLIC_BASE_URL}{path}?lang={lang}</loc>" in body, path
 
 
@@ -365,7 +365,7 @@ def test_guides_are_linked_and_listed_for_discovery():
     ):
         assert f'href="{path}?lang=cs"' in homepage
         assert f'href="{path}?lang=en"' in english_homepage
-        for lang in host_i18n.LANGUAGES:
+        for lang in host_i18n.PUBLIC_LANGUAGES:
             assert f"<loc>{config.PUBLIC_BASE_URL}{path}?lang={lang}</loc>" in sitemap
 
 
