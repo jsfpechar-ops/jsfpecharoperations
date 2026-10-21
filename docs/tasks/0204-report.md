@@ -1,6 +1,6 @@
 # 0204 report (executor)
 
-Status: blocked
+Status: review
 Branch: claude/project-thread-cf47ju
 
 ## Files changed
@@ -29,3 +29,49 @@ Add test_property_readiness.py to §3 for the one-line fix, or should the orches
 
 ## Owner steps left
 After the readiness fix and the browser tests pass: merge through scripts/merge-pr-on-green.sh, then deploy as usual (new cache keys ship with it).
+
+## Follow-up run
+
+Step 19 committed as 68d5181 (readiness tuple: city_en removed, the blocker above is resolved). Commit trailers: Claude Opus 5.5, as the launch message asked.
+
+Cmd 1, part A (all files except test_host_i18n.py), `-x`:
+```
+  /home/user/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+106 passed, 1 warning in 5.94s
+```
+
+Cmd 1, part B (tests/test_host_i18n.py alone, no `-x`): last 5 lines
+```
+=========================== short test summary info ============================
+FAILED tests/test_host_i18n.py::test_language_endpoint_sets_cookie_and_rejects_open_redirects
+FAILED tests/test_host_i18n.py::test_a_signed_in_dashboard_keeps_vietnamese
+FAILED tests/test_host_i18n.py::test_language_endpoint_accepts_vietnamese - s...
+3 failed, 11 passed, 2 warnings in 1.86s
+```
+These are the 3 known failures that also fail on main. Accepted, not fixed.
+
+Cmd 2 (browser, `UBYHOST_REQUIRE_BROWSER=1`, `-rs`): 0 skipped. Last 5 lines
+```
+  /home/user/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+102 passed, 1 warning in 188.63s (0:03:08)
+```
+
+Cmd 3 (`tests -k "entit or business" -rs`): 0 skipped. Last 5 lines
+```
+  /home/user/jsfpecharoperations/App/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+137 passed, 1 warning in 29.91s
+```
+
+No test failed because of a 0204 change. Nothing else was edited.
+
+Evidence: the browser run rewrote tracked PNGs under docs/tasks/0102-evidence/. They were reverted with git checkout and not committed. The 390 px screenshots for the report are still not attached (AGENTS rule 7 is open).
+
