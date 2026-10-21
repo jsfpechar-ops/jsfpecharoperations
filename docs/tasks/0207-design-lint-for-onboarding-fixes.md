@@ -115,6 +115,24 @@ a) `App/tests/test_smart_locks_page.py`: in the line `    for words in ("Authori
 
 b) `App/tests/test_host_ux_acceptance.py`: replace the line `    "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",` with `    "internal_name", "legal_entity_id", "data_controller_entity_id",  # 0204: city_en follows the address town`. Only the PROPERTY_SETTINGS line (the first match, line about 59); leave CREATE_FIELDS alone.
 
+### Step 10 (follow-up). Czech essentials pin
+
+`App/tests/test_smart_locks_page.py`, near line 111. Replace the two lines
+
+```
+    assert "Otevřete svůj zámek v TTLock." in cs
+    assert "Vraťte se sem a vyhledejte zámky." in cs
+```
+
+with
+
+```
+    assert "klepněte na Autorizovaný správce" in cs  # 0205 TTLock wording
+    assert "Vraťte se sem a klepněte na Zkontrolovat připojení." in cs
+```
+
+Then run `.venv/bin/python -m pytest tests/test_reporting_help_0097.py tests/test_smart_locks_page.py -q --tb=short 2>&1 | tail -15` and `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_onboarding_wizard_browser.py -q --tb=line -rs 2>&1 | tail -15` from `App/`. Never `git add` PNGs (`git checkout -- docs/tasks/` evidence files if they changed). Commit `0207 step 10`.
+
 ### Step 8. Is the 360 px tab overflow this PR's?
 
 `tests/test_property_navigation_browser.py::test_property_views_fit_every_width_and_sidebar` failed in the 0205 run (360 px settings tabs: Reporting & fees, Door lock, Automation). Check whether it fails on main too:
