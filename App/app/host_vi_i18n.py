@@ -3070,4 +3070,17 @@ STRINGS: Dict[str, str] = {
     "calendar.next_arrival": "Lần nhận phòng tiếp theo",
     "calendar.time_missing": "Chưa đặt giờ",
     "calendar.cleaning_timing_unavailable": "Đặt giờ hợp lệ cho chỗ ở để hiển thị khung giờ dọn dẹp.",
+    # Brief 0203: installable app.
+    "settings.group.phone": "Ứng dụng trên điện thoại",
+    "pwa.install.title": "Thêm UbyHost vào màn hình chính",
+    "pwa.install.help": "Ứng dụng mở toàn màn hình như mọi ứng dụng khác và có thể hiện cảnh báo khẩn.",
+    "pwa.install.button": "Cài ứng dụng",
+    "pwa.install.installed": "Đã cài",
+    "pwa.install.ios": "Trong Safari, bấm Chia sẻ (hình vuông có mũi tên), rồi chọn Thêm vào MH chính.",
+    "pwa.install.ios_passkey": "Hãy thêm passkey trước (trong mục Bảo mật). Trong ứng dụng, bạn đăng nhập bằng passkey, vì liên kết đăng nhập trong email sẽ mở trong Safari.",
+    "pwa.install.other": "Mở trang này trên điện thoại, bằng Safari trên iPhone hoặc Chrome trên Android, để thêm UbyHost vào màn hình chính.",
+    "pwa.login_hint": "Trong ứng dụng, hãy đăng nhập bằng passkey. Liên kết trong email sẽ mở trong trình duyệt, không mở ở đây.",
+    "offline.title": "Bạn đang ngoại tuyến",
+    "offline.body": "UbyHost cần kết nối Internet. Hãy kiểm tra Wi-Fi hoặc dữ liệu di động, rồi thử lại.",
+    "offline.retry": "Thử lại",
 }
