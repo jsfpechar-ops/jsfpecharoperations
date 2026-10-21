@@ -507,8 +507,6 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position:
 .host-workspace .setup-wizard-head { row-gap: var(--space-3); }
 .host-workspace .setup-wizard-foot .ui-btn-primary { margin-left: auto; }
 .host-workspace .setup-wizard-foot .ui-btn { max-width: 100%; }
-.host-workspace .setup-wizard-lede.setup-wizard-fee-intro { font-size: var(--size-26); font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
-@media (max-width: 1023px) { .host-workspace .setup-wizard-lede.setup-wizard-fee-intro { font-size: var(--size-22); } }
 
 /* 0160: wizard on the page lane; phone footer = full-width stack, primary first, back last */
 .host-workspace .setup-wizard, .host-workspace .setup-wizard-body, .host-workspace .setup-wizard-foot { max-width: none; margin-left: 0; margin-right: 0; }
@@ -660,3 +658,5 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .field:has(:is(input, select, textarea)[required]) > .field-label-row > label::after { content: " *" / ""; color: var(--danger); font-weight: 700; }
 .host-workspace .required-legend { margin: 0 0 var(--space-3); color: var(--ink-muted); font-size: var(--text-sm); }
 .host-workspace .setup-wizard-message-steps { margin: var(--space-2) 0 var(--space-3); padding-left: var(--space-5); }
+/* 0212: the why-ledes are 2-4 sentences; regular weight reads better than bold (GOV.UK lead paragraph). */
+.host-workspace .setup-wizard-lede, .host-workspace .setup-wizard-instruction { font-weight: 400; }
