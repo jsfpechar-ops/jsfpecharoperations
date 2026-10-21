@@ -3119,3 +3119,9 @@ STRINGS.update({
     "why.door_lock": "Không bắt buộc. Bạn có khóa thông minh TTLock kèm gateway? Khi đó UbyHost tạo cho mỗi lượt lưu trú một mã cửa chỉ dùng được trong thời gian lưu trú. Khách nhận mã khi mọi người đã đăng ký xong, nên bạn không cần giao chìa khóa.",
     "why.automation": "Chọn khi nào UbyHost khai báo khách với cảnh sát. Chúng tôi khuyên dùng gửi sau một khoảng chờ: bạn có thời gian kiểm tra thông tin và không bao giờ trễ hạn ba ngày. Bạn có thể đổi lựa chọn này bất cứ lúc nào.",
 })
+
+# 0208: one account box.
+STRINGS.update({
+    "apartment.form.stay_fee.account_help": "Tài khoản ngân hàng của địa phương để nộp phí lưu trú, có trên trang web hoặc trong thư của địa phương. Chép lại đúng như bạn có, ví dụ 19-2000145399/0800, hoặc dạng IBAN. Dấu cách hay gạch ngang đều được; chúng tôi sẽ kiểm tra số. Số này dùng cho mã QR thanh toán.",
+    "flash.stay_fees.account_invalid": "Số tài khoản này không hợp lệ. Hãy kiểm tra lại theo trang web của địa phương, ví dụ 19-2000145399/0800, hoặc dán IBAN.",
+})

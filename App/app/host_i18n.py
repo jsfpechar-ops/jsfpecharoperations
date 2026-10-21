@@ -6840,6 +6840,19 @@ _ONBOARDING_TEST_0206_STRINGS = {
 for _lang, _strings in _ONBOARDING_TEST_0206_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+_ONBOARDING_TEST_0208_STRINGS = {
+    "en": {
+        "apartment.form.stay_fee.account_help": "The town's bank account for the stay fee, from its website or letter. Copy it as you have it, for example 19-2000145399/0800, or as an IBAN. Spaces and dashes are fine; we check the number. It goes into the payment QR code.",
+        "flash.stay_fees.account_invalid": "This account number does not add up. Check it against the town's website, for example 19-2000145399/0800, or paste the IBAN.",
+    },
+    "cs": {
+        "apartment.form.stay_fee.account_help": "Bankovní účet obce pro poplatek z pobytu najdete na webu obce nebo v dopise. Opište ho tak, jak ho máte, například 19-2000145399/0800, nebo jako IBAN. Mezery ani pomlčky nevadí, číslo zkontrolujeme. Použije se pro platební QR kód.",
+        "flash.stay_fees.account_invalid": "Číslo účtu nesedí. Zkontrolujte ho podle webu obce, například 19-2000145399/0800, nebo vložte IBAN.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0208_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
