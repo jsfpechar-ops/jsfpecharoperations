@@ -11,7 +11,8 @@ def test_fee_list_and_detail_have_the_v2_shells(host):
     listing = client.get("/stay-fees?month=2026-08&lang=en").text
     assert listing.count("<h1") == 1 and 'data-body-kind="list"' in listing
     assert 'class="ui-toolbar"' in listing and "ui-btn-primary filter-apply" in listing
-    assert 'class="ui-btn ui-btn-primary"' not in listing
+    # 0203: one property shows its pay steps with one primary action.
+    assert listing.count('class="ui-btn ui-btn-primary"') <= 1
     detail = client.get(f"/stay-fees/{apartment_id}?month=2026-08&lang=en").text
     assert 'data-body-kind="detail"' in detail and 'class="ui-ph-back"' in detail
     assert detail.count('class="ui-btn ui-btn-primary"') == 1
