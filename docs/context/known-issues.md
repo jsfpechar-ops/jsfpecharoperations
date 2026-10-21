@@ -89,9 +89,8 @@ Grep. **HR**: owner decides.
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can receive an undeleted cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
 | K-U15 | Med review | Host forms/navigation | Fixed on staging; 0084 incl. K-U14 + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
-| K-T01 | Low open | Tests | Order-dependent tests | [0080](../tasks/0080-report.md) |
+| K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
-| K-T02 | Low open | test_host_i18n.py | 3 tests fail alone (no apartment table) | 0204 |
 | K-P09 | Med decision | privacy policy | Lawyer: push-service mention | 0204 |
 
 - K-UI-CACHE: a static file changed without a new `?v=` key stays stale a year; guard 0172.
