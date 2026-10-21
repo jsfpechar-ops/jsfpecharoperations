@@ -266,12 +266,15 @@ def test_robots_refuses_ai_and_scraper_bots_but_not_search_engines():
     body = _client().get("/robots.txt").text
     ai_group, _, everyone = body.partition("User-agent: *")
 
-    for agent in ("GPTBot", "ClaudeBot", "CCBot", "Google-Extended", "PerplexityBot"):
+    for agent in ("GPTBot", "ClaudeBot", "CCBot", "Google-Extended", "Bytespider"):
         assert f"User-agent: {agent}\n" in ai_group, agent
     assert "Disallow: /\n" in ai_group
     assert "Disallow: /\n" not in everyone, "search engines lost the public pages"
     assert "Googlebot" not in body and "Bingbot" not in body
     assert "ai-train=no" in everyone
+    for search_bot in ("OAI-SearchBot", "Claude-SearchBot", "PerplexityBot", "ChatGPT-User"):
+        assert search_bot not in body, f"{search_bot} must reach the public pages"
+    assert "ai-input=yes" in everyone
     assert "2019/790" in body
 
 

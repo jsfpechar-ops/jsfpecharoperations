@@ -58,25 +58,20 @@ PRIVATE_PREFIXES = (
     "/sync",
 )
 
-# Bots that collect pages for AI training, AI answers or bulk resale. They get
-# nothing, public pages included; ordinary search engines keep the rules for
-# "*". robots.txt is advisory: well-behaved bots honour it, others need the
-# Cloudflare bot rules.
+# Bots that collect pages for AI training or bulk resale. They get nothing,
+# public pages included. AI search and answer bots (ChatGPT search, Claude,
+# Perplexity) are not listed: like ordinary search engines they follow the
+# rules for "*", so they see the public pages and never the app. robots.txt is
+# advisory: well-behaved bots honour it, others need the Cloudflare bot rules.
 AI_AND_SCRAPER_AGENTS = (
     "GPTBot",
-    "ChatGPT-User",
-    "OAI-SearchBot",
     "ClaudeBot",
-    "Claude-User",
-    "Claude-SearchBot",
     "Claude-Web",
     "anthropic-ai",
     "Google-Extended",
     "Google-CloudVertexBot",
     "Applebot-Extended",
     "CCBot",
-    "PerplexityBot",
-    "Perplexity-User",
     "Bytespider",
     "TikTokSpider",
     "Amazonbot",
@@ -85,9 +80,6 @@ AI_AND_SCRAPER_AGENTS = (
     "FacebookBot",
     "cohere-ai",
     "cohere-training-data-crawler",
-    "MistralAI-User",
-    "DuckAssistBot",
-    "YouBot",
     "AI2Bot",
     "Ai2Bot-Dolma",
     "Diffbot",
@@ -146,7 +138,7 @@ def robots_txt() -> str:
     lines = [TDM_NOTICE, ""]
     lines += [f"User-agent: {agent}" for agent in AI_AND_SCRAPER_AGENTS]
     lines += ["Disallow: /", "", "User-agent: *"]
-    lines += ["Content-Signal: search=yes, ai-train=no, ai-input=no"]
+    lines += ["Content-Signal: search=yes, ai-input=yes, ai-train=no"]
     lines += [f"Disallow: {prefix}" for prefix in PRIVATE_PREFIXES]
     lines += ["", f"Sitemap: {config.PUBLIC_BASE_URL}/sitemap.xml", ""]
     return "\n".join(lines)
