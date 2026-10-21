@@ -35,6 +35,7 @@ Tokens that exist in `tokens.css`: `--radius-xs` (4px) and `--text-sm`.
 | App/app/host_i18n.py | edit | Czech abbreviation hint keeps the letter's exact line |
 | App/tests/test_smart_locks_page.py | edit | new TTLock essentials text |
 | App/tests/test_onboarding_wizard_browser.py | edit | the police step now needs a password |
+| App/tests/test_host_ux_acceptance.py | edit | follow-up: city_en is no longer an editable setting |
 
 ## 4. Steps
 
@@ -108,6 +109,12 @@ Replace with:
 
 If this anchor occurs more than once, apply it only to the occurrence followed within 4 lines by `assert page.locator(".err-text").first.is_visible()` and say so in the report.
 
+### Step 9 (follow-up). Two test pins
+
+a) `App/tests/test_smart_locks_page.py`: in the line `    for words in ("Authorized Admin", "Create Admin", "Manage their own users only", "Tap Recipient and paste the name"):` replace `"Tap Recipient and paste the name"` with `"paste your UbyHost name"` (the new `smart_locks.s6`).
+
+b) `App/tests/test_host_ux_acceptance.py`: replace the line `    "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",` with `    "internal_name", "legal_entity_id", "data_controller_entity_id",  # 0204: city_en follows the address town`. Only the PROPERTY_SETTINGS line (the first match, line about 59); leave CREATE_FIELDS alone.
+
 ### Step 8. Is the 360 px tab overflow this PR's?
 
 `tests/test_property_navigation_browser.py::test_property_views_fit_every_width_and_sidebar` failed in the 0205 run (360 px settings tabs: Reporting & fees, Door lock, Automation). Check whether it fails on main too:
@@ -119,6 +126,10 @@ cd /home/user/jsfpecharoperations && git worktree remove --force /tmp/ubyhost-ma
 ```
 
 Then run the same test on the branch. Report both results. Do not try to fix it here: if it passes on main and fails on the branch, report the assertion message (the `fit` dict) and stop.
+
+## 5. Do not touch
+
+Guest templates, filing code, every file not in §3. AGENTS hard rules 1, 3, 5, 8.
 
 ## 6. Commands
 
