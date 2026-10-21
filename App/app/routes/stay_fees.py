@@ -214,7 +214,7 @@ def fee_form_values(form) -> dict:
         existing = _form_str(form, "_stay_fee_account_existing")
         if not payments.preserve_iban_only_account(existing, prefix, number, bank):
             values[FEE_ACCOUNT_RAW] = payments.compose_czech_account(prefix, number, bank)
-    else:
+    elif "stay_fee_council_account" in form:
         values[FEE_ACCOUNT_RAW] = _form_str(form, "stay_fee_council_account")
     return values
 
