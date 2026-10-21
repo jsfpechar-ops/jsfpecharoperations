@@ -6732,6 +6732,25 @@ _CALENDAR_STRINGS = {
 for _lang, _strings in _CALENDAR_STRINGS.items():
     STRINGS[_lang].update(_strings)
 from .host_vi_i18n import STRINGS as _VI_STRINGS
+# 0203: onboarding user test (2026-10-21): the demo step says "Continue" once
+# done, and the wizard ends on the dashboard.
+_ONBOARDING_TEST_0203_STRINGS = {
+    "en": {
+        "wizard.try_it.skip": "Continue without the demo",
+        "wizard.try_it.keep": "Continue",
+        "wizard.done.go": "Go to the overview",
+        "wizard.done.celebrate": "All set. Your property is ready for guests.",
+    },
+    "cs": {
+        "wizard.try_it.skip": "Pokračovat bez ukázky",
+        "wizard.try_it.keep": "Pokračovat",
+        "wizard.done.go": "Přejít na přehled",
+        "wizard.done.celebrate": "Hotovo. Vaše ubytování je připravené na hosty.",
+    },
+}
+for _lang, _strings in _ONBOARDING_TEST_0203_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
