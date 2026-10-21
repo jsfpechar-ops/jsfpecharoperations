@@ -413,3 +413,26 @@ def test_expired_ceremonies_are_deleted_a_day_later():
     assert not db.query_one(
         "SELECT 1 FROM webauthn_challenge WHERE expires_at = ?", (old,)
     )
+
+
+
+def test_a_passkey_added_from_the_prompt_returns_to_the_page_it_was_on():
+    """0203: the one-time pop-up sends the host back to onboarding, not Settings."""
+    account = _account()
+    client = _signed_in(account)
+    authenticator = SoftAuthenticator(origin=ORIGIN, rp_id=RP_ID)
+    options = _post(client, "/account/passkeys/options")
+    answer = authenticator.create(options.json())
+    response = _post(client, "/account/passkeys", {"credential": answer, "return_to": "/onboarding"})
+    assert response.status_code == 200, response.text
+    assert response.json()["redirect"].startswith("/onboarding?msg=")
+
+
+def test_a_foreign_passkey_return_falls_back_to_settings():
+    account = _account()
+    client = _signed_in(account)
+    authenticator = SoftAuthenticator(origin=ORIGIN, rp_id=RP_ID)
+    options = _post(client, "/account/passkeys/options")
+    answer = authenticator.create(options.json())
+    response = _post(client, "/account/passkeys", {"credential": answer, "return_to": "https://evil.example/x"})
+    assert response.json()["redirect"].startswith("/settings?msg=")

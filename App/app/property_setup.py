@@ -406,3 +406,15 @@ def checklist(
             continue
         rows.append({"key": step, "status": step_status(step, state, apartment, facts)})
     return rows
+
+
+# 0204: the town guests see next to the property name. It follows the police
+# address; the biggest towns get their English name, the rest stay as typed.
+_GUEST_CITY_NAMES = {"plzeň": "Pilsen"}
+
+
+def guest_city(obec: str) -> str:
+    town = " ".join((obec or "").split())
+    if town.lower().startswith("praha"):
+        return "Prague"
+    return _GUEST_CITY_NAMES.get(town.lower(), town)

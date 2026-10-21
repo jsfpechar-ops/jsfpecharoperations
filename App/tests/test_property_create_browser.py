@@ -122,7 +122,7 @@ def test_one_operator_is_chosen_and_one_submit_creates_a_manual_property():
     (row,) = _rows(host["owner"])
     assert f"/apartments/{row['id']}/setup/calendar" in response.headers["location"]
     assert "/setup/calendar" in response.headers["location"]
-    assert row["internal_name"] == "Synthetic Loft" and row["city_en"] == "Brno"
+    assert row["internal_name"] == "Synthetic Loft" and row["city_en"] == "Prague"  # 0204: from the town
     assert row["legal_entity_id"] == host["entities"][0]
     assert row["data_controller_entity_id"] is None
     assert (row["active"], row["automation_mode"], row["default_purpose"]) == (1, "manual", "10")
@@ -407,7 +407,7 @@ def test_create_page_fits_and_follow_ups_move_below_when_narrow(base):
         assert page.locator("#addr_zip-help").is_visible()
 
         # Browser validation keeps the host on the page without a name/operator.
-        page.locator("#city_en").fill("Brno")
+        page.locator("#addr_obec").fill("Brno")
         page.locator(".property-create-actions .ui-btn-primary").click()
         assert page.url.endswith("/apartments/new?lang=en")
         assert db.query("SELECT id FROM apartment WHERE owner_user_id = ?", (host["owner"],)) == []

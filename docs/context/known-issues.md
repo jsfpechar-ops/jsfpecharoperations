@@ -91,6 +91,6 @@ Grep. **HR**: owner decides.
 | K-U15 | Med review | Host forms/navigation | Fixed on staging; 0084 incl. K-U14 + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
-| K-P09 | Low open | privacy policy | Push: Apple/Mozilla DPF status unchecked (legal §7) | 0229 |
 
 - K-UI-CACHE: a static file changed without a new `?v=` key stays stale a year; guard 0172.
+- K-NAV-418: fail on main: 3 nav browser tests (360 px tabs, details, .link-button), 3 host_i18n tests.

@@ -126,6 +126,19 @@ def _wizard_context(
         "setup_hidden": bool(state and state.get("hidden") and not state.get("finished")),
         "door_code": door_code,
         "lock_available": lock_available,
+        # 0209: the report signature sits with the stay fee it is printed on.
+        "fee_signature": (
+            admin_routes._fee_signature_context(request, apartment) if step == "stay_fee" else None
+        ),
+        # 0203: the lock step shows the lock panel itself, so connecting a lock
+        # never leaves the wizard.
+        "lock_panel": (
+            {
+                **admin_routes._smart_lock_panel_context(request),
+                "return_to": f"/apartments/{apartment_id}/setup/door_lock",
+            }
+            if step == "door_lock" else None
+        ),
         "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
         "link_key": link_key,
         "pin": apartment["permalink_pin"] or "",
@@ -230,6 +243,9 @@ def refuse_setup_save(
         for key in ("account_prefix", "account_number", "account_bank"):
             if key in form:
                 draft[key] = _form_str(form, key)
+        if "stay_fee_council_account" in form:
+            draft["stay_fee_council_account"] = _form_str(form, "stay_fee_council_account")
+            draft["stay_fee_council_iban"] = None
     if step == "automation":
         draft["automation_mode"] = _form_str(form, "automation_mode")
         draft["submit_after_hours"] = _form_str(form, "submit_after_hours")

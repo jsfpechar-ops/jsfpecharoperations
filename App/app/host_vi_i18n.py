@@ -3162,3 +3162,69 @@ STRINGS: Dict[str, str] = {
     "stay_fees.pay.no_account": "Thêm tài khoản ngân hàng của chính quyền, mã QR sẽ hiện ở đây.",
     "stay_fees.pay.add_account": "Thêm tài khoản",
 }
+
+# 0203: onboarding user test (2026-10-21).
+STRINGS.update({
+    "wizard.try_it.skip": "Tiếp tục mà không dùng bản mẫu",
+    "wizard.try_it.keep": "Tiếp tục",
+    "wizard.done.go": "Đến trang tổng quan",
+    "wizard.done.celebrate": "Xong. Chỗ ở của bạn đã sẵn sàng đón khách.",
+})
+
+# 0204: onboarding user test (2026-10-21).
+STRINGS.update({
+    "common.required_legend": "Các trường có dấu * là bắt buộc.",
+    "entity.signature.heading": "Chữ ký của bạn trên báo cáo phí lưu trú",
+    "entity.signature.scope": "Không bắt buộc. Thành phố yêu cầu báo cáo phí lưu trú có chữ ký. Vẽ chữ ký một lần, UbyHost sẽ thêm vào mọi báo cáo, bạn không cần in và ký tay. Nếu không có, tên bạn nhập sẽ được in.",
+    "apartment.form.addr.street_hint": "Điền nếu đường có tên. Ở làng không có tên đường, chỉ cần số nhà.",
+    "wizard.guest_link.message_title": "Mẫu tin nhắn cho khách",
+    "wizard.guest_link.message_step1": "Thay các phần trong [ngoặc vuông] bằng thông tin của bạn: giao chìa khóa, chỉ đường, giờ yên tĩnh.",
+    "wizard.guest_link.message_step2": "Dán vào tin nhắn tự động mà Airbnb hoặc Booking.com gửi sau mỗi lượt đặt. UbyHost không gửi tin nhắn này.",
+    "wizard.guest_link.done": "Tiếp tục",
+})
+
+# 0205: onboarding user test (2026-10-21).
+STRINGS.update({
+    "apartment.form.ubyport.mark_hint": "Tự điền từ tên đăng nhập: phần sau UBY-WS_. Chỉ sửa nếu thư của cảnh sát ghi “Zkratka ubytovacího zařízení” khác.",
+    "apartment.form.stay_fee.account_help": "Tài khoản ngân hàng của thành phố cho phí lưu trú, lấy từ trang web hoặc thư của họ. Dán cả số tài khoản (19-2000145399/0800) hoặc IBAN vào ô bất kỳ, hệ thống sẽ tự tách. Dùng cho mã QR thanh toán.",
+    "smart_locks.essential1": "Trong ứng dụng TTLock, mở khóa của bạn và bấm Authorized Admin (một số phiên bản ghi eAdmin).",
+    "smart_locks.essential2": "Bấm Create Admin. Ở ô Recipient, nơi TTLock chờ email hoặc số điện thoại, dán tên UbyHost của bạn ở trên. Để nguyên Permanent bật và bấm Send.",
+    "smart_locks.essential3": "Quay lại đây và bấm Kiểm tra kết nối.",
+    "smart_locks.s4": "Bấm Authorized Admin (một số phiên bản ghi eAdmin). Đó là biểu tượng hình người có dấu tích, trong lưới bên dưới ổ khóa.",
+    "smart_locks.s6": "Để nguyên Permanent ở trạng thái bật. Ở ô Recipient, nơi TTLock chờ email hoặc số điện thoại, dán tên UbyHost của bạn. Ở ô Name, nhập UbyHost.",
+})
+
+# 0206: why on every step.
+STRINGS.update({
+    "why.business": "Người vận hành là người điều hành chỗ ở: chính bạn (hộ kinh doanh cá thể) hoặc công ty của bạn. Các thông tin này được in trên báo cáo gửi cảnh sát, chính quyền địa phương và trên hóa đơn. Nhập IČO và bấm Điền từ sổ đăng ký, chúng tôi sẽ điền phần còn lại.",
+    "why.property": "Tại đây bạn cho UbyHost biết đây là chỗ ở nào: bạn gọi nó là gì, khách đến và đi lúc mấy giờ, ai vận hành và nó ở đâu. Bạn chỉ cần điền một lần.",
+    "why.address": "Cảnh sát và chính quyền địa phương cần địa chỉ chính xác nơi khách của bạn lưu trú. Hãy chép lại từ thư của cảnh sát hoặc từ trích lục sổ địa chính.",
+    "why.times": "UbyHost dùng các giờ này để quyết định mã cửa của khách bắt đầu và hết hiệu lực khi nào, và khi nào có thể dọn dẹp. Không có chúng, mã cửa sẽ không hoạt động.",
+    "why.calendar": "Khi bạn kết nối lịch Airbnb hoặc Booking.com, mỗi đặt phòng mới sẽ tự hiện ở đây và bạn không phải gõ lại gì. Liên kết nằm trong phần cài đặt tin đăng, mục Xuất lịch (iCal).",
+    "why.guest_link": "Mỗi khách phải cung cấp thông tin cho cảnh sát. Gửi cho họ liên kết và mã PIN này, họ sẽ tự điền trên điện thoại trước khi đến. Bạn không phải gõ lại gì.",
+    "why.try": "Xem khách của bạn sẽ thấy gì. Tự điền biểu mẫu bằng thông tin giả. Không có gì được gửi cho cảnh sát, và bạn có thể xóa bản thử sau đó.",
+    "why.police": "Mỗi khách nước ngoài phải được khai báo với cảnh sát trong vòng ba ngày làm việc kể từ khi đến. UbyHost làm việc này cho bạn qua Ubyport. Nó cần thông tin đăng nhập mà cảnh sát đã gửi cho bạn qua thư.",
+    "why.police_wait": "Chưa có? Bấm “Tôi vẫn đang chờ thông tin đăng nhập từ cảnh sát” và tiếp tục.",
+    "why.stay_fee": "Hầu hết các địa phương thu phí lưu trú của khách (tối đa 50 CZK mỗi người mỗi đêm) và yêu cầu báo cáo định kỳ. UbyHost tính phí cho từng lượt lưu trú và chuẩn bị báo cáo cùng mã QR để thanh toán. Mức phí, mã biến số và số tài khoản có trên trang web của địa phương hoặc trong thư đăng ký.",
+    "why.stay_fee_skip": "Địa phương của bạn không thu phí này? Hãy bỏ qua bước này.",
+    "why.door_lock": "Không bắt buộc. Bạn có khóa thông minh TTLock kèm gateway? Khi đó UbyHost tạo cho mỗi lượt lưu trú một mã cửa chỉ dùng được trong thời gian lưu trú. Khách nhận mã khi mọi người đã đăng ký xong, nên bạn không cần giao chìa khóa.",
+    "why.automation": "Chọn khi nào UbyHost khai báo khách với cảnh sát. Chúng tôi khuyên dùng gửi sau một khoảng chờ: bạn có thời gian kiểm tra thông tin và không bao giờ trễ hạn ba ngày. Bạn có thể đổi lựa chọn này bất cứ lúc nào.",
+})
+
+# 0208: one account box.
+STRINGS.update({
+    "apartment.form.stay_fee.account_help": "Tài khoản ngân hàng của địa phương để nộp phí lưu trú, có trên trang web hoặc trong thư của địa phương. Chép lại đúng như bạn có, ví dụ 19-2000145399/0800, hoặc dạng IBAN. Dấu cách hay gạch ngang đều được; chúng tôi sẽ kiểm tra số. Số này dùng cho mã QR thanh toán.",
+    "flash.stay_fees.account_invalid": "Số tài khoản này không hợp lệ. Hãy kiểm tra lại theo trang web của địa phương, ví dụ 19-2000145399/0800, hoặc dán IBAN.",
+})
+
+# 0210: times are required.
+STRINGS.update({
+    "flash.error.times_required": "Hãy chọn giờ nhận phòng và trả phòng. UbyHost cần chúng cho mã cửa và lịch dọn dẹp.",
+    "why.times_missing": "Thiếu giờ nhận phòng và trả phòng, nên mã cửa chưa thể hoạt động. Hãy đặt chúng trước.",
+    "wizard.times_change": "Đổi ở bước 1",
+})
+
+# 0209: signature moved to the stay fee.
+STRINGS.update({
+    "entity.signature.moved": "Chữ ký trên báo cáo phí lưu trú giờ được đặt cùng phần phí lưu trú, trong mục Báo cáo và phí của từng chỗ ở.",
+})

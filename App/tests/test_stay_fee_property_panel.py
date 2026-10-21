@@ -184,7 +184,7 @@ def test_account_is_normalised_and_invalid_account_saves_nothing(host):
     # 0077: the refused save shows the one fee editor again, with the typed
     # values and the error, instead of a redirect that dropped them.
     assert invalid.status_code == 400
-    assert "Enter a valid Czech bank account or IBAN." in invalid.text
+    assert "This account number does not add up." in invalid.text  # 0208 copy
     assert 'id="stay-fee-account-error"' in invalid.text
     assert 'id="stay-fee-settings"' in invalid.text
     assert 'data-settings-group="reporting"' in invalid.text

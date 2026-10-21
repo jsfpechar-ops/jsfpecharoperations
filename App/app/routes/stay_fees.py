@@ -198,6 +198,9 @@ def fee_form_values(form) -> dict:
             "".join(ch for ch in _form_str(form, "stay_fee_vs") if ch.isdigit())[:10] or None
         ),
     }
+    # 0205: the setup wizard asks only rate, period, symbol and account, and no
+    # form offers the payee or the instruction any more. These are written only
+    # when the form carries them, so a shorter form never wipes stored values.
     for key, limit in (
         ("stay_fee_authority_name", 200),
         ("stay_fee_authority_address", 200),
@@ -205,10 +208,12 @@ def fee_form_values(form) -> dict:
         ("stay_fee_payee", 60),
         ("stay_fee_instruction", 500),
     ):
-        values[key] = _form_str(form, key)[:limit].strip() or None
-    values["stay_fee_authority_databox"] = (
-        validation.normalise_databox(_form_str(form, "stay_fee_authority_databox")) or None
-    )
+        if key in form:
+            values[key] = _form_str(form, key)[:limit].strip() or None
+    if "stay_fee_authority_databox" in form:
+        values["stay_fee_authority_databox"] = (
+            validation.normalise_databox(_form_str(form, "stay_fee_authority_databox")) or None
+        )
     if any(key in form for key in ("account_prefix", "account_number", "account_bank")):
         prefix = _form_str(form, "account_prefix")
         number = _form_str(form, "account_number")
@@ -216,7 +221,7 @@ def fee_form_values(form) -> dict:
         existing = _form_str(form, "_stay_fee_account_existing")
         if not payments.preserve_iban_only_account(existing, prefix, number, bank):
             values[FEE_ACCOUNT_RAW] = payments.compose_czech_account(prefix, number, bank)
-    else:
+    elif "stay_fee_council_account" in form:
         values[FEE_ACCOUNT_RAW] = _form_str(form, "stay_fee_council_account")
     return values
 

@@ -146,7 +146,10 @@ async def passkey_register(request: Request, background: BackgroundTasks):
     )
     if outbox_id:
         background.add_task(mail.send_now, outbox_id)
-    target = _back(_SECURITY, msg=_flash(request, "flash.passkeys.added"))
+    # 0203: a passkey added from the one-time pop-up returns the host to the
+    # page they were on (onboarding, the setup wizard), not to Settings.
+    return_to = security.safe_local_path(str(data.get("return_to") or ""), _SECURITY)
+    target = _back(return_to, msg=_flash(request, "flash.passkeys.added"))
     response = JSONResponse({"redirect": target.headers["location"]})
     response.headers["Cache-Control"] = "no-store"
     return response

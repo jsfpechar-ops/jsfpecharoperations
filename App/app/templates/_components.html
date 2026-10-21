@@ -16,7 +16,7 @@
 
 {% macro field_label(for, text, help_text='', optional=false, guide_href='') %}
   <div class="field-label-row">
-    <label for="{{ for }}">{{ text }}{% if optional %} <span class="muted">{{ t('common.optional') }}</span>{% endif %}</label>
+    <label for="{{ for }}">{{ text }}</label>
     {% if help_text %}{{ help_tip(for ~ '-help', help_text, guide_href) }}{% endif %}
   </div>
 {% endmacro %}

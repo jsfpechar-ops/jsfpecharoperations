@@ -1,7 +1,7 @@
 {% extends "setup_wizard/_layout.html" %}
 {% from "_components.html" import help_tip with context %}
 {% block wizard_content %}
-<p class="setup-wizard-lede">{{ t('wizard.guest_link.share_lede') }}</p>
+<p class="setup-wizard-lede">{{ t('why.guest_link') }}</p>
 <div class="setup-wizard-cards">
   <section class="setup-wizard-card" aria-labelledby="wizard-link-title">
     <h2 id="wizard-link-title">{{ t('wizard.guest_link.link_title') }}</h2>
@@ -21,8 +21,12 @@
   <header class="setup-wizard-message-head">
     <h3 id="wizard-message-title">{{ t('wizard.guest_link.message_title') }}</h3>
     <button class="ui-btn ui-btn-secondary setup-wizard-copy" type="button" data-copy="wizard-guest-message" data-copy-label="{{ t('wizard.guest_link.copy_message') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_message') }}</button>
-    {{ help_tip('wizard-message-help', t('wizard.guest_link.message_help')) }}
   </header>
+  {#- 0204: said on the page, not in a tip: this is a template to paste into Airbnb or Booking. -#}
+  <ol class="setup-wizard-message-steps">
+    <li>{{ t('wizard.guest_link.message_step1') }}</li>
+    <li>{{ t('wizard.guest_link.message_step2') }}</li>
+  </ol>
   <textarea id="wizard-guest-message" readonly rows="14" aria-labelledby="wizard-message-title">{{ t('wizard.guest_link.message_template', url=permalink, pin=pin, operator_first_name=message_operator_first_name, property_name=apartment.internal_name) }}</textarea>
 </section>
 {% endblock %}

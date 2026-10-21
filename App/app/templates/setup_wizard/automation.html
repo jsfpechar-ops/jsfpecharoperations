@@ -2,7 +2,7 @@
 {% from "_components.html" import help_tip with context %}
 {% block wizard_content %}
 {% set values = draft if draft is defined and draft else apartment %}
-<p class="setup-wizard-lede">{{ t('setup_guide.automation.text') }}</p>
+<p class="setup-wizard-lede">{{ t('why.automation') }}</p>
 <form method="post" action="/apartments/{{ apartment.id }}/automation-timing" class="setup-wizard-form" id="automation-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">

@@ -1,6 +1,10 @@
 {% extends "setup_wizard/_layout.html" %}
 {% from "_components.html" import nav_icon with context %}
 {% block wizard_content %}
+<div class="ui-banner setup-wizard-celebrate" role="status">
+  <span class="setup-wizard-confetti" aria-hidden="true">{% for n in range(12) %}<i></i>{% endfor %}</span>
+  <div class="grow"><strong>{{ t('wizard.done.celebrate') }}</strong></div>
+</div>
 <h2 class="setup-wizard-section-title">{{ t('wizard.done.title') }}</h2>
 {% set icons = {'property': 'property', 'calendar': 'calendar', 'guest_link': 'link', 'try_it': 'users', 'police': 'report', 'stay_fee': 'coins', 'door_lock': 'lock', 'automation': 'automation'} %}
 <ul class="setup-wizard-checklist host-property-grid">
@@ -26,5 +30,5 @@
 {% endblock %}
 {% block wizard_actions %}
 <span></span>
-<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}?view=overview">{{ t('wizard.done.go') }}</a>
+<a class="ui-btn ui-btn-primary" href="/">{{ t('wizard.done.go') }}</a>
 {% endblock %}

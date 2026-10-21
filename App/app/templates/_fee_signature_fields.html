@@ -1,0 +1,7 @@
+{#- 0209: the stay-fee report signature, edited where the stay fee is set up.
+    Saved to the property's operator by apartment_update; needs a multipart form. -#}
+{%- from "_entity_business_fields.html" import signature_fields with context -%}
+{% if fee_signature and fee_signature.entity %}
+<input type="hidden" name="fee_signature_section" value="1">
+{{ signature_fields('fee_', fee_signature.entity, fee_signature.preview) }}
+{% endif %}
