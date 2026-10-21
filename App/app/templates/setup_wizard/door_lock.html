@@ -18,11 +18,8 @@
     {{ t('apartment.form.door_code.checkout') }} {{ '%02d:00' | format(apartment.checkout_hour) if apartment.checkout_hour is not none else '—' }}.
     <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
   </p>
-  {% if not door_code.account %}
-  <a class="ui-btn ui-btn-secondary" href="/smart-locks?return_to=/apartments/{{ apartment.id }}/setup/door_lock#smart-locks-how">{{ t('apartment.form.door_code.setup') }}</a>
-  {% elif not door_code.locks %}
-  <p class="setup-wizard-instruction">{{ t('apartment.form.door_code.no_locks') }}</p>
-  <a class="ui-btn ui-btn-secondary" href="/smart-locks?return_to=/apartments/{{ apartment.id }}/setup/door_lock#smart-locks-share">{{ t('smart_locks.title') }}</a>
+  {% if not (door_code.account and door_code.locks) %}
+  {#- 0203: no lock yet; the lock panel under this form connects one. -#}
   {% else %}
   <input type="hidden" name="door_codes_fields" value="1">
   <div class="feature-switch-row">
@@ -39,6 +36,13 @@
 
   {% endif %}
 </form>
+{% if not (door_code.account and door_code.locks) and lock_panel and lock_panel.smart_locks_enabled %}
+<section class="setup-wizard-lock-panel" id="door-code">
+  {% with account=lock_panel.account, receiver=lock_panel.receiver, locks=lock_panel.locks, fetched_at=lock_panel.fetched_at, reauth=lock_panel.reauth, return_to=lock_panel.return_to, properties_using=lock_panel.properties_using %}
+  {% include "_smart_locks_panel.html" %}
+  {% endwith %}
+</section>
+{% endif %}
 {% else %}
 <p class="setup-wizard-instruction">{{ t('wizard.door_lock.unavailable') }}</p>
 {% endif %}
