@@ -21,6 +21,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from PIL import Image
 
+from . import guest_uk_i18n, host_vi_i18n
+
 DATA_DIR = Path(__file__).resolve().parent / "data"
 
 # Characters the appendix 3 "Name" regular expression allows, i.e. the CP1250
@@ -139,6 +141,9 @@ PURPOSE_LABELS: Dict[str, Dict[str, str]] = {
         "99": "Autre",
     },
 }
+PURPOSE_LABELS["uk"] = dict(guest_uk_i18n.PURPOSES)
+if host_vi_i18n.PURPOSES:
+    PURPOSE_LABELS["vi"] = dict(host_vi_i18n.PURPOSES)
 PURPOSE_CODES = {code for code, _cs, _en in PURPOSES}
 DEFAULT_PURPOSE = "99"
 
