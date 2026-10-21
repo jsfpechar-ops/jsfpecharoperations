@@ -357,6 +357,11 @@ def robots():
     return Response(seo.robots_txt(), media_type="text/plain; charset=utf-8")
 
 
+@app.get("/.well-known/tdmrep.json", include_in_schema=False)
+def tdmrep():
+    return Response(seo.TDMREP_JSON, media_type="application/json")
+
+
 @app.get("/sitemap.xml", include_in_schema=False)
 def sitemap():
     return Response(seo.sitemap_xml(), media_type="application/xml")

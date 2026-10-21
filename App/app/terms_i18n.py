@@ -182,7 +182,17 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "No rights are granted except as expressly set out in these Terms. The Host retains ownership "
             "of Content it uploads, but grants the Operator a worldwide, non-exclusive, royalty-free "
             "licence to host, copy, transmit, display, and process Content solely to provide and improve "
-            "the Service, comply with law, and enforce these Terms."
+            "the Service, comply with law, and enforce these Terms. Without the Operator's prior "
+            "written consent, no one, whether or not they hold an Account, may: (a) scrape, crawl, "
+            "harvest or systematically download the Service, its website or its content with robots, "
+            "spiders, scripts or other automated means, except through features the Service itself "
+            "offers (such as data export) and search engines, including AI search and answer services, indexing the public pages as robots.txt "
+            "allows; (b) otherwise use any of it for text and data mining, automated analysis, or to train, "
+            "fine-tune or test artificial intelligence or machine-learning systems; or (c) build "
+            "a competing product or dataset from it. The Operator expressly reserves text and data "
+            "mining under Article 4(3) of Directive (EU) 2019/790 and the Czech Copyright Act "
+            "(No. 121/2000 Coll.); the reservation is also given in machine-readable form in "
+            "robots.txt and /.well-known/tdmrep.json."
         ),
         "terms.s12_title": "12. Licence to use the Service",
         "terms.s12_body": (
@@ -518,7 +528,17 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "zůstává výhradním vlastnictvím Provozovatele a jeho licencorů. Práva se udělují jen dle "
             "těchto Podmínek. Ubytovatel vlastní nahraný Obsah, ale uděluje Provozovateli nevýhradní "
             "celosvětovou bezúplatnou licenci k hostování, kopírování, přenosu, zobrazení a zpracování "
-            "Obsahu výhradně pro poskytování a zlepšování Služby, plnění zákona a vymáhání Podmínek."
+            "Obsahu výhradně pro poskytování a zlepšování Služby, plnění zákona a vymáhání Podmínek. "
+            "Bez předchozího písemného souhlasu Provozovatele nesmí nikdo, ať už má Účet, nebo ne: "
+            "(a) automatizovaně procházet, stahovat nebo vytěžovat Službu, její web či obsah pomocí "
+            "robotů, crawlerů, skriptů nebo jiných automatizovaných prostředků, s výjimkou funkcí, "
+            "které Služba sama nabízí (např. export dat), a vyhledávačů včetně služeb AI vyhledávání a asistentů indexujících veřejné stránky "
+            "v rozsahu povoleném souborem robots.txt; (b) je jinak používat k vytěžování textů a dat, "
+            "automatizované analýze nebo k trénování, dolaďování či testování systémů umělé "
+            "inteligence nebo strojového učení; ani (c) z nich vytvářet konkurenční produkt nebo "
+            "datovou sadu. Provozovatel si výslovně vyhrazuje vytěžování textů a dat podle čl. 4 "
+            "odst. 3 směrnice (EU) 2019/790 a autorského zákona (č. 121/2000 Sb.); výhrada je "
+            "uvedena i ve strojově čitelné podobě v souborech robots.txt a /.well-known/tdmrep.json."
         ),
         "terms.s12_title": "12. Licence k používání Služby",
         "terms.s12_body": (

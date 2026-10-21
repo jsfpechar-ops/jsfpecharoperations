@@ -262,6 +262,39 @@ def test_robots_keeps_crawlers_out_of_the_workspace():
     assert "Disallow: /login" not in body, "the one page worth indexing is blocked"
 
 
+def test_robots_refuses_ai_and_scraper_bots_but_not_search_engines():
+    body = _client().get("/robots.txt").text
+    ai_group, _, everyone = body.partition("User-agent: *")
+
+    for agent in ("GPTBot", "ClaudeBot", "CCBot", "Google-Extended", "Bytespider"):
+        assert f"User-agent: {agent}\n" in ai_group, agent
+    assert "Disallow: /\n" in ai_group
+    assert "Disallow: /\n" not in everyone, "search engines lost the public pages"
+    assert "Googlebot" not in body and "Bingbot" not in body
+    assert "ai-train=no" in everyone
+    for search_bot in ("OAI-SearchBot", "Claude-SearchBot", "PerplexityBot", "ChatGPT-User"):
+        assert search_bot not in body, f"{search_bot} must reach the public pages"
+    assert "ai-input=yes" in everyone
+    assert "2019/790" in body
+
+
+def test_tdmrep_reserves_text_and_data_mining():
+    response = _client().get("/.well-known/tdmrep.json")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/json")
+    assert response.json() == [{"location": "/*", "tdm-reservation": 1}]
+
+
+def test_terms_reserve_scraping_and_ai_training_in_both_languages():
+    from app.terms_i18n import TERMS_STRINGS
+
+    assert "train" in TERMS_STRINGS["en"]["terms.s11_body"]
+    assert "2019/790" in TERMS_STRINGS["en"]["terms.s11_body"]
+    assert "trénování" in TERMS_STRINGS["cs"]["terms.s11_body"]
+    assert "2019/790" in TERMS_STRINGS["cs"]["terms.s11_body"]
+
+
 def test_the_sitemap_lists_both_languages_of_every_public_page():
     response = _client().get("/sitemap.xml")
 

@@ -32,17 +32,82 @@ PRIVATE_PREFIXES = (
     "/l/",
     "/account/",
     "/admin/",
+    "/alerts",
     "/api/",
     "/apartments",
+    "/celebrations",
+    "/cleaning",
+    "/dashboard",
+    "/demo",
+    "/dev",
     "/entities",
+    "/feeds",
     "/guest-links",
-    "/guests/",
+    "/guests",
     "/guide",
     "/housebook",
+    "/invoice",
+    "/mail",
+    "/onboarding",
+    "/privacy-requests",
     "/reservations",
     "/settings",
+    "/smart-locks",
+    "/stay-fees",
     "/submissions",
+    "/sync",
 )
+
+# Bots that collect pages for AI training or bulk resale. They get nothing,
+# public pages included. AI search and answer bots (ChatGPT search, Claude,
+# Perplexity) are not listed: like ordinary search engines they follow the
+# rules for "*", so they see the public pages and never the app. robots.txt is
+# advisory: well-behaved bots honour it, others need the Cloudflare bot rules.
+AI_AND_SCRAPER_AGENTS = (
+    "GPTBot",
+    "ClaudeBot",
+    "Claude-Web",
+    "anthropic-ai",
+    "Google-Extended",
+    "Google-CloudVertexBot",
+    "Applebot-Extended",
+    "CCBot",
+    "Bytespider",
+    "TikTokSpider",
+    "Amazonbot",
+    "meta-externalagent",
+    "meta-externalfetcher",
+    "FacebookBot",
+    "cohere-ai",
+    "cohere-training-data-crawler",
+    "AI2Bot",
+    "Ai2Bot-Dolma",
+    "Diffbot",
+    "ImagesiftBot",
+    "Omgilibot",
+    "Omgili",
+    "Webzio-Extended",
+    "Timpibot",
+    "PanguBot",
+    "img2dataset",
+    "Scrapy",
+    "AhrefsBot",
+    "SemrushBot",
+    "MJ12bot",
+    "DotBot",
+    "DataForSeoBot",
+    "BLEXBot",
+)
+
+TDM_NOTICE = (
+    "# Text and data mining, AI training and automated scraping of this site\n"
+    "# are not permitted. Rights reserved under Art. 4(3) of Directive (EU)\n"
+    "# 2019/790 and the Czech Copyright Act (No. 121/2000 Coll.).\n"
+    "# Terms: /terms#s11"
+)
+
+# TDMRep (W3C community report): the same reservation, machine-readable.
+TDMREP_JSON = '[{"location": "/*", "tdm-reservation": 1}]\n'
 
 
 def page_url(path: str, lang: str | None = None) -> str:
@@ -70,7 +135,10 @@ def head_links(request: Request) -> Dict[str, Any]:
 
 
 def robots_txt() -> str:
-    lines = ["User-agent: *"]
+    lines = [TDM_NOTICE, ""]
+    lines += [f"User-agent: {agent}" for agent in AI_AND_SCRAPER_AGENTS]
+    lines += ["Disallow: /", "", "User-agent: *"]
+    lines += ["Content-Signal: search=yes, ai-input=yes, ai-train=no"]
     lines += [f"Disallow: {prefix}" for prefix in PRIVATE_PREFIXES]
     lines += ["", f"Sitemap: {config.PUBLIC_BASE_URL}/sitemap.xml", ""]
     return "\n".join(lines)
