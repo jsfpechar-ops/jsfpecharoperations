@@ -52,7 +52,7 @@
     <p class="ui-sub">{% set used = properties_using.get(lock.lock_id, []) %}
       {% if used %}{{ used | join(', ') }}{% else %}{{ t('smart_locks.unused') }}{% endif %}</p>
     {% if used | length > 1 %}<p class="ui-sub"><strong>{{ t('smart_locks.shared_warning') }}</strong></p>{% endif %}
-    {% if lock.tz_offset_ms is not none and lock.tz_offset_ms != 3600000 %}
+    {% if lock.tz_wrong %}
     <p class="ui-sub"><strong>{{ t('smart_locks.timezone_warning') }}</strong></p>
     {% endif %}
   </div>
