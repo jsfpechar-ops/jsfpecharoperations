@@ -21,8 +21,12 @@
   <header class="setup-wizard-message-head">
     <h3 id="wizard-message-title">{{ t('wizard.guest_link.message_title') }}</h3>
     <button class="ui-btn ui-btn-secondary setup-wizard-copy" type="button" data-copy="wizard-guest-message" data-copy-label="{{ t('wizard.guest_link.copy_message') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_message') }}</button>
-    {{ help_tip('wizard-message-help', t('wizard.guest_link.message_help')) }}
   </header>
+  {#- 0204: said on the page, not in a tip: this is a template to paste into Airbnb or Booking. -#}
+  <ol class="setup-wizard-message-steps">
+    <li>{{ t('wizard.guest_link.message_step1') }}</li>
+    <li>{{ t('wizard.guest_link.message_step2') }}</li>
+  </ol>
   <textarea id="wizard-guest-message" readonly rows="14" aria-labelledby="wizard-message-title">{{ t('wizard.guest_link.message_template', url=permalink, pin=pin, operator_first_name=message_operator_first_name, property_name=apartment.internal_name) }}</textarea>
 </section>
 {% endblock %}
