@@ -2206,6 +2206,11 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     hour_values, hour_error = (
         _property_hour_changes(form, apartment_data) if owns_shared_hours else ({}, None)
     )
+    # 0210: wizard step 1 needs both times; a blank posted select is refused.
+    if not hour_error and setup_step == "property" and any(
+        name in form and hour_values.get(name) is None for name in ("checkin_hour", "checkout_hour")
+    ):
+        hour_error = "flash.error.times_required"
     if hour_error:
         if setup_step:
             draft = dict(apartment_data)
