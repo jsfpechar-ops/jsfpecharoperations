@@ -36,7 +36,7 @@
 {% if demo_state == 'registered' %}
 <p class="setup-wizard-lede">{{ t('setup_guide.try.registered_text') }}</p>
 {% elif demo_state == 'open' %}
-<p class="setup-wizard-instruction">{{ t('wizard.try_it.waiting') }}</p>
+<p class="setup-wizard-instruction" data-wizard-demo-wait>{{ t('wizard.try_it.waiting') }}</p>
 {% endif %}
 {% endblock %}
 {% block wizard_actions %}
