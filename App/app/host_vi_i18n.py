@@ -3079,3 +3079,15 @@ STRINGS.update({
     "wizard.done.go": "Đến trang tổng quan",
     "wizard.done.celebrate": "Xong. Chỗ ở của bạn đã sẵn sàng đón khách.",
 })
+
+# 0204: onboarding user test (2026-10-21).
+STRINGS.update({
+    "common.required_legend": "Các trường có dấu * là bắt buộc.",
+    "entity.signature.heading": "Chữ ký của bạn trên báo cáo phí lưu trú",
+    "entity.signature.scope": "Không bắt buộc. Thành phố yêu cầu báo cáo phí lưu trú có chữ ký. Vẽ chữ ký một lần, UbyHost sẽ thêm vào mọi báo cáo, bạn không cần in và ký tay. Nếu không có, tên bạn nhập sẽ được in.",
+    "apartment.form.addr.street_hint": "Điền nếu đường có tên. Ở làng không có tên đường, chỉ cần số nhà.",
+    "wizard.guest_link.message_title": "Mẫu tin nhắn cho khách",
+    "wizard.guest_link.message_step1": "Thay các phần trong [ngoặc vuông] bằng thông tin của bạn: giao chìa khóa, chỉ đường, giờ yên tĩnh.",
+    "wizard.guest_link.message_step2": "Dán vào tin nhắn tự động mà Airbnb hoặc Booking.com gửi sau mỗi lượt đặt. UbyHost không gửi tin nhắn này.",
+    "wizard.guest_link.done": "Tiếp tục",
+})
