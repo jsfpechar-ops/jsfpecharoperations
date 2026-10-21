@@ -6791,7 +6791,7 @@ _ONBOARDING_TEST_0205_STRINGS = {
         "smart_locks.s6": "Leave Permanent switched on. In Recipient, where TTLock expects an e-mail or phone number, paste your UbyHost name. In Name type UbyHost.",
     },
     "cs": {
-        "apartment.form.ubyport.mark_hint": "Vyplní se samo z přihlašovacího jména: je to část za UBY-WS_. Změňte ji, jen když dopis od policie uvádí jinou „Zkratku ubytovacího zařízení“.",
+        "apartment.form.ubyport.mark_hint": "Vyplní se samo z přihlašovacího jména: je to část za UBY-WS_. Změňte ji, jen když dopis od policie uvádí na řádku „Zkratka ubytovacího zařízení“ něco jiného.",
         "apartment.form.stay_fee.account_help": "Bankovní účet obce pro poplatek z pobytu, z jejího webu nebo dopisu. Vložte celé číslo účtu (19-2000145399/0800) nebo IBAN do kteréhokoli pole a rozdělí se samo. Použije se pro platební QR kód.",
         "smart_locks.essential1": "V aplikaci TTLock otevřete zámek a klepněte na Autorizovaný správce (anglicky Authorized Admin, v některých verzích eAdmin).",
         "smart_locks.essential2": "Klepněte na Vytvořit správce (Create Admin). Do pole Příjemce (Recipient), kde TTLock čeká e-mail nebo telefon, vložte svůj název UbyHost z řádku výše. Nechte zapnuto Trvalý (Permanent) a klepněte na Odeslat (Send).",
