@@ -11,7 +11,7 @@ On `/stay-fees` (already filtered to one month), each set-up property gets a sec
 ## 2. Context
 
 - Owner decisions: no "I've paid" button on the new section (paying is the host's business). The table under the sections stays as the overview. Data box sending is out of scope.
-- MASTER rules: at most one `ui-btn-primary` per screen, so the step buttons are primary only when exactly one property section is shown, otherwise secondary. Tokens only in `host2.css` (no raw px except `1px` borders). Every new class goes into `docs/design/catalog.json` for the template. Copy says why. No em dash in copy.
+- MASTER rules: at most one `ui-btn-primary` per screen. The filter Apply button is already this page's primary, so every step button is secondary (orchestrator decision after the first browser run). Tokens only in `host2.css` (no raw px except `1px` borders). Every new class goes into `docs/design/catalog.json` for the template. Copy says why. No em dash in copy.
 - The PDF and QR exist only after the period is saved (frozen): `stay_fee_pdf_download` needs a filing row, and `payment_details(group)` builds the QR from the IBAN, VS and total (empty QR when the total is 0).
 - `stay_fee_finalize` (POST `/stay-fees/{id}/finalize`, form fields `_csrf`, `month`, `confirm_collected`) currently always returns to the detail page. A list form needs to come back to the list, so finalize learns an optional `return_to`, validated by the existing `fee_return_path`.
 
