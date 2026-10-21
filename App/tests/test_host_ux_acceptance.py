@@ -63,7 +63,7 @@ PROPERTY_SETTINGS = {
     "checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark", "uby_name", "uby_contact",
     "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "account_prefix", "account_number",
     "account_bank", "stay_fee_authority_name", "stay_fee_authority_address", "stay_fee_authority_contact",
-    "stay_fee_authority_databox", "stay_fee_payee", "stay_fee_instruction", "automation_mode",
+    "stay_fee_authority_databox", "automation_mode",
     "submit_after_hours", "default_purpose",
 }
 # The create page legitimately asks for these (creation, not a second editor).
