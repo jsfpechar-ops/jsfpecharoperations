@@ -68,7 +68,7 @@ def test_an_alert_for_a_stay_with_its_own_line_is_not_repeated():
 
 
 def test_setup_and_paste_lines_name_the_property():
-    missing = [{"apartment": {"id": 5, "internal_name": "Loft"}, "missing": [{"key": "ubyport", "anchor": "ubyport"}]}]
+    missing = [{"apartment": {"id": 5, "internal_name": "Loft", "legal_entity_id": None}, "missing": [{"key": "ubyport", "anchor": "ubyport"}]}]
     unused = [{"id": 6, "internal_name": "Studio"}]
     lines = _build([], missing=missing, unused=unused, lang="cs")["lines"]
     assert lines[0]["subject"] == "Loft" and lines[0]["href"] == "/apartments/5?view=settings&section=reporting#ubyport"

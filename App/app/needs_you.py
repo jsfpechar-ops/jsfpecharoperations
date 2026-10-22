@@ -150,10 +150,14 @@ def build(
             stay_id=card.get("reservation_id"),
             apartment_id=card.get("apartment_id"),
         ))
+    from . import demo  # local: demo imports many modules
+
     for row in missing_rows or []:
         apartment = row["apartment"]
         if apartment["id"] in setup_alerts or not row.get("missing"):
             continue
+        if demo.is_demo_apartment(apartment):
+            continue  # the sample property never reports to the police
         # One short line, never the field-by-field list (owner, 2026-10-22):
         # the button opens the first missing field.
         first = row["missing"][0]["anchor"]
