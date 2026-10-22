@@ -62,3 +62,4 @@ Append-only.
 - 2026-10-22 Round 2: one "What needs you" card on `/` (no alert stack there); host reminder may go the day before arrival if the link is unopened, at most one per stay; no new host emails (owner).
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
 - 2026-10-22 Notifications: one short line plus the link to the fix, never field lists or error text; off `/` only red alerts get a line, the rest one summary line (owner).
+- 2026-10-22 [deps] Typed signatures use the self-hosted Dancing Script font (SIL OFL 1.1, App/app/static/fonts/) and our own canvas code; no JS library. "pdfcart" does not exist and signaturepdf is AGPL, so no code was copied (owner asked for the feature).
