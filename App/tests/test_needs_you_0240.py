@@ -78,3 +78,13 @@ def test_setup_and_paste_lines_name_the_property():
 
 def test_demo_stays_never_ask_to_send():
     assert _build([_row(1, "ready", days=2, source="demo")])["lines"] == []
+
+
+def test_the_sample_property_gets_no_setup_line():
+    """0246: the sample property never reports to the police, so no setup nag."""
+    from app import demo
+
+    sample = {"id": 99, "internal_name": demo.DEMO_APARTMENT, "active": 1}
+    missing = [{"apartment": sample, "missing": [{"anchor": "ubyport"}]}]
+    built = needs_you.build([], {}, [], missing, [], "en", date(2026, 10, 22))
+    assert [line for line in built["lines"] if line["kind"] == "setup"] == []

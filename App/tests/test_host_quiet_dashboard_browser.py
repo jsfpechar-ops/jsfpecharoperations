@@ -339,8 +339,13 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
                     assert more.count() == (1 if total > 5 else 0), label
                     if total > 5:
                         assert str(total - 5) in more.inner_text(), (label, more.inner_text())
-                    if "paste" in page.locator(".needs-you-item").evaluate_all("nodes => nodes.map(node => node.dataset.needsYou)"):
-                        assert page.locator(".needs-you-more[data-paste-check] > summary").is_visible(), label
+                    paste_line = page.locator('.needs-you-item[data-needs-you="paste"]')
+                    if paste_line.count() and paste_line.first.is_visible():
+                        how = paste_line.first.locator("[data-paste-check] > summary")
+                        assert how.is_visible(), label
+                        how_box, copy_box = how.bounding_box(), paste_line.first.locator(".needs-you-copy").bounding_box()
+                        assert how_box["y"] >= copy_box["y"] + copy_box["height"] - 1, (label, how_box, copy_box)
+                    assert page.locator('.needs-you-item[data-needs-you="setup"]', has_text="(demo)").count() == 0, label
 
                     # Header: one primary action; below 1024 px the rest sit in the overflow menu.
                     header_buttons = page.locator(".ui-ph-acts .ui-btn:not(.ui-ph-menu)")
