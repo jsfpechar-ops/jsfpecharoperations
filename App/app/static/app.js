@@ -818,6 +818,33 @@
       }
     }
 
+    // 0251: 1024-1279 px always shows the rail (host2.css); there the button
+    // opens the full menu over the page instead, never stored.
+    var tabletRail = window.matchMedia("(min-width: 1024px) and (max-width: 1279px)");
+    var railWasCollapsed = false;
+    function syncRailButton() {
+      if (!collapse || !tabletRail.matches) return;
+      var open = document.body.classList.contains("sidebar-expanded");
+      collapse.setAttribute("aria-expanded", open ? "true" : "false");
+      collapse.setAttribute("aria-label", open ? collapse.dataset.labelHide : collapse.dataset.labelShow);
+    }
+    function setExpanded(open) {
+      var body = document.body;
+      if (open === body.classList.contains("sidebar-expanded")) return;
+      if (open) {
+        railWasCollapsed = body.classList.contains("sidebar-collapsed");
+        body.classList.remove("sidebar-collapsed");
+      } else if (railWasCollapsed) {
+        body.classList.add("sidebar-collapsed");
+      }
+      body.classList.toggle("sidebar-expanded", open);
+      syncRailButton();
+      if (!open && collapse && collapse.dataset.labelShow) {
+        // setCollapsed() owns the label outside the tablet range.
+        if (!tabletRail.matches) setCollapsed(body.classList.contains("sidebar-collapsed"));
+      }
+    }
+
     var stored = null;
     try {
       stored = localStorage.getItem(SIDEBAR_KEY);
@@ -826,8 +853,23 @@
     }
     if (stored === "1") setCollapsed(true);
 
-    if (collapse) collapse.addEventListener("click", function () { setCollapsed(!document.body.classList.contains("sidebar-collapsed")); });
-    if (expand) expand.addEventListener("click", function () { setCollapsed(false); });
+    if (collapse) collapse.addEventListener("click", function () {
+      if (tabletRail.matches) { setExpanded(!document.body.classList.contains("sidebar-expanded")); return; }
+      setCollapsed(!document.body.classList.contains("sidebar-collapsed"));
+    });
+    if (expand) expand.addEventListener("click", function () {
+      if (tabletRail.matches) { setExpanded(true); return; }
+      setCollapsed(false);
+    });
+    document.addEventListener("pointerdown", function (event) {
+      if (document.body.classList.contains("sidebar-expanded") && sidebar && !sidebar.contains(event.target)) setExpanded(false);
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && document.body.classList.contains("sidebar-expanded")) setExpanded(false);
+    });
+    var onRailChange = function () { setExpanded(false); syncRailButton(); if (!tabletRail.matches) setCollapsed(document.body.classList.contains("sidebar-collapsed")); };
+    if (tabletRail.addEventListener) tabletRail.addEventListener("change", onRailChange);
+    syncRailButton();
 
     toggles.forEach(function (button) {
       button.addEventListener("click", function () {
