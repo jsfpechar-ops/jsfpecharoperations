@@ -92,14 +92,14 @@ def test_dashboard_actions_share_height_and_gap(base):
             """() => {
               const rect = (el) => { const r = el.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right)]; };
               return {
-                stats: rect(document.querySelector('.ui-stats')),
+                stats: rect(document.querySelector('.needs-you')),
                 head: rect(document.querySelector('.ui-ph')),
                 first: rect(document.querySelector('section, .panel.empty')),
               };
             }"""
         )
-        assert aligned["stats"] == aligned["head"], "the stat tiles must span the header card exactly"
-        assert aligned["stats"] == aligned["first"], "the stat tiles must align with the content below"
+        assert aligned["stats"] == aligned["head"], "What needs you must span the header card exactly"
+        assert aligned["stats"] == aligned["first"], "What needs you must align with the content below"
         measured = page.locator(".ui-ph-acts").evaluate(
             """(group) => {
               const buttons = [...group.querySelectorAll('.ui-btn')].filter((button) => button.offsetParent !== null);

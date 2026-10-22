@@ -1,8 +1,11 @@
-"""The Overview names what blocks reporting before the host opens each property."""
+"""The dashboard names a property whose police setup is unfinished, in one line (0241).
+
+It used to list every missing field in a banner; the owner asked for one short
+line and one button that opens the first missing field.
+"""
 from __future__ import annotations
 
-import os
-from pathlib import Path
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,17 +15,6 @@ from app.main import app
 from tests.conftest import login_as
 
 USERNAME = "dashboard-missing-banner-host"
-
-REPORT_FIELD_KEYS = (
-    "idub",
-    "mark",
-    "facility_name",
-    "house_no",
-    "zip",
-    "obec",
-    "ws_user",
-    "password",
-)
 
 COMPLETE_VALUES = {
     "uby_idub": "123456789012",
@@ -89,16 +81,8 @@ def _insert_apartment(internal_name: str, **overrides) -> int:
     return db.insert("apartment", payload)
 
 
-def _labels(lang: str) -> list[str]:
-    return [
-        host_i18n.STRINGS[lang][f"apartment.form.readiness.item.{key}"]
-        for key in REPORT_FIELD_KEYS
-    ]
-
-
-def _banner_block(text: str) -> str:
-    start = text.index('class="ui-banner ui-banner-attention"')
-    return text[start : text.index("</div></div>", start)]
+def _setup_lines(text: str) -> list[str]:
+    return re.findall(r'<li class="needs-you-item"[^>]*data-needs-you="setup"[^>]*>(.*?)</li>', text, re.S)
 
 
 @pytest.fixture
@@ -116,53 +100,41 @@ def host():
         _cleanup()
 
 
-def test_the_banner_lists_missing_report_fields_in_readiness_order(host):
+def test_one_short_line_opens_the_first_missing_police_field(host):
     apartment_id = _insert_apartment("Order Flat")
 
     page = host.get("/?lang=en")
 
-    banner = _banner_block(page.text)
-    labels = _labels("en")
-    present = [label for label in labels if label in banner]
-    assert present == [
-        label
-        for label in labels
-        if label
-        in {
-            "IDUB",
-            "Facility abbreviation",
-            "Facility name",
-            "Web-service login",
-            "Password",
-        }
-    ]
-    assert present.index("IDUB") < present.index("Facility abbreviation") < present.index("Password")
-    assert f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting#ubyport"' in banner
-    assert 'href="/apartments"' in banner
-    assert host_i18n.STRINGS["en"]["dashboard.setup.title"] in banner
+    lines = _setup_lines(page.text)
+    assert len(lines) == 1
+    line = lines[0]
+    assert "Order Flat" in line
+    assert host_i18n.STRINGS["en"]["needs_you.setup"] in line
+    assert f'href="/apartments/{apartment_id}?view=settings&amp;section=reporting#ubyport"' in line
+    # The owner asked for no field-by-field list on the dashboard.
+    assert "IDUB" not in line and "Password" not in line
+    assert line.count('class="ui-btn') == 1
 
 
-def test_the_banner_is_absent_when_reporting_is_ready(host):
+def test_no_line_when_reporting_is_ready(host):
     apartment_id = _insert_apartment("Ready Flat", **COMPLETE_VALUES)
     db.update("apartment", apartment_id, COMPLETE_VALUES)
 
     page = host.get("/?lang=en")
 
-    assert 'class="ui-banner ui-banner-attention"' not in page.text
+    assert _setup_lines(page.text) == []
 
 
-def test_the_sixth_incomplete_property_collapses_into_and_more(host):
-    names = [f"Banner Flat {index}" for index in range(1, 7)]
-    for name in names:
-        _insert_apartment(name)
+def test_lines_past_the_fifth_wait_behind_show_more(host):
+    for index in range(1, 7):
+        _insert_apartment(f"Banner Flat {index}")
 
     page = host.get("/?lang=en")
 
-    banner = _banner_block(page.text)
-    assert banner.count('class="dashboard-missing-line"') == 5
-    assert "and 1 more" in page.text
-    assert 'href="/apartments"' in banner
-    assert "Banner Flat 6" not in banner
+    assert len(_setup_lines(page.text)) == 6
+    assert "Show 1 more" in page.text
+    before_more = page.text.split('class="needs-you-more"', 1)[0]
+    assert len(_setup_lines(before_more)) == 5
 
 
 def test_inactive_properties_are_omitted(host):
@@ -170,30 +142,14 @@ def test_inactive_properties_are_omitted(host):
 
     page = host.get("/?lang=en")
 
-    assert 'class="ui-banner ui-banner-attention"' not in page.text
+    assert _setup_lines(page.text) == []
 
 
-@pytest.mark.skipif(os.environ.get("UBYHOST_CAPTURE_0047") != "1", reason="evidence capture")
-def test_capture_banner_screenshots(host):
-    from playwright.sync_api import sync_playwright
+def test_the_setup_line_is_in_czech(host):
+    _insert_apartment("Czech Flat")
 
-    out = Path(__file__).resolve().parents[2] / "generated_images" / "0047-evidence"
-    out.mkdir(parents=True, exist_ok=True)
-    widths = (360, 390, 1280)
+    page = host.get("/?lang=cs")
 
-    def save(label):
-        html = host.get("/?lang=en").text
-        assert 'class="ui-banner ui-banner-attention"' in html
-        with sync_playwright() as playwright:
-            browser = playwright.chromium.launch()
-            for width in widths:
-                page = browser.new_page(viewport={"width": width, "height": 900})
-                page.set_content(html, wait_until="load")
-                page.screenshot(path=str(out / f"{label}-{width}.png"), full_page=True)
-            browser.close()
-
-    _insert_apartment("Demo Property 1")
-    save("one-incomplete")
-    for index in range(2, 7):
-        _insert_apartment(f"Banner Flat {index}")
-    save("six-incomplete")
+    line = _setup_lines(page.text)[0]
+    assert host_i18n.STRINGS["cs"]["needs_you.setup"] in line
+    assert host_i18n.STRINGS["cs"]["needs_you.action.setup"] in line

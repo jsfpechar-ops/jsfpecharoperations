@@ -1,4 +1,4 @@
-"""0102: Dashboard and Stays use one compact menu, with Open inside it."""
+"""0102: Stays use one compact menu, with Open inside it (the dashboard has no rows since 0241)."""
 from __future__ import annotations
 
 import os
@@ -42,7 +42,6 @@ def _check_pairs(pairs, label, locale):
 def test_dashboard_and_stays_share_compact_row_menu(
     dashboard_rich_host, base, stay_actions_host, stay_actions_base,
 ):
-    dash_cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
     stay_cookie = stay_actions_host["client"].cookies.get(auth.SESSION_COOKIE)
     heights = {}
     with sync_api.sync_playwright() as playwright:
@@ -50,7 +49,6 @@ def test_dashboard_and_stays_share_compact_row_menu(
         for locale in ("en", "cs"):
             for width in WIDTHS:
                 for name, url, cookie, selector in (
-                    ("dashboard", base, dash_cookie, ".dashboard-row"),
                     ("stays", stay_actions_base, stay_cookie, ".stays-view tbody tr"),
                 ):
                     context = browser.new_context(viewport={"width": width, "height": 900})
@@ -73,8 +71,6 @@ def test_dashboard_and_stays_share_compact_row_menu(
                         page.screenshot(path=str(EVIDENCE / f"{name}-{width}-{locale}.png"), full_page=True)
                     context.close()
         browser.close()
-    for key, per_page in heights.items():
-        assert per_page["dashboard"] == per_page["stays"], (key, per_page)
 
 
 ONE_LINE = """() => [...document.querySelectorAll('.stays-view tbody tr')].map(tr => {

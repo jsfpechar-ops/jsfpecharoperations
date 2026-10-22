@@ -45,6 +45,7 @@ from .. import (
     push,
     passport_photos,
     payments,
+    property_health,
     property_setup,
     rate_limit,
     reporting,
@@ -475,6 +476,9 @@ def dashboard(request: Request):
             "feed_count": feed_count,
             "missing_report_display": missing_report_display,
             "missing_report_more": missing_report_more,
+            # 0241: "What needs you" reads every property and every bucket.
+            "missing_report_rows": missing_report_rows,
+            "needs_you_queue": queue,
             "last_sync": db.get_setting("last_ical_sync"),
             "demo_loaded": any(demo.is_demo_apartment(apartment) for apartment in apartments),
             "celebration_milestone": milestone,
@@ -1832,6 +1836,8 @@ def _render_apartment_detail(
             "feeds": feeds,
             "issues": issues,
             "readiness": readiness,
+            # 0244: the live health check on the property overview.
+            "health": property_health.checks(apartment, feeds, readiness, door_code),
             "more_options_open": _more_options_open(request, issues, readiness),
             "purposes": codelists.purpose_options("en"),
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",

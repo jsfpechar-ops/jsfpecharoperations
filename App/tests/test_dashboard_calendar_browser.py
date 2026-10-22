@@ -312,12 +312,11 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                     page.wait_for_selector(".cal-gantt-row" if mode == "gantt" else ".cal-week")
                     wait_loaded(page)
                     # Summary -> calendar -> detailed action queue, in the same lane.
-                    boxes = page.evaluate("""() => ['.dashboard-stats', '#calendar', '#needs-action'].map(selector => {
+                    boxes = page.evaluate("""() => ['.needs-you', '#calendar'].map(selector => {
                         const r = document.querySelector(selector).getBoundingClientRect();
                         return {top:r.top, bottom:r.bottom, left:r.left, right:r.right, height:r.height};
                     })""")
                     assert 0 <= boxes[1]["top"] - boxes[0]["bottom"] <= 44, boxes
-                    assert boxes[2]["top"] >= boxes[1]["bottom"], boxes
                     for box in boxes[1:]:
                         assert abs(box["left"] - boxes[0]["left"]) <= 2, boxes
                         assert abs(box["right"] - boxes[0]["right"]) <= 2, boxes
@@ -325,10 +324,6 @@ def test_calendar_geometry_locales_and_screenshots(calendar_workspace, calendar_
                         icon = page.locator("[data-cal-settings] svg").bounding_box()
                         assert icon["width"] >= 18 and icon["height"] >= 18, icon
                     if width >= 1024:
-                        pill_heights = page.locator(".dashboard-stat").evaluate_all(
-                            "nodes => nodes.map(node => node.getBoundingClientRect().height)"
-                        )
-                        assert max(pill_heights) <= 40, pill_heights
                         if mode == "calendar":
                             heights = page.locator(".cal-week").evaluate_all(
                                 "nodes => nodes.map(node => node.getBoundingClientRect().height)"
@@ -512,62 +507,28 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         if overlap.count() and overlap.is_visible():
             overlap.check()
         shot(page, "dashboard-stay-save-popup-en")
-        attention_before = int(page.locator('[data-dashboard-refresh="stats"] .dashboard-stat.action strong').inner_text())
         with page.expect_response(lambda response: response.request.method == "POST" and
                                   response.url.split("?")[0].endswith("/reservations")) as stay_result:
             page.locator("[data-cal-save]").click()
         created_stay = stay_result.value.json()
         assert stay_result.value.status == 201
         assert page.evaluate("location.pathname") == pathname
-        page.wait_for_function("""before => {
-            const strong = document.querySelector('[data-dashboard-refresh="stats"] .dashboard-stat.action strong');
-            return !!strong && Number(strong.textContent.trim()) === before + 1;
-        }""", arg=attention_before)
-        row = page.locator(f'[data-dashboard-refresh="work"] .dashboard-row[data-stay-id="{created_stay["id"]}"]')
-        # The work list shows at most five rows (reporting.py limit), so the new stay is
-        # counted above but only rendered when it ranks in the top five. Row checks run then.
-        row_rendered = row.count() > 0
-        if row_rendered:
-            row.wait_for(state="visible")
-            assert "Popup row refresh" in row.inner_text()
-
-            # Re-delivering the scoped update must not double-bind imported controls.
-            page.evaluate("""() => {
-                const root = document.querySelector('[data-dashboard-refresh="work"]');
-                document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
-                document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
-            }""")
-            row.locator(".row-menu-trigger").click()
-            menu = page.locator(".row-menu-panel:visible").last
-            menu.wait_for(state="visible")
-            assert menu.locator(".row-menu-item").count() >= 1
-            copy_button = menu.locator("button[data-copy]")
-            assert copy_button.count() == 1
-            copy_button_id = "refresh-copy-action"
-            copy_button.evaluate("(button, id) => { button.id = id; }", copy_button_id)
-            copy_button.click()
-            page.wait_for_function("""id => {
-                const button = document.getElementById(id);
-                return !!button && (button.classList.contains("is-copy-confirmed") ||
-                    !!document.querySelector("[data-copy-manual-visible]"));
-            }""", arg=copy_button_id)
-
-            if not menu.is_visible():
-                row.locator(".row-menu-trigger").click()
-                menu = page.locator(".row-menu-panel:visible").last
-                menu.wait_for(state="visible")
-            archive_posts = []
-            page.on("request", lambda request: archive_posts.append(request.url)
-                   if request.method == "POST" and request.url.split("?")[0].endswith("/archive") else None)
-            archive_form = menu.locator('form[data-confirm][action$="/archive"]')
-            assert archive_form.count() == 1
-            archive_form.locator('button[type="submit"]').click()
-            confirmation = page.locator("#confirm-dialog")
-            confirmation.wait_for(state="visible")
-            confirmation.locator("[data-confirm-cancel]").click()
-            assert not confirmation.is_visible()
-            assert archive_posts == []
-            assert row.is_visible()
+        # 0241: the new stay arrives today with no guest form, so "What needs you" gains its line.
+        line = page.locator(
+            f'[data-dashboard-refresh="stats"] .needs-you-item[data-needs-you-stay="{created_stay["id"]}"]'
+        )
+        line.wait_for(state="attached")
+        assert "Popup row refresh" in line.text_content()
+        line_button = line.locator(".ui-btn")
+        assert line_button.count() == 1
+        assert line_button.get_attribute("href").startswith(f"/reservations/{created_stay['id']}?")
+        # Re-delivering the scoped update must not double-bind imported controls.
+        page.evaluate("""() => {
+            const root = document.querySelector('[data-dashboard-refresh="stats"]');
+            document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
+            document.dispatchEvent(new CustomEvent("ubyhost:content-updated", {detail: {root}}));
+        }""")
+        assert line.count() == 1
 
         # Dashboard has no dismissible banner in every fixture; exercise the same
         # scoped binder with a transient banner under the refreshed work region.
@@ -589,11 +550,11 @@ def test_dashboard_calendar_creation_refreshes_cleaning_and_stay_in_place(calend
         assert page.locator(f"#{banner_id}").count() == 0
 
         shot(page, "dashboard-calendar-create-refresh-en")
-        if row_rendered:
-            with page.expect_navigation():
-                row.focus()
-                row.press("Enter")
-            assert page.url.split("?")[0].endswith(f"/reservations/{created_stay['id']}")
+        if not line_button.is_visible():
+            page.locator('[data-dashboard-refresh="stats"] .needs-you-more > summary').first.click()
+        with page.expect_navigation():
+            line_button.click()
+        assert page.url.split("?")[0].endswith(f"/reservations/{created_stay['id']}")
         context.close()
         browser.close()
 
@@ -630,13 +591,13 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim();
             return {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
-                    id: row.getAttribute("data-stay-id"),
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .needs-you-item[data-needs-you="stay"]')].map(row => ({
+                    id: row.getAttribute("data-needs-you-stay"),
                     text: normalize(row.textContent)
                 }))
             };
         }""")
-        assert before["rows"], "fixture should render work rows before the committed save"
+        assert before["rows"], "fixture should show stay lines before the committed save"
         failed_html = {"done": False}
         posts = []
         def fail_first_dashboard_html(route):
@@ -679,8 +640,7 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         retry = page.locator("[data-cal-message] button")
         assert retry.is_visible() and len(posts) == 1
 
-        # The work list is intentionally capped at five rows. Change an existing visible
-        # synthetic manual label so the successful retry proves it replaced stale HTML.
+        # Change an existing stay's label so the successful retry proves it replaced stale HTML.
         target_id = before["rows"][0]["id"]
         sentinel = f"Refresh retry sentinel {saved['id']}"
         assert sentinel not in before["rows"][0]["text"]
@@ -698,8 +658,8 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             return {
                 stats: normalize(doc.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...doc.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
-                    id: row.getAttribute("data-stay-id"),
+                rows: [...doc.querySelectorAll('[data-dashboard-refresh="stats"] .needs-you-item[data-needs-you="stay"]')].map(row => ({
+                    id: row.getAttribute("data-needs-you-stay"),
                     text: rowText(row)
                 }))
             };
@@ -713,8 +673,8 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
             const normalize = value => (value || "").replace(/\\s+/g, " ").trim(); const rowText = row => { const c = row.cloneNode(true); c.querySelectorAll("[data-copy]").forEach(n => n.remove()); return (c.textContent || "").replace(/\\s+/g, " ").trim(); };
             const actual = {
                 stats: normalize(document.querySelector('[data-dashboard-refresh="stats"]')?.textContent),
-                rows: [...document.querySelectorAll('[data-dashboard-refresh="work"] .dashboard-row')].filter(row => !row.closest("noscript")).map(row => ({
-                    id: row.getAttribute("data-stay-id"),
+                rows: [...document.querySelectorAll('[data-dashboard-refresh="stats"] .needs-you-item[data-needs-you="stay"]')].map(row => ({
+                    id: row.getAttribute("data-needs-you-stay"),
                     text: rowText(row)
                 }))
             };

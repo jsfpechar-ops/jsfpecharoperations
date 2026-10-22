@@ -48,24 +48,26 @@
 {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
 {% if readiness and not wizard_active %}
 <section class="panel host-checklist" data-setup-status aria-labelledby="property-readiness-title">
+  {%- set health_rows = health or [] -%}
+  {%- set health_open = health_rows | selectattr('state', 'in', ['bad', 'warn']) | list -%}
   <header class="setup-status-head">
-    <div><h2 id="property-readiness-title">{{ t('host.setup_details') }}</h2><p>{{ t('wizard.overview.status_note') }}</p></div>
-    <span class="ui-badge ui-badge-{{ 'done' if readiness.invite_ready else 'neutral' }}" data-tone="{{ 'green' if readiness.invite_ready else 'grey' }}">{{ t('apartment.form.readiness.invite_ready') if readiness.invite_ready else t('wizard.overview.invite_pending') }}</span>
+    <h2 id="property-readiness-title">{{ t('health.title') }}</h2>
+    {% if health_open %}<span class="ui-badge ui-badge-action" data-tone="{{ 'red' if health_open | selectattr('state', 'equalto', 'bad') | list else 'amber' }}">{{ tp('health.to_fix', health_open | length) }}</span>
+    {% else %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('health.all_set') }}</span>{% endif %}
   </header>
-  {% set icons = {'property': 'house', 'calendar': 'calendar-days', 'guest_link': 'external-link', 'try_it': 'users', 'police': 'send', 'stay_fee': 'coins', 'door_lock': 'key-round', 'automation': 'refresh-cw'} %}
-    <ul class="setup-status-grid">
-    {% for row in setup_checklist %}
-    {% set status = row.status if row.status in ['done', 'skipped', 'waiting', 'not_needed'] else 'todo' %}
-    <li class="setup-status-tile is-{{ status }}" data-overview-setup-step="{{ row.key }}">
-      <span class="setup-status-icon" aria-hidden="true">{{ icon(icons[row.key], 20) }}</span>
-      <div class="setup-status-copy">
-        <div class="setup-status-label"><strong>{{ t('wizard.summary.' ~ row.key) if row.key in ['calendar', 'try_it'] else t('wizard.step.' ~ row.key) }}</strong>
-        </div>
-        <span class="ui-badge ui-badge-{{ 'done' if status == 'done' else 'action' if status == 'waiting' else 'neutral' }}" data-tone="{{ 'green' if status == 'done' else 'amber' if status == 'waiting' else 'grey' }}">{{ t('wizard.summary.status.' ~ status) }}</span>
-      </div>
+  {% set health_list %}
+  <ul class="health-list">
+    {% for row in health_rows %}
+    <li class="health-row" data-health-check="{{ row.key }}" data-state="{{ row.state }}">
+      <span class="health-icon" aria-hidden="true">{{ icon(row.icon, 20) }}</span>
+      <div class="health-copy"><strong>{{ t(row.label_key) }}</strong><span>{{ t(row.text_key) }}</span></div>
+      {% if row.href %}<a class="ui-btn ui-btn-secondary" href="{{ row.href }}">{{ t(row.action_key) }}</a>{% endif %}
     </li>
     {% endfor %}
   </ul>
+  {% endset %}
+  {% if health_open %}{{ health_list }}
+  {% else %}<details class="health-all-set"><summary>{{ t('health.show') }}</summary>{{ health_list }}</details>{% endif %}
   <details class="setup-readiness-help">
     <summary><span aria-hidden="true">?</span> {{ t('wizard.overview.details') }}</summary>
     <section class="readiness">

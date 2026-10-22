@@ -726,7 +726,7 @@ def test_the_refused_stay_page_leads_with_the_fix_and_keeps_send_secondary():
 
     body = client.get(f"/reservations/{reservation['id']}").text
 
-    assert "UbyPort rejected a guest record." in body
+    assert "The police did not accept a guest record." in body
     assert 'class="ui-btn ui-btn-primary" href="#guests"' in body
     assert "Fix rejection" in body
     assert "Send again" in body
@@ -749,11 +749,11 @@ def test_the_refusal_copy_ships_in_both_languages():
     from app import host_i18n
 
     assert host_i18n.STRINGS["en"]["hint.failed"] == (
-        "UbyPort rejected a guest record. Fix the details marked in red below, "
-        "then send again."
+        "The police did not accept a guest record. Fix the details marked in red below, "
+        "then send it again."
     )
     assert host_i18n.STRINGS["cs"]["hint.failed"] == (
-        "UbyPort odmítl záznam hosta. Opravte údaje označené červeně níže a "
+        "Policie nepřijala záznam hosta. Opravte údaje označené červeně níže a "
         "odešlete znovu."
     )
     assert host_i18n.STRINGS["en"]["stay.detail.cta.send_again"] == "Send again"

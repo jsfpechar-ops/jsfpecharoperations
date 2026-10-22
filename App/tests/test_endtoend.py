@@ -608,7 +608,7 @@ def test_24_an_incomplete_stay_past_the_deadline_raises_an_alert(host):
     assert alert["level"] == "critical"
 
     page = host.get("/")
-    assert "overdue" in page.text.lower()
+    assert f'data-tone="red" data-needs-you="stay" data-needs-you-stay="{reservation_id}"' in page.text
 
 
 def test_25_manual_mode_waits_for_the_host(host, mock_ubyport):
