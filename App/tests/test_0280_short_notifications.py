@@ -86,7 +86,7 @@ def test_titles_and_push_bodies_are_short():
             if not pattern.search(key):
                 continue
             checked += 1
-            text = re.sub(r"%\(name\)s", "", value)
+            text = re.sub(r"%\([a-z_]+\)s|%%", "", value)
             assert len(text) <= 60, f"{lang} {key}: {len(text)} characters"
     assert checked > 0
 

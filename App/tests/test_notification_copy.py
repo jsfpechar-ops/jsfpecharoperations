@@ -141,7 +141,7 @@ def test_base_template_keeps_compact_notification_structure():
     assert 'include "_host_alerts.html"' in text
     text = base.with_name("_host_alerts.html").read_text(encoding="utf-8")
     assert "display_title" in text
-    assert "display_detail" in text
+    assert "display_reason" in text
     assert "notification-action" in text
     assert "data-notification-dismiss" in text
     assert "action_label_key" in text

@@ -2091,7 +2091,7 @@ STRINGS: Dict[str, str] = {
     "ops.ttlock.counts": "Mã đã cấp tháng này: %(issued)s · thất bại: %(failed)s",
     "ops.ttlock.live": "Chạy thật",
     "ops.ttlock.test_mode": "Chế độ thử (chỉ lượt lưu trú tự thêm)",
-    "notification.ttlock_budget.title": "Lệnh gọi TTLock: đã dùng %(percent)s %% hạn mức tháng (%(used)s/%(limit)s).",
+    "notification.ttlock_budget.title": "TTLock: đã dùng %(percent)s %% hạn mức gọi tháng này.",
     "notification.reason.ttlock_budget": "Việc làm mới danh sách khóa và kiểm tra đồng hồ sẽ tạm dừng trước. Mã mới vẫn hoạt động đến mức 95 %.",
     "notification.door_code_clock.title": "%(property)s: không kiểm tra được đồng hồ của khóa.",
     "notification.reason.door_code_clock": "Mở khóa trong ứng dụng TTLock và hiệu chỉnh giờ (Settings, Lock Time).",

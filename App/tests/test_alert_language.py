@@ -69,16 +69,11 @@ def test_a_stay_cancelled_after_reporting_is_described_in_the_hosts_language():
     params = {"date": "2026-09-11", "variant": "cancelled"}
 
     en = _card("cancelled_after_report", message, "english detail", params, "en")
-    assert en["display_title"] == (
-        "A stay from 2026-09-11 was cancelled in the calendar after it had "
-        "already been reported to the police."
-    )
+    assert en["display_title"] == "Stay from 2026-09-11 was cancelled after it was reported."
     assert en["display_detail"] == "Check whether the booking was cancelled or merely moved."
 
     cs = _card("cancelled_after_report", message, "english detail", params, "cs")
-    assert cs["display_title"] == (
-        "Pobyt od 2026-09-11 byl v kalendáři zrušen poté, co již byl nahlášen na policii."
-    )
+    assert cs["display_title"] == "Pobyt od 2026-09-11 byl zrušen po nahlášení policii."
     assert cs["display_detail"] == (
         "Zkontrolujte, zda byla rezervace zrušena, nebo se jen přesunula."
     )
@@ -89,13 +84,8 @@ def test_a_stay_that_vanished_uses_the_other_variant_wording():
     params = {"date": "2026-09-11", "variant": "disappeared"}
     en = _card("cancelled_after_report", "stored english", "stored detail", params, "en")
     cs = _card("cancelled_after_report", "stored english", "stored detail", params, "cs")
-    assert en["display_title"] == (
-        "A stay from 2026-09-11 disappeared from the calendar after it had "
-        "already been reported to the police."
-    )
-    assert cs["display_title"] == (
-        "Pobyt od 2026-09-11 zmizel z kalendáře poté, co již byl nahlášen na policii."
-    )
+    assert en["display_title"] == "Stay from 2026-09-11 left the calendar after it was reported."
+    assert cs["display_title"] == "Pobyt od 2026-09-11 zmizel z kalendáře po nahlášení."
     assert "zrušen" not in cs["display_title"]
 
 
@@ -161,9 +151,7 @@ def test_a_missing_receipt_card_names_the_submission():
     params = {"property": "Loft", "submission": 4711, "count": 2}
     en = _card("receipt_missing", "stored", "stored", params, "en")
     cs = _card("receipt_missing", "stored", "stored", params, "cs")
-    assert en["display_title"] == (
-        "Loft: UbyPort accepted the report but returned no confirmation."
-    )
+    assert en["display_title"] == "Loft: report accepted, but no confirmation came."
     assert cs["display_title"] == "Loft: UbyPort hlášení přijal, ale nevrátil potvrzení."
     assert "4711" in en["display_detail"] and "4711" in cs["display_detail"]
 
@@ -172,9 +160,7 @@ def test_the_ubyport_code_list_stays_english_on_purpose():
     """There is nothing to translate: UbyPort returns those codes itself."""
     params = {"property": "Loft"}
     cs = _card("apartment_setup", "stored english", "IČO is missing", params, "cs")
-    assert cs["display_title"] == (
-        "Loft: nastavení pro policii není hotové, takže se žádné hlášení neodešle."
-    )
+    assert cs["display_title"] == "Loft: nastavení pro policii není hotové."
     assert cs["display_detail"] == "IČO is missing"
 
 
@@ -241,9 +227,7 @@ def test_raise_alert_without_parameters_stores_no_parameter_blob(monkeypatch):
     )
     assert captured["params"] is None
     shown = alerts.present(captured, "cs")
-    assert shown["display_title"] == (
-        "Hostovský odkaz byl po opakovaných chybných PINech dočasně zablokován."
-    )
+    assert shown["display_title"] == "Odkaz pro hosty dočasně blokován kvůli chybným PINům."
 
 
 def test_a_dead_background_job_card_names_the_job_in_czech():
