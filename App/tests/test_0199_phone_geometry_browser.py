@@ -11,16 +11,27 @@ FAILS = []
 MEASURE = """() => {
   const R = el => el.getBoundingClientRect();
   const vis = el => !!el && R(el).width > 0;
-  const tl = el => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;
-    while ((n = w.nextNode())) { if (n.textContent.trim()) { const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect(); if (b.width) return b.left; } } return null; };
-  const lines = el => { const r = document.createRange(); r.selectNodeContents(el); const t = new Set();
-    for (const b of r.getClientRects()) if (b.width && b.height) t.add(Math.round(b.top)); return t.size; };
+  const tl = (el, skip) => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;
+    while ((n = w.nextNode())) { if (n.textContent.trim() && !(skip && n.parentElement && n.parentElement.closest(skip))) { const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect(); if (b.width) return b.left; } } return null; };
+  const lines = el => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); const t = []; let n;
+    while ((n = w.nextNode())) { if (!n.textContent.trim()) continue; let skip = false;
+      for (let e = n.parentElement; e && el.contains(e); e = e.parentElement) { const s = getComputedStyle(e);
+        if (e.getAttribute('aria-hidden') === 'true' || s.visibility === 'hidden' || s.opacity === '0' || (e !== el && (R(e).width === 0 || R(e).height === 0))) { skip = true; break; } }
+      if (skip) continue;
+      const r = document.createRange(); r.selectNodeContents(n);
+      for (const b of r.getClientRects()) if (b.width && b.height) t.push(b.top); }
+    const starts = []; for (const y of t.sort((a, b) => a - b)) if (!starts.length || y - starts[starts.length - 1] > 4) starts.push(y);
+    return starts.length; };
   const q = s => document.querySelector(s);
   const f = v => (v === null || v === undefined) ? null : Math.round(v * 10) / 10;
   const cs = (el, p) => getComputedStyle(el)[p];
   const out = { vw: innerWidth, sw: document.documentElement.scrollWidth };
   const panel = q('.host-stay-detail .stay-command-panel'), gh = q('#guests .ui-section-h h2');
-  if (panel && gh) out.A = f(tl(panel) - tl(gh));
+  const main = q('.host-stay-detail .stay-command-panel .stay-command-main');
+  // badges align by their box, text by its text
+  if (main && gh) out.A = f(R(main).left + parseFloat(cs(main, 'paddingLeft')) - tl(gh));
+  const note = q('.stay-command-panel .stay-command-note'); if (note && gh) out.An = f(tl(note) - tl(gh));
+  if (q('.stay-command-panel .journey') && main) out.Aj = f(R(q('.stay-command-panel .journey')).left - R(q('.stay-command-panel .stay-command-main')).left);
   const act = q('.host-stay-detail .stay-command-actions');
   if (act) {
     const btns = [...act.querySelectorAll('.ui-btn,.btn,button,a')].filter(vis);
@@ -96,6 +107,10 @@ def _check_stay(m, name):
     _ok(m, name)
     if "A" in m:
         FAILS.append((abs(m["A"]) <= 1, f"{name}: A panel content offset {m['A']}"))
+    if m.get("Aj") is not None:
+        FAILS.append((abs(m["Aj"]) <= 1, f"{name}: A journey offset {m['Aj']}"))
+    if m.get("An") is not None:
+        FAILS.append((abs(m["An"]) <= 1, f"{name}: A note text offset {m['An']}"))
     if "Bh" in m:
         FAILS.append((m["Bwrap"] == [], f"{name}: B wrapped labels {m['Bwrap']}"))
         FAILS.append((all(43 <= h <= 45 for h in m["Bh"]), f"{name}: B heights {m['Bh']}"))

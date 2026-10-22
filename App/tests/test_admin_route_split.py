@@ -34,6 +34,7 @@ MOVED_PATHS = {
         ("POST", "/onboarding/dismiss"),
         ("POST", "/onboarding/resume"),
         ("POST", "/celebrations/dismiss"),
+        ("POST", "/welcome-back/dismiss"),
     },
     exports: {
         ("GET", "/reservations.csv"),

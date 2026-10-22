@@ -25,6 +25,19 @@
     <div class="ui-ph-acts" data-list-actions>{{ page_secondary }}{{ page_primary }}</div>
     {% endif %}
   </header>
+  {% set how = how_key | default('') %}
+  {% if how %}
+  <details class="ui-how" data-how="{{ how }}">
+    <summary class="ui-how-toggle">{{ icon('circle-help', 16) }}<span>{{ t('how.toggle') }}</span>{{ icon('chevron-down', 16, 'ui-how-chevron') }}</summary>
+    <div class="ui-how-body">
+      <ol class="ui-how-steps">
+        {% for n in (1, 2, 3) %}<li>{{ t('how.' ~ how ~ '.' ~ n) }}</li>{% endfor %}
+      </ol>
+      {% set how_anchor = {'dashboard': 'overview', 'stays': 'stays', 'stay': 'guests', 'properties': 'setup', 'property': 'setup', 'reports': 'reporting', 'invoices': 'invoices', 'stay_fees': 'stay_fee', 'housebook': 'housebook'}[how] %}
+      <a class="ui-how-more" href="/guide#{{ how_anchor }}">{{ t('how.more') }}</a>
+    </div>
+  </details>
+  {% endif %}
   {% endif %}
   {% block tabs %}{% endblock %}
   {% block toolbar %}{% endblock %}

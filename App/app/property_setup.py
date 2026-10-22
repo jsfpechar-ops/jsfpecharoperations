@@ -11,15 +11,17 @@ from typing import Any, Dict, List, Optional
 
 from . import db
 
+# 0270: story order (idea C). Setup questions first, then the guest link, and
+# the test run last, so the demo can show the whole workflow.
 STEPS = (
     "property",
     "calendar",
-    "guest_link",
-    "try_it",
     "police",
+    "automation",
     "stay_fee",
     "door_lock",
-    "automation",
+    "guest_link",
+    "try_it",
 )
 TOTAL_STEPS = len(STEPS)
 OPTIONAL = frozenset({"stay_fee", "door_lock"})
@@ -107,6 +109,7 @@ def load(apartment_id: int) -> Optional[Dict[str, Any]]:
         "finished": bool(state.get("finished")),
         "hidden": bool(state.get("hidden")),
         "legacy": bool(state.get("legacy")),
+        "celebrated": bool(state.get("celebrated")),
     }
 
 
@@ -123,6 +126,7 @@ def _save(apartment_id: int, state: Dict[str, Any]) -> None:
                 "finished": bool(state["finished"]),
                 "hidden": bool(state.get("hidden")),
                 "legacy": bool(state.get("legacy")),
+                "celebrated": bool(state.get("celebrated")),
             },
             sort_keys=True,
         ),
@@ -157,6 +161,16 @@ def finish(apartment_id: int) -> None:
     if state and not state["finished"]:
         state["finished"] = True
         _save(apartment_id, state)
+
+
+def celebrate_once(apartment_id: int) -> bool:
+    """0274: True the first time the finished wizard's finish page is shown."""
+    state = load(apartment_id)
+    if not state or not state["finished"] or state.get("celebrated"):
+        return False
+    state["celebrated"] = True
+    _save(apartment_id, state)
+    return True
 
 
 def wizard_url(apartment_id: int, step: str) -> str:

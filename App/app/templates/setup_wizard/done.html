@@ -1,10 +1,18 @@
 {% extends "setup_wizard/_layout.html" %}
 {% from "_components.html" import nav_icon with context %}
+{% from "_workflow.html" import workflow_strip with context %}
+{% set missing_row = checklist | selectattr('status', 'in', ['waiting', 'todo']) | first %}
+{% set link_next = next_stay_window(apartment) %}
 {% block wizard_content %}
-<div class="ui-banner setup-wizard-celebrate" role="status">
-  <span class="setup-wizard-confetti" aria-hidden="true">{% for n in range(12) %}<i></i>{% endfor %}</span>
-  <div class="grow"><strong>{{ t('wizard.done.celebrate') }}</strong></div>
+<div class="ui-banner setup-wizard-celebrate{{ ' is-partial' if missing_row }}" role="status" data-setup-celebrate="{{ 'partial' if missing_row else 'done' }}">
+  {% if celebrate and not missing_row %}<span class="setup-wizard-confetti" aria-hidden="true">{% for n in range(12) %}<i></i>{% endfor %}</span>{% endif %}
+  <span class="setup-wizard-celebrate-mark" aria-hidden="true">{{ '!' if missing_row else '✓' }}</span>
+  <div class="grow setup-wizard-celebrate-copy">
+    <strong class="setup-wizard-celebrate-title">{{ t('wizard.done.almost') if missing_row else t('wizard.done.all_set') }}</strong>
+    <span>{{ (t('wizard.done.left.police') if missing_row.key == 'police' else t('wizard.done.left.step')) if missing_row else t('wizard.done.all_set_text') }}</span>
+  </div>
 </div>
+{{ workflow_strip(apartment) }}
 <h2 class="setup-wizard-section-title">{{ t('wizard.done.title') }}</h2>
 {% set icons = {'property': 'property', 'calendar': 'calendar', 'guest_link': 'link', 'try_it': 'users', 'police': 'report', 'stay_fee': 'coins', 'door_lock': 'lock', 'automation': 'automation'} %}
 <ul class="setup-wizard-checklist host-property-grid">
@@ -27,8 +35,24 @@
   </li>
   {% endfor %}
 </ul>
+{% if not missing_row %}
+<p class="setup-wizard-instruction" data-finish-note>{% if link_next.stay and link_next.window and link_next.window.state == 'now' %}{{ t('workflow.link.next_stay_now', stay=link_next.stay.date_from | date_short) }}{% elif link_next.stay and link_next.window %}{{ t('workflow.link.next_stay', stay=link_next.stay.date_from | date_short, date=link_next.window.opens.isoformat() | date_short) }}{% elif wizard_facts.feeds %}{{ t('wizard.done.note_sync', minutes=ical_poll_minutes) }}{% else %}{{ t('wizard.done.note_no_calendar') }}{% endif %}</p>
+{% endif %}
 {% endblock %}
 {% block wizard_actions %}
 <span></span>
-<a class="ui-btn ui-btn-primary" href="/">{{ t('wizard.done.go') }}</a>
+{% if missing_row %}
+{% set go_href = '/apartments/' ~ apartment.id ~ '/setup/' ~ missing_row.key %}
+{% set go_label = t('wizard.done.fix.police') if missing_row.key == 'police' else t('wizard.done.fix.step') %}
+{% set go_flag = 'fix' %}
+{% elif link_next.stay %}
+{% set go_href = '/apartments/' ~ apartment.id ~ '?view=bookings' %}
+{% set go_label = t('wizard.done.go_stays') %}
+{% set go_flag = 'stays' %}
+{% else %}
+{% set go_href = '/apartments/' ~ apartment.id ~ '?view=overview' %}
+{% set go_label = t('wizard.done.go_property') %}
+{% set go_flag = 'property' %}
+{% endif %}
+<a class="ui-btn ui-btn-primary" href="{{ go_href }}" data-finish-go="{{ go_flag }}">{{ go_label }}</a>
 {% endblock %}

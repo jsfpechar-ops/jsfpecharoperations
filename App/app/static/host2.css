@@ -422,7 +422,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position:
 .invoice-items-grid td { vertical-align: top; }
 .invoice-items-grid input:not([type=hidden]),
 .invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
-.invoice-items-grid .row-actions [data-remove-item] { min-height: 48px; }
+.invoice-items-grid .row-actions [data-remove-item] { height: 46.5px; min-height: 46.5px; } /* 0253: same height as the quantity input (22.5 px line + 2 x 11 px padding + 2 x 1 px border) */
 .invoice-items-grid [data-vat-col][hidden] { display: block !important; visibility: hidden; }
 .invoice-other-description-field { display: block; margin-top: var(--space-2); }
 .invoice-other-description-field > span { display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-12); font-weight: 600; }
@@ -685,6 +685,18 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .fee-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
+/* 0277: "How does this work?" under the page title (idea P). Closed by default, no JS. */
+.host-workspace .ui-how { margin: var(--space-2) 0 var(--space-3); }
+.host-workspace .ui-how-toggle { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.75rem; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--surface); color: var(--ink-2); font-size: var(--size-14); font-weight: 600; cursor: pointer; list-style: none; }
+.host-workspace .ui-how-toggle::-webkit-details-marker, .host-workspace .ui-how-toggle::before { display: none; }
+.host-workspace .ui-how-toggle:hover { background: var(--surface-hover); }
+.host-workspace .ui-how-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.host-workspace .ui-how-chevron { transition: transform 0.15s ease; }
+.host-workspace .ui-how[open] .ui-how-chevron { transform: rotate(180deg); }
+.host-workspace .ui-how-body { max-width: 40rem; margin-top: var(--space-2); padding: var(--space-3) var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); }
+.host-workspace .ui-how-steps { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-2); color: var(--ink-2); font-size: var(--size-14); }
+.host-workspace .ui-how-more { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--brand-action); font-size: var(--size-14); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .host-workspace .ui-how-chevron { transition: none; } }
 /* 0281: below their card switch point, Properties and Business rows are
    separate outlined cards (owner: no borderless look on phone). */
 @container list-cards (max-width: 799.98px) {

@@ -16,7 +16,7 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from . import alerts, config, db, housebook, invoices, mail_notify, passport_photos
+from . import alerts, config, db, housebook, invoices, mail_notify, passport_photos, welcome_back
 
 log = logging.getLogger(__name__)
 
@@ -330,6 +330,8 @@ def _delete_workspace(owner_id: int) -> None:
         cur.execute("DELETE FROM push_subscription WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
+        # 0275: the welcome-back dates (last dashboard visit) go with the account.
+        welcome_back.forget(cur, owner_id)
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
     # Files last: a rolled-back delete must not have lost the photos. One
     # failing file must not stop the rest; the orphan sweep retries it.

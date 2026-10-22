@@ -139,6 +139,10 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
     property_setup.mark(apartment_id, "calendar", "skipped")
     property_setup.mark(apartment_id, "guest_link", "done")
     property_setup.mark(apartment_id, "try_it", "skipped")
+    # 0270: steps before the guest link are answered too, so it can be opened.
+    property_setup.mark(apartment_id, "automation", "done")
+    property_setup.mark(apartment_id, "stay_fee", "skipped")
+    property_setup.mark(apartment_id, "door_lock", "not_needed")
     with sync_api.sync_playwright() as p:
         browser = _browser(p)
         context = browser.new_context(viewport={"width": width, "height": 1000})

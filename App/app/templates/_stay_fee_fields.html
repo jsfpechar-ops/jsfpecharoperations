@@ -3,7 +3,7 @@
 {%- from "_components.html" import field_label, help_tip with context -%}
 <input type="hidden" name="_stay_fee_account_existing" value="{{ apartment.stay_fee_council_account or apartment.stay_fee_council_iban or '' }}">
 <div class="fee-setup-section">
-  <h4 class="property-subsection-title">1. {{ t('stay_fees.setup.calculation') }}</h4>
+  <{{ fee_heading|default('h4') }} class="property-subsection-title">1. {{ t('stay_fees.setup.calculation') }}</{{ fee_heading|default('h4') }}>
   <div class="grid two">
     <div class="field">
       {{ field_label('stay_fee_rate_czk', t('apartment.form.stay_fee.rate_label'), t('apartment.form.stay_fee.rate_help')) }}
@@ -20,7 +20,7 @@
   </div>
 </div>
 <div class="fee-setup-section" id="stay-fee-payment">
-  <h4 class="property-subsection-title">2. {{ t('stay_fees.setup.payment') }}</h4>
+  <{{ fee_heading|default('h4') }} class="property-subsection-title">2. {{ t('stay_fees.setup.payment') }}</{{ fee_heading|default('h4') }}>
   <div class="field">
     {{ field_label('stay_fee_vs', t('apartment.form.stay_fee.vs_label'), t('apartment.form.stay_fee.vs_help')) }}
     <input type="text" id="stay_fee_vs" name="stay_fee_vs" aria-describedby="stay_fee_vs-help" inputmode="numeric" maxlength="10" value="{{ apartment.stay_fee_vs or '' }}"{% if fee_required %} required{% endif %}>
@@ -38,7 +38,7 @@
 </div>
 {#- 0239: the council name is needed to finalise a report, so the wizard asks it; the rest is only printed on the PDF. -#}
 <div class="fee-setup-section" id="stay-fee-council">
-  <h4 class="property-subsection-title">3. {{ t('stay_fees.setup.council') }}</h4>
+  <{{ fee_heading|default('h4') }} class="property-subsection-title">3. {{ t('stay_fees.setup.council') }}</{{ fee_heading|default('h4') }}>
   <div class="field">
     {{ field_label('stay_fee_authority_name', t('apartment.form.stay_fee.authority_name_label'), t('apartment.form.stay_fee.authority_name_help')) }}
     <input id="stay_fee_authority_name" name="stay_fee_authority_name" aria-describedby="stay_fee_authority_name-help" maxlength="200" value="{{ apartment.stay_fee_authority_name or '' }}"{% if fee_required %} required{% endif %}>

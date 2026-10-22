@@ -1487,6 +1487,15 @@ def get_setting(key: str, default: Optional[str] = None) -> Optional[str]:
     return row["value"] if row else default
 
 
+def get_settings(keys: Iterable[str]) -> Dict[str, Optional[str]]:
+    """Several settings in one query; a missing key is absent from the result."""
+    keys = list(keys)
+    if not keys:
+        return {}
+    marks = ", ".join("?" for _ in keys)
+    return {row["key"]: row["value"] for row in query(f"SELECT key, value FROM settings WHERE key IN ({marks})", keys)}
+
+
 def set_setting(key: str, value: Optional[str]) -> None:
     execute(
         "INSERT INTO settings (key, value) VALUES (?, ?) "

@@ -7393,6 +7393,200 @@ _MAIL_0245_STRINGS = {
 for _lang, _strings in _MAIL_0245_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0272 (C): the test run walkthrough on the last wizard step.
+_TEST_RUN_0272_STRINGS = {
+    "en": {
+        "wizard.step.try_it": "Test run",
+        "wizard.summary.try_it": "Test run",
+        "why.try": "Last step: a test run. Be your own guest: open the link in the message, type the PIN and fill in the form with made-up details. Then see what happens next. Nothing goes to the police, and you can delete the test stay afterwards.",
+        "wizard.rehearsal.title": "Your test run, step by step",
+        "wizard.rehearsal.paste": "Done: you opened the link from your guest message.",
+        "wizard.rehearsal.form": "Done: you filled in the guest form.",
+        "wizard.rehearsal.email": "With a real stay you get an email now. A test run sends no email.",
+        "wizard.rehearsal.police": "With a real stay the police report goes out next.",
+        "wizard.rehearsal.police_manual": "With a real stay you open it and press Send.",
+        "wizard.rehearsal.police_scheduled": "With a real stay it goes out by itself %(hours)s hours after the form.",
+        "wizard.rehearsal.police_immediate": "With a real stay it goes out by itself within %(minutes)s minutes.",
+        "wizard.rehearsal.finish": "With a real stay the guest gets a confirmation email.",
+        "wizard.rehearsal.finish_lock": "With a real stay the guest sees their door code and gets a confirmation email.",
+        "wizard.rehearsal.badge_done": "Done",
+        "wizard.rehearsal.badge_test": "Test only",
+        "wizard.rehearsal.never_police": "A test stay never goes to the police and is left out of stay fees and invoices.",
+    },
+    "cs": {
+        "wizard.step.try_it": "Zkušební běh",
+        "wizard.summary.try_it": "Zkušební běh",
+        "why.try": "Poslední krok: zkušební běh. Buďte sami sobě hostem: otevřete odkaz ze zprávy, zadejte PIN a vyplňte formulář smyšlenými údaji. Pak uvidíte, co se stane dál. Nic se neodešle policii a zkušební pobyt pak můžete smazat.",
+        "wizard.rehearsal.title": "Váš zkušební běh krok za krokem",
+        "wizard.rehearsal.paste": "Hotovo: otevřeli jste odkaz ze zprávy pro hosty.",
+        "wizard.rehearsal.form": "Hotovo: vyplnili jste formulář pro hosty.",
+        "wizard.rehearsal.email": "U skutečného pobytu vám teď přijde e-mail. Zkušební běh žádný e-mail neposílá.",
+        "wizard.rehearsal.police": "U skutečného pobytu teď odejde hlášení policii.",
+        "wizard.rehearsal.police_manual": "U skutečného pobytu ho otevřete a stisknete Odeslat.",
+        "wizard.rehearsal.police_scheduled": "U skutečného pobytu odejde samo %(hours)s hodin po vyplnění formuláře.",
+        "wizard.rehearsal.police_immediate": "U skutečného pobytu odejde samo do %(minutes)s minut.",
+        "wizard.rehearsal.finish": "U skutečného pobytu dostane host potvrzovací e-mail.",
+        "wizard.rehearsal.finish_lock": "U skutečného pobytu host uvidí vstupní kód a dostane potvrzovací e-mail.",
+        "wizard.rehearsal.badge_done": "Hotovo",
+        "wizard.rehearsal.badge_test": "Jen nanečisto",
+        "wizard.rehearsal.never_police": "Zkušební pobyt se nikdy neodešle policii a nepočítá se do poplatků ani faktur.",
+    },
+}
+for _lang, _strings in _TEST_RUN_0272_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+
+# 0273: friendlier wizard (K): question titles and the done count.
+_WIZARD_0273_STRINGS = {
+    "en": {
+        "wizard.done_count": "%(n)s of %(total)s done",
+        "wizard.question.property": "Where is your property?",
+        "wizard.question.calendar": "Where do you take bookings?",
+        "wizard.question.police": "What is your police login?",
+        "wizard.question.automation": "When should reports go to the police?",
+        "wizard.question.stay_fee": "Does your town charge a stay fee?",
+        "wizard.question.door_lock": "How do guests get in?",
+        "wizard.question.guest_link": "How do guests find their form?",
+        "wizard.question.try_it": "Shall we do a test run?",
+    },
+    "cs": {
+        "wizard.done_count": "Hotovo %(n)s z %(total)s",
+        "wizard.question.property": "Kde je vaše ubytování?",
+        "wizard.question.calendar": "Kde přijímáte rezervace?",
+        "wizard.question.police": "Jaké máte přihlášení do Ubyportu?",
+        "wizard.question.automation": "Kdy se mají hlášení posílat policii?",
+        "wizard.question.stay_fee": "Vybírá vaše obec poplatek z pobytu?",
+        "wizard.question.door_lock": "Jak se hosté dostanou dovnitř?",
+        "wizard.question.guest_link": "Jak hosté najdou svůj formulář?",
+        "wizard.question.try_it": "Vyzkoušíme to nanečisto?",
+    },
+}
+for _lang, _strings in _WIZARD_0273_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+_FINISH_0274_STRINGS = {
+    "en": {
+        "wizard.done.all_set": "You're all set!",
+        "wizard.done.all_set_text": "Your guests can now register on their own.",
+        "wizard.done.almost": "Almost there: one thing left.",
+        "wizard.done.left.police": "Add your police login and reports go out by themselves.",
+        "wizard.done.left.step": "Finish the step below and you are done.",
+        "wizard.done.fix.police": "Add your police login",
+        "wizard.done.fix.step": "Finish setup",
+        "wizard.done.go_stays": "Open my stays",
+        "wizard.done.go_property": "Open my property",
+        "wizard.done.note_sync": "Your stays appear on the property page within %(minutes)s minutes, once your calendar syncs.",
+        "wizard.done.note_no_calendar": "No calendar is connected yet. You can add stays by hand on the property page.",
+    },
+    "cs": {
+        "wizard.done.all_set": "Hotovo, vše je nastavené!",
+        "wizard.done.all_set_text": "Hosté se teď můžou registrovat sami.",
+        "wizard.done.almost": "Skoro hotovo: zbývá jedna věc.",
+        "wizard.done.left.police": "Doplňte přihlášení do Ubyportu a hlášení půjdou sama.",
+        "wizard.done.left.step": "Dokončete krok níže a máte hotovo.",
+        "wizard.done.fix.police": "Doplnit údaje Ubyportu",
+        "wizard.done.fix.step": "Dokončit nastavení",
+        "wizard.done.go_stays": "Otevřít moje pobyty",
+        "wizard.done.go_property": "Otevřít ubytování",
+        "wizard.done.note_sync": "Pobyty se objeví u ubytování do %(minutes)s minut, jakmile se kalendář synchronizuje.",
+        "wizard.done.note_no_calendar": "Zatím není připojený žádný kalendář. Pobyty můžete přidat ručně u ubytování.",
+    },
+}
+for _lang, _strings in _FINISH_0274_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+_WELCOME_0275_STRINGS = {
+    "en": {
+        "welcome_back.title": "Welcome back! Since %(date)s:",
+        "welcome_back.stays": "%(count)s new stays came in.",
+        "welcome_back.stays.one": "1 new stay came in.",
+        "welcome_back.stays.few": "%(count)s new stays came in.",
+        "welcome_back.reported": "%(count)s guests were reported to the police.",
+        "welcome_back.reported.one": "1 guest was reported to the police.",
+        "welcome_back.reported.few": "%(count)s guests were reported to the police.",
+        "welcome_back.quiet": "Nothing new came in.",
+    },
+    "cs": {
+        "welcome_back.title": "Vítejte zpět! Od %(date)s:",
+        "welcome_back.stays": "přišlo %(count)s nových pobytů.",
+        "welcome_back.stays.one": "přišel 1 nový pobyt.",
+        "welcome_back.stays.few": "přišly %(count)s nové pobyty.",
+        "welcome_back.reported": "%(count)s hostů jsme nahlásili policii.",
+        "welcome_back.reported.one": "1 hosta jsme nahlásili policii.",
+        "welcome_back.reported.few": "%(count)s hosty jsme nahlásili policii.",
+        "welcome_back.quiet": "Nic nového nepřišlo.",
+    },
+}
+for _lang, _strings in _WELCOME_0275_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+_HOW_0277_STRINGS = {
+    "en": {
+        "how.toggle": "How does this work?",
+        "how.more": "More in the guide",
+        "how.dashboard.1": "Stays arrive here from your calendar by themselves.",
+        "how.dashboard.2": "Each guest fills in the form from the link in your message.",
+        "how.dashboard.3": "Anything that needs you shows at the top. An empty list means all is well.",
+        "how.stays.1": "Every booking in your calendar becomes a stay here.",
+        "how.stays.2": "Your Airbnb or Booking.com message carries the guest link, so guests fill in the form before arrival.",
+        "how.stays.3": "When a guest is done, the police report goes out the way you chose for the property.",
+        "how.stay.1": "This is one stay with its guests.",
+        "how.stay.2": "Each guest shows where they are: waiting for the form, filled in, or reported.",
+        "how.stay.3": "Missing a guest? Send the guest link again, or add them yourself.",
+        "how.properties.1": "Each property has its own calendar, police login and guest link.",
+        "how.properties.2": "Amber marks a setup step that is still missing. Open the property to finish it.",
+        "how.properties.3": "Add one property for each place you rent out.",
+        "how.property.1": "Everything for this one property lives here.",
+        "how.property.2": "Amber marks what is still missing. The rest runs without you.",
+        "how.property.3": "Police reports for this property use its own police login.",
+        "how.reports.1": "Every guest from abroad is reported to the foreign police (Ubyport).",
+        "how.reports.2": "Reports go out by themselves or when you press Send, as set for each property.",
+        "how.reports.3": "Each row shows if the police accepted the report. A problem also shows on the dashboard.",
+        "how.invoices.1": "Issue an invoice when a guest needs one for their stay.",
+        "how.invoices.2": "Your operator details fill in by themselves.",
+        "how.invoices.3": "Download the PDF and send it to the guest.",
+        "how.stay_fees.1": "UbyHost adds up each property's stay fee from its guests and nights.",
+        "how.stay_fees.2": "Open a property for the report, the PDF and the QR code to pay.",
+        "how.stay_fees.3": "Mark the period as sent and paid. UbyHost does not pay for you.",
+        "how.housebook.1": "The house book lists every guest, as Czech law asks.",
+        "how.housebook.2": "It fills in by itself from the guest forms.",
+        "how.housebook.3": "Export it as a PDF or a file when an office asks for it.",
+    },
+    "cs": {
+        "how.toggle": "Jak to funguje?",
+        "how.more": "Více v návodu",
+        "how.dashboard.1": "Pobyty sem přicházejí samy z vašeho kalendáře.",
+        "how.dashboard.2": "Každý host vyplní formulář přes odkaz ve vaší zprávě.",
+        "how.dashboard.3": "Co potřebuje vás, je nahoře. Prázdný seznam znamená, že je vše v pořádku.",
+        "how.stays.1": "Každá rezervace z kalendáře se tu objeví jako pobyt.",
+        "how.stays.2": "Vaše zpráva v Airbnb nebo Booking.com obsahuje odkaz pro hosty, takže formulář vyplní před příjezdem.",
+        "how.stays.3": "Když host formulář dokončí, hlášení na policii odejde tak, jak jste u nemovitosti zvolili.",
+        "how.stay.1": "Tady je jeden pobyt a jeho hosté.",
+        "how.stay.2": "U každého hosta vidíte, kde je: čeká na formulář, vyplněno, nebo nahlášeno.",
+        "how.stay.3": "Chybí host? Pošlete odkaz znovu, nebo ho doplňte sami.",
+        "how.properties.1": "Každá nemovitost má vlastní kalendář, přihlášení k policii a odkaz pro hosty.",
+        "how.properties.2": "Oranžově je označeno, co v nastavení ještě chybí. Otevřete nemovitost a dokončete to.",
+        "how.properties.3": "Přidejte jednu nemovitost za každé ubytování, které pronajímáte.",
+        "how.property.1": "Vše k této nemovitosti najdete tady.",
+        "how.property.2": "Oranžově je označeno, co ještě chybí. Zbytek běží bez vás.",
+        "how.property.3": "Hlášení pro tuto nemovitost používají její vlastní přihlášení k policii.",
+        "how.reports.1": "Každého hosta ze zahraničí hlásíme cizinecké policii (Ubyport).",
+        "how.reports.2": "Hlášení odcházejí sama, nebo když stisknete Odeslat, podle nastavení nemovitosti.",
+        "how.reports.3": "U každého řádku vidíte, zda policie hlášení přijala. Problém se ukáže i na přehledu.",
+        "how.invoices.1": "Fakturu vystavte, když ji host k pobytu potřebuje.",
+        "how.invoices.2": "Údaje provozovatele se vyplní samy.",
+        "how.invoices.3": "Stáhněte PDF a pošlete ho hostovi.",
+        "how.stay_fees.1": "UbyHost sečte poplatek z pobytu každé nemovitosti podle hostů a nocí.",
+        "how.stay_fees.2": "Otevřete nemovitost pro hlášení, PDF a QR kód k platbě.",
+        "how.stay_fees.3": "Období označte jako odeslané a zaplacené. UbyHost za vás neplatí.",
+        "how.housebook.1": "Domovní kniha uvádí každého hosta, jak to vyžaduje zákon.",
+        "how.housebook.2": "Vyplňuje se sama z formulářů hostů.",
+        "how.housebook.3": "Když ji úřad chce, exportujte ji jako PDF nebo soubor.",
+    },
+}
+for _lang, _strings in _HOW_0277_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 # 0280: the one line that stands for several alerts off the dashboard.
 _SUMMARY_0280_STRINGS = {
     "en": {

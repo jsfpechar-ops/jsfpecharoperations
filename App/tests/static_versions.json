@@ -68,20 +68,20 @@
     "v": "20261014-0102d"
   },
   "host-design0123.css": {
-    "sha256": "24fa0de9f9663f3b533325795e618d354855a118727173fbb18e01fb4e0cba4d",
-    "v": "20261021-0199"
+    "sha256": "9e0768b4a69dbeb1adf2cf7571493d770db33daeb8319f2bb944bf2083184d96",
+    "v": "20261022-0253b"
   },
   "host.css": {
-    "sha256": "22c035379f1a1e3c499170aead2eacbd3769cd51dd9d12184181854c64de4e20",
-    "v": "20261022-0252d"
+    "sha256": "024b009429fb628d5c19132d5de244c17b40bc022cc3d2ef89fb23a90ece2d0a",
+    "v": "20261022-0276b"
   },
   "host.js": {
     "sha256": "832ac57d928f8ac4d1e38af0a94a6d567fd1c8c720ee7e6a8885b25bae8f01db",
     "v": "20261022-0282"
   },
   "host2.css": {
-    "sha256": "a29e9a5b6320e446d6549f7f90e32be709f538b22ec210b1a684a58a997b26ca",
-    "v": "20261022-0283"
+    "sha256": "74a42265bfce2db514be08051ebd9a9c044fe4fe62d3edbb77b59c989e8f1b13",
+    "v": "20261022-0283m"
   },
   "landing.css": {
     "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",
@@ -130,6 +130,10 @@
   "ubyhost-mark.png": {
     "sha256": "ae71e0a3ab7231aceeadc761b7d98e66f50b97bae22413cbba65f89e17f53e60",
     "v": "20261004a"
+  },
+  "wizard.css": {
+    "sha256": "8ef0c7ec0f178b1f896f690d7f529618175091604c67de3915c2c03f99cf3a83",
+    "v": "20261022-0274"
   },
   "workflow.css": {
     "sha256": "891e99e72802ef5b6895874129fce0da5834fdde42398db18b003e41df52db20",

@@ -20,7 +20,7 @@ Append-only.
 - 2026-10-06 | [workflow] Context: AGENTS.md L0, context L1, plans L2; audits archived; known-issues replaces FOLLOWUPS | re-reading used 87% of spend | [README](README.md)
 - 2026-10-06 | [workflow] WP/patch series closed at WP33/0034; new work uses task numbers NNNN | one numbering scheme | [workflow](workflow.md)
 - 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in one day found the same issues | [workflow](workflow.md)
-- 2026-10-06 | [workflow] Task 0001 merged (#281) before orchestrator review; review post-merge approved; stale PR cleanup remains owner-run | owner merged early | [0001 report](../tasks/0001-report.md)
+- 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
 - 2026-10-06 | [workflow] Context-rollout bundle: flat files only; MANIFEST at root | place_files paths | [TEMPLATE](../tasks/TEMPLATE.md)
 - 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
 - 2026-10-06 | New dependency `webauthn==3.0.1` plus transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned | passkeys must not be hand-rolled; owner approved all five | task 0004
@@ -61,5 +61,7 @@ Append-only.
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)
 - 2026-10-22 Round 2: one "What needs you" card on `/` (no alert stack there); host reminder may go the day before arrival if the link is unopened, at most one per stay; no new host emails (owner).
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
-- 2026-10-22 Notifications: one short line plus the link to the fix, never field lists or error text; off `/` only red alerts get a line, the rest one summary line (owner).
-- 2026-10-22 [deps] Typed signature: self-hosted Dancing Script (OFL), own canvas code, nothing copied ("pdfcart" not found; signaturepdf is AGPL) (owner).
+- 2026-10-22 [workflow] iPad checks also run in cloud WebKit; `page.route` tests on navigations need `service_workers="block"` (0253).
+- 2026-10-22 Wizard coral bar OK (MASTER 10.5)
+- 2026-10-22 Alerts: one short line + link to the fix; off `/` only red alerts get a line (owner).
+- 2026-10-22 [deps] Typed signature font: self-hosted Dancing Script (OFL); no code copied (owner).

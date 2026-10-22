@@ -525,10 +525,8 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
         assert page.locator("#calendar-add #url").is_visible()
         _shot(page, "created-wizard-calendar-1280-en")
         page.locator(".setup-wizard-skip button[value='skip']").click()
-        page.wait_for_url("**/setup/guest_link**")
-        page.locator("button[value='done']").click()
-        page.wait_for_url("**/setup/try_it**")
-        page.locator("button[value='skip']").click()
+        # 0270: story order, police comes after the calendar.
+        page.wait_for_url("**/setup/police**")
         import re
 
         aid = re.search(r"/apartments/(\d+)/", page.url).group(1)

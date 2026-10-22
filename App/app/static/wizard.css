@@ -1,0 +1,38 @@
+/* 0272: the test run walkthrough (C). Wizard-only styles live in this file. */
+.host-workspace .setup-rehearsal { margin: var(--space-5) 0 0; }
+.host-workspace .setup-rehearsal > h2 { margin: 0 0 var(--space-3); font-size: var(--text-md); line-height: 1.3; }
+.host-workspace .setup-rehearsal-steps { display: grid; gap: var(--space-2); margin: 0 0 var(--space-3); padding: 0; list-style: none; }
+.host-workspace .setup-rehearsal-steps > li { display: flex; align-items: flex-start; gap: var(--space-3); min-width: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.host-workspace .setup-rehearsal-steps > li.is-done { border-color: var(--green-300); }
+.host-workspace .setup-rehearsal-steps > li.is-done .workflow-num { border-color: var(--green-700); background: var(--green-700); color: var(--surface); }
+.host-workspace .setup-rehearsal-copy { display: grid; gap: var(--space-1); flex: 1 1 auto; min-width: 0; font-size: var(--text-sm); line-height: 1.4; overflow-wrap: anywhere; }
+.host-workspace .setup-rehearsal-copy > span { color: var(--ink-secondary); }
+.host-workspace .setup-rehearsal-steps .ui-badge { flex: 0 0 auto; }
+@media (max-width: 599px) { .host-workspace .setup-rehearsal-steps > li { flex-wrap: wrap; } .host-workspace .setup-rehearsal-steps .ui-badge { margin-left: calc(var(--space-8) - var(--space-1)); } }
+
+/* 0273: friendlier setup wizard (K). Coral bar is wizard-only (decision 2026-10-22). */
+.host-workspace .setup-wizard-meter { grid-column: 1 / -1; display: grid; gap: var(--space-2); min-width: 0; }
+.host-workspace .setup-wizard-meter .setup-wizard-progress li { height: 8px; border: 1px solid var(--border); background: var(--surface); opacity: 1; }
+.host-workspace .setup-wizard-meter .setup-wizard-progress li.is-done { border-color: var(--brand-action); background: var(--brand-action); }
+.host-workspace .setup-wizard-meter .setup-wizard-progress li.is-current { border-color: var(--brand-action); background: var(--brand-soft); }
+.host-workspace .setup-wizard-meter .setup-wizard-progress li.is-waiting { border-color: var(--amber-300); background: var(--amber-100); }
+.host-workspace .setup-wizard-meter .setup-wizard-progress li.is-skipped { border-style: dashed; background: var(--surface); }
+.host-workspace .setup-wizard-done-count { display: flex; align-items: center; gap: var(--space-2); margin: 0; color: var(--ink-secondary); font-size: var(--text-sm); font-weight: 600; }
+.host-workspace .setup-wizard-tick { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid var(--green-300); border-radius: var(--radius-pill); background: var(--green-bg); color: var(--green-700); font-size: var(--text-xs); line-height: 1; animation: setup-wizard-tick-pop 300ms ease-out 1 both; }
+@keyframes setup-wizard-tick-pop { 0% { transform: scale(0); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .host-workspace .setup-wizard-tick { animation: none; } }
+.host-workspace .setup-wizard-ask { display: flex; align-items: center; gap: var(--space-3); margin: 0 0 var(--space-3); min-width: 0; }
+.host-workspace .setup-wizard-ask-icon { flex: 0 0 auto; display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid currentColor; border-radius: var(--radius-md); }
+.host-workspace .setup-wizard-ask-icon .nav-icon { width: 24px; height: 24px; color: inherit; }
+.host-workspace .setup-wizard-ask[data-step-tone="blue"] .setup-wizard-ask-icon { color: var(--blue); background: var(--blue-bg); }
+.host-workspace .setup-wizard-ask[data-step-tone="teal"] .setup-wizard-ask-icon { color: var(--teal); background: var(--teal-bg); }
+.host-workspace .setup-wizard-ask[data-step-tone="purple"] .setup-wizard-ask-icon { color: var(--purple); background: var(--purple-bg); }
+.host-workspace .setup-wizard-question { margin: 0; min-width: 0; color: var(--ink); font-size: var(--text-lg); line-height: 1.25; overflow-wrap: anywhere; }
+/* 0274: finish moment (L). Confetti lives in host2.css (12 pieces, reduced-motion hidden). */
+.host-workspace .setup-wizard-celebrate { display: flex; align-items: center; gap: var(--space-3); min-height: 96px; padding: var(--space-5); }
+.host-workspace .setup-wizard-celebrate-mark { position: relative; flex: 0 0 auto; display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--green-300); border-radius: var(--radius-pill); background: var(--surface); color: var(--green-700); font-size: var(--text-lg); font-weight: 700; }
+.host-workspace .setup-wizard-celebrate-copy { position: relative; display: grid; gap: var(--space-1); min-width: 0; }
+.host-workspace .setup-wizard-celebrate-title { color: var(--ink); font-size: var(--text-lg); line-height: 1.25; overflow-wrap: anywhere; }
+.host-workspace .setup-wizard-celebrate.is-partial { background: var(--amber-bg); border-color: var(--amber-300); }
+.host-workspace .setup-wizard-celebrate.is-partial .setup-wizard-celebrate-mark { border-color: var(--amber-300); color: var(--amber-700); }
+.host-workspace .setup-wizard-celebrate .setup-wizard-confetti i { animation-duration: 2s; }
