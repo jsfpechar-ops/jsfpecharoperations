@@ -656,6 +656,7 @@ def _unavailable(
     reason: str = "bad_link",
     status_code: int = 404,
     token: Optional[str] = None,
+    host_note: Optional[str] = None,
 ):
     """The one page a guest lands on when there is nothing to fill in.
 
@@ -702,6 +703,7 @@ def _unavailable(
             # stay hub and here only, so it never competes on the PIN, claim or
             # form screens. Wired off until that feature ships.
             "show_invoice_link": False,
+            "host_note": host_note,
             "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang) if token else None,
         }
     )
