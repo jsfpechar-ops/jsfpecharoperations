@@ -25,7 +25,7 @@ TOTAL_STEPS = len(STEPS)
 OPTIONAL = frozenset({"stay_fee", "door_lock"})
 SKIPPABLE = frozenset({"calendar", "try_it", "stay_fee", "door_lock"})
 TEACHING = frozenset({"guest_link", "try_it"})
-MARKS = ("done", "skipped", "waiting")
+MARKS = ("done", "skipped", "waiting", "not_needed")
 
 # Columns each wizard save may write. Hidden passthrough fields on a step form are
 # not listed here, so a partial post cannot blank another step's data.
@@ -250,7 +250,7 @@ def may_view_step(
         return True
     if step_idx > current_idx:
         return False
-    if step_status(step, state, apartment, facts) in ("done", "skipped", "waiting"):
+    if step_status(step, state, apartment, facts) in ("done", "skipped", "waiting", "not_needed"):
         return True
     return step == current
 
@@ -292,12 +292,15 @@ def step_status(
     apartment,
     facts: Dict[str, Any],
 ) -> str:
-    """done | skipped | waiting | todo | current — for checklist and progress."""
+    """done | skipped | not_needed | waiting | todo | current — for checklist and progress."""
     marks = state["steps"]
     if step == "police" and marks.get("police") == "waiting" and not facts["report_complete"]:
         return "waiting"
     if marks.get(step) == "skipped":
         return "skipped"
+    # 0234: "No smart lock" is an answer, not a skip.
+    if marks.get(step) == "not_needed":
+        return "not_needed"
     if _resolved(step, state, apartment, facts):
         return "done"
     return "todo"
@@ -315,7 +318,7 @@ def done_count(
         if step == "door_lock" and not lock_available:
             total += 1
             continue
-        if step_status(step, state, apartment, facts) in ("done", "skipped"):
+        if step_status(step, state, apartment, facts) in ("done", "skipped", "not_needed"):
             total += 1
     return total
 
@@ -364,8 +367,8 @@ def current(
             progress.append({"key": step, "state": "done" if _resolved(step, state, apartment, facts) else "skipped"})
             continue
         status = step_status(step, state, apartment, facts)
-        if status in ("done", "skipped"):
-            progress.append({"key": step, "state": "done" if status == "done" else "skipped"})
+        if status in ("done", "skipped", "not_needed"):
+            progress.append({"key": step, "state": "skipped" if status == "skipped" else "done"})
         elif step == "police" and waiting:
             progress.append({"key": step, "state": "waiting"})
             continue
@@ -402,7 +405,7 @@ def checklist(
     rows: List[Dict[str, str]] = []
     for step in STEPS:
         if step == "door_lock" and not lock_available:
-            rows.append({"key": step, "status": "skipped"})
+            rows.append({"key": step, "status": "not_needed"})
             continue
         rows.append({"key": step, "status": step_status(step, state, apartment, facts)})
     return rows
