@@ -844,7 +844,12 @@
       "setup-wizard-demo",
       "setup-wizard-instruction",
       "setup-wizard-lede",
-      "setup-wizard-skip"
+      "setup-wizard-skip",
+      "setup-rehearsal",
+      "setup-rehearsal-steps",
+      "setup-rehearsal-copy",
+      "workflow-num",
+      "ui-badge-"
     ],
     "App/app/templates/_smart_locks_panel.html": [
       "action-group",
@@ -865,7 +870,8 @@
     "App/app/templates/admin_funnel.html": []
   },
   "enforced_stylesheets": [
-    "App/app/static/host2.css"
+    "App/app/static/host2.css",
+    "App/app/static/wizard.css"
   ],
   "class_notes": {
     "ui-section-plain": "Guide page section: a section with no border or fill, only spacing and a heading (MASTER 3, section rhythm).",
