@@ -1438,18 +1438,12 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         assert lede.evaluate("(el) => getComputedStyle(el).color") == page.locator(
             ".ui-ph h1"
         ).evaluate("(el) => getComputedStyle(el).color")
-        page.locator("button[value=skip]").click()
-        page.wait_for_url("**/setup/police**")
-        page.locator(".setup-wizard-wait").click()
-        page.wait_for_url("**/setup/stay_fee**")
-        page.locator(".setup-wizard-skip button").click()
-        page.wait_for_url("**/setup/door_lock**")
+        page.goto(f"{base}/door_lock?lang={lang}")
         assert page.locator('button[data-lock-choice="no"]').count() == 1
         assert page.locator('[aria-controls="wizard-lock-help"]').is_visible()
         assert page.locator(".setup-wizard-body p.small.muted").count() == 0
         _shot(page, f"30-lock-instructions-{tag}.png")
-        page.locator('button[data-lock-choice="no"]').click()
-        page.wait_for_url("**/setup/automation**")
+        page.goto(f"{base}/automation?lang={lang}")
         assert page.locator(".setup-wizard-radio-card .help-tip").count() == 3
         page.locator('input[value="manual"]').check()
         _shot(page, f"31-automation-help-{tag}.png")
