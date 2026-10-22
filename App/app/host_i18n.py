@@ -7520,6 +7520,73 @@ _WELCOME_0275_STRINGS = {
 for _lang, _strings in _WELCOME_0275_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+_HOW_0277_STRINGS = {
+    "en": {
+        "how.toggle": "How does this work?",
+        "how.more": "More in the guide",
+        "how.dashboard.1": "Stays arrive here from your calendar by themselves.",
+        "how.dashboard.2": "Each guest fills in the form from the link in your message.",
+        "how.dashboard.3": "Anything that needs you shows at the top. An empty list means all is well.",
+        "how.stays.1": "Every booking in your calendar becomes a stay here.",
+        "how.stays.2": "Your Airbnb or Booking.com message carries the guest link, so guests fill in the form before arrival.",
+        "how.stays.3": "When a guest is done, the police report goes out the way you chose for the property.",
+        "how.stay.1": "This is one stay with its guests.",
+        "how.stay.2": "Each guest shows where they are: waiting for the form, filled in, or reported.",
+        "how.stay.3": "Missing a guest? Send the guest link again, or add them yourself.",
+        "how.properties.1": "Each property has its own calendar, police login and guest link.",
+        "how.properties.2": "Amber marks a setup step that is still missing. Open the property to finish it.",
+        "how.properties.3": "Add one property for each place you rent out.",
+        "how.property.1": "Everything for this one property lives here.",
+        "how.property.2": "Amber marks what is still missing. The rest runs without you.",
+        "how.property.3": "Police reports for this property use its own police login.",
+        "how.reports.1": "Every guest from abroad is reported to the foreign police (Ubyport).",
+        "how.reports.2": "Reports go out by themselves or when you press Send, as set for each property.",
+        "how.reports.3": "Each row shows if the police accepted the report. A problem also shows on the dashboard.",
+        "how.invoices.1": "Issue an invoice when a guest needs one for their stay.",
+        "how.invoices.2": "Your operator details fill in by themselves.",
+        "how.invoices.3": "Download the PDF and send it to the guest.",
+        "how.stay_fees.1": "UbyHost adds up each property's stay fee from its guests and nights.",
+        "how.stay_fees.2": "Open a property for the report, the PDF and the QR code to pay.",
+        "how.stay_fees.3": "Mark the period as sent and paid. UbyHost does not pay for you.",
+        "how.housebook.1": "The house book lists every guest, as Czech law asks.",
+        "how.housebook.2": "It fills in by itself from the guest forms.",
+        "how.housebook.3": "Export it as a PDF or a file when an office asks for it.",
+    },
+    "cs": {
+        "how.toggle": "Jak to funguje?",
+        "how.more": "Více v návodu",
+        "how.dashboard.1": "Pobyty sem přicházejí samy z vašeho kalendáře.",
+        "how.dashboard.2": "Každý host vyplní formulář přes odkaz ve vaší zprávě.",
+        "how.dashboard.3": "Co potřebuje vás, je nahoře. Prázdný seznam znamená, že je vše v pořádku.",
+        "how.stays.1": "Každá rezervace z kalendáře se tu objeví jako pobyt.",
+        "how.stays.2": "Vaše zpráva v Airbnb nebo Booking.com obsahuje odkaz pro hosty, takže formulář vyplní před příjezdem.",
+        "how.stays.3": "Když host formulář dokončí, hlášení na policii odejde tak, jak jste u nemovitosti zvolili.",
+        "how.stay.1": "Tady je jeden pobyt a jeho hosté.",
+        "how.stay.2": "U každého hosta vidíte, kde je: čeká na formulář, vyplněno, nebo nahlášeno.",
+        "how.stay.3": "Chybí host? Pošlete odkaz znovu, nebo ho doplňte sami.",
+        "how.properties.1": "Každá nemovitost má vlastní kalendář, přihlášení k policii a odkaz pro hosty.",
+        "how.properties.2": "Oranžově je označeno, co v nastavení ještě chybí. Otevřete nemovitost a dokončete to.",
+        "how.properties.3": "Přidejte jednu nemovitost za každé ubytování, které pronajímáte.",
+        "how.property.1": "Vše k této nemovitosti najdete tady.",
+        "how.property.2": "Oranžově je označeno, co ještě chybí. Zbytek běží bez vás.",
+        "how.property.3": "Hlášení pro tuto nemovitost používají její vlastní přihlášení k policii.",
+        "how.reports.1": "Každého hosta ze zahraničí hlásíme cizinecké policii (Ubyport).",
+        "how.reports.2": "Hlášení odcházejí sama, nebo když stisknete Odeslat, podle nastavení nemovitosti.",
+        "how.reports.3": "U každého řádku vidíte, zda policie hlášení přijala. Problém se ukáže i na přehledu.",
+        "how.invoices.1": "Fakturu vystavte, když ji host k pobytu potřebuje.",
+        "how.invoices.2": "Údaje provozovatele se vyplní samy.",
+        "how.invoices.3": "Stáhněte PDF a pošlete ho hostovi.",
+        "how.stay_fees.1": "UbyHost sečte poplatek z pobytu každé nemovitosti podle hostů a nocí.",
+        "how.stay_fees.2": "Otevřete nemovitost pro hlášení, PDF a QR kód k platbě.",
+        "how.stay_fees.3": "Období označte jako odeslané a zaplacené. UbyHost za vás neplatí.",
+        "how.housebook.1": "Domovní kniha uvádí každého hosta, jak to vyžaduje zákon.",
+        "how.housebook.2": "Vyplňuje se sama z formulářů hostů.",
+        "how.housebook.3": "Když ji úřad chce, exportujte ji jako PDF nebo soubor.",
+    },
+}
+for _lang, _strings in _HOW_0277_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
