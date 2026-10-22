@@ -43,62 +43,162 @@
     while (parent) { parent.open = true; parent = parent.parentElement.closest('details'); }
   }, true);
 
+  // 0282: the stay-fee signature is locked until the host presses Edit. Edit
+  // opens a large dialog to draw it, or to type a name that is drawn in a
+  // handwriting font. Nothing reaches the form until "Use this signature".
+  var SIGNATURE_INK = '#20201e';
+  var SIGNATURE_FONT = '"UbyHost Signature", cursive';
   document.querySelectorAll('[data-host-signature]').forEach(function (block) {
-    var canvas = block.querySelector('canvas');
+    var dialog = block.querySelector('[data-signature-dialog]');
+    var canvas = block.querySelector('[data-signature-panel="draw"] canvas');
+    var typedCanvas = block.querySelector('[data-signature-typed-canvas]');
+    var typed = block.querySelector('[data-signature-typed]');
     var hidden = block.querySelector('input[name="signature_drawn"]');
-    var clear = block.querySelector('[data-signature-clear]');
-    if (!canvas || !hidden) return;
-    var ctx = canvas.getContext('2d');
+    var preview = block.querySelector('[data-signature-preview]');
+    var empty = block.querySelector('[data-signature-empty]');
+    var status = block.querySelector('[data-signature-status]');
+    var openButton = block.querySelector('[data-signature-open]');
+    var file = block.querySelector('[data-signature-file]');
+    var remove = block.querySelector('input[name="signature_remove"]');
+    if (!dialog || !canvas || !hidden || !openButton || typeof dialog.showModal !== 'function') return;
+    var mode = 'draw';
+    var draft = '';
     var drawing = false;
-    function resize() {
-      var rect = canvas.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
+    var inked = false;
+    openButton.hidden = false;
+
+    function fit(target) {
+      var rect = target.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
       var ratio = window.devicePixelRatio || 1;
-      var width = Math.round(rect.width * ratio);
-      var height = Math.round(rect.height * ratio);
-      if (canvas.width === width && canvas.height === height) return;
-      var snapshot = hidden.value && hidden.value.indexOf('data:image/') === 0 ? hidden.value : '';
-      canvas.width = width;
-      canvas.height = height;
+      target.width = Math.round(rect.width * ratio);
+      target.height = Math.round(rect.height * ratio);
+      var ctx = target.getContext('2d');
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      ctx.lineWidth = 2.2;
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = '#20201e';
-      if (snapshot) {
-        var image = new Image();
-        image.onload = function () { ctx.drawImage(image, 0, 0, rect.width, rect.height); };
-        image.src = snapshot;
+      return { ctx: ctx, width: rect.width, height: rect.height };
+    }
+    function paintDraft() {
+      var box = fit(canvas);
+      if (!box) return;
+      box.ctx.lineWidth = 2.6;
+      box.ctx.lineCap = 'round';
+      box.ctx.lineJoin = 'round';
+      box.ctx.strokeStyle = SIGNATURE_INK;
+      if (!draft) return;
+      var image = new Image();
+      image.onload = function () { box.ctx.drawImage(image, 0, 0, box.width, box.height); };
+      image.src = draft;
+    }
+    function writeName(ctx, width, height) {
+      var text = (typed.value || '').trim();
+      ctx.clearRect(0, 0, width, height);
+      if (!text) return false;
+      var size = height * 0.55;
+      ctx.font = size + 'px ' + SIGNATURE_FONT;
+      var measured = ctx.measureText(text).width;
+      if (measured > width * 0.9) {
+        size = size * width * 0.9 / measured;
+        ctx.font = size + 'px ' + SIGNATURE_FONT;
       }
+      ctx.fillStyle = SIGNATURE_INK;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, width / 2, height / 2);
+      return true;
+    }
+    function paintTyped() {
+      var box = fit(typedCanvas);
+      if (box) writeName(box.ctx, box.width, box.height);
+    }
+    function fontReady() {
+      if (!document.fonts || !document.fonts.load) return Promise.resolve();
+      return document.fonts.load('48px "UbyHost Signature"').catch(function () {});
+    }
+    function setMode(next) {
+      mode = next;
+      block.querySelectorAll('[data-signature-mode]').forEach(function (tab) {
+        tab.setAttribute('aria-selected', tab.getAttribute('data-signature-mode') === next ? 'true' : 'false');
+      });
+      block.querySelectorAll('[data-signature-panel]').forEach(function (panel) {
+        panel.hidden = panel.getAttribute('data-signature-panel') !== next;
+      });
+      if (next === 'draw') paintDraft(); else fontReady().then(paintTyped);
+    }
+    function showPreview(src) {
+      if (src) { preview.src = src; preview.hidden = false; empty.hidden = true; }
+      else { preview.removeAttribute('src'); preview.hidden = true; empty.hidden = false; }
+      if (status) status.textContent = status.getAttribute('data-unsaved') || '';
     }
     function point(event) {
       var rect = canvas.getBoundingClientRect();
-      var source = event.touches ? event.touches[0] : event;
-      return { x: source.clientX - rect.left, y: source.clientY - rect.top };
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
     }
     canvas.addEventListener('pointerdown', function (event) {
       drawing = true;
+      inked = false;
       canvas.setPointerCapture(event.pointerId);
       var start = point(event);
+      var ctx = canvas.getContext('2d');
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
     });
     canvas.addEventListener('pointermove', function (event) {
       if (!drawing) return;
       var next = point(event);
+      var ctx = canvas.getContext('2d');
       ctx.lineTo(next.x, next.y);
       ctx.stroke();
+      inked = true;
     });
-    canvas.addEventListener('pointerup', function () {
+    function endStroke() {
       if (!drawing) return;
       drawing = false;
-      hidden.value = canvas.toDataURL('image/png');
+      if (inked) draft = canvas.toDataURL('image/png');
+    }
+    canvas.addEventListener('pointerup', endStroke);
+    canvas.addEventListener('pointercancel', endStroke);
+    block.querySelector('[data-signature-clear]').addEventListener('click', function () {
+      draft = '';
+      paintDraft();
     });
-    if (clear) clear.addEventListener('click', function () {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      hidden.value = '';
+    block.querySelectorAll('[data-signature-mode]').forEach(function (tab) {
+      tab.addEventListener('click', function () { setMode(tab.getAttribute('data-signature-mode')); });
     });
-    resize();
-    if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+    if (typed) typed.addEventListener('input', function () { fontReady().then(paintTyped); });
+    openButton.addEventListener('click', function () {
+      draft = hidden.value.indexOf('data:image/') === 0 ? hidden.value : '';
+      dialog.showModal();
+      window.requestAnimationFrame(function () { setMode(mode); });
+    });
+    block.querySelector('[data-signature-cancel]').addEventListener('click', function () { dialog.close(); });
+    if (file) file.addEventListener('change', function () {
+      var chosen = file.files && file.files[0];
+      if (!chosen) return;
+      var reader = new FileReader();
+      reader.onload = function () { showPreview(String(reader.result)); dialog.close(); };
+      reader.readAsDataURL(chosen);
+    });
+    block.querySelector('[data-signature-use]').addEventListener('click', function () {
+      if (remove && remove.checked) {
+        hidden.value = '';
+        showPreview('');
+      } else if (mode === 'type') {
+        var out = document.createElement('canvas');
+        out.width = 900;
+        out.height = 240;
+        if (writeName(out.getContext('2d'), out.width, out.height)) {
+          hidden.value = out.toDataURL('image/png');
+          showPreview(hidden.value);
+        }
+      } else if (draft) {
+        hidden.value = draft;
+        showPreview(draft);
+      }
+      dialog.close();
+    });
+    if (window.ResizeObserver) new ResizeObserver(function () {
+      if (dialog.open && !drawing) setMode(mode);
+    }).observe(canvas);
   });
 
   // The demo form opens its POST response in a new tab. Refresh this step
