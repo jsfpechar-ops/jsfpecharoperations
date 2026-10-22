@@ -134,6 +134,8 @@
 @media (max-width: 1023px) { .host-workspace .ui-tabs { flex-wrap: wrap; overflow-x: visible; row-gap: var(--space-1); } }
 .host-workspace .ui-tab { display: flex; align-items: center; height: var(--control-h-phone); padding: 0 var(--space-3); color: var(--ink-2); text-decoration: none; font-size: var(--size-14); font-weight: 600; border-bottom: 2px solid transparent; white-space: nowrap; }
 .host-workspace .ui-tab[aria-current="page"] { color: var(--ink); border-color: var(--ink); }
+.host-workspace button.ui-tab { background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; font: inherit; font-size: var(--size-14); font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.host-workspace .ui-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
 .host-workspace .ui-toolbar { display: flex; align-items: center; gap: var(--space-3); margin: 0 0 var(--space-4); flex-wrap: wrap; }
 .host-workspace .ui-toolbar-search { display: flex; align-items: center; gap: var(--space-2); height: var(--control-h); width: calc(var(--space-12) * 5 + var(--space-10)); padding: 0 var(--input-px); border: 1px solid var(--input-border); border-radius: var(--input-radius); background: var(--surface); color: var(--ink-3); }
 .host-workspace .ui-toolbar-search .ui-input { border: 0; outline: 0; font: inherit; font-size: var(--size-14); color: var(--ink); background: transparent; width: 100%; min-height: 0; height: auto; padding: 0; box-shadow: none; }
