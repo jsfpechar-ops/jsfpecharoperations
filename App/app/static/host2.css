@@ -290,16 +290,18 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position:
 }
 
 @media (max-width: 1279px) and (min-width: 1024px) {
-  .host-workspace .ui-sidebar { width: var(--nav-w-collapsed); padding: var(--space-3) var(--space-2); }
+  body.host-workspace:not(.sidebar-expanded) .ui-sidebar { width: var(--nav-w-collapsed); padding: var(--space-3) var(--space-2); }
   .host-workspace .wrap.with-sidebar { margin-left: var(--nav-w-collapsed); }
   .host-workspace .ui-table th, .host-workspace .ui-table td { padding-left: var(--space-3); padding-right: var(--space-3); }
-  .host-workspace .ui-sidebar :is(.brand-word, .ui-env, .ui-search-row span, .ui-search-row kbd, .ui-nav a > span:not(.ui-nav-count), .host-account-name) { display: none; }
-  .host-workspace .ui-sidebar .ui-nav a, .host-workspace .ui-sidebar .ui-search-row { justify-content: center; padding: 0; }
-  .host-workspace .ui-brand { flex-direction: column; height: auto; gap: var(--space-2); }
-  .host-workspace .ui-sidebar .host-account-menu { position: fixed; position-anchor: --host-acct; left: calc(var(--nav-w-collapsed) + var(--space-2)); right: auto; bottom: 64px; width: 220px; max-height: 65vh; z-index: var(--z-drawer); }
+  body.host-workspace:not(.sidebar-expanded) .ui-sidebar :is(.brand-word, .ui-env, .ui-search-row span, .ui-search-row kbd, .ui-nav a > span:not(.ui-nav-count), .host-account-name) { display: none; }
+  body.host-workspace:not(.sidebar-expanded) .ui-sidebar .ui-nav a, body.host-workspace:not(.sidebar-expanded) .ui-sidebar .ui-search-row { justify-content: center; padding: 0; }
+  body.host-workspace:not(.sidebar-expanded) .ui-brand { flex-direction: column; height: auto; gap: var(--space-2); }
+  body.host-workspace:not(.sidebar-expanded) .ui-sidebar .host-account-menu { position: fixed; position-anchor: --host-acct; left: calc(var(--nav-w-collapsed) + var(--space-2)); right: auto; bottom: 64px; width: 220px; max-height: 65vh; z-index: var(--z-drawer); }
   @supports (anchor-name: --host-acct) {
-    .host-workspace .ui-sidebar .host-account-menu { bottom: anchor(top); margin-bottom: var(--space-2); }
+    body.host-workspace:not(.sidebar-expanded) .ui-sidebar .host-account-menu { bottom: anchor(top); margin-bottom: var(--space-2); }
   }
+  /* 0251: the toggle opens the full menu over the page on tablets. */
+  body.host-workspace.sidebar-expanded .ui-sidebar { width: var(--nav-w); box-shadow: var(--shadow-popover); }
 }
 @media (max-width: 1023px) {
   .host-workspace .ui-sidebar, .host-workspace .sidebar-expand { display: none; }
