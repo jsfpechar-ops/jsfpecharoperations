@@ -28,3 +28,11 @@
 .host-workspace .setup-wizard-ask[data-step-tone="teal"] .setup-wizard-ask-icon { color: var(--teal); background: var(--teal-bg); }
 .host-workspace .setup-wizard-ask[data-step-tone="purple"] .setup-wizard-ask-icon { color: var(--purple); background: var(--purple-bg); }
 .host-workspace .setup-wizard-question { margin: 0; min-width: 0; color: var(--ink); font-size: var(--text-lg); line-height: 1.25; overflow-wrap: anywhere; }
+/* 0274: finish moment (L). Confetti lives in host2.css (12 pieces, reduced-motion hidden). */
+.host-workspace .setup-wizard-celebrate { display: flex; align-items: center; gap: var(--space-3); min-height: 96px; padding: var(--space-5); }
+.host-workspace .setup-wizard-celebrate-mark { position: relative; flex: 0 0 auto; display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--green-300); border-radius: var(--radius-pill); background: var(--surface); color: var(--green-700); font-size: var(--text-lg); font-weight: 700; }
+.host-workspace .setup-wizard-celebrate-copy { position: relative; display: grid; gap: var(--space-1); min-width: 0; }
+.host-workspace .setup-wizard-celebrate-title { color: var(--ink); font-size: var(--text-lg); line-height: 1.25; overflow-wrap: anywhere; }
+.host-workspace .setup-wizard-celebrate.is-partial { background: var(--amber-bg); border-color: var(--amber-300); }
+.host-workspace .setup-wizard-celebrate.is-partial .setup-wizard-celebrate-mark { border-color: var(--amber-300); color: var(--amber-700); }
+.host-workspace .setup-wizard-celebrate .setup-wizard-confetti i { animation-duration: 2s; }
