@@ -740,7 +740,13 @@
       "setup-wizard-exit",
       "setup-wizard-foot",
       "setup-wizard-head",
-      "setup-wizard-progress"
+      "setup-wizard-progress",
+      "setup-wizard-meter",
+      "setup-wizard-done-count",
+      "setup-wizard-tick",
+      "setup-wizard-ask",
+      "setup-wizard-ask-icon",
+      "setup-wizard-question"
     ],
     "App/app/templates/setup_wizard/automation.html": [
       "field",
