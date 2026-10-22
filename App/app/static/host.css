@@ -1542,7 +1542,7 @@ body.host-workspace {
 
 /* 0199: E - below the 860 px lane the five Door lock chips are one horizontally scrolling row, 44 px tall. */
 @container property-lane (max-width: 859px) {
-  .property-settings > .property-settings-nav { flex-wrap: nowrap; overflow-x: auto; min-width: 0; max-width: 100%; }
+  .property-settings > .property-settings-nav { flex-wrap: wrap; min-width: 0; max-width: 100%; }
   .property-settings-nav a { flex: 0 0 auto; min-height: 44px; }
 }
 @media (max-width: 760px) {
@@ -1550,3 +1550,19 @@ body.host-workspace {
   .property-settings-group[data-settings-group=lock] .property-group-intro { margin-bottom: 0; }
   #settings-lock-account #door-code { margin-top: 0; }
 }
+/* 0252: the Open cue on clickable rows (the row is the link). */
+.row-open { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 32px; padding: 0 10px 0 12px; border: 1px solid var(--border-strong); border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink); background: white; vertical-align: middle; white-space: nowrap; }
+.row-open + .row-menu { vertical-align: middle; margin-left: 6px; }
+td:has(> .row-open) { white-space: nowrap; }
+@media (hover: hover) { .clickable-row:hover .row-open { border-color: var(--ink); } }
+@media (max-width: 1279px) {
+  .row-open { width: 32px; padding: 0; }
+  .row-open-text { display: none; }
+}
+@media (max-width: 1023px) {
+  .table-cards tr.clickable-row { position: relative; }
+  .table-cards tr.clickable-row .row-open { position: absolute; right: 12px; bottom: 12px; }
+  .table-cards tr.clickable-row:has(.row-action-form) .row-open { display: none; }
+}
+/* 0252: the housebook is wider than the lane; its row actions stay in view. */
+.scroll-x td.row-actions { position: sticky; right: 0; background: white; }
