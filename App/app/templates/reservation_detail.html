@@ -87,6 +87,8 @@
         {% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}
         {% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}
       </p>{% endif %}
+      {% set lw = link_window(reservation) if progress.status in ('awaiting_guest', 'incomplete') else none %}
+      {% if lw %}<p class="ui-sub link-window-line" data-link-window="{{ lw.state }}"><span class="link-window{{ ' is-later' if lw.state == 'from' }}">{{ t('workflow.link.now') if lw.state == 'now' else t('workflow.link.from', date=lw.opens.isoformat() | date_short) }}</span>{% if lw.state == 'from' %}{{ help_tip('link-window-help', t('workflow.link.why')) }}{% endif %}</p>{% endif %}
     </div>
     <div class="stay-command-actions">
       {% if ns.count_edit %}<a class="ui-btn ui-btn-secondary" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a>{% endif %}
