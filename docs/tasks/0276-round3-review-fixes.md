@@ -12,7 +12,11 @@ Four small fixes from the round 3 review:
 3. The stay fee fields use `h4` under the wizard's `h2` (skipped heading level).
 4. `test_wizard_polish_and_overview_cards` still expects the old finish button (dashboard). Since 0274 (idea M) the finish button goes to the first missing step, here the police login.
 
-## 2. Files
+## 2. Context
+
+Found by the round 3 screenshot matrix and the wide test run.
+
+## 3. Files
 
 | Path | Action |
 |---|---|
@@ -26,7 +30,7 @@ Four small fixes from the round 3 review:
 
 No other file may change.
 
-## 3. Steps
+## 4. Steps
 
 **Step 1. try_it.html.**
 a) Cut the whole block from `{% if demo_state == 'registered' %}` (the line before `<section class="setup-rehearsal"`) down to and including its `</section>`. Paste it right after the line `{% set demo_state = setup_demo.state if setup_demo else 'none' %}` (line 7) and close it there with `{% endif %}`.
@@ -65,11 +69,11 @@ with
 ```
 Commit `0276 step 6`.
 
-## 4. Do not touch
+## 5. Do not touch
 
 Other templates, routes, i18n. Never loosen or delete another assertion. Never push.
 
-## 5. Commands (from `App/`)
+## 6. Commands (from `App/`)
 
 1. `.venv/bin/python -m pytest tests/test_test_run_0272.py tests/test_static_versions.py tests/test_onboarding_wizard_survival.py tests/test_property_hub.py -q --tb=short 2>&1 | tail -15`
 2. `UBYHOST_REQUIRE_BROWSER=1 PLAYWRIGHT_BROWSERS_PATH=/tmp/claude-0/pwb .venv/bin/python -m pytest "tests/test_onboarding_wizard_browser.py::test_wizard_polish_and_overview_cards" tests/test_design_guardrails_browser.py tests/test_a11y_guard_browser.py -q --tb=line -rs -p no:cacheprovider 2>&1 | tail -15` (timeout 900000 ms; 0 failed, 0 skipped)
@@ -78,11 +82,15 @@ Other templates, routes, i18n. Never loosen or delete another assertion. Never p
 
 Never run `playwright install`.
 
-## 6. Acceptance
+## 7. Acceptance
 
 - [ ] All three command lines pass, 0 skipped.
 - [ ] No other file changed (`git status --short`).
 
-## 7. Report
+## 8. Stop and ask
+
+Per TEMPLATE.
+
+## 9. Report
 
 `docs/tasks/0276-report.md` (400 tokens max), `Status: review`. Do not push.

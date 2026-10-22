@@ -60,4 +60,4 @@ Append-only.
 - 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)
 - 2026-10-22 Round 2: dashboard opens with one "What needs you" card; the alert stack is hidden on `/` only (the card carries the alerts). Host reminder may go the day before arrival when nobody opened the link, same key as check-in day, so at most one per stay; no new host emails (owner).
-- 2026-10-22 Round 3 (0270-0275): wizard in story order (property, calendar, police, automation, stay fee, door lock, guest link, test run last); the test run only describes what a real stay would do (no email, never police). Wizard only: coral progress fill (exception to MASTER 10.5), step icons in blue/teal/purple tiles, confetti once per property (stored `celebrated`). Welcome-back line after 14 days away: dates only in settings, 7 days max, no email (owner).
+- 2026-10-22 Round 3 (0270-0276): wizard story order, test run last; wizard-only coral progress (MASTER 10.5 exception); no welcome-back email (owner).
