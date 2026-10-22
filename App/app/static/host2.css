@@ -698,7 +698,6 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 
 /* 0282: stay-fee signature: greyed locked preview, large signing dialog, and
    the self-hosted handwriting font (Dancing Script, SIL OFL 1.1). */
-@font-face { font-family: "UbyHost Signature"; src: url("/static/fonts/DancingScript.ttf?v=20261022-0282") format("truetype"); font-weight: 400 700; font-display: swap; }
 .host-workspace .signature-locked { display: flex; align-items: center; justify-content: center; min-height: calc(var(--control-h) * 2); padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-2); background: var(--surface-2); }
 .host-workspace .signature-locked-img { max-width: 100%; max-height: calc(var(--control-h) * 2.5); filter: grayscale(1); opacity: 0.6; }
 .host-workspace .signature-locked-empty { color: var(--ink-3); font-size: var(--size-14); }
