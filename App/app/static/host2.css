@@ -793,7 +793,9 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
    card is whole, and the name gets room so the Open arrow sits on its line. */
 @container list-cards (min-width: 950px) {
   .host-workspace .lc-entities tbody td.ui-sub { display: table-cell; }
-  .host-workspace .lc-entities tbody td.col-name { min-width: calc(var(--space-12) * 4); }
   .host-workspace .lc-entities tbody td.col-name .row-primary-link { display: inline-block; max-width: calc(100% - var(--space-12)); vertical-align: middle; }
   .host-workspace .lc-entities tbody td.col-name .row-primary-link + .row-open { margin-left: var(--space-3); }
+}
+@container list-cards (min-width: 1100px) {
+  .host-workspace .lc-entities tbody td.col-name { min-width: calc(var(--space-12) * 4); }
 }
