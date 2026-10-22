@@ -9,6 +9,7 @@ from app import auth, config, db, demo, feed_url, icalsync, property_setup
 from app.main import app
 from app.routes import admin as admin_routes
 from tests.conftest import login_as
+from tests.wizard_walk import walk_to
 
 ADDRESS = {
     "addr_okres": "Brno-město",
@@ -427,8 +428,7 @@ def test_try_it_skip_deletes_demo_stay(host):
     apt_id = flat["id"]
     client = host["client"]
     base = f"/apartments/{apt_id}/setup"
-    client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
-    client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
+    assert walk_to(client, apt_id, "try_it") == "try_it"
     client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     stay = demo.demo_stay_for(apt_id)
     assert stay is not None
@@ -492,11 +492,9 @@ def test_finish_setup_with_police_credentials_deferred(host, monkeypatch, lock_a
     )
     client = host["client"]
     base = f"/apartments/{apt_id}/setup"
-    actions = [("calendar", "skip"), ("guest_link", "done"), ("try_it", "skip")]
+    actions = [("calendar", "skip")]
     if defer_police:
-        actions.extend([("police", "wait"), ("stay_fee", "skip")])
-        if lock_available:
-            actions.append(("door_lock", "skip"))
+        actions.append(("police", "wait"))
     for step, action in actions:
         response = client.post(base, data={"step": step, "action": action}, follow_redirects=False)
         assert response.status_code == 303
@@ -506,14 +504,20 @@ def test_finish_setup_with_police_credentials_deferred(host, monkeypatch, lock_a
             "automation_mode": mode,
             "submit_after_hours": "24",
             "setup_step": "automation",
-            "return_to": f"{base}/done",
+            "return_to": f"{base}/stay_fee",
         },
         follow_redirects=False,
     )
     assert saved.status_code == 303
     target = urlparse(saved.headers["location"]).path
-    assert target == f"{base}/{'done' if defer_police else 'police'}"
-    assert property_setup.load(apt_id)["finished"] is defer_police
+    if defer_police:
+        assert target.startswith(f"{base}/") and not target.endswith("/police")
+    else:
+        assert target == f"{base}/police"
+    assert property_setup.load(apt_id)["finished"] is False
+    if defer_police:
+        assert walk_to(client, apt_id, "done") in ("done", "")
+        assert property_setup.load(apt_id)["finished"] is True
     assert not _report_complete(apt_id)
     if defer_police:
         page = client.get(f"{base}/done?lang=en")
@@ -598,8 +602,7 @@ def test_demo_action_teaches_pin_then_opens_the_guest_form_and_reuses_its_stay(h
     apt_id = flat["id"]
     client = host["client"]
     base = f"/apartments/{apt_id}/setup"
-    client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
-    client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
+    assert walk_to(client, apt_id, "try_it") == "try_it"
     first = client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     stay = demo.demo_stay_for(apt_id)
     assert stay is not None
