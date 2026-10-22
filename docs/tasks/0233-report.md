@@ -1,6 +1,6 @@
 # 0233 report
 
-Status: blocked
+Status: review
 
 ## Done
 
@@ -36,3 +36,10 @@ Status: blocked
 ## Owner steps left
 
 None.
+
+## Continuation
+
+```
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 1 warning in 1.52s
+```
