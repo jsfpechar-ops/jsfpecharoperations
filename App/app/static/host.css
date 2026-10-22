@@ -120,11 +120,25 @@
 .host-workspace .guest-card-note, .host-workspace .guest-card-action { margin: 12px 20px; }
 .host-property-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); grid-auto-rows: 1fr; gap: 12px; margin-bottom: 24px; }
 .host-property-card { background: white; padding: 20px; border: 1px solid var(--line); border-radius: 14px; color: var(--ink); text-decoration: none; display: flex; gap: 14px; align-items: center; }
-.host-property-card:hover { border-color: var(--border-strong); background: #fdf6f2; }
+/* 0250: every card shows a bordered Open pill; the whole card is the tap target (iPad). */
+.host-property-card { position: relative; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.host-property-card > div:not(.host-property-card-actions) { flex: 1 1 auto; min-width: 0; }
+.host-property-card-open { margin-left: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 10px 0 12px; border: 1px solid var(--border-strong); border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink); background: white; }
+.host-property-card-link { color: inherit; text-decoration: none; }
+.host-property-card-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.host-property-card-link:focus-visible { outline: none; }
+.host-property-card-static:has(.host-property-card-link:focus-visible) { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+@media (hover: hover) {
+  .host-property-card:hover { border-color: var(--border-strong); background: #fdf6f2; }
+  .host-property-card:hover .host-property-card-open { border-color: var(--ink); }
+}
+@media (max-width: 639px) {
+  .host-property-card-open { width: 32px; padding: 0; justify-content: center; }
+  .host-property-card-open-text { display: none; }
+}
 .host-property-card strong { display: block; font-size: 15px; }
 .host-property-card small { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
 .host-property-card .nav-icon { color: var(--muted); width: 23px; height: 23px; }
-.host-property-card > span:last-child { margin-left: auto; color: var(--muted); }
 .host-workspace .property-section > summary { cursor: pointer; font-size: 17px; font-weight: 700; padding: 0; }
 .host-workspace .property-section[open] > summary { margin-bottom: 20px; }
 .host-workspace .property-section { scroll-margin-top: 24px; }
@@ -734,6 +748,9 @@ body.host-workspace {
   line-height: 1.45; text-align: left; white-space: normal; overflow-wrap: anywhere;
 }
 .help-tip-body a { color: var(--brand-ink); font-weight: 650; }
+.help-tip-body .facility-example { display: block; margin-top: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; overflow-wrap: anywhere; }
+.help-tip-body .facility-example-label { display: block; margin-bottom: 4px; font-family: inherit; font-weight: 650; }
+.help-tip-body mark { background: var(--brand-soft); color: inherit; padding: 0 2px; border-radius: 3px; outline: 1px solid var(--brand); }
 /* No JavaScript: hover and keyboard/tap focus still reveal the text. */
 .help-tip:not([data-js]):hover > .help-tip-body,
 .help-tip:not([data-js]):focus-within > .help-tip-body { display: block; }
@@ -1365,9 +1382,10 @@ body.host-workspace {
 .setup-wizard-checklist .is-done .setup-summary-icon { color: var(--status-done-ink); }
 .setup-wizard-checklist .is-waiting .setup-summary-icon { color: var(--amber); }
 .setup-continue-card .actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 10px; }
-.host-property-card-static { cursor: default; text-decoration: none; color: inherit; }
+.host-property-card-static { text-decoration: none; color: inherit; }
 .host-property-card-static > div:not(.host-property-card-actions) { min-width: 0; }
-.host-property-card-static > .host-property-card-actions { margin: 0 0 0 auto; flex: 0 0 auto; }
+.host-property-card-static > .host-property-card-actions { position: relative; z-index: 1; margin: 0 0 0 auto; flex: 0 0 auto; }
+.host-property-card-static > .host-property-card-open { margin-left: 0; }
 /* end 0102 */
 
 /* 0098 */
