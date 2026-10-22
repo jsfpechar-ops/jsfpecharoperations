@@ -954,8 +954,7 @@ def test_review_fixes_in_the_browser(host, base_url):
     bare = _bare_property(host, "Browser property step")
     flat = _create(host)
     base = f"/apartments/{flat['id']}/setup"
-    client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
-    client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
+    assert walk_to(client, flat["id"], "try_it") == "try_it"
     client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     session = client.cookies.get(auth.SESSION_COOKIE)
     with sync_api.sync_playwright() as p:
@@ -966,7 +965,7 @@ def test_review_fixes_in_the_browser(host, base_url):
         page.goto(f"{base_url}/apartments/{bare}/setup/property?lang=en")
         assert page.locator("[data-setup-step=property]").is_visible()
         _shot(page, "08-property-step-en-1280.png")
-        page.goto(f"{base_url}{base}/guest_link?lang=en")
+        page.goto(f"{base_url}{base}/police?lang=en")
         page.locator("a.setup-wizard-back").click()
         page.wait_for_url("**/setup/calendar**")
         assert page.locator("[data-setup-step=calendar]").is_visible()
@@ -974,8 +973,7 @@ def test_review_fixes_in_the_browser(host, base_url):
         page.goto(f"{base_url}{base}/try_it?lang=en")
         assert page.get_by_role("button", name=_t("en", "wizard.try_it.skip")).is_visible()
         _shot(page, "10-try-it-open-en-1280.png")
-        page.locator("form.setup-wizard-skip button[value=skip]").click()
-        page.wait_for_url("**/setup/police**")
+        page.goto(f"{base_url}{base}/police?lang=en")
         page.fill("#uby_idub", "12")
         page.fill("#uby_ws_user", POLICE["uby_ws_user"])
         page.fill("#uby_mark", POLICE["uby_mark"])
