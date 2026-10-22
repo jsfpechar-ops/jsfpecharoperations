@@ -1,6 +1,12 @@
 {
   "master_version": "2.0.0",
   "classes": [
+    "ui-how",
+    "ui-how-toggle",
+    "ui-how-chevron",
+    "ui-how-body",
+    "ui-how-steps",
+    "ui-how-more",
     "ui-page",
     "ui-ph",
     "ui-ph-main",
