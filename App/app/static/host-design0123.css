@@ -128,6 +128,8 @@ body.host-workspace .host-stay-detail .stay-command-panel { border-top:1px solid
   body.host-workspace .host-stay-detail .stay-command-actions .row-menu-trigger { width:44px; height:44px; min-height:44px; }
   /* 0253: A - the Next step panel content starts at the Guests heading edge: card border 1 px + padding 16 px, less the 4 px stripe on the left. */
   body.host-workspace .host-stay-detail .stay-command-panel { padding-left:calc(var(--space-4) + 1px - 4px); padding-right:var(--space-4); }
+  /* 0253: A - the main block inside the panel takes no extra inline padding, so its text starts at the Guests text edge (app.css sets 20px). */
+  body.host-workspace .host-stay-detail .stay-command-main { padding-left:0; padding-right:0; }
   /* 0199: C - the two Guests header buttons share the full row, 44 px tall. */
   body.host-workspace .host-stay-detail #guests .ui-section-h .ui-form-actions { width:100%; }
   body.host-workspace .host-stay-detail #guests .ui-section-h .ui-form-actions > :is(a,button) { flex:1 1 0; min-width:0; height:44px; min-height:44px; white-space:nowrap; box-sizing:border-box; }
