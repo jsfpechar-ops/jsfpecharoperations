@@ -34,7 +34,23 @@
   <p class="setup-wizard-instruction">{{ t('wizard.try_it.instructions') }}</p>
 </section>
 {% if demo_state == 'registered' %}
-<p class="setup-wizard-lede">{{ t('setup_guide.try.registered_text') }}</p>
+<section class="setup-rehearsal" aria-labelledby="rehearsal-title" data-rehearsal>
+  <h2 id="rehearsal-title">{{ t('wizard.rehearsal.title') }}</h2>
+  <ol class="setup-rehearsal-steps">
+    {% for step in workflow_steps(apartment) %}
+    {% set real = step.n <= 2 %}
+    <li class="{{ 'is-done' if real else 'is-test' }}" data-rehearsal-step="{{ step.key }}">
+      <span class="workflow-num" aria-hidden="true">{% if real %}✓{% else %}{{ step.n }}{% endif %}</span>
+      <span class="setup-rehearsal-copy">
+        <strong>{{ t('workflow.step.' ~ step.key) }}</strong>
+        <span>{% if step.key == 'police_scheduled' %}{{ t('wizard.rehearsal.police_scheduled', hours=apartment.submit_after_hours or 24) }}{% elif step.key == 'police_immediate' %}{{ t('wizard.rehearsal.police_immediate', minutes=setup_sweep_minutes) }}{% else %}{{ t('wizard.rehearsal.' ~ step.key) }}{% endif %}</span>
+      </span>
+      <span class="ui-badge ui-badge-{{ 'done' if real else 'neutral' }}" data-tone="{{ 'green' if real else 'grey' }}">{{ t('wizard.rehearsal.badge_done') if real else t('wizard.rehearsal.badge_test') }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="setup-wizard-instruction">{{ t('wizard.rehearsal.never_police') }}</p>
+</section>
 {% elif demo_state == 'open' %}
 <p class="setup-wizard-instruction" data-wizard-demo-wait>{{ t('wizard.try_it.waiting') }}</p>
 {% endif %}
