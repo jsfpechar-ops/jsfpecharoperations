@@ -10,7 +10,7 @@ Updated: 2026-10-22.
 
 ## Now
 
-- Foolproof workflow: round 1 (0230-0237) and round 2 (0239-0247: "What needs you" card, health check, day-before nudge, one-button mails). **Owner:** review PRs, merge, deploy (`?v=` keys).
+- Foolproof workflow: round 1 (0230-0237) and round 2 (0239-0248: "What needs you" card, health check, day-before nudge, one-button mails; missing setup is amber, not red). **Owner:** review PRs, merge, deploy (`?v=` keys).
 - Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
 - #418 onboarding fixes 0203-0212; address open.
 - Stay-fee email 0220-0224: built, owner staging test.
