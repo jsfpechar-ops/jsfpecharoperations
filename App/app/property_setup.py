@@ -11,15 +11,17 @@ from typing import Any, Dict, List, Optional
 
 from . import db
 
+# 0270: story order (idea C). Setup questions first, then the guest link, and
+# the test run last, so the demo can show the whole workflow.
 STEPS = (
     "property",
     "calendar",
-    "guest_link",
-    "try_it",
     "police",
+    "automation",
     "stay_fee",
     "door_lock",
-    "automation",
+    "guest_link",
+    "try_it",
 )
 TOTAL_STEPS = len(STEPS)
 OPTIONAL = frozenset({"stay_fee", "door_lock"})
