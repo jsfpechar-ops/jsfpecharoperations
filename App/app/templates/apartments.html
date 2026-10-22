@@ -80,7 +80,7 @@
         {% set mode = apartment.automation_mode if apartment.automation_mode in ('manual', 'scheduled', 'immediate') else 'manual' %}
         <tr class="clickable-row" data-summary-row="{{ apartment.id }}" data-href="{{ base_url }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
           <td data-label="{{ t('apartments.table.property') }}">
-            <a class="row-primary-link" href="{{ base_url }}">{{ property_identity(apartment.id, apartment.internal_name) }}</a>
+            <a class="row-primary-link" href="{{ base_url }}">{{ property_identity(apartment.id, apartment.internal_name) }}</a> {{ row_open() }}
           </td>
           <td class="property-inline-link" data-label="{{ t('property_nav.guest_link') }}">
             {% if row.link_url %}

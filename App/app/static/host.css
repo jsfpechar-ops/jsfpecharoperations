@@ -1566,3 +1566,4 @@ td:has(> .row-open) { white-space: nowrap; }
 }
 /* 0252: the housebook is wider than the lane; its row actions stay in view. */
 .scroll-x td.row-actions { position: sticky; right: 0; background: white; }
+.row-primary-link + .row-open { margin-left: 8px; }

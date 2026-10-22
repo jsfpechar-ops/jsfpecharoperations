@@ -281,3 +281,25 @@ As in TEMPLATE.md §8.
 Do not bump the host.css key again: 20261022-0252 has not been released. Just rerun `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -5`.
 
 6c. Run the sweep test again. Then run §6 commands 3 and 4. Commit `0252 step 6` and update the report.
+
+## Addendum 2 (orchestrator review): step 7
+
+Review found that the row cue's width pushes four wide tables into sideways scrolling (`test_design_guardrails_browser.py`: properties summary, businesses, stay fees). The sticky housebook cell also breaks `cell-not-under-header`. On rows the cue becomes a slim bordered chevron button at every width; the cards keep the word "Open".
+
+7a. `App/app/static/host.css`, in the 0252 block at the end of the file:
+- replace the `.row-open { ... }` line with
+  `.row-open { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; box-sizing: border-box; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--ink); background: white; vertical-align: middle; flex: 0 0 auto; }`
+  `.row-open-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }`
+- `.row-open + .row-menu { vertical-align: middle; margin-left: 6px; }`: change `6px` to `4px`.
+- delete the line `td:has(> .row-open) { white-space: nowrap; }`
+- delete the whole `@media (max-width: 1279px) { ... }` block (3 lines plus the closing brace)
+- delete the comment `/* 0252: the housebook is wider than the lane; its row actions stay in view. */` and the `.scroll-x td.row-actions { ... }` line
+- `.row-primary-link + .row-open { margin-left: 8px; }`: change `8px` to `6px`.
+
+Bump the host.css key to `20261022-0252c` in every template and run `--write`.
+
+7b. `App/tests/test_0252_touch_sweep_browser.py`, in `PROBE`: replace the whole `const box = e.closest('.scroll-x'); if (box) { ... }` line with `if (e.closest('.scroll-x')) continue;`. Wide registers scroll inside their own labelled region by design.
+
+7c. `App/tests/test_0199_phone_geometry_browser.py` line ~118: the owner asked that phone chip rows wrap instead of hiding chips off-screen (0252), which replaces 0199 E's single scrolling row. Change `m["E"]["rows"] == 1` to `m["E"]["rows"] <= 3 and m["E"]["scrollW"] <= m["E"]["clientW"] + 1`, and the message text `E chips not on one row` to `E chips hidden off-screen`.
+
+7d. Rerun §6 commands 2, 3 and 4. Expected: everything passes except the pre-existing `test_0199_phone_geometry_browser.py::test_stay` ("A panel content offset 118"). Commit `0252 step 7` and update the report.

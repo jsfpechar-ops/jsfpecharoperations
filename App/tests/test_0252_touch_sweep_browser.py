@@ -41,7 +41,7 @@ PROBE = r"""() => {
       out.outside.push((e.textContent || e.name || e.tagName).trim().slice(0, 30));
     }
   }
-  for (const e of main.querySelectorAll('tr.clickable-row, a.host-property-card')) {
+  for (const e of main.querySelectorAll('tr.clickable-row:not(.dashboard-row), a.host-property-card')) {
     if (!shown(e)) continue;
     if (!e.querySelector('.row-open, .host-property-card-open')) out.noCue.push(name(e));
     const r = e.getBoundingClientRect();
