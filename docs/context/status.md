@@ -10,6 +10,7 @@ Updated: 2026-10-22.
 
 ## Now
 
+- Round 3 0270-0276: wizard order, test run, finish, welcome back; P after #427. **Owner:** review PR.
 - Foolproof workflow: round 1 (0230-0237) and round 2 (0239-0248: "What needs you" card, health check, day-before nudge, one-button mails; missing setup is amber, not red). **Owner:** review PRs, merge, deploy (`?v=` keys).
 - Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
 - #418 onboarding fixes 0203-0212; address open.
@@ -18,7 +19,7 @@ Updated: 2026-10-22.
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
 - AI crawler block (0195): robots.txt, tdmrep.json, Terms §11 TDM (v1.7; lawyer to confirm).
-- Design reset follow-up 0165-0183 (PR #405). **Deploy:** new `?v=` keys.
+- Design reset 0165-0183 (#405). **Deploy:** new `?v=` keys.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 
 - Check production `/healthz`. The credential letter goes to data box ybndqw9.
