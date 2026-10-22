@@ -40,7 +40,9 @@ def test_each_problem_gets_one_button_to_the_exact_setting():
     assert rows["guest_link"]["state"] == "warn"
     assert rows["guest_link"]["href"] == "/apartments/7?view=settings&section=guests#communication"
     assert rows["police"]["href"] == "/apartments/7?view=settings&section=property#address"
+    assert rows["police"]["state"] == "warn"
     assert rows["business"]["href"] == "/apartments/7?view=settings&section=property#operator-picker"
+    assert rows["business"]["state"] == "warn"
     assert len(property_health.to_fix(rows.values())) == 4
 
 

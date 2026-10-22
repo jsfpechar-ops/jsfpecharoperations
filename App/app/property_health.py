@@ -87,7 +87,7 @@ def checks(
     elif missing:
         anchor = missing[0]["anchor"]
         query = needs_you._SETUP_QUERY.get(anchor, "view=settings")
-        rows.append(_row("police", "send", "bad", "health.police.missing", "health.police.fix", f"{base}?{query}#{anchor}"))
+        rows.append(_row("police", "send", "warn", "health.police.missing", "health.police.fix", f"{base}?{query}#{anchor}"))
     else:
         rows.append(_row("police", "send", "ok", "health.police.ok"))
 
@@ -97,7 +97,7 @@ def checks(
     ]
     if business or "controller_missing" in open_kinds:
         rows.append(_row(
-            "business", "receipt", "bad", "health.business.missing", "health.business.fix",
+            "business", "receipt", "warn", "health.business.missing", "health.business.fix",
             f"{base}?view=settings&section=property#operator-picker",
         ))
     else:
