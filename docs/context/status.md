@@ -10,6 +10,7 @@ Updated: 2026-10-22.
 
 ## Now
 
+- 0280-0283 short notifications, phone card borders, locked signature with Draw/Type dialog. **Owner:** review PR, deploy (`?v=` keys), try the signature on the phone.
 - 0250-0252 Open cues, iPad menu, Back fix. **Owner:** PR, iPad.
 - Foolproof workflow: round 1 (0230-0237) and round 2 (0239-0248: "What needs you" card, health check, day-before nudge, one-button mails; missing setup is amber, not red). **Owner:** review PRs, merge, deploy (`?v=` keys).
 - Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
