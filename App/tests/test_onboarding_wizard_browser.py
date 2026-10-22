@@ -1261,9 +1261,26 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         assert other.is_hidden()
         _shot(page, f"22-calendar-platform-{tag}.png")
         page.locator('button[form="calendar-add"]').click()
-        page.wait_for_url("**/setup/guest_link**")
+        page.wait_for_url("**/setup/police**")
         feed = db.query_one("SELECT label FROM ical_feed WHERE apartment_id = ?", (flat["id"],))
         assert feed["label"] == "Booking.com"
+        page.locator(".setup-wizard-wait").click()
+        page.wait_for_url("**/setup/automation**")
+        page.locator('input[value="manual"]').check()
+        page.locator('button[form="automation-form"]').click()
+        page.wait_for_url("**/setup/stay_fee**")
+        typography = """el => {
+            const s = getComputedStyle(el);
+            return [s.fontFamily, s.fontSize, s.fontWeight, s.lineHeight, s.letterSpacing, s.color];
+        }"""
+        # 0212: the fee lede looks like every other step's lede.
+        assert page.locator(".setup-wizard-lede").first.evaluate(typography)[1:4] != page.locator(
+            ".ui-ph h1"
+        ).evaluate(typography)[1:4]
+        assert page.evaluate(_overflow_js())
+        _shot(page, f"24-fee-intro-{tag}.png")
+        page.locator(".setup-wizard-skip button").click()
+        page.wait_for_url("**/setup/guest_link**")
         page.locator("button[value=done]").click()
         page.wait_for_url("**/setup/try_it**")
         assert page.locator(".setup-demo-property strong").inner_text() == flat["internal_name"]
@@ -1289,23 +1306,6 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         assert page.get_by_role("button", name=_t(lang, "wizard.try_it.check_again"), exact=True).is_visible()
         guest_page.close()
         page.locator("form.setup-wizard-skip button[value=skip]").click()
-        page.wait_for_url("**/setup/police**")
-        page.locator(".setup-wizard-wait").click()
-        page.wait_for_url("**/setup/stay_fee**")
-        typography = """el => {
-            const s = getComputedStyle(el);
-            return [s.fontFamily, s.fontSize, s.fontWeight, s.lineHeight, s.letterSpacing, s.color];
-        }"""
-        # 0212: the fee lede looks like every other step's lede.
-        assert page.locator(".setup-wizard-lede").first.evaluate(typography)[1:4] != page.locator(
-            ".ui-ph h1"
-        ).evaluate(typography)[1:4]
-        assert page.evaluate(_overflow_js())
-        _shot(page, f"24-fee-intro-{tag}.png")
-        page.locator(".setup-wizard-skip button").click()
-        page.wait_for_url("**/setup/automation**")
-        page.locator('input[value="manual"]').check()
-        page.locator('button[form="automation-form"]').click()
         page.wait_for_url("**/setup/done**")
         cards = page.locator(".setup-wizard-checklist .host-property-card")
         assert cards.count() == TOTAL
