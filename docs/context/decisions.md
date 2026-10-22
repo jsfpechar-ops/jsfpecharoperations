@@ -29,7 +29,7 @@ Append-only.
 - 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row; the CSV keeps one neutral line so it adds up | a correction line looks wrong to the office | stay_fee.py
 - 2026-10-06 | UbyPort outcome: 0-2 accepted, 4-6 not; 112 = reported late = accepted (replaces batch-not-received) | police letter A1-A5 | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-06 | Sweep: one send per refused record, then wait for host fix (was 3 tries) | police B2-B3 | [OPERATIONS](../OPERATIONS.md)
-- 2026-10-06 | Staging may use the police test environment (`ubyport_env=test`, UBY-WS test account); credentials only in the staging app | police B4: test behaves like production | [LIGHTSAIL](../LIGHTSAIL.md)
+- 2026-10-06 | Staging may use the police test env (`ubyport_env=test`); credentials only in staging | police B4 | [LIGHTSAIL](../LIGHTSAIL.md)
 - 2026-10-06 | Abbreviation check accepts 5-6 alphanumeric characters | police test abbreviation | validation.py
 - 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live; full rules in the plan | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Funnel: in-app dashboard, no JS; Umami public-only | own rows | 0018
@@ -62,4 +62,4 @@ Append-only.
 - 2026-10-22 Round 2: one "What needs you" card on `/` (no alert stack there); host reminder may go the day before arrival if the link is unopened, at most one per stay; no new host emails (owner).
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
 - 2026-10-22 Notifications: one short line plus the link to the fix, never field lists or error text; off `/` only red alerts get a line, the rest one summary line (owner).
-- 2026-10-22 [deps] Typed signatures use the self-hosted Dancing Script font (SIL OFL 1.1, App/app/static/fonts/) and our own canvas code; no JS library. "pdfcart" does not exist and signaturepdf is AGPL, so no code was copied (owner asked for the feature).
+- 2026-10-22 [deps] Typed signature: self-hosted Dancing Script (OFL), own canvas code, nothing copied ("pdfcart" not found; signaturepdf is AGPL) (owner).
