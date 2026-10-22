@@ -45,6 +45,7 @@ from .. import (
     push,
     passport_photos,
     payments,
+    property_health,
     property_setup,
     rate_limit,
     reporting,
@@ -1835,6 +1836,8 @@ def _render_apartment_detail(
             "feeds": feeds,
             "issues": issues,
             "readiness": readiness,
+            # 0244: the live health check on the property overview.
+            "health": property_health.checks(apartment, feeds, readiness, door_code),
             "more_options_open": _more_options_open(request, issues, readiness),
             "purposes": codelists.purpose_options("en"),
             "permalink": f"{config.PUBLIC_BASE_URL}/l/{link_key}",
