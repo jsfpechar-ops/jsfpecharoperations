@@ -686,7 +686,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0277: "How does this work?" under the page title (idea P). Closed by default, no JS. */
 .host-workspace .ui-how { margin: var(--space-2) 0 var(--space-3); }
 .host-workspace .ui-how-toggle { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.75rem; padding: 0 var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--surface); color: var(--ink-2); font-size: var(--size-14); font-weight: 600; cursor: pointer; list-style: none; }
-.host-workspace .ui-how-toggle::-webkit-details-marker { display: none; }
+.host-workspace .ui-how-toggle::-webkit-details-marker, .host-workspace .ui-how-toggle::before { display: none; }
 .host-workspace .ui-how-toggle:hover { background: var(--surface-hover); }
 .host-workspace .ui-how-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .host-workspace .ui-how-chevron { transition: transform 0.15s ease; }
