@@ -439,6 +439,10 @@ def test_the_wizard_asks_four_fee_boxes(host):
     """0239: rate, symbol, account and council name; no period, no print-only office details."""
     client, owner_id, entity_id = host
     apartment_id = _property(owner_id, entity_id)
+    from app import property_setup
+    property_setup.start(apartment_id)
+    for step in property_setup.STEPS[:property_setup.STEPS.index("stay_fee")]:
+        property_setup.mark(apartment_id, step, "waiting" if step == "police" else "done")
     page = client.get(f"/apartments/{apartment_id}/setup/stay_fee?lang=en").text
     form = page.split('id="stay-fee-form"', 1)[1].split("</form>", 1)[0]
     for name in ("stay_fee_rate_czk", "stay_fee_vs", "stay_fee_council_account", "stay_fee_authority_name"):
