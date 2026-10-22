@@ -705,7 +705,7 @@ def sweep_reminders() -> Dict[str, int]:
     from . import alerts, config
 
     today = prague_today()
-    summary = {"guest": 0, "host": 0, "locked": 0}
+    summary = {"guest": 0, "host": 0, "host_early": 0, "locked": 0}
     expire_holds()
     rows = db.query(
         "SELECT r.*, a.permalink_token, a.internal_name, a.uby_name, a.owner_user_id, "
@@ -774,7 +774,18 @@ def sweep_reminders() -> Dict[str, int]:
                 owner_user_id=reservation["owner_user_id"],
             ):
                 summary["guest"] += 1
-        if start == today and not complete and now_local.hour >= 9:
+        # 0245 (idea E): nobody has opened the guest link by 9:00 the day
+        # before arrival, so the host still has a day to send it. The mail key
+        # is the check-in-day key, so a stay never gets a second host reminder.
+        early = (
+            start == today + timedelta(days=1)
+            and now_local.hour >= 9
+            and not reservation["claim_state"]
+            and not complete
+            and progress["status"] not in ("reported", "not_required")
+            and (reservation["source"] or "") != "demo"
+        )
+        if early or (start == today and not complete and now_local.hour >= 9):
             host_email = _entity_contact_email(reservation["legal_entity_id"])
             masked = reservation["email_masked"] or ""
             if host_email:
@@ -784,11 +795,12 @@ def sweep_reminders() -> Dict[str, int]:
                     assigned=masked,
                     stay_url=(
                         f"{config.PUBLIC_BASE_URL.rstrip('/')}"
-                        f"/reservations/{reservation['id']}"
+                        f"/reservations/{reservation['id']}#now"
                     ),
                     claimed=reservation["claim_state"] == CLAIMED,
                     filled=progress["filled"],
                     expected=progress["expected"],
+                    tomorrow=early,
                 )
                 host_payload = {
                     "text": host_content["text"],
@@ -806,6 +818,10 @@ def sweep_reminders() -> Dict[str, int]:
                     apartment_id=reservation["apartment_id"],
                     owner_user_id=reservation["owner_user_id"],
                 )
+            if early:
+                # The check-in-day alert and count belong to check-in day.
+                summary["host_early"] += 1
+                continue
             alerts.raise_alert(
                 "warning",
                 "guest_incomplete_checkin",
