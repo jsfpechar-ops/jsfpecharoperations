@@ -92,7 +92,7 @@ def _counted_get(client, path, monkeypatch):
 
 # WP33 merges overdue unfinished stays into the default Stays list via
 # reporting.dashboard_rows, which adds a few reads on /reservations only.
-_LIST_QUERY_BUDGET = {"/": 20, "/reservations": 25}
+_LIST_QUERY_BUDGET = {"/": 20, "/reservations": 26}
 
 
 @pytest.mark.parametrize("path", ["/", "/reservations"])

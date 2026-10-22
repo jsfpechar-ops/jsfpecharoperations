@@ -167,4 +167,4 @@
   <script type="application/json" data-cal-properties>[{% for apartment in apartments if apartment.active %}{{ {'id': apartment.id, 'name': apartment.internal_name} | tojson }}{% if not loop.last %},{% endif %}{% endfor %}]</script>
   <script type="application/json" data-cal-labels>{{ calendar_labels | tojson }}</script>
 </section>
-<script src="/static/dashboard-calendar.js?v=20261021-0196" defer></script>
+<script src="/static/dashboard-calendar.js?v=20261022-calendar-focus" defer></script>

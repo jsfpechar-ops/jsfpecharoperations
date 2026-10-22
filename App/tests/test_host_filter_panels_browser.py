@@ -138,7 +138,7 @@ def _browser_context(playwright, host, base, *, width=1280, javascript=True):
 
 
 def test_default_stays_are_unbounded_and_native_get_filters_work_without_javascript(host, base):
-    response = host["client"].get("/reservations?lang=en")
+    response = host["client"].get("/reservations?range=all&lang=en")  # 0285: the default is now Upcoming & current
     assert response.status_code == 200, response.text
     assert "10.01.2020" in response.text
     assert "10.04.2099" in response.text
@@ -150,7 +150,7 @@ def test_default_stays_are_unbounded_and_native_get_filters_work_without_javascr
         browser, _context, page = _browser_context(
             playwright, host, base, javascript=False
         )
-        page.goto(base + "/reservations?lang=en")
+        page.goto(base + "/reservations?range=all&lang=en")
         panel = page.locator("#stays-filter-panel")
         assert panel.is_visible()
         page.locator("#stays-from").fill("2020-01-01")
@@ -204,7 +204,7 @@ def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
         page.on("pageerror", lambda error: page_errors.append(str(error)))
         page.on("request", lambda request: requests.append(request) if request.method == "GET" else None)
 
-        page.goto(base + "/reservations?lang=en")
+        page.goto(base + "/reservations?range=all&lang=en")
         _capture(page, "stays-en-desktop-collapsed")
         toggle = page.locator("[data-filter-toggle]")
         assert toggle.is_visible()

@@ -270,7 +270,23 @@ def test_fractional_checkout_and_same_day_cleaning_geometry(workspace, origin, w
         assert dialog_marker.is_visible()
         assert dialog_marker.locator(".cal-cleaning-label").is_visible()
         assert property_name in dialog_marker.locator(".cal-cleaning-property").inner_text()
-        page.locator("[data-cal-day-dialog] [data-cal-close]").click()
+        if not mobile:
+            # Queue close and move focus in one task so the delayed close handler
+            # cannot steal focus between the marker's Enter keydown and activation.
+            focus_kept = page.evaluate("""async eventId => {
+              const dialog = document.querySelector('[data-cal-day-dialog]');
+              const marker = [...document.querySelectorAll('.cal-week-events .cal-event')]
+                .find(node => node.dataset.calEvent === eventId);
+              const closed = new Promise(resolve =>
+                dialog.addEventListener('close', resolve, {once: true}));
+              dialog.querySelector('[data-cal-close]').click();
+              marker.focus();
+              await closed;
+              return document.activeElement === marker;
+            }""", marker["id"])
+            assert focus_kept, "The day dialog close handler stole focus from the cleaning marker"
+        else:
+            page.locator("[data-cal-day-dialog] [data-cal-close]").click()
         single_cleaning_overflow = page.locator('.cal-day-summary.has-cleaning-overflow[data-cal-more="2026-10-19"]')
         assert single_cleaning_overflow.count() == 0
         if not mobile:

@@ -286,7 +286,7 @@ def test_bookings_view_with_no_one_and_many_feeds(host):
     many = _page(host, "?view=bookings&lang=en")
     assert many.count('/delete"') >= 2
     overview = _page(host, "?lang=en")
-    assert "2 calendars" in overview
+    assert 'data-health-check="calendar" data-state="bad"' in overview  # 0286: a calendar problem shows on its card instead of the count
     # A calendar removal returns to the Bookings tab.
     feed_id = db.query_one("SELECT id FROM ical_feed WHERE apartment_id = ? ORDER BY id LIMIT 1", (host["apartment"],))["id"]
     removed = host["client"].post(f"/feeds/{feed_id}/delete", follow_redirects=False)

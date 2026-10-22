@@ -254,7 +254,7 @@ def test_empty_state_action_is_centred_under_its_text(wide_host, wide_base):
 
 
 def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
-    """0178: the setup checklist is a normal card (no tint, solid border, heading inside the padding)."""
+    """0286: the health check lives on the overview cards; no separate checklist box, details stay."""
     cookie = wide_host["cookie"]
     property_id = wide_host["configured_apartment"]
     # The checklist shows only when the setup wizard is not active (_property_overview.html line 48):
@@ -278,25 +278,16 @@ def test_setup_checklist_is_a_padded_card(wide_host, wide_base):
         # Fails the test if the checklist is absent: the configured fixture property must show it.
         page.wait_for_selector("[data-setup-status]", timeout=5000)
         facts = page.evaluate(
-            """() => {
-                const box = document.querySelector('.host-workspace .host-checklist[data-setup-status]');
-                if (!box) return null;
-                const other = document.querySelector('.host-workspace .panel:not(.host-checklist)');
-                const style = getComputedStyle(box);
-                const head = box.querySelector('.setup-status-head h2');
-                return {
-                    background: style.backgroundColor,
-                    expected: other ? getComputedStyle(other).backgroundColor : 'rgb(255, 255, 255)',
-                    borderStyle: style.borderTopStyle,
-                    headGap: head ? head.getBoundingClientRect().left - box.getBoundingClientRect().left : null,
-                };
-            }"""
+            """() => ({
+                box: !!document.querySelector('.host-checklist'),
+                dots: document.querySelectorAll('.host-property-grid [data-health-check] .host-property-card-dot').length,
+                details: !!document.querySelector('.host-workspace details.setup-readiness-help[data-setup-status]'),
+            })"""
         )
-        assert facts is not None, "setup checklist card is not inside .host-workspace"
-        print(f"setup checklist measured: {facts}")
-        assert facts["background"] == facts["expected"], f"checklist background {facts['background']} is not the card background"
-        assert facts["borderStyle"] == "solid", f"checklist border is {facts['borderStyle']}, not solid"
-        assert facts["headGap"] is not None and facts["headGap"] >= 12, f"heading starts {facts['headGap']}px from the left edge"
+        print(f"setup health measured: {facts}")
+        assert not facts["box"], "the separate health check box is back"
+        assert facts["dots"] >= 4, f"only {facts['dots']} cards carry a health dot"
+        assert facts["details"], "the checklist details are missing"
         context.close()
         browser.close()
 

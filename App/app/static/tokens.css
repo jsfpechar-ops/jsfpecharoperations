@@ -136,6 +136,7 @@
   --motion-1: 120ms; --motion-2: 180ms; --motion-3: 240ms;
   /* 2.2 semantic */
   --canvas-2: var(--sand-100); --surface-2: var(--sand-150); --surface-3: var(--sand-200);
+  --state-hover: var(--sand-100); --state-press: var(--sand-200); --state-ink: var(--coral-600);
   --ink-2: var(--ink-700); --ink-3: var(--ink-500); --line-1: var(--sand-300); --line-strong: var(--sand-400);
   --accent: var(--coral-600); --accent-hover: var(--coral-700); --accent-pressed: var(--coral-700); --accent-soft: var(--coral-100); --accent-ink: var(--coral-700); --on-accent: #ffffff;
   --focus-ring-2: 0 0 0 1px var(--sand-0), 0 0 0 4px rgba(200, 90, 82, 0.32);

@@ -67,7 +67,7 @@ def test_the_overview_shows_the_health_check(host):  # noqa: F811
     property_setup.finish(apartment_id)
     for lang, title in (("en", "Health check"), ("cs", "Kontrola nastavení"), ("vi", "Kiểm tra thiết lập")):
         page = host.get(f"/apartments/{apartment_id}?view=overview&lang={lang}").text
-        assert title in page, lang
+        assert "host-property-card-dot" in page and title not in page, lang
         assert 'data-health-check="police"' in page
         assert 'class="setup-status-tile' not in page
     assert db.query_one("SELECT id FROM apartment WHERE id = ?", (apartment_id,))
