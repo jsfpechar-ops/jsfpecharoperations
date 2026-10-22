@@ -7391,6 +7391,48 @@ _MAIL_0245_STRINGS = {
 for _lang, _strings in _MAIL_0245_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0272 (C): the test run walkthrough on the last wizard step.
+_TEST_RUN_0272_STRINGS = {
+    "en": {
+        "wizard.step.try_it": "Test run",
+        "wizard.summary.try_it": "Test run",
+        "why.try": "Last step: a test run. Be your own guest: open the link in the message, type the PIN and fill in the form with made-up details. Then see what happens next. Nothing goes to the police, and you can delete the test stay afterwards.",
+        "wizard.rehearsal.title": "Your test run, step by step",
+        "wizard.rehearsal.paste": "Done: you opened the link from your guest message.",
+        "wizard.rehearsal.form": "Done: you filled in the guest form.",
+        "wizard.rehearsal.email": "With a real stay you get an email now. A test run sends no email.",
+        "wizard.rehearsal.police": "With a real stay the police report goes out next.",
+        "wizard.rehearsal.police_manual": "With a real stay you open it and press Send.",
+        "wizard.rehearsal.police_scheduled": "With a real stay it goes out by itself %(hours)s hours after the form.",
+        "wizard.rehearsal.police_immediate": "With a real stay it goes out by itself within %(minutes)s minutes.",
+        "wizard.rehearsal.finish": "With a real stay the guest gets a confirmation email.",
+        "wizard.rehearsal.finish_lock": "With a real stay the guest sees their door code and gets a confirmation email.",
+        "wizard.rehearsal.badge_done": "Done",
+        "wizard.rehearsal.badge_test": "Test only",
+        "wizard.rehearsal.never_police": "A test stay never goes to the police and is left out of stay fees and invoices.",
+    },
+    "cs": {
+        "wizard.step.try_it": "Zkušební běh",
+        "wizard.summary.try_it": "Zkušební běh",
+        "why.try": "Poslední krok: zkušební běh. Buďte sami sobě hostem: otevřete odkaz ze zprávy, zadejte PIN a vyplňte formulář smyšlenými údaji. Pak uvidíte, co se stane dál. Nic se neodešle policii a zkušební pobyt pak můžete smazat.",
+        "wizard.rehearsal.title": "Váš zkušební běh krok za krokem",
+        "wizard.rehearsal.paste": "Hotovo: otevřeli jste odkaz ze zprávy pro hosty.",
+        "wizard.rehearsal.form": "Hotovo: vyplnili jste formulář pro hosty.",
+        "wizard.rehearsal.email": "U skutečného pobytu vám teď přijde e-mail. Zkušební běh žádný e-mail neposílá.",
+        "wizard.rehearsal.police": "U skutečného pobytu teď odejde hlášení policii.",
+        "wizard.rehearsal.police_manual": "U skutečného pobytu ho otevřete a stisknete Odeslat.",
+        "wizard.rehearsal.police_scheduled": "U skutečného pobytu odejde samo %(hours)s hodin po vyplnění formuláře.",
+        "wizard.rehearsal.police_immediate": "U skutečného pobytu odejde samo do %(minutes)s minut.",
+        "wizard.rehearsal.finish": "U skutečného pobytu dostane host potvrzovací e-mail.",
+        "wizard.rehearsal.finish_lock": "U skutečného pobytu host uvidí vstupní kód a dostane potvrzovací e-mail.",
+        "wizard.rehearsal.badge_done": "Hotovo",
+        "wizard.rehearsal.badge_test": "Jen nanečisto",
+        "wizard.rehearsal.never_police": "Zkušební pobyt se nikdy neodešle policii a nepočítá se do poplatků ani faktur.",
+    },
+}
+for _lang, _strings in _TEST_RUN_0272_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 

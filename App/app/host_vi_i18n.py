@@ -3371,3 +3371,23 @@ STRINGS.update({
     "mail.reminder_host.footer_tomorrow": "Bạn nhận email này tối đa một lần cho mỗi lượt lưu trú: một ngày trước khi nhận phòng, và chỉ khi chưa ai mở liên kết cho khách.",
     "mail.door_code_notice.action": "Mở lượt lưu trú",
 })
+
+# 0272 (C): the test run walkthrough (Vietnamese).
+STRINGS.update({
+    "wizard.step.try_it": "Chạy thử",
+    "wizard.summary.try_it": "Chạy thử",
+    "why.try": "Bước cuối: chạy thử. Hãy tự làm khách của mình: mở liên kết trong tin nhắn, nhập PIN và điền biểu mẫu bằng thông tin giả. Sau đó xem điều gì xảy ra tiếp theo. Không có gì được gửi cho cảnh sát, và bạn có thể xóa lượt lưu trú thử sau đó.",
+    "wizard.rehearsal.title": "Lần chạy thử của bạn, từng bước",
+    "wizard.rehearsal.paste": "Xong: bạn đã mở liên kết từ tin nhắn cho khách.",
+    "wizard.rehearsal.form": "Xong: bạn đã điền biểu mẫu khách.",
+    "wizard.rehearsal.email": "Với lượt lưu trú thật, bạn sẽ nhận email lúc này. Chạy thử không gửi email.",
+    "wizard.rehearsal.police": "Với lượt lưu trú thật, khai báo cảnh sát sẽ được gửi tiếp theo.",
+    "wizard.rehearsal.police_manual": "Với lượt lưu trú thật, bạn mở lượt đó và bấm Gửi.",
+    "wizard.rehearsal.police_scheduled": "Với lượt lưu trú thật, khai báo tự gửi %(hours)s giờ sau khi điền biểu mẫu.",
+    "wizard.rehearsal.police_immediate": "Với lượt lưu trú thật, khai báo tự gửi trong vòng %(minutes)s phút.",
+    "wizard.rehearsal.finish": "Với lượt lưu trú thật, khách nhận email xác nhận.",
+    "wizard.rehearsal.finish_lock": "Với lượt lưu trú thật, khách thấy mã cửa và nhận email xác nhận.",
+    "wizard.rehearsal.badge_done": "Xong",
+    "wizard.rehearsal.badge_test": "Chỉ thử",
+    "wizard.rehearsal.never_police": "Lượt lưu trú thử không bao giờ được gửi cho cảnh sát và không tính vào phí lưu trú hay hóa đơn.",
+})
