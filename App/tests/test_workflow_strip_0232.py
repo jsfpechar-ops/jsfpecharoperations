@@ -39,3 +39,4 @@ def test_a_waiting_stay_shows_step_2_of_5(host):  # noqa: F811
     assert "Step 2 of 5: Guest form" in page.text
     listing = host.get("/reservations?lang=en")
     assert 'data-journey-step="2"' in listing.text
+    assert "Step 2 of 5 · " in listing.text  # 0241: never a bare count next to the guest count
