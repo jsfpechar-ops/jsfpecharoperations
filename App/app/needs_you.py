@@ -143,7 +143,7 @@ def build(
             "alert",
             _ALERT_TONE.get(card.get("level") or "", "amber"),
             card.get("display_title") or card.get("message") or "",
-            card.get("display_detail") or card.get("detail") or "",
+            card.get("display_reason") or "",
             action,
             href,
             dismiss_id=None if kind == "dates_changed_resign" else card.get("id"),

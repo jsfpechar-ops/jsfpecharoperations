@@ -20,7 +20,7 @@ Append-only.
 - 2026-10-06 | [workflow] Context: AGENTS.md L0, context L1, plans L2; audits archived; known-issues replaces FOLLOWUPS | re-reading used 87% of spend | [README](README.md)
 - 2026-10-06 | [workflow] WP/patch series closed at WP33/0034; new work uses task numbers NNNN | one numbering scheme | [workflow](workflow.md)
 - 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in one day found the same issues | [workflow](workflow.md)
-- 2026-10-06 | [workflow] Task 0001 merged (#281) before orchestrator review; review post-merge approved; stale PR cleanup remains owner-run | owner merged early | [0001 report](../tasks/0001-report.md)
+- 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
 - 2026-10-06 | [workflow] Context-rollout bundle: flat files only; MANIFEST at root | place_files paths | [TEMPLATE](../tasks/TEMPLATE.md)
 - 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
 - 2026-10-06 | New dependency `webauthn==3.0.1` plus transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned | passkeys must not be hand-rolled; owner approved all five | task 0004
@@ -29,7 +29,7 @@ Append-only.
 - 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row; the CSV keeps one neutral line so it adds up | a correction line looks wrong to the office | stay_fee.py
 - 2026-10-06 | UbyPort outcome: 0-2 accepted, 4-6 not; 112 = reported late = accepted (replaces batch-not-received) | police letter A1-A5 | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-06 | Sweep: one send per refused record, then wait for host fix (was 3 tries) | police B2-B3 | [OPERATIONS](../OPERATIONS.md)
-- 2026-10-06 | Staging may use the police test environment (`ubyport_env=test`, UBY-WS test account); credentials only in the staging app | police B4: test behaves like production | [LIGHTSAIL](../LIGHTSAIL.md)
+- 2026-10-06 | Staging may use the police test env (`ubyport_env=test`); credentials only in staging | police B4 | [LIGHTSAIL](../LIGHTSAIL.md)
 - 2026-10-06 | Abbreviation check accepts 5-6 alphanumeric characters | police test abbreviation | validation.py
 - 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live; full rules in the plan | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Funnel: in-app dashboard, no JS; Umami public-only | own rows | 0018
@@ -59,7 +59,9 @@ Append-only.
 - 2026-10-21 | Why-ledes; signature with stay fee; guest window 1 day | owner
 - 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)
-- 2026-10-22 Round 2: dashboard opens with one "What needs you" card; the alert stack is hidden on `/` only (the card carries the alerts). Host reminder may go the day before arrival when nobody opened the link, same key as check-in day, so at most one per stay; no new host emails (owner).
+- 2026-10-22 Round 2: one "What needs you" card on `/` (no alert stack there); host reminder may go the day before arrival if the link is unopened, at most one per stay; no new host emails (owner).
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
 - 2026-10-22 [workflow] iPad checks also run in cloud WebKit; `page.route` tests on navigations need `service_workers="block"` (0253).
 - 2026-10-22 Wizard coral bar OK (MASTER 10.5)
+- 2026-10-22 Alerts: one short line + link to the fix; off `/` only red alerts get a line (owner).
+- 2026-10-22 [deps] Typed signature font: self-hosted Dancing Script (OFL); no code copied (owner).

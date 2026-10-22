@@ -72,24 +72,50 @@
 {% endmacro %}
 
 {% macro signature_fields(prefix, entity, preview='') %}
+  {%- set typed = (entity.signature_name or '') if entity else '' -%}
   <fieldset class="signature-block" data-host-signature>
     {#- 0240: the why sits behind "?", not in a paragraph. -#}
     <legend>{{ t('entity.signature.heading') }} {{ help_tip(prefix ~ 'signature-help', t('entity.signature.scope')) }}</legend>
-    <canvas id="{{ prefix }}sig-canvas" class="host-signature-pad" tabindex="0"></canvas>
-    <input type="hidden" id="{{ prefix }}signature" name="signature_drawn" value="{{ preview }}">
+    {#- 0282: locked until Edit, so a scrolling thumb never scratches it. -#}
+    <div class="signature-locked">
+      <img class="signature-locked-img" data-signature-preview alt="{{ t('entity.signature.locked_alt') }}"{% if preview %} src="{{ preview }}"{% else %} hidden{% endif %}>
+      <span class="signature-locked-empty" data-signature-empty{% if preview %} hidden{% endif %}>{{ t('entity.signature.none') }}</span>
+    </div>
     <div class="action-group">
-      <button class="btn" type="button" data-signature-clear>{{ t('entity.signature.clear') }}</button>
-      <label class="btn" for="{{ prefix }}signature_file">{{ t('entity.signature.upload') }}</label>
-      <input class="sr-only" type="file" id="{{ prefix }}signature_file" name="signature_file" accept="image/png,image/jpeg">
+      <button class="ui-btn ui-btn-secondary" type="button" data-signature-open hidden>{{ t('entity.signature.edit' if preview else 'entity.signature.add') }}</button>
+      <span class="small" role="status" data-signature-status data-unsaved="{{ t('entity.signature.unsaved') }}"></span>
     </div>
-    {% if preview %}
-    <label class="check"><input type="checkbox" name="signature_remove" value="1"> {{ t('entity.signature_remove') }}</label>
-    {% endif %}
-    <div class="field">
-      <label for="{{ prefix }}signature_name">{{ t('entity.signature_name_label') }}</label>
-      <input type="text" id="{{ prefix }}signature_name" name="signature_name" maxlength="80"
-             value="{{ (entity.signature_name or '') if entity else '' }}">
-    </div>
+    <input type="hidden" id="{{ prefix }}signature" name="signature_drawn" value="{{ preview }}">
+    <dialog class="ui-dialog signature-dialog" data-signature-dialog aria-labelledby="{{ prefix }}sig-title">
+      <div class="ui-sheet">
+        <span class="ui-sheet-handle" aria-hidden="true"></span>
+        <h2 id="{{ prefix }}sig-title">{{ t('entity.signature.dialog_title') }}</h2>
+        <div class="ui-tabs signature-modes" role="tablist">
+          <button class="ui-tab" type="button" role="tab" aria-selected="true" data-signature-mode="draw">{{ t('entity.signature.mode_draw') }}</button>
+          <button class="ui-tab" type="button" role="tab" aria-selected="false" data-signature-mode="type">{{ t('entity.signature.mode_type') }}</button>
+        </div>
+        <div data-signature-panel="draw">
+          <canvas id="{{ prefix }}sig-canvas" class="signature-dialog-pad" role="img" aria-label="{{ t('entity.signature.draw_hint') }}"></canvas>
+          <button class="ui-btn ui-btn-secondary ui-btn-compact" type="button" data-signature-clear>{{ t('entity.signature.clear') }}</button>
+        </div>
+        <div data-signature-panel="type" hidden>
+          <div class="field">
+            <label for="{{ prefix }}signature_name">{{ t('entity.signature.type_label') }}</label>
+            <input type="text" id="{{ prefix }}signature_name" name="signature_name" maxlength="80" autocomplete="name" value="{{ typed }}" data-signature-typed>
+          </div>
+          <canvas class="signature-dialog-pad signature-typed-preview" data-signature-typed-canvas aria-hidden="true"></canvas>
+        </div>
+        <div class="action-group">
+          <label class="ui-btn ui-btn-secondary ui-btn-compact" for="{{ prefix }}signature_file">{{ t('entity.signature.upload') }}</label>
+          <input class="sr-only" type="file" id="{{ prefix }}signature_file" name="signature_file" accept="image/png,image/jpeg" data-signature-file>
+          {% if preview %}<label class="check"><input type="checkbox" name="signature_remove" value="1"> {{ t('entity.signature_remove') }}</label>{% endif %}
+        </div>
+        <div class="action-group signature-dialog-actions">
+          <button class="ui-btn ui-btn-primary" type="button" data-signature-use>{{ t('entity.signature.use') }}</button>
+          <button class="ui-btn ui-btn-secondary" type="button" data-signature-cancel>{{ t('entity.signature.cancel') }}</button>
+        </div>
+      </div>
+    </dialog>
   </fieldset>
 {% endmacro %}
 

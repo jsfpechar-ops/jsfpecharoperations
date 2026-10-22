@@ -157,7 +157,9 @@ def test_notification_panel_keeps_every_action_reachable(host):
 
     page = host.get("/reservations?lang=en")
 
-    assert _bubbles(page) == 4
+    assert _bubbles(page) == 0
+    assert page.text.count("data-notification-summary>") == 1
+    assert 'href="/#needs-action"' in page.text
     assert 'class="notification-stack"' in page.text
     assert '<details class="host-alerts"' not in page.text
 
@@ -168,8 +170,9 @@ def test_the_stack_shows_no_summary_when_everything_fits(host):
 
     page = host.get("/reservations?lang=en")
 
-    assert _bubbles(page) == 2
-    assert "more alerts" not in page.text
+    assert _bubbles(page) == 0
+    assert page.text.count("data-notification-summary>") == 1
+    assert "2 alerts need you" in page.text
 
 
 def test_two_alerts_on_one_stay_do_not_use_up_the_stack(host):
@@ -190,7 +193,8 @@ def test_the_summary_opens_the_overview_queue(host):
     page = host.get("/reservations?lang=en")
 
     assert 'class="notification-stack"' in page.text
-    assert _bubbles(page) == 3
+    assert _bubbles(page) == 0
+    assert 'href="/#needs-action"' in page.text
 
 
 def test_the_summary_is_in_czech(host):
@@ -200,6 +204,7 @@ def test_the_summary_is_in_czech(host):
     page = host.get("/reservations?lang=cs")
 
     assert host_i18n.translate('cs', 'a11y.notifications') in page.text
+    assert "Upozornění k vyřízení: 3" in page.text
     assert 'class="notification-stack"' in page.text
 
 

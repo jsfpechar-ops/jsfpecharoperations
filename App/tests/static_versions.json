@@ -76,12 +76,12 @@
     "v": "20261022-0276b"
   },
   "host.js": {
-    "sha256": "aab97ff2c2233deaf39f19eb2418aa4a2fcdac968acdadc732a7fd91acf68f9f",
-    "v": "20261021-0205"
+    "sha256": "832ac57d928f8ac4d1e38af0a94a6d567fd1c8c720ee7e6a8885b25bae8f01db",
+    "v": "20261022-0282"
   },
   "host2.css": {
-    "sha256": "d8ca78409fb925898ad49385d5ca298e1597079ed30f3b7ec147a24f9e20cb5f",
-    "v": "20261022-0277c"
+    "sha256": "74a42265bfce2db514be08051ebd9a9c044fe4fe62d3edbb77b59c989e8f1b13",
+    "v": "20261022-0283m"
   },
   "landing.css": {
     "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",
@@ -116,8 +116,8 @@
     "v": "20261019-0146"
   },
   "tokens.css": {
-    "sha256": "7b82eb274e6ca68032bc69b8ddb214376815620ce695e3772fc75bc4bf5e89e1",
-    "v": "20261020-0190a"
+    "sha256": "1327c6c5dd050dbebee41bc0c705d6371d783684d313b3cd19f3a0421918ccf7",
+    "v": "20261022-0283"
   },
   "ubyhost-logo-stacked.png": {
     "sha256": "3f4a4fa5aae52cb2ea45c076ff4ecd26f86c76915852cff2664317d3f7fb50fa",

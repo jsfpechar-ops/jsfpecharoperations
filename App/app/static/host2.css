@@ -134,6 +134,8 @@
 @media (max-width: 1023px) { .host-workspace .ui-tabs { flex-wrap: wrap; overflow-x: visible; row-gap: var(--space-1); } }
 .host-workspace .ui-tab { display: flex; align-items: center; height: var(--control-h-phone); padding: 0 var(--space-3); color: var(--ink-2); text-decoration: none; font-size: var(--size-14); font-weight: 600; border-bottom: 2px solid transparent; white-space: nowrap; }
 .host-workspace .ui-tab[aria-current="page"] { color: var(--ink); border-color: var(--ink); }
+.host-workspace button.ui-tab { background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; font: inherit; font-size: var(--size-14); font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.host-workspace .ui-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
 .host-workspace .ui-toolbar { display: flex; align-items: center; gap: var(--space-3); margin: 0 0 var(--space-4); flex-wrap: wrap; }
 .host-workspace .ui-toolbar-search { display: flex; align-items: center; gap: var(--space-2); height: var(--control-h); width: calc(var(--space-12) * 5 + var(--space-10)); padding: 0 var(--input-px); border: 1px solid var(--input-border); border-radius: var(--input-radius); background: var(--surface); color: var(--ink-3); }
 .host-workspace .ui-toolbar-search .ui-input { border: 0; outline: 0; font: inherit; font-size: var(--size-14); color: var(--ink); background: transparent; width: 100%; min-height: 0; height: auto; padding: 0; box-shadow: none; }
@@ -695,3 +697,30 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .ui-how-steps { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-2); color: var(--ink-2); font-size: var(--size-14); }
 .host-workspace .ui-how-more { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--brand-action); font-size: var(--size-14); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .host-workspace .ui-how-chevron { transition: none; } }
+/* 0281: below their card switch point, Properties and Business rows are
+   separate outlined cards (owner: no borderless look on phone). */
+@container list-cards (max-width: 799.98px) {
+  .host-workspace .lc-properties tbody { display: grid; gap: var(--space-3); }
+  .host-workspace .lc-properties tr,
+  .host-workspace .lc-properties tr:last-child { border: 1px solid var(--line-strong); border-radius: var(--radius-3); }
+}
+@container list-cards (max-width: 949.98px) {
+  .host-workspace .lc-entities tbody { display: grid; gap: var(--space-3); }
+  .host-workspace .lc-entities tr,
+  .host-workspace .lc-entities tr:last-child { border: 1px solid var(--line-strong); border-radius: var(--radius-3); }
+}
+
+/* 0282: stay-fee signature: greyed locked preview, large signing dialog, and
+   the self-hosted handwriting font (Dancing Script, SIL OFL 1.1). */
+.host-workspace .signature-locked { display: flex; align-items: center; justify-content: center; min-height: calc(var(--control-h) * 2); padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-2); background: var(--surface-2); }
+.host-workspace .signature-locked-img { max-width: 100%; max-height: calc(var(--control-h) * 2.5); filter: grayscale(1); opacity: 0.6; }
+.host-workspace .signature-locked-empty { color: var(--ink-3); font-size: var(--size-14); }
+.host-workspace .ui-dialog.signature-dialog { width: min(calc(var(--dialog-w) * 1.5), calc(100vw - var(--space-8))); }
+.host-workspace .signature-dialog .signature-dialog-pad { display: block; width: 100%; height: clamp(calc(var(--control-h) * 3.5), 40vh, calc(var(--control-h) * 7)); margin: var(--space-3) 0; border: 1px solid var(--line-strong); border-radius: var(--radius-2); background: var(--surface); touch-action: none; }
+.host-workspace .signature-dialog .signature-typed-preview { touch-action: auto; }
+.host-workspace .signature-dialog-actions { justify-content: flex-end; }
+@media (max-width: 767px) {
+  .host-workspace .ui-dialog.signature-dialog { width: 100vw; }
+  .host-workspace .ui-dialog.signature-dialog .ui-sheet { max-height: 100dvh; }
+  .host-workspace .signature-dialog-actions { flex-direction: column; align-items: stretch; }
+}

@@ -1,27 +1,23 @@
+{#- 0280: off the dashboard, only red alerts get a line of their own, each one
+    short line plus the link to its fix. Everything else is one line that opens
+    the dashboard's "What needs you" card. -#}
 {% if open_alerts %}
-{% set pin_alerts = open_alerts | selectattr('kind', 'equalto', 'guest_pin_rotated') | list %}
-{% set pin_ids = pin_alerts | map(attribute='apartment_id') | list %}
-{% set pin_names = [] %}
-{% for apartment in apartments | default([]) if apartment.id in pin_ids %}{% set _ = pin_names.append(apartment.internal_name) %}{% endfor %}
+{% set red = open_alerts | selectattr('level', 'equalto', 'critical') | list %}
+{% set rest = open_alerts | rejectattr('level', 'equalto', 'critical') | list %}
+{% set rest_pin = rest | selectattr('kind', 'equalto', 'guest_pin_rotated') | list %}
+{% set rest_count = (rest | rejectattr('kind', 'equalto', 'guest_pin_rotated') | list | length) + (1 if rest_pin else 0) %}
+{% set lines = red + (rest if rest_count == 1 else []) %}
 <aside class="notification-stack" data-host-alerts aria-label="{{ t('a11y.notifications') }}" aria-live="polite">
-  {% for alert in open_alerts if alert.kind != 'guest_pin_rotated' or alert.id == pin_alerts[0].id %}
-    {% set grouped = alert.kind == 'guest_pin_rotated' and pin_alerts | length > 1 %}
-    <article class="notification-bubble {{ alert.level }}" data-notification{% if grouped %} data-notification-group="guest_pin_rotated"{% endif %}>
-      {% set action_href = '/apartments' if grouped else alert.action_href %}
-      {% set action_label = t('dashboard.setup.view_properties') if grouped else (t(alert.action_label_key) if alert.action_label_key else '') %}
-      {% if action_href %}
-        <a class="notification-link" href="{{ action_href }}">
-      {% else %}
-        <div class="notification-link">
-      {% endif %}
-          <span class="notification-icon" aria-hidden="true">!</span>
-          <span class="grow">
-            <strong>{{ alert.display_title or alert.message }}</strong>
-            {% if grouped %}<small>{{ pin_names | join(', ') }}. {{ alert.display_detail or alert.detail }}</small>
-            {% elif alert.display_detail or alert.detail %}<small>{{ alert.display_detail or alert.detail }}</small>{% endif %}
-            {% if action_label %}<small class="notification-action">{{ action_label }}</small>{% endif %}
-          </span>
-      {% if action_href %}</a>{% else %}</div>{% endif %}
+  {% for alert in lines if alert.kind != 'guest_pin_rotated' or alert.id == (rest_pin[0].id if rest_pin else alert.id) %}
+    <article class="notification-bubble {{ alert.level }}" data-notification>
+      {% if alert.action_href %}<a class="notification-link" href="{{ alert.action_href }}">{% else %}<div class="notification-link">{% endif %}
+        <span class="notification-icon" aria-hidden="true">!</span>
+        <span class="grow">
+          <strong>{{ alert.display_title or alert.message }}</strong>
+          {% if alert.display_reason %}<small>{{ alert.display_reason }}</small>{% endif %}
+          {% if alert.action_label_key %}<small class="notification-action">{{ t(alert.action_label_key) }}</small>{% endif %}
+        </span>
+      {% if alert.action_href %}</a>{% else %}</div>{% endif %}
       {% if alert.kind != 'dates_changed_resign' %}
       <form method="post" action="/alerts/{{ alert.id }}/dismiss" data-notification-dismiss>
         <button type="submit" aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
@@ -29,5 +25,16 @@
       {% endif %}
     </article>
   {% endfor %}
+  {% if rest_count > 1 %}
+    <article class="notification-bubble {{ rest[0].level }}" data-notification-summary>
+      <a class="notification-link" href="/#needs-action">
+        <span class="notification-icon" aria-hidden="true">!</span>
+        <span class="grow">
+          <strong>{{ t('notification.summary.more' if red else 'notification.summary.count', n=rest_count) }}</strong>
+          <small class="notification-action">{{ t('notification.summary.open') }}</small>
+        </span>
+      </a>
+    </article>
+  {% endif %}
 </aside>
 {% endif %}
