@@ -25,16 +25,26 @@ def _parse(value: Optional[str]) -> Optional[date]:
         return None
 
 
-def check(user_id: Optional[int], owner_user_id: Optional[int], today: date) -> Optional[Dict[str, Any]]:
+def keys_for(user_id: int) -> tuple:
+    """The settings check() reads, so a page can fetch them with others in one query."""
+    return (_seen_key(user_id), _line_key(user_id))
+
+
+def check(user_id: Optional[int], owner_user_id: Optional[int], today: date, settings: Optional[Dict[str, Optional[str]]] = None) -> Optional[Dict[str, Any]]:
     """Record today's visit; return the line to show, or None."""
     if not user_id:
         return None
-    last_seen = _parse(db.get_setting(_seen_key(user_id)))
+    if settings is None:
+        settings = db.get_settings(keys_for(user_id))
+    last_seen = _parse(settings.get(_seen_key(user_id)))
     if last_seen != today:
         db.set_setting(_seen_key(user_id), today.isoformat())
     if last_seen and (today - last_seen).days >= AWAY_DAYS:
         db.set_setting(_line_key(user_id), f"{last_seen.isoformat()}|{today.isoformat()}")
-    raw = db.get_setting(_line_key(user_id)) or ""
+    if last_seen and (today - last_seen).days >= AWAY_DAYS:
+        raw = f"{last_seen.isoformat()}|{today.isoformat()}"
+    else:
+        raw = settings.get(_line_key(user_id)) or ""
     since_raw, _, shown_raw = raw.partition("|")
     since, shown = _parse(since_raw), _parse(shown_raw)
     if not since or not shown:
