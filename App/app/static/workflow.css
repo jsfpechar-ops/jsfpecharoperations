@@ -89,3 +89,25 @@
   .needs-you-item { grid-template-columns: minmax(0, 1fr) auto; }
   .needs-you-actions { justify-content: flex-end; flex-wrap: nowrap; }
 }
+
+/* 0244 (idea O): property health check. One bordered row per check; the
+   left edge says how it is (the sentence says it too). */
+.health-list { display: grid; gap: var(--space-2); margin: 0 0 var(--space-3); padding: 0; list-style: none; }
+.health-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-2) var(--space-3); min-width: 0; padding: var(--space-3); border: 1px solid var(--border); border-left: 4px solid var(--green-700); border-radius: var(--radius-md); background: var(--surface); }
+.health-row[data-state="warn"] { border-left-color: var(--amber); }
+.health-row[data-state="bad"] { border-left-color: var(--red); }
+.health-row[data-state="off"] { border-left-color: var(--border-strong); }
+.health-icon { display: inline-flex; color: var(--ink-secondary); }
+.health-row[data-state="ok"] .health-icon { color: var(--green-700); }
+.health-copy { display: grid; gap: 2px; min-width: 0; }
+.health-copy strong { color: var(--ink); font-size: var(--text-sm); line-height: 1.35; overflow-wrap: anywhere; }
+.health-copy span { color: var(--ink-secondary); font-size: var(--text-sm); line-height: 1.4; overflow-wrap: anywhere; }
+.health-row > .ui-btn { grid-column: 1 / -1; justify-self: start; min-height: 44px; }
+.health-all-set { margin: 0 0 var(--space-3); }
+.health-all-set > summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 600; }
+.health-all-set > summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.health-all-set > .health-list { margin-top: var(--space-2); }
+@media (min-width: 720px) {
+  .health-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .health-row > .ui-btn { grid-column: auto; justify-self: end; }
+}
