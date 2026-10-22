@@ -1559,5 +1559,6 @@ body.host-workspace {
   .table-cards tr.clickable-row { position: relative; }
   .table-cards tr.clickable-row .row-open { position: absolute; right: 12px; bottom: 12px; }
   .table-cards tr.clickable-row:has(.row-action-form) .row-open { display: none; }
+  .table-cards tr.clickable-row .row-primary-link + .row-open { position: static; }
 }
 .row-primary-link + .row-open { margin-left: 6px; }

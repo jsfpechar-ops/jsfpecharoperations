@@ -44,3 +44,12 @@ Status: blocked
   - Command 4 (guardrails, geometry, 0199, list layouts, onboarding): 94 passed, 2 failed, 0 skipped.
     - `test_design_guardrails_browser.py` (operators, operator-add, operator-edit, invoice-settings at 1280): `4 layout findings {'list-scrolls-sideways': 4}`; `div.panel.tight.scroll-x "NameRegistered seatCompany ID"` at 1010 vs 976. Not one of the four named tables; not checked against the step 6 state.
     - `test_0199_phone_geometry_browser.py::test_stay`: `A panel content offset 118` (the expected pre-existing failure), plus `B wrapped labels` at 360 px and `en`/`cs`/`vi`.
+
+## Orchestrator review (after step 7)
+
+- Phone cards: the cue sat beside the menu on Properties; the actions cell now runs full height (host2.css). Business cards whose actions hold visible buttons keep them in a row under the content, so Edit and Invoice settings no longer cover the name.
+- Entities and stay fees: the cue sits beside the name (the actions cell made the tables scroll sideways at 1280 px).
+- settings_archived.html was missing the `row_open` import (500 on /settings/archived with archived rows). Fixed.
+- Tests whose assertions encoded the old design were updated: no Open cue in stay rows (onboarding_followup, stay_actions), stay jump tabs must scroll (stay_detail_layout), the sidebar toggle collapses at 1024-1279 px (host_fit).
+- Red on main c1ebb74 too, left alone: 0199 test_stay, host_invoice_items, host_property_controls, host_controls browser tests.
+- The touch sweep test passes at 6 sizes in EN, CS and VI.
