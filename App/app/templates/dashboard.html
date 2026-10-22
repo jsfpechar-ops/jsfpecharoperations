@@ -90,6 +90,12 @@
   {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
   {% set needs_you = needs_you_build(rows, needs_you_queue, open_alerts, missing_report_rows, link_unused, lang, today) %}
   {% set ny_lines = (needs_you.lines | rejectattr('kind', 'equalto', 'setup') | list) if banner_showing else needs_you.lines %}
+  {% if welcome_back %}
+  <div class="ui-banner ui-banner-neutral" role="status" data-welcome-back>
+    <div class="grow"><strong>{{ t('welcome_back.title', date=welcome_back.since | date_short) }}</strong> {% if welcome_back.stays or welcome_back.reported %}{{ tp('welcome_back.stays', welcome_back.stays) }} {{ tp('welcome_back.reported', welcome_back.reported) }}{% else %}{{ t('welcome_back.quiet') }}{% endif %}</div>
+    <form method="post" action="/welcome-back/dismiss" data-welcome-back-dismiss><input type="hidden" name="_csrf" value="{{ csrf_token }}">{{ ui_icon_button(t('a11y.dismiss_notification'), 'x', type='submit') }}</form>
+  </div>
+  {% endif %}
   <div data-dashboard-refresh="stats">
   <section class="needs-you" id="needs-action" data-needs-you-card aria-labelledby="needs-you-title">
     <h2 id="needs-you-title">{{ t('needs_you.title') }}{% if ny_lines %} <span class="ui-badge ui-badge-action" data-tone="{{ 'red' if ny_lines[0].tone == 'red' else 'amber' }}">{{ ny_lines | length }}</span>{% endif %}</h2>
