@@ -724,3 +724,23 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .ui-dialog.signature-dialog .ui-sheet { max-height: 100dvh; }
   .host-workspace .signature-dialog-actions { flex-direction: column; align-items: stretch; }
 }
+
+/* 0284: one interaction state for everything clickable (owner 2026-10-22: the
+   Properties row is the model). Hover greys the surface and turns the name or
+   label coral; pressing greys it one step more; keyboard focus keeps its ring.
+   Pages add no hover CSS of their own: extend these lists instead. */
+@media (hover: hover) {
+  .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .needs-you-item:has([data-needs-you-go])):hover,
+  .host-workspace .ui-table .ui-row:hover > td { background: var(--state-hover); }
+  .host-workspace :is(.ui-card, .host-property-card, .host-task, .needs-you-item:has([data-needs-you-go])):hover { border-color: var(--line-strong); }
+  .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .needs-you-item):hover :is(.row-primary-link, .ui-card-l1, .host-property-card-link, .needs-you-copy strong),
+  .host-workspace a.host-property-card:hover strong { color: var(--state-ink); }
+  .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .host-property-card, .needs-you-item):hover :is(.row-open, .host-property-card-open, [data-needs-you-go]) { border-color: var(--ink); }
+  .host-workspace :is(.ui-btn-secondary, .ui-btn-quiet, .btn-icon, .ui-menu-item, .row-menu-item, .ui-chip:not([aria-current="true"])):hover { background: var(--state-hover); color: var(--state-ink); }
+  .host-workspace :is(.ui-btn-secondary, .btn-icon):hover { border-color: var(--ink); }
+}
+.host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .ui-btn-secondary, .ui-btn-quiet, .btn-icon, .ui-menu-item, .row-menu-item):active,
+.host-workspace .ui-table .ui-row:active > td,
+.host-workspace .needs-you-item:has([data-needs-you-go]):active { background: var(--state-press); }
+.host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row):focus-within,
+.host-workspace .ui-table .ui-row:focus-within > td { background: var(--state-hover); }
