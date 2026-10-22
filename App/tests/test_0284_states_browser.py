@@ -83,5 +83,5 @@ def test_needs_you_buttons_line_up_and_the_line_opens(base):
         href = item.locator("[data-needs-you-go]").get_attribute("href")
         box = item.locator(".needs-you-copy").bounding_box()
         page.mouse.click(box["x"] + 10, box["y"] + box["height"] / 2)
-        page.wait_for_url("**" + href.split("#")[0].split("?")[0] + "*")
+        page.wait_for_url("**" + href.split("#")[0].split("?")[0] + "**")
         browser.close()
