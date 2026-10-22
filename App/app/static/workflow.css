@@ -80,6 +80,8 @@
 .needs-you-more { margin-top: var(--space-2); }
 .needs-you-more > summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 600; }
 .needs-you-more > .needs-you-list, .needs-you-how { margin-top: var(--space-2); }
+/* 0246: the paste how-to sits in its line, under the sentence, full width. */
+.needs-you-item > .needs-you-more { grid-column: 1 / -1; grid-row: 2; margin-top: 0; }
 .needs-you-how { display: grid; gap: var(--space-1); margin-bottom: 0; padding-left: var(--space-5); }
 .needs-you-calm { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0; color: var(--ink); }
 .needs-you-calm svg { color: var(--green-700); }
