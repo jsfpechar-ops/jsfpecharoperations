@@ -25,6 +25,7 @@ Two things. First, the "Send the guest link" button on a stay line lands on `#st
 | `App/tests/test_needs_you_0240.py` | edit | one line (step 1) |
 | `App/tests/test_signed_in_chrome.py` | edit | one line (step 1) |
 | `App/tests/test_host_quiet_dashboard_browser.py` | edit | replace the two tests (step 2) |
+| `App/tests/test_design_dashboard.py` | edit | remove the unused `import re` left by 0241 (step 3) |
 | `docs/tasks/0243-report.md` | create | report |
 
 No other file may change.
@@ -245,6 +246,10 @@ def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, ba
 Command: `cd App && .venv/bin/ruff check tests/test_host_quiet_dashboard_browser.py --select E9,F63,F7,F82,F401,F841 2>&1 | tail -10`. If an import at the top of the file is now unused (F401), remove only that name from its import line. Then run §6 command 1. Commit `0243 step 2`.
 
 If a geometry assertion fails, do not loosen it. Save a screenshot of the failing case with `UBYHOST_SHOTS_DIR=/mnt/project-files/foolproof-round2/0243-fail`, put the failing assertion message and the screenshot path in the report, and stop.
+
+### Step 3. Unused import
+
+0241 left `import re` unused in `App/tests/test_design_dashboard.py` (CI runs ruff F401). Delete the line `import re` there. Command: `cd App && .venv/bin/ruff check tests --select E9,F63,F7,F82,F401,F841 2>&1 | tail -5` → `All checks passed!`. Commit `0243 step 3`.
 
 ## 5. Do not touch
 
