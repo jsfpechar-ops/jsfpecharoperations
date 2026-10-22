@@ -14,7 +14,7 @@ Updated: 2026-10-22.
 - Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
 - #418 onboarding fixes 0203-0212; address open.
 - Stay-fee email 0220-0224: built, owner staging test.
-- 0203 #419: fee list pay steps. Data box send PARKED (owner: cert costs, later at scale); built 0239-0242 in draft #424, needs PostSignum serverový cert + ISDS spec.
+- 0203 #419: fee list pay steps. Data box send parked (owner, cert cost); draft #424.
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
 - AI crawler block (0195): robots.txt, tdmrep.json, Terms §11 TDM (v1.7; lawyer to confirm).
