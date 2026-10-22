@@ -1,4 +1,3 @@
-import re
 """Dashboard on host_page.html (docs/design/pages/dashboard.md)."""
 
 from tests.test_signed_in_chrome import empty_host, host_with_property  # noqa: F401
