@@ -432,7 +432,10 @@ def dashboard(request: Request):
     today = deadlines.local_now().date()
     # 0275: one welcome-back line after two weeks away.
     account = auth.current_user(request)
-    welcome = welcome_back.check(account["id"] if account else None, owner_user_id, today)
+    user_id = account["id"] if account else None
+    # One settings read for welcome back and the last calendar sync (query budget).
+    settings = db.get_settings((*welcome_back.keys_for(user_id), "last_ical_sync") if user_id else ("last_ical_sync",))
+    welcome = welcome_back.check(user_id, owner_user_id, today, settings)
     rows = reporting.dashboard_rows(
         days_ahead=30, owner_user_id=owner_user_id, apartments=apartments, overview=True
     )
@@ -483,7 +486,7 @@ def dashboard(request: Request):
             # 0241: "What needs you" reads every property and every bucket.
             "missing_report_rows": missing_report_rows,
             "needs_you_queue": queue,
-            "last_sync": db.get_setting("last_ical_sync"),
+            "last_sync": settings.get("last_ical_sync"),
             "demo_loaded": any(demo.is_demo_apartment(apartment) for apartment in apartments),
             "celebration_milestone": milestone,
             "sent_guest_count": sent_count,
