@@ -172,241 +172,197 @@ def _launch(playwright):
         pytest.skip("Chromium is required for dashboard geometry coverage")
 
 
-def test_dashboard_geometry_locales_and_screenshots(dashboard_host, base):
+WIDTHS = (360, 390, 760, 1280, 1440, 2000)
+LOCALES = ("en", "cs", "vi")
+TONE_RANK = {"red": 0, "amber": 1, "grey": 2}
+
+# 0243: every visible line of "What needs you", measured in one pass.
+CARD_JS = """() => {
+  const card = document.querySelector('.needs-you');
+  if (!card) return null;
+  const rect = el => { const b = el.getBoundingClientRect(); return {l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height}; };
+  const style = el => getComputedStyle(el);
+  const shown = el => el.offsetParent !== null;
+  const items = [...card.querySelectorAll('.needs-you-item')].filter(shown).map(li => {
+    const copy = li.querySelector('.needs-you-copy');
+    const buttons = [...li.querySelectorAll('.needs-you-actions a, .needs-you-actions button')].filter(shown);
+    return {
+      kind: li.dataset.needsYou, tone: li.dataset.tone, text: copy.textContent.trim().slice(0, 80), box: rect(li),
+      border: [style(li).borderTopStyle, parseFloat(style(li).borderTopWidth), parseFloat(style(li).borderLeftWidth), style(li).borderLeftColor],
+      copy: rect(copy), copyOverflow: copy.scrollWidth > copy.clientWidth + 1,
+      buttons: buttons.map(b => Object.assign(rect(b), {text: b.innerText.trim(), clipped: b.scrollWidth > b.clientWidth + 1})),
+    };
+  });
+  return {card: rect(card), cardBorder: [style(card).borderTopStyle, parseFloat(style(card).borderTopWidth)], items,
+          header: rect(document.querySelector('.ui-ph')),
+          calendar: document.querySelector('#calendar') ? rect(document.querySelector('#calendar')) : null,
+          scroll: document.documentElement.scrollWidth - innerWidth,
+          stack: !!document.querySelector('.notification-stack')};
+}"""
+
+
+def _open(browser, base, cookie, locale, width, collapsed=False):
+    context = browser.new_context(viewport={"width": width, "height": 1000})
+    context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
+    flag = "1" if collapsed else "0"
+    context.add_init_script(f"try {{ localStorage.setItem('ubyhost-sidebar-collapsed', '{flag}'); }} catch (e) {{}}")
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(f"{base}/?lang={locale}")
+    page.wait_for_load_state("networkidle")
+    later = page.locator("#security-prompt [data-security-prompt-later]")
+    if later.is_visible():
+        later.click()
+    page.evaluate("window.scrollTo(0, 0)")
+    return context, page, errors
+
+
+def _check_card(geo, width, label):
+    """Borders, lane, touch targets, no overflow and no overlap for every visible line."""
+    assert geo, f"{label}: no What needs you card"
+    assert geo["scroll"] <= 1, (label, "horizontal scroll", geo["scroll"])
+    assert not geo["stack"], f"{label}: the alert stack is shown next to the card"
+    card = geo["card"]
+    assert geo["cardBorder"][0] == "solid" and geo["cardBorder"][1] >= 1, (label, geo["cardBorder"])
+    for edge in ("l", "r"):
+        assert abs(card[edge] - geo["header"][edge]) <= 2, (label, "lane", card, geo["header"])
+        if geo["calendar"]:
+            assert abs(card[edge] - geo["calendar"][edge]) <= 2, (label, "calendar lane", card, geo["calendar"])
+    if geo["calendar"]:
+        assert geo["calendar"]["t"] >= card["b"] - 0.5, (label, "card overlaps calendar")
+    tone_colours = {}
+    for item in geo["items"]:
+        where = (label, item["kind"], item["text"])
+        box, copy = item["box"], item["copy"]
+        assert box["l"] >= card["l"] - 0.5 and box["r"] <= card["r"] + 0.5, where
+        assert item["border"][0] == "solid" and item["border"][1] >= 1, where + (item["border"],)
+        assert item["border"][2] >= 3.5, where + (item["border"],)
+        tone_colours.setdefault(item["tone"], set()).add(item["border"][3])
+        assert not item["copyOverflow"], where
+        assert copy["l"] >= box["l"] - 0.5 and copy["r"] <= box["r"] + 0.5, where
+        assert 1 <= len(item["buttons"]) <= 2, where + (item["buttons"],)
+        for button in item["buttons"]:
+            assert button["h"] >= 43.5, where + (button,)
+            assert button["w"] >= (43.5 if width <= 767 else 39.5), where + (button,)
+            assert not button["clipped"], where + (button,)
+            assert button["l"] >= box["l"] - 0.5 and button["r"] <= box["r"] + 0.5, where + (button,)
+            assert button["t"] >= box["t"] - 0.5 and button["b"] <= box["b"] + 0.5, where + (button,)
+            overlap_x = min(button["r"], copy["r"]) - max(button["l"], copy["l"])
+            overlap_y = min(button["b"], copy["b"]) - max(button["t"], copy["t"])
+            assert overlap_x <= 0.5 or overlap_y <= 0.5, where + ("button overlaps text", button, copy)
+    for tone, colours in tone_colours.items():
+        assert len(colours) == 1, (label, tone, colours)
+    if "red" in tone_colours and "amber" in tone_colours:
+        assert tone_colours["red"] != tone_colours["amber"], (label, tone_colours)
+
+
+def _check_focus(page, label):
+    page.keyboard.press("Tab")
+    button = page.locator(".needs-you > .needs-you-list .needs-you-actions .ui-btn").first
+    button.focus()
+    ring = button.evaluate("el => [getComputedStyle(el).outlineStyle, parseFloat(getComputedStyle(el).outlineWidth)]")
+    assert ring[0] != "none" and ring[1] >= 2, (label, ring)
+
+
+def test_dashboard_single_stay_needs_you_card(dashboard_host, base):
     shots = os.environ.get("UBYHOST_SHOTS_DIR")
     cookie = dashboard_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
-
+    stay_id = dashboard_host["reservation"]
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
-        for locale in ("en", "cs"):
+        for locale in LOCALES:
             for width in (360, 390, 1280):
-                context = browser.new_context(viewport={"width": width, "height": 1000})
-                context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
-                context.add_init_script("""window.__copyWrites = []; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: value => { window.__copyWrites.push(value); return Promise.resolve(); } } });""")
-                page = context.new_page()
-                page_errors = []
-                page.on("pageerror", lambda error: page_errors.append(str(error)))
-                page.goto(f"{base}/?lang={locale}")
-                page.wait_for_load_state("networkidle")
-                security_later = page.locator("#security-prompt [data-security-prompt-later]")
-                if security_later.is_visible():
-                    security_later.click()
-                page.evaluate("window.scrollTo(0, 0)")
+                label = f"single/{locale}/{width}"
+                context, page, errors = _open(browser, base, cookie, locale, width)
                 assert "has-js" in (page.locator("html").get_attribute("class") or "")
-                assert not page_errors, f"browser script errors: {page_errors}"
-
-                assert page.locator(".dashboard-stats .dashboard-stat").count() == 3
-                rows = page.locator(".dashboard-row")
-                assert 1 <= rows.count() <= 5
+                assert not errors, (label, errors)
                 assert page.locator("[data-calendar]").count() == 1
-                assert page.locator(".dashboard-stat.waiting").count() == 0
-                own_row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_host["reservation"]}"]')
-                assert own_row.count() == 1
-                assert page.evaluate("() => document.documentElement.scrollWidth - innerWidth") <= 1
-
-                assert own_row.locator(".dashboard-open").count() == 0
-                more_action = own_row.locator(".row-menu-trigger")
-                assert more_action.get_attribute("aria-label") == ("More actions" if locale == "en" else "Další akce")
-                assert more_action.inner_text() == ""
-                more_box = more_action.bounding_box()
-                more_action.click()
-                panel = page.locator(".row-menu-panel.is-open")
-                assert panel.is_visible(), (
-                    f"menu did not open: expanded={more_action.get_attribute('aria-expanded')}, "
-                    f"scrollY={page.evaluate('window.scrollY')}, menu={own_row.locator('.row-menu').inner_html()}"
-                )
-                assert panel.get_by_role("menuitem", name="Open" if locale == "en" else "Otevřít", exact=True).is_visible()
-                assert panel.get_by_role("menuitem", name="Add a guest" if locale == "en" else "Přidat hosta").is_visible()
-                assert panel.get_by_role("menuitem", name="Open guest form" if locale == "en" else "Otevřít formulář hosta").is_visible()
-                assert panel.locator('button[data-copy][role="menuitem"]').count() == 1
-                copy_source_id = panel.locator('button[data-copy][role="menuitem"]').get_attribute("data-copy")
-                copy_source = page.locator(f"#{copy_source_id}")
-                assert copy_source.count() == 1 and copy_source.get_attribute("tabindex") == "-1"
-                if width <= 390:
-                    touch_targets = [more_action]
-                    touch_targets.extend(panel.locator('[role="menuitem"]').all())
-                    assert len(touch_targets) >= 6
-                    for target in touch_targets:
-                        target_box = target.bounding_box()
-                        assert target_box["height"] >= 44, (
-                            f"touch target is only {target_box['height']}px high in {locale}/{width}"
-                        )
-                else:
-                    assert abs(more_box["height"] - 40) <= 1
-
-                page.keyboard.press("Escape")
-                assert not panel.is_visible()
-                assert more_action.evaluate("el => el === document.activeElement")
-                more_action.focus()
-                page.keyboard.press("Enter")
-                assert panel.is_visible()
-                assert panel.get_by_role("menuitem").first.evaluate("el => el === document.activeElement")
-                page.keyboard.press("ArrowDown")
-                assert panel.get_by_role("menuitem").nth(1).evaluate("el => el === document.activeElement")
-                page.keyboard.press("Home")
-                assert panel.get_by_role("menuitem").first.evaluate("el => el === document.activeElement")
-                page.keyboard.press("End")
-                assert panel.get_by_role("menuitem").last.evaluate("el => el === document.activeElement")
-                page.keyboard.press("Tab")
-                assert not panel.is_visible()
-                assert page.evaluate("document.activeElement !== document.body")
-                page.mouse.click(10, 10)
+                assert page.locator(".dashboard-stats, .dashboard-row, .ui-banner-attention").count() == 0, label
+                line = page.locator(f'.needs-you-item[data-needs-you-stay="{stay_id}"]')
+                assert line.count() == 1, label
+                assert line.get_attribute("data-tone") == "amber", label
+                link = line.locator(".needs-you-actions .ui-btn")
+                assert link.count() == 1, label
+                assert link.get_attribute("href") == f"/reservations/{stay_id}?return_to=/#now", label
+                _check_card(page.evaluate(CARD_JS), width, label)
+                _check_focus(page, label)
                 if shots:
                     os.makedirs(shots, exist_ok=True)
+                    page.mouse.click(1, 1)
                     page.evaluate("window.scrollTo(0, 0)")
                     page.screenshot(path=os.path.join(shots, f"dashboard-single-{locale}-{width}.png"), full_page=True)
+                if locale == "en" and width == 390:
+                    with page.expect_navigation():
+                        link.click()
+                    assert page.url.endswith(f"/reservations/{stay_id}?return_to=/#now")
+                    assert page.locator("#now").is_visible()
+                    assert page.evaluate("document.querySelector('#now').getBoundingClientRect().top") < 1000
                 context.close()
         browser.close()
 
 
-def test_dashboard_rich_queue_colors_cap_and_interaction_screenshots(dashboard_rich_host, base):
-    """Exercise actual queue data, positive count colors, cap, hover and focus."""
+def test_dashboard_rich_needs_you_order_cap_and_geometry(dashboard_rich_host, base):
     shots = os.environ.get("UBYHOST_SHOTS_DIR")
     cookie = dashboard_rich_host["client"].cookies.get(auth.SESSION_COOKIE)
     assert cookie
+    overdue, ready = dashboard_rich_host["overdue"], dashboard_rich_host["ready"]
     with sync_api.sync_playwright() as playwright:
         browser = _launch(playwright)
-        for locale in ("en", "cs"):
-            for width in (360, 390, 1280, 1440, 1680, 1920, 2048):
-                context = browser.new_context(viewport={"width": width, "height": 1000})
-                context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
-                context.add_init_script("""window.__copyWrites = []; Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: value => { window.__copyWrites.push(value); return Promise.resolve(); } } });""")
-                page = context.new_page()
-                page_errors = []
-                page.on("pageerror", lambda error: page_errors.append(str(error)))
-                page.goto(f"{base}/?lang={locale}")
-                page.wait_for_load_state("networkidle")
-                security_later = page.locator("#security-prompt [data-security-prompt-later]")
-                if security_later.is_visible():
-                    security_later.click()
-                page.evaluate("window.scrollTo(0, 0)")
-                assert not page_errors, f"browser script errors: {page_errors}"
+        for locale in LOCALES:
+            for width in WIDTHS:
+                for collapsed in ((False, True) if width >= 1280 else (False,)):
+                    label = f"rich/{locale}/{width}/{'collapsed' if collapsed else 'open'}"
+                    context, page, errors = _open(browser, base, cookie, locale, width, collapsed)
+                    assert not errors, (label, errors)
 
-                cards = page.locator(".dashboard-stats .dashboard-stat")
-                assert cards.count() == 3
-                for kind, count in (("action", 6), ("ready", 1), ("overdue", 1)):
-                    card = page.locator(f".dashboard-stat.{kind}")
-                    assert card.locator("strong").inner_text() == str(count)
-                    assert "is-positive" in (card.get_attribute("class") or "")
-                    assert card.evaluate("el => getComputedStyle(el, \"::before\").backgroundColor") != "rgba(0, 0, 0, 0)"
-                rows = page.locator(".dashboard-row")
-                assert rows.count() == 5
-                shown_ids = [int(value) for value in rows.evaluate_all("nodes => nodes.map(node => node.dataset.stayId)")]
-                assert len(set(shown_ids)) == 5
-                assert set(shown_ids) <= dashboard_rich_host["all_actionable"]
-                assert dashboard_rich_host["overdue"] in shown_ids
-                assert dashboard_rich_host["ready"] in shown_ids
-                assert page.locator('.dashboard-row-task .pill.amber, .dashboard-row-task [data-tone="amber"]').count() >= 1
-                ready_row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["ready"]}"]')
-                assert ready_row.locator('.dashboard-row-task [data-tone="blue"]').count() == 1
-                overdue_row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["overdue"]}"]')
-                assert "is-overdue" in (overdue_row.get_attribute("class") or "")
-                overflow = page.locator("#needs-action > p a")
-                assert overflow.count() == 1
-                assert "1" in overflow.inner_text()
-                # The waiting stay is counted but hidden because the five-row
-                # cap is consumed by actionable work. Do not claim the current
-                # queue is empty or link the count to a nonexistent section.
-                assert page.locator("#current").count() == 0
-                assert page.locator(".dashboard-stat.waiting").count() == 0
-                assert page.locator("[data-calendar]").count() == 1
-                assert page.get_by_text("No guest forms are currently outstanding.", exact=True).count() == 0
-                assert page.evaluate("() => document.documentElement.scrollWidth - innerWidth") <= 1
+                    # Order: red first, then amber, then grey, across every line (shown or behind "Show more").
+                    tones = page.locator(".needs-you-item").evaluate_all("nodes => nodes.map(node => node.dataset.tone)")
+                    assert tones, label
+                    ranks = [TONE_RANK[tone] for tone in tones]
+                    assert ranks == sorted(ranks), (label, tones)
+                    first = page.locator(".needs-you > .needs-you-list > .needs-you-item").first
+                    assert first.get_attribute("data-needs-you-stay") == str(overdue), label
+                    assert first.get_attribute("data-tone") == "red", label
+                    ready_line = page.locator(f'.needs-you-item[data-needs-you-stay="{ready}"]')
+                    assert ready_line.count() == 1 and ready_line.get_attribute("data-tone") == "amber", label
+                    assert ready_line.locator(".ui-btn").get_attribute("href") == f"/reservations/{ready}?return_to=/#now"
+                    for later in dashboard_rich_host["incomplete"]:
+                        assert page.locator(f'.needs-you-item[data-needs-you-stay="{later}"]').count() == 0, label
 
-                header_actions = page.locator(".ui-ph-acts")
-                assert header_actions.locator('a[href="/reservations?new=1"]').is_visible()
-                if width >= 1024:
-                    assert header_actions.locator(
-                        'a[href="/cleaning/new"][data-calendar-add][data-cal-create-type="cleaning"]'
-                    ).is_visible()
-                    assert header_actions.locator('form[action="/demo/reset"]').is_visible()
-                # v2 (MASTER): one primary action; below 1024 px the rest sit in the overflow menu.
-                header_buttons = page.locator(".ui-ph-acts .ui-btn:not(.ui-ph-menu)")
-                visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
-                if width < 1024:
-                    assert len(visible_buttons) == 1
-                    assert page.locator(".ui-ph-menu").is_visible()
-                header_boxes = [button.bounding_box() for button in visible_buttons]
-                assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes)
-                if width > 390:
-                    assert max(box["y"] for box in header_boxes) - min(box["y"] for box in header_boxes) <= 2
+                    # At most five lines open; the rest behind one "Show N more".
+                    shown = page.locator(".needs-you > .needs-you-list > .needs-you-item").count()
+                    total = len(tones)
+                    assert shown == min(total, 5), (label, shown, total)
+                    more = page.locator(".needs-you-more:not([data-paste-check]) > summary")
+                    assert more.count() == (1 if total > 5 else 0), label
+                    if total > 5:
+                        assert str(total - 5) in more.inner_text(), (label, more.inner_text())
+                    if "paste" in page.locator(".needs-you-item").evaluate_all("nodes => nodes.map(node => node.dataset.needsYou)"):
+                        assert page.locator(".needs-you-more[data-paste-check] > summary").is_visible(), label
 
-                if width >= 1440:
-                    # On ultrawide screens the dashboard title/actions, count
-                    # cards, and queue should share the same centered lane.
-                    lane_boxes = page.evaluate("""() => [
-                      '.ui-ph', '.dashboard-stats', '#needs-action'
-                    ].map(selector => {
-                      const rect = document.querySelector(selector).getBoundingClientRect();
-                      return {selector, left: rect.left, right: rect.right};
-                    })""")
-                    for box in lane_boxes[1:]:
-                        assert abs(box["left"] - lane_boxes[0]["left"]) <= 2, lane_boxes
-                        assert abs(box["right"] - lane_boxes[0]["right"]) <= 2, lane_boxes
+                    # Header: one primary action; below 1024 px the rest sit in the overflow menu.
+                    header_buttons = page.locator(".ui-ph-acts .ui-btn:not(.ui-ph-menu)")
+                    visible_buttons = [button for button in header_buttons.all() if button.is_visible()]
+                    if width < 1024:
+                        assert len(visible_buttons) == 1, label
+                        assert page.locator(".ui-ph-menu").is_visible(), label
+                    header_boxes = [button.bounding_box() for button in visible_buttons]
+                    assert all(abs(box["height"] - (44 if width <= 767 else 40)) <= 1 for box in header_boxes), label
 
-                # Save the base view before interaction, with real statuses and
-                # all four positive counters visible.
-                if shots:
-                    os.makedirs(shots, exist_ok=True)
-                    page.screenshot(path=os.path.join(shots, f"dashboard-{locale}-{width}.png"), full_page=True)
-
-                row = page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["ready"]}"]')
-                assert row.locator(".dashboard-open").count() == 0
-                primary_link = row.locator(".dashboard-row-property")
-                more_action = row.locator(".row-menu-trigger")
-                more_box = more_action.bounding_box()
-                assert more_action.inner_text() == ""
-                assert abs(more_box["height"] - (44 if width <= 760 else 40)) <= 1
-
-                before_hover = row.evaluate("el => getComputedStyle(el).backgroundColor")
-                row.hover()
-                page.wait_for_timeout(350)
-                after_hover = row.evaluate("el => getComputedStyle(el).backgroundColor")
-                assert before_hover != after_hover, f"Row hover did not change in {locale}/{width}"
-                if shots:
-                    page.screenshot(path=os.path.join(shots, f"dashboard-hover-{locale}-{width}.png"), full_page=True)
-
-                more_action.focus()
-                page.keyboard.press("Shift+Tab")
-                assert primary_link.evaluate("el => el === document.activeElement")
-                assert primary_link.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
-                if shots:
-                    page.screenshot(path=os.path.join(shots, f"dashboard-focus-{locale}-{width}.png"), full_page=True)
-
-                if locale == "en" and width == 360:
-                    more_action.click()
-                    panel = page.locator(".row-menu-panel.is-open")
-                    assert panel.is_visible()
-                    copy = panel.locator('button[data-copy][role="menuitem"]')
-                    assert copy.count() == 1
-                    source_id = copy.get_attribute("data-copy")
-                    source = page.locator(f"#{source_id}")
-                    assert source.get_attribute("tabindex") == "-1"
-                    link = panel.locator('a[href^="/l/"][target="_blank"]').get_attribute("href")
-                    assert source.input_value().endswith(link)
-                    copy.click()
-                    page.wait_for_function("window.__copyWrites.length === 1")
-                    assert page.evaluate("window.__copyWrites[0]") == source.input_value()
-                    assert page.evaluate("window.__copyWrites[0]").endswith(link)
-                    page.keyboard.press("Escape")
-                    assert not panel.is_visible()
-                    assert more_action.evaluate("el => el === document.activeElement")
-                    more_action.click()
-                    panel = page.locator(".row-menu-panel.is-open")
-                    page.keyboard.press("End")
-                    delete = panel.get_by_role("menuitem", name="Delete")
-                    assert delete.evaluate("el => el === document.activeElement")
-                    delete.click()
-                    confirm = page.locator("#confirm-dialog")
-                    assert confirm.get_attribute("open") is not None
-                    confirm.locator("[data-confirm-cancel]").click()
-                    assert confirm.get_attribute("open") is None
-                    assert page.locator(f'.dashboard-row[data-stay-id="{dashboard_rich_host["ready"]}"]').count() == 1
-
-                if os.environ.get("UBYHOST_CAPTURE_0041") == "1" and width in (360, 390, 1280, 1920):
-                    evidence_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "generated_images", "0041-evidence")
-                    os.makedirs(evidence_dir, exist_ok=True)
-                    row.locator(".dashboard-row-actions").screenshot(path=os.path.join(evidence_dir, f"dashboard-actions-{locale}-{width}.png"))
-                context.close()
+                    _check_card(page.evaluate(CARD_JS), width, label)
+                    _check_focus(page, label)
+                    if shots:
+                        os.makedirs(shots, exist_ok=True)
+                        page.mouse.click(1, 1)
+                        page.evaluate("window.scrollTo(0, 0)")
+                        state = "collapsed" if collapsed else "open"
+                        page.screenshot(path=os.path.join(shots, f"dashboard-{locale}-{width}-{state}.png"), full_page=True)
+                    if total > 5:
+                        more.click()
+                        _check_card(page.evaluate(CARD_JS), width, label + "/more")
+                        hidden_lines = page.locator(".needs-you-more .needs-you-item")
+                        assert all(line.is_visible() for line in hidden_lines.all()), label
+                    context.close()
         browser.close()
