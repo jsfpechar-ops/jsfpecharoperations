@@ -1,5 +1,6 @@
 {% extends "host_page.html" %}
 {% set nav = 'apartments' %}
+{% set how_key = 'property' %}
 {% set editing = apartment is not none %}
 {% set body_kind = 'detail' if editing else 'form' %}
 {% block title %}{{ apartment.internal_name if editing else t('property_create.title') }}{% endblock %}
