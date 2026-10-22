@@ -171,7 +171,8 @@
           {% endif %}
           {% if reservation.status == 'active' and progress.status in ('awaiting_guest', 'incomplete') %}
             {% set lw = link_window(reservation) %}
-            {% if lw %}<div class="link-window{{ ' is-later' if lw.state == 'from' }}" data-link-window="{{ lw.state }}">{{ t('workflow.link.now') if lw.state == 'now' else t('workflow.link.from', date=lw.opens.isoformat() | date_short) }}</div>{% endif %}
+            {#- 0236: quiet when fine; only a stay not yet on the link says so. -#}
+            {% if lw and lw.state == 'from' %}<div class="link-window is-later" data-link-window="from">{{ t('workflow.link.from', date=lw.opens.isoformat() | date_short) }}</div>{% endif %}
           {% endif %}
         </td>
         <td class="ui-cell-acts row-actions stay-col-actions" data-card="actions" data-label="">
