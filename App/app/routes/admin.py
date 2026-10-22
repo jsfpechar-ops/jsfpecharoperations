@@ -480,6 +480,8 @@ def dashboard(request: Request):
             "celebration_milestone": milestone,
             "sent_guest_count": sent_count,
             "minutes_saved": minutes_saved,
+            # 0233: remind until a real guest has used the guest link.
+            "link_unused": workflow.link_unused(apartments),
         },
     )
 
