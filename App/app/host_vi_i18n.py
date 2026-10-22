@@ -3379,3 +3379,19 @@ STRINGS.update({
     "notification.summary.more": "Thêm %(n)s cảnh báo",
     "notification.summary.open": "Mở trang tổng quan",
 })
+
+# 0282: the locked signature and its signing dialog.
+STRINGS.update({
+    "entity.signature.add": "Thêm chữ ký",
+    "entity.signature.edit": "Sửa chữ ký",
+    "entity.signature.none": "Chưa có chữ ký",
+    "entity.signature.locked_alt": "Chữ ký đã lưu",
+    "entity.signature.dialog_title": "Chữ ký của bạn",
+    "entity.signature.mode_draw": "Vẽ",
+    "entity.signature.mode_type": "Gõ tên",
+    "entity.signature.draw_hint": "Ký bằng ngón tay hoặc chuột",
+    "entity.signature.type_label": "Tên của bạn",
+    "entity.signature.use": "Dùng chữ ký này",
+    "entity.signature.cancel": "Hủy",
+    "entity.signature.unsaved": "Nhấn Lưu để giữ lại.",
+})

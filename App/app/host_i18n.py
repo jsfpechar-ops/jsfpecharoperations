@@ -7409,6 +7409,40 @@ _SUMMARY_0280_STRINGS = {
 for _lang, _strings in _SUMMARY_0280_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0282: the locked signature and its signing dialog.
+_SIGNATURE_0282_STRINGS = {
+    "en": {
+        "entity.signature.add": "Add signature",
+        "entity.signature.edit": "Edit signature",
+        "entity.signature.none": "No signature yet",
+        "entity.signature.locked_alt": "Saved signature",
+        "entity.signature.dialog_title": "Your signature",
+        "entity.signature.mode_draw": "Draw",
+        "entity.signature.mode_type": "Type",
+        "entity.signature.draw_hint": "Sign here with a finger or the mouse",
+        "entity.signature.type_label": "Your name",
+        "entity.signature.use": "Use this signature",
+        "entity.signature.cancel": "Cancel",
+        "entity.signature.unsaved": "Press Save to keep it.",
+    },
+    "cs": {
+        "entity.signature.add": "Přidat podpis",
+        "entity.signature.edit": "Upravit podpis",
+        "entity.signature.none": "Zatím bez podpisu",
+        "entity.signature.locked_alt": "Uložený podpis",
+        "entity.signature.dialog_title": "Váš podpis",
+        "entity.signature.mode_draw": "Nakreslit",
+        "entity.signature.mode_type": "Napsat",
+        "entity.signature.draw_hint": "Podepište se prstem nebo myší",
+        "entity.signature.type_label": "Vaše jméno",
+        "entity.signature.use": "Použít tento podpis",
+        "entity.signature.cancel": "Zrušit",
+        "entity.signature.unsaved": "Uložte, aby se zachoval.",
+    },
+}
+for _lang, _strings in _SIGNATURE_0282_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
