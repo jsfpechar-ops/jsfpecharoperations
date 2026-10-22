@@ -7367,6 +7367,28 @@ _HEALTH_0244_STRINGS = {
 for _lang, _strings in _HEALTH_0244_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0245 (ideas E and R): the day-before reminder and the door-code button.
+_MAIL_0245_STRINGS = {
+    "en": {
+        "mail.reminder_host.subject_tomorrow": "Arriving tomorrow, guest link not opened yet: %(property)s",
+        "mail.reminder_host.preheader_tomorrow": "Send the guest link today so the guest can register before arrival.",
+        "mail.reminder_host.intro_tomorrow": "%(property)s has a check-in tomorrow (%(date)s) and nobody has opened the guest registration yet.",
+        "mail.reminder_host.next_steps_tomorrow": "Open the stay, copy its own link and send it to the guest in the booking chat.",
+        "mail.reminder_host.footer_tomorrow": "You get this at most once per stay: the day before check-in, only when nobody has opened the guest link.",
+        "mail.door_code_notice.action": "Open the stay",
+    },
+    "cs": {
+        "mail.reminder_host.subject_tomorrow": "Zítra příjezd, odkaz pro hosty zatím nikdo neotevřel: %(property)s",
+        "mail.reminder_host.preheader_tomorrow": "Pošlete hostovi odkaz ještě dnes, ať se stihne zaregistrovat před příjezdem.",
+        "mail.reminder_host.intro_tomorrow": "%(property)s má zítra příjezd (%(date)s) a registraci hostů zatím nikdo neotevřel.",
+        "mail.reminder_host.next_steps_tomorrow": "Otevřete pobyt, zkopírujte jeho vlastní odkaz a pošlete ho hostovi v konverzaci k rezervaci.",
+        "mail.reminder_host.footer_tomorrow": "Tento e-mail dostanete u pobytu nejvýš jednou: den před příjezdem, a jen když odkaz pro hosty nikdo neotevřel.",
+        "mail.door_code_notice.action": "Otevřít pobyt",
+    },
+}
+for _lang, _strings in _MAIL_0245_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 

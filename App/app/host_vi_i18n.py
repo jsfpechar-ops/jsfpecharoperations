@@ -3360,3 +3360,13 @@ STRINGS.update({
     "health.door.ok": "Mã cửa được gửi tự động.",
     "health.door.off": "Đã tắt.",
 })
+
+# 0245 (ideas E and R): the day-before reminder and the door-code button.
+STRINGS.update({
+    "mail.reminder_host.subject_tomorrow": "Khách đến ngày mai, chưa ai mở liên kết cho khách: %(property)s",
+    "mail.reminder_host.preheader_tomorrow": "Hãy gửi liên kết cho khách ngay hôm nay để khách kịp đăng ký trước khi đến.",
+    "mail.reminder_host.intro_tomorrow": "%(property)s có khách nhận phòng ngày mai (%(date)s) và chưa ai mở trang đăng ký.",
+    "mail.reminder_host.next_steps_tomorrow": "Mở lượt lưu trú, sao chép liên kết riêng của lượt đó và gửi cho khách trong cuộc trò chuyện đặt phòng.",
+    "mail.reminder_host.footer_tomorrow": "Bạn nhận email này tối đa một lần cho mỗi lượt lưu trú: một ngày trước khi nhận phòng, và chỉ khi chưa ai mở liên kết cho khách.",
+    "mail.door_code_notice.action": "Mở lượt lưu trú",
+})
