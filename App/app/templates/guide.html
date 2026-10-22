@@ -15,6 +15,8 @@
   <div class="guide-content">
     <section class="guide-section ui-section ui-section-plain" id="overview">
       <h2>{{ t('guide.nav.overview') }}</h2>
+      {% from "_workflow.html" import workflow_strip with context %}
+      {{ workflow_strip(none, heading=false) }}
       <p>{{ t('guide.overview.body') }}</p>
       <p>{{ t('guide.overview.count') }}</p>
       <p>{{ t('guide.overview.deadline') }}</p>
