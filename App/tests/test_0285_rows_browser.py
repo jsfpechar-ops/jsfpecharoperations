@@ -56,5 +56,17 @@ def test_properties_rows_match_stays_rows(base):
                 return {gap: ro.left - ra.right, sameLine: ro.top < ra.bottom && ro.bottom > ra.top}; }"""
             )
             assert gap["sameLine"] and gap["gap"] >= 11, (width, gap)
+            page.goto(base + "/entities?lang=en")
+            rows = page.evaluate(
+                """() => [...document.querySelectorAll('.lc-entities tbody tr')].map(tr => {
+                const a = tr.querySelector('.row-primary-link'), o = tr.querySelector('.row-open');
+                const ra = a.getBoundingClientRect(), ro = o.getBoundingClientRect();
+                const sub = tr.querySelector('td.ui-sub');
+                return {gap: ro.left - ra.right, sameLine: ro.top < ra.bottom && ro.bottom > ra.top,
+                        contact: sub ? getComputedStyle(sub).display : 'table-cell'}; })"""
+            )
+            assert rows, width
+            for row in rows:
+                assert row["sameLine"] and row["gap"] >= 11 and row["contact"] == "table-cell", (width, row)
             context.close()
         browser.close()
