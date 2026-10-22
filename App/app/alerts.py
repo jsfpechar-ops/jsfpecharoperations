@@ -294,6 +294,47 @@ def _present_computed(
     return row
 
 
+# 0239 (idea T): the one place each alert sends the host, and its button text.
+_ACTIONS = {
+    "ubyport_auth_failed": ("notification.action.police_login", "/apartments/{apartment}?view=settings&section=reporting#ubyport"),
+    "apartment_setup": ("notification.action.police_setup", "/apartments/{apartment}?view=settings&section=reporting#ubyport"),
+    "controller_missing": ("notification.action.business", "/apartments/{apartment}?view=settings&section=property#operator-picker"),
+    "feed_error": ("notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"),
+    "feed_incomplete": ("notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"),
+    "feed_duplicate_uid": ("notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"),
+    "feed_recurring_event": ("notification.action.calendar", "/apartments/{apartment}?view=bookings#calendars"),
+    "guest_pin_rotated": ("notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"),
+    "guest_pin_abuse": ("notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"),
+    "guest_pin_locked_out": ("notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"),
+    "guest_pin_challenged": ("notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"),
+    "submission_stuck": ("notification.action.guests", "/reservations/{reservation}#guests"),
+}
+
+
+def action_for(card: Dict[str, Any]) -> Optional[tuple]:
+    """(label key, href) for an alert's one button, or None when it has no page."""
+    reservation_id = card.get("reservation_id")
+    apartment_id = card.get("apartment_id")
+    known = _ACTIONS.get(card.get("kind") or "")
+    if known:
+        key, pattern = known
+        if ("{reservation}" not in pattern or reservation_id) and (
+            "{apartment}" not in pattern or apartment_id
+        ):
+            return key, pattern.format(reservation=reservation_id, apartment=apartment_id)
+    if reservation_id:
+        return "notification.open_stay", f"/reservations/{reservation_id}"
+    if apartment_id:
+        return "notification.open_property", f"/apartments/{apartment_id}"
+    return None
+
+
+def _with_action(card: Dict[str, Any]) -> Dict[str, Any]:
+    action = action_for(card)
+    card["action_label_key"], card["action_href"] = action if action else ("", "")
+    return card
+
+
 def present(
     alert: Any, lang: str, stays: Optional[Dict[str, Dict[Any, Any]]] = None
 ) -> Dict[str, Any]:
@@ -306,8 +347,8 @@ def present(
     row = dict(alert)
     kind = row.get("kind") or ""
     if kind in _COMPUTED_ALERT_KINDS:
-        return _present_computed(row, kind, lang, stays)
-    return _present_stored(row, kind, lang)
+        return _with_action(_present_computed(row, kind, lang, stays))
+    return _with_action(_present_stored(row, kind, lang))
 
 
 def present_many(alerts: List[Any], lang: str) -> List[Dict[str, Any]]:
