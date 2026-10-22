@@ -93,7 +93,8 @@ def stay_line(row: Dict[str, Any], lang: str, today: date) -> Optional[Dict[str,
             when = t("needs_you.when.today")
         else:
             when = t("needs_you.when.tomorrow")
-        key = "needs_you.stay.no_form" if status == "awaiting_guest" else "needs_you.stay.forms_missing"
+        started = bool(row["progress"].get("guests"))
+        key = "needs_you.stay.forms_missing" if started else "needs_you.stay.no_form"
         return _line("stay", "amber", subject, t(key, when=when), t("needs_you.action.send_link"), base + "#stay-link", stay_id=stay_id)
     return None
 
