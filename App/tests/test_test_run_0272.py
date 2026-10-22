@@ -46,6 +46,9 @@ def test_walkthrough_after_demo_registration(host):
         assert "data-rehearsal" in text
         assert text.count("data-rehearsal-step=") == 5
         assert 'data-rehearsal-step="paste"' in text
+        # 0276: the walkthrough comes first and the stale "open the link" line is gone.
+        assert text.index("data-rehearsal") < text.index('id="demo-property-heading"')
+        assert host_i18n.translate(lang, "wizard.try_it.instructions") not in text
         assert host_i18n.translate(lang, "wizard.rehearsal.never_police") in text
 
 
