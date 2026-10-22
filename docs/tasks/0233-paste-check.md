@@ -1,6 +1,6 @@
 # 0233: Prove the guest message is pasted, remind until it is (idea D)
 
-Status: todo
+Status: blocked
 Depends on: 0232 | Base commit: after 0232 | Branch: claude/project-thread-kbrf7w
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
