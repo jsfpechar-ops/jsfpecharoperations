@@ -7493,6 +7493,31 @@ _FINISH_0274_STRINGS = {
 for _lang, _strings in _FINISH_0274_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+_WELCOME_0275_STRINGS = {
+    "en": {
+        "welcome_back.title": "Welcome back! Since %(date)s:",
+        "welcome_back.stays": "%(count)s new stays came in.",
+        "welcome_back.stays.one": "1 new stay came in.",
+        "welcome_back.stays.few": "%(count)s new stays came in.",
+        "welcome_back.reported": "%(count)s guests were reported to the police.",
+        "welcome_back.reported.one": "1 guest was reported to the police.",
+        "welcome_back.reported.few": "%(count)s guests were reported to the police.",
+        "welcome_back.quiet": "Nothing new came in.",
+    },
+    "cs": {
+        "welcome_back.title": "Vítejte zpět! Od %(date)s:",
+        "welcome_back.stays": "přišlo %(count)s nových pobytů.",
+        "welcome_back.stays.one": "přišel 1 nový pobyt.",
+        "welcome_back.stays.few": "přišly %(count)s nové pobyty.",
+        "welcome_back.reported": "%(count)s hostů jsme nahlásili policii.",
+        "welcome_back.reported.one": "1 hosta jsme nahlásili policii.",
+        "welcome_back.reported.few": "%(count)s hosty jsme nahlásili policii.",
+        "welcome_back.quiet": "Nic nového nepřišlo.",
+    },
+}
+for _lang, _strings in _WELCOME_0275_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 

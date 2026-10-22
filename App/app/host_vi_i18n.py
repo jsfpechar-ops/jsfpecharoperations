@@ -3418,3 +3418,15 @@ STRINGS.update({
     "wizard.done.note_sync": "Các lượt lưu trú sẽ hiện ở trang chỗ ở trong vòng %(minutes)s phút, khi lịch được đồng bộ.",
     "wizard.done.note_no_calendar": "Chưa kết nối lịch nào. Bạn có thể tự thêm lượt lưu trú ở trang chỗ ở.",
 })
+
+# 0275: welcome-back line (Vietnamese).
+STRINGS.update({
+    "welcome_back.title": "Chào mừng bạn trở lại! Từ %(date)s:",
+    "welcome_back.stays": "Có %(count)s lượt lưu trú mới.",
+    "welcome_back.stays.one": "Có 1 lượt lưu trú mới.",
+    "welcome_back.stays.few": "Có %(count)s lượt lưu trú mới.",
+    "welcome_back.reported": "Đã khai báo %(count)s khách cho cảnh sát.",
+    "welcome_back.reported.one": "Đã khai báo 1 khách cho cảnh sát.",
+    "welcome_back.reported.few": "Đã khai báo %(count)s khách cho cảnh sát.",
+    "welcome_back.quiet": "Không có gì mới.",
+})
