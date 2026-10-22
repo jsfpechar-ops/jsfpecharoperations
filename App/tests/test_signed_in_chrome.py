@@ -206,24 +206,17 @@ def test_a_workspace_with_a_property_keeps_the_page_header(host_with_property):
     assert f"<h1>{host_i18n.STRINGS['en']['dashboard.title']}</h1>" in page
 
 
-def test_dashboard_status_counts_use_distinct_colours(host_with_property):
+def test_dashboard_opens_with_the_what_needs_you_card(host_with_property):
     page = host_with_property.get("/?lang=en").text
 
-    cards = re.findall(
-        r'<a class="dashboard-stat (action|waiting|ready|overdue)([^"]*)"[^>]*>'
-        r'<strong[^>]*>(\d+)</strong><span>(.*?)</span></a>', page, re.S,
-    )
-    assert len(cards) == 3
-    assert {kind for kind, _classes, _count, _label in cards} == {
-        "action", "ready", "overdue"
-    }
-    assert all(count == "0" and "is-positive" not in classes
-               for _kind, classes, count, _label in cards)
-    assert "Needs action" in page
-    assert 'class="dashboard-stat waiting' not in page
+    assert 'id="needs-action"' in page
+    assert host_i18n.STRINGS["en"]["needs_you.title"] in page
+    assert 'class="dashboard-stat' not in page
+    assert page.index('id="needs-action"') < page.index('id="calendar"')
 
 
-def test_positive_action_count_uses_semantic_color_and_zeros_stay_neutral(host_with_property):
+
+def test_a_stay_that_needs_the_host_gets_one_line_with_one_button(host_with_property):
     owner_id = _owner_id()
     apartment = db.query_one("SELECT id FROM apartment WHERE owner_user_id = ?", (owner_id,))
     today = claim.prague_today()
@@ -235,18 +228,16 @@ def test_positive_action_count_uses_semantic_color_and_zeros_stay_neutral(host_w
     })
     try:
         page = host_with_property.get("/?lang=en").text
-        cards = re.findall(
-            r'<a class="dashboard-stat (action|waiting|ready|overdue)([^"]*)"[^>]*>'
-            r'<strong[^>]*>(\d+)</strong><span>(.*?)</span></a>', page, re.S,
+        line = re.search(
+            rf'<li class="needs-you-item"[^>]*data-needs-you-stay="{reservation_id}"[^>]*>(.*?)</li>', page, re.S
         )
-        by_kind = {kind: (classes, count) for kind, classes, count, _label in cards}
-        assert by_kind["action"][1] == "1"
-        assert "is-positive" in by_kind["action"][0]
-        for kind in ("ready", "overdue"):
-            assert by_kind[kind][1] == "0"
-            assert "is-positive" not in by_kind[kind][0]
+        assert line, "the stay arriving tomorrow has no line"
+        assert "The guest arrives tomorrow and has not filled in the guest form." in line.group(1)
+        assert line.group(1).count('class="ui-btn') == 1
+        assert f'href="/reservations/{reservation_id}?return_to=/#stay-link"' in line.group(1)
     finally:
         db.execute("DELETE FROM reservation WHERE id = ?", (reservation_id,))
+
 
 
 def test_stat_tiles_use_the_status_tokens():
