@@ -278,7 +278,8 @@
         {{ text_field('uby_mark', t('apartment.form.ubyport.mark_label'), apartment.uby_mark, t('apartment.form.ubyport.mark_hint'), false, 6) }}
       </div>
       <div class="grid two">
-        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name, t('apartment.form.ubyport.name_hint'), false, 35) }}
+        {%- set facility_help -%}{{ t('apartment.form.ubyport.name_hint') }} <span class="facility-example"><span class="facility-example-label">{{ t('apartment.form.ubyport.name_example') }}</span>Ubytovací zařízení: <mark>BYT Č. [2] FIKTVNÍ 1234/56 (PRAHA,</mark> PRAHA 2, FIKTVNÍ, 1234/56)</span>{%- endset %}
+        {{ text_field('uby_name', t('automation.facility_name'), apartment.uby_name, facility_help, false, 35) }}
         {{ text_field('uby_contact', t('automation.contact'), apartment.uby_contact, t('apartment.form.ubyport.contact_hint'), true, 50) }}
       </div>
       <div class="actions">
