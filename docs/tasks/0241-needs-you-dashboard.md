@@ -559,3 +559,14 @@ Write `docs/tasks/0241-report.md` (600 tokens at most) and set `Status: review`.
 ## Owner steps
 
 None.
+
+## 10. Follow-up (added by the reviewer after §6 command 2)
+
+Three tests still read the removed dashboard blocks. `test_host_ux_acceptance.py` only failed because Chromium was not found (set `PLAYWRIGHT_BROWSERS_PATH=/tmp/claude-0/pw`); it is not part of this follow-up. Files added to §3: `App/tests/test_endtoend.py`, `App/tests/test_overview_headcount.py`, `App/tests/test_status_colours.py`.
+
+1. `test_endtoend.py`, in `test_24_an_incomplete_stay_past_the_deadline_raises_an_alert`: replace the exact line `    assert "overdue" in page.text.lower()` with
+   `    assert f'data-tone="red" data-needs-you="stay" data-needs-you-stay="{reservation_id}"' in page.text`
+2. `test_overview_headcount.py`, in `test_a_known_headcount_shows_the_count`: replace `        page = host.get("/?lang=en").text` with `        page = host.get("/reservations?lang=en").text` (only inside that test; the dashboard has no guest-count column since 0241).
+3. `test_status_colours.py`: delete the whole function `test_the_stay_pill_is_blue_on_the_work_queue` (7 lines plus its blank lines; `test_the_stay_pill_is_blue_on_the_stays_list` covers it). In `test_the_stay_pill_is_czech_for_a_czech_host` replace `    page = client.get("/")` with `    page = client.get("/reservations")`.
+
+Command: `cd App && .venv/bin/python -m pytest tests/test_alert_stack.py tests/test_endtoend.py tests/test_overview_headcount.py tests/test_status_colours.py -q --tb=short 2>&1 | tail -10` → pass. Commit `0241 step 12`, add one line to the report, commit.
