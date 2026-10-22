@@ -70,3 +70,10 @@ def test_counts_skip_demo(host):
             },
         )
     assert welcome_back.check(owner, owner, date.today())["stays"] == base + 1
+
+
+def test_check_uses_preloaded_settings(host):
+    owner = host["owner"]
+    _set_seen(owner, (TODAY - timedelta(days=20)).isoformat())
+    settings = db.get_settings(welcome_back.keys_for(owner))
+    assert welcome_back.check(owner, owner, TODAY, settings) is not None
