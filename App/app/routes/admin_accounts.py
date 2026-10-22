@@ -192,7 +192,14 @@ def login_link_form(request: Request):
     """Show a "Log in" button. Opening the link spends nothing (mail scanners)."""
     token = request.query_params.get("t", "")
     row = login_link.peek(token)
-    if not row or not login_link.account_for(row):
+    account = login_link.account_for(row) if row else None
+    current = auth.current_user(request)
+    # Back from the first page after logging in returns to this link, which
+    # is spent by then. A signed-in host goes to the app, not "link expired".
+    # A valid link for another account still shows its button.
+    if current and (not account or account["id"] == current["id"]):
+        return RedirectResponse("/", status_code=303)
+    if not row or not account:
         return _link_page(request, {"expired": True}, status_code=410)
     return _link_page(request, {"token": token, "invite": row["purpose"] == login_link.INVITE})
 

@@ -93,4 +93,4 @@ Grep. **HR**: owner decides.
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 
 - K-UI-CACHE: a static file changed without a new `?v=` key stays stale a year; guard 0172.
-- K-NAV-418: fail on main: 3 nav browser tests (360 px tabs, details, .link-button), 3 host_i18n tests.
+- K-NAV-418: 3 host_i18n tests fail on main.

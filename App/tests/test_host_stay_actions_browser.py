@@ -205,7 +205,7 @@ def test_stays_guest_link_copy_is_status_independent_and_token_guarded(stay_acti
                 copy = ready_row.locator('button[data-copy]')
                 trigger = ready_row.locator(".row-menu-trigger")
                 assert copy.is_hidden()
-                assert ready_row.locator(".row-open").count() == 0
+                assert ready_row.locator(".row-open").count() == 1  # 0252: visible Open cue
                 boxes = [trigger.bounding_box()]
                 expected_height = 44 if width <= 390 else 40
                 assert all(box["height"] >= expected_height - 1 for box in boxes), boxes

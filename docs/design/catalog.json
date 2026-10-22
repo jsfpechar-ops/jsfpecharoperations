@@ -683,6 +683,8 @@
       "host-audit-filter",
       "host-audit-filters",
       "host-property-card",
+      "host-property-card-open",
+      "host-property-card-open-text",
       "host-property-grid",
       "kv",
       "nowrap",
@@ -800,6 +802,8 @@
       "setup-wizard-instruction"
     ],
     "App/app/templates/setup_wizard/police.html": [
+      "facility-example",
+      "facility-example-label",
       "err-text",
       "field",
       "field-label-row",

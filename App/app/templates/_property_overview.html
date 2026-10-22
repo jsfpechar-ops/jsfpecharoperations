@@ -27,21 +27,22 @@
 {% endif %}
 <div class="host-property-grid">
   <a class="host-property-card" href="{{ base_url }}?view=bookings#calendars">{{ icon('calendar-days', 20) }}<div><strong>{{ t('wizard.overview.calendars') }}</strong>
-    <small>{{ tp('apartment.form.calendars_count', feeds | length) }}{% if feed_errors_count %} · {{ t('apartment.form.feed.status.error') }}{% endif %}</small></div></a>
-  <div class="host-property-card host-property-card-static">{{ icon('external-link', 20) }}<div><strong><a href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ t('nav.guest_links') }}</a></strong>
+    <small>{{ tp('apartment.form.calendars_count', feeds | length) }}{% if feed_errors_count %} · {{ t('apartment.form.feed.status.error') }}{% endif %}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
+  <div class="host-property-card host-property-card-static">{{ icon('external-link', 20) }}<div><strong><a class="host-property-card-link" href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ t('nav.guest_links') }}</a></strong>
     <small>{{ t('wizard.guest_link.ready') }}</small></div>
-    <div class="actions host-property-card-actions">{{ copy_inline('overview-guest-url', permalink, t('wizard.guest_link.copy_link')) }}</div></div>
+    <div class="actions host-property-card-actions">{{ copy_inline('overview-guest-url', permalink, t('wizard.guest_link.copy_link')) }}</div>
+    <span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></div>
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#ubyport">{{ icon('send', 20) }}<div><strong>{{ t('host.reporting') }}</strong>
-    <small>{{ t('property_nav.report_ready') if not report_missing else tp('property_nav.report_missing', report_missing) }}</small></div></a>
+    <small>{{ t('property_nav.report_ready') if not report_missing else tp('property_nav.report_missing', report_missing) }}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
   <a class="host-property-card" href="{{ ('/entities?edit=' ~ apartment.legal_entity_id ~ '&next=' ~ (base_url | urlencode)) if operator else (base_url ~ '?view=settings&section=property#operator-picker') }}">{{ icon('receipt', 20) }}<div><strong>{{ t('host.business') }}</strong>
-    {% if operator %}<small>{{ operator.name }}</small>{% endif %}</div></a>
+    {% if operator %}<small>{{ operator.name }}</small>{% endif %}</div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#stay-fee-settings">{{ icon('coins', 20) }}<div><strong>{{ t('host.fee') }}</strong>
-    <small>{{ apartment.stay_fee_rate_czk or 0 }} Kč / {{ t('stay_fees.nights.one', count=1) }}</small></div></a>
+    <small>{{ apartment.stay_fee_rate_czk or 0 }} Kč / {{ t('stay_fees.nights.one', count=1) }}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=property#address">{{ icon('house', 20) }}<div><strong>{{ t('host.property_details') }}</strong>
-    <small>{{ address_text or t('property_nav.address_missing') }}</small></div></a>
+    <small>{{ address_text or t('property_nav.address_missing') }}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
   {% if door_code %}
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=lock#door-code">{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }}</strong>
-    <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div></a>
+    <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
   {% endif %}
 </div>
 

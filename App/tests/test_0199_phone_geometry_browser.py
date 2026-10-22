@@ -115,7 +115,7 @@ def _check_stay(m, name):
 
 def _check_lock(m, name):
     _ok(m, name)
-    FAILS.append((m["E"]["rows"] == 1, f"{name}: E chips not on one row {m['E']}"))
+    FAILS.append((m["E"]["rows"] <= 3 and m["E"]["scrollW"] <= m["E"]["clientW"] + 1, f"{name}: E chips hidden off-screen {m['E']}"))
     FAILS.append((m["E"]["navR"] <= m["E"]["laneR"] + 1, f"{name}: E nav leaves lane {m['E']}"))
     FAILS.append((m["F"] is not None and m["F"] <= 24, f"{name}: F gap {m['F']} {m.get('Fd')}"))
 

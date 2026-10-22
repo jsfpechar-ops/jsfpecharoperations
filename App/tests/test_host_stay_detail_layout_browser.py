@@ -51,7 +51,8 @@ def test_stay_detail_groups_facts_and_wraps(stay_actions_host, stay_actions_base
                         " return [...nav.querySelectorAll('a')].map(a => { const b = a.getBoundingClientRect();"
                         " return [b.left - n.left + nav.scrollLeft, b.right - n.left + nav.scrollLeft, nav.scrollWidth, getComputedStyle(nav).overflowX]; }); })()"
                     )
-                    assert all(-1 <= left and right <= scroll_w + 1 and overflow in ("auto", "scroll") for left, right, scroll_w, overflow in extents), extents
+                    # 0252: the jump tabs wrap on phone instead of scrolling sideways.
+                    assert all(-1 <= left and right <= scroll_w + 1 for left, right, scroll_w, overflow in extents), extents
                     if key != "incomplete":
                         # One fact grid (0179), visible on the page itself.
                         assert page.locator(".guest-card .guest-facts").count() == 1

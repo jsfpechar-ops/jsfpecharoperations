@@ -40,6 +40,9 @@ def _set_sidebar(page, collapsed: bool) -> bool:
     toggle = page.locator("button[data-sidebar-collapse]")
     if not toggle.count() or not toggle.first.is_visible():
         return False
+    # 0251: 1024-1279 px always shows the rail; the toggle opens the menu over the page.
+    if page.evaluate("matchMedia('(min-width: 1024px) and (max-width: 1279px)').matches"):
+        return False
     now = page.evaluate("document.body.classList.contains('sidebar-collapsed')")
     if now != collapsed:
         toggle.first.click()

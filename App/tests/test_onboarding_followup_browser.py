@@ -41,7 +41,8 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         page.goto(f"{base}/reservations?range=all&lang={lang}")
         _ready(page)
         row = page.locator(f'tr[data-href^="/reservations/{stay_id}?"]')
-        assert row.locator(".row-open, .stay-portal-link").count() == 0
+        assert row.locator(".stay-portal-link").count() == 0
+        assert row.locator(".row-open").count() == 1  # 0252: visible Open cue
         assert row.locator('.row-actions > button[data-copy]').count() == 0
         assert row.locator('button[data-copy]').is_hidden()
         row.scroll_into_view_if_needed()
