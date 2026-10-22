@@ -731,7 +731,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
    Pages add no hover CSS of their own: extend these lists instead. */
 @media (hover: hover) {
   .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .needs-you-item:has([data-needs-you-go])):hover { background: var(--state-hover); }
-  .host-workspace :is(.ui-card, .host-property-card, .host-task, .needs-you-item:has([data-needs-you-go])):hover { border-color: var(--line-strong); }
+  .host-workspace :is(.ui-card, .host-property-card:not([data-state="warn"], [data-state="bad"]), .host-task):hover { border-color: var(--line-strong); }
   .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .needs-you-item):hover :is(.row-primary-link, .ui-card-l1, .host-property-card-link, .needs-you-copy strong),
   .host-workspace a.host-property-card:hover strong { color: var(--state-ink); }
   .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .host-property-card, .needs-you-item):hover :is(.row-open, .host-property-card-open, [data-needs-you-go]) { border-color: var(--ink); }

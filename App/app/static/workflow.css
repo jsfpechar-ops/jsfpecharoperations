@@ -117,7 +117,7 @@
 /* 0284: the whole line opens its fix: the button is the link, stretched over
    the line; the dismiss x and the "how" toggle sit above it. The x keeps its
    slot on every line, so the buttons line up. */
-.host-workspace .needs-you-item:has([data-needs-you-go]) { position: relative; cursor: pointer; transition: background-color var(--motion-1) var(--ease-standard), border-color var(--motion-1) var(--ease-standard); }
+.host-workspace .needs-you-item:has([data-needs-you-go]) { position: relative; cursor: pointer; transition: background-color var(--motion-1) var(--ease-standard); }
 .host-workspace .needs-you-actions > [data-needs-you-go] { position: static; }
 .host-workspace .needs-you-actions > [data-needs-you-go]::before { content: ""; position: absolute; inset: 0; border-radius: var(--radius-md); }
 .host-workspace .needs-you-dismiss, .host-workspace .needs-you-item > .needs-you-more { position: relative; z-index: 1; }
