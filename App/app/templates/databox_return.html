@@ -1,0 +1,10 @@
+{% extends "auth_base.html" %}
+{% set key = 'databox_return.done' if ok else 'databox_return.error' %}
+{% block title %}{{ t(key ~ '.title') }}{% endblock %}
+{% block auth_body %}
+<section class="auth-card">
+  <h1 class="auth-title">{{ t(key ~ '.title') }}</h1>
+  <p class="auth-lede" role="{{ 'status' if ok else 'alert' }}">{{ t(key ~ '.lede') }}</p>
+  <p><a class="auth-submit" href="/stay-fees">{{ t('databox_return.back') }}</a></p>
+</section>
+{% endblock %}
