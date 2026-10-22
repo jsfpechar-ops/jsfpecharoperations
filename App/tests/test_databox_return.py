@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db
+from app import auth, db
 from app.main import app
 
 
@@ -42,3 +42,33 @@ def test_return_page_czech(client):
     response = client.get("/stay-fees/databox/error?lang=cs", follow_redirects=False)
     assert response.status_code == 200
     assert "Datová schránka zprávu nepřijala" in response.text
+
+
+def _drop_return_host():
+    for table in ("legal_acceptance", "ad_click", "audit"):
+        db.execute(
+            f"DELETE FROM {table} WHERE user_account_id = (SELECT id FROM user_account WHERE username = ?)"
+            if table != "audit" else
+            "DELETE FROM audit WHERE owner_user_id = (SELECT id FROM user_account WHERE username = ?)",
+            ("databox-return-host",),
+        )
+    db.execute("DELETE FROM user_account WHERE username = ?", ("databox-return-host",))
+
+
+def test_signed_in_without_a_pending_send_goes_to_stay_fees(client):
+    from tests.conftest import login_as
+
+    _drop_return_host()
+    auth.create_account(
+        "databox-return-host@example.test", "Return Demo", role="host", username="databox-return-host",
+    )
+    try:
+        assert login_as(client, "databox-return-host", url="/login?lang=en", follow_redirects=False).status_code == 303
+        response = client.get("/stay-fees/databox/done?lang=en", follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers["location"].startswith("/stay-fees?msg=")
+        response = client.get("/stay-fees/databox/error", follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers["location"].startswith("/stay-fees?err=")
+    finally:
+        _drop_return_host()

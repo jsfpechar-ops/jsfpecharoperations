@@ -1,9 +1,10 @@
 """Host-only stay-fee overview and per-property detail."""
 from __future__ import annotations
 
+import secrets
 import sqlite3
 import unicodedata
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -13,8 +14,10 @@ from .. import (
     access,
     auth,
     claim,
+    config,
     db,
     host_i18n,
+    isds_gateway,
     list_filter,
     payments,
     security,
@@ -393,20 +396,27 @@ def _operator_line(apartment) -> str:
     return name
 
 
-def _send_panel_context(apartment, period, group, filing_row: dict) -> dict:
-    period_label = period["label"] if period else ""
+def _send_texts(apartment, period_label: str, total_czk: int) -> tuple[str, str]:
+    """The subject and body of a send, in Czech (the panel and the data-box send)."""
     property_name = apartment["internal_name"] or ""
     subject_cs = f"Ohlášení poplatku z pobytu – {period_label} – {property_name}"
-    amount = stay_fee.format_czk(group["total_czk"])
+    amount = stay_fee.format_czk(total_czk)
     body_cs = "\n".join([
         _operator_line(apartment),
         period_label,
         f"Částka k úhradě: {amount}. Podrobnosti v příloze.",
     ])
+    return subject_cs, body_cs
+
+
+def _send_panel_context(apartment, period, group, filing_row: dict) -> dict:
+    period_label = period["label"] if period else ""
+    subject_cs, body_cs = _send_texts(apartment, period_label, group["total_czk"])
     return {
         "filing_id": filing_row["id"],
         "authority_name": apartment["stay_fee_authority_name"] or "",
         "databox": apartment["stay_fee_authority_databox"] or "",
+        "databox_send": isds_gateway.configured() and bool(apartment["stay_fee_authority_databox"]),
         "subject_cs": subject_cs,
         "body_cs": body_cs,
         "sent_at": filing_row["sent_at"],
@@ -812,6 +822,50 @@ async def stay_fee_filing_sent(apartment_id: int, filing_id: int, request: Reque
         )
         db.audit("stay_fee_sent", f"filing_id={filing_id}")
     return _back(back_path, msg=_flash(request, "flash.stay_fees.saved"))
+
+
+@router.post("/stay-fees/{apartment_id}/filings/{filing_id}/databox")
+async def stay_fee_filing_databox(apartment_id: int, filing_id: int, request: Request):
+    """Start a data-box send. POST only: a link scanner must never start one."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment, row = _filing_for_action(request, apartment_id, filing_id)
+    if not apartment or not row:
+        raise HTTPException(status_code=404)
+    month = stay_fee_filing.period_anchor(row)
+    back_path = f"/stay-fees/{apartment_id}?month={stay_fee.month_key(month)}#fee-send"
+    databox = apartment["stay_fee_authority_databox"] or ""
+    if not isds_gateway.configured() or not databox:
+        return _back(back_path, err=_flash(request, "flash.stay_fees.databox_unavailable"))
+    user = auth.current_user(request)
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    token = secrets.token_urlsafe(24)
+    send_id = db.insert("stay_fee_databox_send", {
+        "filing_id": filing_id,
+        "apartment_id": apartment_id,
+        "user_account_id": user["id"],
+        "token": token,
+        "state": "pending",
+        "created_at": now.isoformat(),
+        "expires_at": (now + timedelta(seconds=config.ISDS_GATEWAY_VALIDITY_SECONDS)).isoformat(),
+    })
+    period_label = stay_fee.period_label_cs(row["cadence"], month)
+    subject, body = _send_texts(apartment, period_label, int(row["total_due_czk"] or 0))
+    pdf_name = f'hlaseni-poplatek-z-pobytu-{row["period_key"]}-{stay_fee.vs_of(apartment)}.pdf'
+    try:
+        url = isds_gateway.create_draft(
+            recipient_databox=databox, subject=subject, body=body,
+            pdf_name=pdf_name, pdf_bytes=stay_fee_filing.pdf_bytes(row), token=token,
+        )
+        if not isds_gateway.portal_url_ok(url):
+            raise isds_gateway.GatewayError("unexpected portal address")
+    except isds_gateway.GatewayError:
+        db.update("stay_fee_databox_send", send_id, {"state": "failed"})
+        db.audit("stay_fee_databox_failed", f"filing_id={filing_id}")
+        return _back(back_path, err=_flash(request, "flash.stay_fees.databox_failed"))
+    db.audit("stay_fee_databox_started", f"filing_id={filing_id}")
+    return RedirectResponse(url, status_code=303)
 
 
 @router.post("/stay-fees/{apartment_id}/filings/{filing_id}/paid")

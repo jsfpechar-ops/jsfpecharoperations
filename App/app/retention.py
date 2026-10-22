@@ -184,6 +184,18 @@ def _alert_retention_step(today: date, dry_run: bool, owner_user_id: Optional[in
     return count
 
 
+def _databox_send_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Delete data-box hand-offs created more than 90 days ago (brief 0240)."""
+    cutoff = _days_ago_iso(90)
+    scope = "apartment_id IN (SELECT id FROM apartment a WHERE (? IS NULL OR a.owner_user_id = ?))"
+    where = f"created_at < ? AND {scope}"
+    params = (cutoff, owner_user_id, owner_user_id)
+    count = _scalar(f"SELECT COUNT(*) AS n FROM stay_fee_databox_send WHERE {where}", params)
+    if not dry_run and count:
+        db.execute(f"DELETE FROM stay_fee_databox_send WHERE {where}", params)
+    return count
+
+
 def _rate_limit_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Delete stale rate-limit events. Global only: the table has no owner."""
     if owner_user_id is not None:
@@ -328,6 +340,8 @@ def _delete_workspace(owner_id: int) -> None:
         # Brief 0225: urgent-alert devices and their queue (also cascade).
         cur.execute("DELETE FROM push_outbox WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM push_subscription WHERE user_account_id = ?", (owner_id,))
+        # Brief 0240: data-box hand-offs are the account's too (also cascade).
+        cur.execute("DELETE FROM stay_fee_databox_send WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
@@ -435,6 +449,7 @@ STEPS: List[tuple] = [
     ("stay_fee_records", _stay_fee_records_step),
     ("audit_rows", _audit_retention_step),
     ("alerts", _alert_retention_step),
+    ("databox_sends", _databox_send_retention_step),
     ("rate_limit_events", _rate_limit_retention_step),
     ("login_tokens", _login_token_step),
     ("webauthn_challenges", _webauthn_challenge_step),
@@ -462,6 +477,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "stay_fee_records": f"period before {guests}",
         "audit_rows": f"logged before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}",
         "alerts": f"resolved before {_days_ago_iso(config.ALERT_RETENTION_DAYS)}",
+        "databox_sends": f"created before {_days_ago_iso(90)}",
         "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours",
         "login_tokens": "expired more than 1 day ago",
         "webauthn_challenges": "expired more than 1 day ago",

@@ -172,6 +172,14 @@ TTLOCK_MONTHLY_CALLS = int(os.environ.get("UBYHOST_TTLOCK_MONTHLY_CALLS", "30000
 # Web push (briefs 0225-0227): urgent alerts on the host's phone. On unless
 # UBYHOST_WEB_PUSH=0. The signing key is made by the app and kept encrypted.
 WEB_PUSH = os.environ.get("UBYHOST_WEB_PUSH", "1").strip().lower() not in ("0", "false", "no")
+
+# Brief 0240: ISDS Odesílací brána. Off until all four are set (docs/ENVIRONMENT.md).
+ISDS_GATEWAY_ID = os.environ.get("UBYHOST_ISDS_GATEWAY_ID", "").strip()
+ISDS_GATEWAY_CERT = os.environ.get("UBYHOST_ISDS_GATEWAY_CERT", "").strip()
+ISDS_GATEWAY_CERT_PASSWORD = os.environ.get("UBYHOST_ISDS_GATEWAY_CERT_PASSWORD", "")
+ISDS_GATEWAY_SERVICE_URL = os.environ.get("UBYHOST_ISDS_GATEWAY_SERVICE_URL", "").strip().rstrip("/")
+# Must equal "Platnost konceptu" in the ISDS registration (seconds, 60-7200).
+ISDS_GATEWAY_VALIDITY_SECONDS = int(os.environ.get("UBYHOST_ISDS_GATEWAY_VALIDITY_SECONDS", "3600") or "3600")
 # Codes work from 1 h before check-in to 1 h after check-out: covers lock clock
 # drift and any daylight-saving mismatch in the lock. Hours have no default; the host sets them.
 DOOR_CODE_BUFFER_HOURS = 1

@@ -171,6 +171,18 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 No key to set: the app makes its push signing key (VAPID) on first use and keeps it encrypted with `UBYHOST_SECRET_KEY` in the `settings` table. Rotating the secret key makes a new push key, and every host turns alerts on again in Settings. Outbound: HTTPS POST to the browser's push service only (`fcm.googleapis.com`, `*.push.services.mozilla.com`, `web.push.apple.com`, `*.notify.windows.com`), body end-to-end encrypted.
 
 
+## Data box sending (ISDS Odesílací brána)
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `UBYHOST_ISDS_GATEWAY_ID` | unset | Gateway ID from the ISDS registration. |
+| `UBYHOST_ISDS_GATEWAY_CERT` | unset | Path to the registration's client certificate (.pfx), kept outside the repo. |
+| `UBYHOST_ISDS_GATEWAY_CERT_PASSWORD` | unset | Password for that certificate. A secret: `.env` only, never committed. |
+| `UBYHOST_ISDS_GATEWAY_SERVICE_URL` | unset | ISDS gateway service address. Outbound HTTPS to this host only, once per press of "Send by data box". |
+| `UBYHOST_ISDS_GATEWAY_VALIDITY_SECONDS` | `3600` | Must equal "Platnost konceptu" in the ISDS registration (60 to 7200 seconds). |
+
+Off until the first three are set (ID, certificate path, service address). Until then the button answers "not available" and nothing changes for hosts. The host's browser is only ever sent to ISDS pages; the host's data-box login never reaches UbyHost.
+
 ## Accounts
 
 | Variable | Default | Notes |
