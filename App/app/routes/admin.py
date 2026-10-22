@@ -2954,8 +2954,8 @@ def reservations_list(request: Request):
     archive_scope = request.query_params.get("archive_scope") == "1"
     show_archive = date_range == "archive" or archive_scope
     if date_range not in RESERVATION_RANGES and date_range != "archive":
-        # Explicit dates win; an empty date query is the unbounded default.
-        date_range = "custom" if (date_from or date_to or (archive_scope and date_range == "custom")) else "all"
+        # Explicit dates win; with no range the host sees what is coming and who is in now (owner 2026-10-22).
+        date_range = "custom" if (date_from or date_to or (archive_scope and date_range == "custom")) else "upcoming"
     if date_range == "upcoming":
         date_from, date_to = today, ""
     elif date_range == "past":
