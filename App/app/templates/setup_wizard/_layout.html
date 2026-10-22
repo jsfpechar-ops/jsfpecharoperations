@@ -10,11 +10,14 @@
 <div class="setup-wizard" data-setup-wizard data-setup-step="{{ wizard_step }}">
   <div class="setup-wizard-head">
     {% if guide %}
-    <ol class="setup-wizard-progress" aria-hidden="true">
-      {% for item in guide.progress %}
-      <li class="is-{{ item.state }}"></li>
-      {% endfor %}
-    </ol>
+    <div class="setup-wizard-meter">
+      <ol class="setup-wizard-progress" aria-hidden="true">
+        {% for item in guide.progress %}
+        <li class="is-{{ item.state }}"></li>
+        {% endfor %}
+      </ol>
+      <p class="setup-wizard-done-count">{% if guide.done_count %}<span class="setup-wizard-tick" aria-hidden="true">✓</span> {% endif %}{{ t('wizard.done_count', n=guide.done_count, total=guide.total) }}</p>
+    </div>
     {% endif %}
     <form method="post" action="{{ base_setup }}" class="setup-wizard-exit">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
