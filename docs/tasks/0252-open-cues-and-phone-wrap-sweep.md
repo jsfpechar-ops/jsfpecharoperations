@@ -267,3 +267,17 @@ As in TEMPLATE.md §8.
 ## 9. Report
 
 `docs/tasks/0252-report.md`, as in TEMPLATE.md §9. Do not push; do not open a PR.
+
+## Addendum (orchestrator, after the first run): step 6
+
+6a. `App/tests/test_0252_touch_sweep_browser.py`: in `PROBE`, change the selector `'tr.clickable-row, a.host-property-card'` to `'tr.clickable-row:not(.dashboard-row), a.host-property-card'`. The dashboard stay table is being removed on another branch.
+
+6b. `App/app/templates/apartments.html`, the summary row (`grep -nF 'data-summary-row="{{ apartment.id }}"'`): in its first `<td>`, right after `<a class="row-primary-link" href="{{ base_url }}">{{ property_identity(apartment.id, apartment.internal_name) }}</a>`, add ` {{ row_open() }}`. In `host.css`, at the end, add:
+
+```
+.row-primary-link + .row-open { margin-left: 8px; }
+```
+
+Do not bump the host.css key again: 20261022-0252 has not been released. Just rerun `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -5`.
+
+6c. Run the sweep test again. Then run §6 commands 3 and 4. Commit `0252 step 6` and update the report.
