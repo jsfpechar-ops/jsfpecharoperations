@@ -695,3 +695,19 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .lc-entities tr,
   .host-workspace .lc-entities tr:last-child { border: 1px solid var(--line-strong); border-radius: var(--radius-3); }
 }
+
+/* 0282: stay-fee signature: greyed locked preview, large signing dialog, and
+   the self-hosted handwriting font (Dancing Script, SIL OFL 1.1). */
+@font-face { font-family: "UbyHost Signature"; src: url("/static/fonts/DancingScript.ttf?v=20261022-0282") format("truetype"); font-weight: 400 700; font-display: swap; }
+.host-workspace .signature-locked { display: flex; align-items: center; justify-content: center; min-height: calc(var(--control-h) * 2); padding: var(--space-3); border: 1px solid var(--line-strong); border-radius: var(--radius-2); background: var(--surface-2); }
+.host-workspace .signature-locked-img { max-width: 100%; max-height: calc(var(--control-h) * 2.5); filter: grayscale(1); opacity: 0.6; }
+.host-workspace .signature-locked-empty { color: var(--ink-3); font-size: var(--size-14); }
+.host-workspace .ui-dialog.signature-dialog { width: min(calc(var(--dialog-w) * 1.5), calc(100vw - var(--space-8))); }
+.host-workspace .signature-dialog .signature-dialog-pad { display: block; width: 100%; height: clamp(calc(var(--control-h) * 3.5), 40vh, calc(var(--control-h) * 7)); margin: var(--space-3) 0; border: 1px solid var(--line-strong); border-radius: var(--radius-2); background: var(--surface); touch-action: none; }
+.host-workspace .signature-dialog .signature-typed-preview { touch-action: auto; }
+.host-workspace .signature-dialog-actions { justify-content: flex-end; }
+@media (max-width: 767px) {
+  .host-workspace .ui-dialog.signature-dialog { width: 100vw; }
+  .host-workspace .ui-dialog.signature-dialog .ui-sheet { max-height: 100dvh; }
+  .host-workspace .signature-dialog-actions { flex-direction: column; align-items: stretch; }
+}
