@@ -62,4 +62,4 @@ Append-only.
 - 2026-10-21 | Why-ledes; signature with stay fee; guest window 1 day | owner
 - 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)
-- 2026-10-22 ISDS send: draft made on POST only; email links to the app (owner, 0239-0241)
+- 2026-10-22 ISDS send: POST draft; email links; primary button, list exception (owner, 0242)

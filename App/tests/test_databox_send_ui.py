@@ -163,6 +163,7 @@ def test_gateway_off_no_databox_form_and_no_email_step(host, gateway_off):
     assert report.status_code == 200
     assert _databox_forms(listing.text, filing_id) == 0
     assert _databox_forms(report.text, filing_id) == 0
+    assert "fee-databox-send" not in listing.text and "fee-databox-send" not in report.text
     assert "Send by data box" not in listing.text
     assert "Send by data box" not in report.text
 
@@ -187,6 +188,9 @@ def test_gateway_on_form_on_list_and_report(host, gateway_on):
     assert report.status_code == 200
     assert _databox_forms(listing.text, filing_id) == 1
     assert _databox_forms(report.text, filing_id) == 1
+    assert 'class="ui-btn ui-btn-primary fee-databox-send"' in listing.text
+    assert 'class="ui-btn ui-btn-primary fee-databox-send"' in report.text
+    assert report.text.count("ui-btn-primary") == 2 and "ui-btn-primary filter-apply" in report.text
     assert "ui-btn ui-btn-secondary" in report.text
     assert "Or send it by hand" in report.text
 

@@ -60,7 +60,7 @@
           {% if period.databox_send %}
           <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ period.filing_id }}/databox" class="inline-form">
             <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <button class="{{ pay_btn }}" type="submit">{{ t('stay_fees.send.databox_button') }}</button>
+            <button class="ui-btn ui-btn-primary fee-databox-send" type="submit">{{ t('stay_fees.send.databox_button') }}</button>
           </form>
           {% endif %}
           <a class="{{ pay_btn }}" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_q }}" download>{{ t('stay_fees.download_pdf') }}</a>

@@ -34,7 +34,7 @@
   {% if frozen %}
     <span class="ui-badge ui-badge-done" data-tone="green">{{ t('stay_fees.saved_version', version=filing_version) }}</span>
     <a class="ui-btn ui-btn-secondary" href="/stay-fees/{{ apartment.id }}/csv?month={{ month_key }}" download>{{ t('stay_fees.download_csv') }}</a>
-    <a class="{{ cta }}" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_key }}" download>{{ t('stay_fees.download_pdf') }}</a>
+    <a class="{{ 'ui-btn ui-btn-secondary' if send_panel and send_panel.databox_send else cta }}" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_key }}" download>{{ t('stay_fees.download_pdf') }}</a>
     <a class="ui-btn ui-btn-secondary" href="/stay-fees/{{ apartment.id }}?month={{ month_key }}&correct=1">{{ t('stay_fees.correct') }}</a>
   {% elif not issues %}
     <form method="post" action="/stay-fees/{{ apartment.id }}/finalize" class="inline-form">
@@ -118,7 +118,7 @@
   {% if send_panel.databox_send %}
   <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/databox" class="inline-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <button class="ui-btn ui-btn-secondary" type="submit">{{ t('stay_fees.send.databox_button') }}</button>
+    <button class="ui-btn ui-btn-primary fee-databox-send" type="submit">{{ t('stay_fees.send.databox_button') }}</button>
   </form>
   <p class="ui-sub">{{ t('stay_fees.send.databox_lede') }}</p>
   <h3 class="fee-send-marks-title">{{ t('stay_fees.send.by_hand') }}</h3>

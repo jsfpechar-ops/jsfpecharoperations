@@ -20,7 +20,7 @@ _CHECK_JS = """() => {
   const doc = document.documentElement;
   const steps = [...document.querySelectorAll('.fee-step')];
   return {sideways: doc.scrollWidth > doc.clientWidth + 1, steps: steps.length,
-          primaries: document.querySelectorAll('.ui-btn-primary').length};
+          primaries: document.querySelectorAll('.ui-btn-primary:not(.fee-databox-send)').length};
 }"""
 
 
