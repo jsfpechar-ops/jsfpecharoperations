@@ -7,12 +7,10 @@
   {% for alert in open_alerts if alert.kind != 'guest_pin_rotated' or alert.id == pin_alerts[0].id %}
     {% set grouped = alert.kind == 'guest_pin_rotated' and pin_alerts | length > 1 %}
     <article class="notification-bubble {{ alert.level }}" data-notification{% if grouped %} data-notification-group="guest_pin_rotated"{% endif %}>
-      {% if alert.reservation_id %}
-        <a class="notification-link" href="/reservations/{{ alert.reservation_id }}">
-      {% elif grouped %}
-        <a class="notification-link" href="/apartments">
-      {% elif alert.apartment_id %}
-        <a class="notification-link" href="/apartments/{{ alert.apartment_id }}">
+      {% set action_href = '/apartments' if grouped else alert.action_href %}
+      {% set action_label = t('dashboard.setup.view_properties') if grouped else (t(alert.action_label_key) if alert.action_label_key else '') %}
+      {% if action_href %}
+        <a class="notification-link" href="{{ action_href }}">
       {% else %}
         <div class="notification-link">
       {% endif %}
@@ -21,11 +19,9 @@
             <strong>{{ alert.display_title or alert.message }}</strong>
             {% if grouped %}<small>{{ pin_names | join(', ') }}. {{ alert.display_detail or alert.detail }}</small>
             {% elif alert.display_detail or alert.detail %}<small>{{ alert.display_detail or alert.detail }}</small>{% endif %}
-            {% if alert.reservation_id %}<small class="notification-action">{{ t('notification.open_stay') }}</small>
-            {% elif grouped %}<small class="notification-action">{{ t('dashboard.setup.view_properties') }}</small>
-            {% elif alert.apartment_id %}<small class="notification-action">{{ t('notification.open_property') }}</small>{% endif %}
+            {% if action_label %}<small class="notification-action">{{ action_label }}</small>{% endif %}
           </span>
-      {% if alert.reservation_id or alert.apartment_id %}</a>{% else %}</div>{% endif %}
+      {% if action_href %}</a>{% else %}</div>{% endif %}
       {% if alert.kind != 'dates_changed_resign' %}
       <form method="post" action="/alerts/{{ alert.id }}/dismiss" data-notification-dismiss>
         <button type="submit" aria-label="{{ t('a11y.dismiss_notification') }}">&times;</button>
