@@ -131,6 +131,10 @@
     "sha256": "ae71e0a3ab7231aceeadc761b7d98e66f50b97bae22413cbba65f89e17f53e60",
     "v": "20261004a"
   },
+  "wizard.css": {
+    "sha256": "68d22ba07795d86727eb6938be52315f4096aea6671bcfee933eb90d70be95c8",
+    "v": "20261022-0272"
+  },
   "workflow.css": {
     "sha256": "891e99e72802ef5b6895874129fce0da5834fdde42398db18b003e41df52db20",
     "v": "20261022-0246"
