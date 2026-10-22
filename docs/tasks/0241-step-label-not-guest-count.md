@@ -1,6 +1,6 @@
 # 0241: Stay list step label says "Step", not a bare count
 
-Status: todo
+Status: review
 Depends on: main after PR #423 | Branch: claude/project-thread-kbrf7w
 Executor: Haiku 5.5 | Fits one session: 15 tool calls
 
