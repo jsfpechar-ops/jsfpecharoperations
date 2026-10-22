@@ -35,7 +35,7 @@ MOBILE_ROUTE_KEYS = {
     "property-detail-configured", "fee-setup", "fee-detail", "stay-detail",
 }
 CAPTURE_ROUTES = {
-    "dashboard": ("/", ".dashboard-stats"),
+    "dashboard": ("/", ".needs-you"),
     "stays": ("/reservations", ".stays-view, .ui-empty"),
     "properties": ("/apartments", ".panel.tight.scroll-x, .panel.empty"),
     "operators": ("/entities", ".entities-page, .panel.empty"),
@@ -194,7 +194,7 @@ def wide_base(wide_host):
     assert alerts.open_alert(wide_host["alert_key"]), "synthetic date-change alert must remain open after app startup"
     probe = TestClient(app)
     probe.cookies.set(auth.SESSION_COOKIE, wide_host["cookie"])
-    alert_probe = probe.get("/?lang=en")
+    alert_probe = probe.get("/reservations?lang=en")
     assert alert_probe.status_code == 200
     assert 'data-host-alerts' in alert_probe.text, "synthetic open date-change alert must render in signed-in host UI"
     yield f"http://127.0.0.1:{port}"
@@ -500,24 +500,34 @@ def test_host_wide_lanes_align(wide_host, wide_base):
                     assert result, f"{name}/{lang}/{width}: selected result lane {result_selector!r} is missing"
                     header = geometry["pageHeader"]
                     assert header, f"{name}/{lang}/{width}: page header is missing"
-                    alert_stack = geometry["alertStack"]
-                    assert alert_stack and geometry["alertLink"], (
-                        f"synthetic persistent date-change alert not rendered on {name}/{lang}/{width}"
-                    )
-                    assert geometry["alertPosition"] == "static", geometry
-                    assert geometry["alertDismissCount"] == 0, (
-                        "dates_changed_resign alerts are filing gates and must remain non-dismissible"
-                    )
-                    for edge in ("left", "right"):
-                        if abs(alert_stack[edge] - geometry["hostLane"][edge]) > 2:
-                            mismatches.append({"route": name, "locale": lang, "width": width,
-                                "lane": f"alertStack.{edge}", "result": geometry["hostLane"],
-                                "candidate": alert_stack})
                     feedback_region = geometry["feedbackRegion"]
-                    assert feedback_region and alert_stack["bottom"] <= feedback_region["top"] + 1, (
-                        f"persistent alert overlaps feedback region on {name}/{lang}/{width}: "
-                        f"alert={alert_stack}, feedback={feedback_region}"
-                    )
+                    assert feedback_region, f"feedback region missing on {name}/{lang}/{width}"
+                    if name == "dashboard":
+                        # 0241: on the dashboard the alert is a line in "What needs you".
+                        card_alert = page.locator('.needs-you [data-needs-you="alert"]')
+                        assert card_alert.count() >= 1, f"date-change alert missing from the card at {lang}/{width}"
+                        assert card_alert.first.locator("[data-notification-dismiss]").count() == 0, (
+                            "dates_changed_resign alerts are filing gates and must remain non-dismissible"
+                        )
+                        assert geometry["alertStack"] is None, geometry["alertStack"]
+                    else:
+                        alert_stack = geometry["alertStack"]
+                        assert alert_stack and geometry["alertLink"], (
+                            f"synthetic persistent date-change alert not rendered on {name}/{lang}/{width}"
+                        )
+                        assert geometry["alertPosition"] == "static", geometry
+                        assert geometry["alertDismissCount"] == 0, (
+                            "dates_changed_resign alerts are filing gates and must remain non-dismissible"
+                        )
+                        for edge in ("left", "right"):
+                            if abs(alert_stack[edge] - geometry["hostLane"][edge]) > 2:
+                                mismatches.append({"route": name, "locale": lang, "width": width,
+                                    "lane": f"alertStack.{edge}", "result": geometry["hostLane"],
+                                    "candidate": alert_stack})
+                        assert alert_stack["bottom"] <= feedback_region["top"] + 1, (
+                            f"persistent alert overlaps feedback region on {name}/{lang}/{width}: "
+                            f"alert={alert_stack}, feedback={feedback_region}"
+                        )
                     navigation = geometry["navigation"]
                     if navigation:
                         assert feedback_region["bottom"] <= navigation["top"] + 1, (
@@ -798,7 +808,7 @@ def test_collapsed_sidebar_keeps_dashboard_and_stays_lanes_aligned(wide_host, wi
             }])
             page = context.new_page()
             for key, path, selector in (
-                ("dashboard", "/", ".dashboard-stats"),
+                ("dashboard", "/", ".needs-you"),
                 ("stays", "/reservations", ".stays-view"),
             ):
                 response = page.goto(f"{wide_base}{path}?lang={lang}")
@@ -855,7 +865,7 @@ def test_dashboard_760_header_and_actions_remain_in_the_shared_lane(wide_host, w
             page.wait_for_load_state("networkidle")
             _dismiss_optional_security_prompt(page)
             page.evaluate("window.scrollTo(0, 0)")
-            geometry = _capture_geometry(page, ".dashboard-stats")
+            geometry = _capture_geometry(page, ".needs-you")
             assert abs(geometry["pageHeader"]["left"] - geometry["result"]["left"]) <= 2, geometry
             assert abs(geometry["pageHeader"]["right"] - geometry["result"]["right"]) <= 2, geometry
             assert abs(geometry["title"]["left"] - geometry["result"]["left"]) <= 2, geometry
@@ -868,11 +878,11 @@ def test_dashboard_760_header_and_actions_remain_in_the_shared_lane(wide_host, w
             assert not (overlaps_x and overlaps_y), {
                 "title": title, "actions": actions,
             }
-            assert geometry["alertPosition"] == "static" and geometry["alertDismissCount"] == 0, {
-                "alert": geometry["alertStack"], "body": page.locator("body").inner_text()[:500],
-                "title": page.title(), "url": page.url,
-            }
-            assert geometry["alertStack"]["bottom"] <= geometry["feedbackRegion"]["top"] + 1
+            # 0241: the alert is a line in "What needs you", never a second stack.
+            assert geometry["alertStack"] is None, geometry["alertStack"]
+            card_alert = page.locator('.needs-you [data-needs-you="alert"]')
+            assert card_alert.count() >= 1, page.locator("body").inner_text()[:500]
+            assert card_alert.first.locator("[data-notification-dismiss]").count() == 0
             page.screenshot(path=str(output_dir / f"after-dashboard-{lang}-760.png"), full_page=True)
             context.close()
         browser.close()
