@@ -420,7 +420,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position:
 .invoice-items-grid td { vertical-align: top; }
 .invoice-items-grid input:not([type=hidden]),
 .invoice-items-grid select { box-sizing: border-box; width: 100%; min-width: 0; }
-.invoice-items-grid .row-actions [data-remove-item] { min-height: 48px; }
+.invoice-items-grid .row-actions [data-remove-item] { height: 46.5px; min-height: 46.5px; } /* 0253: same height as the quantity input (22.5 px line + 2 x 11 px padding + 2 x 1 px border) */
 .invoice-items-grid [data-vat-col][hidden] { display: block !important; visibility: hidden; }
 .invoice-other-description-field { display: block; margin-top: var(--space-2); }
 .invoice-other-description-field > span { display: block; margin-bottom: var(--space-1); color: var(--ink-3); font-size: var(--size-12); font-weight: 600; }

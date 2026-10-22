@@ -140,7 +140,8 @@ def test_property_and_operator_controls_render_and_work_in_browser(host, base):
             # 0092: the guest message is set on the property page; create stores the default.
             assert page.locator("#guest_message").count() == 0
             labels = page.locator("#address .property-address-grid").first.locator("label")
-            assert labels.count() == 3
+            # street, house no., orientation no. and ZIP: the first address grid holds four fields.
+            assert labels.count() == 4
             first_row = page.locator("#address .property-address-grid").first
             label_input_tops = first_row.evaluate("""(row) => [...row.querySelectorAll('.field')].map((field) => {
               const input = field.querySelector('input');

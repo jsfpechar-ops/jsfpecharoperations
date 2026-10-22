@@ -61,4 +61,5 @@ Append-only.
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)
 - 2026-10-22 Round 2: dashboard opens with one "What needs you" card; the alert stack is hidden on `/` only (the card carries the alerts). Host reminder may go the day before arrival when nobody opened the link, same key as check-in day, so at most one per stay; no new host emails (owner).
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
-- 2026-10-22 Round 3 (0270-0276): wizard story order, test run last; wizard-only coral progress (MASTER 10.5 exception); no welcome-back email (owner).
+- 2026-10-22 [workflow] iPad checks also run in cloud WebKit; `page.route` tests on navigations need `service_workers="block"` (0253).
+- 2026-10-22 Wizard coral bar OK (MASTER 10.5)
