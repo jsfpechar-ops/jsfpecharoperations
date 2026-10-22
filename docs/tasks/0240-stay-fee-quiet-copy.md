@@ -1,6 +1,6 @@
 # 0240: Stay fee step: one-line intro, signature help behind "?"
 
-Status: todo
+Status: review
 Depends on: 0239 | Branch: claude/project-thread-kbrf7w
 Executor: Haiku 5.5 | Fits one session: 20 tool calls
 
