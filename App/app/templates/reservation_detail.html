@@ -61,6 +61,8 @@
 
 {# --- 1. Now ------------------------------------------------------------ #}
 <section class="panel stay-command-panel" id="now">
+  {% from "_workflow.html" import stay_journey_panel with context %}
+  {{ stay_journey_panel(stay_journey(reservation, progress)) }}
   <div class="stay-command-main">
     <div>
       <div class="eyebrow">{{ t('stay.detail.next_step') }}</div>
