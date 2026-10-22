@@ -60,7 +60,7 @@
   {% else %}{{ t('action.check_missing') }}{% endif %}
 {% endmacro %}
 
-{% macro progress_pill(status, automation_mode=none, compact=false, is_demo=false) %}
+{% macro progress_pill(status, automation_mode=none, compact=false, is_demo=false, step=none) %}
   {% set labels = {
     'failed': t('status.failed'),
     'reported': t('status.reported'),
@@ -109,7 +109,7 @@
     {% set label = labels.get(status, status) %}
     {% set tip = '' %}
   {% endif %}
-  <span class="ui-badge ui-badge-{{ UI_KINDS.get(tone, 'neutral') }}{{ ' ui-badge-overdue' if tone == 'red' }}" data-tone="{{ tone }}"{% if tip %} title="{{ tip }}"{% endif %}>{{ label }}</span>
+  <span class="ui-badge ui-badge-{{ UI_KINDS.get(tone, 'neutral') }}{{ ' ui-badge-overdue' if tone == 'red' }}" data-tone="{{ tone }}"{% if tip %} title="{{ tip }}"{% endif %}>{% if step %}<span class="ui-badge-step" data-journey-step="{{ step }}">{{ t('workflow.step_of', n=step, total=5) }} · </span>{% endif %}{{ label }}</span>
 {% endmacro %}
 
 {# Guest count for a stay. Calendars never carry it, so until the guest or the
