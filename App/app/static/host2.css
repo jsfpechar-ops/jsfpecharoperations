@@ -682,3 +682,16 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 @media (min-width: 1024px) {
   .host-workspace .fee-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* 0281: below their card switch point, Properties and Business rows are
+   separate outlined cards (owner: no borderless look on phone). */
+@container list-cards (max-width: 799.98px) {
+  .host-workspace .lc-properties tbody { display: grid; gap: var(--space-3); }
+  .host-workspace .lc-properties tr,
+  .host-workspace .lc-properties tr:last-child { border: 1px solid var(--line-strong); border-radius: var(--radius-3); }
+}
+@container list-cards (max-width: 949.98px) {
+  .host-workspace .lc-entities tbody { display: grid; gap: var(--space-3); }
+  .host-workspace .lc-entities tr,
+  .host-workspace .lc-entities tr:last-child { border: 1px solid var(--line-strong); border-radius: var(--radius-3); }
+}
