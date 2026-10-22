@@ -3372,3 +3372,10 @@ STRINGS.update({
     "mail.reminder_host.footer_tomorrow": "Bạn nhận email này tối đa một lần cho mỗi lượt lưu trú: một ngày trước khi nhận phòng, và chỉ khi chưa ai mở liên kết cho khách.",
     "mail.door_code_notice.action": "Mở lượt lưu trú",
 })
+
+# 0280: the one line that stands for several alerts off the dashboard.
+STRINGS.update({
+    "notification.summary.count": "%(n)s cảnh báo cần bạn xử lý",
+    "notification.summary.more": "Thêm %(n)s cảnh báo",
+    "notification.summary.open": "Mở trang tổng quan",
+})

@@ -7393,6 +7393,22 @@ _MAIL_0245_STRINGS = {
 for _lang, _strings in _MAIL_0245_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0280: the one line that stands for several alerts off the dashboard.
+_SUMMARY_0280_STRINGS = {
+    "en": {
+        "notification.summary.count": "%(n)s alerts need you",
+        "notification.summary.more": "%(n)s more alerts",
+        "notification.summary.open": "Open the dashboard",
+    },
+    "cs": {
+        "notification.summary.count": "Upozornění k vyřízení: %(n)s",
+        "notification.summary.more": "Další upozornění: %(n)s",
+        "notification.summary.open": "Otevřít přehled",
+    },
+}
+for _lang, _strings in _SUMMARY_0280_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
