@@ -1814,8 +1814,12 @@ def build_reminder_host(
     claimed: bool = True,
     filled: int = 0,
     expected: Optional[int] = None,
+    tomorrow: bool = False,
 ) -> Dict[str, str]:
     """The check-in-day nudge for the host, in the host's language.
+
+    0245: with ``tomorrow`` it is the day-before nudge for a stay whose guest
+    link nobody has opened yet (same mail, same key, sent at most once).
 
     Host copy is English today, like the submission notice; see docs/archive/FOLLOWUPS.md.
     """
@@ -1824,7 +1828,9 @@ def build_reminder_host(
     # an unclaimed stay falls back to the count-free subject.
     subject = _text(
         lang,
-        "mail.reminder_host.subject"
+        "mail.reminder_host.subject_tomorrow"
+        if tomorrow
+        else "mail.reminder_host.subject"
         if expected is not None
         else "mail.reminder_host.subject_unclaimed",
         property=property_name,
@@ -1832,14 +1838,17 @@ def build_reminder_host(
         expected=expected,
     )
     heading = _text(lang, "mail.reminder_host.heading")
-    intro = _text(lang, "mail.reminder_host.intro", property=property_name, date=date)
-    preheader = _text(lang, "mail.reminder_host.preheader")
+    when = "_tomorrow" if tomorrow else ""
+    intro = _text(lang, f"mail.reminder_host.intro{when}", property=property_name, date=date)
+    preheader = _text(lang, f"mail.reminder_host.preheader{when}")
     assigned_label = _text(lang, "mail.reminder_host.assigned_label")
     assigned_value = assigned or _text(lang, "mail.reminder_host.assigned_unknown")
     next_label = _text(lang, "mail.reminder_host.next_label")
     next_steps = _text(
         lang,
-        "mail.reminder_host.next_steps_claimed"
+        "mail.reminder_host.next_steps_tomorrow"
+        if tomorrow
+        else "mail.reminder_host.next_steps_claimed"
         if claimed
         else "mail.reminder_host.next_steps_unclaimed",
         filled=filled,
@@ -1847,7 +1856,7 @@ def build_reminder_host(
     )
     action = _text(lang, "mail.reminder_host.action_stay")
     fallback = _guest_text(lang, "mail_link_fallback")
-    footer = _text(lang, "mail.reminder_host.footer")
+    footer = _text(lang, f"mail.reminder_host.footer{when}")
 
     extra_blocks = [_block_link(stay_url, fallback)]
     if claimed:
