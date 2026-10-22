@@ -72,7 +72,7 @@
   {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
   {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
   {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
-  {% if link_unused and not banner_showing %}
+  {% if link_unused %}
   <section class="paste-check" data-paste-check aria-labelledby="paste-check-title">
     <h2 id="paste-check-title">{{ t('workflow.paste.title') }}</h2>
     <p>{{ t('workflow.paste.body') }}</p>
