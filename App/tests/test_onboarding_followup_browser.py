@@ -165,24 +165,22 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         _ready(page)
         status = page.locator("[data-setup-status]")
         assert status.is_visible()
-        # 0244: a live health check, one bordered row per check, a button only on a problem.
-        rows = status.locator(".health-row")
-        assert rows.count() >= 4
-        assert status.locator(".host-property-card").count() == 0
-        assert not status.locator(".setup-readiness-help").evaluate("el => el.open")
-        for index in range(rows.count()):
-            row = rows.nth(index)
-            state = row.get_attribute("data-state")
-            assert row.locator("a.ui-btn").count() == (1 if state in ("bad", "warn") else 0), state
-            assert row.evaluate("el => getComputedStyle(el).borderTopStyle") == "solid"
-            for button in row.locator("a.ui-btn").all():
-                assert button.bounding_box()["height"] >= 43.5
-        police = status.locator('[data-health-check="police"]')
+        # 0286: the health check lives on the overview cards: a dot per checked card, no separate box.
+        cards = page.locator(".host-property-grid [data-health-check]")
+        assert cards.count() >= 4
+        assert page.locator(".host-checklist, .health-row").count() == 0
+        assert not status.evaluate("el => el.open")
+        for index in range(cards.count()):
+            card = cards.nth(index)
+            assert card.locator(".host-property-card-dot").is_visible(), card.get_attribute("data-health-check")
+            assert card.evaluate("el => getComputedStyle(el).borderTopStyle") == "solid"
+            assert card.bounding_box()["height"] >= 43.5
+        police = page.locator('.host-property-grid [data-health-check="police"]')
         assert police.count() == 1
         assert page.locator(".host-property-grid > a.host-property-card").count() >= 5
-        status.locator(".setup-readiness-help > summary").click()
+        status.locator("summary").click()
         assert status.locator(".readiness").is_visible()
-        status.locator(".setup-readiness-help > summary").click()
+        status.locator("summary").click()
         _fits(page)
         _shot(page, f"40-overview-health-{lang}-{width}.png")
         context.close()

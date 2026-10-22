@@ -304,7 +304,7 @@ def test_overview_checklist_when_guide_hidden(host):
     )
     page = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
     assert "setup-continue-card" not in page
-    assert 'class="panel host-checklist"' in page or 'class="readiness"' in page
+    assert 'data-setup-status' in page or 'class="readiness"' in page
 
 
 def test_overview_checklist_without_stored_setup_state(host):
@@ -340,7 +340,7 @@ def test_overview_checklist_without_stored_setup_state(host):
     )
     page = host["client"].get(f"/apartments/{apt_id}?view=overview&lang=en").text
     assert (
-        'class="panel host-checklist"' in page
+        'data-setup-status' in page
         or 'class="panel host-setup-complete"' in page
         or 'class="readiness"' in page
     )
@@ -890,7 +890,7 @@ def test_waiting_hide_show_and_demo_exclusion(host):
     hidden_page = client.get(f"{base}?view=overview&lang=en").text
     assert 'value="show"' in hidden_page
     assert "setup-continue-card" not in hidden_page
-    assert 'class="panel host-checklist"' in hidden_page
+    assert 'data-setup-status' in hidden_page
     assert 'class="panel host-setup-complete"' not in hidden_page
     shown = client.post(setup, data={"action": "show"}, follow_redirects=False)
     assert shown.headers["location"].rstrip("/").endswith("/setup")
@@ -929,7 +929,7 @@ def test_waiting_hide_show_and_demo_exclusion(host):
     assert property_setup.load(legacy) is None
     legacy_page = client.get(f"/apartments/{legacy}?view=overview&lang=en").text
     assert "setup-continue-card" not in legacy_page
-    assert 'class="panel host-checklist"' in legacy_page
+    assert 'data-setup-status' in legacy_page
     assert 'class="panel host-setup-complete"' not in legacy_page
 
 
@@ -985,7 +985,7 @@ def test_review_fixes_in_the_browser(host, base_url):
         _shot(page, "11-police-error-en-1280.png")
         page.locator("form.setup-wizard-exit button").click()
         page.wait_for_url("**view=overview**")
-        assert page.locator(".host-checklist").is_visible()
+        assert page.locator("[data-setup-status]").is_visible()
         _shot(page, "12-overview-hidden-en-1280.png")
         page.locator(".host-property-card-static").scroll_into_view_if_needed()
         _shot(page, "13-overview-guest-link-en-1280.png")

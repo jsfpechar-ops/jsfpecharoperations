@@ -23,7 +23,7 @@ def _nav(text: str) -> str:
     """Just the section nav, so the page body cannot be mistaken for it."""
     if 'class="host-property-grid"' in text:
         start = text.index('<div class="host-property-grid"')
-        end = text.find('<section class="panel host-checklist"', start)
+        end = text.find('<details class="setup-readiness-help"', start)
         return text[start:end if end > 0 else text.index('data-property-view="bookings"', start)]
     start = text.index('<nav class="section-nav"')
     return text[start:text.index('</nav>', start)]
