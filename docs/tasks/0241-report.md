@@ -15,6 +15,7 @@ Status: review
 - 0241 step 9 (two small edits plus coordinator's deadline-test edit): `28 passed, 1 warning in 2.84s`
 - 0241 step 10 (test_signed_in_chrome.py): `29 passed, 1 warning in 2.70s`
 - 0241 step 11 (new test_needs_you_dashboard_0241.py): `15 passed, 1 warning in 2.29s`
+- 0241 step 12 (section 10 follow-up, three test files): `57 passed, 1 warning in 6.51s`. Clears the three real command-2 failures; the test_host_ux_acceptance failures are Chromium-not-found and not part of this follow-up.
 - 0241 report commit (this file).
 
 ## §6 results
