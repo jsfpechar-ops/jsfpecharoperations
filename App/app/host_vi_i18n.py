@@ -3299,3 +3299,30 @@ STRINGS.update({
     "stay.detail.guest_refused": "Cảnh sát không chấp nhận hồ sơ này. Sửa thông tin rồi gửi lại. Lý do từ cảnh sát: %(reason)s",
     "stay.detail.guest_blocked": "Cảnh sát đã từ chối hồ sơ này và gửi lại cũng không thay đổi được. Lý do từ cảnh sát: %(reason)s",
 })
+
+# 0240 (idea N): "What needs you".
+STRINGS.update({
+    "needs_you.title": "Việc cần bạn",
+    "needs_you.calm": "Hôm nay không có việc gì cần bạn.",
+    "needs_you.on_track": "%(count)s lượt lưu trú đang đúng kế hoạch.",
+    "needs_you.on_track.one": "1 lượt lưu trú đang đúng kế hoạch.",
+    "needs_you.on_track.few": "%(count)s lượt lưu trú đang đúng kế hoạch.",
+    "needs_you.more": "Xem thêm %(count)s",
+    "needs_you.more.one": "Xem thêm 1",
+    "needs_you.more.few": "Xem thêm %(count)s",
+    "needs_you.stay.failed": "Cảnh sát không chấp nhận khai báo.",
+    "needs_you.stay.overdue": "Đã quá hạn khai báo cảnh sát.",
+    "needs_you.stay.ready": "Khách đã điền xong mọi biểu mẫu. Hãy gửi khai báo cảnh sát.",
+    "needs_you.stay.no_form": "Khách %(when)s nhưng chưa điền biểu mẫu cho khách.",
+    "needs_you.stay.forms_missing": "Khách %(when)s nhưng một số biểu mẫu cho khách chưa xong.",
+    "needs_you.when.today": "đến hôm nay",
+    "needs_you.when.tomorrow": "đến ngày mai",
+    "needs_you.when.arrived": "đã đến",
+    "needs_you.setup": "Còn thiếu thông tin cho cảnh sát nên chưa gửi được khai báo nào.",
+    "needs_you.paste": "Chưa có khách nào dùng liên kết cho khách của bạn. Bạn đã dán tin nhắn cho khách vào Airbnb hoặc Booking.com chưa?",
+    "needs_you.action.fix": "Sửa khai báo",
+    "needs_you.action.send": "Gửi khai báo",
+    "needs_you.action.open": "Mở lượt lưu trú",
+    "needs_you.action.send_link": "Gửi liên kết cho khách",
+    "needs_you.action.setup": "Hoàn tất thiết lập",
+})

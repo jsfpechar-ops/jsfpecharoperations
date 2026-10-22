@@ -7241,6 +7241,62 @@ _PLAIN_FIXES_0239_STRINGS = {
 for _lang, _strings in _PLAIN_FIXES_0239_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0240 (idea N): "What needs you".
+_NEEDS_YOU_0240_STRINGS = {
+    "en": {
+        "needs_you.title": "What needs you",
+        "needs_you.calm": "Nothing needs you today.",
+        "needs_you.on_track": "%(count)s stays are on track.",
+        "needs_you.on_track.one": "1 stay is on track.",
+        "needs_you.on_track.few": "%(count)s stays are on track.",
+        "needs_you.more": "Show %(count)s more",
+        "needs_you.more.one": "Show 1 more",
+        "needs_you.more.few": "Show %(count)s more",
+        "needs_you.stay.failed": "The police did not accept the report.",
+        "needs_you.stay.overdue": "The police deadline has passed.",
+        "needs_you.stay.ready": "All guest forms are done. Send the police report.",
+        "needs_you.stay.no_form": "The guest %(when)s and has not filled in the guest form.",
+        "needs_you.stay.forms_missing": "The guest %(when)s and some guest forms are not finished.",
+        "needs_you.when.today": "arrives today",
+        "needs_you.when.tomorrow": "arrives tomorrow",
+        "needs_you.when.arrived": "has arrived",
+        "needs_you.setup": "Police details are missing, so no police report can go out yet.",
+        "needs_you.paste": "No guest has used your guest link yet. Did you paste the guest message into Airbnb or Booking.com?",
+        "needs_you.action.fix": "Fix the report",
+        "needs_you.action.send": "Send the report",
+        "needs_you.action.open": "Open the stay",
+        "needs_you.action.send_link": "Send the guest link",
+        "needs_you.action.setup": "Finish setup",
+    },
+    "cs": {
+        "needs_you.title": "Co na vás čeká",
+        "needs_you.calm": "Dnes na vás nic nečeká.",
+        "needs_you.on_track": "%(count)s pobytů běží podle plánu.",
+        "needs_you.on_track.one": "1 pobyt běží podle plánu.",
+        "needs_you.on_track.few": "%(count)s pobyty běží podle plánu.",
+        "needs_you.more": "Zobrazit dalších %(count)s",
+        "needs_you.more.one": "Zobrazit další 1",
+        "needs_you.more.few": "Zobrazit další %(count)s",
+        "needs_you.stay.failed": "Policie hlášení nepřijala.",
+        "needs_you.stay.overdue": "Lhůta pro hlášení policii už uplynula.",
+        "needs_you.stay.ready": "Všechny formuláře hostů jsou hotové. Odešlete hlášení policii.",
+        "needs_you.stay.no_form": "Host %(when)s a ještě nevyplnil formulář pro hosty.",
+        "needs_you.stay.forms_missing": "Host %(when)s a některé formuláře hostů ještě nejsou hotové.",
+        "needs_you.when.today": "přijede dnes",
+        "needs_you.when.tomorrow": "přijede zítra",
+        "needs_you.when.arrived": "už přijel",
+        "needs_you.setup": "Chybí údaje pro policii, takže zatím nemůže odejít žádné hlášení.",
+        "needs_you.paste": "Odkaz pro hosty zatím žádný host nepoužil. Vložili jste zprávu pro hosty do Airbnb nebo Booking.com?",
+        "needs_you.action.fix": "Opravit hlášení",
+        "needs_you.action.send": "Odeslat hlášení",
+        "needs_you.action.open": "Otevřít pobyt",
+        "needs_you.action.send_link": "Poslat odkaz hostovi",
+        "needs_you.action.setup": "Dokončit nastavení",
+    },
+}
+for _lang, _strings in _NEEDS_YOU_0240_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
