@@ -10,7 +10,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
-from .. import access, auth, celebrations, db, demo, onboarding, security
+from .. import access, auth, celebrations, db, demo, onboarding, security, welcome_back
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -64,6 +64,17 @@ async def onboarding_dismiss(request: Request):
     return RedirectResponse(
         security.safe_local_path(_form_str(form, "return_to"), "/"), status_code=303
     )
+
+
+@router.post("/welcome-back/dismiss")
+async def welcome_back_dismiss(request: Request):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    await request.form()
+    account = auth.current_user(request)
+    welcome_back.dismiss(account["id"] if account else None)
+    return RedirectResponse("/", status_code=303)
 
 
 @router.post("/onboarding/resume")
