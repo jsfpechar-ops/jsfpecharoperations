@@ -57,6 +57,9 @@ def test_signature_stays_locked_until_edit_and_saves_draw_or_type(base):
             if touch:
                 assert canvas_box["height"] >= 160, (tag, canvas_box)
             dialog.locator('[data-signature-mode="type"]').click()
+            type_border = dialog.locator('[data-signature-mode="type"]').evaluate("e => getComputedStyle(e).borderBottomColor")
+            draw_border = dialog.locator('[data-signature-mode="draw"]').evaluate("e => getComputedStyle(e).borderBottomColor")
+            assert type_border != draw_border, (tag, type_border, draw_border)
             dialog.locator("[data-signature-typed]").fill(TYPED_NAME)
             page.wait_for_timeout(200)
             if shots:
