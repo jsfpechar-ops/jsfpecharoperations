@@ -1,6 +1,6 @@
 # 0273 report: friendlier setup wizard
 
-Status: blocked
+Status: review
 
 ## Files changed
 - App/app/templates/setup_wizard/_layout.html (meter, question header, nav_icon import)
@@ -35,3 +35,4 @@ Status: blocked
 
 ## Owner steps left
 - Decide on test_host_i18n.py before review.
+- Orchestrator: test_host_i18n.py has the same 3 failures on main when run alone (isolation, not this brief).
