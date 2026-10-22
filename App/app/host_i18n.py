@@ -5486,6 +5486,11 @@ _LIFECYCLE_MAIL_STRINGS = {
         "unsubscribe.service_mail": "You will still get the messages UbyHost needs to send about your account and your filings, such as a report the police did not accept.",
         "unsubscribe.invalid": "This unsubscribe link is not valid. Copy the whole link from the e-mail, or write to support.",
         "unsubscribe.too_many": "Too many attempts from this connection. Try again in an hour.",
+        "databox_return.done.title": "Back from your data box",
+        "databox_return.done.lede": "If you sent the message in your data box, the city office has your stay fee report.",
+        "databox_return.error.title": "Your data box did not take the message",
+        "databox_return.error.lede": "Nothing was sent. Try again from Stay fee, or send the PDF from your data box yourself.",
+        "databox_return.back": "Back to Stay fee",
     },
     "cs": {
         "notification.mail_kind.lifecycle_no_property": "tip k nastavení: přidat ubytování",
@@ -5529,6 +5534,11 @@ _LIFECYCLE_MAIL_STRINGS = {
         "unsubscribe.service_mail": "Zprávy, které vám UbyHost musí posílat k účtu a k hlášením, budete dostávat dál, například když policie hlášení nepřijme.",
         "unsubscribe.invalid": "Tento odkaz pro odhlášení není platný. Zkopírujte z e-mailu celý odkaz, nebo napište podpoře.",
         "unsubscribe.too_many": "Z tohoto připojení bylo příliš mnoho pokusů. Zkuste to znovu za hodinu.",
+        "databox_return.done.title": "Zpět z datové schránky",
+        "databox_return.done.lede": "Pokud jste zprávu v datové schránce odeslali, úřad má vaše hlášení k poplatku z pobytu.",
+        "databox_return.error.title": "Datová schránka zprávu nepřijala",
+        "databox_return.error.lede": "Nic se neodeslalo. Zkuste to znovu z Poplatku z pobytu, nebo pošlete PDF ze své datové schránky sami.",
+        "databox_return.back": "Zpět na poplatek z pobytu",
     },
 }
 for _lang, _strings in _LIFECYCLE_MAIL_STRINGS.items():

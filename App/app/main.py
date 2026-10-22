@@ -28,7 +28,7 @@ from . import (
     seo,
     templating,
 )
-from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, invoices, legal, mail_unsubscribe, onboarding_wizard, stay_fees
+from .routes import admin, cleaning as cleaning_routes, databox_return, dev_ui, guest, invoices, legal, mail_unsubscribe, onboarding_wizard, stay_fees
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -340,6 +340,8 @@ app.include_router(guest.router)
 app.include_router(admin.router)
 app.include_router(onboarding_wizard.router)
 app.include_router(invoices.router)
+# Public, outside the host CSRF dependency: ISDS may return with a POST (0239).
+app.include_router(databox_return.router)
 app.include_router(stay_fees.router)
 app.include_router(cleaning_routes.router)
 app.include_router(legal.router)
