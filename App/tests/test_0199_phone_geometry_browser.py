@@ -11,8 +11,8 @@ FAILS = []
 MEASURE = """() => {
   const R = el => el.getBoundingClientRect();
   const vis = el => !!el && R(el).width > 0;
-  const tl = el => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;
-    while ((n = w.nextNode())) { if (n.textContent.trim()) { const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect(); if (b.width) return b.left; } } return null; };
+  const tl = (el, skip) => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n;
+    while ((n = w.nextNode())) { if (n.textContent.trim() && !(skip && n.parentElement && n.parentElement.closest(skip))) { const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect(); if (b.width) return b.left; } } return null; };
   const lines = el => { const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); const t = []; let n;
     while ((n = w.nextNode())) { if (!n.textContent.trim()) continue; let skip = false;
       for (let e = n.parentElement; e && el.contains(e); e = e.parentElement) { const s = getComputedStyle(e);
@@ -28,7 +28,7 @@ MEASURE = """() => {
   const out = { vw: innerWidth, sw: document.documentElement.scrollWidth };
   const panel = q('.host-stay-detail .stay-command-panel'), gh = q('#guests .ui-section-h h2');
   const main = q('.host-stay-detail .stay-command-panel .stay-command-main');
-  if (main && gh) out.A = f(tl(main) - tl(gh));
+  if (main && gh) out.A = f(tl(main, '.journey') - tl(gh));
   if (q('.stay-command-panel .journey') && main) out.Aj = f(R(q('.stay-command-panel .journey')).left - R(q('.stay-command-panel .stay-command-main')).left);
   const act = q('.host-stay-detail .stay-command-actions');
   if (act) {
