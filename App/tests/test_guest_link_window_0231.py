@@ -40,8 +40,9 @@ def test_a_far_stay_says_when_it_reaches_the_link_and_offers_its_own_link(host):
     assert page.status_code == 200
     assert 'data-link-window="from"' in page.text
     assert "data-copy-own-link" in page.text
+    # 0237: the stay list stays quiet; the stay page carries the date.
     listing = host.get("/reservations?lang=en")
-    assert 'data-link-window="from"' in listing.text
+    assert 'data-link-window=' not in listing.text
 
 
 def test_the_property_editor_names_the_next_stay(host):  # noqa: F811
