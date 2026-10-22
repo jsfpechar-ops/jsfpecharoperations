@@ -50,7 +50,7 @@
       </form>
     </aside>
     {% endif %}
-    {% include "_host_alerts.html" %}
+    {% if not hide_alert_stack | default(false) %}{% include "_host_alerts.html" %}{% endif %}
     {% set undo_stay = request.query_params.get('undo_stay', '') %}
     {% set undo_return = request.query_params.get('undo_return', '/') %}
     <div class="host-feedback-region" data-host-feedback
