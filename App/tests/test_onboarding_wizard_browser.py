@@ -25,6 +25,7 @@ from app import auth, config, db, feed_url, host_i18n, icalsync, property_setup,
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 from tests.conftest import login_as
+from tests.wizard_walk import walk_to
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "0102-evidence"
 ADDRESS = {"addr_obec": "Brno", "addr_house_no": "12", "addr_zip": "602 00", "addr_street": "Synthetic"}
@@ -254,14 +255,12 @@ def test_back_from_later_step_reaches_earlier_page(host):
     flat = _create(host)
     client = host["client"]
     base = f"/apartments/{flat['id']}/setup"
-    client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
-    client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
-    client.post(base, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
-    at_police = client.get(f"{base}/police?lang=en")
-    assert at_police.status_code == 200
-    back = client.get(f"{base}/try_it?lang=en", follow_redirects=False)
+    assert walk_to(client, flat["id"], "guest_link") == "guest_link"
+    at_link = client.get(f"{base}/guest_link?lang=en")
+    assert at_link.status_code == 200
+    back = client.get(f"{base}/automation?lang=en", follow_redirects=False)
     assert back.status_code == 200
-    assert 'data-setup-step="try_it"' in back.text
+    assert 'data-setup-step="automation"' in back.text
 
 
 def test_police_waiting_can_finish_setup_via_automation(host):
@@ -270,17 +269,13 @@ def test_police_waiting_can_finish_setup_via_automation(host):
     client = host["client"]
     base = f"/apartments/{flat['id']}/setup"
     client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
-    client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
-    client.post(base, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
     client.post(base, data={"step": "police", "action": "wait"}, follow_redirects=False)
-    client.post(base, data={"step": "stay_fee", "action": "skip"}, follow_redirects=False)
-    client.post(base, data={"step": "door_lock", "action": "skip"}, follow_redirects=False)
     saved = client.post(
         f"/apartments/{flat['id']}/automation-timing",
         data={
             "automation_mode": "manual",
             "submit_after_hours": "24",
-            "return_to": f"/apartments/{flat['id']}/setup/done",
+            "return_to": f"/apartments/{flat['id']}/setup/stay_fee",
             "setup_step": "automation",
         },
         follow_redirects=False,
@@ -289,11 +284,12 @@ def test_police_waiting_can_finish_setup_via_automation(host):
     from urllib.parse import urlparse
 
     path = urlparse(saved.headers["location"]).path
-    assert path.endswith("/setup/done")
+    assert path.endswith("/setup/stay_fee")
+    assert walk_to(client, flat["id"], "done") in ("done", "")
     state = property_setup.load(flat["id"])
     assert state and state["finished"]
     assert state["steps"]["police"] == "waiting"
-    page = client.get(saved.headers["location"])
+    page = client.get(f"{base}/done")
     assert 'class="is-waiting"' in page.text
     assert f'href="{base}/police"' in page.text
 
@@ -453,14 +449,7 @@ def test_done_count_includes_skipped_door_lock_when_unavailable(host, monkeypatc
     flat = _create(host)
     client = host["client"]
     base = f"/apartments/{flat['id']}/setup"
-    for step, action in (
-        ("calendar", "skip"),
-        ("guest_link", "done"),
-        ("try_it", "skip"),
-        ("police", "wait"),
-        ("stay_fee", "skip"),
-    ):
-        client.post(base, data={"step": step, "action": action}, follow_redirects=False)
+    walk_to(client, flat["id"], "try_it")
     overview = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
     assert "6 of 8" in overview
 
@@ -551,20 +540,13 @@ def test_back_from_the_first_step_has_nowhere_to_go(host):
 
 
 def test_back_skips_steps_that_do_not_apply(host, monkeypatch):
-    """Fix 2: Back from automation skips door_lock when the property has no lock."""
+    """Back from the guest link skips door_lock when the property has no lock."""
     monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
     flat = _create(host)
     client = host["client"]
     base = f"/apartments/{flat['id']}/setup"
-    for step, action in (
-        ("calendar", "skip"),
-        ("guest_link", "done"),
-        ("try_it", "skip"),
-        ("police", "wait"),
-        ("stay_fee", "skip"),
-    ):
-        client.post(base, data={"step": step, "action": action}, follow_redirects=False)
-    page = client.get(f"{base}/automation?lang=en")
+    walk_to(client, flat["id"], "guest_link")
+    page = client.get(f"{base}/guest_link?lang=en")
     assert page.status_code == 200
     assert f'href="{base}/stay_fee"' in page.text
     assert f'href="{base}/door_lock"' not in page.text
@@ -666,8 +648,7 @@ def test_try_it_open_skip_moves_on(host):
     flat = _create(host)
     client = host["client"]
     base = f"/apartments/{flat['id']}/setup"
-    client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
-    client.post(base, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
+    assert walk_to(client, flat["id"], "try_it") == "try_it"
     client.post(base, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     page = client.get(f"{base}/try_it?lang=en")
     assert page.status_code == 200
@@ -675,7 +656,7 @@ def test_try_it_open_skip_moves_on(host):
     assert _t("en", "wizard.try_it.check_again") in page.text
     skipped = client.post(base, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
     assert skipped.status_code == 303
-    assert "/setup/police" in skipped.headers["location"]
+    assert "/setup/done" in skipped.headers["location"]
 
 
 def test_overview_guest_link_card_links_to_settings(host):
@@ -793,33 +774,32 @@ def test_finished_applicable_steps_without_a_lock_are_not_seven_of_eight(host, m
     flat = _create(host)
     client = host["client"]
     base = f"/apartments/{flat['id']}/setup"
-    for step, action in (("calendar", "skip"), ("guest_link", "done"), ("try_it", "skip")):
-        client.post(base, data={"step": step, "action": action}, follow_redirects=False)
+    client.post(base, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
     police = client.post(
         f"/apartments/{flat['id']}",
         data={
             **_identity(flat, host),
             **ADDRESS,
             "setup_step": "police",
-            "return_to": f"{base}/stay_fee",
+            "return_to": f"{base}/automation",
             **POLICE,
         },
         follow_redirects=False,
     )
     assert police.status_code == 303
-    assert "/setup/stay_fee" in police.headers["location"]
-    client.post(base, data={"step": "stay_fee", "action": "skip"}, follow_redirects=False)
+    assert "/setup/automation" in police.headers["location"]
     done = client.post(
         f"/apartments/{flat['id']}/automation-timing",
         data={
             "automation_mode": "manual",
-            "return_to": f"{base}/done",
+            "return_to": f"{base}/stay_fee",
             "setup_step": "automation",
         },
         follow_redirects=False,
     )
     assert done.status_code == 303
-    assert done.headers["location"].split("?")[0].endswith("/setup/done")
+    assert "/setup/stay_fee" in done.headers["location"]
+    walk_to(client, flat["id"], "done")
     assert property_setup.load(flat["id"])["finished"] is True
     overview = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
     assert "7 of 8" not in overview
@@ -895,8 +875,7 @@ def test_waiting_hide_show_and_demo_exclusion(host):
         response = client.post(setup, data={"step": step, "action": action}, follow_redirects=False)
         assert response.status_code == 303
         assert property_setup.load(flat["id"])["steps"] == {}
-    client.post(setup, data={"step": "calendar", "action": "skip"}, follow_redirects=False)
-    client.post(setup, data={"step": "guest_link", "action": "done"}, follow_redirects=False)
+    assert walk_to(client, flat["id"], "try_it") == "try_it"
     opened = client.post(setup, data={"step": "try_it", "action": "demo"}, follow_redirects=False)
     assert "/l/" in opened.headers["location"]
     from app import demo
@@ -904,10 +883,6 @@ def test_waiting_hide_show_and_demo_exclusion(host):
     assert demo.demo_stay_for(flat["id"])
     # The demo stay does not count as a real stay that finishes the calendar.
     assert property_setup.load(flat["id"])["steps"].get("calendar") == "skipped"
-    skipped = client.post(setup, data={"step": "try_it", "action": "skip"}, follow_redirects=False)
-    assert "/setup/police" in skipped.headers["location"]
-    waited = client.post(setup, data={"step": "police", "action": "wait"}, follow_redirects=False)
-    assert "/setup/stay_fee" in waited.headers["location"]
     assert property_setup.load(flat["id"])["steps"]["police"] == "waiting"
     hidden = client.post(setup, data={"action": "hide"}, follow_redirects=False)
     assert hidden.headers["location"].startswith(f"{base}?view=overview")
@@ -965,7 +940,7 @@ def test_no_js_calendar_skip(host):
     client = host["client"]
     skipped = client.post(f"{base}", data={"step": "calendar", "action": "skip"}, follow_redirects=False)
     assert skipped.status_code == 303
-    assert "/setup/guest_link" in skipped.headers["location"]
+    assert "/setup/police" in skipped.headers["location"]
     overview = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
     assert "setup-continue-card" in overview
     assert "/l/" not in overview.split("overview-guest-url")[0] if "overview-guest-url" in overview else True
@@ -1432,10 +1407,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         _shot(page, f"28-continue-setup-{tag}.png")
         flat = _create(host)
         base = f"{base_url}/apartments/{flat['id']}/setup"
-        host["client"].post(
-            f"/apartments/{flat['id']}/setup", data={"step": "calendar", "action": "skip"},
-            follow_redirects=False,
-        )
+        walk_to(host["client"], flat["id"], "guest_link")
         page.goto(f"{base}/guest_link?lang={lang}")
         buttons = page.locator(".setup-wizard-copy")
         assert buttons.count() == 3
