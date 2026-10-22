@@ -448,7 +448,6 @@ def test_done_count_includes_skipped_door_lock_when_unavailable(host, monkeypatc
     monkeypatch.setattr(config, "DOOR_CODES_ENABLED", False)
     flat = _create(host)
     client = host["client"]
-    base = f"/apartments/{flat['id']}/setup"
     walk_to(client, flat["id"], "try_it")
     overview = client.get(f"/apartments/{flat['id']}?view=overview&lang=en").text
     assert "6 of 8" in overview

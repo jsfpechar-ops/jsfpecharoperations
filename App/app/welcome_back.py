@@ -1,7 +1,7 @@
 """0275: one welcome-back line after 14 days away (idea S). Dates only."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 from typing import Any, Dict, Optional
 
 from . import db, reporting
