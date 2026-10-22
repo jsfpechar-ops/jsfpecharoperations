@@ -1,6 +1,6 @@
 # 0234: Door lock as one question with two clear answers (idea J)
 
-Status: todo
+Status: review
 Depends on: 0233 | Base commit: after 0233 | Branch: claude/project-thread-kbrf7w
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
