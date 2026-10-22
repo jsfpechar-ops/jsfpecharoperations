@@ -63,6 +63,15 @@
 {% macro needs_you_line(line) %}
 <li class="needs-you-item" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
   <div class="needs-you-copy"><strong>{{ line.subject }}</strong>{% if line.text %}<span>{{ line.text }}</span>{% endif %}</div>
+  {% if line.kind == 'paste' %}
+  <details class="needs-you-more" data-paste-check><summary>{{ t('workflow.paste.how') }}</summary>
+    <ul class="needs-you-how">
+      <li>{{ t('workflow.paste.airbnb') }}</li>
+      <li>{{ t('workflow.paste.booking') }}</li>
+      <li>{{ t('workflow.paste.direct') }}</li>
+    </ul>
+  </details>
+  {% endif %}
   {% if line.href or line.dismiss_id %}
   <div class="needs-you-actions">
     {% if line.href %}{{ ui_button(line.action, 'secondary', href=line.href) }}{% endif %}
@@ -89,15 +98,6 @@
     {% if ny_lines | length > 5 %}
     <details class="needs-you-more"><summary>{{ tp('needs_you.more', ny_lines | length - 5) }}</summary>
       <ul class="needs-you-list">{% for line in ny_lines[5:] %}{{ needs_you_line(line) }}{% endfor %}</ul>
-    </details>
-    {% endif %}
-    {% if ny_lines | selectattr('kind', 'equalto', 'paste') | list %}
-    <details class="needs-you-more" data-paste-check><summary>{{ t('workflow.paste.how') }}</summary>
-      <ul class="needs-you-how">
-        <li>{{ t('workflow.paste.airbnb') }}</li>
-        <li>{{ t('workflow.paste.booking') }}</li>
-        <li>{{ t('workflow.paste.direct') }}</li>
-      </ul>
     </details>
     {% endif %}
     {% else %}
