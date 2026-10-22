@@ -9,7 +9,7 @@
 {% set icons = {'property': 'property', 'calendar': 'calendar', 'guest_link': 'link', 'try_it': 'users', 'police': 'report', 'stay_fee': 'coins', 'door_lock': 'lock', 'automation': 'automation'} %}
 <ul class="setup-wizard-checklist host-property-grid">
   {% for row in checklist %}
-  {% set status = row.status if row.status in ['done', 'skipped', 'waiting'] else 'todo' %}
+  {% set status = row.status if row.status in ['done', 'skipped', 'waiting', 'not_needed'] else 'todo' %}
   <li class="is-{{ row.status }}" data-setup-summary-step="{{ row.key }}">
     <div class="host-property-card host-property-card-static setup-summary-card">
       <span class="setup-summary-icon">{{ nav_icon(icons[row.key]) }}</span>
