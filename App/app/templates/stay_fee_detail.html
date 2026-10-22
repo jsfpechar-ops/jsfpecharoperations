@@ -115,7 +115,16 @@
 {% if frozen and send_panel %}
 <section class="ui-section" id="fee-send">
   <h2>{{ t('stay_fees.send.title') }}</h2>
+  {% if send_panel.databox_send %}
+  <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ send_panel.filing_id }}/databox" class="inline-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <button class="ui-btn ui-btn-secondary" type="submit">{{ t('stay_fees.send.databox_button') }}</button>
+  </form>
+  <p class="ui-sub">{{ t('stay_fees.send.databox_lede') }}</p>
+  <h3 class="fee-send-marks-title">{{ t('stay_fees.send.by_hand') }}</h3>
+  {% else %}
   <p class="ui-sub">{{ t('stay_fees.send.lede') }}</p>
+  {% endif %}
   <div class="ui-field">
     <label>{{ t('stay_fees.send.recipient') }}</label>
     <div class="copyrow">

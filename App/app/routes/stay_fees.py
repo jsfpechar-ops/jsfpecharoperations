@@ -138,6 +138,8 @@ def stay_fees_list(request: Request):
             apartment["id"], period["first"], period["last"], period
         ):
             issues.append("stay_fees.issue.unsigned")
+        # 0241: Send by data box on step 2; hidden until the gateway is set up.
+        filing_id = _list_filing_id(apartment["id"], selected_month) if period.get("frozen") else None
         rows.append({
             **period,
             "total_display": stay_fee.format_czk(period["total_czk"]),
@@ -148,6 +150,9 @@ def stay_fees_list(request: Request):
             "pay": stay_fee.payment_details(group) if period.get("frozen") else None,
             "pay_total_czk": group["total_czk"],
             "pay_total_display": stay_fee.format_czk(group["total_czk"]),
+            "databox_send": bool(filing_id and apartment["stay_fee_authority_databox"]
+                                 and isds_gateway.configured()),
+            "filing_id": filing_id,
         })
     configured = {row["apartment"]["id"] for row in rows}
     for apartment in apartments:
@@ -407,6 +412,11 @@ def _send_texts(apartment, period_label: str, total_czk: int) -> tuple[str, str]
         f"Částka k úhradě: {amount}. Podrobnosti v příloze.",
     ])
     return subject_cs, body_cs
+
+
+def _list_filing_id(apartment_id: int, month: date):
+    row = stay_fee_filing.covering(apartment_id, month)
+    return row["id"] if row else None
 
 
 def _send_panel_context(apartment, period, group, filing_row: dict) -> dict:

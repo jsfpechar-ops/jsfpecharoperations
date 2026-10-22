@@ -962,6 +962,7 @@ def build_workspace_deletion(*, stage: str, date: str, lang: Optional[str] = Non
 def build_stay_fee_report(
     *, lang: Optional[str], property_name: str, period: str, amount: str, total_czk: int,
     authority: str, databox: str, account: str, vs: str, has_qr: bool, report_url: str,
+    databox_send: bool = False,
 ) -> Dict[str, str]:
     lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
     zero = total_czk == 0
@@ -971,7 +972,11 @@ def build_stay_fee_report(
         subject = _text(lang, "mail.stay_fee.subject", period=period, amount=amount,
                         property=property_name)
     intro = _text(lang, "mail.stay_fee.intro", period=period, property=property_name)
-    if databox:
+    if databox and databox_send:
+        # 0241: the email points at the report's send panel; the data box draft is made there.
+        step_send = _text(lang, "mail.stay_fee.step_send_databox", authority=authority)
+        report_url = f"{report_url}#fee-send"
+    elif databox:
         step_send = _text(lang, "mail.stay_fee.step_send", authority=authority, databox=databox)
     else:
         step_send = _text(lang, "mail.stay_fee.step_send_plain", authority=authority)
@@ -1014,7 +1019,7 @@ def build_stay_fee_report(
 
 
 def queue_stay_fee_report(apartment, filing_row, lang: Optional[str] = None) -> Optional[int]:
-    from . import stay_fee, stay_fee_auto, stay_fee_filing
+    from . import isds_gateway, stay_fee, stay_fee_auto, stay_fee_filing
 
     to_email = _entity_contact_email(apartment["legal_entity_id"])
     if not to_email:
@@ -1038,6 +1043,7 @@ def queue_stay_fee_report(apartment, filing_row, lang: Optional[str] = None) -> 
         vs=(details or {}).get("vs") or group["vs"],
         has_qr=has_qr,
         report_url=report_url,
+        databox_send=isds_gateway.configured(),
     )
     payload: Dict[str, Any] = {
         "text": built["text"],

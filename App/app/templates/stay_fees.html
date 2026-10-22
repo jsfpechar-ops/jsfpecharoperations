@@ -56,7 +56,15 @@
         {% else %}
           <p class="ui-sub">{{ t('stay_fees.pay.send') }}</p>
         {% endif %}
-        <a class="{{ pay_btn }}" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_q }}" download>{{ t('stay_fees.download_pdf') }}</a>
+        <div class="action-group">
+          {% if period.databox_send %}
+          <form method="post" action="/stay-fees/{{ apartment.id }}/filings/{{ period.filing_id }}/databox" class="inline-form">
+            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+            <button class="{{ pay_btn }}" type="submit">{{ t('stay_fees.send.databox_button') }}</button>
+          </form>
+          {% endif %}
+          <a class="{{ pay_btn }}" href="/stay-fees/{{ apartment.id }}/pdf?month={{ month_q }}" download>{{ t('stay_fees.download_pdf') }}</a>
+        </div>
       {% else %}
         <div class="fee-step-locked"><p>{{ t('stay_fees.pay.locked') }}</p></div>
       {% endif %}
