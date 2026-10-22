@@ -169,7 +169,12 @@
     "needs-you-dismiss",
     "needs-you-more",
     "needs-you-how",
-    "needs-you-calm"
+    "needs-you-calm",
+    "health-list",
+    "health-row",
+    "health-icon",
+    "health-copy",
+    "health-all-set"
   ],
   "hooks": [
     "sr-only",
@@ -887,6 +892,11 @@
     "needs-you-dismiss": "0240 dismiss form for an alert line, same endpoint as the alert stack.",
     "needs-you-more": "0240 details that holds lines past the fifth, and the paste how-to.",
     "needs-you-how": "0240 paste how-to list inside needs-you-more.",
-    "needs-you-calm": "0240 'Nothing needs you today' line with a tick."
+    "needs-you-calm": "0240 'Nothing needs you today' line with a tick.",
+    "health-list": "0244 property health check: list of health-row.",
+    "health-row": "0244 one check: icon, name and one sentence, one button only when something is wrong; data-state ok/warn/bad/off sets the left edge colour.",
+    "health-icon": "0244 the row's icon, green when the check is fine.",
+    "health-copy": "0244 name (strong) and sentence (span) of a health-row.",
+    "health-all-set": "0244 details that folds the rows away when nothing needs fixing."
   }
 }
