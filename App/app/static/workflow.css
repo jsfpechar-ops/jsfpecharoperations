@@ -62,3 +62,30 @@
 .journey > summary:focus-visible,
 .lock-choice-option:focus-visible,
 .paste-check summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* 0240 (idea N): "What needs you". One bordered card, one bordered line per
+   thing, a coloured left edge for how urgent it is (the words say it too). */
+.needs-you { margin: 0 0 var(--space-5); padding: var(--space-4); border: 1px solid var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); }
+.needs-you > h2 { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-3); font-size: var(--text-md); line-height: 1.3; }
+.needs-you-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.needs-you-item { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: 1px solid var(--border); border-left: 4px solid var(--amber); border-radius: var(--radius-md); background: var(--surface); }
+.needs-you-item[data-tone="red"] { border-left-color: var(--red); }
+.needs-you-item[data-tone="grey"] { border-left-color: var(--border-strong); }
+.needs-you-copy { display: grid; gap: 2px; min-width: 0; }
+.needs-you-copy strong { color: var(--ink); font-size: var(--text-sm); line-height: 1.35; overflow-wrap: anywhere; }
+.needs-you-copy span { color: var(--ink-secondary); font-size: var(--text-sm); line-height: 1.4; overflow-wrap: anywhere; }
+.needs-you-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.needs-you-actions .ui-btn { min-height: 44px; }
+.needs-you-dismiss { display: inline-flex; margin: 0; }
+.needs-you-more { margin-top: var(--space-2); }
+.needs-you-more > summary { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 600; }
+.needs-you-more > .needs-you-list, .needs-you-how { margin-top: var(--space-2); }
+.needs-you-how { display: grid; gap: var(--space-1); margin-bottom: 0; padding-left: var(--space-5); }
+.needs-you-calm { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0; color: var(--ink); }
+.needs-you-calm svg { color: var(--green-700); }
+.needs-you-calm span { color: var(--ink-secondary); }
+.needs-you-more > summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+@media (min-width: 720px) {
+  .needs-you-item { grid-template-columns: minmax(0, 1fr) auto; }
+  .needs-you-actions { justify-content: flex-end; flex-wrap: nowrap; }
+}
