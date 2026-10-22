@@ -335,6 +335,18 @@ def _with_action(card: Dict[str, Any]) -> Dict[str, Any]:
     return card
 
 
+# 0280: the one short line a card may show under its title. Only the live stay
+# reasons are short enough; every other detail stays on the page the card opens.
+_REASON_KINDS = frozenset({"deadline", "guest_incomplete_checkin", "headcount_mismatch"})
+
+
+def _with_reason(card: Dict[str, Any]) -> Dict[str, Any]:
+    card["display_reason"] = (
+        card.get("display_detail") or "" if card.get("kind") in _REASON_KINDS else ""
+    )
+    return card
+
+
 def present(
     alert: Any, lang: str, stays: Optional[Dict[str, Dict[Any, Any]]] = None
 ) -> Dict[str, Any]:
@@ -347,8 +359,8 @@ def present(
     row = dict(alert)
     kind = row.get("kind") or ""
     if kind in _COMPUTED_ALERT_KINDS:
-        return _with_action(_present_computed(row, kind, lang, stays))
-    return _with_action(_present_stored(row, kind, lang))
+        return _with_reason(_with_action(_present_computed(row, kind, lang, stays)))
+    return _with_reason(_with_action(_present_stored(row, kind, lang)))
 
 
 def present_many(alerts: List[Any], lang: str) -> List[Dict[str, Any]]:
