@@ -55,7 +55,7 @@
   {% set icons = {'property': 'house', 'calendar': 'calendar-days', 'guest_link': 'external-link', 'try_it': 'users', 'police': 'send', 'stay_fee': 'coins', 'door_lock': 'key-round', 'automation': 'refresh-cw'} %}
     <ul class="setup-status-grid">
     {% for row in setup_checklist %}
-    {% set status = row.status if row.status in ['done', 'skipped', 'waiting'] else 'todo' %}
+    {% set status = row.status if row.status in ['done', 'skipped', 'waiting', 'not_needed'] else 'todo' %}
     <li class="setup-status-tile is-{{ status }}" data-overview-setup-step="{{ row.key }}">
       <span class="setup-status-icon" aria-hidden="true">{{ icon(icons[row.key], 20) }}</span>
       <div class="setup-status-copy">
