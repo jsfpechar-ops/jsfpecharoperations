@@ -1,6 +1,6 @@
 # 0231: Guest link window impossible to miss (idea I)
 
-Status: todo
+Status: review
 Depends on: 0230 | Base commit: after 0230 | Branch: claude/project-thread-kbrf7w
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
