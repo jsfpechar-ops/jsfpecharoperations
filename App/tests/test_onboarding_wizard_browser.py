@@ -1090,16 +1090,7 @@ def test_wizard_round_screenshots(host, base_url, monkeypatch):
     )
     property_setup.start(bare)
     tried = _create(host)
-    host["client"].post(
-        f"/apartments/{tried['id']}/setup",
-        data={"step": "calendar", "action": "skip"},
-        follow_redirects=False,
-    )
-    host["client"].post(
-        f"/apartments/{tried['id']}/setup",
-        data={"step": "guest_link", "action": "done"},
-        follow_redirects=False,
-    )
+    assert walk_to(host["client"], tried["id"], "try_it") == "try_it"
     calendar = _create(host, name="Calendar error flat")
     monkeypatch.setattr(
         icalsync,
@@ -1136,7 +1127,7 @@ def test_wizard_round_screenshots(host, base_url, monkeypatch):
         page.wait_for_url("**/setup/try_it**")
         assert demo.demo_stay_for(tried["id"])
         page.locator("form.setup-wizard-skip button[value=skip]").click()
-        page.wait_for_url("**/setup/police**")
+        page.wait_for_url("**/setup/done**")
         assert demo.demo_stay_for(tried["id"]) is None
         _shot(page, "17-try-it-after-skip-en-1280.png")
         page.goto(f"{base_url}/apartments/{calendar['id']}/setup/calendar?lang=en")
