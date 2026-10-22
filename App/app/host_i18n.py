@@ -7433,6 +7433,35 @@ _TEST_RUN_0272_STRINGS = {
 for _lang, _strings in _TEST_RUN_0272_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+
+# 0273: friendlier wizard (K): question titles and the done count.
+_WIZARD_0273_STRINGS = {
+    "en": {
+        "wizard.done_count": "%(n)s of %(total)s done",
+        "wizard.question.property": "Where is your property?",
+        "wizard.question.calendar": "Where do you take bookings?",
+        "wizard.question.police": "What is your police login?",
+        "wizard.question.automation": "When should reports go to the police?",
+        "wizard.question.stay_fee": "Does your town charge a stay fee?",
+        "wizard.question.door_lock": "How do guests get in?",
+        "wizard.question.guest_link": "How do guests find their form?",
+        "wizard.question.try_it": "Shall we do a test run?",
+    },
+    "cs": {
+        "wizard.done_count": "Hotovo %(n)s z %(total)s",
+        "wizard.question.property": "Kde je vaše ubytování?",
+        "wizard.question.calendar": "Kde přijímáte rezervace?",
+        "wizard.question.police": "Jaké máte přihlášení do Ubyportu?",
+        "wizard.question.automation": "Kdy se mají hlášení posílat policii?",
+        "wizard.question.stay_fee": "Vybírá vaše obec poplatek z pobytu?",
+        "wizard.question.door_lock": "Jak se hosté dostanou dovnitř?",
+        "wizard.question.guest_link": "Jak hosté najdou svůj formulář?",
+        "wizard.question.try_it": "Vyzkoušíme to nanečisto?",
+    },
+}
+for _lang, _strings in _WIZARD_0273_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 

@@ -3391,3 +3391,16 @@ STRINGS.update({
     "wizard.rehearsal.badge_test": "Chỉ thử",
     "wizard.rehearsal.never_police": "Lượt lưu trú thử không bao giờ được gửi cho cảnh sát và không tính vào phí lưu trú hay hóa đơn.",
 })
+
+# 0273: friendlier wizard (K).
+STRINGS.update({
+    "wizard.done_count": "Đã xong %(n)s/%(total)s",
+    "wizard.question.property": "Chỗ ở của bạn ở đâu?",
+    "wizard.question.calendar": "Bạn nhận đặt phòng ở đâu?",
+    "wizard.question.police": "Thông tin đăng nhập cảnh sát của bạn là gì?",
+    "wizard.question.automation": "Khi nào gửi khai báo cho cảnh sát?",
+    "wizard.question.stay_fee": "Địa phương của bạn có thu phí lưu trú không?",
+    "wizard.question.door_lock": "Khách vào nhà bằng cách nào?",
+    "wizard.question.guest_link": "Khách tìm biểu mẫu của mình bằng cách nào?",
+    "wizard.question.try_it": "Chạy thử một lần nhé?",
+})
