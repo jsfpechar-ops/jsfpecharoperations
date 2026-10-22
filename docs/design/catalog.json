@@ -174,7 +174,8 @@
     "health-row",
     "health-icon",
     "health-copy",
-    "health-all-set"
+    "health-all-set",
+    "fee-more"
   ],
   "hooks": [
     "sr-only",
@@ -897,6 +898,7 @@
     "health-row": "0244 one check: icon, name and one sentence, one button only when something is wrong; data-state ok/warn/bad/off sets the left edge colour.",
     "health-icon": "0244 the row's icon, green when the check is fine.",
     "health-copy": "0244 name (strong) and sentence (span) of a health-row.",
-    "health-all-set": "0244 details that folds the rows away when nothing needs fixing."
+    "health-all-set": "0244 details that folds the rows away when nothing needs fixing.",
+    "fee-more": "Stay fee editor in Settings: folds the council's print-only details (address, contact, data box) (0239)."
   }
 }
