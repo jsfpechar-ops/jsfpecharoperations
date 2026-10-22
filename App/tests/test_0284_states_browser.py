@@ -4,12 +4,28 @@ from __future__ import annotations
 
 import secrets
 
+import pytest
+
 from fastapi.testclient import TestClient
 
-from app import auth, db, demo
+from app import auth, config, db, demo
 from app.main import app
 from tests.conftest import login_as
 from tests.test_property_navigation_browser import base, chromium_launch_kwargs, sync_api  # noqa: F401
+
+@pytest.fixture(autouse=True)
+def _own_database(tmp_path):
+    """Seed into a private database so later tests see the shared one untouched."""
+    patcher = pytest.MonkeyPatch()
+    db.close_connections()
+    patcher.setattr(config, "DB_PATH", tmp_path / "states.sqlite3")
+    patcher.setattr(demo.icalsync, "fetch_feed", lambda *_a, **_k: None)
+    try:
+        yield
+    finally:
+        db.close_connections()
+        patcher.undo()
+
 
 STYLE = "e => { const c = getComputedStyle(e); return [c.backgroundColor, c.color, c.borderTopColor].join('|'); }"
 WHITE = "rgb(255, 255, 255)"
