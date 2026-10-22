@@ -788,3 +788,12 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .host-property-card[data-state="warn"] { border-left: var(--space-1) solid var(--amber); }
 .host-workspace .host-property-card[data-state="bad"] { border-left: var(--space-1) solid var(--red); }
 .host-workspace .host-property-grid + details.setup-readiness-help { margin-top: var(--space-3); }
+
+/* 0288: Business rows (wide): the contact cell stays a table cell so the row
+   card is whole, and the name gets room so the Open arrow sits on its line. */
+@container list-cards (min-width: 950px) {
+  .host-workspace .lc-entities tbody td.ui-sub { display: table-cell; }
+  .host-workspace .lc-entities tbody td.col-name { min-width: calc(var(--space-12) * 4); }
+  .host-workspace .lc-entities tbody td.col-name .row-primary-link { display: inline-block; max-width: calc(100% - var(--space-12)); vertical-align: middle; }
+  .host-workspace .lc-entities tbody td.col-name .row-primary-link + .row-open { margin-left: var(--space-3); }
+}
