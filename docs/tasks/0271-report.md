@@ -1,6 +1,6 @@
 # 0271 report
 
-Status: blocked
+Status: review
 
 ## Files changed
 - App/tests/test_onboarding_wizard_browser.py (steps 1 to 6)
@@ -15,6 +15,7 @@ Status: blocked
 - Step 6, `test_wizard_polish_and_overview_cards`: `12 passed, 1 warning in 53.57s`
 - Step 7, `test_phone_guest_sharing_and_clear_setup_actions`: FAILED (`[False-360-en]`), `1 failed, 1 warning in 34.43s`. Timeout 30000 ms at test line 1442, `page.wait_for_url("**/setup/police**")` after the try_it skip.
 - Step 8, `test_current_property_name_demo_label_and_distinct_setup_status`: `4 passed, 1 warning in 15.57s`
+- Final §6 run (three files): `89 passed, 1 warning in 214.54s (0:03:34)`
 - Final run of the three files (brief §6): not run.
 
 ## §7 acceptance
