@@ -3404,3 +3404,17 @@ STRINGS.update({
     "wizard.question.guest_link": "Khách tìm biểu mẫu của mình bằng cách nào?",
     "wizard.question.try_it": "Chạy thử một lần nhé?",
 })
+
+STRINGS.update({
+    "wizard.done.all_set": "Xong rồi!",
+    "wizard.done.all_set_text": "Giờ khách có thể tự đăng ký.",
+    "wizard.done.almost": "Sắp xong: còn một việc.",
+    "wizard.done.left.police": "Thêm thông tin đăng nhập cảnh sát, khai báo sẽ tự gửi đi.",
+    "wizard.done.left.step": "Hoàn tất bước bên dưới là xong.",
+    "wizard.done.fix.police": "Thêm đăng nhập cảnh sát",
+    "wizard.done.fix.step": "Hoàn tất thiết lập",
+    "wizard.done.go_stays": "Mở các lượt lưu trú",
+    "wizard.done.go_property": "Mở chỗ ở của tôi",
+    "wizard.done.note_sync": "Các lượt lưu trú sẽ hiện ở trang chỗ ở trong vòng %(minutes)s phút, khi lịch được đồng bộ.",
+    "wizard.done.note_no_calendar": "Chưa kết nối lịch nào. Bạn có thể tự thêm lượt lưu trú ở trang chỗ ở.",
+})

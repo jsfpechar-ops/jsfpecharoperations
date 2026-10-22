@@ -7462,6 +7462,37 @@ _WIZARD_0273_STRINGS = {
 for _lang, _strings in _WIZARD_0273_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+_FINISH_0274_STRINGS = {
+    "en": {
+        "wizard.done.all_set": "You're all set!",
+        "wizard.done.all_set_text": "Your guests can now register on their own.",
+        "wizard.done.almost": "Almost there: one thing left.",
+        "wizard.done.left.police": "Add your police login and reports go out by themselves.",
+        "wizard.done.left.step": "Finish the step below and you are done.",
+        "wizard.done.fix.police": "Add your police login",
+        "wizard.done.fix.step": "Finish setup",
+        "wizard.done.go_stays": "Open my stays",
+        "wizard.done.go_property": "Open my property",
+        "wizard.done.note_sync": "Your stays appear on the property page within %(minutes)s minutes, once your calendar syncs.",
+        "wizard.done.note_no_calendar": "No calendar is connected yet. You can add stays by hand on the property page.",
+    },
+    "cs": {
+        "wizard.done.all_set": "Hotovo, vše je nastavené!",
+        "wizard.done.all_set_text": "Hosté se teď můžou registrovat sami.",
+        "wizard.done.almost": "Skoro hotovo: zbývá jedna věc.",
+        "wizard.done.left.police": "Doplňte přihlášení do Ubyportu a hlášení půjdou sama.",
+        "wizard.done.left.step": "Dokončete krok níže a máte hotovo.",
+        "wizard.done.fix.police": "Doplnit údaje Ubyportu",
+        "wizard.done.fix.step": "Dokončit nastavení",
+        "wizard.done.go_stays": "Otevřít moje pobyty",
+        "wizard.done.go_property": "Otevřít ubytování",
+        "wizard.done.note_sync": "Pobyty se objeví u ubytování do %(minutes)s minut, jakmile se kalendář synchronizuje.",
+        "wizard.done.note_no_calendar": "Zatím není připojený žádný kalendář. Pobyty můžete přidat ručně u ubytování.",
+    },
+}
+for _lang, _strings in _FINISH_0274_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
