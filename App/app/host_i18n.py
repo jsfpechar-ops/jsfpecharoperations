@@ -7297,6 +7297,76 @@ _NEEDS_YOU_0240_STRINGS = {
 for _lang, _strings in _NEEDS_YOU_0240_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0244 (idea O): the property health check.
+_HEALTH_0244_STRINGS = {
+    "en": {
+        "health.title": "Health check",
+        "health.all_set": "All set",
+        "health.show": "Show the checks",
+        "health.to_fix": "%(count)s to fix",
+        "health.to_fix.one": "1 to fix",
+        "health.to_fix.few": "%(count)s to fix",
+        "health.calendar": "Calendar",
+        "health.calendar.ok": "Bookings come in by themselves.",
+        "health.calendar.none": "No calendar connected. Add stays by hand or connect one.",
+        "health.calendar.error": "The last calendar sync failed.",
+        "health.calendar.fix": "Check the calendar",
+        "health.calendar.connect": "Connect a calendar",
+        "health.guest_link": "Guest link",
+        "health.guest_link.ok": "A guest has used your link.",
+        "health.guest_link.unused": "No guest has used your link yet.",
+        "health.guest_link.waiting": "No guest could use it yet.",
+        "health.guest_link.fix": "Open the guest message",
+        "health.police": "Police reports",
+        "health.police.ok": "Police details are complete.",
+        "health.police.missing": "Police details are missing, so no report can go out.",
+        "health.police.login": "The police system refused the login.",
+        "health.police.fix": "Finish police setup",
+        "health.police.fix_login": "Fix the police login",
+        "health.business": "Business details",
+        "health.business.ok": "Complete.",
+        "health.business.missing": "Business details are missing.",
+        "health.business.fix": "Add business details",
+        "health.door": "Door codes",
+        "health.door.ok": "Door codes go out by themselves.",
+        "health.door.off": "Turned off.",
+    },
+    "cs": {
+        "health.title": "Kontrola nastavení",
+        "health.all_set": "Vše v pořádku",
+        "health.show": "Zobrazit kontroly",
+        "health.to_fix": "%(count)s k opravě",
+        "health.to_fix.one": "1 k opravě",
+        "health.to_fix.few": "%(count)s k opravě",
+        "health.calendar": "Kalendář",
+        "health.calendar.ok": "Rezervace se načítají samy.",
+        "health.calendar.none": "Žádný kalendář není připojen. Pobyty přidávejte ručně, nebo kalendář připojte.",
+        "health.calendar.error": "Poslední synchronizace kalendáře selhala.",
+        "health.calendar.fix": "Zkontrolovat kalendář",
+        "health.calendar.connect": "Připojit kalendář",
+        "health.guest_link": "Odkaz pro hosty",
+        "health.guest_link.ok": "Host už váš odkaz použil.",
+        "health.guest_link.unused": "Váš odkaz zatím žádný host nepoužil.",
+        "health.guest_link.waiting": "Zatím ho nemohl použít žádný host.",
+        "health.guest_link.fix": "Otevřít zprávu pro hosty",
+        "health.police": "Hlášení policii",
+        "health.police.ok": "Údaje pro policii jsou kompletní.",
+        "health.police.missing": "Chybí údaje pro policii, proto nemůže odejít žádné hlášení.",
+        "health.police.login": "Policejní systém odmítl přihlášení.",
+        "health.police.fix": "Dokončit nastavení pro policii",
+        "health.police.fix_login": "Opravit přihlášení k policii",
+        "health.business": "Údaje o podnikání",
+        "health.business.ok": "Kompletní.",
+        "health.business.missing": "Chybí údaje o podnikání.",
+        "health.business.fix": "Doplnit údaje o podnikání",
+        "health.door": "Kódy ke dveřím",
+        "health.door.ok": "Kódy ke dveřím odcházejí samy.",
+        "health.door.off": "Vypnuto.",
+    },
+}
+for _lang, _strings in _HEALTH_0244_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 STRINGS["vi"] = dict(_VI_STRINGS)
 
 
