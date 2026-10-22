@@ -155,7 +155,8 @@ def test_host_interactions_geometry_copy_and_archive_controls(host, base):
     ]
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
-        context = browser.new_context(viewport={"width": 1280, "height": 900})
+        # sw.js answers navigations itself; page.route cannot see service-worker requests.
+        context = browser.new_context(service_workers="block", viewport={"width": 1280, "height": 900})
         context.add_cookies([{
             "name": auth.SESSION_COOKIE, "value": _cookie(client), "url": base + "/",
         }])
