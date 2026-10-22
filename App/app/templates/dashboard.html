@@ -2,7 +2,10 @@
 {% set nav = 'dashboard' %}
 {% set body_kind = 'detail' %}
 {% from "_components.html" import progress_pill, copy_inline, row_menu_begin, row_menu_end, onboarding_banner, onboarding_finish, onboarding_finish_strip, onboarding_welcome, next_action, deadline_badge, property_identity, guest_count with context %}
+{% from "_icons.html" import icon with context %}
 {% set show_welcome = not apartments and not onboarding.dismissed %}
+{# 0241: the "What needs you" card carries the alerts here, so the stack is not shown twice. #}
+{% set hide_alert_stack = (apartments or []) | length > 0 %}
 {% block title %}{{ t('dashboard.title') }}{% endblock %}
 {% block page_title %}{% if not show_welcome %}{{ t('dashboard.title') }}{% endif %}{% endblock %}
 {% block meta %}{{ today.isoformat() | date_cz }}{% if last_sync %} · {{ t('dashboard.last_synced', when=last_sync | datetime_local) }}{% endif %}{% endblock %}
@@ -56,61 +59,56 @@
 {% else %}{{ ui_empty(t(empty_key)) }}{% endif %}
 {% endmacro %}
 
+{#- 0241 (idea N): one line of "What needs you": subject, one sentence, one button. -#}
+{% macro needs_you_line(line) %}
+<li class="needs-you-item" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
+  <div class="needs-you-copy"><strong>{{ line.subject }}</strong>{% if line.text %}<span>{{ line.text }}</span>{% endif %}</div>
+  {% if line.href or line.dismiss_id %}
+  <div class="needs-you-actions">
+    {% if line.href %}{{ ui_button(line.action, 'secondary', href=line.href) }}{% endif %}
+    {% if line.dismiss_id %}<form method="post" action="/alerts/{{ line.dismiss_id }}/dismiss" class="needs-you-dismiss" data-notification-dismiss>{{ ui_icon_button(t('a11y.dismiss_notification'), 'x', type='submit') }}</form>{% endif %}
+  </div>
+  {% endif %}
+</li>
+{% endmacro %}
+
 {% block body %}
 {% if not apartments %}
   {% if not onboarding.dismissed %}{{ onboarding_welcome(onboarding, compact=True) }}
   {% else %}{% call ui_empty(t('onboarding.skipped_title'), t('onboarding.skipped_body'), t('apartments.add'), '/apartments/new') %}{{ ui_button(t('onboarding.open_checklist'), 'secondary', href='/onboarding') }}{% endcall %}{% endif %}
 {% else %}
   <div id="dashboard-more" class="ui-btn-group hidden" data-panel>{{ ui_button('+ ' ~ t('calendar.add_cleaning'), 'secondary', href='/cleaning/new') }}</div>
-  <nav class="ui-stats dashboard-stats" aria-label="{{ t('nav.overview') }}" data-dashboard-refresh="stats">
-    <a class="dashboard-stat action ui-stat{{ ' is-positive' if counts.attention > 0 }}" href="#needs-action"><strong class="ui-num">{{ counts.attention }}</strong><span>{{ t('dashboard.stat.action') }}</span></a>
-    <a class="dashboard-stat ready ui-stat{{ ' is-positive' if counts.ready > 0 }}" href="/reservations"><strong class="ui-num">{{ counts.ready }}</strong><span>{{ t('dashboard.stat.ready') }}</span></a>
-    <a class="dashboard-stat overdue ui-stat{{ ' is-positive' if counts.overdue > 0 }}" href="#needs-action"><strong class="ui-num">{{ counts.overdue }}</strong><span>{{ t('dashboard.stat.overdue') }}</span></a>
-  </nav>
-  {% include "_dashboard_calendar.html" %}
-  <div data-dashboard-refresh="work">
-  {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
-  {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
   {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
-  {% if link_unused %}
-  <section class="paste-check" data-paste-check aria-labelledby="paste-check-title">
-    <h2 id="paste-check-title">{{ t('workflow.paste.title') }}</h2>
-    <p>{{ t('workflow.paste.body') }}</p>
-    <details>
-      <summary>{{ t('workflow.paste.how') }}</summary>
-      <ul>
+  {% set needs_you = needs_you_build(rows, needs_you_queue, open_alerts, missing_report_rows, link_unused, lang, today) %}
+  {% set ny_lines = (needs_you.lines | rejectattr('kind', 'equalto', 'setup') | list) if banner_showing else needs_you.lines %}
+  <div data-dashboard-refresh="stats">
+  <section class="needs-you" id="needs-action" data-needs-you-card aria-labelledby="needs-you-title">
+    <h2 id="needs-you-title">{{ t('needs_you.title') }}{% if ny_lines %} <span class="ui-badge ui-badge-action" data-tone="{{ 'red' if ny_lines[0].tone == 'red' else 'amber' }}">{{ ny_lines | length }}</span>{% endif %}</h2>
+    {% if ny_lines %}
+    <ul class="needs-you-list">{% for line in ny_lines[:5] %}{{ needs_you_line(line) }}{% endfor %}</ul>
+    {% if ny_lines | length > 5 %}
+    <details class="needs-you-more"><summary>{{ tp('needs_you.more', ny_lines | length - 5) }}</summary>
+      <ul class="needs-you-list">{% for line in ny_lines[5:] %}{{ needs_you_line(line) }}{% endfor %}</ul>
+    </details>
+    {% endif %}
+    {% if ny_lines | selectattr('kind', 'equalto', 'paste') | list %}
+    <details class="needs-you-more" data-paste-check><summary>{{ t('workflow.paste.how') }}</summary>
+      <ul class="needs-you-how">
         <li>{{ t('workflow.paste.airbnb') }}</li>
         <li>{{ t('workflow.paste.booking') }}</li>
         <li>{{ t('workflow.paste.direct') }}</li>
       </ul>
     </details>
-    <div class="paste-check-actions">
-      {% for apartment in link_unused[:3] %}
-      <a class="ui-btn ui-btn-secondary" href="/apartments/{{ apartment.id }}?view=settings&amp;section=guests#communication">{{ t('workflow.paste.open') }}{% if link_unused | length > 1 %}: {{ apartment.internal_name }}{% endif %}</a>
-      {% endfor %}
-    </div>
+    {% endif %}
+    {% else %}
+    <p class="needs-you-calm">{{ icon('check', 20) }}<strong>{{ t('needs_you.calm') }}</strong>{% if needs_you.on_track %}<span>{{ tp('needs_you.on_track', needs_you.on_track) }}</span>{% endif %}</p>
+    {% endif %}
   </section>
-  {% endif %}
-  {% if missing_report_display and not banner_showing %}
-  {% set anchor_query = {'basics': 'view=settings&section=property', 'address': 'view=settings&section=property', 'ubyport': 'view=settings&section=reporting', 'calendars': 'view=bookings'} %}
-  {% set missing_text %}
-    <span class="dashboard-missing-list">
-    {% for row in missing_report_display %}
-    <span class="dashboard-missing-line"><strong>{{ property_identity(row.apartment.id, row.apartment.internal_name, true) }}</strong>: {{ t('dashboard.missing_banner.missing') }}
-      {% for item in row.missing %}<a href="/apartments/{{ row.apartment.id }}?{{ anchor_query.get(item.anchor, 'view=settings') }}#{{ item.anchor }}">{{ t('apartment.form.readiness.item.' ~ item.key) }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span>
-    {% endfor %}
-    {% if missing_report_more %}<a href="/apartments">{{ t('dashboard.missing_banner.and_more', count=missing_report_more) }}</a>{% endif %}
-    </span>
-    <span class="dashboard-missing-short">{{ tp('dashboard.setup.properties', missing_report_display | length + missing_report_more) }}</span>
-  {% endset %}
-  {{ ui_banner('attention', missing_text, t('dashboard.setup.title'), '/apartments') }}
-  {% endif %}
-  {% if rows %}
-  {% call ui_section(t('dashboard.section.needs_action', count=counts.attention), actions='<a href="/reservations">' ~ t('dashboard.section.view_stays') ~ '</a>', id='needs-action') %}
-    {{ dashboard_rows(queue_groups.needs_action, 'dashboard.queue.empty.action') }}
-    {% if additional_action_count %}<p class="ui-sub"><a href="/reservations">{{ t('dashboard.more_action', count=additional_action_count) }}</a></p>{% endif %}
-  {% endcall %}
-  {% endif %}
+  </div>
+  {% include "_dashboard_calendar.html" %}
+  <div data-dashboard-refresh="work">
+  {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
+  {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
   {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
   {{ onboarding_banner(onboarding) }}
   {% if not rows %}{% from "_workflow.html" import workflow_strip with context %}{{ workflow_strip(apartments[0] if apartments | length == 1 else none) }}{% endif %}
