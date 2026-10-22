@@ -480,6 +480,11 @@ templates.env.globals["stay_journey"] = workflow.journey
 templates.env.globals["journey_step"] = workflow.step_number
 templates.env.globals["link_window"] = workflow.link_window
 templates.env.globals["next_stay_window"] = workflow.next_stay_window
+# 0240: "What needs you" on the dashboard.
+from . import needs_you  # noqa: E402
+
+templates.env.globals["needs_you_build"] = needs_you.build
+
 templates.env.globals["legal_effective"] = _template_legal_effective
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals["identity_visible"] = _template_identity_visible
