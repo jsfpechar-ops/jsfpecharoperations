@@ -3,7 +3,7 @@
     only signal. Words come from workflow.* (0230), the same on every page. -#}
 {% macro workflow_strip(apartment=none, heading=true) %}
 <section class="workflow-block" data-workflow-strip{% if heading %} aria-labelledby="workflow-title"{% endif %}>
-  {% if heading %}<h2 id="workflow-title">{{ t('workflow.title') }}</h2>{% endif %}
+  {% if heading %}<h2 id="workflow-title" class="workflow-title">{{ t('workflow.title') }}</h2>{% endif %}
   <ol class="workflow-strip"{% if not heading %} aria-label="{{ t('workflow.title') }}"{% endif %}>
     {% for step in workflow_steps(apartment) %}
     <li class="workflow-strip-step{{ ' is-you' if step.who != 'auto' }}" data-workflow-step="{{ step.key }}">
