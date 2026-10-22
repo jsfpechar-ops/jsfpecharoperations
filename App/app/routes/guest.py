@@ -510,6 +510,25 @@ def _host_owns_apartment(request: Request, apartment) -> bool:
     return owner is not None and int(owner) == int(workspace["id"])
 
 
+def _host_link_note(request: Request, apartment) -> Optional[str]:
+    """0231: the signed-in owner learns why their link is empty.
+
+    Guests keep the neutral text, so no other stay's dates ever reach them.
+    """
+    if not apartment or not _host_owns_apartment(request, apartment):
+        return None
+    host_lang = host_i18n.lang_from_request(request)
+    upcoming = workflow.next_stay_window(apartment)
+    if upcoming["stay"] is not None and upcoming["window"]:
+        return host_i18n.translate(
+            host_lang,
+            "workflow.link.host_note",
+            stay=validation.fmt_date_short(upcoming["stay"]["date_from"]),
+            date=validation.fmt_date_short(upcoming["window"]["opens"].isoformat()),
+        )
+    return host_i18n.translate(host_lang, "workflow.link.host_note_none")
+
+
 def _require_pin(request: Request, token: str, lang: str):
     if not config.GUEST_PIN_REQUIRED:
         return None
