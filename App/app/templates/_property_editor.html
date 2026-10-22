@@ -183,6 +183,10 @@
           {{ field_label('permalink_window_days', t('apartment.form.guest_link.window_label'), t('apartment.form.guest_link.window_hint')) }}
           <input type="number" id="permalink_window_days" name="permalink_window_days" min="1" max="30" aria-describedby="permalink_window_days-help"
                  value="{{ apartment.permalink_window_days }}">
+          {%- set link_next = next_stay_window(apartment) if apartment.id else none %}
+          {%- if link_next %}
+          <p class="ui-sub link-window-note" data-link-window-note>{% if link_next.stay and link_next.window and link_next.window.state == 'now' %}{{ t('workflow.link.next_stay_now', stay=link_next.stay.date_from | date_short) }}{% elif link_next.stay and link_next.window %}{{ t('workflow.link.next_stay', stay=link_next.stay.date_from | date_short, date=link_next.window.opens.isoformat() | date_short) }}{% else %}{{ tp('workflow.link.no_stay', link_next.days) }}{% endif %}</p>
+          {%- endif %}
         </div>
         <div class="field">
           {{ field_label('permalink_reachback_days', t('apartment.form.guest_link.reachback_label'), t('apartment.form.guest_link.reachback_hint')) }}
