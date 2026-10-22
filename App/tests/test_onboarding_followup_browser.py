@@ -103,13 +103,7 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         page.goto(f"{base}/?lang={lang}")
 
         _ready(page)
-        dashboard_row = page.locator(".dashboard-row").first
-        assert dashboard_row.is_visible()
-        assert dashboard_row.locator(".dashboard-open").count() == 0
-        dashboard_row.locator(".row-menu-trigger").click()
-        menu = page.locator(".row-menu-panel.is-open")
-        assert menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).is_visible()
-        page.keyboard.press("Escape")
+        assert page.locator(".needs-you").is_visible()
         _fits(page)
 
         if width >= 1440:

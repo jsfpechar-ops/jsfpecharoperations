@@ -1,4 +1,4 @@
-"""Dashboard and stay-list rows (0194): one clean box per row at every width, sidebar open or collapsed.
+"""Stay-list rows (0194; the dashboard has no table since 0241): one clean box per row at every width, sidebar open or collapsed.
 
 Guards: every cell and badge sits inside its row's box (no overflow), only the first and last cell of a
 row carry a side border or radius (no per-cell boxes), and the number of row boxes equals the row count.
@@ -26,7 +26,6 @@ GUARD_WIDTHS = (390, 700, 900, 1023, 1024, 1100, 1200, 1280, 1366, 1440, 1536, 2
 LANG = os.environ.get("DASH_ROWS_LANG", "cs")
 SHOT_DIR = pathlib.Path(os.environ.get("DASH_ROWS_SHOT_DIR", "/mnt/project-files/design-reset/checkpoint-4-shell-fixes"))
 PATHS = (
-    (f"/?lang={LANG}", "#needs-action table.ui-table", "dashboard"),
     (f"/reservations?lang={LANG}", "table.ui-table", "stays"),
 )
 
