@@ -234,7 +234,7 @@ def test_a_stay_that_needs_the_host_gets_one_line_with_one_button(host_with_prop
         assert line, "the stay arriving tomorrow has no line"
         assert "The guest arrives tomorrow and has not filled in the guest form." in line.group(1)
         assert line.group(1).count('class="ui-btn') == 1
-        assert f'href="/reservations/{reservation_id}?return_to=/#stay-link"' in line.group(1)
+        assert f'href="/reservations/{reservation_id}?return_to=/#now"' in line.group(1)
     finally:
         db.execute("DELETE FROM reservation WHERE id = ?", (reservation_id,))
 

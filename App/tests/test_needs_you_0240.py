@@ -44,7 +44,7 @@ def test_each_stay_gets_one_plain_line_with_the_exact_button():
     assert lines[1]["text"] == "The police did not accept the report." and lines[1]["href"].endswith("#guests")
     assert lines[2]["action"] == "Send the report" and lines[2]["href"].endswith("#now")
     assert lines[3]["text"] == "The guest arrives tomorrow and has not filled in the guest form."
-    assert lines[3]["href"] == "/reservations/3?return_to=/#stay-link"
+    assert lines[3]["href"] == "/reservations/3?return_to=/#now"
     assert lines[4]["tone"] == "red" and lines[4]["text"] == "The police deadline has passed."
 
 
