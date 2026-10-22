@@ -1319,8 +1319,8 @@ def test_wizard_polish_and_overview_cards(host, base_url, monkeypatch, lang, wid
         _shot(page, f"25-summary-cards-{tag}.png")
         with page.expect_navigation():
             page.locator(".setup-wizard-foot .ui-btn-primary").click()
-        # 0203: the finish button goes to the dashboard, not the property.
-        assert "/setup" not in page.url and "/apartments/" not in page.url, page.url
+        # 0274 (M): police is still waiting, so the finish button opens that step.
+        assert f"/apartments/{flat['id']}/setup/police" in page.url, page.url
         page.goto(f"{base_url}/apartments/{flat['id']}?view=overview&lang={lang}")
         overview = page.locator(".host-property-grid").first
         assert overview.get_by_text(_t(lang, "wizard.overview.calendars"), exact=True).is_visible()
