@@ -498,6 +498,11 @@
 </div>
 {% endmacro %}
 
+{#- 0252: a visible "Open" cue for a row that opens on click; the row itself is the link. -#}
+{% macro row_open() -%}
+<span class="row-open" aria-hidden="true"><span class="row-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span>
+{%- endmacro %}
+
 {% macro source_badge(key, label) %}
 <span class="source-badge">{{ source_mark(key) }}{{ label }}</span>
 {% endmacro %}

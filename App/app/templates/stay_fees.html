@@ -1,7 +1,7 @@
 {% extends "host_page.html" %}
 {% set nav = 'stay_fees' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import row_menu_begin, row_menu_end, empty_state with context %}
+{% from "_components.html" import row_menu_begin, row_menu_end, row_open, empty_state with context %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('stay_fees.title') }}{% endblock %}
 {% block page_title %}{{ t('stay_fees.title') }}{% endblock %}
@@ -124,14 +124,14 @@
         </td>
         {% if fee_list.all_unset %}
         <td data-label="{{ t('filter.status') }}"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stay_fees.status.not_setup') }}</span></td>
-        <td class="nowrap row-actions" data-label=""><a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
+        <td class="nowrap row-actions" data-label="">{{ row_open() }}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
         {% else %}
         <td data-label="{{ t('stay_fees.col.period') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.liable') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.exempt') }}">—</td>
         <td class="num" data-label="{{ t('stay_fees.col.total') }}">—</td>
         <td data-label="{{ t('filter.status') }}"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('stay_fees.status.not_setup') }}</span></td>
-        <td class="nowrap row-actions" data-label=""><a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
+        <td class="nowrap row-actions" data-label="">{{ row_open() }}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ t('stay_fees.setup.action') }}</a></td>
         {% endif %}
       </tr>
       {% else %}
@@ -165,7 +165,7 @@
             <span class="ui-badge ui-badge-action" data-tone="blue">{{ t('stay_fees.status.ready') }}</span>
           {% endif %}
         </td>
-        <td class="nowrap row-actions" data-label="">{{ row_menu_begin() }}<a class="row-menu-item" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" role="menuitem">{{ t('stay_fees.open_report') }}</a>{{ row_menu_end() }}</td>
+        <td class="nowrap row-actions" data-label="">{{ row_open() }}{{ row_menu_begin() }}<a class="row-menu-item" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" role="menuitem">{{ t('stay_fees.open_report') }}</a>{{ row_menu_end() }}</td>
       </tr>
       {% endif %}
     {% endfor %}
