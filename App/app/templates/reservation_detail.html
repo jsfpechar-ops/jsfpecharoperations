@@ -293,7 +293,7 @@
         <p class="guest-card-note {{ 'err-text' if issue.is_error else 'warn-text' }}">{{ validation_message(issue.message) }}</p>
       {% endfor %}
       {% if guest.last_errors %}
-        <p class="guest-card-note err-text">{{ guest.last_errors }}</p>
+        <p class="guest-card-note err-text">{% if guest.submit_state == 'blocked' %}{{ t('stay.detail.guest_blocked', reason=guest.last_errors) }}{% elif guest.submit_state == 'error' %}{{ t('stay.detail.guest_refused', reason=guest.last_errors) }}{% else %}{{ guest.last_errors }}{% endif %}</p>
       {% endif %}
     </li>
   {% endfor %}
