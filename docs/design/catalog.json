@@ -160,7 +160,8 @@
     "lock-choice-form",
     "lock-choice-option",
     "lock-choice-yes",
-    "lock-choice-note"
+    "lock-choice-note",
+    "fee-more"
   ],
   "hooks": [
     "sr-only",
@@ -869,6 +870,7 @@
     "lock-choice-form": "0234 form wrapping the No smart lock answer card.",
     "lock-choice-option": "0234 one bordered answer card (button or summary).",
     "lock-choice-yes": "0234 details holding the Yes card and the lock panel.",
-    "lock-choice-note": "0234 one quiet line under the lock answers."
+    "lock-choice-note": "0234 one quiet line under the lock answers.",
+    "fee-more": "Stay fee editor in Settings: folds the council's print-only details (address, contact, data box) (0239)."
   }
 }

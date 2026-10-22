@@ -246,6 +246,7 @@ STRINGS: Dict[str, str] = {
     "stay_fees.setup.calculation": "Cách tính",
     "stay_fees.setup.payment": "Thanh toán",
     "stay_fees.setup.council": "Chính quyền và cách gửi",
+    "stay_fees.setup.more_details": "Thêm thông tin (không bắt buộc)",
     "stay_fees.status.not_setup": "Chưa thiết lập",
     "stay_fees.status.ready": "Sẵn sàng",
     "stay_fees.status.in_progress": "Đang thực hiện",
@@ -3174,8 +3175,8 @@ STRINGS.update({
 # 0204: onboarding user test (2026-10-21).
 STRINGS.update({
     "common.required_legend": "Các trường có dấu * là bắt buộc.",
-    "entity.signature.heading": "Chữ ký của bạn trên báo cáo phí lưu trú",
-    "entity.signature.scope": "Không bắt buộc. Thành phố yêu cầu báo cáo phí lưu trú có chữ ký. Vẽ chữ ký một lần, UbyHost sẽ thêm vào mọi báo cáo, bạn không cần in và ký tay. Nếu không có, tên bạn nhập sẽ được in.",
+    "entity.signature.heading": "Chữ ký (không bắt buộc)",
+    "entity.signature.scope": "Được in trên mọi báo cáo phí lưu trú, bạn không cần ký tay. Nếu không có, tên bạn nhập sẽ được in.",
     "apartment.form.addr.street_hint": "Điền nếu đường có tên. Ở làng không có tên đường, chỉ cần số nhà.",
     "wizard.guest_link.message_title": "Mẫu tin nhắn cho khách",
     "wizard.guest_link.message_step1": "Thay các phần trong [ngoặc vuông] bằng thông tin của bạn: giao chìa khóa, chỉ đường, giờ yên tĩnh.",
@@ -3205,7 +3206,7 @@ STRINGS.update({
     "why.try": "Xem khách của bạn sẽ thấy gì. Tự điền biểu mẫu bằng thông tin giả. Không có gì được gửi cho cảnh sát, và bạn có thể xóa bản thử sau đó.",
     "why.police": "Mỗi khách nước ngoài phải được khai báo với cảnh sát trong vòng ba ngày làm việc kể từ khi đến. UbyHost làm việc này cho bạn qua Ubyport. Nó cần thông tin đăng nhập mà cảnh sát đã gửi cho bạn qua thư.",
     "why.police_wait": "Chưa có? Bấm “Tôi vẫn đang chờ thông tin đăng nhập từ cảnh sát” và tiếp tục.",
-    "why.stay_fee": "Hầu hết các địa phương thu phí lưu trú của khách (tối đa 50 CZK mỗi người mỗi đêm) và yêu cầu báo cáo định kỳ. UbyHost tính phí cho từng lượt lưu trú và chuẩn bị báo cáo cùng mã QR để thanh toán. Mức phí, mã biến số và số tài khoản có trên trang web của địa phương hoặc trong thư đăng ký.",
+    "why.stay_fee": "UbyHost tính phí cho từng lượt lưu trú và chuẩn bị báo cáo cùng mã QR thanh toán.",
     "why.stay_fee_skip": "Địa phương của bạn không thu phí này? Hãy bỏ qua bước này.",
     "why.door_lock": "Không bắt buộc. Bạn có khóa thông minh TTLock kèm gateway? Khi đó UbyHost tạo cho mỗi lượt lưu trú một mã cửa chỉ dùng được trong thời gian lưu trú. Khách nhận mã khi mọi người đã đăng ký xong, nên bạn không cần giao chìa khóa.",
     "why.automation": "Chọn khi nào UbyHost khai báo khách với cảnh sát. Chúng tôi khuyên dùng gửi sau một khoảng chờ: bạn có thời gian kiểm tra thông tin và không bao giờ trễ hạn ba ngày. Bạn có thể đổi lựa chọn này bất cứ lúc nào.",
