@@ -17,6 +17,11 @@
     <button class="ui-btn ui-btn-secondary setup-wizard-copy" type="button" data-copy="wizard-guest-pin" data-copy-label="{{ t('wizard.guest_link.copy_pin') }}" data-copied-label="{{ t('common.copied') }}">{{ t('wizard.guest_link.copy_pin') }}</button>
   </section>
 </div>
+{% set link_next = next_stay_window(apartment) %}
+<p class="setup-wizard-instruction link-window-note" data-link-window-note>
+  {% if link_next.stay and link_next.window and link_next.window.state == 'now' %}{{ t('workflow.link.next_stay_now', stay=link_next.stay.date_from | date_short) }}{% elif link_next.stay and link_next.window %}{{ t('workflow.link.next_stay', stay=link_next.stay.date_from | date_short, date=link_next.window.opens.isoformat() | date_short) }}{% else %}{{ tp('workflow.link.no_stay', link_next.days) }}{% endif %}
+  <a href="{{ permalink }}" target="_blank" rel="noopener" data-link-preview>{{ t('workflow.link.preview') }}</a>
+</p>
 <section class="setup-wizard-message" aria-labelledby="wizard-message-title">
   <header class="setup-wizard-message-head">
     <h3 id="wizard-message-title">{{ t('wizard.guest_link.message_title') }}</h3>

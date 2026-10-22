@@ -23,7 +23,7 @@ TOKEN = "statuscolourtoken"
 
 # <span class="pill blue" title="...">Label</span>, with the title optional.
 PILL = re.compile(
-    r'<span class="ui-badge ui-badge-[a-z]+(?: ui-badge-overdue)?" data-tone="([a-z]+)"(?: title="([^"]*)")?>(?:! )?([^<]*)</span>',
+    r'<span class="ui-badge ui-badge-[a-z]+(?: ui-badge-overdue)?" data-tone="([a-z]+)"(?: title="([^"]*)")?>(?:! )?(?:<span class="ui-badge-step"[^>]*>[^<]*</span>)?([^<]*)</span>',
 )
 
 # Pills a page template still writes literally; they move to ui_badge with their page brief (0136, 0140).

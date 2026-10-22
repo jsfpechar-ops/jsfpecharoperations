@@ -472,6 +472,14 @@ templates.env.globals["section_tabs"] = _template_section_tabs
 templates.env.globals["page_tabs"] = _template_page_tabs
 templates.env.globals["passkeys_enabled"] = _template_passkeys_enabled
 templates.env.globals["door_codes_enabled"] = _template_door_codes_enabled
+# 0230: the five-step story, the same words on every host page.
+from . import workflow  # noqa: E402
+
+templates.env.globals["workflow_steps"] = workflow.steps
+templates.env.globals["stay_journey"] = workflow.journey
+templates.env.globals["journey_step"] = workflow.step_number
+templates.env.globals["link_window"] = workflow.link_window
+templates.env.globals["next_stay_window"] = workflow.next_stay_window
 templates.env.globals["legal_effective"] = _template_legal_effective
 templates.env.globals["bilingual_message"] = host_i18n.bilingual_message
 templates.env.globals["identity_visible"] = _template_identity_visible

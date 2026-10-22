@@ -1,0 +1,39 @@
+{#- 0232: the five-step story (A) and one stay's place in it (B). Real ordered
+    lists; the current step is named for screen readers; colour is never the
+    only signal. Words come from workflow.* (0230), the same on every page. -#}
+{% macro workflow_strip(apartment=none, heading=true) %}
+<section class="workflow-block" data-workflow-strip{% if heading %} aria-labelledby="workflow-title"{% endif %}>
+  {% if heading %}<h2 id="workflow-title" class="workflow-title">{{ t('workflow.title') }}</h2>{% endif %}
+  <ol class="workflow-strip"{% if not heading %} aria-label="{{ t('workflow.title') }}"{% endif %}>
+    {% for step in workflow_steps(apartment) %}
+    <li class="workflow-strip-step{{ ' is-you' if step.who != 'auto' }}" data-workflow-step="{{ step.key }}">
+      <span class="workflow-num" aria-hidden="true">{{ step.n }}</span>
+      <span class="workflow-strip-copy">
+        <span class="workflow-strip-label">{{ t('workflow.step.' ~ step.key) }}</span>
+        <span class="workflow-tag">{{ t('workflow.who.' ~ step.who) }}</span>
+      </span>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endmacro %}
+
+{% macro stay_journey_panel(journey) %}
+{% if journey %}
+{% set now_step = journey.steps[journey.current - 1] %}
+<details class="journey" data-journey>
+  <summary>
+    <ol class="journey-dots" aria-hidden="true">{% for step in journey.steps %}<li class="is-{{ step.state }}"></li>{% endfor %}</ol>
+    <span class="journey-label">{% if journey.complete %}{{ t('workflow.journey.complete') }}{% else %}{{ t('workflow.journey.label', n=journey.current, total=journey.total, step=t('workflow.short.' ~ now_step.key)) }}{% endif %}</span>
+  </summary>
+  <ol class="journey-steps">
+    {% for step in journey.steps %}
+    <li class="is-{{ step.state }}"{% if step.state == 'current' %} aria-current="step"{% endif %}>
+      <span class="workflow-num" aria-hidden="true">{% if step.state == 'done' %}✓{% else %}{{ step.n }}{% endif %}</span>
+      <span>{{ t('workflow.step.' ~ step.key) }}{% if step.state != 'todo' %} <span class="sr-only">({{ t('workflow.journey.state.' ~ step.state) }})</span>{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ol>
+</details>
+{% endif %}
+{% endmacro %}

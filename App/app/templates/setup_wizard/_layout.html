@@ -2,7 +2,7 @@
 {% set body_kind = 'form' %}
 {% block title %}{{ t('wizard.title', name=apartment.internal_name) }}{% endblock %}
 {% block page_title %}{{ t('wizard.title', name=apartment.internal_name) }}{% endblock %}
-{% block meta %}{% if wizard_number %}{{ t('wizard.count', n=wizard_number, total=wizard_total, step=t('wizard.step.' ~ wizard_step)) }}{% elif guide %}{{ t('wizard.count', n=guide.number, total=guide.total, step=t('wizard.step.' ~ guide.key)) }}{% endif %}{% endblock %}
+{% block meta %}{% if wizard_number %}{{ t('wizard.count', n=wizard_number, total=wizard_total, step=t('wizard.step.' ~ wizard_step) ~ (t('wizard.optional_suffix') if wizard_step in ('stay_fee', 'door_lock') else '')) }}{% elif guide %}{{ t('wizard.count', n=guide.number, total=guide.total, step=t('wizard.step.' ~ guide.key) ~ (t('wizard.optional_suffix') if guide.key in ('stay_fee', 'door_lock') else '')) }}{% endif %}{% endblock %}
 {% block body %}
 {% from "_components.html" import help_tip, copy_button, progress_pill, guest_count with context %}
 {% set base_setup = '/apartments/' ~ apartment.id ~ '/' ~ 'setup' %}

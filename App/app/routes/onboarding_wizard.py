@@ -17,12 +17,13 @@ router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 
 _SETUP_ACTIONS = {
     "skip": property_setup.SKIPPABLE,
+    "none": frozenset({"door_lock"}),
     "done": property_setup.TEACHING,
     "wait": frozenset({"police"}),
     "demo": frozenset({"try_it"}),
     "keep_demo": frozenset({"try_it"}),
 }
-_SETUP_MARKS = {"skip": "skipped", "wait": "waiting"}
+_SETUP_MARKS = {"skip": "skipped", "wait": "waiting", "none": "not_needed"}
 
 
 def wizard_return_to(apartment_id: int, step: str) -> str:

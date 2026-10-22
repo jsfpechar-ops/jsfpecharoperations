@@ -26,7 +26,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, door_codes, guest_slug, guest_uk_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, door_codes, guest_slug, guest_uk_i18n, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -510,6 +510,25 @@ def _host_owns_apartment(request: Request, apartment) -> bool:
     return owner is not None and int(owner) == int(workspace["id"])
 
 
+def _host_link_note(request: Request, apartment) -> Optional[str]:
+    """0231: the signed-in owner learns why their link is empty.
+
+    Guests keep the neutral text, so no other stay's dates ever reach them.
+    """
+    if not apartment or not _host_owns_apartment(request, apartment):
+        return None
+    host_lang = host_i18n.lang_from_request(request)
+    upcoming = workflow.next_stay_window(apartment)
+    if upcoming["stay"] is not None and upcoming["window"]:
+        return host_i18n.translate(
+            host_lang,
+            "workflow.link.host_note",
+            stay=validation.fmt_date_short(upcoming["stay"]["date_from"]),
+            date=validation.fmt_date_short(upcoming["window"]["opens"].isoformat()),
+        )
+    return host_i18n.translate(host_lang, "workflow.link.host_note_none")
+
+
 def _require_pin(request: Request, token: str, lang: str):
     if not config.GUEST_PIN_REQUIRED:
         return None
@@ -637,6 +656,7 @@ def _unavailable(
     reason: str = "bad_link",
     status_code: int = 404,
     token: Optional[str] = None,
+    host_note: Optional[str] = None,
 ):
     """The one page a guest lands on when there is nothing to fill in.
 
@@ -683,6 +703,7 @@ def _unavailable(
             # stay hub and here only, so it never competes on the PIN, claim or
             # form screens. Wired off until that feature ships.
             "show_invoice_link": False,
+            "host_note": host_note,
             "privacy_url": _guest_link(token) + "/privacy" + _lang_q(lang) if token else None,
         }
     )
@@ -1070,7 +1091,8 @@ def pick_stay(token: str, request: Request):
             visible_ids.add(extra["id"])
 
     if not reservations:
-        return _with_lang(_unavailable(request, lang, "no_stays", 200, token), lang)
+        note = _host_link_note(request, apartment)
+        return _with_lang(_unavailable(request, lang, "no_stays", 200, token, host_note=note), lang)
 
     owned = set(_owned_ids(request))
     today = claim.prague_today()

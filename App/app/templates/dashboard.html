@@ -72,6 +72,25 @@
   {% set focus_is_urgent = focus and focus.urgency in ('overdue', 'urgent') %}
   {% set finish_card_showing = onboarding and onboarding.finished and onboarding.finish and not onboarding.dismissed %}
   {% set banner_showing = onboarding and onboarding.current and not onboarding.finished and not onboarding.dismissed %}
+  {% if link_unused %}
+  <section class="paste-check" data-paste-check aria-labelledby="paste-check-title">
+    <h2 id="paste-check-title">{{ t('workflow.paste.title') }}</h2>
+    <p>{{ t('workflow.paste.body') }}</p>
+    <details>
+      <summary>{{ t('workflow.paste.how') }}</summary>
+      <ul>
+        <li>{{ t('workflow.paste.airbnb') }}</li>
+        <li>{{ t('workflow.paste.booking') }}</li>
+        <li>{{ t('workflow.paste.direct') }}</li>
+      </ul>
+    </details>
+    <div class="paste-check-actions">
+      {% for apartment in link_unused[:3] %}
+      <a class="ui-btn ui-btn-secondary" href="/apartments/{{ apartment.id }}?view=settings&amp;section=guests#communication">{{ t('workflow.paste.open') }}{% if link_unused | length > 1 %}: {{ apartment.internal_name }}{% endif %}</a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
   {% if missing_report_display and not banner_showing %}
   {% set anchor_query = {'basics': 'view=settings&section=property', 'address': 'view=settings&section=property', 'ubyport': 'view=settings&section=reporting', 'calendars': 'view=bookings'} %}
   {% set missing_text %}
@@ -94,6 +113,7 @@
   {% endif %}
   {% if finish_card_showing and focus_is_urgent %}{{ onboarding_finish_strip(onboarding) }}{% endif %}
   {{ onboarding_banner(onboarding) }}
+  {% if not rows %}{% from "_workflow.html" import workflow_strip with context %}{{ workflow_strip(apartments[0] if apartments | length == 1 else none) }}{% endif %}
   {% if not rows and feed_count %}{{ ui_empty(t('dashboard.empty.no_stays')) }}
   {% elif not rows %}{{ ui_empty(t('dashboard.empty.no_feed'), '', t('dashboard.empty.connect_calendar'), '/apartments/' ~ apartments[0].id ~ '?view=bookings#calendars', primary=false) }}
   {% endif %}

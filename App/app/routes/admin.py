@@ -55,6 +55,7 @@ from .. import (
     stay_fee_auto,
     ttlock,
     validation,
+    workflow,
 )
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
@@ -479,6 +480,8 @@ def dashboard(request: Request):
             "celebration_milestone": milestone,
             "sent_guest_count": sent_count,
             "minutes_saved": minutes_saved,
+            # 0233: remind until a real guest has used the guest link.
+            "link_unused": workflow.link_unused(apartments),
         },
     )
 
@@ -2164,7 +2167,7 @@ def _setup_after_save(
             msg=_flash(request, "flash.setup.complete"),
         )
     status = property_setup.step_status(step, state, apartment, facts_payload)
-    if status not in ("done", "skipped"):
+    if status not in ("done", "skipped", "not_needed"):
         missing = _missing_report_labels(request, issues)
         if step == "door_lock":
             notice = _flash(request, "flash.error.door_code_lock")

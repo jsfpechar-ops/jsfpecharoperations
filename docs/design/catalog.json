@@ -150,7 +150,17 @@
     "setup-wizard-celebrate",
     "setup-wizard-confetti",
     "setup-wizard-lock-panel",
-    "setup-wizard-message-steps"
+    "setup-wizard-message-steps",
+    "paste-check",
+    "paste-check-actions",
+    "link-window",
+    "link-window-line",
+    "link-window-note",
+    "lock-choice",
+    "lock-choice-form",
+    "lock-choice-option",
+    "lock-choice-yes",
+    "lock-choice-note"
   ],
   "hooks": [
     "sr-only",
@@ -759,7 +769,8 @@
       "setup-wizard-lock-field",
       "setup-wizard-skip",
       "switch",
-      "two"
+      "two",
+      "setup-wizard-section-title"
     ],
     "App/app/templates/setup_wizard/guest_link.html": [
       "field-label-row",
@@ -770,7 +781,8 @@
       "setup-wizard-message",
       "setup-wizard-message-head",
       "setup-wizard-pin",
-      "setup-wizard-url"
+      "setup-wizard-url",
+      "setup-wizard-instruction"
     ],
     "App/app/templates/setup_wizard/police.html": [
       "err-text",
@@ -847,6 +859,16 @@
     "setup-wizard-celebrate": "Setup wizard finish banner, green, holds the one-time confetti (0203).",
     "setup-wizard-confetti": "Decorative confetti pieces inside setup-wizard-celebrate; aria-hidden, off for reduced motion (0203).",
     "setup-wizard-lock-panel": "Setup wizard lock step: wraps the smart locks panel so connecting a lock stays in the wizard (0203).",
-    "setup-wizard-message-steps": "Setup wizard guest message: the numbered steps that say how to use the template (0204)."
+    "setup-wizard-message-steps": "Setup wizard guest message: the numbered steps that say how to use the template (0204).",
+    "paste-check": "0233 dashboard card: no guest has used the guest link yet; bordered, amber left edge, how-to behind a details.",
+    "paste-check-actions": "0233 button row inside paste-check.",
+    "link-window": "0231 status text: when a stay is on the guest link (amber when not yet).",
+    "link-window-line": "0231 stay page line holding link-window and its ? tip.",
+    "link-window-note": "0231 one sentence naming the next stay and the day it reaches the guest link (property editor, wizard).",
+    "lock-choice": "0234 two big answer cards for the wizard lock question.",
+    "lock-choice-form": "0234 form wrapping the No smart lock answer card.",
+    "lock-choice-option": "0234 one bordered answer card (button or summary).",
+    "lock-choice-yes": "0234 details holding the Yes card and the lock panel.",
+    "lock-choice-note": "0234 one quiet line under the lock answers."
   }
 }

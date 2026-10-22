@@ -61,6 +61,8 @@
 
 {# --- 1. Now ------------------------------------------------------------ #}
 <section class="panel stay-command-panel" id="now">
+  {% from "_workflow.html" import stay_journey_panel with context %}
+  {{ stay_journey_panel(stay_journey(reservation, progress)) }}
   <div class="stay-command-main">
     <div>
       <div class="eyebrow">{{ t('stay.detail.next_step') }}</div>
@@ -87,8 +89,11 @@
         {% elif door_code.state == 'preparing' %}{{ t('stay.detail.door_code.preparing') }}
         {% else %}{{ t('stay.detail.door_code.waiting') }}{% endif %}
       </p>{% endif %}
+      {% set lw = link_window(reservation) if progress.status in ('awaiting_guest', 'incomplete') else none %}
+      {% if lw %}<p class="ui-sub link-window-line" data-link-window="{{ lw.state }}"><span class="link-window{{ ' is-later' if lw.state == 'from' }}">{{ t('workflow.link.now') if lw.state == 'now' else t('workflow.link.from', date=lw.opens.isoformat() | date_short) }}</span>{% if lw.state == 'from' %}{{ help_tip('link-window-help', t('workflow.link.why')) }}{% endif %}</p>{% endif %}
     </div>
     <div class="stay-command-actions">
+      {% if lw and lw.state == 'from' %}<button class="ui-btn ui-btn-secondary" type="button" data-copy="stay-link" data-copy-label="{{ t('workflow.link.copy_own') }}" data-copied-label="{{ t('stay.detail.link_copied') }}" data-copy-own-link>{{ t('workflow.link.copy_own') }}</button>{% endif %}
       {% if ns.count_edit %}<a class="ui-btn ui-btn-secondary" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a>{% endif %}
       {% if send_controls.send_enabled %}
         {% if progress.status == 'failed' %}
