@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-21.
+Updated: 2026-10-22.
 
 ## Production
 
@@ -10,6 +10,7 @@ Updated: 2026-10-21.
 
 ## Now
 
+- Foolproof workflow round 1 (0230-0237): 5-step strip, stay tracker, guest-link window line, paste reminder, lock question. **Owner:** review PR, merge, deploy (`?v=` keys).
 - Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
 - #418 onboarding fixes 0203-0212; address open.
 - Stay-fee email 0220-0224: built, owner staging test.

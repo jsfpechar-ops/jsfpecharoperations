@@ -62,3 +62,23 @@ Expected: all passed, 0 skipped. A failure: fix nothing else; quote the last 30 
 ## 9. Report
 
 Write `docs/tasks/0236-report.md` (400 tokens at most): commits, the step 4 result lines, deviations. Set `Status: review`, commit both as `0236 report` (git add those two files only). Do not push or open a PR.
+
+## 2. Context
+
+See section 1 and the parent brief.
+
+## 5. Do not touch
+
+Everything outside section 3.
+
+## 6. Commands
+
+As in section 4.
+
+## 7. Acceptance
+
+- [x] The section 4 commands pass.
+
+## 8. Stop and ask
+
+A test fails twice, or a step is unclear: stop and report.
