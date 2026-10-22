@@ -103,11 +103,12 @@ def test_a_calendar_failure_card_names_the_feed_and_the_error():
     params = {"feed": "Karlín Loft", "error": "HTTP 500 from the calendar server"}
     en = _card("feed_error", "stored", "stored", params, "en")
     cs = _card("feed_error", "stored", "stored", params, "cs")
-    assert en["display_title"] == "Calendar 'Karlín Loft' could not be synchronised."
+    assert en["display_title"] == "Calendar 'Karlín Loft' could not be read."
     assert en["display_detail"] == (
-        "The calendar server answered: HTTP 500 from the calendar server"
+        "New bookings from it will not appear until this is fixed. Check the calendar link. "
+        "The calendar server said: HTTP 500 from the calendar server"
     )
-    assert cs["display_title"] == "Kalendář 'Karlín Loft' se nepodařilo synchronizovat."
+    assert cs["display_title"] == "Kalendář 'Karlín Loft' se nepodařilo načíst."
     assert "HTTP 500" in cs["display_detail"]
 
 
@@ -117,14 +118,14 @@ def test_a_calendar_failure_card_names_the_feed_and_the_error():
         (
             "submission_immediate",
             {"property": "Loft", "error": "timeout"},
-            "Loft: automatic send failed after registration completed.",
-            "Loft: automatické odeslání po dokončení registrace selhalo.",
+            "Loft: the police report could not be sent.",
+            "Loft: hlášení policii se nepodařilo odeslat.",
         ),
         (
             "submission_transport",
             {"property": "Loft", "error": "timeout"},
-            "Loft: could not deliver data to UbyPort.",
-            "Loft: data se nepodařilo doručit do UbyPortu.",
+            "Loft: the police system could not be reached.",
+            "Loft: policejní systém nebyl dostupný.",
         ),
     ],
 )
@@ -140,8 +141,8 @@ def test_a_rejected_report_counts_the_records_in_the_hosts_language():
     params = {"property": "Loft", "count": 3, "failed": 2, "blocked": 1}
     en = _card("submission_rejected", "stored", "stored", params, "en")
     cs = _card("submission_rejected", "stored", "stored", params, "cs")
-    assert en["display_title"] == "Loft: UbyPort did not accept 3 guest record(s)."
-    assert cs["display_title"] == "Loft: UbyPort nepřijal 3 záznamů hostů."
+    assert en["display_title"] == "Loft: the police did not accept 3 guest record(s)."
+    assert cs["display_title"] == "Loft: policie nepřijala 3 záznamů hostů."
     assert "2" in en["display_detail"] and "1" in en["display_detail"]
     assert "2" in cs["display_detail"] and "1" in cs["display_detail"]
     assert "Report header rejected" not in en["display_detail"]
@@ -172,7 +173,7 @@ def test_the_ubyport_code_list_stays_english_on_purpose():
     params = {"property": "Loft"}
     cs = _card("apartment_setup", "stored english", "IČO is missing", params, "cs")
     assert cs["display_title"] == (
-        "Loft: nastavení UbyPortu není úplné, nelze nic nahlásit."
+        "Loft: nastavení pro policii není hotové, takže se žádné hlášení neodešle."
     )
     assert cs["display_detail"] == "IČO is missing"
 
@@ -213,7 +214,7 @@ def test_raise_alert_stores_the_values_the_card_needs(monkeypatch):
     alerts.raise_alert(
         "warning",
         "submission_transport",
-        "Loft: could not deliver data to UbyPort.",
+        "Loft: the police system could not be reached.",
         "timeout",
         dedupe_key="submission_transport:1",
         apartment_id=1,
@@ -222,7 +223,7 @@ def test_raise_alert_stores_the_values_the_card_needs(monkeypatch):
 
     assert json.loads(captured["params"]) == {"property": "Loft", "error": "timeout"}
     shown = alerts.present(captured, "cs")
-    assert shown["display_title"] == "Loft: data se nepodařilo doručit do UbyPortu."
+    assert shown["display_title"] == "Loft: policejní systém nebyl dostupný."
     assert "timeout" in shown["display_detail"]
 
 
