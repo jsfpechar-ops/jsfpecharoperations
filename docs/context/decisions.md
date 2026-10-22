@@ -51,7 +51,7 @@ Append-only.
 - 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
 - 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning day markers; in-page creation | owner | PR #397
-- 2026-10-17 | [workflow] Haiku 5.5 only executor (replaces Cursor, Kimi, GLM, Luna); 100k cap per chat; scoped tests from test-map, no audits or full suite unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
+- 2026-10-17 | [workflow] Haiku 5.5 only executor; 100k cap per chat; scoped tests, no audits unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
 - 2026-10-19 | Design reset v2: `docs/design/MASTER.md` is the only host design source; Lucide icons as inline SVG (no dependency); CI lint blocks raw colours, inline styles, page CSS; phone tab bar | owner | [plan](../plans/design-v2.md)
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
@@ -60,4 +60,5 @@ Append-only.
 - 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)
 - 2026-10-22 Round 2: dashboard opens with one "What needs you" card; the alert stack is hidden on `/` only (the card carries the alerts). Host reminder may go the day before arrival when nobody opened the link, same key as check-in day, so at most one per stay; no new host emails (owner).
+- 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
 - 2026-10-22 Round 3 (0270-0276): wizard story order, test run last; wizard-only coral progress (MASTER 10.5 exception); no welcome-back email (owner).

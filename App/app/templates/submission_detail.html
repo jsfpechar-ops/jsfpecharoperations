@@ -1,7 +1,7 @@
 {% extends "host_page.html" %}
 {% set nav = 'submissions' %}
 {% set body_kind = 'detail' %}
-{% from "_components.html" import submission_pill, row_menu_begin, row_menu_end, copy_button with context %}
+{% from "_components.html" import submission_pill, row_menu_begin, row_menu_end, row_open, copy_button with context %}
 {# The two coral links below sit in exclusive branches (failed vs receipt), as on the stay detail. #}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ t('reports.detail.title', id=submission.id) }}{% endblock %}
@@ -131,7 +131,7 @@
           {% else %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ guest.result }}</span>{% endif %}
           {% if guest.errors %}<div class="ui-sub err-text">{{ guest.errors }}</div>{% endif %}
         </td>
-        <td class="ui-cell-acts row-actions" data-card="actions" data-label="">
+        <td class="ui-cell-acts row-actions" data-card="actions" data-label="">{{ row_open() }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">{{ t('common.edit') }}</a>
           {{ row_menu_end() }}

@@ -1,7 +1,7 @@
 {% extends "host_page.html" %}
 {% set nav = 'stay_fees' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import row_menu_begin, row_menu_end, empty_state with context %}
+{% from "_components.html" import row_menu_begin, row_menu_end, row_open, empty_state with context %}
 {% from "_ui_layout.html" import ui_section_tabs with context %}
 {% block title %}{{ t('stay_fees.title') }}{% endblock %}
 {% block page_title %}{{ t('stay_fees.title') }}{% endblock %}
@@ -119,7 +119,7 @@
       {% if period.unset %}
       <tr class="clickable-row" data-href="{{ fee_settings_url(apartment.id, fee_return) }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('stay_fees.col.property') }}">
-          <a class="row-primary-link" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ apartment.internal_name }}</a>
+          <a class="row-primary-link" href="{{ fee_settings_url(apartment.id, fee_return) }}">{{ apartment.internal_name }}</a> {{ row_open() }}
           <div class="ui-sub">{{ apartment.addr_obec or '' }}</div>
         </td>
         {% if fee_list.all_unset %}
@@ -137,7 +137,7 @@
       {% else %}
       <tr class="clickable-row" data-href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" tabindex="0" role="link" aria-label="{{ apartment.internal_name }}">
         <td data-label="{{ t('stay_fees.col.property') }}">
-          <a class="row-primary-link" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}">{{ apartment.internal_name }}</a>
+          <a class="row-primary-link" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}">{{ apartment.internal_name }}</a> {{ row_open() }}
           <div class="ui-sub">{{ apartment.addr_obec or '' }} · {{ t('stay_fees.rate_line', rate=period.rate_czk) }}</div>
         </td>
         <td class="nowrap" data-label="{{ t('stay_fees.col.period') }}">

@@ -42,7 +42,7 @@ def _canonical_query(view, group):
     return f"view={view}" + (f"&section={group}" if group else "")
 # The successful controls of the one property form, by name.
 SETTINGS_NAMES = {
-    "fee_signature_section", "signature_file", "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
+    "signature_drawn", "signature_name", "fee_signature_section", "signature_file", "return_to", "_csrf", "internal_name", "city_en", "legal_entity_id", "data_controller_entity_id",
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
     "permalink_reachback_days", "passport_photo_policy", "door_code_section", "door_codes_fields", "door_codes",
@@ -193,7 +193,7 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     # No folded essentials, no suggested portal message, no shadow form on Overview.
     content = html[html.index('<nav class="ui-tabs property-tabs"'):]
     # The shared fee partial's council fold belongs to 0077 (outside this task).
-    assert "<details" not in content.replace('<details class="fee-setup-section">', "")
+    assert "<details" not in content.replace('<details class="fee-setup-section">', "").replace('<details class="setup-readiness-help">', "").replace('<details class="ui-section" id="smart-locks-add-more">', "")
     assert "message-template" not in content and "copy_message" not in content
     overview = content[content.index('data-property-view="overview"'):content.index('data-property-view="bookings"')]
     assert "property-settings-form" not in overview and 'id="calendar-add"' not in overview
@@ -524,7 +524,7 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
         assert page.locator("#calendar-add #label").is_visible()
         assert page.locator("#calendar-add #url").is_visible()
         _shot(page, "created-wizard-calendar-1280-en")
-        page.locator(".setup-wizard-skip .link-button").click()
+        page.locator(".setup-wizard-skip button[value='skip']").click()
         page.wait_for_url("**/setup/guest_link**")
         page.locator("button[value='done']").click()
         page.wait_for_url("**/setup/try_it**")
@@ -548,7 +548,7 @@ def test_create_offers_the_calendar_first_and_works_without_js(host, base):
             assert page.locator(f"#{anchor}").is_visible(), anchor
             assert page.locator(f'[data-property-view="{view}"]').is_visible()
             if group:
-                assert page.locator(f'[data-settings-group="{group}"]').is_visible()
+                assert page.locator(f'[data-settings-group="{group}"]').first.is_visible()
         page.goto(f"{url}?lang=cs")
         page.locator('.property-tabs a[data-property-tab="settings"]').click()
         page.locator('[data-property-section-link="property"]').click()

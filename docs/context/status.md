@@ -10,7 +10,8 @@ Updated: 2026-10-22.
 
 ## Now
 
-- Round 3 0270-0276: wizard order, test run, finish, welcome back; P after #427. **Owner:** review PR.
+- Round 3 0270-0276 (wizard, finish, welcome back); P next. **Owner:** PR #429.
+- 0250-0252 Open cues, iPad menu, Back fix. **Owner:** PR, iPad.
 - Foolproof workflow: round 1 (0230-0237) and round 2 (0239-0248: "What needs you" card, health check, day-before nudge, one-button mails; missing setup is amber, not red). **Owner:** review PRs, merge, deploy (`?v=` keys).
 - Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
 - #418 onboarding fixes 0203-0212; address open.

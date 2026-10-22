@@ -1,7 +1,7 @@
 {% extends "host_page.html" %}
 {% set nav = 'reservations' %}
 {% set body_kind = 'detail' %}
-{% from "_components.html" import field_label, help_tip, progress_pill, submission_pill, row_menu_begin, row_menu_end, guest_count, deadline_badge, source_badge with context %}
+{% from "_components.html" import field_label, help_tip, progress_pill, submission_pill, row_menu_begin, row_menu_end, row_open, guest_count, deadline_badge, source_badge with context %}
 {# The UbyPort step is the page's one coral button; the branches below are exclusive. #}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% block title %}{{ reservation.internal_name }} · {{ reservation.date_from | date_cz }}{% endblock %}
@@ -400,7 +400,7 @@
           <td class="ui-cell-first nowrap" data-card="primary">{{ submission.created_at | datetime_local }}</td>
           <td data-card="badge">{{ submission_pill(submission.state) }}</td>
           <td class="ui-mono ui-sub" data-card="meta">{{ submission.pseudo_stamp or '—' }}</td>
-          <td class="ui-cell-acts row-actions" data-card="actions">
+          <td class="ui-cell-acts row-actions" data-card="actions">{{ row_open() }}
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('stay.detail.reports.open') }}</a>
               {% if submission.has_receipt %}
