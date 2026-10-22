@@ -1091,7 +1091,8 @@ def pick_stay(token: str, request: Request):
             visible_ids.add(extra["id"])
 
     if not reservations:
-        return _with_lang(_unavailable(request, lang, "no_stays", 200, token), lang)
+        note = _host_link_note(request, apartment)
+        return _with_lang(_unavailable(request, lang, "no_stays", 200, token, host_note=note), lang)
 
     owned = set(_owned_ids(request))
     today = claim.prague_today()
