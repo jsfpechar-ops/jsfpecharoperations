@@ -42,10 +42,17 @@
 {% block wizard_actions %}
 <span></span>
 {% if missing_row %}
-<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}/setup/{{ missing_row.key }}" data-finish-go="fix">{{ t('wizard.done.fix.police') if missing_row.key == 'police' else t('wizard.done.fix.step') }}</a>
+{% set go_href = '/apartments/' ~ apartment.id ~ '/setup/' ~ missing_row.key %}
+{% set go_label = t('wizard.done.fix.police') if missing_row.key == 'police' else t('wizard.done.fix.step') %}
+{% set go_flag = 'fix' %}
 {% elif link_next.stay %}
-<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}?view=bookings" data-finish-go="stays">{{ t('wizard.done.go_stays') }}</a>
+{% set go_href = '/apartments/' ~ apartment.id ~ '?view=bookings' %}
+{% set go_label = t('wizard.done.go_stays') %}
+{% set go_flag = 'stays' %}
 {% else %}
-<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}?view=overview" data-finish-go="property">{{ t('wizard.done.go_property') }}</a>
+{% set go_href = '/apartments/' ~ apartment.id ~ '?view=overview' %}
+{% set go_label = t('wizard.done.go_property') %}
+{% set go_flag = 'property' %}
 {% endif %}
+<a class="ui-btn ui-btn-primary" href="{{ go_href }}" data-finish-go="{{ go_flag }}">{{ go_label }}</a>
 {% endblock %}

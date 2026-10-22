@@ -777,7 +777,11 @@
       "setup-summary-icon",
       "setup-wizard-checklist",
       "setup-wizard-section-title",
-      "ui-badge-"
+      "ui-badge-",
+      "setup-wizard-celebrate-copy",
+      "setup-wizard-celebrate-mark",
+      "setup-wizard-celebrate-title",
+      "setup-wizard-instruction"
     ],
     "App/app/templates/setup_wizard/door_lock.html": [
       "feature-switch",
