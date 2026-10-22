@@ -169,23 +169,26 @@ def test_invoice_item_geometry_and_localized_screenshots(base):
                 assert abs(stay_price["width"] - extra_price["width"]) <= 1, (
                     f"stay and extra price widths differ at {width}px ({locale})"
                 )
-                if width >= 1280:
-                    assert abs(remove_box["y"] - tops[0]) <= 2, (
-                        f"Remove does not align with the first control at {locale}: {remove_box['y']} vs {tops[0]}"
-                    )
-                    header = page.locator("#item-rows thead tr").bounding_box()
-                    header_cells = page.locator("#item-rows thead th").evaluate_all(
-                        "cells => cells.map(cell => { const r = cell.getBoundingClientRect(); "
-                        "return { x: r.x, y: r.y, width: r.width, height: r.height }; })"
-                    )
-                    assert len(header_cells) == 6
-                    heights = [cell["height"] for cell in header_cells]
-                    y_positions = [cell["y"] for cell in header_cells]
-                    assert max(heights) - min(heights) <= 1, f"header cells have different heights: {heights}"
-                    assert max(y_positions) - min(y_positions) <= 1, f"header cells have different tops: {y_positions}"
-                    assert abs(header_cells[-1]["x"] + header_cells[-1]["width"] - (header["x"] + header["width"])) <= 1, (
-                        "the blank removal header does not fill its track"
-                    )
+                # The items grid is 678 px at every desktop width, below the 850 px container query,
+                # so rows always stack as cards and the table header stays hidden.
+                rows_box = page.locator("#item-rows").bounding_box()
+                assert rows_box["width"] <= 850, (
+                    f"item rows are {rows_box['width']}px wide at {width}px ({locale}); stacked layout assumption is stale"
+                )
+                thead_display = page.locator("#item-rows thead").evaluate("el => getComputedStyle(el).display")
+                assert thead_display == "none", f"item table header is shown at {width}px ({locale}): {thead_display}"
+                description_box = row.locator('[name="item_description"]').bounding_box()
+                assert abs(remove_box["x"] - description_box["x"]) <= 1, (
+                    f"Remove left differs from the description field at {width}px ({locale})"
+                )
+                lowest_control_bottom = max(control.bounding_box()["y"] + control.bounding_box()["height"] for control in controls)
+                assert remove_box["y"] >= lowest_control_bottom - 1, (
+                    f"Remove overlaps the item controls at {width}px ({locale})"
+                )
+                row_box = row.bounding_box()
+                assert remove_box["x"] + remove_box["width"] <= row_box["x"] + row_box["width"] + 1, (
+                    f"Remove sticks out of the item card at {width}px ({locale})"
+                )
                 if shots:
                     page.evaluate("window.scrollTo(0, 0)")
                     if width in screenshot_widths:
