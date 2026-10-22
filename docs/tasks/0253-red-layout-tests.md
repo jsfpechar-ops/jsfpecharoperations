@@ -90,3 +90,19 @@ Per TEMPLATE §8 (excerpt not found, a test fails twice after a fix attempt, 25 
 ## 9. Report
 
 Write `docs/tasks/0253-report.md` (600 tokens max), set `Status: review` here, commit with message `0253: red layout tests fixed at the cause`. Do not push.
+
+## 10. Follow-up (round 2, after the first run stopped at the cap)
+
+Done in round 1: steps 1, 2, 3 (code), 4, 5, 6, 7. Orchestrator findings on the two remaining failures:
+
+**A still 20 px off (offset 29 → measured content at 53, Guests text at 33).** `app.css:1488` gives `.stay-command-main { padding: 18px 20px; }`; the journey bar is a sibling before it, so after the panel padding fix the journey sits at 33 but the main content sits 20 px further in. Fix in `host-design0123.css`, same `@media (max-width:760px)` block, right after the 0253 panel rule: `body.host-workspace .host-stay-detail .stay-command-main { padding-left:0; padding-right:0; }` (keep the vertical padding). Then text-left of the main content = 33 = Guests text, and the right inset = 16 px padding + 1 px border on both cards.
+
+**Invoice "Remove does not align with the first control" at ≥1280.** The items grid is 678 px wide at every desktop width (the design-reset form lane is capped), and its desktop table needs 780 px (`grid-template-columns: minmax(220px,1fr) 84px 124px 148px 78px 126px`), so `@container (max-width: 850px)` always shows the stacked item cards; `thead` is `display:none` at every tested width. The `if width >= 1280:` block asserts the old table layout: stale. Replace that whole block (the Remove-y check and the header-cell checks) with checks of the stacked layout that hold at every width, not only ≥1280:
+- `thead` computed display is `none` when `#item-rows` is ≤ 850 px wide (assert the width too, so a future wider lane makes this fail loudly instead of passing silently);
+- Remove's left equals the description field's left (±1);
+- Remove's top is ≥ the bottom of the lowest of the three controls (no overlap);
+- Remove's right ≤ the row's right (inside the card).
+
+Also do what round 1 skipped: brief step 3's scratch wrap check, step 8 screenshots, and the report.
+
+Commands: §6 again. Commit `0253 step 8: stacked invoice rows, stay panel inner padding`, report, `Status: review`.
