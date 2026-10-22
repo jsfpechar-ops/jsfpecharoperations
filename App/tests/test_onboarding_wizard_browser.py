@@ -1483,11 +1483,11 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         page.wait_for_url("**/setup/stay_fee**")
         page.locator(".setup-wizard-skip button").click()
         page.wait_for_url("**/setup/door_lock**")
-        assert page.locator(".setup-wizard-foot button[value=skip]").count() == 1
+        assert page.locator('button[data-lock-choice="no"]').count() == 1
         assert page.locator('[aria-controls="wizard-lock-help"]').is_visible()
         assert page.locator(".setup-wizard-body p.small.muted").count() == 0
         _shot(page, f"30-lock-instructions-{tag}.png")
-        page.locator(".setup-wizard-foot button[value=skip]").click()
+        page.locator('button[data-lock-choice="no"]').click()
         page.wait_for_url("**/setup/automation**")
         assert page.locator(".setup-wizard-radio-card .help-tip").count() == 3
         page.locator('input[value="manual"]').check()
