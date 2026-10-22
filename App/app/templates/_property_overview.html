@@ -25,51 +25,41 @@
   <button class="link-button" type="submit" name="action" value="show">{{ t('setup_guide.show') }}</button>
 </form>
 {% endif %}
+{#- 0286: the health check lives on these cards (owner 2026-10-22: one place,
+    not a second box). A dot before the title says how each one is; a card
+    with a problem names it and opens its fix. -#}
+{%- set hc = {} -%}
+{%- for row in health or [] %}{% set _ = hc.update({row.key: row}) %}{% endfor -%}
+{%- macro hc_attrs(row) -%}{% if row %} data-health-check="{{ row.key }}" data-state="{{ row.state }}"{% endif %}{%- endmacro -%}
+{%- macro hc_dot(row) -%}{% if row %}<span class="host-property-card-dot" data-state="{{ row.state }}">{% if row.state not in ('bad', 'warn') %}<span class="sr-only">{{ t(row.text_key) }}</span>{% endif %}</span>{% endif %}{%- endmacro -%}
+{%- macro hc_href(row, href) -%}{{ row.href if row and row.state in ('bad', 'warn') and row.href else href }}{%- endmacro -%}
+{%- macro hc_small(row, text) -%}{% if row and row.state in ('bad', 'warn') %}<small class="host-property-card-problem">{{ t(row.text_key) }}</small>{% elif text %}<small>{{ text }}</small>{% endif %}{%- endmacro -%}
+{%- set h_cal, h_link, h_police, h_business, h_door = hc.get('calendar'), hc.get('guest_link'), hc.get('police'), hc.get('business'), hc.get('door') -%}
+{%- set open_pill -%}<span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span>{%- endset -%}
 <div class="host-property-grid">
-  <a class="host-property-card" href="{{ base_url }}?view=bookings#calendars">{{ icon('calendar-days', 20) }}<div><strong>{{ t('wizard.overview.calendars') }}</strong>
-    <small>{{ tp('apartment.form.calendars_count', feeds | length) }}{% if feed_errors_count %} · {{ t('apartment.form.feed.status.error') }}{% endif %}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
-  <div class="host-property-card host-property-card-static">{{ icon('external-link', 20) }}<div><strong><a class="host-property-card-link" href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ t('nav.guest_links') }}</a></strong>
-    <small>{{ t('wizard.guest_link.ready') }}</small></div>
+  <a class="host-property-card" href="{{ hc_href(h_cal, base_url ~ '?view=bookings#calendars') }}"{{ hc_attrs(h_cal) }}>{{ icon('calendar-days', 20) }}<div><strong>{{ hc_dot(h_cal) }}{{ t('wizard.overview.calendars') }}</strong>
+    {{ hc_small(h_cal, tp('apartment.form.calendars_count', feeds | length) ~ ((' · ' ~ t('apartment.form.feed.status.error')) if feed_errors_count else '')) }}</div>{{ open_pill }}</a>
+  <div class="host-property-card host-property-card-static"{{ hc_attrs(h_link) }}>{{ icon('external-link', 20) }}<div><strong>{{ hc_dot(h_link) }}<a class="host-property-card-link" href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ t('nav.guest_links') }}</a></strong>
+    {{ hc_small(h_link, t('wizard.guest_link.ready')) }}</div>
     <div class="actions host-property-card-actions">{{ copy_inline('overview-guest-url', permalink, t('wizard.guest_link.copy_link')) }}</div>
-    <span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></div>
-  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#ubyport">{{ icon('send', 20) }}<div><strong>{{ t('host.reporting') }}</strong>
-    <small>{{ t('property_nav.report_ready') if not report_missing else tp('property_nav.report_missing', report_missing) }}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
-  <a class="host-property-card" href="{{ ('/entities?edit=' ~ apartment.legal_entity_id ~ '&next=' ~ (base_url | urlencode)) if operator else (base_url ~ '?view=settings&section=property#operator-picker') }}">{{ icon('receipt', 20) }}<div><strong>{{ t('host.business') }}</strong>
-    {% if operator %}<small>{{ operator.name }}</small>{% endif %}</div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
+    {{ open_pill }}</div>
+  <a class="host-property-card" href="{{ hc_href(h_police, base_url ~ '?view=settings&section=reporting#ubyport') }}"{{ hc_attrs(h_police) }}>{{ icon('send', 20) }}<div><strong>{{ hc_dot(h_police) }}{{ t('host.reporting') }}</strong>
+    {{ hc_small(h_police, t('property_nav.report_ready') if not report_missing else tp('property_nav.report_missing', report_missing)) }}</div>{{ open_pill }}</a>
+  <a class="host-property-card" href="{{ hc_href(h_business, ('/entities?edit=' ~ apartment.legal_entity_id ~ '&next=' ~ (base_url | urlencode)) if operator else (base_url ~ '?view=settings&section=property#operator-picker')) }}"{{ hc_attrs(h_business) }}>{{ icon('receipt', 20) }}<div><strong>{{ hc_dot(h_business) }}{{ t('host.business') }}</strong>
+    {{ hc_small(h_business, operator.name if operator else '') }}</div>{{ open_pill }}</a>
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=reporting#stay-fee-settings">{{ icon('coins', 20) }}<div><strong>{{ t('host.fee') }}</strong>
-    <small>{{ apartment.stay_fee_rate_czk or 0 }} Kč / {{ t('stay_fees.nights.one', count=1) }}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
+    <small>{{ apartment.stay_fee_rate_czk or 0 }} Kč / {{ t('stay_fees.nights.one', count=1) }}</small></div>{{ open_pill }}</a>
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=property#address">{{ icon('house', 20) }}<div><strong>{{ t('host.property_details') }}</strong>
-    <small>{{ address_text or t('property_nav.address_missing') }}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
+    <small>{{ address_text or t('property_nav.address_missing') }}</small></div>{{ open_pill }}</a>
   {% if door_code %}
-  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=lock#door-code">{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }}</strong>
-    <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
+  <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=lock#door-code"{{ hc_attrs(h_door) }}>{{ icon('key-round', 20) }}<div><strong>{{ hc_dot(h_door) }}{{ t('host.door_code') }}</strong>
+    <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div>{{ open_pill }}</a>
   {% endif %}
 </div>
 
 {%- set wizard_active = setup_progress and not setup_progress.hidden -%}
 {% if readiness and not wizard_active %}
-<section class="panel host-checklist" data-setup-status aria-labelledby="property-readiness-title">
-  {%- set health_rows = health or [] -%}
-  {%- set health_open = health_rows | selectattr('state', 'in', ['bad', 'warn']) | list -%}
-  <header class="setup-status-head">
-    <h2 id="property-readiness-title">{{ t('health.title') }}</h2>
-    {% if health_open %}<span class="ui-badge ui-badge-action" data-tone="{{ 'red' if health_open | selectattr('state', 'equalto', 'bad') | list else 'amber' }}">{{ tp('health.to_fix', health_open | length) }}</span>
-    {% else %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('health.all_set') }}</span>{% endif %}
-  </header>
-  {% set health_list %}
-  <ul class="health-list">
-    {% for row in health_rows %}
-    <li class="health-row" data-health-check="{{ row.key }}" data-state="{{ row.state }}">
-      <span class="health-icon" aria-hidden="true">{{ icon(row.icon, 20) }}</span>
-      <div class="health-copy"><strong>{{ t(row.label_key) }}</strong><span>{{ t(row.text_key) }}</span></div>
-      {% if row.href %}<a class="ui-btn ui-btn-secondary" href="{{ row.href }}">{{ t(row.action_key) }}</a>{% endif %}
-    </li>
-    {% endfor %}
-  </ul>
-  {% endset %}
-  {% if health_open %}{{ health_list }}
-  {% else %}<details class="health-all-set"><summary>{{ t('health.show') }}</summary>{{ health_list }}</details>{% endif %}
-  <details class="setup-readiness-help">
+<details class="setup-readiness-help" data-setup-status>
     <summary><span aria-hidden="true">?</span> {{ t('wizard.overview.details') }}</summary>
     <section class="readiness">
   <div class="readiness-group">
@@ -103,6 +93,5 @@
     </ul>
   </div>
 </section>
-  </details>
-</section>
+</details>
 {% endif %}
