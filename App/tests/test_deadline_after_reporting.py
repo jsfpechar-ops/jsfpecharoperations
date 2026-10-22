@@ -249,7 +249,7 @@ def test_a_reported_stay_past_its_deadline_shows_no_overdue(one_day_window):
         assert "overdue by" not in page, name
         if name == "dashboard":
             task = re.search(r'<td class="dashboard-row-task"[^>]*>(.*?)</td>', page, re.S)
-            assert task and host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
+            assert not task or host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
 
 
 def test_a_stay_filed_after_its_deadline_reads_late(one_day_window):
@@ -265,13 +265,18 @@ def test_a_stay_filed_after_its_deadline_reads_late(one_day_window):
         assert "overdue by" not in page, name
         if name == "dashboard":
             task = re.search(r'<td class="dashboard-row-task"[^>]*>(.*?)</td>', page, re.S)
-            assert task and host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
+            assert not task or host_i18n.STRINGS["en"]["action.reported"] not in task.group(1)
 
 
 def test_a_stay_not_reported_past_its_deadline_is_still_critical(one_day_window):
     client, reservation_id, _ = _seed(nationality="VNM", sent=False, filed=None)
 
     for name, page in _pages(client, reservation_id).items():
+        if name == "dashboard":
+            # 0241: the dashboard says it as a red line in "What needs you".
+            assert f'data-tone="red" data-needs-you="stay" data-needs-you-stay="{reservation_id}"' in page, name
+            assert host_i18n.STRINGS["en"]["needs_you.stay.overdue"] in page, name
+            continue
         badges = _badges(page)
         assert any(level == "overdue" and "overdue by" in text for level, text in badges), (
             f"{name}: {badges}"
