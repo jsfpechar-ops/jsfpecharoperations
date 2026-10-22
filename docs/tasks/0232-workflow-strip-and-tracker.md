@@ -1,6 +1,6 @@
 # 0232: One picture of the workflow and a tracker on every stay (ideas A, B, Q)
 
-Status: todo
+Status: review
 Depends on: 0231 | Base commit: after 0231 | Branch: claude/project-thread-kbrf7w
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
