@@ -1314,3 +1314,6 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
   }
   .g-legal .table-cards td:first-child { grid-column: 1 / -1; white-space: normal; }
 }
+
+/* 0231: the owner's own view of an empty guest link. */
+.g-host-note { margin: 0 0 16px; padding: 10px 12px; border: 1px dashed #92400e; border-radius: 10px; background: #fffbeb; color: #78350f; font-size: 14px; line-height: 1.45; text-align: left; }
