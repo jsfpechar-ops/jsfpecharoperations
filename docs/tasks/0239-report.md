@@ -1,6 +1,6 @@
 # 0239 report
 
-Status: blocked
+Status: review
 
 Done: steps 1 to 7 (commits below). Step 8 partly run. Left: step 8 fix, step 8 browser run, step 9 screenshots.
 
@@ -36,3 +36,10 @@ Browser run (`UBYHOST_REQUIRE_BROWSER=1 ...`) not completed: chromium is missing
 
 - Install chromium for Playwright (`playwright install chromium`), then rerun the browser command in brief section 4 step 8.
 - Step 9 screenshots not taken.
+
+## Continuation (0239-cont-1, 0239-cont-2, closed by the orchestrator)
+
+- f5533d7 cont step 1: the wizard test marks earlier steps so `/setup/stay_fee` renders.
+- 74c5510 cont-2 step 1: the fee browser test opens "More details" by keyboard (a mouse click made the later focus() non-`:focus-visible`, so the "?" tip stayed shut; app behaviour is right).
+- Fee, wizard and i18n set (9 files): 134 passed. Wizard browser (2 files): 77 passed. Geometry, design guardrails, a11y, help, pay steps, filter panels (browser): 27 passed. 0 skipped. Design lint OK, context lint OK.
+- Shots: `/mnt/project-files/stay-fee-four-boxes/{en,cs}/` (wizard stay fee step and Settings reporting, 390/1280/2000, sidebar open and collapsed), 20 shots, 0 geometry problems. Wizard at 390: rate, variable symbol, account, council name, then the signature; no period field.

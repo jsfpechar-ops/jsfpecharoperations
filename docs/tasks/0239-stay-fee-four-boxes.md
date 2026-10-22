@@ -1,6 +1,6 @@
 # 0239: Stay fee setup asks four boxes
 
-Status: todo
+Status: review
 Depends on: main after PR #422 | Branch: claude/project-thread-kbrf7w
 Executor: Haiku 5.5 | Fits one session: 30 tool calls
 
