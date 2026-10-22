@@ -129,15 +129,20 @@ def stays():
     _cleanup()
 
 
-def test_default_stays_view_is_unbounded_and_keeps_overdue_unfiled_stays(stays):
-    client, unfiled, _filed = stays
+def test_default_stays_view_is_upcoming_and_keeps_overdue_unfiled_stays(stays):
+    client, unfiled, filed = stays
 
     page = client.get("/reservations")
 
     assert page.status_code == 200
     assert f"/reservations/{unfiled}" in page.text
-    assert f"/reservations/{_filed}" in page.text
-    assert 'data-original-range="all"' in page.text
+    assert f"/reservations/{filed}" not in page.text
+    assert 'data-original-range="upcoming"' in page.text
+
+    page = client.get("/reservations?range=all")
+
+    assert f"/reservations/{unfiled}" in page.text
+    assert f"/reservations/{filed}" in page.text
     assert 'name="from" value=""' in page.text
     assert 'name="to" value=""' in page.text
 
