@@ -475,6 +475,9 @@ def dashboard(request: Request):
             "feed_count": feed_count,
             "missing_report_display": missing_report_display,
             "missing_report_more": missing_report_more,
+            # 0241: "What needs you" reads every property and every bucket.
+            "missing_report_rows": missing_report_rows,
+            "needs_you_queue": queue,
             "last_sync": db.get_setting("last_ical_sync"),
             "demo_loaded": any(demo.is_demo_apartment(apartment) for apartment in apartments),
             "celebration_milestone": milestone,
