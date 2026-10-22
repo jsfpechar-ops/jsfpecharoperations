@@ -3229,7 +3229,7 @@ STRINGS.update({
     "workflow.short.police_immediate": "Báo cáo công an",
     "workflow.short.finish": "Email xác nhận",
     "workflow.short.finish_lock": "Mã cửa và email xác nhận",
-    "workflow.step_of": "%(n)s / %(total)s",
+    "workflow.step_of": "Bước %(n)s / %(total)s",
     "workflow.journey.label": "Bước %(n)s / %(total)s: %(step)s",
     "workflow.journey.complete": "Đã xong cả 5 bước",
     "workflow.journey.state.done": "xong",
