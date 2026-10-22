@@ -773,3 +773,15 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0285: the Guest links Open arrow stays on the name's line with a clear gap. */
 .host-workspace .property-summary-table td:first-child .row-primary-link { display: inline-block; max-width: calc(100% - var(--space-12)); vertical-align: middle; }
 .host-workspace .property-summary-table td:first-child .row-primary-link + .row-open { margin-left: var(--space-3); }
+
+/* 0286: the property health check lives on the Overview cards: a dot before the
+   title says how each one is (green fine, amber to do, red broken, grey off);
+   a card with a problem names it, opens its fix and carries a coloured edge. */
+.host-workspace .host-property-card-dot { display: inline-block; width: var(--space-2); height: var(--space-2); margin-right: var(--space-2); border-radius: var(--radius-pill); background: var(--green-700); vertical-align: middle; }
+.host-workspace .host-property-card-dot[data-state="warn"] { background: var(--amber); }
+.host-workspace .host-property-card-dot[data-state="bad"] { background: var(--red); }
+.host-workspace .host-property-card-dot[data-state="off"] { background: var(--ink-3); }
+.host-workspace .host-property-card small.host-property-card-problem { color: var(--ink); }
+.host-workspace .host-property-card[data-state="warn"] { border-left: var(--space-1) solid var(--amber); }
+.host-workspace .host-property-card[data-state="bad"] { border-left: var(--space-1) solid var(--red); }
+.host-workspace .host-property-grid + details.setup-readiness-help { margin-top: var(--space-3); }
