@@ -1551,19 +1551,13 @@ body.host-workspace {
   #settings-lock-account #door-code { margin-top: 0; }
 }
 /* 0252: the Open cue on clickable rows (the row is the link). */
-.row-open { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 32px; padding: 0 10px 0 12px; border: 1px solid var(--border-strong); border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink); background: white; vertical-align: middle; white-space: nowrap; }
-.row-open + .row-menu { vertical-align: middle; margin-left: 6px; }
-td:has(> .row-open) { white-space: nowrap; }
+.row-open { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; box-sizing: border-box; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--ink); background: white; vertical-align: middle; flex: 0 0 auto; }
+.row-open-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.row-open + .row-menu { vertical-align: middle; margin-left: 4px; }
 @media (hover: hover) { .clickable-row:hover .row-open { border-color: var(--ink); } }
-@media (max-width: 1279px) {
-  .row-open { width: 32px; padding: 0; }
-  .row-open-text { display: none; }
-}
 @media (max-width: 1023px) {
   .table-cards tr.clickable-row { position: relative; }
   .table-cards tr.clickable-row .row-open { position: absolute; right: 12px; bottom: 12px; }
   .table-cards tr.clickable-row:has(.row-action-form) .row-open { display: none; }
 }
-/* 0252: the housebook is wider than the lane; its row actions stay in view. */
-.scroll-x td.row-actions { position: sticky; right: 0; background: white; }
-.row-primary-link + .row-open { margin-left: 8px; }
+.row-primary-link + .row-open { margin-left: 6px; }

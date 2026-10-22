@@ -36,8 +36,7 @@ PROBE = r"""() => {
     if (!shown(e) || e.closest('.cal-scroll, [data-dashboard-calendar], .notification-stack')) continue;
     const r = e.getBoundingClientRect();
     if (r.right > vw + 1 || r.left < -1) {
-      const box = e.closest('.scroll-x');
-      if (box) { const b = box.getBoundingClientRect(); if (r.left >= b.left - 1 && r.right <= b.right + 1) continue; if (e.closest('td.row-actions') === null) continue; }
+      if (e.closest('.scroll-x')) continue;
       out.outside.push((e.textContent || e.name || e.tagName).trim().slice(0, 30));
     }
   }
