@@ -73,8 +73,8 @@
 
 {% macro signature_fields(prefix, entity, preview='') %}
   <fieldset class="signature-block" data-host-signature>
-    <legend>{{ t('entity.signature.heading') }}</legend>
-    <p class="small">{{ t('entity.signature.scope') }}</p>
+    {#- 0240: the why sits behind "?", not in a paragraph. -#}
+    <legend>{{ t('entity.signature.heading') }} {{ help_tip(prefix ~ 'signature-help', t('entity.signature.scope')) }}</legend>
     <canvas id="{{ prefix }}sig-canvas" class="host-signature-pad" tabindex="0"></canvas>
     <input type="hidden" id="{{ prefix }}signature" name="signature_drawn" value="{{ preview }}">
     <div class="action-group">

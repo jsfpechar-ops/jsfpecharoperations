@@ -190,14 +190,17 @@ def fee_form_values(form) -> dict:
     wipe a stored IBAN-only account: the stored account is then kept.
     """
     rate = stay_fee.clamp_rate(_form_str(form, "stay_fee_rate_czk", "0"))
-    cadence = _form_str(form, "stay_fee_cadence", "monthly")
     values = {
         "stay_fee_rate_czk": rate,
-        "stay_fee_cadence": cadence if cadence in stay_fee.CADENCES else "monthly",
         "stay_fee_vs": (
             "".join(ch for ch in _form_str(form, "stay_fee_vs") if ch.isdigit())[:10] or None
         ),
     }
+    # 0239: the setup wizard no longer asks the period; a form without it keeps
+    # the stored one (new properties start monthly, the database default).
+    if "stay_fee_cadence" in form:
+        cadence = _form_str(form, "stay_fee_cadence", "monthly")
+        values["stay_fee_cadence"] = cadence if cadence in stay_fee.CADENCES else "monthly"
     # 0205: the setup wizard asks only rate, period, symbol and account, and no
     # form offers the payee or the instruction any more. These are written only
     # when the form carries them, so a shorter form never wipes stored values.

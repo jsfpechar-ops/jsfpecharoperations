@@ -138,7 +138,7 @@ def test_a_known_headcount_shows_the_count(host):
     reservation = db.query_one("SELECT id FROM reservation WHERE apartment_id = ?", (apartment,))
     db.update("reservation", reservation["id"], {"expected_guests_override": 3})
     try:
-        page = host.get("/?lang=en").text
+        page = host.get("/reservations?lang=en").text
 
         assert "0 / 3" in page
     finally:

@@ -104,13 +104,7 @@ def test_rows_hover_as_one_surface_and_use_compact_menus(stay_actions_host, stay
         page.goto(f"{base}/?lang={lang}")
 
         _ready(page)
-        dashboard_row = page.locator(".dashboard-row").first
-        assert dashboard_row.is_visible()
-        assert dashboard_row.locator(".dashboard-open").count() == 0
-        dashboard_row.locator(".row-menu-trigger").click()
-        menu = page.locator(".row-menu-panel.is-open")
-        assert menu.get_by_role("menuitem", name=_t(lang, "common.open"), exact=True).is_visible()
-        page.keyboard.press("Escape")
+        assert page.locator(".needs-you").is_visible()
         _fits(page)
 
         if width >= 1440:
@@ -167,24 +161,26 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         _ready(page)
         status = page.locator("[data-setup-status]")
         assert status.is_visible()
-        assert status.locator(".setup-status-tile").count() == 8
+        # 0244: a live health check, one bordered row per check, a button only on a problem.
+        rows = status.locator(".health-row")
+        assert rows.count() >= 4
         assert status.locator(".host-property-card").count() == 0
-        assert status.locator(".setup-status-tile a").count() == 0
         assert not status.locator(".setup-readiness-help").evaluate("el => el.open")
-        police = status.locator('[data-overview-setup-step="police"]')
-        assert police.locator('[data-tone="amber"]').is_visible()
-        assert police.locator('[data-tone="green"]').count() == 0
-        tile = status.locator(".setup-status-tile").first
-        color = tile.evaluate("el => getComputedStyle(el).backgroundColor")
-        tile.hover()
-        assert tile.evaluate("el => getComputedStyle(el).backgroundColor") == color
-        assert tile.evaluate("el => getComputedStyle(el).cursor") == "default"
+        for index in range(rows.count()):
+            row = rows.nth(index)
+            state = row.get_attribute("data-state")
+            assert row.locator("a.ui-btn").count() == (1 if state in ("bad", "warn") else 0), state
+            assert row.evaluate("el => getComputedStyle(el).borderTopStyle") == "solid"
+            for button in row.locator("a.ui-btn").all():
+                assert button.bounding_box()["height"] >= 43.5
+        police = status.locator('[data-health-check="police"]')
+        assert police.count() == 1
         assert page.locator(".host-property-grid > a.host-property-card").count() >= 5
         status.locator(".setup-readiness-help > summary").click()
         assert status.locator(".readiness").is_visible()
         status.locator(".setup-readiness-help > summary").click()
         _fits(page)
-        _shot(page, f"40-overview-status-tiles-{lang}-{width}.png")
+        _shot(page, f"40-overview-health-{lang}-{width}.png")
         context.close()
         browser.close()
 

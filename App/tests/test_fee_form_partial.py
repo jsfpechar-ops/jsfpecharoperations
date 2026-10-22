@@ -17,6 +17,7 @@ def test_a_form_without_the_office_fields_leaves_them_out():
         ("account_number", "2000145399"), ("account_bank", "0800"),
     ]))
     assert values["stay_fee_rate_czk"] == 30 and values["stay_fee_vs"] == "123"
+    assert "stay_fee_cadence" not in values  # 0239: the wizard does not ask the period
     for key in KEPT:
         assert key not in values, key
 

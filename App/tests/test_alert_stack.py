@@ -155,7 +155,7 @@ def test_notification_panel_keeps_every_action_reachable(host):
     for index, reservation_id in enumerate((9001, 9002, 9003, 9004)):
         _alert("cancelled_after_report", "warning", reservation_id, f"stay {index}")
 
-    page = host.get("/?lang=en")
+    page = host.get("/reservations?lang=en")
 
     assert _bubbles(page) == 4
     assert 'class="notification-stack"' in page.text
@@ -166,7 +166,7 @@ def test_the_stack_shows_no_summary_when_everything_fits(host):
     _alert("cancelled_after_report", "warning", 9101, "one")
     _alert("cancelled_after_report", "warning", 9102, "two")
 
-    page = host.get("/?lang=en")
+    page = host.get("/reservations?lang=en")
 
     assert _bubbles(page) == 2
     assert "more alerts" not in page.text
@@ -177,7 +177,7 @@ def test_two_alerts_on_one_stay_do_not_use_up_the_stack(host):
     _alert("guest_incomplete_checkin", "warning", 9201, "waiting")
     _alert("cancelled_after_report", "warning", 9202, "cancelled")
 
-    page = host.get("/?lang=en")
+    page = host.get("/reservations?lang=en")
 
     assert _bubbles(page) == 2
     assert "more alerts" not in page.text
@@ -187,7 +187,7 @@ def test_the_summary_opens_the_overview_queue(host):
     for reservation_id in (9301, 9302, 9303):
         _alert("cancelled_after_report", "warning", reservation_id, "stay")
 
-    page = host.get("/?lang=en")
+    page = host.get("/reservations?lang=en")
 
     assert 'class="notification-stack"' in page.text
     assert _bubbles(page) == 3
@@ -197,7 +197,7 @@ def test_the_summary_is_in_czech(host):
     for reservation_id in (9401, 9402, 9403):
         _alert("cancelled_after_report", "warning", reservation_id, "pobyt")
 
-    page = host.get("/?lang=cs")
+    page = host.get("/reservations?lang=cs")
 
     assert host_i18n.translate('cs', 'a11y.notifications') in page.text
     assert 'class="notification-stack"' in page.text
@@ -205,7 +205,7 @@ def test_the_summary_is_in_czech(host):
 
 def test_notifications_render_in_host_content_flow_with_reachable_stay_link(host):
     _alert("dates_changed_resign", "critical", 9501, "Dates changed")
-    response = host.get("/?lang=en")
+    response = host.get("/reservations?lang=en")
     assert response.status_code == 200, response.text
 
     tree = _TreeParser()
@@ -232,7 +232,7 @@ def test_notifications_render_in_host_content_flow_with_reachable_stay_link(host
 
 def test_critical_notifications_are_visible_without_an_extra_click(host):
     _alert('dates_changed_resign', 'critical', 9501, 'Dates changed')
-    page = host.get('/?lang=en')
+    page = host.get('/reservations?lang=en')
     assert 'data-host-alerts' in page.text
     assert 'data-notification' in page.text
     assert '<details class="host-alerts"' not in page.text

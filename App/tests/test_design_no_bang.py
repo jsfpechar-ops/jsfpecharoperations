@@ -10,5 +10,7 @@ def test_no_bang_prefix_in_badge_macros():
 
 
 def test_needs_action_section_is_guarded_by_rows():
+    """0241: the "What needs you" card replaced the needs-action table; one empty state for no property."""
     text = (T / "dashboard.html").read_text(encoding="utf-8")
-    assert "{% if rows %}\n  {% call ui_section(t('dashboard.section.needs_action'" in text
+    assert "{% if not apartments %}" in text
+    assert "data-needs-you-card" in text

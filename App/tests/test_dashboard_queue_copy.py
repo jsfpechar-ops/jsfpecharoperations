@@ -282,18 +282,23 @@ def test_a_czech_host_reads_the_new_next_actions_in_czech(seeded):
 # --- what the headings and column labels render ---------------------------
 
 
-def test_the_action_heading_counts_the_rows_beneath_it(seeded):
+def test_the_card_gives_each_stay_that_needs_the_host_one_line(seeded):
     page = _page("en")
-    rows = len(re.findall(r'<tr class="[^"]*\bdashboard-row\b[^"]*"[^>]*data-stay-id=', _needs_action_section(page)))
-    assert rows >= 1, "the seeded ready stay should need action"
-    assert _needs_action_heading(page) == f"Needs action now ({rows})"
+    card = _needs_action_section(page)
+    assert host_i18n.translate("en", "needs_you.title") in card
+    lines = re.findall(r'<li class="needs-you-item"[^>]*>(.*?)</li>', card, re.S)
+    assert lines, "the seeded ready stay should need the host"
+    for line in lines:
+        assert line.count('class="ui-btn') == 1, line
 
 
-def test_the_action_heading_never_leaks_its_placeholder(seeded):
+
+def test_the_card_never_leaks_a_placeholder(seeded):
     for lang in ("en", "cs"):
-        heading = _needs_action_heading(_page(lang))
-        assert "%(count)s" not in heading
-        assert re.search(r"\(\d+\)$", heading), heading
+        card = _needs_action_section(_page(lang))
+        assert "%(" not in card
+        assert host_i18n.translate(lang, "needs_you.title") in card
+
 
 
 def test_current_section_replaces_the_completed_history_section(seeded):

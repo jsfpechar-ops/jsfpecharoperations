@@ -109,20 +109,18 @@ def _host_with_a_stay_needing_action() -> TestClient:
 def test_the_next_action_on_a_czech_queue_row_is_czech():
     page = _host_with_a_stay_needing_action().get("/")
     assert page.status_code == 200
-    actions = re.findall(r'<td class="dashboard-row-task"[^>]*>(.*?)</td>', page.text, re.S)
-    assert actions, "no next-action line on the queue at all"
-    english = host_i18n.translate("en", "status.awaiting_verification")
-    czech = host_i18n.translate("cs", "status.awaiting_verification")
+    card = re.search(r'<section[^>]*id="needs-action"[^>]*>(.*?)</section>', page.text, re.S)
+    assert card, "no What needs you card on the dashboard"
+    english = host_i18n.translate("en", "needs_you.stay.ready")
+    czech = host_i18n.translate("cs", "needs_you.stay.ready")
     assert czech != english, "fixture is pointless if the two languages match"
-    joined = " ".join(" ".join(a.split()) for a in actions)
-    assert english not in joined, (
-        "the instruction on the work queue is in English for a Czech host"
-    )
-    assert czech in joined
+    assert english not in card.group(1), "the line on the dashboard is in English for a Czech host"
+    assert czech in card.group(1)
+
 
 
 def test_the_status_pill_on_a_czech_queue_row_is_czech():
-    page = _host_with_a_stay_needing_action().get("/")
+    page = _host_with_a_stay_needing_action().get("/reservations")
     english = host_i18n.translate("en", "status.awaiting_verification")
     czech = host_i18n.translate("cs", "status.awaiting_verification")
     assert czech != english

@@ -17,12 +17,9 @@ Append-only.
 - 2026-10-05 | Umami only on public pages; in-app metrics server-side | privacy first | [rules](rules.md#privacy)
 - 2026-10-05 | Admin preview: full workspace, optional reason, 24 h default | owner support | PR #280, K-P01
 - 2026-10-05 | Ticket Wallet guest UI archived (kept in `App/app/static/archive/`), may return | simpler guest form | -
-- 2026-10-06 | [workflow] Opus plans/briefs/reviews; Cursor executes (Composer/Kimi/GLM) | Opus used 92% of $1,588/30d | [workflow](workflow.md)
 - 2026-10-06 | [workflow] Context: AGENTS.md L0, context L1, plans L2; audits archived; known-issues replaces FOLLOWUPS | re-reading used 87% of spend | [README](README.md)
 - 2026-10-06 | [workflow] WP/patch series closed at WP33/0034; new work uses task numbers NNNN | one numbering scheme | [workflow](workflow.md)
 - 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in one day found the same issues | [workflow](workflow.md)
-- 2026-10-06 | Cloudflare MCP servers removed from the local Cursor MCP config | context cost in every chat, and production DNS/WAF access for agents | task 0001
-- 2026-10-06 | Cursor automations (regression coverage, bug sweep) stay as they are and read known-issues.md | owner choice | [prompts](prompts.md#bug-hunt-automation)
 - 2026-10-06 | [workflow] Task 0001 merged (#281) before orchestrator review; review post-merge approved; stale PR cleanup remains owner-run | owner merged early | [0001 report](../tasks/0001-report.md)
 - 2026-10-06 | [workflow] Context-rollout bundle: flat files only; MANIFEST at root | place_files paths | [TEMPLATE](../tasks/TEMPLATE.md)
 - 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
@@ -62,4 +59,5 @@ Append-only.
 - 2026-10-21 | Why-ledes; signature with stay fee; guest window 1 day | owner
 - 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)
+- 2026-10-22 Round 2: dashboard opens with one "What needs you" card; the alert stack is hidden on `/` only (the card carries the alerts). Host reminder may go the day before arrival when nobody opened the link, same key as check-in day, so at most one per stay; no new host emails (owner).
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner

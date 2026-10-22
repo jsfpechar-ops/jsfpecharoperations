@@ -1,4 +1,4 @@
-"""Phone dashboard (0147, 0148): dots instead of bars, reduced controls, one PIN alert, one-line setup banner."""
+"""Phone dashboard (0147, 0148, 0241): dots instead of bars, reduced controls, one PIN line, one short line per setup gap."""
 from __future__ import annotations
 
 import os
@@ -57,19 +57,22 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
                 page.locator("[data-cal-day-dialog] [data-cal-close]").click()
                 names = seed_pin_alerts(calendar_workspace)
                 page.reload()
-                pin_cards = page.locator("[data-notification]", has_text="PIN")
-                assert pin_cards.count() == 1
-                assert pin_cards.first.get_attribute("data-notification-group") == "guest_pin_rotated"
-                for name in names:
-                    assert name in pin_cards.first.inner_text(), name
-                assert pin_cards.first.locator('a[href="/apartments"]').count() == 1
-                short = page.locator(".dashboard-missing-short")
-                assert short.is_visible()
-                assert short.inner_text().strip() == "3 properties need setup", short.inner_text()
-                assert not page.locator(".dashboard-missing-list").first.is_visible()
-                assert page.locator(".ui-banner-attention .ui-btn").count() == 1
+                # 0241: the three PIN alerts are one line in "What needs you", linking to the property list.
+                assert page.locator(".notification-stack").count() == 0
+                pin_lines = page.locator('.needs-you [data-needs-you="alert"]', has_text="PIN")
+                assert pin_lines.count() == 1
+                assert pin_lines.first.locator('a[href="/apartments"]').count() == 1
+                assert len(names) == 3
+                # One short line per property with missing police details: no field list.
+                setup_lines = page.locator('.needs-you [data-needs-you="setup"]')
+                assert setup_lines.count() == 3
+                for index in range(3):
+                    assert setup_lines.nth(index).locator(".ui-btn").count() == 1
+                    assert "Police details are missing" in setup_lines.nth(index).text_content()
+                if not pin_lines.first.is_visible():
+                    page.locator(".needs-you-more > summary").first.click()
                 shot(page, "phone-390-alert")
-                pin_cards.first.locator("[data-notification-dismiss] button").click()
+                pin_lines.first.locator("[data-notification-dismiss] button").click()
                 page.wait_for_timeout(500)
                 page.reload()
                 assert page.locator("[data-notification]", has_text="PIN").count() == 0
@@ -84,9 +87,7 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
                 page.locator("[data-cal-scales]").wait_for(state="visible")
                 page.locator('[data-cal-view="gantt"]').click()
                 page.locator(".cal-gantt-row").first.wait_for(state="visible")
-                assert page.locator(".dashboard-missing-list").first.is_visible()
-                assert not page.locator(".dashboard-missing-short").is_visible()
-                assert page.locator(".dashboard-missing-line").count() == 3
+                assert page.locator('.needs-you [data-needs-you="setup"]').count() == 3
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             shot(page, f"phone-{width}")
             context.close()

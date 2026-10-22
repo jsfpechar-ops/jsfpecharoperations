@@ -144,7 +144,7 @@ def test_base_template_keeps_compact_notification_structure():
     assert "display_detail" in text
     assert "notification-action" in text
     assert "data-notification-dismiss" in text
-    assert "notification.open_stay" in text
+    assert "action_label_key" in text
 
 
 # --- W4.6: the new calendar cards must read in the host's language [F5, F6, F12]
@@ -210,15 +210,13 @@ def test_a_stay_moved_after_reporting_gets_a_reason_line(monkeypatch):
     en = alerts.present(alert, "en")
     assert en["display_title"] == "Vinohrady Studio (demo) · 19.09.2026 – 21.09.2026"
     assert en["display_detail"] == (
-        "The calendar moved this stay after it was reported to the police. The "
-        "filed record names the old dates. Check the new dates with the guests; "
-        "a filed record is corrected in the UbyPort web application."
+        "This stay moved after its police report went out, so the report still shows the old dates. "
+        "Check the new dates with the guests, then correct the report in the UbyPort web application."
     )
     cs = alerts.present(alert, "cs")
     assert "Vinohrady Studio (demo)" in cs["display_title"]
     assert cs["display_detail"] == (
-        "Kalendář posunul tento pobyt poté, co byl nahlášen policii. Odeslaný "
-        "záznam uvádí původní termíny. Zkontrolujte s hosty nové termíny; "
-        "podaný záznam se opravuje ve webové aplikaci UbyPort."
+        "Pobyt se posunul až po odeslání hlášení policii, takže hlášení uvádí původní termín. "
+        "Ověřte s hosty nový termín a hlášení opravte ve webové aplikaci UbyPort."
     )
     assert "english log copy" not in (cs["display_title"] + cs["display_detail"])

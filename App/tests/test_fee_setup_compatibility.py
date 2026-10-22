@@ -300,7 +300,7 @@ def test_fee_editor_is_the_only_one_and_shows_the_council_block(host):
     apartment_id = _property(owner_id, entity_id, stay_fee_rate_czk=20)
     page = client.get(f"/apartments/{apartment_id}?view=settings&section=reporting&lang=en").text
     section = page.split('id="stay-fee-settings"', 1)[1].split("</section>", 1)[0]
-    assert "<details" not in section and "<summary" not in section
+    assert section.count('<details class="fee-more"') == 1  # 0239: print-only office details fold
     assert 'id="stay-fee-council"' in section
     assert section.count('name="stay_fee_rate_czk"') == 1
     assert page.count('name="stay_fee_authority_name"') == 1
@@ -393,11 +393,13 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 assert page.locator("html").get_attribute("lang") == locale
                 section = page.locator("#stay-fee-settings")
                 assert section.is_visible()
-                # The council block is part of the editor, not a fold (plan section 4 rule 2).
+                # 0239: the council name stays visible; the print-only details fold.
                 for field in ("stay_fee_rate_czk", "stay_fee_vs", "stay_fee_council_account",
-                              "stay_fee_authority_name", "stay_fee_authority_databox"):
+                              "stay_fee_authority_name"):
                     assert page.locator(f"#{field}").is_visible(), (field, width, locale)
-                assert page.locator("#stay-fee-settings details").count() == 0
+                assert page.locator("#stay-fee-settings details").count() == 1
+                page.locator("#stay-fee-council details.fee-more > summary").focus()
+                page.keyboard.press("Enter")  # by keyboard: a later focus() must stay :focus-visible
                 back = page.locator(".fee-return-note a")
                 assert back.is_visible() and back.get_attribute("href") == f"/stay-fees?month={month}"
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (width, locale)
@@ -432,3 +434,21 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                 page.screenshot(path=str(EVIDENCE / f"fee-list-after-save-{locale}-1280.png"))
         context.close()
         browser.close()
+
+
+def test_the_wizard_asks_four_fee_boxes(host):
+    """0239: rate, symbol, account and council name; no period, no print-only office details."""
+    client, owner_id, entity_id = host
+    apartment_id = _property(owner_id, entity_id)
+    from app import property_setup
+    property_setup.start(apartment_id)
+    for step in property_setup.STEPS[:property_setup.STEPS.index("stay_fee")]:
+        property_setup.mark(apartment_id, step, "waiting" if step == "police" else "done")
+    page = client.get(f"/apartments/{apartment_id}/setup/stay_fee?lang=en").text
+    form = page.split('id="stay-fee-form"', 1)[1].split("</form>", 1)[0]
+    for name in ("stay_fee_rate_czk", "stay_fee_vs", "stay_fee_council_account", "stay_fee_authority_name"):
+        assert f'name="{name}"' in form, name
+    for name in ("stay_fee_cadence", "stay_fee_authority_address", "stay_fee_authority_contact",
+                 "stay_fee_authority_databox"):
+        assert f'name="{name}"' not in form, name
+    assert re.search(r'name="stay_fee_authority_name"[^>]*required', form)

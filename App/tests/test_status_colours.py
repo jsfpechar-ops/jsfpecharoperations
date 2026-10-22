@@ -190,14 +190,6 @@ def test_the_unverified_label_matches_the_ready_label_in_both_languages():
         )
 
 
-def test_the_stay_pill_is_blue_on_the_work_queue(host):
-    client, _, _ = host
-    page = client.get("/")
-    assert page.status_code == 200
-    tone, tip = _pill(page.text, "Ready to report")
-    assert tone == "blue", "amber reads as a problem the host has to solve"
-    assert tip == "ID not checked (optional)"
-
 
 def test_the_stay_pill_is_blue_on_the_stays_list(host):
     client, _, _ = host
@@ -220,7 +212,7 @@ def test_the_stay_pill_is_blue_on_the_stay_detail(host):
 def test_the_stay_pill_is_czech_for_a_czech_host(host):
     client, _, _ = host
     client.cookies.set(host_i18n.LANG_COOKIE, "cs")
-    page = client.get("/")
+    page = client.get("/reservations")
     assert page.status_code == 200
     tone, tip = _pill(page.text, "Připraveno k hlášení")
     assert tone == "blue"
