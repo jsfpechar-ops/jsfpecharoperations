@@ -113,3 +113,16 @@
   .health-row { grid-template-columns: auto minmax(0, 1fr) auto; }
   .health-row > .ui-btn { grid-column: auto; justify-self: end; }
 }
+
+/* 0284: the whole line opens its fix: the button is the link, stretched over
+   the line; the dismiss x and the "how" toggle sit above it. The x keeps its
+   slot on every line, so the buttons line up. */
+.host-workspace .needs-you-item:has([data-needs-you-go]) { position: relative; cursor: pointer; transition: background-color var(--motion-1) var(--ease-standard), border-color var(--motion-1) var(--ease-standard); }
+.host-workspace .needs-you-actions > [data-needs-you-go] { position: static; }
+.host-workspace .needs-you-actions > [data-needs-you-go]::before { content: ""; position: absolute; inset: 0; border-radius: var(--radius-md); }
+.host-workspace .needs-you-dismiss, .host-workspace .needs-you-item > .needs-you-more { position: relative; z-index: 1; }
+@media (min-width: 720px) {
+  .needs-you-actions { display: grid; grid-template-columns: auto var(--control-h); justify-items: end; }
+  .needs-you-actions > .ui-btn { grid-column: 1; }
+  .needs-you-dismiss { grid-column: 2; justify-self: center; }
+}
