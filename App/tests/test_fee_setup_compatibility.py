@@ -398,7 +398,8 @@ def test_set_up_link_opens_visible_editor_and_save_returns_to_the_list(live):
                               "stay_fee_authority_name"):
                     assert page.locator(f"#{field}").is_visible(), (field, width, locale)
                 assert page.locator("#stay-fee-settings details").count() == 1
-                page.locator("#stay-fee-council details.fee-more > summary").click()
+                page.locator("#stay-fee-council details.fee-more > summary").focus()
+                page.keyboard.press("Enter")  # by keyboard: a later focus() must stay :focus-visible
                 back = page.locator(".fee-return-note a")
                 assert back.is_visible() and back.get_attribute("href") == f"/stay-fees?month={month}"
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), (width, locale)
