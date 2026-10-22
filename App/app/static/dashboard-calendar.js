@@ -503,6 +503,9 @@
     dialog.addEventListener("close", () => {
       const target = focusReturn.get(dialog); focusReturn.delete(dialog);
       if ($("dialog[open]")) return;
+      // The close event is queued: keep focus if another control already received it.
+      const active = document.activeElement;
+      if (active && active !== document.body && !dialog.contains(active)) return;
       if (target && target.isConnected && !target.closest("dialog:not([open])")) target.focus();
       else body.focus();
     });
