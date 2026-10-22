@@ -6,6 +6,8 @@
 {% set operator_current = apartment.legal_entity_id %}
 {% block wizard_content %}
 <p class="setup-wizard-lede">{{ t('why.property') }}</p>
+{% from "_workflow.html" import workflow_strip with context %}
+{{ workflow_strip(none) }}
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="property-details-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
