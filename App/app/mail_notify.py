@@ -1459,6 +1459,22 @@ def door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
         return None
 
 
+def _door_code_payload(lang: str, subject: str, body: str, reservation_id: int) -> Dict[str, Any]:
+    """0245 (idea R): the notice in the branded layout, ending with one button to the stay."""
+    stay_url = _public(f"/reservations/{reservation_id}#now")
+    action = _text(lang, "mail.door_code_notice.action")
+    blocks = [
+        _block_paragraph(body),
+        _block_button(stay_url, action),
+        _block_link(stay_url, _guest_text(lang, "mail_link_fallback")),
+    ]
+    return {
+        "text": f"{body}\n\n{action}: {stay_url}",
+        "html": _shell(lang=lang, title=subject, preheader=subject, blocks=blocks, footer_lines=["UbyHost"]),
+        "lang": lang,
+    }
+
+
 def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
     row = db.query_one("SELECT * FROM door_code WHERE id = ?", (door_code_id,))
     if not row:
@@ -1484,7 +1500,7 @@ def _door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
         params["code"] = f"••••{tail}"
     subject = _text(lang, f"mail.door_code_notice.{variant}.subject", **params)
     body = _text(lang, f"mail.door_code_notice.{variant}.body", **params)
-    payload = {"text": body, "html": f"<p>{html.escape(body)}</p>", "lang": lang}
+    payload = _door_code_payload(lang, subject, body, reservation["id"])
     return mail.enqueue(
         kind="door_code_notice",
         idempotency_key=f"door_code_notice:{door_code_id}:{variant}",
@@ -1573,7 +1589,7 @@ def door_code_delayed_notice(reservation_id: int, reason: str) -> Optional[int]:
         variant = "failed" if (reason or "waiting") in _DOOR_CODE_NO_RETRY else "delayed"
         subject = _text(lang, f"mail.door_code_notice.{variant}.subject", **params)
         body = _text(lang, f"mail.door_code_notice.{variant}.body", **params)
-        payload = {"text": body, "html": f"<p>{html.escape(body)}</p>", "lang": lang}
+        payload = _door_code_payload(lang, subject, body, reservation_id)
         return mail.enqueue(
             kind="door_code_notice",
             idempotency_key=f"door_code_notice:stay{reservation_id}:delayed",
