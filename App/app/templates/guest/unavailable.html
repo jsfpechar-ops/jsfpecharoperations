@@ -5,6 +5,7 @@
     <div class="mark neutral">?</div>
     <h2>{{ t(title_key) }}</h2>
     <p class="g-intro">{{ t(body_key) }}</p>
+    {% if host_note %}<p class="g-host-note" role="note" data-host-note>{{ host_note }}</p>{% endif %}
     {% if restart_url %}
       <a class="g-btn ghost" href="{{ restart_url }}">{{ t('start_over') }}</a>
     {% endif %}
