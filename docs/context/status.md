@@ -10,8 +10,7 @@ Updated: 2026-10-22.
 
 ## Now
 
-- 0250-0252 Open cues, iPad menu, Back fix. **Owner:** PR, iPad.
-- 0253 four red layout tests fixed (stay panel phone padding, invoice Remove height, stale tests, SW blocks page.route). WebKit runs in cloud. **Owner:** review PR.
+- 0250-0252 Open cues, iPad menu (#427 merged); 0253 four red layout tests. **Owner:** review 0253 PR, iPad.
 - Foolproof workflow: round 1 (0230-0237) and round 2 (0239-0248: "What needs you" card, health check, day-before nudge, one-button mails; missing setup is amber, not red). **Owner:** review PRs, merge, deploy (`?v=` keys).
 - Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
 - #418 onboarding fixes 0203-0212; address open.

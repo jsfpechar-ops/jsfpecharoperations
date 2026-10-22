@@ -65,6 +65,7 @@ Statuses: `todo → in-progress → review → done`, plus `blocked` (with the r
 - Give the full code or exact diffs, never "implement X". Name every file. Number every step. One step changes one place in one file.
 - Every step ends with its command, written out, and the expected result.
 - Acceptance must be checkable by a command or a visible fact. Tests come from the [test-map](test-map.md), never the full suite. UI work: the browser and geometry tests plus the screenshots.
+- Touch or Safari reports: add iPad sizes (820, 1024, 1180) with touch, and run them in WebKit too (`playwright install-deps webkit`, then `install webkit`; recreate the Chromium shim afterwards).
 - Haiku can't push to `main`, merge, set secrets, SSH or deploy, and its `gh` is often read-only. The brief says what to hand to the owner, with exact commands.
 - Owner steps are numbered and click-by-click, in plain words.
 - One brief owns each piece of copy. When a new brief replaces an old one, mark the old one `Status: replaced by NNNN` in the same commit that adds the new brief.

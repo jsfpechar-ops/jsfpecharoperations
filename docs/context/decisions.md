@@ -62,4 +62,4 @@ Append-only.
 - 2026-10-22 Round 2: dashboard opens with one "What needs you" card; the alert stack is hidden on `/` only (the card carries the alerts). Host reminder may go the day before arrival when nobody opened the link, same key as check-in day, so at most one per stay; no new host emails (owner).
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
 
-- 2026-10-22 [workflow] WebKit runs in the cloud container (`playwright install-deps webkit` + `install webkit`); iPad/Safari checks run in real WebKit as well as Chromium touch. Browser tests that use `page.route` on navigations use `service_workers="block"` (sw.js answers navigations, page.route cannot see them). (0253)
+- 2026-10-22 [workflow] iPad checks also run in cloud WebKit; `page.route` tests on navigations need `service_workers="block"` (0253).
