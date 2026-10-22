@@ -28,7 +28,9 @@ MEASURE = """() => {
   const out = { vw: innerWidth, sw: document.documentElement.scrollWidth };
   const panel = q('.host-stay-detail .stay-command-panel'), gh = q('#guests .ui-section-h h2');
   const main = q('.host-stay-detail .stay-command-panel .stay-command-main');
-  if (main && gh) out.A = f(tl(main, '.journey') - tl(gh));
+  // badges align by their box, text by its text
+  if (main && gh) out.A = f(R(main).left + parseFloat(cs(main, 'paddingLeft')) - tl(gh));
+  const note = q('.stay-command-panel .stay-command-note'); if (note && gh) out.An = f(tl(note) - tl(gh));
   if (q('.stay-command-panel .journey') && main) out.Aj = f(R(q('.stay-command-panel .journey')).left - R(q('.stay-command-panel .stay-command-main')).left);
   const act = q('.host-stay-detail .stay-command-actions');
   if (act) {
@@ -107,6 +109,8 @@ def _check_stay(m, name):
         FAILS.append((abs(m["A"]) <= 1, f"{name}: A panel content offset {m['A']}"))
     if m.get("Aj") is not None:
         FAILS.append((abs(m["Aj"]) <= 1, f"{name}: A journey offset {m['Aj']}"))
+    if m.get("An") is not None:
+        FAILS.append((abs(m["An"]) <= 1, f"{name}: A note text offset {m['An']}"))
     if "Bh" in m:
         FAILS.append((m["Bwrap"] == [], f"{name}: B wrapped labels {m['Bwrap']}"))
         FAILS.append((all(43 <= h <= 45 for h in m["Bh"]), f"{name}: B heights {m['Bh']}"))
