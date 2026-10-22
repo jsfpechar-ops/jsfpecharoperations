@@ -57,6 +57,7 @@ from .. import (
     ttlock,
     validation,
     workflow,
+    welcome_back,
 )
 from ..templating import render
 from ..ubyport.client import UbyportError, UbyportTransportError
@@ -429,6 +430,9 @@ def dashboard(request: Request):
     owner_user_id = access.owner_id(request)
     apartments = access.apartments(request)
     today = deadlines.local_now().date()
+    # 0275: one welcome-back line after two weeks away.
+    account = auth.current_user(request)
+    welcome = welcome_back.check(account["id"] if account else None, owner_user_id, today)
     rows = reporting.dashboard_rows(
         days_ahead=30, owner_user_id=owner_user_id, apartments=apartments, overview=True
     )
@@ -486,6 +490,7 @@ def dashboard(request: Request):
             "minutes_saved": minutes_saved,
             # 0233: remind until a real guest has used the guest link.
             "link_unused": workflow.link_unused(apartments),
+            "welcome_back": welcome,
         },
     )
 
