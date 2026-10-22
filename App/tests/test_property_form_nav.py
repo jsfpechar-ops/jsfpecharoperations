@@ -45,7 +45,7 @@ def test_the_third_nav_link_is_the_police_panel(host):
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
 
     assert '#ubyport"' in nav  # 0094: ?view=settings&section=reporting#ubyport
-    assert '<strong>Police reporting</strong>' in nav
+    assert 'Police reporting</strong>' in nav  # 0286: the status dot sits before the title
 
 
 def test_the_nav_no_longer_sends_you_off_the_form(host):
@@ -62,7 +62,7 @@ def test_the_czech_nav_says_hlasi_se_policii(host):
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=cs").text)
 
     assert '#ubyport"' in nav
-    assert '<strong>Hlášení policii</strong>' in nav
+    assert 'Hlášení policii</strong>' in nav  # 0286: the status dot sits before the title
 
 
 def test_the_nav_numbers_run_one_to_five_without_a_gap(host):
