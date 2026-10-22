@@ -152,6 +152,9 @@ def _wizard_context(
             state and state["steps"].get("police") == "waiting" and not report_complete
         ),
         "wizard_facts": facts_payload,
+        # 0274: confetti once, the first time the finish page is shown.
+        "celebrate": property_setup.celebrate_once(apartment_id) if step == "done" else False,
+        "ical_poll_minutes": config.ICAL_POLL_MINUTES,
         "checklist": property_setup.checklist(
             state or property_setup.legacy_state(),
             apartment,

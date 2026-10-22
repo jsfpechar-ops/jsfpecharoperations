@@ -5,6 +5,25 @@
 {% block wizard_content %}
 <p class="setup-wizard-lede">{{ t('why.try') }} {{ help_tip('setup-try-help', t('setup_guide.try.help')) }}</p>
 {% set demo_state = setup_demo.state if setup_demo else 'none' %}
+{% if demo_state == 'registered' %}
+<section class="setup-rehearsal" aria-labelledby="rehearsal-title" data-rehearsal>
+  <h2 id="rehearsal-title">{{ t('wizard.rehearsal.title') }}</h2>
+  <ol class="setup-rehearsal-steps">
+    {% for step in workflow_steps(apartment) %}
+    {% set real = step.n <= 2 %}
+    <li class="{{ 'is-done' if real else 'is-test' }}" data-rehearsal-step="{{ step.key }}">
+      <span class="workflow-num" aria-hidden="true">{% if real %}✓{% else %}{{ step.n }}{% endif %}</span>
+      <span class="setup-rehearsal-copy">
+        <strong>{{ t('workflow.step.' ~ step.key) }}</strong>
+        <span>{% if step.key == 'police_scheduled' %}{{ t('wizard.rehearsal.police_scheduled', hours=apartment.submit_after_hours or 24) }}{% elif step.key == 'police_immediate' %}{{ t('wizard.rehearsal.police_immediate', minutes=setup_sweep_minutes) }}{% else %}{{ t('wizard.rehearsal.' ~ step.key) }}{% endif %}</span>
+      </span>
+      <span class="ui-badge ui-badge-{{ 'done' if real else 'neutral' }}" data-tone="{{ 'green' if real else 'grey' }}">{{ t('wizard.rehearsal.badge_done') if real else t('wizard.rehearsal.badge_test') }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  <p class="setup-wizard-instruction">{{ t('wizard.rehearsal.never_police') }}</p>
+</section>
+{% endif %}
 <section class="setup-wizard-demo" aria-labelledby="demo-property-heading">
   <h2 id="demo-property-heading">{{ t('wizard.try_it.property') }}</h2>
   <a class="setup-demo-property" href="/apartments/{{ apartment.id }}?view=overview">
@@ -31,11 +50,9 @@
   {% set message_url = permalink %}
   {% set message_text = t('wizard.guest_link.message_template', url=message_url, pin=pin, operator_first_name=message_operator_first_name, property_name=apartment.internal_name) %}
   <div class="setup-demo-bubble">{% for part in message_text.split(message_url) %}{{ part }}{% if not loop.last %}{% if demo_state == 'none' %}<button class="setup-demo-message-link" type="submit" form="setup-create-demo">{{ message_url }}</button>{% else %}<a href="{{ setup_demo.guest_url }}" target="_blank" rel="noopener">{{ message_url }}</a>{% endif %}{% endif %}{% endfor %}</div>
-  <p class="setup-wizard-instruction">{{ t('wizard.try_it.instructions') }}</p>
+  {% if demo_state != 'registered' %}<p class="setup-wizard-instruction">{{ t('wizard.try_it.instructions') }}</p>{% endif %}
 </section>
-{% if demo_state == 'registered' %}
-<p class="setup-wizard-lede">{{ t('setup_guide.try.registered_text') }}</p>
-{% elif demo_state == 'open' %}
+{% if demo_state == 'open' %}
 <p class="setup-wizard-instruction" data-wizard-demo-wait>{{ t('wizard.try_it.waiting') }}</p>
 {% endif %}
 {% endblock %}

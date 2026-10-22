@@ -1,6 +1,12 @@
 {
   "master_version": "2.0.0",
   "classes": [
+    "ui-how",
+    "ui-how-toggle",
+    "ui-how-chevron",
+    "ui-how-body",
+    "ui-how-steps",
+    "ui-how-more",
     "ui-page",
     "ui-ph",
     "ui-ph-main",
@@ -742,7 +748,13 @@
       "setup-wizard-exit",
       "setup-wizard-foot",
       "setup-wizard-head",
-      "setup-wizard-progress"
+      "setup-wizard-progress",
+      "setup-wizard-meter",
+      "setup-wizard-done-count",
+      "setup-wizard-tick",
+      "setup-wizard-ask",
+      "setup-wizard-ask-icon",
+      "setup-wizard-question"
     ],
     "App/app/templates/setup_wizard/automation.html": [
       "field",
@@ -773,7 +785,11 @@
       "setup-summary-icon",
       "setup-wizard-checklist",
       "setup-wizard-section-title",
-      "ui-badge-"
+      "ui-badge-",
+      "setup-wizard-celebrate-copy",
+      "setup-wizard-celebrate-mark",
+      "setup-wizard-celebrate-title",
+      "setup-wizard-instruction"
     ],
     "App/app/templates/setup_wizard/door_lock.html": [
       "feature-switch",
@@ -848,7 +864,12 @@
       "setup-wizard-demo",
       "setup-wizard-instruction",
       "setup-wizard-lede",
-      "setup-wizard-skip"
+      "setup-wizard-skip",
+      "setup-rehearsal",
+      "setup-rehearsal-steps",
+      "setup-rehearsal-copy",
+      "workflow-num",
+      "ui-badge-"
     ],
     "App/app/templates/_smart_locks_panel.html": [
       "action-group",
@@ -869,7 +890,8 @@
     "App/app/templates/admin_funnel.html": []
   },
   "enforced_stylesheets": [
-    "App/app/static/host2.css"
+    "App/app/static/host2.css",
+    "App/app/static/wizard.css"
   ],
   "class_notes": {
     "ui-section-plain": "Guide page section: a section with no border or fill, only spacing and a heading (MASTER 3, section rhythm).",

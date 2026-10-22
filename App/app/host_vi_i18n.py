@@ -3372,3 +3372,95 @@ STRINGS.update({
     "mail.reminder_host.footer_tomorrow": "Bạn nhận email này tối đa một lần cho mỗi lượt lưu trú: một ngày trước khi nhận phòng, và chỉ khi chưa ai mở liên kết cho khách.",
     "mail.door_code_notice.action": "Mở lượt lưu trú",
 })
+
+# 0272 (C): the test run walkthrough (Vietnamese).
+STRINGS.update({
+    "wizard.step.try_it": "Chạy thử",
+    "wizard.summary.try_it": "Chạy thử",
+    "why.try": "Bước cuối: chạy thử. Hãy tự làm khách của mình: mở liên kết trong tin nhắn, nhập PIN và điền biểu mẫu bằng thông tin giả. Sau đó xem điều gì xảy ra tiếp theo. Không có gì được gửi cho cảnh sát, và bạn có thể xóa lượt lưu trú thử sau đó.",
+    "wizard.rehearsal.title": "Lần chạy thử của bạn, từng bước",
+    "wizard.rehearsal.paste": "Xong: bạn đã mở liên kết từ tin nhắn cho khách.",
+    "wizard.rehearsal.form": "Xong: bạn đã điền biểu mẫu khách.",
+    "wizard.rehearsal.email": "Với lượt lưu trú thật, bạn sẽ nhận email lúc này. Chạy thử không gửi email.",
+    "wizard.rehearsal.police": "Với lượt lưu trú thật, khai báo cảnh sát sẽ được gửi tiếp theo.",
+    "wizard.rehearsal.police_manual": "Với lượt lưu trú thật, bạn mở lượt đó và bấm Gửi.",
+    "wizard.rehearsal.police_scheduled": "Với lượt lưu trú thật, khai báo tự gửi %(hours)s giờ sau khi điền biểu mẫu.",
+    "wizard.rehearsal.police_immediate": "Với lượt lưu trú thật, khai báo tự gửi trong vòng %(minutes)s phút.",
+    "wizard.rehearsal.finish": "Với lượt lưu trú thật, khách nhận email xác nhận.",
+    "wizard.rehearsal.finish_lock": "Với lượt lưu trú thật, khách thấy mã cửa và nhận email xác nhận.",
+    "wizard.rehearsal.badge_done": "Xong",
+    "wizard.rehearsal.badge_test": "Chỉ thử",
+    "wizard.rehearsal.never_police": "Lượt lưu trú thử không bao giờ được gửi cho cảnh sát và không tính vào phí lưu trú hay hóa đơn.",
+})
+
+# 0273: friendlier wizard (K).
+STRINGS.update({
+    "wizard.done_count": "Đã xong %(n)s/%(total)s",
+    "wizard.question.property": "Chỗ ở của bạn ở đâu?",
+    "wizard.question.calendar": "Bạn nhận đặt phòng ở đâu?",
+    "wizard.question.police": "Thông tin đăng nhập cảnh sát của bạn là gì?",
+    "wizard.question.automation": "Khi nào gửi khai báo cho cảnh sát?",
+    "wizard.question.stay_fee": "Địa phương của bạn có thu phí lưu trú không?",
+    "wizard.question.door_lock": "Khách vào nhà bằng cách nào?",
+    "wizard.question.guest_link": "Khách tìm biểu mẫu của mình bằng cách nào?",
+    "wizard.question.try_it": "Chạy thử một lần nhé?",
+})
+
+STRINGS.update({
+    "wizard.done.all_set": "Xong rồi!",
+    "wizard.done.all_set_text": "Giờ khách có thể tự đăng ký.",
+    "wizard.done.almost": "Sắp xong: còn một việc.",
+    "wizard.done.left.police": "Thêm thông tin đăng nhập cảnh sát, khai báo sẽ tự gửi đi.",
+    "wizard.done.left.step": "Hoàn tất bước bên dưới là xong.",
+    "wizard.done.fix.police": "Thêm đăng nhập cảnh sát",
+    "wizard.done.fix.step": "Hoàn tất thiết lập",
+    "wizard.done.go_stays": "Mở các lượt lưu trú",
+    "wizard.done.go_property": "Mở chỗ ở của tôi",
+    "wizard.done.note_sync": "Các lượt lưu trú sẽ hiện ở trang chỗ ở trong vòng %(minutes)s phút, khi lịch được đồng bộ.",
+    "wizard.done.note_no_calendar": "Chưa kết nối lịch nào. Bạn có thể tự thêm lượt lưu trú ở trang chỗ ở.",
+})
+
+# 0275: welcome-back line (Vietnamese).
+STRINGS.update({
+    "welcome_back.title": "Chào mừng bạn trở lại! Từ %(date)s:",
+    "welcome_back.stays": "Có %(count)s lượt lưu trú mới.",
+    "welcome_back.stays.one": "Có 1 lượt lưu trú mới.",
+    "welcome_back.stays.few": "Có %(count)s lượt lưu trú mới.",
+    "welcome_back.reported": "Đã khai báo %(count)s khách cho cảnh sát.",
+    "welcome_back.reported.one": "Đã khai báo 1 khách cho cảnh sát.",
+    "welcome_back.reported.few": "Đã khai báo %(count)s khách cho cảnh sát.",
+    "welcome_back.quiet": "Không có gì mới.",
+})
+
+# 0277: "How does this work?" (Vietnamese).
+STRINGS.update({
+        "how.toggle": "Hoạt động như thế nào?",
+        "how.more": "Xem thêm trong hướng dẫn",
+        "how.dashboard.1": "Lượt lưu trú tự đến đây từ lịch của bạn.",
+        "how.dashboard.2": "Mỗi khách điền biểu mẫu qua liên kết trong tin nhắn của bạn.",
+        "how.dashboard.3": "Việc cần bạn làm hiện ở trên cùng. Danh sách trống nghĩa là mọi thứ ổn.",
+        "how.stays.1": "Mỗi đặt phòng trong lịch trở thành một lượt lưu trú ở đây.",
+        "how.stays.2": "Tin nhắn Airbnb hoặc Booking.com của bạn có liên kết cho khách, nên khách điền biểu mẫu trước khi đến.",
+        "how.stays.3": "Khi khách điền xong, báo cáo cảnh sát được gửi theo cách bạn chọn cho chỗ ở.",
+        "how.stay.1": "Đây là một lượt lưu trú và các khách của nó.",
+        "how.stay.2": "Mỗi khách hiện trạng thái: chờ biểu mẫu, đã điền, hoặc đã khai báo.",
+        "how.stay.3": "Thiếu khách? Gửi lại liên kết, hoặc tự thêm khách.",
+        "how.properties.1": "Mỗi chỗ ở có lịch, tài khoản cảnh sát và liên kết cho khách riêng.",
+        "how.properties.2": "Màu cam đánh dấu bước cài đặt còn thiếu. Mở chỗ ở để hoàn tất.",
+        "how.properties.3": "Thêm một chỗ ở cho mỗi nơi bạn cho thuê.",
+        "how.property.1": "Mọi thứ của chỗ ở này đều ở đây.",
+        "how.property.2": "Màu cam đánh dấu những gì còn thiếu. Phần còn lại tự chạy.",
+        "how.property.3": "Báo cáo cho chỗ ở này dùng tài khoản cảnh sát riêng của nó.",
+        "how.reports.1": "Mỗi khách nước ngoài được khai báo với cảnh sát ngoại kiều (Ubyport).",
+        "how.reports.2": "Báo cáo tự gửi, hoặc gửi khi bạn bấm Gửi, tùy cài đặt của chỗ ở.",
+        "how.reports.3": "Mỗi dòng cho biết cảnh sát đã nhận báo cáo chưa. Sự cố cũng hiện trên bảng điều khiển.",
+        "how.invoices.1": "Xuất hóa đơn khi khách cần cho lượt lưu trú.",
+        "how.invoices.2": "Thông tin đơn vị kinh doanh tự điền.",
+        "how.invoices.3": "Tải PDF và gửi cho khách.",
+        "how.stay_fees.1": "UbyHost cộng phí lưu trú của từng chỗ ở theo số khách và số đêm.",
+        "how.stay_fees.2": "Mở chỗ ở để xem báo cáo, PDF và mã QR để thanh toán.",
+        "how.stay_fees.3": "Đánh dấu kỳ là đã gửi và đã trả. UbyHost không trả thay bạn.",
+        "how.housebook.1": "Sổ lưu trú ghi mọi khách, theo yêu cầu của luật.",
+        "how.housebook.2": "Sổ tự điền từ biểu mẫu của khách.",
+        "how.housebook.3": "Xuất PDF hoặc tệp khi cơ quan yêu cầu.",
+})

@@ -4,17 +4,20 @@
 {% block page_title %}{{ t('wizard.title', name=apartment.internal_name) }}{% endblock %}
 {% block meta %}{% if wizard_number %}{{ t('wizard.count', n=wizard_number, total=wizard_total, step=t('wizard.step.' ~ wizard_step) ~ (t('wizard.optional_suffix') if wizard_step in ('stay_fee', 'door_lock') else '')) }}{% elif guide %}{{ t('wizard.count', n=guide.number, total=guide.total, step=t('wizard.step.' ~ guide.key) ~ (t('wizard.optional_suffix') if guide.key in ('stay_fee', 'door_lock') else '')) }}{% endif %}{% endblock %}
 {% block body %}
-{% from "_components.html" import help_tip, copy_button, progress_pill, guest_count with context %}
+{% from "_components.html" import help_tip, copy_button, progress_pill, guest_count, nav_icon with context %}
 {% set base_setup = '/apartments/' ~ apartment.id ~ '/' ~ 'setup' %}
 {% set values = draft if draft is defined else apartment %}
 <div class="setup-wizard" data-setup-wizard data-setup-step="{{ wizard_step }}">
   <div class="setup-wizard-head">
     {% if guide %}
-    <ol class="setup-wizard-progress" aria-hidden="true">
-      {% for item in guide.progress %}
-      <li class="is-{{ item.state }}"></li>
-      {% endfor %}
-    </ol>
+    <div class="setup-wizard-meter">
+      <ol class="setup-wizard-progress" aria-hidden="true">
+        {% for item in guide.progress %}
+        <li class="is-{{ item.state }}"></li>
+        {% endfor %}
+      </ol>
+      <p class="setup-wizard-done-count">{% if guide.done_count %}<span class="setup-wizard-tick" aria-hidden="true">✓</span> {% endif %}{{ t('wizard.done_count', n=guide.done_count, total=guide.total) }}</p>
+    </div>
     {% endif %}
     <form method="post" action="{{ base_setup }}" class="setup-wizard-exit">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
@@ -22,6 +25,14 @@
     </form>
   </div>
   <div class="setup-wizard-body">
+    {% set step_icons = {'property': 'property', 'calendar': 'calendar', 'police': 'report', 'automation': 'automation', 'stay_fee': 'coins', 'door_lock': 'lock', 'guest_link': 'link', 'try_it': 'users'} %}
+    {% set step_tones = {'property': 'blue', 'calendar': 'teal', 'police': 'purple', 'automation': 'blue', 'stay_fee': 'teal', 'door_lock': 'purple', 'guest_link': 'blue', 'try_it': 'teal'} %}
+    {% if wizard_step in step_icons %}
+    <div class="setup-wizard-ask" data-step-tone="{{ step_tones[wizard_step] }}">
+      <span class="setup-wizard-ask-icon">{{ nav_icon(step_icons[wizard_step]) }}</span>
+      <h2 class="setup-wizard-question">{{ t('wizard.question.' ~ wizard_step) }}</h2>
+    </div>
+    {% endif %}
     {% if wizard_step in ('property', 'police', 'stay_fee') %}<p class="required-legend">{{ t('common.required_legend') }}</p>{% endif %}
     {% if setup_notice %}<p class="err-text" role="alert">{{ setup_notice }}</p>{% endif %}
     {% block wizard_content %}{% endblock %}
