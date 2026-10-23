@@ -26,6 +26,7 @@ Master version: 2.0.0. Adds only.
 - `banner(attention)`: one line "N properties need setup" (`dashboard.setup.properties`, plural forms) with the "Finish setup" button; the per-field list is desktop only (0148)
 
 ## Empty state
+- Calm card: show “Nothing needs you today.” without a count of stays on track (owner, 2026-10-23).
 - `dashboard.empty.title` ("Nothing needs you today"), body = next stay date when known, `dashboard.section.view_stays` -> `/reservations`
 
 ## Tests

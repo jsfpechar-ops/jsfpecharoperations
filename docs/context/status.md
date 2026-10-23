@@ -4,12 +4,12 @@ Updated: 2026-10-23.
 
 ## Production
 
-- **Magic-link:** phases 1–2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)); e-mail login, `.env` admin/SES, access log off, properties tested.
+- Magic-link phases 1–2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)); login, admin/SES, access log off, properties tested.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
 
-- Mobile More skeleton: fix prepared; browser checks blocked by cloud startup.
+- #436: More loader fix, dashboard count removed; browser CI pending.
 
 - Check-in alerts #435: tests pass; owner merge/deploy.
 
@@ -39,7 +39,7 @@ Updated: 2026-10-23.
 - Merged 0067 (#371) and 0068 (#372). TTLock answered all questions ([TTLOCK](../TTLOCK.md#what-ttlock-support-confirmed-2026-10-12)). Next: [0069](../tasks/0069-same-period-shared-pin.md), same-hours rebooking must not reuse a PIN (K-D04).
 - Plan [file-retention](../plans/file-retention.md): decided, no build now. Lawyer round: add a Terms/DPA line that the app is not the host's statutory archive.
 
-- TTLock door codes: briefs 0008 to 0016 in [ttlock-door-codes](../plans/ttlock-door-codes.md) §11, run in order (0016 any time after 0010). Test mode first; live only after the §12 acceptance test and the lawyer (K-L row).
+- TTLock briefs 0008–0016: [plan](../plans/ttlock-door-codes.md) §11 order (0016 after 0010). Test first; live after §12 acceptance + lawyer (K-L).
 
 - Doručenka smoke on a new filing after this cutover.
 - TTLock staging (2026-10-08/10): issue and delete work, code opened the lock. Untested: change, calendar stays, DST.
