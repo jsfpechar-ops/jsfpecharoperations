@@ -180,6 +180,14 @@ DOOR_CODES_LIVE = os.environ.get("UBYHOST_DOOR_CODES_LIVE", "0") in ("1", "true"
 
 # Used to build the guest permalink shown to hosts for copy/paste.
 PUBLIC_BASE_URL = os.environ.get("UBYHOST_PUBLIC_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
+# Optional host portal. Empty preserves the existing single-origin deployment.
+APP_BASE_URL = os.environ.get("UBYHOST_APP_BASE_URL", "").strip().rstrip("/")
+
+
+def app_base_url() -> str:
+    """Host login and workspace links; guest links keep PUBLIC_BASE_URL."""
+    return APP_BASE_URL or PUBLIC_BASE_URL
+
 
 ENABLE_SCHEDULER = os.environ.get("UBYHOST_ENABLE_SCHEDULER", "1") not in ("0", "false", "no")
 

@@ -9,7 +9,8 @@
 	email {$ACME_EMAIL}
 }
 
-{$UBYHOST_DOMAIN} {
+# The optional app hostname shares this backend, TLS policy and upload limit.
+{$UBYHOST_DOMAIN} {$UBYHOST_APP_DOMAIN} {
 	# The guest form posts its signature and its passport upload as one
 	# multipart body, so this must stay above passport_photos.MAX_PDF_BYTES
 	# (15 MB). 20 MB admits every legitimate body and rejects an unbounded one

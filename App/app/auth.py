@@ -763,7 +763,7 @@ def ensure_bootstrap_admin() -> Optional[str]:
     db.execute("UPDATE audit SET owner_user_id = ? WHERE owner_user_id IS NULL", (user_id,))
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
     token = login_link.issue(account, purpose=login_link.INVITE)
-    link = f"{config.PUBLIC_BASE_URL}/login/link?t={token}"
+    link = f"{config.app_base_url()}/login/link?t={token}"
     path = Path(config.DATA_DIR) / "initial_admin_login"
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     os.fchmod(descriptor, 0o600)

@@ -16,6 +16,11 @@ and logs warnings for the merely suspicious ones. Read its output on boot.
 
 ## Core
 
+Optional host subdomain: [deployment, exact values and rollback](APP_SUBDOMAIN.md).
+`UBYHOST_PUBLIC_BASE_URL` stays public; `UBYHOST_APP_BASE_URL` and
+`UBYHOST_APP_DOMAIN` opt in to the separate host portal together.
+
+
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `UBYHOST_DATA_DIR` | `App/data` | Database, secret key, passport photos. Created at import time with mode `0700`. |

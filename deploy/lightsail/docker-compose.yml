@@ -173,6 +173,7 @@ services:
       - "443:443/udp"
     environment:
       UBYHOST_DOMAIN: ${UBYHOST_DOMAIN}
+      UBYHOST_APP_DOMAIN: ${UBYHOST_APP_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL}
     volumes:
       - ./caddy/Caddyfile.active:/etc/caddy/Caddyfile:ro

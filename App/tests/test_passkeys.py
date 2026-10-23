@@ -436,3 +436,36 @@ def test_a_foreign_passkey_return_falls_back_to_settings():
     answer = authenticator.create(options.json())
     response = _post(client, "/account/passkeys", {"credential": answer, "return_to": "https://evil.example/x"})
     assert response.json()["redirect"].startswith("/settings?msg=")
+
+
+# --- moving the host portal to a child domain --------------------------------
+
+
+def test_existing_public_host_passkey_logs_in_on_the_app_subdomain(monkeypatch):
+    authenticator, registered = _add(_signed_in(_account()))
+    assert registered.status_code == 200
+    app_origin = "https://app.ubyhost.test"
+    monkeypatch.setattr(config, "APP_BASE_URL", app_origin)
+    assert passkeys.rp_id() == RP_ID
+    client = TestClient(app, base_url=app_origin)
+    _, response = _login(authenticator, client, origin=app_origin)
+    assert response.status_code == 200, response.text
+    assert response.json()["redirect"] == "/settings"
+    assert client.get("/settings", follow_redirects=False).status_code == 200
+    assert "domain=" not in response.headers.get("set-cookie", "").lower()
+
+
+def test_app_origin_can_register_without_changing_the_rp_id(monkeypatch):
+    app_origin = "https://app.ubyhost.test"
+    monkeypatch.setattr(config, "APP_BASE_URL", app_origin)
+    authenticator = SoftAuthenticator(origin=app_origin, rp_id=RP_ID)
+    _, response = _add(_signed_in(_account()), authenticator)
+    assert response.status_code == 200, response.text
+    assert _login(authenticator, origin=app_origin)[1].status_code == 200
+
+
+def test_configuring_one_app_origin_does_not_trust_other_subdomains(monkeypatch):
+    monkeypatch.setattr(config, "APP_BASE_URL", "https://app.ubyhost.test")
+    authenticator, _ = _add(_signed_in(_account()))
+    assert _login(authenticator, origin="https://other.ubyhost.test")[1].status_code == 401
+    assert _login(authenticator, origin="https://app.ubyhost.test.evil.example")[1].status_code == 401

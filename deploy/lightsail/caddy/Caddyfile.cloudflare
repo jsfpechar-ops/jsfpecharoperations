@@ -15,7 +15,8 @@
 	}
 }
 
-{$UBYHOST_DOMAIN} {
+# The optional app hostname shares this backend, TLS policy and upload limit.
+{$UBYHOST_DOMAIN} {$UBYHOST_APP_DOMAIN} {
 	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
 	# The guest form posts its signature and its passport upload as one
 	# multipart body, so this must stay above passport_photos.MAX_PDF_BYTES

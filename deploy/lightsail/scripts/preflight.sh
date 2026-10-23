@@ -26,6 +26,11 @@ for var in UBYHOST_DOMAIN ACME_EMAIL UBYHOST_PUBLIC_BASE_URL; do
   fi
 done
 
+# Stdlib-only shared validation, before any image build or container restart.
+if ! python3 "${ROOT}/../../App/app/site_urls.py"; then
+  die "invalid public/app URL configuration"
+fi
+
 DEPLOYMENT="${UBYHOST_DEPLOYMENT:-local}"
 UBYPORT="${UBYHOST_UBYPORT_ENV:-mock}"
 

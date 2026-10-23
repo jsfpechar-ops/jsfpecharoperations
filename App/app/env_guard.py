@@ -10,7 +10,7 @@ import logging
 import os
 from typing import List, Mapping, Optional, Sequence
 
-from . import config, mail
+from . import config, mail, site_urls
 
 log = logging.getLogger("ubyhost.env_guard")
 
@@ -34,7 +34,9 @@ def is_render_like_environment(environ: Optional[Mapping[str, str]] = None) -> b
             "RENDER_EXTERNAL_URL",
             "RENDER_EXTERNAL_HOSTNAME",
             "UBYHOST_PUBLIC_BASE_URL",
+            "UBYHOST_APP_BASE_URL",
             "UBYHOST_DOMAIN",
+            "UBYHOST_APP_DOMAIN",
         )
     ).lower()
     return "onrender.com" in haystack
@@ -57,6 +59,8 @@ def validate_runtime_env(
     scheduler_enabled: Optional[bool] = None,
     public_base_url: Optional[str] = None,
     domain: Optional[str] = None,
+    app_base_url: Optional[str] = None,
+    app_domain: Optional[str] = None,
     environ: Optional[Mapping[str, str]] = None,
     operator_identity: Optional[Mapping[str, str]] = None,
 ) -> List[str]:
@@ -154,6 +158,16 @@ def validate_runtime_env(
 
     if deploy == "production" and not str(base_url).lower().startswith("https://"):
         raise EnvGuardError("UBYHOST_PUBLIC_BASE_URL must use https:// in production")
+
+    try:
+        site_urls.validate_app_url(
+            base_url,
+            app_base_url if app_base_url is not None else os_env.get("UBYHOST_APP_BASE_URL", ""),
+            app_domain if app_domain is not None else os_env.get("UBYHOST_APP_DOMAIN", ""),
+            production=deploy == "production",
+        )
+    except ValueError as exc:
+        raise EnvGuardError(str(exc)) from exc
 
     if deploy == "production":
         identity = (

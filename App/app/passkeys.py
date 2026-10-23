@@ -6,7 +6,8 @@ loses every device still gets in; a passkey only saves the trip to the inbox.
 How the pieces fit:
 
 * The relying party is the host name of ``UBYHOST_PUBLIC_BASE_URL``
-  (``ubyhost.com`` in production). WebAuthn refuses IP addresses, so on a
+  (``ubyhost.com`` in production), even with a separate app URL. Only the
+  public and configured app origins are accepted. WebAuthn refuses IP addresses, so on a
   plain ``http://127.0.0.1`` run passkeys are simply not offered; use
   ``http://localhost:8080`` to try them locally.
 * Every ceremony starts on the server: it mints a random challenge, stores
@@ -58,7 +59,7 @@ from webauthn.helpers.structs import (
     UserVerificationRequirement,
 )
 
-from . import config, db, rate_limit
+from . import config, db, rate_limit, site_urls
 
 REGISTER = "register"
 LOGIN = "login"
@@ -113,6 +114,11 @@ def expected_origin() -> str:
     scheme, host, port = _base()
     default = {"https": 443, "http": 80}.get(scheme)
     return f"{scheme}://{host}" + (f":{port}" if port and port != default else "")
+
+
+def expected_origins() -> list[str]:
+    """Accept only the two configured origins, retaining the public-host RP ID."""
+    return list(dict.fromkeys((expected_origin(), site_urls.origin(config.app_base_url()))))
 
 
 def available() -> bool:
@@ -293,7 +299,7 @@ def register(account: Any, credential: Dict[str, Any], name: str) -> int:
             credential=credential,
             expected_challenge=challenge,
             expected_rp_id=rp_id(),
-            expected_origin=expected_origin(),
+            expected_origin=expected_origins(),
             require_user_verification=True,
         )
     except _VERIFY_ERRORS as exc:
@@ -394,7 +400,7 @@ def authenticate(credential: Dict[str, Any]):
             credential=credential,
             expected_challenge=challenge,
             expected_rp_id=rp_id(),
-            expected_origin=expected_origin(),
+            expected_origin=expected_origins(),
             credential_public_key=base64url_to_bytes(row["public_key"]),
             credential_current_sign_count=int(row["sign_count"] or 0),
             require_user_verification=True,
