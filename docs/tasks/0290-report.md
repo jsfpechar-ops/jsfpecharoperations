@@ -8,9 +8,9 @@ Passkey login now bounds network/body reads to 15 seconds and explicit system sh
 
 ## Verification
 
-- 18 deterministic cases passed in the tools' V8 runtime with controlled DOM, network, time and WebAuthn promises.
+- 19 deterministic cases passed in the tools' V8 runtime with controlled DOM, network, time and WebAuthn promises.
 - The base reproduced the stuck network/body/sheet and three autofill race failures.
-- Native Node and browser CI pending. Browser matrix: Chromium and WebKit; 390/820/1024/1180 touch and 1280 desktop; 90 cases per engine; 390 px screenshots uploaded by CI.
+- Native Node and browser CI pending. Browser matrix: Chromium and WebKit; 390/820/1024/1180 touch and 1280 desktop; 95 cases per engine; 390 px screenshots uploaded by CI.
 - Existing CI supplies auth/passkey/security, cache and geometry checks.
 - Workspace never started: managed network requirements require sandbox enforcement. Local pytest, context lint and physical-device checks were unavailable.
 - No real passkey, live Cloudflare challenge or physical iPhone was used. The precise trigger on the owner's phone remains unconfirmed.

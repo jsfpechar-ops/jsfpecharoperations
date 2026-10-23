@@ -5,7 +5,7 @@ const PASSKEY_CASES = [
   "late-capability", "late-options", "late-conditional-credential",
   "stalled-fetch", "stalled-body", "stalled-sheet", "stalled-login-post", "html-challenge", "null-credential",
   "redirected-response", "invalid-json", "missing-challenge", "missing-redirect", "rate-limit",
-  "cancel-and-retry", "duplicate-click", "success", "add-timeout"
+  "cancel-and-retry", "duplicate-click", "capability-unavailable", "success", "add-timeout"
 ];
 
 async function runPasskeyClientCase(source, name, realDocument) {
@@ -107,6 +107,7 @@ async function runPasskeyClientCase(source, name, realDocument) {
     },
     parseCreationOptionsFromJSON: function (json) { return json; },
     isConditionalMediationAvailable: function () {
+      if (name === "capability-unavailable") return Promise.reject(new Error("No autofill"));
       return name === "late-capability" ? cap.promise : Promise.resolve(
         name === "late-options" || name === "late-conditional-credential"
       );
@@ -176,6 +177,7 @@ async function runPasskeyClientCase(source, name, realDocument) {
     assert(!add.disabled, "add button stayed disabled after network timeout");
     return name;
   }
+  if (name === "capability-unavailable") assert(error.hidden, "unsupported autofill showed an error");
   login.click(); await flush();
   if (name === "late-capability") {
     cap.resolve(true); await flush();

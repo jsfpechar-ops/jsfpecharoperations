@@ -30,7 +30,7 @@ Owner reported iPhone login staying unresponsive after tapping before Turnstile 
 3. Own conditional mediation before checking support; cancel it across options fetching and credential submission. Ignore late cancelled credentials.
 4. Restore the login button on completion/failure, hide stale errors on retry, and avoid an automatic extra options request after a failed tap.
 5. Bump both live cache references and the manifest.
-6. Add 18 deterministic cases and browser runs at 390, 820, 1024, 1180 and 1280 px.
+6. Add 19 deterministic cases and browser runs at 390, 820, 1024, 1180 and 1280 px.
 
 ## 5. Do not touch
 
@@ -45,9 +45,9 @@ No server authentication, CSRF, RP ID, origin checks, rate limits, Turnstile val
 
 ## 7. Acceptance
 
-- [x] 18 deterministic cases pass in the tool's V8 runtime; timing/race failures reproduced on the base.
+- [x] 19 deterministic cases pass in the tool's V8 runtime; timing/race failures reproduced on the base.
 - [ ] Native Node CI passes.
-- [ ] Chromium and WebKit: 90 cases each, zero skips, 390 px screenshots.
+- [ ] Chromium and WebKit: 95 cases each, zero skips, 390 px screenshots.
 - [ ] Existing CI and context lint pass.
 - [ ] Owner reproduces the original timing on a physical phone after deployment.
 

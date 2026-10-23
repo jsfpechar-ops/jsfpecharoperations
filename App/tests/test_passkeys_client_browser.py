@@ -29,7 +29,7 @@ CASES = [
     "late-capability", "late-options", "late-conditional-credential",
     "stalled-fetch", "stalled-body", "stalled-sheet", "stalled-login-post", "html-challenge", "null-credential",
     "redirected-response", "invalid-json", "missing-challenge", "missing-redirect", "rate-limit",
-    "cancel-and-retry", "duplicate-click", "success", "add-timeout",
+    "cancel-and-retry", "duplicate-click", "capability-unavailable", "success", "add-timeout",
 ]
 ENGINE = os.environ.get("PASSKEY_BROWSER", "chromium")
 SHOT_DIR = Path(os.environ.get("UBYHOST_PASSKEY_SHOTS", "/tmp/passkey-login-shots"))
@@ -87,10 +87,10 @@ def test_passkey_login_recovers_on_rendered_controls(browser, monkeypatch, width
             page = context.new_page()
             page.goto("https://ubyhost.test/login?lang=en")
             result = page.evaluate(
-                "async ({source, harness, name}) => {"
+                "async (args) => {"
                 + HARNESS
-                + "; return await runPasskeyClientCase(source, name, document); }",
-                {"source": SOURCE, "harness": HARNESS, "name": case},
+                + "; return await runPasskeyClientCase(args.source, args.name, document); }",
+                {"source": SOURCE, "name": case},
             )
             assert result == case
             assert not page.locator("[data-passkey-login-button]").is_disabled()

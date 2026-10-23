@@ -60,7 +60,26 @@ jobs:
           UBYHOST_DEPLOYMENT: staging
           UBYHOST_ENABLE_SCHEDULER: "0"
           UBYHOST_PASSKEY_SHOTS: ${{ runner.temp }}/passkey-login-shots
-        run: python -m pytest tests/test_passkeys_client_browser.py -q --tb=short -x 2>&1 | tail -30
+        run: python -m pytest tests/test_passkeys_client_browser.py -q --tb=short -x --junitxml=/tmp/passkey-results.xml 2>&1 | tail -30
+      - name: Capture browser failure
+        if: failure()
+        id: recovery_failure
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          report = Path("/tmp/passkey-results.xml")
+          if report.exists():
+              failures = [case for case in ET.parse(report).iter("testcase") if case.find("failure") is not None or case.find("error") is not None]
+              if failures:
+                  detail = " ".join(ET.tostring(failures[0], encoding="unicode").split())[-5000:]
+                  with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+                      out.write("detail=" + detail + "\n")
+          PY
+      - name: ${{ steps.recovery_failure.outputs.detail || 'Browser failure detail' }}
+        if: failure() && steps.recovery_failure.outputs.detail != ''
+        run: 'true'
       - name: Upload login screenshots
         if: always()
         uses: actions/upload-artifact@v4

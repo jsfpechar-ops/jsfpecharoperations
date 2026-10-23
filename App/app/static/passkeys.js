@@ -230,7 +230,7 @@
     var signal = attempt.signal;
     Promise.resolve().then(function () {
       return PublicKeyCredential.isConditionalMediationAvailable();
-    }).then(function (ok) {
+    }).catch(function () { return false; }).then(function (ok) {
       if (!ok || signal.aborted) return;
       return post("/login/passkey/options", null, signal)
         .then(function (json) {

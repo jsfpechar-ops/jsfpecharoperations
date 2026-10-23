@@ -92,7 +92,7 @@
     "v": "20260919a"
   },
   "passkeys.js": {
-    "sha256": "8aefaf826af349aa45718dfcc7d932c4ed89c483e3f116a13d661cbe2de02959",
+    "sha256": "a54da46300bec0b817fc47c7fffa811a2e21567e4c9e40748f1345b217ef5773",
     "v": "20261023-passkey-recovery"
   },
   "pwa.js": {
