@@ -65,4 +65,4 @@ Append-only.
 - 2026-10-22 Wizard coral bar OK (MASTER 10.5)
 - 2026-10-22 Alerts: one short line + link to the fix; off `/` only red alerts get a line (owner).
 - 2026-10-22 [deps] Typed signature font: self-hosted Dancing Script (OFL); no code copied (owner).
-- 2026-10-23 | Owner requested direct implementation of app.ubyhost.com; preserve public/guest URLs and the existing public-host passkey RP ID, with an optional app URL and manual cutover | owner request | [runbook](../APP_SUBDOMAIN.md)
+- 2026-10-23 | App subdomain, same RP ID | owner
