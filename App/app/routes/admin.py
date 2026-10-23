@@ -419,6 +419,13 @@ def _property_draft(form) -> Dict[str, Any]:
 @router.get("/")
 def dashboard(request: Request):
     if not auth.current_user(request):
+        app_host = urlsplit(config.APP_BASE_URL).hostname
+        public_host = urlsplit(config.PUBLIC_BASE_URL).hostname
+        if app_host and app_host != public_host and request.url.hostname == app_host:
+            # Render the existing auth form here; keep the app's address at /.
+            response = admin_accounts.login_form(request)
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
+            return response
         return render(
             request,
             "landing.html",

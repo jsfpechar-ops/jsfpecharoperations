@@ -146,3 +146,63 @@ def test_post_to_old_login_is_not_forwarded_across_origins(split_site):
     )
     assert response.status_code != 302
     assert not response.headers.get("location", "").startswith(PORTAL)
+
+
+
+def test_signed_out_app_root_renders_login_without_redirecting(split_site):
+    db.init_db()
+    client = TestClient(app, base_url=PORTAL)
+    response = client.get("/?lang=en", follow_redirects=False)
+    assert response.status_code == 200
+    assert response.url.path == "/"
+    assert 'action="/login"' in response.text
+    assert 'name="_csrf"' in response.text
+    assert "landing.css" not in response.text
+    assert 'rel="canonical"' not in response.text
+    assert response.headers["x-robots-tag"] == "noindex, nofollow"
+    assert "no-store" in response.headers["cache-control"]
+
+
+def test_public_root_and_single_domain_still_render_marketing(split_site, monkeypatch):
+    db.init_db()
+    public = TestClient(app, base_url=PUBLIC).get("/", follow_redirects=False)
+    assert public.status_code == 200
+    assert "landing.css" in public.text
+    monkeypatch.setattr(config, "APP_BASE_URL", "")
+    single = TestClient(app, base_url=PUBLIC).get("/", follow_redirects=False)
+    assert single.status_code == 200
+    assert "landing.css" in single.text
+
+
+def test_signed_in_app_root_still_renders_the_dashboard(split_site, monkeypatch):
+    from app import auth
+    from tests.conftest import login_as
+
+    db.init_db()
+    username = "domain-root-host"
+    account = db.query_one("SELECT * FROM user_account WHERE username = ?", (username,))
+    if account is None:
+        user_id = auth.create_account("domain-root@example.test", "Root Host", username=username)
+    else:
+        user_id = account["id"]
+    client = TestClient(app, base_url=PORTAL)
+    try:
+        login_as(client, username, url="/login?lang=en")
+        response = client.get("/?lang=en", follow_redirects=False)
+        assert response.status_code == 200
+        assert "data-calendar" in response.text
+        assert 'action="/login"' not in response.text
+        assert "landing.css" not in response.text
+    finally:
+        for table in ("login_token", "webauthn_challenge", "legal_acceptance", "email_outbox", "audit"):
+            column = "owner_user_id" if table in {"email_outbox", "audit"} else "user_account_id"
+            db.execute(f"DELETE FROM {table} WHERE {column} = ?", (user_id,))
+        db.execute("DELETE FROM user_account WHERE id = ?", (user_id,))
+
+
+
+def test_app_root_login_keeps_host_languages(split_site):
+    db.init_db()
+    response = TestClient(app, base_url=PORTAL).get("/?lang=vi")
+    assert response.status_code == 200
+    assert '<html lang="vi"' in response.text
