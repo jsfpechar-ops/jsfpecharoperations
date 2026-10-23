@@ -1,0 +1,20 @@
+{# Essential access timing is visible even before a lock is connected. #}
+{% set buffer = door_code.buffer %}
+{% set cin = apartment.checkin_hour %}
+{% set cout = apartment.checkout_hour %}
+{% set complete = cin is not none and cout is not none %}
+<div data-door-code-window data-buffer="{{ buffer }}"
+     data-checkin="{{ cin if cin is not none else '' }}" data-checkout="{{ cout if cout is not none else '' }}"
+     data-arrival="{{ t('door_code.window.arrival') }}" data-departure="{{ t('door_code.window.departure') }}"
+     data-previous="{{ t('door_code.window.previous') }}" data-next="{{ t('door_code.window.next') }}">
+  <p><strong>{{ t('door_code.window.title') }}</strong><br>{{ t('door_code.window.margin', hours=buffer) }}</p>
+  <div aria-live="polite" aria-atomic="true">
+    <dl class="ui-facts" data-window-values{% if not complete %} hidden{% endif %}>
+      <div><dt>{{ t('door_code.window.from') }}</dt>
+      <dd data-window-start>{% if complete %}{{ '%02d:00' | format((cin - buffer) % 24) }} · {{ t('door_code.window.previous' if cin - buffer < 0 else 'door_code.window.arrival') }}{% endif %}</dd></div>
+      <div><dt>{{ t('door_code.window.until') }}</dt>
+      <dd data-window-end>{% if complete %}{{ '%02d:00' | format((cout + buffer) % 24) }} · {{ t('door_code.window.next' if cout + buffer >= 24 else 'door_code.window.departure') }}{% endif %}</dd></div>
+    </dl>
+    <p data-window-missing{% if complete %} hidden{% endif %}>{{ t('door_code.window.missing') }}</p>
+  </div>
+</div>

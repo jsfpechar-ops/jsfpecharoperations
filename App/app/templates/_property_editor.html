@@ -95,6 +95,7 @@
           </select></div>
         {% endfor %}
       </div>
+      {% if door_code %}{% include "_door_code_window.html" %}{% endif %}
     </section>
 
     <section class="panel property-section ui-section" id="address">
@@ -210,6 +211,7 @@
   <div class="property-settings-group{% if settings_section == 'lock' %} is-active{% endif %}" data-settings-group="lock" id="settings-lock">
     <h2 class="property-group-title">{{ t('property_nav.group.lock') }}</h2>
     <p class="property-group-intro">{{ t('why.door_lock') }}</p>
+    {% include "_door_code_window.html" %}
     {% if door_code.account and door_code.locks %}
     <section class="panel property-section ui-section" id="door-code">
       <p class="ui-sub">{{ t('why.times') }}
@@ -218,7 +220,7 @@
           <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
         </p>
       {% if apartment.checkin_hour is none or apartment.checkout_hour is none %}<p class="small warn-text">{{ t('why.times_missing') }}</p>{% endif %}
-      <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.margin', hours=door_code.buffer) ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
+      <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
         {% if door_code.test_mode %}<p class="ui-sub"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
         <input type="hidden" name="door_codes_fields" value="1">
         <div class="feature-switch-row">

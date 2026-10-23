@@ -6986,7 +6986,7 @@ _ONBOARDING_TEST_0206_STRINGS = {
         "why.police_wait": "Don't have it yet? Tap “I'm still waiting for my police login” and carry on.",
         "why.stay_fee": "UbyHost works out the fee for each stay and prepares the report and the payment QR code.",
         "why.stay_fee_skip": "Your town does not charge it? Skip this step.",
-        "why.door_lock": "Optional. Do you have a TTLock smart lock with a gateway? Then UbyHost makes a door code for each stay that works only during that stay. The guest gets it once everyone has registered, so you never hand over keys.",
+        "why.door_lock": "Optional. Do you have a TTLock smart lock with a gateway? Then UbyHost makes a door code for each stay. The guest gets it once everyone has registered, so you never hand over keys.",
         "why.automation": "Choose when UbyHost reports your guests to the police. We recommend the delay: you have time to check the details and you never miss the three-day deadline. You can change this at any time.",
         "wizard.automation.manual_detail": "You press Send when a stay is ready to report.",
     },
@@ -7002,7 +7002,7 @@ _ONBOARDING_TEST_0206_STRINGS = {
         "why.police_wait": "Ještě je nemáte? Klepněte na „Na přihlašovací údaje od policie ještě čekám“ a pokračujte.",
         "why.stay_fee": "UbyHost spočítá poplatek u každého pobytu a připraví hlášení i QR kód k platbě.",
         "why.stay_fee_skip": "Obec poplatek nevybírá? Tento krok přeskočte.",
-        "why.door_lock": "Nepovinné. Máte chytrý zámek TTLock s bránou? UbyHost pak každému pobytu vytvoří vlastní vstupní kód, platný jen po dobu pobytu. Host ho dostane, jakmile se všichni zaregistrují, a vy nemusíte předávat klíče.",
+        "why.door_lock": "Nepovinné. Máte chytrý zámek TTLock s bránou? UbyHost pak každému pobytu vytvoří vlastní vstupní kód. Host ho dostane, jakmile se všichni zaregistrují, a vy nemusíte předávat klíče.",
         "why.automation": "Vyberte, kdy má UbyHost hosty nahlásit policii. Doporučujeme odeslání s prodlevou: máte čas údaje zkontrolovat a lhůtu tří pracovních dnů nezmeškáte. Volbu můžete kdykoli změnit.",
         "wizard.automation.manual_detail": "Odeslání spustíte tlačítkem Odeslat, až je pobyt připraven.",
     },
@@ -7106,7 +7106,7 @@ _WORKFLOW_0230_STRINGS = {
         "wizard.door_lock.yes_hint": "With a gateway, so codes reach the lock online",
         "wizard.door_lock.other_brands": "Other brands are not supported yet.",
         "wizard.summary.status.not_needed": "Not needed",
-        "why.door_lock": "With a TTLock smart lock, UbyHost makes a door code for each stay that works only during that stay. The guest gets it once everyone has registered, so you never hand over keys.",
+        "why.door_lock": "With a TTLock smart lock, UbyHost makes a door code for each stay. The guest gets it once everyone has registered, so you never hand over keys.",
     },
     "cs": {
         "workflow.title": "Jak probíhá každý pobyt",
@@ -7163,7 +7163,7 @@ _WORKFLOW_0230_STRINGS = {
         "wizard.door_lock.yes_hint": "S bránou, aby kódy došly do zámku online",
         "wizard.door_lock.other_brands": "Jiné značky zatím nepodporujeme.",
         "wizard.summary.status.not_needed": "Není potřeba",
-        "why.door_lock": "S chytrým zámkem TTLock vytvoří UbyHost každému pobytu vlastní vstupní kód, platný jen po dobu pobytu. Host ho dostane, jakmile se všichni zaregistrují, a vy nemusíte předávat klíče.",
+        "why.door_lock": "S chytrým zámkem TTLock vytvoří UbyHost každému pobytu vlastní vstupní kód. Host ho dostane, jakmile se všichni zaregistrují, a vy nemusíte předávat klíče.",
     },
 }
 for _lang, _strings in _WORKFLOW_0230_STRINGS.items():
@@ -7638,6 +7638,48 @@ for _lang, _strings in _SIGNATURE_0282_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 STRINGS["vi"] = dict(_VI_STRINGS)
+
+# Essential access timing is shared by the guide, property editor and wizard.
+_DOOR_CODE_WINDOW_STRINGS = {
+    "en": {
+        "door_code.window.title": "Door-code access times",
+        "door_code.window.margin": "Door codes allow entry %(hours)s hour before check-in and %(hours)s hour after checkout.",
+        "door_code.window.from": "Code works from",
+        "door_code.window.until": "Code works until",
+        "door_code.window.arrival": "arrival day",
+        "door_code.window.departure": "departure day",
+        "door_code.window.previous": "day before arrival",
+        "door_code.window.next": "day after departure",
+        "door_code.window.missing": "Choose both check-in and checkout times to see the code's access times.",
+        "door_code.window.example": "Example: check-in at 15:00 and checkout at 11:00 means access from 14:00 on arrival day until 12:00 on departure day."
+    },
+    "cs": {
+        "door_code.window.title": "Kdy funguje vstupní kód",
+        "door_code.window.margin": "Vstupní kódy umožňují vstup %(hours)s hodinu před příjezdem a %(hours)s hodinu po odjezdu.",
+        "door_code.window.from": "Kód funguje od",
+        "door_code.window.until": "Kód funguje do",
+        "door_code.window.arrival": "v den příjezdu",
+        "door_code.window.departure": "v den odjezdu",
+        "door_code.window.previous": "den před příjezdem",
+        "door_code.window.next": "den po odjezdu",
+        "door_code.window.missing": "Vyberte čas příjezdu i odjezdu a zobrazí se skutečná platnost kódu.",
+        "door_code.window.example": "Příklad: příjezd v 15:00 a odjezd v 11:00 znamená vstup od 14:00 v den příjezdu do 12:00 v den odjezdu."
+    },
+    "vi": {
+        "door_code.window.title": "Thời gian mã cửa có hiệu lực",
+        "door_code.window.margin": "Mã cửa cho phép vào sớm %(hours)s giờ trước giờ nhận phòng và muộn %(hours)s giờ sau giờ trả phòng.",
+        "door_code.window.from": "Mã có hiệu lực từ",
+        "door_code.window.until": "Mã có hiệu lực đến",
+        "door_code.window.arrival": "ngày nhận phòng",
+        "door_code.window.departure": "ngày trả phòng",
+        "door_code.window.previous": "ngày trước ngày nhận phòng",
+        "door_code.window.next": "ngày sau ngày trả phòng",
+        "door_code.window.missing": "Chọn cả giờ nhận phòng và trả phòng để xem thời gian mã cửa có hiệu lực.",
+        "door_code.window.example": "Ví dụ: nhận phòng lúc 15:00 và trả phòng lúc 11:00 thì mã có hiệu lực từ 14:00 ngày nhận phòng đến 12:00 ngày trả phòng."
+    }
+}
+for _lang, _strings in _DOOR_CODE_WINDOW_STRINGS.items():
+    STRINGS[_lang].update(_strings)
 
 
 def normalise_language(value: str | None) -> str:

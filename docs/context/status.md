@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-22.
+Updated: 2026-10-23.
 
 ## Production
 
@@ -9,6 +9,8 @@ Updated: 2026-10-22.
 - Live app `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
+
+- TTLock access disclosure: visible margin and live actual-hour previews; branch `fix/ttlock-access-disclosure`, browser/geometry verification pending.
 
 - App subdomain deployed (#432). Root login and clean calendar URLs: review pending.
 
