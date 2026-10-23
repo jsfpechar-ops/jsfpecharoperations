@@ -10,7 +10,7 @@ Updated: 2026-10-23.
 
 ## Now
 
-- TTLock access disclosure: visible margin and live actual-hour previews; branch `fix/ttlock-access-disclosure`, browser/geometry verification pending.
+- TTLock access disclosure: PR #434, timing/geometry CI pending.
 
 - App subdomain deployed (#432). Root login and clean calendar URLs: review pending.
 

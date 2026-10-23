@@ -501,10 +501,12 @@ jobs:
           python -m pytest tests/test_door_code_window.py tests/test_door_code_window_browser.py
           -q -rs --junitxml=/tmp/door-code-review.xml
       - name: Require zero skipped disclosure checks
+        id: disclosure_summary
         if: always()
         run: |
           python - <<'PY'
           from pathlib import Path
+          import os
           import xml.etree.ElementTree as ET
           path = Path("/tmp/door-code-review.xml")
           if not path.exists():
@@ -513,9 +515,32 @@ jobs:
           skipped = sum(case.find("skipped") is not None for case in cases)
           failed = sum(case.find("failure") is not None or case.find("error") is not None for case in cases)
           print(f"Disclosure checks: {len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped")
+          details = []
+          for case in cases:
+              failure = case.find("failure")
+              if failure is None:
+                  failure = case.find("error")
+              if failure is not None:
+                  details.append(case.get("name", "") + ": " + " ".join((failure.text or failure.get("message", "")).split())[-7000:])
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"summary={len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped\n")
+              for index, detail in enumerate(details[:3], 1):
+                  output.write(f"failure_{index}={detail}\n")
           if not cases or skipped or failed:
               raise SystemExit("All disclosure checks must pass with zero skips")
           PY
+      - name: ${{ steps.disclosure_summary.outputs.summary || 'Disclosure check summary' }}
+        if: always()
+        run: 'true'
+      - name: ${{ steps.disclosure_summary.outputs.failure_1 || 'Disclosure failure detail 1' }}
+        if: failure() && steps.disclosure_summary.outputs.failure_1 != ''
+        run: 'true'
+      - name: ${{ steps.disclosure_summary.outputs.failure_2 || 'Disclosure failure detail 2' }}
+        if: failure() && steps.disclosure_summary.outputs.failure_2 != ''
+        run: 'true'
+      - name: ${{ steps.disclosure_summary.outputs.failure_3 || 'Disclosure failure detail 3' }}
+        if: failure() && steps.disclosure_summary.outputs.failure_3 != ''
+        run: 'true'
       - name: Upload disclosure screenshots and test report
         if: always()
         uses: actions/upload-artifact@v4
