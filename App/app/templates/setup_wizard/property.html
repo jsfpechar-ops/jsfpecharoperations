@@ -24,6 +24,7 @@
       </select></div>
     {% endfor %}
   </div>
+  {% if door_code %}{% include "_door_code_window.html" %}{% endif %}
   {% include "_property_operator.html" %}
   {% if entities %}<div class="setup-wizard-instruction property-operator-hint"><a href="/entities{{ '?edit=' ~ apartment.legal_entity_id if apartment.legal_entity_id else '' }}">{{ t('host.business') }} </a> {{ help_tip('legal_entity_id-help', t('apartment.form.entity.hint')) }}</div>{% endif %}
   <h3 class="property-section-title">{{ t('apartment.form.address.title') }}</h3>

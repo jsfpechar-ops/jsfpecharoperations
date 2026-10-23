@@ -145,6 +145,10 @@
     <section class="guide-section ui-section ui-section-plain" id="door-codes">
       <h2>{{ t('guide.nav.door_codes') }}</h2>
       <p>{{ t('guide.door_codes.lede') }}</p>
+      <div data-door-code-disclosure>
+        <p><strong>{{ t('door_code.window.title') }}</strong><br>{{ t('door_code.window.margin', hours=1) }}</p>
+        <p>{{ t('door_code.window.example') }}</p>
+      </div>
       <h3>{{ t('guide.door_codes.need_title') }}</h3>
       <ul>{% for n in range(1, 4) %}<li>{{ t('guide.door_codes.need' ~ n) }}</li>{% endfor %}</ul>
       <h3>{{ t('guide.door_codes.steps_title') }}</h3>

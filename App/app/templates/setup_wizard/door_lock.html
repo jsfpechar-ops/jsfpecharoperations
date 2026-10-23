@@ -3,6 +3,7 @@
 {% from "_components.html" import field_label, help_tip with context %}
 {% block wizard_content %}
 <p class="setup-wizard-lede">{{ t('why.door_lock') }} {{ help_tip('wizard-lock-help', t('apartment.form.door_code.connect_first')) }}</p>
+{% if door_code %}{% include "_door_code_window.html" %}{% endif %}
 {% if door_code and door_code.account and door_code.locks %}
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="door-lock-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">

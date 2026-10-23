@@ -2308,7 +2308,7 @@ STRINGS: Dict[str, str] = {
     "guide.nav.invoices": "Hóa đơn",
     "guide.nav.settings": "Cài đặt và bảo mật",
     "guide.nav.door-codes": "Khóa cửa điện tử (TTLock)",
-    "guide.door_codes.how1": "Mã được tạo khi mọi khách của lượt lưu trú đã đăng ký. Mã dùng được từ 1 giờ trước giờ nhận phòng đến 1 giờ sau giờ trả phòng.",
+    "guide.door_codes.how1": "Mã được tạo khi mọi khách của lượt lưu trú đã đăng ký.",
     "guide.door_codes.how2": "Khách thấy mã trên trang lưu trú và nhận qua email. Bạn nhận một bản sao.",
     "guide.door_codes.how3": "Quy tắc 24 giờ: phải có người nhập mã trên bàn phím một lần trong vòng 24 giờ sau thời điểm bắt đầu, hoặc trước khi mã hết hạn nếu lượt lưu trú ngắn hơn 24 giờ. Nếu không, TTLock sẽ hủy mã. Mã bắt đầu 1 giờ trước giờ nhận phòng, nên với khách đến muộn, hãy tạo mã mới trong ứng dụng TTLock.",
     "guide.door_codes.how4": "Nếu lịch dời lượt lưu trú, mã cũng dời theo và khách nhận email mới. Nếu lượt lưu trú bị hủy, UbyHost xóa mã và báo cho bạn. Mã chưa ai nhập có thể vẫn dùng được đến khi hết hạn, nên hãy kiểm tra khóa trong ứng dụng TTLock.",
@@ -3184,7 +3184,7 @@ STRINGS.update({
     "why.police_wait": "Chưa có? Bấm “Tôi vẫn đang chờ thông tin đăng nhập từ cảnh sát” và tiếp tục.",
     "why.stay_fee": "UbyHost tính phí cho từng lượt lưu trú và chuẩn bị báo cáo cùng mã QR thanh toán.",
     "why.stay_fee_skip": "Địa phương của bạn không thu phí này? Hãy bỏ qua bước này.",
-    "why.door_lock": "Không bắt buộc. Bạn có khóa thông minh TTLock kèm gateway? Khi đó UbyHost tạo cho mỗi lượt lưu trú một mã cửa chỉ dùng được trong thời gian lưu trú. Khách nhận mã khi mọi người đã đăng ký xong, nên bạn không cần giao chìa khóa.",
+    "why.door_lock": "Không bắt buộc. Bạn có khóa thông minh TTLock kèm gateway? Khi đó UbyHost tạo cho mỗi lượt lưu trú một mã cửa. Khách nhận mã khi mọi người đã đăng ký xong, nên bạn không cần giao chìa khóa.",
     "why.automation": "Chọn khi nào UbyHost khai báo khách với cảnh sát. Chúng tôi khuyên dùng gửi sau một khoảng chờ: bạn có thời gian kiểm tra thông tin và không bao giờ trễ hạn ba ngày. Bạn có thể đổi lựa chọn này bất cứ lúc nào.",
 })
 
@@ -3262,7 +3262,7 @@ STRINGS.update({
     "wizard.door_lock.yes_hint": "Có gateway, để mã đến khóa qua mạng",
     "wizard.door_lock.other_brands": "Hiện chưa hỗ trợ các hãng khác.",
     "wizard.summary.status.not_needed": "Không cần",
-    "why.door_lock": "Với khóa thông minh TTLock, UbyHost tạo cho mỗi lượt lưu trú một mã cửa chỉ dùng được trong thời gian lưu trú. Khách nhận mã khi mọi người đã đăng ký xong, nên bạn không cần giao chìa khóa.",
+    "why.door_lock": "Với khóa thông minh TTLock, UbyHost tạo cho mỗi lượt lưu trú một mã cửa. Khách nhận mã khi mọi người đã đăng ký xong, nên bạn không cần giao chìa khóa.",
 })
 
 # 0239 (idea T): plain fixes.

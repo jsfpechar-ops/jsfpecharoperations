@@ -308,4 +308,31 @@
     adjustMode.addEventListener('change', syncAdjust);
     syncAdjust();
   }
+  // Preview the same buffered wall-clock hours used when the code is issued.
+  function updateDoorCodeWindows() {
+    document.querySelectorAll('[data-door-code-window]').forEach(function (preview) {
+      var cin = document.querySelector('select[name="checkin_hour"]');
+      var cout = document.querySelector('select[name="checkout_hour"]');
+      var from = cin ? cin.value : preview.dataset.checkin;
+      var until = cout ? cout.value : preview.dataset.checkout;
+      var complete = from !== '' && until !== '' &&
+        Number.isInteger(Number(from)) && Number.isInteger(Number(until)) &&
+        Number(from) >= 0 && Number(from) <= 23 && Number(until) >= 0 && Number(until) <= 23;
+      preview.querySelector('[data-window-values]').hidden = !complete;
+      preview.querySelector('[data-window-missing]').hidden = complete;
+      if (!complete) return;
+      var buffer = Number(preview.dataset.buffer);
+      var start = Number(from) - buffer;
+      var end = Number(until) + buffer;
+      var clock = function (hour) { return String(((hour % 24) + 24) % 24).padStart(2, '0') + ':00'; };
+      preview.querySelector('[data-window-start]').textContent =
+        clock(start) + ' · ' + (start < 0 ? preview.dataset.previous : preview.dataset.arrival);
+      preview.querySelector('[data-window-end]').textContent =
+        clock(end) + ' · ' + (end >= 24 ? preview.dataset.next : preview.dataset.departure);
+    });
+  }
+  document.addEventListener('change', function (event) {
+    if (event.target.matches('select[name="checkin_hour"], select[name="checkout_hour"]')) updateDoorCodeWindows();
+  });
+  updateDoorCodeWindows();
 })();
