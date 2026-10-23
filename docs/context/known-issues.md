@@ -4,7 +4,6 @@ Grep. **HR**: owner decides.
 
 **Sources:** [map](known-issue-sources.md).
 
-
 | ID | Sev/status | Where | Issue | Src |
 |---|---|---|---|---|
 | K-DOM01 | Pending | App URLs | CI + phone check | owner |
@@ -63,7 +62,6 @@ Grep. **HR**: owner decides.
 | K-I07 | Low unverified | routes/stay_fees.py | Cadence switch may orphan adjustments | P A15 |
 | K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
 | K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify ordinary VAT invoice requirements | UI §3 |
-| K-U-CHECKIN | Med review | alerts.py, claim.py | Completed forms kept a check-in warning; live filter and worker resolution implemented, CI/deploy pending | owner report 2026-10-23 |
 | K-U01 | High decision | product.html:49,113, landing.html:72,189 | CTAs dead-end at /login while sign-up is off | UX UX-9 |
 | K-U02 | Med unverified | routes/guest.py PIN gate | A wrong PIN loses the #c= claim secret | UX M-3 |
 | K-U03 | Med open | signature.js:515, settings.html:250 | Back skips validation; recovery-code field numeric-only on iOS | UX M-5, M-1 |
@@ -86,7 +84,7 @@ Grep. **HR**: owner decides.
 | K-ML01 | Low open | App/app/static/app.js | Dead reset-password JS after task 0003 password removal | magic-link HANDOFF |
 | K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
 | K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
-| K-ML04 | Low open | login link limit | An attacker can spend another address's 3/15 min login budget; account-only limits would reveal account existence. | 0006 |
+| K-ML04 | Low open | login link limit | Attackers can exhaust an address's 3/15 min login budget; account-only limits reveal account existence. | 0006 |
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can receive an undeleted cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
@@ -94,5 +92,6 @@ Grep. **HR**: owner decides.
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 
-- K-UI-CACHE: a static file changed without a new `?v=` key stays stale a year; guard 0172.
+- K-UI-CACHE: new `?v=` on static edits or stale a year (0172).
 - K-NAV-418: 3 host_i18n tests fail on main.
+- K-CHECKIN: form alert fix #435; undeployed.
