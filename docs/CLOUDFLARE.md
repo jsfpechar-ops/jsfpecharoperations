@@ -168,6 +168,46 @@ Re-check after a dashboard reset or plan change.
 
 Do **not** enable HSTS **preload** or **includeSubDomains** unless every hostname under the zone is HTTPS-only (mail, staging, future subdomains).
 
+### Turnstile pre-clearance — owner confirmed 23 October 2026
+
+The owner confirmed saving these settings in Cloudflare to reduce repeated
+verification prompts during normal use. This records that confirmation; the
+live dashboard and the resulting challenge frequency were not independently checked.
+
+| Setting | Saved value | Where |
+|---------|-------------|-------|
+| Turnstile widget mode | **Managed** | Turnstile → UbyHost widget → Settings |
+| Skip future security rule challenges for verified visitors (pre-clearance) | **On** | Same widget settings |
+| Pre-clearance level | **Interactive (high)** | Same widget settings |
+| Challenge Passage | **1 hour** | `ubyhost.com` zone → Security → Settings → Challenge Passage |
+
+Cloudflare dashboard labels can vary. Keep the widget's allowed hostnames aligned
+with the proxied production hosts, including `app.ubyhost.com`; see
+[app subdomain setup](APP_SUBDOMAIN.md).
+
+**Interactive (high)** describes the clearance granted after a successful
+Turnstile check. It allows that visitor to bypass Non-Interactive, Managed and
+Interactive Challenge security rules while the clearance is valid. It does not
+make the initial widget check harder. The **Managed** widget mode lets Cloudflare
+decide when the visitor needs to interact.
+
+This lets a successful widget check satisfy later challenge rules on the proxied
+site, reducing duplicate prompts from the widget and the broad rules below.
+Challenge Passage controls the clearance duration. The embedded widget can still
+run on a form, and this clearance is separate from application authentication.
+The app must still validate Turnstile tokens on the protected submission routes;
+pre-clearance does not replace server validation or rate limits.
+
+To check the user experience after saving:
+
+1. Open `https://app.ubyhost.com/login` on a phone and complete verification.
+2. Log in and navigate between normal app pages; check that challenges do not
+   keep interrupting navigation every few seconds.
+3. If prompts recur within the hour, inspect Cloudflare Security → Events for
+   the matching rule and confirm that the browser received the `cf_clearance`
+   cookie. Record the affected hostname and rule before changing the scope.
+4. Test a guest link and the email login path as well.
+
 After changing bot / challenge rules, try:
 
 1. Host login at `https://ubyhost.com/login`
@@ -309,7 +349,8 @@ Bingbot when recognised). It is **not** “User-Agent contains Googlebot”.
 
 Verified bots never hit this rule because Rule 1 skips the rest of the custom
 ruleset for them on `/login`. Humans solve the challenge (or pass low-risk
-scores); Turnstile still runs in the app.
+scores); Turnstile still runs in the app. Successful widget checks also grant
+[pre-clearance](#turnstile-pre-clearance--owner-confirmed-23-october-2026) as configured above.
 
 ##### Rule 3 — Challenge private app / guest surfaces
 
