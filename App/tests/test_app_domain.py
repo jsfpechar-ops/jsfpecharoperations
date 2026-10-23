@@ -174,7 +174,7 @@ def test_public_root_and_single_domain_still_render_marketing(split_site, monkey
     assert "landing.css" in single.text
 
 
-def test_signed_in_app_root_still_renders_the_dashboard(split_site, monkeypatch):
+def test_signed_in_app_root_still_renders_the_dashboard(split_site):
     from app import auth
     from tests.conftest import login_as
 
@@ -190,7 +190,8 @@ def test_signed_in_app_root_still_renders_the_dashboard(split_site, monkeypatch)
         login_as(client, username, url="/login?lang=en")
         response = client.get("/?lang=en", follow_redirects=False)
         assert response.status_code == 200
-        assert "data-calendar" in response.text
+        assert response.template.name == "dashboard.html"
+        assert response.context["current_user"]["id"] == user_id
         assert 'action="/login"' not in response.text
         assert "landing.css" not in response.text
     finally:

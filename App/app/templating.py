@@ -580,7 +580,10 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     if public_page and request.state.lang not in host_i18n.PUBLIC_LANGUAGES:
         request.state.lang = "en"
     data["lang"] = request.state.lang
-    for key, value in (seo.head_links(request) if public_page else {}).items():
+    # Only the app-root login must omit the marketing root's canonical links.
+    # Keep the established /login and public-page SEO behavior.
+    head_links = {} if request.url.path == "/" and name == "login.html" else seo.head_links(request)
+    for key, value in head_links.items():
         data.setdefault(key, value)
     workspace = data["workspace_user"]
     if "open_alerts" not in data:
