@@ -222,7 +222,7 @@ def unknown_risk_stays(now: Optional[datetime] = None) -> List[Dict[str, Any]]:
 
 
 def _stay_url(reservation_id: int) -> str:
-    return f"{config.PUBLIC_BASE_URL.rstrip('/')}/reservations/{reservation_id}"
+    return f"{config.app_base_url()}/reservations/{reservation_id}"
 
 
 def notify_hosts(stays: List[Dict[str, Any]], now: Optional[datetime] = None) -> int:

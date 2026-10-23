@@ -10,6 +10,8 @@ Updated: 2026-10-22.
 
 ## Now
 
+- App subdomain: implementation drafted; CI, owner review and manual cutover pending ([runbook](../APP_SUBDOMAIN.md)).
+
 - 0280-0283 short alerts, card borders, signature dialog. **Owner:** PR, deploy, phone test.
 - 0253 four red layout tests. **Owner:** review 0253 PR, iPad.
 - Foolproof rounds 1-3 (0230-0278). **Owner:** deploy (`?v=` keys).

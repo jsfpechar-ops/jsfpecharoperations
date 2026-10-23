@@ -16,6 +16,7 @@
   - `caddy`.
   - `mock-ubyport`.
 - Cloudflare proxy in front, with origin certs.
+- Optional host subdomain: `site_urls.py` validates the app/public split and canonical login redirects; public guest links and passkey RP ID stay on the root host. See [deployment](../APP_SUBDOMAIN.md).
 - Staging: Render `ubyhost-staging` with mock UbyPort (`render.yaml`).
 - CI (`.github/workflows/ci.yml`) runs these jobs: test (ruff, pytest with coverage, dependency audit), smoke, guest-browser, shellcheck, docker, secrets (gitleaks), context.
 

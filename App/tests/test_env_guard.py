@@ -178,3 +178,32 @@ def test_production_refuses_the_staging_no_login_flag():
             deployment="production",
             environ={"UBYHOST_STAGING_NO_LOGIN": "1"},
         )
+
+
+
+def test_public_and_app_domains_are_explicit_and_keep_the_public_domain():
+    warnings = _production(
+        app_base_url="https://app.ubyhost.com", app_domain="app.ubyhost.com",
+    )
+    assert warnings == ["guest e-mail is disabled on production"]
+
+
+@pytest.mark.parametrize(
+    "app_url, app_domain",
+    [
+        ("https://app.ubyhost.com", ""),
+        ("", "app.ubyhost.com"),
+        ("https://wrong.ubyhost.com", "app.ubyhost.com"),
+        ("https://app.ubyhost.com.evil.example", "app.ubyhost.com.evil.example"),
+        ("https://other.example", "other.example"),
+        ("http://app.ubyhost.com", "app.ubyhost.com"),
+        ("https://app.ubyhost.com:8443", "app.ubyhost.com"),
+        ("https://app.ubyhost.com/login", "app.ubyhost.com"),
+        ("https://user:password@app.ubyhost.com", "app.ubyhost.com"),
+        ("https://app.ubyhost.com?next=evil", "app.ubyhost.com"),
+        ("https://app..ubyhost.com", "app..ubyhost.com"),
+    ],
+)
+def test_refuse_invalid_app_domain_configuration(app_url, app_domain):
+    with pytest.raises(env_guard.EnvGuardError):
+        _production(app_base_url=app_url, app_domain=app_domain)

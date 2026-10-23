@@ -794,7 +794,7 @@ def sweep_reminders() -> Dict[str, int]:
                     date=validation.fmt_date(reservation["date_from"]),
                     assigned=masked,
                     stay_url=(
-                        f"{config.PUBLIC_BASE_URL.rstrip('/')}"
+                        f"{config.app_base_url()}"
                         f"/reservations/{reservation['id']}#now"
                     ),
                     claimed=reservation["claim_state"] == CLAIMED,

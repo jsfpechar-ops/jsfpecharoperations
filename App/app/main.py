@@ -26,6 +26,7 @@ from . import (
     scheduler,
     security,
     seo,
+    site_urls,
     templating,
 )
 from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, invoices, legal, mail_unsubscribe, onboarding_wizard, stay_fees
@@ -267,7 +268,17 @@ async def cloudflare_connecting_ip(request: Request, call_next):
     # A fresh counter per request (WP13). The route runs in a copy of this
     # context, which shares the object, so its queries land here.
     stats = db.start_request_stats()
-    response = await call_next(request)
+    redirect_to = ""
+    if request.method in {"GET", "HEAD"}:
+        redirect_to = site_urls.login_redirect_url(
+            request.url.hostname, request.url.path, request.url.query,
+            public_base_url=config.PUBLIC_BASE_URL, app_base_url=config.app_base_url(),
+        )
+    if redirect_to:
+        response = RedirectResponse(redirect_to, status_code=302)
+        response.headers["Referrer-Policy"] = "no-referrer"
+    else:
+        response = await call_next(request)
     security.attach_csrf_cookie(request, response)
     if request.url.path.startswith("/cleaning/shared/"):
         response.headers.update({

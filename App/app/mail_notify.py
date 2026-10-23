@@ -90,6 +90,10 @@ def _public(path: str) -> str:
     return f"{config.PUBLIC_BASE_URL}{path}"
 
 
+def _app(path: str) -> str:
+    return f"{config.app_base_url()}{path}"
+
+
 def _esc(value: Any) -> str:
     """Escape one interpolated value for the HTML part.
 
@@ -642,9 +646,9 @@ def build_submission_problem(
     footer_support = _text(lang, "mail.submission_problem.footer_support")
 
     reason_text = _reason_text(state, reason, transport, lang)
-    submission_url = _public(f"/submissions/{submission_id}") if submission_id else ""
+    submission_url = _app(f"/submissions/{submission_id}") if submission_id else ""
     stay_urls = [
-        (stay, _public(f"/reservations/{stay['id']}")) for stay in stays
+        (stay, _app(f"/reservations/{stay['id']}")) for stay in stays
     ]
 
     return {
@@ -986,7 +990,7 @@ def build_stay_fee_report(
     open_label = _text(lang, "mail.stay_fee.open")
     footer = _text(lang, "mail.stay_fee.footer")
     turn_off = _text(lang, "mail.stay_fee.turn_off")
-    turn_off_url = _public("/settings#settings-stay-fee-emails")
+    turn_off_url = _app("/settings#settings-stay-fee-emails")
     show_qr = has_qr and not zero
     text_lines = [intro, "", step_send, step_pay]
     if show_qr:
@@ -1025,7 +1029,7 @@ def queue_stay_fee_report(apartment, filing_row, lang: Optional[str] = None) -> 
     group = {"anchor": apartment, "vs": stay_fee.vs_of(apartment), "total_czk": total}
     details = stay_fee.payment_details(group)
     has_qr = bool(details and details.get("spayd"))
-    report_url = _public(f"/stay-fees/{apartment['id']}?month={stay_fee.month_key(month)}")
+    report_url = _app(f"/stay-fees/{apartment['id']}?month={stay_fee.month_key(month)}")
     built = build_stay_fee_report(
         lang=lang,
         property_name=apartment["internal_name"] or "UbyHost",
@@ -1071,7 +1075,7 @@ def build_stay_fee_blocked(
     open_label = _text(lang, "mail.stay_fee.open")
     footer = _text(lang, "mail.stay_fee.footer")
     turn_off = _text(lang, "mail.stay_fee.turn_off")
-    turn_off_url = _public("/settings#settings-stay-fee-emails")
+    turn_off_url = _app("/settings#settings-stay-fee-emails")
     text = "\n".join(
         [
             intro, "", *[f"- {item}" for item in items], "", after, report_url, "", "--", "UbyHost",
@@ -1102,7 +1106,7 @@ def queue_stay_fee_blocked(apartment, group, issues, lang: Optional[str] = None)
         return None
     lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
     key = stay_fee_filing.period_key(group["cadence"], group["first"])
-    report_url = _public(f"/stay-fees/{apartment['id']}?month={stay_fee.month_key(group['first'])}")
+    report_url = _app(f"/stay-fees/{apartment['id']}?month={stay_fee.month_key(group['first'])}")
     built = build_stay_fee_blocked(
         lang=lang,
         property_name=apartment["internal_name"] or "UbyHost",
@@ -1150,7 +1154,7 @@ def cancelled_with_guests(apartment_id: int, reservation_id: int, variant: str) 
             property=property_name,
             date=formatted_date,
         )
-        stay_url = _public(f"/reservations/{reservation_id}")
+        stay_url = _app(f"/reservations/{reservation_id}")
         action = host_i18n.translate(lang, "mail.cancelled_with_guests.action")
         text = "\n".join([title, "", detail, "", f"{action}: {stay_url}"])
         html = _shell(
@@ -1236,7 +1240,7 @@ def build_lifecycle(kind: str, *, unsubscribe_url: str, lang: Optional[str] = No
     intro = _text(lang, f"{key}.intro")
     next_step = _text(lang, f"{key}.next")
     action_label = _text(lang, f"{key}.action")
-    action_url = _public(LIFECYCLE_ACTIONS[kind])
+    action_url = _app(LIFECYCLE_ACTIONS[kind])
     signoff = _text(lang, "mail.lifecycle.signoff", support=config.OPERATOR_EMAIL)
     # The sentence is the wording of legal position 2. The two links stay as
     # markers through translate() and become anchors in the HTML part.
@@ -1461,7 +1465,7 @@ def door_code_notice(door_code_id: int, variant: str) -> Optional[int]:
 
 def _door_code_payload(lang: str, subject: str, body: str, reservation_id: int) -> Dict[str, Any]:
     """0245 (idea R): the notice in the branded layout, ending with one button to the stay."""
-    stay_url = _public(f"/reservations/{reservation_id}#now")
+    stay_url = _app(f"/reservations/{reservation_id}#now")
     action = _text(lang, "mail.door_code_notice.action")
     blocks = [
         _block_paragraph(body),
@@ -2194,7 +2198,7 @@ def link_mail(
     same rule the guest claim link follows.
     """
     path = LINK_MAIL[kind][1]
-    link = _public(f"{path}?t={mail.CLAIM_SECRET_MARKER}")
+    link = _app(f"{path}?t={mail.CLAIM_SECRET_MARKER}")
     lang = host_i18n.normalise_language(lang or HOST_MAIL_LANGUAGE)
     content = build_link_mail(kind=kind, link=link, minutes=minutes, lang=lang)
     payload: Dict[str, Any] = {
@@ -2365,7 +2369,7 @@ def build_signup_exists(*, lang: str) -> Dict[str, str]:
     intro = _text(lang, "mail.signup_exists.intro")
     action = _text(lang, "mail.signup_exists.action")
     help_text = _text(lang, "mail.signup_exists.help", support=config.OPERATOR_EMAIL)
-    link = _public(f"/login?lang={lang}")
+    link = _app(f"/login?lang={lang}")
     footer = _signup_footer(lang)
     text = "\n".join([intro, "", f"{action}: {link}", "", help_text, "", "--", *footer])
     blocks = [
@@ -2392,7 +2396,7 @@ def build_signup_admin(
     heading = _text(lang, "mail.signup_admin.heading")
     intro = _text(lang, "mail.signup_admin.intro")
     action = _text(lang, "mail.signup_admin.action")
-    link = _public("/admin/users")
+    link = _app("/admin/users")
     yes_no = _text(lang, "mail.signup_admin.yes" if ads_click else "mail.signup_admin.no")
     facts = [
         (_text(lang, "mail.signup_admin.workspace"), workspace),

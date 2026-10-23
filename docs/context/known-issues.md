@@ -7,6 +7,7 @@ Grep. **HR**: owner decides.
 
 | ID | Sev/status | Where | Issue | Src |
 |---|---|---|---|---|
+| K-DOM01 | Pending | URLs | CI and cutover required | PR432 |
 | K-F01 | High open | reporting.py:1356-1413, ubyport/client.py:166 | Non-401 4xx retried every sweep, no attempt cap | P A28-29 |
 | K-F02 | High open HR | icalsync.py date-move UPDATE ~498 | Date move ignores submission_claim; can move a guest mid-send | P A24 |
 | K-F03 | Med open HR | icalsync.py ~805-830 | Lone vanished future booking stays "suspect" forever | P A19 |
