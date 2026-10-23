@@ -575,12 +575,15 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     # Public and legal pages exist in EN and CS only. A signed-in host's "/" is
     # the dashboard, which is part of the app.
     public_page = request.url.path in seo.INDEXABLE_PATHS and request.url.path != "/login"
-    if request.url.path == "/" and data["current_user"]:
+    if request.url.path == "/" and (data["current_user"] or name == "login.html"):
         public_page = False
     if public_page and request.state.lang not in host_i18n.PUBLIC_LANGUAGES:
         request.state.lang = "en"
     data["lang"] = request.state.lang
-    for key, value in seo.head_links(request).items():
+    # Only the app-root login must omit the marketing root's canonical links.
+    # Keep the established /login and public-page SEO behavior.
+    head_links = {} if request.url.path == "/" and name == "login.html" else seo.head_links(request)
+    for key, value in head_links.items():
         data.setdefault(key, value)
     workspace = data["workspace_user"]
     if "open_alerts" not in data:

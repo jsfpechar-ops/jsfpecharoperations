@@ -685,3 +685,116 @@ def test_dashboard_committed_stay_refresh_retry_does_not_post_twice(calendar_wor
         shot(page, "dashboard-refresh-retry-en")
         context.close()
         browser.close()
+
+
+
+def test_default_calendar_url_is_clean_and_specific_views_survive_reload(
+    calendar_workspace, calendar_origin,
+):
+    from urllib.parse import parse_qs, urlsplit
+
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin, width=390)
+        page.goto(calendar_origin + "/")
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        assert urlsplit(page.url).query == ""
+        today = page.locator("[data-calendar]").get_attribute("data-today")
+        shot(page, "clean-url-dashboard-390")
+        page.set_viewport_size({"width": 1280, "height": 1000})
+        page.goto(
+            f"{calendar_origin}/?cal_view=auto&cal_date={today}&cal_scale=month&lang=en#calendar"
+        )
+        page.wait_for_selector(".cal-gantt-row, .cal-week")
+        wait_loaded(page)
+        assert parse_qs(urlsplit(page.url).query) == {"lang": ["en"]}
+        assert urlsplit(page.url).fragment == "calendar"
+
+        property_id = str(calendar_workspace["properties"][0])
+        page.goto(
+            f"{calendar_origin}/?lang=en&cal_view=calendar&cal_date=2028-02-15"
+            f"&cal_scale=week&cal_property={property_id}#calendar"
+        )
+        page.wait_for_selector(".cal-week")
+        wait_loaded(page)
+        for _ in range(2):
+            params = parse_qs(urlsplit(page.url).query)
+            assert params == {
+                "lang": ["en"], "cal_view": ["calendar"], "cal_date": ["2028-02-15"],
+                "cal_scale": ["week"], "cal_property": [property_id],
+            }
+            assert urlsplit(page.url).fragment == "calendar"
+            assert page.locator("[data-cal-property]").input_value() == property_id
+            assert page.locator('[data-cal-scale="week"]').get_attribute("aria-pressed") == "true"
+            page.reload()
+            page.wait_for_selector(".cal-week")
+            wait_loaded(page)
+
+        page.locator("[data-cal-today]").click()
+        wait_loaded(page)
+        assert "cal_date" not in parse_qs(urlsplit(page.url).query)
+        page.locator("[data-cal-settings]").click()
+        page.locator("[data-cal-auto]").check()
+        wait_loaded(page)
+        page.locator("[data-cal-settings-dialog] [data-cal-close]").click()
+        page.locator("[data-cal-property]").select_option("")
+        wait_loaded(page)
+        assert parse_qs(urlsplit(page.url).query) == {"lang": ["en"]}
+        context.close()
+        browser.close()
+
+
+def test_app_root_login_works_without_javascript_and_keeps_the_root_address(
+    calendar_origin, monkeypatch,
+):
+    from app import config
+
+    monkeypatch.setattr(config, "APP_BASE_URL", calendar_origin)
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://public.ubyhost.test")
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context = browser.new_context(
+            viewport={"width": 390, "height": 844}, java_script_enabled=False,
+        )
+        page = context.new_page()
+        response = page.goto(calendar_origin + "/?lang=en")
+        assert response.status == 200
+        assert page.url == calendar_origin + "/?lang=en"
+        assert page.locator('form[action="/login"]').is_visible()
+        assert page.locator('form[action="/login"] input[name="_csrf"]').input_value()
+        assert page.locator("body").evaluate(
+            "node => node.scrollWidth <= window.innerWidth"
+        )
+        shot(page, "app-root-login-390")
+        context.close()
+        browser.close()
+
+
+
+def test_explicit_auto_view_survives_reload_over_a_saved_manual_preference(
+    calendar_workspace, calendar_origin,
+):
+    from urllib.parse import parse_qs, urlsplit
+
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin)
+        page.evaluate(
+            "() => localStorage.setItem('ubyhost.calendar.display.v1', JSON.stringify({mode: 'calendar'}))"
+        )
+        page.goto(calendar_origin + "/?lang=en&cal_view=auto")
+        page.wait_for_selector(".cal-gantt-row")
+        wait_loaded(page)
+        assert parse_qs(urlsplit(page.url).query)["cal_view"] == ["auto"]
+        page.reload()
+        page.wait_for_selector(".cal-gantt-row")
+        wait_loaded(page)
+        page.locator("[data-cal-settings]").click()
+        page.locator("[data-cal-auto]").uncheck()
+        wait_loaded(page)
+        page.locator("[data-cal-auto]").check()
+        wait_loaded(page)
+        assert "cal_view" not in parse_qs(urlsplit(page.url).query)
+        context.close()
+        browser.close()

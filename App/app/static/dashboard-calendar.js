@@ -123,7 +123,8 @@
   }
   function savePreferences() {
     try {
-      const displaySettings = JSON.stringify({ mode: state.mode, ...state.display });
+      preferences = { mode: state.mode, ...state.display };
+      const displaySettings = JSON.stringify(preferences);
       if (cleaningMode) localStorage.setItem(cleaningPreferencesKey, displaySettings);
       else localStorage.setItem(preferencesKey, displaySettings);
     } catch (_) { /* Optional. */ }
@@ -139,9 +140,16 @@
   }
   function rememberURL() {
     const params = new URLSearchParams(location.search);
-    params.set("cal_view", state.mode); params.set("cal_date", state.date); params.set("cal_scale", state.scale);
+    // Defaults need no query string. Explicit choices remain shareable.
+    const overridesSavedMode = validMode(preferences.mode) && preferences.mode !== "auto";
+    if (state.mode === "auto" && !overridesSavedMode) params.delete("cal_view");
+    else params.set("cal_view", state.mode);
+    const defaultDate = root.dataset.calendarDate || root.dataset.today;
+    if (state.date === defaultDate) params.delete("cal_date"); else params.set("cal_date", state.date);
+    if (state.scale === "month") params.delete("cal_scale"); else params.set("cal_scale", state.scale);
     if (state.property) params.set("cal_property", state.property); else params.delete("cal_property");
-    history.replaceState(null, "", location.pathname + "?" + params.toString() + location.hash);
+    const search = params.toString();
+    history.replaceState(null, "", location.pathname + (search ? "?" + search : "") + location.hash);
   }
   function setMessage(text, retry = false, href = "", linkLabel = labels.open) {
     message.replaceChildren();

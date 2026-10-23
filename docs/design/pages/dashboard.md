@@ -30,3 +30,15 @@ Master version: 2.0.0. Adds only.
 
 ## Tests
 - `test_dashboard_calendar_browser.py`, `test_host_geometry.py`, `test_dashboard_phone_browser.py` (390: dots, hidden controls, one PIN alert, one-line banner); screenshots 390 and 1280 plus the detail skeleton
+
+
+## URL behavior
+
+On the configured app hostname, a signed-out GET / renders the existing login
+form directly (200, no redirect, no indexing). Signed-in GET / still renders the
+dashboard. The public hostname keeps the marketing page; /login stays available.
+
+Calendar URLs omit auto view, the initial date, month scale and an empty property
+filter. Explicit dates, non-default views/scales and property filters remain in
+the URL and survive reload. Unrelated parameters and the fragment are preserved.
+An explicit auto view is retained when it overrides a saved manual preference.
