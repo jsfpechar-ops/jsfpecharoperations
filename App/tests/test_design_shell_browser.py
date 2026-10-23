@@ -58,6 +58,18 @@ def test_phone_tab_bar_is_fixed_at_the_bottom_with_five_44px_tabs(base):
         page.click('[data-sheet-open="more-sheet"]')
         page.wait_for_selector("#more-sheet[open]")
         assert page.locator('#more-sheet a[href="/stay-fees"]').is_visible()
+        # skeleton.js sees this link before shell.js cancels navigation.
+        # Wait past its 300 ms delay; opening/closing More must keep the page.
+        original_url = page.url
+        page.wait_for_timeout(650)
+        assert page.url == original_url
+        assert page.locator("[data-page-skeleton]").is_hidden()
+        assert page.locator("#main-content").get_attribute("aria-busy") is None
+        page.locator("#more-sheet [data-sheet-close]").click()
+        assert not page.locator("#more-sheet").evaluate("(dialog) => dialog.open")
+        assert page.locator("[data-page-skeleton]").is_hidden()
+        assert page.locator("#main-content").get_attribute("aria-busy") is None
+        assert page.url == original_url
         browser.close()
 
 

@@ -95,3 +95,4 @@ Grep. **HR**: owner decides.
 - K-UI-CACHE: new `?v=` on static edits or stale a year (0172).
 - K-NAV-418: 3 host_i18n tests fail on main.
 - K-CHECKIN: form alert fix #435; undeployed.
+- K-MORE: skeleton opt-out prepared; browser/390 px evidence pending (cloud startup failed).

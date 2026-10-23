@@ -9,6 +9,8 @@ Updated: 2026-10-23.
 
 ## Now
 
+- Mobile More skeleton: fix prepared; browser checks blocked by cloud startup.
+
 - Check-in alerts #435: tests pass; owner merge/deploy.
 
 - TTLock disclosure #434: timing/geometry CI pending.
