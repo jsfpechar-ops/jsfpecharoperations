@@ -65,4 +65,4 @@ Append-only.
 - 2026-10-22 Wizard coral bar OK (MASTER 10.5)
 - 2026-10-22 Alerts: one short line + link to the fix; off `/` only red alerts get a line (owner).
 - 2026-10-22 [deps] Typed signature font: self-hosted Dancing Script (OFL); no code copied (owner).
-- 2026-10-23 Subdomain: same RP ID. Alerts #435: live completion + worker resolution; owner authorized Codex.
+- 2026-10-23 RP ID unchanged; #435 live/worker alerts; Codex authorized incl. passkey recovery (0290).

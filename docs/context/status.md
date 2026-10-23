@@ -9,11 +9,13 @@ Updated: 2026-10-23.
 
 ## Now
 
-- Check-in alerts #435: tests pass; owner merge/deploy.
+- 0290: passkey CI/phone pending.
+
+- #435: tests pass; owner merge/deploy.
 
 - TTLock disclosure #434: timing/geometry CI pending.
 
-- App subdomain #432 deployed; root login/calendar URLs: review pending.
+- #432 subdomain deployed; root login/calendar review pending.
 
 - 0280-0283 short alerts, card borders, signature dialog. **Owner:** PR/deploy/phone test.
 - 0253 four red layout tests. **Owner:** review 0253 PR, iPad.
@@ -28,7 +30,7 @@ Updated: 2026-10-23.
 - Design reset 0165-0183 (#405). **Deploy:** new `?v=` keys.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 
-- Check production `/healthz`; credential letter to data box ybndqw9.
+- Check `/healthz`; credential letter to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** legal v1.7 (0005), if unsigned.
 
 ## Next

@@ -1,0 +1,89 @@
+name: Passkey client recovery
+
+on:
+  pull_request:
+    paths:
+      - "App/app/static/passkeys.js"
+      - "App/app/templates/login.html"
+      - "App/app/templates/base.html"
+      - "App/tests/*passkey*"
+      - ".github/workflows/passkeys-client.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Agent context lint
+        run: python3 scripts/context_lint.py 2>&1 | tail -30
+      - name: Pending requests, cancellation, errors and retries
+        run: node --test App/tests/test_passkeys_client.cjs
+
+  browsers:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    defaults:
+      run:
+        working-directory: App
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: App/requirements.lock
+      - name: Install existing app and browser-test dependencies
+        run: |
+          pip install --require-hashes -r requirements.lock
+          pip install -r requirements-dev.txt playwright==1.63.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Phone, touch tablets and desktop login recovery
+        env:
+          PASSKEY_BROWSER: ${{ matrix.browser }}
+          UBYHOST_REQUIRE_BROWSER: "1"
+          UBYHOST_UBYPORT_ENV: mock
+          UBYHOST_DEPLOYMENT: staging
+          UBYHOST_ENABLE_SCHEDULER: "0"
+          UBYHOST_PASSKEY_SHOTS: ${{ runner.temp }}/passkey-login-shots
+        run: python -m pytest tests/test_passkeys_client_browser.py -q --tb=short -x --junitxml=/tmp/passkey-results.xml 2>&1 | tail -30
+      - name: Capture browser failure
+        if: failure()
+        id: recovery_failure
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          report = Path("/tmp/passkey-results.xml")
+          if report.exists():
+              failures = [case for case in ET.parse(report).iter("testcase") if case.find("failure") is not None or case.find("error") is not None]
+              if failures:
+                  detail = " ".join(ET.tostring(failures[0], encoding="unicode").split())[-5000:]
+                  with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+                      out.write("detail=" + detail + "\n")
+          PY
+      - name: ${{ steps.recovery_failure.outputs.detail || 'Browser failure detail' }}
+        if: failure() && steps.recovery_failure.outputs.detail != ''
+        run: 'true'
+      - name: Upload login screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: passkey-login-${{ matrix.browser }}
+          path: ${{ runner.temp }}/passkey-login-shots
+          if-no-files-found: error

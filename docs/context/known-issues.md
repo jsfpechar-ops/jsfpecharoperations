@@ -81,7 +81,7 @@ Grep. **HR**: owner decides.
 | K-O04 | Low open | requirements.txt, Caddyfile | Pillow undeclared; dev deps use >=; HSTS includeSubDomains missing | P A59, A61 |
 | K-O05 | Med open | db.py periodic scans | Scans cover all stays ever, so cost grows with retention | AR-43 |
 | K-W01 | Med decision | GitHub repo | ~30 stale PRs; owner task 0001 step 12 APPLY=1; keep #278 #279 | 0001 |
-| K-ML01 | Low open | App/app/static/app.js | Dead reset-password JS after task 0003 password removal | magic-link HANDOFF |
+| K-ML01 | Low open | App/app/static/app.js | Unused reset-password JS (0003) | magic-link HANDOFF |
 | K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
 | K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
 | K-ML04 | Low open | login link limit | Attackers can exhaust an address's 3/15 min login budget; account-only limits reveal account existence. | 0006 |
@@ -92,6 +92,8 @@ Grep. **HR**: owner decides.
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 
-- K-UI-CACHE: new `?v=` on static edits or stale a year (0172).
+- K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
 - K-NAV-418: 3 host_i18n tests fail on main.
 - K-CHECKIN: form alert fix #435; undeployed.
+
+- K-PK0290: early-tap fix in review.
