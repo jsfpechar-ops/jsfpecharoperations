@@ -41,3 +41,4 @@ dashboard. The public hostname keeps the marketing page; /login stays available.
 Calendar URLs omit auto view, the initial date, month scale and an empty property
 filter. Explicit dates, non-default views/scales and property filters remain in
 the URL and survive reload. Unrelated parameters and the fragment are preserved.
+An explicit auto view is retained when it overrides a saved manual preference.

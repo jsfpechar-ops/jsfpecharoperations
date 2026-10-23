@@ -769,3 +769,32 @@ def test_app_root_login_works_without_javascript_and_keeps_the_root_address(
         shot(page, "app-root-login-390")
         context.close()
         browser.close()
+
+
+
+def test_explicit_auto_view_survives_reload_over_a_saved_manual_preference(
+    calendar_workspace, calendar_origin,
+):
+    from urllib.parse import parse_qs, urlsplit
+
+    with sync_api.sync_playwright() as playwright:
+        browser = launch(playwright)
+        context, page = open_page(browser, calendar_workspace, calendar_origin)
+        page.evaluate(
+            "() => localStorage.setItem('ubyhost.calendar.display.v1', JSON.stringify({mode: 'calendar'}))"
+        )
+        page.goto(calendar_origin + "/?lang=en&cal_view=auto")
+        page.wait_for_selector(".cal-gantt-row")
+        wait_loaded(page)
+        assert parse_qs(urlsplit(page.url).query)["cal_view"] == ["auto"]
+        page.reload()
+        page.wait_for_selector(".cal-gantt-row")
+        wait_loaded(page)
+        page.locator("[data-cal-settings]").click()
+        page.locator("[data-cal-auto]").uncheck()
+        wait_loaded(page)
+        page.locator("[data-cal-auto]").check()
+        wait_loaded(page)
+        assert "cal_view" not in parse_qs(urlsplit(page.url).query)
+        context.close()
+        browser.close()

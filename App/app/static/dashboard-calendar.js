@@ -123,7 +123,8 @@
   }
   function savePreferences() {
     try {
-      const displaySettings = JSON.stringify({ mode: state.mode, ...state.display });
+      preferences = { mode: state.mode, ...state.display };
+      const displaySettings = JSON.stringify(preferences);
       if (cleaningMode) localStorage.setItem(cleaningPreferencesKey, displaySettings);
       else localStorage.setItem(preferencesKey, displaySettings);
     } catch (_) { /* Optional. */ }
@@ -140,7 +141,9 @@
   function rememberURL() {
     const params = new URLSearchParams(location.search);
     // Defaults need no query string. Explicit choices remain shareable.
-    if (state.mode === "auto") params.delete("cal_view"); else params.set("cal_view", state.mode);
+    const overridesSavedMode = validMode(preferences.mode) && preferences.mode !== "auto";
+    if (state.mode === "auto" && !overridesSavedMode) params.delete("cal_view");
+    else params.set("cal_view", state.mode);
     const defaultDate = root.dataset.calendarDate || root.dataset.today;
     if (state.date === defaultDate) params.delete("cal_date"); else params.set("cal_date", state.date);
     if (state.scale === "month") params.delete("cal_scale"); else params.set("cal_scale", state.scale);
