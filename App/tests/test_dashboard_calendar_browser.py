@@ -762,7 +762,7 @@ def test_app_root_login_works_without_javascript_and_keeps_the_root_address(
         assert response.status == 200
         assert page.url == calendar_origin + "/?lang=en"
         assert page.locator('form[action="/login"]').is_visible()
-        assert page.locator('input[name="_csrf"]').input_value()
+        assert page.locator('form[action="/login"] input[name="_csrf"]').input_value()
         assert page.locator("body").evaluate(
             "node => node.scrollWidth <= window.innerWidth"
         )
