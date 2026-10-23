@@ -95,3 +95,5 @@ Grep. **HR**: owner decides.
 - K-UI-CACHE: new `?v=` on static edits or stale a year (0172).
 - K-NAV-418: 3 host_i18n tests fail on main.
 - K-CHECKIN: form alert fix #435; undeployed.
+
+- K-PASSKEY-0290: early-tap pending/race recovery patched; browser CI and physical-phone verification pending (0290).

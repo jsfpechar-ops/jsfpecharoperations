@@ -9,6 +9,8 @@ Updated: 2026-10-23.
 
 ## Now
 
+- Passkey recovery 0290: owner-authorized Codex fix; deterministic checks pass; browser CI/review pending.
+
 - Check-in alerts #435: tests pass; owner merge/deploy.
 
 - TTLock disclosure #434: timing/geometry CI pending.

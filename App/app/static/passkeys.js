@@ -53,6 +53,9 @@
   }
 
   function requestOptions(json) {
+    if (!json || typeof json.challenge !== "string" || !json.challenge) {
+      throw new Error("Missing passkey challenge");
+    }
     if (typeof PublicKeyCredential.parseRequestOptionsFromJSON === "function") {
       return PublicKeyCredential.parseRequestOptionsFromJSON(json);
     }
@@ -91,26 +94,76 @@
 
   // --- talking to the server ----------------------------------------------
 
-  function post(url, body) {
-    return fetch(url, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "X-CSRF-Token": csrf
-      },
-      body: JSON.stringify(body || {})
-    }).then(function (response) {
-      return response.json().catch(function () { return {}; }).then(function (data) {
-        if (!response.ok) {
-          var error = new Error(data.error || "");
-          error.serverMessage = data.error || "";
-          throw error;
-        }
-        return data;
-      });
+  // Bound both fetch/body reads and system sheets. Aborting alone does not
+  // guarantee that a browser API settles its promise.
+  function withDeadline(operation, milliseconds, signal) {
+    return new Promise(function (resolve, reject) {
+      var controller = new AbortController();
+      var settled = false;
+      var timer;
+      function finish(error, value) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (signal) signal.removeEventListener("abort", cancel);
+        if (error) reject(error); else resolve(value);
+      }
+      function cancel() {
+        finish(new DOMException("Passkey request cancelled", "AbortError"));
+        controller.abort();
+      }
+      timer = setTimeout(function () {
+        finish(new Error("Passkey request timed out"));
+        controller.abort();
+      }, milliseconds);
+      if (signal) {
+        if (signal.aborted) { cancel(); return; }
+        signal.addEventListener("abort", cancel, { once: true });
+      }
+      Promise.resolve().then(function () {
+        if (controller.signal.aborted) throw new DOMException("", "AbortError");
+        return operation(controller.signal);
+      }).then(function (value) { finish(null, value); }, finish);
     });
+  }
+
+  function post(url, body, signal) {
+    return withDeadline(function (requestSignal) {
+      return fetch(url, {
+        method: "POST",
+        credentials: "same-origin",
+        signal: requestSignal,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-CSRF-Token": csrf
+        },
+        body: JSON.stringify(body || {})
+      }).then(function (response) {
+        // An edge challenge or expired-form redirect is not WebAuthn JSON.
+        var type = response.headers.get("Content-Type") || "";
+        if (response.redirected || !/^application\/json\b/i.test(type)) {
+          throw new Error("Unexpected passkey response");
+        }
+        return response.json().then(function (data) {
+          if (!data || typeof data !== "object" || Array.isArray(data)) {
+            throw new Error("Invalid passkey response");
+          }
+          if (!response.ok) {
+            var error = new Error(typeof data.error === "string" ? data.error : "");
+            error.serverMessage = error.message;
+            throw error;
+          }
+          return data;
+        });
+      });
+    }, 15000, signal);
+  }
+
+  function requestCredential(method, options) {
+    return withDeadline(function (signal) {
+      return navigator.credentials[method]({ publicKey: options, signal: signal });
+    }, 90000);
   }
 
   function showError(scope, error) {
@@ -130,7 +183,7 @@
     button.disabled = true;
     post("/account/passkeys/options")
       .then(function (json) {
-        return navigator.credentials.create({ publicKey: creationOptions(json) });
+        return requestCredential("create", creationOptions(json));
       })
       .then(function (credential) {
         return post("/account/passkeys", {
@@ -150,52 +203,71 @@
   // --- logging in ----------------------------------------------------------
 
   var conditional = null;
+  var buttonLoginPending = false;
 
-  function finishLogin(credential, form) {
+  function finishLogin(credential, form, signal) {
+    if (!credential) throw new Error("No passkey credential");
     var next = form && form.querySelector('input[name="next"]');
     return post("/login/passkey", {
       credential: serialise(credential),
       remember: true,
       next: next ? next.value : ""
-    }).then(function (data) {
-      window.location.assign(data.redirect || "/");
+    }, signal).then(function (data) {
+      if (typeof data.redirect !== "string" || !data.redirect) {
+        throw new Error("Missing login redirect");
+      }
+      window.location.assign(data.redirect);
     });
   }
 
   function startConditional(form) {
-    if (typeof PublicKeyCredential.isConditionalMediationAvailable !== "function") return;
-    PublicKeyCredential.isConditionalMediationAvailable().then(function (ok) {
-      if (!ok) return;
-      conditional = new AbortController();
-      var signal = conditional.signal;
-      post("/login/passkey/options")
+    if (buttonLoginPending || conditional ||
+        typeof PublicKeyCredential.isConditionalMediationAvailable !== "function") return;
+    // Own the attempt before the asynchronous capability check, so an early
+    // button tap can cancel even a check/options request that has not finished.
+    var attempt = new AbortController();
+    conditional = attempt;
+    var signal = attempt.signal;
+    Promise.resolve().then(function () {
+      return PublicKeyCredential.isConditionalMediationAvailable();
+    }).then(function (ok) {
+      if (!ok || signal.aborted) return;
+      return post("/login/passkey/options", null, signal)
         .then(function (json) {
+          if (signal.aborted) return null;
           return navigator.credentials.get({
             publicKey: requestOptions(json), mediation: "conditional", signal: signal
           });
         })
         .then(function (credential) {
-          if (credential) return finishLogin(credential, form);
-        })
-        .catch(function (error) {
-          if (!signal.aborted) showError(document.querySelector("[data-passkey-login]"), error);
+          if (credential && !signal.aborted) return finishLogin(credential, form, signal);
         });
-    }).catch(function () { /* no autofill support: the button still works */ });
+    }).catch(function (error) {
+      if (!signal.aborted) showError(document.querySelector("[data-passkey-login]"), error);
+    }).then(function () {
+      if (conditional === attempt) conditional = null;
+    });
   }
 
   function loginWithButton(button, form) {
+    if (buttonLoginPending) return;
+    buttonLoginPending = true;
     var scope = document.querySelector("[data-passkey-login]");
     if (conditional) { conditional.abort(); conditional = null; }
+    var box = scope && scope.querySelector("[data-passkey-error]");
+    if (box) box.hidden = true;
     button.disabled = true;
     post("/login/passkey/options")
       .then(function (json) {
-        return navigator.credentials.get({ publicKey: requestOptions(json) });
+        return requestCredential("get", requestOptions(json));
       })
       .then(function (credential) { return finishLogin(credential, form); })
-      .catch(function (error) {
+      .catch(function (error) { showError(scope, error); })
+      .finally(function () {
+        buttonLoginPending = false;
         button.disabled = false;
-        showError(scope, error);
-        startConditional(form);
+        // Do not silently start another options request after a failed tap:
+        // the person can retry without spending a second rate-limit token.
       });
   }
 
