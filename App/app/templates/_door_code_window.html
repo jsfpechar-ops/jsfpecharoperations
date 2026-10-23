@@ -1,7 +1,9 @@
 {# Essential access timing is visible even before a lock is connected. #}
 {% set buffer = door_code.buffer %}
-{% set cin = apartment.checkin_hour %}
-{% set cout = apartment.checkout_hour %}
+{# Validation re-renders carry raw POST strings, including blank/invalid hours. #}
+{% set hour_values = range(24) | map('string') | list %}
+{% set cin = (apartment.checkin_hour | int) if (apartment.checkin_hour | string) in hour_values else none %}
+{% set cout = (apartment.checkout_hour | int) if (apartment.checkout_hour | string) in hour_values else none %}
 {% set complete = cin is not none and cout is not none %}
 <div data-door-code-window data-buffer="{{ buffer }}"
      data-checkin="{{ cin if cin is not none else '' }}" data-checkout="{{ cout if cout is not none else '' }}"

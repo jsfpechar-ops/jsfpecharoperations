@@ -92,3 +92,25 @@ def test_preview_uses_the_configured_margin():
     _, parsed = _render(15, 11, "en", buffer=2)
     assert parsed.values["data-window-start"] == "13:00 · arrival day"
     assert parsed.values["data-window-end"] == "13:00 · departure day"
+
+
+@pytest.mark.parametrize("lang", ["en", "cs", "vi"])
+@pytest.mark.parametrize("cin,cout", [("15", "11"), ("0", "23"), ("23", "0")])
+def test_posted_hour_strings_render_like_saved_integer_hours(lang, cin, cout):
+    _, posted = _render(cin, cout, lang)
+    _, saved = _render(int(cin), int(cout), lang)
+    assert posted.values == saved.values
+    assert posted.hidden == saved.hidden
+
+
+@pytest.mark.parametrize("lang", ["en", "cs", "vi"])
+@pytest.mark.parametrize("cin,cout", [
+    ("", ""), ("", "11"), ("15", ""),
+    ("99", "10"), ("15", "24"), ("-1", "11"),
+    ("invalid", "11"), ("15.5", "11"), ("15", "NaN"),
+])
+def test_invalid_posted_hours_keep_the_explanation_without_inventing_times(lang, cin, cout):
+    _, parsed = _render(cin, cout, lang)
+    assert parsed.hidden["data-window-values"]
+    assert not parsed.hidden["data-window-missing"]
+    assert not any(parsed.values.values())

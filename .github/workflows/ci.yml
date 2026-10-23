@@ -499,7 +499,8 @@ jobs:
           UBYHOST_SHOTS_DIR: ${{ runner.temp }}/door-code-shots
         run: >-
           python -m pytest tests/test_door_code_window.py tests/test_door_code_window_browser.py
-          -q -rs --junitxml=/tmp/door-code-review.xml
+          tests/test_onboarding_wizard_survival.py tests/test_times_required_0210.py
+          tests/test_static_versions.py -q -rs --junitxml=/tmp/door-code-review.xml
       - name: Require zero skipped disclosure checks
         id: disclosure_summary
         if: always()
