@@ -84,14 +84,15 @@ Grep. **HR**: owner decides.
 | K-ML01 | Low open | App/app/static/app.js | Dead reset-password JS after task 0003 password removal | magic-link HANDOFF |
 | K-ML02 | Low open | App/app/host_i18n.py | Dead `login.password*` i18n keys after e-mail link login | magic-link HANDOFF |
 | K-ML03 | Low open | docs/UbyHost_workplan/compliance/01, 03 | Compliance docs partially updated in 0005; lawyer review on LAWYER REVIEW paragraphs | task 0005 |
-| K-ML04 | Low open | login link limit | Attackers can exhaust an address's 3/15 min login budget; account-only limits reveal account existence. | 0006 |
+| K-ML04 | Low open | login limit | Address 3/15 min budget exhaustible; account-only limits expose accounts | 0006 |
 | K-D02 | Low open | door_codes `_handle_moves` | Move replace: gateway retry every 15 min, no cap; guest keeps old PIN | 0037 |
 | K-D03 | Med decision | door_codes `_handle_moves` | Move permission/reauth/config/disabled: no retry after access fixed (0037) | 0037 |
 | K-D04 | High open | door_codes `issue`, `_handle_moves` | Same-hours rebooking can receive an undeleted cancelled PIN via `get` | [0069](../tasks/0069-same-period-shared-pin.md) |
-| K-U15 | Med review | Host forms/navigation | Fixed on staging; 0084 incl. K-U14 + owner review | [combined plan](../plans/host-ux-combined-staging.md) |
+| K-U15 | Med review | Host forms/navigation | Staging fixed; 0084 incl. K-U14; owner review | [plan](../plans/host-ux-combined-staging.md) |
 | K-T01 | Low open | Tests | Order-dependent tests (also 3 in test_host_i18n.py) | [0080](../tasks/0080-report.md) |
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 
 - K-UI-CACHE: new `?v=` on static edits or stale a year (0172).
 - K-NAV-418: 3 host_i18n tests fail on main.
 - K-CHECKIN: form alert fix #435; undeployed.
+- K-MORE: #436 fix; browser CI pending.
