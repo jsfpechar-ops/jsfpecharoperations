@@ -4,17 +4,18 @@ Updated: 2026-10-23.
 
 ## Production
 
-
 - **Magic-link:** phases 1–2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)); e-mail login, `.env` admin/SES, access log off, properties tested.
-- Live app `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
+- `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
 
-- TTLock access disclosure: PR #434, timing/geometry CI pending.
+- Check-in alerts #435: tests pass; owner merge/deploy.
 
-- App subdomain deployed (#432). Root login and clean calendar URLs: review pending.
+- TTLock disclosure #434: timing/geometry CI pending.
 
-- 0280-0283 short alerts, card borders, signature dialog. **Owner:** PR, deploy, phone test.
+- App subdomain #432 deployed; root login/calendar URLs: review pending.
+
+- 0280-0283 short alerts, card borders, signature dialog. **Owner:** PR/deploy/phone test.
 - 0253 four red layout tests. **Owner:** review 0253 PR, iPad.
 - Foolproof rounds 1-3 (0230-0278). **Owner:** deploy (`?v=` keys).
 - Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
@@ -27,11 +28,10 @@ Updated: 2026-10-23.
 - Design reset 0165-0183 (#405). **Deploy:** new `?v=` keys.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 
-- Check production `/healthz`. The credential letter goes to data box ybndqw9.
-- Lawyer: **LAWYER REVIEW** on legal v1.7 (0005) if not yet signed off.
+- Check production `/healthz`; credential letter to data box ybndqw9.
+- Lawyer: **LAWYER REVIEW** legal v1.7 (0005), if unsigned.
 
 ## Next
-
 
 - Door codes 0037 and 0038 are on main. Next: those owner steps on staging.
 - Merged 0067 (#371) and 0068 (#372). TTLock answered all questions ([TTLOCK](../TTLOCK.md#what-ttlock-support-confirmed-2026-10-12)). Next: [0069](../tasks/0069-same-period-shared-pin.md), same-hours rebooking must not reuse a PIN (K-D04).
@@ -50,4 +50,3 @@ Updated: 2026-10-23.
 ## Owner done
 
 - SES, Turnstile, healthchecks, Better Stack, Cloudflare, autopurge, Render staging, backup drill, 0001 (#281), magic-link/0007 phase 2 (Oct 2026).
-

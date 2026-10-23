@@ -731,11 +731,9 @@ def sweep_reminders() -> Dict[str, int]:
         except db.DecryptionError:
             log.exception("reminder sweep skipped reservation_id=%s", reservation["id"])
             continue
-        complete = (
-            progress["expected"] is not None
-            and progress["filled"] >= progress["expected"]
-            and not progress["incomplete"]
-        )
+        complete = alerts.forms_complete(progress)
+        if complete:
+            alerts.resolve(f"guest_incomplete_checkin:{reservation['id']}")
         if (
             start == today + timedelta(days=1)
             and now_local.hour >= 9
