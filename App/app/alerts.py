@@ -96,6 +96,15 @@ def deadline_reason(lang: str, check_in, progress: Dict[str, Any], now=None) -> 
     )
 
 
+def forms_complete(progress: Dict[str, Any]) -> bool:
+    """Use the same live completion rule for reminder creation and presentation."""
+    return (
+        progress["expected"] is not None
+        and progress["filled"] >= progress["expected"]
+        and not progress["incomplete"]
+    )
+
+
 def checkin_incomplete_reason(lang: str) -> str:
     return host_i18n.translate(lang, "notification.reason.checkin_incomplete")
 
@@ -375,6 +384,21 @@ def present_many(alerts: List[Any], lang: str) -> List[Dict[str, Any]]:
     seen: Dict[Any, int] = {}
     stays = _preload_stays(alerts)
     for alert in alerts:
+        if alert["kind"] == "guest_incomplete_checkin":
+            reservation = stays["reservations"].get(alert["reservation_id"])
+            if reservation is not None:
+                from . import reporting
+
+                try:
+                    progress = reporting.reservation_progress(
+                        reservation, stays["guests"].get(reservation["id"])
+                    )
+                except db.DecryptionError:
+                    # Unreadable data is not evidence that forms are complete.
+                    pass
+                else:
+                    if forms_complete(progress):
+                        continue
         card = present(alert, lang, stays)
         reservation_id = card.get("reservation_id")
         if not reservation_id:

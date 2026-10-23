@@ -10,6 +10,8 @@ Updated: 2026-10-23.
 
 ## Now
 
+- Check-in form alerts: live completion filter and worker resolution; CI review pending, owner deploy.
+
 - TTLock access disclosure: PR #434, timing/geometry CI pending.
 
 - App subdomain deployed (#432). Root login and clean calendar URLs: review pending.

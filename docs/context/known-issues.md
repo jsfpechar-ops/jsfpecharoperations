@@ -63,6 +63,7 @@ Grep. **HR**: owner decides.
 | K-I07 | Low unverified | routes/stay_fees.py | Cadence switch may orphan adjustments | P A15 |
 | K-I08 | Low open | stay_fee.py _day_liability | "Charge" files a minor with a blank reason | P A08 |
 | K-I09 | Med unverified | invoices.py:validate_for_issue | Buyer address unchecked; verify ordinary VAT invoice requirements | UI §3 |
+| K-U-CHECKIN | Med review | alerts.py, claim.py | Completed forms kept a check-in warning; live filter and worker resolution implemented, CI/deploy pending | owner report 2026-10-23 |
 | K-U01 | High decision | product.html:49,113, landing.html:72,189 | CTAs dead-end at /login while sign-up is off | UX UX-9 |
 | K-U02 | Med unverified | routes/guest.py PIN gate | A wrong PIN loses the #c= claim secret | UX M-3 |
 | K-U03 | Med open | signature.js:515, settings.html:250 | Back skips validation; recovery-code field numeric-only on iOS | UX M-5, M-1 |
