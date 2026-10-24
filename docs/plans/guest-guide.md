@@ -21,7 +21,7 @@ One guest guide per property, made of small cards ("Turn on the heating", "Open 
 
 ## Leon (AI): character (owner, 2026-10-24)
 
-Leon is the guest bot. He should sound like the best hotel concierge in the world: kind, quick, understanding and helpful. Brief 0300 turns this section into the system prompt and the eval set.
+Leon is the guest bot. He should sound like the best hotel concierge in the world: kind, quick, understanding and helpful. Brief 0350 turns this section into the system prompt and the eval set.
 
 - **Warm and unhurried.** He never makes anyone feel silly for asking, and a guest arriving tired at night gets calm, short answers.
 - **Answers first.** The first sentence is the answer. Steps follow, one per line, written exactly as the host wrote them. He offers the card's photo or video when it has one.
@@ -43,7 +43,7 @@ Booking (Apify voyager/booking-scraper): address, check-in and check-out times, 
 
 ## Briefs
 
-Numbers: this plan owns tasks 0291 to 0309 and migrations 0013 and 0014. Havel (host help bot) owns 0310 to 0329 and migrations from 0015; its 0310 is the shared AI core (`ai.py`, `anthropic` decision, `ai_usage` by feature, kill switch, caps) that 0296 and later build on.
+Numbers: this plan owns tasks 0341 to 0359 (renumbered from 0291 to 0305 on 2026-10-24: another thread used 0291 to 0302 on main) and migrations 0013, 0014 and 0016. Havel (host help bot) owns 0310 to 0329 and migrations from 0015; its 0310 is the shared AI core (`ai.py`, `anthropic` decision, `ai_usage` by feature, kill switch, caps) that 0346 and later build on.
 
 Owner rule (2026-10-24): critical briefs are written by Fable 5.1, or reviewed by Fable when Opus already wrote them; the rest are written by Opus 5.5. Executor is Haiku 5.5 for every brief (owner, 2026-10-24); Fable reviews the diffs of critical briefs before merge.
 
@@ -51,21 +51,21 @@ Critical means one of: a public or guest-facing surface, file uploads, secrets o
 
 | Phase | Brief | What | Critical | Written by | Fable review | Executor | State |
 |---|---|---|---|---|---|---|---|
-| 1 | [0291](../tasks/0291-guest-guide-data.md) | Tables, `guest_guide.py`, the guest gate `for_guest` | yes: migration, guest gate | Opus | yes | Haiku | todo |
-| 1 | [0292](../tasks/0292-guest-guide-pages.md) | Host "Guest guide" tab, card list, card editor, "Save and next card" | no | Opus | no | Haiku | todo |
-| 1 | [0293](../tasks/0293-guide-photos.md) | Card photos: upload, clean, shrink, serve to owner, delete, orphan sweep | yes: uploads | Opus | yes | Haiku | todo |
-| 1 | [0294](../tasks/0294-guest-guide-view.md) | Guest side: "Your guide" on the stay page; public QR page; QR token; guest photo serving; no-index, caching, rate limits | yes: public surface | Fable | n/a | Haiku | todo |
-| 1 | [0295](../tasks/0295-guide-qr.md) | Printable QR sheet for the host (PNG/PDF), rotate the QR link | no | Opus | no | Haiku | todo |
-| 2 | 0296 | Dropped: the shared core 0310 already has per-feature switches and caps; the "leon" and "guide_import" settings ride in 0298 and 0300 | | | | | dropped |
-| 2 | [0297](../tasks/0297-guide-import-fetch.md) | Booking and Airbnb import: Apify key and config, URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Haiku | todo |
-| 2 | [0298](../tasks/0298-guide-import-merge.md) | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Haiku | todo |
-| 2 | [0299](../tasks/0299-guide-drafts.md) | Draft review: source line and "Discard this draft" on the card editor (paste box dropped to keep AI cost down) | no | Opus | no | Haiku | todo |
-| 3 | [0300](../tasks/0300-leon-core.md) | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Haiku | todo |
-| 3 | [0301](../tasks/0301-guest-handoff.md) | Host handoff: "needs you" alert and one mail per batch, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Haiku | todo |
-| 3 | [0302](../tasks/0302-guest-chat-ui.md) | Guest chat UI on the stay link and QR guide pages (all kinds, host answers, waiting state, emergency block), QR contact line; the guide link on the form and claim pages is split out to a later brief (claim gate) | no | Opus | no | Haiku | todo |
-| 3 | [0303](../tasks/0303-guide-translation.md) | Guide translation for guests (cached per card and language, filled after the response, facts checked) and one host usage line instead of a page; migration from the lint | no | Opus | no | Haiku | todo |
-| 1 | [0304](../tasks/0304-guide-full-catalog.md) | Full card catalog: 17 default cards (24 kinds) with checklist prompts and detailed ghost text per field; progress counts skipped as answered | no | Opus | no | Haiku | todo |
-| 1 | [0305](../tasks/0305-guide-quick-answers.md) | Quick answers: 5-step yes/no wizard, `guide_fact` table, fact lines inside cards for guests (6 languages) and Leon, "Your guide" summary | yes: migration, guest surface, AI to guests | Opus | yes | Haiku | todo |
+| 1 | [0341](../tasks/0291-guest-guide-data.md) | Tables, `guest_guide.py`, the guest gate `for_guest` | yes: migration, guest gate | Opus | yes | Haiku | todo |
+| 1 | [0342](../tasks/0292-guest-guide-pages.md) | Host "Guest guide" tab, card list, card editor, "Save and next card" | no | Opus | no | Haiku | todo |
+| 1 | [0343](../tasks/0293-guide-photos.md) | Card photos: upload, clean, shrink, serve to owner, delete, orphan sweep | yes: uploads | Opus | yes | Haiku | todo |
+| 1 | [0344](../tasks/0294-guest-guide-view.md) | Guest side: "Your guide" on the stay page; public QR page; QR token; guest photo serving; no-index, caching, rate limits | yes: public surface | Fable | n/a | Haiku | todo |
+| 1 | [0345](../tasks/0295-guide-qr.md) | Printable QR sheet for the host (PNG/PDF), rotate the QR link | no | Opus | no | Haiku | todo |
+| 2 | 0346 | Dropped: the shared core 0310 already has per-feature switches and caps; the "leon" and "guide_import" settings ride in 0348 and 0350 | | | | | dropped |
+| 2 | [0347](../tasks/0297-guide-import-fetch.md) | Booking and Airbnb import: Apify key and config, URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Haiku | todo |
+| 2 | [0348](../tasks/0298-guide-import-merge.md) | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Haiku | todo |
+| 2 | [0349](../tasks/0299-guide-drafts.md) | Draft review: source line and "Discard this draft" on the card editor (paste box dropped to keep AI cost down) | no | Opus | no | Haiku | todo |
+| 3 | [0350](../tasks/0300-leon-core.md) | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Haiku | todo |
+| 3 | [0351](../tasks/0301-guest-handoff.md) | Host handoff: "needs you" alert and one mail per batch, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Haiku | todo |
+| 3 | [0352](../tasks/0302-guest-chat-ui.md) | Guest chat UI on the stay link and QR guide pages (all kinds, host answers, waiting state, emergency block), QR contact line; the guide link on the form and claim pages is split out to a later brief (claim gate) | no | Opus | no | Haiku | todo |
+| 3 | [0353](../tasks/0303-guide-translation.md) | Guide translation for guests (cached per card and language, filled after the response, facts checked) and one host usage line instead of a page; migration from the lint | no | Opus | no | Haiku | todo |
+| 1 | [0354](../tasks/0304-guide-full-catalog.md) | Full card catalog: 17 default cards (24 kinds) with checklist prompts and detailed ghost text per field; progress counts skipped as answered | no | Opus | no | Haiku | todo |
+| 1 | [0355](../tasks/0305-guide-quick-answers.md) | Quick answers: 5-step yes/no wizard, `guide_fact` table, fact lines inside cards for guests (6 languages) and Leon, "Your guide" summary | yes: migration, guest surface, AI to guests | Opus | yes | Haiku | todo |
 | end | phase review | Fable reads the diffs of the critical files only, before each phase merges | | | yes | | |
 
 Every brief states, in §2 or the risk list: security (ownership on every query, CSRF, input limits), privacy (no guest data in logs, retention), UX (phone first, one primary action, Czech and English copy), design (catalog classes, tokens, layout guard, 390 px screenshot), function (tests for the happy path and each refusal) and cost (tokens per call, caps). Opus checks the embedded code in a scratch copy before the brief is committed, so the executor copies working code.

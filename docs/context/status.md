@@ -9,7 +9,7 @@ Updated: 2026-10-23.
 
 ## Now
 
-- Guest guide [plan](../plans/guest-guide.md): 0291 ready.
+- Guest guide [plan](../plans/guest-guide.md): 0341 ready.
 
 - 0290: passkey CI/phone pending.
 

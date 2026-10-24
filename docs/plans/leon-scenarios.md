@@ -1,6 +1,6 @@
-# Leon (AI): operational scenarios (0300, 0301, 0302)
+# Leon (AI): operational scenarios (0350, 0351, 0352)
 
-Owner request (2026-10-24): be ready for every situation. Content situations (several questions, emergencies, refunds, injection, rude guests, about_me) are 0300's eval set and are not repeated here. Verdict: **OK** as briefed, **fixed** (in the brief's files, with a test where the server decides), or **accepted** (deliberately, reason given). Functions are in `docs/plans/0300-files/leon.py` (L), `guest_leon.py` (R), `docs/plans/0302-files/guest-leon.js` (JS), `docs/plans/0301-files/guest_handoff.py` (H).
+Owner request (2026-10-24): be ready for every situation. Content situations (several questions, emergencies, refunds, injection, rude guests, about_me) are 0350's eval set and are not repeated here. Verdict: **OK** as briefed, **fixed** (in the brief's files, with a test where the server decides), or **accepted** (deliberately, reason given). Functions are in `docs/plans/0300-files/leon.py` (L), `guest_leon.py` (R), `docs/plans/0302-files/guest-leon.js` (JS), `docs/plans/0301-files/guest_handoff.py` (H).
 
 | # | Scenario | What happens | Verdict | Test |
 |---|---|---|---|---|
@@ -17,10 +17,10 @@ Owner request (2026-10-24): be ready for every situation. Content situations (se
 | 11 | Host edits or deletes a card Leon just cited | the old bubble keeps its stored text; the next question reads the current cards (`guest_guide.for_guest` per request) and `validate` checks numbers against them, so a stale number repeated from history fails `number` and goes to the host | OK | `test_an_unsourced_number_becomes_ask_host...` |
 | 12 | The guide stops being live mid-chat | R returns 404; JS says "This page has expired. Please reload"; open questions stay with the host (H) | OK | `test_no_leon_while_the_guide_is_not_live...` |
 | 13 | Booked window closes mid-chat | level per request (`booked_level`, Prague date): booked cards leave the prompt; old answers stay visible and in the 6-turn history | accepted: the same guest already saw them; door codes never reach Leon; the number check allows only numbers from the cards now cited | `test_the_window_edges` |
-| 14 | Guest returns after checkout | 0294's stay gate decides; where it opens, level `everyone` and the old chat until the purge 30 days after checkout | OK | `test_retention_purges_...` |
+| 14 | Guest returns after checkout | 0344's stay gate decides; where it opens, level `everyone` and the old chat until the purge 30 days after checkout | OK | `test_retention_purges_...` |
 | 15 | Host rotates the QR token | the cookie path is `/g/<token>`, so the new sticker starts a new chat; the old chat's questions still reach the host, but the guest cannot see that answer | accepted: rotation answers a leaked sticker; QR chats are anonymous and purged after 30 days | |
 | 16 | QR guest clears cookies | new chat with a fresh `QR_MAX`; bounded by `leon_addr` (30 per 15 min), `guide_qr` (120 per 15 min), the per-property day cap (0.05 USD) and the monthly cap | OK | `test_the_address_limit_spans_conversations`, `test_the_per_property_daily_cap` |
-| 17 | Host answers after the guest left | stored as a host turn (H `answer`); shown on return (stay link in its window, QR cookie 30 days). No push: no guest e-mail is collected (owner decision) | OK | 0301 tests |
+| 17 | Host answers after the guest left | stored as a host turn (H `answer`); shown on return (stay link in its window, QR cookie 30 days). No push: no guest e-mail is collected (owner decision) | OK | 0351 tests |
 | 18 | Guest asks again after the host answered | was: a model call, `no_source`, a second question. Now L `_open_twin` also matches answered questions: kind `answered`, "Your host has already answered this above.", no model call, no row. A reworded repeat is a new question | fixed | `test_a_question_the_host_already_answered_points_up_without_a_new_row` |
 | 19 | Lifetime cap reached in the middle of a multi-part message | the cap is checked per message before the call: the whole message is passed unread (one untriaged row, later messages appended) | OK | `test_the_lifetime_cap_per_door...` |
 | 20 | Slow model or AI timeout | server: 20 s timeout and one retry in 0310, then `AIError` gives `passed`; the guest's bubble says "Sending" meanwhile; JS gives up at 50 s and resends with the same id | fixed (client limit and note) | `test_a_model_error_passes_...` |
@@ -33,9 +33,9 @@ Owner request (2026-10-24): be ready for every situation. Content situations (se
 | 27 | Emoji only | L `is_noise` (no letters): `unclear`, no model call | OK | `test_noise_gets_a_fixed_reply...` |
 | 28 | Guest asks to delete the chat (GDPR) | the model sends it to the host (`ask_host`: the host must decide); chats are deleted 30 days after checkout or the last QR message | accepted: no delete-now path; the host passes an erasure request to UbyHost's privacy contact, as for registration data | |
 | 29 | Clock and time-zone edges | the booked window uses `claim.prague_today()` and dates only; `busy_until` and `paused_until` are UTC ISO strings from one format, compared as text (SQLite and Postgres) | OK | `test_the_window_edges` |
-| 30 | Property deleted or archived | `ON DELETE CASCADE` from `apartment` to chats, turns and questions; the QR door needs an active, unarchived property; the stay door follows 0294's link gate, and the endpoints 404 once the guide is no longer live | OK | |
+| 30 | Property deleted or archived | `ON DELETE CASCADE` from `apartment` to chats, turns and questions; the QR door needs an active, unarchived property; the stay door follows 0344's link gate, and the endpoints 404 once the guide is no longer live | OK | |
 | 31 | Rate limit versus cap wording | `slow_down`: "Let's take a short break. You can write again in a few minutes."; cap: "I've passed your message to Jana, your host"; never the word "limit" | OK | |
-| 32 | Host replies to an untriaged "passed" batch | one row holds every passed message (summary joined, 1000 chars); one answer covers it; the next passed message after that opens a new row | OK | 0301 tests |
+| 32 | Host replies to an untriaged "passed" batch | one row holds every passed message (summary joined, 1000 chars); one answer covers it; the next passed message after that opens a new row | OK | 0351 tests |
 | 33 | `busy` never clears (another device stuck) | after 20 retries (80 s) JS shows "That did not go through" and keeps the batch; the 60 s guard has expired by then, so the next Send goes through | OK | |
 
 Count: 33 scenarios; 19 OK as briefed, 10 fixed (2, 3, 4, 5, 6, 8, 9, 18, 20, 25), 4 accepted (7, 13, 15, 28).
