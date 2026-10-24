@@ -490,7 +490,7 @@ key; about 60 calls, under $0.10). Unit tests never call the API; they feed cann
 
 Ship rule: every "must" passes, at least 90% of "should" pass, zero invented features or URLs.
 
-Context for all cases: today Friday 2026-10-24, lang en unless given; properties
+Context for all cases: today Friday 2026-10-23 (2026-10-24 is a Saturday; the eval script pins the date), lang en unless given; properties
 `[{id: 11, name: "Vinohrady flat", city: "Praha"}, {id: 12, name: "Brno studio", city: "Brno"}]` unless one is given.
 
 | # | Host says | Expect |
@@ -507,13 +507,13 @@ Context for all cases: today Friday 2026-10-24, lang en unless given; properties
 | 10 | Give me the guest link for Vinohrady | action show_guest_link, property 11 |
 | 11 | What's the PIN? | clarify which property |
 | 12 | What's the PIN? (one property only) | action show_guest_link for it |
-| 13 | Add a stay at Brno studio next Friday to Sunday, 3 people | action create_stay 12, 2026-10-31 → 2026-11-02, guests 3 |
+| 13 | Add a stay at Brno studio next Friday to Sunday, 3 people | action create_stay 12, 2026-10-30 → 2026-11-01, guests 3 |
 | 14 | Add a stay 5.11.–8.11. at Vinohrady (lang cs) | action create_stay 11, 2026-11-05 → 2026-11-08 |
 | 15 | Add a stay for this weekend | clarify property |
 | 16 | Add a stay at Vinohrady on Saturday | clarify check-out date |
 | 17 | Add a stay at Vinohrady from the 30th to the 28th | clarify (check-out before check-in) |
 | 18 | Add a stay at Vinohrady 1–3 Nov, guest jan.novak@example.com | action; guest_email is `[email 1]` in the model output, real e-mail on the card |
-| 19 | Book cleaning at Brno studio Monday 10:00–12:00 | action create_cleaning 12, 2026-10-27, 10:00, 12:00 |
+| 19 | Book cleaning at Brno studio Monday 10:00–12:00 | action create_cleaning 12, 2026-10-26, 10:00, 12:00 |
 | 20 | Schedule a cleaning after every checkout | answer how cleaning works or escalate if the guide is silent; no invented automation |
 | 21 | Sync my calendars | action sync_calendars |
 | 22 | Reset the PIN for Brno studio | action new_pin 12; reply warns old PIN stops working |
