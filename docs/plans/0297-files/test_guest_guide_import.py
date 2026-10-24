@@ -85,16 +85,16 @@ def test_evil_links_are_refused(evil):
 
 
 def test_a_request_queues_a_row_and_counts_down(ws):
-    assert gi.left_this_month(ws["home"]) == 3
+    assert gi.imports_left(ws["home"]) == 2
     r = _post(ws, BOOKING)
     assert r.status_code == 303 and "msg=" in r.headers["location"]
     rows = gi.imports(ws["home"])
     assert [(x["source"], x["status"], x["url"]) for x in rows] == [
         ("booking", "queued", "https://www.booking.com/hotel/cz/vivus-3.cs.html"),
     ]
-    assert gi.left_this_month(ws["home"]) == 2
+    assert gi.imports_left(ws["home"]) == 1
     page = ws["client"].get(f"/apartments/{ws['home']}/guide").text
-    assert "Importing" in page and "Imports left this month: 2." in page
+    assert "Importing" in page and "Imports left for this property: 1." in page
 
 
 def test_only_one_import_runs_at_a_time(ws):
@@ -103,15 +103,19 @@ def test_only_one_import_runs_at_a_time(ws):
     assert "err=" in r.headers["location"] and len(gi.imports(ws["home"])) == 1
 
 
-def test_the_monthly_limit_per_property(ws):
-    for n in range(3):
-        _post(ws, AIRBNB)
-        db.execute("UPDATE guide_import SET status = 'failed'")
-    assert gi.left_this_month(ws["home"]) == 0
+def test_one_import_per_listing_for_good(ws):
+    _post(ws, AIRBNB)
+    db.execute("UPDATE guide_import SET status = 'failed'")
+    assert gi.imports_left(ws["home"]) == 2  # a failed run does not use the month up
+    _post(ws, AIRBNB)
+    db.execute("UPDATE guide_import SET status = 'done' WHERE status = 'queued'")
     r = _post(ws, AIRBNB)
-    assert "err=" in r.headers["location"]
+    assert "err=" in r.headers["location"] and "already imported" in r.headers["location"].replace("%20", " ")
+    _post(ws, BOOKING)
+    db.execute("UPDATE guide_import SET status = 'done' WHERE status = 'queued'")
+    assert gi.imports_left(ws["home"]) == 0
     page = ws["client"].get(f"/apartments/{ws['home']}/guide").text
-    assert "Imports left this month: 0." in page and 'name="url"' not in page
+    assert "Imports left for this property: 0." in page and 'name="url"' not in page
 
 
 def test_the_global_budget(ws, monkeypatch):
@@ -243,7 +247,7 @@ def test_the_worker_stops_at_the_global_budget(ws, monkeypatch):
     assert db.query_one("SELECT error FROM guide_import WHERE id = ?", (second,))["error"] == "budget"
 
 
-def test_retention_drops_raw_text_after_seven_days_and_rows_after_sixty(ws, monkeypatch):
+def test_retention_drops_raw_text_after_seven_days_and_failed_rows_after_sixty(ws, monkeypatch):
     monkeypatch.setattr(gi.requests, "post", _fake_post([], body=[AIRBNB_ITEM]))
     import_id = gi.request_import(ws["home"], AIRBNB)
     gi.process_queue()
@@ -254,6 +258,13 @@ def test_retention_drops_raw_text_after_seven_days_and_rows_after_sixty(ws, monk
     assert gi.purge(date(2026, 1, 9), dry_run=False, owner_user_id=None) == 1
     row = db.query_one("SELECT status, raw_json FROM guide_import WHERE id = ?", (import_id,))
     assert (row["status"], row["raw_json"]) == ("expired", None)
+    # The row stays, without text, as the record of the one import; a failed row goes.
+    failed = db.insert("guide_import", {
+        "apartment_id": ws["home"], "source": "booking", "url": "https://www.booking.com/hotel/cz/vivus-3.html", "status": "failed",
+        "created_at": "2026-01-01T10:00:00",
+    })
     assert gi.purge(date(2026, 3, 5), dry_run=False, owner_user_id=None) == 1
-    assert db.query_one("SELECT id FROM guide_import WHERE id = ?", (import_id,)) is None
+    assert db.query_one("SELECT id FROM guide_import WHERE id = ?", (import_id,))
+    assert db.query_one("SELECT id FROM guide_import WHERE id = ?", (failed,)) is None
+    assert gi.imports_left(ws["home"]) == 1
     assert "guide_imports" in dict(retention.STEPS)

@@ -16,7 +16,7 @@ On the guest guide page the host pastes the public link of their own Booking.com
 - **Secret:** `UBYHOST_APIFY_TOKEN`, env only, read in `config.py` like `UBYHOST_TTLOCK_CLIENT_SECRET`. Unset means off: the page says so calmly, the POST refuses, the worker does nothing. The token travels in an `Authorization: Bearer` header, never in a URL or a log.
 - **Untrusted data:** `trim()` keeps only named fields per source (title, description, check-in and check-out times, address, house rules, amenities, location notes), whitespace-collapsed, cut to `MAX_TEXT` / `MAX_ITEM_TEXT`, JSON capped at 64 KB; a response over 4 MB is dropped unread. Logs carry the row id, the source and a short error code, never listing text or the URL.
 - **Ownership and CSRF:** every route goes through `_home()` (404 on a foreign or archived property) under the router's `security.protect_host_post`.
-- **Cost:** 3 imports per property per calendar month (`MONTHLY_PER_PROPERTY`, failed ones count, so a bad link is not a free retry), one in flight per property, and a global cap on actor runs (`UBYHOST_APIFY_MONTHLY_RUNS`, default 40) counted in the existing `lock_api_usage` table under `provider = 'apify'`, exactly as `ttlock._count_call` does. The page shows what is left.
+- **Cost:** one import per listing (Booking, Airbnb) per property, for good (owner, 2026-10-24: after it the host fills the rest by hand; a failed run does not use it up; non-failed rows are kept without text as that record), one in flight per property, and a global cap on actor runs (`UBYHOST_APIFY_MONTHLY_RUNS`, default 40) counted in the existing `lock_api_usage` table under `provider = 'apify'`, exactly as `ttlock._count_call` does. The page shows what is left.
 - Hard rules 2 (new outbound request: this brief is the reason; retention line added), 3, 4 (`requests` is already a dependency), 5, 6, 9.
 
 ### Background job, not a synchronous request
@@ -82,8 +82,9 @@ Repo root: `python3 scripts/context_lint.py 2>&1 | tail -3` prints `next free: t
 -- status: 'queued' (waiting for the worker), 'running', 'done' (raw_json holds
 -- the trimmed result for brief 0298), 'failed' (error holds a short code, no
 -- listing text), 'used' (0298 drafted cards; raw_json is NULL), 'expired'
--- (raw_json removed by retention after 7 days). Rows go after 60 days; they
--- only feed the monthly per-property count. Listing text only, no guest data.
+-- (raw_json removed by retention after 7 days). Failed rows go after 60 days;
+-- the others stay, without text, as the record of the one import per listing.
+-- Listing text only, no guest data.
 CREATE TABLE IF NOT EXISTS guide_import (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     apartment_id  INTEGER NOT NULL REFERENCES apartment(id) ON DELETE CASCADE,
@@ -152,7 +153,6 @@ ACTORS = {
     "booking": "voyager~booking-scraper",
     "airbnb": "tri_angle~airbnb-rooms-urls-scraper",
 }
-MONTHLY_PER_PROPERTY = 3
 MAX_URL_LENGTH = 2048
 MAX_STORED_BYTES = 64 * 1024
 MAX_TEXT = 4000
@@ -218,24 +218,23 @@ def enabled() -> bool:
     return bool(config.APIFY_TOKEN)
 
 
-def _month_start() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-01T00:00:00")
-
-
 def _month_key() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m")
 
 
-def used_this_month(apartment_id: int) -> int:
-    row = db.query_one(
-        "SELECT COUNT(*) AS n FROM guide_import WHERE apartment_id = ? AND created_at >= ?",
-        (apartment_id, _month_start()),
+def used_sources(apartment_id: int) -> set:
+    """Sources this property has imported. One import per listing per property, for good
+    (owner, 2026-10-24): after it the host fills the rest by hand. A failed run does
+    not use it up; the global run budget still counts it."""
+    rows = db.query(
+        "SELECT DISTINCT source FROM guide_import WHERE apartment_id = ? AND status != 'failed'",
+        (apartment_id,),
     )
-    return int(row["n"]) if row else 0
+    return {r["source"] for r in rows}
 
 
-def left_this_month(apartment_id: int) -> int:
-    return max(0, MONTHLY_PER_PROPERTY - used_this_month(apartment_id))
+def imports_left(apartment_id: int) -> int:
+    return len(set(ACTORS) - used_sources(apartment_id))
 
 
 def runs_this_month() -> int:
@@ -271,7 +270,7 @@ def request_import(apartment_id: int, raw_url: str) -> int:
         (apartment_id,),
     ):
         raise GuideImportError("flash.error.guide_import_busy")
-    if left_this_month(apartment_id) <= 0:
+    if link["source"] in used_sources(apartment_id):
         raise GuideImportError("flash.error.guide_import_limit")
     if not global_budget_left():
         raise GuideImportError("flash.error.guide_import_budget")
@@ -477,7 +476,8 @@ def process_queue(limit: int = 3) -> int:
 
 
 def purge(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
-    """Raw data gone after RAW_DAYS; rows after ROW_DAYS (they feed the monthly count)."""
+    """Raw data gone after RAW_DAYS; failed rows after ROW_DAYS. Other rows stay,
+    without data, as the record that the listing was imported (one import for good)."""
     if owner_user_id is not None:
         return 0
     raw_cutoff = (today - timedelta(days=RAW_DAYS)).isoformat()
@@ -485,7 +485,9 @@ def purge(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     stale = db.query_one(
         "SELECT COUNT(*) AS n FROM guide_import WHERE raw_json IS NOT NULL AND created_at < ?", (raw_cutoff,)
     )
-    old = db.query_one("SELECT COUNT(*) AS n FROM guide_import WHERE created_at < ?", (row_cutoff,))
+    old = db.query_one(
+        "SELECT COUNT(*) AS n FROM guide_import WHERE status = 'failed' AND created_at < ?", (row_cutoff,)
+    )
     count = int(stale["n"] if stale else 0) + int(old["n"] if old else 0)
     if not dry_run and count:
         db.execute(
@@ -493,7 +495,7 @@ def purge(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
             "WHERE raw_json IS NOT NULL AND created_at < ?",
             (raw_cutoff,),
         )
-        db.execute("DELETE FROM guide_import WHERE created_at < ?", (row_cutoff,))
+        db.execute("DELETE FROM guide_import WHERE status = 'failed' AND created_at < ?", (row_cutoff,))
     return count
 ```
 
@@ -513,7 +515,7 @@ from .. import access, auth, config, guest_guide, guest_guide_import, guide_phot
         progress=guest_guide.progress(apartment_id),
         next_id=_next_open(apartment_id, 0),
         import_on=guest_guide_import.enabled(),
-        import_left=guest_guide_import.left_this_month(apartment_id),
+        import_left=guest_guide_import.imports_left(apartment_id),
         import_busy=guest_guide_import.in_progress(apartment_id),
         imports=guest_guide_import.imports(apartment_id),
     )
@@ -586,7 +588,7 @@ _GUIDE_IMPORT_STRINGS = {
     "en": {
         "guest_guide.import.title": "Import from Booking or Airbnb",
         "guest_guide.import.help": "Paste the public link of your own listing. We fetch its description, house rules and check-in times and turn them into draft cards for you to check.",
-        "guest_guide.import.left": "Imports left this month: %(n)s.",
+        "guest_guide.import.left": "Imports left for this property: %(n)s. Each listing can be imported once.",
         "guest_guide.import.off": "Imports are not switched on for this UbyHost. You can still fill the cards by hand.",
         "guest_guide.import.running": "Importing. This usually takes a minute. Reload the page to see the result.",
         "guest_guide.import.url": "Listing link",
@@ -604,14 +606,14 @@ _GUIDE_IMPORT_STRINGS = {
         "flash.error.guide_import_airbnb_path": "Paste the link of the listing page itself: it looks like https://www.airbnb.com/rooms/12345678.",
         "flash.error.guide_import_off": "Imports are not switched on for this UbyHost.",
         "flash.error.guide_import_busy": "An import is already running for this property. Reload the page in a minute.",
-        "flash.error.guide_import_limit": "This property has used its imports for this month. You can import again next month, or fill the cards by hand.",
+        "flash.error.guide_import_limit": "This listing was already imported for this property. Fill in the rest of the cards by hand.",
         "flash.error.guide_import_budget": "Imports are paused for this month. You can fill the cards by hand.",
         "notification.job_name.guide_import": "guest guide imports",
     },
     "cs": {
         "guest_guide.import.title": "Import z Booking nebo Airbnb",
         "guest_guide.import.help": "Vložte veřejný odkaz na svou vlastní nabídku. Stáhneme její popis, pravidla domu a časy příjezdu a připravíme z nich návrhy karet ke kontrole.",
-        "guest_guide.import.left": "Zbývající importy tento měsíc: %(n)s.",
+        "guest_guide.import.left": "Zbývající importy pro toto ubytování: %(n)s. Každý inzerát lze naimportovat jednou.",
         "guest_guide.import.off": "Importy nejsou na tomto UbyHostu zapnuté. Karty můžete vyplnit ručně.",
         "guest_guide.import.running": "Importujeme. Obvykle to trvá minutu. Výsledek uvidíte po obnovení stránky.",
         "guest_guide.import.url": "Odkaz na nabídku",
@@ -629,7 +631,7 @@ _GUIDE_IMPORT_STRINGS = {
         "flash.error.guide_import_airbnb_path": "Vložte odkaz přímo na stránku nabídky: vypadá jako https://www.airbnb.com/rooms/12345678.",
         "flash.error.guide_import_off": "Importy nejsou na tomto UbyHostu zapnuté.",
         "flash.error.guide_import_busy": "Pro toto ubytování už jeden import běží. Obnovte stránku za minutu.",
-        "flash.error.guide_import_limit": "Toto ubytování už tento měsíc své importy vyčerpalo. Importovat můžete zase příští měsíc, nebo karty vyplňte ručně.",
+        "flash.error.guide_import_limit": "Tento inzerát už byl pro toto ubytování naimportovaný. Zbytek karet vyplňte ručně.",
         "flash.error.guide_import_budget": "Importy jsou tento měsíc pozastavené. Karty můžete vyplnit ručně.",
         "notification.job_name.guide_import": "importy průvodce pro hosty",
     },
@@ -716,7 +718,7 @@ def _guide_import_step(today: date, dry_run: bool, owner_user_id: Optional[int])
 8c. In `_cutoffs`, directly after the `"push": ...` anchor line add:
 
 ```python
-        "guide_imports": f"listing text fetched before {(today - timedelta(days=7)).isoformat()}, request rows before {(today - timedelta(days=60)).isoformat()}",
+        "guide_imports": f"listing text fetched before {(today - timedelta(days=7)).isoformat()}, failed request rows before {(today - timedelta(days=60)).isoformat()}",
 ```
 
 Command: `.venv/bin/python -m pytest tests/test_retention.py tests/test_retention_alignment.py tests/test_retention_job.py -q --tb=short -x 2>&1 | tail -5`. Expected: 0 failed.
@@ -739,7 +741,7 @@ Command: `.venv/bin/python -m pytest tests/test_retention.py tests/test_retentio
 9b. `docs/privacy/RETENTION.md`: directly above the row that starts `| Submission envelopes (XML with doc numbers)` insert this row:
 
 ```markdown
-| Imported listing text (Booking.com, Airbnb: description, house rules, address, check-in times; no guest data) | `guide_import.raw_json` | fetch | deleted when brief 0298 drafts cards, 7 days at the latest; the request row 60 days | `guest_guide_import.purge` (`retention.py` guide_imports step) | Minimisation |
+| Imported listing text (Booking.com, Airbnb: description, house rules, address, check-in times; no guest data) | `guide_import.raw_json` | fetch | deleted when brief 0298 drafts cards, 7 days at the latest; a failed request row 60 days, other request rows kept without the text as the record of the one import | `guest_guide_import.purge` (`retention.py` guide_imports step) | Minimisation |
 ```
 
 Command (repo root): `python3 scripts/context_lint.py 2>&1 | tail -2`. Expected: `context lint: OK`.
@@ -785,7 +787,7 @@ Repo root: `python3 scripts/design_lint.py | tail -3`, `python3 scripts/context_
 - [ ] Every URL in the `test_evil_links_are_refused` list is refused; the three good links are rebuilt without query strings.
 - [ ] With `UBYHOST_APIFY_TOKEN` unset the guide page shows the "not switched on" sentence and no link field, and the POST redirects with `err=`.
 - [ ] A foreign property's import POST is 404 and writes no row.
-- [ ] The fourth import of a month and a second concurrent import are refused with a flash; the page shows "Imports left this month: N."
+- [ ] A second import of the same listing and a second concurrent import are refused with a flash; a failed run does not use the import up; the page shows "Imports left for this property: N."
 - [ ] `process_queue` with a mocked `requests.post` calls only `https://api.apify.com/v2/acts/<actor>/run-sync-get-dataset-items` with `Authorization: Bearer`, `timeout=(10, 150)`, `allow_redirects=False`, and stores only the trimmed fields; a failure stores a short code and `raw_json` NULL.
 - [ ] `purge` nulls `raw_json` after 7 days and deletes the row after 60; `"guide_imports"` is in `retention.STEPS`.
 - [ ] `grep -rn "APIFY_TOKEN" App/app | grep -v config.py` shows only `guest_guide_import.py` (`enabled()` and the header).
@@ -814,7 +816,7 @@ Write `docs/tasks/0297-report.md` (600 tokens at most) and set `Status: review`.
 - `App/app/migrations/MMMM_guide_import.sql`: number and CHECK constraints.
 - `App/tests/test_guest_guide_import.py` (copied from `docs/plans/0297-files/`): the evil-URL list; `requests.post` is monkeypatched before every `process_queue`.
 
-Security: ownership (`_home`, `apartment_id` in every SQL), CSRF, input limits. Privacy: no guest data, listing text 7 days, no text in logs. UX: one primary button, cs and en. Design: catalog macros, lint, 390 px screenshot. Function: happy path and each refusal tested. Cost: 3 per property, 40 runs shared, about $0.002 a run.
+Security: ownership (`_home`, `apartment_id` in every SQL), CSRF, input limits. Privacy: no guest data, listing text 7 days, no text in logs. UX: one primary button, cs and en. Design: catalog macros, lint, 390 px screenshot. Function: happy path and each refusal tested. Cost: one per listing per property for good, 40 runs shared, about $0.002 a run.
 
 ## Owner steps
 
@@ -832,6 +834,6 @@ Server (Lightsail):
 7. In a terminal connect with the ssh command you use for deploys, then `cd /opt/ubyhost/deploy/lightsail && nano .env`.
 8. At the end of the file add `UBYHOST_APIFY_TOKEN=apify_api_...` (your token, no quotes, no spaces). Press Ctrl+O, Enter, Ctrl+X.
 9. Run `./scripts/deploy.sh`; it restarts web and worker with the new `.env`.
-10. In UbyHost open a property, "Guest guide". The section "Import from Booking or Airbnb" shows the link field and "Imports left this month: 3." Paste your own Airbnb link, click "Import", reload after a minute: "Fetched". "Did not work" means tell the orchestrator; the worker log line `guide import id=... failed kind=...` says why (`http_401` is a wrong token).
+10. In UbyHost open a property, "Guest guide". The section "Import from Booking or Airbnb" shows the link field and "Imports left for this property: 2." Paste your own Airbnb link, click "Import", reload after a minute: "Fetched". "Did not work" means tell the orchestrator; the worker log line `guide import id=... failed kind=...` says why (`http_401` is a wrong token).
 11. Staging on Render: service `ubyhost-staging`, "Environment", "Add Environment Variable", key `UBYHOST_APIFY_TOKEN`, paste, "Save Changes".
 12. After the first month look at Apify "Billing" and tell the orchestrator the amount, so the cap can be adjusted.
