@@ -7,7 +7,7 @@
 {% block page_title %}{{ t('guest_guide.title') }}{% endblock %}
 {% block back_url %}/apartments/{{ apartment.id }}{% endblock %}
 {% block back_label %}{{ apartment.internal_name }}{% endblock %}
-{% block meta %}{{ t('guest_guide.progress', done=progress.done, total=progress.total) }}{% endblock %}
+{% block meta %}{% if progress.live %}{{ t('guest_guide.progress_live', answered=progress.answered, total=progress.cards) }}{% else %}{{ t('guest_guide.progress', answered=progress.answered, total=progress.cards) }}{% endif %}{% endblock %}
 {% block secondary_actions %}{{ ui_button(t('guest_guide.qr.link'), 'secondary', href=base_url ~ '/qr') }} {{ ui_button(t('guest_questions.link', n=questions_open), 'secondary', href=base_url ~ '/questions') }}{% endblock %}
 {% block primary_action %}{% if next_id %}{{ ui_button(t('guest_guide.continue'), 'primary', href=base_url ~ '/' ~ next_id) }}{% endif %}{% endblock %}
 {% block body %}
