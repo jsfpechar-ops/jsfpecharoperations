@@ -31,11 +31,11 @@ No other file may change. No assertion changes.
    Commit `0369 step 1`.
 2. Write the report. Commit `0369 step 2`.
 
-## 5. Not allowed
+## 5. Do not touch
 
 Changing any other line, any assertion, or any file in `App/app/`.
 
-## 6. Test
+## 6. Commands
 
 From `App/`: `.venv/bin/python -m pytest tests/test_guest_navigation.py -q --tb=short 2>&1 | tail -15`. All pass. Run it with the venv at `/home/claude/wt-0368-browser-test-portability/App/.venv` if `App/.venv` is missing.
 
@@ -44,7 +44,7 @@ From `App/`: `.venv/bin/python -m pytest tests/test_guest_navigation.py -q --tb=
 - [ ] §6 passes, 0 failed.
 - [ ] `git diff 2676d06 --stat` shows only the two files.
 
-## 8. If blocked
+## 8. Stop and ask
 
 Stop and write the blocker in the report. Do not change other files.
 
