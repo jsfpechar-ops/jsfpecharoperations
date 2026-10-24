@@ -62,8 +62,8 @@ Critical means one of: a public or guest-facing surface, file uploads, secrets o
 | 2 | [0299](../tasks/0299-guide-drafts.md) | Draft review: source line and "Discard this draft" on the card editor (paste box dropped to keep AI cost down) | no | Opus | no | Haiku | todo |
 | 3 | [0300](../tasks/0300-leon-core.md) | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Haiku | todo |
 | 3 | [0301](../tasks/0301-guest-handoff.md) | Host handoff: "needs you" alert and one mail per batch, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Haiku | todo |
-| 3 | 0302 | Guest chat UI on the stay page and QR page, languages; guide link also on the form and claim pages (before a guest is saved) | no | Opus | no | Haiku | to write |
-| 3 | 0303 | Guide translation for guests (cached per language) and host usage page | no | Opus | no | Haiku | to write |
+| 3 | [0302](../tasks/0302-guest-chat-ui.md) | Guest chat UI on the stay link and QR guide pages (all kinds, host answers, waiting state, emergency block), QR contact line; the guide link on the form and claim pages is split out to a later brief (claim gate) | no | Opus | no | Haiku | todo |
+| 3 | [0303](../tasks/0303-guide-translation.md) | Guide translation for guests (cached per card and language, filled after the response, facts checked) and one host usage line instead of a page; migration from the lint | no | Opus | no | Haiku | todo |
 | 1 | [0304](../tasks/0304-guide-full-catalog.md) | Full card catalog: 17 default cards (24 kinds) with checklist prompts and detailed ghost text per field; progress counts skipped as answered | no | Opus | no | Haiku | todo |
 | 1 | [0305](../tasks/0305-guide-quick-answers.md) | Quick answers: 5-step yes/no wizard, `guide_fact` table, fact lines inside cards for guests (6 languages) and Leon, "Your guide" summary | yes: migration, guest surface, AI to guests | Opus | yes | Haiku | todo |
 | end | phase review | Fable reads the diffs of the critical files only, before each phase merges | | | yes | | |
