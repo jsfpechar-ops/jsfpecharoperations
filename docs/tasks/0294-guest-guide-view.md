@@ -1009,7 +1009,7 @@ From the repo root: `python3 scripts/design_lint.py 2>&1 | tail -3` and `python3
 ## 7. Acceptance
 
 - [ ] Only the fourteen files of §3 change (plus the report and the screenshots).
-- [ ] 18 tests in `test_guest_guide_view.py` pass; the guest row passes with 0 skipped; both lints OK.
+- [ ] 19 tests in `test_guest_guide_view.py` pass; the guest row passes with 0 skipped; both lints OK.
 - [ ] `App/.screenshots/0294-guide-qr-en-390.png` and `0294-guide-qr-cs-390.png` attached to the report, showing cards with numbered steps and the amber watch-out callout.
 - [ ] `curl -sI` style check in the report: the QR page answers with `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, `Referrer-Policy: no-referrer` (the test asserts the same).
 
