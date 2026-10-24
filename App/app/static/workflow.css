@@ -122,7 +122,9 @@
 .host-workspace .needs-you-actions > [data-needs-you-go]::before { content: ""; position: absolute; inset: 0; border-radius: var(--radius-md); }
 .host-workspace .needs-you-dismiss, .host-workspace .needs-you-item > .needs-you-more { position: relative; z-index: 1; }
 @media (min-width: 720px) {
-  .needs-you-actions { display: grid; grid-template-columns: auto var(--control-h); justify-items: end; }
+  .needs-you-actions { display: grid; grid-template-columns: auto; justify-items: end; }
+  /* 0291: the x slot only exists when a line in this list can be dismissed; otherwise the button sits on the card's right edge. */
+  .needs-you-list:has(.needs-you-dismiss) .needs-you-actions { grid-template-columns: auto var(--control-h); }
   .needs-you-actions > .ui-btn { grid-column: 1; }
   .needs-you-dismiss { grid-column: 2; justify-self: center; }
 }

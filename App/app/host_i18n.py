@@ -1383,6 +1383,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "invoice.buyer.zip": "Postcode",
         "invoice.buyer.country": "Country",
         "invoice.buyer.ico": "Company ID (IČO)",
+        "invoice.buyer.or": "or",
         "invoice.buyer.dic": "VAT ID",
         "invoice.buyer.email": "E-mail for the invoice",
         "invoice.buyer.required": "Enter the customer name.",
@@ -2926,6 +2927,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "invoice.buyer.zip": "PSČ",
         "invoice.buyer.country": "Stát",
         "invoice.buyer.ico": "IČO",
+        "invoice.buyer.or": "nebo",
         "invoice.buyer.dic": "DIČ",
         "invoice.buyer.email": "E-mail (pro fakturu)",
         "invoice.buyer.required": "Zadejte jméno odběratele.",
@@ -5978,8 +5980,8 @@ _FEE_0203_STRINGS = {
         "stay_fees.pay.lede": "%(period)s. Three steps: confirm the figures, send the PDF to the council, then pay with the QR code.",
         "stay_fees.pay.step": "Step %(n)s of 3",
         "stay_fees.pay.step1": "Check and confirm the figures",
-        "stay_fees.pay.step2": "Download the PDF for the council",
-        "stay_fees.pay.step3": "Pay with the QR code",
+        "stay_fees.pay.step2": "Download the PDF",
+        "stay_fees.pay.step3": "Pay, then send the PDF",
         "stay_fees.pay.confirm_why": "Confirming freezes the numbers, so the PDF and the payment match what the council sees.",
         "stay_fees.pay.confirm": "Confirm figures",
         "stay_fees.pay.confirmed": "Confirmed",
@@ -5991,13 +5993,24 @@ _FEE_0203_STRINGS = {
         "stay_fees.pay.nothing": "Nothing to pay for this period. The council still needs the PDF.",
         "stay_fees.pay.no_account": "Add the council's bank account and the QR code appears here.",
         "stay_fees.pay.add_account": "Add bank account",
+        "stay_fees.pay.short1": "Check",
+        "stay_fees.pay.short2": "Download",
+        "stay_fees.pay.short3": "Pay and send",
+        "stay_fees.pay.ask": "Are these numbers right?",
+        "stay_fees.pay.yes": "Yes, they're right",
+        "stay_fees.pay.edit": "Edit",
+        "stay_fees.pay.fix_first": "Fix this first",
+        "stay_fees.pay.download_why": "The council needs this PDF.",
+        "stay_fees.pay.next": "Next",
+        "stay_fees.pay.back": "Back",
+        "stay_fees.pay.open_databox": "Open datová schránka",
     },
     "cs": {
         "stay_fees.pay.lede": "%(period)s. Tři kroky: potvrďte čísla, pošlete PDF úřadu a zaplaťte QR kódem.",
         "stay_fees.pay.step": "Krok %(n)s ze 3",
         "stay_fees.pay.step1": "Zkontrolujte a potvrďte čísla",
-        "stay_fees.pay.step2": "Stáhněte PDF pro úřad",
-        "stay_fees.pay.step3": "Zaplaťte QR kódem",
+        "stay_fees.pay.step2": "Stáhněte PDF",
+        "stay_fees.pay.step3": "Zaplaťte a pošlete PDF",
         "stay_fees.pay.confirm_why": "Potvrzením se čísla uzamknou, takže PDF i platba odpovídají tomu, co uvidí úřad.",
         "stay_fees.pay.confirm": "Potvrdit čísla",
         "stay_fees.pay.confirmed": "Potvrzeno",
@@ -6009,6 +6022,17 @@ _FEE_0203_STRINGS = {
         "stay_fees.pay.nothing": "Za toto období se nic neplatí. Úřad ale PDF potřebuje.",
         "stay_fees.pay.no_account": "Doplňte bankovní účet úřadu a QR kód se zobrazí zde.",
         "stay_fees.pay.add_account": "Doplnit účet",
+        "stay_fees.pay.short1": "Kontrola",
+        "stay_fees.pay.short2": "Stažení",
+        "stay_fees.pay.short3": "Platba a odeslání",
+        "stay_fees.pay.ask": "Sedí tato čísla?",
+        "stay_fees.pay.yes": "Ano, sedí",
+        "stay_fees.pay.edit": "Upravit",
+        "stay_fees.pay.fix_first": "Nejdřív opravte tohle",
+        "stay_fees.pay.download_why": "Tohle PDF potřebuje úřad.",
+        "stay_fees.pay.next": "Další",
+        "stay_fees.pay.back": "Zpět",
+        "stay_fees.pay.open_databox": "Otevřít datovou schránku",
     },
 }
 for _lang, _strings in _FEE_0203_STRINGS.items():
@@ -7681,7 +7705,7 @@ _DOOR_CODE_WINDOW_STRINGS = {
 for _lang, _strings in _DOOR_CODE_WINDOW_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
-# 0292: the host's guest guide pages (app/routes/guest_guide.py).
+# 0342: the host's guest guide pages (app/routes/guest_guide.py).
 _GUEST_GUIDE_STRINGS = {
     "en": {
         "guest_guide.title": "Guest guide",
