@@ -1,6 +1,6 @@
 # 0293: Photos on guest guide cards
 
-Status: todo
+Status: review
 Depends on: 0292 merged | Base commit: after 0292 | Branch: task/0293-guide-photos
 Executor: Haiku 5.5 (critical: Fable reviews the diff before merge) | Fits one session: 30 tool calls, 60k tokens
 
