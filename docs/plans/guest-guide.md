@@ -24,6 +24,8 @@ Booking (Apify voyager/booking-scraper): address, check-in and check-out times, 
 
 ## Briefs
 
+Numbers: this plan owns tasks 0291 to 0303 and migrations 0013 and 0014; Havel (host help bot) takes 0304 and up.
+
 Owner rule (2026-10-24): critical briefs are written by Fable 5.1, or reviewed by Fable when Opus already wrote them; the rest are written by Opus 5.5. Executor is Haiku 5.5 unless the header says Sonnet 5.5.
 
 Critical means one of: a public or guest-facing surface, file uploads, secrets or paid APIs, AI output that could reach a guest, personal data or deletion, a migration.
@@ -35,8 +37,8 @@ Critical means one of: a public or guest-facing surface, file uploads, secrets o
 | 1 | [0293](../tasks/0293-guide-photos.md) | Card photos: upload, clean, shrink, serve to owner, delete, orphan sweep | yes: uploads | Opus | yes | Sonnet | todo |
 | 1 | 0294 | Guest side: "Your guide" on the stay page; public QR page; QR token; guest photo serving; no-index, caching, rate limits | yes: public surface | Fable | n/a | Sonnet | to write |
 | 1 | 0295 | Printable QR sheet for the host (PNG/PDF), rotate the QR link | no | Opus | no | Haiku | to write |
-| 2 | 0296 | AI and Apify plumbing: `anthropic` dependency, keys, `ai_usage` ledger, per-property daily caps, kill switch | yes: secrets, money | Fable | n/a | Sonnet | to write |
-| 2 | 0297 | Booking and Airbnb import: URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Sonnet | to write |
+| 2 | 0296 | Shared AI core with Havel (`ai.py`, `anthropic` decision, `ai_usage` by feature, per-feature caps and kill switch, per-key daily cap); written in the Havel thread (PR #440), migration 0015 | yes: secrets, money | Fable | n/a | Sonnet | to write |
+| 2 | 0297 | Booking and Airbnb import: Apify key and config, URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Sonnet | to write |
 | 2 | 0298 | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Sonnet | to write |
 | 2 | 0299 | Paste box and import review UX (accept, edit, dismiss a draft) | no | Opus | no | Haiku | to write |
 | 3 | 0300 | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Sonnet | to write |
