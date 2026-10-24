@@ -1,6 +1,6 @@
 # 0368: Browser tests: no machine-specific screenshot paths, no fixed sleeps on the tablet menu
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 5439abe | Branch: task/0368-browser-test-portability
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

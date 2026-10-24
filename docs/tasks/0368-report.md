@@ -29,3 +29,8 @@ Deviations: Done: steps 1 to 5. Left: step 6 (§6 does not pass, §7 not met). S
 
 ## Owner steps left
 None until question 1 is decided. Not pushed, merged or PR opened.
+
+## Orchestrator review (2026-10-24)
+- Q1: not an app bug. Re-run alone, `test_0251_tablet_browser.py` passes 3 of 3 with `_wait_sidebar` (about 5 s each), and a probe shows the second tap does collapse the rail to 64 px. The executor's single timeout came while other browser runs shared the machine. The old fixed 100 ms sleep is what fails under CI load (`240 < 100`).
+- Q2: those two files are already fixed in briefs 0365 and 0367 (separate PRs), so this PR leaves them alone.
+- Diff checked: only screenshot paths and the wait helper changed; no assertion changed.
