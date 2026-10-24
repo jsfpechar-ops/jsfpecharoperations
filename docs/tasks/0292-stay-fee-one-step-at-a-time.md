@@ -31,6 +31,7 @@ The fee list shows all three pay steps side by side; the owner (2026-10-24) find
 | App/tests/static_versions.json | regenerate | `--write` |
 | App/tests/test_stay_fee_pay_steps.py | edit | step 5 |
 | App/tests/test_stay_fee_pay_steps_browser.py | edit | step 5 |
+| App/app/static/host2.css (property-summary / entities name width) | edit | step 6 |
 
 No other file may change.
 
@@ -196,6 +197,10 @@ No other file may change.
    - `test_stay_fee_pay_steps.py` test 1: replace the two lines `assert "Step 1 of 3" …` and `assert page.count("fee-step-locked") >= 2` with `assert 'data-fee-step="1"' in page and "Are these numbers right?" in page`.
    - test 2: replace `assert "Confirmed" in page` and `assert "fee-step-locked" not in page` with `assert 'data-fee-step="2"' in page`; then add: `page = client.get(f"/stay-fees?month=2026-08&fee_step=3&fee_apt={apartment_id}&lang=en").text` and `assert 'data-fee-step="3"' in page and "https://www.mojedatovaschranka.cz/" in page`.
    - browser test: in `_CHECK_JS` count primaries per card: `primaries: Math.max(0, ...[...document.querySelectorAll('.fee-pay')].map(s => s.querySelectorAll('.ui-btn-primary').length))`; change the click locator to `.fee-step form button.ui-btn-primary`.
+
+6. Carry-over from 0291 (the Open label is wider than the old 28 px arrow, so `test_0285_rows_browser.py::test_properties_rows_match_stays_rows` fails at 1280 px: the Open wraps under the name). In host2.css change
+   `.host-workspace .property-summary-table td:first-child .row-primary-link { display: inline-block; max-width: calc(100% - var(--space-12)); vertical-align: middle; }`
+   so that `max-width` is `calc(100% - 7rem)`. If the entities rows (`.lc-entities td.col-name`) fail the same test, give their `.row-primary-link` the same `max-width: calc(100% - 7rem)` in a new rule next to the line `.host-workspace .lc-entities tbody td.col-name .row-primary-link + .row-open`. Add `tests/test_0285_rows_browser.py` to the §6 command.
 
 ## 5. Do not touch
 
