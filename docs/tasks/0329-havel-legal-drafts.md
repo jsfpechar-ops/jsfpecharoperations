@@ -69,7 +69,7 @@ New `dpa.s11_body` sentence after the Google Drive one, en and cs: "Only if the 
 
 ## 4. Privacy policy, host section
 
-One paragraph for section 4 (Host User data: Havel, what it sends, redaction, chats not stored, optional, the lawful basis from part 6), one sentence each for sections 9 (Anthropic as recipient), 10 (transfer to the US and the safeguard of part 1) and 11 (gap questions 90 days, Havel limit rows 32 days, support e-mails as the support mailbox), en and cs.
+One paragraph for section 4 (Host User data: Havel, what it sends, redaction (owner, 2026-10-24: say plainly that UbyHost's own server removes e-mail addresses, phone numbers and ID-like numbers from each message before it is sent to the AI provider; do not call this "anonymised", because names are not removed, and ask hosts not to type guests' names), chats not stored, optional, the lawful basis from part 6), one sentence each for sections 9 (Anthropic as recipient), 10 (transfer to the US and the safeguard of part 1) and 11 (gap questions 90 days, Havel limit rows 32 days, support e-mails as the support mailbox), en and cs.
 
 ## 5. EU AI Act
 
