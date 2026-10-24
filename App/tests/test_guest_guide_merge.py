@@ -228,3 +228,32 @@ def test_budget_and_disabled_leave_the_import_for_later(ws, monkeypatch):
     assert gm.process_pending() == 1 and status(imp)["status"] == "used"
     usage = db.query_one("SELECT feature, key FROM ai_usage", ())
     assert usage["feature"] == "guide_import" and usage["key"] == str(ws)
+
+
+def test_a_listing_that_is_not_an_object_fails_and_the_queue_moves_on(ws):
+    bad = db.insert("guide_import", {
+        "apartment_id": ws, "source": "airbnb", "url": "https://x.example/", "status": "done",
+        "raw_json": "[]", "created_at": db.utcnow(), "finished_at": db.utcnow(),
+    })
+    good = fetched(ws, BOOKING)
+    fake, merged = run([reply({"cards": BOOKING_CARDS})])
+    assert merged == 1
+    assert status(bad) == {"status": "failed", "error": "merge:json", "raw_json": None}
+    assert status(good)["status"] == "used" and len(fake.calls) == 1
+
+
+def test_an_unexpected_crash_counts_one_attempt_and_the_next_row_still_merges(ws, monkeypatch):
+    first = fetched(ws, AIRBNB)
+    second = fetched(ws, BOOKING)
+    real_merge = gm.merge
+
+    def crash_first(row):
+        if row["id"] == first:
+            raise RuntimeError("boom")
+        return real_merge(row)
+
+    monkeypatch.setattr(gm, "merge", crash_first)
+    fake, merged = run([reply({"cards": BOOKING_CARDS})])
+    assert merged == 1
+    assert status(first) == {"status": "done", "error": "merge:error:1", "raw_json": status(first)["raw_json"]}
+    assert status(second)["status"] == "used"

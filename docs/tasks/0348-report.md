@@ -31,6 +31,7 @@ Status: blocked
 - [x] ENVIRONMENT row present; lint OK
 
 ## Deviations
+- Review fix: a non-dict listing or an unexpected crash in merge fails that row instead of stalling the queue (2 tests).
 Done: steps 1 to 7. Left: step 8 (390 px screenshot of the guide page with a `used` import and the result line). I did not seed a database or run the browser in this session (tool budget). Nothing was pushed. The 3 test_host_i18n failures noted above are the brief's known set.
 
 ## Questions

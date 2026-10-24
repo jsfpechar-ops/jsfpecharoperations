@@ -361,6 +361,9 @@ def process_pending(limit: int = 3) -> int:
         except ValueError:
             _note_failure(r["id"], "json", MAX_ATTEMPTS)
             continue
+        if not isinstance(data, dict):
+            _note_failure(r["id"], "json", MAX_ATTEMPTS)
+            continue
         try:
             merge({"id": r["id"], "apartment_id": r["apartment_id"], "source": r["source"], "data": data})
         except ai.AIBudgetError as exc:
@@ -372,6 +375,11 @@ def process_pending(limit: int = 3) -> int:
             # A row too big for the model will never fit: fail it now and free the listing.
             _note_failure(r["id"], exc.reason, MAX_ATTEMPTS if exc.reason == "input_too_large" else attempts + 1)
             log.warning("guide merge import=%s failed reason=%s attempt=%s", r["id"], exc.reason, attempts + 1)
+            continue
+        except Exception:
+            # Anything else must not stall the queue: this row counts one attempt, the next row still runs.
+            log.exception("guide merge import=%s crashed", r["id"])
+            _note_failure(r["id"], "error", attempts + 1)
             continue
         merged += 1
         if merged >= limit:
