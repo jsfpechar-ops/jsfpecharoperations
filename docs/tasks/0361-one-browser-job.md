@@ -1,6 +1,6 @@
 # 0361: One sharded browser job that runs every browser test
 
-Status: todo
+Status: review
 Depends on: none (0360 runs in parallel; this PR goes green only after 0360 merges) | Base commit: 5439abe | Branch: task/0361-one-browser-job
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
