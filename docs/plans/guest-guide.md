@@ -23,11 +23,27 @@ Booking (Apify voyager/booking-scraper): address, check-in and check-out times, 
 
 ## Briefs
 
-| Phase | Brief | What | State |
-|---|---|---|---|
-| 1 | [0291](../tasks/0291-guest-guide-data.md) | Tables `guide_item`, `guide_photo`; `guest_guide.py` | todo |
-| 1 | 0292 | Host guide page and card editor: "Guest guide" tab, topic cards, progress, must-have five, prompts, visibility, "Save and next card" | todo |
-| 1 | 0293 | Card photos: upload, resize, order, delete | to write |
-| 1 | 0294 | Guest side: "Your guide" tab on the stay page, QR page (read-only) | to write |
-| 2 | 0295+ | `anthropic` and Apify decisions; paste box; Booking + Airbnb import; "talk to steps" | to write |
-| 3 | 0298+ | Guest bot, host handoff, abuse caps, "Add to guide", translation | to write |
+Owner rule (2026-10-24): critical briefs are written by Fable 5.1, or reviewed by Fable when Opus already wrote them; the rest are written by Opus 5.5. Executor is Haiku 5.5 unless the header says Sonnet 5.5.
+
+Critical means one of: a public or guest-facing surface, file uploads, secrets or paid APIs, AI output that could reach a guest, personal data or deletion, a migration.
+
+| Phase | Brief | What | Critical | Written by | Fable review | Executor | State |
+|---|---|---|---|---|---|---|---|
+| 1 | [0291](../tasks/0291-guest-guide-data.md) | Tables, `guest_guide.py`, the guest gate `for_guest` | yes: migration, guest gate | Opus | yes | Haiku | todo |
+| 1 | [0292](../tasks/0292-guest-guide-pages.md) | Host "Guest guide" tab, card list, card editor, "Save and next card" | no | Opus | no | Haiku | todo |
+| 1 | [0293](../tasks/0293-guide-photos.md) | Card photos: upload, clean, shrink, serve to owner, delete, orphan sweep | yes: uploads | Opus | yes | Sonnet | todo |
+| 1 | 0294 | Guest side: "Your guide" on the stay page; public QR page; QR token; guest photo serving; no-index, caching, rate limits | yes: public surface | Fable | n/a | Sonnet | to write |
+| 1 | 0295 | Printable QR sheet for the host (PNG/PDF), rotate the QR link | no | Opus | no | Haiku | to write |
+| 2 | 0296 | AI and Apify plumbing: `anthropic` dependency, keys, `ai_usage` ledger, per-property daily caps, kill switch | yes: secrets, money | Fable | n/a | Sonnet | to write |
+| 2 | 0297 | Booking and Airbnb import: URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Sonnet | to write |
+| 2 | 0298 | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Sonnet | to write |
+| 2 | 0299 | Paste box and import review UX (accept, edit, dismiss a draft) | no | Opus | no | Haiku | to write |
+| 3 | 0300 | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Sonnet | to write |
+| 3 | 0301 | Host handoff: alert, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Sonnet | to write |
+| 3 | 0302 | Guest chat UI on the stay page and QR page, languages | no | Opus | no | Haiku | to write |
+| 3 | 0303 | Guide translation for guests (cached per language) and host usage page | no | Opus | no | Haiku | to write |
+| end | phase review | Fable reads the diffs of the critical files only, before each phase merges | | | yes | | |
+
+Every brief states, in §2 or the risk list: security (ownership on every query, CSRF, input limits), privacy (no guest data in logs, retention), UX (phone first, one primary action, Czech and English copy), design (catalog classes, tokens, layout guard, 390 px screenshot), function (tests for the happy path and each refusal) and cost (tokens per call, caps). Opus checks the embedded code in a scratch copy before the brief is committed, so the executor copies working code.
+
+Token rules: a Fable review reads only the brief and the files in its risk list, stays under 15k tokens and returns findings, never a rewrite. One review pass, no swarm. Bug fixes found in review go back into the brief by Opus.
