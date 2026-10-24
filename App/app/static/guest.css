@@ -1320,7 +1320,7 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 /* 0231: the owner's own view of an empty guest link. */
 .g-host-note { margin: 0 0 16px; padding: 10px 12px; border: 1px dashed #92400e; border-radius: 10px; background: #fffbeb; color: #78350f; font-size: 14px; line-height: 1.45; text-align: left; }
 
-/* 0344: the guest guide cards (stay link and QR page). */
+/* 0294: the guest guide cards (stay link and QR page). */
 .g-guide-where { margin: 0 0 12px; font-size: 14.5px; color: var(--g-ink-2); }
 .g-guide-where span { color: var(--g-muted); }
 .g-guide-steps { margin: 0 0 14px; padding-left: 22px; font-size: 16px; line-height: 1.5; color: var(--g-ink); }
