@@ -808,3 +808,25 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 @media (hover: hover) { .ui-btn-open:hover { background: var(--coral-200); border-color: var(--accent); color: var(--accent-ink); } }
 .ui-btn-open:active { background: var(--coral-200); }
 .ui-btn-open:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+/* 0292: the fee list leads the host one step at a time (owner 2026-10-24). */
+.host-workspace .fee-pay .ui-section-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-3); }
+.host-workspace .fee-stepper { display: flex; gap: var(--space-2); margin: var(--space-3) 0 var(--space-4); padding: 0; list-style: none; }
+.host-workspace .fee-stepper-item { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: var(--space-2); padding-top: var(--space-2); border-top: 3px solid var(--line); color: var(--ink-3); font-size: var(--size-13); font-weight: 600; }
+.host-workspace .fee-stepper-item[data-state="done"] { border-top-color: var(--green-700); color: var(--ink-2); }
+.host-workspace .fee-stepper-item[data-state="current"] { border-top-color: var(--accent); color: var(--ink); }
+.host-workspace .fee-stepper-dot { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface); font-size: var(--size-12); }
+.host-workspace .fee-stepper-item[data-state="current"] .fee-stepper-dot { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.host-workspace .fee-stepper-item[data-state="done"] .fee-stepper-dot { border-color: var(--green-700); color: var(--green-700); }
+.host-workspace .fee-stepper-label { min-width: 0; overflow-wrap: anywhere; }
+.host-workspace .fee-figures { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); margin: 0 0 var(--space-4); }
+.host-workspace .fee-figures div { min-width: 0; }
+.host-workspace .fee-figures dt { color: var(--ink-3); font-size: var(--size-13); }
+.host-workspace .fee-figures dd { margin: 0; font-size: var(--size-18); font-weight: 600; }
+.host-workspace .fee-figures-total dd { font-size: var(--size-22); }
+.host-workspace .fee-step-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-3) 0 0; }
+.host-workspace .fee-qr-amount { font-size: var(--size-22); font-weight: 600; }
+.host-workspace .fee-send-line { margin: var(--space-4) 0 0; }
+@media (max-width: 639px) {
+  .host-workspace .fee-step-actions { flex-direction: column; align-items: stretch; }
+  .host-workspace .fee-stepper-label { font-size: var(--size-12); }
+}
