@@ -1,6 +1,7 @@
 """0201: the phone tab bar clears the home indicator and the rounded corners (viewport-fit=cover, safe-area padding)."""
 import os
 import secrets
+import tempfile
 
 import pytest
 
@@ -14,7 +15,7 @@ from app import auth, db
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
-SHOT_DIR = "/mnt/project-files/design-reset/checkpoint-6/mobile/tabbar/"
+SHOT_DIR = os.path.join(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir()), "0201-tabbar")
 
 
 def _open(playwright, base, width, height, target):
