@@ -18,6 +18,7 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Reservation e-mail / phone fragment | `reservation.guest_email`, `phone_last4` | stay end | 30 days (G-D5) | `retention.py` reservation-contact step | Storage limitation |
 | Submitter IP | `guest.filled_ip` | stay end | 90 days (G-D6, counsel) | `retention.py` submitter-IP step | Dispute evidence window |
 | Empty reservations | `reservation` | six-year cutoff | 6 years | `retention.py` empty-reservation step | § 101 |
+| Imported listing text (Booking.com, Airbnb: description, house rules, address, check-in times; no guest data) | `guide_import.raw_json` | fetch | deleted when brief 0348 drafts cards, 7 days at the latest; a failed request row 60 days, other request rows kept without the text as the record of the one import | `guest_guide_import.purge` (`retention.py` guide_imports step) | Minimisation |
 | Submission envelopes (XML with doc numbers) | `submission.request_xml`, `response_xml` | submission created | 90 days | `reporting.purge_submission_payloads` (12 h sweep) | Minimisation |
 | Orphaned submissions | `submission` | six-year cutoff, no guest points at it | 6 years | `housebook.purge_orphan_submissions` | § 101 evidence |
 | Invoices | `invoice`, `invoice_item` | issue date | 10 years | `invoices.purge_expired` | Accounting law |

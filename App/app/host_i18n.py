@@ -7957,6 +7957,63 @@ _GUIDE_PHOTO_STRINGS = {
 for _lang, _strings in _GUIDE_PHOTO_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0347: Booking and Airbnb listing imports on the guest guide page.
+_GUIDE_IMPORT_STRINGS = {
+    "en": {
+        "guest_guide.import.title": "Import from Booking or Airbnb",
+        "guest_guide.import.help": "Paste the public link of your own listing. We fetch its description, house rules and check-in times and turn them into draft cards for you to check.",
+        "guest_guide.import.left": "Imports left for this property: %(n)s. Each listing can be imported once.",
+        "guest_guide.import.off": "Imports are not switched on for this UbyHost. You can still fill the cards by hand.",
+        "guest_guide.import.running": "Importing. This usually takes a minute. Reload the page to see the result.",
+        "guest_guide.import.url": "Listing link",
+        "guest_guide.import.button": "Import",
+        "guest_guide.import.col.source": "Listing",
+        "guest_guide.import.col.state": "State",
+        "guest_guide.import.source.booking": "Booking.com",
+        "guest_guide.import.source.airbnb": "Airbnb",
+        "guest_guide.import.state.running": "Importing",
+        "guest_guide.import.state.failed": "Did not work",
+        "guest_guide.import.state.done": "Fetched",
+        "flash.guest_guide.import_queued": "Import started. It usually takes a minute; reload the page to see the result.",
+        "flash.error.guide_import_link": "That does not look like a Booking.com or Airbnb listing link. Open your listing, copy the link from the address bar and paste it here.",
+        "flash.error.guide_import_booking_path": "Paste the link of the listing page itself: it starts with https://www.booking.com/hotel/.",
+        "flash.error.guide_import_airbnb_path": "Paste the link of the listing page itself: it looks like https://www.airbnb.com/rooms/12345678.",
+        "flash.error.guide_import_off": "Imports are not switched on for this UbyHost.",
+        "flash.error.guide_import_busy": "An import is already running for this property. Reload the page in a minute.",
+        "flash.error.guide_import_limit": "This listing was already imported for this property. Fill in the rest of the cards by hand.",
+        "flash.error.guide_import_budget": "Imports are paused for this month. You can fill the cards by hand.",
+        "notification.job_name.guide_import": "guest guide imports",
+    },
+    "cs": {
+        "guest_guide.import.title": "Import z Booking nebo Airbnb",
+        "guest_guide.import.help": "Vložte veřejný odkaz na svou vlastní nabídku. Stáhneme její popis, pravidla domu a časy příjezdu a připravíme z nich návrhy karet ke kontrole.",
+        "guest_guide.import.left": "Zbývající importy pro toto ubytování: %(n)s. Každý inzerát lze naimportovat jednou.",
+        "guest_guide.import.off": "Importy nejsou na tomto UbyHostu zapnuté. Karty můžete vyplnit ručně.",
+        "guest_guide.import.running": "Importujeme. Obvykle to trvá minutu. Výsledek uvidíte po obnovení stránky.",
+        "guest_guide.import.url": "Odkaz na nabídku",
+        "guest_guide.import.button": "Importovat",
+        "guest_guide.import.col.source": "Nabídka",
+        "guest_guide.import.col.state": "Stav",
+        "guest_guide.import.source.booking": "Booking.com",
+        "guest_guide.import.source.airbnb": "Airbnb",
+        "guest_guide.import.state.running": "Importujeme",
+        "guest_guide.import.state.failed": "Nepovedlo se",
+        "guest_guide.import.state.done": "Staženo",
+        "flash.guest_guide.import_queued": "Import běží. Obvykle trvá minutu, výsledek uvidíte po obnovení stránky.",
+        "flash.error.guide_import_link": "Tohle nevypadá jako odkaz na nabídku na Booking.com nebo Airbnb. Otevřete svou nabídku, zkopírujte odkaz z adresního řádku a vložte ho sem.",
+        "flash.error.guide_import_booking_path": "Vložte odkaz přímo na stránku nabídky: začíná https://www.booking.com/hotel/.",
+        "flash.error.guide_import_airbnb_path": "Vložte odkaz přímo na stránku nabídky: vypadá jako https://www.airbnb.com/rooms/12345678.",
+        "flash.error.guide_import_off": "Importy nejsou na tomto UbyHostu zapnuté.",
+        "flash.error.guide_import_busy": "Pro toto ubytování už jeden import běží. Obnovte stránku za minutu.",
+        "flash.error.guide_import_limit": "Tento inzerát už byl pro toto ubytování naimportovaný. Zbytek karet vyplňte ručně.",
+        "flash.error.guide_import_budget": "Importy jsou tento měsíc pozastavené. Karty můžete vyplnit ručně.",
+        "notification.job_name.guide_import": "importy průvodce pro hosty",
+    },
+}
+
+for _lang, _strings in _GUIDE_IMPORT_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 # 0345: the guide's QR code for the host to print.
 _GUIDE_QR_STRINGS = {
     "en": {
