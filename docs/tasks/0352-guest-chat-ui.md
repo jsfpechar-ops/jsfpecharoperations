@@ -32,7 +32,7 @@ Leon is "Leon (AI)" everywhere and says he is an AI (header, intro line, every b
 
 **Security and privacy.** No new route: 0350's endpoints and gates. CSRF: hidden `_csrf` input (registered in `test_guest_csrf.py`) and the header. Input capped at 500 characters in the box and on the server. Nothing is logged by this brief. Host text is shown as typed and escaped (`textContent`).
 
-**Copy.** 13 guest keys in en, cs, de, es, fr, uk by `docs/plans/0302-files/add_chat_i18n.py` (run once; it refuses a second run).
+**Copy.** 13 guest keys in en, cs, de, es, fr, uk by `docs/plans/0352-files/add_chat_i18n.py` (run once; it refuses a second run).
 
 Hard rules 2, 3, 4, 6 (light mode; the guide works without JavaScript), 7, 8, 9 apply. Rule 7: the browser tests below pass with 0 skipped; the orchestrator takes the 390 px screenshots.
 
@@ -50,10 +50,10 @@ Hard rules 2, 3, 4, 6 (light mode; the guide works without JavaScript), 7, 8, 9 
 
 | Path | Action | What |
 |---|---|---|
-| `App/app/templates/guest/_leon.html` | create | Copied from `docs/plans/0302-files/` |
+| `App/app/templates/guest/_leon.html` | create | Copied from `docs/plans/0352-files/` |
 | `App/app/static/guest-leon.js` | create | Copied |
 | `App/tests/test_guest_leon_chat.py`, `App/tests/test_guest_leon_browser.py` | create | Copied (6 and 5 tests) |
-| `App/app/static/guest.css` | edit | Append `docs/plans/0302-files/guest-leon.css` |
+| `App/app/static/guest.css` | edit | Append `docs/plans/0352-files/guest-leon.css` |
 | `App/app/templates/guest/base.html`, `guide.html`, `_host.html` | edit | Steps 4 to 6 |
 | `App/app/routes/guest_guide_view.py` | edit | `leon_url`, `leon_host` |
 | `App/app/i18n.py`, `App/app/guest_uk_i18n.py` | edit | By the script (run, not copied) |
@@ -76,17 +76,17 @@ From the repo root: `grep -c '"leon_host_answered_plain"' App/app/i18n.py; grep 
 From the repo root:
 
 ```bash
-cp docs/plans/0302-files/_leon.html App/app/templates/guest/_leon.html
-cp docs/plans/0302-files/guest-leon.js App/app/static/guest-leon.js
-cp docs/plans/0302-files/test_guest_leon_chat.py docs/plans/0302-files/test_guest_leon_browser.py App/tests/
-cat docs/plans/0302-files/guest-leon.css >> App/app/static/guest.css
+cp docs/plans/0352-files/_leon.html App/app/templates/guest/_leon.html
+cp docs/plans/0352-files/guest-leon.js App/app/static/guest-leon.js
+cp docs/plans/0352-files/test_guest_leon_chat.py docs/plans/0352-files/test_guest_leon_browser.py App/tests/
+cat docs/plans/0352-files/guest-leon.css >> App/app/static/guest.css
 ```
 
 Command: `grep -c 'g-leon-msg--emergency' App/app/static/guest.css`. Expected: `2`.
 
 ### Step 3: copy (guest languages)
 
-From the repo root: `python3 docs/plans/0302-files/add_chat_i18n.py`. Expected: `added 13 guest keys x 6 languages`. Command: `grep -c '"leon_intro"' App/app/i18n.py App/app/guest_uk_i18n.py`. Expected: `5` and `1`.
+From the repo root: `python3 docs/plans/0352-files/add_chat_i18n.py`. Expected: `added 13 guest keys x 6 languages`. Command: `grep -c '"leon_intro"' App/app/i18n.py App/app/guest_uk_i18n.py`. Expected: `5` and `1`.
 
 ### Step 4: `App/app/templates/guest/base.html`
 
@@ -181,7 +181,7 @@ Directly before `    ("assigned.html", "/l/{{ token }}/{{ reservation.id }}/part
 
 ### Step 10: docs
 
-`docs/context/test-map.md`: in the row starting `| Guest bot (Leon) |`, replace `` `test_leon.py `` with `` `test_leon.py test_guest_leon_chat.py test_guest_leon_browser.py ``. `docs/plans/guest-guide.md`: in the row starting `| 3 | [0352](../tasks/0302-guest-chat-ui.md) |`, change the last cell `todo` to `review`.
+`docs/context/test-map.md`: in the row starting `| Guest bot (Leon) |`, replace `` `test_leon.py `` with `` `test_leon.py test_guest_leon_chat.py test_guest_leon_browser.py ``. `docs/plans/guest-guide.md`: in the row starting `| 3 | [0352](../tasks/0352-guest-chat-ui.md) |`, change the last cell `todo` to `review`.
 
 ### Step 11: tests
 
@@ -211,7 +211,7 @@ Stop, and write the report, if: an anchor is not found; 0351 is not merged (step
 
 ## 9. Report
 
-Write `docs/tasks/0302-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with its last 5 lines, §7 ticked, whether the browser tests ran, deviations, questions, owner steps left. The orchestrator takes the screenshots (`App/.screenshots/0302-guide-chat-*-390.png`).
+Write `docs/tasks/0352-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with its last 5 lines, §7 ticked, whether the browser tests ran, deviations, questions, owner steps left. The orchestrator takes the screenshots (`App/.screenshots/0302-guide-chat-*-390.png`).
 
 ## Risk list (for the reviewer)
 

@@ -60,7 +60,7 @@ Template strings interpolate with `%(n)s`, not `{n}`. Flash keys must exist in e
 | `App/app/host_i18n.py` | edit | `_GUIDE_IMPORT_STRINGS`, en and cs |
 | `App/app/scheduler.py` | edit | `_job_guide_import`, every minute |
 | `App/app/retention.py` | edit | `guide_imports` step and cutoff line |
-| `App/tests/test_guest_guide_import.py` | create | Copied from `docs/plans/0297-files/` (step 10) |
+| `App/tests/test_guest_guide_import.py` | create | Copied from `docs/plans/0347-files/` (step 10) |
 | `docs/ENVIRONMENT.md` | edit | Apify section |
 | `docs/privacy/RETENTION.md` | edit | One row |
 
@@ -751,7 +751,7 @@ Command (repo root): `python3 scripts/context_lint.py 2>&1 | tail -2`. Expected:
 The file is kept next to this brief so the brief stays under its token cap. From the repo root:
 
 ```bash
-cp docs/plans/0297-files/test_guest_guide_import.py App/tests/test_guest_guide_import.py
+cp docs/plans/0347-files/test_guest_guide_import.py App/tests/test_guest_guide_import.py
 ```
 
 It covers: the allowlist (good links rebuilt without tracking; 23 evil links: other hosts, userinfo, `http`, IP literals, ports, lookalikes, short links, traversal, non-ASCII, over-long), queue and count-down, one in flight, the per-property month limit, the global budget, off without a token, foreign property 404, the worker (mocked `requests.post`: endpoint, Bearer header, timeouts, `allow_redirects=False`, input body, trimmed output, `pending_for` and `mark_used`), Booking input and address, the size cap, failure codes with `raw_json` NULL, a network error, the worker stopping at the budget, and retention. No test opens the network.
@@ -800,7 +800,7 @@ Stop and write the report if: an excerpt is not found; a test fails twice; 30 to
 
 ## 9. Report
 
-Write `docs/tasks/0297-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/0347-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.
@@ -814,7 +814,7 @@ Write `docs/tasks/0297-report.md` (600 tokens at most) and set `Status: review`.
 - `App/app/guest_guide_import.py`: `normalise_url` (the whole SSRF guard), `_fetch` (the one outbound call: constant host, Bearer header, timeouts, size check, no redirects), `trim` (what is kept), `purge`.
 - `App/app/routes/guest_guide.py`: `guide_import` sits above the `{item_id}` routes and goes through `_home`.
 - `App/app/migrations/MMMM_guide_import.sql`: number and CHECK constraints.
-- `App/tests/test_guest_guide_import.py` (copied from `docs/plans/0297-files/`): the evil-URL list; `requests.post` is monkeypatched before every `process_queue`.
+- `App/tests/test_guest_guide_import.py` (copied from `docs/plans/0347-files/`): the evil-URL list; `requests.post` is monkeypatched before every `process_queue`.
 
 Security: ownership (`_home`, `apartment_id` in every SQL), CSRF, input limits. Privacy: no guest data, listing text 7 days, no text in logs. UX: one primary button, cs and en. Design: catalog macros, lint, 390 px screenshot. Function: happy path and each refusal tested. Cost: one per listing per property for good, 40 runs shared, about $0.002 a run.
 
