@@ -8,3 +8,4 @@ Deviation: `App/app/leon.py` import line dropped the now-unused `guest_guide` na
 Review fix: a facts-only (unwritten) card never shows or serves photos.
 Tests: test_quick_answers + test_static_versions: 10 passed. Browser (quick + guest guide): 3 passed, 0 skipped. Guest guide, guide, leon, migrations, db group (browser env set): 192 passed, 0 skipped. i18n/design group: 3 failed (the 3 expected old failures in test_host_i18n.py), 180 passed, 0 skipped.
 Lints: design_lint OK, context_lint OK, ruff F401 group passed.
+- Screenshots at review (orchestrator, 390 px, no horizontal scroll): /mnt/project-files/guest-guide/0355-quick-step-390.png, 0355-quick-done-390.png, 0355-guide-list-390.png, 0355-guest-facts-390.png.
