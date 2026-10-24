@@ -57,3 +57,6 @@ None.
 ## Owner steps left
 
 None. Branch is not pushed and no PR is open.
+
+## Orchestrator review (2026-10-24)
+Diff matches the brief; fail-before and pass-after shown with UBYHOST_SHOTS_DIR set, as on CI.

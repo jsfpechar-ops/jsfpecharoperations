@@ -1,6 +1,6 @@
 # 0370: Tablet menu test: the screenshot must not close the menu
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 911bfb9 | Branch: task/0370-tablet-menu-shot
 Executor: Haiku 5.5 | Fits one session: 12 tool calls, 30k tokens
 
