@@ -1,7 +1,7 @@
 # 0334: AI core: Mistral as a backup provider, one setting away
 
 Status: todo
-Depends on: 0310 (merged) | Base commit: check `git rev-parse --short origin/main` and write it here | Branch: task/0334-ai-mistral-backup
+Depends on: 0310 (merged) | Base commit: 5439abe | Branch: task/0334-ai-mistral-backup
 Executor: Haiku 5.5 | Fits one session: 18 tool calls, 45k tokens
 
 ## 1. Objective

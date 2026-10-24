@@ -324,6 +324,19 @@ AI_FEATURES = frozenset(
 )
 ANTHROPIC_API_KEY = os.environ.get("UBYHOST_ANTHROPIC_API_KEY", "").strip()
 AI_MODEL = os.environ.get("UBYHOST_AI_MODEL", "claude-haiku-5-5")
+# 0334: the provider behind ai.call(). "anthropic" (default) or "mistral", the
+# owner's EU backup. Switching needs the Mistral key and a re-run of the test sets.
+AI_PROVIDER = os.environ.get("UBYHOST_AI_PROVIDER", "anthropic").strip().lower()
+if AI_PROVIDER not in ("anthropic", "mistral"):
+    AI_PROVIDER = "anthropic"
+MISTRAL_API_KEY = os.environ.get("UBYHOST_MISTRAL_API_KEY", "").strip()
+MISTRAL_MODEL = os.environ.get("UBYHOST_MISTRAL_MODEL", "mistral-small-latest")
+# Default USD per million tokens per provider; UBYHOST_AI_PRICE_* still overrides.
+# Mistral Small: check mistral.ai/pricing before switching and set the env vars.
+_AI_PRICE_DEFAULTS = {
+    "anthropic": {"input": "0.10", "output": "0.50", "cache_read": "0.01", "cache_write": "0.125"},
+    "mistral": {"input": "0.10", "output": "0.30", "cache_read": "0.01", "cache_write": "0.10"},
+}[AI_PROVIDER]
 AI_MAX_TOKENS = int(os.environ.get("UBYHOST_AI_MAX_TOKENS", "4000"))
 # Haiku 5.5 costs 5x more once one request's input passes 100,000 tokens. ai.call
 # estimates input as 1 token per 2 characters (more than real text uses, also for
@@ -335,10 +348,10 @@ AI_LONG_CONTEXT_TOKENS = 100_000
 # USD per million tokens, Anthropic table for claude-haiku-5-5 (2026-10-06): input
 # 0.10, output 0.50, cache read a tenth of input, a 5-minute cache write 1.25x.
 AI_PRICE_USD_PER_MTOK = {
-    "input": float(os.environ.get("UBYHOST_AI_PRICE_INPUT", "0.10")),
-    "output": float(os.environ.get("UBYHOST_AI_PRICE_OUTPUT", "0.50")),
-    "cache_read": float(os.environ.get("UBYHOST_AI_PRICE_CACHE_READ", "0.01")),
-    "cache_write": float(os.environ.get("UBYHOST_AI_PRICE_CACHE_WRITE", "0.125")),
+    "input": float(os.environ.get("UBYHOST_AI_PRICE_INPUT", _AI_PRICE_DEFAULTS["input"])),
+    "output": float(os.environ.get("UBYHOST_AI_PRICE_OUTPUT", _AI_PRICE_DEFAULTS["output"])),
+    "cache_read": float(os.environ.get("UBYHOST_AI_PRICE_CACHE_READ", _AI_PRICE_DEFAULTS["cache_read"])),
+    "cache_write": float(os.environ.get("UBYHOST_AI_PRICE_CACHE_WRITE", _AI_PRICE_DEFAULTS["cache_write"])),
 }
 
 

@@ -248,6 +248,9 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 | `UBYHOST_AI_FEATURES` | unset (all off) | Comma list of features that may call the model, for example `havel` or `havel,leon`. A feature not listed shows its no-AI fallback (Havel: quick help and the support form). |
 | `UBYHOST_ANTHROPIC_API_KEY` | unset | Anthropic API key, created in the Anthropic Console with its own monthly spend limit. Passed to the SDK explicitly; the SDK's `ANTHROPIC_API_KEY` is not read. Staging first. |
 | `UBYHOST_AI_MODEL` | `claude-haiku-5-5` | Model id. Changing it invalidates the prompt cache and needs each feature's test set re-run. |
+| `UBYHOST_AI_PROVIDER` | `anthropic` | `mistral` switches every AI feature to Mistral (EU backup, 0334). Set `UBYHOST_MISTRAL_API_KEY` first, update the `UBYHOST_AI_PRICE_*` values from mistral.ai/pricing, and re-run `scripts/havel_eval.py` and Leon's test set. |
+| `UBYHOST_MISTRAL_API_KEY` | unset | Mistral API key; used only when the provider is `mistral`. Secret: never in the repo. |
+| `UBYHOST_MISTRAL_MODEL` | `mistral-small-latest` | Mistral model id. |
 | `UBYHOST_AI_MAX_TOKENS` | `4000` | Ceiling per call; adaptive thinking counts toward it. Callers pass their own lower `max_tokens` (Havel 2500, Leon chat about 800, the import merge up to the ceiling). |
 | `UBYHOST_AI_MAX_INPUT_TOKENS` | `60000` (also the hard maximum) | Largest input one request may send, estimated as 1 token per 2 characters. Haiku 5.5 costs 5x more above 100,000 input tokens, so a larger value is ignored. A request over it raises `input_too_large` and is not sent. |
 | `UBYHOST_AI_MONTHLY_USD_<FEATURE>` | `10` | Spend cap per feature per calendar month (Prague), e.g. `UBYHOST_AI_MONTHLY_USD_HAVEL`. Today's share is the budget left divided by the days left in the month. |
