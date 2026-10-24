@@ -339,6 +339,11 @@ host knows a person will write back. Reply time (owner, 2026-10-24): usually wit
 
 The support card is always available, even when Havel is switched off or over its cap; then it starts empty.
 
+When a limit is hit (6 per conversation, 8 a week, 15 a month, or the AI budget), the host's message goes to
+support without a tap and without a model call, and Havel says "I've passed your message to the UbyHost team.
+They usually reply within a few hours by e-mail." (owner, 2026-10-24, brief 0333). The 3-a-week support cap still
+applies; the 10-minute burst limit, the refusal pause and greetings never forward.
+
 ## 9. Limits and abuse
 
 Hosts open UbyHost about once a month, so Havel is deliberately scarce (owner, 2026-10-24). The page always
@@ -346,11 +351,11 @@ shows what is left: "You can send Havel 7 more messages this month."
 
 | Limit | Value (config, owner can change) | When hit |
 |---|---|---|
-| Messages per host per calendar week (Mon–Sun, Prague time) | 10 | "You've used this week's messages for Havel. They come back on Monday. The guide and support are always here." + support card |
-| Messages per host per calendar month | 20 | Same, "on the 1st" |
+| Messages per host per calendar week (Mon–Sun, Prague time) | 8 | "You've used this week's messages for Havel. They come back on Monday. The guide and support are always here." + support card |
+| Messages per host per calendar month | 15 | Same, "on the 1st" |
 | Messages per host per 10 minutes | 5 | "Let's take a short break. You can write again in a few minutes." |
 | Message length | 600 characters | Form error, nothing sent, nothing counted |
-| Exchanges per conversation (one host message plus Havel's reply) | 8 | "Let's start a fresh conversation." with a New conversation button; the model sees only the last 4 exchanges |
+| Exchanges per conversation (one host message plus Havel's reply) | 6 | Message forwarded to support (0333), then "Let's start a fresh conversation." with a New conversation button; the model sees only the last 4 exchanges |
 | Refusals per host per week | 3 | Havel pauses for that host until Monday: "I can only help with UbyHost, so I'll pause until Monday. Support is still here." |
 | Support sends per host per week | 3 | Send button disabled with the reason |
 | Monthly spend, all hosts | $10 (`UBYHOST_AI_MONTHLY_USD_HAVEL`) | Havel off until the 1st; support card only |
@@ -405,9 +410,9 @@ sees `havel.dont_know` and the support card instead, and the redacted question g
 | `effort: low`, `max_tokens: 1500`, one retry at most | Short thinking, short answers |
 | History capped at 4 turns, 4,000 characters | Input stays small |
 | Input cap per request: 60,000 estimated tokens (about 120,000 characters) | No request reaches Haiku's 100k price step (0310; Havel drops the oldest turn and retries once, 0311) |
-| Weekly, monthly and daily-share caps | A hard ceiling: 20 messages × hosts × about $0.0012 |
+| Weekly, monthly and daily-share caps | A hard ceiling: 15 messages × hosts × about $0.0012 |
 
-Rough worst case: 100 hosts each using all 20 messages is 2,000 messages, about $2.40 a month. The $10 cap is
+Rough worst case: 100 hosts each using all 15 messages is 1,500 messages, about $1.80 a month. The $10 cap is
 there for mistakes and abuse, not for normal use.
 
 ## 10. Privacy and legal
@@ -598,7 +603,7 @@ Context for all cases: today Friday 2026-10-23 (2026-10-24 is a Saturday; the ev
 | 49 | Model reply cites a guide key that does not exist | server turns it into `havel.dont_know` (unit test) |
 | 50 | Model reply contains "costs 299 Kč" with no guide key holding 299 | server blocks it (unit test) |
 | 51 | Model reply contains a URL or an e-mail address | server blocks it (unit test) |
-| 52 | 11th message in one week | not sent to the model; `havel.limit_week` shown with support card (unit test) |
+| 52 | 9th message in one week | not sent to the model; `havel.limit_week` shown with support card (unit test) |
 | 53 | Third refusal in a week | Havel paused for that host until Monday (unit test) |
 | 54 | Daily share used up | not sent to the model; `havel.resting` (unit test) |
 | 55 | Give me the Vinohrady guest link and add a stay there Friday to Sunday for 2 | one action (show_guest_link 11 or create_stay 11); reply names both requests; `next` has exactly one entry with the other request |
@@ -652,6 +657,7 @@ the table order within each column; the guide column and the code column are ind
 | 0321 | `scripts/havel_eval.py` and `App/tests/havel_cases.json` (section 13) | 0311 | written | [0321](../tasks/0321-havel-eval.md) |
 | 0322 | Command palette "Ask Havel: <query>" when no match, "Ask Havel" button at the top of `/guide`, empty-state hints | 0324 | written | [0322](../tasks/0322-havel-palette-guide.md) (reuses `havel.launcher`; no new keys) |
 | 0332 | Several requests in one message: `next` buttons under the newest Havel reply (`havel.next_title` en/cs/vi), mini-forms that work without JavaScript, `havel.js` tap handling, CSS, unit and 390 px browser test | 0324, 0314 | written | [0332](../tasks/0332-havel-next-requests.md) |
+| 0333 | When a limit is hit, the host's message goes to support (no model call), `havel.forwarded` en/cs/vi, unit tests | 0319, 0332 | written | [0333](../tasks/0333-havel-limit-forward.md) |
 | 0323 | Staging acceptance for the owner: click-by-click script over the cases of section 13 that need a person, screenshots, go/no-go | 0314–0325 | written | [0323](../tasks/0323-havel-staging-acceptance.md) |
 
 ## 15. Open owner items
@@ -665,7 +671,7 @@ the table order within each column; the guide column and the code column are ind
    hours." No urgent option (owner chose this on 2026-10-24; section 8, briefs 0312, 0325).
 5. 15–20 real host questions to add to section 13.
 6. **Answered (2026-10-24).** The owner reads the gap list monthly, with the monthly check (section 16b, brief 0331).
-7. Confirm the limits in section 9: 10 messages a week, 20 a month per host, $10 a month in total.
+7. Confirm the limits in section 9: 8 messages a week, 15 a month and 6 per conversation per host, $10 a month in total.
 8. Removed (owner, 2026-10-24): no Vietnamese review; the Vietnamese copy stays as written.
 9. SDK or raw HTTPS (section 3): the briefs use the SDK as decided on 2026-10-24; if the owner would rather add no
    package, 0310 step 1 is replaced by a `requests` client in `ai.py` and the decision line is not needed.

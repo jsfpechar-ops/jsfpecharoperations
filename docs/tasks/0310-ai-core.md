@@ -162,8 +162,8 @@ def ai_key_daily_usd(feature: str) -> float:
     return float(os.environ.get(f"UBYHOST_AI_KEY_DAILY_USD_{feature.upper()}", "0"))
 
 
-HAVEL_WEEKLY_MESSAGES = int(os.environ.get("UBYHOST_HAVEL_WEEKLY", "10"))
-HAVEL_MONTHLY_MESSAGES = int(os.environ.get("UBYHOST_HAVEL_MONTHLY", "20"))
+HAVEL_WEEKLY_MESSAGES = int(os.environ.get("UBYHOST_HAVEL_WEEKLY", "8"))
+HAVEL_MONTHLY_MESSAGES = int(os.environ.get("UBYHOST_HAVEL_MONTHLY", "15"))
 ```
 
    Command: `cd App && .venv/bin/python -c "from app import config; print(sorted(config.AI_FEATURES), config.AI_MODEL, config.ai_monthly_usd('havel'), config.ai_key_daily_usd('leon'))"`. Expected: `[] claude-haiku-5-5 10.0 0.0`.
@@ -619,7 +619,7 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 | `UBYHOST_AI_MONTHLY_USD_<FEATURE>` | `10` | Spend cap per feature per calendar month (Prague), e.g. `UBYHOST_AI_MONTHLY_USD_HAVEL`. Today's share is the budget left divided by the days left in the month. |
 | `UBYHOST_AI_KEY_DAILY_USD_<FEATURE>` | `0` (off) | Per-key daily cap, e.g. `UBYHOST_AI_KEY_DAILY_USD_LEON=0.50` caps one property's guest bot at 50 cents a day. Havel passes no key. |
 | `UBYHOST_AI_PRICE_INPUT`, `UBYHOST_AI_PRICE_OUTPUT`, `UBYHOST_AI_PRICE_CACHE_READ`, `UBYHOST_AI_PRICE_CACHE_WRITE` | `0.10`, `0.50`, `0.01`, `0.125` | USD per million tokens, Anthropic table 2026-10-06. Update when the price changes. |
-| `UBYHOST_HAVEL_WEEKLY`, `UBYHOST_HAVEL_MONTHLY` | `10`, `20` | Havel messages per host per calendar week and month. |
+| `UBYHOST_HAVEL_WEEKLY`, `UBYHOST_HAVEL_MONTHLY` | `8`, `15` | Havel messages per host per calendar week and month. |
 
 ```
 
