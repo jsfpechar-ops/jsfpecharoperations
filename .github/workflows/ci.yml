@@ -18,14 +18,17 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: App
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -37,7 +40,7 @@ jobs:
       - name: Install system tools used by tests
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends age sqlite3
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "22"
 
@@ -58,17 +61,6 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: python3 scripts/design_lint.py
 
-      - name: Type check (informational baseline)
-        continue-on-error: true
-        run: >-
-          mypy app
-          --ignore-missing-imports
-          --follow-imports=skip
-          --allow-untyped-defs
-          --allow-untyped-calls
-          --allow-incomplete-defs
-          --disable-error-code=var-annotated
-
       - name: Run tests with coverage
         env:
           UBYHOST_UBYPORT_ENV: mock
@@ -81,75 +73,36 @@ jobs:
           --cov-fail-under=86
           --junitxml=/tmp/ubyhost-tests.xml
 
-      - name: Annotate failed tests
-        id: test_failures
-        if: failure()
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import xml.etree.ElementTree as ET
-          failures = []
-          report = Path("/tmp/ubyhost-tests.xml")
-          if report.exists():
-              for case in ET.parse(report).iter("testcase"):
-                  failure = case.find("failure")
-                  if failure is None:
-                      failure = case.find("error")
-                  if failure is not None:
-                      title = (case.get("classname", "") + "." + case.get("name", ""))[:200]
-                      detail = (failure.text or failure.get("message", ""))[-6000:]
-                      detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-                      print(f"::error title={title}::{detail}")
-                      failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              for index, detail in enumerate(failures[:8], 1):
-                  output.write(f"failure_{index}={detail}\n")
-          PY
+      - name: Test report
+        id: report
+        if: always()
+        run: python3 ${{ github.workspace }}/scripts/ci_junit.py /tmp/ubyhost-tests.xml Tests
 
-      - name: ${{ steps.test_failures.outputs.failure_1 || 'Test failure detail 1' }}
-        if: failure() && steps.test_failures.outputs.failure_1 != ''
+      - name: ${{ steps.report.outputs.failure_1 || 'Failure detail 1' }}
+        if: failure() && steps.report.outputs.failure_1 != ''
         run: 'true'
 
-      - name: ${{ steps.test_failures.outputs.failure_2 || 'Test failure detail 2' }}
-        if: failure() && steps.test_failures.outputs.failure_2 != ''
+      - name: ${{ steps.report.outputs.failure_2 || 'Failure detail 2' }}
+        if: failure() && steps.report.outputs.failure_2 != ''
         run: 'true'
 
-      - name: ${{ steps.test_failures.outputs.failure_3 || 'Test failure detail 3' }}
-        if: failure() && steps.test_failures.outputs.failure_3 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_4 || 'Test failure detail 4' }}
-        if: failure() && steps.test_failures.outputs.failure_4 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_5 || 'Test failure detail 5' }}
-        if: failure() && steps.test_failures.outputs.failure_5 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_6 || 'Test failure detail 6' }}
-        if: failure() && steps.test_failures.outputs.failure_6 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_7 || 'Test failure detail 7' }}
-        if: failure() && steps.test_failures.outputs.failure_7 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_8 || 'Test failure detail 8' }}
-        if: failure() && steps.test_failures.outputs.failure_8 != ''
+      - name: ${{ steps.report.outputs.failure_3 || 'Failure detail 3' }}
+        if: failure() && steps.report.outputs.failure_3 != ''
         run: 'true'
 
   smoke:
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: App
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -192,6 +145,7 @@ jobs:
     # Four shards run in parallel; each needs Chromium, some need WebKit.
     name: browser shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -201,9 +155,11 @@ jobs:
         working-directory: App
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -253,93 +209,30 @@ jobs:
         run: python -m pytest tests/test_passkeys_client_browser.py -q -rs --junitxml=/tmp/passkey-webkit.xml
 
 
-      - name: Summarize required browser checks
+      - name: Test report
+        id: report
         if: always()
-        id: browser_summary
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import xml.etree.ElementTree as ET
-          report = Path("/tmp/ubyhost-tests.xml")
-          if not report.exists():
-              raise SystemExit("Required browser report is missing")
-          cases = list(ET.parse(report).iter("testcase"))
-          failed = sum(case.find("failure") is not None or case.find("error") is not None for case in cases)
-          skipped = sum(case.find("skipped") is not None for case in cases)
-          summary = f"Browser checks: {len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped"
-          print(summary)
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write("summary=" + summary + "\n")
-          if skipped:
-              raise SystemExit("Required browser checks must have zero skips")
-          PY
+        run: python3 ${{ github.workspace }}/scripts/ci_junit.py /tmp/ubyhost-tests.xml "Browser shard ${{ matrix.shard }}" --no-skips
 
-      - name: ${{ steps.browser_summary.outputs.summary || 'Browser check summary' }}
+      - name: ${{ steps.report.outputs.summary || 'Browser summary' }}
         if: always()
         run: 'true'
 
-      - name: Annotate failed tests
-        id: test_failures
-        if: failure()
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import xml.etree.ElementTree as ET
-          failures = []
-          report = Path("/tmp/ubyhost-tests.xml")
-          if report.exists():
-              for case in ET.parse(report).iter("testcase"):
-                  failure = case.find("failure")
-                  if failure is None:
-                      failure = case.find("error")
-                  if failure is not None:
-                      title = (case.get("classname", "") + "." + case.get("name", ""))[:200]
-                      detail = (failure.text or failure.get("message", ""))[-6000:]
-                      detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-                      print(f"::error title={title}::{detail}")
-                      failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              for index, detail in enumerate(failures[:8], 1):
-                  output.write(f"failure_{index}={detail}\n")
-          PY
-
-      - name: ${{ steps.test_failures.outputs.failure_1 || 'Test failure detail 1' }}
-        if: failure() && steps.test_failures.outputs.failure_1 != ''
+      - name: ${{ steps.report.outputs.failure_1 || 'Failure detail 1' }}
+        if: failure() && steps.report.outputs.failure_1 != ''
         run: 'true'
 
-      - name: ${{ steps.test_failures.outputs.failure_2 || 'Test failure detail 2' }}
-        if: failure() && steps.test_failures.outputs.failure_2 != ''
+      - name: ${{ steps.report.outputs.failure_2 || 'Failure detail 2' }}
+        if: failure() && steps.report.outputs.failure_2 != ''
         run: 'true'
 
-      - name: ${{ steps.test_failures.outputs.failure_3 || 'Test failure detail 3' }}
-        if: failure() && steps.test_failures.outputs.failure_3 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_4 || 'Test failure detail 4' }}
-        if: failure() && steps.test_failures.outputs.failure_4 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_5 || 'Test failure detail 5' }}
-        if: failure() && steps.test_failures.outputs.failure_5 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_6 || 'Test failure detail 6' }}
-        if: failure() && steps.test_failures.outputs.failure_6 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_7 || 'Test failure detail 7' }}
-        if: failure() && steps.test_failures.outputs.failure_7 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_8 || 'Test failure detail 8' }}
-        if: failure() && steps.test_failures.outputs.failure_8 != ''
+      - name: ${{ steps.report.outputs.failure_3 || 'Failure detail 3' }}
+        if: failure() && steps.report.outputs.failure_3 != ''
         run: 'true'
 
       - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: browser-shots-${{ matrix.shard }}
           path: |
@@ -352,6 +245,7 @@ jobs:
     if: always()
     needs: browser-shard
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: All browser shards passed
         run: test "${{ needs.browser-shard.result }}" = "success"
@@ -359,16 +253,21 @@ jobs:
 
   shellcheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: shellcheck deploy and backup scripts (errors only)
         run: shellcheck -S error deploy/lightsail/scripts/*.sh App/scripts/*.sh docker-entrypoint.sh App/run.sh App/render_start.sh render_start.sh
 
   docker:
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Build image
         run: docker build -t ubyhost:ci .
       - name: Start container and wait for healthz
@@ -385,9 +284,10 @@ jobs:
 
   context:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
-        with: { fetch-depth: 50 }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { fetch-depth: 50, persist-credentials: false }
       - name: context lint (caps, links, briefs)
         run: python3 scripts/context_lint.py
       - name: Migration guard
@@ -398,9 +298,10 @@ jobs:
 
   secrets:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
-        with: { fetch-depth: 50 }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { fetch-depth: 50, persist-credentials: false }
       - name: gitleaks (last 50 commits)
         run: >-
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2
