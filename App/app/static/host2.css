@@ -888,3 +888,4 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .copy-btn.copied > svg { visibility: hidden; }
 /* 0302: the summary table's Open column (0296) needs room at 1024 px with the rail open. */
 .host-workspace .property-summary-table td.property-inline-timing { min-width: 18.5rem; }
+.host-workspace .property-summary-table td:first-child { min-width: 8rem; }

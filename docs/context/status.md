@@ -9,7 +9,7 @@ Updated: 2026-10-23.
 
 ## Now
 
-- 0291-0301 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
+- 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
 
 - 0290: passkey CI/phone pending.
 
