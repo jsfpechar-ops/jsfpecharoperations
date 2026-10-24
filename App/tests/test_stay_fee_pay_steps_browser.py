@@ -1,10 +1,11 @@
 """0203: pay steps on the fee list at 390, 1280 and 2000 px in en, cs, vi.
 
-Screenshots: ``UBYHOST_CAPTURE_0203=1`` writes PNGs to /mnt/project-files/design-reset/stay-fee-steps/.
+Screenshots: ``UBYHOST_CAPTURE_0203=1`` writes PNGs to $UBYHOST_SHOTS_DIR/stay-fee-steps/.
 """
 from __future__ import annotations
 
 import os
+import tempfile
 from pathlib import Path
 
 from app import db
@@ -13,7 +14,7 @@ from tests.test_host_ux_acceptance import (  # noqa: F401  (fixtures and helpers
     _context, _dismiss_prompt, _settle, _with_lang, acc, base, sync_api,
 )
 
-OUT = Path("/mnt/project-files/design-reset/stay-fee-steps/")
+OUT = Path(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir())) / "stay-fee-steps"
 CAPTURE = os.environ.get("UBYHOST_CAPTURE_0203") == "1"
 
 _CHECK_JS = """() => {

@@ -1,6 +1,7 @@
 """0219: the service worker installs, and a lost connection shows the offline page."""
 import os
 import secrets
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,7 @@ from app import auth
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 
-SHOT_DIR = "/mnt/project-files/pwa/0203/"
+SHOT_DIR = os.path.join(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir()), "pwa-0203")
 
 _OFFLINE_CACHED = """async (lang) => {
   for (const key of await caches.keys()) {
@@ -45,7 +46,7 @@ def _open(playwright, base, width, height, target):
 
 def _shot(page, name):
     Path(SHOT_DIR).mkdir(parents=True, exist_ok=True)
-    page.screenshot(path=f"{SHOT_DIR}{name}.png", full_page=True)
+    page.screenshot(path=os.path.join(SHOT_DIR, f"{name}.png"), full_page=True)
 
 
 @pytest.mark.parametrize(

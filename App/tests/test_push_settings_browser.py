@@ -8,6 +8,7 @@ database, the encrypted test push) runs for real.
 import json
 import os
 import secrets
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -23,7 +24,7 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.test_host_geometry import _browser_session_cookie, base  # noqa: F401
 from tests.test_push import Browser, PushService
 
-SHOT_DIR = "/mnt/project-files/pwa/0227/"
+SHOT_DIR = os.path.join(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir()), "pwa-0227")
 IPHONE = (
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 "
     "(KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"
@@ -60,8 +61,13 @@ def _host():
 
 
 def _browser(playwright):
+    # The old headless shell always reports Notification.permission "denied",
+    # even after grant_permissions(); the full Chromium in new headless mode honours it.
+    kwargs = chromium_launch_kwargs()
+    if "executable_path" not in kwargs:
+        kwargs["channel"] = "chromium"
     try:
-        return playwright.chromium.launch(**chromium_launch_kwargs())
+        return playwright.chromium.launch(**kwargs)
     except Exception as exc:
         if REQUIRE_BROWSER:
             raise
@@ -86,7 +92,7 @@ def _page(browser, base, username, width, *, fake=None, user_agent=None, collaps
 
 def _shot(page, name):
     Path(SHOT_DIR).mkdir(parents=True, exist_ok=True)
-    page.locator("#settings-group-phone").screenshot(path=f"{SHOT_DIR}{name}.png")
+    page.locator("#settings-group-phone").screenshot(path=os.path.join(SHOT_DIR, f"{name}.png"))
 
 
 def _open_settings(page, base, lang):
