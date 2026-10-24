@@ -16,6 +16,7 @@ from . import (
     door_codes,
     dsr,
     filing_watchdog,
+    guide_photos,
     host_i18n,
     icalsync,
     lifecycle_mail,
@@ -266,6 +267,9 @@ def _job_photo_sweep() -> None:
         removed = passport_photos.purge_stale()
         if removed:
             log.info("passport photo sweep deleted %s file(s)", removed)
+        orphans = guide_photos.purge_orphans()
+        if orphans:
+            log.info("guide photo sweep deleted %s orphaned file(s)", orphans)
         blanked = reporting.purge_submission_payloads()
         if blanked:
             log.info("submission payload purge blanked %s envelope(s)", blanked)

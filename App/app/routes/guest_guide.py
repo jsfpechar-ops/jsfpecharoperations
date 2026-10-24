@@ -8,8 +8,10 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse
 
-from .. import access, auth, guest_guide, security, templating
+from .. import access, auth, guest_guide, guide_photos, security, templating
 from .admin_helpers import back, flash
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
@@ -32,6 +34,15 @@ def _render(request: Request, name: str, status_code: int = 200, **values):
     response = templating.render(request, name, context, status_code=status_code)
     response.headers.update(PRIVATE)
     return response
+
+
+def _card(request: Request, apartment, item, values, error: str = "", status_code: int = 200):
+    return _render(
+        request, "guest_guide_card.html", status_code=status_code,
+        apartment=apartment, item=item, values=values, error=error,
+        photos=guide_photos.photos(apartment["id"], item["id"]),
+        max_photos=guide_photos.MAX_PER_ITEM,
+    )
 
 
 def _next_open(apartment_id: int, after_id: int) -> Optional[int]:
@@ -89,7 +100,7 @@ def guide_card(request: Request, apartment_id: int, item_id: int):
     item = guest_guide.get(apartment_id, item_id)
     if not item:
         raise HTTPException(404)
-    return _render(request, "guest_guide_card.html", apartment=apartment, item=item, values=item, error="")
+    return _card(request, apartment, item, item)
 
 
 @router.post("/apartments/{apartment_id}/guide/{item_id}")
@@ -108,10 +119,7 @@ async def guide_card_save(request: Request, apartment_id: int, item_id: int):
         guest_guide.save(apartment_id, item_id, fields)
     except guest_guide.GuideError as exc:
         values = {**item, **{k: str(v) for k, v in fields.items()}}
-        return _render(
-            request, "guest_guide_card.html", status_code=422,
-            apartment=apartment, item=item, values=values, error=exc.key,
-        )
+        return _card(request, apartment, item, values, error=exc.key, status_code=422)
     if form.get("then") == "next":
         next_id = _next_open(apartment_id, item_id)
         if next_id:
@@ -139,6 +147,56 @@ def guide_card_delete(request: Request, apartment_id: int, item_id: int):
     if guard:
         return guard
     _home(request, apartment_id)
-    if not guest_guide.delete_custom(apartment_id, item_id):
+    item = guest_guide.get(apartment_id, item_id)
+    if not item or item["kind"] != "custom":
         raise HTTPException(404)
+    for photo in guide_photos.photos(apartment_id, item_id):
+        guide_photos.delete(apartment_id, item_id, photo["id"])
+    guest_guide.delete_custom(apartment_id, item_id)
     return back(_base(apartment_id), msg=flash(request, "flash.guest_guide.deleted"))
+
+
+@router.post("/apartments/{apartment_id}/guide/{item_id}/photos")
+async def guide_photo_add(request: Request, apartment_id: int, item_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    if not guest_guide.get(apartment_id, item_id):
+        raise HTTPException(404)
+    card_url = f"{_base(apartment_id)}/{item_id}"
+    form = await request.form()
+    upload = form.get("photo")
+    if upload is None or not hasattr(upload, "read"):
+        return back(card_url, err=flash(request, "flash.error.guide_photo_type"))
+    content = await upload.read(guide_photos.MAX_UPLOAD_BYTES + 1)
+    try:
+        # Decoding and shrinking a phone photo is CPU work; keep it off the event loop.
+        await run_in_threadpool(guide_photos.add, apartment_id, item_id, content, upload.content_type or "")
+    except guest_guide.GuideError as exc:
+        return back(card_url, err=flash(request, exc.key))
+    return back(card_url, msg=flash(request, "flash.guest_guide.photo_added"))
+
+
+@router.get("/apartments/{apartment_id}/guide/{item_id}/photos/{photo_id}")
+def guide_photo_file(request: Request, apartment_id: int, item_id: int, photo_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    photo = guide_photos.get(apartment_id, item_id, photo_id)
+    path = guide_photos.path_for(photo) if photo else None
+    if not path or not path.is_file():
+        raise HTTPException(404)
+    return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=3600"})
+
+
+@router.post("/apartments/{apartment_id}/guide/{item_id}/photos/{photo_id}/delete")
+def guide_photo_delete(request: Request, apartment_id: int, item_id: int, photo_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    if not guide_photos.delete(apartment_id, item_id, photo_id):
+        raise HTTPException(404)
+    return back(f"{_base(apartment_id)}/{item_id}", msg=flash(request, "flash.guest_guide.photo_deleted"))

@@ -16,6 +16,31 @@
 {% if error %}{{ ui_banner('attention', t(error)) }}{% endif %}
 {% if item.state == 'check' %}{{ ui_banner('attention', t('guest_guide.check_banner')) }}{% endif %}
 {% if item.state == 'skipped' %}{{ ui_banner('neutral', t('guest_guide.skipped_banner')) }}{% endif %}
+{% call ui_section(t('guest_guide.photos.title'), id='card-photos') %}
+{% if photos %}
+<ul class="guide-photos">
+{% for photo in photos %}
+<li class="guide-photo">
+<img src="{{ base_url }}/{{ item.id }}/photos/{{ photo.id }}" alt="{{ t('guest_guide.photos.alt', n=loop.index, card=card_title) }}" loading="lazy">
+<form method="post" action="{{ base_url }}/{{ item.id }}/photos/{{ photo.id }}/delete" data-confirm data-confirm-message="{{ t('guest_guide.photos.delete_confirm') }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{{ ui_button(t('guest_guide.photos.delete'), 'quiet', type='submit', size='compact', icon_name='trash-2') }}
+</form>
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if photos | length < max_photos %}
+<form method="post" action="{{ base_url }}/{{ item.id }}/photos" enctype="multipart/form-data">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{{ ui_field('guide-photo', t('guest_guide.photos.add'), name='photo', type='file', help=t('guest_guide.photos.help', max=max_photos), attrs='accept="image/jpeg,image/png,image/webp" required') }}
+<div class="ui-form-actions">{{ ui_button(t('guest_guide.photos.upload'), 'secondary', type='submit', icon_name='plus') }}</div>
+</form>
+{% else %}
+<p class="ui-help">{{ t('guest_guide.photos.full', max=max_photos) }}</p>
+{% endif %}
+{% endcall %}
+
 <form method="post" action="{{ base_url }}/{{ item.id }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 {% if custom %}{{ ui_field('guide-title', t('guest_guide.field.title'), name='title', value=values.title, attrs='maxlength="120" required') }}{% endif %}

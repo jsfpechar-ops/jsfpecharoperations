@@ -7896,6 +7896,43 @@ _GUEST_GUIDE_STRINGS = {
 for _lang, _strings in _GUEST_GUIDE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0293: photos on guest guide cards.
+_GUIDE_PHOTO_STRINGS = {
+    "en": {
+        "guest_guide.photos.title": "Photos",
+        "guest_guide.photos.add": "Add a photo",
+        "guest_guide.photos.help": "Show the exact thing: the boiler display, the button, the key box. Up to %(max)s photos.",
+        "guest_guide.photos.upload": "Upload photo",
+        "guest_guide.photos.full": "This card has %(max)s photos, the most it can hold. Delete one to add another.",
+        "guest_guide.photos.alt": "Photo %(n)s for %(card)s",
+        "guest_guide.photos.delete": "Delete photo",
+        "guest_guide.photos.delete_confirm": "Delete this photo? This cannot be undone.",
+        "flash.guest_guide.photo_added": "Photo added.",
+        "flash.guest_guide.photo_deleted": "Photo deleted.",
+        "flash.error.guide_photo_type": "Upload a JPEG, PNG or WebP photo.",
+        "flash.error.guide_photo_size": "The photo is too large. Use one under 10 MB.",
+        "flash.error.guide_photo_limit": "This card already has the most photos it can hold.",
+    },
+    "cs": {
+        "guest_guide.photos.title": "Fotky",
+        "guest_guide.photos.add": "Přidat fotku",
+        "guest_guide.photos.help": "Vyfoťte přesně tu věc: displej kotle, tlačítko, schránku na klíče. Nejvýš %(max)s fotek.",
+        "guest_guide.photos.upload": "Nahrát fotku",
+        "guest_guide.photos.full": "Karta už má %(max)s fotek, víc se nevejde. Pro další jednu smažte.",
+        "guest_guide.photos.alt": "Fotka %(n)s ke kartě %(card)s",
+        "guest_guide.photos.delete": "Smazat fotku",
+        "guest_guide.photos.delete_confirm": "Smazat tuto fotku? Nelze to vrátit.",
+        "flash.guest_guide.photo_added": "Fotka přidána.",
+        "flash.guest_guide.photo_deleted": "Fotka smazána.",
+        "flash.error.guide_photo_type": "Nahrajte fotku ve formátu JPEG, PNG nebo WebP.",
+        "flash.error.guide_photo_size": "Fotka je příliš velká. Použijte menší než 10 MB.",
+        "flash.error.guide_photo_limit": "Karta už má nejvíc fotek, kolik se vejde.",
+    },
+}
+
+for _lang, _strings in _GUIDE_PHOTO_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]
