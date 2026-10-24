@@ -37,6 +37,14 @@ jobs:
       - name: Install system tools used by tests
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends age sqlite3
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Passkey client logic (node)
+        working-directory: ${{ github.workspace }}
+        run: node --test App/tests/test_passkeys_client.cjs
+
       - name: Install dependencies
         run: pip install --require-hashes -r requirements.lock && pip install -r requirements-dev.txt
 
