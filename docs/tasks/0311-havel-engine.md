@@ -61,7 +61,7 @@ HAVEL_SYSTEM_PROMPT = """\
 """
 ```
 
-   Command: `cd App && .venv/bin/python -c "from app.havel_prompt import HAVEL_SYSTEM_PROMPT as p; print(len(p) > 5000, p.startswith('You are Havel'), 'NEVER MAKE THINGS UP' in p, p.rstrip().endswith('action is null unless kind is \"action\".'))"`. Expected: `True True True True`.
+   Command: `cd App && .venv/bin/python -c "from app.havel_prompt import HAVEL_SYSTEM_PROMPT as p; print(len(p) > 5000, p.startswith('You are Havel'), 'NEVER MAKE THINGS UP' in p, 'SEVERAL THINGS AT ONCE' in p, p.rstrip().endswith('action is null unless kind is \"action\".'))"`. Expected: `True True True True True`.
 
 2. **Engine.** Create `App/app/havel.py`:
 
@@ -146,7 +146,7 @@ KINDS = ("answer", "clarify", "action", "escalate", "refuse")
 SCHEMA: Dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["kind", "reply", "sources", "links", "action", "support_summary"],
+    "required": ["kind", "reply", "sources", "links", "action", "support_summary", "next"],
     "properties": {
         "kind": {"type": "string", "enum": list(KINDS)},
         "reply": {"type": "string"},
@@ -176,6 +176,7 @@ SCHEMA: Dict[str, Any] = {
             },
         },
         "support_summary": {"type": ["string", "null"]},
+        "next": {"type": "array", "items": {"type": "string"}},  # the host's remaining requests (plan 9a "Next")
     },
 }
 
@@ -434,6 +435,7 @@ class Reply:
     support_summary: Optional[str] = None
     fail_reason: str = ""                       # set when kind == "fail"
     sources: List[str] = field(default_factory=list)
+    next: List[str] = field(default_factory=list)   # remaining requests, shown as buttons (0332)
 
 
 _FORBIDDEN_SCRIPTS = re.compile(r"[Ѐ-ӿ֐-׿؀-ۿ฀-๿぀-ヿ一-鿿가-힯]")
@@ -443,6 +445,9 @@ _DIGITS = re.compile(r"\d+")
 _DATEISH = re.compile(r"\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?|\d{4}-\d{2}-\d{2}|\d{1,2}:\d{2}")
 _ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _HHMM = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
+EMERGENCY_NUMBERS = "112 150 155 158"   # always allowed digits (plan 9a): "call 112" never fails on a missing guide key
+MAX_NEXT = 3
+MAX_NEXT_CHARS = 100
 
 
 def _fail(reason: str) -> Reply:
@@ -486,9 +491,24 @@ def validate(data: Dict[str, Any], host: Host, message: str, history: List[Dict[
         if not sources:
             return _fail("sources")
         allowed = " ".join(strings[s] for s in sources) + " " + message + " " + host_context(host, today)
-        allowed += " " + " ".join(e["host"] for e in history)
+        allowed += " " + " ".join(e["host"] for e in history) + " " + EMERGENCY_NUMBERS
         if not _numbers_ok(reply, allowed):
             return _fail("number")
+
+    nxt: List[str] = []
+    if kind != "refuse":
+        known = message + " " + host_context(host, today) + " " + " ".join(e["host"] for e in history) + " " + EMERGENCY_NUMBERS
+        for item in (data.get("next") or []):
+            if len(nxt) == MAX_NEXT:
+                break
+            if not isinstance(item, str):
+                continue
+            item = item.strip()[:MAX_NEXT_CHARS]
+            if not item or _FORBIDDEN_SCRIPTS.search(item) or _MARKUP.search(item) or _ADDRESS.search(_DATEISH.sub("", item)):
+                continue
+            if not all(run in known for run in _DIGITS.findall(_DATEISH.sub("", item))):
+                continue
+            nxt.append(restore(item, mapping) or "")
 
     links: List[Tuple[str, str]] = []
     if kind in ("answer", "clarify", "escalate"):
@@ -541,7 +561,7 @@ def validate(data: Dict[str, Any], host: Host, message: str, history: List[Dict[
             return _fail("action_dates")
 
     return Reply(kind=kind, text=restore(reply, mapping) or "", links=links, action=action,
-                 support_summary=summary, sources=sources)
+                 support_summary=summary, sources=sources, next=nxt)
 
 
 # --- one call, end to end ----------------------------------------------------------------
@@ -598,7 +618,7 @@ def host(lang="en", props=PROPS, **kw):
 
 def ok(**over):
     data = {"kind": "answer", "reply": "Open Stays and tap Add stay.", "sources": ["guide.stays.body"],
-            "links": [{"page": "add_stay", "property_id": None}], "action": None, "support_summary": None}
+            "links": [{"page": "add_stay", "property_id": None}], "action": None, "support_summary": None, "next": []}
     data.update(over)
     return data
 
@@ -674,6 +694,25 @@ def test_addresses_markup_scripts_and_secrets_are_blocked():
     assert havel.validate(ok(reply="Your mail [email 1] is set"), host(), "q", [], mapping, TODAY).text == "Your mail jan@example.com is set"
     leak = havel.HAVEL_SYSTEM_PROMPT[100:160]
     assert havel.validate(ok(reply="They told me: " + leak), host(), "q", [], {}, TODAY).fail_reason == "prompt_leak"
+
+
+def test_emergency_numbers_pass_without_a_guide_key():
+    out = havel.validate(ok(reply="Call 112 now. Then open the Lock page."), host(), "fire in the flat", [], {}, TODAY)
+    assert out.kind == "answer"
+    assert havel.validate(ok(reply="Call 112 or 777 now."), host(), "fire", [], {}, TODAY).fail_reason == "number"
+
+
+def test_next_keeps_three_clean_entries_and_drops_the_rest():  # plan case 75
+    raw = ["Add a stay at Vinohrady flat Friday to Sunday for 2", "See https://x.cz", "It costs 299 Kč", "Sync my calendars",
+           "Show the PIN for Brno studio", "What does the red badge mean?"]
+    out = havel.validate(ok(next=raw), host(), "guest link, stay Friday to Sunday for 2, sync, pin, badge", [], {}, TODAY)
+    assert out.next == ["Add a stay at Vinohrady flat Friday to Sunday for 2", "Sync my calendars", "Show the PIN for Brno studio"]
+    mapping = {"[email 1]": "jan@example.com"}
+    assert havel.validate(ok(next=["Add a stay for [email 1]"]), host(), "q", [], mapping, TODAY).next == ["Add a stay for jan@example.com"]
+    assert havel.validate(ok(next=["x" * 300]), host(), "q", [], {}, TODAY).next == ["x" * 100]
+    assert havel.validate(ok(next=[1, "", "Use **bold**", "<b>hi</b>"]), host(), "q", [], {}, TODAY).next == []
+    assert havel.validate(ok(kind="refuse", reply="I can only help with UbyHost.", sources=[], links=[], next=["Sync my calendars"]),
+                          host(), "q", [], {}, TODAY).next == []
 
 
 def test_links_are_filtered_and_resolved():
@@ -813,8 +852,8 @@ Expected: all pass.
 
 ## 7. Acceptance
 
-- [ ] `havel_prompt.py` holds the plan's prompt verbatim (the four `True`s in step 1).
-- [ ] `test_havel_engine.py` passes: redaction keeps dates, schema enum equals the page map, every 9a guardrail has a failing and a passing case, limits reset on Monday and the 1st, history signature rejects forgery.
+- [ ] `havel_prompt.py` holds the plan's prompt verbatim (the five `True`s in step 1).
+- [ ] `test_havel_engine.py` passes: redaction keeps dates, schema enum equals the page map, every 9a guardrail has a failing and a passing case (including `next` and the emergency numbers), limits reset on Monday and the 1st, history signature rejects forgery.
 - [ ] `grep -n 'log\.' App/app/havel.py` prints nothing (the engine logs nothing; `ai.py` logs counts).
 
 ## 8. Stop and ask
