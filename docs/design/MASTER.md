@@ -5,7 +5,7 @@ Version 2.0.0 (draft for owner approval, plan step B). Governs every signed-in h
 ## 1. Principles
 
 1. The host sees what needs them and the next action without learning the interface. Facts first, status second, action third.
-2. One coral primary action per screen or decisive step. Everything else is quiet.
+2. Every button group (page header, card, step, form, dialog, needs-you line) has exactly one coral primary: the next step. Everything else is secondary or quiet. List rows carry a soft-coral `Open` (7.1 `open`), never a bare arrow (owner 2026-10-24).
 3. Coral is a signal, not a surface (section 4).
 4. Phone first: design at 390 px, then 768, 1024, 1280, 1440+. Desktop is the same components wider, never a second design.
 5. Pages fill slots; they do not design. No page-level layout CSS, inline styles or new stylesheets (section 11).
@@ -88,7 +88,7 @@ Measured on reference screens (method and table in `design-reset/fable/direction
 1. **Budget:** coral (any `--coral-*` or `--accent*` value) covers at most **3 % of the viewport at 1280 px** and **6 % at 390 px**. Empty surface (canvas or surface pixels with no ink) covers at least 55 % at 1280 and 50 % at 390. CI measures both (section 11.2).
 2. **Coral may appear only as:** (a) the one primary button; (b) the active navigation item (tint plus icon); (c) a status-action badge or dot; (d) the focus ring; (e) a text link inside a sentence; (f) the count badge on the Dashboard tab; (g) the checked state of a checkbox, radio or toggle; (h) the current day marker in a calendar.
 3. **Coral never appears as:** page or section backgrounds; card, panel or rail fills; borders used as decoration; headings; icons that are not the active nav item; progress bars; table header rows; more than one filled button in one viewport; a full-width banner (banners use attention amber or neutral grey).
-4. A second coral button on a screen is a lint failure (`primary` count per rendered page template must be 1 or 0; the sticky form action counts as the one).
+4. A second solid coral button in one button group is a lint failure; a group of two or more buttons with no primary is a review failure. Row `Open` buttons are the soft `open` variant and do not count.
 5. Space is created by: hairlines instead of boxes (a list is rows separated by `--line`, not cards in a card); one level of containment (a page never nests a panel inside a panel); the gaps in section 3; empty states that are text and one button, not an illustration.
 
 ## 5. Page template
@@ -185,7 +185,8 @@ Every class below is the whole catalog. Sizes: regular is default; compact exist
 
 | Variant | Fill | Border | Text | Use |
 |---|---|---|---|---|
-| `primary` | `--accent`; hover `--accent-hover` | none | `--on-accent` | the one action; at most one per screen |
+| `primary` | `--accent`; hover `--accent-hover` | none | `--on-accent` | the one next step of its group (header, card, step, form, dialog) |
+| `open` | `--accent-soft`; hover `--coral-200` | 1 px `--coral-200` | `--accent-ink` | the visible "Open" text button of a list row or card; no arrow |
 | `secondary` | `--surface`; hover `--surface-2` | 1 px `--line-2` | `--ink` | everything else that is a button |
 | `quiet` | none; hover `--surface-2` | none | `--ink-2` | toolbar extras, cancel, close |
 | `danger` | `--surface`; hover `--danger-bg` | 1 px `--danger` | `--danger` | delete, revoke; always behind a confirm dialog |
@@ -280,7 +281,7 @@ Phone: one `secondary` "Show more" button, full width, replaced by the next page
 1. A `<style>` block, `style=""` attribute or a page-specific stylesheet in a host template.
 2. A raw colour, pixel spacing, radius, shadow or font size outside `tokens.css`.
 3. A class that is not in the catalog (section 7) or the template (section 5).
-4. Two primary buttons in one viewport, or a primary inside a row.
+4. Two primary buttons in one group, a group of buttons with none, or a solid primary inside a list row (rows use `open`).
 5. Coral as a background, border, heading, icon colour or progress fill.
 6. A new heading class, a hand-drawn icon, an emoji as an icon, an icon without a label or `aria-label`.
 7. A card inside a card, a panel inside a panel, a table inside a card with padding.

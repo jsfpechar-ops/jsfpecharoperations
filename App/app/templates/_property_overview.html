@@ -35,7 +35,7 @@
 {%- macro hc_href(row, href) -%}{{ row.href if row and row.state in ('bad', 'warn') and row.href else href }}{%- endmacro -%}
 {%- macro hc_small(row, text) -%}{% if row and row.state in ('bad', 'warn') %}<small class="host-property-card-problem">{{ t(row.text_key) }}</small>{% elif text %}<small>{{ text }}</small>{% if row %}<span class="sr-only"> · {{ t(row.text_key) }}</span>{% endif %}{% elif row %}<span class="sr-only">{{ t(row.text_key) }}</span>{% endif %}{%- endmacro -%}
 {%- set h_cal, h_link, h_police, h_business, h_door = hc.get('calendar'), hc.get('guest_link'), hc.get('police'), hc.get('business'), hc.get('door') -%}
-{%- set open_pill -%}<span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span>{%- endset -%}
+{%- set open_pill -%}<span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span></span>{%- endset -%}
 <div class="host-property-grid">
   <a class="host-property-card" href="{{ hc_href(h_cal, base_url ~ '?view=bookings#calendars') }}"{{ hc_attrs(h_cal) }}>{{ icon('calendar-days', 20) }}<div><strong>{{ hc_dot(h_cal) }}{{ t('wizard.overview.calendars') }}</strong>
     {{ hc_small(h_cal, tp('apartment.form.calendars_count', feeds | length) ~ ((' · ' ~ t('apartment.form.feed.status.error')) if feed_errors_count else '')) }}</div>{{ open_pill }}</a>
