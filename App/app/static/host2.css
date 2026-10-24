@@ -802,7 +802,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
    row and card, never a bare arrow (owner 2026-10-24). */
 .ui-btn-open,
 .host-workspace .row-open,
-.host-workspace .host-property-card-open { display: inline-flex; align-items: center; justify-content: center; width: auto; height: auto; min-height: var(--control-h-compact); padding: 0 var(--space-3); border: 1px solid var(--coral-200); border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent-ink); font-size: var(--size-13); font-weight: 600; line-height: 1.2; white-space: nowrap; text-decoration: none; }
+.host-workspace .host-property-card-open { display: inline-flex; align-items: center; justify-content: center; width: auto; height: auto; min-height: var(--control-h-compact); padding: 0 var(--space-3); border: 1px solid var(--coral-500); border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent-ink); font-size: var(--size-13); font-weight: 600; line-height: 1.2; white-space: nowrap; text-decoration: none; }
 .host-workspace :is(.row-open-text, .host-property-card-open-text) { position: static; display: inline; width: auto; height: auto; overflow: visible; clip: auto; }
 @media (hover: hover) { .ui-btn-open:hover { background: var(--coral-200); border-color: var(--accent); color: var(--accent-ink); } }
 .ui-btn-open:active { background: var(--coral-200); }
@@ -840,7 +840,8 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .invoice-lookup-ico { flex: 1 1 18rem; min-width: 0; margin: 0; }
 .host-workspace .invoice-lookup-row { display: flex; gap: var(--space-2); }
 .host-workspace .invoice-lookup-row input { flex: 1 1 auto; min-width: 0; max-width: 12rem; }
-.host-workspace .invoice-lookup-row .ui-btn { flex: 0 0 auto; }
+.host-workspace .invoice-lookup-row .ui-btn { flex: 0 0 auto; min-height: 0; height: auto; align-self: stretch; }
+.host-workspace .invoice-lookup-row { align-items: stretch; }
 .host-workspace .invoice-lookup-guest { display: flex; align-items: center; gap: var(--space-3); }
 .host-workspace .invoice-buyer-fields { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-4); }
 .host-workspace .invoice-buyer-fields > .ui-field { margin: 0; min-width: 0; }
@@ -855,8 +856,15 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .invoice-supplier-edit { grid-column: 1; grid-row: 3; }
 }
 @container (max-width: 850px) {
-  .invoice-items-grid tbody tr { gap: var(--space-2) var(--space-4); padding: var(--space-3) 0; }
-  .invoice-items-grid td.row-actions { grid-column: auto / -1; text-align: right; }
+  .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: var(--space-2) var(--space-3); padding: var(--space-3) 0; align-items: end; }
+  .invoice-items-grid tbody tr > td:first-child { grid-column: 1 / -1; }
+  .invoice-items-grid td.row-actions,
+  .invoice-items-grid tbody tr > td:last-child { grid-column: 4; text-align: right; }
+  .invoice-items-grid tbody tr > td:last-child:empty { display: none; }
+}
+@container (max-width: 420px) {
+  .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .invoice-items-grid td.row-actions { grid-column: 1 / -1; text-align: left; }
 }
 /* 0294: Open sits at the row's right edge, before the ⋮ menu. */
 .host-workspace td.row-actions > .row-open { vertical-align: middle; }
