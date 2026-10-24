@@ -93,6 +93,7 @@
       {% set lw = link_window(reservation) if progress.status in ('awaiting_guest', 'incomplete') else none %}
       {% if lw %}<p class="ui-sub link-window-line" data-link-window="{{ lw.state }}"><span class="link-window{{ ' is-later' if lw.state == 'from' }}">{{ t('workflow.link.now') if lw.state == 'now' else t('workflow.link.from', date=lw.opens.isoformat() | date_short) }}</span>{% if lw.state == 'from' %}{{ help_tip('link-window-help', t('workflow.link.why')) }}{% endif %}</p>{% endif %}
     </div>
+    {% set cmd_primary = send_controls.send_enabled or progress.status == 'failed' or (progress.status == 'reported' and submissions) %}
     <div class="stay-command-actions">
       {% if lw and lw.state == 'from' %}<button class="ui-btn ui-btn-secondary" type="button" data-copy="stay-link" data-copy-label="{{ t('workflow.link.copy_own') }}" data-copied-label="{{ t('stay.detail.link_copied') }}" data-copy-own-link>{{ t('workflow.link.copy_own') }}</button>{% endif %}
       {% if ns.count_edit %}<a class="ui-btn ui-btn-secondary" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a>{% endif %}
@@ -126,9 +127,9 @@
         {% endif %}
       {% endif %}
       {% if stay_invoice %}
-        <a class="ui-btn ui-btn-secondary" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>
+        <a class="{{ 'ui-btn ui-btn-secondary' if cmd_primary else cta }}" href="/invoices/{{ stay_invoice.id }}">{{ t('invoice.stay.open', number=stay_invoice.number) }}</a>
       {% else %}
-        <a class="ui-btn ui-btn-secondary" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>
+        <a class="{{ 'ui-btn ui-btn-secondary' if cmd_primary else cta }}" href="/invoices/new?reservation_id={{ reservation.id }}">{{ t('invoice.new') }}</a>
       {% endif %}
       {{ row_menu_begin() }}
         <button class="row-menu-item" type="button" role="menuitem" data-copy="stay-link" data-copied-label="{{ t('stay.detail.link_copied') }}">{{ t('host.copy_guest_form_link') }}</button>
@@ -179,7 +180,7 @@
 {# --- 2. Guests --------------------------------------------------------- #}
 <section class="ui-section" id="guests">
 <div class="ui-section-h"><h2>{{ t('stay.detail.guests.title') }} {{ guest_count(progress, placeholder=true) }}</h2>
-  <div class="ui-form-actions"><a class="ui-btn ui-btn-secondary ui-btn-compact" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="ui-btn ui-btn-secondary ui-btn-compact" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
+  <div class="ui-form-actions"><a class="ui-btn ui-btn-secondary ui-btn-compact" href="#stay-quick-edit" data-open-details>{{ t('host.edit_count') }}</a><a class="ui-btn ui-btn-open ui-btn-compact" href="/reservations/{{ reservation.id }}/guests/new">+ {{ t('stay.detail.cta.add_guest') }}</a></div>
 </div>
 
 {% if stay_claim and (stay_claim.state != 'unclaimed' or stay_claim.guest_access_locked_at) %}

@@ -1,7 +1,7 @@
 # 0310: `ai.py`, the one door to the Claude API (shared by Havel and the guest bot)
 
-Status: todo
-Depends on: owner decision 15.1 in the Havel plan (the `anthropic` dependency line; this brief writes it) | Base commit: 92646d3 | Branch: task/0310-ai-core
+Status: review
+Depends on: owner decision 15.1 in the Havel plan (the `anthropic` dependency line; this brief writes it) | Base commit: de76c71 | Branch: task/0310-ai-core
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective

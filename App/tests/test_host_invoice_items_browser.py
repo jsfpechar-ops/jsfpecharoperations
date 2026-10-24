@@ -178,13 +178,26 @@ def test_invoice_item_geometry_and_localized_screenshots(base):
                 thead_display = page.locator("#item-rows thead").evaluate("el => getComputedStyle(el).display")
                 assert thead_display == "none", f"item table header is shown at {width}px ({locale}): {thead_display}"
                 description_box = row.locator('[name="item_description"]').bounding_box()
-                assert abs(remove_box["x"] - description_box["x"]) <= 1, (
-                    f"Remove left differs from the description field at {width}px ({locale})"
-                )
                 lowest_control_bottom = max(control.bounding_box()["y"] + control.bounding_box()["height"] for control in controls)
-                assert remove_box["y"] >= lowest_control_bottom - 1, (
-                    f"Remove overlaps the item controls at {width}px ({locale})"
-                )
+                if row.bounding_box()["width"] > 420:
+                    # 0295: Remove shares the controls' line, at the card's right edge.
+                    assert abs(remove_box["y"] - tops[0]) <= 2, (
+                        f"Remove is not on the controls' line at {width}px ({locale})"
+                    )
+                    assert abs((remove_box["x"] + remove_box["width"]) - (description_box["x"] + description_box["width"])) <= 1, (
+                        f"Remove right edge differs from the description field at {width}px ({locale})"
+                    )
+                    price_box = controls[-1].bounding_box()
+                    assert remove_box["x"] >= price_box["x"] + price_box["width"] - 1, (
+                        f"Remove overlaps the price at {width}px ({locale})"
+                    )
+                else:
+                    assert abs(remove_box["x"] - description_box["x"]) <= 1, (
+                        f"Remove left differs from the description field at {width}px ({locale})"
+                    )
+                    assert remove_box["y"] >= lowest_control_bottom - 1, (
+                        f"Remove overlaps the item controls at {width}px ({locale})"
+                    )
                 row_box = row.bounding_box()
                 assert remove_box["x"] + remove_box["width"] <= row_box["x"] + row_box["width"] + 1, (
                     f"Remove sticks out of the item card at {width}px ({locale})"

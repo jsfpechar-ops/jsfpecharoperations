@@ -125,3 +125,8 @@ body.host-workspace .cleaning-page .cleaning-subsection > .ui-btn { align-self:f
 /* Beats host-design0123.css (same specificity, loaded earlier) so the list heading stays compact. */
 body.host-workspace .cleaning-page .cleaning-date-group > h3 { font-size:13px; line-height:1.35; padding:0 0 6px; margin:0 0 6px; border-bottom:1px solid var(--border); }
 
+/* 0291: one row per property: the name left, a visible Open right. */
+body.host-workspace .cleaning-property-links { grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+body.host-workspace .cleaning-page .cleaning-property-row { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: var(--space-4); margin: 0; }
+body.host-workspace .cleaning-property-row strong { font-size: var(--size-16); font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+body.host-workspace .cleaning-property-row .ui-btn { flex: 0 0 auto; }
