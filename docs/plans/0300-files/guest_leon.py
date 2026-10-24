@@ -32,16 +32,6 @@ def _gone() -> JSONResponse:
     return _json({"error": "not_found"}, 404)
 
 
-def _guest_first_name(reservation_id: int) -> str:
-    row = db.query_one(
-        "SELECT first_name FROM guest WHERE reservation_id = ? AND first_name IS NOT NULL AND first_name != '' "
-        "ORDER BY id LIMIT 1",
-        (reservation_id,),
-    )
-    first = (row["first_name"] if row else "") or ""
-    return first.strip().split(" ")[0].title()[:40]
-
-
 def _conversation(chat: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if not chat:
         return {"messages": [], "open_questions": 0}
@@ -56,11 +46,11 @@ def _conversation(chat: Optional[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 async def _answer(chat: Dict[str, Any], message: str, *, level: str, apartment, lang: str,
-                  request: Request, guest_name: str = "") -> Dict[str, Any]:
+                  request: Request) -> Dict[str, Any]:
     host = _host_contact(apartment).get("name", "")
     result = await run_in_threadpool(
         leon.reply, chat, message, level=level, property_name=apartment["internal_name"] or "",
-        host_name=host, address_key=rate_limit.client_key(request, "leon"), lang=lang, guest_name=guest_name,
+        host_name=host, address_key=rate_limit.client_key(request, "leon"), lang=lang,
     )
     return {"kind": result["kind"], "text": result["text"], "asked_host": result["question_id"] is not None}
 
@@ -83,7 +73,7 @@ async def stay_leon(token: str, reservation_id: int, request: Request, message: 
         return _gone()
     chat = leon.stay_chat(apartment["id"], reservation["id"], lang)
     body = await _answer(chat, message, level=booked_level(reservation), apartment=apartment, lang=lang,
-                         request=request, guest_name=_guest_first_name(reservation["id"]))
+                         request=request)
     return _json(body)
 
 

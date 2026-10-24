@@ -103,8 +103,8 @@ def test_the_stay_door_inside_the_window_sends_booked_cards_and_never_host_only_
     system = _system(fake)
     assert "Checkout is at 10:00." in system and "boiler" in system
     assert "VINO" not in system and "4455" not in system
-    assert fake.calls[0]["max_tokens"] == leon.MAX_TOKENS == 800
-    assert "Guest first name: Anna." in fake.calls[0]["messages"][-1]["content"]
+    assert fake.calls[0]["max_tokens"] == leon.MAX_TOKENS == 400
+    assert "ANNA" not in fake.calls[0]["messages"][-1]["content"].upper()  # Leon never gets the guest's name
     assert fake.calls[0]["system"][-1]["cache_control"] == {"type": "ephemeral"}
 
 
@@ -125,7 +125,6 @@ def test_the_qr_door_is_everyone_only_and_the_same_for_a_past_guest(ws):
     _say(ws, f"/g/{qr}/leon", "When is checkout?")
     system = _system(fake)
     assert "boiler" in system and "Checkout is at 10:00." not in system and "VINO" not in system
-    assert "Guest first name" not in fake.calls[0]["messages"][-1]["content"]
 
 
 def test_no_leon_while_the_guide_is_not_live_or_the_token_is_wrong(ws):
@@ -175,7 +174,7 @@ def test_the_validator_rules():
     assert leon.validate({"kind": "answer", "reply": "Room 23 is fine.", "sources": ["c5"]}, cards, "I am in room 23")["kind"] == "answer"
     for bad in ("See https://x.example", "Mail me at a@b.cz", "**Set** it", "<b>22</b>"):
         assert leon.validate({"kind": "answer", "reply": bad, "sources": ["c5"]}, cards, "")["reason"] == "markup"
-    assert leon.validate({"kind": "answer", "reply": "x" * 1300, "sources": ["c5"]}, cards, "")["reason"] == "length"
+    assert leon.validate({"kind": "answer", "reply": "x" * 700, "sources": ["c5"]}, cards, "")["reason"] == "length"
     assert leon.validate({"kind": "weird"}, cards, "")["kind"] == "ask_host"
 
 

@@ -104,8 +104,7 @@ def main() -> int:
         for role, text in case.get("history", []):
             leon._store(chat["id"], role, "answer" if role == "leon" else "", text)
         result = leon.reply(chat, case["message"], level=case["level"], property_name=spec["property"],
-                            host_name=spec["host"], address_key=f"eval-{case['id']}", lang="en",
-                            guest_name=case.get("name", ""))
+                            host_name=spec["host"], address_key=f"eval-{case['id']}", lang="en")
         problems = check(case, result)
         if case.get("must"):
             must_failed += bool(problems)
