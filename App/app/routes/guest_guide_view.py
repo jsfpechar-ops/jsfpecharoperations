@@ -88,7 +88,7 @@ def _cards(apartment_id: int, level: str, lang: str, photo_url) -> List[Dict[str
                 "steps": [line.strip() for line in item["steps"].splitlines() if line.strip()],
                 "watch_out": item["watch_out"],
                 "video_url": item["video_url"] if item["video_url"].startswith("https://") else "",
-                "photos": [photo_url(item["id"], p["id"]) for p in guide_photos.photos(apartment_id, item["id"])],
+                "photos": [photo_url(item["id"], p["id"]) for p in guide_photos.photos(apartment_id, item["id"])] if item["state"] == "done" else [],
             }
         )
     return out
@@ -133,7 +133,8 @@ def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level
 
 def _photo(apartment_id: int, level: str, item_id: int, photo_id: int):
     """The file, only when the card is one this level may read; else a bare 404."""
-    if not any(item["id"] == item_id for item in guide_facts.for_guest(apartment_id, level, "en")):
+    # Only a written card serves photos; a facts-only card is a draft.
+    if not any(item["id"] == item_id for item in guest_guide.for_guest(apartment_id, level)):
         return None
     photo = guide_photos.get(apartment_id, item_id, photo_id)
     path = guide_photos.path_for(photo) if photo else None

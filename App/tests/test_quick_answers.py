@@ -1,10 +1,13 @@
 """0355: Quick answers, the yes/no facts shown inside guide cards."""
 from __future__ import annotations
 
+import io
+
 import pytest
 from fastapi.testclient import TestClient
+from PIL import Image
 
-from app import auth, config, db, guest_guide, guide_facts, guide_token, host_i18n, i18n, leon
+from app import auth, config, db, guest_guide, guide_facts, guide_photos, guide_token, host_i18n, i18n, leon
 from app.main import app
 from tests.conftest import login_as
 
@@ -135,3 +138,20 @@ def test_another_hosts_property_is_out_of_reach(ws):
     assert client.get(f"{base}/quick/done").status_code == 404
     assert client.get(f"/apartments/{ws['home']}/guide/quick/nope").status_code == 404
     assert guide_facts.answers(ws["foreign"]) == {}
+
+
+def test_a_card_the_host_has_not_written_shows_no_photo(ws, monkeypatch, tmp_path):
+    monkeypatch.setattr(guide_photos, "PHOTOS_DIR", tmp_path / "guide_photos")
+    out = io.BytesIO()
+    Image.new("RGB", (640, 480), (120, 90, 60)).save(out, format="JPEG")
+    apt = ws["home"]
+    _rules(apt)
+    _go_live(apt)
+    rules = {r["kind"]: r for r in guest_guide.items(apt)}["house_rules"]  # facts only, not written
+    photo = guide_photos.add(apt, rules["id"], out.getvalue(), "image/jpeg")
+    token = guide_token.ensure(apt)
+    client = TestClient(app)
+    page = client.get(f"/g/{token}").text
+    assert "No pets. No smoking. Quiet hours from 22:00 to 07:00." in page
+    assert f"/photos/{rules['id']}/{photo}" not in page
+    assert client.get(f"/g/{token}/photos/{rules['id']}/{photo}").status_code == 404
