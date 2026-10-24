@@ -877,3 +877,11 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .host-property-card > div { min-width: 0; flex: 1 1 10rem; }
   .host-workspace .host-property-card-open { margin-left: auto; }
 }
+/* 0300: one copy button (owner 2026-10-24). Bordered, 32 px; on success the
+   copy icon is replaced in place by a green tick, then comes back. */
+.host-workspace .copy-btn { position: relative; width: var(--control-h-compact); min-width: var(--control-h-compact); height: var(--control-h-compact); padding: 0; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink-2); }
+.host-workspace .copy-btn [data-copy-label-slot] { display: none; }
+.host-workspace .copy-btn [data-copy-state-icon] { inset: 0; top: 0; right: 0; width: auto; height: auto; border: 0; border-radius: inherit; background: transparent; color: var(--green-700); transform: none; }
+.host-workspace .copy-btn [data-copy-state-icon] svg { width: 16px; height: 16px; }
+.host-workspace .copy-btn.copied { color: var(--green-700); border-color: var(--green-700); background: var(--green-100); }
+.host-workspace .copy-btn.copied > svg { visibility: hidden; }
