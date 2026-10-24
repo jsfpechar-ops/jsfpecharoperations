@@ -7920,7 +7920,7 @@ _GUEST_GUIDE_STRINGS = {
 for _lang, _strings in _GUEST_GUIDE_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
-# 0293: photos on guest guide cards.
+# 0343: photos on guest guide cards.
 _GUIDE_PHOTO_STRINGS = {
     "en": {
         "guest_guide.photos.title": "Photos",
