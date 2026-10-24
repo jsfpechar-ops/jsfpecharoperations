@@ -1,0 +1,55 @@
+name: Uptime
+
+# Every 15 minutes: production answers /healthz and the home page, and the
+# TLS certificate has more than 14 days left. A failure opens one issue
+# labelled "outage" (or comments on the open one) so it reaches the owner.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe production
+        id: probe
+        run: |
+          set -uo pipefail
+          problems=""
+          for url in https://ubyhost.com/healthz https://ubyhost.com/; do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 --retry 2 --retry-delay 10 "$url" || echo 000)"
+            [ "$code" = "200" ] || problems="${problems}${url} answered ${code}. "
+          done
+          end="$(echo | openssl s_client -servername ubyhost.com -connect ubyhost.com:443 2>/dev/null | openssl x509 -noout -enddate | cut -d= -f2)"
+          if [ -z "$end" ]; then
+            problems="${problems}TLS certificate could not be read. "
+          elif [ $(( ($(date -d "$end" +%s) - $(date +%s)) / 86400 )) -lt 14 ]; then
+            problems="${problems}TLS certificate expires ${end}. "
+          fi
+          echo "problems=${problems}" >> "$GITHUB_OUTPUT"
+          [ -z "$problems" ] && echo "All good." || { echo "$problems"; exit 1; }
+
+      - name: Open or update the outage issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROBLEMS: ${{ steps.probe.outputs.problems }}
+        run: |
+          gh label create outage --repo "$GITHUB_REPOSITORY" --color B60205 2>/dev/null || true
+          open="$(gh issue list --repo "$GITHUB_REPOSITORY" --label outage --state open --json number --jq '.[0].number')"
+          body="$(date -u '+%Y-%m-%d %H:%M UTC'): ${PROBLEMS:-probe failed} Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --label outage --title "Production is down or degraded" --body "$body"
+          fi
