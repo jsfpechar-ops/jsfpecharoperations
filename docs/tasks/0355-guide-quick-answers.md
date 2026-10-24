@@ -13,7 +13,7 @@ Yes/no facts (pets, smoking, lift, cot, dishwasher, ...) are not cards (owner, 2
 - 22 facts in 5 steps (`times`, `rules`, `access`, `kitchen`, `comfort`), all in `guide_facts.FACTS`: fact, step, type (`yesno`, `time`, `range`) and the default card it shows in.
 - Storage: new table `guide_fact` (migration number: the guide's reserved range is used up, so take the next free number the context lint prints at run time) (one row per answered fact, primary key `apartment_id, fact`, `ON DELETE CASCADE`). "Not sure" or an invalid value deletes the row. A row `step.<step>` = `seen` remembers a saved or skipped step, so `/guide/quick` resumes at the first step not seen. Property facts, no personal data: no retention rule. Every route checks ownership through `_home` (the same check as every guide page).
 - Guests and Leon read cards through `guide_facts.for_guest(apartment_id, level, lang)`: `guest_guide.for_guest` plus a `facts` list per card. A default card the host has not written still reaches guests when it has facts, with its own text left out (a draft is never shown). Leon gets the English lines as a `facts:` line inside the card block, and `_card_corpus` includes them, so a cited card covers times like 22:00.
-- Guest lines exist in every guest language (en, cs, de, es, fr in `i18n.py`, uk in `guest_uk_i18n.py`); host copy in en and cs. All copy is in `docs/plans/0305-files/quick_copy.py`, written by `apply_quick_copy.py`. Never retype copy.
+- Guest lines exist in every guest language (en, cs, de, es, fr in `i18n.py`, uk in `guest_uk_i18n.py`); host copy in en and cs. All copy is in `docs/plans/0355-files/quick_copy.py`, written by `apply_quick_copy.py`. Never retype copy.
 - UX: one primary button per screen ("Save and continue"), a quiet "Skip this step", "Step 2 of 5" in the page meta, the back link returns to the guide (stop any time, resume later). A yes/no question is a `fieldset` with a `legend` and three native radios styled as big tap chips (Yes, No, Not sure; "Not sure" is checked until the host answers): full width at 390 px, 48 px tall, the checked chip filled with ink like a pressed `ui-chip`, a focus ring from `--focus-ring-2`, no JavaScript. The chips are a feature class (`quick-choice`, `quick-choice-options`, `quick-choice-option`) in `catalog.json` `classes` and `class_notes`, styled in `workflow.css` with tokens only; no new shared macro. Times are `ui_field` time inputs; a browser shows no ghost text in a time field, so their help line carries the example.
 - New screen: owner decision line "2026-10-24 Guest guide: Quick answers wizard screen (owner)" is in `docs/context/decisions.md`.
 
@@ -37,17 +37,17 @@ Yes/no facts (pets, smoking, lift, cot, dishwasher, ...) are not cards (owner, 2
 | `App/app/templates/base.html` | edit | New `?v=` key for workflow.css |
 | `App/tests/static_versions.json` | regenerate | `test_static_versions.py --write` |
 
-No other file may change. `docs/plans/0305-files/` is read only.
+No other file may change. `docs/plans/0355-files/` is read only.
 
 ## 4. Steps
 
 1. From the repo root run `python3 scripts/context_lint.py 2>&1 | grep 'next free'`. The guide's reserved migration range is used up: use the migration number this line prints at run time as NNNN (never a number from this brief). Then run, with that number:
-   `cp docs/plans/0305-files/guide_fact.sql App/app/migrations/NNNN_guide_fact.sql`
-   `cp docs/plans/0305-files/guide_facts.py App/app/guide_facts.py`
-   `cp docs/plans/0305-files/guest_guide_quick.html docs/plans/0305-files/guest_guide_quick_done.html App/app/templates/`
-   `cp docs/plans/0305-files/test_quick_answers.py docs/plans/0305-files/test_quick_answers_browser.py App/tests/`
+   `cp docs/plans/0355-files/guide_fact.sql App/app/migrations/NNNN_guide_fact.sql`
+   `cp docs/plans/0355-files/guide_facts.py App/app/guide_facts.py`
+   `cp docs/plans/0355-files/guest_guide_quick.html docs/plans/0355-files/guest_guide_quick_done.html App/app/templates/`
+   `cp docs/plans/0355-files/test_quick_answers.py docs/plans/0355-files/test_quick_answers_browser.py App/tests/`
 
-2. From the repo root run `python3 docs/plans/0305-files/apply_quick_copy.py 2>&1 | tail -30`. Expected, exactly: `quick answers: 53 host keys x 2, 41 guest keys x 6`. Anything else: STOP.
+2. From the repo root run `python3 docs/plans/0355-files/apply_quick_copy.py 2>&1 | tail -30`. Expected, exactly: `quick answers: 53 host keys x 2, 41 guest keys x 6`. Anything else: STOP.
 
 3. In `App/app/routes/guest_guide.py`, directly after the line that starts with `from .. import access, auth, config, guest_guide`, insert this line (that import line differs between branches, so do not edit it):
 
@@ -312,7 +312,7 @@ with
   }
 ```
 
-19. From the repo root run `cat docs/plans/0305-files/quick_choice.css >> App/app/static/workflow.css`.
+19. From the repo root run `cat docs/plans/0355-files/quick_choice.css >> App/app/static/workflow.css`.
 
 20. In `App/app/templates/base.html` replace `/static/workflow.css?v=20261024-0293` with `/static/workflow.css?v=20261024-0305`.
 
@@ -345,7 +345,7 @@ Stop, and write the report, if: 0354 is not merged (`grep -c something_wrong App
 
 ## 9. Report
 
-Write `docs/tasks/0305-report.md` (600 tokens at most) and set `Status: review`: files changed, the migration number used, the screenshot path, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. The orchestrator adds 390 px screenshots of one step, the summary, the card list and the guest page (rule 7).
+Write `docs/tasks/0355-report.md` (600 tokens at most) and set `Status: review`: files changed, the migration number used, the screenshot path, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. The orchestrator adds 390 px screenshots of one step, the summary, the card list and the guest page (rule 7).
 
 ## Risk list (for the reviewer)
 

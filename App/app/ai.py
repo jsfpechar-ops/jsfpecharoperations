@@ -5,7 +5,7 @@ SDK, so a provider swap is this file plus the test sets. The module also keeps
 the spend honest: every response's tokens land in ``ai_usage`` (per day,
 feature and key) and three caps are checked before each call: the feature's
 monthly budget, today's even share of what is left, and, when the caller
-passes a key, that key's daily cap.
+passes a key, that key's daily cap. UBYHOST_AI_PROVIDER=mistral sends the same request to Mistral instead (0334).
 
 Features: "havel" (the host support assistant, no key, pacing only), "leon"
 (the guest bot, key = property id), "guide_translate" (guide translation for guests) and "guide_import" (the guest bot's
@@ -18,6 +18,7 @@ import json
 import logging
 import time
 from datetime import date, datetime
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
 
@@ -53,7 +54,8 @@ class AIBudgetError(AIError):
 
 
 def enabled(feature: str) -> bool:
-    return bool(feature in config.AI_FEATURES and config.ANTHROPIC_API_KEY)
+    key = config.MISTRAL_API_KEY if config.AI_PROVIDER == "mistral" else config.ANTHROPIC_API_KEY
+    return bool(feature in config.AI_FEATURES and key)
 
 
 def set_client_for_tests(client: Any) -> None:
@@ -172,7 +174,77 @@ def _record(feature: str, key: str, usage: Any, day: Optional[date] = None) -> N
     )
 
 
-# --- the call ----------------------------------------------------------------
+# --- Mistral (0334, the owner's backup provider) -------------------------------
+
+MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
+
+
+def _mistral_post(body: Dict[str, Any]) -> Dict[str, Any]:
+    """One HTTPS request to Mistral; tests replace this function. Retries once on a network error or 5xx."""
+    import requests  # already an app dependency
+
+    headers = {"Authorization": f"Bearer {config.MISTRAL_API_KEY}", "Content-Type": "application/json"}
+    for attempt in (1, 2):
+        try:
+            res = requests.post(MISTRAL_URL, json=body, headers=headers, timeout=20)
+        except requests.RequestException:
+            if attempt == 2:
+                raise
+            continue
+        if res.status_code >= 500 and attempt == 1:
+            continue
+        res.raise_for_status()
+        return res.json()
+    raise RuntimeError("unreachable")
+
+
+def _plain(content: Any) -> str:
+    """Anthropic-style content (a string or a list of text blocks) as one string."""
+    if isinstance(content, str):
+        return content
+    return "\n".join(str(block.get("text", "")) for block in content if isinstance(block, dict))
+
+
+def _call_mistral(feature: str, key_text: str, system_blocks: List[str], messages: List[Dict[str, Any]],
+                  schema: Dict[str, Any], max_tokens: int) -> Dict[str, Any]:
+    body = {
+        "model": config.MISTRAL_MODEL,
+        "max_tokens": max_tokens,
+        "temperature": 0.2,
+        "messages": [{"role": "system", "content": "\n\n".join(system_blocks)}]
+        + [{"role": m["role"], "content": _plain(m["content"])} for m in messages],
+        "response_format": {"type": "json_schema",
+                            "json_schema": {"name": "reply", "schema": schema, "strict": True}},
+    }
+    started = time.monotonic()
+    try:
+        data = _mistral_post(body)
+    except Exception as exc:
+        log.warning("ai call failed provider=mistral feature=%s error=%s", feature, type(exc).__name__)
+        raise AIError("api") from exc
+    raw = data.get("usage") or {}
+    usage = SimpleNamespace(input_tokens=int(raw.get("prompt_tokens") or 0), cache_creation_input_tokens=0,
+                            cache_read_input_tokens=0, output_tokens=int(raw.get("completion_tokens") or 0))
+    _record(feature, key_text, usage)
+    choice = (data.get("choices") or [{}])[0]
+    stop = choice.get("finish_reason")
+    log.info("ai call provider=mistral feature=%s stop=%s in=%s out=%s ms=%d", feature, stop,
+             usage.input_tokens, usage.output_tokens, int((time.monotonic() - started) * 1000))
+    if stop in ("length", "model_length"):
+        raise AIError("max_tokens")
+    text = (choice.get("message") or {}).get("content")
+    if not isinstance(text, str) or not text.strip():
+        raise AIError("no_text")
+    try:
+        parsed = json.loads(text)
+    except ValueError as exc:
+        raise AIError("json") from exc
+    if not isinstance(parsed, dict):
+        raise AIError("json")
+    return parsed
+
+
+# --- the call----------------------------------------------------------------
 
 def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]], schema: Dict[str, Any],
          key: Optional[str] = None, max_tokens: Optional[int] = None) -> Dict[str, Any]:
@@ -196,6 +268,10 @@ def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]],
         # trims history (Havel) or splits the input (guide import) and tries again.
         log.warning("ai call refused feature=%s reason=input_too_large", feature)
         raise AIError("input_too_large")
+    limit = min(max_tokens or config.AI_MAX_TOKENS, config.AI_MAX_TOKENS)
+    if config.AI_PROVIDER == "mistral":
+        return _call_mistral(feature, key_text, system_blocks, messages, schema, limit)
+
     system = [{"type": "text", "text": text} for text in system_blocks]
     system[-1]["cache_control"] = {"type": "ephemeral"}
     started = time.monotonic()
@@ -203,7 +279,7 @@ def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]],
         response = _get_client().messages.create(
             model=config.AI_MODEL,
             # Callers may ask for less (leon chat ~800), never more than the global cap.
-            max_tokens=min(max_tokens or config.AI_MAX_TOKENS, config.AI_MAX_TOKENS),
+            max_tokens=limit,
             system=system,
             messages=messages,
             output_config={"effort": "low", "format": {"type": "json_schema", "schema": schema}},

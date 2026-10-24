@@ -1,5 +1,5 @@
 """0352: add the Leon (AI) chat copy and the QR contact line to i18n.py (en, cs, de, es, fr) and guest_uk_i18n.py.
-Run from the repo root once: python3 docs/plans/0302-files/add_chat_i18n.py"""
+Run from the repo root once: python3 docs/plans/0352-files/add_chat_i18n.py"""
 import json
 from pathlib import Path
 

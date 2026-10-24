@@ -11,7 +11,7 @@ Status: review
 - docs/design/catalog.json: enforced_templates entry
 - App/tests/test_design_guardrails_browser.py: guest-guide-qr route
 - App/tests/test_guide_qr.py (new, 6 tests)
-- docs/tasks/0295-report.md
+- docs/tasks/0345-report.md
 
 ## Commands (last lines)
 - `pytest tests/test_guide_qr.py tests/test_guest_guide_pages.py tests/test_guest_guide_view.py tests/test_guide_photos.py tests/test_guest_guide.py -q`: `51 passed, 1 warning in 14.10s`
