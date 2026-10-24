@@ -38,3 +38,4 @@ None.
 1. Merge with scripts/merge-pr-on-green.sh once CI is green (PR not opened: no push requested).
 2. On staging, add guide_translate to UBYHOST_AI_FEATURES (e.g. guide_import,leon,guide_translate), save, restart; then check a live guide with ?lang=de after a minute.
 3. Orchestrator takes the screenshot App/.screenshots/0303-guide-translated-de-390.png (not taken by the executor).
+- Review (orchestrator): browser screenshot 0353-guide-translated-de-390.png checked (translated cards, 'Von KI übersetzt. Original anzeigen' toggle, untranslated card shown as original, no horizontal scroll).
