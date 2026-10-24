@@ -200,20 +200,27 @@ def test_overdue_deadline_is_a_pill_not_a_bar(base, world, browser):
 
 
 def test_operator_signature_block_is_styled(base, world, browser):
+    # 0209 moved the signature to Reporting & fees; 0282 moved Clear and Upload image into its dialog.
     context, page = _page(browser, base, world, 1280)
     try:
-        page.goto(base + "/entities?lang=en")
+        page.goto(f"{base}/apartments/{world['studio']}?view=settings&section=reporting&lang=en")
         page.wait_for_selector(".signature-block")
         style = page.evaluate(
-            """() => { const f = document.querySelector('.signature-block'); const cs = getComputedStyle(f);
-              const b = [...f.querySelectorAll('.action-group .btn')].map(e => Math.round(e.getBoundingClientRect().top));
-              return {border: cs.borderTopStyle, radius: parseFloat(cs.borderTopLeftRadius), tops: b}; }"""
+            """() => { const cs = getComputedStyle(document.querySelector('.signature-block'));
+              return {border: cs.borderTopStyle, radius: parseFloat(cs.borderTopLeftRadius)}; }"""
+        )
+        page.locator("[data-signature-open]").click()
+        page.wait_for_selector("[data-signature-dialog][open]")
+        groups = page.evaluate(
+            """() => [...document.querySelectorAll('[data-signature-dialog] .action-group')].map(
+              g => [...g.querySelectorAll('.ui-btn')].map(e => Math.round(e.getBoundingClientRect().top)))"""
         )
     finally:
         context.close()
     assert style["border"] == "solid"
     assert style["radius"] > 0
-    assert len(set(style["tops"])) == 1, f"Clear and Upload image are not level: {style}"
+    assert groups and all(len(g) >= 1 for g in groups), groups
+    assert all(len(set(g)) == 1 for g in groups), f"Upload image, Use and Cancel are not level: {groups}"
 
 
 def test_guest_privacy_notice_fits_a_phone(base, world, browser):
