@@ -49,13 +49,10 @@ def _findings_template(path: Path, text: str, catalog: dict) -> list[str]:
         for token in m.group(1).split():
             if token and token not in allowed:
                 out.append(f"{rel}: T3 class not in catalog: {token}")
-    # T4 (0291, owner 2026-10-24): one primary per button group. A group is a
-    # run of buttons inside one element; two primaries in one tag's direct
-    # children are flagged, a page may hold several groups.
-    for m in re.finditer(r"<(div|form|p|td|li)\b[^>]*>((?:(?!</?\1\b).)*)</\1>", plain, re.S):
-        if m.group(2).count("ui-btn-primary") > 1:
-            out.append(f"{rel}: T4 more than one ui-btn-primary in one group")
-            break
+    # T4 (0291, owner 2026-10-24): one primary per button group. Two primaries
+    # are in one group when no container tag opens or closes between them.
+    if re.search(r"ui-btn-primary(?:(?!</?(?:div|form|p|td|li|section|fieldset|dialog)\b).)*?ui-btn-primary", plain, re.S):
+        out.append(f"{rel}: T4 more than one ui-btn-primary in one group")
     if "<path" in plain:
         out.append(f"{rel}: T5 literal svg path (use the icon macro)")
     return out
