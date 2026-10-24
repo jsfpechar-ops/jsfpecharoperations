@@ -795,6 +795,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .lc-entities tbody td.ui-sub { display: table-cell; }
   .host-workspace .lc-entities tbody td.col-name .row-primary-link { display: inline-block; max-width: calc(100% - var(--space-12)); vertical-align: middle; }
   .host-workspace .lc-entities tbody td.col-name .row-primary-link + .row-open { margin-left: var(--space-3); }
+  .host-workspace .lc-entities tbody td.col-name .row-primary-link { max-width: calc(100% - 7rem); }
 }
 @container list-cards (min-width: 1100px) {
   .host-workspace .lc-entities tbody td.col-name { min-width: calc(var(--space-12) * 4); }
