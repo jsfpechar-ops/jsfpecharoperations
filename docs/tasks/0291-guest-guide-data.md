@@ -1,6 +1,6 @@
 # 0291: Guest guide data layer
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 92646d3 | Branch: task/0291-guest-guide-data
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
