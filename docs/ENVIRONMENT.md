@@ -239,6 +239,22 @@ the date at release, at least 30 days after hosts are told (Terms § 22), either
 here or by changing `LEGAL_EFFECTIVE_DATE` in `App/app/config.py`. A malformed
 value stops start-up.
 
+## Model API (Havel and the guest bot)
+
+Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything is per feature: `havel` (host support assistant), `leon` (guest bot), `guide_import` (the guest bot's imports), `guide_translate` (guide translation for guests). Every model call goes through `App/app/ai.py`.
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `UBYHOST_AI_FEATURES` | unset (all off) | Comma list of features that may call the model, for example `havel` or `havel,leon`. A feature not listed shows its no-AI fallback (Havel: quick help and the support form). |
+| `UBYHOST_ANTHROPIC_API_KEY` | unset | Anthropic API key, created in the Anthropic Console with its own monthly spend limit. Passed to the SDK explicitly; the SDK's `ANTHROPIC_API_KEY` is not read. Staging first. |
+| `UBYHOST_AI_MODEL` | `claude-haiku-5-5` | Model id. Changing it invalidates the prompt cache and needs each feature's test set re-run. |
+| `UBYHOST_AI_MAX_TOKENS` | `4000` | Ceiling per call; adaptive thinking counts toward it. Callers pass their own lower `max_tokens` (Havel 2500, Leon chat about 800, the import merge up to the ceiling). |
+| `UBYHOST_AI_MAX_INPUT_TOKENS` | `60000` (also the hard maximum) | Largest input one request may send, estimated as 1 token per 2 characters. Haiku 5.5 costs 5x more above 100,000 input tokens, so a larger value is ignored. A request over it raises `input_too_large` and is not sent. |
+| `UBYHOST_AI_MONTHLY_USD_<FEATURE>` | `10` | Spend cap per feature per calendar month (Prague), e.g. `UBYHOST_AI_MONTHLY_USD_HAVEL`. Today's share is the budget left divided by the days left in the month. |
+| `UBYHOST_AI_KEY_DAILY_USD_<FEATURE>` | `0` (off) | Per-key daily cap, e.g. `UBYHOST_AI_KEY_DAILY_USD_LEON=0.50` caps one property's guest bot at 50 cents a day. Havel passes no key. |
+| `UBYHOST_AI_PRICE_INPUT`, `UBYHOST_AI_PRICE_OUTPUT`, `UBYHOST_AI_PRICE_CACHE_READ`, `UBYHOST_AI_PRICE_CACHE_WRITE` | `0.10`, `0.50`, `0.01`, `0.125` | USD per million tokens, Anthropic table 2026-10-06. Update when the price changes. |
+| `UBYHOST_HAVEL_WEEKLY`, `UBYHOST_HAVEL_MONTHLY` | `8`, `15` | Havel messages per host per calendar week and month. |
+
 ## Development and test only
 
 | Variable | Default | Notes |
