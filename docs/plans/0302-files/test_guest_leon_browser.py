@@ -9,7 +9,9 @@ UBYHOST_REQUIRE_BROWSER=1.
 """
 from __future__ import annotations
 
+import json
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -91,6 +93,79 @@ def test_the_chat_works_and_lays_out_on_a_phone(live_server, browser, monkeypatc
         assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
         SHOTS.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=str(SHOTS / f"0302-guide-chat-{lang}-390.png"), full_page=True)
+        context.close()
+    finally:
+        _cleanup()
+
+
+def test_messages_written_while_leon_answers_are_queued_and_sent_as_one(live_server, browser, monkeypatch):  # noqa: F811
+    """Owner, 2026-10-24: one request in flight; texts typed meanwhile go as ONE message; "busy" re-queues."""
+    monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
+    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
+    _, token = _seed()
+    posts, held = [], []
+
+    def route(r):
+        if r.request.method != "POST":
+            return r.continue_()
+        fields = dict(re.findall(r'name="(\w+)"\r\n\r\n(.*?)\r\n--', r.request.post_data or "", re.S))
+        posts.append((fields["message"].replace("\r\n", "\n"), fields["client_id"]))
+        if len(posts) == 1:
+            return held.append(r)  # Leon is "still answering" the first message
+        if len(posts) == 2:  # another device of the chat holds the guard (0300 kind busy)
+            return r.fulfill(status=200, content_type="application/json",
+                             body=json.dumps({"kind": "busy", "text": "One moment", "asked_host": False}))
+        return r.continue_()
+
+    try:
+        context = browser.new_context(viewport={"width": 390, "height": 844})
+        page = context.new_page()
+        page.route("**/leon", route)
+        page.goto(f"{live_server}/g/{token}?lang=en")
+        page.fill("[data-leon-input]", "Thanks")
+        page.click("[data-leon-send]")
+        page.wait_for_function("() => document.querySelectorAll('[data-leon-msg=guest]').length === 1")
+        for extra in ("?", "??"):  # noise, so the merged message needs no model
+            assert page.locator("[data-leon-input]").is_enabled()
+            page.fill("[data-leon-input]", extra)
+            page.click("[data-leon-send]")
+        assert page.locator("[data-leon-msg=guest]").count() == 3
+        assert page.locator("[data-leon-note=queued]").count() == 2 and len(posts) == 1
+        assert page.locator("[data-leon-note=sending]").count() == 1
+        held[0].continue_()
+        page.wait_for_selector("[data-leon-kind=unclear]", timeout=15000)
+        page.wait_for_function("() => document.querySelectorAll('[data-leon-msg=guest]').length === 2")
+        assert len(posts) == 3 and posts[1] == posts[2]
+        assert posts[0][0] == "Thanks" and posts[2][0] == "?\n??"  # one POST carries both queued texts
+        assert posts[0][1] != posts[1][1] and re.fullmatch(r"[0-9a-f]{32}", posts[1][1])  # the retry kept its id
+        assert page.locator("[data-leon-msg=leon]").count() == 2 and page.locator("[data-leon-note]").count() == 0
+        assert page.locator("[data-leon-error]").is_hidden()
+        context.close()
+    finally:
+        _cleanup()
+
+
+def test_a_reload_while_leon_answers_shows_the_reply_when_it_lands(live_server, browser, monkeypatch):  # noqa: F811
+    monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
+    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
+    apartment_id, token = _seed()
+    try:
+        context = browser.new_context(viewport={"width": 390, "height": 844})
+        page = context.new_page()
+        page.goto(f"{live_server}/g/{token}?lang=en")
+        page.fill("[data-leon-input]", "Thanks")
+        page.click("[data-leon-send]")
+        page.wait_for_selector("[data-leon-msg=leon]")
+        chat = db.query_one("SELECT id FROM guest_chat WHERE apartment_id = ?", (apartment_id,))
+        db.execute("UPDATE guest_chat SET busy_until = '2999-01-01T00:00:00+00:00' WHERE id = ?", (chat["id"],))
+        db.insert("guest_chat_message", {"chat_id": chat["id"], "role": "guest", "text": "Heating?", "created_at": db.utcnow()})
+        page.reload()  # the guest reloaded while another request is still answering
+        page.locator("[data-leon-msg=guest]").nth(1).wait_for()
+        db.insert("guest_chat_message", {"chat_id": chat["id"], "role": "leon", "kind": "answer",
+                                         "text": "Press the round button.", "created_at": db.utcnow()})
+        db.execute("UPDATE guest_chat SET busy_until = NULL WHERE id = ?", (chat["id"],))
+        page.locator("[data-leon-msg=leon]").nth(1).wait_for(timeout=10000)
+        assert page.locator("[data-leon-msg=leon]").nth(1).inner_text().endswith("Press the round button.")
         context.close()
     finally:
         _cleanup()

@@ -1,4 +1,4 @@
-"""0300: add Leon's 18 guest copy keys to i18n.py (en, cs, de, es, fr) and guest_uk_i18n.py (uk). Run from the repo root once."""
+"""0300: add Leon's 20 guest copy keys to i18n.py (en, cs, de, es, fr) and guest_uk_i18n.py (uk). Run from the repo root once."""
 import json
 from pathlib import Path
 
@@ -22,6 +22,8 @@ KEYS = {
         "leon_emergency": "If anyone is in danger, call 112 now (in Czechia also 150 fire, 155 ambulance, 158 police). I've told your host it is urgent.",
         "leon_unclear": "I'm not sure what you need. Tell me in a few words and I'll help.",
         "leon_about": "I'm Leon, your host's AI assistant, not a person. I answer from the host's guide, and when it has no answer I ask your host for you.",
+        "leon_busy": "One moment, I'm still answering the previous message.",
+        "leon_see_above": "Your host has already answered this above.",
     },
     "cs": {
         "leon_name": "Leon (AI)",
@@ -42,6 +44,8 @@ KEYS = {
         "leon_emergency": "Pokud je někdo v nebezpečí, volejte hned 112 (v Česku také 150 hasiči, 155 záchranka, 158 policie). Hostiteli jsem dal vědět, že to spěchá.",
         "leon_unclear": "Nejsem si jistý, co potřebujete. Napište mi to pár slovy a pomůžu.",
         "leon_about": "Jsem Leon, AI asistent vašeho hostitele, ne člověk. Odpovídám podle průvodce od hostitele, a když v něm odpověď není, zeptám se hostitele za vás.",
+        "leon_busy": "Moment, ještě odpovídám na předchozí zprávu.",
+        "leon_see_above": "Na tohle už vám hostitel odpověděl výše.",
     },
     "de": {
         "leon_name": "Leon (KI)",
@@ -62,6 +66,8 @@ KEYS = {
         "leon_emergency": "Wenn jemand in Gefahr ist, rufen Sie sofort 112 an (in Tschechien auch 150 Feuerwehr, 155 Rettung, 158 Polizei). Ich habe Ihrem Gastgeber gesagt, dass es dringend ist.",
         "leon_unclear": "Ich bin nicht sicher, was Sie brauchen. Schreiben Sie es mir in ein paar Worten, dann helfe ich.",
         "leon_about": "Ich bin Leon, der KI-Assistent Ihres Gastgebers, kein Mensch. Ich antworte aus dem Gästeführer des Gastgebers, und wenn er keine Antwort hat, frage ich Ihren Gastgeber für Sie.",
+        "leon_busy": "Einen Moment, ich beantworte noch die vorige Nachricht.",
+        "leon_see_above": "Darauf hat Ihr Gastgeber oben schon geantwortet.",
     },
     "es": {
         "leon_name": "Leon (IA)",
@@ -82,6 +88,8 @@ KEYS = {
         "leon_emergency": "Si alguien está en peligro, llame ahora al 112 (en Chequia también 150 bomberos, 155 ambulancia, 158 policía). He avisado a su anfitrión de que es urgente.",
         "leon_unclear": "No estoy seguro de qué necesita. Dígamelo en pocas palabras y le ayudo.",
         "leon_about": "Soy Leon, el asistente de IA de su anfitrión, no una persona. Respondo con la guía del anfitrión y, cuando no tiene la respuesta, se lo pregunto a su anfitrión por usted.",
+        "leon_busy": "Un momento, todavía estoy respondiendo al mensaje anterior.",
+        "leon_see_above": "Su anfitrión ya ha respondido a esto más arriba.",
     },
     "fr": {
         "leon_name": "Leon (IA)",
@@ -102,6 +110,8 @@ KEYS = {
         "leon_emergency": "Si quelqu'un est en danger, appelez tout de suite le 112 (en Tchéquie aussi 150 pompiers, 155 ambulance, 158 police). J'ai prévenu votre hôte que c'est urgent.",
         "leon_unclear": "Je ne suis pas sûr de ce dont vous avez besoin. Dites-le-moi en quelques mots et je vous aide.",
         "leon_about": "Je suis Leon, l'assistant IA de votre hôte, pas une personne. Je réponds à partir du guide de l'hôte et, quand il n'a pas la réponse, je pose la question à votre hôte pour vous.",
+        "leon_busy": "Un instant, je réponds encore au message précédent.",
+        "leon_see_above": "Votre hôte a déjà répondu à cela plus haut.",
     },
     "uk": {
         "leon_name": "Leon (ШІ)",
@@ -122,6 +132,8 @@ KEYS = {
         "leon_emergency": "Якщо хтось у небезпеці, негайно телефонуйте 112 (у Чехії також 150 пожежна, 155 швидка, 158 поліція). Я повідомив господаря, що це терміново.",
         "leon_unclear": "Я не впевнений, що вам потрібно. Напишіть кількома словами, і я допоможу.",
         "leon_about": "Я Leon, ШІ-помічник вашого господаря, а не людина. Я відповідаю за путівником господаря, а коли відповіді там немає, запитую господаря за вас.",
+        "leon_busy": "Хвилинку, я ще відповідаю на попереднє повідомлення.",
+        "leon_see_above": "Ваш господар уже відповів на це вище.",
     },
 }
 def block(lang: str, indent: str) -> str:

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -258,6 +258,35 @@ def test_the_address_limit_spans_conversations(ws, monkeypatch):
     assert kinds == ["smalltalk", "smalltalk", "smalltalk", "slow_down"]
 
 
+def test_a_chat_already_answering_is_busy_without_a_model_call_or_a_cap_count(ws):
+    cards = _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    fake = _fake(answer("Press the round button.", [f"c{cards['heating']['id']}"]))
+    url = f"/l/{TOKEN}/{rid}/guide/leon"
+    assert _say(ws, url, "Thanks").json()["kind"] == "smalltalk"  # creates the chat
+    chat_id = db.query_one("SELECT id FROM guest_chat")["id"]
+    soon = (datetime.now(timezone.utc) + timedelta(seconds=leon.BUSY_SECONDS)).replace(microsecond=0).isoformat()
+    db.execute("UPDATE guest_chat SET busy_until = ? WHERE id = ?", (soon, chat_id))  # another device is waiting
+    got = _say(ws, url, "Heating?").json()
+    assert got == {"kind": "busy", "text": "One moment, I'm still answering the previous message.", "asked_host": False}
+    row = db.query_one("SELECT model_messages, busy_until FROM guest_chat")
+    assert fake.calls == [] and row["model_messages"] == 0 and row["busy_until"] == soon
+    assert db.query_one("SELECT COUNT(*) AS n FROM guest_chat_message WHERE text = 'Heating?'")["n"] == 0
+
+
+def test_a_stale_busy_guard_is_taken_over_and_released(ws):
+    cards = _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    fake = _fake(answer("Press the round button.", [f"c{cards['heating']['id']}"]))
+    url = f"/l/{TOKEN}/{rid}/guide/leon"
+    assert _say(ws, url, "Thanks").json()["kind"] == "smalltalk"
+    stale = (datetime.now(timezone.utc) - timedelta(seconds=1)).replace(microsecond=0).isoformat()
+    db.execute("UPDATE guest_chat SET busy_until = ?", (stale,))  # a crashed worker's guard, expired
+    assert _say(ws, url, "Heating?").json()["kind"] == "answer"
+    row = db.query_one("SELECT model_messages, busy_until FROM guest_chat")
+    assert len(fake.calls) == 1 and row["model_messages"] == 1 and row["busy_until"] is None
+
+
 def test_feature_off_and_spent_budgets_pass_the_message_to_the_host_unread(ws, monkeypatch):
     cards = _go_live(ws["home"])
     rid = _stay(ws["home"], 0)
@@ -356,6 +385,46 @@ def test_the_same_open_question_is_not_asked_twice(ws):
     assert db.query_one("SELECT COUNT(*) AS n FROM guest_question")["n"] == 1
 
 
+def test_a_question_the_host_already_answered_points_up_without_a_new_row(ws):
+    _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    fake = _fake(answer("", [], kind="ask_host", summary="Asks about parking."))
+    _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Where can I park?")
+    db.execute("UPDATE guest_question SET status = 'answered', answer = 'Street, free.'")
+    again = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "where can I park").json()
+    assert again == {"kind": "answered", "text": "Your host has already answered this above.", "asked_host": False}
+    assert len(fake.calls) == 1 and db.query_one("SELECT COUNT(*) AS n FROM guest_question")["n"] == 1
+
+
+def test_a_retried_batch_returns_the_stored_reply_once(ws):
+    cards = _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    fake = _fake(answer("Press the round button.", [f"c{cards['heating']['id']}"]))
+    url = f"/l/{TOKEN}/{rid}/guide/leon"
+    first = ws["client"].post(url, data={"message": "Heating?", "client_id": "batch-0001"}).json()
+    retry = ws["client"].post(url, data={"message": "Heating?", "client_id": "batch-0001"}).json()
+    assert first == retry and first["kind"] == "answer" and len(fake.calls) == 1
+    assert db.query_one("SELECT COUNT(*) AS n FROM guest_chat_message WHERE role = 'guest'")["n"] == 1
+    assert db.query_one("SELECT model_messages FROM guest_chat")["model_messages"] == 1
+    bad = ws["client"].post(url, data={"message": "Thanks", "client_id": "<x>"}).json()  # malformed id: ignored
+    assert bad["kind"] == "smalltalk"
+    history = ws["client"].get(url).json()
+    assert history["answering"] is False and [m["role"] for m in history["messages"]] == ["guest", "leon", "guest", "leon"]
+
+
+def test_a_batch_stored_but_never_answered_is_answered_on_retry(ws):
+    _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    _fake()
+    url = f"/l/{TOKEN}/{rid}/guide/leon"
+    _say(ws, url, "Thanks")
+    chat_id = db.query_one("SELECT id FROM guest_chat")["id"]
+    db.insert("guest_chat_message", {"chat_id": chat_id, "role": "guest", "text": "Hello", "client_id": "batch-0002",
+                                     "created_at": db.utcnow()})  # the worker died before Leon replied
+    got = ws["client"].post(url, data={"message": "Hello", "client_id": "batch-0002"}).json()
+    assert got["kind"] == "smalltalk"
+
+
 def test_noise_gets_a_fixed_reply_without_a_model_call(ws):
     _go_live(ws["home"])
     rid = _stay(ws["home"], 0)
@@ -418,7 +487,7 @@ def test_the_qr_cookie_is_random_httponly_lax_and_scoped(ws):
     assert "set-cookie" not in again.headers
     assert db.query_one("SELECT COUNT(*) AS n FROM guest_chat WHERE door = 'qr'")["n"] == 1
     stranger = TestClient(app)
-    assert stranger.get(f"/g/{qr}/leon").json() == {"messages": [], "open_questions": 0}
+    assert stranger.get(f"/g/{qr}/leon").json() == {"messages": [], "open_questions": 0, "answering": False}
     stranger.cookies.set(leon.LEON_COOKIE, "bad value!")
     assert stranger.post(f"/g/{qr}/leon", data={"message": "Hello"}).headers.get("set-cookie")
     assert db.query_one("SELECT COUNT(*) AS n FROM guest_chat WHERE door = 'qr'")["n"] == 2

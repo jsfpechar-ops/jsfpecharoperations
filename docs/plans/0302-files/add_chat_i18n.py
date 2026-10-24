@@ -16,6 +16,7 @@ GUEST = {
         "leon_waiting": "Waiting for your host. The answer will appear here, and you can close this page in the meantime.",
         "leon_error": "That did not go through. Please try again.",
         "leon_error_reload": "This page has expired. Please reload it and try again.",
+        "leon_queued": "Sending after Leon's reply",
         "guide_qr_contact": "To reach your host directly, write to them where you booked, for example in your Booking.com or Airbnb messages.",
     },
     "cs": {
@@ -30,6 +31,7 @@ GUEST = {
         "leon_waiting": "Čekáme na hostitele. Odpověď se objeví tady a stránku mezitím můžete zavřít.",
         "leon_error": "Nepodařilo se to odeslat. Zkuste to prosím znovu.",
         "leon_error_reload": "Platnost stránky vypršela. Načtěte ji prosím znovu a zkuste to ještě jednou.",
+        "leon_queued": "Odešle se po Leonově odpovědi",
         "guide_qr_contact": "Hostiteli napíšete přímo tam, kde jste rezervovali, například ve zprávách na Booking.com nebo Airbnb.",
     },
     "de": {
@@ -44,6 +46,7 @@ GUEST = {
         "leon_waiting": "Wir warten auf Ihren Gastgeber. Die Antwort erscheint hier, und Sie können die Seite inzwischen schließen.",
         "leon_error": "Das hat nicht geklappt. Bitte versuchen Sie es noch einmal.",
         "leon_error_reload": "Diese Seite ist abgelaufen. Bitte laden Sie sie neu und versuchen Sie es noch einmal.",
+        "leon_queued": "Wird nach Leons Antwort gesendet",
         "guide_qr_contact": "Ihren Gastgeber erreichen Sie direkt dort, wo Sie gebucht haben, zum Beispiel in Ihren Nachrichten bei Booking.com oder Airbnb.",
     },
     "es": {
@@ -58,6 +61,7 @@ GUEST = {
         "leon_waiting": "Esperando a su anfitrión. La respuesta aparecerá aquí y mientras tanto puede cerrar esta página.",
         "leon_error": "No se ha podido enviar. Inténtelo de nuevo.",
         "leon_error_reload": "Esta página ha caducado. Vuelva a cargarla e inténtelo de nuevo.",
+        "leon_queued": "Se enviará tras la respuesta de Leon",
         "guide_qr_contact": "Para contactar directamente con su anfitrión, escríbale donde hizo la reserva, por ejemplo en sus mensajes de Booking.com o Airbnb.",
     },
     "fr": {
@@ -72,6 +76,7 @@ GUEST = {
         "leon_waiting": "En attente de votre hôte. La réponse s'affichera ici, et vous pouvez fermer cette page en attendant.",
         "leon_error": "L'envoi n'a pas abouti. Veuillez réessayer.",
         "leon_error_reload": "Cette page a expiré. Rechargez-la et réessayez.",
+        "leon_queued": "Envoi après la réponse de Leon",
         "guide_qr_contact": "Pour joindre directement votre hôte, écrivez-lui là où vous avez réservé, par exemple dans vos messages Booking.com ou Airbnb.",
     },
     "uk": {
@@ -86,6 +91,7 @@ GUEST = {
         "leon_waiting": "Чекаємо на господаря. Відповідь з'явиться тут, а сторінку тим часом можна закрити.",
         "leon_error": "Не вдалося надіслати. Спробуйте ще раз.",
         "leon_error_reload": "Термін дії сторінки минув. Оновіть її та спробуйте ще раз.",
+        "leon_queued": "Надішлеться після відповіді Leon",
         "guide_qr_contact": "Щоб зв'язатися з господарем напряму, напишіть йому там, де ви бронювали, наприклад у повідомленнях Booking.com або Airbnb.",
     },
 }

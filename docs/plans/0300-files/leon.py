@@ -44,9 +44,11 @@ PAUSE_HOURS = 24
 RETENTION_DAYS = 30
 LEON_COOKIE = "ubyhost_leon"
 COOKIE_DAYS = 30
+BUSY_SECONDS = 60           # one request per conversation at a time; above ai.call's worst case (20 s timeout, 1 retry), then taken over
 EMERGENCY_NUMBERS = ("112", "150", "155", "158")   # EU, and CZ fire, ambulance, police: always safe to say
 KINDS = ("answer", "ask_host", "refuse", "about_me", "emergency", "unclear")
-LOCAL_KINDS = ("smalltalk", "too_long", "paused", "slow_down", "passed")
+LOCAL_KINDS = ("smalltalk", "too_long", "paused", "slow_down", "passed", "busy", "answered")
+_CLIENT_ID = re.compile(r"^[A-Za-z0-9_-]{8,40}$")   # 0302 sends one per message batch, kept on retries
 
 SCHEMA: Dict[str, Any] = {
     "type": "object",
@@ -319,11 +321,12 @@ def messages(chat_id: int, limit: int = 60) -> List[Dict[str, Any]]:
     return [dict(r) for r in reversed(rows)]
 
 
-def _store(chat_id: int, role: str, kind: str, text: str, sources: Optional[List[int]] = None) -> int:
+def _store(chat_id: int, role: str, kind: str, text: str, sources: Optional[List[int]] = None,
+           client_id: Optional[str] = None) -> int:
     now = db.utcnow()
     message_id = db.insert("guest_chat_message", {
         "chat_id": chat_id, "role": role, "kind": kind, "text": text,
-        "sources": ",".join(f"c{i}" for i in (sources or [])), "created_at": now,
+        "sources": ",".join(f"c{i}" for i in (sources or [])), "created_at": now, "client_id": client_id,
     })
     db.execute("UPDATE guest_chat SET last_message_at = ? WHERE id = ?", (now, chat_id))
     return int(message_id)
@@ -364,16 +367,41 @@ def _open_question(chat_id: int, apartment_id: int, message_id: int, summary: st
     return question_id
 
 
-def _open_twin(chat_id: int, folded: str) -> Optional[int]:
-    """An open question of this chat whose guest message is the same words: ask the host once."""
+def _open_twin(chat_id: int, folded: str) -> Optional[Dict[str, Any]]:
+    """An open or answered question of this chat whose guest message is the same words: ask the host once."""
     rows = db.query(
-        "SELECT q.id, m.text FROM guest_question q JOIN guest_chat_message m ON m.id = q.message_id "
-        "WHERE q.chat_id = ? AND q.status = 'open' ORDER BY q.id DESC LIMIT 20", (chat_id,),
+        "SELECT q.id, q.status, m.text FROM guest_question q JOIN guest_chat_message m ON m.id = q.message_id "
+        "WHERE q.chat_id = ? AND q.status IN ('open', 'answered') ORDER BY q.id DESC LIMIT 20", (chat_id,),
     )
     for row in rows:
         if fold(row["text"]) == folded:
-            return int(row["id"])
+            return {"id": int(row["id"]), "status": row["status"]}
     return None
+
+
+def _replay(chat_id: int, client_id: Optional[str]) -> Optional[Dict[str, Any]]:
+    """The stored reply to a message batch this chat already has (a retry after a lost response)."""
+    if not client_id:
+        return None
+    guest = db.query_one("SELECT id FROM guest_chat_message WHERE chat_id = ? AND client_id = ?", (chat_id, client_id))
+    if not guest:
+        return None
+    row = db.query_one(
+        "SELECT id, kind, text FROM guest_chat_message WHERE chat_id = ? AND role = 'leon' AND id > ? ORDER BY id LIMIT 1",
+        (chat_id, int(guest["id"])),
+    )
+    if not row:
+        return None
+    asked = db.query_one("SELECT id FROM guest_question WHERE chat_id = ? AND status = 'open' ORDER BY id DESC LIMIT 1",
+                         (chat_id,))
+    return {"kind": row["kind"], "text": row["text"], "message_id": int(row["id"]),
+            "question_id": int(asked["id"]) if asked else None}
+
+
+def answering(chat: Optional[Dict[str, Any]]) -> bool:
+    """True while a request of this chat holds the guard (0302 polls the history then)."""
+    until = (chat or {}).get("busy_until")
+    return bool(until) and str(until) > db.utcnow()
 
 
 def _open_unread(chat_id: int) -> Optional[Dict[str, Any]]:
@@ -420,11 +448,13 @@ def emergency_text(lang: str, cards: List[Dict[str, Any]]) -> str:
 
 
 def reply(chat: Dict[str, Any], text: str, *, level: str, property_name: str, host_name: str,
-          address_key: str, lang: Optional[str] = None) -> Dict[str, Any]:
+          address_key: str, lang: Optional[str] = None, client_id: Optional[str] = None) -> Dict[str, Any]:
     """One guest message in, one reply out: {"kind", "text", "message_id", "question_id"}.
 
     ``level`` is the door's level ("booked" or "everyone"); ``lang`` is the page
-    language for the fixed copy (defaults to the conversation's).
+    language for the fixed copy (defaults to the conversation's). ``client_id``
+    (0302, one per message batch) makes a retry return the stored reply instead
+    of a second guest turn and model call.
     """
     chat_id = int(chat["id"])
     apartment_id = int(chat["apartment_id"])
@@ -442,24 +472,68 @@ def reply(chat: Dict[str, Any], text: str, *, level: str, property_name: str, ho
         return local("paused", _fixed(lang, "leon_paused"), store=False)
     if rate_limit.blocked("leon_chat", str(chat_id), CHAT_BURST) or rate_limit.blocked("leon_addr", address_key, ADDRESS_BURST):
         return local("slow_down", _fixed(lang, "leon_slow_down"), store=False)
+    if not _take_turn(chat_id):
+        # Another device or tab of this chat is waiting for Leon: nothing stored, no model call, no cap count.
+        log.info("leon busy chat=%s", chat_id)
+        return local("busy", _fixed(lang, "leon_busy"), store=False)
+    try:
+        client_id = client_id if client_id and _CLIENT_ID.match(client_id) else None
+        replayed = _replay(chat_id, client_id)
+        if replayed:
+            log.info("leon replay chat=%s kind=%s", chat_id, replayed["kind"])
+            return replayed
+        if client_id and db.query_one("SELECT id FROM guest_chat_message WHERE chat_id = ? AND client_id = ?",
+                                      (chat_id, client_id)):
+            client_id = None  # stored but never answered (the worker died): answer it again, as a new turn
+        fresh = db.query_one("SELECT * FROM guest_chat WHERE id = ?", (chat_id,))
+        return _answer(_chat(fresh) if fresh else chat, text, level=level, property_name=property_name,
+                       host_name=host_name, address_key=address_key, lang=lang, client_id=client_id)
+    finally:
+        db.execute("UPDATE guest_chat SET busy_until = NULL WHERE id = ?", (chat_id,))
+
+
+def _take_turn(chat_id: int) -> bool:
+    """Atomically claim the conversation for BUSY_SECONDS; False while another request holds it."""
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    until = (now + timedelta(seconds=BUSY_SECONDS)).isoformat()
+    return db.execute(
+        "UPDATE guest_chat SET busy_until = ? WHERE id = ? AND (busy_until IS NULL OR busy_until < ?)",
+        (until, chat_id, now.isoformat()),
+    ) == 1
+
+
+def _answer(chat: Dict[str, Any], text: str, *, level: str, property_name: str, host_name: str,
+            address_key: str, lang: str, client_id: Optional[str]) -> Dict[str, Any]:
+    """reply() once the guard is held: the rate-limit count, local kinds, the model call, the handoff."""
+    chat_id = int(chat["id"])
+    apartment_id = int(chat["apartment_id"])
+
+    def local(kind: str, body: str, store: bool = True) -> Dict[str, Any]:
+        message_id = _store(chat_id, "leon", kind, body) if store else None
+        return {"kind": kind, "text": body, "message_id": message_id, "question_id": None}
+
     rate_limit.record("leon_chat", str(chat_id))
     rate_limit.record("leon_addr", address_key)
 
     small = smalltalk_kind(text)
     if small:
-        _store(chat_id, "guest", "", redact(text))
+        _store(chat_id, "guest", "", redact(text), client_id=client_id)
         return local("smalltalk", _fixed(lang, "leon_hi" if small == "hi" else "leon_thanks"))
     if is_noise(text):
-        _store(chat_id, "guest", "", redact(text))
+        _store(chat_id, "guest", "", redact(text), client_id=client_id)
         return local("unclear", _fixed(lang, "leon_unclear"))
 
     redacted = redact(text)
-    guest_message_id = _store(chat_id, "guest", "", redacted)
+    guest_message_id = _store(chat_id, "guest", "", redacted, client_id=client_id)
     twin = _open_twin(chat_id, fold(redacted))
+    if twin and twin["status"] == "answered":
+        log.info("leon reply chat=%s kind=answered reason=twin question=%s", chat_id, twin["id"])
+        return local("answered", _fixed(lang, "leon_see_above"))
     if twin:
-        log.info("leon reply chat=%s kind=ask_host reason=twin question=%s", chat_id, twin)
+        log.info("leon reply chat=%s kind=ask_host reason=twin question=%s", chat_id, twin["id"])
         body = _fixed(lang, "leon_asked_already")
-        return {"kind": "ask_host", "text": body, "message_id": _store(chat_id, "leon", "ask_host", body), "question_id": twin}
+        return {"kind": "ask_host", "text": body, "message_id": _store(chat_id, "leon", "ask_host", body),
+                "question_id": twin["id"]}
 
     cards = guest_guide.for_guest(apartment_id, level)
     used = int(chat.get("model_messages") or 0)

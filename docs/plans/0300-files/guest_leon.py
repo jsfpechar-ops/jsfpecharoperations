@@ -34,7 +34,7 @@ def _gone() -> JSONResponse:
 
 def _conversation(chat: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if not chat:
-        return {"messages": [], "open_questions": 0}
+        return {"messages": [], "open_questions": 0, "answering": False}
     open_row = db.query_one(
         "SELECT COUNT(*) AS n FROM guest_question WHERE chat_id = ? AND status = 'open'", (chat["id"],)
     )
@@ -42,15 +42,16 @@ def _conversation(chat: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         {"role": m["role"], "kind": m["kind"], "text": m["text"], "at": m["created_at"]}
         for m in leon.messages(int(chat["id"]))
     ]
-    return {"messages": shown, "open_questions": int(open_row["n"]) if open_row else 0}
+    return {"messages": shown, "open_questions": int(open_row["n"]) if open_row else 0, "answering": leon.answering(chat)}
 
 
 async def _answer(chat: Dict[str, Any], message: str, *, level: str, apartment, lang: str,
-                  request: Request) -> Dict[str, Any]:
+                  request: Request, client_id: str = "") -> Dict[str, Any]:
     host = _host_contact(apartment).get("name", "")
     result = await run_in_threadpool(
         leon.reply, chat, message, level=level, property_name=apartment["internal_name"] or "",
         host_name=host, address_key=rate_limit.client_key(request, "leon"), lang=lang,
+        client_id=client_id or None,
     )
     return {"kind": result["kind"], "text": result["text"], "asked_host": result["question_id"] is not None}
 
@@ -67,13 +68,13 @@ def stay_leon_history(token: str, reservation_id: int, request: Request):
 
 
 @router.post("/l/{token}/{reservation_id}/guide/leon")
-async def stay_leon(token: str, reservation_id: int, request: Request, message: str = Form("")):
+async def stay_leon(token: str, reservation_id: int, request: Request, message: str = Form(""), client_id: str = Form("")):
     apartment, reservation, token, lang, early = _stay_gate(request, token, reservation_id)
     if early or not guest_guide.progress(apartment["id"])["live"]:
         return _gone()
     chat = leon.stay_chat(apartment["id"], reservation["id"], lang)
     body = await _answer(chat, message, level=booked_level(reservation), apartment=apartment, lang=lang,
-                         request=request)
+                         request=request, client_id=client_id)
     return _json(body)
 
 
@@ -94,7 +95,7 @@ def qr_leon_history(token: str, request: Request):
 
 
 @router.post("/g/{token}/leon")
-async def qr_leon(token: str, request: Request, message: str = Form("")):
+async def qr_leon(token: str, request: Request, message: str = Form(""), client_id: str = Form("")):
     apartment, lang, early = _qr_apartment(request, token)
     if early or not guest_guide.progress(apartment["id"])["live"]:
         return _gone()
@@ -106,7 +107,8 @@ async def qr_leon(token: str, request: Request, message: str = Form("")):
         cookie = leon.new_cookie_id()
     chat = leon.qr_chat(apartment["id"], cookie, lang)
     # A QR sticker outlives every stay: everyone level only, and only the host's name.
-    response = _json(await _answer(chat, message, level="everyone", apartment=apartment, lang=lang, request=request))
+    response = _json(await _answer(chat, message, level="everyone", apartment=apartment, lang=lang, request=request,
+                                      client_id=client_id))
     if fresh:
         response.set_cookie(
             LEON_COOKIE, cookie, max_age=60 * 60 * 24 * leon.COOKIE_DAYS, httponly=True,

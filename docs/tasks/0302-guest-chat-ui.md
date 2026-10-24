@@ -20,9 +20,11 @@ Leon is "Leon (AI)" everywhere and says he is an AI (header, intro line, every b
 
 **Progressive enhancement.** The guide works without JavaScript. The chat needs it: the form carries `hidden` and the script removes it, so a browser without JavaScript never posts to the JSON endpoint; a `<noscript>` line says "To chat with Leon (AI), turn on JavaScript. The guide above works without it." The jump link is hidden the same way.
 
-**Script.** `App/app/static/guest-leon.js`, vanilla, loaded by `guest/base.html` only when `leon_url` is set. The guest CSP allows `'self'` scripts (`main.py` `_csp`); the file adds no inline script, no storage, no cookie and no request to another origin. Every string it shows comes from `data-*` attributes rendered by Jinja; every text is set with `textContent`. It loads the history (`GET <leon_url>`: `{"messages": [{"role","kind","text","at"}], "open_questions": n}`), posts `FormData` with `message` and `_csrf` plus the `X-CSRF-Token` header (`POST <leon_url>`: `{"kind","text","asked_host"}`), disables the box and button while sending ("Sending"), clears the box on success, and keeps the text with a short error on failure: 403, 404 or an HTML answer (expired form, guide taken down) say "This page has expired. Please reload it and try again."; anything else "That did not go through. Please try again." Counter `n / 500` (warn colour from 450). While `open_questions > 0` or a reply has `asked_host`, the line "Waiting for your host. The answer will appear here, and you can close this page in the meantime." shows and the history is fetched again every 60 seconds while the tab is visible, at most 30 times (one cheap GET; no model call).
+**Script.** `App/app/static/guest-leon.js`, vanilla, loaded by `guest/base.html` only when `leon_url` is set. The guest CSP allows `'self'` scripts (`main.py` `_csp`); the file adds no inline script, no storage, no cookie and no request to another origin. Every string it shows comes from `data-*` attributes rendered by Jinja; every text is set with `textContent`. It loads the history (`GET <leon_url>`: `{"messages": [{"role","kind","text","at"}], "open_questions": n}`), posts `FormData` with `message`, `client_id` and `_csrf` plus the `X-CSRF-Token` header (`POST <leon_url>`: `{"kind","text","asked_host"}`). On a failure it shows a short error: 403, 404 or an HTML answer (expired form, guide taken down) say "This page has expired. Please reload it and try again."; anything else (also no answer within 50 s) "That did not go through. Please try again." Counter `n / 500` (warn colour from 450). While `open_questions > 0` or a reply has `asked_host`, the line "Waiting for your host. The answer will appear here, and you can close this page in the meantime." shows and the history is fetched again every 60 seconds while the tab is visible, at most 30 times (one cheap GET; no model call).
 
-**Kinds** (0300 §2): `answer`, `ask_host`, `refuse`, `about_me`, `emergency`, `unclear`, `smalltalk`, `passed`, `too_long`, `slow_down`, `paused`. All are rendered as Leon bubbles with the text the server sent (fixed copy or a checked answer). `emergency` (112 and the host's emergency card) gets an urgent block: 2 px red border, red-soft background, bold ink text, full width, `role="alert"`. `ask_host` and `passed` get the accent border. Host turns (role `host`, 0301) are green-soft with the label `leon_host_answered` ("Jana, your host, answered:"; first name by `leon.host_first_name`, the plain label when there is no name). Guest bubbles sit on the right with the label "You". Text keeps its line breaks (`white-space: pre-line`).
+**Writing while Leon answers** (owner, 2026-10-24). One request in flight per page. The box and Send stay enabled: Send shows the text at once as the guest's bubble and clears the box; a text sent while a reply is pending is marked "Sending after Leon's reply" (`leon_queued`), the one on its way "Sending". When the reply lands, every queued text goes as ONE message joined with a newline: whole texts only, as many as fit in 500 characters, the rest wait for the next reply (a text is never cut). Each such batch gets a random `client_id` (32 hex) that it keeps on every retry, so a retry after a lost or timed-out response gets 0300's stored reply, never a second turn. `busy` (another device of the stay is waiting for Leon, 0300) puts the batch back and retries every 4 s, at most 20 times. A failed batch stays queued; the next Send (even with an empty box, so the textarea has no `required`) resends it. After each reply the history is fetched again (so the turns of a second device appear), and while `GET` says `"answering": true` (the guest reloaded mid-reply) it is fetched every 3 s, at most 20 times. Old browsers without `fetch` or `FormData.set` keep the hidden form (no broken chat). Every scenario: [leon-scenarios](../plans/leon-scenarios.md).
+
+**Kinds** (0300 §2): `answer`, `ask_host`, `refuse`, `about_me`, `emergency`, `unclear`, `smalltalk`, `passed`, `too_long`, `slow_down`, `paused`, `answered`, and `busy` (never shown: re-queued). All are rendered as Leon bubbles with the text the server sent (fixed copy or a checked answer). `emergency` (112 and the host's emergency card) gets an urgent block: 2 px red border, red-soft background, bold ink text, full width, `role="alert"`. `ask_host` and `passed` get the accent border. Host turns (role `host`, 0301) are green-soft with the label `leon_host_answered` ("Jana, your host, answered:"; first name by `leon.host_first_name`, the plain label when there is no name). Guest bubbles sit on the right with the label "You". Text keeps its line breaks (`white-space: pre-line`).
 
 **QR contact block.** `guest/_host.html` gets a QR branch: the host's name (if any) and `guide_qr_contact`: "To reach your host directly, write to them where you booked, for example in your Booking.com or Airbnb messages." The stay link keeps its phone and e-mail block unchanged.
 
@@ -30,7 +32,7 @@ Leon is "Leon (AI)" everywhere and says he is an AI (header, intro line, every b
 
 **Security and privacy.** No new route: 0300's endpoints and gates. CSRF: hidden `_csrf` input (registered in `test_guest_csrf.py`) and the header. Input capped at 500 characters in the box and on the server. Nothing is logged by this brief. Host text is shown as typed and escaped (`textContent`).
 
-**Copy.** 12 guest keys in en, cs, de, es, fr, uk by `docs/plans/0302-files/add_chat_i18n.py` (run once; it refuses a second run).
+**Copy.** 13 guest keys in en, cs, de, es, fr, uk by `docs/plans/0302-files/add_chat_i18n.py` (run once; it refuses a second run).
 
 Hard rules 2, 3, 4, 6 (light mode; the guide works without JavaScript), 7, 8, 9 apply. Rule 7: the browser tests below pass with 0 skipped; the orchestrator takes the 390 px screenshots.
 
@@ -50,7 +52,7 @@ Hard rules 2, 3, 4, 6 (light mode; the guide works without JavaScript), 7, 8, 9 
 |---|---|---|
 | `App/app/templates/guest/_leon.html` | create | Copied from `docs/plans/0302-files/` |
 | `App/app/static/guest-leon.js` | create | Copied |
-| `App/tests/test_guest_leon_chat.py`, `App/tests/test_guest_leon_browser.py` | create | Copied (6 and 3 tests) |
+| `App/tests/test_guest_leon_chat.py`, `App/tests/test_guest_leon_browser.py` | create | Copied (6 and 5 tests) |
 | `App/app/static/guest.css` | edit | Append `docs/plans/0302-files/guest-leon.css` |
 | `App/app/templates/guest/base.html`, `guide.html`, `_host.html` | edit | Steps 4 to 6 |
 | `App/app/routes/guest_guide_view.py` | edit | `leon_url`, `leon_host` |
@@ -84,7 +86,7 @@ Command: `grep -c 'g-leon-msg--emergency' App/app/static/guest.css`. Expected: `
 
 ### Step 3: copy (guest languages)
 
-From the repo root: `python3 docs/plans/0302-files/add_chat_i18n.py`. Expected: `added 12 guest keys x 6 languages`. Command: `grep -c '"leon_intro"' App/app/i18n.py App/app/guest_uk_i18n.py`. Expected: `5` and `1`.
+From the repo root: `python3 docs/plans/0302-files/add_chat_i18n.py`. Expected: `added 13 guest keys x 6 languages`. Command: `grep -c '"leon_intro"' App/app/i18n.py App/app/guest_uk_i18n.py`. Expected: `5` and `1`.
 
 ### Step 4: `App/app/templates/guest/base.html`
 
@@ -200,7 +202,7 @@ From `App/`:
 ## 7. Acceptance
 
 - [ ] `test_guest_leon_chat.py` (6): chat and script on both doors with the right URL and host label, hidden form plus `<noscript>`, nothing while Leon is off or the guide is not live, the QR contact line in all six languages with no phone or e-mail, every key filled in every language, no `innerHTML`, storage, cookie or remote URL in the script.
-- [ ] `test_guest_leon_browser.py` (3, 0 skipped): a greeting round trip at 390 px (counter, cleared box, no error), a host answer with the host's name, the emergency block (`role="alert"`), the waiting line, no layout problems; without JavaScript one line and no form.
+- [ ] `test_guest_leon_browser.py` (5, 0 skipped): a greeting round trip at 390 px (counter, cleared box, no error), a host answer with the host's name, the emergency block (`role="alert"`), the waiting line, no layout problems; two texts typed while Leon answers go as one POST, and a `busy` reply is retried with the same `client_id`; a reload mid-reply shows the reply when it lands; without JavaScript one line and no form.
 - [ ] `grep -c 'innerHTML' App/app/static/guest-leon.js` is `0`; `grep -c '—' App/app/static/guest-leon.js App/app/templates/guest/_leon.html` both `0`.
 
 ## 8. Stop and ask
