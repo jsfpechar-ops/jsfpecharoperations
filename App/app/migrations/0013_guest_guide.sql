@@ -30,7 +30,7 @@ CREATE INDEX IF NOT EXISTS idx_guide_item_apartment ON guide_item (apartment_id,
 CREATE UNIQUE INDEX IF NOT EXISTS uq_guide_item_kind ON guide_item (apartment_id, kind) WHERE kind != 'custom';
 
 -- guide_photo: photos on a guide item, stored under DATA_DIR/guide_photos by
--- brief 0293. Kept while the item exists; the files go with the item.
+-- brief 0343. Kept while the item exists; the files go with the item.
 CREATE TABLE IF NOT EXISTS guide_photo (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id       INTEGER NOT NULL REFERENCES guide_item(id) ON DELETE CASCADE,

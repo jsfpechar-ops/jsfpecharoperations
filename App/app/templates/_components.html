@@ -287,10 +287,10 @@
 </svg>
 {% endmacro %}
 
-{% macro copy_button(target_id) %}
-  <button class="ui-btn ui-btn-quiet ui-btn-icon ui-btn-compact" type="button" data-copy="{{ target_id }}"
-          data-copy-label="{{ t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
-          aria-label="{{ t('common.copy') }}">{{ icon('copy', 16) }}<span class="btn-icon-label" data-copy-label-slot hidden></span></button>
+{% macro copy_button(target_id, label='') %}
+  <button class="ui-btn ui-btn-secondary ui-btn-icon ui-btn-compact copy-btn" type="button" data-copy="{{ target_id }}"
+          data-copy-label="{{ label or t('common.copy') }}" data-copied-label="{{ t('common.copied') }}"
+          aria-label="{{ label or t('common.copy') }}">{{ icon('copy', 16) }}<span class="btn-icon-label" data-copy-label-slot hidden></span><span class="sr-only">{{ label or t('common.copy') }}</span></button>
 {% endmacro %}
 
 {# Copy a value straight from a list row, so chasing a guest is one click. #}
@@ -500,7 +500,7 @@
 
 {#- 0252: a visible "Open" cue for a row that opens on click; the row itself is the link. -#}
 {% macro row_open() -%}
-<span class="row-open" aria-hidden="true"><span class="row-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span>
+<span class="row-open" aria-hidden="true"><span class="row-open-text">{{ t('common.open') }}</span></span>
 {%- endmacro %}
 
 {% macro source_badge(key, label) %}

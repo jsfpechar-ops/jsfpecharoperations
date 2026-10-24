@@ -1,0 +1,25 @@
+
+/* 0302: Leon (AI), the chat at the end of the guest guide. Light mode only. */
+.g-leon-jump { display: inline-block; margin: 0 0 16px; color: var(--g-accent); font-size: 15px; font-weight: 600; text-decoration: none; }
+.g-leon-jump::after { content: " \2193"; }
+.g-leon [hidden], .g-leon-jump[hidden] { display: none; }
+.g-leon-nojs { margin: 0; font-size: 14.5px; color: var(--g-muted); }
+.g-leon-log { display: flex; flex-direction: column; gap: 10px; margin: 0 0 14px; }
+.g-leon-msg { max-width: 88%; padding: 10px 13px; border: 1px solid var(--g-line); border-radius: var(--g-radius-sm); background: var(--g-surface-2); overflow-wrap: anywhere; }
+.g-leon-msg--guest { align-self: flex-end; background: var(--g-accent-soft); border-color: transparent; }
+.g-leon-msg--host { border-left: 3px solid var(--g-ok); background: var(--g-ok-soft); }
+.g-leon-msg--asked { border-left: 3px solid var(--g-accent); }
+.g-leon-msg--emergency { max-width: 100%; border: 2px solid var(--g-bad); background: var(--g-bad-soft); }
+.g-leon-msg--emergency .g-leon-who, .g-leon-msg--emergency .g-leon-text { color: var(--g-ink); font-weight: 650; }
+.g-leon-who { margin: 0 0 3px; font-size: 12.5px; font-weight: 650; color: var(--g-muted); }
+.g-leon-text { margin: 0; font-size: 15.5px; line-height: 1.5; color: var(--g-ink); white-space: pre-line; }
+.g-leon-queued { margin: 4px 0 0; font-size: 12.5px; color: var(--g-muted); }
+.g-leon-waiting { margin: 0 0 14px; padding: 10px 12px; border-radius: var(--g-radius-sm); background: var(--g-surface-2); color: var(--g-ink-2); font-size: 14.5px; line-height: 1.45; }
+.g-leon-label { display: block; margin: 0 0 6px; font-size: 14.5px; font-weight: 600; color: var(--g-ink); }
+.g-leon-form textarea { display: block; width: 100%; box-sizing: border-box; font-size: 16px; }
+.g-leon-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+.g-leon-count { font-size: 13px; color: var(--g-muted); font-variant-numeric: tabular-nums; }
+.g-leon-count--near { color: var(--g-warn); font-weight: 650; }
+.g-leon-send { width: auto; min-width: 120px; }
+.g-leon-send:disabled { opacity: .6; cursor: default; }
+.g-leon-error { margin: 10px 0 0; font-size: 14.5px; color: var(--g-bad); }

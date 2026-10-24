@@ -97,4 +97,4 @@ Grep. **HR**: owner decides.
 - K-CHECKIN: form alert fix #435; undeployed.
 - K-MORE: #436 undeployed.
 - K-PK0290: passkey fix open.
-- K-CF01: pre-clearance set; repeat-prompt check pending.
+- K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.

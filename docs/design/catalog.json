@@ -181,7 +181,29 @@
     "health-icon",
     "health-copy",
     "health-all-set",
-    "fee-more"
+    "fee-more",
+    "ui-btn-open",
+    "cleaning-property-row",
+    "invoice-supplier-edit",
+    "invoice-customer",
+    "invoice-lookup",
+    "invoice-lookup-ico",
+    "invoice-lookup-row",
+    "invoice-lookup-guest",
+    "invoice-buyer-fields",
+    "invoice-f-full",
+    "invoice-f-zip",
+    "invoice-f-city",
+    "invoice-f-half",
+    "fee-stepper",
+    "fee-stepper-item",
+    "fee-stepper-dot",
+    "fee-stepper-label",
+    "fee-figures",
+    "fee-figures-total",
+    "fee-step-actions",
+    "fee-qr-amount",
+    "fee-send-line"
   ],
   "hooks": [
     "sr-only",
@@ -927,6 +949,7 @@
     "health-icon": "0244 the row's icon, green when the check is fine.",
     "health-copy": "0244 name (strong) and sentence (span) of a health-row.",
     "health-all-set": "0244 details that folds the rows away when nothing needs fixing.",
-    "fee-more": "Stay fee editor in Settings: folds the council's print-only details (address, contact, data box) (0239)."
+    "fee-more": "Stay fee editor in Settings: folds the council's print-only details (address, contact, data box) (0239).",
+    "ui-btn-open": "MASTER 7.1 open: soft-coral Open on list rows and cards (0291)"
   }
 }

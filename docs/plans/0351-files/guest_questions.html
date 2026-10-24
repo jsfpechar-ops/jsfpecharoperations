@@ -1,0 +1,25 @@
+{#- 0301: questions Leon (AI) could not answer from the guide, one property.
+    Open ones first; a row opens the answer page. Data: app/guest_handoff.py. -#}
+{% extends "host_page.html" %}
+{% set body_kind = 'list' %}
+{% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
+{% block title %}{{ t('guest_questions.title') }} · {{ apartment.internal_name }} · UbyHost{% endblock %}
+{% block page_title %}{{ t('guest_questions.title') }}{% endblock %}
+{% block back_url %}{{ base_url }}{% endblock %}
+{% block back_label %}{{ t('guest_guide.title') }}{% endblock %}
+{% block meta %}{% if open_count %}{{ t('guest_questions.open', n=open_count) }}{% else %}{{ t('guest_questions.none_open') }}{% endif %}{% endblock %}
+{% block body %}
+{% if not questions %}
+{{ ui_empty(t('guest_questions.empty.title'), t('guest_questions.empty.body'), t('guest_guide.title'), base_url, primary=false) }}
+{% else %}
+{{ ui_table_begin([(t('guest_questions.col.question'), ''), (t('guest_questions.col.state'), '')], label=t('guest_questions.title')) }}
+{% for q in questions %}
+{% set q_url = base_url ~ '/questions/' ~ q.id %}
+<tr class="ui-row clickable-row" data-href="{{ q_url }}" tabindex="0" role="link" aria-label="{{ q.question }}">
+  <td class="ui-cell-first" data-card="primary"><a href="{{ q_url }}">{{ q.question }}</a><span class="ui-sub"> {{ q.created_at[:10] }} · {{ t('guest_questions.door.' ~ q.door) }}</span></td>
+  <td data-card="badge">{% if q.status == 'open' and q.urgent %}{{ ui_badge('attention', t('guest_questions.badge.urgent')) }} {% endif %}{% if q.status == 'open' and not q.triaged %}{{ ui_badge('neutral', t('guest_questions.badge.unread')) }} {% endif %}{% if q.status == 'open' %}{{ ui_badge('action', t('guest_questions.state.open')) }}{% elif q.status == 'answered' %}{{ ui_badge('done', t('guest_questions.state.answered')) }}{% else %}{{ ui_badge('neutral', t('guest_questions.state.dismissed')) }}{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% endif %}
+{% endblock %}

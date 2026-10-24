@@ -1,0 +1,32 @@
+{# 0302: the Leon (AI) chat at the end of the guide. Rendered only when the
+   guide is live and Leon is switched on (leon_url). The chat needs
+   JavaScript (static/guest-leon.js); without it the form stays hidden and
+   one line says so, so there is never a form that posts to a JSON endpoint.
+   Every text the script shows comes from these data attributes. #}
+<section class="g-card g-leon" id="leon" aria-labelledby="leon-title" data-leon
+  data-leon-url="{{ leon_url }}"
+  data-label-leon="{{ t('leon_name') }}"
+  data-label-you="{{ t('leon_you') }}"
+  data-label-host="{{ t('leon_host_answered', host=leon_host) if leon_host else t('leon_host_answered_plain') }}"
+  data-text-send="{{ t('leon_send') }}"
+  data-text-sending="{{ t('leon_sending') }}"
+  data-text-error="{{ t('leon_error') }}"
+  data-text-reload="{{ t('leon_error_reload') }}"
+  data-text-queued="{{ t('leon_queued') }}">
+  <h2 id="leon-title">{{ t('leon_name') }}</h2>
+  <p class="g-intro">{{ t('leon_intro') }}</p>
+  <noscript><p class="g-leon-nojs" data-leon-nojs>{{ t('leon_needs_js') }}</p></noscript>
+  <div class="g-leon-log" role="log" aria-live="polite" aria-labelledby="leon-title" data-leon-log hidden></div>
+  <p class="g-leon-waiting" role="status" data-leon-waiting hidden>{{ t('leon_waiting') }}</p>
+  <form class="g-leon-form" method="post" action="{{ leon_url }}" data-leon-form hidden>
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <label class="g-leon-label" for="leon-message">{{ t('leon_label') }}</label>
+    <textarea id="leon-message" name="message" rows="2" maxlength="500"
+      placeholder="{{ t('leon_placeholder') }}" data-leon-input></textarea>
+    <div class="g-leon-bar">
+      <span class="g-leon-count" aria-hidden="true" data-leon-count>0 / 500</span>
+      <button type="submit" class="g-btn slim g-leon-send" data-leon-send>{{ t('leon_send') }}</button>
+    </div>
+    <p class="g-leon-error" role="alert" data-leon-error hidden></p>
+  </form>
+</section>

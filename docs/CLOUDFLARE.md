@@ -352,30 +352,68 @@ ruleset for them on `/login`. Humans solve the challenge (or pass low-risk
 scores); Turnstile still runs in the app. Successful widget checks also grant
 [pre-clearance](#turnstile-pre-clearance--owner-confirmed-23-october-2026) as configured above.
 
-##### Rule 3 — Challenge private app / guest surfaces
+##### Rule 3 — Check once when someone enters the host app (owner 2026-10-24)
 
-**Name:** `Protect — managed challenge on private app paths`
+The old Rule 3 challenged every private path (`/reservations`, `/apartments`,
+`/settings`…). A host who was already signed in landed on `/` (not in the
+list) without a check, then met the challenge on the first click. The owner
+wants the opposite: one check on the way in, then free navigation.
+
+**Name:** `Protect — check visitors entering the app once`
 
 **Expression:**
 
 ```txt
-starts_with(http.request.uri.path, "/l/") or
-starts_with(http.request.uri.path, "/account") or
-starts_with(http.request.uri.path, "/admin") or
-starts_with(http.request.uri.path, "/api/") or
-starts_with(http.request.uri.path, "/apartments") or
-starts_with(http.request.uri.path, "/automation") or
-starts_with(http.request.uri.path, "/entities") or
-starts_with(http.request.uri.path, "/guest-links") or
-starts_with(http.request.uri.path, "/guests/") or
-starts_with(http.request.uri.path, "/guide") or
-starts_with(http.request.uri.path, "/housebook") or
-starts_with(http.request.uri.path, "/reservations") or
-starts_with(http.request.uri.path, "/settings") or
-starts_with(http.request.uri.path, "/submissions")
+(http.host eq "app.ubyhost.com")
+and not (http.cookie contains "ubyhost_session=")
+and not starts_with(http.request.uri.path, "/static/")
+and not (http.request.uri.path in {"/sw.js" "/manifest.webmanifest" "/healthz" "/robots.txt"})
 ```
 
 **Action:** **Managed Challenge**
+
+How it behaves:
+
+- A visitor without a session is checked on whatever app page they open
+  first (also `/` and `/login`); the clearance then covers the login form for
+  the Challenge Passage time.
+- A signed-in host (the `ubyhost_session` cookie is present) is never
+  challenged while navigating. A bot that fakes the cookie gains nothing: the
+  app still redirects it to `/login`, which Rule 2 and the in-app Turnstile
+  guard.
+- The app keeps its own Turnstile and rate limits on login, signup, guest
+  PIN and guest claim (server-validated; this rule does not replace them).
+
+##### Rule 4 — Private paths on the public host (old Rule 3, signed-in hosts skip it)
+
+**Name:** `Protect — managed challenge on private paths (public host)`
+
+**Expression:**
+
+```txt
+(http.host ne "app.ubyhost.com")
+and not (http.cookie contains "ubyhost_session=")
+and (
+  starts_with(http.request.uri.path, "/l/") or
+  starts_with(http.request.uri.path, "/account") or
+  starts_with(http.request.uri.path, "/admin") or
+  starts_with(http.request.uri.path, "/api/") or
+  starts_with(http.request.uri.path, "/apartments") or
+  starts_with(http.request.uri.path, "/entities") or
+  starts_with(http.request.uri.path, "/guest-links") or
+  starts_with(http.request.uri.path, "/guests/") or
+  starts_with(http.request.uri.path, "/guide") or
+  starts_with(http.request.uri.path, "/housebook") or
+  starts_with(http.request.uri.path, "/reservations") or
+  starts_with(http.request.uri.path, "/settings") or
+  starts_with(http.request.uri.path, "/submissions")
+)
+```
+
+**Action:** **Managed Challenge**
+
+Guests on `/l/…` never carry a host session, so they are checked as before.
+A host still signed in on the old host is not interrupted mid-session.
 
 #### 3. Cache purge (once after SEO HTML deploy)
 
