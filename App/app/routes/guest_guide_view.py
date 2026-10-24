@@ -1,4 +1,4 @@
-"""The guest side of the guest guide (brief 0294): two read-only doors.
+"""The guest side of the guest guide (brief 0344): two read-only doors.
 
 * ``/l/{token}/{reservation_id}/guide``: "Your guide" for a booked guest, behind
   the same link, PIN and claim checks as the stay page. "booked" cards from the

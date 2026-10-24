@@ -1,4 +1,4 @@
-"""0294: the guest side of the guest guide, both doors."""
+"""0344: the guest side of the guest guide, both doors."""
 from __future__ import annotations
 
 import io
@@ -14,7 +14,7 @@ from app.main import app
 from app.routes.guest_guide_view import QR_MAX_VIEWS, booked_level
 from tests.conftest import login_as
 
-TOKEN = "guideviewtok0294"
+TOKEN = "guideviewtok0344"
 TEMPLATES = pathlib.Path(__file__).resolve().parents[1] / "app" / "templates" / "guest"
 
 
@@ -42,7 +42,7 @@ def ws(monkeypatch, tmp_path):
             "automation_mode": "manual", "permalink_token": token, "permalink_window_days": 14,
         })
     mine = home("Vivus / 3", owner, TOKEN)
-    foreign = home("Other flat", other, "otherflattok0294")
+    foreign = home("Other flat", other, "otherflattok0344")
     for apt in (mine, foreign):
         guest_guide.ensure_defaults(db.query_one("SELECT * FROM apartment WHERE id = ?", (apt,)))
     yield {"home": mine, "foreign": foreign, "client": TestClient(app)}
@@ -66,7 +66,7 @@ def _go_live(apt_id, **fields):
 def _stay(apt_id, start_in_days, nights=2):
     start = claim.prague_today() + timedelta(days=start_in_days)
     return db.insert("reservation", {
-        "apartment_id": apt_id, "uid": f"g0294-{start_in_days}", "source": "airbnb", "status": "active",
+        "apartment_id": apt_id, "uid": f"g0344-{start_in_days}", "source": "airbnb", "status": "active",
         "date_from": start.isoformat(), "date_to": (start + timedelta(days=nights)).isoformat(),
         "created_at": db.utcnow(), "updated_at": db.utcnow(),
     })

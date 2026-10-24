@@ -426,7 +426,7 @@ STRINGS: Dict[str, str] = {
     "door_code_failed": "Код від дверей вам надішле господар.",
     "mail_door_code_subject": "Ваш код від дверей у %(property)s",
     "privacy_door_code_title": "Код від дверей",
-    # 0294: the guest guide pages.
+    # 0344: the guest guide pages.
     "guide_title": "Ваш путівник",
     "guide_back_to_stay": "Назад до вашого проживання",
     "guide_not_ready_title": "Цей путівник ще не готовий",
