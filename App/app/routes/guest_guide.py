@@ -12,6 +12,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 
 from .. import access, auth, config, guest_guide, guest_guide_import, guest_handoff, guest_guide_merge, guide_photos, guide_token, payments, security, templating
+from .. import guide_facts, host_i18n
 from .admin_helpers import back, flash
 from .. import ai, guide_translate  # 0353: the host usage line
 
@@ -76,6 +77,7 @@ def guide_index(request: Request, apartment_id: int):
         must_have=guest_guide.MUST_HAVE,
         progress=guest_guide.progress(apartment_id),
         next_id=_next_open(apartment_id, 0),
+        quick_next=guide_facts.next_step(apartment_id),
         import_on=guest_guide_import.enabled(),
         import_left=guest_guide_import.imports_left(apartment_id),
         import_busy=guest_guide_import.in_progress(apartment_id),
@@ -153,6 +155,71 @@ def guide_qr_rotate(request: Request, apartment_id: int):
     _home(request, apartment_id)
     guide_token.rotate(apartment_id)
     return back(f"{_base(apartment_id)}/qr", msg=flash(request, "flash.guest_guide.qr_rotated"))
+
+
+@router.get("/apartments/{apartment_id}/guide/quick")
+def guide_quick(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    return back(f"{_base(apartment_id)}/quick/{guide_facts.next_step(apartment_id) or 'done'}")
+
+
+@router.get("/apartments/{apartment_id}/guide/quick/done")
+def guide_quick_done(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = _home(request, apartment_id)
+    guest_guide.ensure_defaults(apartment)
+    lang = host_i18n.lang_from_request(request)
+    lines = guide_facts.lines(apartment_id, lang)
+    rows = guest_guide.items(apartment_id)
+    answered = [
+        (host_i18n.translate(lang, f"guest_guide.kind.{r['kind']}.title"), " ".join(lines[r["kind"]]))
+        for r in rows if r["kind"] in lines
+    ]
+    return _render(
+        request, "guest_guide_quick_done.html", apartment=apartment, answered=answered,
+        open_cards=[r for r in rows if r["state"] in ("missing", "check")],
+        progress=guest_guide.progress(apartment_id), next_id=_next_open(apartment_id, 0),
+        first_step=guide_facts.STEPS[0],
+    )
+
+
+@router.get("/apartments/{apartment_id}/guide/quick/{step}")
+def guide_quick_step(request: Request, apartment_id: int, step: str):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = _home(request, apartment_id)
+    if step not in guide_facts.STEPS:
+        raise HTTPException(404)
+    index = guide_facts.STEPS.index(step)
+    return _render(
+        request, "guest_guide_quick.html", apartment=apartment, step=step,
+        step_index=index + 1, step_total=len(guide_facts.STEPS), last=index == len(guide_facts.STEPS) - 1,
+        facts=guide_facts.step_fields(apartment_id, step),
+    )
+
+
+@router.post("/apartments/{apartment_id}/guide/quick/{step}")
+async def guide_quick_save(request: Request, apartment_id: int, step: str):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    if step not in guide_facts.STEPS:
+        raise HTTPException(404)
+    form = await request.form()
+    if form.get("skip"):
+        guide_facts.mark_seen(apartment_id, step)
+    else:
+        guide_facts.save_step(apartment_id, step, form)
+    index = guide_facts.STEPS.index(step) + 1
+    following = guide_facts.STEPS[index] if index < len(guide_facts.STEPS) else "done"
+    return back(f"{_base(apartment_id)}/quick/{following}")
 
 
 @router.get("/apartments/{apartment_id}/guide/{item_id}")
