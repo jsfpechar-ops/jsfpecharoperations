@@ -9,9 +9,7 @@ Updated: 2026-10-23.
 
 ## Now
 
-- Guest guide ([plan](../plans/guest-guide.md)): brief 0291 data layer ready; 0292-0294 next.
-
-- #436 merged: More loader fix, dashboard count removed.
+- Guest guide [plan](../plans/guest-guide.md): 0291 ready.
 
 - 0290: passkey CI/phone pending.
 
