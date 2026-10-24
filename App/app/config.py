@@ -308,6 +308,46 @@ AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").stri
 SIGNUP_ENABLED = os.environ.get("UBYHOST_SIGNUP_ENABLED", "0").lower() in ("1", "true", "yes")
 # Where the "new verified sign-up" notice goes. Defaults to the support address.
 SIGNUP_NOTIFY_EMAIL = os.environ.get("UBYHOST_SIGNUP_NOTIFY_EMAIL", "").strip() or OPERATOR_EMAIL
+
+# Model API (docs/plans/havel-support-assistant.md section 3; shared by Havel and
+# the guest bot). A feature is on only when it is listed in UBYHOST_AI_FEATURES
+# AND the key is set. The key is passed to the SDK explicitly; the SDK's own
+# ANTHROPIC_API_KEY lookup is never used.
+AI_FEATURES = frozenset(
+    part.strip().lower() for part in os.environ.get("UBYHOST_AI_FEATURES", "").split(",") if part.strip()
+)
+ANTHROPIC_API_KEY = os.environ.get("UBYHOST_ANTHROPIC_API_KEY", "").strip()
+AI_MODEL = os.environ.get("UBYHOST_AI_MODEL", "claude-haiku-5-5")
+AI_MAX_TOKENS = int(os.environ.get("UBYHOST_AI_MAX_TOKENS", "4000"))
+# Haiku 5.5 costs 5x more once one request's input passes 100,000 tokens. ai.call
+# estimates input as 1 token per 2 characters (more than real text uses, also for
+# Czech and Vietnamese) and refuses above this cap. The env var may only lower it.
+AI_INPUT_TOKENS_HARD_CAP = 60_000
+AI_MAX_INPUT_TOKENS = min(int(os.environ.get("UBYHOST_AI_MAX_INPUT_TOKENS", "60000")), AI_INPUT_TOKENS_HARD_CAP)
+# Real input tokens above this in one response are logged as an error (never expected).
+AI_LONG_CONTEXT_TOKENS = 100_000
+# USD per million tokens, Anthropic table for claude-haiku-5-5 (2026-10-06): input
+# 0.10, output 0.50, cache read a tenth of input, a 5-minute cache write 1.25x.
+AI_PRICE_USD_PER_MTOK = {
+    "input": float(os.environ.get("UBYHOST_AI_PRICE_INPUT", "0.10")),
+    "output": float(os.environ.get("UBYHOST_AI_PRICE_OUTPUT", "0.50")),
+    "cache_read": float(os.environ.get("UBYHOST_AI_PRICE_CACHE_READ", "0.01")),
+    "cache_write": float(os.environ.get("UBYHOST_AI_PRICE_CACHE_WRITE", "0.125")),
+}
+
+
+def ai_monthly_usd(feature: str) -> float:
+    """Monthly budget for one feature: UBYHOST_AI_MONTHLY_USD_<FEATURE>, else 10."""
+    return float(os.environ.get(f"UBYHOST_AI_MONTHLY_USD_{feature.upper()}", "10"))
+
+
+def ai_key_daily_usd(feature: str) -> float:
+    """Per-key daily cap for one feature: UBYHOST_AI_KEY_DAILY_USD_<FEATURE>; 0 means no per-key cap."""
+    return float(os.environ.get(f"UBYHOST_AI_KEY_DAILY_USD_{feature.upper()}", "0"))
+
+
+HAVEL_WEEKLY_MESSAGES = int(os.environ.get("UBYHOST_HAVEL_WEEKLY", "8"))
+HAVEL_MONTHLY_MESSAGES = int(os.environ.get("UBYHOST_HAVEL_MONTHLY", "15"))
 # The conversion action name exactly as created in Google Ads (case-sensitive).
 ADS_CONVERSION_NAME = os.environ.get("UBYHOST_ADS_CONVERSION_NAME", "UbyHost sign-up").strip()
 # The click ID windows (export within 85 days of the click, delete 90 days
