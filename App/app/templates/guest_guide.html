@@ -18,6 +18,7 @@
 {{ ui_banner('attention', t('guest_guide.not_live', done=progress.must_have_done, total=progress.must_have_total)) }}
 {% endif %}
 {% if progress.check %}{{ ui_banner('attention', t('guest_guide.check_waiting')) }}{% endif %}
+{% if usage.leon or usage.languages %}<p class="ui-sub" data-guide-usage>{% if usage.leon %}{{ t('guest_guide.usage.leon', n=usage.leon) }}{% endif %}{% if usage.leon and usage.languages %} · {% endif %}{% if usage.languages %}{{ t('guest_guide.usage.languages', langs=usage.languages | join(', ') | upper) }}{% endif %}</p>{% endif %}
 
 {% for topic, cards in groups %}
 {% call ui_section(t('guest_guide.topic.' ~ topic), id='topic-' ~ topic) %}
