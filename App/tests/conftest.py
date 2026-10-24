@@ -295,3 +295,24 @@ def mock_ubyport():
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
             process.kill()
+
+
+# anthropic (0310) depends on httpx2, and starlette's TestClient then uses httpx2
+# instead of httpx. httpx2 sends a cookie a test sets with client.cookies.set()
+# (no domain) before a same-name cookie the app set (domain testserver.local),
+# and the app reads the last one, so the test's value lost. A test that sets a
+# cookie means "replace it": drop same-name cookies first.
+try:
+    import httpx2 as _httpx2
+except ImportError:  # pragma: no cover - httpx only
+    _httpx2 = None
+if _httpx2 is not None:
+    _cookies_set = _httpx2.Cookies.set
+
+    def _replacing_cookies_set(self, name, value, domain="", path="/"):
+        for cookie in list(self.jar):
+            if cookie.name == name and cookie.path == path:
+                self.jar.clear(cookie.domain, cookie.path, cookie.name)
+        _cookies_set(self, name, value, domain, path)
+
+    _httpx2.Cookies.set = _replacing_cookies_set

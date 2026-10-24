@@ -31,6 +31,7 @@
 | Data | `App/app/db.py`, `App/app/migrations/`, `App/app/retention.py`, `App/app/dsr.py`, `App/app/workspace_export.py` |
 | Money | `App/app/invoices.py`, `App/app/invoice_pdf.py`, `App/app/stay_fee.py`, `App/app/stay_fee_filing.py`, `App/app/stay_fee_remittance_pdf.py` |
 | Mail | `App/app/mail.py` (SES and outbox), `App/app/mail_notify.py`, `App/app/lifecycle_mail.py` |
+| AI | `App/app/ai.py` (the one door to the model API: structured call, usage ledger per day, feature and key, per-feature monthly budget, daily share and per-key cap; nothing else imports the SDK) |
 | Scheduler | `App/app/scheduler.py`, `App/app/worker.py`, `App/app/alerts.py` |
 | Copy (i18n) | `App/app/i18n.py` (guest), `App/app/host_i18n.py` (host, 357 KB: grep it, never read it whole), `App/app/landing_i18n.py`, and the legal `*_i18n.py` files |
 | UI | `App/app/contact_phone.py` (operator phone form/format), `App/app/templates/` (`guest/` = guest pages; `_list_filter.html`/`_date_range.html` = shared host filters), `App/app/static/` (`app.css`, `guest.css`, `tokens.css`, `skeleton.css`, `host.css`, `host-controls.css`; `app.js` = host controls/feedback) |
