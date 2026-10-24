@@ -14,7 +14,7 @@ Rules: AGENTS.md 2 (new personal-data table: a line in `retention.py`), 5 (migra
 
 Today (`grep -nF` 2026-10-24):
 
-- `App/app/migrations/` ends at `0012_web_push.sql`; 0013 and 0014 are reserved by the guest plan and 0310 takes 0015. Use **0016** unless `ls App/app/migrations | tail -3` already shows 0016 or higher; then the next free one.
+- `App/app/migrations/` ends at `0016_*` on main (0013, 0014 and 0016 are the guest guide, 0015 is 0310). Use **0017** unless `ls App/app/migrations | tail -3` already shows 0017 or higher; then take the next free number the lint prints and say so in the report.
 - `App/app/retention.py`: imports `time` and `from datetime import date, datetime, timedelta, timezone`; `_scalar(sql, params)` line 33. Lines 187 to 197:
 
 ```python
@@ -49,7 +49,7 @@ From 0312 to 0319, `App/app/routes/havel.py`: the line `                    have
 
 | Path | Action | What |
 |---|---|---|
-| App/app/migrations/0016_havel_gap.sql | new | `havel_gap` |
+| App/app/migrations/0017_havel_gap.sql | new | `havel_gap` |
 | App/app/havel.py | edit | `record_gap` |
 | App/app/retention.py | edit | gap step, Havel limits kept 32 days |
 | App/app/routes/havel.py | edit | gap writes, `POST /havel/not-helped` |
@@ -59,7 +59,7 @@ From 0312 to 0319, `App/app/routes/havel.py`: the line `                    have
 
 ## 4. Steps
 
-1. **Migration.** Create `App/app/migrations/0016_havel_gap.sql`:
+1. **Migration.** Create `App/app/migrations/0017_havel_gap.sql`:
 
 ```sql
 -- Brief 0320: questions Havel (AI) could not answer, for the owner to grow the guide.

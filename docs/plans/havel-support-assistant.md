@@ -2,7 +2,7 @@
 
 Status: plan, owner approved the direction on 2026-10-24 and added scarce limits, a kind beginner-friendly voice,
 lowest spend, a full guide update and strict guardrails the same day (no code yet). Reviewed and corrected 2026-10-24
-(section 18). Briefs 0310–0325 come from this file (the guest plan owns 0291–0309); the critical ones (0310–0314, 0324, 0325) are written,
+(section 18). Briefs 0310–0325 come from this file (the guest guide stack is 0341–0355 on main); the critical ones (0310–0314, 0324, 0325) are written,
 the rest are reserved in section 14 with what they must contain. The guide work (0315–0318) has no AI and can start now.
 Owner page with the background and decisions: https://claude.ai/artifact/FNGAdQcDG1ziyaPvcw5fDp
 
@@ -500,7 +500,7 @@ listed there; this table holds the ones the engine and limits use:
 
 ## 12. Storage
 
-Migration `App/app/migrations/0015_havel.sql` (Postgres-portable, through `db.py` only):
+Migration `App/app/migrations/0015_ai_usage.sql` (merged, PR #448) (Postgres-portable, through `db.py` only):
 
 ```sql
 CREATE TABLE IF NOT EXISTS ai_usage (
