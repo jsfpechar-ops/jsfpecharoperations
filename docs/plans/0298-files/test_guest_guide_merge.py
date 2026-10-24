@@ -204,6 +204,18 @@ def test_bad_shape_is_retried_three_times_then_the_import_fails_and_frees_the_li
     assert gi.imports_left(ws) == 2  # a failed row does not use up the host's import
 
 
+def test_input_too_large_fails_at_once_and_frees_the_listing(ws, monkeypatch):
+    imp = fetched(ws, AIRBNB)
+
+    def too_big(*args, **kwargs):
+        raise ai.AIError("input_too_large")
+
+    monkeypatch.setattr(ai, "call", too_big)
+    assert gm.process_pending() == 0
+    assert status(imp) == {"status": "failed", "error": "merge:input_too_large", "raw_json": None}
+    assert gi.imports_left(ws) == 2
+
+
 def test_budget_and_disabled_leave_the_import_for_later(ws, monkeypatch):
     imp = fetched(ws, AIRBNB)
     monkeypatch.setattr(ai, "budget_state", lambda *a, **k: "month")
