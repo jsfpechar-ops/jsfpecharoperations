@@ -292,9 +292,11 @@ jobs:
         run: python3 scripts/context_lint.py
       - name: Migration guard
         if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          git fetch --no-tags --depth=50 origin "${{ github.base_ref }}"
-          python3 scripts/migration_guard.py "origin/${{ github.base_ref }}"
+          git fetch --no-tags --depth=50 origin "${BASE_REF}"
+          python3 scripts/migration_guard.py "origin/${BASE_REF}"
 
   secrets:
     runs-on: ubuntu-latest

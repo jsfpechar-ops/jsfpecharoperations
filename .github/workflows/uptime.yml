@@ -37,7 +37,11 @@ jobs:
             problems="${problems}TLS certificate expires ${end}. "
           fi
           echo "problems=${problems}" >> "$GITHUB_OUTPUT"
-          [ -z "$problems" ] && echo "All good." || { echo "$problems"; exit 1; }
+          if [ -n "$problems" ]; then
+            echo "$problems"
+            exit 1
+          fi
+          echo 'All good.'
 
       - name: Open or update the outage issue
         if: failure()

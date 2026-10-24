@@ -42,3 +42,7 @@ actionlint: see Deviations.
 2. Actions, "Uptime", "Run workflow".
 3. Actions, "Restore drill", "Run workflow"; approve the production environment if asked.
 4. Watch the repo, Custom, tick Issues, for outage e-mails.
+
+## Orchestrator review
+
+Merged 0362 in (this PR stacks on it). Fixed two review findings: the uptime probe ends with if/else instead of `A && B || C` (shellcheck SC2015), and the migration guard reads `github.base_ref` through `env:` (zizmor template-injection). actionlint and zizmor (high) clean.

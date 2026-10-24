@@ -1,6 +1,6 @@
 # 0363: Launch monitoring: uptime probe, weekly restore drill, migration guard, failing public smoke
 
-Status: todo
+Status: review
 Depends on: 0362 (both edit ci.yml) | Base commit: 73fc1e7 (task/0361 head; 0362 runs in parallel, the orchestrator merges the two) | Branch: task/0363-launch-monitoring
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
