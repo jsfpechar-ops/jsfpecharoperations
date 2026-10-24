@@ -18,6 +18,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: App
@@ -90,7 +91,7 @@ jobs:
 
   smoke:
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: App
@@ -141,6 +142,7 @@ jobs:
     # Four shards run in parallel; each needs Chromium, some need WebKit.
     name: browser shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -238,6 +240,7 @@ jobs:
     if: always()
     needs: browser-shard
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: All browser shards passed
         run: test "${{ needs.browser-shard.result }}" = "success"
@@ -245,6 +248,7 @@ jobs:
 
   shellcheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
       - name: shellcheck deploy and backup scripts (errors only)
@@ -252,7 +256,7 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - name: Build image
@@ -271,6 +275,7 @@ jobs:
 
   context:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 50 }
@@ -279,6 +284,7 @@ jobs:
 
   secrets:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 50 }
