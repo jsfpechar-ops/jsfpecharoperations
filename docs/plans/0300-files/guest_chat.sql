@@ -12,7 +12,8 @@
 -- sources: the guide card ids an answer cited, as "c<id>,c<id>".
 -- guest_question: a question Leon could not answer from the guide. Brief 0301
 -- shows open rows to the host and writes answer + answered_at; the guest page
--- renders the answer. summary is Leon's short English summary for the host.
+-- renders the answer. summary is Leon's short English summary for the host;
+-- urgent marks an emergency, triaged = 0 a message Leon never read (cap, budget).
 CREATE TABLE IF NOT EXISTS guest_chat (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     apartment_id    INTEGER NOT NULL REFERENCES apartment(id) ON DELETE CASCADE,
@@ -22,6 +23,7 @@ CREATE TABLE IF NOT EXISTS guest_chat (
     lang            TEXT NOT NULL DEFAULT 'en',
     refusals        INTEGER NOT NULL DEFAULT 0,
     paused_until    TEXT,
+    model_messages  INTEGER NOT NULL DEFAULT 0,
     created_at      TEXT NOT NULL,
     last_message_at TEXT NOT NULL
 );
@@ -48,6 +50,8 @@ CREATE TABLE IF NOT EXISTS guest_question (
     summary      TEXT NOT NULL,
     status       TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'answered', 'dismissed')),
     answer       TEXT NOT NULL DEFAULT '',
+    urgent       INTEGER NOT NULL DEFAULT 0,
+    triaged      INTEGER NOT NULL DEFAULT 1,
     created_at   TEXT NOT NULL,
     answered_at  TEXT
 );

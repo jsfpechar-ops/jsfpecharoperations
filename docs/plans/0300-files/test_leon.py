@@ -80,8 +80,8 @@ def _fake(*replies):
     return fake
 
 
-def answer(text, sources, kind="answer", summary=None):
-    return reply({"kind": kind, "reply": text, "sources": sources, "host_summary": summary})
+def answer(text, sources, kind="answer", summary=None, upset=False):
+    return reply({"kind": kind, "reply": text, "sources": sources, "host_summary": summary, "upset": upset})
 
 
 def _system(fake, i=0):
@@ -103,7 +103,7 @@ def test_the_stay_door_inside_the_window_sends_booked_cards_and_never_host_only_
     system = _system(fake)
     assert "Checkout is at 10:00." in system and "boiler" in system
     assert "VINO" not in system and "4455" not in system
-    assert fake.calls[0]["max_tokens"] == leon.MAX_TOKENS == 400
+    assert fake.calls[0]["max_tokens"] == leon.MAX_TOKENS == 500
     assert "ANNA" not in fake.calls[0]["messages"][-1]["content"].upper()  # Leon never gets the guest's name
     assert fake.calls[0]["system"][-1]["cache_control"] == {"type": "ephemeral"}
 
@@ -174,8 +174,16 @@ def test_the_validator_rules():
     assert leon.validate({"kind": "answer", "reply": "Room 23 is fine.", "sources": ["c5"]}, cards, "I am in room 23")["kind"] == "answer"
     for bad in ("See https://x.example", "Mail me at a@b.cz", "**Set** it", "<b>22</b>"):
         assert leon.validate({"kind": "answer", "reply": bad, "sources": ["c5"]}, cards, "")["reason"] == "markup"
-    assert leon.validate({"kind": "answer", "reply": "x" * 700, "sources": ["c5"]}, cards, "")["reason"] == "length"
+    assert leon.validate({"kind": "answer", "reply": "x" * 900, "sources": ["c5"]}, cards, "")["reason"] == "length"
     assert leon.validate({"kind": "weird"}, cards, "")["kind"] == "ask_host"
+    safe = leon.validate({"kind": "answer", "reply": "Call 112 and set it to 22.", "sources": ["c5"]}, cards, "")
+    assert safe["kind"] == "answer"
+    assert leon.validate({"kind": "answer", "reply": "Call 911.", "sources": ["c5"]}, cards, "")["reason"] == "number"
+    part = leon.validate({"kind": "answer", "reply": "Set it to 22.", "sources": ["c5"], "host_summary": "Asks about parking."}, cards, "")
+    assert part["kind"] == "answer" and part["summary"] == "Asks about parking."
+    assert leon.validate({"kind": "emergency", "host_summary": "Smells gas."}, cards, "")["kind"] == "emergency"
+    assert leon.validate({"kind": "unclear"}, cards, "")["kind"] == "unclear"
+    assert leon.validate({"kind": "ask_host", "upset": True, "host_summary": "Complains."}, cards, "")["upset"] is True
 
 
 # --- injection ------------------------------------------------------------------------
@@ -250,16 +258,20 @@ def test_the_address_limit_spans_conversations(ws, monkeypatch):
     assert kinds == ["smalltalk", "smalltalk", "smalltalk", "slow_down"]
 
 
-def test_feature_off_and_spent_budgets_rest_calmly_with_no_model_call(ws, monkeypatch):
+def test_feature_off_and_spent_budgets_pass_the_message_to_the_host_unread(ws, monkeypatch):
     cards = _go_live(ws["home"])
     rid = _stay(ws["home"], 0)
     fake = _fake(answer("Press the round button.", [f"c{cards['heating']['id']}"]))
     monkeypatch.setattr(config, "AI_FEATURES", frozenset())
-    assert _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Heating?").json()["kind"] == "resting"
+    got = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Heating?").json()
+    assert got["kind"] == "passed" and got["asked_host"] and "Jana" in got["text"]
     monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
     monkeypatch.setattr(config, "ai_monthly_usd", lambda feature: 0.0)
-    assert _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Heating?").json()["kind"] == "resting"
+    assert _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "And the towels?").json()["kind"] == "passed"
     assert fake.calls == []
+    rows = db.query("SELECT summary, triaged, urgent FROM guest_question ORDER BY id")
+    assert len(rows) == 1 and rows[0]["triaged"] == 0 and rows[0]["urgent"] == 0
+    assert rows[0]["summary"] == "Heating?\nAnd the towels?"
 
 
 def test_the_per_property_daily_cap(ws, monkeypatch):
@@ -269,16 +281,114 @@ def test_the_per_property_daily_cap(ws, monkeypatch):
     fake = _fake(answer("Press the round button.", src), answer("Press the round button.", src))
     monkeypatch.setattr(config, "ai_key_daily_usd", lambda feature: 0.0001)
     assert _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Heating?").json()["kind"] == "answer"
-    assert _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Heating again?").json()["kind"] == "resting"
-    assert len(fake.calls) == 1
+    assert _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Heating again?").json()["kind"] == "passed"
+    assert len(fake.calls) == 1 and db.query_one("SELECT triaged FROM guest_question")["triaged"] == 0
     assert db.query_one("SELECT key FROM ai_usage WHERE feature = 'leon'")["key"] == str(ws["home"])
 
 
-def test_a_model_error_rests_and_nothing_is_shown_raw(ws):
+def test_a_model_error_passes_the_message_to_the_host_and_shows_nothing_raw(ws):
     _go_live(ws["home"])
     rid = _stay(ws["home"], 0)
     _fake(reply(text="not json"))
-    assert _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Heating?").json()["kind"] == "resting"
+    got = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Heating?").json()
+    assert got["kind"] == "passed" and "json" not in got["text"] and got["asked_host"]
+
+
+# --- situations: several questions, emergencies, upset guests, repeats, noise, caps ----------
+
+def test_a_multi_part_message_answers_the_covered_parts_and_asks_the_host_the_rest(ws):
+    cards = _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    src = [f"c{cards['heating']['id']}", f"c{cards['checkout']['id']}"]
+    _fake(answer("Heating: press the round button until it shows 22.\nCheckout is at 10:00.", src, summary="Asks where to park."),
+          answer("Checkout is at 10:00 and parking costs 15 EUR.", src, summary="Asks where to park."))
+    got = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "How does the heating work, when is checkout and where do I park?").json()
+    assert got["kind"] == "answer" and got["asked_host"] and got["text"].startswith("Heating:")
+    assert got["text"].rstrip().endswith("the answer will appear here.")
+    q = db.query_one("SELECT summary, status, triaged FROM guest_question")
+    assert q["summary"] == "Asks where to park." and q["status"] == "open" and q["triaged"] == 1
+    got = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Checkout time and parking again please").json()
+    assert got["kind"] == "ask_host" and "15" not in got["text"]
+    assert db.query_one("SELECT COUNT(*) AS n FROM guest_question")["n"] == 2
+
+
+def test_an_emergency_shows_112_the_host_card_and_an_urgent_question(ws):
+    cards = _go_live(ws["home"])
+    guest_guide.save(ws["home"], cards["emergency"]["id"], {"steps": "Main water tap under the sink.", "visibility": "everyone"})
+    rid = _stay(ws["home"], 0)
+    _fake(reply({"kind": "emergency", "reply": "Try to put it out yourself", "sources": [], "host_summary": "Fire in the kitchen.", "upset": True}))
+    got = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon?lang=cs", "Hoří v kuchyni!").json()
+    assert got["kind"] == "emergency" and got["asked_host"]
+    assert "112" in got["text"] and "Main water tap under the sink." in got["text"] and "put it out" not in got["text"]
+    q = db.query_one("SELECT urgent, triaged, summary FROM guest_question")
+    assert q["urgent"] == 1 and q["triaged"] == 1 and q["summary"] == "Fire in the kitchen."
+
+
+def test_danger_words_get_112_even_when_leon_cannot_be_asked(ws, monkeypatch):
+    _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    fake = _fake()
+    monkeypatch.setattr(config, "AI_FEATURES", frozenset())
+    got = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "I smell gas in the kitchen").json()
+    assert got["kind"] == "emergency" and "112" in got["text"] and fake.calls == []
+    q = db.query_one("SELECT urgent, triaged FROM guest_question")
+    assert q["urgent"] == 1 and q["triaged"] == 0
+    assert leon.looks_dangerous("where is the fireplace") is False and leon.looks_dangerous("cítím plyn") is True
+
+
+def test_an_upset_guest_hears_sorry_first_and_never_model_text(ws):
+    _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    _fake(answer("We will refund you 50 EUR.", [], kind="ask_host", summary="Complains about noise, wants a refund.", upset=True))
+    got = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "The noise was unbearable all night, I want a refund").json()
+    assert got["kind"] == "ask_host" and got["text"].startswith("I'm sorry") and "Jana" in got["text"] and "50" not in got["text"]
+    assert db.query_one("SELECT summary FROM guest_question")["summary"] == "Complains about noise, wants a refund."
+
+
+def test_the_same_open_question_is_not_asked_twice(ws):
+    _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    fake = _fake(answer("", [], kind="ask_host", summary="Asks about parking."))
+    first = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Where can I park?").json()
+    again = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "where can i park??").json()
+    assert first["kind"] == "ask_host" and again["kind"] == "ask_host" and again["asked_host"]
+    assert again["text"].startswith("I've already") and len(fake.calls) == 1
+    assert db.query_one("SELECT COUNT(*) AS n FROM guest_question")["n"] == 1
+
+
+def test_noise_gets_a_fixed_reply_without_a_model_call(ws):
+    _go_live(ws["home"])
+    rid = _stay(ws["home"], 0)
+    fake = _fake(reply({"kind": "unclear", "reply": "", "sources": [], "host_summary": None, "upset": False}))
+    for text in ("?", "\U0001F600\U0001F600", "https://example.test/x?y=1", "12345"):
+        assert _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", text).json()["kind"] == "unclear"
+    assert fake.calls == []
+    got = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "asdkj qwpeo zzz").json()
+    assert got["kind"] == "unclear" and len(fake.calls) == 1 and not got["asked_host"]
+    assert db.query_one("SELECT COUNT(*) AS n FROM guest_question")["n"] == 0
+
+
+@pytest.mark.parametrize("door", ["stay", "qr"])
+def test_the_lifetime_cap_per_door_then_messages_pass_to_the_host(ws, monkeypatch, door):
+    cards = _go_live(ws["home"])
+    monkeypatch.setenv("UBYHOST_LEON_STAY_MAX", "2")
+    monkeypatch.setenv("UBYHOST_LEON_QR_MAX", "1")
+    cap = 2 if door == "stay" else 1
+    url = f"/l/{TOKEN}/{_stay(ws['home'], 0)}/guide/leon" if door == "stay" else f"/g/{guide_token.ensure(ws['home'])}/leon"
+    src = [f"c{cards['heating']['id']}"]
+    fake = _fake(*[answer("Press the round button.", src) for _ in range(cap)])
+    assert _say(ws, url, "Hi").json()["kind"] == "smalltalk"
+    for i in range(cap):
+        assert _say(ws, url, f"Heating question {i}").json()["kind"] == "answer"
+    over = _say(ws, url, "One more thing about the heating").json()
+    assert over["kind"] == "passed" and over["asked_host"] and len(fake.calls) == cap
+    assert _say(ws, url, "And the towels?").json()["kind"] == "passed"
+    rows = db.query("SELECT summary, triaged FROM guest_question")
+    assert len(rows) == 1 and rows[0]["triaged"] == 0 and rows[0]["summary"].endswith("And the towels?")
+    assert db.query_one("SELECT model_messages FROM guest_chat")["model_messages"] == cap
+    assert leon.door_cap("stay") == 2 and leon.door_cap("qr") == 1
+    monkeypatch.delenv("UBYHOST_LEON_STAY_MAX")
+    assert leon.door_cap("stay") == leon.STAY_MAX == 20 and leon.QR_MAX == 10
 
 
 # --- conversations and cookies -------------------------------------------------------

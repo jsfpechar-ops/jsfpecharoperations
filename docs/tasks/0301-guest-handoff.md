@@ -16,7 +16,7 @@ Leon never gets the guest's name or registration data (nothing here changes the 
 
 ### Design
 
-**Alert channel.** The existing "needs you" stack: `alerts.raise_alert` with `dedupe_key = "guest_question:<apartment_id>"`, level `warning`, `params = {"property", "count"}`. One line per property, refreshed with the open count on every new question and resolved (`alerts.resolve`) when the last open question is answered or dismissed. The line's button (`_ACTIONS["guest_question"]`) opens the questions page. The dashboard already renders open alerts (`needs_you.build`), so no dashboard code changes. **One mail per batch:** `mail.enqueue(kind="guest_question")` to the legal entity's contact address (`mail_notify._entity_contact_email`, as the filing watchdog does) only when the new question is the *only* open one for the property; later questions join the batch silently until the host clears it. This needs no column and no scheduler. Neither the alert nor the mail carries message text: the mail says "a guest at <property> asked something your guide does not answer" and links the page. Host mail language: `mail_notify.HOST_MAIL_LANGUAGE` (en), as every host mail. `mail_enabled()` false (tests, dev) skips the mail; the alert still stands.
+**Alert channel.** The existing "needs you" stack: `alerts.raise_alert` with `dedupe_key = "guest_question:<apartment_id>"`, level `warning`, `params = {"property", "count"}`. One line per property, refreshed with the open count on every new question and resolved (`alerts.resolve`) when the last open question is answered or dismissed. The line's button (`_ACTIONS["guest_question"]`) opens the questions page. The dashboard already renders open alerts (`needs_you.build`), so no dashboard code changes. **One mail per batch:** `mail.enqueue(kind="guest_question")` to the legal entity's contact address (`mail_notify._entity_contact_email`, as the filing watchdog does) only when the new question is the *only* open one for the property; later questions join the batch silently until the host clears it. This needs no column and no scheduler. **Urgent and unread rows (0300 change, 2026-10-24).** `guest_question.urgent = 1` is an emergency (Leon showed 112; the guest may be in danger): `refresh_alert` raises the line at level `critical` while any open row of the property is urgent, and `on_new_question` sends the batch mail for an urgent row even when other questions are open (idempotency key per question already allows it). `triaged = 0` means Leon never read the message (lifetime cap, spent budget or outage) and `summary` is the guest's redacted words, possibly several messages joined by newlines: the list and the question page show a badge (`guest_questions.badge.urgent` "Urgent", `guest_questions.badge.unread` "Not read by Leon (AI)", en and cs, two more keys in the script) and the question page renders the summary one `<p>` per line like the answer. Neither the alert nor the mail carries message text: the mail says "a guest at <property> asked something your guide does not answer" and links the page. Host mail language: `mail_notify.HOST_MAIL_LANGUAGE` (en), as every host mail. `mail_enabled()` false (tests, dev) skips the mail; the alert still stands.
 
 **Where the host answers.** Two pages under the property's guide, `App/app/routes/guest_questions.py`: `GET /apartments/{id}/guide/questions` (list: open first, oldest first; then the rest, newest first; 50 rows) and `GET /apartments/{id}/guide/questions/{qid}` (one question: the redacted guest message, Leon's English summary, a textarea, primary "Send to guest"; a quiet "Dismiss without answering"). The guide page gets a second secondary button "Guest questions (n)". The router is registered *before* the guide router because `/guide/{item_id}` would otherwise catch `/guide/questions` (422).
 
@@ -34,7 +34,7 @@ Hard rules 2, 3, 4, 5, 6 (forms work without JavaScript), 7, 8, 9 apply. Rule 7:
 
 ### Anchors (verbatim; a missing anchor means STOP)
 
-`App/app/leon.py` (0300): `        return {"kind": "ask_host", "text": body, "message_id": message_id, "question_id": int(question_id)}`.
+`App/app/leon.py` (0300): the comment line `    # 0301 adds its host alert hook directly below this line.` inside `_open_question` (4 spaces of indent).
 `App/app/alerts.py`: `    "submission_stuck": ("notification.action.guests", "/reservations/{reservation}#guests"),`.
 `App/app/mail.py`: in `KINDS`, the three lines `    "cancelled_with_guests",` / `    "deadline_at_risk",` / `    "deadline_digest",`; in `HOST_KINDS`, the three lines `    # digest. Neither goes to a guest.` / `    "deadline_at_risk",` / `    "deadline_digest",`.
 `App/app/main.py`: the import line containing `guest_guide_view, guest_leon, invoices,` and the line `app.include_router(guest_guide_routes.router)`.
@@ -86,12 +86,14 @@ Command: `ls App/app/guest_handoff.py App/app/routes/guest_questions.py App/app/
 
 ### Step 3: the hook in `App/app/leon.py`
 
-Directly before the line `        return {"kind": "ask_host", "text": body, "message_id": message_id, "question_id": int(question_id)}` insert (8 spaces of indent, like the return):
+Directly after the line `    # 0301 adds its host alert hook directly below this line.` insert (4 spaces of indent, like the comment):
 
 ```python
-        from . import guest_handoff  # local: guest_handoff reads this module's tables
-        guest_handoff.on_new_question(int(question_id))
+    from . import guest_handoff  # local: guest_handoff reads this module's tables
+    guest_handoff.on_new_question(int(question_id))
 ```
+
+`_open_question` is the one place 0300 writes a `guest_question` row (ask_host, emergency, the uncovered part of a multi-part answer, and messages passed unread), so the hook covers them all. Appends to an existing unread row (over the cap) do not call it: the alert count is unchanged.
 
 Command: `grep -c 'guest_handoff' app/leon.py`. Expected: `2`.
 

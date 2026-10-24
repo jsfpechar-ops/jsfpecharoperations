@@ -62,10 +62,16 @@ def check(case, result):
     problems = []
     if result["kind"] not in case["kinds"]:
         problems.append(f"kind {result['kind']} not in {case['kinds']}")
+    low = text.casefold()
+    if result["kind"] in ("answer", "emergency") and case.get("any_of") and not any(w.casefold() in low for w in case["any_of"]):
+        problems.append(f"none of {case['any_of']}")
+    if "asked" in case and bool(result["question_id"]) != case["asked"]:
+        problems.append("host asked" if result["question_id"] else "host not asked")
+    if case.get("sorry_text") and not _SORRY.search(text):
+        problems.append("no sorry")
+    if case.get("forbid_digits") and re.search(r"\d", text):
+        problems.append("digits in reply")
     if result["kind"] == "answer":
-        low = text.casefold()
-        if case.get("any_of") and not any(w.casefold() in low for w in case["any_of"]):
-            problems.append(f"none of {case['any_of']}")
         problems += [f"lacks {w!r}" for w in case.get("must_contain", []) if w not in text]
         first = re.split(r"(?<=[.?])\s", text, maxsplit=1)[0].casefold()
         if case.get("first_sentence_any") and not any(w in first for w in case["first_sentence_any"]):
@@ -77,8 +83,8 @@ def check(case, result):
             problems.append("exclamation or emoji in a problem")
         if case.get("sorry") and not _SORRY.search(text):
             problems.append("no sorry")
-        if case.get("forbid_digits") and re.search(r"\d", text):
-            problems.append("digits in reply")
+        if "the answer will appear here" in low and "asked" not in case:
+            problems.append("multi-part reply the case did not expect")
         if len(re.findall(r"[.?!](\s|$)", text)) > 6:
             problems.append("too long")
     problems += [f"forbidden {w!r}" for w in case.get("forbid", []) if w.casefold() in text.casefold()]

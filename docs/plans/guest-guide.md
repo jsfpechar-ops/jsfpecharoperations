@@ -64,6 +64,8 @@ Critical means one of: a public or guest-facing surface, file uploads, secrets o
 | 3 | [0301](../tasks/0301-guest-handoff.md) | Host handoff: "needs you" alert and one mail per batch, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Haiku | todo |
 | 3 | 0302 | Guest chat UI on the stay page and QR page, languages; guide link also on the form and claim pages (before a guest is saved) | no | Opus | no | Haiku | to write |
 | 3 | 0303 | Guide translation for guests (cached per language) and host usage page | no | Opus | no | Haiku | to write |
+| 1 | [0304](../tasks/0304-guide-full-catalog.md) | Full card catalog: 17 default cards (24 kinds) with checklist prompts and detailed ghost text per field; progress counts skipped as answered | no | Opus | no | Haiku | todo |
+| 1 | [0305](../tasks/0305-guide-quick-answers.md) | Quick answers: 5-step yes/no wizard, `guide_fact` table, fact lines inside cards for guests (6 languages) and Leon, "Your guide" summary | yes: migration, guest surface, AI to guests | Opus | yes | Haiku | todo |
 | end | phase review | Fable reads the diffs of the critical files only, before each phase merges | | | yes | | |
 
 Every brief states, in §2 or the risk list: security (ownership on every query, CSRF, input limits), privacy (no guest data in logs, retention), UX (phone first, one primary action, Czech and English copy), design (catalog classes, tokens, layout guard, 390 px screenshot), function (tests for the happy path and each refusal) and cost (tokens per call, caps). Opus checks the embedded code in a scratch copy before the brief is committed, so the executor copies working code.

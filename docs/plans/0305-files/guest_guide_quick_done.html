@@ -1,0 +1,40 @@
+{#- 0305: the end of Quick answers. Shows what guests now read and sends the host
+    to the cards that still need their words. Data: app/guide_facts.py. -#}
+{% extends "host_page.html" %}
+{% set body_kind = 'list' %}
+{% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
+{% block title %}{{ t('guest_guide.quick.done_title') }} · {{ apartment.internal_name }} · UbyHost{% endblock %}
+{% block page_title %}{{ t('guest_guide.quick.done_title') }}{% endblock %}
+{% block back_url %}{{ base_url }}{% endblock %}
+{% block back_label %}{{ t('guest_guide.title') }}{% endblock %}
+{% block meta %}{{ t('guest_guide.progress', answered=progress.answered, total=progress.cards) }}{% endblock %}
+{% block secondary_actions %}{{ ui_button(t('guest_guide.quick.edit'), 'secondary', href=base_url ~ '/quick/' ~ first_step) }}{% endblock %}
+{% block primary_action %}{% if next_id %}{{ ui_button(t('guest_guide.quick.write'), 'primary', href=base_url ~ '/' ~ next_id) }}{% else %}{{ ui_button(t('guest_guide.quick.back'), 'primary', href=base_url) }}{% endif %}{% endblock %}
+{% block body %}
+{{ ui_banner('neutral', t('guest_guide.quick.done_lede')) }}
+{% call ui_section(t('guest_guide.quick.answers_title'), id='quick-answers') %}
+{% if answered %}
+{% set pairs = [] %}{% for title, text in answered %}{% set _ = pairs.append((title, text | e)) %}{% endfor %}
+{{ ui_facts(pairs) }}
+{% else %}
+<p class="ui-sub">{{ t('guest_guide.quick.no_answers') }}</p>
+{% endif %}
+{% endcall %}
+{% call ui_section(t('guest_guide.quick.missing_title'), id='quick-missing') %}
+{% if open_cards %}
+<p class="ui-sub">{{ t('guest_guide.quick.missing_lede') }}</p>
+{{ ui_table_begin([(t('guest_guide.col.card'), ''), (t('guest_guide.col.state'), '')], label=t('guest_guide.quick.missing_title')) }}
+{% for card in open_cards %}
+{% set card_url = base_url ~ '/' ~ card.id %}
+{% set card_title = card.title if card.kind == 'custom' else t('guest_guide.kind.' ~ card.kind ~ '.title') %}
+<tr class="ui-row clickable-row" data-href="{{ card_url }}" tabindex="0" role="link" aria-label="{{ card_title }}">
+  <td class="ui-cell-first" data-card="primary"><a href="{{ card_url }}">{{ card_title }}</a></td>
+  <td data-card="badge">{% if card.state == 'check' %}{{ ui_badge('attention', t('guest_guide.state.check')) }}{% else %}{{ ui_badge('action', t('guest_guide.state.missing')) }}{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}
+<p class="ui-sub">{{ t('guest_guide.quick.all_done') }}</p>
+{% endif %}
+{% endcall %}
+{% endblock %}
