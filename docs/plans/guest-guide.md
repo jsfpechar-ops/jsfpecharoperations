@@ -61,7 +61,7 @@ Critical means one of: a public or guest-facing surface, file uploads, secrets o
 | 2 | 0299 | Paste box and import review UX (accept, edit, dismiss a draft) | no | Opus | no | Haiku | to write |
 | 3 | 0300 | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Sonnet | to write |
 | 3 | 0301 | Host handoff: alert, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Sonnet | to write |
-| 3 | 0302 | Guest chat UI on the stay page and QR page, languages | no | Opus | no | Haiku | to write |
+| 3 | 0302 | Guest chat UI on the stay page and QR page, languages; guide link also on the form and claim pages (before a guest is saved) | no | Opus | no | Haiku | to write |
 | 3 | 0303 | Guide translation for guests (cached per language) and host usage page | no | Opus | no | Haiku | to write |
 | end | phase review | Fable reads the diffs of the critical files only, before each phase merges | | | yes | | |
 
