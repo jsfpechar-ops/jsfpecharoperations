@@ -20,6 +20,8 @@
   --g-ok-soft: var(--green-bg);
   --g-bad: var(--red);
   --g-bad-soft: var(--red-bg);
+  --g-warn: var(--warn);
+  --g-warn-soft: var(--warn-soft);
   --g-radius-sm: var(--radius-sm);
   --g-radius: var(--radius-lg);
   --g-radius-lg: var(--radius-lg);
@@ -1317,3 +1319,17 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 
 /* 0231: the owner's own view of an empty guest link. */
 .g-host-note { margin: 0 0 16px; padding: 10px 12px; border: 1px dashed #92400e; border-radius: 10px; background: #fffbeb; color: #78350f; font-size: 14px; line-height: 1.45; text-align: left; }
+
+/* 0294: the guest guide cards (stay link and QR page). */
+.g-guide-where { margin: 0 0 12px; font-size: 14.5px; color: var(--g-ink-2); }
+.g-guide-where span { color: var(--g-muted); }
+.g-guide-steps { margin: 0 0 14px; padding-left: 22px; font-size: 16px; line-height: 1.5; color: var(--g-ink); }
+.g-guide-steps li { margin: 0 0 8px; padding-left: 4px; }
+.g-guide-warn { margin: 0 0 14px; padding: 10px 12px; border-left: 3px solid var(--g-warn); border-radius: var(--g-radius-sm); background: var(--g-warn-soft); color: var(--g-ink); font-size: 14.5px; line-height: 1.45; }
+.g-guide-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0 0 14px; }
+.g-guide-photos img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--g-radius-sm); border: 1px solid var(--g-line); }
+.g-guide-video { margin: 0; font-size: 15px; }
+.g-guide-video a { color: var(--g-accent); font-weight: 600; }
+.g-guide-card h2 { font-size: 19px; }
+.g-guide-link { display: block; padding: 16px 20px; text-decoration: none; font-size: 16.5px; font-weight: 600; color: var(--g-accent); }
+.g-guide-link::after { content: " \2192"; }

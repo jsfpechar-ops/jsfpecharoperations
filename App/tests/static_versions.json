@@ -60,8 +60,8 @@
     "v": "20261003a"
   },
   "guest.css": {
-    "sha256": "f5037ac99f7a44fa81b0360577d1ff0902eebc7cb31c69759da56e0fd29fc96d",
-    "v": "20261022-0231"
+    "sha256": "0f4f324c8d3bbf76c5a80fdf3978a1b3af0fff7aa4baada6cd8b8f47049a307c",
+    "v": "20261024-0294"
   },
   "host-controls.css": {
     "sha256": "5f187fafa975e322becf8101dd749d862a5c166f03d74523a738f2fd55a2f93d",
@@ -136,7 +136,7 @@
     "v": "20261022-0274"
   },
   "workflow.css": {
-    "sha256": "8ec578e98b1829dc180549807e1055fd3ee4adf7734ab9582346841f54674f79",
-    "v": "20261024-0291"
+    "sha256": "a3a618d4637403cff98c9cb433000e09a2e8b166694b399defb472d890ec8015",
+    "v": "20261024-0343"
   }
 }

@@ -10,13 +10,9 @@ Updated: 2026-10-23.
 ## Now
 
 - 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
-
 - 0290: passkey CI/phone pending.
-
 - Check-in alerts #435: tests pass; owner merge/deploy.
-
 - TTLock disclosure #434: timing/geometry CI pending.
-
 - #432 subdomain deployed; root login/calendar review pending.
 
 - 0280-0283 short alerts, card borders, signature dialog. **Owner:** PR/deploy/phone test.

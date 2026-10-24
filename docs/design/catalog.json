@@ -203,7 +203,9 @@
     "fee-figures-total",
     "fee-step-actions",
     "fee-qr-amount",
-    "fee-send-line"
+    "fee-send-line",
+    "guide-photos",
+    "guide-photo"
   ],
   "hooks": [
     "sr-only",
@@ -294,7 +296,10 @@
     "App/app/templates/users.html",
     "App/app/templates/admin_incidents.html",
     "App/app/templates/admin_operations.html",
-    "App/app/templates/admin_funnel.html"
+    "App/app/templates/admin_funnel.html",
+    "App/app/templates/guest_guide.html",
+    "App/app/templates/guest_guide_card.html",
+    "App/app/templates/guest_guide_qr.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [
@@ -948,6 +953,8 @@
     "health-copy": "0244 name (strong) and sentence (span) of a health-row.",
     "health-all-set": "0244 details that folds the rows away when nothing needs fixing.",
     "fee-more": "Stay fee editor in Settings: folds the council's print-only details (address, contact, data box) (0239).",
-    "ui-btn-open": "MASTER 7.1 open: soft-coral Open on list rows and cards (0291)"
+    "ui-btn-open": "MASTER 7.1 open: soft-coral Open on list rows and cards (0291)",
+    "guide-photos": "0343 grid of a guest guide card's photos (a ul of guide-photo).",
+    "guide-photo": "0343 one photo with its delete button under it."
   }
 }

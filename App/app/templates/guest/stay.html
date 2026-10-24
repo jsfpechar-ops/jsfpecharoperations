@@ -10,6 +10,8 @@
   <span>{{ nights_label(reservation.date_from, reservation.date_to) }}</span>
 </div>
 
+<a class="g-card g-guide-link" href="/l/{{ token }}/{{ reservation.id }}/guide?lang={{ lang }}" data-guide-link>{{ t('guide_title') }}</a>
+
 {# Fixed vertical order: (1) status, (2) the one next action, (3) money —
    the invoice link, when there is one — (4) your records, (5) the host
    footer. #}

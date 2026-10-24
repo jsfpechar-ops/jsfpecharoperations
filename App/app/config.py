@@ -169,6 +169,12 @@ TTLOCK_CLIENT_ID = os.environ.get("UBYHOST_TTLOCK_CLIENT_ID", "").strip()
 TTLOCK_CLIENT_SECRET = os.environ.get("UBYHOST_TTLOCK_CLIENT_SECRET", "").strip()
 TTLOCK_MONTHLY_CALLS = int(os.environ.get("UBYHOST_TTLOCK_MONTHLY_CALLS", "30000"))
 
+# Guest guide imports through Apify (brief 0347). Off until the token is set;
+# the token is env only. The run cap is shared by every host on the instance.
+APIFY_TOKEN = os.environ.get("UBYHOST_APIFY_TOKEN", "").strip()
+APIFY_MONTHLY_RUNS = int(os.environ.get("UBYHOST_APIFY_MONTHLY_RUNS", "40"))
+APIFY_TIMEOUT = int(os.environ.get("UBYHOST_APIFY_TIMEOUT", "120"))
+
 # Web push (briefs 0225-0227): urgent alerts on the host's phone. On unless
 # UBYHOST_WEB_PUSH=0. The signing key is made by the app and kept encrypted.
 WEB_PUSH = os.environ.get("UBYHOST_WEB_PUSH", "1").strip().lower() not in ("0", "false", "no")

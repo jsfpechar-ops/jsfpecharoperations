@@ -16,6 +16,8 @@ from . import (
     door_codes,
     dsr,
     filing_watchdog,
+    guest_guide_import,
+    guide_photos,
     host_i18n,
     icalsync,
     lifecycle_mail,
@@ -47,6 +49,7 @@ _JOB_LEVELS = {
     "door_codes": "warning",
     "push": "warning",
     "stay_fee_mail": "warning",
+    "guide_import": "warning",
 }
 
 
@@ -83,6 +86,7 @@ def job_intervals() -> dict:
         "door_codes": 1,
         "posthog": 15,
         "push": 1,
+        "guide_import": 1,
         "stay_fee_mail": 24 * 60,
     }
 
@@ -266,6 +270,9 @@ def _job_photo_sweep() -> None:
         removed = passport_photos.purge_stale()
         if removed:
             log.info("passport photo sweep deleted %s file(s)", removed)
+        orphans = guide_photos.purge_orphans()
+        if orphans:
+            log.info("guide photo sweep deleted %s orphaned file(s)", orphans)
         blanked = reporting.purge_submission_payloads()
         if blanked:
             log.info("submission payload purge blanked %s envelope(s)", blanked)
@@ -343,6 +350,22 @@ def _job_door_codes() -> None:
         return
     _job_ok("door_codes")
     _log_run("door_codes", started, True, summary)
+
+
+def _job_guide_import() -> None:
+    """Brief 0347: run the queued Booking and Airbnb imports, one actor run each."""
+    started = time.perf_counter()
+    try:
+        ran = guest_guide_import.process_queue()
+        if ran:
+            log.info("guide import: %s run(s)", ran)
+    except Exception:
+        log.exception("guide import job failed")
+        _job_failed("guide_import")
+        _log_run("guide_import", started, False)
+        return
+    _job_ok("guide_import")
+    _log_run("guide_import", started, True, {"runs": ran})
 
 
 def _job_push() -> None:
@@ -470,6 +493,10 @@ def start() -> bool:
     _scheduler.add_job(
         _job_push, "interval", minutes=minutes["push"],
         id="push", max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_guide_import, "interval", minutes=minutes["guide_import"],
+        id="guide_import", max_instances=1, coalesce=True,
     )
     _scheduler.start()
     log.info(
