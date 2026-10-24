@@ -117,6 +117,9 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
           LIGHTSAIL_HOST="$(printf '%s' "${LIGHTSAIL_HOST}" | tr -d '[:space:]')"
           LIGHTSAIL_HOST="${LIGHTSAIL_HOST#ubuntu@}"
+          # The unquoted heredoc is deliberate: DEPLOY_SHA, TARGET and the token expand here,
+          # everything escaped with \$ expands on the server.
+          # shellcheck disable=SC2087
           ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
           DEPLOY_SHA="${DEPLOY_SHA}"
           TARGET="${TARGET}"
