@@ -1,6 +1,6 @@
 # 0292 report: guest guide pages (executor)
 
-Status: blocked
+Status: review
 
 ## 1. Files changed
 
@@ -44,3 +44,6 @@ Code and tests (all steps of brief §3 applied exactly):
 
 1. Review the PR once a fresh executor (or you) has taken the 390 px screenshots of the two pages.
 2. Merge when CI is green.
+
+## Review (orchestrator, 2026-10-24)
+- Code identical to the brief's verified files. 390 px screenshots taken on a live server by a second Haiku run: list and card, scrollWidth 390 = clientWidth 390, nothing overlaps (the bottom tab bar sits mid-page only because the capture is full-page).
