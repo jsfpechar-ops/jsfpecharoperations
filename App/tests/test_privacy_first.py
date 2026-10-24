@@ -21,7 +21,7 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from app import auth, claim, cookie_inventory, db, i18n, landing_i18n, public_guides
+from app import auth, claim, cookie_inventory, db, guest_guide, guide_token, i18n, landing_i18n, public_guides
 from app.main import app
 from tests.conftest import complete_guest_claim
 from tests.conftest import login_as
@@ -207,6 +207,15 @@ def test_a_full_crawl_sets_exactly_the_strictly_necessary_cookies(guest_pin_on):
         )
         assert saved.status_code == 200, saved.text
         guest.get(f"/l/{TOKEN}/privacy?lang=cs", follow_redirects=True)
+
+        # Leon (AI) on the public QR page: the conversation cookie (brief 0350).
+        guest_guide.ensure_defaults(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
+        cards = {r["kind"]: r for r in guest_guide.items(apartment_id)}
+        for kind in guest_guide.MUST_HAVE:
+            guest_guide.save(apartment_id, cards[kind]["id"], {"steps": f"Do the {kind} thing"})
+        visitor = recorder.client()
+        said = visitor.post(f"/g/{guide_token.ensure(apartment_id)}/leon", data={"message": "Hello"})
+        assert said.status_code == 200, said.text
     finally:
         _cleanup()
 
@@ -228,6 +237,7 @@ def test_the_strictly_necessary_set_is_the_first_party_cookie_inventory():
         "ubyhost_owned",
         "ubyhost_claim",
         "ubyhost_guest_lang",
+        "ubyhost_leon",
     }
 
 

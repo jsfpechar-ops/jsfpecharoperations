@@ -7,7 +7,7 @@ Status: review
 - `App/app/migrations/0013_guest_guide.sql` (new): `guide_item`, `guide_photo`, indexes.
 - `App/app/guest_guide.py` (new): topics, kinds, defaults, save/skip/custom, progress, `for_guest`.
 - `App/tests/test_guest_guide.py` (new): 9 tests.
-- `docs/tasks/0291-report.md` (new) and `docs/tasks/0291-guest-guide-data.md` (Status line only).
+- `docs/tasks/0341-report.md` (new) and `docs/tasks/0341-guest-guide-data.md` (Status line only).
 
 No other file changed. `db.py`, existing migrations, templates, routes and i18n are untouched.
 

@@ -1,6 +1,6 @@
 # Leon (AI): operational scenarios (0350, 0351, 0352)
 
-Owner request (2026-10-24): be ready for every situation. Content situations (several questions, emergencies, refunds, injection, rude guests, about_me) are 0350's eval set and are not repeated here. Verdict: **OK** as briefed, **fixed** (in the brief's files, with a test where the server decides), or **accepted** (deliberately, reason given). Functions are in `docs/plans/0300-files/leon.py` (L), `guest_leon.py` (R), `docs/plans/0302-files/guest-leon.js` (JS), `docs/plans/0301-files/guest_handoff.py` (H).
+Owner request (2026-10-24): be ready for every situation. Content situations (several questions, emergencies, refunds, injection, rude guests, about_me) are 0350's eval set and are not repeated here. Verdict: **OK** as briefed, **fixed** (in the brief's files, with a test where the server decides), or **accepted** (deliberately, reason given). Functions are in `docs/plans/0350-files/leon.py` (L), `guest_leon.py` (R), `docs/plans/0352-files/guest-leon.js` (JS), `docs/plans/0351-files/guest_handoff.py` (H).
 
 | # | Scenario | What happens | Verdict | Test |
 |---|---|---|---|---|

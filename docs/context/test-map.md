@@ -12,10 +12,11 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Door-code access disclosure | `test_door_code_window.py test_door_code_window_browser.py`; CI `door-code-access-review` requires Chromium/WebKit, zero skips, 390 px screenshots |
 | Door codes, TTLock | `test_door_code*.py test_ttlock*.py test_smart_locks_page.py` |
 | Cleaning | `test_cleaning*.py` |
-| AI calls, Havel | `test_ai*.py test_havel*.py`; UI parts also the host pages row |
+| Havel (AI), AI calls, Help & guide | `test_ai*.py test_havel*.py test_guide*.py` (browser files 0 skipped); UI parts also the host pages row |
 | Calendar, iCal feeds | `test_icalsync.py test_ical_skip_unchanged.py test_feed_*.py test_dashboard_calendar*.py test_calendar_*.py test_sample_calendar.py` |
 | Mail, SES | `test_ses_mail.py test_mail_*.py test_*_mail.py test_lifecycle_mail.py test_notification_copy.py` |
 | Retention, privacy, personal data | `test_retention*.py test_privacy_*.py test_no_tracking.py test_cookie_inventory.py test_pii_encryption.py test_dsr_audit.py test_data_keys.py` |
+| Guest bot (Leon) | `test_leon.py test_privacy_first.py test_cookie_inventory.py test_guest_languages.py test_ai.py` |
 | Database, migrations | `test_migrations.py test_db_*.py` |
 | Public pages, legal, landing | `test_public_*.py test_legal_*.py test_landing_*.py test_terms_copy.py test_wp24_terms_dpa.py` |
 | Copy, translations | `test_*_i18n.py test_no_em_dashes.py test_copy_cleanup.py test_flash_literals.py` |

@@ -11,7 +11,7 @@ Every property gets 17 cards that together cover what a guest asks (owner, 2026-
 ## 2. Context
 
 - Catalog after this brief: 11 topics (keys unchanged), 24 built-in kinds. 17 are default cards (every property). The other 7 (`garage`, `tv`, `air_conditioning`, `dishwasher`, `coffee_machine`, `sofa_bed`, `balcony`) are narrower cards kept because data and 0348 use them: they appear only where an import or earlier data created them. New kinds: `getting_here`, `bedrooms`, `bathroom`, `something_wrong`. No kind key is renamed or removed; `MUST_HAVE` stays the same five.
-- All copy (titles, checklists, ghost text, en and cs) is in `docs/plans/0304-files/catalog_copy.py`; `apply_catalog.py` writes it into the code. Never retype copy.
+- All copy (titles, checklists, ghost text, en and cs) is in `docs/plans/0354-files/catalog_copy.py`; `apply_catalog.py` writes it into the code. Never retype copy.
 - `ensure_defaults` runs on every list page load (0342). `add_kind` is idempotent (`ON CONFLICT DO NOTHING` on `uq_guide_item_kind`), so existing properties get the new cards on their next visit; text already written is never touched.
 - `items()` now takes topic and order of a built-in card from the catalog, not from the stored row, so new cards sit in the right place next to old rows.
 - Guests read card titles in en or cs; other guest languages read English (`_copy_lang` in `routes/guest_guide_view.py`, 0344). So en and cs cover every guest language.
@@ -33,11 +33,11 @@ Every property gets 17 cards that together cover what a guest asks (owner, 2026-
 | `App/tests/test_guest_guide.py` | append | Catalog tests |
 | `App/tests/test_guest_guide_pages.py` | edit, append | Progress line, ghost text test |
 
-No other file may change. `docs/plans/0304-files/` is read only.
+No other file may change. `docs/plans/0354-files/` is read only.
 
 ## 4. Steps
 
-1. From the repo root run `python3 docs/plans/0304-files/apply_catalog.py 2>&1 | tail -30`. Expected, exactly: `catalog: 11 topics, 24 cards, 17 default`. Anything else (for example `AssertionError: already applied`): STOP.
+1. From the repo root run `python3 docs/plans/0354-files/apply_catalog.py 2>&1 | tail -30`. Expected, exactly: `catalog: 11 topics, 24 cards, 17 default`. Anything else (for example `AssertionError: already applied`): STOP.
 
 2. In `App/app/guest_guide.py` replace
 
@@ -156,7 +156,7 @@ with
 
 11. From `App/` run `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -30`. Expected: one line starting with `wrote` and ending with `files)`. A line starting with `refusing`: STOP.
 
-12. From the repo root run `cat docs/plans/0304-files/test_catalog_append.py >> App/tests/test_guest_guide.py` and `cat docs/plans/0304-files/test_pages_append.py >> App/tests/test_guest_guide_pages.py`.
+12. From the repo root run `cat docs/plans/0354-files/test_catalog_append.py >> App/tests/test_guest_guide.py` and `cat docs/plans/0354-files/test_pages_append.py >> App/tests/test_guest_guide_pages.py`.
 
 13. In `App/tests/test_guest_guide_pages.py` replace
 
@@ -197,7 +197,7 @@ Stop, and write the report, if: step 1 prints anything but the expected line; an
 
 ## 9. Report
 
-Write `docs/tasks/0304-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. The orchestrator adds one 390 px screenshot each of the card list and the Wi-Fi card (rule 7: template and CSS change).
+Write `docs/tasks/0354-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. The orchestrator adds one 390 px screenshot each of the card list and the Wi-Fi card (rule 7: template and CSS change).
 
 ## Risk list (for the reviewer)
 

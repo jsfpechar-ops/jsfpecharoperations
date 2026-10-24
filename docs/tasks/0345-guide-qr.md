@@ -529,7 +529,7 @@ Stop, and write the report, if: 0344 is not merged; an anchor in steps 2, 5, 6 o
 
 ## 9. Report
 
-Write `docs/tasks/0295-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left.
+Write `docs/tasks/0345-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left.
 
 ## Risk list (for the reviewer)
 

@@ -7974,6 +7974,9 @@ _GUIDE_IMPORT_STRINGS = {
         "guest_guide.import.state.running": "Importing",
         "guest_guide.import.state.failed": "Did not work",
         "guest_guide.import.state.done": "Fetched",
+        "guest_guide.import.state.drafting": "Fetched, drafting cards",
+        "guest_guide.import.merge_failed": "We fetched the listing but could not draft cards from it. You can import this listing again or fill the cards by hand.",
+        "guest_guide.import.drafted": "%(n)s draft cards from your listing are marked Check this. Read each one, fix what is wrong and save it. Nothing reaches guests before you do.",
         "flash.guest_guide.import_queued": "Import started. It usually takes a minute; reload the page to see the result.",
         "flash.error.guide_import_link": "That does not look like a Booking.com or Airbnb listing link. Open your listing, copy the link from the address bar and paste it here.",
         "flash.error.guide_import_booking_path": "Paste the link of the listing page itself: it starts with https://www.booking.com/hotel/.",
@@ -7999,6 +8002,9 @@ _GUIDE_IMPORT_STRINGS = {
         "guest_guide.import.state.running": "Importujeme",
         "guest_guide.import.state.failed": "Nepovedlo se",
         "guest_guide.import.state.done": "Staženo",
+        "guest_guide.import.state.drafting": "Staženo, připravujeme karty",
+        "guest_guide.import.merge_failed": "Nabídku jsme stáhli, ale karty z ní připravit nešlo. Můžete ji naimportovat znovu nebo karty vyplnit ručně.",
+        "guest_guide.import.drafted": "Z vaší nabídky je %(n)s návrhů karet označených Zkontrolovat. Každý si přečtěte, opravte, co nesedí, a uložte. K hostům se nic nedostane dřív.",
         "flash.guest_guide.import_queued": "Import běží. Obvykle trvá minutu, výsledek uvidíte po obnovení stránky.",
         "flash.error.guide_import_link": "Tohle nevypadá jako odkaz na nabídku na Booking.com nebo Airbnb. Otevřete svou nabídku, zkopírujte odkaz z adresního řádku a vložte ho sem.",
         "flash.error.guide_import_booking_path": "Vložte odkaz přímo na stránku nabídky: začíná https://www.booking.com/hotel/.",
@@ -8012,6 +8018,31 @@ _GUIDE_IMPORT_STRINGS = {
 }
 
 for _lang, _strings in _GUIDE_IMPORT_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
+# 0349: reviewing drafts on the card editor.
+_GUIDE_DRAFT_STRINGS = {
+    "en": {
+        "guest_guide.draft_from.booking": "From your Booking.com listing.",
+        "guest_guide.draft_from.airbnb": "From your Airbnb listing.",
+        "guest_guide.draft_from.legacy": "From your old check-in notes in UbyHost.",
+        "guest_guide.draft_from.other": "Drafted by UbyHost.",
+        "guest_guide.discard": "Discard this draft",
+        "guest_guide.discard_confirm": "Discard the drafted text? The card goes back to Missing and you can write it yourself.",
+        "flash.guest_guide.discarded": "Draft discarded. Write the card in your own words.",
+    },
+    "cs": {
+        "guest_guide.draft_from.booking": "Z vaší nabídky na Booking.com.",
+        "guest_guide.draft_from.airbnb": "Z vaší nabídky na Airbnb.",
+        "guest_guide.draft_from.legacy": "Z vašich starších poznámek k příjezdu v UbyHost.",
+        "guest_guide.draft_from.other": "Připravil UbyHost.",
+        "guest_guide.discard": "Zahodit tento návrh",
+        "guest_guide.discard_confirm": "Zahodit navržený text? Karta se vrátí mezi chybějící a napíšete ji sami.",
+        "flash.guest_guide.discarded": "Návrh zahozen. Napište kartu vlastními slovy.",
+    },
+}
+
+for _lang, _strings in _GUIDE_DRAFT_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
 # 0345: the guide's QR code for the host to print.
