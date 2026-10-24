@@ -39,6 +39,7 @@
 <p class="ui-sub">{{ t('guest_guide.import.off') }}</p>
 {% else %}
 {% if import_busy %}{{ ui_banner('neutral', t('guest_guide.import.running')) }}{% endif %}
+{% if import_drafts %}<p class="ui-sub">{{ t('guest_guide.import.drafted', n=import_drafts) }}</p>{% endif %}
 <p class="ui-sub">{{ t('guest_guide.import.help') }} {{ t('guest_guide.import.left', n=import_left) }}</p>
 {% if import_left > 0 and not import_busy %}
 <form method="post" action="{{ base_url }}/import">
@@ -51,8 +52,8 @@
 {{ ui_table_begin([(t('guest_guide.import.col.source'), ''), (t('guest_guide.import.col.state'), '')], label=t('guest_guide.import.title')) }}
 {% for row in imports %}
 <tr class="ui-row">
-  <td class="ui-cell-first" data-card="primary">{{ t('guest_guide.import.source.' ~ row.source) }}<span class="ui-sub"> {{ row.created_at[:10] }}</span></td>
-  <td data-card="badge">{% if row.status in ('queued', 'running') %}{{ ui_badge('action', t('guest_guide.import.state.running')) }}{% elif row.status == 'failed' %}{{ ui_badge('attention', t('guest_guide.import.state.failed')) }}{% else %}{{ ui_badge('done', t('guest_guide.import.state.done')) }}{% endif %}</td>
+  <td class="ui-cell-first" data-card="primary">{{ t('guest_guide.import.source.' ~ row.source) }}<span class="ui-sub"> {{ row.created_at[:10] }}</span>{% if row.status == 'failed' and (row.error or '').startswith('merge') %}<p class="ui-sub">{{ t('guest_guide.import.merge_failed') }}</p>{% endif %}</td>
+  <td data-card="badge">{% if row.status in ('queued', 'running') %}{{ ui_badge('action', t('guest_guide.import.state.running')) }}{% elif row.status == 'failed' %}{{ ui_badge('attention', t('guest_guide.import.state.failed')) }}{% elif row.status == 'done' %}{{ ui_badge('action', t('guest_guide.import.state.drafting')) }}{% else %}{{ ui_badge('done', t('guest_guide.import.state.done')) }}{% endif %}</td>
 </tr>
 {% endfor %}
 {{ ui_table_end() }}
