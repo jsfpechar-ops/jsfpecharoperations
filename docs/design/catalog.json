@@ -298,7 +298,8 @@
     "App/app/templates/admin_operations.html",
     "App/app/templates/admin_funnel.html",
     "App/app/templates/guest_guide.html",
-    "App/app/templates/guest_guide_card.html"
+    "App/app/templates/guest_guide_card.html",
+    "App/app/templates/guest_guide_qr.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [

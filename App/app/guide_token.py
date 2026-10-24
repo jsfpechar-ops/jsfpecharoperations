@@ -7,8 +7,12 @@ break a single stay link, and a leaked QR photo never opens a registration form.
 """
 from __future__ import annotations
 
+import io
 import secrets
 from typing import Any, Dict, Optional
+
+import qrcode
+from qrcode.constants import ERROR_CORRECT_M
 
 from . import db
 
@@ -57,3 +61,12 @@ def apartment_for(token: str) -> Optional[Dict[str, Any]]:
         (token,),
     )
     return dict(row) if row else None
+
+def qr_png(url: str) -> bytes:
+    """A print-sized PNG of the QR code (brief 0345): about 6 cm at 300 dpi."""
+    qr = qrcode.QRCode(error_correction=ERROR_CORRECT_M, box_size=20, border=4)
+    qr.add_data(url)
+    qr.make(fit=True)
+    out = io.BytesIO()
+    qr.make_image().save(out, format="PNG")
+    return out.getvalue()

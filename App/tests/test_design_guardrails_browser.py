@@ -33,6 +33,7 @@ ROUTES = {key: path for key, (path, _selector) in CAPTURE_ROUTES.items()}
 ROUTES.update({
     "cleaning": "/cleaning",
     "guest-guide": "/apartments/{property_id}/guide",
+    "guest-guide-qr": "/apartments/{property_id}/guide/qr",
     "guest-new": "/reservations/{reservation_id}/guests/new",
     "setup-property": "/apartments/{property_id}/setup/property",
     "setup-police": "/apartments/{property_id}/setup/police",

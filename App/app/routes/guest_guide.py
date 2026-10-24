@@ -9,9 +9,9 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
-from .. import access, auth, guest_guide, guide_photos, guide_token, security, templating
+from .. import access, auth, config, guest_guide, guide_photos, guide_token, payments, security, templating
 from .admin_helpers import back, flash
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
@@ -90,6 +90,46 @@ async def guide_add(request: Request, apartment_id: int):
     except guest_guide.GuideError as exc:
         return back(_base(apartment_id), err=flash(request, exc.key))
     return back(f"{_base(apartment_id)}/{item_id}")
+
+
+def _guest_url(apartment_id: int) -> str:
+    return f"{config.PUBLIC_BASE_URL}/g/{guide_token.ensure(apartment_id)}"
+
+
+@router.get("/apartments/{apartment_id}/guide/qr")
+def guide_qr(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = _home(request, apartment_id)
+    url = _guest_url(apartment_id)
+    return _render(
+        request, "guest_guide_qr.html", apartment=apartment, guest_url=url,
+        qr=payments.qr_data_uri(url), progress=guest_guide.progress(apartment_id),
+    )
+
+
+@router.get("/apartments/{apartment_id}/guide/qr.png")
+def guide_qr_png(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    return Response(
+        guide_token.qr_png(_guest_url(apartment_id)),
+        media_type="image/png",
+        headers={**PRIVATE, "Content-Disposition": 'attachment; filename="guest-guide-qr.png"'},
+    )
+
+
+@router.post("/apartments/{apartment_id}/guide/qr/rotate")
+def guide_qr_rotate(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    guide_token.rotate(apartment_id)
+    return back(f"{_base(apartment_id)}/qr", msg=flash(request, "flash.guest_guide.qr_rotated"))
 
 
 @router.get("/apartments/{apartment_id}/guide/{item_id}")
