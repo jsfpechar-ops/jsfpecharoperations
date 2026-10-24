@@ -874,9 +874,12 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace td.row-actions > .row-open + .ui-btn { margin-left: var(--space-2); }
 /* 0298: on narrow phones a card's Open drops under the text instead of widening the card. */
 @media (max-width: 639px) {
-  .host-workspace .host-property-card { flex-wrap: wrap; min-width: 0; max-width: 100%; box-sizing: border-box; }
-  .host-workspace .host-property-card > div { min-width: 0; flex: 1 1 10rem; }
+  .host-workspace .host-property-card:not(.host-property-card-static) { flex-wrap: wrap; min-width: 0; max-width: 100%; box-sizing: border-box; }
+  .host-workspace .host-property-card:not(.host-property-card-static) > div { min-width: 0; flex: 1 1 10rem; }
   .host-workspace .host-property-card-open { margin-left: auto; }
+  /* The guest link card keeps Copy beside its label; only Open drops a line. */
+  .host-workspace .host-property-card-static { flex-wrap: wrap; min-width: 0; max-width: 100%; box-sizing: border-box; }
+  .host-workspace .host-property-card-static > div:not(.actions) { flex: 1 1 0; min-width: 0; }
 }
 /* 0300: one copy button (owner 2026-10-24). Bordered, 32 px; on success the
    copy icon is replaced in place by a green tick, then comes back. */
