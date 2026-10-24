@@ -36,3 +36,7 @@ actionlint on ci.yml: no output, exit 0.
 ## Owner steps left
 
 1. Merge when CI is green (after review).
+
+## Orchestrator review
+
+Reviewed: actionlint clean, zizmor 0 high, all actions SHA-pinned, checkouts without persisted credentials. The 150-line target was my estimate before 0361 had already cut most of the duplication; 99 lines is fine.

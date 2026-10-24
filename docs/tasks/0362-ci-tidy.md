@@ -1,6 +1,6 @@
 # 0362: Tidy CI: one annotation script, no dead steps, pinned actions, grouped Dependabot
 
-Status: todo
+Status: review
 Depends on: 0361 (both edit ci.yml) | Base commit: 73fc1e7 (task/0361 head) | Branch: task/0362-ci-tidy
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
