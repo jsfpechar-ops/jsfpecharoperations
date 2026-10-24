@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 
-from .. import access, auth, config, guest_guide, guide_photos, guide_token, payments, security, templating
+from .. import access, auth, config, guest_guide, guest_guide_import, guide_photos, guide_token, payments, security, templating
 from .admin_helpers import back, flash
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
@@ -75,6 +75,10 @@ def guide_index(request: Request, apartment_id: int):
         must_have=guest_guide.MUST_HAVE,
         progress=guest_guide.progress(apartment_id),
         next_id=_next_open(apartment_id, 0),
+        import_on=guest_guide_import.enabled(),
+        import_left=guest_guide_import.imports_left(apartment_id),
+        import_busy=guest_guide_import.in_progress(apartment_id),
+        imports=guest_guide_import.imports(apartment_id),
     )
 
 
@@ -90,6 +94,21 @@ async def guide_add(request: Request, apartment_id: int):
     except guest_guide.GuideError as exc:
         return back(_base(apartment_id), err=flash(request, exc.key))
     return back(f"{_base(apartment_id)}/{item_id}")
+
+
+@router.post("/apartments/{apartment_id}/guide/import")
+async def guide_import(request: Request, apartment_id: int):
+    """Queue one Booking or Airbnb import (brief 0297). Must stay above the {item_id} routes."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    form = await request.form()
+    try:
+        guest_guide_import.request_import(apartment_id, str(form.get("url", ""))[:guest_guide_import.MAX_URL_LENGTH])
+    except guest_guide_import.GuideImportError as exc:
+        return back(f"{_base(apartment_id)}#import", err=flash(request, exc.key))
+    return back(f"{_base(apartment_id)}#import", msg=flash(request, "flash.guest_guide.import_queued"))
 
 
 def _guest_url(apartment_id: int) -> str:

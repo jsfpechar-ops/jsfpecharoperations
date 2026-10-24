@@ -426,6 +426,12 @@ def _push_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     return push.purge(dry_run=dry_run, owner_user_id=owner_user_id)
 
 
+def _guide_import_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Brief 0297: imported listing text 7 days after the fetch; the request row after 60."""
+    from . import guest_guide_import
+    return guest_guide_import.purge(today, dry_run, owner_user_id)
+
+
 # Each step takes (today, dry_run, owner_user_id) and returns the affected count.
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
@@ -443,6 +449,7 @@ STEPS: List[tuple] = [
     ("door_code_pins", _door_code_pin_step),
     ("cleaning", _cleaning_step),
     ("push", _push_step),
+    ("guide_imports", _guide_import_step),
     ("legal_acceptance", _acceptance_retention_step),
     ("workspaces", _workspace_deletion_step),
 ]
@@ -470,6 +477,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "door_code_pins": "valid_to more than 1 day ago",
         "cleaning": f"event or link expiry before {(today - timedelta(days=30)).isoformat()}",
         "push": "alert queued over 30 days ago, or device unseen for 180 days",
+        "guide_imports": f"listing text fetched before {(today - timedelta(days=7)).isoformat()}, failed request rows before {(today - timedelta(days=60)).isoformat()}",
         "legal_acceptance": (
             f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
         ),

@@ -167,6 +167,14 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 `UBYHOST_DOOR_CODES_LIVE` off, and use console mail for the door-code PIN. See
 [DEPLOYMENT.md](DEPLOYMENT.md#door-codes-on-render-staging).
 
+## Guest guide imports (Apify)
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `UBYHOST_APIFY_TOKEN` | unset | Apify API token. Unset means imports are off and the guide page says so. Set in Lightsail `.env` or Render Environment only, never in git. |
+| `UBYHOST_APIFY_MONTHLY_RUNS` | `40` | Shared monthly cap on Apify actor runs (all hosts). `0` removes the cap. Each run is one listing on Apify's pay-per-result pricing; the cap keeps a month inside the free credit. |
+| `UBYHOST_APIFY_TIMEOUT` | `120` | Seconds one actor run may take before Apify stops it. Keep under 300 (Apify's limit for synchronous runs). |
+
 ## Urgent alerts (web push)
 
 | Variable | Default | Notes |
