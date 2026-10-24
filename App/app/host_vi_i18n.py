@@ -3125,8 +3125,8 @@ STRINGS: Dict[str, str] = {
     "stay_fees.pay.lede": "%(period)s. Ba bước: xác nhận số liệu, gửi PDF cho chính quyền địa phương, rồi thanh toán bằng mã QR.",
     "stay_fees.pay.step": "Bước %(n)s trên 3",
     "stay_fees.pay.step1": "Kiểm tra và xác nhận số liệu",
-    "stay_fees.pay.step2": "Tải PDF cho chính quyền",
-    "stay_fees.pay.step3": "Thanh toán bằng mã QR",
+    "stay_fees.pay.step2": "Tải PDF",
+    "stay_fees.pay.step3": "Thanh toán, rồi gửi PDF",
     "stay_fees.pay.confirm_why": "Xác nhận sẽ khóa số liệu, để PDF và khoản thanh toán khớp với những gì chính quyền nhận được.",
     "stay_fees.pay.confirm": "Xác nhận số liệu",
     "stay_fees.pay.confirmed": "Đã xác nhận",
@@ -3138,6 +3138,17 @@ STRINGS: Dict[str, str] = {
     "stay_fees.pay.nothing": "Kỳ này không phải trả gì. Chính quyền vẫn cần PDF.",
     "stay_fees.pay.no_account": "Thêm tài khoản ngân hàng của chính quyền, mã QR sẽ hiện ở đây.",
     "stay_fees.pay.add_account": "Thêm tài khoản",
+    "stay_fees.pay.short1": "Kiểm tra",
+    "stay_fees.pay.short2": "Tải về",
+    "stay_fees.pay.short3": "Trả và gửi",
+    "stay_fees.pay.ask": "Các số này đúng chưa?",
+    "stay_fees.pay.yes": "Đúng rồi",
+    "stay_fees.pay.edit": "Sửa",
+    "stay_fees.pay.fix_first": "Hãy sửa điều này trước",
+    "stay_fees.pay.download_why": "Chính quyền cần tệp PDF này.",
+    "stay_fees.pay.next": "Tiếp",
+    "stay_fees.pay.back": "Quay lại",
+    "stay_fees.pay.open_databox": "Mở datová schránka",
 }
 
 # 0203: onboarding user test (2026-10-21).
