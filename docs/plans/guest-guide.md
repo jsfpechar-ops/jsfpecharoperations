@@ -45,7 +45,7 @@ Booking (Apify voyager/booking-scraper): address, check-in and check-out times, 
 
 Numbers: this plan owns tasks 0291 to 0309 and migrations 0013 and 0014. Havel (host help bot) owns 0310 to 0329 and migrations from 0015; its 0310 is the shared AI core (`ai.py`, `anthropic` decision, `ai_usage` by feature, kill switch, caps) that 0296 and later build on.
 
-Owner rule (2026-10-24): critical briefs are written by Fable 5.1, or reviewed by Fable when Opus already wrote them; the rest are written by Opus 5.5. Executor is Haiku 5.5 unless the header says Sonnet 5.5.
+Owner rule (2026-10-24): critical briefs are written by Fable 5.1, or reviewed by Fable when Opus already wrote them; the rest are written by Opus 5.5. Executor is Haiku 5.5 for every brief (owner, 2026-10-24); Fable reviews the diffs of critical briefs before merge.
 
 Critical means one of: a public or guest-facing surface, file uploads, secrets or paid APIs, AI output that could reach a guest, personal data or deletion, a migration.
 
@@ -53,15 +53,15 @@ Critical means one of: a public or guest-facing surface, file uploads, secrets o
 |---|---|---|---|---|---|---|---|
 | 1 | [0291](../tasks/0291-guest-guide-data.md) | Tables, `guest_guide.py`, the guest gate `for_guest` | yes: migration, guest gate | Opus | yes | Haiku | todo |
 | 1 | [0292](../tasks/0292-guest-guide-pages.md) | Host "Guest guide" tab, card list, card editor, "Save and next card" | no | Opus | no | Haiku | todo |
-| 1 | [0293](../tasks/0293-guide-photos.md) | Card photos: upload, clean, shrink, serve to owner, delete, orphan sweep | yes: uploads | Opus | yes | Sonnet | todo |
-| 1 | [0294](../tasks/0294-guest-guide-view.md) | Guest side: "Your guide" on the stay page; public QR page; QR token; guest photo serving; no-index, caching, rate limits | yes: public surface | Fable | n/a | Sonnet | todo |
+| 1 | [0293](../tasks/0293-guide-photos.md) | Card photos: upload, clean, shrink, serve to owner, delete, orphan sweep | yes: uploads | Opus | yes | Haiku | todo |
+| 1 | [0294](../tasks/0294-guest-guide-view.md) | Guest side: "Your guide" on the stay page; public QR page; QR token; guest photo serving; no-index, caching, rate limits | yes: public surface | Fable | n/a | Haiku | todo |
 | 1 | [0295](../tasks/0295-guide-qr.md) | Printable QR sheet for the host (PNG/PDF), rotate the QR link | no | Opus | no | Haiku | todo |
 | 2 | 0296 | Dropped: the shared core 0310 already has per-feature switches and caps; the "leon" and "guide_import" settings ride in 0298 and 0300 | | | | | dropped |
-| 2 | [0297](../tasks/0297-guide-import-fetch.md) | Booking and Airbnb import: Apify key and config, URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Sonnet | todo |
-| 2 | [0298](../tasks/0298-guide-import-merge.md) | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Sonnet | todo |
+| 2 | [0297](../tasks/0297-guide-import-fetch.md) | Booking and Airbnb import: Apify key and config, URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Haiku | todo |
+| 2 | [0298](../tasks/0298-guide-import-merge.md) | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Haiku | todo |
 | 2 | [0299](../tasks/0299-guide-drafts.md) | Draft review: source line and "Discard this draft" on the card editor (paste box dropped to keep AI cost down) | no | Opus | no | Haiku | todo |
-| 3 | 0300 | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Sonnet | to write |
-| 3 | 0301 | Host handoff: alert, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Sonnet | to write |
+| 3 | 0300 | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Haiku | to write |
+| 3 | 0301 | Host handoff: alert, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Haiku | to write |
 | 3 | 0302 | Guest chat UI on the stay page and QR page, languages; guide link also on the form and claim pages (before a guest is saved) | no | Opus | no | Haiku | to write |
 | 3 | 0303 | Guide translation for guests (cached per language) and host usage page | no | Opus | no | Haiku | to write |
 | end | phase review | Fable reads the diffs of the critical files only, before each phase merges | | | yes | | |

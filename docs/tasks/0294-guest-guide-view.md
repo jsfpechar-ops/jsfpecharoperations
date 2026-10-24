@@ -2,7 +2,7 @@
 
 Status: todo
 Depends on: 0293 merged | Base commit: after 0293 | Branch: task/0294-guest-guide-view
-Executor: Sonnet 5.5 (public, guest-facing surface) | Fits one session: 30 tool calls, 60k tokens
+Executor: Haiku 5.5 (critical: Fable reviews the diff before merge) | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 

@@ -2,7 +2,7 @@
 
 Status: todo
 Depends on: 0297 and 0310 merged | Base commit: after 0297 and 0310 | Branch: task/0298-guide-import-merge
-Executor: Sonnet 5.5 (AI output that reaches the host's guide, paid API) | Fits one session: 30 tool calls, 60k tokens
+Executor: Haiku 5.5 (critical: Fable reviews the diff before merge) | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 

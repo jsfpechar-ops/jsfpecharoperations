@@ -2,7 +2,7 @@
 
 Status: todo
 Depends on: 0295 merged | Base commit: after 0295 | Branch: task/0297-guide-import-fetch
-Executor: Sonnet 5.5 (paid outbound API, untrusted data, a migration) | Fits one session: 30 tool calls, 60k tokens
+Executor: Haiku 5.5 (critical: Fable reviews the diff before merge) | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
