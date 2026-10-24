@@ -831,3 +831,32 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .fee-step-actions { flex-direction: column; align-items: stretch; }
   .host-workspace .fee-stepper-label { font-size: var(--size-12); }
 }
+
+/* 0293: invoice builder (owner 2026-10-24): the IČO lookup comes first, the
+   address reads like an address, item rows stay compact. */
+.host-workspace .invoice-supplier { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-4); align-items: start; }
+.host-workspace .invoice-supplier-edit { grid-column: 2; grid-row: 1; font-size: var(--size-14); }
+.host-workspace .invoice-supplier-picker { grid-column: 1; grid-row: 1; max-width: 22rem; margin: 0; }
+.host-workspace .invoice-supplier-meta { grid-column: 1 / -1; padding: 0; }
+.host-workspace .invoice-lookup { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); margin: var(--space-3) 0 var(--space-5); padding: var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface-2); }
+.host-workspace .invoice-lookup-ico { flex: 1 1 18rem; min-width: 0; margin: 0; }
+.host-workspace .invoice-lookup-row { display: flex; gap: var(--space-2); }
+.host-workspace .invoice-lookup-row input { flex: 1 1 auto; min-width: 0; max-width: 12rem; }
+.host-workspace .invoice-lookup-row .ui-btn { flex: 0 0 auto; }
+.host-workspace .invoice-lookup-guest { display: flex; align-items: center; gap: var(--space-3); }
+.host-workspace .invoice-buyer-fields { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-4); }
+.host-workspace .invoice-buyer-fields > .ui-field { margin: 0; min-width: 0; }
+.host-workspace .invoice-f-full { grid-column: span 6; }
+.host-workspace .invoice-f-zip { grid-column: span 2; }
+.host-workspace .invoice-f-city { grid-column: span 4; }
+.host-workspace .invoice-f-half { grid-column: span 3; }
+@media (max-width: 639px) {
+  .host-workspace .invoice-buyer-fields > .ui-field { grid-column: 1 / -1; }
+  .host-workspace .invoice-lookup-row input { max-width: none; }
+  .host-workspace .invoice-supplier { grid-template-columns: minmax(0, 1fr); }
+  .host-workspace .invoice-supplier-edit { grid-column: 1; grid-row: 3; }
+}
+@container (max-width: 850px) {
+  .invoice-items-grid tbody tr { gap: var(--space-2) var(--space-4); padding: var(--space-3) 0; }
+  .invoice-items-grid td.row-actions { grid-column: auto / -1; text-align: right; }
+}

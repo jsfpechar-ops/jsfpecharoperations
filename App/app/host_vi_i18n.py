@@ -1304,6 +1304,7 @@ STRINGS: Dict[str, str] = {
     "invoice.buyer.zip": "Mã bưu chính",
     "invoice.buyer.country": "Quốc gia",
     "invoice.buyer.ico": "Mã số doanh nghiệp (IČO)",
+    "invoice.buyer.or": "hoặc",
     "invoice.buyer.dic": "Mã số thuế VAT",
     "invoice.buyer.email": "Email nhận hóa đơn",
     "invoice.buyer.required": "Nhập tên khách hàng.",
