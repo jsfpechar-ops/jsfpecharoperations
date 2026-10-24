@@ -45,7 +45,8 @@ Excerpts (verbatim; if one is not found, stop, section 8):
 | App/app/routes/havel.py | edit | build the card; "not prepared" sentence |
 | App/app/templates/_havel_card.html | new | the card |
 | App/app/static/host2.css | edit | append card rules; new `?v=` key in base.html |
-| App/app/templates/base.html | edit | the CSS key only |
+| App/app/templates/base.html | edit | the CSS key and the `havel.js` key only |
+| App/app/static/havel.js | edit | the Cancel handler only |
 | App/tests/test_havel_actions.py | new | unit and route tests |
 | App/tests/test_havel_cards_browser.py | new | card at 390 and 1280, screenshots |
 | docs/design/catalog.json | edit | enforced template |

@@ -36,6 +36,7 @@ router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 | Path | Action | What |
 |---|---|---|
 | App/app/routes/havel.py | new | GET and POST `/havel` |
+| App/app/templates/_icons.html | edit | the one new icon `message-circle-question` (step with the icon) |
 | App/app/main.py | edit | import and include the router |
 | App/app/templates/havel.html | new | the page |
 | App/app/templates/_havel_thread.html | new | bubbles, links, support exit (reused by the panel, 0324) |
