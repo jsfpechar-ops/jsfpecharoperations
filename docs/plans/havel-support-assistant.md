@@ -322,7 +322,7 @@ shows what is left: "You can send Havel 7 more messages this month."
 - Only messages that reach the model count. Free and not counted: greetings and thanks answered from a fixed
   list, empty or too-long messages, limit notices, and every support send.
 - The daily share stops one busy day from eating the month: on the 10th with $7 left and 22 days to go (today included), today may
-  spend $0.33. Unused share rolls into the next day automatically, because it is recomputed each morning.
+  spend $0.32. Unused share rolls into the next day automatically, because it is recomputed each morning.
 - At 80% of the monthly budget the operator gets one e-mail (mail kind `havel_budget`), so a surprise never
   arrives as an outage.
 - Rate limits reuse `rate_limit.blocked(scope, key, max, window)` and `rate_limit.record(scope, key)`, key the user id,
