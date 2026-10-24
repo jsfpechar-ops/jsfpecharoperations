@@ -364,6 +364,8 @@ def _open_question(chat_id: int, apartment_id: int, message_id: int, summary: st
         "created_at": db.utcnow(), "answered_at": None,
     }))
     # 0351 adds its host alert hook directly below this line.
+    from . import guest_handoff  # local: guest_handoff reads this module's tables
+    guest_handoff.on_new_question(int(question_id))
     return question_id
 
 
