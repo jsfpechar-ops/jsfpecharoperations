@@ -9,3 +9,7 @@ Files changed: App/tests/test_0199_phone_geometry_browser.py, App/tests/test_wp2
 
 Commands: test_wp28 7 passed (twice); test_0199 3 passed (twice); guardrails + a11y guard 14 passed; 0 skipped.
 Owner steps: merge when CI is green.
+
+## Orchestrator review
+
+Also fixed the CI-only failure of all three 0199 tests: screenshots were written to a hard-coded `/mnt/project-files/...` path that exists only on the machine that wrote the test. They now go to `UBYHOST_SHOTS_DIR` (the CI artifact folder) or a temp dir. 3 passed locally.

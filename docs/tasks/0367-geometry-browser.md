@@ -1,6 +1,6 @@
 # 0367: Make the lock geometry and operator signature browser tests pass
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 5439abe | Branch: task/0367-geometry-browser
 Executor: Sonnet (debugging brief, owner allowed a stronger model 2026-10-24) | Fits one session: 30 tool calls, 60k tokens
 

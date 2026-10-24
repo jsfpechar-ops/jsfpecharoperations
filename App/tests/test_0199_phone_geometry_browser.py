@@ -1,4 +1,6 @@
 import json
+import os
+import tempfile
 from pathlib import Path
 from app import auth, cleaning
 from tests.test_host_stay_actions_browser import _browser, stay_actions_base, stay_actions_host, sync_api  # noqa: F401
@@ -6,7 +8,8 @@ from tests.test_lock_navigation_browser import world, _reset  # noqa: F401
 from tests.test_cleaning_browser import origin, browser_context, loaded  # noqa: F401
 from tests.test_cleaning import workspace  # noqa: F401
 
-OUT = Path("/mnt/project-files/design-reset/checkpoint-6/mobile/")
+# Screenshots go to the CI artifact folder (or a temp dir), never a machine-specific path.
+OUT = Path(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir())) / "0199-phone-geometry"
 FAILS = []
 MEASURE = """() => {
   const R = el => el.getBoundingClientRect();
