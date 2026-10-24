@@ -1,7 +1,6 @@
 """0293: the new-invoice form asks for the customer's IČO first, then the address in reading order."""
 from __future__ import annotations
 
-from app import db
 from tests.invoice_stay_helper import make_stay
 from tests.test_invoice_stay_pages import _add_entity, _owner, host  # noqa: F401  (fixture)
 
