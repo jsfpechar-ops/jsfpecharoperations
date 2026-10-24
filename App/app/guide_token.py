@@ -63,7 +63,7 @@ def apartment_for(token: str) -> Optional[Dict[str, Any]]:
     return dict(row) if row else None
 
 def qr_png(url: str) -> bytes:
-    """A print-sized PNG of the QR code (brief 0295): about 6 cm at 300 dpi."""
+    """A print-sized PNG of the QR code (brief 0345): about 6 cm at 300 dpi."""
     qr = qrcode.QRCode(error_correction=ERROR_CORRECT_M, box_size=20, border=4)
     qr.add_data(url)
     qr.make(fit=True)
