@@ -4,7 +4,7 @@ Status: review | Base commit: de76c71 | Branch: task/0310-ai-core | Executor: Ha
 
 ## Files
 - App/requirements.txt (+ `anthropic==2.3.0`), App/requirements.lock (regenerated, hashes)
-- App/app/migrations/0013_ai_usage.sql (new: ai_usage, havel_stats)
+- App/app/migrations/0015_ai_usage.sql (new: ai_usage, havel_stats)
 - App/app/config.py (AI settings block after SIGNUP_NOTIFY_EMAIL)
 - App/app/ai.py (new), App/tests/ai_fake.py (new), App/tests/test_ai.py (new)
 - docs/ENVIRONMENT.md, docs/context/architecture.md, docs/context/test-map.md
@@ -33,15 +33,14 @@ anthropic 2.3.0. New top-level packages in the lock: anthropic, docstring-parser
 
 ## Deviations
 - Lock bumps (accepted per orchestrator answer 1): fastapi 0.141.1 to 0.142.2, boto3 1.43.103 to 1.43.108, botocore 1.43.104 to 1.43.118. Header regenerated under Python 3.13 with the command from requirements.txt (old header said 3.12 and the older command).
-- Migration number: the lint printed `next free: migration 0013`, not 0015, so 0013 is used. The brief reserves 0013 and 0014 for the guest plan (0291-0309). See Questions.
+- Migration number: 0015 was used, by orchestrator decision (0013 and 0014 are reserved for the guest-guide stack, 0016 is taken by it).
 - decisions.md line: the plan is not on main (docs/plans/havel-support-assistant.md is missing), and the lint rejects both a markdown link and a backticked path to it. The line names the plan in plain text.
 - ENVIRONMENT.md "Plans:" link points to the same missing file; the lint does not check it.
 - Compaction script was run from the session scratchpad, not /tmp.
 - Secret grep: the only matches are pattern words inside docs/tasks/0310-ai-core.md (the brief's own grep text). No keys.
 
 ## Questions
-1. Migration number: keep 0013_ai_usage.sql (lint), or rename to 0015_ai_usage.sql to avoid the guest plan's 0013 and 0014? Recommend 0015 before merge.
-2. The plan file is not on main. Should the links in ENVIRONMENT.md and the decision line point to it once it lands?
+1. The plan file is not on main. Should the links in ENVIRONMENT.md and the decision line point to it once it lands?
 
 ## Owner steps
 1. Read the decision line in docs/context/decisions.md and the package list above.
