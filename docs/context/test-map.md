@@ -18,6 +18,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Database, migrations | `test_migrations.py test_db_*.py` |
 | Public pages, legal, landing | `test_public_*.py test_legal_*.py test_landing_*.py test_terms_copy.py test_wp24_terms_dpa.py` |
 | Copy, translations | `test_*_i18n.py test_no_em_dashes.py test_copy_cleanup.py test_flash_literals.py` |
+| Guest guide | `test_guest_guide*.py` |
 | Onboarding, properties | `test_onboarding*.py test_property_*.py test_first_*.py` |
 | Analytics | `test_posthog_*.py test_umami_guard.py test_meta_capi.py` |
 | Design system, catalog page, design lint | `test_design_*.py test_dev_ui*.py` |

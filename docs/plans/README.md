@@ -15,6 +15,7 @@ Deep designs, one per feature. Open a plan only when you're working on that feat
 | [host-design-staging-handoff.md](host-design-staging-handoff.md) | Owner authorized staging review; application implementation must precede Render deploy |
 | [host-filter-audit.md](host-filter-audit.md) | Targeted host-filter audit complete; uniform controls with domain-specific fields |
 | [invoice-address-check.md](invoice-address-check.md) | Code distinction checked; current-source legal verification blocked by network |
+| [guest-guide.md](guest-guide.md) | Approved 2026-10-24. Guest guide, imports and guest bot; Phase 1 briefs 0291-0294 |
 | [stay-fee-remittance/PLAN_STAY_FEE_REMITTANCE.md](stay-fee-remittance/PLAN_STAY_FEE_REMITTANCE.md) | Built. Host-only, optional per property (rate 0 by default) |
 | [PLAN_GUEST_INVOICE_FEATURE.md](PLAN_GUEST_INVOICE_FEATURE.md) | Built. Standalone host-only invoice builder (the filename is historical) |
 | [stay-only-invoices.md](stay-only-invoices.md) | Approved 2026-10-08. Invoices only for a stay; briefs 0019, 0020 |

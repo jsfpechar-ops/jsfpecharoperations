@@ -23,9 +23,9 @@ Append-only.
 - 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
 - 2026-10-06 | [workflow] Context-rollout bundle: flat files only; MANIFEST at root | place_files paths | [TEMPLATE](../tasks/TEMPLATE.md)
 - 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
-- 2026-10-06 | New dependency `webauthn==3.0.1` plus transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned | passkeys must not be hand-rolled; owner approved all five | task 0004
+- 2026-10-06 | New dependency `webauthn==3.0.1` plus transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned | no hand-rolled passkeys; owner approved | task 0004
 - 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
-- 2026-10-06 | Downloads skip the navigation skeleton (`download`, `data-no-skeleton`, path-ending rule), pinned by a template scan test | a stay-fee PDF click blanked the page for 15 s | skeleton.js
+- 2026-10-06 | Downloads skip the navigation skeleton (`download`, `data-no-skeleton`, path-ending rule), pinned by a template scan test | PDF click blanked page | skeleton.js
 - 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row; the CSV keeps one neutral line so it adds up | a correction line looks wrong to the office | stay_fee.py
 - 2026-10-06 | UbyPort outcome: 0-2 accepted, 4-6 not; 112 = reported late = accepted (replaces batch-not-received) | police letter A1-A5 | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-06 | Sweep: one send per refused record, then wait for host fix (was 3 tries) | police B2-B3 | [OPERATIONS](../OPERATIONS.md)
@@ -52,7 +52,7 @@ Append-only.
 - 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning day markers; in-page creation | owner | PR #397
 - 2026-10-17 | [workflow] Haiku 5.5 only executor; 100k cap per chat; scoped tests, no audits unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
-- 2026-10-19 | Design reset v2: `docs/design/MASTER.md` is the only host design source; Lucide icons as inline SVG (no dependency); CI lint blocks raw colours, inline styles, page CSS; phone tab bar | owner | [plan](../plans/design-v2.md)
+- 2026-10-19 | Design reset v2: `docs/design/MASTER.md` is the only host design source; Lucide inline SVG icons; CI lint blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
@@ -69,3 +69,4 @@ Append-only.
 - 2026-10-23 More skips loader; no on-track count (owner).
 - 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
 - 2026-10-23 Cloudflare pre-clearance set (owner).
+- 2026-10-24 Guest guide plan ([plan](../plans/guest-guide.md)) (owner).
