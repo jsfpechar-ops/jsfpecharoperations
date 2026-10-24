@@ -31,6 +31,7 @@
     {% for card in group.cards %}
       <div class="g-card g-guide-card" data-guide-card="{{ card.id }}">
         <h2>{{ card.title }}</h2>
+        {% if card.facts %}<p>{{ card.facts | join(' ') }}</p>{% endif %}
         {% if card.location %}<p class="g-guide-where"><span>{{ t('guide_where') }}</span> {{ card.location }}</p>{% endif %}
         {% if card.steps %}
           <ol class="g-guide-steps">

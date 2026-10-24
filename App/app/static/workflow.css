@@ -133,3 +133,17 @@
 .guide-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--space-3); margin: 0 0 var(--space-3); padding: 0; list-style: none; }
 .guide-photo { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
 .guide-photo img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
+
+/* 0355: Quick answers. A yes/no question is a fieldset of three native radios
+   shown as big tap chips: full width, 48 px tall, the checked answer filled with
+   ink like a pressed ui-chip ("Not sure", the unanswered default, stays light), a focus ring on the keyboard. No JavaScript. */
+.quick-choice { margin: 0 0 var(--space-4); padding: 0; border: 0; min-width: 0; }
+.quick-choice > .ui-label { display: block; margin: 0 0 var(--space-2); padding: 0; }
+.quick-choice-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.quick-choice-option { position: relative; display: block; min-width: 0; }
+.quick-choice-option > input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.quick-choice-option > span { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: var(--space-2); border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font-weight: 600; text-align: center; overflow-wrap: anywhere; transition: background-color var(--motion-1) var(--ease-standard); }
+.quick-choice-option > input:hover + span { background: var(--surface-hover); }
+.quick-choice-option > input:checked + span { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+.quick-choice-option > input[value=""]:checked + span { border-color: var(--ink); background: var(--surface-active); color: var(--ink); }
+.quick-choice-option > input:focus-visible + span { box-shadow: var(--focus-ring-2); }

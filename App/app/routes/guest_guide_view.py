@@ -20,7 +20,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from starlette.background import BackgroundTask
 
-from .. import claim, guest_guide, guide_photos, guide_token, host_i18n, mail, rate_limit
+from .. import claim, guest_guide, guide_facts, guide_photos, guide_token, host_i18n, mail, rate_limit
 from ..templating import render_guest
 from .. import ai, leon  # 0352: the Leon (AI) chat
 from .. import guide_translate  # 0353: cards in the guest's language
@@ -75,7 +75,7 @@ def _copy_lang(lang: str) -> str:
 def _cards(apartment_id: int, level: str, lang: str, photo_url) -> List[Dict[str, Any]]:
     hl = _copy_lang(lang)
     out = []
-    for item in guest_guide.for_guest(apartment_id, level):
+    for item in guide_facts.for_guest(apartment_id, level, lang):
         title = item["title"] if item["kind"] == "custom" else host_i18n.translate(hl, f"guest_guide.kind.{item['kind']}.title")
         out.append(
             {
@@ -83,6 +83,7 @@ def _cards(apartment_id: int, level: str, lang: str, photo_url) -> List[Dict[str
                 "kind": item["kind"],
                 "topic": item["topic"],
                 "title": title,
+                "facts": item["facts"],
                 "location": item["location"],
                 "steps": [line.strip() for line in item["steps"].splitlines() if line.strip()],
                 "watch_out": item["watch_out"],
@@ -132,7 +133,7 @@ def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level
 
 def _photo(apartment_id: int, level: str, item_id: int, photo_id: int):
     """The file, only when the card is one this level may read; else a bare 404."""
-    if not any(item["id"] == item_id for item in guest_guide.for_guest(apartment_id, level)):
+    if not any(item["id"] == item_id for item in guide_facts.for_guest(apartment_id, level, "en")):
         return None
     photo = guide_photos.get(apartment_id, item_id, photo_id)
     path = guide_photos.path_for(photo) if photo else None

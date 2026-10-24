@@ -8,7 +8,7 @@
 {% block back_url %}/apartments/{{ apartment.id }}{% endblock %}
 {% block back_label %}{{ apartment.internal_name }}{% endblock %}
 {% block meta %}{% if progress.live %}{{ t('guest_guide.progress_live', answered=progress.answered, total=progress.cards) }}{% else %}{{ t('guest_guide.progress', answered=progress.answered, total=progress.cards) }}{% endif %}{% endblock %}
-{% block secondary_actions %}{{ ui_button(t('guest_guide.qr.link'), 'secondary', href=base_url ~ '/qr') }} {{ ui_button(t('guest_questions.link', n=questions_open), 'secondary', href=base_url ~ '/questions') }}{% endblock %}
+{% block secondary_actions %}{{ ui_button(t('guest_guide.quick.link'), 'secondary', href=base_url ~ '/quick') }} {{ ui_button(t('guest_guide.qr.link'), 'secondary', href=base_url ~ '/qr') }} {{ ui_button(t('guest_questions.link', n=questions_open), 'secondary', href=base_url ~ '/questions') }}{% endblock %}
 {% block primary_action %}{% if next_id %}{{ ui_button(t('guest_guide.continue'), 'primary', href=base_url ~ '/' ~ next_id) }}{% endif %}{% endblock %}
 {% block body %}
 {% set topic_options = [] %}{% for topic in topics %}{% set _ = topic_options.append((topic, t('guest_guide.topic.' ~ topic))) %}{% endfor %}
@@ -18,6 +18,7 @@
 {{ ui_banner('attention', t('guest_guide.not_live', done=progress.must_have_done, total=progress.must_have_total)) }}
 {% endif %}
 {% if progress.check %}{{ ui_banner('attention', t('guest_guide.check_waiting')) }}{% endif %}
+{% if quick_next %}{{ ui_banner('neutral', t('guest_guide.quick.banner'), t('guest_guide.quick.start'), base_url ~ '/quick') }}{% endif %}
 {% if usage.leon or usage.languages %}<p class="ui-sub" data-guide-usage>{% if usage.leon %}{{ t('guest_guide.usage.leon', n=usage.leon) }}{% endif %}{% if usage.leon and usage.languages %} · {% endif %}{% if usage.languages %}{{ t('guest_guide.usage.languages', langs=usage.languages | join(', ') | upper) }}{% endif %}</p>{% endif %}
 
 {% for topic, cards in groups %}
