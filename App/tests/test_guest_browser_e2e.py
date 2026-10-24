@@ -14,7 +14,7 @@ None of that is visible in markup. This file clicks through the real pages in
 Chromium - pick the stay, set the group size, claim by
 e-mail, then fill, sign and submit one form per person - and measures the
 layout on every screen. It is skipped when Playwright or Chromium is missing;
-the ``guest-browser`` CI job installs both, so it always runs on a pull request.
+the ``browser`` CI job installs both, so it always runs on a pull request.
 
 Run it locally:
     pip install playwright==1.63.0 && python -m playwright install chromium
