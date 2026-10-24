@@ -175,6 +175,8 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 | `UBYHOST_APIFY_MONTHLY_RUNS` | `40` | Shared monthly cap on Apify actor runs (all hosts). `0` removes the cap. Each run is one listing on Apify's pay-per-result pricing; the cap keeps a month inside the free credit. |
 | `UBYHOST_APIFY_TIMEOUT` | `120` | Seconds one actor run may take before Apify stops it. Keep under 300 (Apify's limit for synchronous runs). |
 | `UBYHOST_AI_MONTHLY_USD_GUIDE_IMPORT` | `10` (from the Model API section) | Monthly cap for turning fetched listings into draft cards (brief 0348, feature `guide_import`, one model call per import, about 0.002 USD each). `UBYHOST_AI_FEATURES` must list `guide_import`, or fetched imports wait as "Fetched, drafting cards". 3 USD is plenty. |
+| `UBYHOST_AI_MONTHLY_USD_LEON`, `UBYHOST_AI_KEY_DAILY_USD_LEON` | `10`, set `0.05` (from the Model API section) | Leon (AI), the guest bot (brief 0350, feature `leon`, key = property id): monthly cap for all properties and the daily cap per property. One message costs 0.0002 to 0.0007 USD (the higher figure when the prompt cache is cold), so 0.05 is at least 70 guest messages per property per day. `UBYHOST_AI_FEATURES` must list `leon`; without it, or past a cap, guests get the "passed to your host" reply and the host a question. |
+| `UBYHOST_LEON_STAY_MAX`, `UBYHOST_LEON_QR_MAX` | `20`, `10` | Lifetime cap of model-answered guest messages per stay conversation and per QR-page conversation (brief 0350). Over the cap Leon makes no model call: the message goes to the host as an open question and the guest reads "I've passed your message to your host". |
 
 ## Urgent alerts (web push)
 
