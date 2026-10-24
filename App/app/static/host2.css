@@ -864,9 +864,15 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 }
 @container (max-width: 420px) {
   .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .invoice-items-grid td.row-actions { grid-column: 1 / -1; text-align: left; }
+  .invoice-items-grid td.row-actions, .invoice-items-grid tbody tr > td:last-child { grid-column: 1 / -1; text-align: left; }
 }
 /* 0294: Open sits at the row's right edge, before the ⋮ menu. */
 .host-workspace td.row-actions > .row-open { vertical-align: middle; }
 .host-workspace td.row-actions > .row-open + .row-menu,
 .host-workspace td.row-actions > .row-open + .ui-btn { margin-left: var(--space-2); }
+/* 0298: on narrow phones a card's Open drops under the text instead of widening the card. */
+@media (max-width: 639px) {
+  .host-workspace .host-property-card { flex-wrap: wrap; min-width: 0; max-width: 100%; box-sizing: border-box; }
+  .host-workspace .host-property-card > div { min-width: 0; flex: 1 1 10rem; }
+  .host-workspace .host-property-card-open { margin-left: auto; }
+}
