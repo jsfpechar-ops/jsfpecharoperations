@@ -1,4 +1,6 @@
 import json
+import os
+import tempfile
 from pathlib import Path
 from app import auth, cleaning
 from tests.test_host_stay_actions_browser import _browser, stay_actions_base, stay_actions_host, sync_api  # noqa: F401
@@ -6,7 +8,8 @@ from tests.test_lock_navigation_browser import world, _reset  # noqa: F401
 from tests.test_cleaning_browser import origin, browser_context, loaded  # noqa: F401
 from tests.test_cleaning import workspace  # noqa: F401
 
-OUT = Path("/mnt/project-files/design-reset/checkpoint-6/mobile/")
+# Screenshots go to the CI artifact folder (or a temp dir), never a machine-specific path.
+OUT = Path(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir())) / "0199-phone-geometry"
 FAILS = []
 MEASURE = """() => {
   const R = el => el.getBoundingClientRect();
@@ -56,7 +59,9 @@ MEASURE = """() => {
       navR: f(R(nav).right), laneR: f(R(nav.parentElement).right), navW: f(R(nav).width), scrollW: nav.scrollWidth,
       clientW: nav.clientWidth, ovx: cs(nav, 'overflowX') }; }
   const intro = q('#settings-lock .property-group-intro'), door = q('#door-code'), lg = q('#settings-lock'), acc = q('#settings-lock-account');
-  if (intro && door) out.F = f(R(door).top - R(intro).bottom);
+  // 97ac958 put the door-code window card between the intro and the panel: each gap in the stack must stay small.
+  const dwin = q('#settings-lock [data-door-code-window]');
+  if (intro && door) out.F = dwin ? f(Math.max(R(dwin).top - R(intro).bottom, R(door).top - R(dwin).bottom)) : f(R(door).top - R(intro).bottom);
   if (intro && lg && acc) out.Fd = { lgT: f(R(lg).top), introB: f(R(intro).bottom), lgB: f(R(lg).bottom), accT: f(R(acc).top),
     rowGap: cs(acc.parentElement, 'rowGap'), lgMB: cs(lg, 'marginBottom'), lgPB: cs(lg, 'paddingBottom'), accMT: cs(acc, 'marginTop'),
     accPT: cs(acc, 'paddingTop'), introMB: cs(intro, 'marginBottom'), introH: f(R(intro).height) };
