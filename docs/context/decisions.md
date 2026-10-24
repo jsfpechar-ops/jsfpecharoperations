@@ -58,15 +58,14 @@ Append-only.
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
 - 2026-10-21 | Why-ledes; signature with stay fee; guest window 1 day | owner
 - 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
-- 2026-10-21 Stay-fee email: auto-confirm clean periods; PDF+QR on 2nd; Settings switch | owner, [plan](../plans/stay-fee-monthly-email.md)
-- 2026-10-22 One needs-you card on `/`; unopened-link reminder day before arrival, once/stay; no new host emails | owner.
+- 2026-10-21 Stay-fee email: auto-confirm clean; PDF+QR on 2nd; Settings switch | owner, [plan](../plans/stay-fee-monthly-email.md)
+- 2026-10-22 One needs-you card on `/`; unopened-link reminder once/stay; no new host emails | owner.
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
-- 2026-10-22 [workflow] iPad: cloud WebKit; navigation `page.route` needs `service_workers="block"` (0253).
 - 2026-10-22 [workflow] iPad: cloud WebKit; route tests: `service_workers="block"` (0253).
-- 2026-10-22 Wizard coral bar OK (MASTER 10.5)
-- 2026-10-22 Alerts: short line + fix link; off `/` only red gets a line (owner).
-- 2026-10-22 [deps] Typed signature font: self-hosted Dancing Script (OFL); no code copied (owner).
-- 2026-10-23 Subdomain: same RP ID; #435 live completion + worker resolution | owner.
-- 2026-10-23 More skips loader; dashboard drops on-track count | owner.
-- 2026-10-23 Subdomain: same RP ID. Alerts #435: live completion + worker resolution; owner authorized Codex.
+- 2026-10-22 [workflow] iPad: cloud WebKit; route tests: `service_workers="block"` (0253).
+- 2026-10-22 Wizard coral bar OK
+- 2026-10-22 Alerts: short line + fix link; off `/` only red (owner).
+- 2026-10-22 [deps] Signature font: self-hosted Dancing Script (OFL) (owner).
+- 2026-10-23 More skips loader; no on-track count (owner).
+- 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
 - 2026-10-23 Cloudflare pre-clearance set (owner).
