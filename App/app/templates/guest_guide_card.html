@@ -1,0 +1,53 @@
+{#- 0292: one guest guide card. "Save and next card" walks the host through
+    every card that still needs them; the old free text arrives as a draft
+    ('check') that guests never see until the host saves it. -#}
+{% extends "host_page.html" %}
+{% set body_kind = 'form' %}
+{% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
+{% set custom = item.kind == 'custom' %}
+{% set card_title = item.title if custom else t('guest_guide.kind.' ~ item.kind ~ '.title') %}
+{% block title %}{{ card_title }} · {{ t('guest_guide.title') }} · UbyHost{% endblock %}
+{% block page_title %}{{ card_title }}{% endblock %}
+{% block back_url %}{{ base_url }}{% endblock %}
+{% block back_label %}{{ t('guest_guide.title') }}{% endblock %}
+{% block meta %}{{ t('guest_guide.custom_prompt') if custom else t('guest_guide.kind.' ~ item.kind ~ '.prompt') }}{% endblock %}
+{% block body %}
+{% set visibility_options = [] %}{% for level in visibility %}{% set _ = visibility_options.append((level, t('guest_guide.visibility.' ~ level))) %}{% endfor %}
+{% if error %}{{ ui_banner('attention', t(error)) }}{% endif %}
+{% if item.state == 'check' %}{{ ui_banner('attention', t('guest_guide.check_banner')) }}{% endif %}
+{% if item.state == 'skipped' %}{{ ui_banner('neutral', t('guest_guide.skipped_banner')) }}{% endif %}
+<form method="post" action="{{ base_url }}/{{ item.id }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{% if custom %}{{ ui_field('guide-title', t('guest_guide.field.title'), name='title', value=values.title, attrs='maxlength="120" required') }}{% endif %}
+{{ ui_field('guide-location', t('guest_guide.field.location'), name='location', value=values.location, help=t('guest_guide.field.location_help'), optional=true, attrs='maxlength="500"') }}
+{{ ui_textarea('guide-steps', t('guest_guide.field.steps'), value=values.steps, name='steps', help=t('guest_guide.field.steps_help'), rows=8, attrs='maxlength="4000"') }}
+{{ ui_textarea('guide-watch-out', t('guest_guide.field.watch_out'), value=values.watch_out, name='watch_out', help=t('guest_guide.field.watch_out_help'), optional=true, rows=3, attrs='maxlength="1000"') }}
+{{ ui_field('guide-video', t('guest_guide.field.video'), name='video_url', value=values.video_url, type='url', help=t('guest_guide.field.video_help'), optional=true, attrs='maxlength="500" inputmode="url"') }}
+{{ ui_select('guide-visibility', t('guest_guide.field.visibility'), visibility_options, selected=values.visibility, name='visibility', help=t('guest_guide.field.visibility_help')) }}
+<div class="ui-form-actions">
+{{ ui_button(t('guest_guide.save_next'), 'primary', type='submit', attrs='name="then" value="next"') }}
+{{ ui_button(t('guest_guide.save'), 'secondary', type='submit') }}
+</div>
+</form>
+
+{% call ui_section(t('guest_guide.more.title'), id='card-more') %}
+<div class="ui-btn-group">
+<form method="post" action="{{ base_url }}/{{ item.id }}/skip">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{% if item.state == 'skipped' %}
+<input type="hidden" name="skip" value="0">
+{{ ui_button(t('guest_guide.unskip'), 'secondary', type='submit') }}
+{% else %}
+<input type="hidden" name="skip" value="1">
+{{ ui_button(t('guest_guide.skip'), 'quiet', type='submit') }}
+{% endif %}
+</form>
+{% if custom %}
+<form method="post" action="{{ base_url }}/{{ item.id }}/delete" data-confirm data-confirm-message="{{ t('guest_guide.delete_confirm') }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{{ ui_button(t('guest_guide.delete'), 'danger', type='submit') }}
+</form>
+{% endif %}
+</div>
+{% endcall %}
+{% endblock %}

@@ -1,6 +1,6 @@
 # 0292: Host guest guide page and card editor
 
-Status: todo
+Status: blocked
 Depends on: 0291 merged | Base commit: after 0291 | Branch: task/0292-guest-guide-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
