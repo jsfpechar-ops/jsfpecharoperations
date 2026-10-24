@@ -857,6 +857,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 }
 @container (max-width: 850px) {
   .invoice-items-grid tbody tr { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: var(--space-2) var(--space-3); padding: var(--space-3) 0; align-items: end; }
+  .invoice-items-grid tbody tr[data-stay-row] { align-items: start; }
   .invoice-items-grid tbody tr > td:first-child { grid-column: 1 / -1; }
   .invoice-items-grid td.row-actions,
   .invoice-items-grid tbody tr > td:last-child { grid-column: -2 / -1; text-align: right; }
