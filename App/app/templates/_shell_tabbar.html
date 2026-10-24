@@ -9,7 +9,7 @@
   <a href="/reservations" {% if stays_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('calendar-days', 24) }}</span><span>{{ t('nav.stays') }}</span></a>
   <a href="/apartments" {% if properties_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('house', 24) }}</span><span>{{ t('nav.properties') }}</span></a>
   <a href="/cleaning" {% if nav == 'cleaning' %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('brush-cleaning', 24) }}</span><span>{{ t('nav.cleaning') }}</span></a>
-  <a href="/settings" data-sheet-open="more-sheet" aria-label="{{ t('nav.more_menu') }}" {% if more_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('ellipsis', 24) }}</span><span>{{ t('nav.more') }}</span></a>
+  <a href="/settings" data-sheet-open="more-sheet" data-no-skeleton aria-label="{{ t('nav.more_menu') }}" {% if more_nav %}aria-current="page"{% endif %}><span class="ui-tabbar-ic">{{ icon('ellipsis', 24) }}</span><span>{{ t('nav.more') }}</span></a>
 </nav>
 <dialog id="more-sheet" class="ui-dialog" aria-label="{{ t('nav.more') }}">
   <div class="ui-sheet">
