@@ -159,9 +159,27 @@ def stay_fees_list(request: Request):
     ]
     rows.sort(key=lambda row: (row["apartment"]["internal_name"] or "", row["apartment"]["id"]))
 
+    # 0292: which step each property card shows. Step 1 until the period is
+    # confirmed; then 2 (download), and 3 (pay and send) when the host pressed Next.
+    try:
+        step_apartment = int(request.query_params.get("fee_apt", ""))
+    except ValueError:
+        step_apartment = None
+    step_three = request.query_params.get("fee_step") == "3"
+    list_query = [(k, v) for k, v in request.query_params.multi_items() if k not in ("lang", "fee_step", "fee_apt")]
+
+    def fee_step_url(apartment_id: int, step: int) -> str:
+        query = urlencode(list_query + ([("fee_step", "3"), ("fee_apt", str(apartment_id))] if step == 3 else []))
+        return f"/stay-fees?{query}#fee-pay-{apartment_id}" if query else f"/stay-fees#fee-pay-{apartment_id}"
+
+    for row in rows:
+        if not row.get("unset"):
+            row["step"] = 1 if not row.get("frozen") else (3 if step_three and step_apartment == row["apartment"]["id"] else 2)
+
     return render(request, "stay_fees.html", {
         "nav": "stay_fees",
         "periods": rows,
+        "fee_step_url": fee_step_url,
         "selected_month": selected_month,
         "has_properties": bool(apartments),
         "stay_fee_emails": stay_fee_auto.emails_enabled(owner_id),
