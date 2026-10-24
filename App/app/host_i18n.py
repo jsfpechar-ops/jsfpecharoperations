@@ -7933,6 +7933,43 @@ _GUIDE_PHOTO_STRINGS = {
 for _lang, _strings in _GUIDE_PHOTO_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0295: the guide's QR code for the host to print.
+_GUIDE_QR_STRINGS = {
+    "en": {
+        "guest_guide.qr.link": "QR code for guests",
+        "guest_guide.qr.title": "QR code for guests",
+        "guest_guide.qr.meta": "Anyone who scans it sees the cards marked Everyone with the QR code. Booked guests see more on their stay link.",
+        "guest_guide.qr.not_live": "Until the must-have cards are done, the code opens a page that says the guide is not ready yet. You can print it now.",
+        "guest_guide.qr.alt": "QR code that opens the guest guide",
+        "guest_guide.qr.print_help": "Print it at least 5 cm wide and put it where guests look first: inside the front door or on the fridge.",
+        "guest_guide.qr.download": "Download for printing",
+        "guest_guide.qr.open": "Open the guest page",
+        "guest_guide.qr.rotate_title": "New link",
+        "guest_guide.qr.rotate_help": "Use this if the code is somewhere it should not be, for example in an old listing photo. Every printed code stops working at once, so print the new one straight away.",
+        "guest_guide.qr.rotate": "Make a new link",
+        "guest_guide.qr.rotate_confirm": "Every printed code for this property stops working now. Make a new link?",
+        "flash.guest_guide.qr_rotated": "New link made. Print the new code; the old one no longer works.",
+    },
+    "cs": {
+        "guest_guide.qr.link": "QR kód pro hosty",
+        "guest_guide.qr.title": "QR kód pro hosty",
+        "guest_guide.qr.meta": "Kdo ho naskenuje, uvidí karty označené Každý s QR kódem. Hosté s rezervací uvidí víc přes odkaz na pobyt.",
+        "guest_guide.qr.not_live": "Dokud nebudou hotové povinné karty, kód otevře stránku, že průvodce ještě není připravený. Vytisknout ho můžete už teď.",
+        "guest_guide.qr.alt": "QR kód, který otevře průvodce pro hosty",
+        "guest_guide.qr.print_help": "Vytiskněte ho aspoň 5 cm široký a dejte ho tam, kam se hosté podívají nejdřív: na vnitřní stranu vchodových dveří nebo na lednici.",
+        "guest_guide.qr.download": "Stáhnout pro tisk",
+        "guest_guide.qr.open": "Otevřít stránku pro hosty",
+        "guest_guide.qr.rotate_title": "Nový odkaz",
+        "guest_guide.qr.rotate_help": "Použijte, pokud je kód někde, kde být nemá, třeba na staré fotce z inzerátu. Všechny vytištěné kódy hned přestanou fungovat, tak nový hned vytiskněte.",
+        "guest_guide.qr.rotate": "Vytvořit nový odkaz",
+        "guest_guide.qr.rotate_confirm": "Všechny vytištěné kódy pro toto ubytování teď přestanou fungovat. Vytvořit nový odkaz?",
+        "flash.guest_guide.qr_rotated": "Nový odkaz je hotový. Vytiskněte nový kód, starý už nefunguje.",
+    },
+}
+
+for _lang, _strings in _GUIDE_QR_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 
 def normalise_language(value: str | None) -> str:
     value = (value or "").lower()[:2]

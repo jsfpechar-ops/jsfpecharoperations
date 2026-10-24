@@ -1,0 +1,29 @@
+{#- 0295: the guide's QR code for the host to print. The code opens /g/<token>,
+    the public "everyone" cards only. A new link makes every printed code stop. -#}
+{% extends "host_page.html" %}
+{% set body_kind = 'form' %}
+{% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
+{% block title %}{{ t('guest_guide.qr.title') }} · {{ apartment.internal_name }} · UbyHost{% endblock %}
+{% block page_title %}{{ t('guest_guide.qr.title') }}{% endblock %}
+{% block back_url %}{{ base_url }}{% endblock %}
+{% block back_label %}{{ t('guest_guide.title') }}{% endblock %}
+{% block meta %}{{ t('guest_guide.qr.meta') }}{% endblock %}
+{% block body %}
+{% if not progress.live %}{{ ui_banner('attention', t('guest_guide.qr.not_live')) }}{% endif %}
+{% call ui_section(apartment.internal_name, id='qr-code') %}
+<img src="{{ qr }}" width="240" height="240" alt="{{ t('guest_guide.qr.alt') }}">
+<p class="ui-help">{{ t('guest_guide.qr.print_help') }}</p>
+<p class="ui-mono">{{ guest_url }}</p>
+<div class="ui-form-actions">
+{{ ui_button(t('guest_guide.qr.download'), 'primary', href=base_url ~ '/qr.png', icon_name='download') }}
+{{ ui_button(t('guest_guide.qr.open'), 'secondary', href=guest_url, icon_name='external-link', attrs='target="_blank" rel="noopener"') }}
+</div>
+{% endcall %}
+{% call ui_section(t('guest_guide.qr.rotate_title'), id='qr-rotate') %}
+<p class="ui-help">{{ t('guest_guide.qr.rotate_help') }}</p>
+<form method="post" action="{{ base_url }}/qr/rotate" data-confirm data-confirm-message="{{ t('guest_guide.qr.rotate_confirm') }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{{ ui_button(t('guest_guide.qr.rotate'), 'danger', type='submit', icon_name='refresh-cw') }}
+</form>
+{% endcall %}
+{% endblock %}

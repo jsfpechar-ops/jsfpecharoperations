@@ -8,6 +8,7 @@
 {% block back_url %}/apartments/{{ apartment.id }}{% endblock %}
 {% block back_label %}{{ apartment.internal_name }}{% endblock %}
 {% block meta %}{{ t('guest_guide.progress', done=progress.done, total=progress.total) }}{% endblock %}
+{% block secondary_actions %}{{ ui_button(t('guest_guide.qr.link'), 'secondary', href=base_url ~ '/qr') }}{% endblock %}
 {% block primary_action %}{% if next_id %}{{ ui_button(t('guest_guide.continue'), 'primary', href=base_url ~ '/' ~ next_id) }}{% endif %}{% endblock %}
 {% block body %}
 {% set topic_options = [] %}{% for topic in topics %}{% set _ = topic_options.append((topic, t('guest_guide.topic.' ~ topic))) %}{% endfor %}
