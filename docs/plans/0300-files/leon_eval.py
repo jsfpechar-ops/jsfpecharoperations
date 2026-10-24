@@ -98,7 +98,7 @@ def main() -> int:
     must_failed, other_failed, others = 0, 0, 0
     for case in spec["cases"]:
         if offline:
-            print(f"{case['id']}: level={case['level']} user_chars={len(leon.user_turn(leon.redact(case['message']), 'en', case.get('name', '')))}")
+            print(f"{case['id']}: level={case['level']} user_chars={len(leon.user_turn(leon.redact(case['message']), 'en'))}")
             continue
         chat = leon.qr_chat(apt, leon.new_cookie_id(), "en")
         for role, text in case.get("history", []):
