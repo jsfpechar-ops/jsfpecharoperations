@@ -1033,4 +1033,4 @@ Write `docs/tasks/0294-report.md` (600 tokens at most) and set `Status: review`:
 
 1. Review and merge once CI is green.
 2. After deploy, open one property's "Guest guide" page once: that creates its QR token. The printable QR sheet and the "new QR code" button come with 0295; until then the link is `/g/<guide_token>` from the database.
-3. The QR page shows only the host's name in the "Your host" box (orchestrator default, owner card open 2026-10-24); phone and e-mail stay on the stay page.
+3. The QR page shows only the host's name in the "Your host" box (owner, 2026-10-24: guests have the contact on Booking.com or Airbnb); phone and e-mail stay on the stay page.

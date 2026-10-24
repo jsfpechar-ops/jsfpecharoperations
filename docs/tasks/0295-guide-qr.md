@@ -14,7 +14,7 @@ Give the host a "QR code for guests" page per property: the code on screen, the 
 - `payments.qr_data_uri(payload)` already renders a small QR PNG as a data URI (used on stay fees); the page reuses it. `qrcode[pil]` is already a dependency.
 - The QR routes are declared before `/apartments/{apartment_id}/guide/{item_id}`, so `qr` is never parsed as an item id.
 - Rotating is safe for stay links: the QR token is separate from the stay link token.
-- Owner decision (2026-10-24, default while the card is open): the public QR page shows the host's name only.
+- Owner decision (2026-10-24): the public QR page shows the host's name only; guests have the contact on Booking.com or Airbnb.
 
 ## 3. Files
 
