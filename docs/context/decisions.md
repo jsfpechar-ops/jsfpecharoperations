@@ -68,6 +68,6 @@ Append-only.
 - 2026-10-22 [deps] Signature font: self-hosted Dancing Script (OFL) (owner).
 - 2026-10-23 More skips loader, no on-track count (owner).
 - 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
-- 2026-10-23 Cloudflare pre-clearance (owner).
-- 2026-10-24 [Guest guide](../plans/guest-guide.md); Fable on critical briefs (owner).
+- 2026-10-24 1 primary/group; soft Open; CF once (owner).
+- 2026-10-24 [Guest guide](../plans/guest-guide.md); Fable critical briefs (owner).
 - 2026-10-24 Guest guide: Quick answers wizard screen (owner).

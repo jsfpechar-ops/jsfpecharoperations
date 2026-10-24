@@ -9,6 +9,7 @@ Updated: 2026-10-23.
 
 ## Now
 
+- 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
 - Guest guide [plan](../plans/guest-guide.md): 0341 ready.
 
 - 0290: passkey CI/phone pending.

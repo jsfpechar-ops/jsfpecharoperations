@@ -11,7 +11,7 @@
 {# 0083: one index, six visible groups. Each specialized action keeps its own form and endpoint. #}
 <nav class="host-property-grid" aria-label="{{ t('settings.index_label') }}">
   {% for href, key in [('#settings-group-account', 'settings.group.account'), ('#settings-group-security', 'settings.group.security'), ('#settings-group-phone', 'settings.group.phone'), ('#settings-group-data', 'settings.group.data'), ('#settings-group-privacy', 'settings.group.privacy'), ('#settings-technical', 'settings.group.technical'), ('#settings-group-help', 'settings.group.help')] %}
-    <a class="host-property-card" href="{{ href }}"><strong>{{ t(key) }}</strong><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span>{{ icon('chevron-right', 16) }}</span></a>
+    <a class="host-property-card" href="{{ href }}"><strong>{{ t(key) }}</strong><span class="host-property-card-open" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span></span></a>
   {% endfor %}
 </nav>
 

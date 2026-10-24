@@ -6,6 +6,6 @@
 {% block back_label %}{{ ct('back') }}{% endblock %}
 {% block body %}
 <div class="cleaning-page">
-<div class="cleaning-property-links">{% for home in homes %}<a class="cleaning-panel" href="/cleaning/properties/{{ home.id }}"><strong>{{ home.internal_name }}</strong><span>{{ ct('settings') }} →</span></a>{% else %}<p>{{ ct('no_properties') }}</p>{% endfor %}</div>
+<div class="cleaning-property-links">{% for home in homes %}<a class="cleaning-panel cleaning-property-row" href="/cleaning/properties/{{ home.id }}"><strong>{{ home.internal_name }}</strong><span class="ui-btn ui-btn-open ui-btn-compact" aria-hidden="true">{{ t('common.open') }}</span></a>{% else %}<p>{{ ct('no_properties') }}</p>{% endfor %}</div>
 </div>
 {% endblock %}
