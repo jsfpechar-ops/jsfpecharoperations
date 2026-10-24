@@ -174,6 +174,7 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 | `UBYHOST_APIFY_TOKEN` | unset | Apify API token. Unset means imports are off and the guide page says so. Set in Lightsail `.env` or Render Environment only, never in git. |
 | `UBYHOST_APIFY_MONTHLY_RUNS` | `40` | Shared monthly cap on Apify actor runs (all hosts). `0` removes the cap. Each run is one listing on Apify's pay-per-result pricing; the cap keeps a month inside the free credit. |
 | `UBYHOST_APIFY_TIMEOUT` | `120` | Seconds one actor run may take before Apify stops it. Keep under 300 (Apify's limit for synchronous runs). |
+| `UBYHOST_AI_MONTHLY_USD_GUIDE_IMPORT` | `10` (from the Model API section) | Monthly cap for turning fetched listings into draft cards (brief 0348, feature `guide_import`, one model call per import, about 0.002 USD each). `UBYHOST_AI_FEATURES` must list `guide_import`, or fetched imports wait as "Fetched, drafting cards". 3 USD is plenty. |
 
 ## Urgent alerts (web push)
 
