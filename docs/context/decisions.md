@@ -69,5 +69,5 @@ Append-only.
 - 2026-10-23 More skips loader, no on-track count (owner).
 - 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
 - 2026-10-24 1 primary/group; soft Open; CF once (owner).
-- 2026-10-24 [Guest guide](../plans/guest-guide.md); Fable critical briefs (owner).
-- 2026-10-24 Guest guide: Quick answers wizard screen (owner).
+- 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
+- 2026-10-24 Guide Quick answers screen (owner).
