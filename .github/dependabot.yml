@@ -4,9 +4,19 @@ updates:
     directory: /App
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    groups:
+      pip-minor-and-patch:
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    groups:
+      actions:
+        patterns: ["*"]
   - package-ecosystem: docker
     directory: /
     schedule: { interval: weekly }
+    ignore:
+      # A Python runtime upgrade is its own task, not a weekly bump.
+      - dependency-name: python
+        update-types: [version-update:semver-major, version-update:semver-minor]

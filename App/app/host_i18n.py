@@ -8290,6 +8290,31 @@ _GUIDE_IMPORT_STRINGS = {
 for _lang, _strings in _GUIDE_IMPORT_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
+# 0349: reviewing drafts on the card editor.
+_GUIDE_DRAFT_STRINGS = {
+    "en": {
+        "guest_guide.draft_from.booking": "From your Booking.com listing.",
+        "guest_guide.draft_from.airbnb": "From your Airbnb listing.",
+        "guest_guide.draft_from.legacy": "From your old check-in notes in UbyHost.",
+        "guest_guide.draft_from.other": "Drafted by UbyHost.",
+        "guest_guide.discard": "Discard this draft",
+        "guest_guide.discard_confirm": "Discard the drafted text? The card goes back to Missing and you can write it yourself.",
+        "flash.guest_guide.discarded": "Draft discarded. Write the card in your own words.",
+    },
+    "cs": {
+        "guest_guide.draft_from.booking": "Z vaší nabídky na Booking.com.",
+        "guest_guide.draft_from.airbnb": "Z vaší nabídky na Airbnb.",
+        "guest_guide.draft_from.legacy": "Z vašich starších poznámek k příjezdu v UbyHost.",
+        "guest_guide.draft_from.other": "Připravil UbyHost.",
+        "guest_guide.discard": "Zahodit tento návrh",
+        "guest_guide.discard_confirm": "Zahodit navržený text? Karta se vrátí mezi chybějící a napíšete ji sami.",
+        "flash.guest_guide.discarded": "Návrh zahozen. Napište kartu vlastními slovy.",
+    },
+}
+
+for _lang, _strings in _GUIDE_DRAFT_STRINGS.items():
+    STRINGS[_lang].update(_strings)
+
 # 0345: the guide's QR code for the host to print.
 _GUIDE_QR_STRINGS = {
     "en": {

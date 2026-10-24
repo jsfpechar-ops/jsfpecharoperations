@@ -258,6 +258,17 @@ async def guide_card_save(request: Request, apartment_id: int, item_id: int):
     return back(_base(apartment_id), msg=flash(request, "flash.guest_guide.saved"))
 
 
+@router.post("/apartments/{apartment_id}/guide/{item_id}/discard")
+def guide_card_discard(request: Request, apartment_id: int, item_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    if not guest_guide.discard_draft(apartment_id, item_id):
+        raise HTTPException(404)
+    return back(f"{_base(apartment_id)}/{item_id}", msg=flash(request, "flash.guest_guide.discarded"))
+
+
 @router.post("/apartments/{apartment_id}/guide/{item_id}/skip")
 async def guide_card_skip(request: Request, apartment_id: int, item_id: int):
     guard = auth.require_login(request)

@@ -14,7 +14,7 @@
 {% block body %}
 {% set visibility_options = [] %}{% for level in visibility %}{% set _ = visibility_options.append((level, t('guest_guide.visibility.' ~ level))) %}{% endfor %}
 {% if error %}{{ ui_banner('attention', t(error)) }}{% endif %}
-{% if item.state == 'check' %}{{ ui_banner('attention', t('guest_guide.check_banner')) }}{% endif %}
+{% if item.state == 'check' %}{{ ui_banner('attention', t('guest_guide.draft_from.' ~ (item.source if item.source in ('booking', 'airbnb', 'legacy') else 'other')) ~ ' ' ~ t('guest_guide.check_banner')) }}{% endif %}
 {% if item.state == 'skipped' %}{{ ui_banner('neutral', t('guest_guide.skipped_banner')) }}{% endif %}
 {% call ui_section(t('guest_guide.photos.title'), id='card-photos') %}
 {% if photos %}
@@ -68,6 +68,12 @@
 {{ ui_button(t('guest_guide.skip'), 'quiet', type='submit') }}
 {% endif %}
 </form>
+{% if item.state == 'check' %}
+<form method="post" action="{{ base_url }}/{{ item.id }}/discard" data-confirm data-confirm-message="{{ t('guest_guide.discard_confirm') }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{{ ui_button(t('guest_guide.discard'), 'secondary', type='submit') }}
+</form>
+{% endif %}
 {% if custom %}
 <form method="post" action="{{ base_url }}/{{ item.id }}/delete" data-confirm data-confirm-message="{{ t('guest_guide.delete_confirm') }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
