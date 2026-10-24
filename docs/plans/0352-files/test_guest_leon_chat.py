@@ -1,4 +1,4 @@
-"""0302: the Leon (AI) chat on both guide doors, rendered server side (the browser test is test_guest_leon_browser.py)."""
+"""0352: the Leon (AI) chat on both guide doors, rendered server side (the browser test is test_guest_leon_browser.py)."""
 from __future__ import annotations
 
 import pathlib

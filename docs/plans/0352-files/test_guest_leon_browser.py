@@ -1,4 +1,4 @@
-"""0302: the Leon (AI) chat on the QR guide page in a real browser at 390 px.
+"""0352: the Leon (AI) chat on the QR guide page in a real browser at 390 px.
 
 A greeting is answered by the server without a model call (leon smalltalk), so
 the round trip needs no network. A host answer and an open question are then

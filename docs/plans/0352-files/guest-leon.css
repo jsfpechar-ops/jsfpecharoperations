@@ -1,5 +1,5 @@
 
-/* 0302: Leon (AI), the chat at the end of the guest guide. Light mode only. */
+/* 0352: Leon (AI), the chat at the end of the guest guide. Light mode only. */
 .g-leon-jump { display: inline-block; margin: 0 0 16px; color: var(--g-accent); font-size: 15px; font-weight: 600; text-decoration: none; }
 .g-leon-jump::after { content: " \2193"; }
 .g-leon [hidden], .g-leon-jump[hidden] { display: none; }

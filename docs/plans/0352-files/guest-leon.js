@@ -1,4 +1,4 @@
-/* 0302: the Leon (AI) chat on the guest guide (stay link and QR page).
+/* 0352: the Leon (AI) chat on the guest guide (stay link and QR page).
  *
  * Progressive enhancement: the guide works without this file. The form is
  * hidden in the HTML and shown here, so a browser without JavaScript never

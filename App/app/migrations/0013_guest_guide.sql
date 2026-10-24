@@ -1,4 +1,4 @@
--- Brief 0291: the guest guide (plan: docs/plans/guest-guide.md).
+-- Brief 0341: the guest guide (plan: docs/plans/guest-guide.md).
 --
 -- guide_item: one thing a guest may need to know or do at a property ("Turn
 -- on the heating"). The host writes it; guests read it on the guide page and

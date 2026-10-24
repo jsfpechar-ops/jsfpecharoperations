@@ -1,4 +1,4 @@
-# 0292: Host guest guide page and card editor
+# 0342: Host guest guide page and card editor
 
 Status: review
 Depends on: 0341 merged | Base commit: after 0341 | Branch: task/0292-guest-guide-pages
@@ -40,7 +40,7 @@ No other file may change.
 2. Create `App/app/routes/guest_guide.py` with exactly this content:
 
 ```python
-"""0292: the host's guest guide pages: the card list and one card's editor.
+"""0342: the host's guest guide pages: the card list and one card's editor.
 
 The data and every rule about it live in ``app.guest_guide``; these routes only
 check the property belongs to the host, call it, and redirect.
@@ -189,7 +189,7 @@ def guide_card_delete(request: Request, apartment_id: int, item_id: int):
 3. Create `App/app/templates/guest_guide.html` with exactly this content:
 
 ```html
-{#- 0292: the host's guest guide, one property. Cards grouped by topic in
+{#- 0342: the host's guest guide, one property. Cards grouped by topic in
     guest order; a row opens the card editor. Data: app/guest_guide.py. -#}
 {% extends "host_page.html" %}
 {% set body_kind = 'list' %}
@@ -238,7 +238,7 @@ def guide_card_delete(request: Request, apartment_id: int, item_id: int):
 4. Create `App/app/templates/guest_guide_card.html` with exactly this content:
 
 ```html
-{#- 0292: one guest guide card. "Save and next card" walks the host through
+{#- 0342: one guest guide card. "Save and next card" walks the host through
     every card that still needs them; the old free text arrives as a draft
     ('check') that guests never see until the host saves it. -#}
 {% extends "host_page.html" %}
@@ -303,7 +303,7 @@ for _lang, _strings in _DOOR_CODE_WINDOW_STRINGS.items():
 Directly after them, insert one blank line and then exactly this block:
 
 ```python
-# 0292: the host's guest guide pages (app/routes/guest_guide.py).
+# 0342: the host's guest guide pages (app/routes/guest_guide.py).
 _GUEST_GUIDE_STRINGS = {
     "en": {
         "guest_guide.title": "Guest guide",
@@ -549,7 +549,7 @@ Do not add `data-property-tab` to it.
 10. Create `App/tests/test_guest_guide_pages.py` with exactly this content:
 
 ```python
-"""0292: the host's guest guide pages."""
+"""0342: the host's guest guide pages."""
 from __future__ import annotations
 
 import pytest

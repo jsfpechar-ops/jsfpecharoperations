@@ -1,4 +1,4 @@
-"""0291: the guest guide, one list of items per property.
+"""0341: the guest guide, one list of items per property.
 
 The host fills small cards ("Turn on the heating"); guests read the confirmed
 ones, and later the guest bot answers only from them. An item a guest may see

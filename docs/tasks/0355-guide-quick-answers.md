@@ -1,4 +1,4 @@
-# 0305: Quick answers wizard (yes/no facts inside the cards)
+# 0355: Quick answers wizard (yes/no facts inside the cards)
 
 Status: todo
 Depends on: 0354 merged | Base commit: after 0354 | Branch: task/0305-guide-quick-answers

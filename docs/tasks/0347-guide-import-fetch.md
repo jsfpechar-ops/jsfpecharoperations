@@ -1,4 +1,4 @@
-# 0297: Booking and Airbnb import: fetch
+# 0347: Booking and Airbnb import: fetch
 
 Status: todo
 Depends on: 0345 merged | Base commit: after 0345 | Branch: task/0297-guide-import-fetch
@@ -38,7 +38,7 @@ Production runs two uvicorn web workers and the scheduler in a separate `worker`
 
 `App/app/templates/guest_guide.html`: `{% call ui_section(t('guest_guide.add.title'), id='add-card') %}`
 
-`App/app/host_i18n.py`: `# 0295: the guide's QR code for the host to print.` followed by `_GUIDE_QR_STRINGS = {`
+`App/app/host_i18n.py`: `# 0345: the guide's QR code for the host to print.` followed by `_GUIDE_QR_STRINGS = {`
 
 `App/app/scheduler.py`: `    "stay_fee_mail": "warning",` followed by `}`; `        "push": 1,`; `def _job_push() -> None:`; the `add_job` block whose second line is `        _job_push, "interval", minutes=minutes["push"],`.
 
@@ -75,7 +75,7 @@ Commands run from `App/` with `.venv/bin/python` unless said otherwise.
 Repo root: `python3 scripts/context_lint.py 2>&1 | tail -3` prints `next free: task NNNN | migration MMMM`. Create `App/app/migrations/MMMM_guide_import.sql` with that `MMMM` (another thread adds migrations from 0015; never reuse an existing number):
 
 ```sql
--- Brief 0297: Booking.com and Airbnb listing imports (plan: docs/plans/guest-guide.md).
+-- Brief 0347: Booking.com and Airbnb listing imports (plan: docs/plans/guest-guide.md).
 --
 -- guide_import: one request by the host to fetch their own public listing
 -- through Apify. url is the rebuilt, allowlisted link (never the pasted text).
@@ -122,7 +122,7 @@ Command: `.venv/bin/python -c "from app import config; print(config.APIFY_TOKEN 
 ### Step 3: `App/app/guest_guide_import.py` (new)
 
 ```python
-"""Brief 0297: fetch a host's own Booking.com or Airbnb listing through Apify.
+"""Brief 0347: fetch a host's own Booking.com or Airbnb listing through Apify.
 
 The pasted link is checked against a strict allowlist and rebuilt from its
 parts, so nothing the host typed reaches an HTTP client. The worker runs one
@@ -295,7 +295,7 @@ def in_progress(apartment_id: int) -> bool:
 
 
 def pending_for(apartment_id: int) -> List[Dict[str, Any]]:
-    """Handoff to brief 0298: fetched, unused imports with their data parsed."""
+    """Handoff to brief 0348: fetched, unused imports with their data parsed."""
     rows = db.query(
         "SELECT id, source, url, raw_json, created_at FROM guide_import "
         "WHERE apartment_id = ? AND status = 'done' AND raw_json IS NOT NULL ORDER BY id",
@@ -580,10 +580,10 @@ Command (repo root): `python3 scripts/design_lint.py | tail -3`. Expected: `desi
 
 ### Step 6: `App/app/host_i18n.py`
 
-Directly above the `# 0295: the guide's QR code for the host to print.` anchor insert:
+Directly above the `# 0345: the guide's QR code for the host to print.` anchor insert:
 
 ```python
-# 0297: Booking and Airbnb listing imports on the guest guide page.
+# 0347: Booking and Airbnb listing imports on the guest guide page.
 _GUIDE_IMPORT_STRINGS = {
     "en": {
         "guest_guide.import.title": "Import from Booking or Airbnb",
@@ -667,7 +667,7 @@ Command: `.venv/bin/python -m pytest tests/test_host_i18n.py tests/test_flash_li
 
 ```python
 def _job_guide_import() -> None:
-    """Brief 0297: run the queued Booking and Airbnb imports, one actor run each."""
+    """Brief 0347: run the queued Booking and Airbnb imports, one actor run each."""
     started = time.perf_counter()
     try:
         ran = guest_guide_import.process_queue()
@@ -701,7 +701,7 @@ Command: `.venv/bin/python -m pytest tests/test_scheduler.py tests/test_push.py 
 
 ```python
 def _guide_import_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
-    """Brief 0297: imported listing text 7 days after the fetch; the request row after 60."""
+    """Brief 0347: imported listing text 7 days after the fetch; the request row after 60."""
     from . import guest_guide_import
     return guest_guide_import.purge(today, dry_run, owner_user_id)
 

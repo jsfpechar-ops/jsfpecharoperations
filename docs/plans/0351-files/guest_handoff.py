@@ -1,4 +1,4 @@
-"""Brief 0301: the host side of Leon (AI).
+"""Brief 0351: the host side of Leon (AI).
 
 When Leon cannot answer from the guide he writes a ``guest_question`` row
 (brief 0350). This module alerts the host, lets the host answer in the app,

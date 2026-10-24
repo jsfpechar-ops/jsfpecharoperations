@@ -1,4 +1,4 @@
-"""0300: Leon (AI), the guest bot's core (plan: docs/plans/guest-guide.md, "Leon (AI): character").
+"""0350: Leon (AI), the guest bot's core (plan: docs/plans/guest-guide.md, "Leon (AI): character").
 
 Leon answers only from ``guest_guide.for_guest(apartment_id, level)`` for the
 door the guest came through. The guide goes to the model as a system block

@@ -1,4 +1,4 @@
--- Brief 0305: Quick answers, the short facts of a property's guest guide
+-- Brief 0355: Quick answers, the short facts of a property's guest guide
 -- (plan: docs/plans/guest-guide.md). One row per answered fact; "not sure"
 -- deletes the row. fact is a key of guide_facts.FACTS ('pets', 'lift', ...) or
 -- 'step.<step>' (value 'seen': the host saved or skipped that step). value is

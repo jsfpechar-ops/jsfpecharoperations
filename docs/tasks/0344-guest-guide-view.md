@@ -1,4 +1,4 @@
-# 0294: Guest side of the guest guide (stay link and QR page)
+# 0344: Guest side of the guest guide (stay link and QR page)
 
 Status: todo
 Depends on: 0343 merged | Base commit: after 0343 | Branch: task/0294-guest-guide-view
@@ -47,7 +47,7 @@ No other file may change.
 Create `App/app/migrations/0014_guide_token.sql`. The number is fixed (0015 and later are reserved).
 
 ```sql
--- Brief 0294: the public QR door of the guest guide (plan: docs/plans/guest-guide.md).
+-- Brief 0344: the public QR door of the guest guide (plan: docs/plans/guest-guide.md).
 --
 -- apartment.guide_token: the unguessable key in the QR code at the property
 -- (/g/{token}). Separate from permalink_token, which opens the stay link and
@@ -494,7 +494,7 @@ Add directly after it (one blank line, then the link):
 en:
 
 ```python
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Your guide",
         "guide_back_to_stay": "Back to your stay",
         "guide_not_ready_title": "This guide is not ready yet",
@@ -511,7 +511,7 @@ en:
 cs:
 
 ```python
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Váš průvodce",
         "guide_back_to_stay": "Zpět na váš pobyt",
         "guide_not_ready_title": "Tento průvodce ještě není hotový",
@@ -528,7 +528,7 @@ cs:
 de:
 
 ```python
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Ihr Guide",
         "guide_back_to_stay": "Zurück zu Ihrem Aufenthalt",
         "guide_not_ready_title": "Dieser Guide ist noch nicht fertig",
@@ -545,7 +545,7 @@ de:
 es:
 
 ```python
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Su guía",
         "guide_back_to_stay": "Volver a su estancia",
         "guide_not_ready_title": "Esta guía aún no está lista",
@@ -562,7 +562,7 @@ es:
 fr:
 
 ```python
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Votre guide",
         "guide_back_to_stay": "Retour à votre séjour",
         "guide_not_ready_title": "Ce guide n'est pas encore prêt",
@@ -579,7 +579,7 @@ fr:
 `App/app/guest_uk_i18n.py`: anchor (once) `    "privacy_door_code_title": "Код від дверей",`. Insert directly after it (four-space indent):
 
 ```python
-    # 0294: the guest guide pages.
+    # 0344: the guest guide pages.
     "guide_title": "Ваш путівник",
     "guide_back_to_stay": "Назад до вашого проживання",
     "guide_not_ready_title": "Цей путівник ще не готовий",
@@ -608,7 +608,7 @@ Append at the end of the file (after the `.g-host-note` rule):
 
 ```css
 
-/* 0294: the guest guide cards (stay link and QR page). */
+/* 0344: the guest guide cards (stay link and QR page). */
 .g-guide-where { margin: 0 0 12px; font-size: 14.5px; color: var(--g-ink-2); }
 .g-guide-where span { color: var(--g-muted); }
 .g-guide-steps { margin: 0 0 14px; padding-left: 22px; font-size: 16px; line-height: 1.5; color: var(--g-ink); }
@@ -628,7 +628,7 @@ Then in `App/app/templates/guest/base.html`, anchor (once) `guest.css?v=20261022
 ### Step 11: `App/tests/test_guest_guide_view.py` (new)
 
 ```python
-"""0294: the guest side of the guest guide, both doors."""
+"""0344: the guest side of the guest guide, both doors."""
 from __future__ import annotations
 
 import io
@@ -933,7 +933,7 @@ Command: `.venv/bin/python -m pytest tests/test_guest_guide_view.py -q --tb=shor
 ### Step 12: `App/tests/test_guest_guide_browser.py` (new)
 
 ```python
-"""0294: the QR guide page in a real browser at phone width (layout rules and a screenshot).
+"""0344: the QR guide page in a real browser at phone width (layout rules and a screenshot).
 
 Reuses the live server, browser and layout checker of test_guest_browser_e2e.
 Skipped when Chromium is missing, unless UBYHOST_REQUIRE_BROWSER=1.

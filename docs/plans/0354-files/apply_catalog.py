@@ -1,4 +1,4 @@
-"""0304: the guide card catalog (fewer, richer cards). Run once from the repo root.
+"""0354: the guide card catalog (fewer, richer cards). Run once from the repo root.
 
 Rewrites TOPICS / KINDS / DEFAULT_KINDS in App/app/guest_guide.py and every
 guest_guide.topic.* / guest_guide.kind.* line (en, cs) in App/app/host_i18n.py,
@@ -21,7 +21,7 @@ def py_block() -> str:
     return (
         "# Guest order. A custom item names one of these.\n"
         f"TOPICS = (\n{topics})\n\n"
-        "# Built-in cards: kind -> topic, in guest order (0304: few, rich cards; each\n"
+        "# Built-in cards: kind -> topic, in guest order (0354: few, rich cards; each\n"
         "# prompt is a checklist of what guests ask). Never rename a kind: rows use it.\n"
         f"KINDS: Dict[str, str] = {{\n{kinds}}}\n\n"
         "# Every property gets these cards. The other built-in kinds are narrower cards\n"

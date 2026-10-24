@@ -1,4 +1,4 @@
-"""0303: a translated guide card on the QR page at 390 px, with the original opened. No network."""
+"""0353: a translated guide card on the QR page at 390 px, with the original opened. No network."""
 from __future__ import annotations
 
 import os

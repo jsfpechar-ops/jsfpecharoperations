@@ -1,4 +1,4 @@
--- Brief 0303: the guest guide in the guest's language (plan: docs/plans/guest-guide.md).
+-- Brief 0353: the guest guide in the guest's language (plan: docs/plans/guest-guide.md).
 --
 -- guide_translation: one row per guide card and guest language, written by
 -- guide_translate.fill after a guest opened the guide in that language.

@@ -1,4 +1,4 @@
-# 0293: Photos on guest guide cards
+# 0343: Photos on guest guide cards
 
 Status: todo
 Depends on: 0342 merged | Base commit: after 0342 | Branch: task/0293-guide-photos
@@ -41,7 +41,7 @@ No other file may change.
 2. Create `App/app/guide_photos.py`:
 
 ```python
-"""0293: photos on guest guide cards ("this is the boiler, press this button").
+"""0343: photos on guest guide cards ("this is the boiler, press this button").
 
 A photo is decoded and saved again as a fresh JPEG (``passport_photos.reencode_image``),
 so no EXIF location or camera data survives, then shrunk to ``MAX_SIDE``. Files
@@ -168,7 +168,7 @@ def purge_orphans() -> int:
 3. Replace the whole content of `App/app/routes/guest_guide.py` with:
 
 ```python
-"""0292: the host's guest guide pages: the card list and one card's editor.
+"""0342: the host's guest guide pages: the card list and one card's editor.
 
 The data and every rule about it live in ``app.guest_guide``; these routes only
 check the property belongs to the host, call it, and redirect.
@@ -375,7 +375,7 @@ def guide_photo_delete(request: Request, apartment_id: int, item_id: int, photo_
 4. Replace the whole content of `App/app/templates/guest_guide_card.html` with:
 
 ```html
-{#- 0292: one guest guide card. "Save and next card" walks the host through
+{#- 0342: one guest guide card. "Save and next card" walks the host through
     every card that still needs them; the old free text arrives as a draft
     ('check') that guests never see until the host saves it. -#}
 {% extends "host_page.html" %}
@@ -465,7 +465,7 @@ for _lang, _strings in _GUEST_GUIDE_STRINGS.items():
 Directly after them, insert one blank line and then:
 
 ```python
-# 0293: photos on guest guide cards.
+# 0343: photos on guest guide cards.
 _GUIDE_PHOTO_STRINGS = {
     "en": {
         "guest_guide.photos.title": "Photos",
@@ -516,7 +516,7 @@ for _lang, _strings in _GUIDE_PHOTO_STRINGS.items():
 7. Append to the end of `App/app/static/workflow.css` (one blank line before):
 
 ```css
-/* 0293: photos on a guest guide card. */
+/* 0343: photos on a guest guide card. */
 .guide-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--space-3); margin: 0 0 var(--space-3); padding: 0; list-style: none; }
 .guide-photo { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
 .guide-photo img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); }
@@ -534,7 +534,7 @@ for _lang, _strings in _GUIDE_PHOTO_STRINGS.items():
 10. Create `App/tests/test_guide_photos.py`:
 
 ```python
-"""0293: photos on guest guide cards."""
+"""0343: photos on guest guide cards."""
 from __future__ import annotations
 
 import io

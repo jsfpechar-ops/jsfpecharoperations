@@ -1,4 +1,4 @@
-"""0305: every string of Quick answers. Data only; apply_quick_copy.py writes it.
+"""0355: every string of Quick answers. Data only; apply_quick_copy.py writes it.
 
 HOST: the host wizard (host_i18n, en and cs). GUEST: the lines guests and Leon
 read inside a card (i18n.py en, cs, de, es, fr and guest_uk_i18n.py uk).

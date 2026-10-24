@@ -43,7 +43,7 @@ Booking (Apify voyager/booking-scraper): address, check-in and check-out times, 
 
 ## Briefs
 
-Numbers: this plan owns tasks 0341 to 0359 (renumbered from 0291 to 0305 on 2026-10-24: another thread used 0291 to 0302 on main) and migrations 0013, 0014 and 0016. Havel (host help bot) owns 0310 to 0329 and migrations from 0015; its 0310 is the shared AI core (`ai.py`, `anthropic` decision, `ai_usage` by feature, kill switch, caps) that 0346 and later build on.
+Numbers: this plan owns tasks 0341 to 0359 (renumbered from 0341 to 0355 on 2026-10-24: another thread used 0341 to 0352 on main) and migrations 0013, 0014 and 0016. Havel (host help bot) owns 0310 to 0329 and migrations from 0015; its 0310 is the shared AI core (`ai.py`, `anthropic` decision, `ai_usage` by feature, kill switch, caps) that 0346 and later build on.
 
 Owner rule (2026-10-24): critical briefs are written by Fable 5.1, or reviewed by Fable when Opus already wrote them; the rest are written by Opus 5.5. Executor is Haiku 5.5 for every brief (owner, 2026-10-24); Fable reviews the diffs of critical briefs before merge.
 

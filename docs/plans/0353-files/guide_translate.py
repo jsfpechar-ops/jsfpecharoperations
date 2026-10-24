@@ -1,4 +1,4 @@
-"""0303: the guest guide in the guest's language (feature "guide_translate", plan: docs/plans/guest-guide.md).
+"""0353: the guest guide in the guest's language (feature "guide_translate", plan: docs/plans/guest-guide.md).
 
 The host writes each card once, in one language. When a guest opens a guide
 page, ``apply`` swaps in the cached translation of every card for the page

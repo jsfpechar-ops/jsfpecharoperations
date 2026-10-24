@@ -1,4 +1,4 @@
-# 0303: Guide cards in the guest's language, and one usage line for the host
+# 0353: Guide cards in the guest's language, and one usage line for the host
 
 Status: todo
 Depends on: 0352 merged | Base commit: after 0352 | Branch: task/0303-guide-translation
@@ -38,7 +38,7 @@ Hard rules 2, 3, 4, 5 (migration through `db.py`, Postgres-portable: unique inde
 
 ### Anchors (verbatim; a missing anchor means STOP)
 
-`App/app/routes/guest_guide_view.py` (after 0352): `from fastapi.responses import FileResponse, RedirectResponse`, `from .. import ai, leon  # 0302: the Leon (AI) chat`, `                "id": item["id"],`, `    cards = _cards(apartment["id"], level, lang, photo_url) if live else []`, `            "leon_host": leon.host_first_name((context.get("host") or {}).get("name", "")),`, `    response = render_guest(request, "guest/guide.html", context)`.
+`App/app/routes/guest_guide_view.py` (after 0352): `from fastapi.responses import FileResponse, RedirectResponse`, `from .. import ai, leon  # 0352: the Leon (AI) chat`, `                "id": item["id"],`, `    cards = _cards(apartment["id"], level, lang, photo_url) if live else []`, `            "leon_host": leon.host_first_name((context.get("host") or {}).get("name", "")),`, `    response = render_guest(request, "guest/guide.html", context)`.
 `App/app/templates/guest/guide.html`: `  {% if leon_url %}<a class="g-leon-jump" href="#leon" data-leon-jump hidden>{{ t('leon_ask') }}</a>{% endif %}` and the line `          <p class="g-guide-video"><a href="{{ card.video_url }}" rel="noopener noreferrer" target="_blank">{{ t('guide_video') }}</a></p>`.
 `App/app/templates/guest/base.html`: `/static/guest.css?v=20261024-0302`.
 `App/app/config.py`: the two functions `def ai_monthly_usd(feature: str) -> float:` and `def ai_key_daily_usd(feature: str) -> float:` (three lines each).
@@ -91,16 +91,16 @@ From the repo root: `python3 docs/plans/0303-files/add_translate_i18n.py`. Expec
 
 ### Step 4: `App/app/routes/guest_guide_view.py`
 
-Directly after `from fastapi.responses import FileResponse, RedirectResponse` insert `from starlette.background import BackgroundTask`. Directly after `from .. import ai, leon  # 0302: the Leon (AI) chat` insert:
+Directly after `from fastapi.responses import FileResponse, RedirectResponse` insert `from starlette.background import BackgroundTask`. Directly after `from .. import ai, leon  # 0352: the Leon (AI) chat` insert:
 
 ```python
-from .. import guide_translate  # 0303: cards in the guest's language
+from .. import guide_translate  # 0353: cards in the guest's language
 ```
 
 Directly after `                "id": item["id"],` insert `                "kind": item["kind"],` (16 spaces). Directly after `    cards = _cards(apartment["id"], level, lang, photo_url) if live else []` insert:
 
 ```python
-    # 0303: cached translations in place; the missing ones are filled after the response.
+    # 0353: cached translations in place; the missing ones are filled after the response.
     missing = guide_translate.apply(cards, lang)
     fill = bool(missing) and guide_translate.can_fill(apartment["id"])
 ```
@@ -127,7 +127,7 @@ The video line `          <p class="g-guide-video">...` is followed by `        
 
 ```
         {% if card.original %}
-          {# 0303: the AI translation is shown; the host's own words are one tap away, no JavaScript. #}
+          {# 0353: the AI translation is shown; the host's own words are one tap away, no JavaScript. #}
           <details class="g-guide-original" data-guide-original>
             <summary>{{ t('guide_translated') }}</summary>
             <div class="g-guide-original-body">
@@ -147,7 +147,7 @@ The video line `          <p class="g-guide-video">...` is followed by `        
 Replace the two functions `ai_monthly_usd` and `ai_key_daily_usd` (from `def ai_monthly_usd` through the `return` line of `ai_key_daily_usd`) with:
 
 ```python
-# 0303: features whose default caps differ from 10 USD a month and no per-key cap.
+# 0353: features whose default caps differ from 10 USD a month and no per-key cap.
 _AI_CAP_DEFAULTS = {"guide_translate": ("2", "0.05")}
 
 
@@ -167,7 +167,7 @@ Command: `.venv/bin/python -c "from app import config; print(config.ai_monthly_u
 
 ### Step 7: the host usage line
 
-`App/app/routes/guest_guide.py`: directly after `from .admin_helpers import back, flash` insert `from .. import ai, guide_translate  # 0303: the host usage line`. Directly after `        questions_open=guest_handoff.open_count(apartment_id),` insert:
+`App/app/routes/guest_guide.py`: directly after `from .admin_helpers import back, flash` insert `from .. import ai, guide_translate  # 0353: the host usage line`. Directly after `        questions_open=guest_handoff.open_count(apartment_id),` insert:
 
 ```python
         usage=guide_translate.usage(apartment_id, ai.today().replace(day=1).isoformat()),

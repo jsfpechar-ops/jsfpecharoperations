@@ -1,4 +1,4 @@
-"""0298: fetched listings become 'check' cards only, every line backed by a quote from the listing."""
+"""0348: fetched listings become 'check' cards only, every line backed by a quote from the listing."""
 from __future__ import annotations
 
 import json

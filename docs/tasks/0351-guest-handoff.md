@@ -1,4 +1,4 @@
-# 0301: Leon (AI): host handoff and "Add to guide"
+# 0351: Leon (AI): host handoff and "Add to guide"
 
 Status: todo
 Depends on: 0350 merged | Base commit: after 0350 | Branch: task/0301-guest-handoff
@@ -112,7 +112,7 @@ Command: `grep -c 'guest_question' app/alerts.py`. Expected: `1`.
 In `KINDS`, directly after the three lines `    "cancelled_with_guests",` / `    "deadline_at_risk",` / `    "deadline_digest",` insert:
 
 ```python
-    # 0301: one host mail per batch of open guest questions (Leon handoff).
+    # 0351: one host mail per batch of open guest questions (Leon handoff).
     "guest_question",
 ```
 

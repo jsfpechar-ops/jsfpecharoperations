@@ -1,4 +1,4 @@
--- Brief 0300: Leon (AI), the guest bot (plan: docs/plans/guest-guide.md).
+-- Brief 0350: Leon (AI), the guest bot (plan: docs/plans/guest-guide.md).
 --
 -- guest_chat: one conversation per door. Stay door: one row per reservation
 -- (every device of that stay shares it). QR door: one row per property and

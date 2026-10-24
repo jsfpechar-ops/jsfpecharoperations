@@ -1,4 +1,4 @@
-"""0300: add Leon's 20 guest copy keys to i18n.py (en, cs, de, es, fr) and guest_uk_i18n.py (uk). Run from the repo root once."""
+"""0350: add Leon's 20 guest copy keys to i18n.py (en, cs, de, es, fr) and guest_uk_i18n.py (uk). Run from the repo root once."""
 import json
 from pathlib import Path
 

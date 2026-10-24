@@ -1,4 +1,4 @@
-# 0291: Guest guide data layer
+# 0341: Guest guide data layer
 
 Status: review
 Depends on: none | Base commit: 92646d3 | Branch: task/0291-guest-guide-data
@@ -39,7 +39,7 @@ No other file may change.
 2. Create `App/app/migrations/0013_guest_guide.sql` with exactly this content:
 
 ```sql
--- Brief 0291: the guest guide (plan: docs/plans/guest-guide.md).
+-- Brief 0341: the guest guide (plan: docs/plans/guest-guide.md).
 --
 -- guide_item: one thing a guest may need to know or do at a property ("Turn
 -- on the heating"). The host writes it; guests read it on the guide page and
@@ -87,7 +87,7 @@ Command: `cd App && .venv/bin/python -m pytest tests/test_migrations.py -q --tb=
 3. Create `App/app/guest_guide.py` with exactly this content:
 
 ```python
-"""0291: the guest guide, one list of items per property.
+"""0341: the guest guide, one list of items per property.
 
 The host fills small cards ("Turn on the heating"); guests read the confirmed
 ones, and later the guest bot answers only from them. An item a guest may see
@@ -362,7 +362,7 @@ Command: `cd App && .venv/bin/python -c "import app.guest_guide" 2>&1 | tail -30
 4. Create `App/tests/test_guest_guide.py` with exactly this content:
 
 ```python
-"""0291: the guest guide data layer."""
+"""0341: the guest guide data layer."""
 from __future__ import annotations
 
 import pytest
