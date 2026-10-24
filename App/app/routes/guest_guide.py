@@ -1,4 +1,4 @@
-"""0292: the host's guest guide pages: the card list and one card's editor.
+"""0342: the host's guest guide pages: the card list and one card's editor.
 
 The data and every rule about it live in ``app.guest_guide``; these routes only
 check the property belongs to the host, call it, and redirect.

@@ -7705,7 +7705,7 @@ _DOOR_CODE_WINDOW_STRINGS = {
 for _lang, _strings in _DOOR_CODE_WINDOW_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
-# 0292: the host's guest guide pages (app/routes/guest_guide.py).
+# 0342: the host's guest guide pages (app/routes/guest_guide.py).
 _GUEST_GUIDE_STRINGS = {
     "en": {
         "guest_guide.title": "Guest guide",
