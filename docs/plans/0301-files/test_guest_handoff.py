@@ -57,19 +57,15 @@ def _stay(apt_id):
     })
 
 
-def _ask(apt_id, door="stay", text=QUESTION, summary=SUMMARY):
-    """What leon.reply does for an ask_host verdict (0300), then the 0301 hook."""
+def _ask(apt_id, door="stay", text=QUESTION, summary=SUMMARY, urgent=False, triaged=True):
+    """What leon.reply does for an ask_host verdict (0300): the row through ``_open_question``, which runs the hook."""
     if door == "stay":
         chat = leon.stay_chat(apt_id, _stay(apt_id), "en")
     else:
         chat = leon.qr_chat(apt_id, leon.new_cookie_id(), "en")
     message_id = leon._store(chat["id"], "guest", "", leon.redact(text))
     leon._store(chat["id"], "leon", "ask_host", "I have asked Jana.")
-    qid = db.insert("guest_question", {
-        "chat_id": chat["id"], "apartment_id": apt_id, "message_id": message_id, "summary": summary,
-        "status": "open", "answer": "", "created_at": db.utcnow(), "answered_at": None,
-    })
-    guest_handoff.on_new_question(int(qid))
+    qid = leon._open_question(chat["id"], apt_id, message_id, summary, urgent=urgent, triaged=triaged)
     return int(qid), chat
 
 
@@ -108,6 +104,52 @@ def test_a_new_question_raises_one_needs_you_line_and_one_mail_per_batch(ws):
     assert alerts.open_alert(key) is None
     _ask(ws["home"], door="qr", text="Third?", summary="Third")
     assert len(_outbox()) == 2
+
+
+def test_an_urgent_question_turns_the_line_red_and_mails_at_once(ws):
+    _ask(ws["home"])
+    assert len(_outbox()) == 1
+    key = guest_handoff.dedupe_key(ws["home"])
+    assert alerts.open_alert(key)["level"] == "warning"
+    qid, _ = _ask(ws["home"], door="qr", text="Smoke in the kitchen", summary="Smoke in the kitchen.", urgent=True)
+    assert len(_outbox()) == 2, "an emergency does not wait for the batch"
+    alert = alerts.open_alert(key)
+    assert alert["level"] == "critical" and "urgent" in alert["message"] and "Smoke" not in alert["message"]
+    dashboard = ws["client"].get("/?lang=en").text
+    assert "Urgent: a guest at Vinohrady flat may need help" in dashboard
+    listing = ws["client"].get(_url(ws) + "?lang=en").text
+    assert listing.index("Smoke in the kitchen") < listing.index("Where is the iron?"), "urgent rows first"
+    assert "Urgent" in listing
+    page = ws["client"].get(_url(ws, qid) + "?lang=en").text
+    assert "read this as an emergency" in page
+    guest_handoff.answer(ws["home"], qid, "I am on my way.")
+    assert alerts.open_alert(key)["level"] == "warning", "back to amber once the urgent row is handled"
+
+
+def test_an_unread_question_shows_the_guests_words_per_line(ws):
+    words = "Where is the iron?\nAlso the hair dryer does not work."
+    qid, _ = _ask(ws["home"], text="Where is the iron?", summary=words, triaged=False)
+    listing = ws["client"].get(_url(ws) + "?lang=en").text
+    assert "Not read by Leon (AI)" in listing
+    page = ws["client"].get(_url(ws, qid) + "?lang=en").text
+    assert "Not read by Leon (AI)" in page and "<p>Also the hair dryer does not work.</p>" in page
+    assert "In short:" in page
+
+
+def test_the_hook_fires_for_an_emergency_from_leon_reply(ws):
+    cards = {r["kind"]: r for r in guest_guide.items(ws["home"])}
+    for kind in guest_guide.MUST_HAVE:
+        guest_guide.save(ws["home"], cards[kind]["id"], {"steps": f"Do the {kind} thing"})
+    ai.set_client_for_tests(FakeClient([reply({"kind": "emergency", "reply": "", "sources": [],
+                                               "host_summary": "Someone smells gas."})]))
+    chat = leon.stay_chat(ws["home"], _stay(ws["home"]), "en")
+    got = leon.reply(chat, "I smell gas in the flat", level="booked", property_name="Vinohrady flat",
+                     host_name="Jana", address_key="t")
+    assert got["kind"] == "emergency" and got["question_id"]
+    row = db.query_one("SELECT urgent, triaged FROM guest_question WHERE id = ?", (got["question_id"],))
+    assert row["urgent"] == 1 and row["triaged"] == 1
+    assert alerts.open_alert(guest_handoff.dedupe_key(ws["home"]))["level"] == "critical"
+    assert len(_outbox()) == 1
 
 
 def test_the_hook_fires_from_leon_reply(ws):

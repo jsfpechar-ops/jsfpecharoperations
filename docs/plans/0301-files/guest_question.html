@@ -12,9 +12,11 @@
 {% block meta %}{{ question.created_at[:10] }} · {{ t('guest_questions.door.' ~ question.door) }}{% endblock %}
 {% block body %}
 {% if error %}{{ ui_banner('attention', t(error)) }}{% endif %}
+{% if question.status == 'open' and question.urgent %}{{ ui_banner('attention', t('guest_question.urgent_banner')) }}{% endif %}
 {% call ui_section(t('guest_question.asked'), id='question') %}
+{% if question.status == 'open' and question.urgent %}{{ ui_badge('attention', t('guest_questions.badge.urgent')) }} {% endif %}{% if not question.triaged %}{{ ui_badge('neutral', t('guest_questions.badge.unread')) }}{% endif %}
 {% for line in question.question.split('\n') if line.strip() %}<p>{{ line }}</p>{% endfor %}
-{% if question.summary and question.summary != question.question %}<p class="ui-sub">{{ t('guest_question.summary') }} {{ question.summary }}</p>{% endif %}
+{% if question.summary and question.summary != question.question %}<p class="ui-sub">{{ t('guest_question.summary') }}</p>{% for line in question.summary.split('\n') if line.strip() %}<p>{{ line }}</p>{% endfor %}{% endif %}
 {% endcall %}
 
 {% if question.status == 'answered' %}

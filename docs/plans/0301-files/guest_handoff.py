@@ -9,10 +9,13 @@ guide card on one tap.
 Alert channel (owner, 2026-10-24): the existing "needs you" stack. One open
 alert per property (``alerts.raise_alert`` with a dedupe key) carries the
 count of waiting questions and resolves itself when the last one is answered
-or dismissed. One e-mail per batch: the mail goes out only when a new question
-is the only open one for the property, so a host who has not yet opened the
-app gets one mail, not one per guest message. Neither the alert nor the mail
-carries any message text.
+or dismissed; it is red while an urgent row (an emergency, 0300) is open. One
+e-mail per batch: the mail goes out only when a new question is the only open
+one for the property, so a host who has not yet opened the app gets one mail,
+not one per guest message; an urgent row always mails. Rows with
+``triaged = 0`` hold a message Leon never read (cap, budget, outage): their
+``summary`` is the guest's own redacted words, one message per line. Neither
+the alert nor the mail carries any message text.
 
 Privacy: the guest's message is already redacted (0300). Logs carry ids and
 counts only. Rows are deleted with the chat (``leon.purge``, 30 days).
@@ -52,26 +55,33 @@ def questions_url(apartment_id: int) -> str:
 # --- reading -----------------------------------------------------------------------
 
 def open_count(apartment_id: int) -> int:
+    return open_counts(apartment_id)[0]
+
+
+def open_counts(apartment_id: int) -> tuple:
+    """(open rows, open urgent rows) for the property."""
     row = db.query_one(
-        "SELECT COUNT(*) AS n FROM guest_question WHERE apartment_id = ? AND status = 'open'",
+        "SELECT COUNT(*) AS n, COALESCE(SUM(urgent), 0) AS u FROM guest_question "
+        "WHERE apartment_id = ? AND status = 'open'",
         (apartment_id,),
     )
-    return int(row["n"]) if row else 0
+    return (int(row["n"]), int(row["u"])) if row else (0, 0)
 
 
 _SELECT = (
     "SELECT q.id, q.chat_id, q.apartment_id, q.message_id, q.summary, q.status, q.answer, q.created_at, "
-    "q.answered_at, c.door, c.lang, m.text AS question "
+    "q.answered_at, q.urgent, q.triaged, c.door, c.lang, m.text AS question "
     "FROM guest_question q JOIN guest_chat c ON c.id = q.chat_id "
     "JOIN guest_chat_message m ON m.id = q.message_id "
 )
 
 
 def questions(apartment_id: int, limit: int = LIST_LIMIT) -> List[Dict[str, Any]]:
-    """Open questions first (oldest first, so nobody waits longest), then the rest, newest first."""
+    """Open questions first (urgent ones at the top, then oldest first), then the rest, newest first."""
     rows = db.query(
         _SELECT + "WHERE q.apartment_id = ? "
         "ORDER BY CASE q.status WHEN 'open' THEN 0 ELSE 1 END, "
+        "CASE q.status WHEN 'open' THEN -q.urgent ELSE 0 END, "
         "CASE q.status WHEN 'open' THEN q.id ELSE -q.id END LIMIT ?",
         (apartment_id, int(limit)),
     )
@@ -108,8 +118,13 @@ def _property(apartment_id: int):
 
 
 def refresh_alert(apartment_id: int) -> int:
-    """Keep the one "needs you" line in step with the open count. Returns the count."""
-    count = open_count(apartment_id)
+    """Keep the one "needs you" line in step with the open count. Returns the count.
+
+    Level ``critical`` (red) while any open row is urgent (an emergency Leon
+    showed 112 for), else ``warning`` (amber). ``raise_alert`` refreshes the
+    open row with the same dedupe key, level included.
+    """
+    count, urgent = open_counts(apartment_id)
     key = dedupe_key(apartment_id)
     if count == 0:
         alerts.resolve(key)
@@ -117,11 +132,11 @@ def refresh_alert(apartment_id: int) -> int:
     home = _property(apartment_id)
     name = (home["internal_name"] if home else "") or ""
     alerts.raise_alert(
-        "warning", ALERT_KIND,
-        f"{count} guest question(s) wait for an answer at {name}",
+        "critical" if urgent else "warning", ALERT_KIND,
+        f"{count} guest question(s) wait for an answer at {name}" + (f" ({urgent} urgent)" if urgent else ""),
         "Leon (AI) could not answer from the guide. Answer in the app; the guest sees it on the guide page.",
         dedupe_key=key, apartment_id=apartment_id,
-        params={"property": name, "count": count},
+        params={"property": name, "count": count, "urgent": urgent, "variant": "urgent" if urgent else ""},
     )
     return count
 
@@ -147,12 +162,14 @@ def build_mail(property_name: str, url: str, lang: Optional[str] = None) -> Dict
 def on_new_question(question_id: int) -> None:
     """Called by ``leon.reply`` right after it writes the row. Never raises: the guest reply comes first."""
     try:
-        row = db.query_one("SELECT apartment_id FROM guest_question WHERE id = ?", (question_id,))
+        row = db.query_one("SELECT apartment_id, urgent FROM guest_question WHERE id = ?", (question_id,))
         if not row:
             return
         apartment_id = int(row["apartment_id"])
         count = refresh_alert(apartment_id)
-        if count != 1:
+        # One mail per batch: the first open question mails; later ones wait in the app.
+        # An urgent row (emergency) always mails, batch or not.
+        if count != 1 and not int(row["urgent"] or 0):
             log.info("guest question %s apartment=%s open=%s (batch mail already sent)", question_id, apartment_id, count)
             return
         home = _property(apartment_id)

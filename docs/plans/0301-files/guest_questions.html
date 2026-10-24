@@ -17,7 +17,7 @@
 {% set q_url = base_url ~ '/questions/' ~ q.id %}
 <tr class="ui-row clickable-row" data-href="{{ q_url }}" tabindex="0" role="link" aria-label="{{ q.question }}">
   <td class="ui-cell-first" data-card="primary"><a href="{{ q_url }}">{{ q.question }}</a><span class="ui-sub"> {{ q.created_at[:10] }} · {{ t('guest_questions.door.' ~ q.door) }}</span></td>
-  <td data-card="badge">{% if q.status == 'open' %}{{ ui_badge('action', t('guest_questions.state.open')) }}{% elif q.status == 'answered' %}{{ ui_badge('done', t('guest_questions.state.answered')) }}{% else %}{{ ui_badge('neutral', t('guest_questions.state.dismissed')) }}{% endif %}</td>
+  <td data-card="badge">{% if q.status == 'open' and q.urgent %}{{ ui_badge('attention', t('guest_questions.badge.urgent')) }} {% endif %}{% if q.status == 'open' and not q.triaged %}{{ ui_badge('neutral', t('guest_questions.badge.unread')) }} {% endif %}{% if q.status == 'open' %}{{ ui_badge('action', t('guest_questions.state.open')) }}{% elif q.status == 'answered' %}{{ ui_badge('done', t('guest_questions.state.answered')) }}{% else %}{{ ui_badge('neutral', t('guest_questions.state.dismissed')) }}{% endif %}</td>
 </tr>
 {% endfor %}
 {{ ui_table_end() }}
