@@ -62,10 +62,10 @@ def _visible_groups(page):
     return page.evaluate(_STATE_JS)["visibleGroups"]
 
 
-def _shot(page, name):
+def _shot(page, name, full_page=True):
     if SHOTS:
         Path(SHOTS).mkdir(parents=True, exist_ok=True)
-        page.screenshot(path=str(Path(SHOTS) / f"0251-{name}.png"), full_page=True)
+        page.screenshot(path=str(Path(SHOTS) / f"0251-{name}.png"), full_page=full_page)
 
 
 def _sidebar_width(page):
@@ -122,7 +122,8 @@ def test_overview_cards_and_tablet_menu_on_touch(host, base):
                 _wait_sidebar(page, True)
                 assert _sidebar_width(page) >= 200, width
                 assert page.locator(".ui-nav a > span").first.is_visible(), width
-                _shot(page, f"menu-open-{width}")
+                # A full-page shot resizes the viewport, which closes the menu (0370).
+                _shot(page, f"menu-open-{width}", full_page=False)
 
                 toggle.tap()
                 _wait_sidebar(page, False)
