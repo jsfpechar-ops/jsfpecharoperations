@@ -137,7 +137,7 @@ Write `docs/tasks/0329-report.md` (300 tokens at most) and set `Status: review`:
 
 ## Risk list (for the reviewer)
 
-- A1 to A6 were checked on 2026-10-24 (above). The drafts may be copied into the live texts once the owner decides on `inference_geo` (below).
+- A1 to A6 were checked on 2026-10-24 (above). The drafts may be copied into the live texts; they must say processing may happen in any country where Anthropic operates (owner kept the global default).
 
 ## Owner steps
 
@@ -160,4 +160,4 @@ Findings:
 
 Changes made in this brief: findings 1 to 7 above; Anthropic facts turned into assumptions A1 to A6; draft parts 3, 5, 6 and 7 added; ROPA basis, Support mailbox and DPIA lines.
 
-Owner decisions: A1 to A6 checked 2026-10-24; whether to send `inference_geo: "us"` (recommended: inference stays in one known country, covered by the SCCs, for 10% more on a few dollars a month; a one-line change in `App/app/ai.py`); the support mailbox retention: answered 2026-10-24, the support mailbox is Zoho Mail, 12 months (owner accepted the recommendation); the 30-day subprocessor notice is not needed before launch, because there are no production hosts yet (owner, 2026-10-24), so the register is updated before the first real host signs up; whether to add "or guests' details" to `havel.disclaimer` (recommended); whether the register lists the guest assistant now or when it ships (the plan's exact wording keeps it, marked "not in use yet").
+Owner decisions: A1 to A6 checked 2026-10-24; `inference_geo`: owner chose the global default (2026-10-24), so the privacy texts say the AI provider may process requests in any country where it operates, under the SCCs; the support mailbox retention: answered 2026-10-24, the support mailbox is Zoho Mail, 12 months (owner accepted the recommendation); the 30-day subprocessor notice is not needed before launch, because there are no production hosts yet (owner, 2026-10-24), so the register is updated before the first real host signs up; whether to add "or guests' details" to `havel.disclaimer` (recommended); whether the register lists the guest assistant now or when it ships (the plan's exact wording keeps it, marked "not in use yet").
