@@ -1,49 +1,40 @@
-# 0292 report: guest guide pages (executor)
+# 0292 report: stay fee list one step at a time
 
 Status: review
 
-## 1. Files changed
+## Files changed
+- App/app/routes/stay_fees.py (step 1: step per card, fee_step_url)
+- App/app/templates/stay_fees.html (step 2: pay loop replaced, pay_btn removed)
+- App/app/host_i18n.py, App/app/host_vi_i18n.py (step 3: new keys, step2/step3 values)
+- App/app/static/host2.css (step 4 append; step 6 width 7rem; entities name rule)
+- App/app/templates/base.html (host2 cache key)
+- App/tests/static_versions.json (regenerated with --write)
+- App/tests/test_stay_fee_pay_steps.py, App/tests/test_stay_fee_pay_steps_browser.py (step 5)
+- App/tests/test_design_fees.py (not named in brief, see Deviations)
 
-Code and tests (all steps of brief §3 applied exactly):
-- App/app/routes/guest_guide.py (new)
-- App/app/templates/guest_guide.html (new)
-- App/app/templates/guest_guide_card.html (new)
-- App/tests/test_guest_guide_pages.py (new)
-- App/app/host_i18n.py (edit: _GUEST_GUIDE_STRINGS, en and cs)
-- App/app/main.py (edit: import and include_router)
-- App/app/templates/apartment_form.html (edit: one tab link, no data-property-tab)
-- docs/design/catalog.json (edit: two enforced_templates entries)
-- App/tests/test_design_guardrails_browser.py (edit: one ROUTES entry)
-- docs/tasks/0292-report.md, docs/tasks/0292-guest-guide-pages.md (status line)
+## Commands
+- `.venv/bin/python -m pytest tests/test_stay_fee*.py tests/test_design_fees.py tests/test_static_versions.py tests/test_design_guardrails_browser.py tests/test_host_i18n*.py tests/test_0285_rows_browser.py -q --tb=short -rfs 2>&1 | tail -30`
+  last line: `174 passed, 2 warnings in 47.96s`. No skipped lines.
+- Earlier run had 3 failures (static manifest, 0285 entities rows at 1280 px, design_fees primary assertion). Each fixed as listed below.
 
-## 2. Commands (last lines)
+## Section 7
+- [x] Unconfirmed card: step 1 current, figures, Yes (primary) + Edit (test 1, browser test).
+- [x] Confirmed card: step 2 Download + Next; fee_step=3 shows QR, send line, Open datová schránka (test 2).
+- [x] One primary per card; EN/CS/VI strings present (browser test, i18n tests).
+- [x] Commands run; failures listed.
+Screenshots not taken (orchestrator).
 
-- `pytest tests/test_guest_guide_pages.py tests/test_guest_guide.py -q`: `20 passed, 1 warning in 3.60s`
-- `pytest tests/test_*_i18n.py ... tests/test_design_*.py -q -rs`: `3 failed, 180 passed`. The 3 failures are the known environment failures in tests/test_host_i18n.py (test_language_endpoint_sets_cookie_and_rejects_open_redirects, test_a_signed_in_dashboard_keeps_vietnamese, test_language_endpoint_accepts_vietnamese). No SKIPPED lines.
-- `UBYHOST_REQUIRE_BROWSER=1 pytest tests/test_design_guardrails_browser.py -k every_host_page -rs`: `1 passed, 9 deselected`, no skips.
-- `python3 scripts/design_lint.py`: `design lint: OK`
-- `python3 scripts/context_lint.py`: `context lint: OK`
+## Deviations
+- Cache key: brief says `?v=20261024-0292`. The manifest refused a second CSS edit under the same key, so base.html uses `20261024-0292b`.
+- App/tests/test_design_fees.py line 14 asserted the list has no `ui-btn ui-btn-primary`. The brief makes Yes a primary, so it now asserts exactly one. Not named in brief; reviewer to confirm.
+- `.lc-entities` name links also failed at 1280 px. Added `.host-workspace .lc-entities tbody td.col-name .row-primary-link { max-width: calc(100% - 7rem); }` inside the 950px block, after the `+ .row-open` line.
+- New CSS uses `3px` and `1.5rem` as the brief gives them. Not checked against any px lint.
+- Old keys (lede, locked, confirmed_help, confirm_why) and the 0203 rules are left in place; i18n tests pass.
+- Tool-call budget: this run went past the 25-call checkpoint (about 34 calls) while fixing test failures. No steps are left undone.
+- No PR opened: this session may not push.
 
-## 3. Acceptance (§7)
+## Questions
+- Confirm the test_design_fees.py change and the 0292b cache key.
 
-- [x] Diff lists the nine §3 files plus the report.
-- [x] 20 guide tests pass; copy and design rows pass except the 3 known i18n failures; layout guard passes with 0 skipped.
-- [x] Both lints OK.
-
-## 4. Deviations
-
-- Done: steps 1 to 10 (all). Left: 390 px screenshots (see Questions).
-- Commit: one commit at the end, not one per step, as the lead asked.
-- Screenshots: the in-process render (TestClient HTML loaded into Playwright) returned the login page, not the guide, because the session did not carry over. The scrollWidth 390 / clientWidth 390 numbers came from that login page, so they are not evidence for the guide pages. Not claimed as passed.
-
-## 5. Questions
-
-- Session setup for the screenshot script: login_as does not put a usable session cookie into the TestClient jar for Playwright. A reviewer or the next session should take the two 390 px screenshots (guide and card) on a real running server.
-
-## 6. Owner steps left
-
-1. Review the PR once a fresh executor (or you) has taken the 390 px screenshots of the two pages.
-2. Merge when CI is green.
-
-## Review (orchestrator, 2026-10-24)
-- Code identical to the brief's verified files. 390 px screenshots taken on a live server by a second Haiku run: list and card, scrollWidth 390 = clientWidth 390, nothing overlaps (the bottom tab bar sits mid-page only because the capture is full-page).
+## Owner steps left
+- None.

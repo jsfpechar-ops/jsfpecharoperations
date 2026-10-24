@@ -1,4 +1,4 @@
-"""0294: the QR guide page in a real browser at phone width (layout rules and a screenshot).
+"""0344: the QR guide page in a real browser at phone width (layout rules and a screenshot).
 
 Reuses the live server, browser and layout checker of test_guest_browser_e2e.
 Skipped when Chromium is missing, unless UBYHOST_REQUIRE_BROWSER=1.
@@ -14,14 +14,14 @@ from app import db, guest_guide, guide_token
 from tests.test_guest_browser_e2e import LAYOUT_JS, browser, live_server  # noqa: F401
 
 SHOTS = Path(os.environ.get("UBYHOST_SHOTS_DIR") or Path(__file__).resolve().parents[1] / ".screenshots")
-NAME = "Guide browser flat 0294"
+NAME = "Guide browser flat 0344"
 
 
 def _seed() -> str:
     _cleanup()
     now = db.utcnow()
     apartment_id = db.insert("apartment", {
-        "internal_name": NAME, "uby_name": NAME, "permalink_token": "guidebrowsertok0294",
+        "internal_name": NAME, "uby_name": NAME, "permalink_token": "guidebrowsertok0344",
         "automation_mode": "manual", "active": 1, "created_at": now,
     })
     guest_guide.ensure_defaults(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
@@ -49,7 +49,7 @@ def test_the_qr_guide_page_lays_out_on_a_phone(live_server, browser, lang):  # n
         assert not problems, problems
         assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
         SHOTS.mkdir(parents=True, exist_ok=True)
-        page.screenshot(path=str(SHOTS / f"0294-guide-qr-{lang}-390.png"), full_page=True)
+        page.screenshot(path=str(SHOTS / f"0344-guide-qr-{lang}-390.png"), full_page=True)
         context.close()
     finally:
         _cleanup()

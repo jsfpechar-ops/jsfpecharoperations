@@ -1,4 +1,4 @@
-"""0293: photos on guest guide cards ("this is the boiler, press this button").
+"""0343: photos on guest guide cards ("this is the boiler, press this button").
 
 A photo is decoded and saved again as a fresh JPEG (``passport_photos.reencode_image``),
 so no EXIF location or camera data survives, then shrunk to ``MAX_SIDE``. Files

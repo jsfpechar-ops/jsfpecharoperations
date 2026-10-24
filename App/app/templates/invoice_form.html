@@ -36,55 +36,63 @@
   </p>
   {% endif %}
   <div class="ui-section invoice-supplier">
-    <div class="invoice-supplier-row">
-      <div class="field invoice-supplier-picker">
-        <label for="legal_entity_id">{{ t('invoice.entity.label') }}</label>
-        <select id="legal_entity_id" name="legal_entity_id">
-          {% for option in entities %}
-            <option value="{{ option.id }}"
-                     data-vat-payer="{{ 1 if (option.vat_status or 'non_payer') == 'payer' else 0 }}"
-                     {% if entity and option.id == entity.id %}selected{% endif %}>{{ option.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="invoice-supplier-meta">
-        <span class="invoice-supplier-name">{{ entity.name }}</span>
-        <span class="ui-sub">
-          {% if entity.ico %}IČO {{ entity.ico }}{% endif %}
-          {% if entity.seat %}· {{ entity.seat }}{% endif %}
-        </span>
-      </div>
-      <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/entities?edit={{ entity.id }}&amp;next={{ (('/invoices/new?reservation_id=' ~ (stay.reservation.id if stay else '') ~ '&entity=' ~ entity.id) | urlencode) }}#entity-invoice">
-        {{ t('invoice.edit_details') }}
-      </a>
+    <a class="invoice-supplier-edit" href="/entities?edit={{ entity.id }}&amp;next={{ (('/invoices/new?reservation_id=' ~ (stay.reservation.id if stay else '') ~ '&entity=' ~ entity.id) | urlencode) }}#entity-invoice">{{ t('invoice.edit_details') }}</a>
+    <div class="ui-field invoice-supplier-picker">
+      <label for="legal_entity_id">{{ t('invoice.entity.label') }}</label>
+      <select id="legal_entity_id" name="legal_entity_id">
+        {% for option in entities %}
+          <option value="{{ option.id }}"
+                   data-vat-payer="{{ 1 if (option.vat_status or 'non_payer') == 'payer' else 0 }}"
+                   {% if entity and option.id == entity.id %}selected{% endif %}>{{ option.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="invoice-supplier-meta">
+      <span class="invoice-supplier-name">{{ entity.name }}</span>
+      <span class="ui-sub">
+        {% if entity.ico %}IČO {{ entity.ico }}{% endif %}
+        {% if entity.seat %}· {{ entity.seat }}{% endif %}
+      </span>
     </div>
   </div>
 
-  <div class="ui-section">
+  <div class="ui-section invoice-customer">
     <h2>{{ t('invoice.section.customer') }}</h2>
-    {% if show_fill_guest %}
-    <div class="ui-form-actions">
-      <button type="submit" name="fill_from_guest" value="1" formnovalidate class="ui-btn ui-btn-secondary">{{ t('invoice.fill_guest.button') }}</button>
+    <div class="invoice-lookup">
+      <div class="ui-field invoice-lookup-ico">
+        <label for="buyer_ico">{{ t('invoice.buyer.ico') }} <span class="opt">{{ t('common.optional') }}</span></label>
+        <div class="invoice-lookup-row">
+          <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" autocomplete="off" value="{{ values.get('buyer_ico', '') }}">
+          <button class="ui-btn ui-btn-primary" type="submit" name="fill_buyer_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
+        </div>
+        {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
+        {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
+      </div>
+      {% if show_fill_guest %}
+      <div class="invoice-lookup-guest">
+        <span class="ui-sub">{{ t('invoice.buyer.or') }}</span>
+        <button type="submit" name="fill_from_guest" value="1" formnovalidate class="ui-btn ui-btn-secondary">{{ t('invoice.fill_guest.button') }}</button>
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
-    <div class="grid invoice-buyer-grid">
-      <div class="ui-field">
+    <div class="invoice-buyer-fields">
+      <div class="ui-field invoice-f-full">
         <label for="buyer_name">{{ t('invoice.buyer.name') }}</label>
-        <input type="text" id="buyer_name" name="buyer_name" required value="{{ values.get('buyer_name', '') }}">
+        <input type="text" id="buyer_name" name="buyer_name" required autocomplete="organization" value="{{ values.get('buyer_name', '') }}">
       </div>
-      <div class="ui-field">
+      <div class="ui-field invoice-f-full">
         <label for="buyer_street">{{ t('invoice.buyer.street') }}</label>
-        <input type="text" id="buyer_street" name="buyer_street" value="{{ values.get('buyer_street', '') }}">
+        <input type="text" id="buyer_street" name="buyer_street" autocomplete="address-line1" value="{{ values.get('buyer_street', '') }}">
       </div>
-      <div class="ui-field">
-        <label for="buyer_city">{{ t('invoice.buyer.city') }}</label>
-        <input type="text" id="buyer_city" name="buyer_city" value="{{ values.get('buyer_city', '') }}">
-      </div>
-      <div class="ui-field">
+      <div class="ui-field invoice-f-zip">
         <label for="buyer_zip">{{ t('invoice.buyer.zip') }}</label>
-        <input type="text" id="buyer_zip" name="buyer_zip" value="{{ values.get('buyer_zip', '') }}">
+        <input type="text" id="buyer_zip" name="buyer_zip" autocomplete="postal-code" value="{{ values.get('buyer_zip', '') }}">
       </div>
-      <div class="ui-field">
+      <div class="ui-field invoice-f-city">
+        <label for="buyer_city">{{ t('invoice.buyer.city') }}</label>
+        <input type="text" id="buyer_city" name="buyer_city" autocomplete="address-level2" value="{{ values.get('buyer_city', '') }}">
+      </div>
+      <div class="ui-field invoice-f-full">
         <label for="buyer_country">{{ t('invoice.buyer.country') }}</label>
         <select id="buyer_country" name="buyer_country">
           {% for country in countries %}
@@ -92,22 +100,13 @@
           {% endfor %}
         </select>
       </div>
-      <div class="ui-field">
-        <label for="buyer_ico">{{ t('invoice.buyer.ico') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <div class="action-group invoice-ico-row">
-          <input type="text" id="buyer_ico" name="buyer_ico" inputmode="numeric" maxlength="8" value="{{ values.get('buyer_ico', '') }}">
-          <button class="ui-btn ui-btn-secondary" type="submit" name="fill_buyer_from_register" value="1" formnovalidate>{{ t('ares.fill') }}</button>
-        </div>
-        {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
-        {% if ares_note %}<p class="hint">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
-      </div>
-      <div class="ui-field">
+      <div class="ui-field invoice-f-half">
         <label for="buyer_dic">{{ t('invoice.buyer.dic') }} <span class="opt">{{ t('common.optional') }}</span></label>
         <input type="text" id="buyer_dic" name="buyer_dic" value="{{ values.get('buyer_dic', '') }}">
       </div>
-      <div class="ui-field">
+      <div class="ui-field invoice-f-half">
         <label for="buyer_email">{{ t('invoice.buyer.email') }} <span class="opt">{{ t('common.optional') }}</span></label>
-        <input type="email" id="buyer_email" name="buyer_email" value="{{ values.get('buyer_email', '') }}">
+        <input type="email" id="buyer_email" name="buyer_email" autocomplete="email" value="{{ values.get('buyer_email', '') }}">
       </div>
     </div>
   </div>
@@ -184,7 +183,7 @@
                 {% endfor %}
               </select>
             </td>
-            <td class="row-actions"><button type="button" class="ui-btn ui-btn-secondary ui-btn-compact" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
+            <td class="row-actions"><button type="button" class="ui-btn ui-btn-quiet ui-btn-compact" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
           </tr>
           {% endfor %}
         {% else %}
@@ -212,7 +211,7 @@
               <option value="0">0 %</option>
             </select>
           </td>
-          <td class="row-actions"><button type="button" class="ui-btn ui-btn-secondary ui-btn-compact" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
+          <td class="row-actions"><button type="button" class="ui-btn ui-btn-quiet ui-btn-compact" data-remove-item>{{ t('invoice.remove_item') }}</button></td>
         </tr>
         {% endif %}
       </tbody>

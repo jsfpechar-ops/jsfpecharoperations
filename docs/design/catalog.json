@@ -931,7 +931,7 @@
     "health-copy": "0244 name (strong) and sentence (span) of a health-row.",
     "health-all-set": "0244 details that folds the rows away when nothing needs fixing.",
     "fee-more": "Stay fee editor in Settings: folds the council's print-only details (address, contact, data box) (0239).",
-    "guide-photos": "0293 grid of a guest guide card's photos (a ul of guide-photo).",
-    "guide-photo": "0293 one photo with its delete button under it."
+    "guide-photos": "0343 grid of a guest guide card's photos (a ul of guide-photo).",
+    "guide-photo": "0343 one photo with its delete button under it."
   }
 }

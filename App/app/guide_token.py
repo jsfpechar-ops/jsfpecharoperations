@@ -1,8 +1,8 @@
-"""The QR token of a property's guest guide (brief 0294).
+"""The QR token of a property's guest guide (brief 0344).
 
 One token per property, 192 random bits, stored in ``apartment.guide_token``.
 It opens ``/g/{token}``: the "everyone" cards only, for anyone standing at the
-property. It is never the stay link token, so rotating it (brief 0295) does not
+property. It is never the stay link token, so rotating it (brief 0345) does not
 break a single stay link, and a leaked QR photo never opens a registration form.
 """
 from __future__ import annotations
@@ -42,7 +42,7 @@ def ensure(apartment_id: int) -> str:
 
 
 def rotate(apartment_id: int) -> str:
-    """A fresh token; the old QR code stops working at once (UI in brief 0295)."""
+    """A fresh token; the old QR code stops working at once (UI in brief 0345)."""
     token = new_token()
     db.update("apartment", apartment_id, {"guide_token": token})
     return token
@@ -63,7 +63,7 @@ def apartment_for(token: str) -> Optional[Dict[str, Any]]:
     return dict(row) if row else None
 
 def qr_png(url: str) -> bytes:
-    """A print-sized PNG of the QR code (brief 0295): about 6 cm at 300 dpi."""
+    """A print-sized PNG of the QR code (brief 0345): about 6 cm at 300 dpi."""
     qr = qrcode.QRCode(error_correction=ERROR_CORRECT_M, box_size=20, border=4)
     qr.add_data(url)
     qr.make(fit=True)

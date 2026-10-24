@@ -1,4 +1,4 @@
-"""0295: the guide's QR code for the host."""
+"""0345: the guide's QR code for the host."""
 from __future__ import annotations
 
 import io
