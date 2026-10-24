@@ -98,4 +98,3 @@ Grep. **HR**: owner decides.
 - K-MORE: #436 undeployed.
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
-- K-GI01: 0348 quote check passes number-free prose on any 10-char quote; real-key eval PASS gates guide_import.

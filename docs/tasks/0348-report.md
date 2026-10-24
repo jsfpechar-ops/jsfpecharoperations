@@ -39,3 +39,4 @@ Done: steps 1 to 7. Left: step 8 (390 px screenshot of the guide page with a `us
 
 ## Owner steps left
 - Ship rule from brief section 7: run `scripts/guide_import_eval.py` with the real key on staging, paste output in the PR, then set `UBYHOST_AI_FEATURES` and the budget env var.
+- Known limit (Fable review): the quote check passes number-free prose on any 10-character quote; the real-key eval PASS before enabling guide_import is the gate.
