@@ -1,4 +1,4 @@
-"""0293: photos on guest guide cards."""
+"""0343: photos on guest guide cards."""
 from __future__ import annotations
 
 import io

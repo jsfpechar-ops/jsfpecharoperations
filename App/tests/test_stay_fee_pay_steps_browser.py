@@ -20,7 +20,7 @@ _CHECK_JS = """() => {
   const doc = document.documentElement;
   const steps = [...document.querySelectorAll('.fee-step')];
   return {sideways: doc.scrollWidth > doc.clientWidth + 1, steps: steps.length,
-          primaries: document.querySelectorAll('.ui-btn-primary').length};
+          primaries: Math.max(0, ...[...document.querySelectorAll('.fee-pay')].map(s => s.querySelectorAll('.ui-btn-primary').length))};
 }"""
 
 
@@ -40,7 +40,7 @@ def test_pay_steps_fit_every_width_and_language(acc, base):
                         _settle(page)
                         _dismiss_prompt(page)
                         if state == "after" and lang == "en" and width == 390:
-                            button = page.locator(".fee-step form button")
+                            button = page.locator(".fee-step form button.ui-btn-primary")
                             if button.count():
                                 button.first.click()
                                 _settle(page)

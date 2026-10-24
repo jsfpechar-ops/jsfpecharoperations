@@ -1,0 +1,240 @@
+"""0355: every string of Quick answers. Data only; apply_quick_copy.py writes it.
+
+HOST: the host wizard (host_i18n, en and cs). GUEST: the lines guests and Leon
+read inside a card (i18n.py en, cs, de, es, fr and guest_uk_i18n.py uk).
+"""
+
+HOST = {
+    "en": {
+        "guest_guide.quick.link": "Quick answers",
+        "guest_guide.quick.title": "Quick answers",
+        "guest_guide.quick.banner": "Start with Quick answers: a few taps about pets, parking, the lift and more. It takes about two minutes.",
+        "guest_guide.quick.start": "Start",
+        "guest_guide.quick.lede": "Pick an answer for each question. Not sure? Leave it. Guests and Leon see your answers inside the right cards.",
+        "guest_guide.quick.step_of": "Step %(n)s of %(total)s",
+        "guest_guide.quick.step.times": "Arrival and checkout",
+        "guest_guide.quick.step.rules": "House rules",
+        "guest_guide.quick.step.access": "Parking and access",
+        "guest_guide.quick.step.kitchen": "Kitchen and laundry",
+        "guest_guide.quick.step.comfort": "Rooms and comfort",
+        "guest_guide.quick.yes": "Yes",
+        "guest_guide.quick.no": "No",
+        "guest_guide.quick.unsure": "Not sure",
+        "guest_guide.quick.from": "from",
+        "guest_guide.quick.to": "to",
+        "guest_guide.quick.time_help": "For example 15:00. Leave it empty if it changes.",
+        "guest_guide.quick.range_help": "For example 22:00 to 07:00.",
+        "guest_guide.quick.q.checkin_from": "Check-in from",
+        "guest_guide.quick.q.checkout_by": "Checkout by",
+        "guest_guide.quick.q.late_checkout": "Can guests ask for a late checkout?",
+        "guest_guide.quick.q.luggage": "Can guests leave bags before check-in or after checkout?",
+        "guest_guide.quick.q.pets": "Are pets allowed?",
+        "guest_guide.quick.q.smoking": "Is smoking allowed?",
+        "guest_guide.quick.q.parties": "Are parties or events allowed?",
+        "guest_guide.quick.q.quiet_hours": "Quiet hours",
+        "guest_guide.quick.q.parking": "Can guests park at the property?",
+        "guest_guide.quick.q.lift": "Is there a lift?",
+        "guest_guide.quick.q.step_free": "Can guests get in without steps?",
+        "guest_guide.quick.q.dishwasher": "Is there a dishwasher?",
+        "guest_guide.quick.q.coffee_machine": "Is there a coffee machine?",
+        "guest_guide.quick.q.washing_machine": "Is there a washing machine?",
+        "guest_guide.quick.q.dryer": "Is there a tumble dryer?",
+        "guest_guide.quick.q.iron": "Is there an iron?",
+        "guest_guide.quick.q.air_conditioning": "Is there air conditioning?",
+        "guest_guide.quick.q.balcony": "Is there a balcony or terrace?",
+        "guest_guide.quick.q.safe": "Is there a safe?",
+        "guest_guide.quick.q.cot": "Is there a baby cot?",
+        "guest_guide.quick.q.high_chair": "Is there a high chair?",
+        "guest_guide.quick.q.hair_dryer": "Is there a hair dryer?",
+        "guest_guide.quick.next": "Save and continue",
+        "guest_guide.quick.finish": "Save and finish",
+        "guest_guide.quick.skip": "Skip this step",
+        "guest_guide.quick.done_title": "Your guide",
+        "guest_guide.quick.done_lede": "Thank you. Guests now see these answers inside the right cards, and Leon can use them.",
+        "guest_guide.quick.answers_title": "Your quick answers",
+        "guest_guide.quick.no_answers": "No answers yet. You can come back any time.",
+        "guest_guide.quick.missing_title": "Still to write",
+        "guest_guide.quick.missing_lede": "These cards still need a few words from you. The grey example in each field shows what guests find useful.",
+        "guest_guide.quick.all_done": "Every card is answered. Nice work.",
+        "guest_guide.quick.edit": "Change answers",
+        "guest_guide.quick.write": "Write the next card",
+        "guest_guide.quick.back": "Back to the guide",
+    },
+    "cs": {
+        "guest_guide.quick.link": "Rychlé odpovědi",
+        "guest_guide.quick.title": "Rychlé odpovědi",
+        "guest_guide.quick.banner": "Začněte rychlými odpověďmi: pár klepnutí o zvířatech, parkování, výtahu a dalším. Zabere to asi dvě minuty.",
+        "guest_guide.quick.start": "Začít",
+        "guest_guide.quick.lede": "U každé otázky vyberte odpověď. Nevíte? Nechte být. Hosté i Leon uvidí odpovědi ve správných kartách.",
+        "guest_guide.quick.step_of": "Krok %(n)s z %(total)s",
+        "guest_guide.quick.step.times": "Příjezd a odjezd",
+        "guest_guide.quick.step.rules": "Domácí pravidla",
+        "guest_guide.quick.step.access": "Parkování a přístup",
+        "guest_guide.quick.step.kitchen": "Kuchyně a praní",
+        "guest_guide.quick.step.comfort": "Pokoje a vybavení",
+        "guest_guide.quick.yes": "Ano",
+        "guest_guide.quick.no": "Ne",
+        "guest_guide.quick.unsure": "Nevím",
+        "guest_guide.quick.from": "od",
+        "guest_guide.quick.to": "do",
+        "guest_guide.quick.time_help": "Například 15:00. Když se mění, nechte prázdné.",
+        "guest_guide.quick.range_help": "Například 22:00 až 07:00.",
+        "guest_guide.quick.q.checkin_from": "Příjezd od",
+        "guest_guide.quick.q.checkout_by": "Odjezd do",
+        "guest_guide.quick.q.late_checkout": "Mohou si hosté říct o pozdní odjezd?",
+        "guest_guide.quick.q.luggage": "Mohou si hosté nechat zavazadla před příjezdem nebo po odjezdu?",
+        "guest_guide.quick.q.pets": "Jsou povolená zvířata?",
+        "guest_guide.quick.q.smoking": "Smí se kouřit?",
+        "guest_guide.quick.q.parties": "Jsou povolené oslavy a akce?",
+        "guest_guide.quick.q.quiet_hours": "Noční klid",
+        "guest_guide.quick.q.parking": "Mohou hosté parkovat u ubytování?",
+        "guest_guide.quick.q.lift": "Je v domě výtah?",
+        "guest_guide.quick.q.step_free": "Dá se dovnitř dostat bez schodů?",
+        "guest_guide.quick.q.dishwasher": "Je tu myčka?",
+        "guest_guide.quick.q.coffee_machine": "Je tu kávovar?",
+        "guest_guide.quick.q.washing_machine": "Je tu pračka?",
+        "guest_guide.quick.q.dryer": "Je tu sušička?",
+        "guest_guide.quick.q.iron": "Je tu žehlička?",
+        "guest_guide.quick.q.air_conditioning": "Je tu klimatizace?",
+        "guest_guide.quick.q.balcony": "Je tu balkon nebo terasa?",
+        "guest_guide.quick.q.safe": "Je tu trezor?",
+        "guest_guide.quick.q.cot": "Je tu dětská postýlka?",
+        "guest_guide.quick.q.high_chair": "Je tu dětská židlička?",
+        "guest_guide.quick.q.hair_dryer": "Je tu fén?",
+        "guest_guide.quick.next": "Uložit a pokračovat",
+        "guest_guide.quick.finish": "Uložit a dokončit",
+        "guest_guide.quick.skip": "Tento krok přeskočit",
+        "guest_guide.quick.done_title": "Váš průvodce",
+        "guest_guide.quick.done_lede": "Děkujeme. Hosté teď odpovědi uvidí ve správných kartách a Leon je může použít.",
+        "guest_guide.quick.answers_title": "Vaše rychlé odpovědi",
+        "guest_guide.quick.no_answers": "Zatím žádné odpovědi. Vrátit se můžete kdykoli.",
+        "guest_guide.quick.missing_title": "Ještě dopsat",
+        "guest_guide.quick.missing_lede": "Tyto karty ještě potřebují pár vašich slov. Šedý příklad v každém poli ukazuje, co hostům pomáhá.",
+        "guest_guide.quick.all_done": "Všechny karty jsou vyřízené. Skvělá práce.",
+        "guest_guide.quick.edit": "Změnit odpovědi",
+        "guest_guide.quick.write": "Napsat další kartu",
+        "guest_guide.quick.back": "Zpět na průvodce",
+    },
+}
+
+# fact -> {lang: line} for time facts, or {lang: (yes line, no line)} for yes/no facts.
+_LINES = {
+    "checkin_from": {"en": "Check-in from %(time)s.", "cs": "Příjezd od %(time)s.", "de": "Check-in ab %(time)s.", "es": "Entrada a partir de las %(time)s.", "fr": "Arrivée à partir de %(time)s.", "uk": "Заселення з %(time)s."},
+    "checkout_by": {"en": "Checkout by %(time)s.", "cs": "Odjezd do %(time)s.", "de": "Check-out bis %(time)s.", "es": "Salida antes de las %(time)s.", "fr": "Départ avant %(time)s.", "uk": "Виселення до %(time)s."},
+    "quiet_hours": {"en": "Quiet hours from %(start)s to %(end)s.", "cs": "Noční klid od %(start)s do %(end)s.", "de": "Ruhezeit von %(start)s bis %(end)s.", "es": "Horario de silencio de %(start)s a %(end)s.", "fr": "Silence de %(start)s à %(end)s.", "uk": "Тиша з %(start)s до %(end)s."},
+    "late_checkout": {
+        "en": ("Late checkout is possible on request.", "Late checkout is not possible."),
+        "cs": ("Pozdní odjezd je možný po domluvě.", "Pozdní odjezd není možný."),
+        "de": ("Später Check-out ist auf Anfrage möglich.", "Später Check-out ist nicht möglich."),
+        "es": ("Salida tardía posible bajo petición.", "No es posible la salida tardía."),
+        "fr": ("Départ tardif possible sur demande.", "Le départ tardif n'est pas possible."),
+        "uk": ("Пізнє виселення можливе за запитом.", "Пізнє виселення неможливе."),
+    },
+    "luggage": {
+        "en": ("You can leave luggage before check-in or after checkout.", "Luggage cannot be left before check-in or after checkout."),
+        "cs": ("Zavazadla si můžete nechat před příjezdem i po odjezdu.", "Zavazadla tu před příjezdem ani po odjezdu nechat nejde."),
+        "de": ("Sie können Gepäck vor dem Check-in oder nach dem Check-out hier lassen.", "Gepäck kann vor dem Check-in oder nach dem Check-out nicht hier bleiben."),
+        "es": ("Puede dejar el equipaje antes de la entrada o después de la salida.", "No se puede dejar el equipaje antes de la entrada ni después de la salida."),
+        "fr": ("Vous pouvez laisser vos bagages avant l'arrivée ou après le départ.", "Les bagages ne peuvent pas rester avant l'arrivée ni après le départ."),
+        "uk": ("Багаж можна залишити до заселення або після виселення.", "Багаж не можна залишити до заселення чи після виселення."),
+    },
+    "pets": {
+        "en": ("Pets are welcome.", "No pets."), "cs": ("Zvířata jsou vítána.", "Bez zvířat."),
+        "de": ("Haustiere sind willkommen.", "Keine Haustiere."), "es": ("Se admiten mascotas.", "No se admiten mascotas."),
+        "fr": ("Les animaux sont les bienvenus.", "Animaux non admis."), "uk": ("Тварини вітаються.", "Без тварин."),
+    },
+    "smoking": {
+        "en": ("Smoking is allowed.", "No smoking."), "cs": ("Kouření je povoleno.", "Nekouří se."),
+        "de": ("Rauchen ist erlaubt.", "Rauchen ist nicht erlaubt."), "es": ("Se permite fumar.", "No se permite fumar."),
+        "fr": ("Il est permis de fumer.", "Interdit de fumer."), "uk": ("Курити дозволено.", "Курити заборонено."),
+    },
+    "parties": {
+        "en": ("Parties and events are allowed.", "No parties or events."), "cs": ("Oslavy a akce jsou povoleny.", "Žádné oslavy ani akce."),
+        "de": ("Partys und Feiern sind erlaubt.", "Keine Partys oder Feiern."), "es": ("Se permiten fiestas y eventos.", "No se permiten fiestas ni eventos."),
+        "fr": ("Fêtes et événements autorisés.", "Pas de fêtes ni d'événements."), "uk": ("Вечірки та заходи дозволені.", "Без вечірок і заходів."),
+    },
+    "parking": {
+        "en": ("Parking is available.", "No parking at the property."), "cs": ("Parkování je k dispozici.", "U ubytování se parkovat nedá."),
+        "de": ("Parkplatz vorhanden.", "Kein Parkplatz an der Unterkunft."), "es": ("Hay aparcamiento.", "No hay aparcamiento en el alojamiento."),
+        "fr": ("Parking disponible.", "Pas de parking sur place."), "uk": ("Є парковка.", "Парковки біля житла немає."),
+    },
+    "lift": {
+        "en": ("There is a lift.", "There is no lift."), "cs": ("V domě je výtah.", "V domě není výtah."),
+        "de": ("Es gibt einen Aufzug.", "Es gibt keinen Aufzug."), "es": ("Hay ascensor.", "No hay ascensor."),
+        "fr": ("Il y a un ascenseur.", "Il n'y a pas d'ascenseur."), "uk": ("Є ліфт.", "Ліфта немає."),
+    },
+    "step_free": {
+        "en": ("Step-free access.", "There are steps at the entrance."), "cs": ("Bezbariérový přístup.", "Ke vchodu vedou schody."),
+        "de": ("Stufenloser Zugang.", "Am Eingang gibt es Stufen."), "es": ("Acceso sin escalones.", "Hay escalones en la entrada."),
+        "fr": ("Accès sans marches.", "Il y a des marches à l'entrée."), "uk": ("Вхід без сходинок.", "Біля входу є сходинки."),
+    },
+    "dishwasher": {
+        "en": ("There is a dishwasher.", "There is no dishwasher."), "cs": ("Je tu myčka.", "Myčka tu není."),
+        "de": ("Es gibt eine Spülmaschine.", "Es gibt keine Spülmaschine."), "es": ("Hay lavavajillas.", "No hay lavavajillas."),
+        "fr": ("Il y a un lave-vaisselle.", "Il n'y a pas de lave-vaisselle."), "uk": ("Є посудомийна машина.", "Посудомийної машини немає."),
+    },
+    "coffee_machine": {
+        "en": ("There is a coffee machine.", "There is no coffee machine."), "cs": ("Je tu kávovar.", "Kávovar tu není."),
+        "de": ("Es gibt eine Kaffeemaschine.", "Es gibt keine Kaffeemaschine."), "es": ("Hay cafetera.", "No hay cafetera."),
+        "fr": ("Il y a une machine à café.", "Il n'y a pas de machine à café."), "uk": ("Є кавоварка.", "Кавоварки немає."),
+    },
+    "washing_machine": {
+        "en": ("There is a washing machine.", "There is no washing machine."), "cs": ("Je tu pračka.", "Pračka tu není."),
+        "de": ("Es gibt eine Waschmaschine.", "Es gibt keine Waschmaschine."), "es": ("Hay lavadora.", "No hay lavadora."),
+        "fr": ("Il y a un lave-linge.", "Il n'y a pas de lave-linge."), "uk": ("Є пральна машина.", "Пральної машини немає."),
+    },
+    "dryer": {
+        "en": ("There is a tumble dryer.", "There is no tumble dryer."), "cs": ("Je tu sušička.", "Sušička tu není."),
+        "de": ("Es gibt einen Wäschetrockner.", "Es gibt keinen Wäschetrockner."), "es": ("Hay secadora.", "No hay secadora."),
+        "fr": ("Il y a un sèche-linge.", "Il n'y a pas de sèche-linge."), "uk": ("Є сушильна машина.", "Сушильної машини немає."),
+    },
+    "iron": {
+        "en": ("There is an iron.", "There is no iron."), "cs": ("Je tu žehlička.", "Žehlička tu není."),
+        "de": ("Es gibt ein Bügeleisen.", "Es gibt kein Bügeleisen."), "es": ("Hay plancha.", "No hay plancha."),
+        "fr": ("Il y a un fer à repasser.", "Il n'y a pas de fer à repasser."), "uk": ("Є праска.", "Праски немає."),
+    },
+    "air_conditioning": {
+        "en": ("There is air conditioning.", "There is no air conditioning."), "cs": ("Je tu klimatizace.", "Klimatizace tu není."),
+        "de": ("Es gibt eine Klimaanlage.", "Es gibt keine Klimaanlage."), "es": ("Hay aire acondicionado.", "No hay aire acondicionado."),
+        "fr": ("Il y a la climatisation.", "Il n'y a pas de climatisation."), "uk": ("Є кондиціонер.", "Кондиціонера немає."),
+    },
+    "balcony": {
+        "en": ("There is a balcony or terrace.", "There is no balcony or terrace."), "cs": ("Je tu balkon nebo terasa.", "Balkon ani terasa tu nejsou."),
+        "de": ("Es gibt einen Balkon oder eine Terrasse.", "Es gibt keinen Balkon und keine Terrasse."), "es": ("Hay balcón o terraza.", "No hay balcón ni terraza."),
+        "fr": ("Il y a un balcon ou une terrasse.", "Il n'y a ni balcon ni terrasse."), "uk": ("Є балкон або тераса.", "Балкона чи тераси немає."),
+    },
+    "safe": {
+        "en": ("There is a safe.", "There is no safe."), "cs": ("Je tu trezor.", "Trezor tu není."),
+        "de": ("Es gibt einen Safe.", "Es gibt keinen Safe."), "es": ("Hay caja fuerte.", "No hay caja fuerte."),
+        "fr": ("Il y a un coffre-fort.", "Il n'y a pas de coffre-fort."), "uk": ("Є сейф.", "Сейфа немає."),
+    },
+    "cot": {
+        "en": ("A baby cot is available.", "There is no baby cot."), "cs": ("Dětská postýlka je k dispozici.", "Dětská postýlka tu není."),
+        "de": ("Ein Babybett ist vorhanden.", "Es gibt kein Babybett."), "es": ("Hay cuna disponible.", "No hay cuna."),
+        "fr": ("Un lit bébé est disponible.", "Il n'y a pas de lit bébé."), "uk": ("Є дитяче ліжечко.", "Дитячого ліжечка немає."),
+    },
+    "high_chair": {
+        "en": ("A high chair is available.", "There is no high chair."), "cs": ("Dětská židlička je k dispozici.", "Dětská židlička tu není."),
+        "de": ("Ein Hochstuhl ist vorhanden.", "Es gibt keinen Hochstuhl."), "es": ("Hay trona disponible.", "No hay trona."),
+        "fr": ("Une chaise haute est disponible.", "Il n'y a pas de chaise haute."), "uk": ("Є дитячий стільчик.", "Дитячого стільчика немає."),
+    },
+    "hair_dryer": {
+        "en": ("There is a hair dryer.", "There is no hair dryer."), "cs": ("Je tu fén.", "Fén tu není."),
+        "de": ("Es gibt einen Föhn.", "Es gibt keinen Föhn."), "es": ("Hay secador de pelo.", "No hay secador de pelo."),
+        "fr": ("Il y a un sèche-cheveux.", "Il n'y a pas de sèche-cheveux."), "uk": ("Є фен.", "Фена немає."),
+    },
+}
+
+LANGS = ("en", "cs", "de", "es", "fr", "uk")
+
+
+def guest(lang: str) -> dict:
+    """The guest keys of one language: guide_fact_<fact> or guide_fact_<fact>_yes / _no."""
+    out = {}
+    for fact, by_lang in _LINES.items():
+        value = by_lang[lang]
+        if isinstance(value, tuple):
+            out[f"guide_fact_{fact}_yes"], out[f"guide_fact_{fact}_no"] = value
+        else:
+            out[f"guide_fact_{fact}"] = value
+    return out

@@ -1,0 +1,40 @@
+{#- 0355: Quick answers, one short step per screen. Every step saves on its own;
+    "Skip this step" moves on without changing anything. A yes/no question is a
+    fieldset of three native radios styled as big chips (quick-choice, workflow.css):
+    works without JavaScript, "Not sure" (empty) is checked until the host answers.
+    Data: app/guide_facts.py. -#}
+{% extends "host_page.html" %}
+{% set body_kind = 'form' %}
+{% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
+{% block title %}{{ t('guest_guide.quick.title') }} · {{ apartment.internal_name }} · UbyHost{% endblock %}
+{% block page_title %}{{ t('guest_guide.quick.step.' ~ step) }}{% endblock %}
+{% block back_url %}{{ base_url }}{% endblock %}
+{% block back_label %}{{ t('guest_guide.title') }}{% endblock %}
+{% block meta %}{{ t('guest_guide.quick.step_of', n=step_index, total=step_total) }}{% endblock %}
+{% block body %}
+{% if step_index == 1 %}{{ ui_banner('neutral', t('guest_guide.quick.lede')) }}{% endif %}
+{% set choices = [('yes', t('guest_guide.quick.yes')), ('no', t('guest_guide.quick.no')), ('', t('guest_guide.quick.unsure'))] %}
+<form method="post" action="{{ base_url }}/quick/{{ step }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{% for fact in facts %}
+{% set label = t('guest_guide.quick.q.' ~ fact.key) %}
+{% if fact.type == 'yesno' %}
+<fieldset class="quick-choice" data-quick-fact="{{ fact.key }}">
+<legend class="ui-label">{{ label }}</legend>
+<div class="quick-choice-options">
+{% for value, text in choices %}<label class="quick-choice-option"><input type="radio" name="{{ fact.key }}" value="{{ value }}"{% if fact.value == value %} checked{% endif %}><span>{{ text }}</span></label>{% endfor %}
+</div>
+</fieldset>
+{% elif fact.type == 'time' %}
+{{ ui_field('quick-' ~ fact.key, label, name=fact.key, value=fact.value, type='time', help=t('guest_guide.quick.time_help'), optional=true) }}
+{% else %}
+{{ ui_field('quick-' ~ fact.key ~ '-from', label ~ ': ' ~ t('guest_guide.quick.from'), name=fact.key ~ '_from', value=fact.start, type='time', optional=true) }}
+{{ ui_field('quick-' ~ fact.key ~ '-to', label ~ ': ' ~ t('guest_guide.quick.to'), name=fact.key ~ '_to', value=fact.end, type='time', help=t('guest_guide.quick.range_help'), optional=true) }}
+{% endif %}
+{% endfor %}
+<div class="ui-form-actions">
+{% if last %}{{ ui_button(t('guest_guide.quick.finish'), 'primary', type='submit') }}{% else %}{{ ui_button(t('guest_guide.quick.next'), 'primary', type='submit') }}{% endif %}
+{{ ui_button(t('guest_guide.quick.skip'), 'quiet', type='submit', attrs='name="skip" value="1"') }}
+</div>
+</form>
+{% endblock %}

@@ -657,7 +657,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "door_code_failed": "Your host will send you the door code.",
         "mail_door_code_subject": "Your door code for %(property)s",
         "privacy_door_code_title": "Door code",
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Your guide",
         "guide_back_to_stay": "Back to your stay",
         "guide_not_ready_title": "This guide is not ready yet",
@@ -1211,7 +1211,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "door_code_failed": "Kód ke dveřím vám pošle hostitel.",
         "mail_door_code_subject": "Váš kód ke dveřím pro %(property)s",
         "privacy_door_code_title": "Kód ke dveřím",
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Váš průvodce",
         "guide_back_to_stay": "Zpět na váš pobyt",
         "guide_not_ready_title": "Tento průvodce ještě není hotový",
@@ -1548,7 +1548,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "door_code_failed": "Ihr Gastgeber schickt Ihnen den Türcode.",
         "mail_door_code_subject": "Ihr Türcode für %(property)s",
         "privacy_door_code_title": "Türcode",
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Ihr Guide",
         "guide_back_to_stay": "Zurück zu Ihrem Aufenthalt",
         "guide_not_ready_title": "Dieser Guide ist noch nicht fertig",
@@ -1885,7 +1885,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "door_code_failed": "Su anfitrión le enviará el código de la puerta.",
         "mail_door_code_subject": "Su código de la puerta para %(property)s",
         "privacy_door_code_title": "Código de la puerta",
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Su guía",
         "guide_back_to_stay": "Volver a su estancia",
         "guide_not_ready_title": "Esta guía aún no está lista",
@@ -2222,7 +2222,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "door_code_failed": "Votre hôte vous enverra le code de porte.",
         "mail_door_code_subject": "Votre code de porte pour %(property)s",
         "privacy_door_code_title": "Code de porte",
-        # 0294: the guest guide pages.
+        # 0344: the guest guide pages.
         "guide_title": "Votre guide",
         "guide_back_to_stay": "Retour à votre séjour",
         "guide_not_ready_title": "Ce guide n'est pas encore prêt",
