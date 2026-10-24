@@ -926,7 +926,8 @@ def test_a_short_party_is_flagged_once_the_stay_has_started():
     key = f"headcount_mismatch:{stay}"
     try:
         _one_signed_guest(TestClient(app), token, stay, party_size=60)
-        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+        day = claim.prague_today() + timedelta(days=1)
+        tomorrow = datetime(day.year, day.month, day.day, 12)  # Prague noon, naive
 
         reporting.check_deadlines(tomorrow)
 
