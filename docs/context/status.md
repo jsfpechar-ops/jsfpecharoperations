@@ -51,4 +51,4 @@ Updated: 2026-10-23.
 
 ## Owner done
 
-- SES, Turnstile, healthchecks, Better Stack, Cloudflare, autopurge, Render staging, backup drill, 0001 (#281), magic-link/0007 phase 2 (Oct 2026).
+- SES, Turnstile, healthchecks, Better Stack, Cloudflare pre-clearance (23 Oct), autopurge, Render staging, backup drill, 0001 (#281) done.

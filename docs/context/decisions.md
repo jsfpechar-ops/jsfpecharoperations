@@ -61,8 +61,10 @@ Append-only.
 - 2026-10-21 Stay-fee email: clean periods auto-confirmed, PDF+QR mailed on the 2nd; switch in Settings (owner) | [plan](../plans/stay-fee-monthly-email.md)
 - 2026-10-22 One "What needs you" card on `/`, no stack; unopened-link host reminder day before arrival, once/stay; no new host emails (owner).
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
-- 2026-10-22 [workflow] iPad checks also run in cloud WebKit; `page.route` tests on navigations need `service_workers="block"` (0253).
+- 2026-10-22 [workflow] iPad: cloud WebKit; route tests: `service_workers="block"` (0253).
 - 2026-10-22 Wizard coral bar OK (MASTER 10.5)
-- 2026-10-22 Alerts: one short line + link to the fix; off `/` only red alerts get a line (owner).
+- 2026-10-22 Alerts: short line + fix link; off `/` only red gets a line (owner).
 - 2026-10-22 [deps] Typed signature font: self-hosted Dancing Script (OFL); no code copied (owner).
 - 2026-10-23 RP ID unchanged; #435 live/worker alerts; Codex authorized incl. passkey recovery (0290).
+- 2026-10-23 Subdomain: same RP ID. Alerts #435: live completion + worker resolution; owner authorized Codex.
+- 2026-10-23 Cloudflare pre-clearance set (owner).
