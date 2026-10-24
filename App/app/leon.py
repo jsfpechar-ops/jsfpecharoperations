@@ -24,7 +24,7 @@ import secrets
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from . import ai, db, guest_guide, guide_facts, host_i18n, i18n, rate_limit
+from . import ai, db, guide_facts, host_i18n, i18n, rate_limit
 
 log = logging.getLogger(__name__)
 
