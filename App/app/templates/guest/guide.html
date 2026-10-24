@@ -1,0 +1,56 @@
+{% extends "guest/base.html" %}
+{% block title %}{{ t('guide_title') }}{% endblock %}
+{% block heading %}{{ t('guide_title') }}{% endblock %}
+{% block foot %}
+  {% if door == 'qr' %}<p>{{ t('guide_qr_foot') }}</p>{% else %}{{ super() }}{% endif %}
+{% endblock %}
+{% block content %}
+
+{% if back_url %}
+  <a class="g-back" href="{{ back_url }}">{{ t('guide_back_to_stay') }}</a>
+{% endif %}
+
+{% if not_ready %}
+  <div class="g-card" data-guide-not-ready>
+    <h2>{{ t('guide_not_ready_title') }}</h2>
+    <p class="g-intro" style="margin-bottom:0">{{ t('guide_not_ready_help') }}</p>
+  </div>
+{% else %}
+  {% if door == 'stay' and level == 'everyone' %}
+    <p class="g-intro" data-guide-window-note>{{ t('guide_more_from_arrival') }}</p>
+  {% endif %}
+  {% if not groups %}
+    <div class="g-card" data-guide-empty>
+      <p class="g-intro" style="margin-bottom:0">{{ t('guide_empty') }}</p>
+    </div>
+  {% endif %}
+  {% for group in groups %}
+    <p class="g-question-kicker" data-guide-topic>{{ group.title }}</p>
+    {% for card in group.cards %}
+      <div class="g-card g-guide-card" data-guide-card="{{ card.id }}">
+        <h2>{{ card.title }}</h2>
+        {% if card.location %}<p class="g-guide-where"><span>{{ t('guide_where') }}</span> {{ card.location }}</p>{% endif %}
+        {% if card.steps %}
+          <ol class="g-guide-steps">
+            {% for step in card.steps %}<li>{{ step }}</li>{% endfor %}
+          </ol>
+        {% endif %}
+        {% if card.watch_out %}
+          <div class="g-guide-warn" role="note"><strong>{{ t('guide_watch_out') }}</strong> {{ card.watch_out }}</div>
+        {% endif %}
+        {% if card.photos %}
+          <div class="g-guide-photos">
+            {% for url in card.photos %}
+              <a href="{{ url }}"><img src="{{ url }}" alt="{{ t('guide_photo_alt', n=loop.index) }}" loading="lazy"></a>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% if card.video_url %}
+          <p class="g-guide-video"><a href="{{ card.video_url }}" rel="noopener noreferrer" target="_blank">{{ t('guide_video') }}</a></p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endfor %}
+{% endif %}
+
+{% endblock %}
