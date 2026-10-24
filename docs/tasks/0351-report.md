@@ -37,3 +37,4 @@ Status: review
 ## Owner steps left
 
 - Nothing new beyond the brief's section 9 (merge with `scripts/merge-pr-on-green.sh` once CI is green; production Leon stays off until 0352).
+- Review (orchestrator): 390 px screenshots of the questions list and one question, scrollWidth 390; browser guard every_host_page 1 passed with Chromium.
