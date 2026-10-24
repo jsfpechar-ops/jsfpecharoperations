@@ -95,8 +95,10 @@ def test_create_page_is_short_and_has_each_field_once():
         assert f'name="{field}"' not in page, field
     assert len(ids) == len(set(ids)), "duplicate ids"
     content = page[page.index('<header class="ui-ph"'):]
-    for gone in ('class="section-nav"', "onboarding-banner", "more-options", "<details", "Step 1 of"):
+    for gone in ('class="section-nav"', "onboarding-banner", "more-options", "Step 1 of"):
         assert gone not in content, gone
+    # The shared closed "How does this work?" disclosure (0277) is the only fold allowed.
+    assert content.replace('<details class="ui-how" data-how="property">', "").count("<details") == 0
     # The purpose default is the existing tourism code, carried as one hidden value.
     assert page.count('name="default_purpose"') == 1
     assert '<input type="hidden" name="default_purpose" value="10">' in page
