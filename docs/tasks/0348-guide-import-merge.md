@@ -54,9 +54,9 @@ From 0310: `ai.call(feature, system_blocks, messages, schema, key=None)` returns
 | `App/app/routes/guest_guide.py` | edit | `import_drafts` context value |
 | `App/app/templates/guest_guide.html` | edit | Result line, `drafting` badge, failed-merge line |
 | `App/app/host_i18n.py` | edit | Three strings, en and cs |
-| `App/tests/test_guest_guide_merge.py` | create | Copied from `docs/plans/0298-files/` |
-| `App/tests/eval/guide_import_cases.json` | create | Copied from `docs/plans/0298-files/` |
-| `App/scripts/guide_import_eval.py` | create | Copied from `docs/plans/0298-files/` |
+| `App/tests/test_guest_guide_merge.py` | create | Copied from `docs/plans/0348-files/` |
+| `App/tests/eval/guide_import_cases.json` | create | Copied from `docs/plans/0348-files/` |
+| `App/scripts/guide_import_eval.py` | create | Copied from `docs/plans/0348-files/` |
 | `docs/ENVIRONMENT.md` | edit | One row in the Apify table |
 
 No other file may change. No migration.
@@ -532,9 +532,9 @@ From the repo root:
 
 ```bash
 mkdir -p App/tests/eval
-cp docs/plans/0298-files/test_guest_guide_merge.py App/tests/test_guest_guide_merge.py
-cp docs/plans/0298-files/guide_import_cases.json App/tests/eval/guide_import_cases.json
-cp docs/plans/0298-files/guide_import_eval.py App/scripts/guide_import_eval.py
+cp docs/plans/0348-files/test_guest_guide_merge.py App/tests/test_guest_guide_merge.py
+cp docs/plans/0348-files/guide_import_cases.json App/tests/eval/guide_import_cases.json
+cp docs/plans/0348-files/guide_import_eval.py App/scripts/guide_import_eval.py
 ```
 
 The tests (20) cover: a Czech Booking listing and an English Airbnb listing become `check` cards with the right source, language line and schema; a prompt-injection sentence in the listing stays in the user turn and changes nothing; twelve drop reasons (quote not in the text, number, name, phone and URL without a quote, length, unknown kind, bad topic, empty title, empty card, no quotes, over-long quote); folding of case, whitespace and punctuation; duplicates; host-saved, skipped and legacy cards untouched; the second platform updating the first platform's draft with both times; running twice does not duplicate; wrong shape retried three times, then the import is `failed` with the raw text gone and `imports_left` back at 2; budget and disabled leave the import `done` and the usage row carries the property id.
@@ -585,7 +585,7 @@ As in docs/tasks/TEMPLATE.md section 8, plus: `ai.call` has a different signatur
 
 ## 9. Report
 
-`docs/tasks/0298-report.md` (600 tokens at most): files, each command's last 5 lines, section 7 ticked, deviations, questions, owner steps. Set `Status: review`. Do not push.
+`docs/tasks/0348-report.md` (600 tokens at most): files, each command's last 5 lines, section 7 ticked, deviations, questions, owner steps. Set `Status: review`. Do not push.
 
 ## Risk list (for the reviewer)
 

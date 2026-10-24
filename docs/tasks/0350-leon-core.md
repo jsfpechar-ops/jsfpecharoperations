@@ -82,24 +82,24 @@ From 0344, `App/app/routes/guest_guide_view.py`: `HARDEN = {`, `def booked_level
 
 | Path | Action | What |
 |---|---|---|
-| `App/app/migrations/NNNN_guest_chat.sql` | create | Copied from `docs/plans/0300-files/guest_chat.sql` (NNNN from the lint, step 1) |
-| `App/app/leon.py` | create | Copied from `docs/plans/0300-files/leon.py`: prompt, schema, redaction, guardrail, conversations, reply, caps, purge |
-| `App/app/routes/guest_leon.py` | create | Copied from `docs/plans/0300-files/guest_leon.py`: both doors' JSON endpoints, the QR cookie |
+| `App/app/migrations/NNNN_guest_chat.sql` | create | Copied from `docs/plans/0350-files/guest_chat.sql` (NNNN from the lint, step 1) |
+| `App/app/leon.py` | create | Copied from `docs/plans/0350-files/leon.py`: prompt, schema, redaction, guardrail, conversations, reply, caps, purge |
+| `App/app/routes/guest_leon.py` | create | Copied from `docs/plans/0350-files/guest_leon.py`: both doors' JSON endpoints, the QR cookie |
 | `App/app/main.py` | edit | Import and register the router |
 | `App/app/i18n.py` | edit | 20 `leon_*` keys in en, cs, de, es, fr (script) |
 | `App/app/guest_uk_i18n.py` | edit | The 20 keys in uk (script); the cookie's uk text |
 | `App/app/cookie_inventory.py` | edit | `ubyhost_leon` row and its de, es, fr text |
 | `App/app/retention.py` | edit | `guest_chats` step and cutoff line |
 | `App/tests/test_privacy_first.py` | edit | Crawl reaches the Leon cookie; the set names it |
-| `App/tests/test_leon.py` | create | Copied from `docs/plans/0300-files/` |
-| `App/tests/eval/leon_cases.json` | create | Copied from `docs/plans/0300-files/` |
-| `App/scripts/leon_eval.py` | create | Copied from `docs/plans/0300-files/` |
+| `App/tests/test_leon.py` | create | Copied from `docs/plans/0350-files/` |
+| `App/tests/eval/leon_cases.json` | create | Copied from `docs/plans/0350-files/` |
+| `App/scripts/leon_eval.py` | create | Copied from `docs/plans/0350-files/` |
 | `docs/privacy/RETENTION.md` | edit | One row |
 | `docs/ENVIRONMENT.md` | edit | One row |
 | `docs/context/test-map.md` | edit | One row |
 | `docs/plans/guest-guide.md` | edit | 0350 row: state `review` |
 
-No other file may change. `docs/plans/0300-files/add_leon_i18n.py` is run, not copied.
+No other file may change. `docs/plans/0350-files/add_leon_i18n.py` is run, not copied.
 
 ## 4. Steps
 
@@ -112,28 +112,28 @@ From the repo root: `grep -c 'max_tokens: Optional\[int\] = None' App/app/ai.py;
 ### Step 2: copy the test, eval and script files
 
 ```bash
-cp docs/plans/0300-files/test_leon.py App/tests/test_leon.py
-mkdir -p App/tests/eval && cp docs/plans/0300-files/leon_cases.json App/tests/eval/leon_cases.json
-cp docs/plans/0300-files/leon_eval.py App/scripts/leon_eval.py
+cp docs/plans/0350-files/test_leon.py App/tests/test_leon.py
+mkdir -p App/tests/eval && cp docs/plans/0350-files/leon_cases.json App/tests/eval/leon_cases.json
+cp docs/plans/0350-files/leon_eval.py App/scripts/leon_eval.py
 ```
 
 Command: `ls App/tests/test_leon.py App/tests/eval/leon_cases.json App/scripts/leon_eval.py | wc -l`. Expected: `3`.
 
 ### Step 3: migration
 
-`cp docs/plans/0300-files/guest_chat.sql App/app/migrations/NNNN_guest_chat.sql` (from the repo root). The file is reviewed there; it holds the three tables in §2 (`guest_chat.model_messages` and `busy_until`, `guest_chat_message.client_id`, `guest_question.urgent` and `triaged` included) with `ON DELETE CASCADE` from `apartment`, `reservation` and the chat, partial unique indexes `uq_guest_chat_stay (reservation_id) WHERE door = 'stay'`, `uq_guest_chat_qr (apartment_id, cookie_id) WHERE door = 'qr'` and `uq_guest_chat_message_client (chat_id, client_id) WHERE client_id IS NOT NULL`, and CHECKs on `door`, `role` and `status`.
+`cp docs/plans/0350-files/guest_chat.sql App/app/migrations/NNNN_guest_chat.sql` (from the repo root). The file is reviewed there; it holds the three tables in §2 (`guest_chat.model_messages` and `busy_until`, `guest_chat_message.client_id`, `guest_question.urgent` and `triaged` included) with `ON DELETE CASCADE` from `apartment`, `reservation` and the chat, partial unique indexes `uq_guest_chat_stay (reservation_id) WHERE door = 'stay'`, `uq_guest_chat_qr (apartment_id, cookie_id) WHERE door = 'qr'` and `uq_guest_chat_message_client (chat_id, client_id) WHERE client_id IS NOT NULL`, and CHECKs on `door`, `role` and `status`.
 
 Command (from `App/`): `.venv/bin/python -c "from app import db; db.init_db(); print(db.query_one('SELECT COUNT(*) AS n FROM guest_question')['n'])" 2>&1 | tail -3`. Expected: `0`.
 
 ### Step 4: `App/app/leon.py`
 
-`cp docs/plans/0300-files/leon.py App/app/leon.py` (from the repo root). The file is reviewed there: prompt (`CHARACTER` is the plan's Leon section turned into rules plus the SITUATIONS block; change it only together with the plan and re-run the eval), `SCHEMA`, redaction, `validate`, conversations, `reply`, `purge`. Do not edit it.
+`cp docs/plans/0350-files/leon.py App/app/leon.py` (from the repo root). The file is reviewed there: prompt (`CHARACTER` is the plan's Leon section turned into rules plus the SITUATIONS block; change it only together with the plan and re-run the eval), `SCHEMA`, redaction, `validate`, conversations, `reply`, `purge`. Do not edit it.
 
 Command: `.venv/bin/python -c "from app import leon; print(leon.redact('a@b.cz +420 777 123 456 AB1234567 room 12'), leon.is_noise('?'), leon.looks_dangerous('fireplace'), leon.door_cap('stay'), len(leon.CHARACTER))"`. Expected: `[email] [phone] [number] room 12 True False 20 5034`.
 
 ### Step 5: `App/app/routes/guest_leon.py`
 
-`cp docs/plans/0300-files/guest_leon.py App/app/routes/guest_leon.py` (from the repo root). It imports `HARDEN`, `_qr_apartment`, `_stay_gate` and `booked_level` from 0344's `guest_guide_view` and `_host_contact` from `guest`, on purpose: Leon can never be reached by a stay or token the guide page would refuse. Command (from `App/`): `.venv/bin/python -c "from app.routes import guest_leon; print(len(guest_leon.router.routes))"`. Expected: `4`.
+`cp docs/plans/0350-files/guest_leon.py App/app/routes/guest_leon.py` (from the repo root). It imports `HARDEN`, `_qr_apartment`, `_stay_gate` and `booked_level` from 0344's `guest_guide_view` and `_host_contact` from `guest`, on purpose: Leon can never be reached by a stay or token the guide page would refuse. Command (from `App/`): `.venv/bin/python -c "from app.routes import guest_leon; print(len(guest_leon.router.routes))"`. Expected: `4`.
 
 ### Step 6: register the router
 
@@ -147,7 +147,7 @@ Command: `grep -c 'guest_leon' app/main.py`. Expected: `2`.
 
 ### Step 7: guest copy
 
-From the repo root: `python3 docs/plans/0300-files/add_leon_i18n.py`. Expected: `added 20 keys x 6 languages`. The script inserts the `leon_*` keys after each `guide_photo_alt` line (en, cs, de, es, fr) and after the uk one, and refuses to run twice. Command: `grep -c '"leon_about"' App/app/i18n.py App/app/guest_uk_i18n.py`. Expected: `5` and `1`.
+From the repo root: `python3 docs/plans/0350-files/add_leon_i18n.py`. Expected: `added 20 keys x 6 languages`. The script inserts the `leon_*` keys after each `guide_photo_alt` line (en, cs, de, es, fr) and after the uk one, and refuses to run twice. Command: `grep -c '"leon_about"' App/app/i18n.py App/app/guest_uk_i18n.py`. Expected: `5` and `1`.
 
 ### Step 8: cookie inventory
 
@@ -253,7 +253,7 @@ In `test_the_strictly_necessary_set_is_the_first_party_cookie_inventory`, after 
 | Guest bot (Leon) | `test_leon.py test_privacy_first.py test_cookie_inventory.py test_guest_languages.py test_ai.py` |
 ```
 
-`docs/plans/guest-guide.md`: in the row starting `| 3 | [0350](../tasks/0300-leon-core.md) |`, change the last cell `todo` to `review`.
+`docs/plans/guest-guide.md`: in the row starting `| 3 | [0350](../tasks/0350-leon-core.md) |`, change the last cell `todo` to `review`.
 
 ### Step 12: tests and eval (offline)
 
@@ -278,7 +278,7 @@ From `App/`:
 - [ ] `grep -c 'def validate' App/app/leon.py` is `1`, and `test_leon.py` passes (40): both doors and levels, the four window edges, unsourced numbers and fake ids become `ask_host` with a `guest_question` row, 112 allowed without a card, host-only and draft cards never in the prompt, injection in a message and in a card, three refusals pause, smalltalk, noise and too-long messages make no model call, both rate limits, a multi-part answer opens one question for the rest and fails as a whole, an emergency shows 112 plus the host card with an urgent row (also with no model), an upset guest hears sorry first, a repeated open question is not asked twice, feature off, spent budgets and model errors pass the message to the host unread (one row per chat, later messages appended), the lifetime cap per door with no model call past it, the per-property cap keys on the property id, one conversation per stay, the QR cookie (HttpOnly, Lax, path, Secure in production, a bad cookie replaced), redaction before storing and sending, no message text in logs, retention after 30 days, a held guard gives `busy` (no model call, no cap count) and a stale one is taken over, a retried `client_id` returns the stored reply once, a repeat of an answered question gives `answered`.
 - [ ] `test_privacy_first.py` and `test_cookie_inventory.py` pass with `ubyhost_leon` in the set.
 - [ ] `grep -rn 'log\.\(info\|warning\|error\).*text' App/app/leon.py App/app/routes/guest_leon.py | wc -l` is `0`.
-- [ ] No em dash in the new files: `grep -c '—' App/app/leon.py App/app/routes/guest_leon.py docs/plans/0300-files/add_leon_i18n.py` all `0`.
+- [ ] No em dash in the new files: `grep -c '—' App/app/leon.py App/app/routes/guest_leon.py docs/plans/0350-files/add_leon_i18n.py` all `0`.
 
 ## 8. Stop and ask
 
@@ -286,11 +286,11 @@ Stop, and write the report, if: an anchor is not found; `ai.call` has no `max_to
 
 ## 9. Report
 
-Write `docs/tasks/0300-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with its last 5 lines, §7 ticked, the migration number used, deviations, questions, owner steps left.
+Write `docs/tasks/0350-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with its last 5 lines, §7 ticked, the migration number used, deviations, questions, owner steps left.
 
 ## Risk list (for the reviewer)
 
-`docs/plans/0300-files/leon.py` (`CHARACTER`, `validate`, `redact`, `reply`, `_open_question`, `looks_dangerous`, `purge`), `docs/plans/0300-files/guest_leon.py` (gates, cookie), `docs/plans/0300-files/guest_chat.sql`, the `test_privacy_first.py` edit. Known limits: the number check does not catch an invented word-number ("five euros") or an invented place name; the eval set measures those (`no-invented-tip`, `honest-ask-host-*`). Unanswered `ask_host` turns are not sent back to the model, so a guest's follow-up to an open question reads as new (an identical repeat is caught by `_open_twin`). Emergency detection is the model's; the server word list (`_DANGER`) only runs when the model cannot be asked and then errs on the side of 112 ("gas" in "gas stove" also triggers it). The 43-case eval (33 must) is the measure of the situation rules (several questions, follow-ups, emergencies, requests for the host, safety, medical and tax, injection in pasted text, rude guests, about_me); ship only on PASS.
+`docs/plans/0350-files/leon.py` (`CHARACTER`, `validate`, `redact`, `reply`, `_open_question`, `looks_dangerous`, `purge`), `docs/plans/0350-files/guest_leon.py` (gates, cookie), `docs/plans/0350-files/guest_chat.sql`, the `test_privacy_first.py` edit. Known limits: the number check does not catch an invented word-number ("five euros") or an invented place name; the eval set measures those (`no-invented-tip`, `honest-ask-host-*`). Unanswered `ask_host` turns are not sent back to the model, so a guest's follow-up to an open question reads as new (an identical repeat is caught by `_open_twin`). Emergency detection is the model's; the server word list (`_DANGER`) only runs when the model cannot be asked and then errs on the side of 112 ("gas" in "gas stove" also triggers it). The 43-case eval (33 must) is the measure of the situation rules (several questions, follow-ups, emergencies, requests for the host, safety, medical and tax, injection in pasted text, rude guests, about_me); ship only on PASS.
 
 ## Owner steps
 
