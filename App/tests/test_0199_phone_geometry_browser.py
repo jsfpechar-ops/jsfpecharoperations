@@ -56,7 +56,9 @@ MEASURE = """() => {
       navR: f(R(nav).right), laneR: f(R(nav.parentElement).right), navW: f(R(nav).width), scrollW: nav.scrollWidth,
       clientW: nav.clientWidth, ovx: cs(nav, 'overflowX') }; }
   const intro = q('#settings-lock .property-group-intro'), door = q('#door-code'), lg = q('#settings-lock'), acc = q('#settings-lock-account');
-  if (intro && door) out.F = f(R(door).top - R(intro).bottom);
+  // 97ac958 put the door-code window card between the intro and the panel: each gap in the stack must stay small.
+  const dwin = q('#settings-lock [data-door-code-window]');
+  if (intro && door) out.F = dwin ? f(Math.max(R(dwin).top - R(intro).bottom, R(door).top - R(dwin).bottom)) : f(R(door).top - R(intro).bottom);
   if (intro && lg && acc) out.Fd = { lgT: f(R(lg).top), introB: f(R(intro).bottom), lgB: f(R(lg).bottom), accT: f(R(acc).top),
     rowGap: cs(acc.parentElement, 'rowGap'), lgMB: cs(lg, 'marginBottom'), lgPB: cs(lg, 'paddingBottom'), accMT: cs(acc, 'marginTop'),
     accPT: cs(acc, 'paddingTop'), introMB: cs(intro, 'marginBottom'), introH: f(R(intro).height) };
