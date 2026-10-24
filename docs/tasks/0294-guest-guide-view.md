@@ -332,6 +332,9 @@ def qr_guide(token: str, request: Request):
     context = _shared(request, "", lang, apartment)
     # No stay link on a public page: the privacy notice link carries the stay token.
     context.update({"token": "", "privacy_url": None, "door": "qr"})
+    # A QR sticker outlives every stay: anyone who scans it sees the host's name,
+    # never the phone or e-mail (owner, 2026-10-24). Booked guests get those on the stay page.
+    context["host"] = {"name": (context.get("host") or {}).get("name", "")}
     return _page(
         request, lang, apartment, context, "everyone",
         lambda item_id, photo_id: f"/g/{token}/photos/{item_id}/{photo_id}",
@@ -911,9 +914,21 @@ def _request_stub():
     class _Request:
         client = _Client()
     return _Request()
+
+
+def test_the_qr_page_shows_the_host_name_but_not_phone_or_email(ws):
+    entity = db.insert("legal_entity", {
+        "name": "Jana Fiktivni", "contact_email": "jana@example.test", "contact_phone": "+420 600 000 000",
+        "created_at": db.utcnow(),
+    })
+    db.execute("UPDATE apartment SET legal_entity_id = ? WHERE id = ?", (entity, ws["home"]))
+    _go_live(ws["home"])
+    body = ws["client"].get(f"/g/{_qr(ws)}?lang=en").text
+    assert "Jana Fiktivni" in body
+    assert "jana@example.test" not in body and "600 000 000" not in body
 ```
 
-Command: `.venv/bin/python -m pytest tests/test_guest_guide_view.py -q --tb=short 2>&1 | tail -5`. Expected: 18 passed.
+Command: `.venv/bin/python -m pytest tests/test_guest_guide_view.py -q --tb=short 2>&1 | tail -5`. Expected: 19 passed.
 
 ### Step 12: `App/tests/test_guest_guide_browser.py` (new)
 
@@ -1018,4 +1033,4 @@ Write `docs/tasks/0294-report.md` (600 tokens at most) and set `Status: review`:
 
 1. Review and merge once CI is green.
 2. After deploy, open one property's "Guest guide" page once: that creates its QR token. The printable QR sheet and the "new QR code" button come with 0295; until then the link is `/g/<guide_token>` from the database.
-3. Decide for 0295 or 0303: on the QR page the "Your host" box shows the host's name, phone and e-mail to anyone at the property. If you prefer to hide it there, say so and it becomes a one-line template change.
+3. The QR page shows only the host's name in the "Your host" box (orchestrator default, owner card open 2026-10-24); phone and e-mail stay on the stay page.
