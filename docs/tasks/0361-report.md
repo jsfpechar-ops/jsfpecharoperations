@@ -110,3 +110,7 @@ Failing files outside WebKit: test_0199, property_create, property_navigation, p
 
 1. Write fix briefs for the failing files above. Merge only after every browser shard is green.
 2. After merge, the main ruleset (owner settings pass) requires `browser`, not `guest-browser`.
+
+## Orchestrator review
+
+Reviewed the diff. Replaced `ls` with `printf` in the shard file picker (actionlint SC2012). Executor session used about 101k tokens, over the 100k cap: the survey of 53 files was too big for one session; future surveys get their own brief. The 12 real failures (6 more are WebKit-only, not installed locally) get fix briefs 0365 to 0367 before this merges. The old onboarding screenshot upload is covered: `docs/tasks/0102-evidence/` is in the new `browser-shots-N` artifact.

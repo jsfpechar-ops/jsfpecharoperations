@@ -221,7 +221,7 @@ jobs:
       - name: Pick this shard's files
         id: files
         run: |
-          files="$(ls tests/*_browser.py tests/test_guest_browser_e2e.py tests/test_host_geometry.py \
+          files="$(printf '%s\n' tests/*_browser.py tests/test_guest_browser_e2e.py tests/test_host_geometry.py \
             tests/test_wp28_geometry.py tests/test_onboarding_wizard_survival.py | sort -u \
             | awk -v n=4 -v s=${{ matrix.shard }} '(NR - 1) % n == s - 1' | tr '\n' ' ')"
           echo "files=${files}" >> "$GITHUB_OUTPUT"
