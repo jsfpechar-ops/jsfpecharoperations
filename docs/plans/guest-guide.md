@@ -16,6 +16,7 @@ One guest guide per property, made of small cards ("Turn on the heating", "Open 
 - Host replies reach the guest on the page only; no guest email is collected.
 - Chat logs: 30 days after checkout (QR chats with no stay: 30 days after the last message).
 - In-app support bot for hosts: separate plan.
+- The guest bot is called "Leon (AI)" everywhere guests see it; it always says it is an AI.
 
 ## Spike (2026-10-24, 3 Booking and 4 Airbnb listings)
 
