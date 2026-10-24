@@ -54,7 +54,7 @@ Critical means one of: a public or guest-facing surface, file uploads, secrets o
 | 1 | [0292](../tasks/0292-guest-guide-pages.md) | Host "Guest guide" tab, card list, card editor, "Save and next card" | no | Opus | no | Haiku | todo |
 | 1 | [0293](../tasks/0293-guide-photos.md) | Card photos: upload, clean, shrink, serve to owner, delete, orphan sweep | yes: uploads | Opus | yes | Sonnet | todo |
 | 1 | [0294](../tasks/0294-guest-guide-view.md) | Guest side: "Your guide" on the stay page; public QR page; QR token; guest photo serving; no-index, caching, rate limits | yes: public surface | Fable | n/a | Sonnet | todo |
-| 1 | 0295 | Printable QR sheet for the host (PNG/PDF), rotate the QR link | no | Opus | no | Haiku | to write |
+| 1 | [0295](../tasks/0295-guide-qr.md) | Printable QR sheet for the host (PNG/PDF), rotate the QR link | no | Opus | no | Haiku | todo |
 | 2 | 0296 | Leon settings on the shared AI core (0310, Havel thread, PR #440): features "leon" and "guide_import", per-property daily cap (key = property id), env docs | yes: money | Fable | n/a | Haiku | to write |
 | 2 | 0297 | Booking and Airbnb import: Apify key and config, URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Sonnet | to write |
 | 2 | 0298 | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Sonnet | to write |
