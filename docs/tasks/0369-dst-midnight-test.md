@@ -1,6 +1,6 @@
 # 0369: Headcount test: one clock, so it passes on the night the clocks change
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 2676d06 | Branch: task/0369-dst-midnight-test
 Executor: Haiku 5.5 | Fits one session: 10 tool calls, 30k tokens
 

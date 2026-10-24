@@ -36,3 +36,6 @@ None.
 ## Owner steps left
 
 - Review and merge the PR via `scripts/merge-pr-on-green.sh`, if the orchestrator opens one.
+
+## Orchestrator review (2026-10-24)
+Diff is the one line from the brief; the extra file in the stat is the brief itself, as expected. 31 passed during the failing hour (22:1x UTC).
