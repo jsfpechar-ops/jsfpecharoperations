@@ -1,4 +1,4 @@
-# 0297 report
+# 0347 report
 
 Status: review
 
@@ -12,7 +12,7 @@ Status: review
 - test_migrations.py: 13 passed
 - test_db_*.py: 5 passed
 - test_retention*, test_privacy_*, test_no_tracking, test_cookie_inventory, test_pii_encryption, test_dsr_audit, test_data_keys: 120 passed
-- test_*_i18n.py, test_no_em_dashes, test_copy_cleanup, test_flash_literals: 3 failed (test_host_i18n.py, known, predate 0297), rest passed
+- test_*_i18n.py, test_no_em_dashes, test_copy_cleanup, test_flash_literals: 3 failed (test_host_i18n.py, known, predate 0347), rest passed
 - test_scheduler, test_push, test_admin_operations: 57 passed
 - test_retention, test_retention_alignment, test_retention_job: 41 passed
 - test_host_*.py + test_host_geometry + test_design_guardrails_browser: 209 passed, 1 skipped (test_host_copy_corrections.py, needs UBYHOST_REQUIRE_BROWSER=1); rerun with that set: 9 passed, 0 skipped

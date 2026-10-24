@@ -1,10 +1,10 @@
--- Brief 0297: Booking.com and Airbnb listing imports (plan: docs/plans/guest-guide.md).
+-- Brief 0347: Booking.com and Airbnb listing imports (plan: docs/plans/guest-guide.md).
 --
 -- guide_import: one request by the host to fetch their own public listing
 -- through Apify. url is the rebuilt, allowlisted link (never the pasted text).
 -- status: 'queued' (waiting for the worker), 'running', 'done' (raw_json holds
--- the trimmed result for brief 0298), 'failed' (error holds a short code, no
--- listing text), 'used' (0298 drafted cards; raw_json is NULL), 'expired'
+-- the trimmed result for brief 0348), 'failed' (error holds a short code, no
+-- listing text), 'used' (0348 drafted cards; raw_json is NULL), 'expired'
 -- (raw_json removed by retention after 7 days). Failed rows go after 60 days;
 -- the others stay, without text, as the record of the one import per listing.
 -- Listing text only, no guest data.

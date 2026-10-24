@@ -1,9 +1,9 @@
-"""Brief 0297: fetch a host's own Booking.com or Airbnb listing through Apify.
+"""Brief 0347: fetch a host's own Booking.com or Airbnb listing through Apify.
 
 The pasted link is checked against a strict allowlist and rebuilt from its
 parts, so nothing the host typed reaches an HTTP client. The worker runs one
 Apify actor per queued row and stores a trimmed, size-capped copy of the text.
-Brief 0298 reads it (``pending_for``) and calls ``mark_used``; ``purge`` drops
+Brief 0348 reads it (``pending_for``) and calls ``mark_used``; ``purge`` drops
 raw data after seven days at the latest. Listing text and the token are never
 logged.
 """
@@ -171,7 +171,7 @@ def in_progress(apartment_id: int) -> bool:
 
 
 def pending_for(apartment_id: int) -> List[Dict[str, Any]]:
-    """Handoff to brief 0298: fetched, unused imports with their data parsed."""
+    """Handoff to brief 0348: fetched, unused imports with their data parsed."""
     rows = db.query(
         "SELECT id, source, url, raw_json, created_at FROM guide_import "
         "WHERE apartment_id = ? AND status = 'done' AND raw_json IS NOT NULL ORDER BY id",
@@ -188,7 +188,7 @@ def pending_for(apartment_id: int) -> List[Dict[str, Any]]:
 
 
 def mark_used(import_id: int) -> None:
-    """Brief 0298 calls this after drafting cards: the raw data goes at once."""
+    """Brief 0348 calls this after drafting cards: the raw data goes at once."""
     db.execute(
         "UPDATE guide_import SET status = 'used', raw_json = NULL, used_at = ? WHERE id = ? AND status = 'done'",
         (db.utcnow(), import_id),

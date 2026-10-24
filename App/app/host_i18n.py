@@ -7957,7 +7957,7 @@ _GUIDE_PHOTO_STRINGS = {
 for _lang, _strings in _GUIDE_PHOTO_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
-# 0297: Booking and Airbnb listing imports on the guest guide page.
+# 0347: Booking and Airbnb listing imports on the guest guide page.
 _GUIDE_IMPORT_STRINGS = {
     "en": {
         "guest_guide.import.title": "Import from Booking or Airbnb",
@@ -8014,7 +8014,7 @@ _GUIDE_IMPORT_STRINGS = {
 for _lang, _strings in _GUIDE_IMPORT_STRINGS.items():
     STRINGS[_lang].update(_strings)
 
-# 0295: the guide's QR code for the host to print.
+# 0345: the guide's QR code for the host to print.
 _GUIDE_QR_STRINGS = {
     "en": {
         "guest_guide.qr.link": "QR code for guests",

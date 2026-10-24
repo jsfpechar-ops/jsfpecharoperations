@@ -427,7 +427,7 @@ def _push_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
 
 
 def _guide_import_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
-    """Brief 0297: imported listing text 7 days after the fetch; the request row after 60."""
+    """Brief 0347: imported listing text 7 days after the fetch; the request row after 60."""
     from . import guest_guide_import
     return guest_guide_import.purge(today, dry_run, owner_user_id)
 

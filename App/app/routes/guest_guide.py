@@ -98,7 +98,7 @@ async def guide_add(request: Request, apartment_id: int):
 
 @router.post("/apartments/{apartment_id}/guide/import")
 async def guide_import(request: Request, apartment_id: int):
-    """Queue one Booking or Airbnb import (brief 0297). Must stay above the {item_id} routes."""
+    """Queue one Booking or Airbnb import (brief 0347). Must stay above the {item_id} routes."""
     guard = auth.require_login(request)
     if guard:
         return guard

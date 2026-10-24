@@ -353,7 +353,7 @@ def _job_door_codes() -> None:
 
 
 def _job_guide_import() -> None:
-    """Brief 0297: run the queued Booking and Airbnb imports, one actor run each."""
+    """Brief 0347: run the queued Booking and Airbnb imports, one actor run each."""
     started = time.perf_counter()
     try:
         ran = guest_guide_import.process_queue()

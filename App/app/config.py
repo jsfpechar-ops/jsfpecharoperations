@@ -169,7 +169,7 @@ TTLOCK_CLIENT_ID = os.environ.get("UBYHOST_TTLOCK_CLIENT_ID", "").strip()
 TTLOCK_CLIENT_SECRET = os.environ.get("UBYHOST_TTLOCK_CLIENT_SECRET", "").strip()
 TTLOCK_MONTHLY_CALLS = int(os.environ.get("UBYHOST_TTLOCK_MONTHLY_CALLS", "30000"))
 
-# Guest guide imports through Apify (brief 0297). Off until the token is set;
+# Guest guide imports through Apify (brief 0347). Off until the token is set;
 # the token is env only. The run cap is shared by every host on the instance.
 APIFY_TOKEN = os.environ.get("UBYHOST_APIFY_TOKEN", "").strip()
 APIFY_MONTHLY_RUNS = int(os.environ.get("UBYHOST_APIFY_MONTHLY_RUNS", "40"))
