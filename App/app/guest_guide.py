@@ -133,8 +133,10 @@ def ensure_defaults(apartment) -> None:
     ``checkin_info`` / ``checkout_info`` were host text never shown anywhere,
     so they become drafts (``'check'``) the host confirms, not live items.
     """
+    have = {r["kind"] for r in db.query("SELECT kind FROM guide_item WHERE apartment_id = ?", (apartment["id"],))}
     for kind in DEFAULT_KINDS:
-        add_kind(apartment["id"], kind)
+        if kind not in have:
+            add_kind(apartment["id"], kind)
     legacy = {"checkin": apartment["checkin_info"], "checkout": apartment["checkout_info"]}
     for kind, text in legacy.items():
         text = (text or "").strip()
@@ -155,7 +157,12 @@ def items(apartment_id: int) -> List[Dict[str, Any]]:
         (apartment_id,),
     )
     out = [dict(row) for row in rows]
-    out.sort(key=lambda r: TOPICS.index(r["topic"]) if r["topic"] in TOPICS else len(TOPICS))
+    for row in out:
+        if row["kind"] in KINDS:
+            # The catalog decides where a built-in card sits, so cards added later
+            # (0354) line up with the ones a property already had.
+            row["topic"], row["sort_order"] = KINDS[row["kind"]], _order(row["kind"])
+    out.sort(key=lambda r: (TOPICS.index(r["topic"]) if r["topic"] in TOPICS else len(TOPICS), r["sort_order"], r["id"]))
     return out
 
 
@@ -265,6 +272,9 @@ def progress(apartment_id: int) -> Dict[str, Any]:
     return {
         "done": done,
         "total": len(counted),
+        # Skipped counts as answered: the host has dealt with the card.
+        "answered": sum(1 for r in rows if r["state"] in ("done", "skipped")),
+        "cards": len(rows),
         "check": sum(1 for r in counted if r["state"] == "check"),
         "must_have_done": must_done,
         "must_have_total": len(MUST_HAVE),
