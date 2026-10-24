@@ -1,6 +1,6 @@
 # 0365: Make the push-alerts browser tests pass
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 5439abe | Branch: task/0365-push-settings-browser
 Executor: Sonnet (debugging brief, owner allowed a stronger model 2026-10-24) | Fits one session: 30 tool calls, 60k tokens
 

@@ -11,3 +11,7 @@ Failures (8, all one cause):
 Commands: push settings file, 11 passed, 0 skipped, twice; guardrails + a11y browser files, 14 passed.
 No test skipped, deleted or loosened. 390 px screenshots are written by the test to the shots dir (no template/CSS change).
 Owner steps: merge when CI is green; CI needs the full Chromium installed (`playwright install chromium` does it).
+
+## Orchestrator review
+
+Reviewed. The channel switch only applies to this file and only when no system browser is configured; CI installs full Chromium with `playwright install chromium`.
