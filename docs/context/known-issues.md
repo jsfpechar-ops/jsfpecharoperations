@@ -93,7 +93,8 @@ Grep. **HR**: owner decides.
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
-- K-NAV-418: 3 host_i18n tests fail on main.
+- K-NAV-418: 3 host_i18n tests fail.
 - K-CHECKIN: form alert fix #435; undeployed.
-- K-MORE: #436 fix; browser CI pending.
+- K-MORE: #436 undeployed.
+- K-PK0290: passkey fix open.
 - K-CF01: pre-clearance set; repeat-prompt check pending.

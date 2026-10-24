@@ -244,7 +244,7 @@
 <script src="/static/app.js?v=20261022-0251"></script>
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261023-door-code-window" defer></script>{% endif %}
 {% if show_nav | default(true) %}<script src="/static/pwa.js?v=20261021-0206" defer></script>{% endif %}
-{% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261021-0203" defer></script>{% endif %}
+{% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261023-passkey-recovery" defer></script>{% endif %}
 {% if show_nav | default(true) %}{% include "_shell_tabbar.html" %}<script src="/static/shell.js?v=20261019-v2a" defer></script>{% endif %}
 </body>
 </html>
