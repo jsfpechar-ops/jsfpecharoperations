@@ -44,6 +44,7 @@ def test_guide_page_lists_default_cards_in_topics(ws):
     assert "Guests cannot see the guide yet" in body
     assert "guest_guide." not in body  # every key has copy
     assert len(_cards(ws["home"])) == len(guest_guide.DEFAULT_KINDS)
+    assert f"0 of {len(guest_guide.DEFAULT_KINDS)} cards answered" in body
 
 
 def test_foreign_property_is_not_found(ws):
@@ -154,3 +155,18 @@ def test_czech_page(ws):
 def test_property_page_links_to_the_guide(ws):
     body = ws["client"].get(f"/apartments/{ws['home']}").text
     assert f'href="/apartments/{ws["home"]}/guide"' in body
+
+
+def test_cards_show_ghost_text_that_is_never_saved(ws):
+    import re
+
+    client = ws["client"]
+    client.get(f"/apartments/{ws['home']}/guide")  # creates the cards
+    wifi = _cards(ws["home"])["wifi"]
+    body = client.get(f"/apartments/{ws['home']}/guide/{wifi['id']}").text
+    assert re.search(r'<textarea[^>]*name="steps"[^>]*placeholder="Network: Loft_Guest\nPassword:[^"]*"[^>]*></textarea>', body)
+    assert 'placeholder="White router on the shelf in the hallway' in body
+    czech = client.get(f"/apartments/{ws['home']}/guide/{wifi['id']}?lang=cs").text
+    assert 'placeholder="Síť: Loft_Guest' in czech
+    client.post(f"/apartments/{ws['home']}/guide/{wifi['id']}", data={"steps": "", "visibility": "booked"})
+    assert guest_guide.get(ws["home"], wifi["id"])["steps"] == ""
