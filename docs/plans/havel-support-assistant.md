@@ -658,6 +658,7 @@ the table order within each column; the guide column and the code column are ind
 | 0322 | Command palette "Ask Havel: <query>" when no match, "Ask Havel" button at the top of `/guide`, empty-state hints | 0324 | written | [0322](../tasks/0322-havel-palette-guide.md) (reuses `havel.launcher`; no new keys) |
 | 0332 | Several requests in one message: `next` buttons under the newest Havel reply (`havel.next_title` en/cs/vi), mini-forms that work without JavaScript, `havel.js` tap handling, CSS, unit and 390 px browser test | 0324, 0314 | written | [0332](../tasks/0332-havel-next-requests.md) |
 | 0333 | When a limit is hit, the host's message goes to support (no model call), `havel.forwarded` en/cs/vi, unit tests | 0319, 0332 | written | [0333](../tasks/0333-havel-limit-forward.md) |
+| 0334 | Mistral as a backup provider in `ai.py` (`UBYHOST_AI_PROVIDER=mistral`, plain `requests`, no new dependency), same caps and ledger, mocked tests, env rows | 0310 | written | [0334](../tasks/0334-ai-mistral-backup.md) |
 | 0323 | Staging acceptance for the owner: click-by-click script over the cases of section 13 that need a person, screenshots, go/no-go | 0314–0325 | written | [0323](../tasks/0323-havel-staging-acceptance.md) |
 
 ## 15. Open owner items
