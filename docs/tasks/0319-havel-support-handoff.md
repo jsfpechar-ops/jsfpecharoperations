@@ -368,7 +368,7 @@ def test_escalate_shows_the_card_prefilled_and_sending_queues_one_mail(host, on)
     send = {"_csrf": form["_csrf"], "history": history, "history_sig": sig, "page": "reports",
             "summary": "Host sees error 4 on a police report.", "note": "Since Monday"}
     done = host.post("/havel/support", data=send).text
-    assert "Sent." in done
+    assert "Forwarded to the UbyHost team." in done
     host.post("/havel/support", data=send)
     rows = _outbox("havel_support")
     assert len(rows) == 1 and rows[0]["to_email"] == mail.normalise_email(config.OPERATOR_EMAIL)
@@ -433,7 +433,7 @@ def test_support_card_sends_without_javascript_at_390(origin):
         card.screenshot(path=str(SHOTS / "support-card-390.png"))
         page.fill("#havel-support-note", "Since Monday")
         card.locator("button[type=submit]").click()
-        page.get_by_text("Sent.").first.wait_for()
+        page.get_by_text("Forwarded to the UbyHost team.").first.wait_for()
         page.screenshot(path=str(SHOTS / "support-sent-390.png"))
         browser.close()
 ```
@@ -481,5 +481,5 @@ Write `docs/tasks/0319-report.md` (600 tokens at most) and set `Status: review`:
 ## Owner steps
 
 0. Do not set `UBYHOST_AI_FEATURES` on staging or production before 0320 is merged (see the risk list: the nightly purge resets Havel's caps until then).
-1. Owner item 4: tell the orchestrator the reply time to promise. A follow-up adds it to `havel.support.sent` in en, cs and vi.
+1. Owner item 4 is answered (2026-10-24): "usually within a few hours", already in `havel.support.sent` (0312, 0325). The urgent checkbox and phone call come in 0330.
 2. After deploy, send one test request from staging and check it arrives at the support mailbox.

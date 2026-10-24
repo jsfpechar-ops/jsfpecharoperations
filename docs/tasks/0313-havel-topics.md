@@ -466,4 +466,4 @@ Write `docs/tasks/0313-report.md` (600 tokens at most) and set `Status: review`:
 1. Open the pull request and look at `docs/tasks/screenshots-0313/havel-topic-390.png`.
 2. On staging open `/havel`, tap "Guest link and PIN", then "Where do I find the link and PIN?". The answer is the guide's sentence; the button under it opens your property's Guest links card. Tap "Still need help? Ask Havel": the cursor lands in the box.
 3. Read the five topic names and the thirteen questions in en and cs (plan 17e) and change any wording you want before 0324 ships the panel.
-4. Have a Vietnamese speaker check the one new sentence `havel.topic.support_body` (owner item 8).
+4. None for Vietnamese: no native review (owner, 2026-10-24).

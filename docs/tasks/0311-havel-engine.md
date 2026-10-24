@@ -13,7 +13,7 @@ Add `App/app/havel_prompt.py` (the system prompt, verbatim from the plan) and `A
 Plan: `docs/plans/havel-support-assistant.md` sections 2, 4 (prompt, copy it exactly), 5 (schema), 6 (pages), 9 (limits), 9a (guardrails), 10 (redaction). Rules: AGENTS.md 2 (no personal data in logs), 5 (SQL through `db.py`).
 
 Repo facts, verified 2026-10-24:
-- `App/app/ai.py` (0310): `ai.call(feature, system_blocks, messages, schema, key=None, max_tokens=None) -> dict` (clamped to `config.AI_MAX_TOKENS`, default 4000), raises `ai.AIDisabled`, `ai.AIBudgetError` (`.reason` in `month`, `day`), `ai.AIError` (`.reason`); `ai.today()`, `ai.now()` in Europe/Prague; `ai.enabled("havel")`.
+- `App/app/ai.py` (0310): `ai.call(feature, system_blocks, messages, schema, key=None, max_tokens=None) -> dict` (clamped to `config.AI_MAX_TOKENS`, default 4000), raises `ai.AIDisabled`, `ai.AIBudgetError` (`.reason` in `month`, `day`), `ai.AIError` (`.reason`; `input_too_large` before any API call when the estimated input passes `config.AI_MAX_INPUT_TOKENS`, 60,000); `ai.today()`, `ai.now()` in Europe/Prague; `ai.enabled("havel")`.
 - `App/app/guide_i18n.py`: `GUIDE_STRINGS = {"en": {...}, "cs": {...}}`, keys like `guide.nav.stays`, `guide.stays.body`. There is no `vi` guide yet (English is used for vi). Anchors in `templates/guide.html`: `overview, statuses, setup, stays, guests, reporting, manual-filing, ubyport-credentials, filters, housebook, stay_fee, invoices, settings, door-codes, faster, faq, legal, demo`. Nav label keys exist for all but `manual-filing` (label key `guide.reporting.manual_filing_title`), `ubyport-credentials` (`apartment.form.ubyport.credentials_help_heading`) and `door-codes` (`guide.nav.door-codes`).
 - `App/app/host_i18n.py`: `translate(lang, key, **kwargs)`, `LANGUAGES = ("en", "cs", "vi")`, `DEFAULT_LANGUAGE = "en"`; Vietnamese falls back to English through `lookup`.
 - `App/app/rate_limit.py`:
@@ -548,16 +548,25 @@ def validate(data: Dict[str, Any], host: Host, message: str, history: List[Dict[
 
 def ask(host: Host, history: List[Dict[str, str]], message: str, today: Optional[date] = None) -> Reply:
     """Build, call, validate. Raises ai.AIDisabled / ai.AIBudgetError; any other
-    failure (API, refusal, bad JSON, guardrail) comes back as kind 'fail'."""
+    failure (API, refusal, bad JSON, guardrail) comes back as kind 'fail'.
+    input_too_large (0310's input cap): drop the oldest history turn and retry once;
+    a second refusal is a 'fail', which the page shows as havel.dont_know plus the support card."""
     today = today or ai.today()
-    mapping: Dict[str, str] = {}
-    messages = build_messages(host, history, message, today, mapping)
-    try:
-        data = ai.call(FEATURE, system_blocks(host.lang), messages, SCHEMA, max_tokens=MAX_TOKENS)
-    except (ai.AIDisabled, ai.AIBudgetError):
-        raise
-    except ai.AIError as exc:
-        return _fail(exc.reason)
+    for attempt in range(2):
+        mapping: Dict[str, str] = {}
+        messages = build_messages(host, history, message, today, mapping)
+        try:
+            data = ai.call(FEATURE, system_blocks(host.lang), messages, SCHEMA, max_tokens=MAX_TOKENS)
+            break
+        except (ai.AIDisabled, ai.AIBudgetError):
+            raise
+        except ai.AIError as exc:
+            if exc.reason == "input_too_large" and attempt == 0 and history:
+                history = history[1:]
+                continue
+            return _fail(exc.reason)
+    else:  # pragma: no cover - the loop always breaks or returns
+        return _fail("input_too_large")
     reply = validate(data, host, message, history, mapping, today)
     record_stat("guardrail_fail" if reply.kind == "fail" else reply.kind, today)
     return reply
@@ -713,6 +722,29 @@ def test_ask_returns_fail_for_api_problems_and_records_stats(monkeypatch):
     assert fake.calls[0]["system"][0]["text"] == havel.HAVEL_SYSTEM_PROMPT
     rows = {r["kind"]: r["count"] for r in db.query("SELECT kind, count FROM havel_stats WHERE day = ?", (TODAY.isoformat(),))}
     assert rows["answer"] == 1 and rows["guardrail_fail"] == 2
+
+
+def test_ask_drops_the_oldest_turn_once_when_the_input_is_too_large(monkeypatch):
+    monkeypatch.setattr(config, "AI_FEATURES", frozenset({"havel"}))
+    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "k")
+    monkeypatch.setattr(ai, "today", lambda: TODAY)
+    fake = FakeClient([reply(ok())])
+    ai.set_client_for_tests(fake)
+    history = [{"host": "old " * 300, "havel": "a"}, {"host": "new", "havel": "b"}]
+    sizes = []
+    real_call = ai.call
+
+    def capped(feature, system_blocks, messages, schema, **kw):
+        sizes.append(len(str(messages)))
+        if len(sizes) == 1:
+            raise ai.AIError("input_too_large")
+        return real_call(feature, system_blocks, messages, schema, **kw)
+
+    monkeypatch.setattr(ai, "call", capped)
+    assert havel.ask(host(), history, "q", TODAY).kind == "answer"
+    assert len(sizes) == 2 and sizes[1] < sizes[0]
+    monkeypatch.setattr(ai, "call", lambda *a, **k: (_ for _ in ()).throw(ai.AIError("input_too_large")))
+    assert havel.ask(host(), history, "q", TODAY).fail_reason == "input_too_large"
 
 
 # --- limits (cases 52-54) and local replies (case 41)

@@ -1,7 +1,7 @@
 # 0323: Havel (AI): staging acceptance (owner)
 
 Status: todo
-Depends on: 0310 to 0322, 0324 to 0329 merged | Base commit: the `main` commit you deploy (write it in step 4)
+Depends on: 0310 to 0322, 0324 to 0331 merged | Base commit: the `main` commit you deploy (write it in step 4)
 Executor: **Owner (Josef)**, not Haiku. About 60 minutes and under $0.50 of API use.
 
 ## 1. Objective
@@ -58,7 +58,7 @@ None in the repository. Your notes file and screenshots stay on your computer.
    4. Type "Book cleaning at <test property> Monday 10:00–12:00" (with the dash). The card shows Monday's date, 10:00 and 12:00. Click **Cancel**.
    5. Type "Reset the PIN for <test property>". The card warns that the old PIN stops working. Click **Cancel**.
    6. Type "Sync my calendars". Click **Refresh calendars**. The page says the calendars are syncing.
-   7. Type "My police report failed with error 4". Havel offers **Send to UbyHost support** with a summary filled in. Add "staging test" in the note and click **Send to support**. The page says Sent. Open **/admin/operations**, section Mail: one `havel_support` row (staging may only log it).
+   7. Type "My police report failed with error 4". Havel offers **Send to UbyHost support** with a summary filled in. Add "staging test" in the note and click **Send to support**. The page says "Forwarded to the UbyHost team". Open **/admin/operations**, section Mail: one `havel_support` row (staging may only log it). Send a second one with a different note and **It's urgent, please call me** ticked (0330): the new row's subject starts with `URGENT` and its body shows the phone number.
    8. Click **This didn't help** under any answer. The thanks line appears with the support card. On **/admin/operations**, section **Havel (AI)**, the question is listed.
    9. Press **Ctrl K**, type "how do i zzqx". The only row says "Ask Havel (AI): how do i zzqx". Press Enter. The panel opens with the text typed in. Do not send.
    10. Open **Help**. The **Ask Havel (AI)** button is at the top. Click it; the panel opens.
@@ -97,7 +97,7 @@ Decision: GO / NO-GO   Reason:
 
 ## 5. Do not touch
 
-Production (Lightsail): no Havel variables there until a GO and the lawyer's sign-off. Other staging variables. The data of real guests.
+Production (Lightsail): no Havel variables there until a GO and the owner's sign-off of the 0329 drafts. Other staging variables. The data of real guests.
 
 ## 6. Commands
 
@@ -110,7 +110,7 @@ Go only if all of these hold:
 - Step 3 says `SHIP RULE: met` and you found no invented feature.
 - Every check in steps 5 and 6 is ok, or each failure has a brief number to fix it.
 - Cost per message is under $0.01.
-- The lawyer has answered the 0329 questions (production only; staging may stay on).
+- The owner has confirmed the 0329 assumptions A1 to A6 and signed off the drafts (production only; staging may stay on).
 
 
 ## 8. Stop and ask

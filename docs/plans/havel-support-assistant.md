@@ -66,8 +66,9 @@ All Claude calls go through one shared module, `App/app/ai.py`, which the guest 
 | Timeout / retries | `Anthropic(api_key=..., timeout=20.0, max_retries=1)` | A host is waiting; a failure shows the support form. Wall clock can reach 40 s, so the route runs the call in a threadpool |
 | Stop reasons | `refusal` (Haiku 5.5 has safety classifiers and no server-side fallback), `max_tokens`, no `text` block, or unparsable JSON → the fallback reply in section 11, support card offered | Never show raw model text that failed validation |
 | Logging | request id, token counts, kind, latency. Never the message text | Rule: no personal data in logs |
+| Input cap | `ai.call` refuses with `AIError("input_too_large")` before any API call when the estimate (1 token per 2 characters over system blocks and messages) passes `config.AI_MAX_INPUT_TOKENS` (`UBYHOST_AI_MAX_INPUT_TOKENS`, default and hard maximum 60,000). Havel then drops the oldest history turn and retries once; if that is still too large, the host sees `havel.dont_know` and the support card (0311) | Haiku 5.5 costs 5x above 100k input tokens |
 
-Provider fallback (owner, 2026-10-24): if the lawyer rules Anthropic out, Mistral (EU) is the worst-case
+Provider fallback (owner, 2026-10-24): if the counsel review or the owner's checks rule Anthropic out, Mistral (EU) is the worst-case
 replacement. So `ai.py` exposes one function, `ai.call(feature, system_blocks, messages, schema) -> dict`,
 and nothing outside `ai.py` imports the SDK. A swap is one module plus re-running the test set (section 13),
 which then also measures how much quality is lost.
@@ -108,7 +109,7 @@ THE ONE RULE ABOVE ALL: NEVER MAKE THINGS UP
 - Every fact you state must come from the guide or from <host_context>. List the guide keys you used in "sources". If you cannot point to a guide key for a fact, do not state that fact.
 - Never invent or assume a feature, button, menu, place on the screen, setting, price, plan, deadline, number, fine or legal rule. Never fill a gap with general knowledge about Airbnb, Booking.com, Czech law, other apps, or what apps "usually" do.
 - You cannot see the host's stays, guests, police reports, alerts, invoices or settings. If the host asks about a specific stay or report, say kindly that you cannot see it, tell them where to look, and explain what the colours and statuses mean using the guide.
-- When you do not know, say so plainly and offer support. In the host's language, say something like: "I don't know that, and I don't want to guess. I can send your question to the UbyHost team, and a person will reply by e-mail." Saying you don't know is always better than a guess.
+- When you do not know, say so plainly and offer support. In the host's language, say something like: "I don't know that, and I don't want to guess. I can forward your question to the UbyHost team. They usually reply within a few hours." Saying you don't know is always better than a guess.
 
 HOW TO EXPLAIN STEPS
 - Start with one short sentence that answers the question.
@@ -129,7 +130,7 @@ WHEN TO PASS IT TO SUPPORT (kind "escalate")
 - billing, prices, contracts, closing or deleting their account, or any legal or tax question the guide does not answer;
 - the host asks for a person;
 - the host is still stuck after you have explained the same thing twice.
-Do not guess before escalating. In "reply", say kindly in one or two sentences that you can send this to the UbyHost team and that a person replies by e-mail. In "support_summary", write in English, in two to four sentences, what the host wants, what they already tried, and which page they are on. Do not invent details.
+Do not guess before escalating. In "reply", say kindly in one or two sentences that you will forward this to the UbyHost team, who usually reply within a few hours, and that if it is urgent the host can tick "It's urgent, please call me" on the card and the team will call them. Never promise a time other than "usually within a few hours". In "support_summary", write in English, in two to four sentences, what the host wants, what they already tried, and which page they are on. Do not invent details.
 For requests about guests' personal data (to see, correct or delete it), link "privacy_requests" and escalate.
 
 ACTIONS YOU MAY PREPARE (kind "action")
@@ -294,10 +295,17 @@ Josef wants Havel to contact support when it cannot help. It does, with one tap 
    `mail.enqueue`, idempotency key `havel-support-<user id>-<hash of summary>`.
 3. The mail holds: host account e-mail, workspace name, language, current page, the summary, the host's note,
    and the last 4 turns as the host typed them. It is UbyHost's own support channel, not a third party.
-4. The page confirms "Sent. Support replies to your e-mail, usually within <SLA from owner>."
+4. The page confirms `havel.support.sent`: "Forwarded to the UbyHost team. They know about it and usually reply
+   within a few hours. If you marked it urgent, they will call you." (owner, 2026-10-24; the last sentence arrives
+   with the urgent checkbox in 0330).
+5. Urgent (0330): the card has a checkbox "It's urgent, please call me" and a phone field, prefilled from the host's
+   existing business contact phone (`legal_entity.contact_phone`) when there is one. Ticked, the operator mail gets
+   the subject prefix "URGENT" and the phone number in its body, and the team calls the host. No new stored field:
+   the phone travels only in that mail, whose outbox row is purged after 14 days (`mail.purge_old`); the copy in
+   the support mailbox follows the support mailbox's retention (ROPA, open for counsel).
 
 Why one tap rather than fully automatic: support only gets questions the host still cares about, and the
-host knows a person will write back. Section 15 lists the SLA sentence the owner must supply.
+host knows a person will write back. Reply time (owner, 2026-10-24): usually within a few hours; urgent ones by phone.
 
 The support card is always available, even when Havel is switched off or over its cap; then it starts empty.
 
@@ -365,6 +373,7 @@ sees `havel.dont_know` and the support card instead, and the redacted question g
 | Prompt caching (5-minute) on the system blocks | The 2nd to 8th message in a conversation pays about a tenth for the prompt |
 | `effort: low`, `max_tokens: 1500`, one retry at most | Short thinking, short answers |
 | History capped at 4 turns, 4,000 characters | Input stays small |
+| Input cap per request: 60,000 estimated tokens (about 120,000 characters) | No request reaches Haiku's 100k price step (0310; Havel drops the oldest turn and retries once, 0311) |
 | Weekly, monthly and daily-share caps | A hard ceiling: 20 messages × hosts × about $0.0012 |
 
 Rough worst case: 100 hosts each using all 20 messages is 2,000 messages, about $2.40 a month. The $10 cap is
@@ -390,15 +399,27 @@ Redaction (`havel.redact`, applied to every user turn and history turn before th
 Dates stay, because stays need them. The mapping is kept in memory for one request and used to put real
 values back into the card fields. Tests cover Czech phone formats and passport-style numbers.
 
-Documents to change (brief 0329, drafted for the lawyer; nothing goes live before sign-off):
-1. Subprocessor register v1.3: Anthropic, purpose "AI support assistant and guest assistant", data as above,
-   location and transfer safeguard as Anthropic's commercial terms and DPA state (lawyer to confirm, including
-   whether EU-only processing or zero data retention is available on our plan).
-2. DPA change notice to hosts, as the DPA's subprocessor-change clause requires.
-3. Privacy policy, host section: Havel exists, what it sends, that it is optional, that chats are not stored.
-4. ROPA entry for "host support assistant".
-5. `retention.py`: `havel_gap` rows 90 days; `havel_support` mail follows the outbox purge (14 days).
-6. EU AI Act transparency: the name "Havel (AI)" and the line under the input box tell hosts they talk to an AI.
+Redaction does not remove names or street addresses, so a guest's details reach Anthropic if the host types them.
+That makes Anthropic a subprocessor of guest data under the DPA, not only UbyHost's processor for host data
+(AI counsel review, 2026-10-24; findings in brief 0329).
+
+Documents to change (brief 0329, AI counsel reviewed; nothing goes live before the owner signs off):
+1. Subprocessor register v1.3: Anthropic, PBC, purpose "AI support assistant and guest assistant" (guest
+   assistant marked not in use yet), data as above, location United States. Transfer safeguard: the EU-US Data
+   Privacy Framework if Anthropic is certified, otherwise the SCCs in Anthropic's DPA. Both, Anthropic's own
+   retention of API data, zero data retention and EU-only processing are **assumptions the owner confirms** in
+   Anthropic's current terms (0329, A1 to A6), never stated as fact.
+2. Notice to hosts at least 30 days ahead, to each account e-mail, with the right to object (DPA sections 11 and 20).
+3. DPA text: section 11 names each subprocessor, so it gains an "only if used: Anthropic" sentence and a new
+   effective date.
+4. Privacy policy, host section: Havel exists, what it sends, that it is optional, that chats are not stored, the
+   lawful basis (legitimate interest for host data; contract for the support hand-off), the US transfer.
+5. ROPA entry for "host support assistant"; the Support mailbox row gains the Havel hand-offs and the urgent phone.
+6. `retention.py`: `havel_gap` rows 90 days; `havel_support` outbox rows 14 days (`mail.purge_old`). The
+   delivered copy stays in the support mailbox, whose retention is still an owner decision.
+7. EU AI Act Article 50(1), in force from 2 August 2026: the name "Havel (AI)", the intro and the line under the
+   input box tell hosts they talk to an AI before the first message.
+8. DPIA: a screening note (no full DPIA while redaction, the disclaimer and the 90-day limit stay).
 
 ## 11. UI and copy
 
@@ -417,7 +438,7 @@ listed there; this table holds the ones the engine and limits use:
 | `havel.disclaimer` | Havel is an AI and can make mistakes. Check every card before you confirm. Don't type passwords or guests' document numbers. |
 | `havel.placeholder` | For example: How do I send guests the check-in link? |
 | `havel.remaining` | You can send Havel %(n)s more messages this month. |
-| `havel.dont_know` | I don't know that, and I don't want to guess. I can send your question to the UbyHost team, and a person will reply by e-mail. |
+| `havel.dont_know` | I don't know that, and I don't want to guess. I can forward your question to the UbyHost team. They usually reply within a few hours. |
 | `havel.send` | Send |
 | `havel.new` | New conversation |
 | `havel.card.confirm_stay` | Create stay |
@@ -431,8 +452,8 @@ listed there; this table holds the ones the engine and limits use:
 | `havel.support.title` | Send to UbyHost support |
 | `havel.support.add` | Anything to add? |
 | `havel.support.send` | Send to support |
-| `havel.support.sent` | Sent. Support will reply to your e-mail. |
-| `havel.fallback` | I couldn't answer that just now. You can send it to support and a person will reply. |
+| `havel.support.sent` | Forwarded to the UbyHost team. They know about it and usually reply within a few hours. (0330 adds: If you marked it urgent, they will call you.) |
+| `havel.fallback` | I couldn't answer that just now. You can forward it to the UbyHost team. They usually reply within a few hours. |
 | `havel.off` | Havel is unavailable right now. You can still write to support here. |
 | `havel.limit_burst` | Let's take a short break. You can write again in a few minutes. |
 | `havel.limit_week` | You've used this week's messages for Havel. They come back on Monday. The guide and support are always here. |
@@ -480,7 +501,7 @@ CREATE TABLE IF NOT EXISTS havel_stats (
 limit_hit), with no user and no text, so the owner can spot anything odd, such as a jump in refusals.
 
 `havel_gap` stores the redacted question when Havel escalated or the host tapped "This didn't help".
-No user id, no property id. Admin sees it at `/admin/operations` as a list (later brief) to grow the guide.
+No user id, no property id. Admin sees it at `/admin/operations` as a grouped, counted list (0331) to grow the guide.
 No chat history is stored on the server.
 
 ## 13. Test set
@@ -573,8 +594,10 @@ the table order within each column; the guide column and the code column are ind
 | 0326 | Guide in Vietnamese: every new guide key in `host_vi_i18n.py`, `GUIDE_STRINGS["vi"]` for Havel (split from 0318) | 0328 | written | [0326](../tasks/0326-guide-vietnamese.md) |
 | 0327 | `test_guide_coverage.py`, 13 new `GUIDE_ANCHORS`, quick-help key fixes (0313 cited the wrong guide keys), PR template line (split from 0318) | 0326, 0313 | written | [0327](../tasks/0327-guide-coverage-test.md) |
 | 0319 | Support hand-off: mail kinds `havel_support` and `havel_budget` in `mail.KINDS`, `POST /havel/support`, `havel_support` scope cap, the 80% budget mail from `ai.py`, tests from the mail row | 0314, 0325 | written | [0319](../tasks/0319-havel-support-handoff.md) (budget mail kind is `ai_budget`, for every AI feature; its weekly cap only holds once 0320 is in) |
-| 0320 | `havel_gap` and `havel_stats` writes, "This didn't help" button, `retention.py` lines (gap 90 days), admin list at `/admin/operations`, legal drafts (subprocessor v1.3, DPA notice, privacy policy host section, ROPA entry) marked LAWYER REVIEW | 0319 | written | [0320](../tasks/0320-havel-gap-stats-retention.md) (legal drafts moved to 0329; also keeps `havel_*` rate-limit rows 32 days: the nightly 24-hour purge in `retention.py` is confirmed, so **0320 must merge before `UBYHOST_AI_FEATURES` is set anywhere**, or the weekly, monthly and support caps reset every night; 0323 already requires it) |
-| 0329 | Legal drafts for the lawyer: subprocessor v1.3, DPA notice, privacy-policy host section, ROPA and RETENTION lines, all LAWYER REVIEW, nothing published (split from 0320) | 0320 | written | [0329](../tasks/0329-havel-legal-drafts.md) |
+| 0320 | `havel_gap` and `havel_stats` writes, "This didn't help" button, `retention.py` lines (gap 90 days), legal drafts (subprocessor v1.3, DPA notice, privacy policy host section, ROPA entry) marked LAWYER REVIEW | 0319 | written | [0320](../tasks/0320-havel-gap-stats-retention.md) (legal drafts moved to 0329; admin list moved to 0331; also keeps `havel_*` rate-limit rows 32 days: the nightly 24-hour purge in `retention.py` is confirmed, so **0320 must merge before `UBYHOST_AI_FEATURES` is set anywhere**, or the weekly, monthly and support caps reset every night; 0323 already requires it) |
+| 0329 | Legal drafts, AI counsel reviewed: subprocessor v1.3, notice to hosts, DPA text, privacy-policy host section, ROPA, RETENTION and DPIA lines, Anthropic facts as owner assumptions, all LAWYER REVIEW, nothing published (split from 0320) | 0320, 0330 | written | [0329](../tasks/0329-havel-legal-drafts.md) |
+| 0330 | Support card: "It's urgent, please call me", phone prefilled from `legal_entity.contact_phone`, "URGENT: " mail subject and phone in the body, no new stored field (split from 0319) | 0319 | written | [0330](../tasks/0330-havel-support-urgent.md) |
+| 0331 | Owner's gap list on `/admin/operations`: groups by normalised question with counts, sorted by count then newest, language, page, plain reason, guide section to fix, "How to improve Havel with this list" box; spend and 30-day stats (split from 0320) | 0320 | written | [0331](../tasks/0331-havel-gap-list.md) |
 | 0321 | `scripts/havel_eval.py` and `App/tests/havel_cases.json` (section 13) | 0311 | written | [0321](../tasks/0321-havel-eval.md) |
 | 0322 | Command palette "Ask Havel: <query>" when no match, "Ask Havel" button at the top of `/guide`, empty-state hints | 0324 | written | [0322](../tasks/0322-havel-palette-guide.md) (reuses `havel.launcher`; no new keys) |
 | 0323 | Staging acceptance for the owner: click-by-click script over the 54 cases that need a person, screenshots, go/no-go | 0314–0325 | written | [0323](../tasks/0323-havel-staging-acceptance.md) |
@@ -583,12 +606,16 @@ the table order within each column; the guide column and the code column are ind
 
 1. Approve the `anthropic` dependency line in `docs/context/decisions.md` (rule 4), shared with the guest bot.
 2. Create an Anthropic API key with a monthly spend limit in the Anthropic Console, and set it on staging only.
-3. Lawyer: subprocessor v1.3, DPA notice, privacy policy, transfer basis (section 10).
-4. The support reply time to promise ("usually within one working day"?).
+3. **Done (AI counsel review, 2026-10-24).** The owner chose an AI counsel review (Opus) instead of an external
+   lawyer for these drafts; findings and the remaining owner decisions (Anthropic assumptions A1 to A6, support
+   mailbox retention) are in brief 0329. This is not a substitute for a licensed lawyer if a dispute arises.
+4. **Answered (2026-10-24).** "Forwarded to the UbyHost team. They know about it and usually reply within a few
+   hours. If you marked it urgent, they will call you." Urgent requests carry a phone number and the team calls
+   (section 8, briefs 0312, 0325, 0330).
 5. 15–20 real host questions to add to section 13.
-6. Who reads `havel_gap` and `havel_stats` and how often (suggest: owner, monthly, with the monthly check).
+6. **Answered (2026-10-24).** The owner reads the gap list monthly, with the monthly check (section 16b, brief 0331).
 7. Confirm the limits in section 9: 10 messages a week, 20 a month per host, $10 a month in total.
-8. A Vietnamese speaker reviews the `havel.*` strings in `host_vi_i18n.py` (0312) and later the Vietnamese guide (0318).
+8. Removed (owner, 2026-10-24): no Vietnamese review; the Vietnamese copy stays as written.
 9. SDK or raw HTTPS (section 3): the briefs use the SDK as decided on 2026-10-24; if the owner would rather add no
    package, 0310 step 1 is replaced by a `requests` client in `ai.py` and the decision line is not needed.
 10. Entry points (section 17a): no floating bubble; sidebar item on computer, top-bar button and More row on phone.
@@ -624,8 +651,17 @@ a beginner, and stay true as the app changes (owner, 2026-10-24).
 | Existing rule in `guide_i18n.py` | "When a feature changes, change its paragraph here in the same commit" |
 | New test `App/tests/test_guide_coverage.py` | Every Havel page id has a guide anchor; every guide key exists in en, cs and vi; every anchor in the guide nav renders |
 | PR template line | "Host behaviour changed → Help & guide updated in this PR" |
-| Havel gap log (`havel_gap`) | Questions Havel could not answer, reviewed in the owner's monthly check and turned into guide text |
+| Havel gap log (`havel_gap`) | Questions Havel could not answer, grouped and counted on `/admin/operations` (0331), reviewed in the owner's monthly check and turned into guide text |
 | Prompt cache follows the guide | The guide text is in the system blocks, so any guide change is live for Havel on the next deploy with no extra step |
+
+Monthly, the owner improves Havel from the gap list (owner, 2026-10-24; the same three steps head the list in 0331):
+
+1. Read the most-asked questions first. Each row shows how often it was asked, the language, the page, why Havel
+   could not help ("Havel didn't know", "The host said it didn't help", "A safety check blocked the answer") and the
+   guide section to fix.
+2. Ask the orchestrator for a guide brief that adds or fixes that text, pasting the question, page and guide section.
+3. Next month, check that the question has moved down the list or gone. If it is still near the top, the new text
+   does not answer it yet.
 
 The guide will grow from about 4,500 to about 12,000 tokens per language. With caching that adds well under
 $0.001 per conversation.
@@ -786,8 +822,8 @@ Guest links card, or back to the hosting page), where the normal flash confirms 
 | `havel.support.replies_to` | Support replies to %(email)s | Podpora odpoví na %(email)s |
 
 Existing keys from section 11 keep their text; their Czech: `havel.dont_know` "To nevím a nechci hádat. Můžu vaši otázku
-poslat týmu UbyHostu a člověk vám odpoví e-mailem."; `havel.fallback` "Teď jsem na to nedokázal odpovědět. Můžete to
-poslat podpoře a odpoví vám člověk."; `havel.off` "Havel teď není k dispozici. Podpoře můžete napsat tady."; `havel.limit_burst`
+předat týmu UbyHostu. Obvykle odpoví do několika hodin."; `havel.fallback` "Teď jsem na to nedokázal odpovědět. Můžete to
+předat týmu UbyHostu. Obvykle odpoví do několika hodin."; `havel.off` "Havel teď není k dispozici. Podpoře můžete napsat tady."; `havel.limit_burst`
 "Dáme si krátkou pauzu. Za pár minut můžete psát dál."; `havel.limit_week` "Zprávy pro Havla na tento týden jste vyčerpali.
 Vrátí se v pondělí. Nápověda a podpora jsou tu pořád."; `havel.limit_month` "Zprávy pro Havla na tento měsíc jste vyčerpali.
 Vrátí se 1. dne v měsíci. Nápověda a podpora jsou tu pořád."; `havel.paused` "Můžu pomáhat jen s UbyHostem, tak si dám
@@ -797,7 +833,8 @@ pauzu do pondělí. Podpora je tu pořád."; `havel.resting` "Havel odpočívá 
 `havel.card.change` "Změnit"; `havel.card.cancel` "Zrušit"; `havel.card.overlap` "Překrývá se s jiným pobytem v tomto
 ubytování."; `havel.card.pin_warning` "Současný PIN přestane platit okamžitě, i pro hosty, kteří se právě registrují.";
 `havel.support.title` "Poslat podpoře UbyHostu"; `havel.support.add` "Chcete něco doplnit?"; `havel.support.send`
-"Poslat podpoře"; `havel.support.sent` "Odesláno. Podpora vám odpoví e-mailem."; `havel.title` "Havel (AI) · Asistent podpory".
+"Poslat podpoře"; `havel.support.sent` "Předáno týmu UbyHostu. Vědí o tom a obvykle odpoví do několika hodin." (0330 adds "Pokud jste
+označili, že je to naléhavé, zavolají vám."); `havel.title` "Havel (AI) · Asistent podpory".
 
 ## 18. Review notes (2026-10-24, Fable)
 

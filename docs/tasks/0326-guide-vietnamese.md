@@ -25,7 +25,7 @@ for _lang, _strings in GUIDE_STRINGS.items():
   `STRINGS` has no `"vi"` key at that point; line 7640 `STRINGS["vi"] = dict(_VI_STRINGS)` builds it later from `host_vi_i18n`. So adding `"vi"` to `GUIDE_STRINGS` without step 2 raises `KeyError: 'vi'` at import.
 - `App/tests/test_host_i18n.py` line 147 `test_every_vietnamese_key_exists_in_english_with_the_same_placeholders`: every vi key must exist in English and keep the same `%(name)s` placeholders.
 - From brief 0316 (grep before editing): `App/tests/test_guide_browser.py` has `@pytest.mark.parametrize("lang", ["en", "cs"])` and `            if width == 390 and lang == "en":`.
-- `guide.door_codes.terms1` to `terms9` are legal terms; they stay English in vi (owner item 8). Do not translate them.
+- `guide.door_codes.terms1` to `terms9` are legal terms; they stay English in vi. Do not translate them.
 
 Vietnamese words to use (from `host_vi_i18n.py`; any other UI label: find its en key with `grep -nF '"<English label>"' app/host_i18n.py | head -3`, then use that key's vi text): Help = Trợ giúp, Dashboard = Tổng quan, Stays = Lưu trú, Properties = Chỗ ở, Cleaning = Dọn dẹp, More = Thêm, Stay fees = Phí lưu trú, Invoices = Hóa đơn, Settings = Cài đặt, Guest links = Liên kết cho khách, Data requests = Yêu cầu về dữ liệu, Guest register = Sổ khách lưu trú, Police reporting = Khai báo cảnh sát, sign out = Đăng xuất. Keep UbyPort, UbyHost, iCal, PIN, IDUB, Airbnb, Booking.com, TTLock and passkey as they are.
 
@@ -145,7 +145,7 @@ Write `docs/tasks/0326-report.md` (500 tokens at most) and set `Status: review`:
 
 ## Risk list (for the reviewer)
 
-- Machine-quality Vietnamese: owner item 8 review before Vietnamese hosts are told about it.
+- Machine-quality Vietnamese: the owner decided on 2026-10-24 that it ships without a native review.
 - `GUIDE_STRINGS["vi"]` falls back to English per key, so a future en key without vi silently shows English; 0327's coverage test catches it.
 
 ## Owner steps

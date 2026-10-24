@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Fits one session: 10 tool calls, 20k tokens
 
 ## 1. Objective
 
-The `havel.*` strings in Vietnamese, so a host who uses the app in vi reads Havel in vi instead of the English fallback. Owner item 8 in the plan: a Vietnamese speaker reviews these before or after merge; the keys are the same as en/cs (0312, 0313).
+The `havel.*` strings in Vietnamese, so a host who uses the app in vi reads Havel in vi instead of the English fallback. No native review (owner, 2026-10-24): the wording below ships as written; the keys are the same as en/cs (0312, 0313).
 
 ## 2. Context
 
@@ -71,8 +71,8 @@ No other file may change.
     "havel.error": "Có lỗi ở phía chúng tôi. Vui lòng thử lại sau một lát.",
     "havel.retry": "Thử lại",
     "havel.not_helped": "Điều này không giúp được",
-    "havel.dont_know": "Tôi không biết điều đó và không muốn đoán. Tôi có thể gửi câu hỏi của bạn đến đội UbyHost, và một người sẽ trả lời qua e-mail.",
-    "havel.fallback": "Lúc này tôi chưa trả lời được. Bạn có thể gửi cho bộ phận hỗ trợ và một người sẽ trả lời.",
+    "havel.dont_know": "Tôi không biết điều đó và không muốn đoán. Tôi có thể chuyển câu hỏi của bạn đến đội UbyHost. Họ thường trả lời trong vòng vài giờ.",
+    "havel.fallback": "Lúc này tôi chưa trả lời được. Bạn có thể chuyển cho đội UbyHost. Họ thường trả lời trong vòng vài giờ.",
     "havel.off": "Havel hiện không hoạt động. Bạn vẫn có thể viết cho bộ phận hỗ trợ ở đây.",
     "havel.limit_burst": "Hãy nghỉ một chút. Bạn có thể viết lại sau vài phút.",
     "havel.limit_week": "Bạn đã dùng hết tin nhắn cho Havel tuần này. Chúng sẽ trở lại vào thứ Hai. Hướng dẫn và hỗ trợ luôn ở đây.",
@@ -108,7 +108,7 @@ No other file may change.
     "havel.support.title": "Gửi cho bộ phận hỗ trợ UbyHost",
     "havel.support.add": "Bạn muốn bổ sung gì không?",
     "havel.support.send": "Gửi cho hỗ trợ",
-    "havel.support.sent": "Đã gửi. Bộ phận hỗ trợ sẽ trả lời qua e-mail của bạn.",
+    "havel.support.sent": "Đã chuyển đến đội UbyHost. Họ đã biết và thường trả lời trong vòng vài giờ.",
     "havel.support.replies_to": "Hỗ trợ sẽ trả lời đến %(email)s",
     "havel.support.mailto": "Gửi e-mail cho hỗ trợ",
 ```
@@ -142,8 +142,8 @@ As in docs/tasks/TEMPLATE.md section 8, plus: the anchor line is missing, or the
 
 ## Risk list (for the reviewer)
 
-`App/app/host_vi_i18n.py` only. The wording needs a native review (owner item 8); the executor must not change it.
+`App/app/host_vi_i18n.py` only. The executor must not change the wording.
 
 ## Owner steps
 
-1. Send the vi block to a Vietnamese-speaking host or translator with the en block beside it; ask especially about `havel.ai_note`, `havel.dont_know` and the limit sentences. Apply their wording in a follow-up.
+1. None. The owner decided on 2026-10-24 that the Vietnamese copy needs no native review.
