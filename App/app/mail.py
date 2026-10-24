@@ -40,6 +40,8 @@ KINDS = (
     "cancelled_with_guests",
     "deadline_at_risk",
     "deadline_digest",
+    # 0351: one host mail per batch of open guest questions (Leon handoff).
+    "guest_question",
     "lifecycle_no_property",
     "lifecycle_no_calendar",
     "lifecycle_no_guest",
@@ -86,6 +88,7 @@ HOST_KINDS = (
     # digest. Neither goes to a guest.
     "deadline_at_risk",
     "deadline_digest",
+    "guest_question",
     "lifecycle_no_property",
     "lifecycle_no_calendar",
     "lifecycle_no_guest",

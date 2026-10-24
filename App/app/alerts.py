@@ -317,6 +317,7 @@ _ACTIONS = {
     "guest_pin_locked_out": ("notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"),
     "guest_pin_challenged": ("notification.action.guest_link", "/apartments/{apartment}?view=settings&section=guests#communication"),
     "submission_stuck": ("notification.action.guests", "/reservations/{reservation}#guests"),
+    "guest_question": ("notification.action.guest_questions", "/apartments/{apartment}/guide/questions"),
 }
 
 

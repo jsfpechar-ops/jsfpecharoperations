@@ -41,6 +41,7 @@ def questions_index(request: Request, apartment_id: int):
     if guard:
         return guard
     apartment = _home(request, apartment_id)
+    guest_handoff.refresh_alert(apartment_id)
     rows = guest_handoff.questions(apartment_id)
     return _render(
         request, "guest_questions.html", apartment=apartment, questions=rows,
