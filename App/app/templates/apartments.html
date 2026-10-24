@@ -73,7 +73,7 @@
   </div>
   <div class="panel tight scroll-x list-cards lc-properties property-summary-panel">
     <table class="table-cards property-summary-table">
-      <thead><tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('property_nav.guest_link') }}</th><th>{{ t('guest_links.pin') }}</th><th>{{ t('automation.timing_title') }}</th></tr></thead>
+      <thead><tr><th>{{ t('apartments.table.property') }}</th><th>{{ t('property_nav.guest_link') }}</th><th>{{ t('guest_links.pin') }}</th><th>{{ t('automation.timing_title') }}</th><th><span class="sr-only">{{ t('common.actions') }}</span></th></tr></thead>
       <tbody>
       {% for row in rows %}
         {% set apartment = row.apartment %}
@@ -132,6 +132,7 @@
               <span class="small property-timing-status" role="status" aria-live="polite" data-timing-status></span>
             </form>
           </td>
+          <td class="nowrap row-actions" data-label="">{{ row_open() }}</td>
         </tr>
       {% endfor %}
       </tbody>

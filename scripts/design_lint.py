@@ -7,7 +7,7 @@ Checks the templates and stylesheets named in docs/design/catalog.json:
   T3 every class token is in the catalog, the hook allowlist, or that
      template's own "legacy" list (old classes a page brief still carries;
      the cleanup brief empties these lists)
-  T4 at most one ui-btn-primary per template file (a template is one screen)
+  T4 at most one ui-btn-primary per button group (MASTER 1.2)
   T5 every <svg in a template comes from the icon macro (no literal <path)
   S1 stylesheet: no #hex, rgb(, hsl(, font-family:, or a literal box-shadow
   S2 stylesheet: no bare px in margin, padding, gap, border-radius, font-size except 0 and 1px
@@ -49,8 +49,13 @@ def _findings_template(path: Path, text: str, catalog: dict) -> list[str]:
         for token in m.group(1).split():
             if token and token not in allowed:
                 out.append(f"{rel}: T3 class not in catalog: {token}")
-    if plain.count("ui-btn-primary") > 1:
-        out.append(f"{rel}: T4 more than one ui-btn-primary")
+    # T4 (0291, owner 2026-10-24): one primary per button group. A group is a
+    # run of buttons inside one element; two primaries in one tag's direct
+    # children are flagged, a page may hold several groups.
+    for m in re.finditer(r"<(div|form|p|td|li)\b[^>]*>((?:(?!</?\1\b).)*)</\1>", plain, re.S):
+        if m.group(2).count("ui-btn-primary") > 1:
+            out.append(f"{rel}: T4 more than one ui-btn-primary in one group")
+            break
     if "<path" in plain:
         out.append(f"{rel}: T5 literal svg path (use the icon macro)")
     return out
