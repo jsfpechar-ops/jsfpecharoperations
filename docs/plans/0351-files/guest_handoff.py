@@ -167,9 +167,10 @@ def on_new_question(question_id: int) -> None:
             return
         apartment_id = int(row["apartment_id"])
         count = refresh_alert(apartment_id)
+        _, urgent_open = open_counts(apartment_id)
         # One mail per batch: the first open question mails; later ones wait in the app.
-        # An urgent row (emergency) always mails, batch or not.
-        if count != 1 and not int(row["urgent"] or 0):
+        # An urgent row (emergency) mails when it is the first open urgent one, batch or not.
+        if count != 1 and not (int(row["urgent"] or 0) and urgent_open == 1):
             log.info("guest question %s apartment=%s open=%s (batch mail already sent)", question_id, apartment_id, count)
             return
         home = _property(apartment_id)

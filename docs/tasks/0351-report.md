@@ -29,6 +29,7 @@ Status: review
 
 - Step 4 once created a stray file inside the worktree by a bad path; it was deleted before any commit. Nothing stray is committed.
 - Commits per step: `0351 step 2` to `0351 step 10`, plus this report commit (`0351 step 11`). Not pushed.
+- Review fixes: an urgent question mails only when it is the first open urgent one (test added); opening the questions page refreshes the alert after the purge.
 
 ## Questions
 
