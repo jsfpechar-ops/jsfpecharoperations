@@ -1,6 +1,6 @@
 # 0342: Host guest guide page and card editor
 
-Status: todo
+Status: review
 Depends on: 0341 merged | Base commit: after 0341 | Branch: task/0292-guest-guide-pages
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

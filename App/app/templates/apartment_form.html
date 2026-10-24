@@ -27,6 +27,7 @@
   {% for key, label in [('overview', t('property_nav.overview')), ('bookings', t('property_nav.bookings')), ('settings', t('property_nav.settings'))] %}
   <a class="ui-tab" href="{{ base_url }}?view={{ key }}" data-property-tab="{{ key }}"{% if key == property_view %} aria-current="page"{% endif %}>{{ label }}</a>
   {% endfor %}
+  <a class="ui-tab" href="{{ base_url }}/guide">{{ t('guest_guide.tab') }}</a>
 </nav>
 <div class="property-views" data-property-views data-property-base="{{ base_url }}">
   <section class="property-view{% if property_view == 'overview' %} is-active{% endif %}" data-property-view="overview" id="property-overview" aria-label="{{ t('property_nav.overview') }}">
