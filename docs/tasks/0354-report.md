@@ -40,3 +40,4 @@ Status: review
 ## Owner steps left
 - Orchestrator adds the 390 px screenshots (card list, Wi-Fi card) per rule 7.
 - Review and merge once CI is green.
+- Review (orchestrator): 390 px screenshots of the card list and the Wi-Fi card (ghost text in --ink-muted), scrollWidth 390.
