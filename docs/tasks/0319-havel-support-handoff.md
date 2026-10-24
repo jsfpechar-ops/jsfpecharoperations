@@ -481,5 +481,5 @@ Write `docs/tasks/0319-report.md` (600 tokens at most) and set `Status: review`:
 ## Owner steps
 
 0. Do not set `UBYHOST_AI_FEATURES` on staging or production before 0320 is merged (see the risk list: the nightly purge resets Havel's caps until then).
-1. Owner item 4 is answered (2026-10-24): "usually within a few hours", already in `havel.support.sent` (0312, 0325). The urgent checkbox and phone call come in 0330.
+1. Owner item 4 is answered (2026-10-24): "usually within a few hours", already in `havel.support.sent` (0312, 0325). No urgent option (owner, 2026-10-24).
 2. After deploy, send one test request from staging and check it arrives at the support mailbox.

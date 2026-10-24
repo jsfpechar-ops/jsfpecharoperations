@@ -58,7 +58,7 @@ None in the repository. Your notes file and screenshots stay on your computer.
    4. Type "Book cleaning at <test property> Monday 10:00–12:00" (with the dash). The card shows Monday's date, 10:00 and 12:00. Click **Cancel**.
    5. Type "Reset the PIN for <test property>". The card warns that the old PIN stops working. Click **Cancel**.
    6. Type "Sync my calendars". Click **Refresh calendars**. The page says the calendars are syncing.
-   7. Type "My police report failed with error 4". Havel offers **Send to UbyHost support** with a summary filled in. Add "staging test" in the note and click **Send to support**. The page says "Forwarded to the UbyHost team". Open **/admin/operations**, section Mail: one `havel_support` row (staging may only log it). Send a second one with a different note and **It's urgent, please call me** ticked (0330): the new row's subject starts with `URGENT` and its body shows the phone number.
+   7. Type "My police report failed with error 4". Havel offers **Send to UbyHost support** with a summary filled in. Add "staging test" in the note and click **Send to support**. The page says "Forwarded to the UbyHost team". Open **/admin/operations**, section Mail: one `havel_support` row (staging may only log it).
    8. Click **This didn't help** under any answer. The thanks line appears with the support card. On **/admin/operations**, section **Havel (AI)**, the question is listed.
    9. Press **Ctrl K**, type "how do i zzqx". The only row says "Ask Havel (AI): how do i zzqx". Press Enter. The panel opens with the text typed in. Do not send.
    10. Open **Help**. The **Ask Havel (AI)** button is at the top. Click it; the panel opens.

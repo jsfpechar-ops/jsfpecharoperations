@@ -1,7 +1,7 @@
 # 0329: Havel (AI): legal drafts, AI counsel reviewed (LAWYER REVIEW, not published)
 
 Status: todo
-Depends on: 0320, 0330 (for the retention and phone facts; the drafts can be written before they merge) | Base commit: f4c76d7 (check `git rev-parse --short origin/main` first; if it differs, write the current one here) | Branch: task/0329-havel-legal-drafts
+Depends on: 0320 (for the retention facts; the drafts can be written before it merges) | Base commit: f4c76d7 (check `git rev-parse --short origin/main` first; if it differs, write the current one here) | Branch: task/0329-havel-legal-drafts
 Executor: Haiku 5.5 | Fits one session: 14 tool calls, 30k tokens
 
 ## 1. Objective
@@ -10,12 +10,12 @@ The texts plan section 10 lists, drafted for the owner's sign-off: subprocessor 
 
 ## 2. Context
 
-Facts to state (plan sections 3, 8, 10, 12, briefs 0310 to 0320 and 0330; add no others):
+Facts to state (plan sections 3, 8, 10, 12, briefs 0310 to 0320; add no others):
 
 - Provider: Anthropic (the Claude API). Purpose wording, exactly: "AI support assistant and guest assistant". The guest assistant is not built yet; the row says so.
 - Sent per host message: the fixed prompt, the Help & guide text, the list of app pages, the host's message and up to 4 earlier turns, both redacted (e-mail addresses, phone numbers and ID-like numbers replaced by placeholders; **names and street addresses are not redacted**), today's date, phone or computer, the host's property ids, internal names and cities, and the current page. Never sent: guest records from the database, passwords, sign-in data, PINs, guest links, door codes, document numbers or photos, invoices, stay-fee figures, UbyPort credentials. Guest details reach Anthropic only if the host types them.
 - Not stored by UbyHost: the chat. It lives in the host's browser page, signed, and is gone when the page closes.
-- Stored by UbyHost: `ai_usage` (token counts per day and feature, no personal data); `havel_stats` (counts per day and kind, no personal data); `havel_gap` (redacted questions Havel could not answer, language, page, no user, no property; the free text may still hold a name the host typed; deleted after 90 days); `rate_limit_event` rows of the `havel_*` scopes (user id and time, kept 32 days so the weekly and monthly caps work); support requests the host sends with one tap go as e-mail to `support@ubyhost.com` (account e-mail, workspace, language, page, summary, note, last 4 host messages as typed, not redacted, and a phone number only when the host ticks "It's urgent, please call me", 0330). The outbox row is deleted after 14 days (`mail.purge_old`, RETENTION.md "Mail rows"); **the delivered copy stays in the support mailbox**, whose retention is still open (ROPA "Support mailbox").
+- Stored by UbyHost: `ai_usage` (token counts per day and feature, no personal data); `havel_stats` (counts per day and kind, no personal data); `havel_gap` (redacted questions Havel could not answer, language, page, no user, no property; the free text may still hold a name the host typed; deleted after 90 days); `rate_limit_event` rows of the `havel_*` scopes (user id and time, kept 32 days so the weekly and monthly caps work); support requests the host sends with one tap go as e-mail to `support@ubyhost.com` (account e-mail, workspace, language, page, summary, note, last 4 host messages as typed, not redacted). The outbox row is deleted after 14 days (`mail.purge_old`, RETENTION.md "Mail rows"); **the delivered copy stays in the support mailbox**, whose retention is still open (ROPA "Support mailbox").
 - Optional: off unless the operator switches it on (`UBYHOST_AI_FEATURES`); each host decides to use it. The name "Havel (AI)", the intro and the line under the input box say it is an AI.
 - Assumptions about Anthropic (not verified; the owner confirms each against Anthropic's current Commercial Terms, DPA and the Data Privacy Framework list before anything goes live): A1 Anthropic, PBC is a US company and processes API data in the US; A2 Anthropic's DPA applies automatically to API customers and includes the 2021 Standard Contractual Clauses; A3 Anthropic is or is not self-certified under the EU-US Data Privacy Framework (check `dataprivacyframework.gov`); A4 API inputs and outputs are not used for training and are deleted after a limited period (write the period the terms state); A5 zero data retention or EU-only processing is or is not available on UbyHost's plan; A6 Anthropic publishes a list of its own subprocessors.
 
@@ -41,7 +41,7 @@ Style: plain English, short sentences, no em or en dashes, "no tracking cookies"
 
 > **LAWYER REVIEW.** (the line from section 2)
 
-Source: plan `docs/plans/havel-support-assistant.md` section 10; code in briefs 0310 to 0320 and 0330.
+Source: plan `docs/plans/havel-support-assistant.md` section 10; code in briefs 0310 to 0320.
 
 ## 1. Subprocessor register, version 1.3
 
@@ -86,7 +86,7 @@ A1 to A6 from the brief, one bullet each, each with where to check it; then the 
 | Host support assistant, Havel (AI) (**LAWYER REVIEW**, off until enabled) | Host's typed question and up to 4 earlier turns, redacted (names not removed), plus property ids, names and cities, sent to Anthropic per message and not stored by UbyHost; `havel_gap` (redacted question, language, page, no user; may hold a name the host typed); `rate_limit_event` `havel_*` rows (user id, time); one-tap support e-mails | Answer hosts' questions about the app; improve the guide; hand off to support | Legitimate interest, Art 6(1)(f) (balancing in `drafts/havel-ai.md` part 6); hand-off: contract | Chat not stored; `havel_gap` 90 days; Havel limit rows 32 days; support e-mail as the support mailbox. Processor: Anthropic, PBC, US (see `drafts/havel-ai.md`) |
 ```
 
-   In the `| Security logs |` row change `rate-limit 24 h` to `rate-limit 24 h (Havel limits 32 days)`. In the `| Support mailbox |` row change `Messages to/from `support@ubyhost.com`` to `Messages to/from `support@ubyhost.com`, including Havel (AI) hand-offs (summary, note, last 4 host messages; a phone number only when marked urgent)`. Under `## Open questions for counsel` add `- Havel (AI): assumptions A1 to A6 about Anthropic and the support mailbox retention ([drafts/havel-ai.md](drafts/havel-ai.md) part 7).`
+   In the `| Security logs |` row change `rate-limit 24 h` to `rate-limit 24 h (Havel limits 32 days)`. In the `| Support mailbox |` row change `Messages to/from `support@ubyhost.com`` to `Messages to/from `support@ubyhost.com`, including Havel (AI) hand-offs (summary, note, last 4 host messages)`. Under `## Open questions for counsel` add `- Havel (AI): assumptions A1 to A6 about Anthropic and the support mailbox retention ([drafts/havel-ai.md](drafts/havel-ai.md) part 7).`
 
 3. In `docs/privacy/RETENTION.md` replace line 28 with:
 
@@ -147,11 +147,11 @@ Findings:
 1. **Anthropic is a subprocessor of guest data, not only a processor of host data.** Redaction removes e-mails, phones and ID numbers but not names, so a host can send a guest's name. DPA section 11 therefore applies in full: 30 days' notice, a right to object, and section 11 itself names each subprocessor, so its text must change too (new part 3, with a section 20 effective date).
 2. **Transfer to the US.** Never state DPF or SCC cover as fact. It depends on A2 and A3. With SCCs only, a short transfer impact assessment belongs in `docs/vendors/`. The DPF has faced court challenges, so SCCs are the fallback.
 3. **Lawful basis.** Contract (6(1)(b)) is weak for an optional assistant. The draft now uses legitimate interest for host data and contract for the hand-off e-mail.
-4. **Retention was overstated.** "Deleted with the outbox after 14 days" holds only for UbyHost's database. The delivered copy, now with a phone number when urgent, stays in the support mailbox, whose retention is still open.
-5. **Minimisation.** `havel_gap` can hold a typed name, so ROPA no longer implies it has no personal data. It is kept small by no user link and 90 days. The phone goes out only when the host ticks urgent.
+4. **Retention was overstated.** "Deleted with the outbox after 14 days" holds only for UbyHost's database. The delivered copy stays in the support mailbox, whose retention is still open.
+5. **Minimisation.** `havel_gap` can hold a typed name, so ROPA no longer implies it has no personal data. It is kept small by no user link and 90 days.
 6. **AI Act Article 50** applies from 2 August 2026, so it already applies at launch. The current labels meet it. Part 5 records why.
 7. **DPIA:** a screening note, no full DPIA (step 4).
 
-Changes made in this brief: findings 1 to 7 above; Anthropic facts turned into assumptions A1 to A6; draft parts 3, 5, 6 and 7 added; ROPA basis, Support mailbox and DPIA lines; facts from 0330.
+Changes made in this brief: findings 1 to 7 above; Anthropic facts turned into assumptions A1 to A6; draft parts 3, 5, 6 and 7 added; ROPA basis, Support mailbox and DPIA lines.
 
 Owner decisions: A1 to A6; the support mailbox retention (suggest 12 months); whether to add "or guests' details" to `havel.disclaimer` (recommended); whether the register lists the guest assistant now or when it ships (the plan's exact wording keeps it, marked "not in use yet").

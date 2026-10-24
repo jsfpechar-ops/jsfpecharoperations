@@ -130,7 +130,7 @@ WHEN TO PASS IT TO SUPPORT (kind "escalate")
 - billing, prices, contracts, closing or deleting their account, or any legal or tax question the guide does not answer;
 - the host asks for a person;
 - the host is still stuck after you have explained the same thing twice.
-Do not guess before escalating. In "reply", say kindly in one or two sentences that you will forward this to the UbyHost team, who usually reply within a few hours, and that if it is urgent the host can tick "It's urgent, please call me" on the card and the team will call them. Never promise a time other than "usually within a few hours". In "support_summary", write in English, in two to four sentences, what the host wants, what they already tried, and which page they are on. Do not invent details.
+Do not guess before escalating. In "reply", say kindly in one or two sentences that you will forward this to the UbyHost team, who usually reply within a few hours. Never promise a time other than "usually within a few hours". In "support_summary", write in English, in two to four sentences, what the host wants, what they already tried, and which page they are on. Do not invent details.
 For requests about guests' personal data (to see, correct or delete it), link "privacy_requests" and escalate.
 
 ACTIONS YOU MAY PREPARE (kind "action")
@@ -296,16 +296,12 @@ Josef wants Havel to contact support when it cannot help. It does, with one tap 
 3. The mail holds: host account e-mail, workspace name, language, current page, the summary, the host's note,
    and the last 4 turns as the host typed them. It is UbyHost's own support channel, not a third party.
 4. The page confirms `havel.support.sent`: "Forwarded to the UbyHost team. They know about it and usually reply
-   within a few hours. If you marked it urgent, they will call you." (owner, 2026-10-24; the last sentence arrives
-   with the urgent checkbox in 0330).
-5. Urgent (0330): the card has a checkbox "It's urgent, please call me" and a phone field, prefilled from the host's
-   existing business contact phone (`legal_entity.contact_phone`) when there is one. Ticked, the operator mail gets
-   the subject prefix "URGENT" and the phone number in its body, and the team calls the host. No new stored field:
-   the phone travels only in that mail, whose outbox row is purged after 14 days (`mail.purge_old`); the copy in
-   the support mailbox follows the support mailbox's retention (ROPA, open for counsel).
+   within a few hours." (owner, 2026-10-24).
+5. No urgent option and no phone field (owner, 2026-10-24: Havel is an in-app assistant; every request gets the
+   same "usually within a few hours").
 
 Why one tap rather than fully automatic: support only gets questions the host still cares about, and the
-host knows a person will write back. Reply time (owner, 2026-10-24): usually within a few hours; urgent ones by phone.
+host knows a person will write back. Reply time (owner, 2026-10-24): usually within a few hours, no urgent option.
 
 The support card is always available, even when Havel is switched off or over its cap; then it starts empty.
 
@@ -414,7 +410,7 @@ Documents to change (brief 0329, AI counsel reviewed; nothing goes live before t
    effective date.
 4. Privacy policy, host section: Havel exists, what it sends, that it is optional, that chats are not stored, the
    lawful basis (legitimate interest for host data; contract for the support hand-off), the US transfer.
-5. ROPA entry for "host support assistant"; the Support mailbox row gains the Havel hand-offs and the urgent phone.
+5. ROPA entry for "host support assistant"; the Support mailbox row gains the Havel hand-offs.
 6. `retention.py`: `havel_gap` rows 90 days; `havel_support` outbox rows 14 days (`mail.purge_old`). The
    delivered copy stays in the support mailbox, whose retention is still an owner decision.
 7. EU AI Act Article 50(1), in force from 2 August 2026: the name "Havel (AI)", the intro and the line under the
@@ -452,7 +448,7 @@ listed there; this table holds the ones the engine and limits use:
 | `havel.support.title` | Send to UbyHost support |
 | `havel.support.add` | Anything to add? |
 | `havel.support.send` | Send to support |
-| `havel.support.sent` | Forwarded to the UbyHost team. They know about it and usually reply within a few hours. (0330 adds: If you marked it urgent, they will call you.) |
+| `havel.support.sent` | Forwarded to the UbyHost team. They know about it and usually reply within a few hours. |
 | `havel.fallback` | I couldn't answer that just now. You can forward it to the UbyHost team. They usually reply within a few hours. |
 | `havel.off` | Havel is unavailable right now. You can still write to support here. |
 | `havel.limit_burst` | Let's take a short break. You can write again in a few minutes. |
@@ -595,8 +591,7 @@ the table order within each column; the guide column and the code column are ind
 | 0327 | `test_guide_coverage.py`, 13 new `GUIDE_ANCHORS`, quick-help key fixes (0313 cited the wrong guide keys), PR template line (split from 0318) | 0326, 0313 | written | [0327](../tasks/0327-guide-coverage-test.md) |
 | 0319 | Support hand-off: mail kinds `havel_support` and `havel_budget` in `mail.KINDS`, `POST /havel/support`, `havel_support` scope cap, the 80% budget mail from `ai.py`, tests from the mail row | 0314, 0325 | written | [0319](../tasks/0319-havel-support-handoff.md) (budget mail kind is `ai_budget`, for every AI feature; its weekly cap only holds once 0320 is in) |
 | 0320 | `havel_gap` and `havel_stats` writes, "This didn't help" button, `retention.py` lines (gap 90 days), legal drafts (subprocessor v1.3, DPA notice, privacy policy host section, ROPA entry) marked LAWYER REVIEW | 0319 | written | [0320](../tasks/0320-havel-gap-stats-retention.md) (legal drafts moved to 0329; admin list moved to 0331; also keeps `havel_*` rate-limit rows 32 days: the nightly 24-hour purge in `retention.py` is confirmed, so **0320 must merge before `UBYHOST_AI_FEATURES` is set anywhere**, or the weekly, monthly and support caps reset every night; 0323 already requires it) |
-| 0329 | Legal drafts, AI counsel reviewed: subprocessor v1.3, notice to hosts, DPA text, privacy-policy host section, ROPA, RETENTION and DPIA lines, Anthropic facts as owner assumptions, all LAWYER REVIEW, nothing published (split from 0320) | 0320, 0330 | written | [0329](../tasks/0329-havel-legal-drafts.md) |
-| 0330 | Support card: "It's urgent, please call me", phone prefilled from `legal_entity.contact_phone`, "URGENT: " mail subject and phone in the body, no new stored field (split from 0319) | 0319 | written | [0330](../tasks/0330-havel-support-urgent.md) |
+| 0329 | Legal drafts, AI counsel reviewed: subprocessor v1.3, notice to hosts, DPA text, privacy-policy host section, ROPA, RETENTION and DPIA lines, Anthropic facts as owner assumptions, all LAWYER REVIEW, nothing published (split from 0320) | 0320 | written | [0329](../tasks/0329-havel-legal-drafts.md) |
 | 0331 | Owner's gap list on `/admin/operations`: groups by normalised question with counts, sorted by count then newest, language, page, plain reason, guide section to fix, "How to improve Havel with this list" box; spend and 30-day stats (split from 0320) | 0320 | written | [0331](../tasks/0331-havel-gap-list.md) |
 | 0321 | `scripts/havel_eval.py` and `App/tests/havel_cases.json` (section 13) | 0311 | written | [0321](../tasks/0321-havel-eval.md) |
 | 0322 | Command palette "Ask Havel: <query>" when no match, "Ask Havel" button at the top of `/guide`, empty-state hints | 0324 | written | [0322](../tasks/0322-havel-palette-guide.md) (reuses `havel.launcher`; no new keys) |
@@ -610,8 +605,7 @@ the table order within each column; the guide column and the code column are ind
    lawyer for these drafts; findings and the remaining owner decisions (Anthropic assumptions A1 to A6, support
    mailbox retention) are in brief 0329. This is not a substitute for a licensed lawyer if a dispute arises.
 4. **Answered (2026-10-24).** "Forwarded to the UbyHost team. They know about it and usually reply within a few
-   hours. If you marked it urgent, they will call you." Urgent requests carry a phone number and the team calls
-   (section 8, briefs 0312, 0325, 0330).
+   hours." No urgent option (owner chose this on 2026-10-24; section 8, briefs 0312, 0325).
 5. 15–20 real host questions to add to section 13.
 6. **Answered (2026-10-24).** The owner reads the gap list monthly, with the monthly check (section 16b, brief 0331).
 7. Confirm the limits in section 9: 10 messages a week, 20 a month per host, $10 a month in total.
@@ -833,8 +827,7 @@ pauzu do pondělí. Podpora je tu pořád."; `havel.resting` "Havel odpočívá 
 `havel.card.change` "Změnit"; `havel.card.cancel` "Zrušit"; `havel.card.overlap` "Překrývá se s jiným pobytem v tomto
 ubytování."; `havel.card.pin_warning` "Současný PIN přestane platit okamžitě, i pro hosty, kteří se právě registrují.";
 `havel.support.title` "Poslat podpoře UbyHostu"; `havel.support.add` "Chcete něco doplnit?"; `havel.support.send`
-"Poslat podpoře"; `havel.support.sent` "Předáno týmu UbyHostu. Vědí o tom a obvykle odpoví do několika hodin." (0330 adds "Pokud jste
-označili, že je to naléhavé, zavolají vám."); `havel.title` "Havel (AI) · Asistent podpory".
+"Poslat podpoře"; `havel.support.sent` "Předáno týmu UbyHostu. Vědí o tom a obvykle odpoví do několika hodin."; `havel.title` "Havel (AI) · Asistent podpory".
 
 ## 18. Review notes (2026-10-24, Fable)
 
