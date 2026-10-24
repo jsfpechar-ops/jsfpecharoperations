@@ -886,3 +886,5 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .copy-btn [data-copy-state-icon] svg { width: 16px; height: 16px; }
 .host-workspace .copy-btn.copied { color: var(--green-700); border-color: var(--green-700); background: var(--green-100); }
 .host-workspace .copy-btn.copied > svg { visibility: hidden; }
+/* 0302: the summary table's Open column (0296) needs room at 1024 px with the rail open. */
+.host-workspace .property-summary-table td.property-inline-timing { min-width: 18.5rem; }
