@@ -774,7 +774,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace :is(.lc-properties, .lc-entities) tbody tr.clickable-row:active > td { background: var(--state-press); }
 
 /* 0285: the Guest links Open arrow stays on the name's line with a clear gap. */
-.host-workspace .property-summary-table td:first-child .row-primary-link { display: inline-block; max-width: calc(100% - var(--space-12)); vertical-align: middle; }
+.host-workspace .property-summary-table td:first-child .row-primary-link { display: inline-block; max-width: calc(100% - 7rem); vertical-align: middle; }
 .host-workspace .property-summary-table td:first-child .row-primary-link + .row-open { margin-left: var(--space-3); }
 
 /* 0286: the property health check lives on the Overview cards: a dot before the
