@@ -2,7 +2,7 @@
 
 Append-only.
 
-- 2026-09-09 | Core product = automatic UbyPort filing plus the house book (uvítací kniha); everything else is optional | the owner's founding rule | [UBYPORT_CORE](../UBYPORT_CORE.md)
+- 2026-09-09 | Core product = automatic UbyPort filing plus the house book; everything else is optional | the owner's founding rule | [UBYPORT_CORE](../UBYPORT_CORE.md)
 - 2026-09-13 | Production on AWS Lightsail; Render is staging with mock UbyPort, permanently | cost, control | [LIGHTSAIL](../LIGHTSAIL.md)
 - 2026-09-14 | Hosts use TOTP 2FA + 8 recovery codes, forced in production; Turnstile on login and guest PIN | security | [SECURITY](../SECURITY.md)
 - 2026-09-16 | Light mode only; dark mode parked | owner policy | [DESIGN](../DESIGN.md#color-mode-light-only-no-dark-mode)
@@ -13,14 +13,14 @@ Append-only.
 - 2026-10-05 | Admin preview: full workspace, optional reason, 24 h default | owner support | PR #280, K-P01
 - 2026-10-06 | [workflow] Context: AGENTS.md L0, context L1, plans L2; audits archived; known-issues replaces FOLLOWUPS | re-reading used 87% of spend | [README](README.md)
 - 2026-10-06 | [workflow] WP/patch series closed at WP33/0034; new work uses task numbers NNNN | one numbering scheme | [workflow](workflow.md)
-- 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in one day found the same issues | [workflow](workflow.md)
+- 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in a day, same findings | [workflow](workflow.md)
 - 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
 - 2026-10-06 | [workflow] Context-rollout bundle: flat files only; MANIFEST at root | place_files paths | [TEMPLATE](../tasks/TEMPLATE.md)
 - 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
-- 2026-10-06 | New dependency `webauthn==3.0.1` plus transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned | passkeys must not be hand-rolled; owner approved all five | task 0004
+- 2026-10-06 | New dependency `webauthn==3.0.1` plus transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned | no hand-rolled passkeys; owner approved | task 0004
 - 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
-- 2026-10-06 | Downloads skip the navigation skeleton (`download`, `data-no-skeleton`, path-ending rule), pinned by a template scan test | a stay-fee PDF click blanked the page for 15 s | skeleton.js
-- 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row; the CSV keeps one neutral line so it adds up | a correction line looks wrong to the office | stay_fee.py
+- 2026-10-06 | Downloads skip the navigation skeleton (`download`, `data-no-skeleton`, path-ending rule), pinned by a template scan test | PDF click blanked page | skeleton.js
+- 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row; the CSV keeps one neutral line so it adds up | a correction line confuses the office | stay_fee.py
 - 2026-10-06 | UbyPort outcome: 0-2 accepted, 4-6 not; 112 = reported late = accepted (replaces batch-not-received) | police letter A1-A5 | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-06 | Sweep: one send per refused record, then wait for host fix (was 3 tries) | police B2-B3 | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-06 | Staging may use the police test env (`ubyport_env=test`); credentials only in staging | police B4 | [LIGHTSAIL](../LIGHTSAIL.md)
@@ -31,12 +31,12 @@ Append-only.
 - 2026-10-08 | Door codes: one 1-min job; no PIN/list/unlock polling; weekly `queryDate` | API budget; type-3 unknown until use | [plan §7](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Invoices per stay only, replaces 09-26 | scope | [plan](../plans/stay-only-invoices.md)
 - 2026-10-08 | Staging: `UBYHOST_STAGING_NO_LOGIN=1` skips login; door-code alert after 10 min | test-only | [ENVIRONMENT](../ENVIRONMENT.md)
-- 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in the same commit; executors skip non-todo; lint warns on overlapping open briefs | brief collisions | [workflow](workflow.md)
+- 2026-10-09 | [workflow] One brief per copy text; replaced brief marked in the same commit; executors skip non-todo; lint warns on brief overlap | brief collisions | [workflow](workflow.md)
 - 2026-10-09 | Waiting guest sees only "You will receive your door code by e-mail." (0024; replaces 0022) | [0022](../tasks/0022-guest-door-code-waiting-messages.md)
 - 2026-10-09 | [workflow] Status `replaced`: a newer brief took over | `blocked` reads as waiting
 - 2026-10-10 | UI decisions continue | cap | [UI](ui-decisions.md)
 - 2026-10-09 | #331: no ID-check step (host checks ID); guest link default 1 day ahead | K-F12
-- 2026-10-10 | PostHog replaces Umami; privacy settings live in snippet, not dashboard | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
+- 2026-10-10 | PostHog replaces Umami; privacy settings in the snippet | owner | [plan](../plans/posthog-analytics.md), [0039](../tasks/0039-posthog-hardening.md)
 - 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; requests lib; 24 h cache; 20/h per user | owner | [0055](../tasks/0055-ares-lookup.md)
 - 2026-10-11 | Facility abbreviation: suffix after UBY-WS_ | owner | [0043](../tasks/0043-police-setup-fewer-fields.md)
@@ -46,7 +46,7 @@ Append-only.
 - 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
 - 2026-10-16 | #397: white workspace; Property hours; fractional stays; Dashboard stays only; Cleaning day markers; in-page creation | owner | PR #397
 - 2026-10-17 | [workflow] Haiku 5.5 only executor; 100k cap per chat; scoped tests, no audits unless asked | owner | [workflow](workflow.md#when-haiku-reaches-the-cap)
-- 2026-10-19 | Design reset v2: `docs/design/MASTER.md` is the only host design source; Lucide icons as inline SVG (no dependency); CI lint blocks raw colours, inline styles, page CSS; phone tab bar | owner | [plan](../plans/design-v2.md)
+- 2026-10-19 | Design reset v2: MASTER.md is the only host design source; Lucide inline SVG icons; CI lint blocks raw colours, inline styles, page CSS | owner | [plan](../plans/design-v2.md)
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
@@ -60,7 +60,9 @@ Append-only.
 - 2026-10-22 Wizard coral bar OK
 - 2026-10-22 Alerts: short line + fix link; off `/` only red (owner).
 - 2026-10-22 [deps] Signature font: self-hosted Dancing Script (OFL) (owner).
-- 2026-10-23 More skips loader; no on-track count (owner).
+- 2026-10-23 More skips loader, no on-track count (owner).
 - 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
 - 2026-10-24 1 primary/group; soft Open; CF once (owner).
 - 2026-10-24 | New dependency `anthropic` (Python SDK 2.3.0, pinned in `App/requirements.txt`, hashes with its transitive packages in `App/requirements.lock`: anthropic docstring-parser httpcore2 httpx2 jiter opentelemetry-api sniffio truststore); model `claude-haiku-5-5`; every model call through `App/app/ai.py`, per-feature switch and budget | Havel support assistant and the guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
+- 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
+- 2026-10-24 Guide Quick answers screen (owner).
