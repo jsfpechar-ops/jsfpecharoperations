@@ -1,7 +1,7 @@
 # 0364: Security hardening: workflow lint, dependency review, Scorecard, CODEOWNERS, SECURITY.md
 
-Status: blocked
-Depends on: none (new files only, runs beside 0362 and 0363) | Base commit: main | Branch: task/0364-security-hardening
+Status: review
+Depends on: 0361 and 0362 must merge first (they remove the 30 high zizmor findings) | Base commit: main | Branch: task/0364-security-hardening
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective

@@ -1,6 +1,6 @@
 # 0364 report: security hardening
 
-Status: blocked (stopped at step 5, brief §8)
+Status: review (stopped at step 5, brief §8)
 
 ## Files changed
 - `.github/workflows/security.yml` (new, step 1)
@@ -38,3 +38,7 @@ Steps 1 to 4 are done and committed. Step 5 is not done: no existing workflow wa
 ## Owner steps left
 1. Decide Q1 and Q2 above before merging, otherwise the new Security workflow fails on this repo.
 2. After merge: Settings, Security, "Private vulnerability reporting": Enable.
+
+## Orchestrator review
+
+The 30 high findings are fixed elsewhere: 29 unpinned actions disappear with 0361 (deletes the side workflows) and 0362 (pins ci.yml); the workflow_run finding gets a justified ignore comment in 0362 step 7. Merge 0364 after 0361 and 0362.
