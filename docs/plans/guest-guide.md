@@ -58,7 +58,7 @@ Critical means one of: a public or guest-facing surface, file uploads, secrets o
 | 1 | [0295](../tasks/0295-guide-qr.md) | Printable QR sheet for the host (PNG/PDF), rotate the QR link | no | Opus | no | Haiku | todo |
 | 2 | 0296 | Dropped: the shared core 0310 already has per-feature switches and caps; the "leon" and "guide_import" settings ride in 0298 and 0300 | | | | | dropped |
 | 2 | [0297](../tasks/0297-guide-import-fetch.md) | Booking and Airbnb import: Apify key and config, URL allowlist, Apify run, raw data kept only for the run | yes: outbound calls, untrusted data | Fable | n/a | Sonnet | todo |
-| 2 | 0298 | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Sonnet | to write |
+| 2 | [0298](../tasks/0298-guide-import-merge.md) | Haiku merge into draft cards: "Check this" only, conflicts shown, scraped text treated as data, eval set from the spike listings | yes: AI to guests | Fable | n/a | Sonnet | todo |
 | 2 | 0299 | Paste box and import review UX (accept, edit, dismiss a draft) | no | Opus | no | Haiku | to write |
 | 3 | 0300 | Guest bot core: cached guide prompt, `ask_host` tool, refusals, injection rules, rate limits, 30-day chat deletion | yes: AI to guests, personal data | Fable | n/a | Sonnet | to write |
 | 3 | 0301 | Host handoff: alert, reply in app, answer shown to guest, "Add to guide" | yes: messaging, personal data | Fable | n/a | Sonnet | to write |
