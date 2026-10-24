@@ -16,7 +16,7 @@ on:
         description: "Type DEPLOY to deploy the current main revision to production"
         required: true
         type: string
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers] runs only for CI on main pushes; the job checks event != pull_request and head_branch == main, and checks out nothing from the triggering run
     workflows: [CI]
     types: [completed]
     branches: [main]
