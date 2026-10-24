@@ -49,16 +49,10 @@ No other file may change. `docs/plans/0305-files/` is read only.
 
 2. From the repo root run `python3 docs/plans/0305-files/apply_quick_copy.py 2>&1 | tail -30`. Expected, exactly: `quick answers: 53 host keys x 2, 41 guest keys x 6`. Anything else: STOP.
 
-3. In `App/app/routes/guest_guide.py` replace
+3. In `App/app/routes/guest_guide.py`, directly after the line that starts with `from .. import access, auth, config, guest_guide`, insert this line (that import line differs between branches, so do not edit it):
 
 ```python
-from .. import access, auth, config, guest_guide, guest_guide_import, guest_guide_merge, guide_photos, guide_token, payments, security, templating
-```
-
-with
-
-```python
-from .. import access, auth, config, guest_guide, guest_guide_import, guest_guide_merge, guide_facts, guide_photos, guide_token, host_i18n, payments, security, templating
+from .. import guide_facts, host_i18n
 ```
 
 4. In the same file replace
@@ -144,16 +138,16 @@ async def guide_quick_save(request: Request, apartment_id: int, step: str):
     return back(f"{_base(apartment_id)}/quick/{following}")
 ```
 
-6. In `App/app/templates/guest_guide.html` replace
+6. In `App/app/templates/guest_guide.html` replace this start of the `secondary_actions` line (the rest of that line differs between branches; leave it as it is)
 
 ```html
-{% block secondary_actions %}{{ ui_button(t('guest_guide.qr.link'), 'secondary', href=base_url ~ '/qr') }}{% endblock %}
+{% block secondary_actions %}{{ ui_button(t('guest_guide.qr.link'),
 ```
 
 with
 
 ```html
-{% block secondary_actions %}{{ ui_button(t('guest_guide.quick.link'), 'secondary', href=base_url ~ '/quick') }}{{ ui_button(t('guest_guide.qr.link'), 'secondary', href=base_url ~ '/qr') }}{% endblock %}
+{% block secondary_actions %}{{ ui_button(t('guest_guide.quick.link'), 'secondary', href=base_url ~ '/quick') }} {{ ui_button(t('guest_guide.qr.link'),
 ```
 
 7. In the same file replace
