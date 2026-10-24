@@ -10,6 +10,7 @@ One guest guide per property, made of small cards ("Turn on the heating", "Open 
 
 - Order: guide editor first (no AI), then imports, then the bot.
 - Imports: the host pastes both the Booking and the Airbnb link; Apify actors fetch them on the free monthly credit; Haiku 5.5 merges them into draft cards. Conflicts between platforms are shown to the host as "Check this"; the AI never picks. No in-house scraper.
+- Import once: each listing (Booking, Airbnb) can be imported once per property, for good; a failed run does not count. After that the host fills the form.
 - Never invent: anything the AI is not sure of stays "Missing" or "Check this"; drafts never reach guests.
 - Guide and bot free for every host, with a daily cap per property.
 - Two doors to one bot: a QR code at the property (public, "everyone" items) and the guest's stay link ("booked" items from 1 day before check-in until checkout). Door codes stay with TTLock only.
