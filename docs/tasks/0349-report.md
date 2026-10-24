@@ -33,8 +33,8 @@ Status: review
 ## Deviations
 
 - Commits: steps 1 and 2 are in one commit ("0349 step 1-2"), steps 3 and 4 in one commit ("0349 step 3-4"), step 5 and step 6 each have their own commit. Done in one session to save tool calls.
-- Screenshot: not taken (executor brief, skipped as instructed).
-- Browser tests in the design set skipped (no Chromium). Not run.
+- Screenshot: taken at review by the orchestrator (390 px, a `check` card from Booking): source line in the banner, "Discard this draft" under More, scrollWidth 390.
+- Browser tests: run at review with Chromium, test_design_*.py + test_guide_drafts.py 144 passed, 0 skipped.
 
 ## Questions
 
