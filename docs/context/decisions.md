@@ -7,16 +7,10 @@ Append-only.
 - 2026-09-14 | Hosts use TOTP 2FA + 8 recovery codes, forced in production; Turnstile on login and guest PIN | security | [SECURITY](../SECURITY.md)
 - 2026-09-16 | Light mode only; dark mode parked | owner policy | [DESIGN](../DESIGN.md#color-mode-light-only-no-dark-mode)
 - 2026-09-18 | Mail via AWS SES (no-reply@ubyhost.com, DKIM) | already on AWS; keeps SMS/login options open | [SES](../SES.md)
-- 2026-09-26 | Every change goes through an owner-reviewed PR; production deploy is manual only | safety | [rules](rules.md#merging-and-deploying)
-- 2026-09-26 | Invoices standalone/host-only; guest stay fee on hold; optional host remittance tool built | scope | [plans](../plans/README.md)
 - 2026-10-03 | Stay fee charged per started day (arrival, departure]; use the rate the period was saved with | under-charging is the host's liability | P Q-answers
-- 2026-10-03 | Filing: one automatic retry, then red plus mail to the host; code 150 = success; pause after repeated wrong UbyPort passwords | the police account can lock | P
 - 2026-10-03 | Sign-up stays off in production (`UBYHOST_SIGNUP_ENABLED`) until the owner chooses | launch with invited hosts | [ENVIRONMENT](../ENVIRONMENT.md#accounts)
-- 2026-10-04 | Lightsail 8 GB / 2 vCPU (~$44/month) | headroom for worker and Litestream | [LIGHTSAIL](../LIGHTSAIL.md#production-instance-ubyhostcom)
 - 2026-10-05 | WP22/WP24 legal texts 1.6 shipped without the counsel gate; lawyer review stays open | ship with real hosts | K-L rows
-- 2026-10-05 | Umami only on public pages; in-app metrics server-side | privacy first | [rules](rules.md#privacy)
 - 2026-10-05 | Admin preview: full workspace, optional reason, 24 h default | owner support | PR #280, K-P01
-- 2026-10-05 | Ticket Wallet guest UI archived (kept in `App/app/static/archive/`), may return | simpler guest form | -
 - 2026-10-06 | [workflow] Context: AGENTS.md L0, context L1, plans L2; audits archived; known-issues replaces FOLLOWUPS | re-reading used 87% of spend | [README](README.md)
 - 2026-10-06 | [workflow] WP/patch series closed at WP33/0034; new work uses task numbers NNNN | one numbering scheme | [workflow](workflow.md)
 - 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in one day found the same issues | [workflow](workflow.md)
@@ -69,3 +63,4 @@ Append-only.
 - 2026-10-23 More skips loader; no on-track count (owner).
 - 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
 - 2026-10-24 1 primary/group; soft Open; CF once (owner).
+- 2026-10-24 | New dependency `anthropic` (Python SDK 2.3.0, pinned in `App/requirements.txt`, hashes with its transitive packages in `App/requirements.lock`: anthropic docstring-parser httpcore2 httpx2 jiter opentelemetry-api sniffio truststore); model `claude-haiku-5-5`; every model call through `App/app/ai.py`, per-feature switch and budget | Havel support assistant and the guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
