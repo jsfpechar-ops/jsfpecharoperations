@@ -432,6 +432,12 @@ def _guide_import_step(today: date, dry_run: bool, owner_user_id: Optional[int])
     return guest_guide_import.purge(today, dry_run, owner_user_id)
 
 
+def _guest_chat_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Brief 0350: Leon conversations 30 days after checkout (stay) or the last message (QR)."""
+    from . import leon
+    return leon.purge(today, dry_run, owner_user_id)
+
+
 # Each step takes (today, dry_run, owner_user_id) and returns the affected count.
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
@@ -450,6 +456,7 @@ STEPS: List[tuple] = [
     ("cleaning", _cleaning_step),
     ("push", _push_step),
     ("guide_imports", _guide_import_step),
+    ("guest_chats", _guest_chat_step),
     ("legal_acceptance", _acceptance_retention_step),
     ("workspaces", _workspace_deletion_step),
 ]
@@ -478,6 +485,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "cleaning": f"event or link expiry before {(today - timedelta(days=30)).isoformat()}",
         "push": "alert queued over 30 days ago, or device unseen for 180 days",
         "guide_imports": f"listing text fetched before {(today - timedelta(days=7)).isoformat()}, failed request rows before {(today - timedelta(days=60)).isoformat()}",
+        "guest_chats": f"stay ended, or QR chat last used, before {(today - timedelta(days=30)).isoformat()}",
         "legal_acceptance": (
             f"inactive account, last login before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}"
         ),

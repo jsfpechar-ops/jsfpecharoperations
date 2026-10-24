@@ -48,7 +48,7 @@ Hard rules 2, 3, 4, 5, 6 (forms work without JavaScript), 7, 8, 9 apply. Rule 7:
 
 | Path | Action | What |
 |---|---|---|
-| `App/app/guest_handoff.py` | create | Copied from `docs/plans/0301-files/`: alert, mail, answer, dismiss, add_to_guide |
+| `App/app/guest_handoff.py` | create | Copied from `docs/plans/0351-files/`: alert, mail, answer, dismiss, add_to_guide |
 | `App/app/routes/guest_questions.py` | create | Copied: the two pages and three POSTs |
 | `App/app/templates/guest_questions.html`, `guest_question.html` | create | Copied |
 | `App/tests/test_guest_handoff.py` | create | Copied (14 tests) |
@@ -57,7 +57,7 @@ Hard rules 2, 3, 4, 5, 6 (forms work without JavaScript), 7, 8, 9 apply. Rule 7:
 | `App/app/mail.py` | edit | `guest_question` in `KINDS` and `HOST_KINDS` |
 | `App/app/main.py` | edit | Import and register the router before the guide router |
 | `App/app/routes/guest_guide.py`, `App/app/templates/guest_guide.html` | edit | Open count and the "Guest questions (n)" button |
-| `App/app/host_i18n.py`, `App/app/i18n.py`, `App/app/guest_uk_i18n.py` | edit | By the script `docs/plans/0301-files/add_handoff_i18n.py` (run, not copied) |
+| `App/app/host_i18n.py`, `App/app/i18n.py`, `App/app/guest_uk_i18n.py` | edit | By the script `docs/plans/0351-files/add_handoff_i18n.py` (run, not copied) |
 | `docs/design/catalog.json`, `App/tests/test_design_guardrails_browser.py` | edit | Two templates; one layout-guard route |
 | `docs/context/test-map.md`, `docs/plans/guest-guide.md` | edit | One row each |
 
@@ -76,10 +76,10 @@ From the repo root: `grep -c 'guest_question' App/app/leon.py; grep -c 'guest_gu
 From the repo root:
 
 ```bash
-cp docs/plans/0301-files/guest_handoff.py App/app/guest_handoff.py
-cp docs/plans/0301-files/guest_questions.py App/app/routes/guest_questions.py
-cp docs/plans/0301-files/guest_questions.html docs/plans/0301-files/guest_question.html App/app/templates/
-cp docs/plans/0301-files/test_guest_handoff.py App/tests/test_guest_handoff.py
+cp docs/plans/0351-files/guest_handoff.py App/app/guest_handoff.py
+cp docs/plans/0351-files/guest_questions.py App/app/routes/guest_questions.py
+cp docs/plans/0351-files/guest_questions.html docs/plans/0351-files/guest_question.html App/app/templates/
+cp docs/plans/0351-files/test_guest_handoff.py App/tests/test_guest_handoff.py
 ```
 
 Command: `ls App/app/guest_handoff.py App/app/routes/guest_questions.py App/app/templates/guest_question.html App/app/templates/guest_questions.html App/tests/test_guest_handoff.py | wc -l`. Expected: `5`.
@@ -159,7 +159,7 @@ Command: `grep -c 'guest_handoff' app/routes/guest_guide.py; grep -c 'questions_
 
 ### Step 8: copy
 
-From the repo root: `python3 docs/plans/0301-files/add_handoff_i18n.py`. Expected: `added 49 host keys x 2 languages and 2 guest keys x 6 languages`. The script refuses to run twice. Command: `grep -c '"guest_question.send"' App/app/host_i18n.py; grep -c '"leon_host_answered"' App/app/i18n.py App/app/guest_uk_i18n.py`. Expected: `2`, then `5` and `1`.
+From the repo root: `python3 docs/plans/0351-files/add_handoff_i18n.py`. Expected: `added 49 host keys x 2 languages and 2 guest keys x 6 languages`. The script refuses to run twice. Command: `grep -c '"guest_question.send"' App/app/host_i18n.py; grep -c '"leon_host_answered"' App/app/i18n.py App/app/guest_uk_i18n.py`. Expected: `2`, then `5` and `1`.
 
 ### Step 9: catalog and layout guard
 
@@ -181,7 +181,7 @@ Command (repo root): `python3 scripts/design_lint.py 2>&1 | tail -2`. Expected: 
 
 ### Step 10: docs
 
-`docs/context/test-map.md`: in the row starting `| Guest bot (Leon) |`, replace `` `test_leon.py `` with `` `test_leon.py test_guest_handoff.py `` (the backtick stays where it was). `docs/plans/guest-guide.md`: in the row starting `| 3 | [0351](../tasks/0301-guest-handoff.md) |`, change the last cell `todo` to `review`.
+`docs/context/test-map.md`: in the row starting `| Guest bot (Leon) |`, replace `` `test_leon.py `` with `` `test_leon.py test_guest_handoff.py `` (the backtick stays where it was). `docs/plans/guest-guide.md`: in the row starting `| 3 | [0351](../tasks/0351-guest-handoff.md) |`, change the last cell `todo` to `review`.
 
 ### Step 11: tests
 
@@ -213,11 +213,11 @@ Stop, and write the report, if: an anchor is not found; 0350 is not merged (step
 
 ## 9. Report
 
-Write `docs/tasks/0301-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with its last 5 lines, §7 ticked, whether the browser guard ran, deviations, questions, owner steps left.
+Write `docs/tasks/0351-report.md` (600 tokens at most) and set `Status: review`: files changed (`git diff --stat`), each command with its last 5 lines, §7 ticked, whether the browser guard ran, deviations, questions, owner steps left.
 
 ## Risk list (for the reviewer)
 
-`docs/plans/0301-files/guest_handoff.py` (`on_new_question`: never raises into the guest reply; the batch rule `count == 1`; `answer`; `add_to_guide` and `card_for`), `docs/plans/0301-files/guest_questions.py` (owner check on every route, router order), `guest_question.html` (escaping, one primary button), the `leon.py` hook. Known limits: `card_for` matches by title, so two questions with the same summary share one card; the question page has no browser screenshot (the layout guard sees only the list page's empty state; the orchestrator could not run Chromium in the scratch copy); the host mail is English only (`HOST_MAIL_LANGUAGE`, as every host mail); the `guide_item.source` value `guest_question` from 0341 stays unused because the owner wants a host-saved card.
+`docs/plans/0351-files/guest_handoff.py` (`on_new_question`: never raises into the guest reply; the batch rule `count == 1`; `answer`; `add_to_guide` and `card_for`), `docs/plans/0351-files/guest_questions.py` (owner check on every route, router order), `guest_question.html` (escaping, one primary button), the `leon.py` hook. Known limits: `card_for` matches by title, so two questions with the same summary share one card; the question page has no browser screenshot (the layout guard sees only the list page's empty state; the orchestrator could not run Chromium in the scratch copy); the host mail is English only (`HOST_MAIL_LANGUAGE`, as every host mail); the `guide_item.source` value `guest_question` from 0341 stays unused because the owner wants a host-saved card.
 
 ## Owner steps
 

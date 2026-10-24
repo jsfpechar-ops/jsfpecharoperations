@@ -19,7 +19,8 @@ Kinds that carry HTML today: `claim`, `claim_resend`, `completion`,
 `reminder_guest`, `reminder_host`, `submission_problem`, `invoice_issued`,
 `workspace_deletion`, `deadline_at_risk` and `deadline_digest` (WP23 filing
 watchdog: the host's one warning per stay at risk, and the operator digest to
-`UBYHOST_OPERATOR_EMAIL`). Every kind the app
+`UBYHOST_OPERATOR_EMAIL`), and `guest_question` (0351: the host's one batched mail
+about open guest questions). Every kind the app
 can send is in that list: there is no plain-text-only message. The
 **host submission-problem** notice additionally names the
 reason UbyPort gave and links to each affected stay and to the Doručenka; see

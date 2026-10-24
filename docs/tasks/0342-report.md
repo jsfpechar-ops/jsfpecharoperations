@@ -14,7 +14,7 @@ Code and tests (all steps of brief §3 applied exactly):
 - App/app/templates/apartment_form.html (edit: one tab link, no data-property-tab)
 - docs/design/catalog.json (edit: two enforced_templates entries)
 - App/tests/test_design_guardrails_browser.py (edit: one ROUTES entry)
-- docs/tasks/0292-report.md, docs/tasks/0292-guest-guide-pages.md (status line)
+- docs/tasks/0342-report.md, docs/tasks/0342-guest-guide-pages.md (status line)
 
 ## 2. Commands (last lines)
 

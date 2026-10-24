@@ -174,6 +174,9 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 | `UBYHOST_APIFY_TOKEN` | unset | Apify API token. Unset means imports are off and the guide page says so. Set in Lightsail `.env` or Render Environment only, never in git. |
 | `UBYHOST_APIFY_MONTHLY_RUNS` | `40` | Shared monthly cap on Apify actor runs (all hosts). `0` removes the cap. Each run is one listing on Apify's pay-per-result pricing; the cap keeps a month inside the free credit. |
 | `UBYHOST_APIFY_TIMEOUT` | `120` | Seconds one actor run may take before Apify stops it. Keep under 300 (Apify's limit for synchronous runs). |
+| `UBYHOST_AI_MONTHLY_USD_GUIDE_IMPORT` | `10` (from the Model API section) | Monthly cap for turning fetched listings into draft cards (brief 0348, feature `guide_import`, one model call per import, about 0.002 USD each). `UBYHOST_AI_FEATURES` must list `guide_import`, or fetched imports wait as "Fetched, drafting cards". 3 USD is plenty. |
+| `UBYHOST_AI_MONTHLY_USD_LEON`, `UBYHOST_AI_KEY_DAILY_USD_LEON` | `10`, set `0.05` (from the Model API section) | Leon (AI), the guest bot (brief 0350, feature `leon`, key = property id): monthly cap for all properties and the daily cap per property. One message costs 0.0002 to 0.0007 USD (the higher figure when the prompt cache is cold), so 0.05 is at least 70 guest messages per property per day. `UBYHOST_AI_FEATURES` must list `leon`; without it, or past a cap, guests get the "passed to your host" reply and the host a question. |
+| `UBYHOST_LEON_STAY_MAX`, `UBYHOST_LEON_QR_MAX` | `20`, `10` | Lifetime cap of model-answered guest messages per stay conversation and per QR-page conversation (brief 0350). Over the cap Leon makes no model call: the message goes to the host as an open question and the guest reads "I've passed your message to your host". |
 
 ## Urgent alerts (web push)
 
@@ -248,6 +251,9 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 | `UBYHOST_AI_FEATURES` | unset (all off) | Comma list of features that may call the model, for example `havel` or `havel,leon`. A feature not listed shows its no-AI fallback (Havel: quick help and the support form). |
 | `UBYHOST_ANTHROPIC_API_KEY` | unset | Anthropic API key, created in the Anthropic Console with its own monthly spend limit. Passed to the SDK explicitly; the SDK's `ANTHROPIC_API_KEY` is not read. Staging first. |
 | `UBYHOST_AI_MODEL` | `claude-haiku-5-5` | Model id. Changing it invalidates the prompt cache and needs each feature's test set re-run. |
+| `UBYHOST_AI_PROVIDER` | `anthropic` | `mistral` switches every AI feature to Mistral (EU backup, 0334). Set `UBYHOST_MISTRAL_API_KEY` first, update the `UBYHOST_AI_PRICE_*` values from mistral.ai/pricing, and re-run `scripts/havel_eval.py` and Leon's test set. |
+| `UBYHOST_MISTRAL_API_KEY` | unset | Mistral API key; used only when the provider is `mistral`. Secret: never in the repo. |
+| `UBYHOST_MISTRAL_MODEL` | `mistral-small-latest` | Mistral model id. |
 | `UBYHOST_AI_MAX_TOKENS` | `4000` | Ceiling per call; adaptive thinking counts toward it. Callers pass their own lower `max_tokens` (Havel 2500, Leon chat about 800, the import merge up to the ceiling). |
 | `UBYHOST_AI_MAX_INPUT_TOKENS` | `60000` (also the hard maximum) | Largest input one request may send, estimated as 1 token per 2 characters. Haiku 5.5 costs 5x more above 100,000 input tokens, so a larger value is ignored. A request over it raises `input_too_large` and is not sent. |
 | `UBYHOST_AI_MONTHLY_USD_<FEATURE>` | `10` | Spend cap per feature per calendar month (Prague), e.g. `UBYHOST_AI_MONTHLY_USD_HAVEL`. Today's share is the budget left divided by the days left in the month. |
