@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Fits one session: 28 tool calls, 60k tokens
 
 ## 1. Objective
 
-The owner learns what Havel could not answer (plan sections 12 and 16b). Each escalated or failed question, and each one the host marks "This didn't help", is stored redacted with no user and no property, kept 90 days. `/admin/operations` shows this month's spend, replies per kind for 30 days and the recent gaps. The nightly retention job also stops wiping Havel's weekly and monthly limits: today it deletes every rate-limit row older than 24 hours. The legal drafts are brief 0329.
+The owner learns what Havel could not answer (plan sections 12 and 16b). Each escalated or failed question, and each one the host marks "This didn't help", is stored redacted with no user and no property, kept 90 days. `/admin/operations` shows this month's spend, replies per kind for 30 days and the recent gaps. The nightly retention job also stops wiping Havel's weekly and monthly limits: today it deletes every rate-limit row older than 24 hours (`_rate_limit_retention_step`, `config.RATE_LIMIT_RETENTION_HOURS` default 24, verified 2026-10-24), so `havel_week`, `havel_month` and `havel_support` reset every night. **Ordering: this brief must merge before Havel is switched on anywhere** (`UBYHOST_AI_FEATURES` stays unset on staging and production until then; 0323 lists 0320 among its prerequisites). The legal drafts are brief 0329.
 
 ## 2. Context
 
@@ -36,7 +36,7 @@ def _rate_limit_retention_step(today: date, dry_run: bool, owner_user_id: Option
 - `App/app/host_i18n.py` en line 5324 `        "ops.alerts.help": "Unresolved alerts across all workspaces, by kind.",`, cs line 5373 `        "ops.alerts.help": "Nevyřešená upozornění napříč všemi pracovními prostory, podle druhu.",`; `App/app/host_vi_i18n.py` line 2568 `    "ops.alerts.help": "Cảnh báo chưa xử lý trên mọi không gian làm việc, theo loại.",`. `ops.col.kind` and `ops.col.count` exist.
 - `App/tests/test_design_guardrails_browser.py` `test_admin_pages_pass_the_layout_guard` has `        "admin-users-manage": f"/admin/users?manage={wide_host['owner']}",`.
 
-From 0310/0311: `havel_stats(day, kind, count)` exists (migration 0015); `havel.py` imports `ai, config, db, ...` and `date, datetime, timedelta`, has `FEATURE`, `MAX_MESSAGE_CHARS`, `redact(text) -> (text, mapping)` (e-mails, phones, ID-like numbers), `record_stat(kind)`, `read_history`, `PAGES`; `ai.month_spend_usd(feature, day)`, `ai.enabled`, `ai.today()`; `config.ai_monthly_usd(feature)`. Rate-limit scopes `havel_burst`, `havel_week`, `havel_month`, `havel_refuse`, `havel_support`.
+From 0310/0311: `havel_stats(day, kind, count)` exists (migration 0015); `havel.py` imports `ai, config, db, ...` and `date, datetime, timedelta`, has `FEATURE`, `MAX_MESSAGE_CHARS`, `redact(text) -> (text, mapping)` (e-mails, phones, ID-like numbers), `record_stat(kind)`, `read_history`, `PAGES`; `ai.month_spend_usd(feature, day)`, `ai.enabled`, `ai.today()`; `config.ai_monthly_usd(feature)`. Rate-limit scopes `havel_burst`, `havel_week`, `havel_month`, `havel_refuse`, `havel_support`; this brief adds `havel_gap` (the "This didn't help" cap, user id and time, kept 32 days like the others).
 
 From 0312 to 0319, `App/app/routes/havel.py`: the line `                    havel.record_message(uid)` (once, in `havel_send`); the reply item
 
@@ -436,8 +436,10 @@ Write `docs/tasks/0320-report.md` (600 tokens at most) and set `Status: review`:
 ## Risk list (for the reviewer)
 
 - `redact` does not remove names; a host's free text may name a guest. No user id is stored and rows go after 90 days; the admin page is admin-only. ROPA and RETENTION wording in 0329.
-- `substr(scope, 1, 6)` works in SQLite and Postgres.
+- `substr(scope, 1, 6)` works in SQLite and Postgres. The 32-day keep also covers `havel_burst` and `havel_refuse` rows (user id, time); harmless, and simpler than a scope list.
+- Until this brief is merged the nightly purge resets Havel's weekly, monthly and support caps: Havel must not be switched on before it lands.
 
 ## Owner steps
 
+0. Merge this brief before setting `UBYHOST_AI_FEATURES` anywhere (staging included); 0323 starts only after it.
 1. Owner item 6: read the "Questions to add to the guide" list in the monthly check and hand the useful ones to the orchestrator.

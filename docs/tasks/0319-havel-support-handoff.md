@@ -14,7 +14,7 @@ Plan section 8 (the card, the mail fields, idempotency key `havel-support-<user 
 
 Today (`grep -nF` 2026-10-24):
 
-- `App/app/mail.py` line 28 `KINDS = (`, ending `    "door_code",` `    "door_code_notice",` `)`. Line 80 `HOST_KINDS = (`, ending `    "stay_fee_report",` `    "stay_fee_blocked",` `)`. A kind must be in `GUEST_KINDS` or `HOST_KINDS` (`test_mail.py`) and have `notification.mail_kind.<kind>` in en and cs (`test_mail_failed_alert.py`). `mask_email(addr)` at line 140; `enqueue(*, kind, idempotency_key, to_email, subject, payload, ...)` at line 206. Rows land in `email_outbox` (`test_signup.py` line 342 reads it).
+- `App/app/mail.py` line 28 `KINDS = (`, ending `    "door_code",` `    "door_code_notice",` `)`. Line 80 `HOST_KINDS = (`, ending `    "stay_fee_report",` `    "stay_fee_blocked",` `)`. A kind must be in `GUEST_KINDS` or `HOST_KINDS` (`tests/test_claim_mail.py` line 1792) and have `notification.mail_kind.<kind>` in en and cs (`test_mail_failed_alert.py`). `mask_email(addr)` at line 140; `enqueue(*, kind, idempotency_key, to_email, subject, payload, ...)` at line 206. Rows land in `email_outbox` (`test_signup.py` line 342 reads it).
 - `App/app/mail_notify.py`: imports `config, db, deadlines, host_i18n, i18n, mail, validation` and `hashlib`; `HOST_MAIL_LANGUAGE = "en"`; helpers `_text(lang, key, **kw)`, `_app(path)`, `_block_heading`, `_block_paragraph` and `_block_fact(label, value)` (both escape), `_block_button(url, label)`, `_shell(*, lang, title, preheader, blocks, footer_lines)`, `_signup_footer(lang)`. The pattern to copy is `build_signup_admin` / `signup_admin` (line 2390 and 2466): facts list, text lines, blocks, `mail.enqueue`.
 - `App/app/host_i18n.py`: en line 4909 `        "notification.mail_kind.signup_admin": "new sign-up notice",`; cs line 5071 `        "notification.mail_kind.signup_admin": "oznámení o nové registraci",`.
 - `App/app/auth.py`: `current_user(request)` and `workspace_user(request)` return account rows with `email`, `display_name`, `username`.
@@ -449,7 +449,7 @@ def test_support_card_sends_without_javascript_at_390(origin):
 - `.venv/bin/python -m pytest tests/test_havel_support.py tests/test_havel_page.py tests/test_havel_topics.py tests/test_ai.py -q --tb=short -x 2>&1 | tail -15`
 - `.venv/bin/python -m pytest tests/test_havel_support_browser.py tests/test_havel_browser.py -q --tb=short -x -rs 2>&1 | tail -15`
 - `.venv/bin/python -m pytest tests/test_design_guardrails_browser.py -k havel -q --tb=short -rs 2>&1 | tail -10` and `.venv/bin/python -m pytest tests/test_host_geometry.py -q --tb=short -rs 2>&1 | tail -10` (0 skipped)
-- Mail row: `.venv/bin/python -m pytest tests/test_ses_mail.py tests/test_mail_*.py tests/test_notification_copy.py tests/test_signup.py -q --tb=short -x 2>&1 | tail -15`
+- Mail row: `.venv/bin/python -m pytest tests/test_ses_mail.py tests/test_mail_*.py tests/test_*_mail.py tests/test_notification_copy.py tests/test_signup.py -q --tb=short -x 2>&1 | tail -15` (`test_claim_mail.py` checks the kind groups)
 - `.venv/bin/python -m pytest tests/test_host_i18n.py tests/test_no_em_dashes.py tests/test_static_versions.py -q 2>&1 | tail -5`; from the repo root `python3 scripts/context_lint.py | tail -5`
 
 ## 7. Acceptance
@@ -464,7 +464,7 @@ def test_support_card_sends_without_javascript_at_390(origin):
 ## 8. Stop and ask
 
 - `mail.enqueue` refuses a kind or needs an argument not in section 2.
-- `test_mail.py` or `test_mail_failed_alert.py` asks for something more than the group and the `notification.mail_kind` key.
+- `test_claim_mail.py` or `test_mail_failed_alert.py` asks for something more than the group and the `notification.mail_kind` key.
 
 ## 9. Report
 
@@ -476,8 +476,10 @@ Write `docs/tasks/0319-report.md` (600 tokens at most) and set `Status: review`:
 - The kind is `ai_budget`, not the plan's `havel_budget`: the warning is for every AI feature (the guest bot too).
 - The hash covers summary and note, so a second request with a new note is a new mail.
 - `_warn_budget` runs one extra SUM query per AI call.
+- The weekly `SUPPORT_MAX` cap counts `rate_limit_event` rows, and the nightly job deletes every row older than 24 hours (`retention.py` `_rate_limit_retention_step`, `config.RATE_LIMIT_RETENTION_HOURS`, verified 2026-10-24). The cap only holds once 0320's 32-day keep for `havel_*` scopes is merged. Havel stays off (`UBYHOST_AI_FEATURES` unset) until then; 0323 lists 0320 as a prerequisite.
 
 ## Owner steps
 
+0. Do not set `UBYHOST_AI_FEATURES` on staging or production before 0320 is merged (see the risk list: the nightly purge resets Havel's caps until then).
 1. Owner item 4: tell the orchestrator the reply time to promise. A follow-up adds it to `havel.support.sent` in en, cs and vi.
 2. After deploy, send one test request from staging and check it arrives at the support mailbox.
