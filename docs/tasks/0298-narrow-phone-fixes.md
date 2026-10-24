@@ -42,6 +42,10 @@ The orchestrator's full run found two 360 px faults from 0291/0295: (a) on the p
    ```
 3. Bump the key, `--write` the manifest.
 
+## 5. Do not touch
+
+Everything outside §3.
+
 ## 6. Commands
 
 From `App/`:
@@ -49,6 +53,14 @@ From `App/`:
 .venv/bin/python -m pytest tests/test_host_controls_browser.py tests/test_host_invoice_items_browser.py tests/test_host_ux_acceptance.py tests/test_host_wide_geometry_browser.py tests/test_static_versions.py tests/test_0252_touch_sweep_browser.py -q --tb=short 2>&1 | tail -30
 ```
 If a test still fails, give the first assertion line in the report and stop (do not try other CSS).
+
+## 7. Acceptance
+
+- [ ] The §6 commands pass, or the failure is in the report.
+
+## 8. Stop and ask
+
+As in TEMPLATE §8.
 
 ## 9. Report
 

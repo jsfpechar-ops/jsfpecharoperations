@@ -55,6 +55,10 @@ From `App/`:
 
 - [ ] design lint OK; test_design_lint passes. If a template is still flagged, report the two lines and stop.
 
+## 8. Stop and ask
+
+As in TEMPLATE §8.
+
 ## 9. Report
 
 `docs/tasks/0297-report.md` (200 tokens max), `Status: review`. One commit `0297: lint T4 by group boundary`.

@@ -56,10 +56,22 @@ Executor: Haiku 5.5 | Fits one session: 15 tool calls, 30k tokens
 ```
    If `tops` is not defined earlier in the function, use `controls[0].bounding_box()["y"]`.
 
+## 5. Do not touch
+
+Everything outside §3.
+
 ## 6. Commands
 
 From `App/`: `.venv/bin/python -m pytest tests/test_host_invoice_items_browser.py -q --tb=short 2>&1 | tail -15`
 If it still fails, put the assertion line in the report and stop.
+
+## 7. Acceptance
+
+- [ ] The §6 commands pass, or the failure is in the report.
+
+## 8. Stop and ask
+
+As in TEMPLATE §8.
 
 ## 9. Report
 

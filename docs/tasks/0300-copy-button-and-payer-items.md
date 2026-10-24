@@ -62,6 +62,10 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
    If the S2 lint flags `16px` in `width/height`, use `1rem`.
 5. New `App/tests/test_0300_copy_button.py`: with the `host_with_property` fixture (as in `tests/test_design_dashboard.py`), GET `/apartments?lang=en`: `page.count('class="btn-icon" type="button" data-copy=') == 0` and `'copy-btn' in page`; and read `App/app/templates/_components.html` text: `'ui-btn-quiet ui-btn-icon ui-btn-compact" type="button" data-copy' not in text`.
 
+## 5. Do not touch
+
+Everything outside §3.
+
 ## 6. Commands
 
 From `App/`:
@@ -75,6 +79,10 @@ A test that pins the old coral copy badge: report it with its assertion line, do
 
 - [ ] Every icon copy button renders through `copy_button`; copied state shows only the green tick.
 - [ ] Invoice items browser test passes.
+
+## 8. Stop and ask
+
+As in TEMPLATE §8.
 
 ## 9. Report
 
