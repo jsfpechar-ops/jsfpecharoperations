@@ -135,6 +135,13 @@ AI_FEATURES = frozenset(
 ANTHROPIC_API_KEY = os.environ.get("UBYHOST_ANTHROPIC_API_KEY", "").strip()
 AI_MODEL = os.environ.get("UBYHOST_AI_MODEL", "claude-haiku-5-5")
 AI_MAX_TOKENS = int(os.environ.get("UBYHOST_AI_MAX_TOKENS", "4000"))
+# Haiku 5.5 costs 5x more once one request's input passes 100,000 tokens. ai.call
+# estimates input as 1 token per 2 characters (more than real text uses, also for
+# Czech and Vietnamese) and refuses above this cap. The env var may only lower it.
+AI_INPUT_TOKENS_HARD_CAP = 60_000
+AI_MAX_INPUT_TOKENS = min(int(os.environ.get("UBYHOST_AI_MAX_INPUT_TOKENS", "60000")), AI_INPUT_TOKENS_HARD_CAP)
+# Real input tokens above this in one response are logged as an error (never expected).
+AI_LONG_CONTEXT_TOKENS = 100_000
 # USD per million tokens, Anthropic table for claude-haiku-5-5 (2026-10-06): input
 # 0.10, output 0.50, cache read a tenth of input, a 5-minute cache write 1.25x.
 AI_PRICE_USD_PER_MTOK = {
@@ -206,6 +213,12 @@ class AIError(Exception):
 
 class AIDisabled(AIError):
     """The feature is not switched on, or there is no key."""
+
+
+def estimate_input_tokens(system_blocks: List[str], messages: List[Dict[str, Any]]) -> int:
+    """Over-estimate of a request's input tokens: 1 token per 2 characters, rounded up."""
+    chars = sum(len(text) for text in system_blocks) + len(json.dumps(messages, ensure_ascii=False))
+    return (chars + 1) // 2
 
 
 class AIBudgetError(AIError):
@@ -351,6 +364,11 @@ def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]],
     state = budget_state(feature, key_text if key is not None else None)
     if state != "ok":
         raise AIBudgetError(state)
+    if estimate_input_tokens(system_blocks, messages) > config.AI_MAX_INPUT_TOKENS:
+        # Never send a request that could reach the 100k long-context price. The caller
+        # trims history (Havel) or splits the input (guide import) and tries again.
+        log.warning("ai call refused feature=%s reason=input_too_large", feature)
+        raise AIError("input_too_large")
     system = [{"type": "text", "text": text} for text in system_blocks]
     system[-1]["cache_control"] = {"type": "ephemeral"}
     started = time.monotonic()
@@ -368,6 +386,10 @@ def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]],
         raise AIError("api") from exc
     usage = getattr(response, "usage", None)
     _record(feature, key_text, usage)
+    total_in = sum(getattr(usage, name, 0) or 0 for name in
+                   ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+    if total_in > config.AI_LONG_CONTEXT_TOKENS:
+        log.error("ai long context feature=%s in_total=%d", feature, total_in)
     log.info(
         "ai call feature=%s request_id=%s stop=%s in=%s cache_w=%s cache_r=%s out=%s ms=%d",
         feature,
@@ -502,6 +524,8 @@ def test_call_sends_structured_output_and_caches_the_last_system_block(on):
     assert kw["max_tokens"] == config.AI_MAX_TOKENS
     assert kw["output_config"] == {"effort": "low", "format": {"type": "json_schema", "schema": SCHEMA}}
     assert "thinking" not in kw and "temperature" not in kw
+    assert kw["system"][-1]["cache_control"] == {"type": "ephemeral"}
+    assert all("cache_control" not in block for block in kw["system"][:-1])
 
 
 def test_call_max_tokens_is_clamped_to_the_global_cap(on):
@@ -510,8 +534,24 @@ def test_call_max_tokens_is_clamped_to_the_global_cap(on):
     ai.call("havel", ["p"], [{"role": "user", "content": "hi"}], SCHEMA, max_tokens=800)
     ai.call("havel", ["p"], [{"role": "user", "content": "hi"}], SCHEMA, max_tokens=99_999)
     assert [c["max_tokens"] for c in fake.calls] == [800, config.AI_MAX_TOKENS]
-    assert kw["system"][-1]["cache_control"] == {"type": "ephemeral"}
-    assert all("cache_control" not in block for block in kw["system"][:-1])
+
+
+def test_input_cap_cannot_be_raised_above_the_hard_cap():
+    assert config.AI_INPUT_TOKENS_HARD_CAP == 60_000
+    assert config.AI_MAX_INPUT_TOKENS <= config.AI_INPUT_TOKENS_HARD_CAP
+    # 60k estimated tokens is at most 120k characters: well under 100k real tokens.
+
+
+def test_too_large_input_is_refused_before_any_api_call(on, monkeypatch):
+    monkeypatch.setattr(config, "AI_MAX_INPUT_TOKENS", 1_000)
+    fake = FakeClient([reply({"kind": "answer"})])
+    ai.set_client_for_tests(fake)
+    with pytest.raises(ai.AIError) as err:
+        ai.call("havel", ["x" * 2_100], [{"role": "user", "content": "hi"}], SCHEMA)
+    assert err.value.reason == "input_too_large"
+    assert fake.calls == []
+    assert ai.month_spend_usd("havel", ai.today()) == 0.0
+    assert ai.call("havel", ["x" * 1_900], [{"role": "user", "content": "hi"}], SCHEMA) == {"kind": "answer"}
 
 
 def test_call_records_usage_per_day_feature_and_key(on):
@@ -575,6 +615,7 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 | `UBYHOST_ANTHROPIC_API_KEY` | unset | Anthropic API key, created in the Anthropic Console with its own monthly spend limit. Passed to the SDK explicitly; the SDK's `ANTHROPIC_API_KEY` is not read. Staging first. |
 | `UBYHOST_AI_MODEL` | `claude-haiku-5-5` | Model id. Changing it invalidates the prompt cache and needs each feature's test set re-run. |
 | `UBYHOST_AI_MAX_TOKENS` | `4000` | Ceiling per call; adaptive thinking counts toward it. Callers pass their own lower `max_tokens` (Havel 2500, Leon chat about 800, the import merge up to the ceiling). |
+| `UBYHOST_AI_MAX_INPUT_TOKENS` | `60000` (also the hard maximum) | Largest input one request may send, estimated as 1 token per 2 characters. Haiku 5.5 costs 5x more above 100,000 input tokens, so a larger value is ignored. A request over it raises `input_too_large` and is not sent. |
 | `UBYHOST_AI_MONTHLY_USD_<FEATURE>` | `10` | Spend cap per feature per calendar month (Prague), e.g. `UBYHOST_AI_MONTHLY_USD_HAVEL`. Today's share is the budget left divided by the days left in the month. |
 | `UBYHOST_AI_KEY_DAILY_USD_<FEATURE>` | `0` (off) | Per-key daily cap, e.g. `UBYHOST_AI_KEY_DAILY_USD_LEON=0.50` caps one property's guest bot at 50 cents a day. Havel passes no key. |
 | `UBYHOST_AI_PRICE_INPUT`, `UBYHOST_AI_PRICE_OUTPUT`, `UBYHOST_AI_PRICE_CACHE_READ`, `UBYHOST_AI_PRICE_CACHE_WRITE` | `0.10`, `0.50`, `0.01`, `0.125` | USD per million tokens, Anthropic table 2026-10-06. Update when the price changes. |
@@ -644,7 +685,7 @@ Expected: all pass; `context lint: OK` (the pre-existing WARN lines about other 
 
 - [ ] `anthropic==1.x` in `App/requirements.txt`; `requirements.lock` regenerated with hashes; `pip install --require-hashes -r requirements.lock` succeeds.
 - [ ] `App/app/ai.py` is the only file under `App/app/` that contains `import anthropic` (`grep -rl 'import anthropic' App/app`).
-- [ ] `test_ai.py` passes: structured output, cache breakpoint, usage upsert per key, error reasons, month, day and key caps, features independent.
+- [ ] `test_ai.py` passes: structured output, cache breakpoint, usage upsert per key, error reasons, month, day and key caps, features independent, input cap (refused before any API call, cannot be raised above 60,000).
 - [ ] The migration applies with the next free number; `test_migrations.py` passes.
 - [ ] ENVIRONMENT.md section, architecture row, test-map row, decision line present; lint OK.
 
