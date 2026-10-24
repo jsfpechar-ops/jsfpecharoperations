@@ -1,0 +1,10 @@
+# Every change needs the owner's review. The lines below name the paths
+# where a mistake reaches guests, the police filing or the servers.
+*                                   @jsfpechar-ops
+/.github/                           @jsfpechar-ops
+/deploy/                            @jsfpechar-ops
+/scripts/                           @jsfpechar-ops
+/App/app/migrations/                @jsfpechar-ops
+/App/app/auth.py                    @jsfpechar-ops
+/App/app/ubyport*                   @jsfpechar-ops
+/Dockerfile                         @jsfpechar-ops
