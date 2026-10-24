@@ -26,10 +26,12 @@ TOPICS = (
     "emergency",
 )
 
-# Built-in cards: kind -> topic. Order within a topic is the order here.
+# Built-in cards: kind -> topic, in guest order (0354: few, rich cards; each
+# prompt is a checklist of what guests ask). Never rename a kind: rows use it.
 KINDS: Dict[str, str] = {
     "checkin": "arrival",
     "keys": "arrival",
+    "getting_here": "arrival",
     "parking": "arrival",
     "garage": "arrival",
     "wifi": "wifi",
@@ -40,27 +42,40 @@ KINDS: Dict[str, str] = {
     "kitchen_appliances": "kitchen",
     "dishwasher": "kitchen",
     "coffee_machine": "kitchen",
+    "bedrooms": "rooms",
     "sofa_bed": "rooms",
     "balcony": "rooms",
+    "bathroom": "bathroom",
     "washing_machine": "bathroom",
     "house_rules": "rules",
     "trash": "trash",
     "checkout": "checkout",
     "area_tips": "area",
     "emergency": "emergency",
+    "something_wrong": "emergency",
 }
 
-# Every property gets these cards; the others come from imports or the host.
+# Every property gets these cards. The other built-in kinds are narrower cards
+# kept for data that already uses them: they appear only where an import or
+# earlier data created them.
 DEFAULT_KINDS = (
     "checkin",
     "keys",
+    "getting_here",
+    "parking",
     "wifi",
     "heating",
     "hot_water",
+    "kitchen_appliances",
+    "bedrooms",
+    "bathroom",
+    "washing_machine",
     "house_rules",
     "trash",
     "checkout",
+    "area_tips",
     "emergency",
+    "something_wrong",
 )
 
 # The guide goes live for guests once these five are done (or skipped).
