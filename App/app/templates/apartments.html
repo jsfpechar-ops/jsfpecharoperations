@@ -2,7 +2,7 @@
 {% set nav = 'apartments' %}
 {% set how_key = 'properties' %}
 {% set body_kind = 'list' %}
-{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, row_open, property_identity, help_tip, copy_icon with context %}
+{% from "_components.html" import onboarding_banner, empty_state, row_menu_begin, row_menu_end, row_open, property_identity, help_tip, copy_icon, copy_button with context %}
 {% from "_ui.html" import ui_button with context %}
 {% from "_ui_layout.html" import ui_toolbar, ui_section_tabs with context %}
 {% from "_icons.html" import icon with context %}
@@ -88,8 +88,7 @@
             <div class="property-inline-value">
               <code class="mono property-inline-url" id="guest-url-{{ apartment.id }}" title="{{ row.link_url }}">{{ row.link_url }}</code>
               <span class="property-inline-icons">
-                <button class="btn-icon" type="button" data-copy="guest-url-{{ apartment.id }}"
-                        data-copied-label="{{ t('common.copied') }}" aria-label="{{ t('common.copy_link') }}">{{ copy_icon() }}<span class="sr-only">{{ t('common.copy_link') }}</span></button>
+                {{ copy_button('guest-url-' ~ apartment.id, t('common.copy_link')) }}
                 <a class="btn-icon" href="/l/{{ row.link_key }}" target="_blank" rel="noopener" aria-label="{{ t('guest_links.preview') }}">{{ icon('external-link', 16) }}<span class="sr-only">{{ t('guest_links.preview') }}</span></a>
               </span>
             </div>
@@ -99,8 +98,7 @@
             <div class="property-inline-value">
               <code class="mono property-inline-pin-value" id="guest-pin-{{ apartment.id }}">{{ apartment.permalink_pin or '—' }}</code>
               <span class="property-inline-icons">
-                {% if apartment.permalink_pin %}<button class="btn-icon" type="button" data-copy="guest-pin-{{ apartment.id }}"
-                        data-copied-label="{{ t('common.copied') }}" aria-label="{{ t('properties.inline.copy_pin') }}">{{ copy_icon() }}<span class="sr-only">{{ t('properties.inline.copy_pin') }}</span></button>{% endif %}
+                {% if apartment.permalink_pin %}{{ copy_button('guest-pin-' ~ apartment.id, t('properties.inline.copy_pin')) }}{% endif %}
                 <form method="post" action="{{ base_url }}/regenerate-pin" class="property-inline-form"
                       data-confirm data-confirm-message="{{ t('properties.inline.new_pin_confirm', name=apartment.internal_name) }}">
                   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
