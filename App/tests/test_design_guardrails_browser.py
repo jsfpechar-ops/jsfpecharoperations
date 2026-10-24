@@ -34,6 +34,7 @@ ROUTES.update({
     "cleaning": "/cleaning",
     "guest-guide": "/apartments/{property_id}/guide",
     "guest-guide-qr": "/apartments/{property_id}/guide/qr",
+    "guest-questions": "/apartments/{property_id}/guide/questions",
     "guest-new": "/reservations/{reservation_id}/guests/new",
     "setup-property": "/apartments/{property_id}/setup/property",
     "setup-police": "/apartments/{property_id}/setup/police",
