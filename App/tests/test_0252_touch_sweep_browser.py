@@ -42,7 +42,7 @@ PROBE = r"""() => {
   }
   for (const e of main.querySelectorAll('tr.clickable-row:not(.dashboard-row), a.host-property-card')) {
     if (!shown(e)) continue;
-    if (!e.querySelector('.row-open, .host-property-card-open')) out.noCue.push(name(e));
+    if (!e.querySelector('.row-open, .host-property-card-open, .ui-btn-open')) out.noCue.push(name(e));
     const r = e.getBoundingClientRect();
     const x = r.left + Math.min(r.width / 2, 120), y = r.top + Math.min(r.height / 2, 24);
     if (y > 0 && y < innerHeight && x < vw) {
