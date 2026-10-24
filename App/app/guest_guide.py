@@ -227,6 +227,19 @@ def skip(apartment_id: int, item_id: int, skipped: bool = True) -> None:
     db.update("guide_item", item_id, {"state": state, "updated_at": db.utcnow()})
 
 
+def discard_draft(apartment_id: int, item_id: int) -> bool:
+    """Throw away text the host did not write (an import or the old notes); the card
+    goes back to "Missing". Only for drafts; True when something was discarded."""
+    item = get(apartment_id, item_id)
+    if not item or item["state"] != "check":
+        return False
+    db.update("guide_item", item_id, {
+        "location": "", "steps": "", "watch_out": "", "video_url": "",
+        "state": "missing", "source": "host", "updated_at": db.utcnow(),
+    })
+    return True
+
+
 def add_custom(apartment_id: int, topic: str, title: str) -> int:
     """A card the host names themself, under one of the topics."""
     if topic not in TOPICS:
