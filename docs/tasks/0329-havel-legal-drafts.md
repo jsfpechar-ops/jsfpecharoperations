@@ -154,4 +154,4 @@ Findings:
 
 Changes made in this brief: findings 1 to 7 above; Anthropic facts turned into assumptions A1 to A6; draft parts 3, 5, 6 and 7 added; ROPA basis, Support mailbox and DPIA lines.
 
-Owner decisions: A1 to A6; the support mailbox retention (suggest 12 months); whether to add "or guests' details" to `havel.disclaimer` (recommended); whether the register lists the guest assistant now or when it ships (the plan's exact wording keeps it, marked "not in use yet").
+Owner decisions: A1 to A6; the support mailbox retention: answered 2026-10-24, the support mailbox is Zoho Mail, 12 months (owner accepted the recommendation); the 30-day subprocessor notice is not needed before launch, because there are no production hosts yet (owner, 2026-10-24), so the register is updated before the first real host signs up; whether to add "or guests' details" to `havel.disclaimer` (recommended); whether the register lists the guest assistant now or when it ships (the plan's exact wording keeps it, marked "not in use yet").
