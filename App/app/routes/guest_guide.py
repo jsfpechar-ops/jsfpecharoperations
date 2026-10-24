@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 
-from .. import access, auth, config, guest_guide, guest_guide_import, guide_photos, guide_token, payments, security, templating
+from .. import access, auth, config, guest_guide, guest_guide_import, guest_guide_merge, guide_photos, guide_token, payments, security, templating
 from .admin_helpers import back, flash
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
@@ -79,6 +79,7 @@ def guide_index(request: Request, apartment_id: int):
         import_left=guest_guide_import.imports_left(apartment_id),
         import_busy=guest_guide_import.in_progress(apartment_id),
         imports=guest_guide_import.imports(apartment_id),
+        import_drafts=guest_guide_merge.drafted_count(apartment_id),
     )
 
 
