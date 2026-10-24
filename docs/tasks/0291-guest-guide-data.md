@@ -282,10 +282,15 @@ def skip(apartment_id: int, item_id: int, skipped: bool = True) -> None:
     item = get(apartment_id, item_id)
     if not item:
         raise GuideError("flash.error.guide_no_such_item")
+    has_text = bool(item["steps"] or item["location"])
     if skipped:
         state = "skipped"
+    elif has_text and item["source"] == "host":
+        state = "done"
     else:
-        state = "done" if (item["steps"] or item["location"]) else "missing"
+        # Imported or legacy text the host never saved goes back to "Check this",
+        # never straight to guests.
+        state = "check" if has_text else "missing"
     db.update("guide_item", item_id, {"state": state, "updated_at": db.utcnow()})
 
 
@@ -498,6 +503,10 @@ def test_drafts_and_skipped_cards_never_reach_guests(apartment):
     garage = _by_kind(apt)["garage"]
     db.execute("UPDATE guide_item SET steps = 'Remote in drawer', state = 'check' WHERE id = ?", (garage["id"],))
     assert "garage" not in {r["kind"] for r in guest_guide.for_guest(apt, "booked")}
+    guest_guide.skip(apt, garage["id"])
+    guest_guide.skip(apt, garage["id"], skipped=False)
+    assert _by_kind(apt)["garage"]["state"] == "check"
+    assert "garage" not in {r["kind"] for r in guest_guide.for_guest(apt, "booked")}
     guest_guide.skip(apt, _by_kind(apt)["trash"]["id"])
     progress = guest_guide.progress(apt)
     assert progress["check"] == 1
@@ -551,7 +560,7 @@ Write `docs/tasks/0291-report.md` (600 tokens at most) and set `Status: review`.
 ## Risk list (for the reviewer)
 
 - `App/app/migrations/0013_guest_guide.sql` (HIGH RISK: migration; read the full diff).
-- `App/app/guest_guide.py`: `for_guest` is the only gate between host-only or draft text and guests.
+- `App/app/guest_guide.py`: `for_guest` is the only gate between host-only or draft text and guests. `skip(..., skipped=False)` must not turn imported text into `done` (Fable review 2026-10-24).
 
 ## Owner steps
 
