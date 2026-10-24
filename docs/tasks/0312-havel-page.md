@@ -21,51 +21,11 @@ router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 ```
 
 - Rendering, `App/app/templating.py` line 561: `def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None, status_code: int = 200):` adds `request`, `csrf_token`, `current_user`, `workspace_user`, flash from `?msg=`/`?err=`. The language is `request.state.lang`. Template globals include `t(key, **kw)`, `operator()` (with `.email`), `icon` via `{% from "_icons.html" import icon with context %}`, `ui_button` from `_ui.html`.
-- The guide route in `App/app/routes/admin.py` line 508 is the pattern:
-
-```python
-@router.get("/guide")
-def guide_view(request: Request):
-    guard = auth.require_login(request)
-    if guard:
-        return guard
-    return render(request, "guide.html", {"demo_available": config.UBYPORT_ENV == "mock"})
-```
-
-- `App/app/main.py` line 32 and 355 (anchors):
-
-```python
-from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, invoices, legal, mail_unsubscribe, onboarding_wizard, stay_fees
-```
-
-```python
-app.include_router(cleaning_routes.router)
-```
-
+- The guide route pattern (`App/app/routes/admin.py` line 508): `@router.get("/guide")`, `guard = auth.require_login(request)`, `if guard: return guard`, then `render(...)`.
+- `App/app/main.py` line 32: `from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, invoices, legal, mail_unsubscribe, onboarding_wizard, stay_fees`; line 355: `app.include_router(cleaning_routes.router)`.
 - `App/app/templates/guide.html` lines 1–7 show the page skeleton (`{% extends "host_page.html" %}`, `{% set nav = 'guide' %}`, `{% set body_kind = 'detail' %}`, blocks `title`, `page_title`, `meta`, `body`).
-- `App/app/host_i18n.py`: the `STRINGS["en"]` block ends with
-
-```python
-        "settings.archive_hint": "Restore archived stays, properties, and house-book entries.",
-    },
-    "cs": {
-```
-
-  and the `STRINGS["cs"]` block ends with
-
-```python
-        "settings.archive_hint": "Obnovte archivované pobyty, ubytování a záznamy domovní knihy.",
-    },
-}
-```
-
-- `App/app/host_vi_i18n.py`: the flat `STRINGS` dict ends with
-
-```python
-    "stay_fees.pay.add_account": "Thêm tài khoản",
-}
-```
-
+- `App/app/host_i18n.py`: the `STRINGS["en"]` block ends with the line `        "settings.archive_hint": "Restore archived stays, properties, and house-book entries.",` followed by `    },` and `    "cs": {`; the `STRINGS["cs"]` block ends with `        "settings.archive_hint": "Obnovte archivované pobyty, ubytování a záznamy domovní knihy.",` followed by `    },` and `}`.
+- `App/app/host_vi_i18n.py`: the flat `STRINGS` dict ends with `    "stay_fees.pay.add_account": "Thêm tài khoản",` followed by `}`.
 - `App/app/templates/base.html` line 26: `  <link rel="stylesheet" href="/static/host2.css?v=20261022-0289">`. A changed static file needs a new key and `cd App && .venv/bin/python tests/test_static_versions.py --write`.
 - `App/tests/test_design_guardrails_browser.py` lines 34–47: `ROUTES.update({ ... "settings-account": "/settings", })`. The a11y guard reuses `ROUTES`.
 - `docs/design/catalog.json`: keys `classes` (list), `hooks`, `enforced_templates`, `enforced_stylesheets` (`host2.css` is enforced: tokens only, no raw px except `0` and `1px`), `class_notes`. The lint is `python3 scripts/design_lint.py`.
@@ -78,13 +38,12 @@ app.include_router(cleaning_routes.router)
 | App/app/routes/havel.py | new | GET and POST `/havel` |
 | App/app/main.py | edit | import and include the router |
 | App/app/templates/havel.html | new | the page |
-| App/app/templates/_havel_thread.html | new | bubbles, links, support exit (reused by 0313's panel) |
-| App/app/templates/_havel_form.html | new | composer and hidden fields (reused by 0313) |
+| App/app/templates/_havel_thread.html | new | bubbles, links, support exit (reused by the panel, 0324) |
+| App/app/templates/_havel_form.html | new | composer and hidden fields (reused by 0313 and 0324) |
 | App/app/static/host2.css | append | thread, bubbles, composer |
 | App/app/templates/base.html | edit | host2.css key |
 | App/tests/static_versions.json | regenerate | `--write` |
 | App/app/host_i18n.py | edit | `havel.*` en and cs |
-| App/app/host_vi_i18n.py | edit | `havel.*` vi |
 | docs/design/catalog.json | edit | classes and enforced templates |
 | docs/design/pages/havel.md | new | page file |
 | App/tests/test_design_guardrails_browser.py | edit | `ROUTES["havel"]` |
@@ -279,96 +238,7 @@ Commit after each step: `0312 step k`.
 
    Command: `cd App && .venv/bin/python -m pytest tests/test_host_i18n.py tests/test_no_em_dashes.py -q --tb=short -x 2>&1 | tail -5`. Expected: pass (en and cs parity holds: both blocks have the same 83 keys).
 
-3. **Copy, Vietnamese** (owner item 8: a Vietnamese speaker reviews these). In `App/app/host_vi_i18n.py`, directly after the line `    "stay_fees.pay.add_account": "Thêm tài khoản",` insert:
-
-```python
-    # 0312: Havel, trợ lý hỗ trợ AI (plan section 17e). Chữ "AI" luôn đi cùng tên.
-    "havel.name": "Havel (AI)",
-    "havel.title": "Havel (AI) · Trợ lý hỗ trợ",
-    "havel.subtitle": "Trợ lý hỗ trợ",
-    "havel.launcher": "Hỏi Havel (AI)",
-    "havel.open_page": "Mở thành trang",
-    "havel.close": "Đóng",
-    "havel.intro": "Xin chào, tôi là Havel, trợ lý AI của UbyHost. Hãy chọn một chủ đề bên dưới hoặc hỏi tôi cách làm một việc gì đó. Tôi giải thích từng bước, và sẽ không có gì thay đổi cho đến khi bạn xác nhận.",
-    "havel.ai_note": "Havel là trí tuệ nhân tạo và có thể sai. Hãy kiểm tra từng thẻ trước khi xác nhận. Không nhập mật khẩu hay số giấy tờ của khách.",
-    "havel.topics_title": "Bạn cần giúp về việc gì?",
-    "havel.topic.stays": "Thêm hoặc sửa lượt ở",
-    "havel.topic.guest_link": "Liên kết cho khách và mã PIN",
-    "havel.topic.reporting": "Khai báo với cảnh sát",
-    "havel.topic.calendars": "Lịch (Airbnb, Booking)",
-    "havel.topic.wrong": "Có gì đó không ổn",
-    "havel.topic.back": "Tất cả chủ đề",
-    "havel.topic.ask": "Vẫn cần giúp? Hỏi Havel",
-    "havel.topic.guide": "Đọc thêm trong hướng dẫn",
-    "havel.q.stays.add": "Làm sao để thêm lượt ở bằng tay?",
-    "havel.q.stays.change": "Tôi có thể sửa gì ở một lượt ở?",
-    "havel.q.stays.cancelled": "Một đặt phòng bị hủy hoặc đổi ngày",
-    "havel.q.guest_link.how": "Khách đăng ký như thế nào?",
-    "havel.q.guest_link.where": "Tìm liên kết và mã PIN ở đâu?",
-    "havel.q.guest_link.broken": "Khách nói liên kết không hoạt động",
-    "havel.q.reporting.when": "Khi nào khách được khai báo?",
-    "havel.q.reporting.colours": "Các màu có nghĩa là gì?",
-    "havel.q.reporting.czech": "Khách người Séc có được khai báo không?",
-    "havel.q.calendars.connect": "Làm sao để kết nối lịch?",
-    "havel.q.calendars.stale": "Lịch không được cập nhật",
-    "havel.q.wrong.report": "Một báo cáo thất bại hoặc hiện màu đỏ",
-    "havel.q.wrong.error": "Tôi thấy lỗi hoặc thiếu gì đó",
-    "havel.placeholder": "Viết câu hỏi của bạn ở đây",
-    "havel.send": "Gửi",
-    "havel.writing": "Havel đang viết…",
-    "havel.you": "Bạn",
-    "havel.new": "Cuộc trò chuyện mới",
-    "havel.remaining_week": "Tuần này còn %(n)s tin nhắn",
-    "havel.remaining_month": "Tháng này còn %(n)s tin nhắn",
-    "havel.greeting": "Xin chào. Hãy hỏi tôi cách một việc gì đó hoạt động trong UbyHost, hoặc chọn một chủ đề ở trên.",
-    "havel.thanks": "Không có gì. Nếu cần gì thêm, tôi luôn ở đây.",
-    "havel.too_long": "Vui lòng viết dưới 600 ký tự.",
-    "havel.error": "Có lỗi ở phía chúng tôi. Vui lòng thử lại sau một lát.",
-    "havel.retry": "Thử lại",
-    "havel.not_helped": "Điều này không giúp được",
-    "havel.dont_know": "Tôi không biết điều đó và không muốn đoán. Tôi có thể gửi câu hỏi của bạn đến đội UbyHost, và một người sẽ trả lời qua e-mail.",
-    "havel.fallback": "Lúc này tôi chưa trả lời được. Bạn có thể gửi cho bộ phận hỗ trợ và một người sẽ trả lời.",
-    "havel.off": "Havel hiện không hoạt động. Bạn vẫn có thể viết cho bộ phận hỗ trợ ở đây.",
-    "havel.limit_burst": "Hãy nghỉ một chút. Bạn có thể viết lại sau vài phút.",
-    "havel.limit_week": "Bạn đã dùng hết tin nhắn cho Havel tuần này. Chúng sẽ trở lại vào thứ Hai. Hướng dẫn và hỗ trợ luôn ở đây.",
-    "havel.limit_month": "Bạn đã dùng hết tin nhắn cho Havel tháng này. Chúng sẽ trở lại vào ngày 1. Hướng dẫn và hỗ trợ luôn ở đây.",
-    "havel.paused": "Tôi chỉ có thể giúp về UbyHost, nên tôi sẽ tạm nghỉ đến thứ Hai. Bộ phận hỗ trợ vẫn ở đây.",
-    "havel.resting": "Havel nghỉ đến ngày mai. Bạn vẫn có thể viết cho bộ phận hỗ trợ ở đây.",
-    "havel.limit_turns": "Hãy bắt đầu một cuộc trò chuyện mới.",
-    "havel.card.title_stay": "Thêm lượt ở này?",
-    "havel.card.title_cleaning": "Thêm lượt dọn dẹp này?",
-    "havel.card.title_sync": "Làm mới tất cả lịch?",
-    "havel.card.title_pin": "Tạo mã PIN mới?",
-    "havel.card.title_link": "Liên kết cho khách",
-    "havel.card.confirm_stay": "Thêm lượt ở",
-    "havel.card.confirm_cleaning": "Thêm dọn dẹp",
-    "havel.card.confirm_sync": "Làm mới lịch",
-    "havel.card.confirm_pin": "Tạo mã PIN mới",
-    "havel.card.change": "Thay đổi",
-    "havel.card.cancel": "Hủy",
-    "havel.card.nights": "%(n)s đêm",
-    "havel.card.guests": "%(n)s khách",
-    "havel.card.pin": "PIN",
-    "havel.card.copy_link": "Sao chép liên kết",
-    "havel.card.open_guest_links": "Mở Liên kết cho khách",
-    "havel.card.overlap": "Trùng với một lượt ở khác tại chỗ ở này.",
-    "havel.card.pin_warning": "Mã PIN hiện tại sẽ ngừng hoạt động ngay, kể cả với khách đang đăng ký.",
-    "havel.card.not_prepared": "Tôi chưa chuẩn bị được việc này: %(reason)s",
-    "havel.card.open_form": "Mở biểu mẫu",
-    "havel.reason.property": "Tôi không chắc bạn nói đến chỗ ở nào.",
-    "havel.reason.dates": "Tôi chưa rõ ngày tháng.",
-    "havel.reason.no_calendar": "Chưa có lịch nào được kết nối.",
-    "havel.reason.no_link": "Chỗ ở này chưa có liên kết cho khách.",
-    "havel.reason.archived": "Chỗ ở này đã được lưu trữ hoặc đang tắt.",
-    "havel.support.title": "Gửi cho bộ phận hỗ trợ UbyHost",
-    "havel.support.add": "Bạn muốn bổ sung gì không?",
-    "havel.support.send": "Gửi cho hỗ trợ",
-    "havel.support.sent": "Đã gửi. Bộ phận hỗ trợ sẽ trả lời qua e-mail của bạn.",
-    "havel.support.replies_to": "Hỗ trợ sẽ trả lời đến %(email)s",
-    "havel.support.mailto": "Gửi e-mail cho hỗ trợ",
-```
-
-   Command: `cd App && .venv/bin/python -c "from app import host_i18n as h; print(h.translate('vi','havel.send'), '|', h.translate('vi','havel.card.nights', n=2))"`. Expected: `Gửi | 2 đêm`.
+3. **Copy, Vietnamese.** Moved to brief 0325 (`host_vi_i18n` falls back to en until it ships). Nothing to do here.
 
 4. **Route.** Create `App/app/routes/havel.py`:
 
@@ -376,7 +246,7 @@ Commit after each step: `0312 step k`.
 """Havel, the AI support assistant: the page /havel and the form it posts to.
 
 Plan: docs/plans/havel-support-assistant.md sections 2, 9, 11 and 17. The same
-form lives inside the panel (0313); with the header ``X-Havel: 1`` the POST
+form lives inside the panel (0324); with the header ``X-Havel: 1`` the POST
 answers with the thread fragment instead of the page. Without JavaScript the
 page simply re-renders. The engine (``app.havel``) decides what is safe to
 show; this module only wires the form, the limits and the copy.
@@ -593,7 +463,7 @@ from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, havel as 
 {% endblock %}
 ```
 
-   Create `App/app/templates/_havel_thread.html` (the panel in 0313 includes the same file):
+   Create `App/app/templates/_havel_thread.html` (the panel in 0324 includes the same file):
 
 ```jinja
 {#- 0312: Havel's thread. Host bubbles right, Havel bubbles left with the AI label.
@@ -630,7 +500,7 @@ from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, havel as 
 
 ```jinja
 {#- 0312: the composer. Hidden fields carry the signed history, the hosting page,
-    the device (set by havel.js in 0313) and the quick-help topic. -#}
+    the device (set by havel.js in 0324) and the quick-help topic. -#}
 <form method="post" action="/havel" class="havel-composer" data-havel-form>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="history" value="{{ havel_history }}" data-havel-history>
@@ -669,15 +539,13 @@ from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, havel as 
 
 ```css
 
-/* 0312: Havel (AI), the support assistant. Thread, bubbles, composer (MASTER 7.15 via plan 17b).
-   Host bubbles right on --surface-2, Havel bubbles left on --surface with a hairline;
-   steps are a real list; links are compact buttons under the bubble. Tokens only. */
+/* 0312: Havel (AI) thread, bubbles, composer (plan 17b). Tokens only. */
 .host-workspace .havel-thread { display: flex; flex-direction: column; gap: var(--space-3); }
 .host-workspace .havel-msg { display: flex; flex-direction: column; max-width: 85%; }
 .host-workspace .havel-msg-host { align-self: flex-end; align-items: flex-end; }
 .host-workspace .havel-msg-havel { align-self: flex-start; align-items: flex-start; }
 .host-workspace .havel-msg:focus { outline: none; }
-.host-workspace .havel-msg:focus-visible .havel-bubble { box-shadow: var(--focus-inner), var(--focus); }
+.host-workspace .havel-msg:focus-visible .havel-bubble { box-shadow: var(--focus-ring-2); }
 .host-workspace .havel-who { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); color: var(--ink-2); font-size: var(--size-13); font-weight: 600; }
 .host-workspace .havel-avatar { display: inline-flex; align-items: center; justify-content: center; width: var(--space-6); height: var(--space-6); border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent-ink); }
 .host-workspace .havel-bubble { padding: var(--space-3) var(--space-4); border-radius: var(--radius-4); font-size: var(--size-15); line-height: 1.5; color: var(--ink); }
@@ -690,7 +558,7 @@ from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, havel as 
 .host-workspace .havel-links { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .host-workspace .havel-composer { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); }
 .host-workspace .havel-composer textarea { width: 100%; box-sizing: border-box; min-height: calc(var(--control-h) * 2); padding: var(--space-3); border: 1px solid var(--input-border); border-radius: var(--input-radius); font: inherit; font-size: var(--size-15); color: var(--ink); background: var(--surface); resize: vertical; }
-.host-workspace .havel-composer textarea:focus-visible { outline: none; border-color: var(--accent); box-shadow: var(--focus-inner), var(--focus); }
+.host-workspace .havel-composer textarea:focus-visible { outline: 0; border-color: var(--accent); box-shadow: var(--focus-ring-2); }
 .host-workspace .havel-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
 .host-workspace .havel-actions .havel-meta { margin: 0 auto 0 0; }
 .host-workspace .havel-meta { margin: 0; font-size: var(--size-13); color: var(--ink-3); }
@@ -725,32 +593,15 @@ print("catalog ok", len(c["classes"]))
    If `class_notes` is not a dict, skip that line and note it. Create `docs/design/pages/havel.md`:
 
 ```markdown
-# Page: Havel (AI) (`/havel`, template `havel.html` + `_havel_thread.html` + `_havel_form.html`)
+# Page: Havel (AI) (`/havel`, templates `havel.html`, `_havel_thread.html`, `_havel_form.html`)
 
 Master version: 2.0.0. Adds only; never overrides MASTER.md. Plan: docs/plans/havel-support-assistant.md section 17.
 
-## Identity
-- nav: `guide` (phone: the More tab is active)
-- body_kind: `detail`
-- title key: `havel.title`; page title `havel.name`; meta: `havel.subtitle`
-- back link: none
-
-## Header
-- primary action: none (the Send button in the composer is the page's one primary)
-- secondary actions: none
-- tabs: none
-
-## Body
-- one `ui-section`: the thread (`role="log"`): Havel's intro bubble, then host and Havel bubbles; link buttons (compact secondary) under a Havel bubble; a confirm card (0314) under the bubble
-- the composer: textarea (600 chars), remaining-messages line, New conversation (quiet) when a conversation exists, Send (primary); the AI note under it
-- when Havel is off or a limit is hit: the limit sentence replaces the textarea; the support exit stays
-- badges used: none
-
-## Empty state
-- the intro bubble and the quick-help topics (0313); never a blank box
-
-## Tests
-- test-map row: `test_havel_page.py`, `test_havel_browser.py` (0313), `test_design_guardrails_browser.py` (`ROUTES["havel"]`); screenshots 390 and 1280
+- Identity: nav `guide`, body_kind `detail`, title `havel.title`, page title `havel.name`, meta `havel.subtitle`, no back link.
+- Header: no actions, no tabs; the composer's Send is the page's one primary.
+- Body: one `ui-section`: the thread (`role="log"`) with host and Havel bubbles, compact secondary link buttons and a confirm card (0314) under a Havel bubble; the composer (textarea 600 chars, remaining-messages line, quiet New conversation when a conversation exists, primary Send, the AI note). Off or over a limit: the limit sentence replaces the textarea; the support exit stays.
+- Empty state: the quick-help topics (0313); never a blank box.
+- Tests: `test_havel_page.py`, `test_havel_browser.py` (0324), `test_design_guardrails_browser.py` (`ROUTES["havel"]`); screenshots 390 and 1280.
 ```
 
    In `App/tests/test_design_guardrails_browser.py`, directly after the line `    "settings-account": "/settings",` insert `    "havel": "/havel",`.
@@ -865,7 +716,7 @@ def test_too_long_is_refused_without_a_call(host):
 
 ## 5. Do not touch
 
-Anything not in section 3 (plus `_icons.html` for the one icon). No launcher, panel, topics or JavaScript (0313), no cards (0314), no mail (0319). AGENTS.md rules 6, 7, 9; MASTER 10.
+Anything not in section 3 (plus `_icons.html` for the one icon). No topics (0313), no launcher, panel or JavaScript (0324), no cards (0314), no vi copy (0325), no mail (0319). AGENTS.md rules 6, 7, 9; MASTER 10.
 
 ## 6. Commands (from `App/`, `export UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`)
 
@@ -877,12 +728,12 @@ cd .. && python3 scripts/design_lint.py 2>&1 | tail -5 && python3 scripts/contex
 
 ## 7. Acceptance
 
-- [ ] `/havel` renders in en, cs, vi with "Havel (AI)" in the title and no raw `havel.` keys.
+- [ ] `/havel` renders in en, cs and vi (vi falls back to en) with "Havel (AI)" in the title and no raw `havel.` keys.
 - [ ] A greeting and an over-long message never reach the fake client; an answer renders steps as `<ol>`, link buttons and a 64-character history signature.
 - [ ] `X-Havel: 1` returns the thread fragment with `data-havel-state`.
 - [ ] Off, limit and guardrail failure show the fixed sentences and the e-mail support exit.
 - [ ] Layout guard and a11y guard pass for `/havel`, 0 skipped; screenshots at 390 and 1280 saved and looked at.
-- [ ] en and cs have the same `havel.*` keys; vi has them all; no em dash; `host2.css` key bumped; design lint clean.
+- [ ] en and cs have the same `havel.*` keys (vi: 0325); no em dash; `host2.css` key bumped; design lint clean.
 
 ## 8. Stop and ask
 

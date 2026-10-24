@@ -2,7 +2,7 @@
 
 Status: plan, owner approved the direction on 2026-10-24 and added scarce limits, a kind beginner-friendly voice,
 lowest spend, a full guide update and strict guardrails the same day (no code yet). Reviewed and corrected 2026-10-24
-(section 18). Briefs 0310–0323 come from this file (the guest plan owns 0291–0309); the five critical ones (0310–0314) are written,
+(section 18). Briefs 0310–0325 come from this file (the guest plan owns 0291–0309); the critical ones (0310–0314, 0324, 0325) are written,
 the rest are reserved in section 14 with what they must contain. The guide work (0315–0318) has no AI and can start now.
 Owner page with the background and decisions: https://claude.ai/artifact/FNGAdQcDG1ziyaPvcw5fDp
 
@@ -390,7 +390,7 @@ Redaction (`havel.redact`, applied to every user turn and history turn before th
 Dates stay, because stays need them. The mapping is kept in memory for one request and used to put real
 values back into the card fields. Tests cover Czech phone formats and passport-style numbers.
 
-Documents to change (one brief, 0313, drafted for the lawyer; nothing goes live before sign-off):
+Documents to change (brief 0320, drafted for the lawyer; nothing goes live before sign-off):
 1. Subprocessor register v1.3: Anthropic, purpose "AI support assistant and guest assistant", data as above,
    location and transfer safeguard as Anthropic's commercial terms and DPA state (lawyer to confirm, including
    whether EU-only processing or zero data retention is available on our plan).
@@ -561,8 +561,10 @@ the table order within each column; the guide column and the code column are ind
 | 0310 | `ai.py` core: SDK client, `call()`, usage recording, `ai_usage` migration 0015 (next free at run time), per-feature monthly cap and daily share, optional per-key daily cap for the guest bot, per-feature kill switch, config and env docs, decision line, fake client for tests | owner decision 15.1 | written | [0310](../tasks/0310-ai-core.md) |
 | 0311 | Havel engine: `havel_prompt.py`, `havel.py` (page map, redaction, request build, guardrails 9a, validate, limits, history signing, local replies), unit tests with canned JSON | 0310 | written | [0311](../tasks/0311-havel-engine.md) |
 | 0312 | Havel page `/havel`: route, templates, i18n en/cs/vi, limits wiring, remaining line, support card shell, guardrails ROUTES, unit tests | 0311 | written | [0312](../tasks/0312-havel-page.md) |
-| 0313 | Launcher, panel, bubbles, quick-help topics, `havel.js`, CSS, icon, catalog and MASTER 7.15, browser tests and screenshots | 0312 | written | [0313](../tasks/0313-havel-panel.md) |
-| 0314 | Confirm cards for the five actions, posting to existing routes | 0313 | written | [0314](../tasks/0314-havel-action-cards.md) |
+| 0313 | Quick-help topics on `/havel`: `havel_topics.py`, topic/question/answer screens from guide strings, `read_keys` hand-off, fragment template | 0312 | written | [0313](../tasks/0313-havel-topics.md) |
+| 0324 | Launcher (sidebar, top bar, More row), panel `<dialog>` in `base.html`, `havel.js`, CSS, MASTER 7.15, browser tests and screenshots (split from 0313 for the 12k-token brief cap) | 0313 | written | [0324](../tasks/0324-havel-panel.md) |
+| 0314 | Confirm cards for the five actions, posting to existing routes | 0324 | written | [0314](../tasks/0314-havel-action-cards.md) |
+| 0325 | Vietnamese `havel.*` copy (split from 0312 for the brief cap; vi falls back to en until then) | 0312 | written | [0325](../tasks/0325-havel-copy-vi.md) |
 | 0315 | Guide audit: coverage table of every host page against the guide, the section plan for 16a | none | to write (non-Fable) | Docs only: `docs/plans/guide-coverage.md` with one row per route in `test_design_guardrails_browser.py` ROUTES, the guide anchor that covers it or "missing", and the order for 0316–0318 |
 | 0316 | Guide: "Finding your way" (phone and computer) and glossary, en and cs | 0315 | to write (non-Fable) | New first section `finding` in `guide.html` and `guide_i18n.py` from the template facts in 16a.1; glossary of iCal, PIN, UbyPort, IDUB, stay fee, guest register; `test_guide.py` section list updated; the page map in `havel.py` gets `guide_finding` |
 | 0317 | Guide: Cleaning (new), Guest links and PIN, Stays and calendars, beginner steps, en and cs | 0316 | to write (non-Fable) | Four-part structure from 16a.2 for the three areas Havel needs most; copy written from `cleaning.html`, `_property_calendars.html`, the guest-links settings section; one action per step, "tap" and "click" variants |
@@ -570,8 +572,8 @@ the table order within each column; the guide column and the code column are ind
 | 0319 | Support hand-off: mail kinds `havel_support` and `havel_budget` in `mail.KINDS`, `POST /havel/support`, `havel_support` scope cap, the 80% budget mail from `ai.py`, tests from the mail row | 0312 | to write (non-Fable) | Mail body fields from section 8; idempotency key `havel-support-<user id>-<sha256 of summary>[:16]`; the card copy keys `havel.support.*` already exist after 0312; SLA sentence from owner item 4 |
 | 0320 | `havel_gap` and `havel_stats` writes, "This didn't help" button, `retention.py` lines (gap 90 days), admin list at `/admin/operations`, legal drafts (subprocessor v1.3, DPA notice, privacy policy host section, ROPA entry) marked LAWYER REVIEW | 0311 | to write (non-Fable) | `havel_stats` exists from 0015 (0310); `havel_gap` is a new migration here (next free number) with its `retention.py` line in the same PR; writes happen in `routes/havel.py`; legal text in `docs/privacy/` drafts, nothing published |
 | 0321 | `scripts/havel_eval.py` and `App/tests/havel_cases.json` (section 13) | 0311 | to write (non-Fable) | Reads the 54 cases, calls `ai.call` with the real key, scores must/should, prints a table and the token cost; never runs in CI |
-| 0322 | Command palette "Ask Havel: <query>" when no match, "Ask Havel" button at the top of `/guide`, empty-state hints | 0313 | to write (non-Fable) | `routes/api.py` adds a trailing item that opens the panel with the query prefilled; `guide.html` header secondary action |
-| 0323 | Staging acceptance for the owner: click-by-click script over the 54 cases that need a person, screenshots, go/no-go | 0314–0322 | to write (non-Fable) | Owner-only brief; includes adding `havel` to `UBYHOST_AI_FEATURES` and the key on Render staging, reading `ai_usage` after the run |
+| 0322 | Command palette "Ask Havel: <query>" when no match, "Ask Havel" button at the top of `/guide`, empty-state hints | 0324 | to write (non-Fable) | `routes/api.py` adds a trailing item that opens the panel with the query prefilled; `guide.html` header secondary action |
+| 0323 | Staging acceptance for the owner: click-by-click script over the 54 cases that need a person, screenshots, go/no-go | 0314–0325 | to write (non-Fable) | Owner-only brief; includes adding `havel` to `UBYHOST_AI_FEATURES` and the key on Render staging, reading `ai_usage` after the run |
 
 ## 15. Open owner items
 
@@ -826,6 +828,10 @@ What the review changed and why; the plan above is already corrected.
     text instead of repeating it, moved the "call pages by their labels" rule next to the data rules, stated the length
     limits in words, and said that `date_to` is null for cleaning.
 14. **Brief table** renumbered 0315–0323 with reserved numbers for the non-Fable briefs and a sentence on what each must
-    contain; the four critical briefs are written.
-15. Not verified: whether `access.invoice_details_url` exists (0311 greps every URL before listing it) and the exact
+    contain. The context lint caps a brief at 12k tokens, so the panel brief was split (0313 topics, 0324 launcher and
+    panel) and the Vietnamese copy moved out of 0312 into 0325; both numbers sit inside the locked 0310–0329 range.
+    Dependency chain: 0310 → 0311 → 0312 → 0313 → 0324 → 0314; 0325 only needs 0312.
+15. Fixed in review of my own briefs: 0312's CSS used focus tokens that do not exist (`--focus`, `--focus-inner`); the
+    system's `--focus-ring-2` is used instead. `--space-7` does not exist either (0324 uses `--space-6`).
+16. Not verified: whether `access.invoice_details_url` exists (0311 greps every URL before listing it) and the exact
     current `anthropic` 1.x version (0310 has Haiku read it from PyPI and record it in the report).
