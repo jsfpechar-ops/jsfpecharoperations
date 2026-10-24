@@ -134,7 +134,7 @@ AI_FEATURES = frozenset(
 )
 ANTHROPIC_API_KEY = os.environ.get("UBYHOST_ANTHROPIC_API_KEY", "").strip()
 AI_MODEL = os.environ.get("UBYHOST_AI_MODEL", "claude-haiku-5-5")
-AI_MAX_TOKENS = int(os.environ.get("UBYHOST_AI_MAX_TOKENS", "2500"))
+AI_MAX_TOKENS = int(os.environ.get("UBYHOST_AI_MAX_TOKENS", "4000"))
 # USD per million tokens, Anthropic table for claude-haiku-5-5 (2026-10-06): input
 # 0.10, output 0.50, cache read a tenth of input, a 5-minute cache write 1.25x.
 AI_PRICE_USD_PER_MTOK = {
@@ -282,7 +282,8 @@ def daily_allowance_usd(feature: str, day: Optional[date] = None) -> float:
     """What today may spend: the budget left, spread evenly over the days left in the month."""
     day = day or today()
     days_left = calendar.monthrange(day.year, day.month)[1] - day.day + 1
-    left = config.ai_monthly_usd(feature) - month_spend_usd(feature, day)
+    # Budget left at the start of today, so today's own spend does not shrink today's share.
+    left = config.ai_monthly_usd(feature) - (month_spend_usd(feature, day) - day_spend_usd(feature, day))
     return max(0.0, left / days_left)
 
 
@@ -541,9 +542,9 @@ def test_budget_month_day_and_key(on, monkeypatch):
     monkeypatch.setattr(ai, "today", lambda: day)
     db.execute(ROW, ("2026-10-02", "havel", "", 30_000_000))  # $3.00 this month
     assert round(ai.month_spend_usd("havel", day), 2) == 3.0
-    assert round(ai.daily_allowance_usd("havel", day), 3) == round(7 / 21, 3)  # 21 days left
+    assert round(ai.daily_allowance_usd("havel", day), 3) == round(7 / 22, 3)  # 22 days left, the 10th included
     assert ai.budget_state("havel", day=day) == "ok"
-    db.execute(ROW, ("2026-10-10", "havel", "", 4_000_000))  # $0.40 today > $0.333
+    db.execute(ROW, ("2026-10-10", "havel", "", 4_000_000))  # $0.40 today > $0.318 (share unchanged by today's spend)
     assert ai.budget_state("havel", day=day) == "day"
     with pytest.raises(ai.AIBudgetError) as err:
         _call(FakeClient([reply({"kind": "a"})]))
@@ -573,7 +574,7 @@ Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything i
 | `UBYHOST_AI_FEATURES` | unset (all off) | Comma list of features that may call the model, for example `havel` or `havel,leon`. A feature not listed shows its no-AI fallback (Havel: quick help and the support form). |
 | `UBYHOST_ANTHROPIC_API_KEY` | unset | Anthropic API key, created in the Anthropic Console with its own monthly spend limit. Passed to the SDK explicitly; the SDK's `ANTHROPIC_API_KEY` is not read. Staging first. |
 | `UBYHOST_AI_MODEL` | `claude-haiku-5-5` | Model id. Changing it invalidates the prompt cache and needs each feature's test set re-run. |
-| `UBYHOST_AI_MAX_TOKENS` | `2500` | Output cap per call; adaptive thinking counts toward it. A caller may pass a lower `max_tokens` (Leon's chat uses about 800), never a higher one. |
+| `UBYHOST_AI_MAX_TOKENS` | `4000` | Ceiling per call; adaptive thinking counts toward it. Callers pass their own lower `max_tokens` (Havel 2500, Leon chat about 800, the import merge up to the ceiling). |
 | `UBYHOST_AI_MONTHLY_USD_<FEATURE>` | `10` | Spend cap per feature per calendar month (Prague), e.g. `UBYHOST_AI_MONTHLY_USD_HAVEL`. Today's share is the budget left divided by the days left in the month. |
 | `UBYHOST_AI_KEY_DAILY_USD_<FEATURE>` | `0` (off) | Per-key daily cap, e.g. `UBYHOST_AI_KEY_DAILY_USD_LEON=0.50` caps one property's guest bot at 50 cents a day. Havel passes no key. |
 | `UBYHOST_AI_PRICE_INPUT`, `UBYHOST_AI_PRICE_OUTPUT`, `UBYHOST_AI_PRICE_CACHE_READ`, `UBYHOST_AI_PRICE_CACHE_WRITE` | `0.10`, `0.50`, `0.01`, `0.125` | USD per million tokens, Anthropic table 2026-10-06. Update when the price changes. |

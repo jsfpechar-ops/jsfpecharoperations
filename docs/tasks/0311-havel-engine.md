@@ -13,7 +13,7 @@ Add `App/app/havel_prompt.py` (the system prompt, verbatim from the plan) and `A
 Plan: `docs/plans/havel-support-assistant.md` sections 2, 4 (prompt, copy it exactly), 5 (schema), 6 (pages), 9 (limits), 9a (guardrails), 10 (redaction). Rules: AGENTS.md 2 (no personal data in logs), 5 (SQL through `db.py`).
 
 Repo facts, verified 2026-10-24:
-- `App/app/ai.py` (0310): `ai.call(feature, system_blocks, messages, schema, key=None) -> dict`, raises `ai.AIDisabled`, `ai.AIBudgetError` (`.reason` in `month`, `day`), `ai.AIError` (`.reason`); `ai.today()`, `ai.now()` in Europe/Prague; `ai.enabled("havel")`.
+- `App/app/ai.py` (0310): `ai.call(feature, system_blocks, messages, schema, key=None, max_tokens=None) -> dict` (clamped to `config.AI_MAX_TOKENS`, default 4000), raises `ai.AIDisabled`, `ai.AIBudgetError` (`.reason` in `month`, `day`), `ai.AIError` (`.reason`); `ai.today()`, `ai.now()` in Europe/Prague; `ai.enabled("havel")`.
 - `App/app/guide_i18n.py`: `GUIDE_STRINGS = {"en": {...}, "cs": {...}}`, keys like `guide.nav.stays`, `guide.stays.body`. There is no `vi` guide yet (English is used for vi). Anchors in `templates/guide.html`: `overview, statuses, setup, stays, guests, reporting, manual-filing, ubyport-credentials, filters, housebook, stay_fee, invoices, settings, door-codes, faster, faq, legal, demo`. Nav label keys exist for all but `manual-filing` (label key `guide.reporting.manual_filing_title`), `ubyport-credentials` (`apartment.form.ubyport.credentials_help_heading`) and `door-codes` (`guide.nav.door-codes`).
 - `App/app/host_i18n.py`: `translate(lang, key, **kwargs)`, `LANGUAGES = ("en", "cs", "vi")`, `DEFAULT_LANGUAGE = "en"`; Vietnamese falls back to English through `lookup`.
 - `App/app/rate_limit.py`:
@@ -88,6 +88,7 @@ from . import ai, config, db, guide_i18n, host_i18n, rate_limit
 from .havel_prompt import HAVEL_SYSTEM_PROMPT
 
 FEATURE = "havel"
+MAX_TOKENS = 2500  # plan §3: room for beginner steps plus low-effort thinking
 MAX_MESSAGE_CHARS = 600
 MAX_REPLY_CHARS = 1500
 MAX_SUMMARY_CHARS = 800
@@ -552,7 +553,7 @@ def ask(host: Host, history: List[Dict[str, str]], message: str, today: Optional
     mapping: Dict[str, str] = {}
     messages = build_messages(host, history, message, today, mapping)
     try:
-        data = ai.call(FEATURE, system_blocks(host.lang), messages, SCHEMA)
+        data = ai.call(FEATURE, system_blocks(host.lang), messages, SCHEMA, max_tokens=MAX_TOKENS)
     except (ai.AIDisabled, ai.AIBudgetError):
         raise
     except ai.AIError as exc:
