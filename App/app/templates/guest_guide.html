@@ -1,0 +1,44 @@
+{#- 0342: the host's guest guide, one property. Cards grouped by topic in
+    guest order; a row opens the card editor. Data: app/guest_guide.py. -#}
+{% extends "host_page.html" %}
+{% set body_kind = 'list' %}
+{% set base_url = '/apartments/' ~ apartment.id ~ '/guide' %}
+{% block title %}{{ t('guest_guide.title') }} · {{ apartment.internal_name }} · UbyHost{% endblock %}
+{% block page_title %}{{ t('guest_guide.title') }}{% endblock %}
+{% block back_url %}/apartments/{{ apartment.id }}{% endblock %}
+{% block back_label %}{{ apartment.internal_name }}{% endblock %}
+{% block meta %}{{ t('guest_guide.progress', done=progress.done, total=progress.total) }}{% endblock %}
+{% block primary_action %}{% if next_id %}{{ ui_button(t('guest_guide.continue'), 'primary', href=base_url ~ '/' ~ next_id) }}{% endif %}{% endblock %}
+{% block body %}
+{% set topic_options = [] %}{% for topic in topics %}{% set _ = topic_options.append((topic, t('guest_guide.topic.' ~ topic))) %}{% endfor %}
+{% if progress.live %}
+{{ ui_banner('neutral', t('guest_guide.live')) }}
+{% else %}
+{{ ui_banner('attention', t('guest_guide.not_live', done=progress.must_have_done, total=progress.must_have_total)) }}
+{% endif %}
+{% if progress.check %}{{ ui_banner('attention', t('guest_guide.check_waiting')) }}{% endif %}
+
+{% for topic, cards in groups %}
+{% call ui_section(t('guest_guide.topic.' ~ topic), id='topic-' ~ topic) %}
+{{ ui_table_begin([(t('guest_guide.col.card'), ''), (t('guest_guide.col.state'), '')], label=t('guest_guide.topic.' ~ topic)) }}
+{% for card in cards %}
+{% set card_url = base_url ~ '/' ~ card.id %}
+{% set card_title = card.title if card.kind == 'custom' else t('guest_guide.kind.' ~ card.kind ~ '.title') %}
+<tr class="ui-row clickable-row" data-href="{{ card_url }}" tabindex="0" role="link" aria-label="{{ card_title }}">
+  <td class="ui-cell-first" data-card="primary"><a href="{{ card_url }}">{{ card_title }}</a>{% if card.kind in must_have %} <span class="ui-sub">{{ t('guest_guide.must_have') }}</span>{% endif %}</td>
+  <td data-card="badge">{% if card.state == 'done' %}{{ ui_badge('done', t('guest_guide.state.done')) }}{% elif card.state == 'check' %}{{ ui_badge('attention', t('guest_guide.state.check')) }}{% elif card.state == 'skipped' %}{{ ui_badge('neutral', t('guest_guide.state.skipped')) }}{% else %}{{ ui_badge('action', t('guest_guide.state.missing')) }}{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% endcall %}
+{% endfor %}
+
+{% call ui_section(t('guest_guide.add.title'), id='add-card') %}
+<form method="post" action="{{ base_url }}/cards">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{{ ui_select('guide-add-topic', t('guest_guide.add.topic'), topic_options, name='topic') }}
+{{ ui_field('guide-add-title', t('guest_guide.add.name'), name='title', placeholder=t('guest_guide.add.placeholder'), attrs='maxlength="120" required') }}
+<div class="ui-form-actions">{{ ui_button(t('guest_guide.add.button'), 'secondary', type='submit', icon_name='plus') }}</div>
+</form>
+{% endcall %}
+{% endblock %}
