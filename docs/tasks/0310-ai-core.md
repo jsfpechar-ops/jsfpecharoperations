@@ -68,13 +68,13 @@ No other file may change.
 
 Commit after each step: `0310 step k`.
 
-1. **Dependency.** Find the newest `anthropic` 1.x on PyPI and pin it (from `App/`):
+1. **Dependency.** Pin `anthropic==2.3.0` (orchestrator checked 2026-10-24: 2.3.0 has `messages.create(output_config=..., thinking=...)` and the usage fields this brief reads). Confirm it exists (from `App/`):
 
 ```
 .venv/bin/python -m pip index versions anthropic 2>&1 | head -2
 ```
 
-   Take the first version printed (it must start with `1.`; if it does not, STOP and ask). Add one line after `webauthn==3.0.1` in `App/requirements.txt`: `anthropic==<that version>`. Then regenerate the lock and install:
+   The list must contain `2.3.0` (if it does not, STOP and ask). Add one line after `webauthn==3.0.1` in `App/requirements.txt`: `anthropic==2.3.0`. Then regenerate the lock and install:
 
 ```
 cd App && .venv/bin/python -m pip install pip-tools 2>&1 | tail -2
@@ -495,7 +495,7 @@ def on(monkeypatch):
     monkeypatch.setattr(config, "AI_FEATURES", frozenset({"havel", "leon"}))
     monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
     monkeypatch.setattr(config, "ai_monthly_usd", lambda feature: 10.0)
-    monkeypatch.setattr(config, "ai_key_daily_usd", lambda feature: 0.5 if feature == "leon" else 0.0)
+    monkeypatch.setattr(config, "ai_key_daily_usd", lambda feature: 0.2 if feature == "leon" else 0.0)  # below leon's daily share, so the key cap bites first
     yield
     ai.set_client_for_tests(None)
 
@@ -594,7 +594,7 @@ def test_budget_month_day_and_key(on, monkeypatch):
     assert ai.budget_fraction("havel", day) > 1.0
     # Features are separate: leon is untouched by havel's spend, but its key cap bites.
     assert ai.budget_state("leon", "11", day) == "ok"
-    db.execute(ROW, ("2026-10-10", "leon", "11", 6_000_000))  # $0.60 for property 11 today > $0.50
+    db.execute(ROW, ("2026-10-10", "leon", "11", 2_500_000))  # $0.25 for property 11 today > $0.20, < share $0.4545
     assert ai.budget_state("leon", "11", day) == "key"
     assert ai.budget_state("leon", "12", day) == "ok"
     assert ai.budget_state("leon", None, day) == "ok"
@@ -658,7 +658,7 @@ assert len(moved) == 6, [l[:40] for l in moved]
 kept = [l for l in lines if not l.startswith(starts)]
 header = "# Decisions archive 2026\n\nMoved from docs/context/decisions.md (workflow.md, Compaction). Live rules stay in rules.md.\n\n"
 dst.write_text((dst.read_text(encoding="utf-8") if dst.exists() else header) + "".join(moved), encoding="utf-8")
-new = ("- 2026-10-24 | New dependency `anthropic` (Python SDK 1.x, pinned in `App/requirements.txt`, hashes with its "
+new = ("- 2026-10-24 | New dependency `anthropic` (Python SDK 2.3.0, pinned in `App/requirements.txt`, hashes with its "
        "transitive packages in `App/requirements.lock`: PACKAGES); model `claude-haiku-5-5`; every model call through "
        "`App/app/ai.py`, per-feature switch and budget | Havel support assistant and the guest assistant; one module to "
        "swap providers | [plan](../plans/havel-support-assistant.md), task 0310\n")
@@ -683,7 +683,7 @@ Expected: all pass; `context lint: OK` (the pre-existing WARN lines about other 
 
 ## 7. Acceptance
 
-- [ ] `anthropic==1.x` in `App/requirements.txt`; `requirements.lock` regenerated with hashes; `pip install --require-hashes -r requirements.lock` succeeds.
+- [ ] `anthropic==2.3.0` in `App/requirements.txt`; `requirements.lock` regenerated with hashes; `pip install --require-hashes -r requirements.lock` succeeds.
 - [ ] `App/app/ai.py` is the only file under `App/app/` that contains `import anthropic` (`grep -rl 'import anthropic' App/app`).
 - [ ] `test_ai.py` passes: structured output, cache breakpoint, usage upsert per key, error reasons, month, day and key caps, features independent, input cap (refused before any API call, cannot be raised above 60,000).
 - [ ] The migration applies with the next free number; `test_migrations.py` passes.
@@ -691,7 +691,7 @@ Expected: all pass; `context lint: OK` (the pre-existing WARN lines about other 
 
 ## 8. Stop and ask
 
-As in docs/tasks/TEMPLATE.md section 8, plus: the newest `anthropic` is not `1.x`; pip has no network; the compaction script moves a count other than 6; the lint's next free migration is not 0015 (use it, but say so).
+As in docs/tasks/TEMPLATE.md section 8, plus: `anthropic` 2.3.0 is not on PyPI; pip has no network; the compaction script moves a count other than 6; the lint's next free migration is not 0015 (use it, but say so).
 
 ## 9. Report
 
