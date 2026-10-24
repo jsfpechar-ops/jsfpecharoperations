@@ -26,6 +26,7 @@ Status: review
 ## Deviations
 - Step 8 was first applied with a wrong anchor, reverted with git checkout before any commit, then reapplied correctly. Final file matches the brief.
 - Step 9: an extra blank line was removed so the new function has two blank lines before the next comment (PEP 8). No other text changed.
+- Review fixes: lint (2 unused variables), history text cleaned so stored guest text cannot close its tag (test extended), busy guard released only by the request that took it.
 
 ## Questions
 None.

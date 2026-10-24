@@ -337,11 +337,11 @@ def _history(chat_id: int) -> List[Dict[str, str]]:
     out: List[Dict[str, str]] = []
     for m in messages(chat_id, HISTORY_TURNS):
         if m["role"] == "guest":
-            role, text = "user", f"<guest_message>\n{m['text']}\n</guest_message>"
+            role, text = "user", f"<guest_message>\n{_clean_card_text(m['text'])}\n</guest_message>"
         elif m["role"] == "leon" and m["kind"] == "answer":
             role, text = "assistant", m["text"]
         elif m["role"] == "host":
-            role, text = "assistant", f"(The host answered on the page: {m['text']})"
+            role, text = "assistant", f"(The host answered on the page: {_clean_card_text(m['text'])})"
         else:
             continue
         if out and out[-1]["role"] == role:
@@ -457,7 +457,6 @@ def reply(chat: Dict[str, Any], text: str, *, level: str, property_name: str, ho
     of a second guest turn and model call.
     """
     chat_id = int(chat["id"])
-    apartment_id = int(chat["apartment_id"])
     lang = lang or chat.get("lang") or "en"
     text = str(text or "").strip()
 
@@ -472,7 +471,8 @@ def reply(chat: Dict[str, Any], text: str, *, level: str, property_name: str, ho
         return local("paused", _fixed(lang, "leon_paused"), store=False)
     if rate_limit.blocked("leon_chat", str(chat_id), CHAT_BURST) or rate_limit.blocked("leon_addr", address_key, ADDRESS_BURST):
         return local("slow_down", _fixed(lang, "leon_slow_down"), store=False)
-    if not _take_turn(chat_id):
+    until = _take_turn(chat_id)
+    if not until:
         # Another device or tab of this chat is waiting for Leon: nothing stored, no model call, no cap count.
         log.info("leon busy chat=%s", chat_id)
         return local("busy", _fixed(lang, "leon_busy"), store=False)
@@ -489,17 +489,18 @@ def reply(chat: Dict[str, Any], text: str, *, level: str, property_name: str, ho
         return _answer(_chat(fresh) if fresh else chat, text, level=level, property_name=property_name,
                        host_name=host_name, address_key=address_key, lang=lang, client_id=client_id)
     finally:
-        db.execute("UPDATE guest_chat SET busy_until = NULL WHERE id = ?", (chat_id,))
+        db.execute("UPDATE guest_chat SET busy_until = NULL WHERE id = ? AND busy_until = ?", (chat_id, until))
 
 
-def _take_turn(chat_id: int) -> bool:
-    """Atomically claim the conversation for BUSY_SECONDS; False while another request holds it."""
+def _take_turn(chat_id: int) -> Optional[str]:
+    """Atomically claim the conversation for BUSY_SECONDS; return the busy_until it wrote, None while another request holds it."""
     now = datetime.now(timezone.utc).replace(microsecond=0)
     until = (now + timedelta(seconds=BUSY_SECONDS)).isoformat()
-    return db.execute(
+    took = db.execute(
         "UPDATE guest_chat SET busy_until = ? WHERE id = ? AND (busy_until IS NULL OR busy_until < ?)",
         (until, chat_id, now.isoformat()),
     ) == 1
+    return until if took else None
 
 
 def _answer(chat: Dict[str, Any], text: str, *, level: str, property_name: str, host_name: str,
