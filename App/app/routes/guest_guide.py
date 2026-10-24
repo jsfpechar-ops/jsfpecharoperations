@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
-from .. import access, auth, guest_guide, guide_photos, security, templating
+from .. import access, auth, guest_guide, guide_photos, guide_token, security, templating
 from .admin_helpers import back, flash
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
@@ -63,6 +63,7 @@ def guide_index(request: Request, apartment_id: int):
         return guard
     apartment = _home(request, apartment_id)
     guest_guide.ensure_defaults(apartment)
+    guide_token.ensure(apartment_id)
     rows = guest_guide.items(apartment_id)
     groups = [(topic, [r for r in rows if r["topic"] == topic]) for topic in guest_guide.TOPICS]
     return _render(
