@@ -1,4 +1,4 @@
-# 0299: Review drafted cards (source line, discard)
+# 0349: Review drafted cards (source line, discard)
 
 Status: todo
 Depends on: 0348 merged | Base commit: after 0348 | Branch: task/0299-guide-drafts
@@ -92,7 +92,7 @@ for _lang, _strings in _GUIDE_IMPORT_STRINGS.items():
 Directly after them, insert one blank line and:
 
 ```python
-# 0299: reviewing drafts on the card editor.
+# 0349: reviewing drafts on the card editor.
 _GUIDE_DRAFT_STRINGS = {
     "en": {
         "guest_guide.draft_from.booking": "From your Booking.com listing.",
@@ -121,7 +121,7 @@ for _lang, _strings in _GUIDE_DRAFT_STRINGS.items():
 6. Create `App/tests/test_guide_drafts.py`:
 
 ```python
-"""0299: reviewing drafted cards on the card editor."""
+"""0349: reviewing drafted cards on the card editor."""
 from __future__ import annotations
 
 import pytest

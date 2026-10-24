@@ -1,4 +1,4 @@
-"""0303: guest copy for translated guide cards (6 languages) and the host usage line (en, cs).
+"""0353: guest copy for translated guide cards (6 languages) and the host usage line (en, cs).
 Run from the repo root once: python3 docs/plans/0303-files/add_translate_i18n.py"""
 import json
 from pathlib import Path

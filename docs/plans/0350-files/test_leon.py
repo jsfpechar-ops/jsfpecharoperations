@@ -1,4 +1,4 @@
-"""0300: Leon (AI), the guest bot core. Both doors, the never-invent guardrail, limits, caps, retention. No network."""
+"""0350: Leon (AI), the guest bot core. Both doors, the never-invent guardrail, limits, caps, retention. No network."""
 from __future__ import annotations
 
 import logging

@@ -1,4 +1,4 @@
-"""0304: every string of the guide card catalog (en, cs). Data only; apply_catalog.py writes it."""
+"""0354: every string of the guide card catalog (en, cs). Data only; apply_catalog.py writes it."""
 
 TOPICS = [
     ("arrival", "Arrival and getting here", "Příjezd a cesta"),

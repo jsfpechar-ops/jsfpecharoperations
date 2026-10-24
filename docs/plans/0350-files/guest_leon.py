@@ -1,4 +1,4 @@
-"""0300: Leon (AI) endpoints behind the two guide doors (JSON; the chat UI is brief 0352).
+"""0350: Leon (AI) endpoints behind the two guide doors (JSON; the chat UI is brief 0352).
 
 Stay door: ``/l/{token}/{reservation_id}/guide/leon``, the same gate as the
 stay guide (``_stay_gate``), level from ``booked_level``; one conversation per

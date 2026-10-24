@@ -1,4 +1,4 @@
-# 0295: QR code for guests (print and new link)
+# 0345: QR code for guests (print and new link)
 
 Status: todo
 Depends on: 0344 merged | Base commit: after 0344 | Branch: task/0295-guide-qr
@@ -74,7 +74,7 @@ def qr_png(url: str) -> bytes:
 3. Replace the whole content of `App/app/routes/guest_guide.py` with:
 
 ```python
-"""0292: the host's guest guide pages: the card list and one card's editor.
+"""0342: the host's guest guide pages: the card list and one card's editor.
 
 The data and every rule about it live in ``app.guest_guide``; these routes only
 check the property belongs to the host, call it, and redirect.
@@ -322,7 +322,7 @@ def guide_photo_delete(request: Request, apartment_id: int, item_id: int, photo_
 4. Create `App/app/templates/guest_guide_qr.html`:
 
 ```html
-{#- 0295: the guide's QR code for the host to print. The code opens /g/<token>,
+{#- 0345: the guide's QR code for the host to print. The code opens /g/<token>,
     the public "everyone" cards only. A new link makes every printed code stop. -#}
 {% extends "host_page.html" %}
 {% set body_kind = 'form' %}
@@ -369,7 +369,7 @@ for _lang, _strings in _GUIDE_PHOTO_STRINGS.items():
 Directly after them, insert one blank line and:
 
 ```python
-# 0295: the guide's QR code for the host to print.
+# 0345: the guide's QR code for the host to print.
 _GUIDE_QR_STRINGS = {
     "en": {
         "guest_guide.qr.link": "QR code for guests",
@@ -418,7 +418,7 @@ for _lang, _strings in _GUIDE_QR_STRINGS.items():
 9. Create `App/tests/test_guide_qr.py`:
 
 ```python
-"""0295: the guide's QR code for the host."""
+"""0345: the guide's QR code for the host."""
 from __future__ import annotations
 
 import io

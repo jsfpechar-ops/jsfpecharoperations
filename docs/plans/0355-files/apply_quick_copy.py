@@ -1,4 +1,4 @@
-"""0305: write the Quick answers copy. Run once from the repo root.
+"""0355: write the Quick answers copy. Run once from the repo root.
 
 host_i18n.py gets a _GUIDE_QUICK_STRINGS block (en, cs) after the 0345 QR block;
 i18n.py (en, cs, de, es, fr) and guest_uk_i18n.py (uk) get the guest lines after
@@ -25,7 +25,7 @@ def main() -> None:
     assert "_GUIDE_QUICK_STRINGS" not in host_text and '"guide_fact_pets_yes"' not in main_text, "already applied"
     assert host_text.count(HOST_ANCHOR) == 1, "0345 QR block not found"
     block = (
-        "\n# 0305: Quick answers, the host wizard.\n_GUIDE_QUICK_STRINGS = {\n"
+        "\n# 0355: Quick answers, the host wizard.\n_GUIDE_QUICK_STRINGS = {\n"
         + "".join(f'    "{lang}": {{\n{_lines(HOST[lang], "        ")}    }},\n' for lang in ("en", "cs"))
         + "}\n\nfor _lang, _strings in _GUIDE_QUICK_STRINGS.items():\n    STRINGS[_lang].update(_strings)\n"
     )

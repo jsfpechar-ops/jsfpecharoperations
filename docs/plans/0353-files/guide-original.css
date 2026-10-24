@@ -1,5 +1,5 @@
 
-/* 0303: a card the guest reads in an AI translation, with the host's original one tap away. */
+/* 0353: a card the guest reads in an AI translation, with the host's original one tap away. */
 .g-guide-original { margin: 14px 0 0; font-size: 14px; color: var(--g-muted); }
 .g-guide-original summary { cursor: pointer; padding: 6px 0; font-weight: 600; color: var(--g-ink-2); }
 .g-guide-original-body { margin-top: 8px; padding: 10px 12px; border-radius: var(--g-radius-sm); background: var(--g-surface-2); }

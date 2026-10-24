@@ -1,4 +1,4 @@
-# 0302: Leon (AI): the guest chat on the guide pages
+# 0352: Leon (AI): the guest chat on the guide pages
 
 Status: todo
 Depends on: 0350 and 0351 merged | Base commit: after 0351 | Branch: task/0302-guest-chat-ui
@@ -131,7 +131,7 @@ Replace the line `  <p class="g-intro">{{ t('host_details_help') }}</p>` with:
 
 ```
   {% if door == 'qr' %}
-    {# 0302: a QR guest scanned a sticker, so there is no message this link came in. #}
+    {# 0352: a QR guest scanned a sticker, so there is no message this link came in. #}
     {% if host and host.name %}<p>{{ host.name }}</p>{% endif %}
     <p class="g-intro" style="margin-bottom:0" data-qr-contact>{{ t('guide_qr_contact') }}</p>
   {% else %}
@@ -145,7 +145,7 @@ The line `    <p class="hint">{{ t('host_details_missing') }}</p>` is followed b
 Directly after `from ..templating import render_guest` insert:
 
 ```python
-from .. import ai, leon  # 0302: the Leon (AI) chat
+from .. import ai, leon  # 0352: the Leon (AI) chat
 ```
 
 Replace `def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level: str, photo_url, back_url: str = ""):` with:
@@ -158,7 +158,7 @@ def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level
 Directly after `            "back_url": back_url,` insert:
 
 ```python
-            # 0302: the chat only while the guide is live and Leon is switched on.
+            # 0352: the chat only while the guide is live and Leon is switched on.
             "leon_url": leon_url if live and ai.enabled("leon") else "",
             "leon_host": leon.host_first_name((context.get("host") or {}).get("name", "")),
 ```
@@ -215,7 +215,7 @@ Write `docs/tasks/0302-report.md` (600 tokens at most) and set `Status: review`:
 
 ## Risk list (for the reviewer)
 
-`guest-leon.js` (textContent only, error paths, polling bounds), `_leon.html` (hidden form, CSRF input), the `_host.html` branch. Known limits: a host answer appears within 60 seconds, not live; polling stops after 30 minutes (a reload shows later answers); the chat is hidden while `leon` is not in `UBYHOST_AI_FEATURES`, so guests then have the guide and the contact block only. Works before or after 0354 and 0305: its anchors avoid the lines they edit.
+`guest-leon.js` (textContent only, error paths, polling bounds), `_leon.html` (hidden form, CSRF input), the `_host.html` branch. Known limits: a host answer appears within 60 seconds, not live; polling stops after 30 minutes (a reload shows later answers); the chat is hidden while `leon` is not in `UBYHOST_AI_FEATURES`, so guests then have the guide and the contact block only. Works before or after 0354 and 0355: its anchors avoid the lines they edit.
 
 ## Owner steps
 

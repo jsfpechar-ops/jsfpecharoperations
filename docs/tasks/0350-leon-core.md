@@ -1,4 +1,4 @@
-# 0300: Leon (AI): the guest bot's core
+# 0350: Leon (AI): the guest bot's core
 
 Status: todo
 Depends on: 0344, 0348 and 0310 merged | Base commit: after 0344, 0348 and 0310 | Branch: task/0300-leon-core
@@ -6,7 +6,7 @@ Executor: Haiku 5.5 (critical: Fable reviews the diff before merge) | Fits one s
 
 ## 1. Objective
 
-Add Leon (AI), the guest bot, behind the two guide doors of 0294: a guest writes a question, `claude-haiku-5-5` (through `ai.call`, feature `leon`, key = property id) answers only from the confirmed guide cards that door may read, the server checks every answer against the cited cards, and anything the guide does not answer (or Leon may not read: lifetime cap, spent budget, outage) becomes a question for the host (brief 0351 shows it to the host; the guest sees the answer on the page). This brief is the backend plus a minimal JSON endpoint per door; the chat UI is 0352.
+Add Leon (AI), the guest bot, behind the two guide doors of 0344: a guest writes a question, `claude-haiku-5-5` (through `ai.call`, feature `leon`, key = property id) answers only from the confirmed guide cards that door may read, the server checks every answer against the cited cards, and anything the guide does not answer (or Leon may not read: lifetime cap, spent budget, outage) becomes a question for the host (brief 0351 shows it to the host; the guest sees the answer on the page). This brief is the backend plus a minimal JSON endpoint per door; the chat UI is 0352.
 
 ## 2. Context
 
@@ -21,7 +21,7 @@ Add Leon (AI), the guest bot, behind the two guide doors of 0294: a guest writes
 
 ### Design
 
-**Knowledge.** The only source is `guest_guide.for_guest(apartment_id, level)` (0291: `done` cards of that visibility, empty until the guide is live). `leon.system_blocks(cards, property_name)` returns two constant texts: `CHARACTER`, and a `<guide>` block with each card as `[c<id>] title`, `where:`, `steps:` (one per line, as the host wrote them), `watch out:`, `media: photo, video`, sorted by id, with `<` and `>` removed from host text so a card cannot close the tag. Nothing per request goes in `system`, so the prompt cache holds per property and level (5 minutes). The property name is the one the door already shows; check-in and checkout times reach Leon only as the host's checkin and checkout cards (the `cleaning_property` times are a cleaner's schedule, not guest copy, so they stay out). The page language and the redacted message go in the user turn inside `<guest_message>` tags. Leon never gets the guest's name or any other registration data, and answers briefly with only what the guest needs (owner, 2026-10-24).
+**Knowledge.** The only source is `guest_guide.for_guest(apartment_id, level)` (0341: `done` cards of that visibility, empty until the guide is live). `leon.system_blocks(cards, property_name)` returns two constant texts: `CHARACTER`, and a `<guide>` block with each card as `[c<id>] title`, `where:`, `steps:` (one per line, as the host wrote them), `watch out:`, `media: photo, video`, sorted by id, with `<` and `>` removed from host text so a card cannot close the tag. Nothing per request goes in `system`, so the prompt cache holds per property and level (5 minutes). The property name is the one the door already shows; check-in and checkout times reach Leon only as the host's checkin and checkout cards (the `cleaning_property` times are a cleaner's schedule, not guest copy, so they stay out). The page language and the redacted message go in the user turn inside `<guest_message>` tags. Leon never gets the guest's name or any other registration data, and answers briefly with only what the guest needs (owner, 2026-10-24).
 
 **Kinds** (`SCHEMA`, strict JSON, `additionalProperties: false`, no length keywords: lengths are server checks as in the Havel plan §5):
 
@@ -55,8 +55,8 @@ Add Leon (AI), the guest bot, behind the two guide doors of 0294: a guest writes
 
 | Route | Gate |
 |---|---|
-| `GET`/`POST /l/{token}/{reservation_id}/guide/leon` | `_stay_gate` (0294: link, PIN, stay, claim), level `booked_level(reservation)` |
-| `GET`/`POST /g/{token}/leon` | `_qr_apartment` (0294: QR rate limit, token), level `everyone` |
+| `GET`/`POST /l/{token}/{reservation_id}/guide/leon` | `_stay_gate` (0344: link, PIN, stay, claim), level `booked_level(reservation)` |
+| `GET`/`POST /g/{token}/leon` | `_qr_apartment` (0344: QR rate limit, token), level `everyone` |
 
 Both routes send 0344's `HARDEN` headers (no-store, noindex, no-referrer). POSTs are guarded by `security.protect_guest_post` (CSRF, as every guest form). The model call runs in a threadpool.
 
@@ -199,7 +199,7 @@ Command: `.venv/bin/python -c "from app import cookie_inventory as c; print('uby
 
 ```python
 def _guest_chat_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
-    """Brief 0300: Leon conversations 30 days after checkout (stay) or the last message (QR)."""
+    """Brief 0350: Leon conversations 30 days after checkout (stay) or the last message (QR)."""
     from . import leon
     return leon.purge(today, dry_run, owner_user_id)
 

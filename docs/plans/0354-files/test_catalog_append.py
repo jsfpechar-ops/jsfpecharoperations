@@ -1,6 +1,6 @@
 
 
-# --- 0304: the full card catalog ---------------------------------------------------
+# --- 0354: the full card catalog ---------------------------------------------------
 
 def test_catalog_is_complete_in_english_and_czech():
     from app import host_i18n

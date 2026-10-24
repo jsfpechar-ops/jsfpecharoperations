@@ -1,4 +1,4 @@
-"""0305: Quick answers chips in a real browser at 390 px (tap size, width, checked state, focus).
+"""0355: Quick answers chips in a real browser at 390 px (tap size, width, checked state, focus).
 
 Skipped when Chromium is missing, unless UBYHOST_REQUIRE_BROWSER=1.
 """

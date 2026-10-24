@@ -1,4 +1,4 @@
-"""0301: add the host copy (en, cs) to host_i18n.py and the guest copy (6 languages) to i18n.py and guest_uk_i18n.py.
+"""0351: add the host copy (en, cs) to host_i18n.py and the guest copy (6 languages) to i18n.py and guest_uk_i18n.py.
 Run from the repo root once: python3 docs/plans/0301-files/add_handoff_i18n.py"""
 import json
 from pathlib import Path

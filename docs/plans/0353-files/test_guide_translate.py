@@ -1,4 +1,4 @@
-"""0303: guide cards in the guest's language: cached per card and language, filled after the response. No network."""
+"""0353: guide cards in the guest's language: cached per card and language, filled after the response. No network."""
 from __future__ import annotations
 
 import json

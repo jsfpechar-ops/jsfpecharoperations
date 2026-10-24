@@ -1,4 +1,4 @@
-# 0304: The full card catalog (few, rich cards with ghost text)
+# 0354: The full card catalog (few, rich cards with ghost text)
 
 Status: todo
 Depends on: 0341 to 0350 merged | Base commit: after 0350 | Branch: task/0304-guide-full-catalog

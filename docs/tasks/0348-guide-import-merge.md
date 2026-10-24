@@ -1,4 +1,4 @@
-# 0298: Import merge: Haiku turns fetched listings into draft cards
+# 0348: Import merge: Haiku turns fetched listings into draft cards
 
 Status: todo
 Depends on: 0347 and 0310 merged | Base commit: after 0347 and 0310 | Branch: task/0298-guide-import-merge
@@ -43,7 +43,7 @@ and the line `    _log_run("guide_import", started, True, {"runs": ran})`.
 
 `docs/ENVIRONMENT.md`: the row starting `| \`UBYHOST_APIFY_TIMEOUT\` | \`120\` |`.
 
-From 0310: `ai.call(feature, system_blocks, messages, schema, key=None)` returns the parsed dict and raises `ai.AIDisabled`, `ai.AIBudgetError`, `ai.AIError` (all with `.reason`); `tests/ai_fake.py` has `FakeClient([reply({...}), ...])` and `ai.set_client_for_tests(fake)`. From 0297: `guest_guide_import.mark_used(import_id)` sets `used` and clears `raw_json`; `pending_for` is per property, so the worker query here is its own. From 0291: `guest_guide.KINDS`, `TOPICS`, `LIMITS`, `add_kind(apartment_id, kind, source=...)`, `items`, `save`, `skip`, `add_custom`.
+From 0310: `ai.call(feature, system_blocks, messages, schema, key=None)` returns the parsed dict and raises `ai.AIDisabled`, `ai.AIBudgetError`, `ai.AIError` (all with `.reason`); `tests/ai_fake.py` has `FakeClient([reply({...}), ...])` and `ai.set_client_for_tests(fake)`. From 0347: `guest_guide_import.mark_used(import_id)` sets `used` and clears `raw_json`; `pending_for` is per property, so the worker query here is its own. From 0341: `guest_guide.KINDS`, `TOPICS`, `LIMITS`, `add_kind(apartment_id, kind, source=...)`, `items`, `save`, `skip`, `add_custom`.
 
 ## 3. Files
 
@@ -68,7 +68,7 @@ Commit after each step: `0348 step k`.
 ### Step 1: `App/app/guest_guide_merge.py` (new)
 
 ```python
-"""0298: turn a fetched listing (0347's ``guide_import`` row) into draft guide cards.
+"""0348: turn a fetched listing (0347's ``guide_import`` row) into draft guide cards.
 
 One model call per import (feature ``guide_import``, key = property id). The
 model may only restate what the listing says: every draft carries quotes from
@@ -474,7 +474,7 @@ with
 
 and replace `    _log_run("guide_import", started, True, {"runs": ran})` with `    _log_run("guide_import", started, True, {"runs": ran, "merged": merged})`.
 
-Command: `.venv/bin/python -c "from app import scheduler; print(scheduler._job_guide_import.__doc__[:12])"`. Expected: `Brief 0297: `.
+Command: `.venv/bin/python -c "from app import scheduler; print(scheduler._job_guide_import.__doc__[:12])"`. Expected: `Brief 0347: `.
 
 ### Step 3: `App/app/routes/guest_guide.py`
 
