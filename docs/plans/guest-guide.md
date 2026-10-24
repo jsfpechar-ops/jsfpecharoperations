@@ -26,8 +26,8 @@ Booking (Apify voyager/booking-scraper): address, check-in and check-out times, 
 | Phase | Brief | What | State |
 |---|---|---|---|
 | 1 | [0291](../tasks/0291-guest-guide-data.md) | Tables `guide_item`, `guide_photo`; `guest_guide.py` | todo |
-| 1 | 0292 | Host guide page: a "Guest guide" section in property settings, topic cards, progress, must-have five | to write |
-| 1 | 0293 | Card editor: fixed prompts per card, visibility, photo upload, video link | to write |
+| 1 | 0292 | Host guide page and card editor: "Guest guide" tab, topic cards, progress, must-have five, prompts, visibility, "Save and next card" | todo |
+| 1 | 0293 | Card photos: upload, resize, order, delete | to write |
 | 1 | 0294 | Guest side: "Your guide" tab on the stay page, QR page (read-only) | to write |
 | 2 | 0295+ | `anthropic` and Apify decisions; paste box; Booking + Airbnb import; "talk to steps" | to write |
 | 3 | 0298+ | Guest bot, host handoff, abuse caps, "Add to guide", translation | to write |
