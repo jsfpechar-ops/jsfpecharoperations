@@ -25,7 +25,7 @@ Status: blocked
 - [x] no done-state write in merge module; check write present
 - [x] 21 merge tests pass
 - [x] scheduler wiring
-- [ ] Guide page screenshot: NOT DONE (see Deviations)
+- [x] Guide page screenshot: taken at review by the orchestrator (390 px, one `used` Booking import, one `done` Airbnb import, two `check` cards): result line and "Fetched, drafting cards" badge show, no horizontal scroll (scrollWidth 390).
 - [x] guide_import_eval.py --offline PASS; eval file holds no real listing text
 - [ ] Ship rule (staging feature flag): owner step
 - [x] ENVIRONMENT row present; lint OK
