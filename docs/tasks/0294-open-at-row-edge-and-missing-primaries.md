@@ -40,7 +40,7 @@ No other file may change, except a test that pinned Open inside the name cell (r
 ## 4. Steps
 
 1. stay_fees.html: in both name cells delete ` {{ row_open() }}` (keep the link). In each of those rows' `row-actions` cell put `{{ row_open() }}` as the first thing inside the `<td>`; where the cell already has a "Set up" `ui-btn` link, do **not** add row_open (that link is the row's action) but change its class from `ui-btn-secondary` to `ui-btn-open`.
-2. apartments.html line ~84: delete ` {{ row_open() }}` after the link and add `{{ row_open() }}` as the first thing in that row's `row-actions` cell.
+2. apartments.html line ~84 (property-summary table): delete ` {{ row_open() }}` after the link and add nothing (orchestrator 2026-10-24: that table is the guest link / PIN / timing settings list; the Properties table above already has Open in its actions cell, and this row has no actions cell). In step 6, drop the property-summary `gap`/`sameLine` check from test_0285 instead of rewriting it.
 3. entities.html: delete ` {{ row_open() }}` in both places (~83, ~128). Change the Edit link at ~93 from `ui-btn ui-btn-secondary ui-btn-compact` to `ui-btn ui-btn-open ui-btn-compact`. In the archived table (~128) add `{{ row_open() }}` as the first thing in its `row-actions` cell.
 4. reservation_detail.html:
    - Directly before `<div class="stay-command-actions">` add `{% set cmd_primary = send_controls.send_enabled or progress.status == 'failed' or (progress.status == 'reported' and submissions) %}`.
