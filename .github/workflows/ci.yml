@@ -89,7 +89,6 @@ jobs:
       - name: ${{ steps.report.outputs.failure_3 || 'Failure detail 3' }}
         if: failure() && steps.report.outputs.failure_3 != ''
         run: 'true'
-        run: 'true'
 
   smoke:
     runs-on: ubuntu-latest
