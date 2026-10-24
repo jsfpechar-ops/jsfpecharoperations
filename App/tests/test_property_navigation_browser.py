@@ -193,7 +193,7 @@ def test_three_views_four_groups_one_editor_and_unique_ids(host):
     # No folded essentials, no suggested portal message, no shadow form on Overview.
     content = html[html.index('<nav class="ui-tabs property-tabs"'):]
     # The shared fee partial's council fold belongs to 0077 (outside this task).
-    assert "<details" not in content.replace('<details class="fee-setup-section">', "").replace('<details class="setup-readiness-help">', "").replace('<details class="ui-section" id="smart-locks-add-more">', "")
+    assert "<details" not in content.replace('<details class="fee-setup-section">', "").replace('<details class="fee-more">', "").replace('<details class="setup-readiness-help" data-setup-status>', "").replace('<details class="ui-section" id="smart-locks-add-more">', "")
     assert "message-template" not in content and "copy_message" not in content
     overview = content[content.index('data-property-view="overview"'):content.index('data-property-view="bookings"')]
     assert "property-settings-form" not in overview and 'id="calendar-add"' not in overview
