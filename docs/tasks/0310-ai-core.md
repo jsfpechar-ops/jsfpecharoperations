@@ -6,7 +6,7 @@ Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
 
-Add `App/app/ai.py`, the only module that imports the Anthropic SDK: `ai.call(feature, system_blocks, messages, schema, key=None)` sends one structured-output request to `claude-haiku-5-5`, records token usage per day, feature and key in a new `ai_usage` ledger, and refuses to call when that feature's monthly budget, today's share of it, or the caller's per-key daily cap is used up. Havel (`feature="havel"`, no key, 0311–0314) and the guest bot ("leon", `feature="leon"` with `key=<property id>`, and `feature="guide_import"`) both build on it; a provider swap is this one file.
+Add `App/app/ai.py`, the only module that imports the Anthropic SDK: `ai.call(feature, system_blocks, messages, schema, key=None, max_tokens=None)` sends one structured-output request to `claude-haiku-5-5`, records token usage per day, feature and key in a new `ai_usage` ledger, and refuses to call when that feature's monthly budget, today's share of it, or the caller's per-key daily cap is used up. Havel (`feature="havel"`, no key, 0311–0314) and the guest bot ("leon", `feature="leon"` with `key=<property id>`, and `feature="guide_import"`) both build on it; a provider swap is this one file.
 
 ## 2. Context
 
@@ -174,7 +174,7 @@ monthly budget, today's even share of what is left, and, when the caller
 passes a key, that key's daily cap.
 
 Features: "havel" (the host support assistant, no key, pacing only), "leon"
-(the guest bot, key = property id) and "guide_import" (the guest bot's
+(the guest bot, key = property id), "guide_translate" (guide translation for guests) and "guide_import" (the guest bot's
 one-off imports). Never log message text. Log ids, counts and timings only.
 """
 from __future__ import annotations
@@ -334,7 +334,7 @@ def _record(feature: str, key: str, usage: Any, day: Optional[date] = None) -> N
 # --- the call ----------------------------------------------------------------
 
 def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]], schema: Dict[str, Any],
-         key: Optional[str] = None) -> Dict[str, Any]:
+         key: Optional[str] = None, max_tokens: Optional[int] = None) -> Dict[str, Any]:
     """One structured-output request. Returns the parsed JSON object.
 
     ``system_blocks`` are constant texts in cache order (the last one is the
@@ -356,7 +356,8 @@ def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]],
     try:
         response = _get_client().messages.create(
             model=config.AI_MODEL,
-            max_tokens=config.AI_MAX_TOKENS,
+            # Callers may ask for less (leon chat ~800), never more than the global cap.
+            max_tokens=min(max_tokens or config.AI_MAX_TOKENS, config.AI_MAX_TOKENS),
             system=system,
             messages=messages,
             output_config={"effort": "low", "format": {"type": "json_schema", "schema": schema}},
@@ -500,6 +501,14 @@ def test_call_sends_structured_output_and_caches_the_last_system_block(on):
     assert kw["max_tokens"] == config.AI_MAX_TOKENS
     assert kw["output_config"] == {"effort": "low", "format": {"type": "json_schema", "schema": SCHEMA}}
     assert "thinking" not in kw and "temperature" not in kw
+
+
+def test_call_max_tokens_is_clamped_to_the_global_cap(on):
+    fake = FakeClient([reply({"kind": "a"}), reply({"kind": "b"})])
+    ai.set_client_for_tests(fake)
+    ai.call("havel", ["p"], [{"role": "user", "content": "hi"}], SCHEMA, max_tokens=800)
+    ai.call("havel", ["p"], [{"role": "user", "content": "hi"}], SCHEMA, max_tokens=99_999)
+    assert [c["max_tokens"] for c in fake.calls] == [800, config.AI_MAX_TOKENS]
     assert kw["system"][-1]["cache_control"] == {"type": "ephemeral"}
     assert all("cache_control" not in block for block in kw["system"][:-1])
 
@@ -557,14 +566,14 @@ def test_budget_month_day_and_key(on, monkeypatch):
 ```markdown
 ## Model API (Havel and the guest bot)
 
-Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything is per feature: `havel` (host support assistant), `leon` (guest bot), `guide_import` (the guest bot's imports). Every model call goes through `App/app/ai.py`.
+Plans: [havel-support-assistant](plans/havel-support-assistant.md). Everything is per feature: `havel` (host support assistant), `leon` (guest bot), `guide_import` (the guest bot's imports), `guide_translate` (guide translation for guests). Every model call goes through `App/app/ai.py`.
 
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `UBYHOST_AI_FEATURES` | unset (all off) | Comma list of features that may call the model, for example `havel` or `havel,leon`. A feature not listed shows its no-AI fallback (Havel: quick help and the support form). |
 | `UBYHOST_ANTHROPIC_API_KEY` | unset | Anthropic API key, created in the Anthropic Console with its own monthly spend limit. Passed to the SDK explicitly; the SDK's `ANTHROPIC_API_KEY` is not read. Staging first. |
 | `UBYHOST_AI_MODEL` | `claude-haiku-5-5` | Model id. Changing it invalidates the prompt cache and needs each feature's test set re-run. |
-| `UBYHOST_AI_MAX_TOKENS` | `2500` | Output cap per call; adaptive thinking counts toward it. |
+| `UBYHOST_AI_MAX_TOKENS` | `2500` | Output cap per call; adaptive thinking counts toward it. A caller may pass a lower `max_tokens` (Leon's chat uses about 800), never a higher one. |
 | `UBYHOST_AI_MONTHLY_USD_<FEATURE>` | `10` | Spend cap per feature per calendar month (Prague), e.g. `UBYHOST_AI_MONTHLY_USD_HAVEL`. Today's share is the budget left divided by the days left in the month. |
 | `UBYHOST_AI_KEY_DAILY_USD_<FEATURE>` | `0` (off) | Per-key daily cap, e.g. `UBYHOST_AI_KEY_DAILY_USD_LEON=0.50` caps one property's guest bot at 50 cents a day. Havel passes no key. |
 | `UBYHOST_AI_PRICE_INPUT`, `UBYHOST_AI_PRICE_OUTPUT`, `UBYHOST_AI_PRICE_CACHE_READ`, `UBYHOST_AI_PRICE_CACHE_WRITE` | `0.10`, `0.50`, `0.01`, `0.125` | USD per million tokens, Anthropic table 2026-10-06. Update when the price changes. |
