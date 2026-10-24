@@ -42,7 +42,7 @@ Created: guest/_leon.html, static/guest-leon.js, tests/test_guest_leon_chat.py, 
 
 - Step 1 (preflight) had no change and was committed with step 2. Other steps have their own commits (0352 step 2 to step 10).
 - No PR opened and no push, per the owner instruction for this run.
-- Screenshots skipped (reviewer or orchestrator takes them).
+- Screenshots: the browser test writes 0352-guide-chat-en-390.png and -cs-390.png; checked at review (chat, host answer, emergency block, waiting state, no horizontal scroll).
 
 ## Questions
 
