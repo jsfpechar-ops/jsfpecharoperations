@@ -17,6 +17,7 @@ from . import (
     dsr,
     filing_watchdog,
     guest_guide_import,
+    guest_guide_merge,
     guide_photos,
     host_i18n,
     icalsync,
@@ -359,13 +360,16 @@ def _job_guide_import() -> None:
         ran = guest_guide_import.process_queue()
         if ran:
             log.info("guide import: %s run(s)", ran)
+        merged = guest_guide_merge.process_pending()
+        if merged:
+            log.info("guide import: %s merged", merged)
     except Exception:
         log.exception("guide import job failed")
         _job_failed("guide_import")
         _log_run("guide_import", started, False)
         return
     _job_ok("guide_import")
-    _log_run("guide_import", started, True, {"runs": ran})
+    _log_run("guide_import", started, True, {"runs": ran, "merged": merged})
 
 
 def _job_push() -> None:
