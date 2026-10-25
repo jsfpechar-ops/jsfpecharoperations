@@ -106,7 +106,7 @@ def test_ai_off_prefills_the_support_card_with_the_host_message(host, on, monkey
     monkeypatch.setattr(config, "AI_FEATURES", frozenset())
     message = "How do I add a stay?"
     page = _ask(host, message)
-    assert "Havel is unavailable right now" in page
+    assert "Chat is paused right now" in page
     assert 'action="/havel/support"' in page
     assert _summary_box(page) == message
 

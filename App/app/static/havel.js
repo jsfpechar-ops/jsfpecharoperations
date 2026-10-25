@@ -250,12 +250,14 @@
     counter.className = "havel-meta havel-counter";
     counter.setAttribute("aria-live", "polite");
     counter.hidden = true;
-    ta.insertAdjacentElement("afterend", counter);
+    (ta.closest(".havel-input") || ta).insertAdjacentElement("afterend", counter);
     ta.addEventListener("input", function () {
       var n = ta.value.length;
       counter.hidden = n < max - 100;
       counter.textContent = n + " / " + max;
     });
+    function grow() { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 132) + "px"; }
+    ta.addEventListener("input", grow);
     ta.addEventListener("keydown", function (event) {
       if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
         event.preventDefault();

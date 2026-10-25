@@ -11,8 +11,8 @@
 {% endif %}
 <div class="havel-topics" data-havel-topics>
   {% if havel_answer %}
-  <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/havel?topic={{ havel_topic }}" data-havel-topic-link>{{ icon('chevron-left', 16) }}{{ t(havel_topic_data.label) }}</a>
-  <h2 class="havel-answer-title">{{ t(havel_answer.question.label) }}</h2>
+  <a class="ui-chip havel-chip-back" href="/havel?topic={{ havel_topic }}" data-havel-topic-link>{{ icon('chevron-left', 16) }}{{ t(havel_topic_data.label) }}</a>
+  <div class="havel-msg havel-msg-host"><span class="sr-only">{{ t('havel.you') }}: </span><div class="havel-bubble"><p>{{ t(havel_answer.question.label) }}</p></div></div>
   <div class="havel-msg havel-msg-havel havel-answer" tabindex="-1">
     <div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span><span class="havel-name">{{ t('havel.name') }}</span></div>
     <div class="havel-bubble">{% for p in havel_answer.paragraphs %}<p>{{ p }}</p>{% endfor %}</div>
@@ -21,17 +21,16 @@
       {% if havel_answer.support %}{% with havel_support_prefill = t(havel_answer.question.label) %}{% include "_havel_support.html" %}{% endwith %}{% endif %}
     </div>
   </div>
-  {% if not havel_state %}<a class="ui-btn ui-btn-secondary havel-ask" href="#havel-message" data-havel-ask data-topic="{{ havel_topic }}" data-q="{{ havel_q }}">{{ t('havel.topic.ask') }}</a>{% endif %}
+  {% if not havel_state %}<a class="ui-chip havel-chip" href="#havel-message" data-havel-ask data-topic="{{ havel_topic }}" data-q="{{ havel_q }}">{{ t('havel.topic.ask') }}</a>{% endif %}
   {% elif havel_topic_data %}
-  <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/havel" data-havel-topic-link>{{ icon('chevron-left', 16) }}{{ t('havel.topic.back') }}</a>
-  <h2 class="havel-answer-title">{{ t(havel_topic_data.label) }}</h2>
-  <div class="ui-menu-panel" role="group" aria-label="{{ t(havel_topic_data.label) }}">
-    {% for q in havel_topic_data.questions %}<a class="ui-menu-item havel-topic" href="/havel?topic={{ havel_topic }}&q={{ q.id }}" data-havel-topic-link>{{ t(q.label) }}<span class="grow"></span>{{ icon('chevron-right', 16) }}</a>{% endfor %}
+  <a class="ui-chip havel-chip-back" href="/havel" data-havel-topic-link>{{ icon('chevron-left', 16) }}{{ t('havel.topic.back') }}</a>
+  <div class="havel-msg havel-msg-host"><span class="sr-only">{{ t('havel.you') }}: </span><div class="havel-bubble"><p>{{ t(havel_topic_data.label) }}</p></div></div>
+  <div class="ui-chips havel-chips" role="group" aria-label="{{ t(havel_topic_data.label) }}">
+    {% for q in havel_topic_data.questions %}<a class="ui-chip havel-chip" href="/havel?topic={{ havel_topic }}&q={{ q.id }}" data-havel-topic-link>{{ t(q.label) }}</a>{% endfor %}
   </div>
   {% else %}
-  <h2 class="havel-answer-title">{{ t('havel.topics_title') }}</h2>
-  <div class="ui-menu-panel" role="group" aria-label="{{ t('havel.topics_title') }}">
-    {% for tp in havel_topics %}<a class="ui-menu-item havel-topic" href="/havel?topic={{ tp.id }}" data-havel-topic-link>{{ icon(tp.icon, 16) }}{{ t(tp.label) }}<span class="grow"></span>{{ icon('chevron-right', 16) }}</a>{% endfor %}
+  <div class="ui-chips havel-chips" role="group" aria-label="{{ t('havel.topics_title') }}">
+    {% for tp in havel_topics %}<a class="ui-chip havel-chip" href="/havel?topic={{ tp.id }}" data-havel-topic-link>{{ icon(tp.icon, 16) }}{{ t(tp.label) }}</a>{% endfor %}
   </div>
   {% endif %}
 </div>
