@@ -6,7 +6,7 @@
 {% block meta %}{{ t('guide.lede') }}{% endblock %}
 {% block body %}
 
-{% set sections = ['overview', 'statuses', 'setup', 'stays', 'guests', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'door-codes', 'faster', 'faq', 'legal'] + (['demo'] if demo_available else []) %}
+{% set sections = ['finding', 'overview', 'statuses', 'setup', 'stays', 'guests', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'door-codes', 'faster', 'faq', 'glossary', 'legal'] + (['demo'] if demo_available else []) %}
 <div class="guide-layout">
   <nav class="guide-nav ui-section" aria-label="{{ t('guide.title') }}">
     {% for key in sections %}<a href="#{{ key }}" class="guide-nav-link">{{ t('guide.nav.' ~ key) }}</a>{% endfor %}
