@@ -24,7 +24,6 @@
   {% if current_user %}
   <div class="host-rail-bottom">
     <nav class="ui-nav ui-nav-bottom" aria-label="{{ t('nav.guide') }}">
-      <a class="host-help havel-launcher" href="/havel" title="{{ t('havel.name') }}" data-sheet-open="havel-sheet" data-havel-launcher {% if nav == 'havel' %}aria-current="page"{% endif %}>{{ icon('message-circle-question', 20) }}<span>{{ t('havel.name') }}</span></a>
       <a class="host-help" href="/guide">{{ icon('book-open', 20) }}<span>{{ t('nav.guide') }}</span></a>
       {% if current_user.role == 'admin' %}<a href="/admin/users" {% if nav == 'admin' %}aria-current="page"{% endif %}>{{ icon('shield', 20) }}<span>{{ t('nav.admin') }}</span></a>{% endif %}
     </nav>
