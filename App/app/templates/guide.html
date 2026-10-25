@@ -6,7 +6,7 @@
 {% block meta %}{{ t('guide.lede') }}{% endblock %}
 {% block body %}
 
-{% set sections = ['finding', 'overview', 'statuses', 'setup', 'business', 'stays', 'cleaning', 'guests', 'guest_links', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'door-codes', 'faster', 'faq', 'glossary', 'legal'] + (['demo'] if demo_available else []) %}
+{% set sections = ['finding', 'overview', 'statuses', 'setup', 'business', 'stays', 'cleaning', 'guests', 'guest_links', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'archive', 'privacy_requests', 'door-codes', 'faster', 'faq', 'glossary', 'legal'] + (['demo'] if demo_available else []) %}
 <div class="guide-layout">
   <nav class="guide-nav ui-section" aria-label="{{ t('guide.title') }}">
     {% for key in sections %}<a href="#{{ key }}" class="guide-nav-link">{{ t('guide.nav.' ~ key) }}</a>{% endfor %}
@@ -34,6 +34,11 @@
       <p>{{ t('guide.overview.body') }}</p>
       <p>{{ t('guide.overview.count') }}</p>
       <p>{{ t('guide.overview.deadline') }}</p>
+      <p>{{ t('guide.overview.when') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 5) %}<li>{{ t('guide.overview.how' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 4) %}<li>{{ t('guide.overview.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
     <section class="guide-section ui-section ui-section-plain" id="statuses">
@@ -216,9 +221,38 @@
     <section class="guide-section ui-section ui-section-plain" id="settings">
       <h2>{{ t('guide.nav.settings') }}</h2>
       <p>{{ t('guide.settings.body') }}</p>
+      <p>{{ t('guide.settings.when') }}</p>
+      <p>{{ t('guide.settings.login') }}</p>
+      {% for part, count in [('passkey', 3), ('twofa', 4), ('email', 2)] %}
+      <h3 id="settings-{{ part }}">{{ t('guide.settings.' ~ part ~ '_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, count + 1) %}<li>{{ t('guide.settings.' ~ part ~ n) }}</li>{% endfor %}</ol>
+      {% endfor %}
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 4) %}<li>{{ t('guide.settings.wrong' ~ n) }}</li>{% endfor %}</ul>
       <ul class="guide-steps">
         {% for item in ['two_factor', 'retention', 'requests', 'deletion'] %}<li>{{ t('guide.settings.' ~ item) }}</li>{% endfor %}
       </ul>
+    </section>
+
+    <section class="guide-section ui-section ui-section-plain" id="archive">
+      <h2>{{ t('guide.nav.archive') }}</h2>
+      <p>{{ t('guide.archive.what') }}</p>
+      <p class="ui-sub">{{ t('guide.archive.when') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('guide.archive.how' ~ n) }}</li>{% endfor %}</ol>
+      <p class="ui-sub">{{ t('guide.archive.note') }}</p>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul><li>{{ t('guide.archive.wrong1') }}</li></ul>
+    </section>
+
+    <section class="guide-section ui-section ui-section-plain" id="privacy_requests">
+      <h2>{{ t('guide.nav.privacy_requests') }}</h2>
+      <p>{{ t('guide.privacy_requests.what') }}</p>
+      <p class="ui-sub">{{ t('guide.privacy_requests.when') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 5) %}<li>{{ t('guide.privacy_requests.how' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul><li>{{ t('guide.privacy_requests.wrong1') }}</li></ul>
     </section>
 
     <section class="guide-section ui-section ui-section-plain" id="door-codes">
