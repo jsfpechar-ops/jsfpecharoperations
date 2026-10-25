@@ -80,17 +80,17 @@ def test_computer_panel_topics_handoff_and_answer(origin):
         assert launcher.count() == 1 and not launcher.is_visible()
         sidebar = page.locator("#app-sidebar").bounding_box()
         assert page.evaluate("([x, y]) => !!document.elementFromPoint(x, y).closest('#app-sidebar')", [sidebar["x"] + sidebar["width"] / 2, sidebar["y"] + sidebar["height"] / 2])
-        assert dialog.locator("[data-havel-topic-link]").count() == 5
+        assert dialog.locator("[data-havel-topic-link]").count() == 6  # 0391: five topics + "Other topic"
         assert dialog.locator("h2#havel-title").inner_text().strip() == "Havel (AI)"
         box = dialog.locator(".ui-sheet").bounding_box()
         assert box["width"] <= 400 and box["height"] <= 680
         dialog.locator("[data-havel-topic-link]", has_text="stay").first.click()
         dialog.locator("[data-havel-topic-link][href*='q=cancelled']").wait_for()
         dialog.locator("[data-havel-topic-link][href*='q=cancelled']").click()
-        dialog.locator("[data-havel-ask]").wait_for()
+        dialog.locator("[data-havel-ask-open]").wait_for()
         page.screenshot(path=str(SHOTS / "panel-topic-1280.png"))
-        dialog.locator("[data-havel-ask]").click()
-        assert page.evaluate("document.activeElement.id") == "havel-message"
+        dialog.locator("[data-havel-ask-open]").click()
+        sync_api.expect(page.locator("#havel-message")).to_be_focused()
         assert dialog.locator("[data-havel-topic]").input_value() == "stays"
         page.keyboard.type("And if the guest never arrives?")
         page.keyboard.press("Enter")
@@ -152,6 +152,7 @@ def test_phone_next_buttons_send_the_tapped_request(origin):
         page.locator("[data-havel-fab]").click()
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
+        dialog.locator("[data-havel-other]").click()
         composer = dialog.locator("#havel-message")
         composer.wait_for()
         composer.fill("guest link, sync and the red badge")
@@ -179,6 +180,7 @@ def test_greeting_shows_once_after_a_reply(origin):
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
         assert dialog.locator("[data-havel-greeting]").count() == 1
+        dialog.locator("[data-havel-other]").click()
         composer = dialog.locator("#havel-message")
         composer.fill("How do I add a stay?")
         composer.press("Enter")
@@ -212,6 +214,7 @@ def test_chat_follows_the_host_across_pages(origin, width):
         page.locator("[data-havel-fab]").click()
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
+        dialog.locator("[data-havel-other]").click()
         composer = dialog.locator("#havel-message")
         composer.wait_for()
         composer.fill("How do I add a stay?")
@@ -250,6 +253,7 @@ def test_new_chat_and_other_user_clear_it(origin):
         page.locator("[data-havel-fab]").click()
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
+        dialog.locator("[data-havel-other]").click()
         composer = dialog.locator("#havel-message")
         composer.wait_for()
         composer.fill("How do I add a stay?")
