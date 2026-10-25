@@ -30,6 +30,9 @@ ANSWER = {"kind": "answer", "reply": "Open Stays.\n1. Tap Add stay.\n2. Pick the
 @pytest.fixture
 def origin(host, monkeypatch):
     db.init_db()
+    # Other Havel test files leave rate-limit rows behind; a burst limit hides the composer.
+    for scope in ("havel_burst", "havel_week", "havel_month", "havel_refuse"):
+        db.execute("DELETE FROM rate_limit_event WHERE scope = ?", (scope,))
     monkeypatch.setattr(config, "AI_FEATURES", frozenset({"havel"}))
     monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "k")
     ai.set_client_for_tests(FakeClient([reply(ANSWER), reply(ANSWER), reply(ANSWER)]))
