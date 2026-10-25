@@ -59,9 +59,13 @@
     "sha256": "3a916b6481143037c7df5b9bb0bd1d125d29d7a95754d73a5d9f28d2744ec7ee",
     "v": "20261003a"
   },
+  "guest-leon.js": {
+    "sha256": "8b7420cd0c4134492c158e690283ad6a7e2a602d1d251e585e31171ac7f28a12",
+    "v": "20261024-0302"
+  },
   "guest.css": {
-    "sha256": "0f4f324c8d3bbf76c5a80fdf3978a1b3af0fff7aa4baada6cd8b8f47049a307c",
-    "v": "20261024-0294"
+    "sha256": "f6a9dd73c04c10120e247d9158a2917e07ec93797c1a0776dff45a1b21c7f539",
+    "v": "20261024-0302"
   },
   "host-controls.css": {
     "sha256": "5f187fafa975e322becf8101dd749d862a5c166f03d74523a738f2fd55a2f93d",

@@ -1,5 +1,10 @@
 <div class="g-card" id="host-contact">
   <h2>{{ t('host_details') }}</h2>
+  {% if door == 'qr' %}
+    {# 0352: a QR guest scanned a sticker, so there is no message this link came in. #}
+    {% if host and host.name %}<p>{{ host.name }}</p>{% endif %}
+    <p class="g-intro" style="margin-bottom:0" data-qr-contact>{{ t('guide_qr_contact') }}</p>
+  {% else %}
   <p class="g-intro">{{ t('host_details_help') }}</p>
   {% if host and (host.name or host.email or host.phone) %}
     {% if host.name %}<p>{{ host.name }}</p>{% endif %}
@@ -7,5 +12,6 @@
     {% if host.email %}<p><a href="mailto:{{ host.email }}">{{ host.email }}</a></p>{% endif %}
   {% else %}
     <p class="hint">{{ t('host_details_missing') }}</p>
+  {% endif %}
   {% endif %}
 </div>
