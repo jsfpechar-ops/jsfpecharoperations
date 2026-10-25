@@ -14,8 +14,8 @@
   <h2>{{ t('smart_locks.setup_title') }}</h2>
   <form method="post" action="/smart-locks/setup">
     <input type="hidden" name="return_to" value="{{ return_to }}">
-    <div class="checkline"><input type="checkbox" id="terms" name="terms" value="1" required>
-      <label for="terms">{{ t('smart_locks.terms') }} <a href="/guide#door-codes-terms">{{ t('smart_locks.terms_link') }}</a></label></div>
+    <label class="checkline" for="terms"><input type="checkbox" id="terms" name="terms" value="1" required>
+      <span>{{ t('smart_locks.terms') }} <a href="/guide#door-codes-terms">{{ t('smart_locks.terms_link') }}</a></span></label>
     <div class="action-group"><button class="{{ cta }}" type="submit">{{ t('smart_locks.setup') }}</button></div>
   </form>
   <p class="ui-sub"><a href="/guide#door-codes">{{ t('smart_locks.guide_link') }}</a></p>

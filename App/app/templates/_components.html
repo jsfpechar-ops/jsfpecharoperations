@@ -13,6 +13,18 @@
     <span class="help-tip-body" id="{{ id }}" role="tooltip">{{ text }}{% if guide_href %} <a href="{{ guide_href }}" aria-label="{{ t('help.tip.more') }}: {{ text | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a>{% endif %}</span>
   </span>
 {% endmacro %}
+{#- 0410: one option card. The label is stretched over the whole bordered card, so a
+    tap anywhere selects; the "?" and any extra field (call block) sit above it. No JS. -#}
+{% macro choice_card(name, value, label, checked=false, help_id='', help_text='', type='radio') %}
+<div class="ui-choice-card">
+  <label class="ui-choice-card-label">
+    <input type="{{ type }}" name="{{ name }}" value="{{ value }}"{% if checked %} checked{% endif %}>
+    <strong>{{ label }}</strong>
+  </label>
+  {% if help_text %}{{ help_tip(help_id, help_text) }}{% endif %}
+  {% if caller is defined %}<div class="ui-choice-card-extra">{{ caller() }}</div>{% endif %}
+</div>
+{% endmacro %}
 
 {% macro field_label(for, text, help_text='', optional=false, guide_href='') %}
   <div class="field-label-row">

@@ -556,7 +556,11 @@ body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: ro
 .host-workspace :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
 
 /* 0171 */
-.host-workspace input:focus-visible, .host-workspace input:focus { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
+.host-workspace input:not([type=checkbox], [type=radio]):focus-visible, .host-workspace input:not([type=checkbox], [type=radio]):focus { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
+/* 0410: radios and checkboxes are coral, and a mouse click draws no box (keyboard focus keeps the 0169 ring). */
+.host-workspace :is(input[type=checkbox], input[type=radio]) { accent-color: var(--accent); }
+.host-workspace :is(input[type=checkbox], input[type=radio]):focus { box-shadow: none; }
+.host-workspace .checkline > span { font-weight: 500; }
 
 /* 0170 */
 .host-workspace .copy-property-form .copyrow { display: flex; align-items: flex-end; gap: var(--space-3); }
@@ -744,7 +748,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
    label coral; pressing greys it one step more; keyboard focus keeps its ring.
    Pages add no hover CSS of their own: extend these lists instead. */
 @media (hover: hover) {
-  .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .needs-you-item:has([data-needs-you-go])):hover { background: var(--state-hover); }
+  .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .ui-choice-card, .needs-you-item:has([data-needs-you-go])):hover { background: var(--state-hover); }
   .host-workspace :is(.ui-card, .host-property-card:not([data-state="warn"], [data-state="bad"]), .host-task):hover { border-color: var(--line-strong); }
   .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .needs-you-item):hover :is(.row-primary-link, .ui-card-l1, .host-property-card-link, .needs-you-copy strong),
   .host-workspace a.host-property-card:hover strong { color: var(--state-ink); }
@@ -752,7 +756,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace :is(.ui-btn-secondary, .ui-btn-quiet, .btn-icon, .ui-menu-item, .row-menu-item, .ui-chip:not([aria-current="true"])):hover { background: var(--state-hover); color: var(--state-ink); }
   .host-workspace :is(.ui-btn-secondary, .btn-icon):hover { border-color: var(--ink); }
 }
-.host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .ui-btn-secondary, .ui-btn-quiet, .btn-icon, .ui-menu-item, .row-menu-item):active,
+.host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row, .ui-card, .host-property-card, .host-task, .ui-choice-card, .ui-btn-secondary, .ui-btn-quiet, .btn-icon, .ui-menu-item, .row-menu-item):active,
 .host-workspace .needs-you-item:has([data-needs-you-go]):active { background: var(--state-press); }
 .host-workspace :is(tbody tr.clickable-row, .ui-table .ui-row):focus-within { background: var(--state-hover); }
 /* 0284: on desktop the Stays cells carry the row's surface (0181); below 1024 px the row is the card and its cells stay clear. */
@@ -1104,3 +1108,17 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
     ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
   }
 }
+/* 0410: option cards (choice_card macro). The label's ::after covers the whole card, so a tap
+   anywhere selects; the "?" and the extra field sit above it. The focus ring goes round the card. */
+.ui-choice-cards { display: flex; flex-direction: column; gap: var(--space-2); }
+.ui-choice-card { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); cursor: pointer; }
+.ui-choice-card-label { display: flex; align-items: center; gap: var(--space-3); flex: 1 1 12rem; min-width: 0; margin: 0; cursor: pointer; }
+.ui-choice-card-label::after { content: ""; position: absolute; inset: 0; }
+.ui-choice-card-label input { flex: 0 0 auto; width: var(--space-5); height: var(--space-5); margin: 0; accent-color: var(--accent); }
+.ui-choice-card-label strong { overflow-wrap: anywhere; }
+.ui-choice-card > .help-tip, .ui-choice-card-extra { position: relative; z-index: 1; }
+.ui-choice-card > .help-tip:is(.is-open, :focus-within) { z-index: 2; }
+.ui-choice-card-extra { flex: 1 1 100%; min-width: 0; cursor: auto; }
+.ui-choice-card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.host-workspace .ui-choice-card input:focus-visible { outline: none !important; }
+.ui-choice-card:has(input:focus-visible) { outline: 2px solid var(--coral-600); outline-offset: 2px; }
