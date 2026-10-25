@@ -8478,6 +8478,13 @@ for _lang, _strings in _GUIDE_PHOTO_STRINGS.items():
 # 0347: Booking and Airbnb listing imports on the guest guide page.
 _GUIDE_IMPORT_STRINGS = {
     "en": {
+        "guest_guide.leon.title": "Leon (AI) for your guests",
+        "guest_guide.leon.help": "Leon answers guests' questions from the cards marked Done, and passes anything he does not know to you. He stays off until you switch him on.",
+        "guest_guide.leon.toggle": "Let Leon answer my guests",
+        "guest_guide.leon.save": "Save",
+        "guest_guide.leon.waiting": "Leon starts once the guide is live.",
+        "flash.guest_guide.leon_on": "Leon (AI) is on for this property.",
+        "flash.guest_guide.leon_off": "Leon (AI) is off for this property.",
         "guest_guide.import.title": "Import from Booking or Airbnb",
         "guest_guide.import.help": "Paste the public link of your own listing. We fetch its description, house rules and check-in times and turn them into draft cards for you to check.",
         "guest_guide.import.left": "Imports left for this property: %(n)s. Each listing can be imported once.",
@@ -8506,6 +8513,13 @@ _GUIDE_IMPORT_STRINGS = {
         "notification.job_name.guide_import": "guest guide imports",
     },
     "cs": {
+        "guest_guide.leon.title": "Leon (AI) pro vaše hosty",
+        "guest_guide.leon.help": "Leon odpovídá hostům na otázky podle karet označených Hotovo a vše, co neví, předá vám. Dokud ho nezapnete, zůstává vypnutý.",
+        "guest_guide.leon.toggle": "Ať Leon odpovídá mým hostům",
+        "guest_guide.leon.save": "Uložit",
+        "guest_guide.leon.waiting": "Leon začne, jakmile bude průvodce zveřejněný.",
+        "flash.guest_guide.leon_on": "Leon (AI) je pro tuto nemovitost zapnutý.",
+        "flash.guest_guide.leon_off": "Leon (AI) je pro tuto nemovitost vypnutý.",
         "guest_guide.import.title": "Import z Booking nebo Airbnb",
         "guest_guide.import.help": "Vložte veřejný odkaz na svou vlastní nabídku. Stáhneme její popis, pravidla domu a časy příjezdu a připravíme z nich návrhy karet ke kontrole.",
         "guest_guide.import.left": "Zbývající importy pro toto ubytování: %(n)s. Každý inzerát lze naimportovat jednou.",

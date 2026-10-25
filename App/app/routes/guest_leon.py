@@ -6,7 +6,7 @@ stay. QR door: ``/g/{token}/leon``, the QR rate limit and token lookup
 (``_qr_apartment``), always level "everyone"; one conversation per browser,
 keyed by the HttpOnly ``ubyhost_leon`` cookie (random, set on the first POST).
 Both: 404 while the guide is not live. POST takes the form field ``message``;
-GET returns the conversation. Never log message text.
+GET returns the conversation. Also 404 until the host switches Leon on (0376). Never log message text.
 """
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ async def _answer(chat: Dict[str, Any], message: str, *, level: str, apartment, 
 @router.get("/l/{token}/{reservation_id}/guide/leon")
 def stay_leon_history(token: str, reservation_id: int, request: Request):
     apartment, reservation, token, lang, early = _stay_gate(request, token, reservation_id)
-    if early or not guest_guide.progress(apartment["id"])["live"]:
+    if early or not guest_guide.progress(apartment["id"])["live"] or not leon.switched_on(apartment):
         return _gone()
     row = db.query_one("SELECT * FROM guest_chat WHERE door = 'stay' AND reservation_id = ?", (reservation["id"],))
     return _json(_conversation(dict(row) if row else None))
@@ -70,7 +70,7 @@ def stay_leon_history(token: str, reservation_id: int, request: Request):
 @router.post("/l/{token}/{reservation_id}/guide/leon")
 async def stay_leon(token: str, reservation_id: int, request: Request, message: str = Form(""), client_id: str = Form("")):
     apartment, reservation, token, lang, early = _stay_gate(request, token, reservation_id)
-    if early or not guest_guide.progress(apartment["id"])["live"]:
+    if early or not guest_guide.progress(apartment["id"])["live"] or not leon.switched_on(apartment):
         return _gone()
     chat = leon.stay_chat(apartment["id"], reservation["id"], lang)
     body = await _answer(chat, message, level=booked_level(reservation), apartment=apartment, lang=lang,
@@ -83,7 +83,7 @@ async def stay_leon(token: str, reservation_id: int, request: Request, message: 
 @router.get("/g/{token}/leon")
 def qr_leon_history(token: str, request: Request):
     apartment, lang, early = _qr_apartment(request, token)
-    if early or not guest_guide.progress(apartment["id"])["live"]:
+    if early or not guest_guide.progress(apartment["id"])["live"] or not leon.switched_on(apartment):
         return _gone()
     cookie = request.cookies.get(LEON_COOKIE)
     row = None
@@ -97,7 +97,7 @@ def qr_leon_history(token: str, request: Request):
 @router.post("/g/{token}/leon")
 async def qr_leon(token: str, request: Request, message: str = Form(""), client_id: str = Form("")):
     apartment, lang, early = _qr_apartment(request, token)
-    if early or not guest_guide.progress(apartment["id"])["live"]:
+    if early or not guest_guide.progress(apartment["id"])["live"] or not leon.switched_on(apartment):
         return _gone()
     # Every QR post also counts as a QR page view, so one address cannot mint endless conversations.
     rate_limit.record("guide_qr", rate_limit.client_key(request, "guide_qr"))

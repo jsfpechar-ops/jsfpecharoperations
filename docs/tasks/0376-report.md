@@ -1,26 +1,40 @@
-# 0376 report
+# 0376 report (executor, Haiku 5.5)
 
-Status: blocked
+Status: blocked. Done: steps 1 to 12 and 14. Left: step 13 (App/tests/test_0376_ai_gates.py, not written).
 
-Files changed: App/app/static/host2.css (block appended), App/app/templates/base.html (host2 key 20261025-0376), App/tests/static_versions.json (--write), App/tests/test_0376_phone_card_open_browser.py (new), docs/tasks/0376-phone-card-open.md, docs/tasks/0376-report.md.
+## Files changed
+- App/app/migrations/0021_leon_opt_in.sql (new): leon_enabled column.
+- App/app/config.py: AI_TEST_EMAILS.
+- App/app/ai.py: enabled_for, enabled_for_property.
+- App/app/leon.py: switched_on.
+- App/app/routes/guest_guide_view.py, guest_leon.py (4 gates), havel.py (_on, _state(request, uid)), api.py, admin.py.
+- App/app/guide_translate.py: can_fill checks the owner.
+- App/app/routes/guest_guide.py: context leon_offer/leon_on, POST /apartments/{id}/guide/leon.
+- App/app/templates/guest_guide.html: Leon section.
+- App/app/host_i18n.py (en, cs), App/app/host_vi_i18n.py (vi): 7 keys each.
+- App/tests/test_leon.py, App/tests/test_guest_leon_chat.py: fixtures patch app.leon.switched_on.
+- docs/ENVIRONMENT.md: UBYHOST_AI_TEST_EMAILS row.
 
-Commands (last lines):
-- pytest 7-file set (§6): `35 passed, 1 warning in 136.98s`, 0 skipped (-rs shows none).
-- `python3 scripts/design_lint.py`: `DESIGN App/app/static/host2.css: S2 bare 24px in padding` / `design lint: FAIL`. Caused by the brief's own `calc(var(--control-h-compact) + 24px)` line. Not changed (brief says do not guess).
+## Commands and results
+- `cd App && .venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841`: All checks passed.
+- `cd /home/claude/jsfpecharoperations && App/.venv/bin/python scripts/design_lint.py`: OK (exit 0).
+- `PYTHONPATH=. .venv/bin/pytest tests/test_leon.py tests/test_guest_leon_chat.py tests/test_guest_guide_view.py tests/test_guest_guide_pages.py tests/test_guide_translate.py tests/test_havel_page.py tests/test_havel_panel.py tests/test_havel_palette.py tests/test_ai.py -q`: 104 passed, 1 skipped, 2 failed before the last fix.
+  - test_guest_leon_chat.py::test_no_chat_while_leon_is_off_or_the_guide_is_not_live: fixed in the last step (see the test_guest_leon_chat rerun line below).
+  - test_havel_page.py::test_the_seventh_message_starts_a_fresh_conversation: fails on the base commit too (stash check: 1 failed, 7 passed in that file). Not caused by this change.
 
-§7 acceptance: tests pass; design lint fails (see above).
+## Deviations
+- Step 12: the existing Leon tests were not given leon_enabled = 1. Their fixtures monkeypatch app.leon.switched_on to True (off-test to False). Assertions unchanged.
+- Step 13 not written: no tests yet for the owner e-mail test list, Havel off/on by list, or the host POST route.
+- Not run: browser tests, migration_guard, the design test glob, i18n parity test.
 
-Screenshots: App-probe output in /tmp/claude-0/probe/out/row-390.png and /tmp/claude-0/probe/out/row-820.png.
-The 390 px shot shows the Open button still partly covered by the coral floating help button (bottom-right). The pill no longer overlaps.
-Probe also reports td backgrounds rgb(247,247,245) in the pressed state, which the new rule does not cover.
+## Owner steps left
+- Finish step 13 (test_0376_ai_gates.py), then rerun the checks above.
+- Review the Leon section at 390 px (no screenshot taken).
 
-Deviations: the brief asked for one commit; executor.md asks for per-step commits. Done as one commit per brief §9. No push, no PR.
+## Review (Opus, 2026-10-25)
 
-Questions:
-1. Lint: replace `+ 24px` with a spacing token, or allow the value?
-2. Coral help button over Open at 390 px: outside this brief; the owner's "coral buttons" note likely refers to it.
-3. Pressed-state grey on td: needs a brief covering `:active`/pressed selectors.
-
-Owner steps left: none (no push).
-
-Orchestrator follow-up: `+ 24px` → `var(--space-6)` (design lint S2); pressed/focused cards also keep cells clear (the 0285 `:focus-within > td` / `:active > td` tints made grey blocks); the bottom padding applies only ≤720 px, where 0200 lifts the actions cell to the top corner (at 721-1023 Open already shares the menu's line). Key 0376d. §6 set plus wide geometry and 0284 states: 43 passed with `UBYHOST_REQUIRE_BROWSER=1`; design lint OK.
+- `leon.switched_on` now means "host said yes and the owner is on the test list" only. `ai.enabled("leon")` stays a separate check on the guide card, so a chat that is open when AI goes off still passes the guest's message to the host (the existing 0350 behaviour) instead of 404ing.
+- `ai.on_test_list` / `ai.owner_on_test_list` split out of `enabled_for` / `enabled_for_property`.
+- Existing Leon tests no longer patch `switched_on`; their fixtures set `leon_enabled = 1` (also test_privacy_first, test_guest_leon_browser), so the real gate runs.
+- Step 13 written: `App/tests/test_0376_ai_gates.py` (8 tests: default off, host toggle on/off, foreign property 404, no section while AI is off, test list keeps others out of Leon/translation/Havel, case-insensitive match).
+- Ran: ruff, design_lint, migration_guard origin/main, and 425 non-browser tests across havel/ai/design/guide/i18n/dev_ui/admin/api files plus leon/privacy files: all pass.

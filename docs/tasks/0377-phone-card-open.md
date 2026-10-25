@@ -1,4 +1,4 @@
-# 0376: Phone row cards: Open on its own line, no grey strip over the content
+# 0377: Phone row cards: Open on its own line, no grey strip over the content
 
 Status: todo
 Depends on: 0375 (merged) | Base commit: HEAD of origin/main | Branch: claude/project-thread-1am307 (already checked out; commit here)
@@ -25,15 +25,15 @@ Wanted, on card lists below 1024 px:
 | Path | Action |
 |---|---|
 | App/app/static/host2.css | append one block |
-| App/app/templates/base.html | host2 key `?v=20261025-0376` |
+| App/app/templates/base.html | host2 key `?v=20261025-0377` |
 | App/tests/static_versions.json | `--write` |
-| App/tests/test_0376_phone_card_open_browser.py | new |
+| App/tests/test_0377_phone_card_open_browser.py | new |
 
 ## 4. Steps
 
 1. Append to host2.css:
 ```css
-/* 0376: on phone/tablet row cards the text "Open" gets its own line at the
+/* 0377: on phone/tablet row cards the text "Open" gets its own line at the
    bottom right; the actions cell is see-through and never covers the fields;
    cells carry no surface of their own (owner 2026-10-25). */
 @media (max-width: 1023px) {
@@ -44,7 +44,7 @@ Wanted, on card lists below 1024 px:
 }
 ```
 2. Bump the host2 key and run `.venv/bin/python tests/test_static_versions.py --write` from `App/`.
-3. Write `tests/test_0376_phone_card_open_browser.py`. Model it on how `tests/test_0285_rows_browser.py` starts a live server, signs in and gets a browser (reuse its fixtures and imports). For widths 390 and 820, in `en` and `cs`, open `/apartments`. For each visible `table.properties-table tbody tr.clickable-row` in card layout (its `thead` is `display: none`), assert:
+3. Write `tests/test_0377_phone_card_open_browser.py`. Model it on how `tests/test_0285_rows_browser.py` starts a live server, signs in and gets a browser (reuse its fixtures and imports). For widths 390 and 820, in `en` and `cs`, open `/apartments`. For each visible `table.properties-table tbody tr.clickable-row` in card layout (its `thead` is `display: none`), assert:
    - (a) the visible `.row-open` box does not intersect the box of any other visible `td` child's content (`strong, a, span, .pill, .ui-badge` inside the other tds). Use a 1 px tolerance.
    - (b) the `.row-open` top is ≥ the bottom of every other td (except `td.row-actions`) minus 1.
    - (c) `getComputedStyle(td).backgroundColor` is `rgba(0, 0, 0, 0)` for every td.
@@ -58,7 +58,7 @@ Everything outside §3. No template changes.
 
 From `App/`:
 ```
-UBYHOST_REQUIRE_BROWSER=1 UBYHOST_UBYPORT_ENV=mock UBYHOST_DEPLOYMENT=staging UBYHOST_ENABLE_SCHEDULER=0 .venv/bin/python -m pytest tests/test_0376_phone_card_open_browser.py tests/test_0285_rows_browser.py tests/test_0252_touch_sweep_browser.py tests/test_host_controls_browser.py tests/test_host_ux_acceptance.py tests/test_properties_inline_controls_browser.py tests/test_static_versions.py -q --tb=short 2>&1 | tail -30
+UBYHOST_REQUIRE_BROWSER=1 UBYHOST_UBYPORT_ENV=mock UBYHOST_DEPLOYMENT=staging UBYHOST_ENABLE_SCHEDULER=0 .venv/bin/python -m pytest tests/test_0377_phone_card_open_browser.py tests/test_0285_rows_browser.py tests/test_0252_touch_sweep_browser.py tests/test_host_controls_browser.py tests/test_host_ux_acceptance.py tests/test_properties_inline_controls_browser.py tests/test_static_versions.py -q --tb=short 2>&1 | tail -30
 cd .. && python3 scripts/design_lint.py 2>&1 | tail -3
 ```
 If a test fails, put its first assertion line in the report and stop (do not try other CSS).
@@ -73,4 +73,4 @@ As in TEMPLATE §8.
 
 ## 9. Report
 
-`docs/tasks/0376-report.md` (200 tokens), `Status: review`. One commit `0376: phone row cards keep Open on its own line`, including this brief. Do not push.
+`docs/tasks/0377-report.md` (200 tokens), `Status: review`. One commit `0377: phone row cards keep Open on its own line`, including this brief. Do not push.

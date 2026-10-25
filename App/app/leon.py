@@ -424,6 +424,15 @@ def _fixed(lang: str, key: str, **kwargs) -> str:
 _COMPANY = re.compile(r"(s\.\s?r\.\s?o|a\.\s?s\.|spol\.|z\.\s?s\.|ltd|gmbh|inc\b|llc|\d)", re.IGNORECASE)
 
 
+def switched_on(apartment) -> bool:
+    """0376: the host ticked yes for this property and its owner is on the AI test list.
+
+    The guide routes 404 without it. ``ai.enabled`` stays a separate check, so a chat
+    that is open when AI goes off still passes the guest's message to the host.
+    """
+    return bool(apartment["leon_enabled"]) and ai.owner_on_test_list(int(apartment["id"]))
+
+
 def host_first_name(name: str) -> str:
     """The name the door already shows, shortened to a first name unless it is a company."""
     name = " ".join(str(name or "").split())

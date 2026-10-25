@@ -113,7 +113,8 @@ def command_palette(request: Request):
             "tone": int(submission["apartment_id"]) % 10,
             "keywords": submission["created_at"],
         })
-    if ai.enabled(havel.FEATURE):
+    user = auth.current_user(request)
+    if ai.enabled_for(havel.FEATURE, user["email"] if user else ""):
         # 0322: app.js shows this row only when nothing else matches, as "Ask Havel (AI): <query>".
         items.append({"label": t("havel.launcher"), "group": t("havel.name"), "url": "/havel", "havel": True})
     return JSONResponse({"items": items})
