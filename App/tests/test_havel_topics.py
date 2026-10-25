@@ -31,7 +31,8 @@ def test_every_topic_key_resolves_in_both_languages():
             assert host_i18n.translate(lang, topic["label"]) not in ("", topic["label"])
             for q in topic["questions"]:
                 answer = havel_topics.answer(lang, topic["id"], q["id"])
-                assert len(answer["paragraphs"]) == len(q["keys"]), (lang, topic["id"], q["id"])
+                expected = 1 if q.get("short") else len(q["keys"])
+                assert len(answer["paragraphs"]) == expected, (lang, topic["id"], q["id"])
                 for p in answer["paragraphs"]:
                     assert "%(" not in p and "<" not in p and not p.startswith(("guide.", "havel."))
 
@@ -53,8 +54,8 @@ def test_topics_render_on_the_page_and_as_fragments(host):
     answer = html.unescape(host.get("/havel?topic=guest_link&q=where&lang=en", headers={"X-Havel": "1"}).text)
     assert "<html" not in answer and 'data-mode="replace"' in answer
     assert 'href="/havel?topic=guest_link&q=where&ask=1" data-havel-topic-link data-havel-ask-open' in answer
-    assert host_i18n.translate("en", "guide.guest_links.find1")[:20] in answer or \
-        host_i18n.translate("cs", "guide.guest_links.find1")[:20] in answer
+    assert host_i18n.translate("en", "havel.short.guest_link.where")[:20] in answer or \
+        host_i18n.translate("cs", "havel.short.guest_link.where")[:20] in answer
     support = html.unescape(host.get("/havel?topic=wrong&q=error&lang=en").text)
     assert 'action="/havel/support"' in support
     assert host.get("/havel?topic=evil&q=../x&lang=en").status_code == 200
@@ -79,3 +80,16 @@ def test_hand_off_sends_topic_and_read_keys_to_the_engine(host, monkeypatch):
     assert seen["host"].topic == "stays" and seen["host"].page == "stays"
     assert seen["host"].read_keys == ["guide.stays.cancelled", "guide.stays.dates_changed"]
     assert 'data-mode="append"' in res.text and "havel-msg-havel" in res.text
+
+
+def test_short_answers_are_short_and_read_keys_stay_guide_keys():
+    for lang in ("en", "cs", "vi"):
+        for topic in havel_topics.TOPICS:
+            for q in topic["questions"]:
+                if not q.get("short"):
+                    continue
+                text = host_i18n.translate(lang, q["short"])
+                assert text and text not in ("?", q["short"]), (lang, q["short"])
+                assert len(text) <= 220, (lang, q["short"])
+    assert havel_topics.read_keys("stays", "cancelled") == ["guide.stays.cancelled", "guide.stays.dates_changed"]
+    assert havel_topics.read_keys("guest_link", "where")[0] == "guide.guest_links.find1"
