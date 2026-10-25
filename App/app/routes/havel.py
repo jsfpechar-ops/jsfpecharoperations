@@ -78,7 +78,7 @@ def blocks(text: str) -> List[Dict[str, Any]]:
 
 def _item(role: str, text: str, **extra: Any) -> Dict[str, Any]:
     item = {"role": role, "text": text, "blocks": blocks(text), "links": [], "support": False,
-            "support_summary": None, "card": None}
+            "support_summary": None, "next": [], "card": None}
     item.update(extra)
     return item
 
@@ -218,7 +218,7 @@ async def havel_send(request: Request):
                                 url = havel.page_url(page_id, reply.action.get("property_id"), host.property_ids)
                                 links.append((_t(request, "havel.card.open_form"), url))
                         items.append(_item("havel", reply_text, links=links, support=reply.kind == "escalate",
-                                           support_summary=reply.support_summary, card=card,
+                                           support_summary=reply.support_summary, card=card, next=reply.next,
                                            not_helped=reply.kind in ("answer", "clarify")))
         if len(items) == 1:
             items.append(_item("havel", reply_text, support=support))

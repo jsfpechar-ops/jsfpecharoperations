@@ -122,3 +122,34 @@ def test_phone_launcher_and_sheet(origin):
         page.locator("#havel-sheet[open]").wait_for()
         assert page.locator("#more-sheet[open]").count() == 0
         browser.close()
+
+
+NEXT = {**ANSWER, "reply": "Two things. Open Guest links first.", "next": ["Sync my calendars", "What does the red badge mean?"]}
+
+
+def test_phone_next_buttons_send_the_tapped_request(origin):
+    shots = SHOTS.parent / "screenshots-0332"
+    shots.mkdir(parents=True, exist_ok=True)
+    ai.set_client_for_tests(FakeClient([reply(NEXT), reply(ANSWER)]))
+    with sync_api.sync_playwright() as pw:
+        browser, context = _context(pw, origin, 390)
+        page = context.new_page()
+        page.goto(origin[0] + "/")
+        page.locator(".ui-topbar [data-havel-launcher]").click()
+        dialog = page.locator("#havel-sheet[open]")
+        dialog.wait_for()
+        composer = dialog.locator("#havel-message")
+        composer.wait_for()
+        composer.fill("guest link, sync and the red badge")
+        composer.press("Enter")
+        nxt = dialog.locator("[data-havel-next]")
+        nxt.wait_for()
+        buttons = nxt.locator("button")
+        assert buttons.count() == 2 and buttons.first.bounding_box()["height"] >= 36
+        assert page.evaluate("document.documentElement.scrollWidth") <= 390
+        page.screenshot(path=str(shots / "next-390.png"))
+        buttons.first.click()
+        dialog.locator(".havel-msg-havel:not([data-havel-writing])").last.wait_for()
+        assert dialog.locator("[data-havel-next]").count() == 0
+        assert "Sync my calendars" in dialog.locator(".havel-msg-host").last.inner_text()
+        browser.close()
