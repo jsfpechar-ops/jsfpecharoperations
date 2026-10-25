@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import json
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -568,3 +569,75 @@ def record_gap(lang: str, page: str, kind: str, question: str) -> None:
         return
     db.insert("havel_gap", {"created_at": db.utcnow(), "lang": (lang or "en")[:5],
                             "page": page if page in PAGES else None, "kind": kind, "question": text})
+
+
+# --- 0331: the owner's gap list on /admin/operations --------------------------
+GAP_REASON_KEYS = {"escalate": "ops.havel.reason.escalate", "not_helped": "ops.havel.reason.not_helped",
+                   "fail": "ops.havel.reason.fail"}
+# Plan section 6 page id -> the guide section to fix (an anchor in templates/guide.html).
+GUIDE_FOR_PAGE = {
+    "dashboard": "overview", "stays": "stays", "add_stay": "add-stay", "property_calendars": "connect-calendar",
+    "reports": "reporting", "property_reporting": "reporting", "housebook": "housebook",
+    "stay_fees": "stay_fee", "invoices": "invoices", "invoice_settings": "invoices",
+    "properties": "setup", "property": "setup", "property_details": "setup", "business": "business",
+    "property_guests": "guest_links", "property_lock": "door-codes", "smart_locks": "door-codes",
+    "cleaning": "cleaning", "cleaning_properties": "cleaning", "settings": "settings", "security": "settings",
+    "data": "settings", "archive": "archive", "privacy_requests": "privacy_requests",
+}
+GAP_GROUPS_SHOWN = 30
+GAP_ROWS_READ = 2000
+
+
+def normalise_question(text: str) -> str:
+    """Case, punctuation and spacing do not make two questions different."""
+    kept = "".join(ch if ch.isalnum() or ch.isspace() else " " for ch in (text or "").casefold())
+    return " ".join(kept.split())
+
+
+def guide_section(page: Optional[str]) -> str:
+    """The guide anchor to fix for a page; Common questions when there is none yet."""
+    anchor = GUIDE_FOR_PAGE.get(page or "", "faq")
+    return anchor if anchor in GUIDE_ANCHORS else "faq"
+
+
+def gap_groups(limit: int = GAP_GROUPS_SHOWN) -> List[Dict[str, Any]]:
+    """Gap rows grouped by normalised question, most asked first, then newest."""
+    rows = db.query("SELECT created_at, lang, page, kind, question FROM havel_gap "
+                    "ORDER BY created_at DESC, id DESC LIMIT ?", (GAP_ROWS_READ,))
+    groups: Dict[str, Dict[str, Any]] = {}
+    for row in rows:  # newest first, so a group's first row is its newest wording
+        key = normalise_question(row["question"])
+        if not key:
+            continue
+        group = groups.setdefault(key, {"question": row["question"], "count": 0, "newest": row["created_at"],
+                                        "langs": Counter(), "pages": Counter(), "kinds": Counter()})
+        group["count"] += 1
+        group["langs"][row["lang"]] += 1
+        group["pages"][row["page"] or ""] += 1
+        group["kinds"][row["kind"]] += 1
+    ordered = sorted(groups.values(), key=lambda g: (g["count"], g["newest"]), reverse=True)
+    result = []
+    for group in ordered[:limit]:
+        page = group["pages"].most_common(1)[0][0]
+        anchor = guide_section(page)
+        result.append({
+            "question": group["question"], "count": group["count"], "newest": str(group["newest"])[:10],
+            "langs": ", ".join(sorted(group["langs"])), "page": page,
+            "reasons": [GAP_REASON_KEYS[k] for k, _ in group["kinds"].most_common() if k in GAP_REASON_KEYS],
+            "guide_anchor": anchor, "guide_label": GUIDE_ANCHORS[anchor],
+        })
+    return result
+
+
+def admin_overview(day: Optional[date] = None) -> Dict[str, Any]:
+    day = day or ai.today()
+    spent = ai.month_spend_usd(FEATURE, day)
+    cap = config.ai_monthly_usd(FEATURE)
+    since = (day - timedelta(days=29)).isoformat()
+    stats = db.query("SELECT kind, SUM(count) AS n FROM havel_stats WHERE day >= ? GROUP BY kind ORDER BY kind", (since,))
+    return {
+        "enabled": ai.enabled(FEATURE), "spent": f"{spent:.2f}", "cap": f"{cap:.2f}",
+        "percent": int(spent / cap * 100) if cap > 0 else 0,
+        "stats": [{"kind": r["kind"], "n": int(r["n"] or 0)} for r in stats],
+        "gaps": gap_groups(),
+    }
