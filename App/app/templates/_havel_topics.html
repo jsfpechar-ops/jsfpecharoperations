@@ -1,0 +1,31 @@
+{#- 0313: quick help (plan 17c). Three screens: the five topics, a topic's
+    questions, one answer built from the guide. Every row is a real link, so
+    the layer works on /havel without JavaScript; havel.js fetches the same
+    URLs with X-Havel: 1 inside the panel. -#}
+{% from "_icons.html" import icon with context %}
+<div class="havel-topics" data-havel-topics>
+  {% if havel_answer %}
+  <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/havel?topic={{ havel_topic }}" data-havel-topic-link>{{ icon('chevron-left', 16) }}{{ t(havel_topic_data.label) }}</a>
+  <h3 class="havel-answer-title">{{ t(havel_answer.question.label) }}</h3>
+  <div class="havel-msg havel-msg-havel havel-answer" tabindex="-1">
+    <div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span><span class="havel-name">{{ t('havel.name') }}</span></div>
+    <div class="havel-bubble">{% for p in havel_answer.paragraphs %}<p>{{ p }}</p>{% endfor %}</div>
+    <div class="havel-links">
+      {% if havel_answer.page %}{% set url = page_url(havel_answer.page) %}{% if url %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ url }}">{{ t('havel.topic.guide') if havel_answer.page.startswith('guide_') else t(pages[havel_answer.page][1]) }}{{ icon('chevron-right', 16) }}</a>{% endif %}{% endif %}
+      {% if havel_answer.support and operator().email %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="mailto:{{ operator().email }}">{{ icon('send', 16) }}{{ t('havel.support.mailto') }}</a>{% endif %}
+    </div>
+  </div>
+  {% if not havel_state %}<a class="ui-btn ui-btn-secondary havel-ask" href="#havel-message" data-havel-ask data-topic="{{ havel_topic }}" data-q="{{ havel_q }}">{{ t('havel.topic.ask') }}</a>{% endif %}
+  {% elif havel_topic_data %}
+  <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/havel" data-havel-topic-link>{{ icon('chevron-left', 16) }}{{ t('havel.topic.back') }}</a>
+  <h3 class="havel-answer-title">{{ t(havel_topic_data.label) }}</h3>
+  <nav class="ui-menu-panel" aria-label="{{ t(havel_topic_data.label) }}">
+    {% for q in havel_topic_data.questions %}<a class="ui-menu-item havel-topic" href="/havel?topic={{ havel_topic }}&q={{ q.id }}" data-havel-topic-link>{{ t(q.label) }}<span class="grow"></span>{{ icon('chevron-right', 16) }}</a>{% endfor %}
+  </nav>
+  {% else %}
+  <h3 class="havel-answer-title">{{ t('havel.topics_title') }}</h3>
+  <nav class="ui-menu-panel" aria-label="{{ t('havel.topics_title') }}">
+    {% for tp in havel_topics %}<a class="ui-menu-item havel-topic" href="/havel?topic={{ tp.id }}" data-havel-topic-link>{{ icon(tp.icon, 16) }}{{ t(tp.label) }}<span class="grow"></span>{{ icon('chevron-right', 16) }}</a>{% endfor %}
+  </nav>
+  {% endif %}
+</div>

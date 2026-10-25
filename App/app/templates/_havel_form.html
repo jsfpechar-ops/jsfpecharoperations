@@ -7,6 +7,7 @@
   <input type="hidden" name="page" value="{{ havel_page }}">
   <input type="hidden" name="device" value="computer" data-havel-device>
   <input type="hidden" name="topic" value="{{ havel_topic }}" data-havel-topic>
+  <input type="hidden" name="q" value="{{ havel_q }}" data-havel-q>
   <input type="hidden" name="return_to" value="{{ havel_return_to }}">
   {% if havel_state %}
   <p class="havel-meta">{{ t('havel.' ~ havel_state) }}</p>
