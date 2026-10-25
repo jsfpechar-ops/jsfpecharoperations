@@ -2559,7 +2559,7 @@ STRINGS: Dict[str, str] = {
     "guide.guest_links.what": "Mỗi chỗ ở có một liên kết cho khách cố định và một mã PIN sáu chữ số. Khách mở liên kết trên điện thoại, nhập PIN, chọn lượt lưu trú và điền biểu mẫu của họ.",
     "guide.guest_links.when": "Bạn cần chúng cho mọi đặt phòng: đưa liên kết và PIN vào tin nhắn nhận phòng trên Airbnb, Booking.com và trong e-mail của bạn. Cùng một nội dung dùng được trên mọi cổng.",
     "guide.guest_links.find1": "Mở Chỗ ở: trên điện thoại, nhấn Chỗ ở ở thanh dưới cùng; trên máy tính, nhấn Chỗ ở trong menu bên trái.",
-    "guide.guest_links.find2": "Nhấn chỗ ở.",
+    "guide.guest_links.find2": "Nhấn hoặc bấm vào chỗ ở của bạn.",
     "guide.guest_links.find3": "Nhấn tab Cài đặt, rồi Trải nghiệm của khách.",
     "guide.guest_links.find4": "Dưới Liên kết cho khách, nhấn nút sao chép cạnh Liên kết cho khách.",
     "guide.guest_links.find5": "Dán liên kết vào tin nhắn nhận phòng. Sao chép Mã PIN truy cập theo cách tương tự và dán luôn.",

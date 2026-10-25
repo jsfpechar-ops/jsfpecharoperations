@@ -2,6 +2,10 @@
 
 -
 
+## Help & guide
+
+- [ ] Host behaviour changed → Help & guide updated in this PR (`guide_i18n.py`, `host_vi_i18n.py`; `test_guide_coverage.py` passes)
+
 ## UI checklist
 
 Complete this when the change touches host templates or CSS:
