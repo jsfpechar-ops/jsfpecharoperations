@@ -41,7 +41,7 @@
           {% elif not apartment.feeds %}<span class="ui-badge ui-badge-action" data-tone="amber">{{ t('apartments.setup.calendar') }}</span>
           {% else %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('apartments.setup.ready') }}</span>{% endif %}
         </td>
-        <td class="nowrap row-actions" data-label="">{{ row_open() }}
+        <td class="nowrap row-actions" data-label="">{{ row_open(base_url) }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="{{ base_url }}" role="menuitem">{{ t('common.open') }}</a>
             <a class="row-menu-item" href="{{ base_url }}?view=settings&amp;section=property#basics" role="menuitem">{{ t('apartments.row.edit') }}</a>
@@ -130,7 +130,7 @@
               <span class="small property-timing-status" role="status" aria-live="polite" data-timing-status></span>
             </form>
           </td>
-          <td class="nowrap row-actions" data-label="">{{ row_open() }}</td>
+          <td class="nowrap row-actions" data-label="">{{ row_open(base_url) }}</td>
         </tr>
       {% endfor %}
       </tbody>

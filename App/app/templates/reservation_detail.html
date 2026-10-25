@@ -405,7 +405,7 @@
           <td class="ui-cell-first nowrap" data-card="primary">{{ submission.created_at | datetime_local }}</td>
           <td data-card="badge">{{ submission_pill(submission.state) }}</td>
           <td class="ui-mono ui-sub" data-card="meta">{{ submission.pseudo_stamp or '—' }}</td>
-          <td class="ui-cell-acts row-actions" data-card="actions">{{ row_open() }}
+          <td class="ui-cell-acts row-actions" data-card="actions">{{ row_open('/submissions/' ~ submission.id) }}
             {{ row_menu_begin() }}
               <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('stay.detail.reports.open') }}</a>
               {% if submission.has_receipt %}

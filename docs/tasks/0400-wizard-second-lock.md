@@ -1,4 +1,4 @@
-# 0394: The wizard's lock step can add a second lock
+# 0400: The wizard's lock step can add a second lock
 
 Status: review
 Branch: claude/project-thread-rmxe40 (already checked out; commit here)
@@ -30,7 +30,7 @@ After this brief:
 | App/app/templates/setup_wizard/door_lock.html | new branches, disabled options, draft values |
 | App/app/routes/admin.py | `free_lock_count`; refusals stay on the lock step |
 | App/app/host_i18n.py, App/app/host_vi_i18n.py | 1 new key |
-| App/tests/test_wizard_second_lock_0394.py | new tests |
+| App/tests/test_wizard_second_lock_0400.py | new tests |
 
 ## 4. Steps
 
@@ -40,7 +40,7 @@ Create `App/app/templates/_smart_lock_share.html` with exactly:
 
 ```jinja
 {% from "_components.html" import help_tip, copy_button with context %}
-{#- 0394: the TTLock sharing steps. One copy for the Door lock tab and the setup wizard. -#}
+{#- 0400: the TTLock sharing steps. One copy for the Door lock tab and the setup wizard. -#}
 {% macro share_block(code_id, section, receiver, return_to, primary) %}
   <h2>{{ t('smart_locks.share_title') }}</h2>
   <p class="ui-sub">{{ t('smart_locks.warn_owner') }}</p>
@@ -57,7 +57,7 @@ Create `App/app/templates/_smart_lock_share.html` with exactly:
 {% endmacro %}
 ```
 
-Commit `0394 step 1`.
+Commit `0400 step 1`.
 
 ### Step 2: the panel uses the macro
 
@@ -73,7 +73,7 @@ b. Replace `{{ share_block('ttlock-receiver', 'share') }}` with `{{ share_block(
 
 c. Replace `{{ share_block('ttlock-receiver-more', 'add-more') }}` with `{{ share_block('ttlock-receiver-more', 'add-more', receiver, return_to, false) }}`.
 
-Run: `cd App && .venv/bin/python -m pytest tests/test_smart_locks_page.py -q --tb=short -x 2>&1 | tail -30`. Commit `0394 step 2`.
+Run: `cd App && .venv/bin/python -m pytest tests/test_smart_locks_page.py -q --tb=short -x 2>&1 | tail -30`. Commit `0400 step 2`.
 
 ### Step 3: `free_lock_count` in the lock context
 
@@ -82,11 +82,11 @@ In `App/app/routes/admin.py`, function `_door_code_context`, find the line
 and add directly under it:
 
 ```python
-        # 0394: 0 means every connected lock serves another property.
+        # 0400: 0 means every connected lock serves another property.
         "free_lock_count": len(free_locks),
 ```
 
-Commit `0394 step 3`.
+Commit `0400 step 3`.
 
 ### Step 4: refused lock saves stay on the lock step
 
@@ -107,7 +107,7 @@ a. In `_lock_section_refusal`, replace
 with
 
 ```python
-        # 0394: keep what the host chose, so a refusal never wipes the step.
+        # 0400: keep what the host chose, so a refusal never wipes the step.
         lock_draft = {
             "checkin_hour": _form_str(form, "checkin_hour"),
             "checkout_hour": _form_str(form, "checkout_hour"),
@@ -155,7 +155,7 @@ and replace with
             if setup_step:
 ```
 
-Commit `0394 step 4`.
+Commit `0400 step 4`.
 
 ### Step 5: the new string
 
@@ -177,7 +177,7 @@ In `App/app/host_vi_i18n.py`, under `    "wizard.door_lock.other_brands": "Hiệ
     "wizard.door_lock.all_taken": "Khóa bạn đã kết nối đang mở một chỗ ở khác, và mỗi khóa chỉ dùng cho một chỗ ở. Trước tiên, hãy thêm UbyHost vào khóa của chỗ ở này trong ứng dụng TTLock:",
 ```
 
-Commit `0394 step 5`.
+Commit `0400 step 5`.
 
 ### Step 6: the wizard template
 
@@ -238,14 +238,14 @@ f. Replace the two lines
 ```jinja
 </form>
 {% if lock_panel and lock_panel.smart_locks_enabled %}
-{#- 0394: a second lock is added here, without leaving the wizard. -#}
+{#- 0400: a second lock is added here, without leaving the wizard. -#}
 <details class="ui-section setup-wizard-lock-panel" id="smart-locks-add-more">
   <summary>{{ t('smart_locks.add_more') }}</summary>
   {{ share_block('ttlock-receiver-more', 'add-more', lock_panel.receiver, lock_panel.return_to, false) }}
 </details>
 {% endif %}
 {% elif door_code and door_code.account and door_code.locks %}
-{#- 0394: every connected lock already serves another property: add this property's lock first. -#}
+{#- 0400: every connected lock already serves another property: add this property's lock first. -#}
 <section class="ui-section setup-wizard-lock-panel" id="smart-locks-share">
   <p class="setup-wizard-instruction">{{ t('wizard.door_lock.all_taken') }}</p>
   <ul class="setup-wizard-taken-locks">{% for lock in door_code.locks %}<li>{{ lock.alias }} · {{ t('apartment.form.door_code.in_use', property=lock.used_by) }}</li>{% endfor %}</ul>
@@ -280,14 +280,14 @@ with
 {% if door_code.free_lock_count %}<button class="{{ cta }}" type="submit" form="door-lock-form">{{ t('wizard.save_continue') }}</button>{% endif %}
 ```
 
-Commit `0394 step 6`.
+Commit `0400 step 6`.
 
 ### Step 7: tests
 
-Create `App/tests/test_wizard_second_lock_0394.py` with exactly:
+Create `App/tests/test_wizard_second_lock_0400.py` with exactly:
 
 ```python
-"""0394: a second property's lock is added inside the setup wizard."""
+"""0400: a second property's lock is added inside the setup wizard."""
 from __future__ import annotations
 
 import json
@@ -435,7 +435,7 @@ def test_the_door_lock_tab_still_shows_its_sharing_steps(world):
     assert "x_secondlock" in page
 ```
 
-Run: `cd App && .venv/bin/python -m pytest tests/test_wizard_second_lock_0394.py -q --tb=short -x 2>&1 | tail -30`. Commit `0394 step 7`.
+Run: `cd App && .venv/bin/python -m pytest tests/test_wizard_second_lock_0400.py -q --tb=short -x 2>&1 | tail -30`. Commit `0400 step 7`.
 
 ## 5. Do not touch
 
@@ -444,7 +444,7 @@ Do not change routes other than the three edits in step 4, CSS, the guide, or an
 ## 6. Commands
 
 ```
-cd App && .venv/bin/python -m pytest tests/test_wizard_second_lock_0394.py tests/test_smart_locks_page.py tests/test_door_code_one_lock_one_property.py tests/test_lock_question_0234.py tests/test_onboarding_wizard_survival.py -q --tb=short 2>&1 | tail -30
+cd App && .venv/bin/python -m pytest tests/test_wizard_second_lock_0400.py tests/test_smart_locks_page.py tests/test_door_code_one_lock_one_property.py tests/test_lock_question_0234.py tests/test_onboarding_wizard_survival.py -q --tb=short 2>&1 | tail -30
 cd App && UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome .venv/bin/python -m pytest tests/test_lock_navigation_browser.py tests/test_onboarding_wizard_browser.py tests/test_door_code_window_browser.py -q -rs --tb=short 2>&1 | tail -30
 cd .. && python3 scripts/context_lint.py 2>&1 | tail -30
 ```
@@ -460,4 +460,4 @@ An anchor is not found, or a test fails twice: stop, write the report with `Stat
 
 ## 9. Report
 
-`docs/tasks/0394-report.md`.
+`docs/tasks/0400-report.md`.

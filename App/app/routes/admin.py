@@ -62,6 +62,7 @@ from .. import (
     welcome_back,
 )
 from ..templating import render
+from .guest_guide import leon_card_state as _leon_card_state  # 0396
 from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, dashboard_calendar, exports, guest, onboarding, privacy_requests
 from . import passkeys as passkey_routes
@@ -796,7 +797,7 @@ def _entities_page(
 def _invoice_details_response(request: Request, form, entity: Dict[str, Any], *, default_next: str):
     """Save or look up Invoice details from the business editor."""
     next_path = _entity_next(_form_str(form, "next"))
-    if form.get("fill_from_register"):
+    if form.get("fill_from_register") or form.get("use_register_account"):
         state = invoice_routes.lookup_invoice_details(request, form, entity)
         return _entities_page(request, edit_entity=entity, invoice=state, next_path=next_path)
     refused = invoice_routes.save_invoice_details(request, form, entity)
@@ -1786,7 +1787,7 @@ def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]
         "enabled": apartment["lock_provider"] == "ttlock",
         "lock_id": apartment["lock_id"],
         "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
-        # 0394: 0 means every connected lock serves another property.
+        # 0400: 0 means every connected lock serves another property.
         "free_lock_count": len(free_locks),
         "checkin_hour": cin,
         "checkout_hour": cout,
@@ -1847,6 +1848,7 @@ def _render_apartment_detail(
             "apartment": apartment,
             "fee_signature": _fee_signature_context(request, apartment),
             "door_code": door_code,
+            "leon_card": _leon_card_state(apartment),  # 0396
             "lock_panel": (
                 {**_smart_lock_panel_context(request), "return_to": f"/apartments/{apartment_id}?view=settings&section=lock"}
                 if door_code is not None
@@ -2086,7 +2088,7 @@ async def apartment_update(apartment_id: int, request: Request):
 def _lock_section_refusal(request: Request, apartment_id: int, form, error_key: str):
     """A door-lock save that cannot be stored. The wizard stays on its step."""
     if _form_str(form, "setup_step") == "door_lock":
-        # 0394: keep what the host chose, so a refusal never wipes the step.
+        # 0400: keep what the host chose, so a refusal never wipes the step.
         lock_draft = {
             "checkin_hour": _form_str(form, "checkin_hour"),
             "checkout_hour": _form_str(form, "checkout_hour"),

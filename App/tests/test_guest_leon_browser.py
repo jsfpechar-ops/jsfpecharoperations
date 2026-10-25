@@ -30,7 +30,7 @@ def _seed() -> tuple:
     entity = db.insert("legal_entity", {"name": "Jana Fiktivni", "created_at": now})
     apartment_id = db.insert("apartment", {
         "internal_name": NAME, "uby_name": NAME, "permalink_token": "leonchatbrowser0352", "legal_entity_id": entity,
-        "automation_mode": "manual", "active": 1, "created_at": now, "leon_enabled": 1,  # 0376
+        "automation_mode": "manual", "active": 1, "created_at": now, "leon_enabled": 1, "leon_terms_version": "2026-10-25",  # 0376
     })
     guest_guide.ensure_defaults(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
     cards = {r["kind"]: r for r in guest_guide.items(apartment_id)}

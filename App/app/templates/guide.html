@@ -278,6 +278,12 @@
       <ol>{% for n in range(1, 10) %}<li>{{ t('guide.door_codes.terms' ~ n) }}</li>{% endfor %}</ol>
     </section>
 
+    <section class="guide-section ui-section ui-section-plain" id="leon-terms">
+      <h2>{{ t('guide.leon_terms.title') }}</h2>
+      <p class="ui-sub">{{ t('guide.leon_terms.version', version='2026-10-25') }}</p>
+      <ol>{% for n in range(1, 13) %}<li>{{ t('guide.leon_terms.terms' ~ n) }}</li>{% endfor %}</ol>
+    </section>
+
     <section class="guide-section ui-section ui-section-plain" id="faster">
       <h2>{{ t('guide.nav.faster') }}</h2>
       <ul class="guide-steps">

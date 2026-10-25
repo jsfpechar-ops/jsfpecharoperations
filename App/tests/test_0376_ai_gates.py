@@ -73,24 +73,21 @@ def test_leon_stays_off_until_the_host_says_yes(ws):
     assert _leon_flag(ws["home"]) == 0
     assert not _guest_sees_leon(ws)
     assert ws["guest"].post(f"/g/{ws['token']}/leon", data={"message": "Hi"}).status_code == 404
-    db.execute("UPDATE apartment SET leon_enabled = 1 WHERE id = ?", (ws["home"],))
+    db.execute("UPDATE apartment SET leon_enabled = 1, leon_terms_version = '2026-10-25' WHERE id = ?", (ws["home"],))
     assert _guest_sees_leon(ws)
 
 
-def test_host_switches_leon_on_and_off_on_the_guide_page(ws):
-    client, url = ws["host"], f"/apartments/{ws['home']}/guide"
-    page = client.get(url + "?lang=en").text
-    assert 'id="leon"' in page and "Let Leon answer my guests" in page and 'name="on"' in page
-    assert 'checked' not in re.search(r'id="guide-leon-on"[^>]*>', page).group(0)
-    assert _host_post(client, url + "/leon", {"on": "1"}).status_code == 303
+def test_host_switches_leon_on_and_off_on_the_leon_page(ws):
+    client, url = ws["host"], f"/apartments/{ws['home']}/leon"
+    assert 'name="terms"' in client.get(url + "?lang=en").text
+    assert _host_post(client, url, {"action": "on", "terms": "1"}).status_code == 303
     assert _leon_flag(ws["home"]) == 1
-    assert 'checked' in re.search(r'id="guide-leon-on"[^>]*>', client.get(url).text).group(0)
-    assert _host_post(client, url + "/leon", {}).status_code == 303
+    assert _host_post(client, url, {"action": "off"}).status_code == 303
     assert _leon_flag(ws["home"]) == 0
 
 
 def test_host_cannot_switch_leon_on_for_another_hosts_property(ws):
-    response = _host_post(ws["host"], f"/apartments/{ws['foreign']}/guide/leon", {"on": "1"})
+    response = _host_post(ws["host"], f"/apartments/{ws['foreign']}/leon", {"action": "on", "terms": "1"})
     assert response.status_code == 404
     assert _leon_flag(ws["foreign"]) == 0
 
@@ -98,23 +95,23 @@ def test_host_cannot_switch_leon_on_for_another_hosts_property(ws):
 def test_no_leon_section_while_leon_is_off(ws, monkeypatch):
     monkeypatch.setattr(config, "AI_FEATURES", frozenset())
     assert 'id="leon"' not in ws["host"].get(f"/apartments/{ws['home']}/guide").text
-    _host_post(ws["host"], f"/apartments/{ws['home']}/guide/leon", {"on": "1"})
+    _host_post(ws["host"], f"/apartments/{ws['home']}/leon", {"action": "on", "terms": "1"})
     assert _leon_flag(ws["home"]) == 0
 
 
 def test_test_list_keeps_other_owners_out(ws, monkeypatch):
-    db.execute("UPDATE apartment SET leon_enabled = 1 WHERE id = ?", (ws["home"],))
+    db.execute("UPDATE apartment SET leon_enabled = 1, leon_terms_version = '2026-10-25' WHERE id = ?", (ws["home"],))
     monkeypatch.setattr(config, "AI_TEST_EMAILS", frozenset({"josef@example.test"}))
     assert not _guest_sees_leon(ws)
     assert not guide_translate.can_fill(ws["home"])
     assert 'id="leon"' not in ws["host"].get(f"/apartments/{ws['home']}/guide").text
     db.execute("UPDATE apartment SET leon_enabled = 0 WHERE id = ?", (ws["home"],))
-    _host_post(ws["host"], f"/apartments/{ws['home']}/guide/leon", {"on": "1"})
+    _host_post(ws["host"], f"/apartments/{ws['home']}/leon", {"action": "on", "terms": "1"})
     assert _leon_flag(ws["home"]) == 0
 
 
 def test_test_list_lets_a_listed_owner_in_whatever_the_case(ws, monkeypatch):
-    db.execute("UPDATE apartment SET leon_enabled = 1 WHERE id = ?", (ws["home"],))
+    db.execute("UPDATE apartment SET leon_enabled = 1, leon_terms_version = '2026-10-25' WHERE id = ?", (ws["home"],))
     monkeypatch.setattr(config, "AI_TEST_EMAILS", frozenset({"gate-owner@example.test"}))
     assert _guest_sees_leon(ws)
     assert guide_translate.can_fill(ws["home"])

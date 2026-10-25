@@ -39,14 +39,14 @@
   </div>
 </form>
 {% if lock_panel and lock_panel.smart_locks_enabled %}
-{#- 0394: a second lock is added here, without leaving the wizard. -#}
+{#- 0400: a second lock is added here, without leaving the wizard. -#}
 <details class="ui-section setup-wizard-lock-panel" id="smart-locks-add-more">
   <summary>{{ t('smart_locks.add_more') }}</summary>
   {{ share_block('ttlock-receiver-more', 'add-more', lock_panel.receiver, lock_panel.return_to, false) }}
 </details>
 {% endif %}
 {% elif door_code and door_code.account and door_code.locks %}
-{#- 0394: every connected lock already serves another property: add this property's lock first. -#}
+{#- 0400: every connected lock already serves another property: add this property's lock first. -#}
 <section class="ui-section setup-wizard-lock-panel" id="smart-locks-share">
   <p class="setup-wizard-instruction">{{ t('wizard.door_lock.all_taken') }}</p>
   <ul>{% for lock in door_code.locks %}<li>{{ lock.alias }} · {{ t('apartment.form.door_code.in_use', property=lock.used_by) }}</li>{% endfor %}</ul>

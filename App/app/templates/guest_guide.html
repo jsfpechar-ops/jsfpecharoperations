@@ -39,12 +39,8 @@
 {% if leon_offer %}
 {% call ui_section(t('guest_guide.leon.title'), id='leon') %}
 <p class="ui-sub">{{ t('guest_guide.leon.help') }}</p>
-<form method="post" action="{{ base_url }}/leon">
-<input type="hidden" name="_csrf" value="{{ csrf_token }}">
-{{ ui_toggle('guide-leon-on', t('guest_guide.leon.toggle'), name='on', checked=leon_on) }}
-<div class="ui-form-actions">{{ ui_button(t('guest_guide.leon.save'), 'secondary', type='submit') }}</div>
-</form>
-{% if leon_on and not progress.live %}<p class="ui-sub">{{ t('guest_guide.leon.waiting') }}</p>{% endif %}
+<p class="ui-sub">{{ t('leon_page.card.' ~ leon_state) }}</p>
+<div class="ui-form-actions">{{ ui_button(t('guest_guide.leon.open'), 'secondary', href='/apartments/' ~ apartment.id ~ '/leon') }}</div>
 {% endcall %}
 {% endif %}
 {% call ui_section(t('guest_guide.import.title'), id='import') %}

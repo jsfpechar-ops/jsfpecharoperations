@@ -498,9 +498,9 @@
 </div>
 {% endmacro %}
 
-{#- 0252: a visible "Open" cue for a row that opens on click; the row itself is the link. -#}
-{% macro row_open() -%}
-<span class="row-open" aria-hidden="true"><span class="row-open-text">{{ t('common.open') }}</span></span>
+{#- 0252, 0399: a visible "Open" link to the row's target; the row or its primary link is the keyboard target. -#}
+{% macro row_open(href) -%}
+<a class="row-open" href="{{ href }}" tabindex="-1" aria-hidden="true"><span class="row-open-text">{{ t('common.open') }}</span></a>
 {%- endmacro %}
 
 {% macro source_badge(key, label) %}

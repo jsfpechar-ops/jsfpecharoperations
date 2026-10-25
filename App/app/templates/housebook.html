@@ -91,7 +91,7 @@
           {% elif row.reported.startswith('NO') %}<span class="ui-badge ui-badge-action" data-tone="red">{{ t('submission.rejected') }}</span>
           {% else %}<span class="ui-badge ui-badge-neutral" data-tone="teal">{{ t('housebook.not_sent') }}</span>{% endif %}
         </td>
-        <td class="nowrap row-actions" data-label="">{{ row_open() }}
+        <td class="nowrap row-actions" data-label="">{{ row_open('/guests/' ~ row._guest_id ~ '?return_to=/housebook') }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}?return_to=/housebook" role="menuitem">{{ t('common.edit') }}</a>
             <a class="row-menu-item" href="/guests/{{ row._guest_id }}/form.pdf" role="menuitem">{{ t('housebook.pdf') }}</a>

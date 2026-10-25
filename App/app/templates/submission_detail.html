@@ -131,7 +131,7 @@
           {% else %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ guest.result }}</span>{% endif %}
           {% if guest.errors %}<div class="ui-sub err-text">{{ guest.errors }}</div>{% endif %}
         </td>
-        <td class="ui-cell-acts row-actions" data-card="actions" data-label="">{{ row_open() }}
+        <td class="ui-cell-acts row-actions" data-card="actions" data-label="">{{ row_open('/guests/' ~ guest.id ~ '?return_to=/submissions/' ~ submission.id) }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/guests/{{ guest.id }}?return_to=/submissions/{{ submission.id }}" role="menuitem">{{ t('common.edit') }}</a>
           {{ row_menu_end() }}

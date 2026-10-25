@@ -69,6 +69,8 @@ def test_the_nav_numbers_run_one_to_five_without_a_gap(host):
     client, apartment_id = host
 
     nav = _nav(client.get(f"/apartments/{apartment_id}?lang=en").text)
+    # 0399: the Guest links Open pill repeats its card's link.
+    nav = re.sub(r'<a class="host-property-card-open"[^>]*>', '', nav)
     targets = re.findall(r'href="[^"#]*#([^"]+)"', nav)
     # 0094: the business card opens the shared entity editor, not a property anchor.
     assert targets == ['calendars', 'communication', 'ubyport', 'stay-fee-settings', 'address']
