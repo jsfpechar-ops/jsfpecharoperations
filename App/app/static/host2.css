@@ -927,6 +927,8 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-topic { min-height: var(--control-h); }
 .host-workspace .havel-topics .havel-answer { max-width: none; }
 .host-workspace .havel-ask { align-self: flex-start; }
+.host-workspace .havel-topics .ui-menu-panel { position: static; display: flex; min-width: 0; box-shadow: none; border-radius: var(--card-radius); padding: var(--space-2); z-index: auto; }
+.host-workspace .havel-topic .grow { flex: 1 1 auto; }
 
 /* 0324: Havel panel and launcher (MASTER 7.15, plan 17a-17b). Computer: the dialog is anchored
    bottom-right, 400 x 680 at most; phone: the existing bottom sheet, 92dvh. Tokens only. */
