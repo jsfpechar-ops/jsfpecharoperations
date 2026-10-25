@@ -60,12 +60,12 @@
     "v": "20261003a"
   },
   "guest-leon.js": {
-    "sha256": "8b7420cd0c4134492c158e690283ad6a7e2a602d1d251e585e31171ac7f28a12",
-    "v": "20261024-0302"
+    "sha256": "9adb45c2f083b6ba2438f0bef3e6284f167e7ec54ceea73a607def0fc841c944",
+    "v": "20261025-0387"
   },
   "guest.css": {
-    "sha256": "3bfae56e8e3ecfef985fc8de587b89ec112d8d32ed89b2d7fabd3bc03ff2198d",
-    "v": "20261024-0303"
+    "sha256": "c08855880fae55e7314fbe3bd8a1d37de5d10329db3d262628bac43c4eff40b4",
+    "v": "20261025-0387b"
   },
   "havel.js": {
     "sha256": "f1c725b3d5988255256e0bddec43e4b5788b70b4802862d94e6945c1549c8138",

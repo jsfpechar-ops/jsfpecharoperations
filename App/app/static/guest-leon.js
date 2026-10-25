@@ -138,6 +138,9 @@
     var n = input.value.length;
     count.textContent = n + " / " + MAX;
     count.classList.toggle("g-leon-count--near", n > MAX - 50);
+    count.hidden = n <= MAX - 50;
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 132) + "px";
   }
 
   function mark(item, state) {

@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 
 import pytest
@@ -71,7 +72,7 @@ def test_the_chat_works_and_lays_out_on_a_phone(live_server, browser, monkeypatc
         assert page.locator("[data-leon-form]").is_visible()
         assert page.locator("[data-leon-jump]").is_visible()
         page.fill("[data-leon-input]", "Hello")
-        assert page.locator("[data-leon-count]").inner_text() == "5 / 500"
+        assert page.locator("[data-leon-count]").is_hidden()
         page.click("[data-leon-send]")
         page.wait_for_selector("[data-leon-msg=leon]")
         assert page.locator("[data-leon-msg=guest]").inner_text().endswith("Hello")
@@ -93,6 +94,54 @@ def test_the_chat_works_and_lays_out_on_a_phone(live_server, browser, monkeypatc
         assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
         SHOTS.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=str(SHOTS / f"0352-guide-chat-{lang}-390.png"), full_page=True)
+        context.close()
+    finally:
+        _cleanup()
+
+
+def test_leon_chat_look_on_a_phone(live_server, browser, monkeypatch):  # noqa: F811
+    monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
+    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
+    apartment_id, token = _seed()
+    docs_shots = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0387"
+    try:
+        context = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2)
+        page = context.new_page()
+        page.goto(f"{live_server}/g/{token}?lang=en")
+        assert page.locator("[data-leon-form]").is_visible()
+        assert page.locator(".g-leon-avatar").is_visible()
+        assert page.locator("label[for=leon-message]").bounding_box()["width"] <= 1
+        pill = page.locator(".g-leon-pill").bounding_box()
+        send = page.locator(".g-leon-send").bounding_box()
+        assert send["width"] >= 44 and send["height"] >= 44
+        assert send["x"] >= pill["x"] - 1 and send["y"] >= pill["y"] - 1
+        assert send["x"] + send["width"] <= pill["x"] + pill["width"] + 1
+        assert send["y"] + send["height"] <= pill["y"] + pill["height"] + 1
+
+        page.fill("[data-leon-input]", "x" * 460)
+        assert page.locator("[data-leon-count]").inner_text() == "460 / 500"
+        page.fill("[data-leon-input]", "line\n" * 8)
+        grown = page.locator("[data-leon-input]").bounding_box()["height"]
+        assert 40 < grown <= 132, grown
+
+        page.fill("[data-leon-input]", "Hello")
+        page.click("[data-leon-send]")
+        page.wait_for_selector("[data-leon-msg=leon]")
+        guest_bg = page.locator("[data-leon-msg=guest]").evaluate("e => getComputedStyle(e).backgroundColor")
+        leon_bg = page.locator("[data-leon-msg=leon]").evaluate("e => getComputedStyle(e).backgroundColor")
+        assert guest_bg != leon_bg
+        assert page.locator(".g-leon-msg--guest .g-leon-who").bounding_box()["width"] <= 1
+        assert page.evaluate("() => document.documentElement.scrollWidth <= 390")
+        SHOTS.mkdir(parents=True, exist_ok=True)
+        docs_shots.mkdir(parents=True, exist_ok=True)
+        page.locator("#leon").screenshot(path=str(SHOTS / "leon-chat-390.png"))
+        shutil.copy(SHOTS / "leon-chat-390.png", docs_shots / "leon-chat-390.png")
+
+        _host_answers(apartment_id)
+        page.reload()
+        page.wait_for_selector("[data-leon-msg=host]")
+        page.locator("#leon").screenshot(path=str(SHOTS / "leon-chat-host-390.png"))
+        shutil.copy(SHOTS / "leon-chat-host-390.png", docs_shots / "leon-chat-host-390.png")
         context.close()
     finally:
         _cleanup()
