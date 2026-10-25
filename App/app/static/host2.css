@@ -956,3 +956,21 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 @media (max-width: 767px) {
   .host-workspace .havel-dialog .ui-sheet { max-height: 92dvh; height: 92dvh; }
 }
+
+/* 0314: Havel confirm cards (plan 17d). A card sits under the bubble, never inside it. */
+.host-workspace .havel-card { margin-top: var(--space-2); max-width: 100%; }
+.host-workspace .havel-card-title { margin: 0 0 var(--space-2); font-size: var(--size-15); font-weight: 600; color: var(--ink); }
+.host-workspace .havel-card-facts { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; }
+.host-workspace .havel-card-facts div { display: flex; gap: var(--space-2); align-items: baseline; }
+.host-workspace .havel-card-facts dt { font-size: var(--size-13); color: var(--ink-3); }
+.host-workspace .havel-card-facts dd { margin: 0; font-size: var(--size-15); color: var(--ink); overflow-wrap: anywhere; }
+.host-workspace .havel-card-link { display: flex; align-items: center; gap: var(--space-1); font-family: var(--font-mono); font-size: var(--size-13); }
+.host-workspace .havel-card-pin { font-family: var(--font-mono); font-size: var(--size-18); font-weight: 600; letter-spacing: 0.08em; }
+.host-workspace .havel-card-warning { display: flex; gap: var(--space-2); align-items: flex-start; margin: var(--space-2) 0 0; font-size: var(--size-13); color: var(--ink-2); }
+.host-workspace .havel-card-danger { color: var(--danger); }
+.host-workspace .havel-card-change { margin-top: var(--space-2); }
+.host-workspace .havel-card-change summary { list-style: none; display: inline-flex; }
+.host-workspace .havel-card-change summary::-webkit-details-marker { display: none; }
+.host-workspace .havel-card-change[open] summary { margin-bottom: var(--space-2); }
+.host-workspace .havel-card-change .ui-field { margin-bottom: var(--space-2); }
+.host-workspace .havel-card-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap; }

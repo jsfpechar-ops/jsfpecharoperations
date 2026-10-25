@@ -9,12 +9,14 @@ show; this module only wires the form, the limits and the copy.
 from __future__ import annotations
 
 import re
+from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.concurrency import run_in_threadpool
 
-from .. import access, ai, auth, havel, havel_topics, host_i18n, security
+from .. import access, ai, auth, cleaning_i18n, db, havel, havel_actions, havel_topics, host_i18n, security
+from . import dashboard_calendar
 from ..templating import render
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
@@ -38,6 +40,23 @@ def _t(request: Request, key: str, **kw: Any) -> str:
 def _properties(request: Request) -> List[Dict[str, Any]]:
     rows = access.apartments(request, "id, internal_name, addr_obec")
     return [{"id": int(r["id"]), "name": r["internal_name"] or f"#{r['id']}", "city": r["addr_obec"] or ""} for r in rows]
+
+
+def _feed_count(apartment_id: int) -> int:
+    row = db.query_one("SELECT COUNT(*) AS n FROM ical_feed WHERE apartment_id = ? AND active = 1", (apartment_id,))
+    return int(row["n"]) if row else 0
+
+
+def _card(request: Request, action: Dict[str, Any], return_to: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """(card, None) or (None, reason sentence)."""
+    rows = list(access.apartments(request, "*"))
+    try:
+        card = havel_actions.prepare(action, rows, date.today(), return_to=return_to,
+                                     overlaps=dashboard_calendar.overlapping_count, feed_count=_feed_count)
+    except havel_actions.NotPrepared as exc:
+        return None, _t(request, "havel.card.not_prepared", reason=_t(request, f"havel.reason.{exc.reason}"))
+    card["cleaning_words"] = cleaning_i18n.translator(host_i18n.lang_from_request(request))
+    return card, None
 
 
 def blocks(text: str) -> List[Dict[str, Any]]:
@@ -185,12 +204,16 @@ async def havel_send(request: Request):
                     else:
                         reply_text = reply.text
                         links = list(reply.links)
-                        if reply.action:  # 0314 replaces this with the confirm card
-                            page_id = ACTION_FALLBACK_PAGE[reply.action["type"]]
-                            url = havel.page_url(page_id, reply.action.get("property_id"), host.property_ids)
-                            links.append((_t(request, "havel.card.open_form"), url))
+                        card = None
+                        if reply.action:
+                            card, not_prepared = _card(request, reply.action, return_to)
+                            if not_prepared:
+                                reply_text = f"{reply_text}\n{not_prepared}".strip()
+                                page_id = ACTION_FALLBACK_PAGE[reply.action["type"]]
+                                url = havel.page_url(page_id, reply.action.get("property_id"), host.property_ids)
+                                links.append((_t(request, "havel.card.open_form"), url))
                         items.append(_item("havel", reply_text, links=links, support=reply.kind == "escalate",
-                                           support_summary=reply.support_summary))
+                                           support_summary=reply.support_summary, card=card))
         if len(items) == 1:
             items.append(_item("havel", reply_text, support=support))
         if reply_text != _t(request, "havel.limit_turns"):
