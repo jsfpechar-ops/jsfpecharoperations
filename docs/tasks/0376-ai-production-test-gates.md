@@ -148,13 +148,28 @@ With no env change nothing visible changes on production: AI is off there today.
    - Host POST `/apartments/{id}/guide/leon` `on=1` -> column 1, then no `on` -> 0; another host's property -> 404.
 14. Document `UBYHOST_AI_TEST_EMAILS` next to the other `UBYHOST_AI_*` vars (find them with `grep -rn UBYHOST_AI_FEATURES docs deploy`).
 
-## 5. Checks (run all before committing)
+## 5. Do not touch
+
+- `App/app/db.py` base schema (migrations only), `leon.reply` and the Leon prompt, Havel's limits, any CI workflow.
+
+## 6. Commands
 
 - `App/.venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841` (from `App/`)
 - `python scripts/design_lint.py`, `python scripts/migration_guard.py` if it runs locally
 - `pytest App/tests/test_0376_ai_gates.py App/tests/test_leon.py App/tests/test_guest_leon_chat.py App/tests/test_guest_guide_view.py App/tests/test_guest_guide_pages.py App/tests/test_guide_translate.py App/tests/test_havel_page.py App/tests/test_havel_panel.py App/tests/test_havel_palette.py App/tests/test_ai.py App/tests/test_design_*.py -q` plus any i18n parity test (`grep -ln "host_vi_i18n\|STRINGS\[" App/tests`).
 - `git checkout -- docs/tasks` if browser tests rewrote screenshots.
 
-## 6. Report
+## 7. Acceptance
+
+- With no new env vars nothing changes for hosts or guests on production.
+- Leon's card and endpoints stay off for a property until its host switches Leon on.
+- With `UBYHOST_AI_TEST_EMAILS` set, Havel, Leon and guide translation work only for listed accounts.
+- Every command in section 6 passes.
+
+## 8. Stop and ask
+
+- If a step needs a new dependency, a change to Leon's answers, or a second migration.
+
+## 9. Report
 
 Write `docs/tasks/0376-report.md`: what changed, test output summary, anything you could not do.
