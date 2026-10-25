@@ -3361,7 +3361,6 @@ STRINGS: Dict[str, str] = {
     "havel.intro": "Xin chào, tôi là Havel, trợ lý AI của UbyHost. Hãy chọn một chủ đề bên dưới hoặc hỏi tôi cách làm một việc gì đó. Tôi giải thích từng bước, và sẽ không có gì thay đổi cho đến khi bạn xác nhận.",
     "havel.ai_note": "Havel là trí tuệ nhân tạo và có thể sai. Hãy kiểm tra từng thẻ trước khi xác nhận. Không nhập mật khẩu hay số giấy tờ của khách.",
     "havel.topics_title": "Bạn cần giúp về việc gì?",
-    "havel.greeting": "Xin chào, tôi là Havel, trợ lý hỗ trợ của UbyHost (AI). Tôi có thể chỉ cho bạn mọi thứ nằm ở đâu trong ứng dụng và hướng dẫn bạn từng bước. Hãy chọn một chủ đề bên dưới hoặc viết câu hỏi bằng lời của bạn.",
     "havel.topic.stays": "Thêm hoặc sửa lượt ở",
     "havel.topic.guest_link": "Liên kết cho khách và mã PIN",
     "havel.topic.reporting": "Khai báo với cảnh sát",
