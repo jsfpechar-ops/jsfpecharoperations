@@ -7,7 +7,8 @@
 {% block back_label %}{{ apartment.internal_name }}{% endblock %}
 {% block meta %}{{ t('leon_page.card.' ~ state) }}{% endblock %}
 {% block body %}
-{% if state == 'terms' %}{{ ui_banner('attention', t('leon_page.terms_updated')) }}{% endif %}
+{% if state == 'terms' %}{{ ui_banner('attention', t('leon_page.terms_updated')) }}
+{% elif state in ('on', 'waiting') %}{{ ui_banner('neutral', t('leon_page.on_banner') if live else t('leon_page.waiting_banner')) }}{% endif %}
 {% call ui_section(t('leon_page.what_title')) %}
 <p class="ui-sub">{{ t('leon_page.what') }}</p>
 {% endcall %}
@@ -25,17 +26,16 @@
 {% endcall %}
 {% else %}
 {% call ui_section(t('leon_page.accepted_title')) %}
-{{ ui_banner('neutral', t('leon_page.on_banner') if live else t('leon_page.waiting_banner')) }}
-<ul>
-<li>{{ t('leon_page.accepted_version') }}: {{ apartment.leon_terms_version }}</li>
-<li>{{ t('leon_page.accepted_at') }}: {{ accepted_at }}</li>
-<li>{{ t('leon_page.accepted_by') }}: {{ accepted_by }}</li>
-</ul>
+<dl class="kv">
+<dt>{{ t('leon_page.accepted_version') }}</dt><dd><a href="/guide#leon-terms">{{ apartment.leon_terms_version }}</a></dd>
+<dt>{{ t('leon_page.accepted_at') }}</dt><dd>{{ accepted_at }}</dd>
+<dt>{{ t('leon_page.accepted_by') }}</dt><dd>{{ accepted_by }}</dd>
+</dl>
 <div class="ui-form-actions">{{ ui_button(t('leon_page.edit_guide'), 'secondary', href='/apartments/' ~ apartment.id ~ '/guide') }}</div>
-<form method="post" action="/apartments/{{ apartment.id }}/leon">
+<form method="post" action="/apartments/{{ apartment.id }}/leon" data-confirm data-confirm-message="{{ t('leon_page.off_confirm') }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 <input type="hidden" name="action" value="off">
-<div class="ui-form-actions">{{ ui_button(t('leon_page.switch_off'), 'secondary', type='submit', attrs='data-confirm data-confirm-message="' ~ t('leon_page.off_confirm') ~ '"') }}</div>
+<div class="ui-form-actions">{{ ui_button(t('leon_page.switch_off'), 'secondary', type='submit') }}</div>
 </form>
 {% endcall %}
 {% endif %}

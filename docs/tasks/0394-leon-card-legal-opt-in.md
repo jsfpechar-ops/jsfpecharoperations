@@ -1,12 +1,12 @@
 # 0394: Leon (AI) card on the property overview, with warnings and terms the host accepts first
 
-Status: todo
+Status: review
 Depends on: main (0376, 0393 merged) | Branch: claude/0394-leon-card-legal-opt-in (checked out; commit here)
 Executor: Haiku 5.5 | Reviewer: Opus | Fits one session: 40 tool calls, 90k tokens
 
 ## 1. Objective
 
-Owner (Josef, 2026-10-25): Leon's switch is "really difficult to find" (it sits at the bottom of the Guest guide tab). He wants it on the property **Overview** grid of cards (Connected calendars, Guest links, Police reporting, Digital door lock ...), "optional of course, with all warning and legal they have to accept before using, like TTLock". Legal copy was written by an Opus legal-counsel pass (§6).
+Owner (Josef, 2026-10-25): Leon's switch is "really difficult to find" (it sits at the bottom of the Guest guide tab). He wants it on the property **Overview** grid of cards (Connected calendars, Guest links, Police reporting, Digital door lock ...), "optional of course, with all warning and legal they have to accept before using, like TTLock". Legal copy was written by an Opus legal-counsel pass (§4 Copy).
 
 1. New optional **"Leon (AI)" card** on the property Overview grid, shown only where Leon is offered (`ai.enabled_for_property(leon.FEATURE, id)`, i.e. `leon` in `UBYHOST_AI_FEATURES`, a key, and the owner on `UBYHOST_AI_TEST_EMAILS` when set). Status line: Off / On / On, starts when the guide is live / Terms updated, accept again. Opens the new Leon page.
 2. New page **`/apartments/{id}/leon`** ("Leon (AI)"): what Leon does, the warnings, one required checkbox accepting the versioned Leon terms (link to `/guide#leon-terms`), primary button "Switch Leon on". When on: who accepted which version when, and "Switch Leon off".
@@ -42,7 +42,7 @@ Off is always allowed. With no env change nothing shows on production for hosts 
 | App/app/routes/admin.py | overview context `leon_card` |
 | App/app/templates/guest_guide.html | Leon section: status line + link |
 | App/app/templates/guide.html | `#leon-terms` section |
-| App/app/host_i18n.py, App/app/host_vi_i18n.py, App/app/guide_i18n.py | copy (§6) |
+| App/app/host_i18n.py, App/app/host_vi_i18n.py, App/app/guide_i18n.py | copy (§4 Copy) |
 | App/app/retention.py | one line for the acceptance fields |
 | App/tests/test_0394_leon_opt_in.py | new |
 | App/tests/test_0394_leon_opt_in_browser.py | new (390 px screenshots) |
@@ -87,7 +87,7 @@ Off is always allowed. With no env change nothing shows on production for hosts 
    Check that `apartment` in this context has the new columns (it is a full row; if it is a dict built by hand, add them).
 6. `guest_guide.html` Leon section (keep `id='leon'`, `leon_offer` guard): drop the form and toggle; show `<p class="ui-sub">{{ t('leon_page.card.' ~ leon_state) }}</p>` and `{{ ui_button(t('guest_guide.leon.open'), 'secondary', href='/apartments/' ~ apartment.id ~ '/leon') }}`. Remove keys `guest_guide.leon.toggle`, `guest_guide.leon.save`, `guest_guide.leon.waiting` from en/cs/vi only if nothing else uses them (grep).
 7. `guide.html`: right after the door-codes terms section (after line ~279 `</section>`), a new `<section class="guide-section ui-section ui-section-plain" id="leon-terms">` with `<h2>{{ t('guide.leon_terms.title') }}</h2>`, `<p class="ui-sub">{{ t('guide.leon_terms.version', version='2026-10-25') }}</p>`, `<ol>` of `guide.leon_terms.terms1..N`. If the guide has a side nav listing sections (grep `guide.nav.`), add an entry only if every other terms block has one (door-code terms is an `h3` inside a section without its own nav entry; then also make Leon's an `h3` inside the closest AI/guest-guide section if one exists, else its own section without nav).
-8. Copy from §6 into en and cs (`host_i18n.py`, `guide_i18n.py`); Vietnamese host strings into `host_vi_i18n.py` (translate the host strings yourself, plain and short; the guide terms stay en/cs since `guide_i18n` has no vi).
+8. Copy from the Copy section into en and cs (`host_i18n.py`, `guide_i18n.py`); Vietnamese host strings into `host_vi_i18n.py` (translate the host strings yourself, plain and short; the guide terms stay en/cs since `guide_i18n` has no vi).
 9. `retention.py`: (a) one line saying `apartment.leon_terms_accepted_by` / `_at` / `_version` are kept while the property exists (proof of the host's acceptance), deleted with the property/account; follow the neighbouring format. (b) Acceptance evidence must not expire after 3 years (legal note part 4): in `_audit_retention_step` change `action NOT IN ('legal_accepted')` to `action NOT IN ('legal_accepted', 'door_code_terms_accepted', 'leon_terms_accepted')` and extend its docstring by one sentence. Add a test in `test_0394_leon_opt_in.py` that an old `leon_terms_accepted` audit row survives the step while an old ordinary row is deleted (copy the pattern from the existing retention tests: grep `_audit_retention_step` in tests).
 10. Tests `test_0394_leon_opt_in.py` (copy fixtures from `test_0376_ai_gates.py`):
     - Card absent when Leon not offered (feature off, or owner not on the test list); present with `data-leon-card="off"` when offered.
@@ -100,17 +100,7 @@ Off is always allowed. With no env change nothing shows on production for hosts 
 11. `test_0394_leon_opt_in_browser.py` (`sync_api = pytest.importorskip("playwright.sync_api")`, copy the server fixture from `test_guest_leon_browser.py` or the closest host browser test): at 390 px save screenshots to `docs/tasks/screenshots-0394/`: `overview-card-390.png` (overview grid with the Leon card, scrolled to it), `leon-off-390.png`, `leon-on-390.png`; plus `leon-off-1280.png`. Assert no horizontal overflow (`document.documentElement.scrollWidth <= innerWidth`).
 12. Update the tests in §2 to set `leon_terms_version` alongside `leon_enabled = 1`.
 
-## 5. Checks
-
-From `App/`:
-```
-.venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841 | tail -5
-.venv/bin/python -m pytest tests/test_0394_leon_opt_in.py tests/test_0376_ai_gates.py tests/test_leon.py tests/test_guest_leon_chat.py tests/test_privacy_first.py tests/test_guest_guide*.py tests/test_design_*.py -q --tb=short 2>&1 | tail -30
-.venv/bin/python -m pytest tests/test_0394_leon_opt_in_browser.py tests/test_guest_leon_browser.py -q --tb=short 2>&1 | tail -15
-```
-From repo root: `python3 scripts/design_lint.py | tail -5`, `python3 scripts/context_lint.py | tail -5`. Then `git checkout -- docs/tasks/screenshots-0*` for folders other than `screenshots-0394`.
-
-## 6. Copy
+### Copy (step 8)
 
 The legal note is `docs/privacy/LEON_LEGAL.md` (Opus legal counsel, 2026-10-25). Take text from it **verbatim**:
 
@@ -149,6 +139,31 @@ Host strings (en / cs; translate to vi in `host_vi_i18n.py`):
 
 Keep `guest_guide.leon.title`, `guest_guide.leon.help`, `flash.guest_guide.leon_on`, `flash.guest_guide.leon_off`.
 
-## 7. Report
+## 5. Do not touch
+
+Guest chat pages (`templates/guest/`, `guest-leon.js`), `leon.py` CHARACTER and the AI call path, the legal note text.
+
+## 6. Commands
+
+From `App/`:
+```
+.venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841 | tail -5
+.venv/bin/python -m pytest tests/test_0394_leon_opt_in.py tests/test_0376_ai_gates.py tests/test_leon.py tests/test_guest_leon_chat.py tests/test_privacy_first.py tests/test_guest_guide*.py tests/test_design_*.py -q --tb=short 2>&1 | tail -30
+.venv/bin/python -m pytest tests/test_0394_leon_opt_in_browser.py tests/test_guest_leon_browser.py -q --tb=short 2>&1 | tail -15
+```
+From repo root: `python3 scripts/design_lint.py | tail -5`, `python3 scripts/context_lint.py | tail -5`. Then `git checkout -- docs/tasks/screenshots-0*` for folders other than `screenshots-0394`.
+
+## 7. Acceptance
+
+- The Leon card shows on the Overview grid only where Leon is offered, and opens `/apartments/{id}/leon`.
+- Leon cannot be switched on without ticking the terms; acceptance version, time and user are stored and audited.
+- Leon answers only with the current terms version accepted; the old guide toggle is gone.
+- All commands in §6 pass with 0 skipped; screenshots in `docs/tasks/screenshots-0394/`.
+
+## 8. Stop and ask
+
+If a design test needs a new CSS class or a second primary button, or the overview `apartment` row lacks the new columns and fixing it means touching unrelated code.
+
+## 9. Report
 
 Write `docs/tasks/0394-report.md`: what changed, test output tails, screenshot paths. Commit (do not push).

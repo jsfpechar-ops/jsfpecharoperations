@@ -40,7 +40,7 @@ def test_overview_card_and_leon_page_at_390px(live_server, browser, host, base, 
         card.scroll_into_view_if_needed()
         assert card.is_visible()
         assert _no_overflow(page)
-        card.screenshot(path=str(OUT / "overview-card-390.png"))
+        page.locator(".host-property-grid").screenshot(path=str(OUT / "overview-card-390.png"))
 
         page.goto(f"{base}/apartments/{apt}/leon?lang=en")
         assert _no_overflow(page)
@@ -62,6 +62,8 @@ def test_leon_page_off_at_1280px(live_server, browser, host, base, leon_offered)
     context = _context(browser, base, host, 1280, 900)
     try:
         page = context.new_page()
+        page.goto(f"{base}/apartments/{leon_offered}?view=overview&lang=en")
+        page.locator(".host-property-grid").screenshot(path=str(OUT / "overview-grid-1280.png"))
         page.goto(f"{base}/apartments/{leon_offered}/leon?lang=en")
         assert _no_overflow(page)
         page.screenshot(path=str(OUT / "leon-off-1280.png"), full_page=True)
