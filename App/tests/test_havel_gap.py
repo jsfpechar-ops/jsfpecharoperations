@@ -14,7 +14,7 @@ ANSWER = {"kind": "answer", "reply": "Open Stays, then tap Add stay.", "sources"
 
 
 def _gaps():
-    return db.query("SELECT lang, page, kind, question FROM havel_gap ORDER BY id")
+    return db.query("SELECT lang, page, kind, question, created_at FROM havel_gap ORDER BY id")
 
 
 def _ask(client, text, data):
@@ -45,6 +45,7 @@ def test_not_helped_logs_the_last_question_once_per_tap_and_caps_a_day(host, on)
         host.post("/havel/not-helped?lang=en", data=form)
     rows = _gaps()
     assert len(rows) == 5 and rows[0]["kind"] == "not_helped" and rows[0]["question"] == "How do I add a stay?"
+    assert all(str(r["created_at"]).endswith("T00:00:00+00:00") for r in rows)  # day only: no join to rate-limit rows
     forged = dict(form, history_sig="0" * 64)
     db.execute("DELETE FROM rate_limit_event WHERE scope = 'havel_gap'")
     host.post("/havel/not-helped?lang=en", data=forged)
