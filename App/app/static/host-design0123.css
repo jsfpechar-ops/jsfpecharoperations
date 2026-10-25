@@ -121,6 +121,10 @@ body.host-workspace .host-stay-detail .stay-command-panel { border-top:1px solid
   body.host-workspace .host-stay-detail .stay-command-actions { justify-content:flex-start; flex-wrap:wrap; width:100%; }
   body.host-workspace .host-stay-detail .stay-command-actions > :not(.row-menu) { flex:1 1 0; min-width:0; }
   body.host-workspace .host-stay-detail .stay-command-actions > :first-child:not(.row-menu) { flex:1 1 100%; }
+  /* 0380: the guest-form line keeps its "?" beside the Unlink button. */
+  body.host-workspace .host-stay-detail .stay-claim-line .stay-command-actions { flex-wrap:nowrap; }
+  body.host-workspace .host-stay-detail .stay-claim-line .stay-command-actions > form { flex:1 1 auto; }
+  body.host-workspace .host-stay-detail .stay-claim-line .stay-command-actions > .help-tip { flex:0 0 auto; }
   body.host-workspace .host-stay-detail .stay-command-actions > form > .ui-btn,
   body.host-workspace .host-stay-detail .stay-command-actions > .ui-btn { width:100%; }
   body.host-workspace .host-stay-detail .stay-command-actions :is(.ui-btn,.btn) { height:44px; min-height:44px; white-space:nowrap; }

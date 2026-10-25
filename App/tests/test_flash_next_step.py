@@ -226,8 +226,8 @@ def _add_guest(client, reservation_id: int) -> int:
         ),
         (
             "flash.reservations.claim_released",
-            "Assignment released. Another e-mail can now claim this stay.",
-            "Přiřazení uvolněno. Pobyt teď může převzít jiný e-mail.",
+            "E-mail unlinked. The next person who opens the guest form can take this stay.",
+            "E-mail odpojen. Pobyt může převzít další, kdo otevře formulář hostů.",
         ),
     ],
 )
