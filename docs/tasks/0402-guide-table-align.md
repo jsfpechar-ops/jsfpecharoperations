@@ -1,7 +1,7 @@
-# 0405: Guide card tables line up
+# 0402: Guide card tables line up
 
 Status: todo
-Depends on: none | Base commit: a759eb6 | Branch: task/0405-guide-table-align
+Depends on: none | Base commit: a759eb6 | Branch: task/0402-guide-table-align
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
 ## 1. Objective
@@ -27,12 +27,6 @@ App/app/templates/guest_guide.html
 ```
   <td data-card="badge">{% if card.state == 'done' %}
 ```
-```
-{{ ui_table_begin([(t('guest_guide.import.col.source'), ''), (t('guest_guide.import.col.state'), '')], label=t('guest_guide.import.title')) }}
-```
-```
-  <td data-card="badge">{% if row.status in ('queued', 'running') %}
-```
 
 App/app/templates/guest_guide_quick_done.html
 ```
@@ -46,20 +40,20 @@ App/app/templates/guest_guide_quick_done.html
 
 | Path | Action | What |
 |---|---|---|
-| App/app/templates/guest_guide.html | edit | STATE column right-aligned in both tables |
+| App/app/templates/guest_guide.html | edit | STATE column right-aligned in the topic tables only (the import section is being moved by 0403; do not touch it) |
 | App/app/templates/guest_guide_quick_done.html | edit | same |
 | App/tests/test_guest_guide_table_browser.py | new | alignment test + screenshots |
-| docs/tasks/0405-report.md | new | report |
+| docs/tasks/0402-report.md | new | report |
 
 No other file may change.
 
 ## 4. Steps
 
-1. In both templates, change each STATE column tuple from `(..., '')` to `(..., 'r')` (second tuple of the three `ui_table_begin` calls above), and each `<td data-card="badge">` shown above to `<td class="ui-cell-r" data-card="badge">`.
+1. In both templates, change each STATE column tuple from `(..., '')` to `(..., 'r')` (second tuple of the two `ui_table_begin` calls above), and each `<td data-card="badge">` shown above to `<td class="ui-cell-r" data-card="badge">`.
 2. Create App/tests/test_guest_guide_table_browser.py:
 
 ```python
-"""0405: the STATE column of every guide topic table shares one right edge at desktop width."""
+"""0402: the STATE column of every guide topic table shares one right edge at desktop width."""
 from __future__ import annotations
 
 import os
@@ -82,7 +76,7 @@ from test_host_wide_geometry_browser import (  # noqa: F401  (fixtures)
     wide_host,
 )
 
-SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0405"
+SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0402"
 EDGES = """() => [...document.querySelectorAll('[id^=topic-] td[data-card=badge] .ui-badge, [id^=topic-] th:last-child')]
   .map(e => Math.round(e.getBoundingClientRect().right))"""
 
@@ -122,13 +116,13 @@ From `App/`:
 - `.venv/bin/python -m pytest tests/test_guest_guide.py tests/test_guest_guide_pages.py tests/test_guest_guide_browser.py tests/test_design_guardrails_browser.py -q --tb=short 2>&1 | tail -30` → all pass.
 - `.venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841 2>&1 | tail -5` → clean.
 - From repo root: `python3 scripts/design_lint.py 2>&1 | tail -5` and `python3 scripts/context_lint.py 2>&1 | tail -5` → clean.
-- `git checkout -- docs/tasks/screenshots-*` for any folder other than screenshots-0405 that a browser run rewrote.
+- `git checkout -- docs/tasks/screenshots-*` for any folder other than screenshots-0402 that a browser run rewrote.
 
 ## 7. Acceptance
 
 - [ ] At 1280 px the right edges of every STATE header and badge differ by at most 2 px (test above).
 - [ ] At 390 px the cards look as before (badge on its own line, left).
-- [ ] Screenshots docs/tasks/screenshots-0405/guide-table-1280.png and -390.png.
+- [ ] Screenshots docs/tasks/screenshots-0402/guide-table-1280.png and -390.png.
 
 ## 8. Stop and ask
 
@@ -136,4 +130,4 @@ Stop, and write the report, if an excerpt is not found, a test fails twice, a fi
 
 ## 9. Report
 
-Write `docs/tasks/0405-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations.
+Write `docs/tasks/0402-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations.
