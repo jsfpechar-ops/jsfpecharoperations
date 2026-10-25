@@ -53,8 +53,8 @@ def test_topics_render_on_the_page_and_as_fragments(host):
     answer = html.unescape(host.get("/havel?topic=guest_link&q=where&lang=en", headers={"X-Havel": "1"}).text)
     assert "<html" not in answer and 'data-mode="replace"' in answer
     assert 'data-havel-ask data-topic="guest_link" data-q="where"' in answer
-    assert host_i18n.translate("en", "guide.setup.step3")[:20] in answer or \
-        host_i18n.translate("cs", "guide.setup.step3")[:20] in answer
+    assert host_i18n.translate("en", "guide.guest_links.find1")[:20] in answer or \
+        host_i18n.translate("cs", "guide.guest_links.find1")[:20] in answer
     support = html.unescape(host.get("/havel?topic=wrong&q=error&lang=en").text)
     assert "mailto:" in support
     assert host.get("/havel?topic=evil&q=../x&lang=en").status_code == 200
