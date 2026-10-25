@@ -1787,6 +1787,8 @@ def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]
         "enabled": apartment["lock_provider"] == "ttlock",
         "lock_id": apartment["lock_id"],
         "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
+        # 0400: 0 means every connected lock serves another property.
+        "free_lock_count": len(free_locks),
         "checkin_hour": cin,
         "checkout_hour": cout,
         "tz_warning": bool(selected and _lock_tz_wrong(selected["tz_offset_ms"])),
@@ -2086,12 +2088,19 @@ async def apartment_update(apartment_id: int, request: Request):
 def _lock_section_refusal(request: Request, apartment_id: int, form, error_key: str):
     """A door-lock save that cannot be stored. The wizard stays on its step."""
     if _form_str(form, "setup_step") == "door_lock":
+        # 0400: keep what the host chose, so a refusal never wipes the step.
+        lock_draft = {
+            "checkin_hour": _form_str(form, "checkin_hour"),
+            "checkout_hour": _form_str(form, "checkout_hour"),
+            "enabled": _form_str(form, "door_codes") == "1",
+        }
         return _wizard_rerender(
             request,
             apartment_id,
             "door_lock",
             notice=_flash(request, error_key),
             status_code=400,
+            extra={"lock_draft": lock_draft},
         ), False
     return _back(
         f"/apartments/{apartment_id}?view=settings&section=lock#door-code",
@@ -2274,6 +2283,8 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     ):
         hour_error = "flash.error.times_required"
     if hour_error:
+        if setup_step == "door_lock":
+            return _lock_section_refusal(request, apartment_id, form, hour_error)
         if setup_step:
             draft = dict(apartment_data)
             draft.update({key: value for key, value in _property_draft(form).items() if key in form})
@@ -2310,6 +2321,8 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
             except (TypeError, ValueError):
                 valid_pair = False
         if not valid_pair:
+            if setup_step == "door_lock":
+                return _lock_section_refusal(request, apartment_id, form, "flash.error.door_code_hours")
             if setup_step:
                 draft = dict(apartment_data)
                 draft.update({key: value for key, value in _property_draft(form).items() if key in form})

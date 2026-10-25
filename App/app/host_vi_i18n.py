@@ -3643,6 +3643,7 @@ STRINGS.update({
     "wizard.door_lock.yes": "Có, tôi có khóa TTLock",
     "wizard.door_lock.yes_hint": "Có gateway, để mã đến khóa qua mạng",
     "wizard.door_lock.other_brands": "Hiện chưa hỗ trợ các hãng khác.",
+    "wizard.door_lock.all_taken": "Khóa bạn đã kết nối đang mở một chỗ ở khác, và mỗi khóa chỉ dùng cho một chỗ ở. Trước tiên, hãy thêm UbyHost vào khóa của chỗ ở này trong ứng dụng TTLock:",
     "wizard.summary.status.not_needed": "Không cần",
     "why.door_lock": "Với khóa thông minh TTLock, UbyHost tạo cho mỗi lượt lưu trú một mã cửa. Khách nhận mã khi mọi người đã đăng ký xong, nên bạn không cần giao chìa khóa.",
 })

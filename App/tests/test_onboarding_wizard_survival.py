@@ -730,4 +730,8 @@ def test_missing_property_hours_from_lock_step_keep_saved_property_draft(host, m
         follow_redirects=False,
     )
     assert response.status_code == 400
-    assert flat["internal_name"] in response.text and ADDRESS["addr_street"] in response.text
+    # 0400: the refusal stays on the lock step; the saved property is untouched.
+    assert 'id="door-lock-form"' in response.text or 'id="smart-locks-share"' in response.text or 'id="lock-question"' in response.text
+    assert flat["internal_name"] in response.text
+    saved = admin_routes.db.query_one("SELECT internal_name, addr_street FROM apartment WHERE id = ?", (flat["id"],))
+    assert saved["internal_name"] == flat["internal_name"] and saved["addr_street"] == ADDRESS["addr_street"]
