@@ -11,7 +11,7 @@ Updated: 2026-10-25.
 
 - Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
 - Guide + Leon 0341-0355: owner merges #465-#468.
-- 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
+- 0291-0302 buttons, fees, invoice. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
 - Check-in alerts #435: tests pass; owner merge/deploy.
 - TTLock disclosure #434: timing/geometry CI pending.
