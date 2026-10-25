@@ -72,6 +72,16 @@
       </ol>
     </section>
 
+    <section class="guide-section ui-section ui-section-plain" id="business">
+      <h2>{{ t('guide.nav.business') }}</h2>
+      <p>{{ t('guide.business.what') }}</p>
+      <p class="ui-sub">{{ t('guide.business.when') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 6) %}<li>{{ t('guide.business.how' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 3) %}<li>{{ t('guide.business.wrong' ~ n) }}</li>{% endfor %}</ul>
+    </section>
+
     <section class="guide-section ui-section ui-section-plain" id="stays">
       <h2>{{ t('guide.nav.stays') }}</h2>
       <p>{{ t('guide.stays.body') }}</p>
