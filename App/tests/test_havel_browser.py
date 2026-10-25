@@ -218,7 +218,9 @@ def test_chat_follows_the_host_across_pages(origin, width):
         composer.wait_for()
         composer.fill("How do I add a stay?")
         composer.press("Enter")
-        dialog.locator(".havel-msg-havel:not([data-havel-writing])").last.wait_for()
+        # Wait for the reply itself: the intro bubble already matches .havel-msg-havel.
+        dialog.locator(".havel-bubble ol li").first.wait_for()
+        sync_api.expect(dialog.locator("[data-havel-history]")).not_to_have_value("[]")
         history_before = dialog.locator("[data-havel-history]").input_value()
         # The panel is still open on the next page, with the same chat.
         page.goto(origin[0] + "/guide")
@@ -252,7 +254,7 @@ def test_new_chat_and_other_user_clear_it(origin):
         composer.wait_for()
         composer.fill("How do I add a stay?")
         composer.press("Enter")
-        dialog.locator(".havel-msg-havel:not([data-havel-writing])").last.wait_for()
+        dialog.locator(".havel-bubble ol li").first.wait_for()
         dialog.locator("button[name=reset]").click()
         sync_api.expect(dialog.locator(".havel-msg-host")).to_have_count(0)
         sync_api.expect(dialog.locator("[data-havel-greeting]")).to_have_count(1)

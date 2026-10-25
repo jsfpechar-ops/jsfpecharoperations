@@ -965,9 +965,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   html:has(.havel-fab:not([hidden])) { scroll-padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12)); }
   body.host-workspace:has(.havel-fab) .wrap.with-sidebar { padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12)); }
 }
-@media (max-width: 1023px) {
-  html:has(.havel-fab:not([hidden])) { scroll-padding-bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-3) + var(--space-8)); }
-}
+
 .host-workspace .havel-greeting { margin-bottom: var(--space-2); }
 @media (max-width: 767px) {
   .host-workspace .havel-dialog { position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; z-index: var(--z-drawer); box-shadow: var(--shadow-2); }
