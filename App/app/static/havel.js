@@ -84,7 +84,7 @@
 
   function echo(text) {
     var t = thread();
-    if (!t) return;
+    if (!t) return null;
     var topics = t.querySelector("[data-havel-topics]");
     if (topics) topics.remove();
     var el = document.createElement("div");
@@ -92,6 +92,7 @@
     el.innerHTML = '<div class="havel-bubble"><p></p></div>';
     el.querySelector("p").textContent = text;
     t.appendChild(el);
+    return el;
   }
 
   function send(extra) {
@@ -102,7 +103,7 @@
     if (!extra && !text) return;
     var data = new FormData(f);
     if (extra) Object.keys(extra).forEach(function (k) { data.set(k, extra[k]); });
-    if (!extra) echo(text);
+    var echoed = extra ? null : echo(text);
     writing(true);
     fetch(f.getAttribute("action") || "/havel", {
       method: "POST", body: data, credentials: "same-origin",
@@ -112,10 +113,12 @@
       return res.text();
     }).then(function (html) {
       writing(false);
+      if (echoed) echoed.remove();
       swap(html, extra && extra.reset ? "replace" : "append");
       focusAnswer();
     }).catch(function () {
       writing(false);
+      if (echoed) echoed.remove();
       showError(text);
     });
   }

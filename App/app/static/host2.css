@@ -931,9 +931,9 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0324: Havel panel and launcher (MASTER 7.15, plan 17a-17b). Computer: the dialog is anchored
    bottom-right, 400 x 680 at most; phone: the existing bottom sheet, 92dvh. Tokens only. */
 .host-workspace .havel-launcher span { white-space: nowrap; }
-.host-workspace .havel-dialog { --havel-w: 400px; --havel-h: 680px; width: min(var(--havel-w), calc(100vw - var(--space-12))); }
+.host-workspace .havel-dialog { --havel-w: 400px; --havel-h: 680px; }
 @media (min-width: 768px) {
-  .host-workspace .havel-dialog { position: fixed; inset: auto var(--space-6) var(--space-6) auto; margin: 0; }
+  .host-workspace .havel-dialog { position: fixed; inset: auto var(--space-6) var(--space-6) auto; margin: 0; width: min(var(--havel-w), calc(100vw - var(--space-12))); }
   .host-workspace .havel-dialog .ui-sheet { height: min(var(--havel-h), calc(100dvh - var(--space-12))); }
 }
 .host-workspace .havel-dialog .ui-sheet { display: flex; flex-direction: column; padding: var(--space-4) var(--space-4) var(--space-3); overflow: hidden; }
