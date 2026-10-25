@@ -886,3 +886,169 @@ def test_dashboard_760_header_and_actions_remain_in_the_shared_lane(wide_host, w
             page.screenshot(path=str(output_dir / f"after-dashboard-{lang}-760.png"), full_page=True)
             context.close()
         browser.close()
+
+
+RAIL_FACTS = """() => {
+  const side = document.getElementById('app-sidebar');
+  const box = el => { if (!el) return null; const r = el.getBoundingClientRect(); return {left: r.left, right: r.right, top: r.top, width: r.width}; };
+  const icon = document.querySelector('[data-sidebar-collapse] .ui-icon');
+  const t = getComputedStyle(icon).transform;
+  return {
+    display: getComputedStyle(side).display,
+    width: side.getBoundingClientRect().width,
+    marginLeft: parseFloat(getComputedStyle(document.querySelector('.wrap.with-sidebar')).marginLeft),
+    toggle: box(document.querySelector('[data-sidebar-collapse]')),
+    iconFlipped: t !== 'none' && new DOMMatrix(t).a < -0.99,
+    navIcon: box(document.querySelector('.ui-nav a .ui-icon')),
+    animating: document.body.classList.contains('sidebar-animating'),
+    transitions: side.getAnimations().filter(a => a.transitionProperty).map(a => a.transitionProperty),
+  };
+}"""
+# Records every moment .sidebar-animating appears, so restore and resize can prove they never animate.
+ANIMATION_RECORDER = """
+new MutationObserver(() => {
+  if (document.body && document.body.classList.contains('sidebar-animating')) window.__railAnimated = (window.__railAnimated || 0) + 1;
+}).observe(document.documentElement, {attributes: true, subtree: true, attributeFilter: ['class']});
+"""
+CLICK_AND_SAMPLE = """() => {
+  document.querySelector('[data-sidebar-collapse]').click();
+  const side = document.getElementById('app-sidebar');
+  getComputedStyle(side).width;
+  return {
+    animating: document.body.classList.contains('sidebar-animating'),
+    transitions: side.getAnimations().filter(a => a.transitionProperty).map(a => a.transitionProperty),
+    mainTransitions: document.querySelector('.wrap.with-sidebar').getAnimations().map(a => a.transitionProperty),
+  };
+}"""
+
+
+def _rail_context(browser, wide_host, wide_base, width, collapsed, **options):
+    context = browser.new_context(viewport={"width": width, "height": 900}, **options)
+    context.add_cookies([{
+        "name": auth.SESSION_COOKIE, "value": wide_host["cookie"], "url": wide_base + "/",
+    }])
+    context.add_init_script(
+        "try { localStorage.setItem('ubyhost-sidebar-collapsed', '%s'); } catch (e) {}" % ("1" if collapsed else "0")
+    )
+    context.add_init_script(ANIMATION_RECORDER)
+    return context
+
+
+def _rail_page(context, wide_base, path="/"):
+    page = context.new_page()
+    response = page.goto(f"{wide_base}{path}")
+    assert response and response.status == 200
+    page.wait_for_load_state("networkidle")
+    _dismiss_optional_security_prompt(page)
+    return page
+
+
+def _settled(page):
+    page.wait_for_function("() => !document.body.classList.contains('sidebar-animating')")
+    return page.evaluate(RAIL_FACTS)
+
+
+def test_sidebar_click_slides_the_rail_and_flips_the_toggle(wide_host, wide_base):
+    """0377: a click animates width and page margin; the toggle stays in the rail, flipped."""
+    output_dir = _output_dir()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        for width in (1280, 2000):
+            context = _rail_context(browser, wide_host, wide_base, width, collapsed=False)
+            page = _rail_page(context, wide_base)
+            open_facts = page.evaluate(RAIL_FACTS)
+            assert open_facts["width"] == 240 and open_facts["marginLeft"] == 240, open_facts
+            assert not open_facts["iconFlipped"], open_facts
+            assert open_facts["toggle"]["right"] <= 240, open_facts
+            assert page.evaluate("window.__railAnimated || 0") == 0
+
+            sample = page.evaluate(CLICK_AND_SAMPLE)
+            assert sample["animating"], sample
+            assert "width" in sample["transitions"], sample
+            assert "margin-left" in sample["mainTransitions"], sample
+            shut = _settled(page)
+            assert shut["width"] == 64 and shut["marginLeft"] == 64, shut
+            assert shut["iconFlipped"], shut
+            assert 0 <= shut["toggle"]["left"] and shut["toggle"]["right"] <= 64, shut
+            # Icons keep their x through the slide, so only the edge moves.
+            assert abs(shut["navIcon"]["left"] - open_facts["navIcon"]["left"]) <= 3, (open_facts, shut)
+            assert page.evaluate("localStorage.getItem('ubyhost-sidebar-collapsed')") == "1"
+            page.screenshot(path=str(output_dir / f"after-sidebar-{width}-collapsed.png"))
+
+            sample = page.evaluate(CLICK_AND_SAMPLE)
+            assert sample["animating"] and "width" in sample["transitions"], sample
+            reopened = _settled(page)
+            assert reopened["width"] == 240 and reopened["marginLeft"] == 240, reopened
+            assert not reopened["iconFlipped"], reopened
+            assert reopened["transitions"] == [], reopened
+            page.screenshot(path=str(output_dir / f"after-sidebar-{width}-open.png"))
+            context.close()
+        browser.close()
+
+
+def test_sidebar_restore_and_resize_never_animate(wide_host, wide_base):
+    """0377: a stored collapse and every breakpoint crossing apply instantly."""
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        context = _rail_context(browser, wide_host, wide_base, 2000, collapsed=True)
+        page = _rail_page(context, wide_base)
+        facts = page.evaluate(RAIL_FACTS)
+        assert facts["width"] == 64 and facts["marginLeft"] == 64 and facts["iconFlipped"], facts
+        expected = {
+            1280: (64, 64, True),
+            1024: (64, 64, True),
+            768: (None, 0, None),
+            390: (None, 0, None),
+            2000: (64, 64, True),
+        }
+        for width, (rail, margin, flipped) in expected.items():
+            page.set_viewport_size({"width": width, "height": 900})
+            page.wait_for_timeout(50)
+            facts = page.evaluate(RAIL_FACTS)
+            assert not facts["animating"] and facts["transitions"] == [], (width, facts)
+            assert facts["marginLeft"] == margin, (width, facts)
+            if rail is None:
+                assert facts["display"] == "none", (width, facts)
+            else:
+                assert facts["width"] == rail and facts["iconFlipped"] == flipped, (width, facts)
+        assert page.evaluate("window.__railAnimated || 0") == 0
+        assert page.evaluate("localStorage.getItem('ubyhost-sidebar-collapsed')") == "1"
+        context.close()
+        browser.close()
+
+
+def test_tablet_rail_toggle_slides_the_overlay_only(wide_host, wide_base):
+    """0377: at 1024-1279 the toggle slides the menu over the page; the page never moves."""
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        context = _rail_context(browser, wide_host, wide_base, 1024, collapsed=False, has_touch=True)
+        page = _rail_page(context, wide_base)
+        rail = page.evaluate(RAIL_FACTS)
+        assert rail["width"] == 64 and rail["marginLeft"] == 64 and rail["iconFlipped"], rail
+        sample = page.evaluate(CLICK_AND_SAMPLE)
+        assert sample["animating"] and "width" in sample["transitions"], sample
+        assert sample["mainTransitions"] == [], sample
+        opened = _settled(page)
+        assert opened["width"] == 240 and opened["marginLeft"] == 64 and not opened["iconFlipped"], opened
+        page.keyboard.press("Escape")
+        closed = _settled(page)
+        assert closed["width"] == 64 and closed["iconFlipped"], closed
+        # The tablet overlay is never stored as a desktop collapse.
+        assert page.evaluate("localStorage.getItem('ubyhost-sidebar-collapsed')") == "0"
+        context.close()
+        browser.close()
+
+
+def test_sidebar_click_respects_reduced_motion(wide_host, wide_base):
+    """0377: with reduced motion the rail and page jump without a transition."""
+    with sync_api.sync_playwright() as playwright:
+        browser = playwright.chromium.launch(**chromium_launch_kwargs())
+        context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, reduced_motion="reduce")
+        page = _rail_page(context, wide_base)
+        sample = page.evaluate(CLICK_AND_SAMPLE)
+        assert sample["transitions"] == [] and sample["mainTransitions"] == [], sample
+        facts = _settled(page)
+        assert facts["width"] == 64 and facts["marginLeft"] == 64, facts
+        context.close()
+        browser.close()

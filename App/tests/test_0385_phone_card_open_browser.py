@@ -1,4 +1,4 @@
-"""0377: on phone/tablet Properties row cards the Open cue sits bottom-right on
+"""0385: on phone/tablet Properties row cards the Open cue sits bottom-right on
 its own line, below every field; the actions cell is see-through and cells
 carry no background of their own."""
 from __future__ import annotations

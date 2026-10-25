@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-24.
+Updated: 2026-10-25.
 
 ## Production
 
@@ -9,6 +9,7 @@ Updated: 2026-10-24.
 
 ## Now
 
+- 0377 sidebar slide: owner PR.
 - Guide + Leon 0341-0355: owner merges #465-#468, evals.
 - 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
@@ -25,7 +26,7 @@ Updated: 2026-10-24.
 - 0203 #419: fee list pay steps. Data box send on hold (DIA).
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
-- AI crawler block (0195): robots.txt, tdmrep.json, Terms §11 TDM (v1.7; lawyer to confirm).
+- AI crawler block 0195: Terms §11 TDM v1.7, lawyer to confirm.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 
 - Check `/healthz`; credential letter to data box ybndqw9.

@@ -21,9 +21,9 @@
   {% if show_nav | default(true) %}
   <link rel="stylesheet" href="/static/host.css?v=20261022-0276b">
   <link rel="stylesheet" href="/static/host-controls.css?v=20261014-0102d">
-  <link rel="stylesheet" href="/static/host-design0123.css?v=20261022-0253b">
+  <link rel="stylesheet" href="/static/host-design0123.css?v=20261025-0380">
   {% if nav | default('') == 'cleaning' %}<link rel="stylesheet" href="/static/cleaning.css?v=20261024-0291">{% endif %}
-  <link rel="stylesheet" href="/static/host2.css?v=20261025-0377">
+  <link rel="stylesheet" href="/static/host2.css?v=20261025-0385">
   <link rel="stylesheet" href="/static/workflow.css?v=20261025-0375">
   <link rel="stylesheet" href="/static/wizard.css?v=20261022-0274">
   {% endif %}
@@ -242,7 +242,7 @@
 
 <script src="/static/csrf.js?v=20260915a"></script>
 <script src="/static/skeleton.js?v=20261025-havel-skeleton"></script>
-<script src="/static/app.js?v=20261025-0322"></script>
+<script src="/static/app.js?v=20261025-0377"></script>
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261023-door-code-window" defer></script>{% endif %}
 {% if show_nav | default(true) %}<script src="/static/pwa.js?v=20261021-0206" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261023-passkey-recovery" defer></script>{% endif %}

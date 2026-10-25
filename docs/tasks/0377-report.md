@@ -1,26 +1,19 @@
-# 0377 report
+# 0377 report: smooth sidebar collapse
 
-Status: blocked
+Owner allowed direct implementation ("implement it yourself", handoff 2026-10-25).
 
-Files changed: App/app/static/host2.css (block appended), App/app/templates/base.html (host2 key 20261025-0377), App/tests/static_versions.json (--write), App/tests/test_0377_phone_card_open_browser.py (new), docs/tasks/0377-phone-card-open.md, docs/tasks/0377-report.md.
+## Change
 
-Commands (last lines):
-- pytest 7-file set (§6): `35 passed, 1 warning in 136.98s`, 0 skipped (-rs shows none).
-- `python3 scripts/design_lint.py`: `DESIGN App/app/static/host2.css: S2 bare 24px in padding` / `design lint: FAIL`. Caused by the brief's own `calc(var(--control-h-compact) + 24px)` line. Not changed (brief says do not guess).
+- `host2.css`: `body.sidebar-animating` transitions rail width/padding and page `margin-left` (260 ms, `--ease-standard`). Nav icons keep their x during the slide. The toggle icon turns 180° in the rail (desktop collapsed and the 1024-1279 tablet rail). Reduced motion: no transition.
+- `app.js`: `animateRail()` sets `.sidebar-animating` for 280 ms, only from a click, Escape or outside tap. Stored collapse on load and breakpoint crossings stay instant.
+- `?v=` keys: `host2.css` and `app.js` now `20261025-0377`; `tests/static_versions.json` rewritten.
 
-§7 acceptance: tests pass; design lint fails (see above).
+## Tests
 
-Screenshots: App-probe output in /tmp/claude-0/probe/out/row-390.png and /tmp/claude-0/probe/out/row-820.png.
-The 390 px shot shows the Open button still partly covered by the coral floating help button (bottom-right). The pill no longer overlaps.
-Probe also reports td backgrounds rgb(247,247,245) in the pressed state, which the new rule does not cover.
+- New in `test_host_wide_geometry_browser.py`: click slide at 1280/2000 (240↔64, margin, toggle inside rail, icon flipped, transitions running), restore + resize 2000→1280→1024→768→390→2000 never animates, tablet overlay slides without moving the page, reduced motion.
+- `test_design_shell_browser.py`: waits for the slide to finish before measuring.
+- Passed: `test_host_wide_geometry_browser.py`, `test_design_guardrails_browser.py`, `test_design_shell_browser.py`, `test_static_versions.py`, `test_0251_tablet_browser.py`, `test_shell_lane_browser.py`, `test_a11y_guard_browser.py`, `test_host_fit_browser.py`, `test_design_shell.py`, `test_host_ux_acceptance.py`, `test_0252_touch_sweep_browser.py`, `test_dashboard_rows_browser.py` (0 skipped, `UBYHOST_REQUIRE_BROWSER=1`).
 
-Deviations: the brief asked for one commit; executor.md asks for per-step commits. Done as one commit per brief §9. No push, no PR.
+## Screenshots
 
-Questions:
-1. Lint: replace `+ 24px` with a spacing token, or allow the value?
-2. Coral help button over Open at 390 px: outside this brief; the owner's "coral buttons" note likely refers to it.
-3. Pressed-state grey on td: needs a brief covering `:active`/pressed selectors.
-
-Owner steps left: none (no push).
-
-Orchestrator follow-up: `+ 24px` → `var(--space-6)` (design lint S2); pressed/focused cards also keep cells clear (the 0285 `:focus-within > td` / `:active > td` tints made grey blocks); the bottom padding applies only ≤720 px, where 0200 lifts the actions cell to the top corner (at 721-1023 Open already shares the menu's line). Key 0377d. §6 set plus wide geometry and 0284 states: 43 passed with `UBYHOST_REQUIRE_BROWSER=1`; design lint OK.
+Project files `sidebar-animation-0376/`: dashboard 390 open; 1280 and 2000 open and collapsed; 1280 mid-slide; 1024 tablet overlay.

@@ -46,6 +46,7 @@ def test_desktop_sidebar_is_240_wide_and_main_starts_after_it(base):
         assert page.evaluate("getComputedStyle(document.querySelector('.ui-tabbar')).display") == "none"
         page.click("button[data-sidebar-collapse]")
         page.wait_for_function("document.body.classList.contains('sidebar-collapsed')")
+        page.wait_for_function("() => !document.body.classList.contains('sidebar-animating')")  # 0377: let the slide finish
         assert round(page.evaluate("document.querySelector('.ui-sidebar').getBoundingClientRect().width")) == 64
         browser.close()
 
@@ -88,10 +89,12 @@ def test_collapsed_rail_expands_again_with_the_same_button(base):
         button = page.locator("button[data-sidebar-collapse]")
         button.click()
         page.wait_for_function("document.body.classList.contains('sidebar-collapsed')")
+        page.wait_for_function("() => !document.body.classList.contains('sidebar-animating')")  # 0377: let the slide finish
         assert button.get_attribute("aria-expanded") == "false"
         assert round(page.evaluate("document.querySelector('.ui-sidebar').getBoundingClientRect().width")) == 64
         button.click()
         page.wait_for_function("!document.body.classList.contains('sidebar-collapsed')")
+        page.wait_for_function("() => !document.body.classList.contains('sidebar-animating')")  # 0377: let the slide finish
         assert button.get_attribute("aria-expanded") == "true"
         assert round(page.evaluate("document.querySelector('.ui-sidebar').getBoundingClientRect().width")) == 240
         browser.close()

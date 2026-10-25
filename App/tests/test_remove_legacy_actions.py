@@ -29,7 +29,8 @@ def test_the_stay_detail_keeps_one_send_and_moves_the_rest_into_the_menu():
     assert "remove-empty-slot" not in text
     assert text.count("delete-demo") == 1  # item 7 kept: shows only for the demo stay
     menu = text[text.index('id="now"'):text.index("</section>", text.index('id="now"'))]
-    assert "reopen-guest" in menu and "release-claim" in menu
+    assert "reopen-guest" in menu and "release-claim" not in menu
+    assert text.count("data-release-claim") == 1  # 0380: a visible button in the Guests section
     assert "filed-by-hand" in text  # Keep: the manual-filing fallback
     assert text.count("ui-btn-primary") == 1
 
