@@ -144,4 +144,41 @@
   </table>
   {% else %}<p class="ui-sub">{{ t('ops.none') }}</p>{% endif %}
 </section>
+<section class="ui-section" id="ops-havel">
+  <h2>{{ t('ops.havel.title') }}</h2>
+  <p class="ui-sub">{{ t('ops.havel.help') }}</p>
+  <p class="ui-sub">{{ t('ops.havel.spend', spent=havel_ops.spent, cap=havel_ops.cap, percent=havel_ops.percent) }}{% if not havel_ops.enabled %} · {{ t('ops.havel.off') }}{% endif %}</p>
+  <h3>{{ t('ops.havel.how_title') }}</h3>
+  <ol>
+    <li>{{ t('ops.havel.how_1') }}</li>
+    <li>{{ t('ops.havel.how_2') }}</li>
+    <li>{{ t('ops.havel.how_3') }}</li>
+  </ol>
+  <h3>{{ t('ops.havel.gaps') }}</h3>
+  {% if havel_ops.gaps %}
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{ t('ops.havel.col.count') }}</th><th>{{ t('ops.havel.col.question') }}</th><th>{{ t('ops.havel.col.why') }}</th><th>{{ t('ops.havel.col.fix') }}</th><th>{{ t('ops.havel.col.where') }}</th></tr></thead>
+    <tbody>
+    {% for row in havel_ops.gaps %}
+      <tr>
+        <td data-label="{{ t('ops.havel.col.count') }}">{{ row.count }}</td>
+        <td data-label="{{ t('ops.havel.col.question') }}">{{ row.question }}</td>
+        <td data-label="{{ t('ops.havel.col.why') }}">{% for key in row.reasons %}{{ t(key) }}{% if not loop.last %}; {% endif %}{% endfor %}</td>
+        <td data-label="{{ t('ops.havel.col.fix') }}"><a href="/guide#{{ row.guide_anchor }}">{{ t(row.guide_label) }}</a></td>
+        <td data-label="{{ t('ops.havel.col.where') }}">{{ row.page or '-' }} · {{ row.langs }} · {{ row.newest }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="ui-sub">{{ t('ops.none') }}</p>{% endif %}
+  {% if havel_ops.stats %}
+  <h3>{{ t('ops.havel.stats') }}</h3>
+  <table class="ui-table ui-table-stack">
+    <thead><tr><th>{{ t('ops.col.kind') }}</th><th>{{ t('ops.col.count') }}</th></tr></thead>
+    <tbody>
+    {% for row in havel_ops.stats %}<tr><td data-label="{{ t('ops.col.kind') }}" class="ui-mono">{{ row.kind }}</td><td data-label="{{ t('ops.col.count') }}">{{ row.n }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
 {% endblock %}
