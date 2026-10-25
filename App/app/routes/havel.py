@@ -32,7 +32,7 @@ _STEP = re.compile(r"^\d{1,2}\.\s+")
 
 
 def _t(request: Request, key: str, **kw: Any) -> str:
-    return host_i18n.translate(request.state.lang, key, **kw)
+    return host_i18n.translate(host_i18n.lang_from_request(request), key, **kw)
 
 
 def _properties(request: Request) -> List[Dict[str, Any]]:
@@ -144,7 +144,7 @@ async def havel_send(request: Request):
                 reply_text, support = _t(request, f"havel.{limit}"), True
                 havel.record_stat("limit_hit")
             else:
-                host = havel.Host(user_id=uid, lang=request.state.lang, device=device,
+                host = havel.Host(user_id=uid, lang=host_i18n.lang_from_request(request), device=device,
                                   properties=_properties(request), page=page, topic=topic)
                 try:
                     reply = await run_in_threadpool(havel.ask, host, exchanges, message)
