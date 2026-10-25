@@ -13,6 +13,20 @@
   </nav>
 
   <div class="guide-content">
+    <section class="guide-section ui-section ui-section-plain" id="finding">
+      <h2>{{ t('guide.nav.finding') }}</h2>
+      <p>{{ t('guide.finding.what') }}</p>
+      <p class="ui-sub">{{ t('guide.finding.when') }}</p>
+      {% for part in ['phone', 'computer'] %}
+      <h3>{{ t('guide.finding.' ~ part ~ '_title') }}</h3>
+      <ul class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('guide.finding.' ~ part ~ n) }}</li>{% endfor %}</ul>
+      {% endfor %}
+      <h3>{{ t('guide.finding.pages_title') }}</h3>
+      {% for item in ['tabs', 'property', 'how', 'search'] %}<p>{{ t('guide.finding.' ~ item) }}</p>{% endfor %}
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 3) %}<li>{{ t('guide.finding.wrong' ~ n) }}</li>{% endfor %}</ul>
+    </section>
+
     <section class="guide-section ui-section ui-section-plain" id="overview">
       <h2>{{ t('guide.nav.overview') }}</h2>
       {% from "_workflow.html" import workflow_strip with context %}
