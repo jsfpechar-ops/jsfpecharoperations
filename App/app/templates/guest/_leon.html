@@ -15,8 +15,9 @@
   data-text-queued="{{ t('leon_queued') }}">
   <div class="g-leon-head">
     <span class="g-leon-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span>
-    <div class="g-leon-head-text"><h2 id="leon-title">{{ t('leon_name') }}</h2><p class="g-intro">{{ t('leon_intro') }}</p></div>
+    <div class="g-leon-head-text"><h2 id="leon-title">{{ t('leon_name') }} <span class="g-leon-tag">{{ t('leon_tag') }}</span></h2><p class="g-leon-role">{{ t('leon_role') }}</p></div>
   </div>
+  <p class="g-intro">{{ t('leon_intro') }}</p>
   <noscript><p class="g-leon-nojs" data-leon-nojs>{{ t('leon_needs_js') }}</p></noscript>
   <div class="g-leon-log" role="log" aria-live="polite" aria-labelledby="leon-title" data-leon-log hidden></div>
   <p class="g-leon-waiting" role="status" data-leon-waiting hidden>{{ t('leon_waiting') }}</p>
