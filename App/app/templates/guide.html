@@ -34,6 +34,11 @@
       <p>{{ t('guide.overview.body') }}</p>
       <p>{{ t('guide.overview.count') }}</p>
       <p>{{ t('guide.overview.deadline') }}</p>
+      <p>{{ t('guide.overview.when') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 5) %}<li>{{ t('guide.overview.how' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 4) %}<li>{{ t('guide.overview.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
     <section class="guide-section ui-section ui-section-plain" id="statuses">
