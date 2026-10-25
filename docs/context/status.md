@@ -9,11 +9,11 @@ Updated: 2026-10-25.
 
 ## Now
 
-- 0377 sidebar slide: owner PR.
+- 0391 option cards: owner PR.
 - Guide + Leon 0341-0355: owner merges #465-#468, evals.
 - 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
-- Check-in alerts #435: tests pass; owner merge/deploy.
+- Check-in alerts #435: owner merge/deploy.
 - TTLock disclosure #434: timing/geometry CI pending.
 - #432 subdomain deployed; root login/calendar review pending.
 

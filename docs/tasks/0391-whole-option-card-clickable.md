@@ -1,6 +1,6 @@
 # 0391: The whole option card selects, radios and checkboxes look calm
 
-Status: todo
+Status: review
 Depends on: none | Branch: claude/project-thread-cf1iwp (already checked out; commit here)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
