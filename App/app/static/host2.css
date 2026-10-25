@@ -292,6 +292,17 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position:
 @supports (anchor-name: --host-acct) {
   body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { bottom: anchor(top); margin-bottom: var(--space-2); }
 }
+/* 0376: a click slides the rail; restore and breakpoint crossings stay instant (app.js sets
+   .sidebar-animating for 280 ms). Icons keep their x so only the edge and the page move. */
+body.host-workspace.sidebar-animating .ui-sidebar { transition: width 260ms var(--ease-standard), padding 260ms var(--ease-standard), box-shadow 260ms var(--ease-standard); overflow-x: hidden; }
+body.host-workspace.sidebar-animating .wrap.with-sidebar { transition: margin-left 260ms var(--ease-standard); }
+body.host-workspace.sidebar-animating .ui-sidebar .ui-nav a { white-space: nowrap; }
+body.host-workspace.sidebar-animating.sidebar-collapsed .ui-sidebar .ui-nav a { justify-content: flex-start; padding: 0 calc((var(--nav-w-collapsed) - var(--space-4) - var(--nav-icon)) / 2); }
+body.host-workspace.sidebar-animating .sidebar-collapse .ui-icon { transition: transform 260ms var(--ease-standard); }
+body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  body.host-workspace.sidebar-animating :is(.ui-sidebar, .wrap.with-sidebar, .sidebar-collapse .ui-icon) { transition: none; }
+}
 
 @media (max-width: 1279px) and (min-width: 1024px) {
   body.host-workspace:not(.sidebar-expanded) .ui-sidebar { width: var(--nav-w-collapsed); padding: var(--space-3) var(--space-2); }
@@ -306,6 +317,8 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .host-account-menu { position:
   }
   /* 0251: the toggle opens the full menu over the page on tablets. */
   body.host-workspace.sidebar-expanded .ui-sidebar { width: var(--nav-w); box-shadow: var(--shadow-popover); }
+  body.host-workspace:not(.sidebar-expanded) .sidebar-collapse .ui-icon { transform: rotate(180deg); }
+  body.host-workspace.sidebar-animating:not(.sidebar-expanded) .ui-sidebar .ui-nav a { justify-content: flex-start; padding: 0 calc((var(--nav-w-collapsed) - var(--space-4) - var(--nav-icon)) / 2); }
 }
 @media (max-width: 1023px) {
   .host-workspace .ui-sidebar, .host-workspace .sidebar-expand { display: none; }

@@ -805,7 +805,15 @@
       });
     }
 
-    function setCollapsed(collapsed) {
+    // 0376: only a click slides the rail; restore and resize stay instant.
+    var animateTimer = null;
+    function animateRail() {
+      document.body.classList.add("sidebar-animating");
+      clearTimeout(animateTimer);
+      animateTimer = setTimeout(function () { document.body.classList.remove("sidebar-animating"); }, 280);
+    }
+    function setCollapsed(collapsed, animate) {
+      if (animate && collapsed !== document.body.classList.contains("sidebar-collapsed")) animateRail();
       document.body.classList.toggle("sidebar-collapsed", collapsed);
       if (collapse) {
         collapse.setAttribute("aria-expanded", collapsed ? "false" : "true");
@@ -828,9 +836,10 @@
       collapse.setAttribute("aria-expanded", open ? "true" : "false");
       collapse.setAttribute("aria-label", open ? collapse.dataset.labelHide : collapse.dataset.labelShow);
     }
-    function setExpanded(open) {
+    function setExpanded(open, animate) {
       var body = document.body;
       if (open === body.classList.contains("sidebar-expanded")) return;
+      if (animate) animateRail();
       if (open) {
         railWasCollapsed = body.classList.contains("sidebar-collapsed");
         body.classList.remove("sidebar-collapsed");
@@ -854,18 +863,18 @@
     if (stored === "1") setCollapsed(true);
 
     if (collapse) collapse.addEventListener("click", function () {
-      if (tabletRail.matches) { setExpanded(!document.body.classList.contains("sidebar-expanded")); return; }
-      setCollapsed(!document.body.classList.contains("sidebar-collapsed"));
+      if (tabletRail.matches) { setExpanded(!document.body.classList.contains("sidebar-expanded"), true); return; }
+      setCollapsed(!document.body.classList.contains("sidebar-collapsed"), true);
     });
     if (expand) expand.addEventListener("click", function () {
-      if (tabletRail.matches) { setExpanded(true); return; }
-      setCollapsed(false);
+      if (tabletRail.matches) { setExpanded(true, true); return; }
+      setCollapsed(false, true);
     });
     document.addEventListener("pointerdown", function (event) {
-      if (document.body.classList.contains("sidebar-expanded") && sidebar && !sidebar.contains(event.target)) setExpanded(false);
+      if (document.body.classList.contains("sidebar-expanded") && sidebar && !sidebar.contains(event.target)) setExpanded(false, true);
     });
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape" && document.body.classList.contains("sidebar-expanded")) setExpanded(false);
+      if (event.key === "Escape" && document.body.classList.contains("sidebar-expanded")) setExpanded(false, true);
     });
     var onRailChange = function () { setExpanded(false); syncRailButton(); if (!tabletRail.matches) setCollapsed(document.body.classList.contains("sidebar-collapsed")); };
     if (tabletRail.addEventListener) tabletRail.addEventListener("change", onRailChange);
