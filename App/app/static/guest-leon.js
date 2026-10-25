@@ -83,6 +83,13 @@
     return item;
   }
 
+  // 0389: Leon speaks first. A fixed welcome drawn by the page: never stored, never sent, never counted.
+  function welcome() {
+    var item = bubble("leon", "", text("text-welcome"));
+    item.setAttribute("data-leon-msg", "welcome");
+    return item;
+  }
+
   function setWaiting(on) {
     waiting.hidden = !on;
     if (on && !timer && polls < POLL_MAX) {
@@ -104,6 +111,7 @@
       return;
     }
     while (log.firstChild) log.removeChild(log.firstChild);
+    welcome();
     (data.messages || []).forEach(function (m) {
       bubble(m.role, m.kind, m.text);
     });
@@ -280,5 +288,6 @@
   form.hidden = false;
   if (jump) jump.hidden = false;
   updateCount();
+  welcome();
   history().catch(function () {});
 })();

@@ -236,3 +236,37 @@ def test_without_javascript_the_guide_shows_one_line_and_no_form(live_server, br
         context.close()
     finally:
         _cleanup()
+
+
+def test_leon_greets_first(live_server, browser, monkeypatch):  # noqa: F811
+    monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
+    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
+    apartment_id, token = _seed()
+    docs_shots = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0387"
+    try:
+        context = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2)
+        page = context.new_page()
+        page.goto(f"{live_server}/g/{token}?lang=en")
+        welcome = page.locator("[data-leon-msg=welcome]")
+        assert welcome.count() == 1 and welcome.is_visible()
+        assert "your 24/7 concierge" in welcome.inner_text()
+        assert page.locator("[data-leon-msg=leon]").count() == 0
+        assert page.locator("[data-leon-log] > :first-child").get_attribute("data-leon-msg") == "welcome"
+        SHOTS.mkdir(parents=True, exist_ok=True)
+        docs_shots.mkdir(parents=True, exist_ok=True)
+        page.locator("#leon").screenshot(path=str(SHOTS / "leon-welcome-390.png"))
+        shutil.copy(SHOTS / "leon-welcome-390.png", docs_shots / "leon-welcome-390.png")
+
+        page.fill("[data-leon-input]", "Hello")
+        page.click("[data-leon-send]")
+        page.wait_for_selector("[data-leon-msg=leon]")
+        assert "What can I do for you" in page.locator("[data-leon-msg=leon]").inner_text()
+        assert welcome.count() == 1
+
+        page.reload()
+        page.wait_for_selector("[data-leon-msg=leon]")
+        assert page.locator("[data-leon-msg=welcome]").count() == 1
+        assert page.locator("[data-leon-log] > :first-child").get_attribute("data-leon-msg") == "welcome"
+        context.close()
+    finally:
+        _cleanup()
