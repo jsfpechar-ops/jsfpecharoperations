@@ -29,8 +29,10 @@ def test_an_unopened_link_reminds_the_host_the_day_before_and_only_once(monkeypa
     day_before = datetime.fromisoformat(arrival).date() - timedelta(days=1)
     try:
         moment = _clock(monkeypatch, day_before, hour=8)
-        assert claim.sweep_reminders()["host_early"] == 0  # not before 9:00
+        assert claim.sweep_reminders()["host_early"] == 0  # not before 18:00
         moment[0] = datetime.combine(day_before, time(10, 0))
+        assert claim.sweep_reminders()["host_early"] == 0  # not before 18:00
+        moment[0] = datetime.combine(day_before, time(18, 0))
         assert claim.sweep_reminders()["host_early"] == 1
         rows = _host_reminders(current)
         assert len(rows) == 1

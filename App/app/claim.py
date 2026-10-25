@@ -772,12 +772,13 @@ def sweep_reminders() -> Dict[str, int]:
                 owner_user_id=reservation["owner_user_id"],
             ):
                 summary["guest"] += 1
-        # 0245 (idea E): nobody has opened the guest link by 9:00 the day
-        # before arrival, so the host still has a day to send it. The mail key
-        # is the check-in-day key, so a stay never gets a second host reminder.
+        # 0245 (idea E): nobody has opened the guest link by 18:00 the day
+        # before arrival, after the OTA scheduled messages had all day to
+        # land. The mail key is the check-in-day key, so a stay never gets
+        # a second host reminder.
         early = (
             start == today + timedelta(days=1)
-            and now_local.hour >= 9
+            and now_local.hour >= 18
             and not reservation["claim_state"]
             and not complete
             and progress["status"] not in ("reported", "not_required")
