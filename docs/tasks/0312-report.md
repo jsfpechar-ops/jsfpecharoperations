@@ -23,6 +23,7 @@ Done: steps 1 to 8 (34 passed). Step 9: design guardrails browser test passed (0
 - Test isolation: without `?lang=en` the page rendered in Vietnamese (language cookie or saved state leaked between requests in the test client). Pinned to `en` in the helper.
 - Coordinator approved the apostrophe fix: `html.unescape` on the three page reads in test_off_limit (commit pending in this WIP).
 - Step 4 check: `app.routes` items have no `.path`; used `app.openapi()` instead.
+- Review fix: signed history keeps 6 exchanges so the conversation cap works; the model still sees 4 / 4000 chars.
 
 ## Questions
 1. Fix the apostrophe assertion (escape or unescape) in test_havel_page.py, then rerun step 8? Approve and I continue.
