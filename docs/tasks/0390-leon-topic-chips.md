@@ -175,6 +175,10 @@ If a test fails, put its first assertion line in the report. Fix only inside §3
 - [ ] §6 passes, 0 skipped.
 - [ ] Both screenshots exist and you looked at each once: chips under the welcome, then a card answer with the link and the chips again.
 
+## 8. Stop and ask
+
+As in TEMPLATE §8.
+
 ## 9. Report
 
 No report file. ONE commit `0390: Leon offers situation chips from the guide`, including this brief and the screenshots, ending with the Haiku Co-Authored-By trailer and `Claude-Session: https://claude.ai/code/session_01Lvzax2VbKkYR4rb7JYLc3K`. Do not push.

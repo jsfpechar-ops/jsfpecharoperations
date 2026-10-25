@@ -81,6 +81,10 @@ If a test fails, put its first assertion line in the report. Fix only inside §3
 - [ ] §6 passes, 0 skipped.
 - [ ] `docs/tasks/screenshots-0387/leon-welcome-390.png` shows the welcome bubble in an otherwise empty chat. You looked at it once.
 
+## 8. Stop and ask
+
+As in TEMPLATE §8.
+
 ## 9. Report
 
 `docs/tasks/0389-report.md` (150 tokens), `Status: review`. ONE commit `0389: Leon greets the guest first`, including this brief and the screenshots, ending with:
