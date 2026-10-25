@@ -9,8 +9,7 @@ Updated: 2026-10-25.
 
 ## Now
 
-- 0399 option cards: owner PR.
-- 0391 Havel topics: #513.
+- 0399 option cards: owner PR. 0391 Havel topics: #513.
 - Guide + Leon 0341-0355: owner merges #465-#468, evals.
 - 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
@@ -26,7 +25,7 @@ Updated: 2026-10-25.
 - Stay-fee email 0220-0224: built, owner staging test.
 - 0203 #419: fee list pay steps. Data box send on hold (DIA).
 - #416: lock tab, stay buttons, phone pass (0196-0201).
-- Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
+- Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy.
 - AI crawler block 0195: Terms §11 TDM v1.7, lawyer to confirm.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 
