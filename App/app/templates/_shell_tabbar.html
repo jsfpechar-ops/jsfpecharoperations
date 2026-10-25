@@ -18,6 +18,7 @@
       <button class="ui-menu-item" type="button" data-command-open>{{ icon('search', 16) }}{{ t('host.search') }}</button>
       <a class="ui-menu-item" href="/stay-fees">{{ icon('invoice-slip', 16) }}{{ t('nav.stay_fees') }}</a>
       <a class="ui-menu-item" href="/settings">{{ icon('settings', 16) }}{{ t('nav.settings') }}</a>
+      <a class="ui-menu-item" href="/havel" data-havel-more>{{ icon('message-circle-question', 16) }}{{ t('havel.name') }}</a>
       <a class="ui-menu-item" href="/guide">{{ icon('book-open', 16) }}{{ t('nav.guide') }}</a>
       {% if current_user and current_user.role == 'admin' %}<a class="ui-menu-item" href="/admin/users">{{ icon('shield', 16) }}{{ t('nav.admin') }}</a>{% endif %}
       <a class="ui-menu-item" href="/settings/archived">{{ icon('archive', 16) }}{{ t('settings.nav.archive') }}</a>

@@ -238,7 +238,9 @@
     "havel-counter",
     "havel-writing",
     "havel-answer-title",
-    "havel-ask"
+    "havel-ask",
+    "havel-launcher",
+    "havel-dots"
   ],
   "hooks": [
     "sr-only",
@@ -339,7 +341,8 @@
     "App/app/templates/_havel_thread.html",
     "App/app/templates/_havel_form.html",
     "App/app/templates/_havel_topics.html",
-    "App/app/templates/_havel_fragment.html"
+    "App/app/templates/_havel_fragment.html",
+    "App/app/templates/_havel_panel.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [

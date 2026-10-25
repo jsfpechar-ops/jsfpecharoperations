@@ -255,6 +255,10 @@ Phone: one `secondary` "Show more" button, full width, replaced by the next page
 
 `section(title, actions)` (18/600 title row, 32 gap above), `facts(pairs)` (key 13 `--ink-3`, value 15 `--ink`, 44 px rows, 2 columns at 768+), `stat_row(items)` (3 or 4 tiles: number 26/600 and label 14 `--ink-2`, tile = surface, hairline, radius 12; the tile links; no colour fill), `banner(kind, text, action)` (attention or neutral only, full lane, radius 12, 16 px icon, one `secondary` action), `property_dot(index, name)`, `copy_button(target)`, `kbd`, `calendar` (existing month/week/gantt, restyled to tokens; controls become `secondary compact` and `tabs`), `progress_pill` becomes `badge`.
 
+### 7.15 Havel panel: `_havel_panel.html` (0324)
+
+One `<dialog class="ui-dialog havel-dialog">` for the AI support assistant. Computer: anchored bottom-right, 400 x 680 max; phone: the 7.9 bottom sheet at 92dvh. Header: 24 px avatar (`--accent-soft`, `message-circle-question`), title "Havel (AI)" 16/600 (AI never dropped), subtitle 13 `--ink-3`, quiet icon buttons "Open as a page" and close. Thread `role="log"`: host bubbles right on `--surface-2`, Havel bubbles left on `--surface` with a hairline, steps as `<ol>`, at most three `secondary compact` links and a 7.5 card under a bubble. Composer: textarea, `primary` Send (the only primary), 12 px remaining line. Empty state: five `ui-menu-item` topics (plan 17c). Launchers: sidebar item above Help & guide; phone top-bar icon button and More row. No floating bubble, no toasts in the panel. Plan section 17.
+
 ## 8. Copy tone
 
 1. Verbs on buttons, nouns on titles: "Add stay", "Send report", "Download PDF". Never "Submit", "OK", "Click here".
