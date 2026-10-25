@@ -25,7 +25,6 @@ def ws(monkeypatch, tmp_path):
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
     monkeypatch.setattr(auth, "staging_no_login", lambda: False)
     monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
-    monkeypatch.setattr("app.leon.switched_on", lambda apartment: True)  # 0376: host opt-in covered in test_0376_ai_gates.py
     monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
     db.init_db()
     owner = auth.create_account("chat-owner@example.test", "Chat owner", username="chat-owner", role="host")
@@ -37,6 +36,7 @@ def ws(monkeypatch, tmp_path):
     home = db.insert("apartment", {
         "owner_user_id": owner, "legal_entity_id": entity, "internal_name": "Chat flat", "active": 1,
         "created_at": now, "automation_mode": "manual", "permalink_token": TOKEN, "permalink_window_days": 14,
+        "leon_enabled": 1,  # 0376: the host said yes
     })
     guest_guide.ensure_defaults(db.query_one("SELECT * FROM apartment WHERE id = ?", (home,)))
     yield {"home": home, "client": TestClient(app)}
@@ -92,7 +92,6 @@ def test_no_chat_while_leon_is_off_or_the_guide_is_not_live(ws, monkeypatch):
     assert "data-guide-not-ready" in page.text and "data-leon" not in page.text
     _go_live(ws["home"])
     monkeypatch.setattr(config, "AI_FEATURES", frozenset())
-    monkeypatch.setattr("app.leon.switched_on", lambda apartment: False)  # 0376: AI off means no chat
     _, page = _qr_page(ws)
     assert "data-guide-card" in page.text
     assert "data-leon" not in page.text and "guest-leon.js" not in page.text

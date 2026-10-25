@@ -30,3 +30,11 @@ Status: blocked. Done: steps 1 to 12 and 14. Left: step 13 (App/tests/test_0376_
 ## Owner steps left
 - Finish step 13 (test_0376_ai_gates.py), then rerun the checks above.
 - Review the Leon section at 390 px (no screenshot taken).
+
+## Review (Opus, 2026-10-25)
+
+- `leon.switched_on` now means "host said yes and the owner is on the test list" only. `ai.enabled("leon")` stays a separate check on the guide card, so a chat that is open when AI goes off still passes the guest's message to the host (the existing 0350 behaviour) instead of 404ing.
+- `ai.on_test_list` / `ai.owner_on_test_list` split out of `enabled_for` / `enabled_for_property`.
+- Existing Leon tests no longer patch `switched_on`; their fixtures set `leon_enabled = 1` (also test_privacy_first, test_guest_leon_browser), so the real gate runs.
+- Step 13 written: `App/tests/test_0376_ai_gates.py` (8 tests: default off, host toggle on/off, foreign property 404, no section while AI is off, test list keeps others out of Leon/translation/Havel, case-insensitive match).
+- Ran: ruff, design_lint, migration_guard origin/main, and 425 non-browser tests across havel/ai/design/guide/i18n/dev_ui/admin/api files plus leon/privacy files: all pass.
