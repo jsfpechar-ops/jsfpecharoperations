@@ -592,7 +592,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "mail_completion_heading": "You're all set",
         "mail_completion_intro": (
-            "Everyone for %(property)s (%(dates)s) is registered. "
+            "Everyone for %(property)s is registered. "
             "There is nothing else you need to do."
         ),
         "mail_completion_action": "See your stay page",
@@ -600,6 +600,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Your host takes care of the official registration with the authorities. "
             "This e-mail is your receipt, not an official confirmation."
         ),
+        "mail_completion_panel_title": "Your stay",
+        "mail_completion_guests_label": "Guests registered",
+        "mail_completion_guests_value": "%(filled)s of %(expected)s",
+        "mail_completion_checkin_label": "Check-in",
+        "mail_completion_checkin_value": "%(date)s, from %(time)s",
+        "mail_completion_checkout_label": "Check-out",
+        "mail_completion_checkout_value": "%(date)s, by %(time)s",
+        "mail_completion_host_action": "See your stay page (host only)",
         "mail_reminder_guest_subject": (
             "Tomorrow at %(property)s: %(filled)s of %(expected)s guests registered"
         ),
@@ -1244,7 +1252,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "mail_completion_heading": "Hotovo",
         "mail_completion_intro": (
-            "Všichni hosté pro %(property)s (%(dates)s) jsou zaregistrovaní. "
+            "Všichni hosté pro %(property)s jsou zaregistrovaní. "
             "Nic dalšího dělat nemusíte."
         ),
         "mail_completion_action": "Zobrazit stránku pobytu",
@@ -1252,6 +1260,14 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Úřední hlášení vyřizuje váš hostitel. Tento e-mail je potvrzení pro vás, "
             "nikoli úřední doklad."
         ),
+        "mail_completion_panel_title": "Váš pobyt",
+        "mail_completion_guests_label": "Registrovaní hosté",
+        "mail_completion_guests_value": "%(filled)s z %(expected)s",
+        "mail_completion_checkin_label": "Příjezd",
+        "mail_completion_checkin_value": "%(date)s od %(time)s",
+        "mail_completion_checkout_label": "Odjezd",
+        "mail_completion_checkout_value": "%(date)s do %(time)s",
+        "mail_completion_host_action": "Zobrazit stránku pobytu (jen pro hostitele)",
         "mail_reminder_guest_subject": (
             "Zítra přijíždíte (%(property)s): zaregistrováno %(filled)s z %(expected)s "
             "hostů"
@@ -1700,9 +1716,17 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_subject": "Sie sind für %(property)s registriert: nichts weiter zu tun",
         "mail_completion_preheader": "Alle Gäste dieses Aufenthalts sind registriert. Nichts weiter zu tun.",
         "mail_completion_heading": "Alles erledigt",
-        "mail_completion_intro": "Alle Gäste für %(property)s (%(dates)s) sind registriert. Sie müssen nichts weiter tun.",
+        "mail_completion_intro": "Alle Gäste für %(property)s sind registriert. Sie müssen nichts weiter tun.",
         "mail_completion_action": "Zur Aufenthaltsseite",
         "mail_completion_note": "Ihr Gastgeber kümmert sich um die offizielle Meldung bei den Behörden. Diese E-Mail ist Ihre Quittung, keine amtliche Bestätigung.",
+        "mail_completion_panel_title": "Ihr Aufenthalt",
+        "mail_completion_guests_label": "Registrierte Gäste",
+        "mail_completion_guests_value": "%(filled)s von %(expected)s",
+        "mail_completion_checkin_label": "Check-in",
+        "mail_completion_checkin_value": "%(date)s ab %(time)s",
+        "mail_completion_checkout_label": "Check-out",
+        "mail_completion_checkout_value": "%(date)s bis %(time)s",
+        "mail_completion_host_action": "Zur Aufenthaltsseite (nur für Gastgeber)",
         "mail_reminder_guest_subject": "Morgen in %(property)s: %(filled)s von %(expected)s Gästen registriert",
         "mail_reminder_guest_subject_no_count": "Morgen in %(property)s: Die Gästeregistrierung ist nicht abgeschlossen",
         "mail_reminder_guest_preheader": "Ihr Aufenthalt beginnt morgen und die Registrierung ist nicht vollständig.",
@@ -2127,9 +2151,17 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_subject": "Registro completado para %(property)s: no tiene que hacer nada más",
         "mail_completion_preheader": "Todos los huéspedes de esta estancia están registrados. No tiene que hacer nada más.",
         "mail_completion_heading": "Todo listo",
-        "mail_completion_intro": "Todos los huéspedes de %(property)s (%(dates)s) están registrados. No necesita hacer nada más.",
+        "mail_completion_intro": "Todos los huéspedes de %(property)s están registrados. No necesita hacer nada más.",
         "mail_completion_action": "Ver la página de su estancia",
         "mail_completion_note": "Su anfitrión se encarga del registro oficial ante las autoridades. Este e-mail es su justificante, no una confirmación oficial.",
+        "mail_completion_panel_title": "Su estancia",
+        "mail_completion_guests_label": "Huéspedes registrados",
+        "mail_completion_guests_value": "%(filled)s de %(expected)s",
+        "mail_completion_checkin_label": "Llegada",
+        "mail_completion_checkin_value": "%(date)s, desde las %(time)s",
+        "mail_completion_checkout_label": "Salida",
+        "mail_completion_checkout_value": "%(date)s, antes de las %(time)s",
+        "mail_completion_host_action": "Ver la página de su estancia (solo anfitrión)",
         "mail_reminder_guest_subject": "Mañana en %(property)s: %(filled)s de %(expected)s huéspedes registrados",
         "mail_reminder_guest_subject_no_count": "Mañana en %(property)s: el registro de huéspedes no está terminado",
         "mail_reminder_guest_preheader": "Su estancia empieza mañana y el registro no está completo.",
@@ -2554,9 +2586,17 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_subject": "Vous êtes enregistré pour %(property)s : rien d'autre à faire",
         "mail_completion_preheader": "Tous les voyageurs de ce séjour sont enregistrés. Rien d'autre à faire.",
         "mail_completion_heading": "Tout est en ordre",
-        "mail_completion_intro": "Tous les voyageurs pour %(property)s (%(dates)s) sont enregistrés. Vous n'avez plus rien à faire.",
+        "mail_completion_intro": "Tous les voyageurs pour %(property)s sont enregistrés. Vous n'avez plus rien à faire.",
         "mail_completion_action": "Voir la page du séjour",
         "mail_completion_note": "Votre hôte se charge de la déclaration officielle auprès des autorités. Cet e-mail est votre récapitulatif, et non une confirmation officielle.",
+        "mail_completion_panel_title": "Votre séjour",
+        "mail_completion_guests_label": "Voyageurs enregistrés",
+        "mail_completion_guests_value": "%(filled)s sur %(expected)s",
+        "mail_completion_checkin_label": "Arrivée",
+        "mail_completion_checkin_value": "%(date)s, à partir de %(time)s",
+        "mail_completion_checkout_label": "Départ",
+        "mail_completion_checkout_value": "%(date)s, avant %(time)s",
+        "mail_completion_host_action": "Voir la page du séjour (hôte uniquement)",
         "mail_reminder_guest_subject": "Demain à %(property)s : %(filled)s voyageurs sur %(expected)s enregistrés",
         "mail_reminder_guest_subject_no_count": "Demain à %(property)s : l'enregistrement des voyageurs n'est pas terminé",
         "mail_reminder_guest_preheader": "Votre séjour commence demain et l'enregistrement n'est pas complet.",

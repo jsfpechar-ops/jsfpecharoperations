@@ -1,31 +1,51 @@
-# 0387 report
+# 0387 report: completion mail shows the stay at a glance
 
 Status: review
+Executor: Haiku 5.5 | Branch: claude/project-thread-j8pnyp (not pushed, no PR opened)
 
 ## Files changed
-- App/app/templates/guest/_leon.html: header with avatar, visually hidden label, pill composer, send button with arrow icon, counter hidden by default.
-- App/app/static/guest-leon.js: counter hidden above 450 chars, textarea auto-grow to 132 px inside updateCount (also runs after send).
-- App/app/static/guest.css: one appended block; send button `min-width: 0` (an older `.g-leon-send` rule set `min-width: 120px`, which made the first render wide).
-- App/app/templates/guest/base.html: guest-leon.js key `20261025-0387`, guest.css key `20261025-0387b` (see Deviations).
-- App/tests/static_versions.json: regenerated with --write.
-- App/tests/test_guest_leon_browser.py: counter assertion changed to is_hidden; new test_leon_chat_look_on_a_phone.
-- docs/tasks/screenshots-0387/leon-chat-390.png, leon-chat-host-390.png.
 
-## Commands (§6)
-- ruff E9,F63,F7,F82,F401,F841: All checks passed!
-- pytest (7 files): 75 passed, 0 skipped (last line: "75 passed in 222.58s").
+- App/app/i18n.py: intro without dates (en, cs, de, es, fr); 8 panel keys after `mail_completion_note`
+- App/app/guest_uk_i18n.py: same for uk
+- App/app/mail_notify.py: `build_completion` takes filled, expected, checkin, checkout, address; stay panel; `_block_quiet_link` for the stay link
+- App/app/claim.py: `_completion_facts` helper; passes facts and counts from `_guest_mail_content` and `maybe_notify_completion`
+- App/tests/test_guest_mail.py: 2 tests updated, 2 added, NEW_GUEST_KEYS extended
+- docs/tasks/screenshots-0387/completion-en-390.png, completion-cs-390.png, completion-uk-390.png
 
-## §7
-- [x] §6 commands pass with 0 skipped.
-- [x] Both screenshots exist and were viewed; they show the §1 look.
+## Commands (last lines)
+
+- Step 1: `pytest tests/test_guest_languages.py`: `47 passed in 1.32s`
+- Step 3: `pytest tests/test_claim_mail.py tests/test_claim_fallback_text.py tests/test_claim_resend_complete.py`: `83 passed, 1 warning in 2.31s`
+- Step 4: `pytest tests/test_guest_mail.py tests/test_guest_languages.py tests/test_property_names_in_mail.py tests/test_mail_side_padding.py`: `120 passed in 1.74s`
+- Step 6: `python3 scripts/context_lint.py`: `context lint: OK` (WARN lines are open-brief overlaps, not failures)
+
+## Section 7
+
+- [x] All step commands pass.
+- [x] Completion HTML has no printed stay URL; text part still has it.
+- [x] Panel shows count, check-in, check-out, address in en/cs/uk previews.
+- [x] 3 PNGs in docs/tasks/screenshots-0387/.
 
 ## Deviations
-- Done: steps 1 to 5, all of them.
-- guest.css key is `20261025-0387b`, not `20261025-0387`: the manifest test refuses a changed file under an unchanged key, and the key was bumped after the min-width fix.
-- Commit trailer uses Co-Authored-By: Claude Haiku 5.5 (the session attribution), not the Opus line in §9.
+
+- Step 4 test: the brief asserts "Your stay" in the text part, but the step 2 code adds only the rows to the text part, not the panel title. I followed the step 2 code and asserted the title in the HTML part only. Rows are asserted in both parts.
+- Step 5: the first uk preview rendered in English because uk is off by default (`UBYHOST_GUEST_LANGS`). Re-rendered with `UBYHOST_GUEST_LANGS=en,cs,de,es,fr,uk`; the fix is its own commit.
+- Step 5: Python Playwright is not in App/.venv, so the screenshots used Node Playwright. Throwaway scripts live in /tmp/claude-0/, not committed.
+- The panel sits before the door-code block in the HTML, as step 2's insertion point specifies.
+- No PR opened, per the owner's instruction for this run (the executor template says to open one).
 
 ## Questions
-- None.
+
+None.
 
 ## Owner steps left
-- Review and merge with scripts/merge-pr-on-green.sh. Do not push from this executor.
+
+1. Review the screenshots, then open the PR and merge with `scripts/merge-pr-on-green.sh`.
+2. Deploy as usual.
+
+## Addendum A
+
+- The guest stay link is gone from the receipt; the only link is a host-only "open this stay in UbyHost" link (A1 to A3), and the address row is dropped (A6). Mail test set: 203 passed.
+- Previews re-rendered with `host_url` and no address (A5), with `UBYHOST_GUEST_LANGS=en,cs,uk`; the three PNGs are overwritten.
+- Open question: the footer still says "registered with this address" in all three languages (existing copy, not in the brief, not changed).
+Addendum B: host link label is now 'See your stay page (host only)' in six languages (owner).

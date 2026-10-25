@@ -51,6 +51,14 @@ NEW_GUEST_KEYS = (
     "mail_completion_intro",
     "mail_completion_action",
     "mail_completion_note",
+    "mail_completion_panel_title",
+    "mail_completion_guests_label",
+    "mail_completion_guests_value",
+    "mail_completion_checkin_label",
+    "mail_completion_checkin_value",
+    "mail_completion_checkout_label",
+    "mail_completion_checkout_value",
+    "mail_completion_host_action",
     "mail_reminder_guest_subject",
     "mail_reminder_guest_subject_no_count",
     "mail_reminder_guest_preheader",
@@ -193,6 +201,7 @@ def _completion_content(lang: str = "en"):
         dates="2026-01-05 \u2013 2026-01-08",
         stay_url=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1",
         host=_host(),
+        host_url=f"{config.PUBLIC_BASE_URL}/reservations/1",
     )
 
 
@@ -489,35 +498,45 @@ def test_the_footer_names_the_host_and_never_ubyhost_support():
         assert HOST_EMAIL in content["text"], kind
 
 
-def test_the_completion_mail_links_to_the_stay():
-    content = _completion_content()
+def test_the_completion_mail_links_only_the_host():
+    """Owner: the guest taps the stay link and only reaches sign-in, so the link is for the host."""
     stay = f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1"
-    assert stay in content["html"]
-    assert stay in content["text"]
-    # The address is readable, not just a button target: a guest whose client
-    # mangles the markup can still copy it out of the message.
-    assert f">{stay}</a>" in content["html"]
+    host_url = "https://app.example.test/reservations/1"
+    content = mail_notify.build_completion(
+        lang="en",
+        property_name="Guest Mail Flat",
+        dates="2026-01-05 \u2013 2026-01-08",
+        stay_url=stay,
+        host=_host(),
+        host_url=host_url,
+    )
+    html_part = html.unescape(content["html"])
+    label = "See your stay page (host only)"
+    assert host_url in content["html"]
+    assert host_url in content["text"]
+    assert label in html_part
+    assert label in content["text"]
+    assert stay not in content["html"]
+    assert stay not in content["text"]
 
 
 def test_the_completion_mail_closes_with_nothing_left_to_do():
     """E-7: the receipt used to read like a report that was still in flight."""
-    for lang, heading, subject, intro, note, action in (
+    for lang, heading, subject, intro, note in (
         (
             "en",
             "You're all set",
             "You're registered for Guest Mail Flat: nothing else to do",
-            "Everyone for Guest Mail Flat (2026-01-05 \u2013 2026-01-08) is registered.",
+            "Everyone for Guest Mail Flat is registered.",
             "Your host takes care of the official registration with the authorities.",
-            "See your stay page",
         ),
         (
             "cs",
             "Hotovo",
             "Registrace hotov\u00e1 \u2013 Guest Mail Flat. Nic dal\u0161\u00edho nemus\u00edte d\u011blat",
-            "V\u0161ichni host\u00e9 pro Guest Mail Flat (2026-01-05 \u2013 2026-01-08) "
+            "V\u0161ichni host\u00e9 pro Guest Mail Flat "
             "jsou zaregistrovan\u00ed.",
             "\u00da\u0159edn\u00ed hl\u00e1\u0161en\u00ed vy\u0159izuje v\u00e1\u0161 hostitel.",
-            "Zobrazit str\u00e1nku pobytu",
         ),
     ):
         content = _completion_content(lang)
@@ -528,13 +547,41 @@ def test_the_completion_mail_closes_with_nothing_left_to_do():
         assert intro in html_part, lang
         assert note in html_part, lang
         assert note in content["text"], lang
-        assert action in html_part, lang
-        assert action in content["text"], lang
         # The closing line is a muted paragraph, not a coral callout box.
         assert f"background:{mail_notify.BRAND_SOFT}" not in html_part, lang
         # And the receipt no longer carries a coral button: nothing here is an
         # action the guest still owes the host.
         assert f"background:{mail_notify.BRAND_ACTION};" not in html_part, lang
+
+
+def test_the_completion_mail_shows_the_stay_at_a_glance():
+    for lang, title, guests, checkin, checkout in (
+        ("en", "Your stay", "3 of 3", "05.01.2026, from 15:00", "08.01.2026, by 10:00"),
+        ("cs", "V\u00e1\u0161 pobyt", "3 z 3", "05.01.2026 od 15:00", "08.01.2026 do 10:00"),
+    ):
+        content = mail_notify.build_completion(
+            lang=lang,
+            property_name="Guest Mail Flat",
+            dates="2026-01-05 \u2013 2026-01-08",
+            stay_url=f"{config.PUBLIC_BASE_URL}/l/{TOKEN}/1",
+            host=_host(),
+            filled=3,
+            expected=3,
+            checkin=checkin,
+            checkout=checkout,
+        )
+        html_part = html.unescape(content["html"])
+        # The panel title is a visual heading; the text part lists the rows.
+        assert title in html_part, lang
+        assert "Address" not in html_part, lang
+        for value in (guests, checkin, checkout):
+            assert value in html_part, (lang, value)
+            assert value in content["text"], (lang, value)
+
+
+def test_the_completion_mail_without_facts_has_no_panel():
+    content = _completion_content()
+    assert "Your stay" not in html.unescape(content["html"])
 
 
 def test_the_completion_mail_stops_blaming_ubyport():
