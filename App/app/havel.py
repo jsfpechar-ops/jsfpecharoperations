@@ -567,7 +567,8 @@ def record_gap(lang: str, page: str, kind: str, question: str) -> None:
     text = redact(question)[0].strip()[:MAX_MESSAGE_CHARS]
     if not text or kind not in GAP_KINDS:
         return
-    db.insert("havel_gap", {"created_at": db.utcnow(), "lang": (lang or "en")[:5],
+    # Day only: a time to the second could be joined to the user-keyed rate-limit rows written in the same request.
+    db.insert("havel_gap", {"created_at": db.utcnow()[:10] + "T00:00:00+00:00", "lang": (lang or "en")[:5],
                             "page": page if page in PAGES else None, "kind": kind, "question": text})
 
 

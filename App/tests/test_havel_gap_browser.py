@@ -21,7 +21,7 @@ def test_not_helped_at_390(origin):
         page.goto(f"{origin[0]}/havel?lang=en")
         page.fill("#havel-message", "How do I add a stay?")
         page.locator("[data-havel-form] [data-havel-send]").click()
-        button = page.locator(".havel-not-helped button")
+        button = page.locator("[data-havel-not-helped] button")
         button.wait_for()
         page.locator(".havel-msg-havel").last.screenshot(path=str(SHOTS / "not-helped-390.png"))
         button.click()
