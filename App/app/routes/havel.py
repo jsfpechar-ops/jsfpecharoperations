@@ -15,7 +15,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from fastapi import APIRouter, Depends, Request
 from fastapi.concurrency import run_in_threadpool
 
-from .. import access, ai, auth, cleaning_i18n, db, havel, havel_actions, havel_topics, host_i18n, security
+from .. import (access, ai, auth, cleaning_i18n, config, db, havel, havel_actions, havel_topics, host_i18n, mail,
+                mail_notify, rate_limit, security)
 from . import dashboard_calendar
 from ..templating import render
 
@@ -116,6 +117,8 @@ def _page_context(request: Request, uid: int, items: List[Dict[str, Any]], excha
         "havel_topics": havel_topics.ordered(nav), "havel_topic_data": havel_topics.topic(topic) if topic else None,
         "havel_answer": havel_topics.answer(host_i18n.lang_from_request(request), topic, q) if topic and q else None,
         "havel_show_topics": len(exchanges) == 0 and not items,
+        "havel_support_to": mail.mask_email(str((auth.current_user(request) or {"email": ""})["email"] or "")),
+        "havel_support_blocked": havel.support_blocked(uid),
         "pages": havel.PAGES,
         "page_url": lambda page_id: havel.page_url(page_id, ids[0] if ids else None, ids),
     }
@@ -227,4 +230,39 @@ async def havel_send(request: Request):
         return render(request, "_havel_fragment.html", ctx)
     ctx = _page_context(request, uid, _thread(request, exchanges, last), exchanges, topic=topic, q=q, page=page,
                         return_to=return_to, error=error)
+    return render(request, "havel.html", ctx)
+
+
+@router.post("/havel/support")
+async def havel_support(request: Request):
+    """Plan section 8: the host's one tap sends the summary to UbyHost support."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    account = auth.current_user(request)
+    uid = int(account["id"])
+    form = await request.form()
+    exchanges = havel.read_history(uid, str(form.get("history", "")), str(form.get("history_sig", "")))
+    page = str(form.get("page", ""))
+    page = page if page in havel.PAGES else ""
+    return_to = security.safe_local_path(str(form.get("return_to", "")), "/havel")
+    summary = str(form.get("summary", "")).strip()[: havel.MAX_SUMMARY_CHARS]
+    note = str(form.get("note", "")).strip()[: havel.MAX_MESSAGE_CHARS]
+    items = _thread(request, exchanges, None)
+    if havel.support_blocked(uid):
+        items.append(_item("havel", _t(request, "havel.support.limit", email=config.OPERATOR_EMAIL)))
+    elif not summary and not note:
+        items.append(_item("havel", _t(request, "havel.support.empty"), support=True))
+    else:
+        workspace = auth.workspace_user(request) or account
+        mail_notify.havel_support(
+            user_id=uid, account_email=str(account["email"] or ""),
+            workspace=str(workspace["display_name"] or workspace["username"] or ""),
+            lang=host_i18n.lang_from_request(request), page=page, summary=summary, note=note,
+            turns=[exchange["host"] for exchange in exchanges][-4:],
+        )
+        rate_limit.record("havel_support", str(uid))
+        havel.record_stat("support_sent")
+        items.append(_item("havel", _t(request, "havel.support.sent")))
+    ctx = _page_context(request, uid, items, exchanges, page=page, return_to=return_to)
     return render(request, "havel.html", ctx)

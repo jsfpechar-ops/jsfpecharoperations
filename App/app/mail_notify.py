@@ -2482,3 +2482,77 @@ def signup_admin(
             "lang": HOST_MAIL_LANGUAGE,
         },
     )
+
+
+# --- 0319: Havel (AI) support hand-off and the AI budget warning ------------
+
+
+def _one_line(value: str) -> str:
+    return " ".join(str(value or "").split())
+
+
+def build_havel_support(
+    *, account_email: str, workspace: str, lang: str, page: str, summary: str, note: str, turns: List[str],
+) -> Dict[str, str]:
+    out = HOST_MAIL_LANGUAGE
+    subject = _text(out, "mail.havel_support.subject", workspace=_one_line(workspace or account_email)[:80])
+    heading = _text(out, "mail.havel_support.heading")
+    intro = _text(out, "mail.havel_support.intro")
+    facts = [
+        (_text(out, "mail.havel_support.account"), account_email or "-"),
+        (_text(out, "mail.havel_support.workspace"), workspace or "-"),
+        (_text(out, "mail.havel_support.language"), lang),
+        (_text(out, "mail.havel_support.page"), page or "-"),
+        (_text(out, "mail.havel_support.summary"), summary or "-"),
+        (_text(out, "mail.havel_support.note"), note or "-"),
+    ]
+    facts.extend((_text(out, "mail.havel_support.turn", n=i), turn) for i, turn in enumerate(turns, 1))
+    footer = _signup_footer(out)
+    text = "\n".join([intro, "", *[f"{label}: {value}" for label, value in facts], "", "--", *footer])
+    blocks = [_block_heading(heading), _block_paragraph(intro)]
+    blocks.extend(_block_fact(label, value) for label, value in facts)
+    return {"subject": subject, "text": text,
+            "html": _shell(lang=out, title=heading, preheader=intro, blocks=blocks, footer_lines=footer)}
+
+
+def havel_support(
+    *, user_id: int, account_email: str, workspace: str, lang: str, page: str, summary: str, note: str,
+    turns: List[str],
+) -> Optional[int]:
+    """The host's question to UbyHost support; the same text twice is one mail."""
+    content = build_havel_support(account_email=account_email, workspace=workspace, lang=lang, page=page,
+                                  summary=summary, note=note, turns=turns)
+    digest = hashlib.sha256(f"{summary}\n{note}".encode("utf-8")).hexdigest()[:16]
+    return mail.enqueue(
+        kind="havel_support",
+        idempotency_key=f"havel-support-{user_id}-{digest}",
+        to_email=config.OPERATOR_EMAIL,
+        subject=content["subject"],
+        payload={"text": content["text"], "html": content["html"], "lang": HOST_MAIL_LANGUAGE},
+    )
+
+
+def build_ai_budget(*, feature: str, month: str, spent: float, cap: float) -> Dict[str, str]:
+    out = HOST_MAIL_LANGUAGE
+    percent = int(spent / cap * 100) if cap > 0 else 100
+    subject = _text(out, "mail.ai_budget.subject", percent=percent, feature=feature)
+    body = _text(out, "mail.ai_budget.body", feature=feature, spent=f"{spent:.2f}", cap=f"{cap:.2f}", month=month)
+    action = _text(out, "mail.ai_budget.action")
+    link = _app("/admin/operations")
+    footer = _signup_footer(out)
+    text = "\n".join([body, "", f"{action}: {link}", "", "--", *footer])
+    blocks = [_block_heading(subject), _block_paragraph(body), _block_button(link, action)]
+    return {"subject": subject, "text": text,
+            "html": _shell(lang=out, title=subject, preheader=body, blocks=blocks, footer_lines=footer)}
+
+
+def ai_budget(*, feature: str, month: str, spent: float, cap: float) -> Optional[int]:
+    """One warning per feature per month (key ai-budget-<feature>-<YYYY-MM>)."""
+    content = build_ai_budget(feature=feature, month=month, spent=spent, cap=cap)
+    return mail.enqueue(
+        kind="ai_budget",
+        idempotency_key=f"ai-budget-{feature}-{month}",
+        to_email=config.OPERATOR_EMAIL,
+        subject=content["subject"],
+        payload={"text": content["text"], "html": content["html"], "lang": HOST_MAIL_LANGUAGE},
+    )

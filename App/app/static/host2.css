@@ -974,3 +974,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-card-change[open] summary { margin-bottom: var(--space-2); }
 .host-workspace .havel-card-change .ui-field { margin-bottom: var(--space-2); }
 .host-workspace .havel-card-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap; }
+/* 0319: Havel support card, full width under the reply's links */
+.havel-links .havel-support { flex-basis: 100%; display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--surface); }
+.havel-support-title { margin: 0; font-size: var(--size-16); }
+.havel-links > .havel-meta { flex-basis: 100%; }

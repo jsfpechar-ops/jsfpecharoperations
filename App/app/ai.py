@@ -226,6 +226,7 @@ def _call_mistral(feature: str, key_text: str, system_blocks: List[str], message
     usage = SimpleNamespace(input_tokens=int(raw.get("prompt_tokens") or 0), cache_creation_input_tokens=0,
                             cache_read_input_tokens=0, output_tokens=int(raw.get("completion_tokens") or 0))
     _record(feature, key_text, usage)
+    _warn_budget(feature)
     choice = (data.get("choices") or [{}])[0]
     stop = choice.get("finish_reason")
     log.info("ai call provider=mistral feature=%s stop=%s in=%s out=%s ms=%d", feature, stop,
@@ -245,6 +246,19 @@ def _call_mistral(feature: str, key_text: str, system_blocks: List[str], message
 
 
 # --- the call----------------------------------------------------------------
+
+def _warn_budget(feature: str) -> None:
+    """Mail the operator once a month when 80% of the feature's budget is spent (0319)."""
+    try:
+        if budget_fraction(feature) < 0.8:
+            return
+        from . import mail_notify  # lazy: mail_notify imports much of the app
+
+        mail_notify.ai_budget(feature=feature, month=today().strftime("%Y-%m"),
+                              spent=month_spend_usd(feature), cap=config.ai_monthly_usd(feature))
+    except Exception:  # a mail problem must never cost the host the answer
+        log.warning("ai budget mail failed feature=%s", feature)
+
 
 def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]], schema: Dict[str, Any],
          key: Optional[str] = None, max_tokens: Optional[int] = None) -> Dict[str, Any]:
@@ -289,6 +303,7 @@ def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]],
         raise AIError("api") from exc
     usage = getattr(response, "usage", None)
     _record(feature, key_text, usage)
+    _warn_budget(feature)
     total_in = sum(getattr(usage, name, 0) or 0 for name in
                    ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
     if total_in > config.AI_LONG_CONTEXT_TOKENS:
