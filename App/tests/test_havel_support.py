@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from app import ai, config, db, havel, mail, mail_notify
+from app import ai, config, db, havel, host_i18n, mail, mail_notify
 from tests.ai_fake import FakeClient, reply
 from tests.test_submission_retry_cap import host  # noqa: F401
 
@@ -74,3 +74,62 @@ def test_budget_mail_once_a_month_at_80_percent(on, monkeypatch):
     assert len(rows) == 1 and "havel" in rows[0]["subject"]
     mail_notify.ai_budget(feature="havel", month=ai.today().strftime("%Y-%m"), spent=1.0, cap=1.0)
     assert len(_outbox("ai_budget")) == 1
+
+
+FAIL = {"kind": "fail", "reply": "", "sources": [], "links": [], "action": None, "support_summary": None}
+ESCALATE_NO_SUMMARY = dict(ESCALATE, support_summary=None)
+WRONG_ERROR_LABEL = "havel.q.wrong.error"
+
+
+def _summary_box(page):
+    """The text inside the support hand-off's summary textarea (unescaped)."""
+    match = re.search(r'<textarea[^>]*name="summary"[^>]*>(.*?)</textarea>', html.unescape(page), re.S)
+    assert match, "no summary textarea on the page"
+    return html.unescape(match.group(1))
+
+
+def _ask(client, message, **extra):
+    form = {"_csrf": _csrf(client), "history": "", "history_sig": "", "page": "reports", "device": "phone",
+            "topic": "", "message": message, "lang": "en", **extra}
+    return html.unescape(client.post("/havel?lang=en", data=form).text)
+
+
+def test_a_fail_reply_prefills_the_support_card_with_the_host_message(host, on):
+    ai.set_client_for_tests(FakeClient([reply(FAIL)]))
+    message = "Why does the export button vanish on Tuesdays"
+    page = _ask(host, message)
+    assert 'action="/havel/support"' in page
+    assert _summary_box(page) == message
+
+
+def test_ai_off_prefills_the_support_card_with_the_host_message(host, on, monkeypatch):
+    monkeypatch.setattr(config, "AI_FEATURES", frozenset())
+    message = "How do I add a stay?"
+    page = _ask(host, message)
+    assert "Havel is unavailable right now" in page
+    assert 'action="/havel/support"' in page
+    assert _summary_box(page) == message
+
+
+def test_escalate_without_a_summary_prefills_the_host_message(host, on):
+    ai.set_client_for_tests(FakeClient([reply(ESCALATE_NO_SUMMARY)]))
+    message = "Error 4 on my report"
+    assert _summary_box(_ask(host, message)) == message
+
+
+def test_escalate_with_a_summary_keeps_the_model_summary(host, on):
+    ai.set_client_for_tests(FakeClient([reply(ESCALATE)]))
+    assert _summary_box(_ask(host, "Error 4 on my report")) == ESCALATE["support_summary"]
+
+
+def test_quick_help_support_card_prefills_the_question_label(host, on):
+    # Only the "wrong / error" question sets support in havel_topics.TOPICS.
+    page = html.unescape(host.get("/havel?lang=en&topic=wrong&q=error").text)
+    assert 'action="/havel/support"' in page
+    assert _summary_box(page) == host_i18n.translate("en", WRONG_ERROR_LABEL)
+
+
+def test_the_composer_no_longer_shows_a_remaining_count(host, on):
+    page = host.get("/havel?lang=en").text
+    assert 'name="message"' in page
+    assert "messages left" not in html.unescape(page)

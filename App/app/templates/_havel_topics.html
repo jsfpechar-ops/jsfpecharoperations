@@ -12,7 +12,7 @@
     <div class="havel-bubble">{% for p in havel_answer.paragraphs %}<p>{{ p }}</p>{% endfor %}</div>
     <div class="havel-links">
       {% if havel_answer.page %}{% set url = page_url(havel_answer.page) %}{% if url %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ url }}">{{ t('havel.topic.guide') if havel_answer.page.startswith('guide_') else t(pages[havel_answer.page][1]) }}{{ icon('chevron-right', 16) }}</a>{% endif %}{% endif %}
-      {% if havel_answer.support %}{% with havel_support_prefill = '' %}{% include "_havel_support.html" %}{% endwith %}{% endif %}
+      {% if havel_answer.support %}{% with havel_support_prefill = t(havel_answer.question.label) %}{% include "_havel_support.html" %}{% endwith %}{% endif %}
     </div>
   </div>
   {% if not havel_state %}<a class="ui-btn ui-btn-secondary havel-ask" href="#havel-message" data-havel-ask data-topic="{{ havel_topic }}" data-q="{{ havel_q }}">{{ t('havel.topic.ask') }}</a>{% endif %}

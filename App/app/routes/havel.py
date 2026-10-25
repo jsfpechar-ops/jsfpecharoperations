@@ -93,24 +93,22 @@ def _thread(request: Request, exchanges: List[Dict[str, str]], last: Optional[Di
     return items
 
 
-def _state(request: Request, uid: int) -> Tuple[Optional[str], str]:
-    """(state, remaining line). state is None, 'off' or a limit key suffix."""
-    n, period = havel.remaining(uid)
-    line = _t(request, f"havel.remaining_{period}", n=n)
+def _state(uid: int) -> Optional[str]:
+    """None, 'off' or a limit key suffix."""
     if not ai.enabled(havel.FEATURE):
-        return "off", line
-    return havel.limit_state(uid), line
+        return "off"
+    return havel.limit_state(uid)
 
 
 def _page_context(request: Request, uid: int, items: List[Dict[str, Any]], exchanges: List[Dict[str, str]],
                   *, topic: str = "", q: str = "", page: str = "", return_to: str = "/havel",
                   error: Optional[str] = None) -> Dict[str, Any]:
-    state, remaining = _state(request, uid)
+    state = _state(uid)
     payload, sig = havel.sign_history(uid, exchanges)
     nav = next((k for k, v in NAV_TO_PAGE.items() if v == page), "")
     ids = [p["id"] for p in _properties(request)]
     return {
-        "havel_items": items, "havel_state": state, "havel_remaining": remaining, "havel_error": error,
+        "havel_items": items, "havel_state": state, "havel_error": error,
         "havel_history": payload, "havel_history_sig": sig, "havel_topic": topic, "havel_q": q, "havel_page": page,
         "havel_return_to": return_to, "havel_max": havel.MAX_MESSAGE_CHARS,
         "havel_fresh": len(exchanges) == 0,
@@ -244,12 +242,12 @@ async def havel_send(request: Request):
                                 url = havel.page_url(page_id, reply.action.get("property_id"), host.property_ids)
                                 links.append((_t(request, "havel.card.open_form"), url))
                         items.append(_item("havel", reply_text, links=links, support=reply.kind == "escalate",
-                                           support_summary=reply.support_summary, card=card, next=reply.next,
+                                           support_summary=reply.support_summary or message, card=card, next=reply.next,
                                            not_helped=reply.kind in ("answer", "clarify")))
         if forward and _forward(request, uid, message, prior, page, forward):
             reply_text, support = _t(request, "havel.forwarded"), False
         if len(items) == 1:
-            items.append(_item("havel", reply_text, support=support))
+            items.append(_item("havel", reply_text, support=support, support_summary=message if support else None))
         if reply_text != _t(request, "havel.limit_turns"):
             exchanges.append({"host": message, "havel": reply_text})
         last = {"items": items}

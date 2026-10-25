@@ -59,7 +59,7 @@ def test_answer_renders_steps_links_and_signed_history(host):
     history = re.search(r'name="history" value="([^"]*)"', page).group(1)
     sig = re.search(r'name="history_sig" value="([^"]*)"', page).group(1)
     assert "How do I add a stay?" in history.replace("&#34;", '"').replace("&quot;", '"') and len(sig) == 64
-    assert "messages left this week" in page or "messages left this month" in page
+    assert "messages left" not in page
 
 
 def test_fragment_header_returns_only_the_thread(host):
