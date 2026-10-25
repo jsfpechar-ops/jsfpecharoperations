@@ -200,3 +200,49 @@ App/app/claim.py, App/app/mail_notify.py.
 
 1. Review the draft PR and the screenshots, then merge with `scripts/merge-pr-on-green.sh`.
 2. Deploy as usual.
+
+## Addendum A (owner, 2026-10-25): the link is for the host, not the guest
+
+Owner: "See your stay (for host) maybe? So the guest won't click it." The receipt goes to the guest with the host CC'd. The guest stay link leaves the mail; in its place a host-only link to the stay in the app. A guest who taps it only reaches the sign-in page.
+
+Files: App/app/i18n.py, App/app/guest_uk_i18n.py, App/app/mail_notify.py, App/app/claim.py, App/tests/test_guest_mail.py, the 3 previews. Nothing else.
+
+### Step A1: catalogue
+
+After each language's `"mail_completion_address_label"` entry add `mail_completion_host_action`:
+en `For your host: open this stay in UbyHost` · cs `Pro hostitele: otevřít pobyt v UbyHost` · de `Für Ihren Gastgeber: Aufenthalt in UbyHost öffnen` · es `Para su anfitrión: abrir la estancia en UbyHost` · fr `Pour votre hôte : ouvrir le séjour dans UbyHost` · uk `Для господаря: відкрити проживання в UbyHost`.
+Keep `mail_completion_action` in the catalogues (the plain-text fallback in claim.py still uses it).
+
+### Step A2: `build_completion`
+
+Add keyword param `host_url: str = ""` after `address`. Replace the "Slot 2" block (the `_block_quiet_link(stay_url, action)` line and the `text_lines.extend(["", f"{action}: {stay_url}"])` line) with:
+
+```python
+    # Slot 2: one quiet link, for the copied host only. The guest's own stay
+    # page is already open on the device that registered; a second guest
+    # link here only invited a tap with nothing behind it.
+    if host_url:
+        host_action = _guest_text(lang, "mail_completion_host_action")
+        blocks.append(_block_quiet_link(host_url, host_action))
+        text_lines.extend(["", f"{host_action}: {host_url}"])
+```
+
+Delete the now unused `action = _guest_text(lang, "mail_completion_action")` line. Keep the `stay_url` parameter (callers pass it) but it is no longer printed; change the docstring sentence about the stay link to: "The only link is for the copied host and opens the stay in the app; the guest gets no link, because their stay page is already on their device."
+
+### Step A3: claim.py
+
+In `_guest_mail_content`'s `build_completion(` call add
+`host_url=f"{config.app_base_url()}/reservations/{reservation['id']}",`.
+(`config` is already imported in claim.py.)
+
+### Step A4: tests (test_guest_mail.py)
+
+- Add `"mail_completion_host_action"` to `NEW_GUEST_KEYS`.
+- `test_the_completion_mail_links_to_the_stay`: rename to `test_the_completion_mail_links_only_the_host`; build with `host_url="https://app.example.test/reservations/1"`; assert that URL is in html and text, "For your host: open this stay in UbyHost" is in both, and the guest stay URL (`/l/{TOKEN}/1`) is in neither.
+- `test_the_completion_mail_closes_with_nothing_left_to_do`: drop the `action` assertions (keep the tuple shape or remove the field, your choice, but keep every other assertion).
+
+Commands: `cd App && .venv/bin/python -m pytest tests/test_guest_mail.py tests/test_guest_languages.py tests/test_property_names_in_mail.py tests/test_mail_side_padding.py tests/test_claim_mail.py tests/test_claim_fallback_text.py tests/test_claim_resend_complete.py -q --tb=short 2>&1 | tail -30`
+
+### Step A5: previews
+
+Re-render the 3 previews as in step 5, adding `host_url="https://app.ubyhost.com/reservations/17"` (uk with uk enabled). Commit as `0387 addendum A`. Append a 3-line "Addendum A" section to the report.
