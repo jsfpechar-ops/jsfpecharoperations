@@ -50,9 +50,13 @@ def test_the_chips_are_big_full_width_and_show_their_state(base):  # noqa: F811
         assert unsure.is_checked()
         page.locator('[data-quick-fact="pets"] label:has(input[value="no"])').click()  # a tap on the chip
         assert page.locator('[data-quick-fact="pets"] input[value="no"]').is_checked()
-        filled = page.evaluate("""() => getComputedStyle(document.querySelector('[data-quick-fact="pets"] input[value="no"] + span')).backgroundColor""")
-        plain = page.evaluate("""() => getComputedStyle(document.querySelector('[data-quick-fact="pets"] input[value="yes"] + span')).backgroundColor""")
-        assert filled != plain
+        page.wait_for_function(
+            """() => {
+                const bg = (v) => getComputedStyle(document.querySelector(`[data-quick-fact="pets"] input[value="${v}"] + span`)).backgroundColor;
+                return bg("no") !== bg("yes");
+            }""",
+            timeout=3000,
+        )  # the chip fills after its short colour transition
         page.keyboard.press("Tab")
         page.focus('[data-quick-fact="smoking"] input[value="yes"]')
         page.keyboard.press("ArrowRight")
