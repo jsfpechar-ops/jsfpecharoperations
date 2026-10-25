@@ -19,6 +19,7 @@
   {% if door == 'stay' and level == 'everyone' %}
     <p class="g-intro" data-guide-window-note>{{ t('guide_more_from_arrival') }}</p>
   {% endif %}
+  {% if leon_url %}<a class="g-leon-jump" href="#leon" data-leon-jump hidden>{{ t('leon_ask') }}</a>{% endif %}
   {% if not groups %}
     <div class="g-card" data-guide-empty>
       <p class="g-intro" style="margin-bottom:0">{{ t('guide_empty') }}</p>
@@ -51,6 +52,7 @@
       </div>
     {% endfor %}
   {% endfor %}
+  {% if leon_url %}{% include "guest/_leon.html" %}{% endif %}
 {% endif %}
 
 {% endblock %}

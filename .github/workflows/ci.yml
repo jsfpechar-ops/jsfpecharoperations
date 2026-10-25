@@ -18,14 +18,17 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: App
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -36,6 +39,14 @@ jobs:
 
       - name: Install system tools used by tests
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends age sqlite3
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+
+      - name: Passkey client logic (node)
+        working-directory: ${{ github.workspace }}
+        run: node --test App/tests/test_passkeys_client.cjs
 
       - name: Install dependencies
         run: pip install --require-hashes -r requirements.lock && pip install -r requirements-dev.txt
@@ -50,17 +61,6 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: python3 scripts/design_lint.py
 
-      - name: Type check (informational baseline)
-        continue-on-error: true
-        run: >-
-          mypy app
-          --ignore-missing-imports
-          --follow-imports=skip
-          --allow-untyped-defs
-          --allow-untyped-calls
-          --allow-incomplete-defs
-          --disable-error-code=var-annotated
-
       - name: Run tests with coverage
         env:
           UBYHOST_UBYPORT_ENV: mock
@@ -73,75 +73,36 @@ jobs:
           --cov-fail-under=86
           --junitxml=/tmp/ubyhost-tests.xml
 
-      - name: Annotate failed tests
-        id: test_failures
-        if: failure()
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import xml.etree.ElementTree as ET
-          failures = []
-          report = Path("/tmp/ubyhost-tests.xml")
-          if report.exists():
-              for case in ET.parse(report).iter("testcase"):
-                  failure = case.find("failure")
-                  if failure is None:
-                      failure = case.find("error")
-                  if failure is not None:
-                      title = (case.get("classname", "") + "." + case.get("name", ""))[:200]
-                      detail = (failure.text or failure.get("message", ""))[-6000:]
-                      detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-                      print(f"::error title={title}::{detail}")
-                      failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              for index, detail in enumerate(failures[:8], 1):
-                  output.write(f"failure_{index}={detail}\n")
-          PY
+      - name: Test report
+        id: report
+        if: always()
+        run: python3 ${{ github.workspace }}/scripts/ci_junit.py /tmp/ubyhost-tests.xml Tests
 
-      - name: ${{ steps.test_failures.outputs.failure_1 || 'Test failure detail 1' }}
-        if: failure() && steps.test_failures.outputs.failure_1 != ''
+      - name: ${{ steps.report.outputs.failure_1 || 'Failure detail 1' }}
+        if: failure() && steps.report.outputs.failure_1 != ''
         run: 'true'
 
-      - name: ${{ steps.test_failures.outputs.failure_2 || 'Test failure detail 2' }}
-        if: failure() && steps.test_failures.outputs.failure_2 != ''
+      - name: ${{ steps.report.outputs.failure_2 || 'Failure detail 2' }}
+        if: failure() && steps.report.outputs.failure_2 != ''
         run: 'true'
 
-      - name: ${{ steps.test_failures.outputs.failure_3 || 'Test failure detail 3' }}
-        if: failure() && steps.test_failures.outputs.failure_3 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_4 || 'Test failure detail 4' }}
-        if: failure() && steps.test_failures.outputs.failure_4 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_5 || 'Test failure detail 5' }}
-        if: failure() && steps.test_failures.outputs.failure_5 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_6 || 'Test failure detail 6' }}
-        if: failure() && steps.test_failures.outputs.failure_6 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_7 || 'Test failure detail 7' }}
-        if: failure() && steps.test_failures.outputs.failure_7 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_8 || 'Test failure detail 8' }}
-        if: failure() && steps.test_failures.outputs.failure_8 != ''
+      - name: ${{ steps.report.outputs.failure_3 || 'Failure detail 3' }}
+        if: failure() && steps.report.outputs.failure_3 != ''
         run: 'true'
 
   smoke:
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: App
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -179,21 +140,26 @@ jobs:
           done
           python tools/smoke.py http://127.0.0.1:18080
 
-  guest-browser:
-    # The guest pages driven in real Chromium, the way a guest on a phone uses
-    # them: group size, claim e-mail, one signed form per person, layout
-    # measured on every screen. Markup tests alone let a blank group size, a
-    # 0 x 0 signature pad and a misaligned date of birth reach guests.
+  browser-shard:
+    # Every browser test, collected by pattern so none can be forgotten.
+    # Four shards run in parallel; each needs Chromium, some need WebKit.
+    name: browser shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     defaults:
       run:
         working-directory: App
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -202,142 +168,106 @@ jobs:
             App/requirements.lock
             App/requirements-dev.txt
 
-      - name: Install dependencies and Chromium
+      - name: Install dependencies, Chromium and WebKit
         run: |
           pip install --require-hashes -r requirements.lock && pip install -r requirements-dev.txt
           pip install playwright==1.63.0
-          python -m playwright install --with-deps chromium
+          python -m playwright install --with-deps chromium webkit
 
-      - name: Walk the guest flow in a browser
+      - name: Pick this shard's files
+        id: files
+        run: |
+          files="$(printf '%s\n' tests/*_browser.py tests/test_guest_browser_e2e.py tests/test_host_geometry.py \
+            tests/test_wp28_geometry.py tests/test_onboarding_wizard_survival.py | sort -u \
+            | awk -v n=4 -v s=${{ matrix.shard }} '(NR - 1) % n == s - 1' | tr '\n' ' ')"
+          echo "files=${files}" >> "$GITHUB_OUTPUT"
+          echo "Shard ${{ matrix.shard }}: ${files}"
+
+      - name: Run browser tests
         env:
           UBYHOST_UBYPORT_ENV: mock
           UBYHOST_DEPLOYMENT: staging
           UBYHOST_ENABLE_SCHEDULER: "0"
           UBYHOST_REQUIRE_BROWSER: "1"
-          UBYHOST_SHOTS_DIR: ${{ runner.temp }}/dashboard-calendar-shots
-          UBYHOST_WIDE_GEOMETRY_DIR: ${{ runner.temp }}/dashboard-calendar-shots/wide
+          UBYHOST_SHELL_BROWSERS: chromium,webkit
+          UBYHOST_SHOTS_DIR: ${{ runner.temp }}/browser-shots
+          UBYHOST_WIDE_GEOMETRY_DIR: ${{ runner.temp }}/browser-shots/wide
           UBYHOST_CAPTURE_FILTERS: "1"
+          UBYHOST_PASSKEY_SHOTS: ${{ runner.temp }}/browser-shots/passkey
         # REQUIRE_BROWSER turns "Chromium is missing" from a skip into a failure.
-        run: >-
-          python -m pytest tests/test_guest_browser_e2e.py tests/test_host_geometry.py
-          tests/test_onboarding_wizard_browser.py tests/test_onboarding_wizard_survival.py
-          tests/test_download_skeleton_browser.py tests/test_onboarding_followup_browser.py
-          tests/test_host_stay_actions_browser.py tests/test_host_stay_detail_layout_browser.py
-          tests/test_host_quiet_dashboard_browser.py tests/test_dashboard_calendar_browser.py tests/test_cleaning_browser.py tests/test_host_list_layouts_browser.py tests/test_host_filter_panels_browser.py tests/test_host_wide_geometry_browser.py tests/test_design_guardrails_browser.py tests/test_a11y_guard_browser.py tests/test_lock_navigation_browser.py tests/test_property_navigation_browser.py::test_shared_timing_pair_is_owned_by_properties -q -rs --junitxml=/tmp/ubyhost-tests.xml
+        run: python -m pytest ${{ steps.files.outputs.files }} -q -rs --junitxml=/tmp/ubyhost-tests.xml
+
+      - name: Passkey login on WebKit
+        if: matrix.shard == 1
+        env:
+          PASSKEY_BROWSER: webkit
+          UBYHOST_REQUIRE_BROWSER: "1"
+          UBYHOST_UBYPORT_ENV: mock
+          UBYHOST_DEPLOYMENT: staging
+          UBYHOST_ENABLE_SCHEDULER: "0"
+          UBYHOST_PASSKEY_SHOTS: ${{ runner.temp }}/browser-shots/passkey-webkit
+        run: python -m pytest tests/test_passkeys_client_browser.py -q -rs --junitxml=/tmp/passkey-webkit.xml
 
 
-      - name: Summarize required browser checks
+      - name: Test report
+        id: report
         if: always()
-        id: browser_summary
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import xml.etree.ElementTree as ET
-          report = Path("/tmp/ubyhost-tests.xml")
-          if not report.exists():
-              raise SystemExit("Required browser report is missing")
-          cases = list(ET.parse(report).iter("testcase"))
-          failed = sum(case.find("failure") is not None or case.find("error") is not None for case in cases)
-          skipped = sum(case.find("skipped") is not None for case in cases)
-          summary = f"Browser checks: {len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped"
-          print(summary)
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write("summary=" + summary + "\n")
-          if skipped:
-              raise SystemExit("Required browser checks must have zero skips")
-          PY
+        run: python3 ${{ github.workspace }}/scripts/ci_junit.py /tmp/ubyhost-tests.xml "Browser shard ${{ matrix.shard }}" --no-skips
 
-      - name: ${{ steps.browser_summary.outputs.summary || 'Browser check summary' }}
+      - name: ${{ steps.report.outputs.summary || 'Browser summary' }}
         if: always()
         run: 'true'
 
-      - name: Upload calendar and dashboard review screenshots
+      - name: ${{ steps.report.outputs.failure_1 || 'Failure detail 1' }}
+        if: failure() && steps.report.outputs.failure_1 != ''
+        run: 'true'
+
+      - name: ${{ steps.report.outputs.failure_2 || 'Failure detail 2' }}
+        if: failure() && steps.report.outputs.failure_2 != ''
+        run: 'true'
+
+      - name: ${{ steps.report.outputs.failure_3 || 'Failure detail 3' }}
+        if: failure() && steps.report.outputs.failure_3 != ''
+        run: 'true'
+
+      - name: Upload screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: dashboard-calendar-review
-          path: ${{ runner.temp }}/dashboard-calendar-shots
+          name: browser-shots-${{ matrix.shard }}
+          path: |
+            ${{ runner.temp }}/browser-shots
+            docs/tasks/0102-evidence/
           if-no-files-found: warn
 
-      - name: Annotate failed tests
-        id: test_failures
-        if: failure()
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import xml.etree.ElementTree as ET
-          failures = []
-          report = Path("/tmp/ubyhost-tests.xml")
-          if report.exists():
-              for case in ET.parse(report).iter("testcase"):
-                  failure = case.find("failure")
-                  if failure is None:
-                      failure = case.find("error")
-                  if failure is not None:
-                      title = (case.get("classname", "") + "." + case.get("name", ""))[:200]
-                      detail = (failure.text or failure.get("message", ""))[-6000:]
-                      detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-                      print(f"::error title={title}::{detail}")
-                      failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              for index, detail in enumerate(failures[:8], 1):
-                  output.write(f"failure_{index}={detail}\n")
-          PY
+  browser:
+    # The one name the deploy gate and the main ruleset require.
+    if: always()
+    needs: browser-shard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All browser shards passed
+        run: test "${{ needs.browser-shard.result }}" = "success"
 
-      - name: ${{ steps.test_failures.outputs.failure_1 || 'Test failure detail 1' }}
-        if: failure() && steps.test_failures.outputs.failure_1 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_2 || 'Test failure detail 2' }}
-        if: failure() && steps.test_failures.outputs.failure_2 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_3 || 'Test failure detail 3' }}
-        if: failure() && steps.test_failures.outputs.failure_3 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_4 || 'Test failure detail 4' }}
-        if: failure() && steps.test_failures.outputs.failure_4 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_5 || 'Test failure detail 5' }}
-        if: failure() && steps.test_failures.outputs.failure_5 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_6 || 'Test failure detail 6' }}
-        if: failure() && steps.test_failures.outputs.failure_6 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_7 || 'Test failure detail 7' }}
-        if: failure() && steps.test_failures.outputs.failure_7 != ''
-        run: 'true'
-
-      - name: ${{ steps.test_failures.outputs.failure_8 || 'Test failure detail 8' }}
-        if: failure() && steps.test_failures.outputs.failure_8 != ''
-        run: 'true'
-
-      - name: Upload onboarding screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: onboarding-wizard-screenshots
-          path: docs/tasks/0102-evidence/
-          if-no-files-found: warn
 
   shellcheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: shellcheck deploy and backup scripts (errors only)
         run: shellcheck -S error deploy/lightsail/scripts/*.sh App/scripts/*.sh docker-entrypoint.sh App/run.sh App/render_start.sh render_start.sh
 
   docker:
     runs-on: ubuntu-latest
-    needs: test
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Build image
         run: docker build -t ubyhost:ci .
       - name: Start container and wait for healthz
@@ -354,200 +284,27 @@ jobs:
 
   context:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
-        with: { fetch-depth: 50 }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { fetch-depth: 50, persist-credentials: false }
       - name: context lint (caps, links, briefs)
         run: python3 scripts/context_lint.py
+      - name: Migration guard
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=50 origin "${BASE_REF}"
+          python3 scripts/migration_guard.py "origin/${BASE_REF}"
 
   secrets:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
-        with: { fetch-depth: 50 }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { fetch-depth: 50, persist-credentials: false }
       - name: gitleaks (last 50 commits)
         run: >-
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2
           detect --source=/repo --redact --log-opts="-n 50"
-
-  calendar-review:
-    # Fast feature feedback runs alongside the full required regression suite.
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: App
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: |
-            App/requirements.lock
-            App/requirements-dev.txt
-      - name: Install dependencies and Chromium
-        run: |
-          pip install --require-hashes -r requirements.lock && pip install -r requirements-dev.txt
-          pip install playwright==1.63.0
-          python -m playwright install --with-deps chromium
-      - name: Exercise calendar booking interactions and geometry
-        env:
-          UBYHOST_UBYPORT_ENV: mock
-          UBYHOST_DEPLOYMENT: staging
-          UBYHOST_ENABLE_SCHEDULER: "0"
-          UBYHOST_REQUIRE_BROWSER: "1"
-          UBYHOST_SHOTS_DIR: ${{ runner.temp }}/calendar-feature-shots
-        run: >-
-          python -m pytest tests/test_cleaning.py tests/test_cleaning_browser.py
-          tests/test_dashboard_calendar.py tests/test_dashboard_calendar_browser.py
-          -q -rs --junitxml=/tmp/calendar-review.xml
-      - name: Summarize calendar checks
-        if: always()
-        id: calendar_summary
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import xml.etree.ElementTree as ET
-          report = Path("/tmp/calendar-review.xml")
-          if not report.exists():
-              raise SystemExit("Calendar test report is missing")
-          cases = list(ET.parse(report).iter("testcase"))
-          failed = sum(case.find("failure") is not None or case.find("error") is not None for case in cases)
-          skipped = sum(case.find("skipped") is not None for case in cases)
-          summary = f"Calendar checks: {len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped"
-          print(summary)
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write("summary=" + summary + "\n")
-          if skipped:
-              raise SystemExit("Calendar checks must have zero skips")
-          PY
-      - name: ${{ steps.calendar_summary.outputs.summary || 'Calendar check summary' }}
-        if: always()
-        run: 'true'
-      - name: Annotate calendar failures
-        if: failure()
-        id: calendar_failures
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import xml.etree.ElementTree as ET
-          failures = []
-          path = Path("/tmp/calendar-review.xml")
-          if path.exists():
-              for case in ET.parse(path).iter("testcase"):
-                  failure = case.find("failure")
-                  if failure is None:
-                      failure = case.find("error")
-                  if failure is not None:
-                      title = (case.get("classname", "") + "." + case.get("name", ""))[:200]
-                      detail = (failure.text or failure.get("message", ""))[-6000:]
-                      detail = detail.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-                      print(f"::error title={title}::{detail}")
-                      failures.append(title + ": " + " ".join((failure.text or failure.get("message", "")).split())[-3500:])
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              for index, detail in enumerate(failures[:4], 1):
-                  output.write(f"failure_{index}={detail}\n")
-          PY
-      - name: ${{ steps.calendar_failures.outputs.failure_1 || 'Calendar failure detail 1' }}
-        if: failure() && steps.calendar_failures.outputs.failure_1 != ''
-        run: 'true'
-      - name: ${{ steps.calendar_failures.outputs.failure_2 || 'Calendar failure detail 2' }}
-        if: failure() && steps.calendar_failures.outputs.failure_2 != ''
-        run: 'true'
-      - name: ${{ steps.calendar_failures.outputs.failure_3 || 'Calendar failure detail 3' }}
-        if: failure() && steps.calendar_failures.outputs.failure_3 != ''
-        run: 'true'
-      - name: ${{ steps.calendar_failures.outputs.failure_4 || 'Calendar failure detail 4' }}
-        if: failure() && steps.calendar_failures.outputs.failure_4 != ''
-        run: 'true'
-      - name: Upload calendar feature screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: calendar-feature-review
-          path: ${{ runner.temp }}/calendar-feature-shots
-          if-no-files-found: warn
-
-  door-code-access-review:
-    # Focused geometry and timing checks run without waiting for the full suite.
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: App
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: |
-            App/requirements.lock
-            App/requirements-dev.txt
-      - name: Install dependencies and both browser engines
-        run: |
-          pip install --require-hashes -r requirements.lock && pip install -r requirements-dev.txt
-          pip install playwright==1.63.0
-          python -m playwright install --with-deps chromium webkit
-      - name: Verify actual code hours and disclosure geometry
-        env:
-          UBYHOST_UBYPORT_ENV: mock
-          UBYHOST_DEPLOYMENT: staging
-          UBYHOST_ENABLE_SCHEDULER: "0"
-          UBYHOST_REQUIRE_BROWSER: "1"
-          UBYHOST_SHOTS_DIR: ${{ runner.temp }}/door-code-shots
-        run: >-
-          python -m pytest tests/test_door_code_window.py tests/test_door_code_window_browser.py
-          tests/test_onboarding_wizard_survival.py tests/test_times_required_0210.py
-          tests/test_static_versions.py -q -rs --junitxml=/tmp/door-code-review.xml
-      - name: Require zero skipped disclosure checks
-        id: disclosure_summary
-        if: always()
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import xml.etree.ElementTree as ET
-          path = Path("/tmp/door-code-review.xml")
-          if not path.exists():
-              raise SystemExit("Disclosure test report is missing")
-          cases = list(ET.parse(path).iter("testcase"))
-          skipped = sum(case.find("skipped") is not None for case in cases)
-          failed = sum(case.find("failure") is not None or case.find("error") is not None for case in cases)
-          print(f"Disclosure checks: {len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped")
-          details = []
-          for case in cases:
-              failure = case.find("failure")
-              if failure is None:
-                  failure = case.find("error")
-              if failure is not None:
-                  details.append(case.get("name", "") + ": " + " ".join((failure.text or failure.get("message", "")).split())[-7000:])
-          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-              output.write(f"summary={len(cases) - failed - skipped} passed, {failed} failed, {skipped} skipped\n")
-              for index, detail in enumerate(details[:3], 1):
-                  output.write(f"failure_{index}={detail}\n")
-          if not cases or skipped or failed:
-              raise SystemExit("All disclosure checks must pass with zero skips")
-          PY
-      - name: ${{ steps.disclosure_summary.outputs.summary || 'Disclosure check summary' }}
-        if: always()
-        run: 'true'
-      - name: ${{ steps.disclosure_summary.outputs.failure_1 || 'Disclosure failure detail 1' }}
-        if: failure() && steps.disclosure_summary.outputs.failure_1 != ''
-        run: 'true'
-      - name: ${{ steps.disclosure_summary.outputs.failure_2 || 'Disclosure failure detail 2' }}
-        if: failure() && steps.disclosure_summary.outputs.failure_2 != ''
-        run: 'true'
-      - name: ${{ steps.disclosure_summary.outputs.failure_3 || 'Disclosure failure detail 3' }}
-        if: failure() && steps.disclosure_summary.outputs.failure_3 != ''
-        run: 'true'
-      - name: Upload disclosure screenshots and test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: door-code-access-review
-          path: |
-            ${{ runner.temp }}/door-code-shots
-            /tmp/door-code-review.xml
-          if-no-files-found: error

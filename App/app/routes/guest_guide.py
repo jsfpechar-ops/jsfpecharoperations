@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 
-from .. import access, auth, config, guest_guide, guest_guide_import, guide_photos, guide_token, payments, security, templating
+from .. import access, auth, config, guest_guide, guest_guide_import, guest_handoff, guest_guide_merge, guide_photos, guide_token, payments, security, templating
 from .admin_helpers import back, flash
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
@@ -79,6 +79,8 @@ def guide_index(request: Request, apartment_id: int):
         import_left=guest_guide_import.imports_left(apartment_id),
         import_busy=guest_guide_import.in_progress(apartment_id),
         imports=guest_guide_import.imports(apartment_id),
+        import_drafts=guest_guide_merge.drafted_count(apartment_id),
+        questions_open=guest_handoff.open_count(apartment_id),
     )
 
 
@@ -185,6 +187,17 @@ async def guide_card_save(request: Request, apartment_id: int, item_id: int):
         if next_id:
             return back(f"{_base(apartment_id)}/{next_id}", msg=flash(request, "flash.guest_guide.saved"))
     return back(_base(apartment_id), msg=flash(request, "flash.guest_guide.saved"))
+
+
+@router.post("/apartments/{apartment_id}/guide/{item_id}/discard")
+def guide_card_discard(request: Request, apartment_id: int, item_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    if not guest_guide.discard_draft(apartment_id, item_id):
+        raise HTTPException(404)
+    return back(f"{_base(apartment_id)}/{item_id}", msg=flash(request, "flash.guest_guide.discarded"))
 
 
 @router.post("/apartments/{apartment_id}/guide/{item_id}/skip")

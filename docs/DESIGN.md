@@ -493,7 +493,7 @@ size, a signature pad that saved nothing and a date of birth a line too low.
    and 390px (WP26), and in Czech, and measures every screen:
    no sideways scroll, no clipped text, equal box heights, side-by-side fields
    level, even field spacing, 44px tap targets, no visible screen-reader text.
-   CI runs it in the `guest-browser` job.
+   CI runs it in the `browser` job.
 3. Bump the `?v=` cache key in `guest/base.html` for every CSS or JS file you
    changed, or phones keep the old file.
 4. Click through it yourself on a phone once: group of 2+, sign, save, next guest.

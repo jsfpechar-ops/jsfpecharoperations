@@ -126,6 +126,13 @@ def test_an_urgent_question_turns_the_line_red_and_mails_at_once(ws):
     assert alerts.open_alert(key)["level"] == "warning", "back to amber once the urgent row is handled"
 
 
+def test_a_second_open_urgent_question_does_not_mail_again(ws):
+    _ask(ws["home"], door="qr", text="Fire in the kitchen", summary="Fire.", urgent=True)
+    assert len(_outbox()) == 1, "the first urgent question mails"
+    _ask(ws["home"], door="qr", text="Fire again", summary="Fire again.", urgent=True)
+    assert len(_outbox()) == 1, "a repeated urgent question does not flood the host's mailbox"
+
+
 def test_an_unread_question_shows_the_guests_words_per_line(ws):
     words = "Where is the iron?\nAlso the hair dryer does not work."
     qid, _ = _ask(ws["home"], text="Where is the iron?", summary=words, triaged=False)

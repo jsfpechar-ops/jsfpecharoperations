@@ -21,6 +21,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 
 from .. import claim, guest_guide, guide_photos, guide_token, host_i18n, mail, rate_limit
 from ..templating import render_guest
+from .. import ai, leon  # 0352: the Leon (AI) chat
 from .guest import (
     _device_holds_claim,
     _host_owns_apartment,
@@ -99,7 +100,8 @@ def _groups(cards: List[Dict[str, Any]], lang: str):
     return groups
 
 
-def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level: str, photo_url, back_url: str = ""):
+def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level: str, photo_url, back_url: str = "",
+          leon_url: str = ""):
     live = guest_guide.progress(apartment["id"])["live"]
     cards = _cards(apartment["id"], level, lang, photo_url) if live else []
     context.update(
@@ -108,6 +110,9 @@ def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level
             "level": level,
             "groups": _groups(cards, lang),
             "back_url": back_url,
+            # 0352: the chat only while the guide is live and Leon is switched on.
+            "leon_url": leon_url if live and ai.enabled("leon") else "",
+            "leon_host": leon.host_first_name((context.get("host") or {}).get("name", "")),
         }
     )
     response = render_guest(request, "guest/guide.html", context)
@@ -169,7 +174,7 @@ def stay_guide(token: str, reservation_id: int, request: Request):
     return _page(
         request, lang, apartment, context, level,
         lambda item_id, photo_id: f"{base}/guide/photos/{item_id}/{photo_id}",
-        back_url=f"{base}?lang={lang}",
+        back_url=f"{base}?lang={lang}", leon_url=f"{base}/guide/leon",
     )
 
 
@@ -208,7 +213,7 @@ def qr_guide(token: str, request: Request):
     context["host"] = {"name": (context.get("host") or {}).get("name", "")}
     return _page(
         request, lang, apartment, context, "everyone",
-        lambda item_id, photo_id: f"/g/{token}/photos/{item_id}/{photo_id}",
+        lambda item_id, photo_id: f"/g/{token}/photos/{item_id}/{photo_id}", leon_url=f"/g/{token}/leon",
     )
 
 
