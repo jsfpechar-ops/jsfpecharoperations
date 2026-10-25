@@ -206,6 +206,11 @@
       <p>{{ t('guide.invoices.body') }}</p>
       <p>{{ t('guide.invoices.when') }}</p>
       <p>{{ t('guide.invoices.flow') }}</p>
+      <p class="ui-sub">{{ t('guide.invoices.settings') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 7) %}<li>{{ t('guide.invoices.how' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 4) %}<li>{{ t('guide.invoices.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
     <section class="guide-section ui-section ui-section-plain" id="settings">
