@@ -61,8 +61,9 @@
 {% endmacro %}
 
 {#- 0241 (idea N): one line of "What needs you": subject, one sentence, one button. -#}
-{% macro needs_you_line(line) %}
+{% macro needs_you_line(line, first=False) %}
 <li class="needs-you-item" data-tone="{{ line.tone }}" data-needs-you="{{ line.kind }}"{% if line.stay_id %} data-needs-you-stay="{{ line.stay_id }}"{% endif %}{% if line.dismiss_id %} data-notification{% endif %}>
+  <span class="needs-you-icon" aria-hidden="true">{{ icon('triangle-alert' if line.tone == 'red' else 'info', 18) }}</span>
   <div class="needs-you-copy"><strong>{{ line.subject }}</strong>{% if line.text %}<span>{{ line.text }}</span>{% endif %}</div>
   {% if line.kind == 'paste' %}
   <details class="needs-you-more" data-paste-check><summary>{{ t('workflow.paste.how') }}</summary>
@@ -75,7 +76,7 @@
   {% endif %}
   {% if line.href or line.dismiss_id %}
   <div class="needs-you-actions">
-    {% if line.href %}{{ ui_button(line.action, 'open', href=line.href, attrs='data-needs-you-go') }}{% endif %}
+    {% if line.href %}{{ ui_button(line.action, ('primary' if first else 'secondary'), href=line.href, attrs='data-needs-you-go') }}{% endif %}
     {% if line.dismiss_id %}<form method="post" action="/alerts/{{ line.dismiss_id }}/dismiss" class="needs-you-dismiss" data-notification-dismiss>{{ ui_icon_button(t('a11y.dismiss_notification'), 'x', type='submit') }}</form>{% endif %}
   </div>
   {% endif %}
@@ -101,7 +102,7 @@
   <section class="needs-you" id="needs-action" data-needs-you-card aria-labelledby="needs-you-title">
     <h2 id="needs-you-title">{{ t('needs_you.title') }}{% if ny_lines %} <span class="ui-badge ui-badge-action" data-tone="{{ 'red' if ny_lines[0].tone == 'red' else 'amber' }}">{{ ny_lines | length }}</span>{% endif %}</h2>
     {% if ny_lines %}
-    <ul class="needs-you-list">{% for line in ny_lines[:5] %}{{ needs_you_line(line) }}{% endfor %}</ul>
+    <ul class="needs-you-list">{% for line in ny_lines[:5] %}{{ needs_you_line(line, loop.first) }}{% endfor %}</ul>
     {% if ny_lines | length > 5 %}
     <details class="needs-you-more"><summary>{{ tp('needs_you.more', ny_lines | length - 5) }}</summary>
       <ul class="needs-you-list">{% for line in ny_lines[5:] %}{{ needs_you_line(line) }}{% endfor %}</ul>

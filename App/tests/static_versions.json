@@ -88,8 +88,8 @@
     "v": "20261023-door-code-window"
   },
   "host2.css": {
-    "sha256": "98fd8bc63ba263d79cf1d61392817b6fcb6caff7e36f86dced39a8a51994daa3",
-    "v": "20261025-0374c"
+    "sha256": "7fcb3ad39022a282d8a0dc932ed77e6016c865c6c4c9e8ce2dc9ab401690e1a5",
+    "v": "20261025-0375"
   },
   "landing.css": {
     "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",
@@ -144,7 +144,7 @@
     "v": "20261022-0274"
   },
   "workflow.css": {
-    "sha256": "b3d00d8c77786ed70e1d036c2fbf019e30baeaf08a1d393bc160279d0e37fa07",
-    "v": "20261024-0355"
+    "sha256": "c459966c81c8660e3039e1b0be2573f48755b402ac5e33266f4aae7f8ba9820f",
+    "v": "20261025-0375"
   }
 }
