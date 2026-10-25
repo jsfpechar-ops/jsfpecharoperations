@@ -38,12 +38,12 @@ def _render(request: Request, name: str, status_code: int = 200, **values):
     return response
 
 
-def _card(request: Request, apartment, item, values, error: str = "", status_code: int = 200):
+def _card(request: Request, apartment, item, values, error: str = "", status_code: int = 200, *, from_leon: bool = False):
     return _render(
         request, "guest_guide_card.html", status_code=status_code,
         apartment=apartment, item=item, values=values, error=error,
         photos=guide_photos.photos(apartment["id"], item["id"]),
-        max_photos=guide_photos.MAX_PER_ITEM,
+        max_photos=guide_photos.MAX_PER_ITEM, from_leon=from_leon,
     )
 
 
@@ -132,6 +132,8 @@ def leon_page(request: Request, apartment_id: int):
     if not ai.enabled_for_property(leon.FEATURE, apartment_id):
         raise HTTPException(404)
     progress = guest_guide.progress(apartment_id)
+    if leon.host_state(apartment, bool(progress["live"])) in ("off", "terms"):
+        return back(f"/apartments/{apartment_id}/leon/setup")
     accepted = None
     if apartment["leon_terms_accepted_by"]:
         accepted = db.query_one("SELECT email FROM user_account WHERE id = ?", (apartment["leon_terms_accepted_by"],))
@@ -159,8 +161,10 @@ async def leon_save(request: Request, apartment_id: int):
     if form.get("action") == "on":
         if not ai.enabled_for_property(leon.FEATURE, apartment_id):
             raise HTTPException(404)
+        setup = form.get("next") == "setup"
         if form.get("terms") != "1":
-            return back(page, err=flash(request, "flash.error.leon_terms"))
+            return back(f"/apartments/{apartment_id}/leon/setup/switch_on" if setup else page,
+                        err=flash(request, "flash.error.leon_terms"))
         account = auth.current_user(request)
         db.execute(
             "UPDATE apartment SET leon_enabled = 1, leon_terms_version = ?, leon_terms_accepted_at = ?, "
@@ -168,7 +172,8 @@ async def leon_save(request: Request, apartment_id: int):
             (leon.LEON_TERMS_VERSION, db.utcnow(), account["id"] if account else None, apartment_id),
         )
         db.audit("leon_terms_accepted", f"apartment={apartment_id} version={leon.LEON_TERMS_VERSION}")
-        return back(page, msg=flash(request, "flash.guest_guide.leon_on"))
+        return back(f"/apartments/{apartment_id}/leon/setup" if setup else page,
+                    msg=flash(request, "flash.guest_guide.leon_on"))
     return back(page)
 
 
@@ -304,7 +309,16 @@ def guide_card(request: Request, apartment_id: int, item_id: int):
     item = guest_guide.get(apartment_id, item_id)
     if not item:
         raise HTTPException(404)
-    return _card(request, apartment, item, item)
+    return _card(request, apartment, item, item, from_leon=request.query_params.get("from") == "leon")
+
+
+def _leon_after_save(apartment_id: int, item_id: int, then: Optional[str]):
+    """0404: a card opened from the Leon setup wizard returns to the wizard."""
+    if then == "next":
+        next_id = _next_open(apartment_id, item_id)
+        if next_id:
+            return back(f"{_base(apartment_id)}/{next_id}?from=leon")
+    return back(f"/apartments/{apartment_id}/leon/setup/cards")
 
 
 @router.post("/apartments/{apartment_id}/guide/{item_id}")
@@ -323,7 +337,10 @@ async def guide_card_save(request: Request, apartment_id: int, item_id: int):
         guest_guide.save(apartment_id, item_id, fields)
     except guest_guide.GuideError as exc:
         values = {**item, **{k: str(v) for k, v in fields.items()}}
-        return _card(request, apartment, item, values, error=exc.key, status_code=422)
+        return _card(request, apartment, item, values, error=exc.key, status_code=422,
+                     from_leon=form.get("from") == "leon")
+    if form.get("from") == "leon":
+        return _leon_after_save(apartment_id, item_id, form.get("then"))
     if form.get("then") == "next":
         next_id = _next_open(apartment_id, item_id)
         if next_id:
@@ -353,6 +370,8 @@ async def guide_card_skip(request: Request, apartment_id: int, item_id: int):
         guest_guide.skip(apartment_id, item_id, skipped=form.get("skip") == "1")
     except guest_guide.GuideError:
         raise HTTPException(404) from None
+    if form.get("from") == "leon":
+        return _leon_after_save(apartment_id, item_id, form.get("then"))
     return back(_base(apartment_id))
 
 
