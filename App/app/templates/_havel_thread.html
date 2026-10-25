@@ -1,0 +1,26 @@
+{#- 0312: Havel's thread. Host bubbles right, Havel bubbles left with the AI label.
+    Numbered steps render as a list. Links are buttons under the bubble; a card
+    (0314) sits under the bubble, never inside it. -#}
+{% from "_icons.html" import icon with context %}
+{% for item in havel_items %}
+  {% if item.role == 'host' %}
+  <div class="havel-msg havel-msg-host"><span class="sr-only">{{ t('havel.you') }}: </span>
+    <div class="havel-bubble">{% for b in item.blocks %}<p>{{ b.text if b.kind == 'p' else b['items'] | join(' ') }}</p>{% endfor %}</div>
+  </div>
+  {% else %}
+  <div class="havel-msg havel-msg-havel" tabindex="-1">
+    <div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span><span class="havel-name">{{ t('havel.name') }}</span></div>
+    <div class="havel-bubble">
+      {% for b in item.blocks %}{% if b.kind == 'ol' %}<ol>{% for step in b['items'] %}<li>{{ step }}</li>{% endfor %}</ol>{% else %}<p>{{ b.text }}</p>{% endif %}{% endfor %}
+    </div>
+    {% if item.card %}{% include "_havel_card.html" %}{% endif %}
+    {% if item.links or item.support %}
+    <div class="havel-links">
+      {% for label, url in item.links %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ url }}">{{ label }}{{ icon('chevron-right', 16) }}</a>{% endfor %}
+      {% if item.support and operator().email %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="mailto:{{ operator().email }}{% if item.support_summary %}?body={{ item.support_summary | urlencode }}{% endif %}">{{ icon('send', 16) }}{{ t('havel.support.mailto') }}</a>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endfor %}
+{% if havel_fragment %}<div hidden data-havel-state data-history="{{ havel_history }}" data-sig="{{ havel_history_sig }}" data-remaining="{{ havel_remaining }}" data-state="{{ havel_state or '' }}"{% if havel_error %} data-error="{{ havel_error }}"{% endif %}></div>{% endif %}

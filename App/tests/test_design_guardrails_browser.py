@@ -45,6 +45,7 @@ ROUTES.update({
     "setup-automation": "/apartments/{property_id}/setup/automation",
     "setup-try-it": "/apartments/{property_id}/setup/try_it",
     "settings-account": "/settings",
+    "havel": "/havel",
 })
 
 
