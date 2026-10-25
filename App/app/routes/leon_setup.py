@@ -1,12 +1,15 @@
 """0404: the Leon setup wizard: switch on, import the listing, check the cards, try, done."""
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import JSONResponse
 
-from .. import ai, auth, guest_guide, guest_guide_import, guest_guide_merge, leon, security
+from .. import ai, auth, guest_guide, guest_guide_import, guest_guide_merge, host_i18n, leon, security
 from .admin_helpers import back
+from .guest import _host_contact
 from .guest_guide import _home, _render
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
@@ -58,6 +61,10 @@ def setup_entry(request: Request, apartment_id: int):
 
 @router.get("/apartments/{apartment_id}/leon/setup/{step}")
 def setup_step_page(request: Request, apartment_id: int, step: str):
+    return _step_page(request, apartment_id, step)
+
+
+def _step_page(request: Request, apartment_id: int, step: str, asked: str = "", answer: Optional[Dict[str, Any]] = None):
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -87,6 +94,7 @@ def setup_step_page(request: Request, apartment_id: int, step: str):
         number=index + 1 if index is not None else None, total=TOTAL, prev_step=prev_step,
         done_steps=done_steps, state=state,
         next_id=open_cards[0]["id"] if open_cards else None, **facts,
+        **_try_context(apartment_id, step, asked, answer),
     )
 
 
@@ -103,3 +111,36 @@ async def setup_save(request: Request, apartment_id: int):
     if action == "finish":
         return back(f"/apartments/{apartment_id}/leon/setup/done")
     return back(f"/apartments/{apartment_id}/leon/setup")
+
+
+def _try_context(apartment_id: int, step: str, asked: str, answer: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    if step != "try":
+        return {}
+    return {"try_left": leon.try_left(apartment_id), "try_max": leon.TRY_MAX, "asked": asked, "answer": answer or {}}
+
+
+@router.post("/apartments/{apartment_id}/leon/setup/try")
+async def setup_try(request: Request, apartment_id: int):
+    """0405: one test message to Leon, as a booked guest would ask it. Nothing is stored."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = _offered(request, apartment_id)
+    if not leon.switched_on(apartment) or not _facts(apartment_id)["live"]:
+        raise HTTPException(404)
+    form = await request.form()
+    message = str(form.get("message") or "")
+    host_lang = host_i18n.lang_from_request(request)
+    guest_lang = "cs" if host_lang == "cs" else "en"
+    host = _host_contact(apartment).get("name", "")
+    result = await run_in_threadpool(leon.try_reply, apartment, message, lang=guest_lang, host_name=host)
+    text = result["text"]
+    if result["kind"] == "cap":
+        text = host_i18n.translate(host_lang, "leon_setup.try.cap")
+    elif result["kind"] == "no_guide":
+        text = host_i18n.translate(host_lang, "leon_page.not_live")
+    result = dict(result, text=text)
+    note = host_i18n.translate(host_lang, "leon_setup.try.would_ask") if result["would_ask"] else ""
+    if "application/json" in request.headers.get("accept", ""):
+        return JSONResponse(dict(result, note=note), headers={"Cache-Control": "no-store"})
+    return _step_page(request, apartment_id, "try", asked=message[:500], answer=result)
