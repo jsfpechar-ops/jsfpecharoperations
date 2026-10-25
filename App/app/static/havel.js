@@ -25,6 +25,76 @@
     }
   }
 
+  // 0374: the chat follows the host across pages. It lives in this tab's sessionStorage only;
+  // every access is wrapped, so a throwing or full storage just means no restore.
+  var KEY = "ubyhost.havel.chat";
+  var TWELVE_HOURS = 43200000;
+  function owner() { return root.getAttribute("data-havel-owner") || ""; }
+  function loadChat() {
+    try {
+      var s = JSON.parse(sessionStorage.getItem(KEY) || "null");
+      if (s && s.owner === owner()) return s;
+      sessionStorage.removeItem(KEY);
+    } catch (e) {}
+    return null;
+  }
+  function clear() { try { sessionStorage.removeItem(KEY); } catch (e) {} }
+  function formValue(sel, key, prev) {
+    var el = root.querySelector(sel);
+    return el ? el.value : (prev[key] || "");
+  }
+  function save(extra) {
+    var t = thread();
+    if (!t) return;
+    try {
+      var prev = JSON.parse(sessionStorage.getItem(KEY) || "null");
+      if (!prev || prev.owner !== owner()) prev = {};
+      var copy = t.cloneNode(true);
+      copy.querySelectorAll("[data-havel-writing]").forEach(function (n) { n.remove(); });
+      copy.querySelectorAll("[data-havel-retry]").forEach(function (b) { var m = b.closest(".havel-msg"); if (m) m.remove(); });
+      var rec = {
+        owner: owner(), saved: Date.now(), html: copy.innerHTML,
+        history: formValue("[data-havel-history]", "history", prev),
+        sig: formValue("[data-havel-sig]", "sig", prev),
+        topic: formValue("[data-havel-topic]", "topic", prev),
+        q: formValue("[data-havel-q]", "q", prev),
+        open: panel ? panel.open : false,
+        unread: prev.unread === true
+      };
+      Object.keys(extra || {}).forEach(function (k) { rec[k] = extra[k]; });
+      sessionStorage.setItem(KEY, JSON.stringify(rec));
+    } catch (e) {}
+  }
+  function fill(s) {
+    [["[data-havel-history]", s.history], ["[data-havel-sig]", s.sig], ["[data-havel-topic]", s.topic], ["[data-havel-q]", s.q]].forEach(function (p) {
+      var el = root.querySelector(p[0]);
+      if (el && typeof p[1] === "string") el.value = p[1];
+    });
+    save();
+    scrollDown();
+  }
+  function restore() {
+    var s = loadChat();
+    if (!s || !s.html) return;
+    if (!(Date.now() - s.saved < TWELVE_HOURS)) { clear(); return; }
+    // A non-JS post on /havel rendered its own chat: the page wins.
+    var have = root.querySelector("[data-havel-history]");
+    if (have && have.value && have.value !== s.history) { save(); return; }
+    var t = thread();
+    if (!t) return;
+    t.innerHTML = s.html;
+    if (panel) ensureForm(function () { fill(s); }); else fill(s);
+    if (!panel || typeof panel.show !== "function") return;
+    if (s.open) { panel.show(); hideFab(); scrollDown(); }
+    else if (s.unread) { var fb = fab(); if (fb) fb.setAttribute("data-unread", ""); }
+  }
+  function onOpen() {
+    var fb = fab();
+    if (fb) fb.removeAttribute("data-unread");
+    save({ open: true, unread: false });
+    scrollDown();
+  }
+
   function setDevice() {
     var d = root.querySelector("[data-havel-device]");
     if (d) d.value = PHONE.matches ? "phone" : "computer";
@@ -61,6 +131,7 @@
     if (formWrap && wrap) wrap.innerHTML = formWrap.innerHTML;
     setDevice();
     bindCounter();
+    save();
   }
 
   function writing(on) {
@@ -131,11 +202,14 @@
       writing(false);
       if (echoed) echoed.remove();
       swap(html, extra && extra.reset ? "replace" : "append");
+      // 0374: a reply that arrives while the panel is closed shows the unread dot.
+      if (panel && !panel.open) { save({ unread: true }); var fb = fab(); if (fb) fb.setAttribute("data-unread", ""); }
       focusAnswer();
     }).catch(function () {
       writing(false);
       if (echoed) echoed.remove();
       showError(text);
+      save();
     });
   }
 
@@ -200,7 +274,7 @@
     if (!f) return;
     event.preventDefault();
     var submitter = event.submitter;
-    if (submitter && submitter.name === "reset") { send({ reset: "1", message: "" }); return; }
+    if (submitter && submitter.name === "reset") { clear(); send({ reset: "1", message: "" }); return; }
     send();
   });
 
@@ -242,6 +316,7 @@
 
   if (panel) {
     panel.addEventListener("close", function () {
+      save({ open: false });
       var f = fab();
       if (f) f.hidden = false;
       var back = opener;
@@ -261,6 +336,14 @@
     } };
   }
 
+  // 0374: opening the panel saves it as open; the stored chat is restored; sign-out clears it.
+  if (panel && window.MutationObserver) {
+    new MutationObserver(function () { if (panel.open) onOpen(); }).observe(panel, { attributes: true, attributeFilter: ["open"] });
+  }
+  restore();
+  document.addEventListener("submit", function (event) {
+    if (event.target && event.target.matches && event.target.matches('form[action="/logout"]')) clear();
+  });
   setDevice();
   bindCounter();
   PHONE.addEventListener("change", setDevice);

@@ -957,6 +957,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-fab { position: fixed; right: var(--space-6); bottom: var(--space-6); z-index: var(--z-drawer); width: calc(var(--control-h) + var(--space-3)); height: calc(var(--control-h) + var(--space-3)); display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-on, var(--surface)); box-shadow: var(--shadow-2); text-decoration: none; }
 .host-workspace .havel-fab:hover { background: var(--accent-hover); }
 .host-workspace .havel-fab:focus-visible { box-shadow: var(--focus-ring-2); outline: 0; }
+.host-workspace .havel-fab[data-unread]::after { content: ""; position: absolute; top: var(--space-1); right: var(--space-1); width: var(--space-3); height: var(--space-3); border-radius: var(--radius-pill); background: var(--danger); border: 2px solid var(--surface); }
 .host-workspace .havel-fab[hidden] { display: none; }
 .host-workspace .havel-greeting { margin-bottom: var(--space-2); }
 @media (max-width: 767px) {

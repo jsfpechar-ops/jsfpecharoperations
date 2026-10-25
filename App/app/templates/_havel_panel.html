@@ -9,7 +9,7 @@
 {% set havel_return_to = request.url.path %}
 {% set havel_topics = havel_topics_for(nav | default('')) %}
 {% if nav | default('') != 'havel' %}<a class="havel-fab" href="/havel" data-sheet-open="havel-sheet" data-havel-launcher data-havel-fab aria-label="{{ t('havel.launcher') }}" title="{{ t('havel.launcher') }}">{{ icon('message-circle-question', 24) }}</a>
-<dialog id="havel-sheet" class="ui-dialog havel-dialog" aria-labelledby="havel-title" data-havel-modeless data-havel-panel
+<dialog id="havel-sheet" class="ui-dialog havel-dialog" aria-labelledby="havel-title" data-havel-modeless data-havel-panel data-havel-owner="{{ current_user.id }}"
         data-src="/havel?page={{ havel_page | urlencode }}&amp;return_to={{ havel_return_to | urlencode }}"
         data-writing="{{ t('havel.writing') }}" data-error="{{ t('havel.error') }}" data-retry="{{ t('havel.retry') }}" data-name="{{ t('havel.name') }}">
   <div class="ui-sheet">
