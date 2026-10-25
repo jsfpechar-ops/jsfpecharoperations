@@ -1500,13 +1500,13 @@ def test_demo_preview_pin_is_private_and_validated(host, monkeypatch):
     assert db.query_one("SELECT source FROM reservation WHERE id = ?", (stay_id,))["source"] == "demo"
 
 
-CHOICE_SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0399"
+CHOICE_SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0410"
 
 
 @pytest.mark.parametrize("lang", ["en", "cs", "vi"])
 @pytest.mark.parametrize("width,collapsed", [(390, False), (1280, False), (1280, True), (2000, False), (2000, True)])
 def test_choice_card_selects_from_anywhere(host, base_url, lang, width, collapsed):
-    """0399: a tap anywhere on an option card selects it; the "?" and the hours field do not."""
+    """0410: a tap anywhere on an option card selects it; the "?" and the hours field do not."""
     if not REQUIRE_BROWSER:
         pytest.skip("browser not required")
     flat = _create(host)

@@ -1,4 +1,4 @@
-# 0399: The whole option card selects, radios and checkboxes look calm
+# 0410: The whole option card selects, radios and checkboxes look calm
 
 Status: review
 Depends on: none | Branch: claude/project-thread-cf1iwp (already checked out; commit here)
@@ -29,9 +29,9 @@ Owner (Josef, 2026-10-25, setup wizard "When should reports go to the police?"):
 | App/app/templates/_components.html | add `choice_card` macro |
 | App/app/templates/setup_wizard/automation.html | use it |
 | App/app/static/host.css | delete the old setup-wizard-radio rules |
-| App/app/static/host2.css | new 0399 block, focus fix, 0284 lists |
+| App/app/static/host2.css | new 0410 block, focus fix, 0284 lists |
 | App/app/templates/guest_form_admin.html, App/app/templates/_smart_locks_panel.html | `div.checkline` → `label.checkline` |
-| App/app/templates/base.html | bump `host.css` and `host2.css` keys to `20261025-0399` |
+| App/app/templates/base.html | bump `host.css` and `host2.css` keys to `20261025-0410` |
 | App/tests/static_versions.json | `--write` |
 | App/tests/test_onboarding_wizard_browser.py | one selector, one new test |
 
@@ -41,7 +41,7 @@ Owner (Josef, 2026-10-25, setup wizard "When should reports go to the police?"):
 
 1. **Macro** (`_components.html`): insert directly after the `help_tip` macro's `{% endmacro %}`:
 ```jinja
-{#- 0399: one option card. The label is stretched over the whole bordered card, so a
+{#- 0410: one option card. The label is stretched over the whole bordered card, so a
     tap anywhere selects; the "?" and any extra field (call block) sit above it. No JS. -#}
 {% macro choice_card(name, value, label, checked=false, help_id='', help_text='', type='radio') %}
 <div class="ui-choice-card">
@@ -76,7 +76,7 @@ Owner (Josef, 2026-10-25, setup wizard "When should reports go to the police?"):
 with
 ```css
 .host-workspace input:not([type=checkbox], [type=radio]):focus-visible, .host-workspace input:not([type=checkbox], [type=radio]):focus { outline: 2px solid var(--coral-600) !important; outline-offset: 2px; }
-/* 0399: radios and checkboxes are coral, and a mouse click draws no box (keyboard focus keeps the 0169 ring). */
+/* 0410: radios and checkboxes are coral, and a mouse click draws no box (keyboard focus keeps the 0169 ring). */
 .host-workspace :is(input[type=checkbox], input[type=radio]) { accent-color: var(--accent); }
 .host-workspace .checkline > span { font-weight: 500; }
 ```
@@ -85,7 +85,7 @@ with
 
 6. **host2.css new block**: append at the end of the file:
 ```css
-/* 0399: option cards (choice_card macro). The label's ::after covers the whole card, so a tap
+/* 0410: option cards (choice_card macro). The label's ::after covers the whole card, so a tap
    anywhere selects; the "?" and the extra field sit above it. The focus ring goes round the card. */
 .ui-choice-cards { display: flex; flex-direction: column; gap: var(--space-2); }
 .ui-choice-card { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); cursor: pointer; }
@@ -121,17 +121,17 @@ In `_smart_locks_panel.html` replace the two lines starting `<div class="checkli
       <span>{{ t('smart_locks.terms') }} <a href="/guide#door-codes-terms">{{ t('smart_locks.terms_link') }}</a></span></label>
 ```
 
-8. **Cache keys**: in `base.html` set the `host.css?v=` and `host2.css?v=` values to `20261025-0399`. Then `.venv/bin/python tests/test_static_versions.py --write`.
+8. **Cache keys**: in `base.html` set the `host.css?v=` and `host2.css?v=` values to `20261025-0410`. Then `.venv/bin/python tests/test_static_versions.py --write`.
 
 9. **Tests** (`test_onboarding_wizard_browser.py`): change `.setup-wizard-radio-card .help-tip` to `.ui-choice-card .help-tip`. Append at the end of the file:
 ```python
-CHOICE_SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0399"
+CHOICE_SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0410"
 
 
 @pytest.mark.parametrize("lang", ["en", "cs", "vi"])
 @pytest.mark.parametrize("width,collapsed", [(390, False), (1280, False), (1280, True), (2000, False), (2000, True)])
 def test_choice_card_selects_from_anywhere(host, base_url, lang, width, collapsed):
-    """0399: a tap anywhere on an option card selects it; the "?" and the hours field do not."""
+    """0410: a tap anywhere on an option card selects it; the "?" and the hours field do not."""
     if not REQUIRE_BROWSER:
         pytest.skip("browser not required")
     flat = _create(host)
@@ -191,7 +191,7 @@ If a test fails, put its first assertion line in the report. Fix only inside §3
 ## 7. Acceptance
 
 - [ ] §6 passes, 0 skipped.
-- [ ] `docs/tasks/screenshots-0399/` has 15 PNGs; you looked at `automation-en-390.png` and `automation-vi-2000c.png` once each: three bordered cards, coral radio, no blue, no square box.
+- [ ] `docs/tasks/screenshots-0410/` has 15 PNGs; you looked at `automation-en-390.png` and `automation-vi-2000c.png` once each: three bordered cards, coral radio, no blue, no square box.
 
 ## 8. Stop and ask
 
@@ -199,4 +199,4 @@ As in TEMPLATE §8.
 
 ## 9. Report
 
-No report file. ONE commit `0399: whole option card selects; coral radios, no box on click`, including this brief and `docs/tasks/screenshots-0399/`, ending with the Haiku Co-Authored-By trailer and `Claude-Session: https://claude.ai/code/session_01NLtgdaBVrKe87AGaYMWFVN`. Do not push.
+No report file. ONE commit `0410: whole option card selects; coral radios, no box on click`, including this brief and `docs/tasks/screenshots-0410/`, ending with the Haiku Co-Authored-By trailer and `Claude-Session: https://claude.ai/code/session_01NLtgdaBVrKe87AGaYMWFVN`. Do not push.
