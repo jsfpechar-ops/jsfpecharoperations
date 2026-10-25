@@ -1,6 +1,6 @@
 # 0391: The wizard's lock step can add a second lock
 
-Status: todo
+Status: review
 Branch: claude/project-thread-rmxe40 (already checked out; commit here)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -437,11 +437,11 @@ def test_the_door_lock_tab_still_shows_its_sharing_steps(world):
 
 Run: `cd App && .venv/bin/python -m pytest tests/test_wizard_second_lock_0391.py -q --tb=short -x 2>&1 | tail -30`. Commit `0391 step 7`.
 
-## 5. Out of scope
+## 5. Do not touch
 
 Do not change routes other than the three edits in step 4, CSS, the guide, or any other wizard step.
 
-## 6. Tests
+## 6. Commands
 
 ```
 cd App && .venv/bin/python -m pytest tests/test_wizard_second_lock_0391.py tests/test_smart_locks_page.py tests/test_door_code_one_lock_one_property.py tests/test_lock_question_0234.py tests/test_onboarding_wizard_survival.py -q --tb=short 2>&1 | tail -30
@@ -449,11 +449,15 @@ cd App && UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium-1243/chrome-linux
 cd .. && python3 scripts/context_lint.py 2>&1 | tail -30
 ```
 
-## 7. Done when
+## 7. Acceptance
 
 - [ ] All commands in §6 pass, 0 skipped.
 - [ ] One commit per step.
 
-## 8. Stop and report
+## 8. Stop and ask
 
 An anchor is not found, or a test fails twice: stop, write the report with `Status: blocked`. Screenshots are taken by the reviewer; do not take them. Do not push.
+
+## 9. Report
+
+`docs/tasks/0391-report.md`.
