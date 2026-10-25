@@ -26,6 +26,7 @@ GUEST_TEMPLATES = Path(__file__).resolve().parent.parent / "app" / "templates" /
 # test below fails if this list and the templates disagree in either direction,
 # so a new guest form has to be registered here and carry the token.
 GUEST_POST_FORMS = [
+    ("_leon.html", "{{ leon_url }}"),
     ("assigned.html", "/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}"),
     ("claim.html", "/l/{{ token }}/{{ reservation.id }}/party?lang={{ lang }}"),
     ("confirm.html", "/l/{{ token }}/{{ reservation.id }}/claim/confirm?lang={{ lang }}"),

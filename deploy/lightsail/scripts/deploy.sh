@@ -278,6 +278,7 @@ if [ "${SKIP_PUBLIC_SMOKE:-0}" != "1" ]; then
   echo ""
   echo "==> Public smoke (set SKIP_PUBLIC_SMOKE=1 to skip)"
   if ! ./scripts/smoke-remote.sh; then
-    echo "WARNING: public smoke failed (DNS/TLS/Cloudflare?). Internal healthz is above." >&2
+    echo "ERROR: public smoke failed (DNS/TLS/Cloudflare?). Internal healthz passed, the new version is running; check the public site now." >&2
+    exit 1
   fi
 fi

@@ -1,0 +1,31 @@
+# Weekly proof that the newest backup restores. Read-only: restore_test.sh writes only a temp file and prints only row counts.
+name: Restore drill
+
+on:
+  schedule:
+    - cron: "30 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drill:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Run restore_test.sh on production
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+          LIGHTSAIL_SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+          LIGHTSAIL_KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$LIGHTSAIL_SSH_PRIVATE_KEY" > ~/.ssh/lightsail_deploy.pem
+          chmod 600 ~/.ssh/lightsail_deploy.pem
+          printf '%s\n' "$LIGHTSAIL_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          host="$(echo "$LIGHTSAIL_HOST" | tr -d ' ' | sed 's/^ubuntu@//')"
+          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${host}" 'cd /opt/ubyhost/deploy/lightsail && ./scripts/restore_test.sh'
+          rm -f ~/.ssh/lightsail_deploy.pem
