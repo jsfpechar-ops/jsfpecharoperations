@@ -25,6 +25,7 @@ Status: review
 2. `ask()` now calls `record_stat("guardrail_fail", today)` on the API-error path too. The brief's test expects `guardrail_fail == 2` for a refusal and a bad-JSON reply, which the brief's code did not record.
 3. Route check: no route matched the literal `@router.get("/apartments/{id}")`. The real route is `/apartments/{apartment_id}` (App/app/routes/admin.py:1589), so the page stays. All other 16 paths matched; PAGES stays at 41.
 4. Step 3 was done in one commit with the step-2 fixes; the report is a separate commit.
+5. Review fixes (orchestrator, critical review): history redaction, wider ID pattern, domain check, int/bool checks, unowned sync property dropped. Action check order: property, then dates, then note/e-mail text checks (moved to the end of the action block per coordinator decision).
 
 ## Questions
 - Is the phone-regex lookbehind (deviation 1) acceptable, or should the ID pattern run before the phone pattern?
