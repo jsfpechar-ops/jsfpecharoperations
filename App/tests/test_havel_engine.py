@@ -235,3 +235,39 @@ def test_history_is_signed_capped_and_dropped_when_forged():
     assert havel.read_history(8, payload, sig) == []
     assert havel.read_history(7, payload.replace("q5", "q9"), sig) == []
     assert havel.read_history(7, "", "") == []
+
+
+def test_history_assistant_turns_are_redacted():
+    mapping = {}
+    msgs = havel.build_messages(host(), [{"host": "mail a@b.cz", "havel": "I will send it to a@b.cz"}], "q", TODAY, mapping)
+    assert all("a@b.cz" not in m["content"] for m in msgs)
+    assert msgs[1]["role"] == "assistant" and "[email 1]" in msgs[1]["content"]
+
+
+def test_longer_ids_are_redacted_and_short_codes_are_numbers_not_phones():
+    for text in ("IBAN CZ6508000000192000145399", "id ABCD1234567", "ref x12345678901"):
+        out, _ = havel.redact(text)
+        assert "[number 1]" in out and text.split()[-1] not in out, out
+    assert "[number 1]" in havel.redact("AB1234567")[0]
+
+
+def test_scheme_less_domains_are_blocked():
+    assert havel.validate(ok(reply="Go to ubyhost-login.com now"), host(), "q", [], {}, TODAY).fail_reason == "address"
+
+
+def test_action_fields_are_typed_and_checked():
+    base = {"type": "create_stay", "property_id": 12, "date_from": "2026-10-31", "date_to": "2026-11-02", "guests": 3,
+            "guest_email": "[email 1]", "start_time": None, "end_time": None, "note": None}
+    mapping = {"[email 1]": "jan@example.com"}
+
+    def check(**over):
+        return havel.validate(ok(kind="action", reply="x", sources=[], links=[], action={**base, **over}), host(), "q", [], mapping, TODAY)
+
+    for bad in ("three", [3], True):
+        assert check(guests=bad).fail_reason == "action_guests", bad
+    assert check(property_id=True).fail_reason == "action_property"
+    assert check(note="Pay at https://x.example").fail_reason == "action_text"
+    assert check(guest_email="not-an-email").fail_reason == "action_email"
+    sync = {**base, "type": "sync_calendars", "property_id": 999, "date_from": None, "date_to": None, "guests": None, "guest_email": None}
+    out = havel.validate(ok(kind="action", reply="x", sources=[], links=[], action=sync), host(), "q", [], {}, TODAY)
+    assert out.kind == "action" and out.action["property_id"] is None

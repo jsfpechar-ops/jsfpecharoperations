@@ -162,7 +162,7 @@ def system_blocks(lang: str) -> List[str]:
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}|\b\d{1,2}\.\s?\d{1,2}\.(?:\s?\d{4})?|\b\d{1,2}:\d{2}\b")
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _PHONE = re.compile(r"(?<![A-Za-z\d])\+?\d(?:[\s-]?\d){6,}")
-_NUMBER = re.compile(r"\b(?:\d{6,}|[A-Za-z]{1,3}\d{6,9})\b")
+_NUMBER = re.compile(r"\b(?:\d{6,}|[A-Za-z]{1,4}\d{6,})\b")
 
 
 def redact(text: str, mapping: Optional[Dict[str, str]] = None) -> Tuple[str, Dict[str, str]]:
@@ -273,7 +273,8 @@ def build_messages(host: Host, history: List[Dict[str, str]], message: str, toda
     for exchange in history:
         host_text, _ = redact(exchange["host"], mapping)
         messages.append({"role": "user", "content": f"<message>{host_text}</message>"})
-        messages.append({"role": "assistant", "content": exchange["havel"]})
+        havel_text, _ = redact(exchange["havel"], mapping)
+        messages.append({"role": "assistant", "content": havel_text})
     text, _ = redact(message, mapping)
     messages.append({"role": "user", "content": host_context(host, today) + f"\n<message>{text}</message>"})
     return messages
@@ -371,7 +372,7 @@ class Reply:
 
 
 _FORBIDDEN_SCRIPTS = re.compile(r"[Ѐ-ӿ֐-׿؀-ۿ฀-๿぀-ヿ一-鿿가-힯]")
-_ADDRESS = re.compile(r"https?:|www\.|@|/[A-Za-z]|\+?\d(?:[\s-]?\d){6,}", re.I)
+_ADDRESS = re.compile(r"https?:|www\.|@|/[A-Za-z]|\+?\d(?:[\s-]?\d){6,}|\b[\w-]+\.(?:com|cz|net|org|io|eu|sk|de|app|info)\b", re.I)
 _MARKUP = re.compile(r"[<>`]|\*\*|^#", re.M)
 _DIGITS = re.compile(r"\d+")
 _DATEISH = re.compile(r"\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?|\d{4}-\d{2}-\d{2}|\d{1,2}:\d{2}")
@@ -391,6 +392,11 @@ def _numbers_ok(reply: str, allowed_text: str) -> bool:
     present in the host's text or context, or present in a cited guide text."""
     cleaned = _DATEISH.sub("", re.sub(r"(?m)^\d{1,2}\.\s", "", reply))
     return all(run in allowed_text for run in _DIGITS.findall(cleaned))
+
+
+def _int(value: Any) -> Optional[int]:
+    """An int from the model's JSON, or None (bool is not an int here)."""
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
 def validate(data: Dict[str, Any], host: Host, message: str, history: List[Dict[str, str]],
@@ -449,7 +455,7 @@ def validate(data: Dict[str, Any], host: Host, message: str, history: List[Dict[
                 break
             if not isinstance(item, dict) or item.get("page") not in PAGES:
                 continue
-            pid = item.get("property_id") if isinstance(item.get("property_id"), int) else None
+            pid = _int(item.get("property_id"))
             url = page_url(item["page"], pid, host.property_ids)
             if url:
                 links.append((label(host.lang, PAGES[item["page"]][1]), url))
@@ -471,13 +477,15 @@ def validate(data: Dict[str, Any], host: Host, message: str, history: List[Dict[
         action = {k: raw.get(k) for k in SCHEMA["properties"]["action"]["required"]}
         action["guest_email"] = restore(action.get("guest_email"), mapping)
         action["note"] = restore(action.get("note"), mapping)
-        pid = action.get("property_id")
+        pid = _int(action.get("property_id"))
         if action["type"] != "sync_calendars":
             if len(host.properties) == 1 and pid is None:
                 pid = host.property_ids[0]
             if pid not in host.property_ids:
                 return _fail("action_property")
-            action["property_id"] = pid
+        elif pid not in host.property_ids:
+            pid = None
+        action["property_id"] = pid
         for name in ("date_from", "date_to"):
             if action.get(name) is not None and not _ISO.match(str(action[name])):
                 return _fail("action_dates")
@@ -487,10 +495,21 @@ def validate(data: Dict[str, Any], host: Host, message: str, history: List[Dict[
         if action["type"] == "create_stay":
             if not action.get("date_from") or not action.get("date_to") or action["date_to"] <= action["date_from"]:
                 return _fail("action_dates")
-            if action.get("guests") is not None and not 1 <= int(action["guests"]) <= 60:
+            guests = action.get("guests")
+            if guests is not None and (_int(guests) is None or not 1 <= guests <= 60):
                 return _fail("action_guests")
         if action["type"] == "create_cleaning" and not action.get("date_from"):
             return _fail("action_dates")
+        for name in ("note", "guest_email"):
+            value = action.get(name)
+            if value is None:
+                continue
+            if not isinstance(value, str) or _FORBIDDEN_SCRIPTS.search(value) or _MARKUP.search(value):
+                return _fail("action_text")
+            if name == "note" and _ADDRESS.search(_DATEISH.sub("", value)):
+                return _fail("action_text")
+        if action["guest_email"] is not None and not _EMAIL.fullmatch(action["guest_email"]):
+            return _fail("action_email")
 
     return Reply(kind=kind, text=restore(reply, mapping) or "", links=links, action=action,
                  support_summary=summary, sources=sources, next=nxt)
