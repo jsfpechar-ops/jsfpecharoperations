@@ -97,6 +97,18 @@ COOKIE_INVENTORY: Tuple[Dict[str, object], ...] = (
         "lifetime": {"en": "60 days", "cs": "60 dn\u00ed"},
     },
     {
+        "name": "ubyhost_leon",
+        "set_by": "routes/guest_leon.py:qr_leon",
+        "party": "first",
+        "kind": "cookie",
+        "surface": "guest",
+        "purpose": {
+            "en": "Keeps your conversation with Leon (AI) on this property's guide page; a random number, nothing about you",
+            "cs": "Udržuje vaši konverzaci s Leonem (AI) na stránce průvodce; náhodné číslo, nic o vás",
+        },
+        "lifetime": {"en": "30 days", "cs": "30 dní"},
+    },
+    {
         "name": "ubyhost-sidebar-collapsed",
         "set_by": "static/app.js",
         "party": "first",
@@ -332,6 +344,18 @@ _GUEST_LANGUAGE_TEXT: Dict[str, Dict[str, Dict[str, str]]] = {
             "de": "60 Tage",
             "es": "60 días",
             "fr": "60 jours",
+        },
+    },
+    "ubyhost_leon": {
+        "purpose": {
+            "de": "Hält Ihr Gespräch mit Leon (KI) auf der Seite dieser Unterkunft; eine Zufallszahl, nichts über Sie",
+            "es": "Mantiene su conversación con Leon (IA) en la página de este alojamiento; un número aleatorio, nada sobre usted",
+            "fr": "Garde votre conversation avec Leon (IA) sur la page de ce logement ; un nombre aléatoire, rien sur vous",
+        },
+        "lifetime": {
+            "de": "30 Tage",
+            "es": "30 días",
+            "fr": "30 jours",
         },
     },
     "ubyhost-sidebar-collapsed": {

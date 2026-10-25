@@ -5,7 +5,7 @@ Status: review
 ## Files changed (git diff --stat plus new files)
 - Modified: App/app/config.py, App/app/host_i18n.py, App/app/retention.py, App/app/routes/guest_guide.py, App/app/scheduler.py, App/app/templates/guest_guide.html, docs/ENVIRONMENT.md, docs/privacy/RETENTION.md
 - New: App/app/guest_guide_import.py, App/app/migrations/0016_guide_import.sql, App/tests/test_guest_guide_import.py
-- Report: docs/tasks/0297-report.md
+- Report: docs/tasks/0347-report.md
 
 ## Commands (from App/ unless noted)
 - test_guest_guide_import.py + test_guest_guide_pages.py: 50 passed (brief says 51)

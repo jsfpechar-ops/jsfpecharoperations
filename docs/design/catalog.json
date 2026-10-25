@@ -299,7 +299,9 @@
     "App/app/templates/admin_funnel.html",
     "App/app/templates/guest_guide.html",
     "App/app/templates/guest_guide_card.html",
-    "App/app/templates/guest_guide_qr.html"
+    "App/app/templates/guest_guide_qr.html",
+    "App/app/templates/guest_questions.html",
+    "App/app/templates/guest_question.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [

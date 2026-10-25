@@ -746,7 +746,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/0292-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/0342-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

@@ -51,10 +51,10 @@ Hard rules 2, 3, 4, 5 (migration through `db.py`, Postgres-portable: unique inde
 
 | Path | Action | What |
 |---|---|---|
-| `App/app/migrations/NNNN_guide_translation.sql` | create | Copied from `docs/plans/0303-files/guide_translation.sql` |
+| `App/app/migrations/NNNN_guide_translation.sql` | create | Copied from `docs/plans/0353-files/guide_translation.sql` |
 | `App/app/guide_translate.py` | create | Copied |
 | `App/tests/test_guide_translate.py`, `App/tests/test_guide_translate_browser.py` | create | Copied (11 and 1 tests) |
-| `App/app/static/guest.css` | edit | Append `docs/plans/0303-files/guide-original.css` |
+| `App/app/static/guest.css` | edit | Append `docs/plans/0353-files/guide-original.css` |
 | `App/app/routes/guest_guide_view.py`, `App/app/templates/guest/guide.html`, `App/app/templates/guest/base.html` | edit | Steps 4 to 6 |
 | `App/app/config.py` | edit | Per-feature cap defaults |
 | `App/app/routes/guest_guide.py`, `App/app/templates/guest_guide.html` | edit | Usage line |
@@ -77,17 +77,17 @@ From the repo root: `grep -c 'leon_url' App/app/routes/guest_guide_view.py; grep
 From the repo root (put NNNN in the first line):
 
 ```bash
-cp docs/plans/0303-files/guide_translation.sql App/app/migrations/NNNN_guide_translation.sql
-cp docs/plans/0303-files/guide_translate.py App/app/guide_translate.py
-cp docs/plans/0303-files/test_guide_translate.py docs/plans/0303-files/test_guide_translate_browser.py App/tests/
-cat docs/plans/0303-files/guide-original.css >> App/app/static/guest.css
+cp docs/plans/0353-files/guide_translation.sql App/app/migrations/NNNN_guide_translation.sql
+cp docs/plans/0353-files/guide_translate.py App/app/guide_translate.py
+cp docs/plans/0353-files/test_guide_translate.py docs/plans/0353-files/test_guide_translate_browser.py App/tests/
+cat docs/plans/0353-files/guide-original.css >> App/app/static/guest.css
 ```
 
 Command: `grep -c 'g-guide-original' App/app/static/guest.css`. Expected: `5`.
 
 ### Step 3: copy
 
-From the repo root: `python3 docs/plans/0303-files/add_translate_i18n.py`. Expected: `added 2 guest keys x 6 languages and 2 host keys x 2 languages`. It refuses a second run.
+From the repo root: `python3 docs/plans/0353-files/add_translate_i18n.py`. Expected: `added 2 guest keys x 6 languages and 2 host keys x 2 languages`. It refuses a second run.
 
 ### Step 4: `App/app/routes/guest_guide_view.py`
 
@@ -197,7 +197,7 @@ Command: `.venv/bin/python -c "from app import config; print(config.ai_monthly_u
 | Guide translation (0353) | `test_guide_translate.py test_guide_translate_browser.py test_guest_guide_view.py test_ai.py` |
 ```
 
-`docs/plans/guest-guide.md`: in the row starting `| 3 | [0353](../tasks/0303-guide-translation.md) |`, change the last cell `todo` to `review`.
+`docs/plans/guest-guide.md`: in the row starting `| 3 | [0353](../tasks/0353-guide-translation.md) |`, change the last cell `todo` to `review`.
 
 ### Step 10: tests
 
@@ -229,7 +229,7 @@ Stop, and write the report, if: an anchor is not found; 0352 is not merged; a te
 
 ## 9. Report
 
-Write `docs/tasks/0303-report.md` (600 tokens at most) and set `Status: review`: files changed, the migration number used, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. The orchestrator takes the screenshot (`App/.screenshots/0303-guide-translated-de-390.png`).
+Write `docs/tasks/0353-report.md` (600 tokens at most) and set `Status: review`: files changed, the migration number used, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. The orchestrator takes the screenshot (`App/.screenshots/0303-guide-translated-de-390.png`).
 
 ## Risk list (for the reviewer)
 

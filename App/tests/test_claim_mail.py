@@ -1832,6 +1832,8 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         # 0222: monthly stay-fee report and the blocked notice.
         "stay_fee_report",
         "stay_fee_blocked",
+        # 0351: the batched "guests asked something" mail to the host.
+        "guest_question",
     }
 
 

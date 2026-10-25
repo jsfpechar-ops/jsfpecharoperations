@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import tempfile
 
 import pytest
 
@@ -24,7 +25,7 @@ from tests.test_dashboard_calendar_browser import calendar_origin, calendar_work
 
 GUARD_WIDTHS = (390, 700, 900, 1023, 1024, 1100, 1200, 1280, 1366, 1440, 1536, 2000)
 LANG = os.environ.get("DASH_ROWS_LANG", "cs")
-SHOT_DIR = pathlib.Path(os.environ.get("DASH_ROWS_SHOT_DIR", "/mnt/project-files/design-reset/checkpoint-4-shell-fixes"))
+SHOT_DIR = pathlib.Path(os.environ.get("DASH_ROWS_SHOT_DIR") or os.path.join(os.environ.get("UBYHOST_SHOTS_DIR", tempfile.gettempdir()), "dashboard-rows"))
 PATHS = (
     (f"/reservations?lang={LANG}", "table.ui-table", "stays"),
 )
