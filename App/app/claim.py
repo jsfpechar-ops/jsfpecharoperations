@@ -334,6 +334,48 @@ def start_claim(
     return True, "", secret
 
 
+def _completion_facts(apartment, reservation, lang: str) -> Dict[str, str]:
+    """Check-in, check-out and address for the receipt's stay panel.
+
+    Each is optional: a property without hours or an address still gets its
+    receipt, with fewer rows. Any read failure drops the facts, never the mail.
+    """
+    t = i18n.translator(lang)
+
+    def col(row, name):
+        try:
+            return row[name]
+        except (KeyError, IndexError, TypeError):
+            return None
+
+    def moment(day, hour, key):
+        shown = validation.fmt_date(day) or ""
+        if not shown or hour is None or hour == "":
+            return shown
+        return t(key, date=shown, time=f"{int(hour):02d}:00")
+
+    try:
+        street = " ".join(
+            str(part).strip()
+            for part in (col(apartment, "addr_street"), col(apartment, "addr_house_no"))
+            if part and str(part).strip()
+        )
+        town = (col(apartment, "addr_obec") or "").strip()
+        return {
+            "checkin": moment(
+                reservation["date_from"], col(apartment, "checkin_hour"),
+                "mail_completion_checkin_value",
+            ),
+            "checkout": moment(
+                reservation["date_to"], col(apartment, "checkout_hour"),
+                "mail_completion_checkout_value",
+            ),
+            "address": ", ".join(part for part in (street, town) if part),
+        }
+    except Exception:
+        return {}
+
+
 def _guest_mail_content(
     kind: str,
     apartment,
@@ -414,6 +456,9 @@ def _guest_mail_content(
                 stay_url=stay_url or "",
                 host=host,
                 door_code=door_code,
+                filled=filled,
+                expected=expected,
+                **_completion_facts(apartment, reservation, lang),
             )
         if kind == "reminder_guest":
             return mail_notify.build_reminder_guest(
@@ -671,6 +716,8 @@ def maybe_notify_completion(reservation, apartment, *, force: bool = False) -> N
         lang=lang,
         stay_url=_stay_link(apartment, reservation),
         door_code=code_fields,
+        filled=progress["filled"],
+        expected=expected,
     )
     payload = mail_notify.guest_payload(apartment, content, lang)
     if code_row is not None:
