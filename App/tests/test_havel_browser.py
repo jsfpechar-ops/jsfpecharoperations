@@ -230,6 +230,8 @@ def test_chat_follows_the_host_across_pages(origin, width):
         # Closing only minimises it: the next page starts closed, and the chat is there on opening.
         dialog.locator("[data-sheet-close]").first.click()
         sync_api.expect(page.locator("#havel-sheet[open]")).to_have_count(0)
+        # The close event (which saves the chat as closed and shows the button again) runs after the attribute goes; wait for it.
+        sync_api.expect(page.locator("[data-havel-fab]")).to_be_visible()
         page.goto(origin[0] + "/")
         sync_api.expect(page.locator("[data-havel-fab]")).to_be_visible()
         assert page.locator("#havel-sheet[open]").count() == 0

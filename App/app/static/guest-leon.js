@@ -83,6 +83,86 @@
     return item;
   }
 
+  // 0389: Leon speaks first. A fixed welcome drawn by the page: never stored, never sent, never counted.
+  function welcome() {
+    var item = bubble("leon", "", text("text-welcome"));
+    item.setAttribute("data-leon-msg", "welcome");
+    var tp = topics();
+    if (!local.length && tp.length) chips(tp, answerSituation, "").setAttribute("data-leon-welcome-chips", "");
+    return item;
+  }
+
+  // 0390: the guide's own topics as chips. Answers are copied from the cards on this page:
+  // no request, no AI call, nothing stored or counted. Text only (textContent), never HTML.
+  var local = []; // nodes of chip exchanges, kept across render()
+  function topics() {
+    var lis = root.querySelectorAll("[data-leon-situations] li");
+    return Array.prototype.map.call(lis, function (li) {
+      var cards = [];
+      li.getAttribute("data-kinds").split(" ").forEach(function (k) {
+        Array.prototype.forEach.call(document.querySelectorAll('[data-guide-kind="' + k + '"]'), function (c) { if (cards.length < 2 && cardText(c)) cards.push(c); });
+      });
+      return { title: li.textContent.trim(), help: li.getAttribute("data-help") || "", cards: cards };
+    }).filter(function (tp) { return tp.cards.length || tp.help; });
+  }
+  function chips(items, onPick, label) {
+    var wrap = document.createElement("div");
+    wrap.className = "g-leon-chips";
+    wrap.setAttribute("role", "group");
+    if (label) wrap.setAttribute("aria-label", label);
+    items.forEach(function (it) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "g-leon-chip";
+      b.textContent = it.title;
+      b.addEventListener("click", function () { onPick(it); });
+      wrap.appendChild(b);
+    });
+    log.appendChild(wrap);
+    return wrap;
+  }
+  function cardTitle(card) { var h = card.querySelector("h2"); return h ? h.textContent.trim() : ""; }
+  function cardText(card) {
+    var lines = [];
+    Array.prototype.forEach.call(card.children, function (el) {
+      if (el.tagName === "P" && !el.className) lines.push(el.textContent.trim());
+      else if (el.classList.contains("g-guide-where")) lines.push(el.textContent.trim().replace(/\s+/g, " "));
+      else if (el.classList.contains("g-guide-steps")) Array.prototype.forEach.call(el.querySelectorAll("li"), function (li, i) { lines.push((i + 1) + ". " + li.textContent.trim()); });
+      else if (el.classList.contains("g-guide-warn")) lines.push(el.textContent.trim().replace(/\s+/g, " "));
+    });
+    return lines.filter(Boolean).join("\n");
+  }
+  function keep(node) { local.push(node); return node; }
+  function answerSituation(tp) {
+    // Only the newest chip group stays clickable: drop older ones (welcome included).
+    Array.prototype.forEach.call(log.querySelectorAll(".g-leon-chips"), function (n) {
+      log.removeChild(n);
+      local = local.filter(function (x) { return x !== n; });
+    });
+    keep(bubble("guest", "", tp.title));
+    var last = null;
+    if (tp.help) {
+      var help = keep(bubble("leon", "emergency", tp.help));
+      help.setAttribute("data-leon-msg", "card");
+      last = help;
+    }
+    tp.cards.forEach(function (card) {
+      var node = keep(bubble("leon", "", cardTitle(card) + "\n" + cardText(card)));
+      node.setAttribute("data-leon-msg", "card");
+      var a = document.createElement("a");
+      a.className = "g-leon-see";
+      a.href = "#" + card.id;
+      a.textContent = text("text-see-card");
+      node.appendChild(a);
+      last = node;
+    });
+    keep(topicChips());
+    if (last && last.scrollIntoView) last.scrollIntoView({ block: "nearest" });
+  }
+  function topicChips() {
+    return chips(topics(), answerSituation, "");
+  }
+
   function setWaiting(on) {
     waiting.hidden = !on;
     if (on && !timer && polls < POLL_MAX) {
@@ -104,6 +184,8 @@
       return;
     }
     while (log.firstChild) log.removeChild(log.firstChild);
+    welcome();
+    local.forEach(function (n) { log.appendChild(n); });
     (data.messages || []).forEach(function (m) {
       bubble(m.role, m.kind, m.text);
     });
@@ -138,6 +220,9 @@
     var n = input.value.length;
     count.textContent = n + " / " + MAX;
     count.classList.toggle("g-leon-count--near", n > MAX - 50);
+    count.hidden = n <= MAX - 50;
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 132) + "px";
   }
 
   function mark(item, state) {
@@ -277,5 +362,6 @@
   form.hidden = false;
   if (jump) jump.hidden = false;
   updateCount();
+  welcome();
   history().catch(function () {});
 })();
