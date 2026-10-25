@@ -1006,7 +1006,11 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
    cells carry no surface of their own (owner 2026-10-25). */
 @media (max-width: 1023px) {
   .host-workspace .table-cards tbody tr.clickable-row > td { background: transparent; }
+  .host-workspace .table-cards tbody tr.clickable-row:is(:hover, :focus-within, :active) > td { background: transparent; }
   .host-workspace .table-cards tr.clickable-row > td.row-actions { pointer-events: none; }
   .host-workspace .table-cards tr.clickable-row > td.row-actions > * { pointer-events: auto; }
-  .host-workspace .table-cards tr.clickable-row:has(.row-open) { padding-bottom: calc(var(--control-h-compact) + 24px); }
+}
+/* 0376: below 720 px the actions cell is lifted to the top corner (0200), so the card keeps a bottom line free for Open. */
+@media (max-width: 720px) {
+  .host-workspace .table-cards tr.clickable-row:has(.row-open) { padding-bottom: calc(var(--control-h-compact) + var(--space-6)); }
 }

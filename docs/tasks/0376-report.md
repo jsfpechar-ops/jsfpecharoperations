@@ -22,3 +22,5 @@ Questions:
 3. Pressed-state grey on td: needs a brief covering `:active`/pressed selectors.
 
 Owner steps left: none (no push).
+
+Orchestrator follow-up: `+ 24px` → `var(--space-6)` (design lint S2); pressed/focused cards also keep cells clear (the 0285 `:focus-within > td` / `:active > td` tints made grey blocks); the bottom padding applies only ≤720 px, where 0200 lifts the actions cell to the top corner (at 721-1023 Open already shares the menu's line). Key 0376d. §6 set plus wide geometry and 0284 states: 43 passed with `UBYHOST_REQUIRE_BROWSER=1`; design lint OK.
