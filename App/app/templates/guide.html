@@ -6,7 +6,7 @@
 {% block meta %}{{ t('guide.lede') }}{% endblock %}
 {% block body %}
 
-{% set sections = ['finding', 'overview', 'statuses', 'setup', 'stays', 'cleaning', 'guests', 'guest_links', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'door-codes', 'faster', 'faq', 'glossary', 'legal'] + (['demo'] if demo_available else []) %}
+{% set sections = ['finding', 'overview', 'statuses', 'setup', 'business', 'stays', 'cleaning', 'guests', 'guest_links', 'reporting', 'filters', 'housebook', 'stay_fee', 'invoices', 'settings', 'door-codes', 'faster', 'faq', 'glossary', 'legal'] + (['demo'] if demo_available else []) %}
 <div class="guide-layout">
   <nav class="guide-nav ui-section" aria-label="{{ t('guide.title') }}">
     {% for key in sections %}<a href="#{{ key }}" class="guide-nav-link">{{ t('guide.nav.' ~ key) }}</a>{% endfor %}
@@ -56,11 +56,30 @@
 
     <section class="guide-section ui-section ui-section-plain" id="setup">
       <h2>{{ t('guide.nav.setup') }}</h2>
+      <p>{{ t('guide.setup.what') }}</p>
+      <p class="ui-sub">{{ t('guide.setup.when') }}</p>
+      <h3 id="add-property">{{ t('guide.setup.add_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 7) %}<li>{{ t('guide.setup.add' ~ n) }}</li>{% endfor %}</ol>
+      <h3 id="setup-guide">{{ t('guide.setup.wizard_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 6) %}<li>{{ t('guide.setup.wizard' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 4) %}<li>{{ t('guide.setup.wrong' ~ n) }}</li>{% endfor %}</ul>
+      <h3>{{ t('guide.setup.fields_title') }}</h3>
       <ol class="guide-steps">
         {% for n in range(1, 6) %}
         <li><strong>{{ t('guide.setup.step' ~ n ~ '_title') }}:</strong> {{ t('guide.setup.step' ~ n) }}</li>
         {% endfor %}
       </ol>
+    </section>
+
+    <section class="guide-section ui-section ui-section-plain" id="business">
+      <h2>{{ t('guide.nav.business') }}</h2>
+      <p>{{ t('guide.business.what') }}</p>
+      <p class="ui-sub">{{ t('guide.business.when') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 6) %}<li>{{ t('guide.business.how' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 3) %}<li>{{ t('guide.business.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
     <section class="guide-section ui-section ui-section-plain" id="stays">
@@ -171,14 +190,27 @@
     <section class="guide-section ui-section ui-section-plain" id="stay_fee">
       <h2>{{ t('guide.nav.stay_fee') }}</h2>
       <p>{{ t('guide.stay_fee.body') }}</p>
+      <p>{{ t('guide.stay_fee.when') }}</p>
       <p>{{ t('guide.stay_fee.rules') }}</p>
       <p>{{ t('guide.stay_fee.save') }}</p>
+      <h3 id="stay-fee-setup">{{ t('guide.stay_fee.setup_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('guide.stay_fee.setup' ~ n) }}</li>{% endfor %}</ol>
+      <h3 id="stay-fee-pay">{{ t('guide.stay_fee.pay_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 7) %}<li>{{ t('guide.stay_fee.pay' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 5) %}<li>{{ t('guide.stay_fee.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
     <section class="guide-section ui-section ui-section-plain" id="invoices">
       <h2>{{ t('guide.nav.invoices') }}</h2>
       <p>{{ t('guide.invoices.body') }}</p>
+      <p>{{ t('guide.invoices.when') }}</p>
       <p>{{ t('guide.invoices.flow') }}</p>
+      <p class="ui-sub">{{ t('guide.invoices.settings') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 7) %}<li>{{ t('guide.invoices.how' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 4) %}<li>{{ t('guide.invoices.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
     <section class="guide-section ui-section ui-section-plain" id="settings">
