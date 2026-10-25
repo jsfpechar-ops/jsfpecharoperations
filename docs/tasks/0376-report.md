@@ -1,19 +1,40 @@
-# 0376 report: smooth sidebar collapse
+# 0376 report (executor, Haiku 5.5)
 
-Owner allowed direct implementation ("implement it yourself", handoff 2026-10-25).
+Status: blocked. Done: steps 1 to 12 and 14. Left: step 13 (App/tests/test_0376_ai_gates.py, not written).
 
-## Change
+## Files changed
+- App/app/migrations/0021_leon_opt_in.sql (new): leon_enabled column.
+- App/app/config.py: AI_TEST_EMAILS.
+- App/app/ai.py: enabled_for, enabled_for_property.
+- App/app/leon.py: switched_on.
+- App/app/routes/guest_guide_view.py, guest_leon.py (4 gates), havel.py (_on, _state(request, uid)), api.py, admin.py.
+- App/app/guide_translate.py: can_fill checks the owner.
+- App/app/routes/guest_guide.py: context leon_offer/leon_on, POST /apartments/{id}/guide/leon.
+- App/app/templates/guest_guide.html: Leon section.
+- App/app/host_i18n.py (en, cs), App/app/host_vi_i18n.py (vi): 7 keys each.
+- App/tests/test_leon.py, App/tests/test_guest_leon_chat.py: fixtures patch app.leon.switched_on.
+- docs/ENVIRONMENT.md: UBYHOST_AI_TEST_EMAILS row.
 
-- `host2.css`: `body.sidebar-animating` transitions rail width/padding and page `margin-left` (260 ms, `--ease-standard`). Nav icons keep their x during the slide. The toggle icon turns 180° in the rail (desktop collapsed and the 1024-1279 tablet rail). Reduced motion: no transition.
-- `app.js`: `animateRail()` sets `.sidebar-animating` for 280 ms, only from a click, Escape or outside tap. Stored collapse on load and breakpoint crossings stay instant.
-- `?v=` keys: `host2.css` and `app.js` now `20261025-0376`; `tests/static_versions.json` rewritten.
+## Commands and results
+- `cd App && .venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841`: All checks passed.
+- `cd /home/claude/jsfpecharoperations && App/.venv/bin/python scripts/design_lint.py`: OK (exit 0).
+- `PYTHONPATH=. .venv/bin/pytest tests/test_leon.py tests/test_guest_leon_chat.py tests/test_guest_guide_view.py tests/test_guest_guide_pages.py tests/test_guide_translate.py tests/test_havel_page.py tests/test_havel_panel.py tests/test_havel_palette.py tests/test_ai.py -q`: 104 passed, 1 skipped, 2 failed before the last fix.
+  - test_guest_leon_chat.py::test_no_chat_while_leon_is_off_or_the_guide_is_not_live: fixed in the last step (see the test_guest_leon_chat rerun line below).
+  - test_havel_page.py::test_the_seventh_message_starts_a_fresh_conversation: fails on the base commit too (stash check: 1 failed, 7 passed in that file). Not caused by this change.
 
-## Tests
+## Deviations
+- Step 12: the existing Leon tests were not given leon_enabled = 1. Their fixtures monkeypatch app.leon.switched_on to True (off-test to False). Assertions unchanged.
+- Step 13 not written: no tests yet for the owner e-mail test list, Havel off/on by list, or the host POST route.
+- Not run: browser tests, migration_guard, the design test glob, i18n parity test.
 
-- New in `test_host_wide_geometry_browser.py`: click slide at 1280/2000 (240↔64, margin, toggle inside rail, icon flipped, transitions running), restore + resize 2000→1280→1024→768→390→2000 never animates, tablet overlay slides without moving the page, reduced motion.
-- `test_design_shell_browser.py`: waits for the slide to finish before measuring.
-- Passed: `test_host_wide_geometry_browser.py`, `test_design_guardrails_browser.py`, `test_design_shell_browser.py`, `test_static_versions.py`, `test_0251_tablet_browser.py`, `test_shell_lane_browser.py`, `test_a11y_guard_browser.py`, `test_host_fit_browser.py`, `test_design_shell.py`, `test_host_ux_acceptance.py`, `test_0252_touch_sweep_browser.py`, `test_dashboard_rows_browser.py` (0 skipped, `UBYHOST_REQUIRE_BROWSER=1`).
+## Owner steps left
+- Finish step 13 (test_0376_ai_gates.py), then rerun the checks above.
+- Review the Leon section at 390 px (no screenshot taken).
 
-## Screenshots
+## Review (Opus, 2026-10-25)
 
-Project files `sidebar-animation-0376/`: dashboard 390 open; 1280 and 2000 open and collapsed; 1280 mid-slide; 1024 tablet overlay.
+- `leon.switched_on` now means "host said yes and the owner is on the test list" only. `ai.enabled("leon")` stays a separate check on the guide card, so a chat that is open when AI goes off still passes the guest's message to the host (the existing 0350 behaviour) instead of 404ing.
+- `ai.on_test_list` / `ai.owner_on_test_list` split out of `enabled_for` / `enabled_for_property`.
+- Existing Leon tests no longer patch `switched_on`; their fixtures set `leon_enabled = 1` (also test_privacy_first, test_guest_leon_browser), so the real gate runs.
+- Step 13 written: `App/tests/test_0376_ai_gates.py` (8 tests: default off, host toggle on/off, foreign property 404, no section while AI is off, test list keeps others out of Leon/translation/Havel, case-insensitive match).
+- Ran: ruff, design_lint, migration_guard origin/main, and 425 non-browser tests across havel/ai/design/guide/i18n/dev_ui/admin/api files plus leon/privacy files: all pass.

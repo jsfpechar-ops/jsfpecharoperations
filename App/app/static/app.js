@@ -805,7 +805,7 @@
       });
     }
 
-    // 0376: only a click slides the rail; restore and resize stay instant.
+    // 0377: only a click slides the rail; restore and resize stay instant.
     var animateTimer = null;
     function animateRail() {
       document.body.classList.add("sidebar-animating");

@@ -8,8 +8,8 @@
     "v": "20261020-0188e"
   },
   "app.js": {
-    "sha256": "c76f77b05dc301cf32776619b7a8b49fa550426ebc4aa4870d17021191e20347",
-    "v": "20261025-0376"
+    "sha256": "bad08e58325b355367e6301b10474934f5ddb417c3c6b7500c758acbc87ea45e",
+    "v": "20261025-0377"
   },
   "apple-touch-icon.png": {
     "sha256": "8b487f53a3a7522a9620ed5c26ab1fd77ee6a08cae12fcd087cb9f7a0c03c250",
@@ -88,8 +88,8 @@
     "v": "20261023-door-code-window"
   },
   "host2.css": {
-    "sha256": "34eff0ebeee80c4e522cb68f73e4400138f34d50abbce0607c4fdb1995099bc8",
-    "v": "20261025-0376"
+    "sha256": "65b14128b59014efebb29776c0cfa76b10f68266084447999c3e790b9fb2da5e",
+    "v": "20261025-0377"
   },
   "landing.css": {
     "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",

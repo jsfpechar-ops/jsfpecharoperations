@@ -949,7 +949,7 @@ def _settled(page):
 
 
 def test_sidebar_click_slides_the_rail_and_flips_the_toggle(wide_host, wide_base):
-    """0376: a click animates width and page margin; the toggle stays in the rail, flipped."""
+    """0377: a click animates width and page margin; the toggle stays in the rail, flipped."""
     output_dir = _output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
     with sync_api.sync_playwright() as playwright:
@@ -988,7 +988,7 @@ def test_sidebar_click_slides_the_rail_and_flips_the_toggle(wide_host, wide_base
 
 
 def test_sidebar_restore_and_resize_never_animate(wide_host, wide_base):
-    """0376: a stored collapse and every breakpoint crossing apply instantly."""
+    """0377: a stored collapse and every breakpoint crossing apply instantly."""
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 2000, collapsed=True)
@@ -1019,7 +1019,7 @@ def test_sidebar_restore_and_resize_never_animate(wide_host, wide_base):
 
 
 def test_tablet_rail_toggle_slides_the_overlay_only(wide_host, wide_base):
-    """0376: at 1024-1279 the toggle slides the menu over the page; the page never moves."""
+    """0377: at 1024-1279 the toggle slides the menu over the page; the page never moves."""
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1024, collapsed=False, has_touch=True)
@@ -1041,7 +1041,7 @@ def test_tablet_rail_toggle_slides_the_overlay_only(wide_host, wide_base):
 
 
 def test_sidebar_click_respects_reduced_motion(wide_host, wide_base):
-    """0376: with reduced motion the rail and page jump without a transition."""
+    """0377: with reduced motion the rail and page jump without a transition."""
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = _rail_context(browser, wide_host, wide_base, 1280, collapsed=False, reduced_motion="reduce")
