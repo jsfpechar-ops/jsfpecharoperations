@@ -115,7 +115,7 @@ def test_one_import_per_listing_for_good(ws):
     db.execute("UPDATE guide_import SET status = 'done' WHERE status = 'queued'")
     assert gi.imports_left(ws["home"]) == 0
     page = ws["client"].get(f"/apartments/{ws['home']}/guide").text
-    assert "Imports left for this property: 0." in page and 'name="url"' not in page
+    assert "Imports left for this property: 0." in page and 'name="booking_url"' not in page and 'name="airbnb_url"' not in page
 
 
 def test_the_global_budget(ws, monkeypatch):
@@ -129,7 +129,7 @@ def test_the_global_budget(ws, monkeypatch):
 def test_off_without_a_token(ws, monkeypatch):
     monkeypatch.setattr(config, "APIFY_TOKEN", "")
     page = ws["client"].get(f"/apartments/{ws['home']}/guide").text
-    assert "Imports are not switched on" in page and 'name="url"' not in page
+    assert "Imports are not switched on" in page and 'name="booking_url"' not in page and 'name="airbnb_url"' not in page
     r = _post(ws, BOOKING)
     assert "err=" in r.headers["location"] and gi.imports(ws["home"]) == []
     assert gi.process_queue() == 0
@@ -268,3 +268,70 @@ def test_retention_drops_raw_text_after_seven_days_and_failed_rows_after_sixty(w
     assert db.query_one("SELECT id FROM guide_import WHERE id = ?", (failed,)) is None
     assert gi.imports_left(ws["home"]) == 1
     assert "guide_imports" in dict(retention.STEPS)
+
+
+# --- 0403: a Booking and an Airbnb link together, the import first ----------
+
+
+def _post2(ws, booking="", airbnb="", next_=None):
+    data = {"booking_url": booking, "airbnb_url": airbnb}
+    if next_:
+        data["next"] = next_
+    return ws["client"].post(f"/apartments/{ws['home']}/guide/import", data=data, follow_redirects=False)
+
+
+def _loc(r):
+    from urllib.parse import unquote_plus
+    return unquote_plus(r.headers["location"])
+
+
+def test_both_links_in_one_post_queue_two_rows(ws):
+    r = _post2(ws, booking=BOOKING, airbnb=AIRBNB)
+    assert r.status_code == 303 and "msg=" in r.headers["location"]
+    rows = gi.imports(ws["home"])
+    assert sorted(x["source"] for x in rows) == ["airbnb", "booking"]
+    assert all(x["status"] == "queued" for x in rows)
+    assert gi.imports_left(ws["home"]) == 0
+
+
+def test_empty_fields_queue_nothing(ws):
+    r = _post2(ws)
+    assert "err=" in r.headers["location"] and gi.imports(ws["home"]) == []
+
+
+def test_two_airbnb_links_are_refused(ws):
+    r = _post2(ws, booking="https://www.airbnb.com/rooms/12345678", airbnb=AIRBNB)
+    assert "err=" in r.headers["location"] and "not two from the same site" in _loc(r)
+    assert gi.imports(ws["home"]) == []
+
+
+def test_a_used_platform_refuses_the_pair(ws):
+    _post(ws, AIRBNB)
+    db.execute("UPDATE guide_import SET status = 'done' WHERE status = 'queued'")
+    r = _post2(ws, booking=BOOKING, airbnb=AIRBNB)
+    assert "err=" in r.headers["location"] and "already imported" in _loc(r)
+    assert len(gi.imports(ws["home"])) == 1
+
+
+def test_the_budget_counts_each_run(ws, monkeypatch):
+    monkeypatch.setattr(config, "APIFY_MONTHLY_RUNS", 1)
+    r = _post2(ws, booking=BOOKING, airbnb=AIRBNB)
+    assert "err=" in r.headers["location"] and gi.imports(ws["home"]) == []
+    r = _post2(ws, booking=BOOKING)
+    assert "msg=" in r.headers["location"] and len(gi.imports(ws["home"])) == 1
+
+
+def test_the_import_section_comes_first_while_it_has_work(ws):
+    page = ws["client"].get(f"/apartments/{ws['home']}/guide").text
+    assert 'name="booking_url"' in page and 'name="airbnb_url"' in page
+    assert page.index('id="import"') < page.index('id="topic-')
+    _post2(ws, booking=BOOKING, airbnb=AIRBNB)
+    db.execute("UPDATE guide_import SET status = 'done'")
+    page = ws["client"].get(f"/apartments/{ws['home']}/guide").text
+    assert 'name="booking_url"' not in page and 'name="airbnb_url"' not in page
+    assert page.index('id="import"') > page.rindex('id="topic-')
+
+
+def test_next_leon_redirects_to_the_setup_import_step(ws):
+    r = _post2(ws, booking=BOOKING, next_="leon")
+    assert r.headers["location"].startswith(f"/apartments/{ws['home']}/leon/setup/import")
