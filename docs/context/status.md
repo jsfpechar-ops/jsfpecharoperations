@@ -9,7 +9,7 @@ Updated: 2026-10-25.
 
 ## Now
 
-- 0391 Open buttons are real links (stays row Open did nothing). **Owner:** merge PR, deploy (`?v=`).
+- 0391 Open links: owner PR.
 
 - 0377 sidebar slide: owner PR.
 - Guide + Leon 0341-0355: owner merges #465-#468, evals.
