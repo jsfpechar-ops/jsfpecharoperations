@@ -1560,6 +1560,12 @@
     }
 
     function runItem(item) {
+      if (item.havel) {
+        if (command.open) command.close();
+        if (window.UbyHavel && window.UbyHavel.open) window.UbyHavel.open(item.query || "");
+        else window.location.assign(item.url);
+        return;
+      }
       var recentId = item.url || item.label;
       recents = [recentId].concat(recents.filter(function (value) { return value !== recentId; })).slice(0, 8);
       try { localStorage.setItem(recentKey, JSON.stringify(recents)); } catch (error) {}
@@ -1607,7 +1613,9 @@
         }
         return score;
       }
+      var askHavel = null;
       visible = items.map(function (item) {
+        if (item.havel) { askHavel = item; return null; }
         var haystack = [item.label, item.meta, item.group, item.keywords].join(" ").toLocaleLowerCase();
         var scores = words.map(function (word) { return fuzzyScore(haystack, word); });
         if (scores.some(function (score) { return score < 0; })) return null;
@@ -1624,6 +1632,10 @@
       selected = 0;
       results.textContent = "";
       results.removeAttribute("aria-busy");
+      if (!visible.length && askHavel && words.length) {
+        var asked = String(query || "").trim();
+        visible = [{ label: askHavel.label + ": " + asked, group: askHavel.group, url: askHavel.url, havel: true, query: asked }];
+      }
       if (!visible.length) {
         var empty = document.createElement("p");
         empty.className = "command-empty";

@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from .. import access, auth, config, db, guest_slug, host_i18n, ttlock
+from .. import access, ai, auth, config, db, guest_slug, havel, host_i18n, ttlock
 
 router = APIRouter()
 
@@ -113,4 +113,7 @@ def command_palette(request: Request):
             "tone": int(submission["apartment_id"]) % 10,
             "keywords": submission["created_at"],
         })
+    if ai.enabled(havel.FEATURE):
+        # 0322: app.js shows this row only when nothing else matches, as "Ask Havel (AI): <query>".
+        items.append({"label": t("havel.launcher"), "group": t("havel.name"), "url": "/havel", "havel": True})
     return JSONResponse({"items": items})

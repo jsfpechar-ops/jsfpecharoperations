@@ -145,7 +145,8 @@ def test_disclosure_design_and_geometry_on_every_changed_page(host, base, engine
                 if shots and width == 390:
                     directory = Path(shots) / "door-code-access"
                     directory.mkdir(parents=True, exist_ok=True)
-                    page.screenshot(path=str(directory / f"{engine}-{lang}-{name}.png"), full_page=True)
+                    # The guide is too long for one full-page image; the anchor view shows the section.
+                    page.screenshot(path=str(directory / f"{engine}-{lang}-{name}.png"), full_page=name != "help")
             context.close()
         browser.close()
 

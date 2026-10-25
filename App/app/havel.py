@@ -68,6 +68,12 @@ GUIDE_ANCHORS: Dict[str, str] = {
     "filters": "guide.nav.filters", "housebook": "guide.nav.housebook", "stay_fee": "guide.nav.stay_fee",
     "invoices": "guide.nav.invoices", "settings": "guide.nav.settings", "door-codes": "guide.nav.door-codes",
     "faster": "guide.nav.faster", "faq": "guide.nav.faq", "legal": "guide.nav.legal",
+    "finding": "guide.nav.finding", "glossary": "guide.nav.glossary", "cleaning": "guide.nav.cleaning",
+    "guest_links": "guide.nav.guest_links", "business": "guide.nav.business", "archive": "guide.nav.archive",
+    "privacy_requests": "guide.nav.privacy_requests",
+    "add-property": "guide.setup.add_title", "setup-guide": "guide.setup.wizard_title",
+    "connect-calendar": "guide.stays.calendar_title", "add-stay": "guide.stays.add_title",
+    "stay-fee-setup": "guide.stay_fee.setup_title", "stay-fee-pay": "guide.stay_fee.pay_title",
 }
 for _anchor, _key in GUIDE_ANCHORS.items():
     PAGES["guide_" + _anchor.replace("-", "_")] = ("/guide#" + _anchor, _key, "Help & guide: " + _anchor)
@@ -560,5 +566,6 @@ def record_gap(lang: str, page: str, kind: str, question: str) -> None:
     text = redact(question)[0].strip()[:MAX_MESSAGE_CHARS]
     if not text or kind not in GAP_KINDS:
         return
-    db.insert("havel_gap", {"created_at": db.utcnow(), "lang": (lang or "en")[:5],
+    # Day only: a time to the second could be joined to the user-keyed rate-limit rows written in the same request.
+    db.insert("havel_gap", {"created_at": db.utcnow()[:10] + "T00:00:00+00:00", "lang": (lang or "en")[:5],
                             "page": page if page in PAGES else None, "kind": kind, "question": text})
