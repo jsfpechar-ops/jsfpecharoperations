@@ -221,6 +221,14 @@
     <section class="guide-section ui-section ui-section-plain" id="settings">
       <h2>{{ t('guide.nav.settings') }}</h2>
       <p>{{ t('guide.settings.body') }}</p>
+      <p>{{ t('guide.settings.when') }}</p>
+      <p>{{ t('guide.settings.login') }}</p>
+      {% for part, count in [('passkey', 3), ('twofa', 4), ('email', 2)] %}
+      <h3 id="settings-{{ part }}">{{ t('guide.settings.' ~ part ~ '_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, count + 1) %}<li>{{ t('guide.settings.' ~ part ~ n) }}</li>{% endfor %}</ol>
+      {% endfor %}
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 4) %}<li>{{ t('guide.settings.wrong' ~ n) }}</li>{% endfor %}</ul>
       <ul class="guide-steps">
         {% for item in ['two_factor', 'retention', 'requests', 'deletion'] %}<li>{{ t('guide.settings.' ~ item) }}</li>{% endfor %}
       </ul>
