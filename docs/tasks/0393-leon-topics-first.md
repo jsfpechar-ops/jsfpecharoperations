@@ -1,6 +1,6 @@
 # 0393: Leon starts with topics, "Other question" opens the box; brief premium-concierge voice
 
-Status: blocked (see docs/tasks/0393-report.md)
+Status: done
 Depends on: main (0387-0390 merged) | Branch: claude/0393-leon-topics-first (checked out in /home/claude/wt-leon; commit here)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

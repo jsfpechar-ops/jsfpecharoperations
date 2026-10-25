@@ -116,6 +116,7 @@
       b.type = "button";
       b.className = "g-leon-chip";
       b.textContent = it.title;
+      if (it.other) b.setAttribute("data-leon-other", "");
       b.addEventListener("click", function () { it.other ? askOther() : onPick(it); });
       wrap.appendChild(b);
     });
@@ -169,6 +170,7 @@
   function openBox(focus) {
     opened = true;
     form.hidden = false;
+    updateCount(); // the height was measured while the box was hidden
     if (focus) input.focus();
   }
   function askOther() {
@@ -176,8 +178,9 @@
       log.removeChild(n);
       local = local.filter(function (x) { return x !== n; });
     });
-    keep(bubble("guest", "", text("text-other")));
-    keep(bubble("leon", "", text("text-other-prompt")));
+    // Marked "other", like the welcome, so they never count as a sent message or a reply.
+    keep(bubble("guest", "", text("text-other"))).setAttribute("data-leon-msg", "other");
+    keep(bubble("leon", "", text("text-other-prompt"))).setAttribute("data-leon-msg", "other");
     openBox(true);
   }
 

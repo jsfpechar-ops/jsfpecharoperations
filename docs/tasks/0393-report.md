@@ -1,38 +1,24 @@
-# 0393 report
+# 0393 report: Leon starts with topics, brief premium-concierge voice
 
-Status: blocked
-Done: steps 1 to 6 (copy, template, JS, prompt, version key, tests written). Left: the 5 failing browser tests below, then one rerun of §6.
+Status: review
+Executor: Haiku 5.5, finished by the orchestrator | Branch: claude/0393-leon-topics-first
 
 ## Files changed
-- App/app/i18n.py, App/app/guest_uk_i18n.py: leon_sit_other, leon_other_prompt in 6 languages
-- App/app/templates/guest/_leon.html, App/app/templates/guest/base.html (?v=20261025-0393)
-- App/app/static/guest-leon.js: Other question chip, openBox/askOther, box hidden until opened or stored messages
-- App/app/leon.py: CHARACTER edits only (no test pinned the old text)
-- App/tests/static_versions.json, App/tests/test_guest_leon_browser.py (new test test_leon_other_question_opens_box, helper _open_box)
-- docs/tasks/0393-leon-topics-first.md (status), docs/tasks/0393-report.md, docs/tasks/screenshots-0393/leon-topics-first-390.png, docs/tasks/screenshots-0393/leon-other-390.png
 
-## Command results
-- ruff E9,F63,F7,F82,F401,F841: All checks passed!
-- node --check guest-leon.js: OK
-- static versions --write: wrote 37 files
-- pytest tests/test_guest_leon_browser.py (last run): 5 failed, 4 passed (70 s). The §6 set was not rerun.
-- context lint: WARN  20 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review. next free: task 0394 | migration 0022 context lint: OK 
+- App/app/i18n.py, App/app/guest_uk_i18n.py: `leon_sit_other`, `leon_other_prompt` (en, cs, de, es, fr, uk)
+- App/app/templates/guest/_leon.html: `data-text-other`, `data-text-other-prompt`
+- App/app/static/guest-leon.js: "Other question" chip (`data-leon-other`) always last; box hidden until it is tapped or the stay has stored messages; the two "Other question" bubbles are marked `data-leon-msg="other"` (never a sent message or a reply); `updateCount()` on open so the box height is measured while visible
+- App/app/leon.py: CHARACTER: five-star concierge line, "Premium but brief" bullet (~40 words, one courtesy at most), steps at most four
+- App/app/templates/guest/base.html, App/tests/static_versions.json: guest-leon.js `20261025-0393b`
+- App/tests/test_guest_leon_browser.py: `_open_box` helper before typing, chip count 4 -> 5, new `test_leon_other_question_opens_box`
+- docs/tasks/screenshots-0393/: leon-topics-first-390.png, leon-other-390.png
 
-## Failing tests (first assertion or error line)
-- test_the_chat_works_and_lays_out_on_a_phone[en] and [cs]: tests/test_guest_leon_browser.py:79 "assert False" (the test is on a fresh chat after _open_box; not yet analysed).
-- test_leon_chat_look_on_a_phone: _open_box timed out clicking the "Other question" chip (30 s).
-- test_messages_written_while_leon_answers_are_queued_and_sent_as_one: _open_box timed out (line 182).
-- test_leon_greets_first: tests/test_guest_leon_browser.py:272 "'What can I do for you' in 'Leon / Of course. Write your question below...'": the reply wait picks the prompt bubble.
-- Passing: test_leon_other_question_opens_box (new), test_leon_topic_chips, test_without_javascript..., test_a_reload....
+## Commands (last lines)
+
+- §6 pytest set: 121 passed, 2 failed (static_versions: key bump needed after the orchestrator's JS fix; fixed with `0393b` and `--write`, file re-run: 3 passed); 0 skipped
+- ruff: All checks passed. node --check: ok. context lint: OK
 
 ## Deviations
-- One commit as §9 says (executor.md says per step); the owner asked for one commit.
-- The new test sends with the Send button, not Enter.
-- Test edits beyond the brief: _open_box helper before each fill; chip count 4 to 5 in test_leon_topic_chips; .last on guest and leon locators.
-- The i18n insert script was written to /tmp (deleted), not the scratchpad.
 
-## Questions
-- Is the "Other question" chip click timing out in the _open_box path a real page bug (chip hidden or covered at 390 px) or a test race? Needs a look at the 390 px welcome screenshot.
-
-## Owner steps left
-- None yet. The executor or a fresh session must fix the 5 tests and rerun §6 before review.
+- Haiku stopped with 5 browser tests failing; the orchestrator added the `data-leon-other` hook (the cs test could not find the English label), marked the two bubbles "other" (tests waiting for `[data-leon-msg=leon]` matched the prompt), and re-measured the box height on open (the placeholder sat on a second line).
+- Owner: re-run `leon_eval.py` on staging after merge; the CHARACTER changed.

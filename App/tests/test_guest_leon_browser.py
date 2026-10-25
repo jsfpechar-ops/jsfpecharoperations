@@ -135,7 +135,7 @@ def test_leon_chat_look_on_a_phone(live_server, browser, monkeypatch):  # noqa: 
         guest_bg = page.locator("[data-leon-msg=guest]").evaluate("e => getComputedStyle(e).backgroundColor")
         leon_bg = page.locator("[data-leon-msg=leon]").evaluate("e => getComputedStyle(e).backgroundColor")
         assert guest_bg != leon_bg
-        assert page.locator(".g-leon-msg--guest .g-leon-who").bounding_box()["width"] <= 1
+        assert page.locator("[data-leon-msg=guest] .g-leon-who").bounding_box()["width"] <= 1
         assert page.evaluate("() => document.documentElement.scrollWidth <= 390")
         SHOTS.mkdir(parents=True, exist_ok=True)
         docs_shots.mkdir(parents=True, exist_ok=True)
@@ -333,7 +333,7 @@ def test_leon_topic_chips(live_server, browser, monkeypatch):  # noqa: F811
 def _open_box(page):
     # 0393: the box stays closed until "Other question" is tapped (or the stay already has messages).
     if page.locator("[data-leon-input]").is_hidden():
-        page.locator(".g-leon-chip", has_text="Other question").last.click()
+        page.locator("[data-leon-other]").last.click()
     page.locator("[data-leon-input]").wait_for(state="visible")
 
 
@@ -360,8 +360,8 @@ def test_leon_other_question_opens_box(live_server, browser, monkeypatch):  # no
 
         before = len([u for u in leon_reqs if leon_path in u])
         chips.last.click()
-        assert page.locator("[data-leon-msg=guest]", has_text="Other question").count() == 1
-        assert page.locator("[data-leon-msg=leon]", has_text="Write your question below").count() == 1
+        assert page.locator("[data-leon-msg=other]", has_text="Other question").count() == 1
+        assert page.locator("[data-leon-msg=other]", has_text="Write your question below").count() == 1
         assert page.locator("[data-leon-input]").is_visible()
         assert page.locator("[data-leon-input]").evaluate("n => n === document.activeElement")
         assert page.evaluate("document.documentElement.scrollWidth") <= 390
