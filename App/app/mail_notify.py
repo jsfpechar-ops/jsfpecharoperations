@@ -1623,6 +1623,7 @@ def build_completion(
     checkin: str = "",
     checkout: str = "",
     address: str = "",
+    host_url: str = "",
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
 
@@ -1632,13 +1633,12 @@ def build_completion(
     the guest just finished filling the form in. An invoice is its own mail
     (``build_invoice_issued``), so the receipt stays buttonless and closed.
 
-    The stay link is a labelled link, not a printed address: the URL is long and means nothing to a guest.
+    The only link is for the copied host and opens the stay in the app; the guest gets no link, because their stay page is already on their device.
     """
     subject = _guest_text(lang, "mail_completion_subject", property=property_name)
     intro = _guest_text(
         lang, "mail_completion_intro", property=property_name, dates=dates
     )
-    action = _guest_text(lang, "mail_completion_action")
     note = _guest_text(lang, "mail_completion_note")
     footer_lines = _guest_footer_lines(lang, property_name, host)
 
@@ -1688,9 +1688,13 @@ def build_completion(
             blocks.append(_block_paragraph(first_use))
             text_lines.append(first_use)
 
-    # Slot 2: the links, quiet by design -- nothing here is still owed.
-    blocks.append(_block_quiet_link(stay_url, action))
-    text_lines.extend(["", f"{action}: {stay_url}"])
+    # Slot 2: one quiet link, for the copied host only. The guest's own stay
+    # page is already open on the device that registered; a second guest
+    # link here only invited a tap with nothing behind it.
+    if host_url:
+        host_action = _guest_text(lang, "mail_completion_host_action")
+        blocks.append(_block_quiet_link(host_url, host_action))
+        text_lines.extend(["", f"{host_action}: {host_url}"])
 
     # Slot 3: the closing note.
     blocks.append(_block_paragraph(note, muted=True))
