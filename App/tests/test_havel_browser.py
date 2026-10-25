@@ -19,7 +19,7 @@ else:
 from app import ai, auth, config, db
 from app.main import app
 from tests.ai_fake import FakeClient, reply
-from tests.browser_support import chromium_launch_kwargs
+from tests.browser_support import chromium_launch_kwargs, settle_motion
 from tests.test_submission_retry_cap import host as host  # noqa: F401
 
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0373"
@@ -82,6 +82,7 @@ def test_computer_panel_topics_handoff_and_answer(origin):
         assert page.evaluate("([x, y]) => !!document.elementFromPoint(x, y).closest('#app-sidebar')", [sidebar["x"] + sidebar["width"] / 2, sidebar["y"] + sidebar["height"] / 2])
         assert dialog.locator("[data-havel-topic-link]").count() == 5
         assert dialog.locator("h2#havel-title").inner_text().strip() == "Havel (AI)"
+        settle_motion(page)
         box = dialog.locator(".ui-sheet").bounding_box()
         assert box["width"] <= 400 and box["height"] <= 680
         dialog.locator("[data-havel-topic-link]", has_text="stay").first.click()
@@ -124,6 +125,7 @@ def test_phone_launcher_and_sheet(origin):
         fab.click()
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
+        settle_motion(page)
         sheet = dialog.locator(".ui-sheet").bounding_box()
         assert sheet["width"] == 390 and sheet["height"] <= 900 * 0.7 + 1
         assert sheet["y"] + sheet["height"] <= tabbar["y"] + 1

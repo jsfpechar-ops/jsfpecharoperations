@@ -74,7 +74,7 @@ def test_cards_at_390_and_1280(origin):
             assert card.locator("form[action='/reservations'] input[name='_csrf']").count() == 1
             assert not card.locator("input[name='date_from']").is_visible()
             card.locator("summary").click()
-            assert card.locator("input[name='date_from']").is_visible()
+            card.locator("input[name='date_from']").wait_for(state="visible")  # 0386: the fold-out slides open
             assert page.evaluate("document.documentElement.scrollWidth") <= width
             page.screenshot(path=str(SHOTS / f"card-stay-{width}.png"), full_page=True)
             card.locator("[data-havel-cancel]").click()

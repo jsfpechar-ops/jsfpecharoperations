@@ -19,7 +19,7 @@ else:
 
 from app import auth, cleaning, cleaning_codes, cleaning_i18n, db
 from app.main import app
-from tests.browser_support import chromium_launch_kwargs
+from tests.browser_support import chromium_launch_kwargs, settle_motion
 from tests.test_cleaning import workspace, stay  # noqa: F401
 
 
@@ -632,6 +632,7 @@ def _open_create_dialog(page, kind):
 
 
 def _assert_dialog_centred(page, label):
+    settle_motion(page)
     box = page.evaluate(CREATE_CENTRE_JS)
     assert abs(box["cx"] - box["vx"]) <= 8 and abs(box["cy"] - box["vy"]) <= 8, (label, box)
     return box
