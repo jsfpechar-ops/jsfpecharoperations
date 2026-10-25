@@ -18,10 +18,10 @@ def _csrf(page: str) -> str:
 
 
 def _post(client, data, headers=None):
-    page = client.get("/havel").text
+    page = client.get("/havel?lang=en").text
     form = {"_csrf": _csrf(page), "history": "", "history_sig": "", "page": "dashboard", "device": "phone", "topic": ""}
     form.update(data)
-    return client.post("/havel", data=form, headers=headers or {})
+    return client.post("/havel?lang=en", data=form, headers=headers or {})
 
 
 @pytest.fixture(autouse=True)

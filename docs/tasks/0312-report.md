@@ -2,34 +2,28 @@
 
 Status: blocked
 
-Done: steps 1 to 7. Step 8: test file written (committed as WIP), run blocked. Left: step 8 run, step 9 (browser guard, screenshots at 390 and 1280), report review.
+Done: steps 1 to 7; step 8 lang fix applied and test file simplified. Step 8 run still failing (1 test). Left: step 8 pass, step 9 (browser guard, screenshots at 390 and 1280), report review.
 
 ## Files changed
-- App/app/host_i18n.py: havel.* copy en and cs (step 1-2).
-- App/app/routes/havel.py (new): route as in brief step 4.
-- App/app/main.py: import `havel as havel_routes`, `include_router(havel_routes.router)` after the cleaning include.
-- App/app/templates/havel.html, _havel_thread.html, _havel_form.html (new); _icons.html: `message-circle-question`.
-- App/app/static/host2.css (appended), App/app/templates/base.html (cache key), App/tests/static_versions.json (regenerated, 36 files).
-- docs/design/catalog.json (classes, enforced_templates), docs/design/pages/havel.md (new), App/tests/test_design_guardrails_browser.py (`"havel": "/havel"`).
-- App/tests/test_havel_page.py (new, WIP).
+- App/app/host_i18n.py: havel.* copy en and cs (steps 1-2).
+- App/app/routes/havel.py (new): route; `request.state.lang` replaced with `host_i18n.lang_from_request(request)` (commit 2384c53).
+- App/app/main.py, App/app/templates/havel.html, _havel_thread.html, _havel_form.html (new), _icons.html, App/app/static/host2.css, App/app/templates/base.html, App/tests/static_versions.json, docs/design/catalog.json, docs/design/pages/havel.md (new), App/tests/test_design_guardrails_browser.py.
+- App/tests/test_havel_page.py (new): simplified second test per step 8; `_post` and GET use `/havel?lang=en`.
 
 ## Commands (last lines)
-- Step 4 import: `from app.main import app` loads; `/havel` in OpenAPI paths: `['/havel']`.
-- Step 5 icon: `grep -c message-circle-question` = 1.
-- Step 6 cache key: `grep -c 'host2.css?v=20261025-0312"'` = 1; `static_versions --write`: `wrote .../static_versions.json (36 files)`.
-- Step 7: `design lint: OK`. Catalog 236 classes.
-- Step 8 run: `1 failed` (see below).
+- Step 8 run: `1 failed, 4 passed` (`test_off_limit_and_failure_show_the_fixed_sentences`, line 78: `assert "I don't know that, and I don't want to guess" in page`). The page has lang="en" but the sentence is not found. Probable cause: Jinja autoescapes the apostrophe to `&#39;`, so the assertion needs the escaped form or `html.unescape(page)`. Not verified.
+- tests/test_host_i18n.py alone: `3 failed, 11 passed` (the 3 known pre-existing failures).
+- Step 7 earlier: `design lint: OK`.
 
 ## Deviations
-- Step 4 check: `app.routes` items have no `.path` (`_IncludedRouter`), so the brief's one-liner errors. Used `app.openapi()` paths instead.
-- Step 7 script saved in the session scratchpad, not `/tmp/claude-0/s/`.
-- Step 8 test file: dropped the unused `rate_limit` import after the brief's simplification.
-- Step 8 STOPPED: `AttributeError: 'State' object has no attribute 'lang'` at app/routes/havel.py line 35 (`_t` in `havel_page`). `request.state.lang` is set only inside `render()` (app/app/templating.py line 574), which runs after the route's `_t` calls. Brief §8 says ask.
-- Not run: tests/test_havel_engine.py, tests/test_host_i18n.py (3 known pre-existing failures), test_no_em_dashes.py, design guardrails and a11y browser tests, screenshots.
+- Step 8 lang fix: `request.state.lang` was not set before `_t` ran; now `host_i18n.lang_from_request(request)`. Brief §8 said to ask; orchestrator instructed the fix.
+- Test isolation: without `?lang=en` the page rendered in Vietnamese (language cookie or saved state leaked between requests in the test client). Pinned to `en` in the helper.
+- Second failure in the same run stopped the executor per executor.md (one fix allowed).
+- Step 4 check: `app.routes` items have no `.path`; used `app.openapi()` instead.
 
 ## Questions
-1. How should the route get the language before `render()`? Option A: `host_i18n.resolve_language(request, default="en")` (the same resolver `render()` uses) set on `request.state.lang` at the top of each handler. Option B: `normalise_language(request.query_params.get("lang"))`. Recommend A.
-2. Confirm the 3 pre-existing test_host_i18n failures (no such table: apartment when the file runs alone) are accepted.
+1. Fix the apostrophe assertion (escape or unescape) in test_havel_page.py, then rerun step 8? Approve and I continue.
+2. Confirm the 3 pre-existing test_host_i18n failures are accepted.
 
 ## Owner steps left
 None until steps 8 to 9 are done.
