@@ -927,3 +927,4 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-topic { min-height: var(--control-h); }
 .host-workspace .havel-topics .havel-answer { max-width: none; }
 .host-workspace .havel-ask { align-self: flex-start; }
+.host-workspace .havel-topics .ui-menu-panel { position: static; display: flex; min-width: 0; box-shadow: none; border-radius: var(--card-radius); padding: var(--space-2); z-index: auto; }
