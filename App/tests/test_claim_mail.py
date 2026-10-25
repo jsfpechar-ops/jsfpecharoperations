@@ -1834,6 +1834,9 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "stay_fee_blocked",
         # 0351: the batched "guests asked something" mail to the host.
         "guest_question",
+        # 0319: the Havel support hand-off and the AI budget warning, both to the operator.
+        "havel_support",
+        "ai_budget",
     }
 
 

@@ -1,6 +1,6 @@
 # 0319: Havel (AI): one-tap support hand-off and the 80% budget mail
 
-Status: todo
+Status: review
 Depends on: 0314, 0325 | Base commit: 92646d3 (check `git rev-parse --short origin/main` first; if it differs, write the current one here) | Branch: task/0319-havel-support
 Executor: Haiku 5.5 | Fits one session: 28 tool calls, 60k tokens
 

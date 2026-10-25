@@ -56,7 +56,7 @@ def test_topics_render_on_the_page_and_as_fragments(host):
     assert host_i18n.translate("en", "guide.guest_links.find1")[:20] in answer or \
         host_i18n.translate("cs", "guide.guest_links.find1")[:20] in answer
     support = html.unescape(host.get("/havel?topic=wrong&q=error&lang=en").text)
-    assert "mailto:" in support
+    assert 'action="/havel/support"' in support
     assert host.get("/havel?topic=evil&q=../x&lang=en").status_code == 200
 
 

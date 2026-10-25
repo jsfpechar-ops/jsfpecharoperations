@@ -17,7 +17,7 @@
     {% if item.links or item.support %}
     <div class="havel-links">
       {% for label, url in item.links %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ url }}">{{ label }}{{ icon('chevron-right', 16) }}</a>{% endfor %}
-      {% if item.support and operator().email %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="mailto:{{ operator().email }}{% if item.support_summary %}?body={{ item.support_summary | urlencode }}{% endif %}">{{ icon('send', 16) }}{{ t('havel.support.mailto') }}</a>{% endif %}
+      {% if item.support and loop.last %}{% with havel_support_prefill = item.support_summary %}{% include "_havel_support.html" %}{% endwith %}{% endif %}
     </div>
     {% endif %}
   </div>

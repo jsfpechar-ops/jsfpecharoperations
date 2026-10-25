@@ -1,0 +1,20 @@
+{#- 0319: the support hand-off (plan section 8). Works without JavaScript; the
+    newest Havel reply carries it, prefilled with Havel's English summary. -#}
+{% from "_ui.html" import ui_textarea, ui_button with context %}
+{% if havel_support_blocked %}
+<p class="havel-meta">{{ t('havel.support.limit', email=operator().email) }}</p>
+{% else %}
+<form method="post" action="/havel/support" class="havel-support" data-havel-support>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="history" value="{{ havel_history }}">
+  <input type="hidden" name="history_sig" value="{{ havel_history_sig }}">
+  <input type="hidden" name="page" value="{{ havel_page }}">
+  <input type="hidden" name="return_to" value="{{ havel_return_to }}">
+  <h3 class="havel-support-title">{{ t('havel.support.title') }}</h3>
+  {{ ui_textarea('havel-support-summary', t('havel.support.summary'), value=havel_support_prefill or '', name='summary', rows=4, attrs='maxlength="800"') }}
+  {{ ui_textarea('havel-support-note', t('havel.support.add'), name='note', optional=true, rows=2, attrs='maxlength="600"') }}
+  <p class="havel-meta">{{ t('havel.support.includes') }}</p>
+  {% if havel_support_to %}<p class="havel-meta">{{ t('havel.support.replies_to', email=havel_support_to) }}</p>{% endif %}
+  {{ ui_button(t('havel.support.send'), 'primary', type='submit', icon_name='send') }}
+</form>
+{% endif %}

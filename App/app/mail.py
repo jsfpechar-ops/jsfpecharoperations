@@ -62,6 +62,9 @@ KINDS = (
     "passkey_added",
     "door_code",
     "door_code_notice",
+    # 0319: Havel support hand-off and the AI budget warning, both to the operator.
+    "havel_support",
+    "ai_budget",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -104,6 +107,9 @@ HOST_KINDS = (
     # 0222: monthly stay-fee email (plan stay-fee-monthly-email).
     "stay_fee_report",
     "stay_fee_blocked",
+    # 0319: Havel support hand-off and the AI budget warning, both to the operator.
+    "havel_support",
+    "ai_budget",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.
