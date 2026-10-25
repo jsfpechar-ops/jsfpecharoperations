@@ -58,7 +58,6 @@ NEW_GUEST_KEYS = (
     "mail_completion_checkin_value",
     "mail_completion_checkout_label",
     "mail_completion_checkout_value",
-    "mail_completion_address_label",
     "mail_reminder_guest_subject",
     "mail_reminder_guest_subject_no_count",
     "mail_reminder_guest_preheader",
@@ -561,12 +560,12 @@ def test_the_completion_mail_shows_the_stay_at_a_glance():
             expected=3,
             checkin=checkin,
             checkout=checkout,
-            address="Dlouh\u00e1 12, Praha",
         )
         html_part = html.unescape(content["html"])
         # The panel title is a visual heading; the text part lists the rows.
         assert title in html_part, lang
-        for value in (guests, checkin, checkout, "Dlouh\u00e1 12, Praha"):
+        assert "Address" not in html_part, lang
+        for value in (guests, checkin, checkout):
             assert value in html_part, (lang, value)
             assert value in content["text"], (lang, value)
 

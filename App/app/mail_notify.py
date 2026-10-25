@@ -1622,7 +1622,6 @@ def build_completion(
     expected: Optional[int] = None,
     checkin: str = "",
     checkout: str = "",
-    address: str = "",
     host_url: str = "",
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
@@ -1664,8 +1663,6 @@ def build_completion(
         rows.append((_guest_text(lang, "mail_completion_checkin_label"), checkin))
     if checkout:
         rows.append((_guest_text(lang, "mail_completion_checkout_label"), checkout))
-    if address:
-        rows.append((_guest_text(lang, "mail_completion_address_label"), address))
     if rows:
         blocks.append(_block_panel(_guest_text(lang, "mail_completion_panel_title"), rows))
         text_lines.extend(["", *(f"{label}: {value}" for label, value in rows)])

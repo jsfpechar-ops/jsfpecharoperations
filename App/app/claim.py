@@ -335,7 +335,7 @@ def start_claim(
 
 
 def _completion_facts(apartment, reservation, lang: str) -> Dict[str, str]:
-    """Check-in, check-out and address for the receipt's stay panel.
+    """Check-in and check-out for the receipt's stay panel.
 
     Each is optional: a property without hours or an address still gets its
     receipt, with fewer rows. Any read failure drops the facts, never the mail.
@@ -355,12 +355,6 @@ def _completion_facts(apartment, reservation, lang: str) -> Dict[str, str]:
         return t(key, date=shown, time=f"{int(hour):02d}:00")
 
     try:
-        street = " ".join(
-            str(part).strip()
-            for part in (col(apartment, "addr_street"), col(apartment, "addr_house_no"))
-            if part and str(part).strip()
-        )
-        town = (col(apartment, "addr_obec") or "").strip()
         return {
             "checkin": moment(
                 reservation["date_from"], col(apartment, "checkin_hour"),
@@ -370,7 +364,6 @@ def _completion_facts(apartment, reservation, lang: str) -> Dict[str, str]:
                 reservation["date_to"], col(apartment, "checkout_hour"),
                 "mail_completion_checkout_value",
             ),
-            "address": ", ".join(part for part in (street, town) if part),
         }
     except Exception:
         return {}
