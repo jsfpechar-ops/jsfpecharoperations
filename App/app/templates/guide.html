@@ -234,6 +234,27 @@
       </ul>
     </section>
 
+    <section class="guide-section ui-section ui-section-plain" id="archive">
+      <h2>{{ t('guide.nav.archive') }}</h2>
+      <p>{{ t('guide.archive.what') }}</p>
+      <p class="ui-sub">{{ t('guide.archive.when') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('guide.archive.how' ~ n) }}</li>{% endfor %}</ol>
+      <p class="ui-sub">{{ t('guide.archive.note') }}</p>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul><li>{{ t('guide.archive.wrong1') }}</li></ul>
+    </section>
+
+    <section class="guide-section ui-section ui-section-plain" id="privacy_requests">
+      <h2>{{ t('guide.nav.privacy_requests') }}</h2>
+      <p>{{ t('guide.privacy_requests.what') }}</p>
+      <p class="ui-sub">{{ t('guide.privacy_requests.when') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 5) %}<li>{{ t('guide.privacy_requests.how' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul><li>{{ t('guide.privacy_requests.wrong1') }}</li></ul>
+    </section>
+
     <section class="guide-section ui-section ui-section-plain" id="door-codes">
       <h2>{{ t('guide.nav.door_codes') }}</h2>
       <p>{{ t('guide.door_codes.lede') }}</p>
