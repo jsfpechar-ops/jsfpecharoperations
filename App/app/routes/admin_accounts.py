@@ -20,6 +20,7 @@ from .. import (
     auth,
     config,
     db,
+    havel,
     host_i18n,
     incidents,
     lifecycle_mail,
@@ -958,7 +959,7 @@ def operations_admin(request: Request):
     account, guard = _require_admin(request)
     if guard:
         return guard
-    return render(request, "admin_operations.html", {"ops": admin_ops.overview()})
+    return render(request, "admin_operations.html", {"ops": admin_ops.overview(), "havel_ops": havel.admin_overview()})
 
 
 @router.get("/admin/funnel")
