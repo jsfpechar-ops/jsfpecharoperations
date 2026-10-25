@@ -123,6 +123,15 @@ def _properties_using_lock(owner_id, lock_id: str, except_apartment_id: Optional
     ]
 
 
+def _hour_or_none(raw: Any) -> Optional[int]:
+    """0397: a posted hour as 0..23, or None when blank or not an hour."""
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if 0 <= value <= 23 else None
+
+
 def _door_code_hours_overlap(
     checkin_hour: Optional[int], checkout_hour: Optional[int]
 ) -> bool:
@@ -1928,6 +1937,7 @@ def _refuse_apartment_save(
     operator_error: Optional[str],
     address_errors: Optional[Dict[str, str]] = None,
     shared_time_error: Optional[str] = None,
+    lock_times_error: bool = False,
 ):
     """Render the property page again with the host's unsaved values."""
     draft = dict(apartment)
@@ -1940,7 +1950,8 @@ def _refuse_apartment_save(
         draft["data_controller_entity_id"] = submitted["data_controller_entity_id"]
     for field in ("checkin_hour", "checkout_hour"):
         if field in form:
-            draft[field] = _form_str(form, field)
+            # 0397: the page does arithmetic on these; text here crashed it.
+            draft[field] = _hour_or_none(_form_str(form, field))
     copy_ctx = {
         "copy_property_peers": [
             row for row in access.apartments(request) if row["id"] != apartment["id"]
@@ -1960,18 +1971,32 @@ def _refuse_apartment_save(
     )
     if wizard:
         return wizard
+    extra = {
+        "property_view": "settings",
+        "settings_section": "property",
+        "address_errors": address_errors or {},
+        "shared_time_error": shared_time_error,
+    }
+    if lock_times_error:
+        # 0397: door codes need both times; stay on the Door lock tab with
+        # the switch and the lock the host chose.
+        draft["lock_id"] = _form_str(form, "lock_id") or draft.get("lock_id")
+        extra.update(
+            {
+                "settings_section": "lock",
+                "lock_times_error": True,
+                "door_switch_posted": _form_str(form, "door_codes") == "1",
+            }
+        )
     return _render_apartment_detail(
         request,
         draft,
         copy_ctx,
         operator_error=operator_error,
-        extra={
-            "property_view": "settings",
-            "settings_section": "property",
-            "address_errors": address_errors or {},
-            "shared_time_error": shared_time_error,
-        },
-        status_code=400 if (operator_error or address_errors or shared_time_error) else 200,
+        extra=extra,
+        status_code=400
+        if (operator_error or address_errors or shared_time_error or lock_times_error)
+        else 200,
     )
 
 
@@ -2331,8 +2356,14 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
                     request, apartment_id, "property", notice=_flash(request, "flash.error.door_code_hours"),
                     status_code=400, extra={"draft": draft},
                 ), False
+            from_lock_tab = "section=lock" in _form_str(form, "return_to")
             return _refuse_apartment_save(
-                request, apartment, form, None, shared_time_error="flash.error.door_code_hours"
+                request,
+                apartment,
+                form,
+                None,
+                shared_time_error=None if from_lock_tab else "flash.error.door_code_hours",
+                lock_times_error=from_lock_tab,
             ), False
     if owns_shared_hours:
         payload.update(hour_values)
