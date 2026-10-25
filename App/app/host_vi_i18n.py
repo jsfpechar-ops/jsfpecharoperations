@@ -3404,7 +3404,7 @@ STRINGS: Dict[str, str] = {
     "havel.limit_month": "Bạn đã dùng hết tin nhắn cho Havel tháng này. Chúng sẽ trở lại vào ngày 1. Hướng dẫn và hỗ trợ luôn ở đây.",
     "havel.paused": "Tôi chỉ có thể giúp về UbyHost, nên tôi sẽ tạm nghỉ đến thứ Hai. Bộ phận hỗ trợ vẫn ở đây.",
     "havel.resting": "Havel nghỉ đến ngày mai. Bạn vẫn có thể viết cho bộ phận hỗ trợ ở đây.",
-    "havel.forwarded": "Tôi đã chuyển tin nhắn của bạn cho đội ngũ UbyHost. Họ thường trả lời qua e-mail trong vòng vài giờ.",
+    "havel.forwarded": "Tôi đã chuyển tin nhắn của bạn, cùng vài tin nhắn gần đây ở đây và e-mail tài khoản, cho đội ngũ UbyHost. Họ thường trả lời qua e-mail trong vòng vài giờ.",
     "havel.limit_turns": "Hãy bắt đầu một cuộc trò chuyện mới.",
     "havel.card.title_stay": "Thêm lượt ở này?",
     "havel.card.title_cleaning": "Thêm lượt dọn dẹp này?",

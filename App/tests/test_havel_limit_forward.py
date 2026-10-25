@@ -8,7 +8,7 @@ from app import ai, config, db, havel, rate_limit
 from tests.ai_fake import FakeClient
 from tests.test_submission_retry_cap import USERNAME, host  # noqa: F401
 
-FORWARDED = "passed your message to the UbyHost team"
+FORWARDED = "to the UbyHost team. They usually reply"
 
 
 @pytest.fixture
