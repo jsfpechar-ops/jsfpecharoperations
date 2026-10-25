@@ -136,6 +136,16 @@
       .catch(function () { window.location.href = url; });
   }
 
+  // 0324: the panel's composer is fetched on first open; topics are already in the page.
+  function ensureForm(done) {
+    if (!panel || form()) { if (done) done(); return; }
+    var url = panel.getAttribute("data-src");
+    fetch(url, { credentials: "same-origin", headers: { "X-Havel": "1", "Accept": "text/html" } })
+      .then(function (res) { return res.ok ? res.text() : Promise.reject(new Error(String(res.status))); })
+      .then(function (html) { if (!form()) swap(html, "replace"); if (done) done(); })
+      .catch(function () { window.location.href = url; });
+  }
+
   function bindCounter() {
     var ta = textarea();
     if (!ta || ta.hasAttribute("data-havel-counted")) return;
@@ -189,14 +199,18 @@
   });
 
   document.addEventListener("click", function (event) {
+    var launcher = event.target.closest ? event.target.closest('[data-sheet-open="havel-sheet"]') : null;
+    if (launcher) ensureForm();
     var more = event.target.closest ? event.target.closest("[data-havel-more]") : null;
     if (!more || !panel || typeof panel.showModal !== "function") return;
     event.preventDefault();
     var sheet = document.getElementById("more-sheet");
     if (sheet && sheet.open) sheet.close();
     if (!panel.open) panel.showModal();
-    var ta = textarea();
-    if (ta && !PHONE.matches) ta.focus();
+    ensureForm(function () {
+      var ta = textarea();
+      if (ta && !PHONE.matches) ta.focus();
+    });
   });
 
   if (panel) {
@@ -207,8 +221,10 @@
     // For 0322 (command palette): open with a prefilled question.
     window.UbyHavel = { open: function (text) {
       if (!panel.open) panel.showModal();
-      var ta = textarea();
-      if (ta) { if (text) ta.value = text; ta.focus(); ta.dispatchEvent(new Event("input")); }
+      ensureForm(function () {
+        var ta = textarea();
+        if (ta) { if (text) ta.value = text; ta.focus(); ta.dispatchEvent(new Event("input")); }
+      });
     } };
   }
 

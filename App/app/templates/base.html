@@ -242,11 +242,11 @@
 
 <script src="/static/csrf.js?v=20260915a"></script>
 <script src="/static/skeleton.js?v=20261019-0146"></script>
-<script src="/static/app.js?v=20261022-0251"></script>
+<script src="/static/app.js?v=20261025-0322"></script>
 {% if show_nav | default(true) %}<script src="/static/host.js?v=20261023-door-code-window" defer></script>{% endif %}
 {% if show_nav | default(true) %}<script src="/static/pwa.js?v=20261021-0206" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261023-passkey-recovery" defer></script>{% endif %}
 {% if show_nav | default(true) %}{% include "_shell_tabbar.html" %}<script src="/static/shell.js?v=20261019-v2a" defer></script>{% endif %}
-{% if (show_nav | default(true)) and current_user %}<script src="/static/havel.js?v=20261025-0314" defer></script>{% endif %}
+{% if (show_nav | default(true)) and current_user %}<script src="/static/havel.js?v=20261025-0314b" defer></script>{% endif %}
 </body>
 </html>

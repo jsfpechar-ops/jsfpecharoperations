@@ -1,4 +1,6 @@
 {% extends "host_page.html" %}
+{% from "_ui.html" import ui_button with context %}
+{% block secondary_actions %}{% if havel_on %}{{ ui_button(t('havel.launcher'), 'secondary', href='/havel', icon_name='message-circle-question', attrs='data-sheet-open="havel-sheet" data-havel-launcher') }}{% endif %}{% endblock %}
 {% set nav = 'guide' %}
 {% set body_kind = 'detail' %}
 {% block title %}{{ t('guide.title') }}{% endblock %}
