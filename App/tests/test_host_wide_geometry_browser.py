@@ -229,8 +229,9 @@ def _capture_geometry(page, result_selector):
           const staysPanel = document.querySelector(
             '.stays-view .panel.tight.scroll-x, .stays-view'
           );
+          // 0394: the Open cue (a.row-open) is a compact link cue, not a row-menu control.
           const rowActions = [...document.querySelectorAll(
-            '.stays-view td.row-actions a, .stays-view td.row-actions button'
+            '.stays-view td.row-actions a:not(.row-open), .stays-view td.row-actions button'
           )].map(element => {
             const r = element.getBoundingClientRect();
             const panel = staysPanel?.getBoundingClientRect();
@@ -287,7 +288,7 @@ def _capture_geometry(page, result_selector):
             '.page-actions .btn', '.ui-ph-acts .ui-btn', '.dashboard-actions .btn',
             '.dashboard-row-actions .btn', '.filter-panel-actions .btn',
             '.host-property-save .btn', '.invoice-form button[type=submit]',
-            '.stays-view td.row-actions a', '.stays-view td.row-actions button'
+            '.stays-view td.row-actions a:not(.row-open)', '.stays-view td.row-actions button'
           ];
           const actions = actionSelectors.flatMap(selector =>
             [...document.querySelectorAll(selector)].map(element => {
