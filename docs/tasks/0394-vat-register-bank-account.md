@@ -1,6 +1,6 @@
 # 0394: "Fill from register" also fills the bank account from the MFČR VAT register
 
-Status: build
+Status: review
 Depends on: main 6e02f74 | Branch: claude/project-thread-kyxdtg (already checked out; commit here)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -417,11 +417,11 @@ Append to `docs/context/decisions.md` (end of the table, same format as the ARES
 - 2026-10-25 | Invoice details "Fill from register" also asks the MFČR VAT register (official CRPDPH SOAP, getStatusNespolehlivySubjektRozsirenyV2) on the host's click; sends only the DIČ digits; fills empty account fields, offers other published accounts; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
 ```
 
-## 5. Not in scope
+## 5. Do not touch
 
 The buyer lookup on the new-invoice form, the entity editor's own IČO lookup, IBAN filling from non-standard accounts, any stored field or migration.
 
-## 6. Tests
+## 6. Commands
 
 From `App/`:
 
@@ -440,6 +440,10 @@ From `App/`:
 - [ ] host.css key bumped; tests in §6 pass, browser 0 skipped
 - [ ] Report `docs/tasks/0394-report.md`; do not push, the orchestrator pushes and opens the PR
 
-## 8. If stuck
+## 8. Stop and ask
 
 An anchor is missing, a test fails twice, or a step can be read two ways: STOP, commit what works, write the report with `Status: blocked` and the question.
+
+## 9. Report
+
+`docs/tasks/0394-report.md`, as executor.md says.
