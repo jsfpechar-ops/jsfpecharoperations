@@ -16,7 +16,6 @@
   <textarea id="havel-message" name="message" rows="2" maxlength="{{ havel_max }}" placeholder="{{ t('havel.placeholder') }}" required{% if havel_error %} aria-invalid="true" aria-describedby="havel-error"{% endif %}></textarea>
   {% if havel_error %}<p id="havel-error" class="havel-error">{{ havel_error }}</p>{% endif %}
   <div class="havel-actions">
-    <p class="havel-meta">{{ havel_remaining }}</p>
     {% if not havel_fresh %}<button class="ui-btn ui-btn-quiet" type="submit" name="reset" value="1" formnovalidate>{{ t('havel.new') }}</button>{% endif %}
     <button class="ui-btn ui-btn-primary" type="submit" data-havel-send>{{ t('havel.send') }}</button>
   </div>

@@ -1,4 +1,4 @@
-# 0373: Plain bordered Open on rows; "What needs you" lines with one look and equal buttons
+# 0375: Plain bordered Open on rows; "What needs you" lines with one look and equal buttons
 
 Status: todo
 Depends on: none | Base commit: a49cdaf | Branch: claude/project-thread-1am307 (already checked out; commit here)
@@ -24,9 +24,9 @@ On the dashboard "What needs you" card the action buttons (Open the stay, Send t
 | App/app/static/host2.css | edit the 0291 block + the hover line |
 | App/app/templates/dashboard.html | edit the macro and the first loop |
 | App/app/static/workflow.css | append one block |
-| App/app/templates/base.html | keys: host2 `?v=20261025-0373`, workflow `?v=20261025-0373` |
+| App/app/templates/base.html | keys: host2 `?v=20261025-0375`, workflow `?v=20261025-0375` |
 | App/tests/static_versions.json | `--write` |
-| App/tests/test_0373_needs_you_and_open.py | new |
+| App/tests/test_0375_needs_you_and_open.py | new |
 | App/tests/test_design_dashboard.py | only if step 6 says so |
 
 ## 4. Steps
@@ -53,7 +53,7 @@ On the dashboard "What needs you" card the action buttons (Open the stay, Send t
 }
 ```
 5. Bump both keys, run `.venv/bin/python tests/test_static_versions.py --write` from `App/`.
-6. Write `tests/test_0373_needs_you_and_open.py` with:
+6. Write `tests/test_0375_needs_you_and_open.py` with:
    - a test that `app/static/host2.css` no longer contains `var(--accent-soft)` inside the 0291 rule (read the file, take the text between `/* 0291 + 0373` and `/* 0292`, assert `accent-soft` and `coral-500` not in it).
    - a test that `app/templates/dashboard.html` contains `needs_you_line(line, loop.first)`, `needs-you-icon` and `'primary' if first else 'secondary'`, and does not contain `ui_button(line.action, 'open'`.
    Then run §6. If `tests/test_design_dashboard.py` fails only on `page.count('class="ui-btn ui-btn-primary"') == 1` because the needs-you card now adds a primary, change that assertion to `<= 2` and add the comment `# 0373: the page header and the top "What needs you" line may each have one.`
@@ -66,7 +66,7 @@ Everything outside §3. Do not rename classes. No new colours or tokens.
 
 From `App/` (the env var makes browser tests run instead of skip):
 ```
-UBYHOST_REQUIRE_BROWSER=1 UBYHOST_UBYPORT_ENV=mock UBYHOST_DEPLOYMENT=staging UBYHOST_ENABLE_SCHEDULER=0 .venv/bin/python -m pytest tests/test_0373_needs_you_and_open.py tests/test_0291_open_buttons.py tests/test_design_dashboard.py tests/test_needs_you_dashboard_0241.py tests/test_dashboard_phone_browser.py tests/test_host_quiet_dashboard_browser.py tests/test_0284_states_browser.py tests/test_0285_rows_browser.py tests/test_0252_touch_sweep_browser.py tests/test_static_versions.py -q --tb=short 2>&1 | tail -30
+UBYHOST_REQUIRE_BROWSER=1 UBYHOST_UBYPORT_ENV=mock UBYHOST_DEPLOYMENT=staging UBYHOST_ENABLE_SCHEDULER=0 .venv/bin/python -m pytest tests/test_0375_needs_you_and_open.py tests/test_0291_open_buttons.py tests/test_design_dashboard.py tests/test_needs_you_dashboard_0241.py tests/test_dashboard_phone_browser.py tests/test_host_quiet_dashboard_browser.py tests/test_0284_states_browser.py tests/test_0285_rows_browser.py tests/test_0252_touch_sweep_browser.py tests/test_static_versions.py -q --tb=short 2>&1 | tail -30
 cd .. && python3 scripts/design_lint.py 2>&1 | tail -5
 ```
 If a test fails, put its first assertion line in the report and stop (do not try other CSS).
@@ -81,4 +81,4 @@ As in TEMPLATE §8.
 
 ## 9. Report
 
-`docs/tasks/0373-report.md` (200 tokens), `Status: review`. One commit `0373: plain Open, even What needs you buttons`. Do not push.
+`docs/tasks/0375-report.md` (200 tokens), `Status: review`. One commit `0375: plain Open, even What needs you buttons`. Do not push.

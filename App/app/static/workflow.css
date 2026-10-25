@@ -148,7 +148,7 @@
 .quick-choice-option > input[value=""]:checked + span { border-color: var(--ink); background: var(--surface-active); color: var(--ink); }
 .quick-choice-option > input:focus-visible + span { box-shadow: var(--focus-ring-2); }
 
-/* 0373: one look per line (owner 2026-10-25): a tinted icon says how urgent,
+/* 0375: one look per line (owner 2026-10-25): a tinted icon says how urgent,
    the sentence says why, every button has the same width; only the top
    line's button is solid coral. */
 .needs-you-item { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--space-3); }

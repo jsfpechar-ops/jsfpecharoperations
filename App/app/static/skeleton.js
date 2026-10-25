@@ -74,7 +74,10 @@
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     var link = event.target.closest ? event.target.closest("a[href]") : null;
     if (!link) return;
-    if (link.closest("[data-no-skeleton]") || link.hasAttribute("download")) return;
+    // Links that open a sheet or panel (data-sheet-open, data-havel-more) do not
+    // navigate. shell.js and havel.js cancel the click, but they load after this
+    // file, so the click reaches us first and is not yet defaultPrevented.
+    if (link.closest("[data-no-skeleton], [data-sheet-open], [data-havel-more]") || link.hasAttribute("download")) return;
     if (link.target && link.target !== "_self") return;
     if (link.origin !== window.location.origin) return;
     if (link.hash && link.pathname === window.location.pathname &&

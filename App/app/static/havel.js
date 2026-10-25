@@ -11,6 +11,94 @@
   function thread() { return root.querySelector("[data-havel-thread]"); }
   function form() { return root.querySelector("[data-havel-form]"); }
   function textarea() { return root.querySelector("#havel-message"); }
+  // 0373: the corner button is hidden while the panel is open; the opener gets focus on close.
+  var opener = null;
+  function fab() { return document.querySelector("[data-havel-fab]"); }
+  function hideFab() { var f = fab(); if (f) f.hidden = true; }
+  function focusPanel() {
+    if (PHONE.matches) {
+      var h = root.querySelector("#havel-title");
+      if (h) h.focus({ preventScroll: true });
+    } else {
+      var ta = textarea();
+      if (ta) ta.focus();
+    }
+  }
+
+  // 0374: the chat follows the host across pages. It lives in this tab's sessionStorage only;
+  // every access is wrapped, so a throwing or full storage just means no restore.
+  var KEY = "ubyhost.havel.chat";
+  var TWELVE_HOURS = 43200000;
+  function owner() { return root.getAttribute("data-havel-owner") || ""; }
+  function loadChat() {
+    try {
+      var s = JSON.parse(sessionStorage.getItem(KEY) || "null");
+      if (s && s.owner === owner()) return s;
+      sessionStorage.removeItem(KEY);
+    } catch (e) {}
+    return null;
+  }
+  function clear() { try { sessionStorage.removeItem(KEY); } catch (e) {} }
+  function formValue(sel, key, prev) {
+    var el = root.querySelector(sel);
+    return el ? el.value : (prev[key] || "");
+  }
+  function save(extra) {
+    var t = thread();
+    if (!t) return;
+    try {
+      var prev = JSON.parse(sessionStorage.getItem(KEY) || "null");
+      if (!prev || prev.owner !== owner()) prev = {};
+      var copy = t.cloneNode(true);
+      copy.querySelectorAll("[data-havel-writing]").forEach(function (n) { n.remove(); });
+      copy.querySelectorAll("[data-havel-retry]").forEach(function (b) { var m = b.closest(".havel-msg"); if (m) m.remove(); });
+      var rec = {
+        owner: owner(), saved: Date.now(), html: copy.innerHTML,
+        history: formValue("[data-havel-history]", "history", prev),
+        sig: formValue("[data-havel-sig]", "sig", prev),
+        topic: formValue("[data-havel-topic]", "topic", prev),
+        q: formValue("[data-havel-q]", "q", prev),
+        open: panel ? panel.open : false,
+        unread: prev.unread === true
+      };
+      Object.keys(extra || {}).forEach(function (k) { rec[k] = extra[k]; });
+      sessionStorage.setItem(KEY, JSON.stringify(rec));
+    } catch (e) {}
+  }
+  function fill(s) {
+    [["[data-havel-history]", s.history], ["[data-havel-sig]", s.sig], ["[data-havel-topic]", s.topic], ["[data-havel-q]", s.q]].forEach(function (p) {
+      var el = root.querySelector(p[0]);
+      if (el && typeof p[1] === "string") el.value = p[1];
+    });
+    save();
+    scrollDown();
+  }
+  function restore() {
+    var s = loadChat();
+    if (!s || !s.html) return;
+    if (!(Date.now() - s.saved < TWELVE_HOURS)) { clear(); return; }
+    // A non-JS post on /havel rendered its own chat: the page wins.
+    var have = root.querySelector("[data-havel-history]");
+    if (have && have.value && have.value !== s.history) { save(); return; }
+    var t = thread();
+    if (!t) return;
+    // The composer fragment can replace the thread (swap with items), so the stored chat is
+    // put back after the composer has loaded, never before.
+    var apply = function () {
+      t.innerHTML = s.html;
+      fill(s);
+      if (!panel || typeof panel.show !== "function") return;
+      if (s.open) { panel.show(); hideFab(); scrollDown(); }
+      else if (s.unread) { var fb = fab(); if (fb) fb.setAttribute("data-unread", ""); }
+    };
+    if (panel) ensureForm(apply); else apply();
+  }
+  function onOpen() {
+    var fb = fab();
+    if (fb) fb.removeAttribute("data-unread");
+    save({ open: true, unread: false });
+    scrollDown();
+  }
 
   function setDevice() {
     var d = root.querySelector("[data-havel-device]");
@@ -41,12 +129,14 @@
       var old = t.querySelector("[data-havel-topics]");
       if (!replace) t.querySelectorAll("[data-havel-next]").forEach(function (n) { n.remove(); });
       if (old && !replace) old.remove();
+      if (!replace && t.querySelector("[data-havel-greeting]")) items.querySelectorAll("[data-havel-greeting]").forEach(function (g) { g.remove(); });
       while (items.firstChild) t.appendChild(items.firstChild);
     }
     var wrap = root.querySelector("[data-havel-form-wrap]");
     if (formWrap && wrap) wrap.innerHTML = formWrap.innerHTML;
     setDevice();
     bindCounter();
+    save();
   }
 
   function writing(on) {
@@ -105,6 +195,7 @@
     var data = new FormData(f);
     if (extra) Object.keys(extra).forEach(function (k) { data.set(k, extra[k]); });
     var echoed = extra ? null : echo(text);
+    if (!extra && ta) { ta.value = ""; ta.dispatchEvent(new Event("input")); }
     writing(true);
     fetch(f.getAttribute("action") || "/havel", {
       method: "POST", body: data, credentials: "same-origin",
@@ -116,11 +207,14 @@
       writing(false);
       if (echoed) echoed.remove();
       swap(html, extra && extra.reset ? "replace" : "append");
+      // 0374: a reply that arrives while the panel is closed shows the unread dot.
+      if (panel && !panel.open) { save({ unread: true }); var fb = fab(); if (fb) fb.setAttribute("data-unread", ""); }
       focusAnswer();
     }).catch(function () {
       writing(false);
       if (echoed) echoed.remove();
       showError(text);
+      save();
     });
   }
 
@@ -185,7 +279,7 @@
     if (!f) return;
     event.preventDefault();
     var submitter = event.submitter;
-    if (submitter && submitter.name === "reset") { send({ reset: "1", message: "" }); return; }
+    if (submitter && submitter.name === "reset") { clear(); send({ reset: "1", message: "" }); return; }
     send();
   });
 
@@ -211,34 +305,50 @@
 
   document.addEventListener("click", function (event) {
     var launcher = event.target.closest ? event.target.closest('[data-sheet-open="havel-sheet"]') : null;
-    if (launcher) ensureForm();
+    if (launcher) {
+      opener = launcher;
+      ensureForm(function () { hideFab(); focusPanel(); });
+    }
     var more = event.target.closest ? event.target.closest("[data-havel-more]") : null;
-    if (!more || !panel || typeof panel.showModal !== "function") return;
+    if (!more || !panel || typeof panel.show !== "function") return;
     event.preventDefault();
+    opener = more;
     var sheet = document.getElementById("more-sheet");
     if (sheet && sheet.open) sheet.close();
-    if (!panel.open) panel.showModal();
-    ensureForm(function () {
-      var ta = textarea();
-      if (ta && !PHONE.matches) ta.focus();
-    });
+    if (!panel.open) panel.show();
+    ensureForm(function () { hideFab(); focusPanel(); });
   });
 
   if (panel) {
     panel.addEventListener("close", function () {
-      var opener = document.querySelector("[data-havel-launcher]:not([hidden])");
-      if (opener && opener.offsetParent !== null) opener.focus();
+      save({ open: false });
+      var f = fab();
+      if (f) f.hidden = false;
+      var back = opener;
+      opener = null;
+      // getClientRects, not offsetParent: the tab bar and the corner button are position: fixed.
+      if (back && document.body.contains(back) && back.getClientRects().length > 0) back.focus();
+      else if (f) f.focus();
     });
     // For 0322 (command palette): open with a prefilled question.
     window.UbyHavel = { open: function (text) {
-      if (!panel.open) panel.showModal();
+      if (!panel.open) panel.show();
       ensureForm(function () {
+        hideFab();
         var ta = textarea();
         if (ta) { if (text) ta.value = text; ta.focus(); ta.dispatchEvent(new Event("input")); }
       });
     } };
   }
 
+  // 0374: opening the panel saves it as open; the stored chat is restored; sign-out clears it.
+  if (panel && window.MutationObserver) {
+    new MutationObserver(function () { if (panel.open) onOpen(); }).observe(panel, { attributes: true, attributeFilter: ["open"] });
+  }
+  restore();
+  document.addEventListener("submit", function (event) {
+    if (event.target && event.target.matches && event.target.matches('form[action="/logout"]')) clear();
+  });
   setDevice();
   bindCounter();
   PHONE.addEventListener("change", setDevice);
