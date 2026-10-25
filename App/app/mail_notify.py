@@ -1618,6 +1618,11 @@ def build_completion(
     stay_url: str,
     host: Optional[Dict[str, str]] = None,
     door_code: Optional[Dict[str, str]] = None,
+    filled: Optional[int] = None,
+    expected: Optional[int] = None,
+    checkin: str = "",
+    checkout: str = "",
+    address: str = "",
 ) -> Dict[str, str]:
     """The receipt. It points at the stay, not at a new claim link.
 
@@ -1626,6 +1631,8 @@ def build_completion(
     access. The stay address works on the device that confirmed, which is where
     the guest just finished filling the form in. An invoice is its own mail
     (``build_invoice_issued``), so the receipt stays buttonless and closed.
+
+    The stay link is a labelled link, not a printed address: the URL is long and means nothing to a guest.
     """
     subject = _guest_text(lang, "mail_completion_subject", property=property_name)
     intro = _guest_text(
@@ -1641,6 +1648,28 @@ def build_completion(
         _block_paragraph(intro),
     ]
     text_lines = [intro]
+
+    # The stay at a glance, so neither the guest nor the copied host has to
+    # open the app to check. Counts and property facts only, never a guest's
+    # name or document.
+    rows: List[Tuple[str, str]] = []
+    if expected:
+        rows.append((
+            _guest_text(lang, "mail_completion_guests_label"),
+            _guest_text(
+                lang, "mail_completion_guests_value", filled=filled or 0, expected=expected
+            ),
+        ))
+    if checkin:
+        rows.append((_guest_text(lang, "mail_completion_checkin_label"), checkin))
+    if checkout:
+        rows.append((_guest_text(lang, "mail_completion_checkout_label"), checkout))
+    if address:
+        rows.append((_guest_text(lang, "mail_completion_address_label"), address))
+    if rows:
+        blocks.append(_block_panel(_guest_text(lang, "mail_completion_panel_title"), rows))
+        text_lines.extend(["", *(f"{label}: {value}" for label, value in rows)])
+
     if door_code:
         code_title = _guest_text(lang, "door_code_title")
         times = _guest_text(
@@ -1660,7 +1689,7 @@ def build_completion(
             text_lines.append(first_use)
 
     # Slot 2: the links, quiet by design -- nothing here is still owed.
-    blocks.append(_block_link(stay_url, action))
+    blocks.append(_block_quiet_link(stay_url, action))
     text_lines.extend(["", f"{action}: {stay_url}"])
 
     # Slot 3: the closing note.
