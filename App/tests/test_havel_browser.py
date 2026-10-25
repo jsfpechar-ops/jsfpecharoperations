@@ -22,7 +22,7 @@ from tests.ai_fake import FakeClient, reply
 from tests.browser_support import chromium_launch_kwargs
 from tests.test_submission_retry_cap import host as host  # noqa: F401
 
-SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0324"
+SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0373"
 ANSWER = {"kind": "answer", "reply": "Open Stays.\n1. Tap Add stay.\n2. Pick the dates.", "sources": ["guide.stays.body"],
           "links": [{"page": "add_stay", "property_id": None}], "action": None, "support_summary": None}
 
@@ -67,11 +67,15 @@ def test_computer_panel_topics_handoff_and_answer(origin):
         browser, context = _context(pw, origin, 1280)
         page = context.new_page()
         page.goto(origin[0] + "/")
-        launcher = page.locator("#app-sidebar [data-havel-launcher]")
+        launcher = page.locator("[data-havel-fab]")
         assert launcher.is_visible()
         launcher.click()
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
+        assert page.evaluate("document.querySelector('#havel-sheet').matches(':modal')") is False
+        assert launcher.count() == 1 and not launcher.is_visible()
+        sidebar = page.locator("#app-sidebar").bounding_box()
+        assert page.evaluate("([x, y]) => !!document.elementFromPoint(x, y).closest('#app-sidebar')", [sidebar["x"] + sidebar["width"] / 2, sidebar["y"] + sidebar["height"] / 2])
         assert dialog.locator("[data-havel-topic-link]").count() == 5
         assert dialog.locator("h2#havel-title").inner_text().strip() == "Havel (AI)"
         box = dialog.locator(".ui-sheet").bounding_box()
@@ -95,6 +99,8 @@ def test_computer_panel_topics_handoff_and_answer(origin):
         page.screenshot(path=str(SHOTS / "panel-answer-1280.png"))
         page.keyboard.press("Escape")
         assert page.locator("#havel-sheet[open]").count() == 0
+        sync_api.expect(launcher).to_be_visible()
+        sync_api.expect(launcher).to_be_focused()
         browser.close()
 
 
@@ -104,18 +110,24 @@ def test_phone_launcher_and_sheet(origin):
         browser, context = _context(pw, origin, 390)
         page = context.new_page()
         page.goto(origin[0] + "/")
-        topbar = page.locator(".ui-topbar [data-havel-launcher]")
-        assert topbar.is_visible()
-        tb = topbar.bounding_box()
-        assert tb["width"] >= 44 and tb["height"] >= 44
-        topbar.click()
+        fab = page.locator("[data-havel-fab]")
+        assert fab.is_visible()
+        fb = fab.bounding_box()
+        assert fb["width"] >= 44 and fb["height"] >= 44
+        tabbar = page.locator(".ui-tabbar").bounding_box()
+        assert fb["y"] + fb["height"] <= tabbar["y"]
+        page.screenshot(path=str(SHOTS / "fab-dashboard-390.png"))
+        fab.click()
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
         sheet = dialog.locator(".ui-sheet").bounding_box()
-        assert sheet["width"] == 390 and sheet["height"] <= 900 * 0.92 + 1
+        assert sheet["width"] == 390 and sheet["height"] <= 900 * 0.7 + 1
+        assert sheet["y"] + sheet["height"] <= tabbar["y"] + 1
+        assert page.evaluate("([x, y]) => !!document.elementFromPoint(x, y).closest('.ui-tabbar')", [tabbar["x"] + tabbar["width"] / 2, tabbar["y"] + tabbar["height"] / 2])
+        assert not fab.is_visible()
         assert dialog.locator("[data-havel-device]").input_value() == "phone"
         assert page.evaluate("document.documentElement.scrollWidth") <= 390
-        page.screenshot(path=str(SHOTS / "panel-topics-390.png"))
+        page.screenshot(path=str(SHOTS / "panel-open-390.png"))
         dialog.locator("[data-sheet-close]").click()
         page.locator("[data-sheet-open='more-sheet']").click()
         page.locator("#more-sheet[open] [data-havel-more]").click()
@@ -135,7 +147,7 @@ def test_phone_next_buttons_send_the_tapped_request(origin):
         browser, context = _context(pw, origin, 390)
         page = context.new_page()
         page.goto(origin[0] + "/")
-        page.locator(".ui-topbar [data-havel-launcher]").click()
+        page.locator("[data-havel-fab]").click()
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
         composer = dialog.locator("#havel-message")
@@ -152,4 +164,36 @@ def test_phone_next_buttons_send_the_tapped_request(origin):
         dialog.locator(".havel-msg-havel:not([data-havel-writing])").last.wait_for()
         assert dialog.locator("[data-havel-next]").count() == 0
         assert "Sync my calendars" in dialog.locator(".havel-msg-host").last.inner_text()
+        browser.close()
+
+
+def test_greeting_shows_once_after_a_reply(origin):
+    ai.set_client_for_tests(FakeClient([reply(ANSWER)]))
+    with sync_api.sync_playwright() as pw:
+        browser, context = _context(pw, origin, 390)
+        page = context.new_page()
+        page.goto(origin[0] + "/")
+        page.locator("[data-havel-fab]").click()
+        dialog = page.locator("#havel-sheet[open]")
+        dialog.wait_for()
+        assert dialog.locator("[data-havel-greeting]").count() == 1
+        composer = dialog.locator("#havel-message")
+        composer.fill("How do I add a stay?")
+        composer.press("Enter")
+        assert composer.input_value() == ""
+        dialog.locator(".havel-bubble ol li").first.wait_for()
+        assert dialog.locator("[data-havel-greeting]").count() == 1
+        browser.close()
+
+
+def test_czech_greeting_on_the_phone(origin):
+    with sync_api.sync_playwright() as pw:
+        browser, context = _context(pw, origin, 390)
+        page = context.new_page()
+        page.goto(origin[0] + "/?lang=cs")
+        page.locator("[data-havel-fab]").click()
+        dialog = page.locator("#havel-sheet[open]")
+        dialog.wait_for()
+        assert "Dobrý den, jsem Havel" in dialog.locator("[data-havel-greeting]").inner_text()
+        page.screenshot(path=str(SHOTS / "panel-open-cs-390.png"))
         browser.close()
