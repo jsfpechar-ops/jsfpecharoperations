@@ -1,6 +1,6 @@
 # 0312 report: Havel page /havel
 
-Status: blocked (screenshots not taken; all else passes)
+Status: review
 
 Done: steps 1 to 8 (34 passed). Step 9: design guardrails browser test passed (0 skipped); a11y guard has no `havel` test (4 deselected). Left: screenshots at 390 and 1280 (not taken), then Status: review.
 
@@ -30,3 +30,5 @@ Done: steps 1 to 8 (34 passed). Step 9: design guardrails browser test passed (0
 
 ## Owner steps left
 None until steps 8 to 9 are done.
+
+- Orchestrator: a11y guard (full file, covers /havel via ROUTES) 4 passed; screenshots docs/tasks/screenshots-0312/havel-390.png and havel-1280.png taken with the wide_host harness.
