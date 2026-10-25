@@ -1,8 +1,8 @@
 # 0312 report: Havel page /havel
 
-Status: blocked
+Status: blocked (screenshots not taken; all else passes)
 
-Done: steps 1 to 7; step 8 lang fix applied and test file simplified. Step 8 run still failing (1 test). Left: step 8 pass, step 9 (browser guard, screenshots at 390 and 1280), report review.
+Done: steps 1 to 8 (34 passed). Step 9: design guardrails browser test passed (0 skipped); a11y guard has no `havel` test (4 deselected). Left: screenshots at 390 and 1280 (not taken), then Status: review.
 
 ## Files changed
 - App/app/host_i18n.py: havel.* copy en and cs (steps 1-2).
@@ -11,14 +11,17 @@ Done: steps 1 to 7; step 8 lang fix applied and test file simplified. Step 8 run
 - App/tests/test_havel_page.py (new): simplified second test per step 8; `_post` and GET use `/havel?lang=en`.
 
 ## Commands (last lines)
-- Step 8 run: `1 failed, 4 passed` (`test_off_limit_and_failure_show_the_fixed_sentences`, line 78: `assert "I don't know that, and I don't want to guess" in page`). The page has lang="en" but the sentence is not found. Probable cause: Jinja autoescapes the apostrophe to `&#39;`, so the assertion needs the escaped form or `html.unescape(page)`. Not verified.
+- Step 8 run (after html.unescape fix): `34 passed in 2.11s` (test_havel_page, test_havel_engine, test_no_em_dashes, test_static_versions).
+- Browser: `test_design_guardrails_browser.py -k every_host_page`: `1 passed, 9 deselected` (chromium-1243, 0 skipped). `test_a11y_guard_browser.py -k havel`: `4 deselected` (no havel test).
+- Lint: `context lint: OK`.
+- Earlier step 8 run: `1 failed, 4 passed` (`test_off_limit_and_failure_show_the_fixed_sentences`, line 78: `assert "I don't know that, and I don't want to guess" in page`). The page has lang="en" but the sentence is not found. Probable cause: Jinja autoescapes the apostrophe to `&#39;`, so the assertion needs the escaped form or `html.unescape(page)`. Not verified.
 - tests/test_host_i18n.py alone: `3 failed, 11 passed` (the 3 known pre-existing failures).
 - Step 7 earlier: `design lint: OK`.
 
 ## Deviations
 - Step 8 lang fix: `request.state.lang` was not set before `_t` ran; now `host_i18n.lang_from_request(request)`. Brief §8 said to ask; orchestrator instructed the fix.
 - Test isolation: without `?lang=en` the page rendered in Vietnamese (language cookie or saved state leaked between requests in the test client). Pinned to `en` in the helper.
-- Second failure in the same run stopped the executor per executor.md (one fix allowed).
+- Coordinator approved the apostrophe fix: `html.unescape` on the three page reads in test_off_limit (commit pending in this WIP).
 - Step 4 check: `app.routes` items have no `.path`; used `app.openapi()` instead.
 
 ## Questions

@@ -1,6 +1,7 @@
 """0312: the Havel page works as a plain form, applies the limits and shows only checked text."""
 from __future__ import annotations
 
+import html
 import re
 
 import pytest
@@ -70,14 +71,14 @@ def test_fragment_header_returns_only_the_thread(host):
 
 def test_off_limit_and_failure_show_the_fixed_sentences(host, monkeypatch):
     monkeypatch.setattr(config, "AI_FEATURES", frozenset())
-    page = _post(host, {"message": "How do I add a stay?"}).text
+    page = html.unescape(_post(host, {"message": "How do I add a stay?"}).text)
     assert "Havel is unavailable right now" in page
     monkeypatch.setattr(config, "AI_FEATURES", frozenset({"havel"}))
     ai.set_client_for_tests(FakeClient([reply(text="{broken")]))
-    page = _post(host, {"message": "How do I add a stay?"}).text
+    page = html.unescape(_post(host, {"message": "How do I add a stay?"}).text)
     assert "I don't know that, and I don't want to guess" in page
     monkeypatch.setattr(havel, "limit_state", lambda uid, now=None: "limit_week")
-    page = _post(host, {"message": "Again?"}).text
+    page = html.unescape(_post(host, {"message": "Again?"}).text)
     assert "They come back on Monday" in page and 'name="message"' not in page
 
 
