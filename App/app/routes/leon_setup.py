@@ -142,5 +142,6 @@ async def setup_try(request: Request, apartment_id: int):
     result = dict(result, text=text)
     note = host_i18n.translate(host_lang, "leon_setup.try.would_ask") if result["would_ask"] else ""
     if "application/json" in request.headers.get("accept", ""):
-        return JSONResponse(dict(result, note=note), headers={"Cache-Control": "no-store"})
+        cap = host_i18n.translate(host_lang, "leon_setup.try.cap") if result["left"] <= 0 and result["kind"] != "cap" else ""
+        return JSONResponse(dict(result, note=note, cap=cap), headers={"Cache-Control": "no-store"})
     return _step_page(request, apartment_id, "try", asked=message[:500], answer=result)

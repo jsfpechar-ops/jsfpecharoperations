@@ -1,6 +1,6 @@
 # 0405: try Leon at the end of the setup wizard (capped test chat)
 
-Status: ready
+Status: review
 Depends on: 0404 (same branch) | Branch: claude/0403-leon-setup-wizard (checked out; commit here)
 Executor: Haiku 5.5 | Reviewer: Opus | Fits one session: 30 tool calls, 80k tokens
 

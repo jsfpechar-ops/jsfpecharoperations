@@ -1,6 +1,6 @@
 # 0403: import a Booking and an Airbnb link together, and put the import first
 
-Status: ready
+Status: review
 Depends on: main (0347, 0348, 0396 merged) | Branch: claude/0403-leon-setup-wizard (checked out; commit here)
 Executor: Haiku 5.5 | Reviewer: Opus | Fits one session: 30 tool calls, 80k tokens
 Followed by: 0404 (Leon setup wizard), 0405 (try Leon). Same branch, one PR.

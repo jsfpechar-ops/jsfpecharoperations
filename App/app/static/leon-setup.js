@@ -50,6 +50,11 @@
       .then(function (d) {
         bubble("havel-answer", "leon", d.text, d.note);
         input.disabled = d.left <= 0;
+        if (d.cap) {
+          var cap = document.createElement("p");
+          cap.className = "ui-sub"; cap.setAttribute("data-leon-try-cap", ""); cap.textContent = d.cap;
+          box.appendChild(cap);
+        }
         if (!input.disabled) input.focus();
       })
       .catch(function () { input.disabled = false; });

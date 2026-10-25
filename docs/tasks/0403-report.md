@@ -1,6 +1,6 @@
 # 0403 report
 
-Status: blocked (browser tests skipped, see Questions)
+Status: review (reviewer installed the CI Playwright pin 1.63.0 in the venv; browser tests then ran with 0 skipped)
 
 ## Files changed
 

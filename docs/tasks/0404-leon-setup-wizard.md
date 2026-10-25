@@ -1,6 +1,6 @@
 # 0404: Leon setup wizard (switch on, import, check cards, try, done)
 
-Status: ready
+Status: review
 Depends on: 0403 (same branch) | Branch: claude/0403-leon-setup-wizard (checked out; commit here)
 Executor: Haiku 5.5 | Reviewer: Opus | Fits one session: 40 tool calls, 100k tokens
 Followed by: 0405 fills the "try" step with the test chat. This brief renders that step as a placeholder.
