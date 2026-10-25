@@ -147,7 +147,7 @@ GUIDE_STRINGS = {
         "guide.invoices.body": "Create an invoice for any stay or customer. The seller is one of your operators; VAT rates appear only for VAT payers. An invoice has up to four items so it fits one page.",
         "guide.invoices.flow": "Preview, then issue: the number is assigned per operator and year and cannot be changed. Afterwards you can record payment, e-mail it with a download link valid for 30 days, download the PDF, or cancel it with a cancellation or corrective document.",
 
-        "guide.settings.body": "Settings hold your password and two-factor sign-in, the guest PIN setting, archived records, data protection (retention and deleting expired records), the activity log and technical details.",
+        "guide.settings.body": "Settings hold how you log in (your login e-mail, passkeys and two-factor authentication), the guest PIN setting, archived records, data protection (retention and deleting expired records), the activity log and technical details.",
         "guide.settings.two_factor": "Two-factor sign-in uses an authenticator app. Store the recovery codes somewhere safe; each works once.",
         "guide.settings.retention": "Guest records are kept 6 years after the stay, invoices 10 years. Document photos go after 30 days, raw police request data after 90 days.",
         "guide.settings.requests": "Data requests records a guest's GDPR request and its one-month deadline.",
@@ -469,7 +469,7 @@ GUIDE_STRINGS = {
         "guide.invoices.body": "Fakturu vystavíte k jakémukoli pobytu nebo odběrateli. Dodavatelem je jeden z vašich ubytovatelů; sazby DPH se zobrazí jen plátcům. Faktura má nejvýše čtyři položky, aby se vešla na jednu stránku.",
         "guide.invoices.flow": "Náhled, pak vystavení: číslo se přidělí podle ubytovatele a roku a nejde změnit. Potom můžete zaznamenat platbu, poslat ji e-mailem s odkazem ke stažení platným 30 dní, stáhnout PDF nebo ji zrušit stornem či opravným dokladem.",
 
-        "guide.settings.body": "Nastavení obsahuje heslo a dvoufázové přihlášení, nastavení PINu pro hosty, archiv, ochranu dat (doba uchování a mazání prošlých záznamů), protokol aktivit a technické údaje.",
+        "guide.settings.body": "Nastavení obsahuje způsob přihlášení (přihlašovací e-mail, přístupové klíče a dvoufázové ověření), nastavení PINu pro hosty, archiv, ochranu dat (doba uchování a mazání prošlých záznamů), protokol aktivit a technické údaje.",
         "guide.settings.two_factor": "Dvoufázové přihlášení používá ověřovací aplikaci. Záložní kódy si uložte na bezpečné místo; každý platí jednou.",
         "guide.settings.retention": "Záznamy hostů se uchovávají 6 let po pobytu, faktury 10 let. Fotky dokladů se mažou po 30 dnech, surová data hlášení po 90 dnech.",
         "guide.settings.requests": "Žádosti o data zaznamenávají žádost hosta podle GDPR a její měsíční lhůtu.",
