@@ -650,6 +650,64 @@ def _answer(chat: Dict[str, Any], text: str, *, level: str, property_name: str, 
     return {"kind": kind, "text": body, "message_id": message_id, "question_id": question_id}
 
 
+# 0405: the host tries Leon at the end of the setup wizard. Nothing is stored but the
+# usage ledger and the rate-limit rows; the cap is per property per rolling day.
+TRY_MAX = 5
+TRY_WINDOW = 24 * 3600
+
+
+def try_left(apartment_id: int) -> int:
+    return max(0, TRY_MAX - rate_limit._count("leon_try", str(apartment_id), TRY_WINDOW))
+
+
+def try_reply(apartment, text: str, *, lang: str, host_name: str) -> Dict[str, Any]:
+    """One test message in, one reply out: {"kind", "text", "would_ask", "left"}. Never stores the chat."""
+    apartment_id = int(apartment["id"])
+    text = str(text or "").strip()
+
+    def out(kind: str, body: str, would_ask: bool = False) -> Dict[str, Any]:
+        return {"kind": kind, "text": body, "would_ask": would_ask, "left": try_left(apartment_id)}
+
+    if not text or len(text) > MAX_MESSAGE_CHARS:
+        return out("too_long", _fixed(lang, "leon_too_long", n=MAX_MESSAGE_CHARS))
+    small = smalltalk_kind(text)
+    if small:
+        return out("smalltalk", _fixed(lang, "leon_hi" if small == "hi" else "leon_thanks"))
+    if is_noise(text):
+        return out("unclear", _fixed(lang, "leon_unclear"))
+    if rate_limit.blocked("leon_try", str(apartment_id), TRY_MAX, TRY_WINDOW):
+        return out("cap", "")
+    redacted = redact(text)
+    cards = guide_facts.for_guest(apartment_id, "booked", "en")
+    if not cards:
+        return out("no_guide", "")
+    rate_limit.record("leon_try", str(apartment_id))
+    try:
+        data = ai.call(FEATURE, system_blocks(cards, apartment["internal_name"] or ""),
+                       [{"role": "user", "content": user_turn(redacted, lang)}], SCHEMA,
+                       key=str(apartment_id), max_tokens=MAX_TOKENS)
+    except ai.AIError as exc:
+        log.info("leon try property=%s failed reason=%s", apartment_id, exc.reason)
+        return out("passed", _named(lang, "leon_passed_to_host", host_name), True)
+    verdict = validate(data, cards, redacted)
+    kind = verdict["kind"]
+    log.info("leon try property=%s kind=%s reason=%s", apartment_id, kind, verdict["reason"])
+    if kind == "answer":
+        body = verdict["text"]
+        if verdict["summary"]:
+            body += "\n" + _fixed(lang, "leon_asked_host_part")
+        return out("answer", body, bool(verdict["summary"]))
+    if kind == "emergency":
+        return out("emergency", emergency_text(lang, cards), True)
+    if kind == "refuse":
+        return out("refuse", _fixed(lang, "leon_refuse"))
+    if kind == "about_me":
+        return out("about_me", _fixed(lang, "leon_about"))
+    if kind == "unclear":
+        return out("unclear", _fixed(lang, "leon_unclear"))
+    return out("ask_host", _named(lang, "leon_asked_host_sorry" if verdict["upset"] else "leon_asked_host", host_name), True)
+
+
 # --- retention ---------------------------------------------------------------------
 
 def purge(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
