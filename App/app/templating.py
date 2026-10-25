@@ -25,6 +25,7 @@ from . import (
     db,
     deadlines,
     guest_uk_i18n,
+    havel_topics,
     host_i18n,
     icalsync,
     i18n,
@@ -379,6 +380,7 @@ templates.env.filters["date_cz"] = _fmt_date
 templates.env.filters["date_short"] = validation.fmt_date_short
 templates.env.filters["money_czk"] = _money_czk
 templates.env.filters["weekday"] = _weekday
+templates.env.globals["havel_topics_for"] = havel_topics.ordered  # 0324: topics for the panel in base.html
 templates.env.filters["datetime_local"] = _datetime_local
 templates.env.filters["from_json"] = _from_json
 templates.env.filters["legal_links"] = _legal_links

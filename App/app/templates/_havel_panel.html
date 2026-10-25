@@ -1,0 +1,26 @@
+{#- 0324: the Havel panel (plan 17b). One <dialog>, included once in base.html
+    for signed-in hosts. shell.js opens it from any [data-sheet-open="havel-sheet"];
+    havel.js does the rest. Without JavaScript the launchers lead to /havel. -#}
+{% from "_icons.html" import icon with context %}
+{% set havel_fresh = true %}
+{% set havel_show_topics = true %}
+{% set havel_max = 600 %}
+{% set havel_page = nav | default('') %}
+{% set havel_return_to = request.url.path %}
+{% set havel_topics = havel_topics_for(nav | default('')) %}
+<dialog id="havel-sheet" class="ui-dialog havel-dialog" aria-labelledby="havel-title" data-havel-panel
+        data-writing="{{ t('havel.writing') }}" data-error="{{ t('havel.error') }}" data-retry="{{ t('havel.retry') }}" data-name="{{ t('havel.name') }}">
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <div class="havel-head">
+      <span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span>
+      <div class="havel-head-text"><h2 id="havel-title">{{ t('havel.name') }}</h2><p>{{ t('havel.subtitle') }}</p></div>
+      <a class="ui-btn ui-btn-quiet ui-btn-icon" href="/havel" aria-label="{{ t('havel.open_page') }}" title="{{ t('havel.open_page') }}">{{ icon('external-link', 20) }}</a>
+      <button class="ui-btn ui-btn-quiet ui-btn-icon" type="button" data-sheet-close aria-label="{{ t('havel.close') }}">{{ icon('x', 20) }}</button>
+    </div>
+    <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
+      {% include "_havel_topics.html" %}
+    </div>
+    <div data-havel-form-wrap>{% include "_havel_form.html" %}</div>
+  </div>
+</dialog>
