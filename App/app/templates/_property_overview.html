@@ -55,6 +55,10 @@
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=lock#door-code"{{ hc_attrs(h_door) }}>{{ icon('key-round', 20) }}<div><strong>{{ hc_dot(h_door) }}{{ t('host.door_code') }}</strong>
     <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div>{{ open_pill }}</a>
   {% endif %}
+  {% if leon_card %}
+  <a class="host-property-card" href="{{ base_url }}/leon" data-leon-card="{{ leon_card }}">{{ icon('message-circle-question', 20) }}<div><strong>{{ t('leon_page.title') }}</strong>
+    <small>{{ t('leon_page.card.' ~ leon_card) }}</small></div>{{ open_pill }}</a>
+  {% endif %}
 </div>
 
 {%- set wizard_active = setup_progress and not setup_progress.hidden -%}

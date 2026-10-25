@@ -62,6 +62,7 @@ from .. import (
     welcome_back,
 )
 from ..templating import render
+from .guest_guide import leon_card_state as _leon_card_state  # 0396
 from ..ubyport.client import UbyportError, UbyportTransportError
 from . import admin_accounts, api, dashboard_calendar, exports, guest, onboarding, privacy_requests
 from . import passkeys as passkey_routes
@@ -1845,6 +1846,7 @@ def _render_apartment_detail(
             "apartment": apartment,
             "fee_signature": _fee_signature_context(request, apartment),
             "door_code": door_code,
+            "leon_card": _leon_card_state(apartment),  # 0396
             "lock_panel": (
                 {**_smart_lock_panel_context(request), "return_to": f"/apartments/{apartment_id}?view=settings&section=lock"}
                 if door_code is not None
