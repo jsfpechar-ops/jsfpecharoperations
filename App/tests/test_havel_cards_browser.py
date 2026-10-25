@@ -20,7 +20,7 @@ from app import ai, auth, config
 from app.main import app
 from tests.ai_fake import FakeClient
 from tests.browser_support import chromium_launch_kwargs
-from tests.test_havel_actions import _action, _reply, ready  # noqa: F401
+from tests.test_havel_actions import LATER, SOON, _action, _reply, ready  # noqa: F401
 from tests.test_submission_retry_cap import host as host  # noqa: F401
 
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0314"
@@ -59,7 +59,7 @@ def _context(playwright, origin, width, js=True):
 
 def test_cards_at_390_and_1280(origin):
     url, _cookie, pid = origin
-    stay = _reply(_action(property_id=pid, date_from="2026-10-30", date_to="2026-11-01"))
+    stay = _reply(_action(property_id=pid, date_from=SOON, date_to=LATER))
     SHOTS.mkdir(parents=True, exist_ok=True)
     for width in (390, 1280):
         ai.set_client_for_tests(FakeClient([stay]))

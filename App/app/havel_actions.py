@@ -110,7 +110,7 @@ def prepare(action: Dict[str, Any], properties: List[Any], today: date, *, retur
     return {"type": kind, "title": "havel.card.title_stay", "confirm": "havel.card.confirm_stay",
             "action": "/reservations", "hidden": {"host_note": (action.get("note") or "")[:500]}, "property": prop,
             "date_from": start.isoformat(), "date_to": end.isoformat(), "nights": (end - start).days,
-            "guests": guests, "guest_email": email,
+            "guests": guests, "guest_email": email, "note": (action.get("note") or "")[:500],
             "overlap": overlaps(prop["id"], start.isoformat(), end.isoformat()) > 0,
             "fields": [
                 {"name": "apartment_id", "label": ("host", "stays.add_panel.apartment"), "type": "select",

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -11,6 +11,8 @@ from tests.ai_fake import FakeClient, reply
 from tests.test_submission_retry_cap import USERNAME, host as host  # noqa: F401
 
 TODAY = date(2026, 10, 23)
+# Route tests run against the real date.today(), so their stay starts a few days from now.
+SOON, LATER = (date.today() + timedelta(days=5)).isoformat(), (date.today() + timedelta(days=7)).isoformat()
 
 
 def _row(id=11, name="Riverside / 4", active=1, archived=None, pin="482913", token="tok11"):
@@ -35,6 +37,7 @@ def test_stay_card_has_facts_fields_and_overlap_flag():
     assert [f["name"] for f in card["fields"]] == ["apartment_id", "date_from", "date_to", "expected_guests", "guest_email"]
     assert card["property"]["index"] == 1 and card["guest_email"] == "guest@example.test"
     assert _prepare(_action(guest_email="not an e-mail"))["guest_email"] == ""
+    assert _prepare(_action(note="Late arrival"))["note"] == "Late arrival"  # the host sees what the form saves
 
 
 @pytest.mark.parametrize("bad", [
@@ -114,7 +117,7 @@ def _send(client, text):
 
 def test_stay_card_renders_and_posts_to_the_existing_route(ready):
     client, pid = ready
-    ai.set_client_for_tests(FakeClient([_reply(_action(property_id=pid, date_from="2026-10-30", date_to="2026-11-01"))]))
+    ai.set_client_for_tests(FakeClient([_reply(_action(property_id=pid, date_from=SOON, date_to=LATER))]))
     res = _send(client, "Add a stay from Friday to Sunday for 3 guests")
     assert res.status_code == 200
     html = res.text
