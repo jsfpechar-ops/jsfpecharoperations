@@ -1,0 +1,14 @@
+{% extends "host_page.html" %}
+{% set nav = 'guide' %}
+{% set body_kind = 'detail' %}
+{% block title %}{{ t('havel.title') }}{% endblock %}
+{% block page_title %}{{ t('havel.name') }}{% endblock %}
+{% block meta %}{{ t('havel.subtitle') }}{% endblock %}
+{% block body %}
+<section class="ui-section havel-page" data-havel-page>
+  <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
+    {% include "_havel_thread.html" %}
+  </div>
+  {% include "_havel_form.html" %}
+</section>
+{% endblock %}
