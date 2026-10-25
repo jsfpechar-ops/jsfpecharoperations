@@ -147,6 +147,28 @@ def havel_page(request: Request):
     return render(request, "havel.html", ctx)
 
 
+def _forward(request: Request, uid: int, message: str, exchanges: List[Dict[str, str]], page: str,
+             reason: str) -> bool:
+    """0333: a limit was hit, so the host's message goes to support instead of the model.
+
+    False when the weekly support cap is used up; the caller then shows the limit text.
+    """
+    if havel.support_blocked(uid):
+        return False
+    account = auth.current_user(request)
+    workspace = auth.workspace_user(request) or account
+    mail_notify.havel_support(
+        user_id=uid, account_email=str(account["email"] or ""),
+        workspace=str(workspace["display_name"] or workspace["username"] or ""),
+        lang=host_i18n.lang_from_request(request), page=page,
+        summary=f"Havel limit reached ({reason}). The host's message below was forwarded without an AI answer.",
+        note=message, turns=[exchange["host"] for exchange in exchanges][-4:],
+    )
+    rate_limit.record("havel_support", str(uid))
+    havel.record_stat("support_forwarded")
+    return True
+
+
 @router.post("/havel")
 async def havel_send(request: Request):
     guard = auth.require_login(request)
@@ -177,9 +199,11 @@ async def havel_send(request: Request):
         items = [_item("host", message)]
         key = havel.local_reply(message)
         support = False
+        forward, prior = "", exchanges
         if key:
             reply_text = _t(request, key)
         elif len(exchanges) >= havel.MAX_EXCHANGES:
+            forward = "conversation"
             reply_text = _t(request, "havel.limit_turns")
             exchanges = []
         elif not ai.enabled(havel.FEATURE):
@@ -189,6 +213,7 @@ async def havel_send(request: Request):
             if limit:
                 reply_text, support = _t(request, f"havel.{limit}"), True
                 havel.record_stat("limit_hit")
+                forward = limit if limit in ("limit_week", "limit_month") else ""
             else:
                 host = havel.Host(user_id=uid, lang=host_i18n.lang_from_request(request), device=device,
                                   properties=_properties(request), page=page, topic=topic, read_keys=havel_topics.read_keys(topic, q))
@@ -198,6 +223,7 @@ async def havel_send(request: Request):
                     reply_text, support = _t(request, "havel.off"), True
                 except ai.AIBudgetError as exc:
                     reply_text, support = _t(request, "havel.off" if exc.reason == "month" else "havel.resting"), True
+                    forward = "budget_" + exc.reason
                 else:
                     havel.record_message(uid)
                     if reply.kind in ("escalate", "fail"):
@@ -220,6 +246,8 @@ async def havel_send(request: Request):
                         items.append(_item("havel", reply_text, links=links, support=reply.kind == "escalate",
                                            support_summary=reply.support_summary, card=card, next=reply.next,
                                            not_helped=reply.kind in ("answer", "clarify")))
+        if forward and _forward(request, uid, message, prior, page, forward):
+            reply_text, support = _t(request, "havel.forwarded"), False
         if len(items) == 1:
             items.append(_item("havel", reply_text, support=support))
         if reply_text != _t(request, "havel.limit_turns"):
