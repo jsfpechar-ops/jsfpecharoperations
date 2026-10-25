@@ -8,7 +8,7 @@
 {% set havel_page = nav | default('') %}
 {% set havel_return_to = request.url.path %}
 {% set havel_topics = havel_topics_for(nav | default('')) %}
-<dialog id="havel-sheet" class="ui-dialog havel-dialog" aria-labelledby="havel-title" data-havel-panel
+{% if nav | default('') != 'havel' %}<dialog id="havel-sheet" class="ui-dialog havel-dialog" aria-labelledby="havel-title" data-havel-panel
         data-writing="{{ t('havel.writing') }}" data-error="{{ t('havel.error') }}" data-retry="{{ t('havel.retry') }}" data-name="{{ t('havel.name') }}">
   <div class="ui-sheet">
     <span class="ui-sheet-handle" aria-hidden="true"></span>
@@ -23,4 +23,4 @@
     </div>
     <div data-havel-form-wrap>{% include "_havel_form.html" %}</div>
   </div>
-</dialog>
+</dialog>{% endif %}
