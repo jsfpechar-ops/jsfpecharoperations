@@ -229,7 +229,7 @@ def _capture_geometry(page, result_selector):
           const staysPanel = document.querySelector(
             '.stays-view .panel.tight.scroll-x, .stays-view'
           );
-          // 0394: the Open cue (a.row-open) is a compact link cue, not a row-menu control.
+          // 0399: the Open cue (a.row-open) is a compact link cue, not a row-menu control.
           const rowActions = [...document.querySelectorAll(
             '.stays-view td.row-actions a:not(.row-open), .stays-view td.row-actions button'
           )].map(element => {

@@ -796,7 +796,7 @@ def _entities_page(
 def _invoice_details_response(request: Request, form, entity: Dict[str, Any], *, default_next: str):
     """Save or look up Invoice details from the business editor."""
     next_path = _entity_next(_form_str(form, "next"))
-    if form.get("fill_from_register"):
+    if form.get("fill_from_register") or form.get("use_register_account"):
         state = invoice_routes.lookup_invoice_details(request, form, entity)
         return _entities_page(request, edit_entity=entity, invoice=state, next_path=next_path)
     refused = invoice_routes.save_invoice_details(request, form, entity)

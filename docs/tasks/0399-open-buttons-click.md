@@ -1,6 +1,6 @@
-# 0394: every "Open" button actually opens
+# 0399: every "Open" button actually opens
 
-Status: done (report: [0394-report](0394-report.md))
+Status: done (report: [0399-report](0399-report.md))
 Branch: claude/project-thread-by10nz
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens (took two)
 
@@ -23,7 +23,7 @@ Owner (Josef, 2026-10-25): "open button on stay dont work when i click it then i
 | App/app/templates/{reservations,reservation_detail,apartments,submission_detail,submissions,entities,settings_archived,housebook,invoices,stay_fees}.html | pass the row's own `data-href` |
 | App/app/templates/_property_overview.html | Guest links Open is an `<a>` to the card's link target |
 | App/app/templates/base.html | no change (host2.css not edited, so its key stays) |
-| App/tests/test_0394_open_buttons_click_browser.py | new |
+| App/tests/test_0399_open_buttons_click_browser.py | new |
 | docs/design/MASTER.md | 7.1 `open` row: Open is a real link |
 
 ## 4. Steps
@@ -42,7 +42,7 @@ Radio/option card rules (another branch changes them). Hover rules outside the 0
 
 ## 6. Commands
 
-From `App/`: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0394_open_buttons_click_browser.py tests/test_0291_open_buttons.py tests/test_0375_needs_you_and_open.py tests/test_0385_phone_card_open_browser.py tests/test_0252_touch_sweep_browser.py tests/test_design_guardrails_browser.py tests/test_host_geometry.py -q --tb=short -x 2>&1 | tail -30`. Then `git checkout -- ../docs/tasks` evidence PNGs if rewritten. From the repo root: `python3 scripts/context_lint.py`.
+From `App/`: `UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_0399_open_buttons_click_browser.py tests/test_0291_open_buttons.py tests/test_0375_needs_you_and_open.py tests/test_0385_phone_card_open_browser.py tests/test_0252_touch_sweep_browser.py tests/test_design_guardrails_browser.py tests/test_host_geometry.py -q --tb=short -x 2>&1 | tail -30`. Then `git checkout -- ../docs/tasks` evidence PNGs if rewritten. From the repo root: `python3 scripts/context_lint.py`.
 
 ## 7. Acceptance
 
@@ -54,4 +54,4 @@ A row with no `data-href`; any test that needs data demo does not have.
 
 ## 9. Report
 
-`docs/tasks/0394-report.md`: files changed, test tail, deviations.
+`docs/tasks/0399-report.md`: files changed, test tail, deviations.

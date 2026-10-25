@@ -3776,6 +3776,8 @@ _INTERFACE_STRINGS = {
         "ares.field.dic": "tax ID (DIČ)",
         "ares.field.registry_entry": "registry entry",
         "ares.field.vat_status": "VAT status",
+        "ares.field.bank_account": "bank account",
+        "ares.field.bic": "BIC",
         "ares.field.buyer_name": "buyer name",
         "ares.field.buyer_street": "buyer street",
         "ares.field.buyer_city": "buyer city",
@@ -4594,6 +4596,8 @@ _INTERFACE_STRINGS = {
         "ares.field.dic": "DIČ",
         "ares.field.registry_entry": "zápis v rejstříku",
         "ares.field.vat_status": "postavení k DPH",
+        "ares.field.bank_account": "bankovní účet",
+        "ares.field.bic": "BIC",
         "ares.field.buyer_name": "jméno odběratele",
         "ares.field.buyer_street": "ulice odběratele",
         "ares.field.buyer_city": "město odběratele",
@@ -6633,10 +6637,20 @@ _REGISTER_LOOKUP_STRINGS = {
     "en": {
         "entities.register_lookup.uses": "Register lookup uses IČO %(ico)s from Business details.",
         "entities.register_lookup.needs_ico": "To fill invoice details from the register, add the IČO in",
+        "vat_register.source_note": "Filled from the business register (ARES) and the VAT register. Check and save.",
+        "vat_register.accounts": "Accounts in the VAT register:",
+        "vat_register.use": "Use %(account)s",
+        "vat_register.needs_dic": "To fill the bank account too, add your DIČ in",
+        "vat_register.unreliable": "The VAT register lists this business as an unreliable VAT payer.",
     },
     "cs": {
         "entities.register_lookup.uses": "Vyhledání v registru použije IČO %(ico)s z firemních údajů.",
         "entities.register_lookup.needs_ico": "Pro doplnění fakturačních údajů z registru vyplňte IČO v sekci",
+        "vat_register.source_note": "Vyplněno z obchodního rejstříku (ARES) a registru plátců DPH. Zkontrolujte a uložte.",
+        "vat_register.accounts": "Účty v registru plátců DPH:",
+        "vat_register.use": "Použít %(account)s",
+        "vat_register.needs_dic": "Pro doplnění bankovního účtu vyplňte DIČ v sekci",
+        "vat_register.unreliable": "Registr plátců DPH vede tento subjekt jako nespolehlivého plátce.",
     },
 }
 for _lang, _strings in _REGISTER_LOOKUP_STRINGS.items():

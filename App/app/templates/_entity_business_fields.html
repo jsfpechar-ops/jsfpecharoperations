@@ -7,9 +7,9 @@
     required IČO of the entity form; ``context='lookup'`` is the invoice
     settings IČO, which only feeds the register lookup and is never saved. -#}
 
-{% macro register_messages(ares_error=none, ares_note=none, ares_vat_found=false) %}
+{% macro register_messages(ares_error=none, ares_note=none, ares_vat_found=false, source_key='ares.source_note') %}
   {% if ares_error %}<p class="alert">{{ ares_error }}</p>{% endif %}
-  {% if ares_note %}<p class="entity-register-note">{{ t('ares.source_note') }} {{ ares_note }}</p>{% endif %}
+  {% if ares_note %}<p class="entity-register-note">{{ t(source_key) }} {{ ares_note }}</p>{% endif %}
   {% if ares_vat_found %}<p class="hint">{{ t('ares.vat_found') }}</p>{% endif %}
 {% endmacro %}
 
@@ -133,7 +133,7 @@
 
 {#- Invoice details lookup: one IČO per business, so the lookup sends the saved
     Business details value instead of offering a second IČO box. -#}
-{% macro register_lookup_saved(ico, ares_error=none, ares_note=none, ares_vat_found=false) %}
+{% macro register_lookup_saved(ico, invoice) %}
   <div class="field entity-register-lookup">
     {% if ico %}
     <input type="hidden" name="ico" value="{{ ico }}">
@@ -142,6 +142,16 @@
     {% else %}
     <p class="small muted">{{ t('entities.register_lookup.needs_ico') }} <a href="#entity-business">{{ t('entities.section.business') }} </a></p>
     {% endif %}
-    {{ register_messages(ares_error, ares_note, ares_vat_found) }}
+    {{ register_messages(invoice.ares_error, invoice.ares_note, invoice.ares_vat_found, invoice.ares_source or 'ares.source_note') }}
+    {% if invoice.vat_unreliable %}<p class="alert">{{ t('vat_register.unreliable') }}</p>{% endif %}
+    {% if invoice.vat_needs_dic %}<p class="small">{{ t('vat_register.needs_dic') }} <a href="#entity-business">{{ t('entities.section.business') }}</a></p>{% endif %}
+    {% if invoice.register_accounts %}
+    <div class="register-accounts">
+      <p class="small">{{ t('vat_register.accounts') }}</p>
+      {% for account in invoice.register_accounts %}
+      <button class="btn" type="submit" name="use_register_account" value="{{ account }}" formnovalidate>{{ t('vat_register.use', account=account) }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 {% endmacro %}
