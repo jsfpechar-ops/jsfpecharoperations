@@ -960,12 +960,20 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-fab:focus-visible { box-shadow: var(--focus-ring-2); outline: 0; }
 .host-workspace .havel-fab[data-unread]::after { content: ""; position: absolute; top: var(--space-1); right: var(--space-1); width: var(--space-3); height: var(--space-3); border-radius: var(--radius-pill); background: var(--danger); border: 2px solid var(--surface); }
 .host-workspace .havel-fab[hidden] { display: none; }
+/* Keyboard focus and scrolled-to content stop above the corner button instead of under it. */
+@media (min-width: 1024px) {
+  html:has(.havel-fab:not([hidden])) { scroll-padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12)); }
+  body.host-workspace:has(.havel-fab) .wrap.with-sidebar { padding-bottom: calc(var(--control-h) + var(--space-3) + var(--space-12)); }
+}
+@media (max-width: 1023px) {
+  html:has(.havel-fab:not([hidden])) { scroll-padding-bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-3) + var(--space-8)); }
+}
 .host-workspace .havel-greeting { margin-bottom: var(--space-2); }
 @media (max-width: 767px) {
   .host-workspace .havel-dialog { position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; z-index: var(--z-drawer); box-shadow: var(--shadow-2); }
   .host-workspace .havel-dialog .ui-sheet { max-height: 70dvh; height: 70dvh; }
   .host-workspace .havel-fab { right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4)); }
-  body:has(.ui-sticky-actions) .host-workspace .havel-fab { bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8)); }
+  body.host-workspace:has(.ui-sticky-actions) .havel-fab { bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8)); }
 }
 
 /* 0314: Havel confirm cards (plan 17d). A card sits under the bubble, never inside it. */
