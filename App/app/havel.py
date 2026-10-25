@@ -161,7 +161,7 @@ def system_blocks(lang: str) -> List[str]:
 
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}|\b\d{1,2}\.\s?\d{1,2}\.(?:\s?\d{4})?|\b\d{1,2}:\d{2}\b")
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
-_PHONE = re.compile(r"\+?\d(?:[\s-]?\d){6,}")
+_PHONE = re.compile(r"(?<![A-Za-z\d])\+?\d(?:[\s-]?\d){6,}")
 _NUMBER = re.compile(r"\b(?:\d{6,}|[A-Za-z]{1,3}\d{6,9})\b")
 
 
@@ -516,6 +516,7 @@ def ask(host: Host, history: List[Dict[str, str]], message: str, today: Optional
             if exc.reason == "input_too_large" and attempt == 0 and history:
                 history = history[1:]
                 continue
+            record_stat("guardrail_fail", today)
             return _fail(exc.reason)
     else:  # pragma: no cover - the loop always breaks or returns
         return _fail("input_too_large")
