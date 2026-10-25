@@ -43,6 +43,7 @@
 
 <form method="post" action="{{ base_url }}/{{ item.id }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{% if from_leon %}<input type="hidden" name="from" value="leon">{% endif %}
 {% if custom %}{{ ui_field('guide-title', t('guest_guide.field.title'), name='title', value=values.title, attrs='maxlength="120" required') }}{% endif %}
 {% set ph = 'guest_guide.custom.ph.' if custom else 'guest_guide.kind.' ~ item.kind ~ '.ph.' %}
 {{ ui_field('guide-location', t('guest_guide.field.location'), name='location', value=values.location, help=t('guest_guide.field.location_help'), optional=true, attrs='maxlength="500"', placeholder=t(ph ~ 'location')) }}
@@ -60,6 +61,7 @@
 <div class="ui-btn-group">
 <form method="post" action="{{ base_url }}/{{ item.id }}/skip">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{% if from_leon %}<input type="hidden" name="from" value="leon">{% endif %}
 {% if item.state == 'skipped' %}
 <input type="hidden" name="skip" value="0">
 {{ ui_button(t('guest_guide.unskip'), 'secondary', type='submit') }}
