@@ -54,6 +54,7 @@
       var old = t.querySelector("[data-havel-topics]");
       if (!replace) t.querySelectorAll("[data-havel-next]").forEach(function (n) { n.remove(); });
       if (old && !replace) old.remove();
+      if (!replace && t.querySelector("[data-havel-greeting]")) items.querySelectorAll("[data-havel-greeting]").forEach(function (g) { g.remove(); });
       while (items.firstChild) t.appendChild(items.firstChild);
     }
     var wrap = root.querySelector("[data-havel-form-wrap]");
