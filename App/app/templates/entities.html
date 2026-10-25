@@ -60,7 +60,7 @@
       <input type="hidden" name="legal_entity_id" value="{{ edit_entity.id }}">
       {% if next_path %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
       <input type="hidden" name="_invoice_account_existing" value="{{ invoice_entity.bank_account or invoice_entity.iban or '' }}">
-      {{ register_lookup_saved(edit_entity.ico, invoice.ares_error, invoice.ares_note, invoice.ares_vat_found) }}
+      {{ register_lookup_saved(edit_entity.ico, invoice) }}
       {{ invoice_fields(invoice_entity, invoice.bank_parts, invoice.bic_from_bank, invoice.account_error) }}
       <div class="actions"><button class="{{ cta }}" type="submit">{{ t('common.save') }}</button></div>
     </form>
