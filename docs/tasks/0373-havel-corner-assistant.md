@@ -55,7 +55,8 @@ Current code (`grep -n` each before editing; STOP and report if one is missing):
 | App/app/static/havel.js | edit | `show()`, button hide/show, focus, clear on send |
 | App/app/static/host2.css | edit | `.havel-fab`, phone sheet |
 | App/app/templates/base.html | edit | cache keys `20261025-0373` |
-| App/app/host_i18n.py, App/app/host_vi_i18n.py | edit | `havel.greeting` |
+| App/app/templates/_havel_thread.html | edit | mark the server intro item `data-havel-greeting` |
+| App/app/host_i18n.py, App/app/host_vi_i18n.py | edit | only to delete `havel.open_page` if unused |
 | docs/design/catalog.json | edit | add `havel-fab`, `havel-greeting` |
 | docs/design/MASTER.md | edit | 7.15 launcher sentence |
 | App/tests/test_havel_panel.py, App/tests/test_havel_browser.py | edit | new launcher, modeless, greeting |
@@ -94,11 +95,13 @@ Current code (`grep -n` each before editing; STOP and report if one is missing):
      <div class="havel-bubble"><p>{{ t('havel.intro') }}</p></div>
    </div>
    ```
-   It is template text only: no AI call, no limit count, never in `history`. Add the key after each `havel.topics_title` line (draft wording; the owner may replace it later, keep it one key):
-   - en: `"havel.intro": "Hi, I'm Havel, the UbyHost support assistant (AI). I can show you where everything is in the app and walk you through it step by step. Pick a topic below or just write your question in your own words.",`
-   - cs: `"havel.intro": "Dobrý den, jsem Havel, asistent podpory UbyHost (AI). Ukážu vám, kde co v aplikaci najdete, a provedu vás krok za krokem. Vyberte si téma níže, nebo mi napište otázku vlastními slovy.",`
-   - vi: `"havel.intro": "Xin chào, tôi là Havel, trợ lý hỗ trợ của UbyHost (AI). Tôi có thể chỉ cho bạn mọi thứ nằm ở đâu trong ứng dụng và hướng dẫn bạn từng bước. Hãy chọn một chủ đề bên dưới hoặc viết câu hỏi bằng lời của bạn.",`
-   Placement: `havel.js` `echo(text)` removes `[data-havel-topics]` when the host types, and the greeting must stay as the first message. So put the greeting block BEFORE `<div class="havel-topics" data-havel-topics>`, wrapped in `{% if not havel_answer and not havel_topic_data %}...{% endif %}` so it shows only on the home screen. Not inside the `{% else %}` branch.
+   It is template text only: no AI call, no limit count, never in `history`.
+
+   **The key `havel.intro` already exists** (en, cs, vi; good text that says "Pick a topic below"). Do NOT add it again and do NOT change its text (the owner's final wording replaces it later). Do not touch `havel.greeting` (that is havel.py's reply to a "hi" message).
+
+   Duplicate guard: `routes/havel.py` `_thread()` already puts a `havel.intro` item first in every thread it returns, so after the first message the server fragment would show the intro a second time. In `_havel_thread.html`, on the item loop, add `data-havel-greeting` to the item's outer `.havel-msg` when `loop.first and item.role == 'havel' and item.text == t('havel.intro')`. In `havel.js` `swap()`, before appending the items in append mode, if the thread already has a `[data-havel-greeting]`, remove every `[data-havel-greeting]` from `items`. In replace mode keep the incoming one only (the thread is emptied first). On `/havel` without JavaScript, the page renders either the topics greeting (fresh) or the thread intro (after a post); if both appear in one render, hide the thread one with the same `loop.first` check by skipping it when `havel_show_topics` is true.
+
+   Placement: `havel.js` `echo(text)` removes `[data-havel-topics]` when the host types, and the greeting must stay as the first message. So the greeting block sits BEFORE `<div class="havel-topics" data-havel-topics>`, wrapped in `{% if not havel_answer and not havel_topic_data %}...{% endif %}` (already done by the first executor; it currently renders `t('havel.greeting')`, change that to `t('havel.intro')`).
 
 6b. **Remove the expand icon.** In `_havel_panel.html` delete the line `<a class="ui-btn ui-btn-quiet ui-btn-icon" href="/havel" aria-label="{{ t('havel.open_page') }}" ...>{{ icon('external-link', 20) }}</a>`. If `grep -rn "havel.open_page" App/app App/tests` then shows only the i18n files, delete the `havel.open_page` lines in `host_i18n.py` (en, cs) and `host_vi_i18n.py`; fix any test that asserted the icon.
 
@@ -130,7 +133,7 @@ All the Objective points hold; the commands pass with 0 skipped browser tests; r
 
 ## 8. Stop and ask
 
-A `grep -n` anchor from section 2 is missing, a copy key already exists, a test outside the Havel files fails in a way this change could cause, or the work needs an edit in a "Do not touch" file.
+A `grep -n` anchor from section 2 is missing, a NEW copy key the brief asks for already exists (`havel.intro` is expected to exist), a test outside the Havel files fails in a way this change could cause, or the work needs an edit in a "Do not touch" file.
 
 ## 9. Report
 
