@@ -103,6 +103,19 @@
       <p class="ui-sub">{{ t('guide.guests.cookies') }}</p>
     </section>
 
+    <section class="guide-section ui-section ui-section-plain" id="guest_links">
+      <h2>{{ t('guide.nav.guest_links') }}</h2>
+      <p>{{ t('guide.guest_links.what') }}</p>
+      <p>{{ t('guide.guest_links.when') }}</p>
+      <h3>{{ t('guide.how_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 7) %}<li>{{ t('guide.guest_links.find' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.guest_links.pin_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('guide.guest_links.pin' ~ n) }}</li>{% endfor %}</ol>
+      <p class="ui-sub">{{ t('guide.guest_links.windows') }}</p>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 4) %}<li>{{ t('guide.guest_links.wrong' ~ n) }}</li>{% endfor %}</ul>
+    </section>
+
     <section class="guide-section ui-section ui-section-plain" id="reporting">
       <h2>{{ t('guide.nav.reporting') }}</h2>
       <p>{{ t('guide.reporting.body') }}</p>
