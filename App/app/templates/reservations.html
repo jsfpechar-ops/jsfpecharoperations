@@ -171,7 +171,7 @@
             <div class="stay-report-deadline">{{ deadline_badge(deadline_cell(progress, check_in)) }}</div>
           {% endif %}
         </td>
-        <td class="ui-cell-acts row-actions stay-col-actions" data-card="actions" data-label="">{{ row_open() }}
+        <td class="ui-cell-acts row-actions stay-col-actions" data-card="actions" data-label="">{{ row_open('/reservations/' ~ reservation.id ~ '?return_to=' ~ (return_to | urlencode)) }}
           {{ row_menu_begin() }}
             <a class="row-menu-item" href="/reservations/{{ reservation.id }}?return_to={{ return_to | urlencode }}" role="menuitem">{{ t('common.open') }}</a>
             {% if reservation.permalink_token %}
