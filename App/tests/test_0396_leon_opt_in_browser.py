@@ -1,6 +1,6 @@
-"""0394: the Leon (AI) card on the property overview and the Leon page in a real browser at 390 px.
+"""0396: the Leon (AI) card on the property overview and the Leon page in a real browser at 390 px.
 
-Screenshots go to docs/tasks/screenshots-0394/. Skipped when Chromium is missing, unless
+Screenshots go to docs/tasks/screenshots-0396/. Skipped when Chromium is missing, unless
 UBYHOST_REQUIRE_BROWSER=1.
 """
 from __future__ import annotations
@@ -13,7 +13,7 @@ from app import config, db
 from tests.test_0251_tablet_browser import _context, base, host  # noqa: F401 (fixtures)
 from tests.test_guest_browser_e2e import browser, live_server  # noqa: F401 (fixtures)
 
-OUT = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0394"
+OUT = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0396"
 
 
 @pytest.fixture

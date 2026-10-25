@@ -425,7 +425,7 @@ def _fixed(lang: str, key: str, **kwargs) -> str:
 _COMPANY = re.compile(r"(s\.\s?r\.\s?o|a\.\s?s\.|spol\.|z\.\s?s\.|ltd|gmbh|inc\b|llc|\d)", re.IGNORECASE)
 
 
-# 0394: the host accepts these terms before Leon answers (text: guide_i18n guide.leon_terms.*).
+# 0396: the host accepts these terms before Leon answers (text: guide_i18n guide.leon_terms.*).
 # Changing the date turns Leon off on every property until its host accepts again.
 LEON_TERMS_VERSION = "2026-10-25"
 
@@ -435,7 +435,7 @@ def terms_current(apartment) -> bool:
 
 
 def host_state(apartment, live: bool) -> str:
-    """0394: what the host sees on the Leon page and the overview card."""
+    """0396: what the host sees on the Leon page and the overview card."""
     if not apartment["leon_enabled"]:
         return "off"
     if not terms_current(apartment):
@@ -444,7 +444,7 @@ def host_state(apartment, live: bool) -> str:
 
 
 def switched_on(apartment) -> bool:
-    """0376/0394: the host ticked yes, accepted the current terms, and the owner is on the AI test list.
+    """0376/0396: the host ticked yes, accepted the current terms, and the owner is on the AI test list.
 
     The guide routes 404 without it. ``ai.enabled`` stays a separate check, so a chat
     that is open when AI goes off still passes the guest's message to the host.

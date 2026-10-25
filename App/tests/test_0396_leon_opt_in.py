@@ -1,4 +1,4 @@
-"""0394: Leon (AI) card on the property overview; the host accepts the Leon terms before Leon answers."""
+"""0396: Leon (AI) card on the property overview; the host accepts the Leon terms before Leon answers."""
 from __future__ import annotations
 
 from datetime import date

@@ -79,7 +79,7 @@ def guide_index(request: Request, apartment_id: int):
         next_id=_next_open(apartment_id, 0),
         quick_next=guide_facts.next_step(apartment_id),
         leon_offer=ai.enabled_for_property(leon.FEATURE, apartment_id),  # 0376
-        leon_state=leon.host_state(apartment, bool(guest_guide.progress(apartment_id)["live"])),  # 0394
+        leon_state=leon.host_state(apartment, bool(guest_guide.progress(apartment_id)["live"])),  # 0396
         import_on=guest_guide_import.enabled(),
         import_left=guest_guide_import.imports_left(apartment_id),
         import_busy=guest_guide_import.in_progress(apartment_id),
@@ -105,7 +105,7 @@ async def guide_add(request: Request, apartment_id: int):
 
 
 def leon_card_state(apartment) -> Optional[str]:
-    """0394: the Leon card on the property overview; None where Leon is not offered."""
+    """0396: the Leon card on the property overview; None where Leon is not offered."""
     if not ai.enabled_for_property(leon.FEATURE, apartment["id"]):
         return None
     live = bool(guest_guide.progress(apartment["id"])["live"]) if apartment["leon_enabled"] else False
@@ -118,7 +118,7 @@ def _leon_utc(value: Optional[str]) -> str:
 
 @router.get("/apartments/{apartment_id}/leon")
 def leon_page(request: Request, apartment_id: int):
-    """0394: the host's Leon (AI) page: what Leon does, the warnings, the terms accepted."""
+    """0396: the host's Leon (AI) page: what Leon does, the warnings, the terms accepted."""
     guard = auth.require_login(request)
     if guard:
         return guard
@@ -139,7 +139,7 @@ def leon_page(request: Request, apartment_id: int):
 
 @router.post("/apartments/{apartment_id}/leon")
 async def leon_save(request: Request, apartment_id: int):
-    """0394: the host switches Leon (AI) on after ticking the current terms, or off (always allowed)."""
+    """0396: the host switches Leon (AI) on after ticking the current terms, or off (always allowed)."""
     guard = auth.require_login(request)
     if guard:
         return guard

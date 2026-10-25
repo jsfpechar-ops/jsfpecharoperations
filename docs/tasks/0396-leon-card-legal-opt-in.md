@@ -1,7 +1,7 @@
-# 0394: Leon (AI) card on the property overview, with warnings and terms the host accepts first
+# 0396: Leon (AI) card on the property overview, with warnings and terms the host accepts first
 
 Status: review
-Depends on: main (0376, 0393 merged) | Branch: claude/0394-leon-card-legal-opt-in (checked out; commit here)
+Depends on: main (0376, 0393 merged) | Branch: claude/0396-leon-card-legal-opt-in (checked out; commit here)
 Executor: Haiku 5.5 | Reviewer: Opus | Fits one session: 40 tool calls, 90k tokens
 
 ## 1. Objective
@@ -44,8 +44,8 @@ Off is always allowed. With no env change nothing shows on production for hosts 
 | App/app/templates/guide.html | `#leon-terms` section |
 | App/app/host_i18n.py, App/app/host_vi_i18n.py, App/app/guide_i18n.py | copy (§4 Copy) |
 | App/app/retention.py | one line for the acceptance fields |
-| App/tests/test_0394_leon_opt_in.py | new |
-| App/tests/test_0394_leon_opt_in_browser.py | new (390 px screenshots) |
+| App/tests/test_0396_leon_opt_in.py | new |
+| App/tests/test_0396_leon_opt_in_browser.py | new (390 px screenshots) |
 | tests listed in §2 | set `leon_terms_version` |
 | App/tests/test_0376_ai_gates.py | tests of `/guide/leon` move to the new route |
 
@@ -53,14 +53,14 @@ Off is always allowed. With no env change nothing shows on production for hosts 
 
 1. `0022_leon_terms.sql`:
    ```sql
-   -- Brief 0394: which Leon (AI) terms the host accepted for this property, when and who.
+   -- Brief 0396: which Leon (AI) terms the host accepted for this property, when and who.
    ALTER TABLE apartment ADD COLUMN leon_terms_version TEXT;
    ALTER TABLE apartment ADD COLUMN leon_terms_accepted_at TEXT;
    ALTER TABLE apartment ADD COLUMN leon_terms_accepted_by INTEGER;
    ```
 2. `leon.py`, above `switched_on`:
    ```python
-   # 0394: the host accepts these terms before Leon answers (text: guide_i18n guide.leon_terms.*).
+   # 0396: the host accepts these terms before Leon answers (text: guide_i18n guide.leon_terms.*).
    # Changing the date turns Leon off on every property until its host accepts again.
    LEON_TERMS_VERSION = "2026-10-25"
 
@@ -68,7 +68,7 @@ Off is always allowed. With no env change nothing shows on production for hosts 
    def terms_current(apartment) -> bool:
        return (apartment["leon_terms_version"] or "") == LEON_TERMS_VERSION
    ```
-   and `switched_on` returns `bool(apartment["leon_enabled"]) and terms_current(apartment) and ai.owner_on_test_list(...)` (update its docstring: "0376/0394").
+   and `switched_on` returns `bool(apartment["leon_enabled"]) and terms_current(apartment) and ai.owner_on_test_list(...)` (update its docstring: "0376/0396").
 3. `routes/guest_guide.py`:
    - Helper `_leon_state(apartment) -> str`: `"off"` if not `leon_enabled`; `"terms"` if on but not `leon.terms_current`; `"waiting"` if on and the guide is not live (`guest_guide.progress(id)["live"]`); else `"on"`.
    - `GET /apartments/{apartment_id}/leon` (`leon_page`): login guard, `_home`; 404 if not `ai.enabled_for_property(leon.FEATURE, apartment_id)`. Render `leon_settings.html` with `apartment`, `state=_leon_state(apartment)`, `terms_version=leon.LEON_TERMS_VERSION`, `accepted_at` (the stored ISO time, shown as `YYYY-MM-DD HH:MM UTC`), `accepted_by` (that user's e-mail via `db.query_one("SELECT email FROM user_account WHERE id = ?", ...)`, or ""), `live`, `usage` (same as `guide_index`).
@@ -88,8 +88,8 @@ Off is always allowed. With no env change nothing shows on production for hosts 
 6. `guest_guide.html` Leon section (keep `id='leon'`, `leon_offer` guard): drop the form and toggle; show `<p class="ui-sub">{{ t('leon_page.card.' ~ leon_state) }}</p>` and `{{ ui_button(t('guest_guide.leon.open'), 'secondary', href='/apartments/' ~ apartment.id ~ '/leon') }}`. Remove keys `guest_guide.leon.toggle`, `guest_guide.leon.save`, `guest_guide.leon.waiting` from en/cs/vi only if nothing else uses them (grep).
 7. `guide.html`: right after the door-codes terms section (after line ~279 `</section>`), a new `<section class="guide-section ui-section ui-section-plain" id="leon-terms">` with `<h2>{{ t('guide.leon_terms.title') }}</h2>`, `<p class="ui-sub">{{ t('guide.leon_terms.version', version='2026-10-25') }}</p>`, `<ol>` of `guide.leon_terms.terms1..N`. If the guide has a side nav listing sections (grep `guide.nav.`), add an entry only if every other terms block has one (door-code terms is an `h3` inside a section without its own nav entry; then also make Leon's an `h3` inside the closest AI/guest-guide section if one exists, else its own section without nav).
 8. Copy from the Copy section into en and cs (`host_i18n.py`, `guide_i18n.py`); Vietnamese host strings into `host_vi_i18n.py` (translate the host strings yourself, plain and short; the guide terms stay en/cs since `guide_i18n` has no vi).
-9. `retention.py`: (a) one line saying `apartment.leon_terms_accepted_by` / `_at` / `_version` are kept while the property exists (proof of the host's acceptance), deleted with the property/account; follow the neighbouring format. (b) Acceptance evidence must not expire after 3 years (legal note part 4): in `_audit_retention_step` change `action NOT IN ('legal_accepted')` to `action NOT IN ('legal_accepted', 'door_code_terms_accepted', 'leon_terms_accepted')` and extend its docstring by one sentence. Add a test in `test_0394_leon_opt_in.py` that an old `leon_terms_accepted` audit row survives the step while an old ordinary row is deleted (copy the pattern from the existing retention tests: grep `_audit_retention_step` in tests).
-10. Tests `test_0394_leon_opt_in.py` (copy fixtures from `test_0376_ai_gates.py`):
+9. `retention.py`: (a) one line saying `apartment.leon_terms_accepted_by` / `_at` / `_version` are kept while the property exists (proof of the host's acceptance), deleted with the property/account; follow the neighbouring format. (b) Acceptance evidence must not expire after 3 years (legal note part 4): in `_audit_retention_step` change `action NOT IN ('legal_accepted')` to `action NOT IN ('legal_accepted', 'door_code_terms_accepted', 'leon_terms_accepted')` and extend its docstring by one sentence. Add a test in `test_0396_leon_opt_in.py` that an old `leon_terms_accepted` audit row survives the step while an old ordinary row is deleted (copy the pattern from the existing retention tests: grep `_audit_retention_step` in tests).
+10. Tests `test_0396_leon_opt_in.py` (copy fixtures from `test_0376_ai_gates.py`):
     - Card absent when Leon not offered (feature off, or owner not on the test list); present with `data-leon-card="off"` when offered.
     - GET `/apartments/{id}/leon` 404 when not offered; 200 and contains `/guide#leon-terms` and one `ui-btn-primary` when offered and off.
     - POST `action=on` without `terms` -> Leon stays off, nothing stored. With `terms=1` -> `leon_enabled=1`, version = `LEON_TERMS_VERSION`, `accepted_at` set, `accepted_by` = the user id, one audit row `leon_terms_accepted`.
@@ -97,7 +97,7 @@ Off is always allowed. With no env change nothing shows on production for hosts 
     - POST `action=off` -> `leon_enabled=0`, acceptance fields kept, audit `leon_switched_off`.
     - Old route `POST /apartments/{id}/guide/leon` no longer switches Leon on (404 or 405).
     - `/guide` contains `id="leon-terms"` in en and cs.
-11. `test_0394_leon_opt_in_browser.py` (`sync_api = pytest.importorskip("playwright.sync_api")`, copy the server fixture from `test_guest_leon_browser.py` or the closest host browser test): at 390 px save screenshots to `docs/tasks/screenshots-0394/`: `overview-card-390.png` (overview grid with the Leon card, scrolled to it), `leon-off-390.png`, `leon-on-390.png`; plus `leon-off-1280.png`. Assert no horizontal overflow (`document.documentElement.scrollWidth <= innerWidth`).
+11. `test_0396_leon_opt_in_browser.py` (`sync_api = pytest.importorskip("playwright.sync_api")`, copy the server fixture from `test_guest_leon_browser.py` or the closest host browser test): at 390 px save screenshots to `docs/tasks/screenshots-0396/`: `overview-card-390.png` (overview grid with the Leon card, scrolled to it), `leon-off-390.png`, `leon-on-390.png`; plus `leon-off-1280.png`. Assert no horizontal overflow (`document.documentElement.scrollWidth <= innerWidth`).
 12. Update the tests in §2 to set `leon_terms_version` alongside `leon_enabled = 1`.
 
 ### Copy (step 8)
@@ -148,17 +148,17 @@ Guest chat pages (`templates/guest/`, `guest-leon.js`), `leon.py` CHARACTER and 
 From `App/`:
 ```
 .venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841 | tail -5
-.venv/bin/python -m pytest tests/test_0394_leon_opt_in.py tests/test_0376_ai_gates.py tests/test_leon.py tests/test_guest_leon_chat.py tests/test_privacy_first.py tests/test_guest_guide*.py tests/test_design_*.py -q --tb=short 2>&1 | tail -30
-.venv/bin/python -m pytest tests/test_0394_leon_opt_in_browser.py tests/test_guest_leon_browser.py -q --tb=short 2>&1 | tail -15
+.venv/bin/python -m pytest tests/test_0396_leon_opt_in.py tests/test_0376_ai_gates.py tests/test_leon.py tests/test_guest_leon_chat.py tests/test_privacy_first.py tests/test_guest_guide*.py tests/test_design_*.py -q --tb=short 2>&1 | tail -30
+.venv/bin/python -m pytest tests/test_0396_leon_opt_in_browser.py tests/test_guest_leon_browser.py -q --tb=short 2>&1 | tail -15
 ```
-From repo root: `python3 scripts/design_lint.py | tail -5`, `python3 scripts/context_lint.py | tail -5`. Then `git checkout -- docs/tasks/screenshots-0*` for folders other than `screenshots-0394`.
+From repo root: `python3 scripts/design_lint.py | tail -5`, `python3 scripts/context_lint.py | tail -5`. Then `git checkout -- docs/tasks/screenshots-0*` for folders other than `screenshots-0396`.
 
 ## 7. Acceptance
 
 - The Leon card shows on the Overview grid only where Leon is offered, and opens `/apartments/{id}/leon`.
 - Leon cannot be switched on without ticking the terms; acceptance version, time and user are stored and audited.
 - Leon answers only with the current terms version accepted; the old guide toggle is gone.
-- All commands in §6 pass with 0 skipped; screenshots in `docs/tasks/screenshots-0394/`.
+- All commands in §6 pass with 0 skipped; screenshots in `docs/tasks/screenshots-0396/`.
 
 ## 8. Stop and ask
 
@@ -166,4 +166,4 @@ If a design test needs a new CSS class or a second primary button, or the overvi
 
 ## 9. Report
 
-Write `docs/tasks/0394-report.md`: what changed, test output tails, screenshot paths. Commit (do not push).
+Write `docs/tasks/0396-report.md`: what changed, test output tails, screenshot paths. Commit (do not push).

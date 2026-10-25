@@ -151,14 +151,14 @@ def _days_ago_iso(days: int) -> str:
     )
 
 
-# 0394: apartment.leon_terms_* (the host's Leon terms acceptance) are kept while the property exists.
+# 0396: apartment.leon_terms_* (the host's Leon terms acceptance) are kept while the property exists.
 def _audit_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Delete audit rows past the window, but never the acceptance evidence.
 
     ``legal_accepted`` rows are the BE-1 evidence and have their own rule
     (``_acceptance_retention_step``); the free-text ``login`` rows that used to
     carry the versions are ordinary audit rows and expire here. The door-code and
-    Leon terms acceptances are evidence too and never expire here (0394).
+    Leon terms acceptances are evidence too and never expire here (0396).
     """
     cutoff = _days_ago_iso(config.AUDIT_RETENTION_DAYS)
     where = (
