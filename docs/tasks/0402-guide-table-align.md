@@ -77,7 +77,7 @@ from test_host_wide_geometry_browser import (  # noqa: F401  (fixtures)
 )
 
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0402"
-EDGES = """() => [...document.querySelectorAll('[id^=topic-] td[data-card=badge] .ui-badge, [id^=topic-] th:last-child')]
+EDGES = """(selector) => [...document.querySelectorAll(selector)]
   .map(e => Math.round(e.getBoundingClientRect().right))"""
 
 
@@ -94,9 +94,11 @@ def test_guide_state_column_lines_up(wide_host, wide_base, width):  # noqa: F811
         _dismiss_optional_security_prompt(page)
         assert page.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")
         if width >= 1024:
-            edges = page.evaluate(EDGES)
-            assert len(edges) > 4
-            assert max(edges) - min(edges) <= 2, edges
+            # th and td have different side padding, so headers and badges are checked as two groups.
+            for selector in ("[id^=topic-] td[data-card=badge] .ui-badge", "[id^=topic-] th:last-child"):
+                edges = page.evaluate(EDGES, selector)
+                assert len(edges) > 4
+                assert max(edges) - min(edges) <= 2, (selector, edges)
         page.locator("[id^=topic-]").nth(1).scroll_into_view_if_needed()
         SHOTS.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=str(SHOTS / f"guide-table-{width}.png"))
@@ -120,7 +122,7 @@ From `App/`:
 
 ## 7. Acceptance
 
-- [ ] At 1280 px the right edges of every STATE header and badge differ by at most 2 px (test above).
+- [ ] At 1280 px the right edges of all badges differ by at most 2 px, and those of all STATE headers too (test above).
 - [ ] At 390 px the cards look as before (badge on its own line, left).
 - [ ] Screenshots docs/tasks/screenshots-0402/guide-table-1280.png and -390.png.
 

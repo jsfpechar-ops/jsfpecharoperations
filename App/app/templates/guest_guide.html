@@ -23,13 +23,13 @@
 
 {% for topic, cards in groups %}
 {% call ui_section(t('guest_guide.topic.' ~ topic), id='topic-' ~ topic) %}
-{{ ui_table_begin([(t('guest_guide.col.card'), ''), (t('guest_guide.col.state'), '')], label=t('guest_guide.topic.' ~ topic)) }}
+{{ ui_table_begin([(t('guest_guide.col.card'), ''), (t('guest_guide.col.state'), 'r')], label=t('guest_guide.topic.' ~ topic)) }}
 {% for card in cards %}
 {% set card_url = base_url ~ '/' ~ card.id %}
 {% set card_title = card.title if card.kind == 'custom' else t('guest_guide.kind.' ~ card.kind ~ '.title') %}
 <tr class="ui-row clickable-row" data-href="{{ card_url }}" tabindex="0" role="link" aria-label="{{ card_title }}">
   <td class="ui-cell-first" data-card="primary"><a href="{{ card_url }}">{{ card_title }}</a>{% if card.kind in must_have %} <span class="ui-sub">{{ t('guest_guide.must_have') }}</span>{% endif %}</td>
-  <td data-card="badge">{% if card.state == 'done' %}{{ ui_badge('done', t('guest_guide.state.done')) }}{% elif card.state == 'check' %}{{ ui_badge('attention', t('guest_guide.state.check')) }}{% elif card.state == 'skipped' %}{{ ui_badge('neutral', t('guest_guide.state.skipped')) }}{% else %}{{ ui_badge('action', t('guest_guide.state.missing')) }}{% endif %}</td>
+  <td class="ui-cell-r" data-card="badge">{% if card.state == 'done' %}{{ ui_badge('done', t('guest_guide.state.done')) }}{% elif card.state == 'check' %}{{ ui_badge('attention', t('guest_guide.state.check')) }}{% elif card.state == 'skipped' %}{{ ui_badge('neutral', t('guest_guide.state.skipped')) }}{% else %}{{ ui_badge('action', t('guest_guide.state.missing')) }}{% endif %}</td>
 </tr>
 {% endfor %}
 {{ ui_table_end() }}
