@@ -1,0 +1,25 @@
+{% extends "leon_setup/_layout.html" %}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('leon_page.what') }}</p>
+{% if state == 'terms' %}{{ ui_banner('attention', t('leon_page.terms_updated')) }}{% endif %}
+{% if state in ('off', 'terms') %}
+<h2 class="setup-wizard-section-title">{{ t('leon_page.warn_title') }}</h2>
+<ul>{% for n in range(1, 7) %}<li>{{ t('leon_page.warn' ~ n) }}</li>{% endfor %}</ul>
+<form method="post" action="/apartments/{{ apartment.id }}/leon" id="leon-setup-on">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<input type="hidden" name="action" value="on">
+<input type="hidden" name="next" value="setup">
+<div class="checkline"><input type="checkbox" id="leon-terms" name="terms" value="1" required>
+  <label for="leon-terms">{{ t('leon_page.accept') }} <a href="/guide#leon-terms">{{ t('leon_page.terms_link') }}</a></label></div>
+</form>
+{% else %}
+<p class="setup-wizard-instruction">{{ t('leon_setup.switch_on.already') }}</p>
+{% endif %}
+{% endblock %}
+{% block wizard_actions %}
+{% if state in ('off', 'terms') %}
+<button class="ui-btn ui-btn-primary" type="submit" form="leon-setup-on">{{ t('leon_page.switch_on') }}</button>
+{% else %}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}/leon/setup/import">{{ t('leon_setup.next') }}</a>
+{% endif %}
+{% endblock %}

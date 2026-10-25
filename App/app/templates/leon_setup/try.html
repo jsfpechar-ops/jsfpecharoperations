@@ -1,0 +1,20 @@
+{% extends "leon_setup/_layout.html" %}
+{#- 0404 placeholder: 0405 fills this step with the test chat. -#}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('leon_setup.try.lede') }}</p>
+{% if not live %}
+<p class="setup-wizard-instruction">{{ t('leon_page.not_live') }}</p>
+{% else %}
+<div data-leon-try></div>
+{% endif %}
+{% endblock %}
+{% block wizard_actions %}
+{% if live %}
+<form method="post" action="/apartments/{{ apartment.id }}/leon/setup">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<button class="ui-btn ui-btn-primary" type="submit" name="action" value="finish">{{ t('leon_setup.finish') }}</button>
+</form>
+{% else %}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}/leon/setup/cards">{{ t('leon_setup.step.cards') }}</a>
+{% endif %}
+{% endblock %}
