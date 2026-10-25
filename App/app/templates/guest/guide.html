@@ -29,7 +29,7 @@
   {% for group in groups %}
     <p class="g-question-kicker" data-guide-topic>{{ group.title }}</p>
     {% for card in group.cards %}
-      <div class="g-card g-guide-card" data-guide-card="{{ card.id }}">
+      <div class="g-card g-guide-card" data-guide-card="{{ card.id }}" id="card-{{ card.id }}" data-guide-kind="{{ card.kind }}">
         <h2>{{ card.title }}</h2>
         {% if card.facts %}<p>{{ card.facts | join(' ') }}</p>{% endif %}
         {% if card.location %}<p class="g-guide-where"><span>{{ t('guide_where') }}</span> {{ card.location }}</p>{% endif %}

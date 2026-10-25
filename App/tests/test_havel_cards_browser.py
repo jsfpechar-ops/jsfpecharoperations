@@ -66,7 +66,7 @@ def test_cards_at_390_and_1280(origin):
         with sync_api.sync_playwright() as pw:
             browser, context = _context(pw, origin, width)
             page = context.new_page()
-            page.goto(url + "/havel?lang=en")
+            page.goto(url + "/havel?lang=en&ask=1")
             page.fill("#havel-message", "Add a stay from Friday to Sunday for 3 guests")
             page.keyboard.press("Enter")
             page.locator("[data-havel-card='create_stay']").wait_for()
@@ -74,7 +74,7 @@ def test_cards_at_390_and_1280(origin):
             assert card.locator("form[action='/reservations'] input[name='_csrf']").count() == 1
             assert not card.locator("input[name='date_from']").is_visible()
             card.locator("summary").click()
-            card.locator("input[name='date_from']").wait_for(state="visible")  # 0386: the fold-out slides open
+            card.locator("input[name='date_from']").wait_for(state="visible")  # 0394: the fold-out slides open
             assert page.evaluate("document.documentElement.scrollWidth") <= width
             page.screenshot(path=str(SHOTS / f"card-stay-{width}.png"), full_page=True)
             card.locator("[data-havel-cancel]").click()
@@ -89,7 +89,7 @@ def test_pin_card_confirm_lands_on_the_guest_links_card(origin):
     with sync_api.sync_playwright() as pw:
         browser, context = _context(pw, origin, 390)
         page = context.new_page()
-        page.goto(url + "/havel?lang=en")
+        page.goto(url + "/havel?lang=en&ask=1")
         page.fill("#havel-message", "Make a new PIN")
         page.keyboard.press("Enter")
         page.locator("[data-havel-card='new_pin']").wait_for()

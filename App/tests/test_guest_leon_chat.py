@@ -75,7 +75,8 @@ def test_the_qr_page_has_the_chat_and_its_script(ws):
     assert '/static/guest-leon.js?v=' in body
     assert 'maxlength="500"' in body
     assert 'data-label-host="Jana, your host, answered:"' in body
-    assert "Leon (AI)" in body
+    assert "Your 24/7 concierge" in body
+    assert '<span class="g-leon-tag">AI</span>' in body
 
 
 def test_the_stay_door_has_the_chat_on_its_own_url(ws):
@@ -83,7 +84,7 @@ def test_the_stay_door_has_the_chat_on_its_own_url(ws):
     rid = _stay(ws["home"])
     body = ws["client"].get(f"/l/{TOKEN}/{rid}/guide?lang=cs").text
     assert f'data-leon-url="/l/{TOKEN}/{rid}/guide/leon"' in body
-    assert "Zeptejte se Leona (AI)" in body
+    assert "Zeptejte se Leona, vašeho concierge" in body
     assert 'data-label-host="Jana, váš hostitel, odpovídá:"' in body
 
 

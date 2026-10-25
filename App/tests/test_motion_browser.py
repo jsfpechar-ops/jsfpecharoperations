@@ -1,4 +1,4 @@
-"""0386: dialogs, fold-outs, menus and page changes move smoothly, and stay still under reduced motion."""
+"""0394: dialogs, fold-outs, menus and page changes move smoothly, and stay still under reduced motion."""
 from __future__ import annotations
 
 from tests.test_host_wide_geometry_browser import (  # noqa: F401 - shared synthetic host fixtures

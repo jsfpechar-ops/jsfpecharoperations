@@ -1,6 +1,7 @@
 {#- 0312: the composer. Hidden fields carry the signed history, the hosting page,
     the device (set by havel.js in 0324) and the quick-help topic. -#}
-<form method="post" action="/havel" class="havel-composer" data-havel-form>
+{% from "_icons.html" import icon with context %}
+<form method="post" action="/havel" class="havel-composer" data-havel-form{% if havel_locked %} hidden data-havel-locked{% endif %}>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="history" value="{{ havel_history }}" data-havel-history>
   <input type="hidden" name="history_sig" value="{{ havel_history_sig }}" data-havel-sig>
@@ -10,15 +11,16 @@
   <input type="hidden" name="q" value="{{ havel_q }}" data-havel-q>
   <input type="hidden" name="return_to" value="{{ havel_return_to }}">
   {% if havel_state %}
-  <p class="havel-meta">{{ t('havel.' ~ havel_state) }}</p>
+  <p class="havel-meta havel-status">{{ t('havel.' ~ havel_state) }}</p>
+  <a class="ui-btn ui-btn-secondary havel-support-open" href="/havel?topic=wrong&q=error" data-havel-topic-link>{{ icon('mail', 16) }}{{ t('havel.write_support') }}</a>
   {% else %}
   <label for="havel-message" class="sr-only">{{ t('havel.placeholder') }}</label>
-  <textarea id="havel-message" name="message" rows="2" maxlength="{{ havel_max }}" placeholder="{{ t('havel.placeholder') }}" required{% if havel_error %} aria-invalid="true" aria-describedby="havel-error"{% endif %}></textarea>
-  {% if havel_error %}<p id="havel-error" class="havel-error">{{ havel_error }}</p>{% endif %}
-  <div class="havel-actions">
-    {% if not havel_fresh %}<button class="ui-btn ui-btn-quiet" type="submit" name="reset" value="1" formnovalidate>{{ t('havel.new') }}</button>{% endif %}
-    <button class="ui-btn ui-btn-primary" type="submit" data-havel-send>{{ t('havel.send') }}</button>
+  <div class="havel-input">
+    <textarea id="havel-message" name="message" rows="1" maxlength="{{ havel_max }}" placeholder="{{ t('havel.placeholder') }}" required{% if havel_error %} aria-invalid="true" aria-describedby="havel-error"{% endif %}></textarea>
+    <button class="ui-btn ui-btn-primary ui-btn-icon havel-send" type="submit" data-havel-send aria-label="{{ t('havel.send') }}">{{ icon('arrow-up', 20) }}</button>
   </div>
-  {% endif %}
+  {% if havel_error %}<p id="havel-error" class="havel-error">{{ havel_error }}</p>{% endif %}
+  {% if not havel_fresh %}<div class="havel-actions"><button class="ui-btn ui-btn-quiet ui-btn-compact" type="submit" name="reset" value="1" formnovalidate>{{ t('havel.new') }}</button></div>{% endif %}
   <p class="havel-meta havel-note">{{ t('havel.ai_note') }}</p>
+  {% endif %}
 </form>

@@ -24,7 +24,7 @@ def test_support_card_sends_without_javascript_at_390(origin):
     with sync_api.sync_playwright() as pw:
         browser, context = _context(pw, origin, 390, js=False)
         page = context.new_page()
-        page.goto(f"{origin[0]}/havel?lang=en")
+        page.goto(f"{origin[0]}/havel?lang=en&ask=1")
         page.fill("#havel-message", "Error 4 on my report")
         page.locator("[data-havel-form] [data-havel-send]").click()
         card = page.locator("[data-havel-support]")

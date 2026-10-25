@@ -30,7 +30,7 @@
       <input type="hidden" name="page" value="{{ havel_page }}">
       <input type="hidden" name="return_to" value="{{ havel_return_to }}">
       <p class="havel-meta">{{ t('havel.next_title') }}</p>
-      {% for q in item.next %}<button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" name="message" value="{{ q }}">{{ q }}</button>{% endfor %}
+      <div class="ui-chips havel-chips">{% for q in item.next %}<button class="ui-chip havel-chip" type="submit" name="message" value="{{ q }}">{{ q }}</button>{% endfor %}</div>
     </form>
     {% endif %}
   </div>

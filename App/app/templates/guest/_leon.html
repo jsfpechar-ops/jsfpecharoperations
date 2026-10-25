@@ -10,23 +10,35 @@
   data-label-host="{{ t('leon_host_answered', host=leon_host) if leon_host else t('leon_host_answered_plain') }}"
   data-text-send="{{ t('leon_send') }}"
   data-text-sending="{{ t('leon_sending') }}"
+  data-text-other="{{ t('leon_sit_other') }}"
+  data-text-other-prompt="{{ t('leon_other_prompt') }}"
   data-text-error="{{ t('leon_error') }}"
   data-text-reload="{{ t('leon_error_reload') }}"
-  data-text-queued="{{ t('leon_queued') }}">
-  <h2 id="leon-title">{{ t('leon_name') }}</h2>
+  data-text-queued="{{ t('leon_queued') }}"
+  data-text-see-card="{{ t('leon_see_card') }}"
+  data-text-welcome="{{ t('leon_welcome') }}">
+  <div class="g-leon-head">
+    <span class="g-leon-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span>
+    <div class="g-leon-head-text"><h2 id="leon-title">{{ t('leon_name') }} <span class="g-leon-tag">{{ t('leon_tag') }}</span></h2><p class="g-leon-role">{{ t('leon_role') }}</p></div>
+  </div>
   <p class="g-intro">{{ t('leon_intro') }}</p>
   <noscript><p class="g-leon-nojs" data-leon-nojs>{{ t('leon_needs_js') }}</p></noscript>
+  <ul hidden data-leon-situations>
+    {% for key, kinds in [("cant_get_in", "keys checkin"), ("cold", "heating hot_water air_conditioning"), ("broken", "something_wrong"), ("parking", "parking garage"), ("trash", "trash"), ("checkout", "checkout"), ("emergency", "emergency")] %}
+    <li data-key="{{ key }}" data-kinds="{{ kinds }}"{% if key == "emergency" %} data-help="{{ t('leon_sit_emergency_help') }}"{% endif %}>{{ t('leon_sit_' ~ key) }}</li>
+    {% endfor %}
+  </ul>
   <div class="g-leon-log" role="log" aria-live="polite" aria-labelledby="leon-title" data-leon-log hidden></div>
   <p class="g-leon-waiting" role="status" data-leon-waiting hidden>{{ t('leon_waiting') }}</p>
   <form class="g-leon-form" method="post" action="{{ leon_url }}" data-leon-form hidden>
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <label class="g-leon-label" for="leon-message">{{ t('leon_label') }}</label>
-    <textarea id="leon-message" name="message" rows="2" maxlength="500"
-      placeholder="{{ t('leon_placeholder') }}" data-leon-input></textarea>
-    <div class="g-leon-bar">
-      <span class="g-leon-count" aria-hidden="true" data-leon-count>0 / 500</span>
-      <button type="submit" class="g-btn slim g-leon-send" data-leon-send>{{ t('leon_send') }}</button>
+    <label class="g-leon-label g-sr-only" for="leon-message">{{ t('leon_label') }}</label>
+    <div class="g-leon-pill">
+      <textarea id="leon-message" name="message" rows="1" maxlength="500"
+        placeholder="{{ t('leon_placeholder') }}" data-leon-input></textarea>
+      <button type="submit" class="g-leon-send" data-leon-send aria-label="{{ t('leon_send') }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></button>
     </div>
+    <span class="g-leon-count" aria-hidden="true" data-leon-count hidden>0 / 500</span>
     <p class="g-leon-error" role="alert" data-leon-error hidden></p>
   </form>
 </section>
