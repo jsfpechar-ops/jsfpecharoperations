@@ -443,6 +443,21 @@ def host_state(apartment, live: bool) -> str:
     return "on" if live else "waiting"
 
 
+# 0404: the Leon setup wizard, in order. "done" is the finish page, not a step.
+SETUP_STEPS = ("switch_on", "import", "cards", "try")
+
+
+def setup_step(apartment, *, live: bool, checking: int, import_started: bool, import_on: bool) -> str:
+    """The first step the host still has to do; "try" once everything else is ready."""
+    if host_state(apartment, live) in ("off", "terms"):
+        return "switch_on"
+    if import_on and not import_started and not live:
+        return "import"
+    if not live or checking:
+        return "cards"
+    return "try"
+
+
 def switched_on(apartment) -> bool:
     """0376/0396: the host ticked yes, accepted the current terms, and the owner is on the AI test list.
 
