@@ -27,7 +27,8 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Audit rows | `audit` | created | 3 years, except `legal_accepted` (G-D7) | `retention.py` audit step | Accountability |
 | Acceptance evidence | `legal_acceptance` | account disabled + 3 years | life of account + 3 years (G-D7) | `retention.py` acceptance step | Accountability |
 | Resolved alerts | `alert` | resolved | 12 months (G-D7) | `retention.py` alert step | Operations |
-| Rate-limit events | `rate_limit_event` | created | 24 hours (G-D7) | `retention.py` rate-limit step | Security |
+| Rate-limit events | `rate_limit_event` | created | 24 hours (G-D7); `havel_*` scopes 32 days (Havel weekly and monthly caps, 0320) | `retention.py` rate-limit step | Security |
+| Havel gap questions | `havel_gap` | created | 90 days (0320) | `retention.py` Havel gap step | Storage limitation |
 | Login links | `login_token` (hash, account, address, purpose, times) | expiry | 1 day after expiry; deleted with the account | `retention.py` login-token step (`login_link.purge`) | Security |
 | Passkeys | `passkey` | created | until removed by the host or the account is deleted | `retention.py` workspace deletion; cascade | Contract |
 | Urgent-alert devices (push address and keys, encrypted; language; device family; last visit) | `push_subscription` | last visit | 180 days unseen; at once when the host turns alerts off, removes the device, logs out on it, or the push service says it is gone; deleted with the account | `retention.py` push step (`push.purge`); workspace deletion | Contract |
