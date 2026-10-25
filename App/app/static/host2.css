@@ -893,3 +893,29 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0302: the summary table's Open column (0296) needs room at 1024 px with the rail open. */
 .host-workspace .property-summary-table td.property-inline-timing { min-width: 18.5rem; }
 .host-workspace .property-summary-table td:first-child { min-width: 8rem; }
+
+/* 0312: Havel (AI) thread, bubbles, composer (plan 17b). Tokens only. */
+.host-workspace .havel-thread { display: flex; flex-direction: column; gap: var(--space-3); }
+.host-workspace .havel-msg { display: flex; flex-direction: column; max-width: 85%; }
+.host-workspace .havel-msg-host { align-self: flex-end; align-items: flex-end; }
+.host-workspace .havel-msg-havel { align-self: flex-start; align-items: flex-start; }
+.host-workspace .havel-msg:focus { outline: none; }
+.host-workspace .havel-msg:focus-visible .havel-bubble { box-shadow: var(--focus-ring-2); }
+.host-workspace .havel-who { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); color: var(--ink-2); font-size: var(--size-13); font-weight: 600; }
+.host-workspace .havel-avatar { display: inline-flex; align-items: center; justify-content: center; width: var(--space-6); height: var(--space-6); border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent-ink); }
+.host-workspace .havel-bubble { padding: var(--space-3) var(--space-4); border-radius: var(--radius-4); font-size: var(--size-15); line-height: 1.5; color: var(--ink); }
+.host-workspace .havel-msg-host .havel-bubble { background: var(--surface-2); border-bottom-right-radius: var(--radius-1); }
+.host-workspace .havel-msg-havel .havel-bubble { background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: var(--radius-1); }
+.host-workspace .havel-bubble p { margin: 0; }
+.host-workspace .havel-bubble p + p, .host-workspace .havel-bubble p + ol, .host-workspace .havel-bubble ol + p { margin-top: var(--space-2); }
+.host-workspace .havel-bubble ol { margin: 0; padding-left: var(--space-5); }
+.host-workspace .havel-bubble li + li { margin-top: var(--space-1); }
+.host-workspace .havel-links { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.host-workspace .havel-composer { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); }
+.host-workspace .havel-composer textarea { width: 100%; box-sizing: border-box; min-height: calc(var(--control-h) * 2); padding: var(--space-3); border: 1px solid var(--input-border); border-radius: var(--input-radius); font: inherit; font-size: var(--size-15); color: var(--ink); background: var(--surface); resize: vertical; }
+.host-workspace .havel-composer textarea:focus-visible { outline: 0; border-color: var(--accent); box-shadow: var(--focus-ring-2); }
+.host-workspace .havel-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
+.host-workspace .havel-actions .havel-meta { margin: 0 auto 0 0; }
+.host-workspace .havel-meta { margin: 0; font-size: var(--size-13); color: var(--ink-3); }
+.host-workspace .havel-note { font-size: var(--size-12); }
+.host-workspace .havel-error { margin: 0; font-size: var(--size-13); color: var(--danger); }
