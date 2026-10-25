@@ -1,6 +1,6 @@
 {#- 0319: the support hand-off (plan section 8). Works without JavaScript; the
     newest Havel reply carries it, prefilled with Havel's English summary. -#}
-{% from "_ui.html" import ui_textarea, ui_button %}
+{% from "_ui.html" import ui_textarea, ui_button with context %}
 {% if havel_support_blocked %}
 <p class="havel-meta">{{ t('havel.support.limit', email=operator().email) }}</p>
 {% else %}
