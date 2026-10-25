@@ -186,7 +186,7 @@ Every class below is the whole catalog. Sizes: regular is default; compact exist
 | Variant | Fill | Border | Text | Use |
 |---|---|---|---|---|
 | `primary` | `--accent`; hover `--accent-hover` | none | `--on-accent` | the one next step of its group (header, card, step, form, dialog) |
-| `open` | `--surface`; hover `--state-hover` | 1 px `--line-strong` (hover `--ink`) | `--ink` | the visible "Open" text button of a list row or card; no arrow |
+| `open` | `--surface`; hover `--state-hover` | 1 px `--line-strong` (hover `--ink`) | `--ink` | the visible "Open" text button of a list row or card; no arrow; a real link to the row's own target (0391) |
 | `secondary` | `--surface`; hover `--surface-2` | 1 px `--line-2` | `--ink` | everything else that is a button |
 | `quiet` | none; hover `--surface-2` | none | `--ink-2` | toolbar extras, cancel, close |
 | `danger` | `--surface`; hover `--danger-bg` | 1 px `--danger` | `--danger` | delete, revoke; always behind a confirm dialog |

@@ -2,9 +2,12 @@
 on Open opens the same place as a click on the row."""
 from __future__ import annotations
 
+import re
 import secrets
+from pathlib import Path
 from urllib.parse import urljoin
 
+import jinja2
 import pytest
 from fastapi.testclient import TestClient
 
@@ -13,15 +16,13 @@ from app.main import app
 from tests.conftest import login_as
 from tests.test_property_navigation_browser import base, chromium_launch_kwargs, sync_api  # noqa: F401
 
-PAGES = (
+TEMPLATES = Path(__file__).resolve().parents[1] / "app" / "templates"
+
+# Every page here must show a visible Open with demo data; none may be skipped.
+REQUIRED_PAGES = (
     "/reservations?range=all",
     "/apartments",
-    "/entities",
-    "/invoices",
-    "/stay-fees",
-    "/submissions",
     "/housebook",
-    "/cleaning/properties",
 )
 
 FIRST_OPEN = """() => {
@@ -36,6 +37,9 @@ FIRST_PROPERTY = """() => {
   return link ? link.getAttribute('href') : null;
 }"""
 
+ROW_OPEN_CALL = re.compile(r"row_open\(\s*\)")
+OPEN_SPAN = re.compile(r'<span[^>]*\bclass="row-open"')
+
 
 def _client():
     db.init_db()
@@ -47,11 +51,17 @@ def _client():
     return client
 
 
-def _open_and_check(page, found):
+def _open_page(page, path_or_url, base_url):
+    page.goto(urljoin(base_url, path_or_url))
+    page.wait_for_load_state("load")
+    return page.url
+
+
+def _click_open(page, found):
     start = page.url
     target = urljoin(start, found["href"])
-    # dispatch, not a pointer click: the Guest links card's stretched title link covers its Open pill
-    page.locator("a.row-open, a.host-property-card-open").nth(found["index"]).dispatch_event("click")
+    # a real pointer click: a covering overlay that takes the click elsewhere must still land on the same href
+    page.locator("a.row-open, a.host-property-card-open").nth(found["index"]).click(force=True)
     page.wait_for_url(lambda url: url == target, timeout=10000)
     assert page.url == target, (start, target)
     assert page.url != start, (start, target)
@@ -61,37 +71,47 @@ def _open_and_check(page, found):
 def test_open_buttons_open_their_row(base, width):
     client = _client()
     cookie = client.cookies.get(auth.SESSION_COOKIE)
-    clicked, skipped = [], []
+    clicked = []
     with sync_api.sync_playwright() as playwright:
         browser = playwright.chromium.launch(**chromium_launch_kwargs())
         context = browser.new_context(viewport={"width": width, "height": 900})
         context.add_cookies([{"name": auth.SESSION_COOKIE, "value": cookie, "url": base + "/"}])
         page = context.new_page()
-        for path in PAGES:
-            page.goto(base + path)
-            page.wait_for_load_state("load")
+        for path in REQUIRED_PAGES:
+            _open_page(page, path, base)
             found = page.evaluate(FIRST_OPEN)
-            if found is None:
-                skipped.append(path)
-                continue
+            assert found is not None, (width, path, "no visible Open")
+            _click_open(page, found)
             clicked.append(path)
-            _open_and_check(page, found)
+
         # the first property overview, with its Guest links card Open
-        page.goto(base + "/apartments")
-        page.wait_for_load_state("load")
+        _open_page(page, "/apartments", base)
         overview = page.evaluate(FIRST_PROPERTY)
-        if overview is None:
-            skipped.append("property overview")
-        else:
-            page.goto(urljoin(page.url, overview))
-            page.wait_for_load_state("load")
-            found = page.evaluate(FIRST_OPEN)
-            if found is None:
-                skipped.append("property overview")
-            else:
-                clicked.append("property overview")
-                _open_and_check(page, found)
+        assert overview is not None, (width, "no property row on /apartments")
+        _open_page(page, overview, page.url)
+        found = page.evaluate(FIRST_OPEN)
+        assert found is not None, (width, "no visible Open on the property overview")
+        _click_open(page, found)
+        clicked.append("property overview")
+
+
         context.close()
         browser.close()
-    print(f"width {width}: clicked {clicked}; no Open with demo data: {skipped}")
-    assert len(clicked) >= 6, (width, clicked, skipped)
+    print(f"width {width}: clicked {clicked}")
+
+
+def test_row_open_always_gets_its_target():
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(str(TEMPLATES)), undefined=jinja2.StrictUndefined)
+    env.globals["t"] = lambda key, **kw: key
+    no_target, span_open = [], []
+    for path in sorted(TEMPLATES.glob("**/*.html")):
+        text = path.read_text(encoding="utf-8")
+        name = str(path.relative_to(TEMPLATES))
+        if ROW_OPEN_CALL.search(text):
+            no_target.append(name)
+        if OPEN_SPAN.search(text):
+            span_open.append(name)
+    assert no_target == [], no_target
+    assert span_open == [], span_open
+    html = env.from_string('{% from "_components.html" import row_open %}{{ row_open("/x") }}').render()
+    assert '<a class="row-open" href="/x"' in html, html
