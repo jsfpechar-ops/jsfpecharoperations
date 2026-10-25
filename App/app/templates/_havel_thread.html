@@ -14,9 +14,10 @@
       {% for b in item.blocks %}{% if b.kind == 'ol' %}<ol>{% for step in b['items'] %}<li>{{ step }}</li>{% endfor %}</ol>{% else %}<p>{{ b.text }}</p>{% endif %}{% endfor %}
     </div>
     {% if item.card %}{% include "_havel_card.html" %}{% endif %}
-    {% if item.links or item.support %}
+    {% if item.links or item.support or item.not_helped %}
     <div class="havel-links">
       {% for label, url in item.links %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="{{ url }}">{{ label }}{{ icon('chevron-right', 16) }}</a>{% endfor %}
+      {% if item.not_helped and loop.last %}<form method="post" action="/havel/not-helped" data-havel-not-helped><input type="hidden" name="_csrf" value="{{ csrf_token }}"><input type="hidden" name="history" value="{{ havel_history }}"><input type="hidden" name="history_sig" value="{{ havel_history_sig }}"><input type="hidden" name="page" value="{{ havel_page }}"><button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('havel.not_helped') }}</button></form>{% endif %}
       {% if item.support and loop.last %}{% with havel_support_prefill = item.support_summary %}{% include "_havel_support.html" %}{% endwith %}{% endif %}
     </div>
     {% endif %}

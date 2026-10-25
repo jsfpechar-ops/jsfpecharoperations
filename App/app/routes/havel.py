@@ -200,6 +200,8 @@ async def havel_send(request: Request):
                     reply_text, support = _t(request, "havel.off" if exc.reason == "month" else "havel.resting"), True
                 else:
                     havel.record_message(uid)
+                    if reply.kind in ("escalate", "fail"):
+                        havel.record_gap(host_i18n.lang_from_request(request), page, reply.kind, message)
                     if reply.kind == "refuse":
                         havel.record_refusal(uid)
                     if reply.kind == "fail":
@@ -216,7 +218,8 @@ async def havel_send(request: Request):
                                 url = havel.page_url(page_id, reply.action.get("property_id"), host.property_ids)
                                 links.append((_t(request, "havel.card.open_form"), url))
                         items.append(_item("havel", reply_text, links=links, support=reply.kind == "escalate",
-                                           support_summary=reply.support_summary, card=card))
+                                           support_summary=reply.support_summary, card=card,
+                                           not_helped=reply.kind in ("answer", "clarify")))
         if len(items) == 1:
             items.append(_item("havel", reply_text, support=support))
         if reply_text != _t(request, "havel.limit_turns"):
@@ -266,3 +269,27 @@ async def havel_support(request: Request):
         items.append(_item("havel", _t(request, "havel.support.sent")))
     ctx = _page_context(request, uid, items, exchanges, page=page, return_to=return_to)
     return render(request, "havel.html", ctx)
+
+
+NOT_HELPED_PER_DAY = 5
+
+
+@router.post("/havel/not-helped")
+async def havel_not_helped(request: Request):
+    """"This didn't help": the last question (from the signed history) goes to the gap log."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    uid = int(auth.current_user(request)["id"])
+    form = await request.form()
+    exchanges = havel.read_history(uid, str(form.get("history", "")), str(form.get("history_sig", "")))
+    page = str(form.get("page", ""))
+    page = page if page in havel.PAGES else ""
+    question = exchanges[-1]["host"] if exchanges else ""
+    if question and not rate_limit.blocked("havel_gap", str(uid), NOT_HELPED_PER_DAY, 86400):
+        rate_limit.record("havel_gap", str(uid))
+        havel.record_gap(host_i18n.lang_from_request(request), page, "not_helped", question)
+        havel.record_stat("not_helped")
+    items = _thread(request, exchanges, None)
+    items.append(_item("havel", _t(request, "havel.not_helped_ack"), support=True, support_summary=question))
+    return render(request, "havel.html", _page_context(request, uid, items, exchanges, page=page))

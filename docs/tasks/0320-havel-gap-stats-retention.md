@@ -1,7 +1,7 @@
 # 0320: Havel (AI): gap log, "This didn't help", retention
 
-Status: todo
-Depends on: 0319 | Base commit: 92646d3 (check `git rev-parse --short origin/main` first; if it differs, write the current one here) | Branch: task/0320-havel-gap
+Status: review
+Depends on: 0319 | Base commit: 13c3de1 (origin/main at execution; brief said 92646d3) | Branch: task/0320-havel-gap
 Executor: Haiku 5.5 | Fits one session: 24 tool calls, 50k tokens
 
 ## 1. Objective

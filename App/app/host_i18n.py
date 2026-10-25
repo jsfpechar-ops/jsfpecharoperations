@@ -1667,6 +1667,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "havel.support.summary": "What Havel will send",
         "havel.support.empty": "Write what you need help with, then send.",
         "havel.support.limit": "You have sent three requests this week. Write to %(email)s instead.",
+        "havel.not_helped_ack": "Thanks, noted. We use it to improve the guide. If you need a person, send it to support.",
     },
     "cs": {
         "lang.en": "EN",
@@ -3299,6 +3300,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "havel.support.summary": "Co Havel odešle",
         "havel.support.empty": "Napište, s čím potřebujete pomoct, a odešlete.",
         "havel.support.limit": "Tento týden jste poslali už tři žádosti. Napište prosím na %(email)s.",
+        "havel.not_helped_ack": "Díky, zaznamenáno. Podle toho doplníme nápovědu. Pokud potřebujete člověka, pošlete to podpoře.",
     },
 }
 

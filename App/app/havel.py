@@ -555,3 +555,17 @@ def ask(host: Host, history: List[Dict[str, str]], message: str, today: Optional
     reply = validate(data, host, message, history, mapping, today)
     record_stat("guardrail_fail" if reply.kind == "fail" else reply.kind, today)
     return reply
+
+
+# --- 0320: gap log ----------------------------------------------------------
+GAP_KINDS = ("escalate", "fail", "not_helped")
+
+
+def record_gap(lang: str, page: str, kind: str, question: str) -> None:
+    """Store the redacted question, with no user and no property (plan section 12)."""
+    text = redact(question)[0].strip()[:MAX_MESSAGE_CHARS]
+    if not text or kind not in GAP_KINDS:
+        return
+    # Day only: a time to the second could be joined to the user-keyed rate-limit rows written in the same request.
+    db.insert("havel_gap", {"created_at": db.utcnow()[:10] + "T00:00:00+00:00", "lang": (lang or "en")[:5],
+                            "page": page if page in PAGES else None, "kind": kind, "question": text})

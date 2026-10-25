@@ -3422,6 +3422,7 @@ STRINGS: Dict[str, str] = {
     "havel.support.summary": "Nội dung Havel sẽ gửi",
     "havel.support.empty": "Hãy viết bạn cần giúp gì, rồi gửi.",
     "havel.support.limit": "Tuần này bạn đã gửi ba yêu cầu. Hãy viết đến %(email)s.",
+    "havel.not_helped_ack": "Cảm ơn, đã ghi nhận. Chúng tôi dùng nó để cải thiện hướng dẫn. Nếu bạn cần người hỗ trợ, hãy gửi cho bộ phận hỗ trợ.",
     "stay_fees.pay.short1": "Kiểm tra",
     "stay_fees.pay.short2": "Tải về",
     "stay_fees.pay.short3": "Trả và gửi",
