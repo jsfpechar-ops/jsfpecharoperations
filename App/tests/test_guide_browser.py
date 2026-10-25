@@ -24,7 +24,7 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.test_submission_retry_cap import host as host  # noqa: F401
 
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-guide"
-SECTIONS = ("finding", "glossary", "cleaning", "guest_links", "stays", "setup", "stay_fee", "invoices", "overview", "settings")
+SECTIONS = ("finding", "glossary", "cleaning", "guest_links", "business", "stays", "setup", "stay_fee", "invoices", "overview", "settings")
 
 
 @pytest.fixture
