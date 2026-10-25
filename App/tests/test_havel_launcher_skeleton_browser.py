@@ -25,7 +25,7 @@ def test_havel_launcher_does_not_arm_the_navigation_skeleton(origin):
         browser, context = _context(pw, origin, 1280)
         page = context.new_page()
         page.goto(origin[0] + "/")
-        page.locator("#app-sidebar [data-havel-launcher]").click()
+        page.locator("[data-havel-fab]").click()
         page.locator("#havel-sheet[open]").wait_for()
         page.wait_for_timeout(700)
         skeleton = page.locator("[data-page-skeleton]")

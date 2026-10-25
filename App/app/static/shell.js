@@ -9,6 +9,11 @@
     var opener = event.target.closest ? event.target.closest("[data-sheet-open]") : null;
     if (opener) {
       var sheet = sheetFor(opener);
+      if (sheet && sheet.hasAttribute("data-havel-modeless") && typeof sheet.show === "function") {
+        event.preventDefault();
+        if (!sheet.open) sheet.show();
+        return;
+      }
       if (sheet && typeof sheet.showModal === "function") {
         event.preventDefault();
         if (!sheet.open) sheet.showModal();
@@ -22,7 +27,16 @@
       return;
     }
     var open = event.target.closest ? event.target.closest("dialog.ui-dialog[open]") : null;
-    if (open && event.target === open) open.close();
+    if (open && event.target === open && !open.hasAttribute("data-havel-modeless")) open.close();
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape") return;
+    var active = document.activeElement;
+    var dialog = active && active.closest ? active.closest("dialog[data-havel-modeless][open]") : null;
+    if (dialog) {
+      event.preventDefault();
+      dialog.close();
+    }
   });
   document.addEventListener("click", function (event) {
     var palette = event.target.closest ? event.target.closest("#more-sheet [data-command-open]") : null;

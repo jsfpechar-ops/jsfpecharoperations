@@ -2,13 +2,14 @@
     Numbered steps render as a list. Links are buttons under the bubble; a card
     (0314) sits under the bubble, never inside it. -#}
 {% from "_icons.html" import icon with context %}
-{% for item in havel_items %}
+{% set thread_items = havel_items[1:] if (havel_show_topics and havel_items and havel_items[0].text == t('havel.intro')) else havel_items %}
+{% for item in thread_items %}
   {% if item.role == 'host' %}
   <div class="havel-msg havel-msg-host"><span class="sr-only">{{ t('havel.you') }}: </span>
     <div class="havel-bubble">{% for b in item.blocks %}<p>{{ b.text if b.kind == 'p' else b['items'] | join(' ') }}</p>{% endfor %}</div>
   </div>
   {% else %}
-  <div class="havel-msg havel-msg-havel" tabindex="-1">
+  <div class="havel-msg havel-msg-havel" tabindex="-1"{% if loop.first and item.text == t('havel.intro') %} data-havel-greeting{% endif %}>
     <div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span><span class="havel-name">{{ t('havel.name') }}</span></div>
     <div class="havel-bubble">
       {% for b in item.blocks %}{% if b.kind == 'ol' %}<ol>{% for step in b['items'] %}<li>{{ step }}</li>{% endfor %}</ol>{% else %}<p>{{ b.text }}</p>{% endif %}{% endfor %}

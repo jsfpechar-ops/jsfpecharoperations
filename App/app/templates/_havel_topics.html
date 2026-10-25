@@ -3,6 +3,12 @@
     the layer works on /havel without JavaScript; havel.js fetches the same
     URLs with X-Havel: 1 inside the panel. -#}
 {% from "_icons.html" import icon with context %}
+{% if not havel_answer and not havel_topic_data %}
+<div class="havel-msg havel-msg-havel havel-greeting" data-havel-greeting>
+  <div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span><span class="havel-name">{{ t('havel.name') }}</span></div>
+  <div class="havel-bubble"><p>{{ t('havel.intro') }}</p></div>
+</div>
+{% endif %}
 <div class="havel-topics" data-havel-topics>
   {% if havel_answer %}
   <a class="ui-btn ui-btn-quiet ui-btn-compact" href="/havel?topic={{ havel_topic }}" data-havel-topic-link>{{ icon('chevron-left', 16) }}{{ t(havel_topic_data.label) }}</a>

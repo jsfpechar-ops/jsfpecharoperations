@@ -5,7 +5,7 @@
 {% block page_title %}{{ t('havel.name') }}{% endblock %}
 {% block meta %}{{ t('havel.subtitle') }}{% endblock %}
 {% block body %}
-<section class="ui-section havel-page" data-havel-page>
+<section class="ui-section havel-page" data-havel-page data-havel-owner="{{ current_user.id }}">
   <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
     {% if havel_show_topics %}{% include "_havel_topics.html" %}{% endif %}
     {% include "_havel_thread.html" %}
