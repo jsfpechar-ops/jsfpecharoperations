@@ -70,6 +70,12 @@
       <p>{{ t('guide.stays.detail') }}</p>
       <p>{{ t('guide.stays.dates_changed') }}</p>
       <p class="ui-sub">{{ t('guide.stays.cancelled') }}</p>
+      <h3 id="connect-calendar">{{ t('guide.stays.calendar_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 8) %}<li>{{ t('guide.stays.calendar' ~ n) }}</li>{% endfor %}</ol>
+      <h3 id="add-stay">{{ t('guide.stays.add_title') }}</h3>
+      <ol class="guide-steps">{% for n in range(1, 6) %}<li>{{ t('guide.stays.add' ~ n) }}</li>{% endfor %}</ol>
+      <h3>{{ t('guide.wrong_title') }}</h3>
+      <ul>{% for n in range(1, 4) %}<li>{{ t('guide.stays.wrong' ~ n) }}</li>{% endfor %}</ul>
     </section>
 
     <section class="guide-section ui-section ui-section-plain" id="guests">
