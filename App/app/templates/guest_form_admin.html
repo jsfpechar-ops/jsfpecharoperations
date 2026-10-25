@@ -294,10 +294,10 @@
   </p>
   <form method="post" action="/guests/{{ guest.id }}/resend">
     <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-    <div class="checkline">
+    <label class="checkline" for="confirm_duplicate">
       <input type="checkbox" id="confirm_duplicate" name="confirm_duplicate" value="1">
-      <label for="confirm_duplicate">{{ t('guest.admin.resend.confirm') }}</label>
-    </div>
+      <span>{{ t('guest.admin.resend.confirm') }}</span>
+    </label>
     <button class="ui-btn ui-btn-danger" type="submit">{{ t('guest.admin.resend.submit') }}</button>
   </form>
 </div>

@@ -1363,13 +1363,6 @@ body.host-workspace {
 .setup-wizard-message-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; }
 .setup-wizard-message-head h3 { flex: 1 1 190px; margin: 0; }
 .setup-wizard-message textarea { width: 100%; box-sizing: border-box; margin: 0; line-height: 1.6; resize: vertical; }
-.setup-wizard-radio-choice { display: flex; align-items: center; gap: 10px; flex: 1 1 200px; min-width: 0; cursor: pointer; }
-.setup-wizard-radio-card .inline-hours { flex-basis: 100%; }
-.setup-wizard-radios { display: flex; flex-direction: column; gap: 10px; }
-.setup-wizard-radio-card { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
-.setup-wizard-radio-card:has(input:checked) { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
-.setup-wizard-radio-card strong { display: block; }
-.setup-wizard-radio-card small { display: block; color: var(--ink-secondary); margin-top: 4px; }
 .setup-wizard-note-box { margin-top: 12px; padding: 12px; border-radius: 8px; background: var(--surface-alt, #f3f3f0); }
 .setup-wizard-checklist { list-style: none; padding: 0; margin: 16px 0 0; }
 .setup-wizard-checklist li { min-width: 0; }

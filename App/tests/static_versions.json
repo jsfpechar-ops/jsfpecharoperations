@@ -80,16 +80,16 @@
     "v": "20261025-0380"
   },
   "host.css": {
-    "sha256": "024b009429fb628d5c19132d5de244c17b40bc022cc3d2ef89fb23a90ece2d0a",
-    "v": "20261022-0276b"
+    "sha256": "b7723dbda75e7c050fc2aa234edf70a634497be0a37b98982cd1055ecec49826",
+    "v": "20261025-0391"
   },
   "host.js": {
     "sha256": "db4fe0fef3c37a4acc2631e12eaeb0025d4cfbcccd31dfafe6a6471b6c4b76f3",
     "v": "20261023-door-code-window"
   },
   "host2.css": {
-    "sha256": "9f7f3f2fa341f2a10da49e3cca6c308fd531db9138eb76eef1aaf0660e1e5f48",
-    "v": "20261025-0386c"
+    "sha256": "d05f785c674d463bb239bc1a2dc9fc44cc8714dfaf615d36053597aa3bfcb98b",
+    "v": "20261025-0391b"
   },
   "landing.css": {
     "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",

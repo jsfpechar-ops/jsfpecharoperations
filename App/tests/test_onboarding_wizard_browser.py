@@ -1443,7 +1443,7 @@ def test_phone_guest_sharing_and_clear_setup_actions(host, base_url, lang, width
         assert page.locator(".setup-wizard-body p.small.muted").count() == 0
         _shot(page, f"30-lock-instructions-{tag}.png")
         page.goto(f"{base}/automation?lang={lang}")
-        assert page.locator(".setup-wizard-radio-card .help-tip").count() == 3
+        assert page.locator(".ui-choice-card .help-tip").count() == 3
         page.locator('input[value="manual"]').check()
         _shot(page, f"31-automation-help-{tag}.png")
         if javascript:
@@ -1498,3 +1498,56 @@ def test_demo_preview_pin_is_private_and_validated(host, monkeypatch):
     assert other.get(preview).status_code == 404
     # No reservation is created or changed by viewing the preview.
     assert db.query_one("SELECT source FROM reservation WHERE id = ?", (stay_id,))["source"] == "demo"
+
+
+CHOICE_SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0391"
+
+
+@pytest.mark.parametrize("lang", ["en", "cs", "vi"])
+@pytest.mark.parametrize("width,collapsed", [(390, False), (1280, False), (1280, True), (2000, False), (2000, True)])
+def test_choice_card_selects_from_anywhere(host, base_url, lang, width, collapsed):
+    """0391: a tap anywhere on an option card selects it; the "?" and the hours field do not."""
+    if not REQUIRE_BROWSER:
+        pytest.skip("browser not required")
+    flat = _create(host)
+    walk_to(host["client"], flat["id"], "automation")
+    session = host["client"].cookies.get(auth.SESSION_COOKIE)
+    with sync_api.sync_playwright() as p:
+        browser = p.chromium.launch(**chromium_launch_kwargs())
+        context = browser.new_context(viewport={"width": width, "height": 900}, locale=lang)
+        context.add_cookies([{"name": auth.SESSION_COOKIE, "value": session, "url": base_url + "/"}])
+        if collapsed:
+            context.add_init_script("localStorage.setItem('ubyhost-sidebar-collapsed', '1')")
+        page = context.new_page()
+        page.goto(f"{base_url}/apartments/{flat['id']}/setup/automation?lang={lang}")
+        cards = page.locator(".ui-choice-card")
+        assert cards.count() == 3
+
+        def click_empty(card):
+            card.evaluate("(el) => el.scrollIntoView({block: 'center'})")
+            box = card.bounding_box()
+            row = card.locator(".ui-choice-card-label").bounding_box()
+            page.mouse.click(box["x"] + 6, row["y"] + row["height"] / 2)
+
+        click_empty(cards.nth(2))
+        assert page.locator('input[value="immediate"]').is_checked()
+        click_empty(cards.nth(1))
+        scheduled = page.locator('input[value="scheduled"]')
+        assert scheduled.is_checked()
+        assert scheduled.evaluate("(el) => getComputedStyle(el).outlineStyle") == "none"
+        assert scheduled.evaluate("(el) => getComputedStyle(el).boxShadow") == "none"
+        assert scheduled.evaluate("(el) => getComputedStyle(el).accentColor") != "auto"
+        tip = cards.nth(0).locator(".help-tip-btn")
+        tip.click()
+        assert not page.locator('input[value="manual"]').is_checked()
+        tip.click()
+        page.locator("#submit_after_hours").click()
+        assert scheduled.is_checked()
+        scheduled.focus()
+        page.keyboard.press("ArrowUp")
+        assert page.locator('input[value="manual"]').is_checked()
+        assert cards.nth(0).evaluate("(el) => getComputedStyle(el).outlineStyle") == "solid"
+        assert page.evaluate(_overflow_js())
+        CHOICE_SHOTS.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=str(CHOICE_SHOTS / f"automation-{lang}-{width}{'c' if collapsed else ''}.png"), full_page=True)
+        browser.close()
