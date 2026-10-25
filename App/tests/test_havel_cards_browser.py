@@ -16,7 +16,7 @@ if REQUIRE_BROWSER:
 else:
     sync_api = pytest.importorskip("playwright.sync_api")
 
-from app import ai, auth, config
+from app import ai, auth
 from app.main import app
 from tests.ai_fake import FakeClient
 from tests.browser_support import chromium_launch_kwargs

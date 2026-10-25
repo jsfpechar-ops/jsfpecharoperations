@@ -70,7 +70,7 @@ def test_messages_carry_context_and_redacted_history():
     assert last.endswith("<message>What is the PIN?</message>")
     blocks = havel.system_blocks("en")
     assert blocks[0].startswith("You are Havel") and blocks[1].startswith('<guide lang="en">') and blocks[2].startswith("<pages>")
-    assert havel.system_blocks("vi")[1].startswith('<guide lang="en">')
+    assert havel.system_blocks("vi")[1].startswith('<guide lang="vi">')
 
 
 # --- guardrails (plan 9a, cases 49-51)
