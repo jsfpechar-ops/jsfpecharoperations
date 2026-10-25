@@ -607,7 +607,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_checkin_value": "%(date)s, from %(time)s",
         "mail_completion_checkout_label": "Check-out",
         "mail_completion_checkout_value": "%(date)s, by %(time)s",
-        "mail_completion_address_label": "Address",
+        "mail_completion_host_action": "For your host: open this stay in UbyHost",
         "mail_reminder_guest_subject": (
             "Tomorrow at %(property)s: %(filled)s of %(expected)s guests registered"
         ),
@@ -1255,7 +1255,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_checkin_value": "%(date)s od %(time)s",
         "mail_completion_checkout_label": "Odjezd",
         "mail_completion_checkout_value": "%(date)s do %(time)s",
-        "mail_completion_address_label": "Adresa",
+        "mail_completion_host_action": "Pro hostitele: otevřít pobyt v UbyHost",
         "mail_reminder_guest_subject": (
             "Zítra přijíždíte (%(property)s): zaregistrováno %(filled)s z %(expected)s "
             "hostů"
@@ -1702,7 +1702,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_checkin_value": "%(date)s ab %(time)s",
         "mail_completion_checkout_label": "Check-out",
         "mail_completion_checkout_value": "%(date)s bis %(time)s",
-        "mail_completion_address_label": "Adresse",
+        "mail_completion_host_action": "Für Ihren Gastgeber: Aufenthalt in UbyHost öffnen",
         "mail_reminder_guest_subject": "Morgen in %(property)s: %(filled)s von %(expected)s Gästen registriert",
         "mail_reminder_guest_subject_no_count": "Morgen in %(property)s: Die Gästeregistrierung ist nicht abgeschlossen",
         "mail_reminder_guest_preheader": "Ihr Aufenthalt beginnt morgen und die Registrierung ist nicht vollständig.",
@@ -2125,7 +2125,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_checkin_value": "%(date)s, desde las %(time)s",
         "mail_completion_checkout_label": "Salida",
         "mail_completion_checkout_value": "%(date)s, antes de las %(time)s",
-        "mail_completion_address_label": "Dirección",
+        "mail_completion_host_action": "Para su anfitrión: abrir la estancia en UbyHost",
         "mail_reminder_guest_subject": "Mañana en %(property)s: %(filled)s de %(expected)s huéspedes registrados",
         "mail_reminder_guest_subject_no_count": "Mañana en %(property)s: el registro de huéspedes no está terminado",
         "mail_reminder_guest_preheader": "Su estancia empieza mañana y el registro no está completo.",
@@ -2548,7 +2548,7 @@ STRINGS: Dict[str, Dict[str, str]] = {
         "mail_completion_checkin_value": "%(date)s, à partir de %(time)s",
         "mail_completion_checkout_label": "Départ",
         "mail_completion_checkout_value": "%(date)s, avant %(time)s",
-        "mail_completion_address_label": "Adresse",
+        "mail_completion_host_action": "Pour votre hôte : ouvrir le séjour dans UbyHost",
         "mail_reminder_guest_subject": "Demain à %(property)s : %(filled)s voyageurs sur %(expected)s enregistrés",
         "mail_reminder_guest_subject_no_count": "Demain à %(property)s : l'enregistrement des voyageurs n'est pas terminé",
         "mail_reminder_guest_preheader": "Votre séjour commence demain et l'enregistrement n'est pas complet.",
