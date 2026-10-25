@@ -29,7 +29,7 @@ from . import (
     site_urls,
     templating,
 )
-from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, guest_guide as guest_guide_routes, guest_guide_view, guest_leon, guest_questions, invoices, legal, mail_unsubscribe, onboarding_wizard, stay_fees
+from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, guest_guide as guest_guide_routes, guest_guide_view, guest_leon, guest_questions, havel as havel_routes, invoices, legal, mail_unsubscribe, onboarding_wizard, stay_fees
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -353,6 +353,7 @@ app.include_router(onboarding_wizard.router)
 app.include_router(invoices.router)
 app.include_router(stay_fees.router)
 app.include_router(cleaning_routes.router)
+app.include_router(havel_routes.router)
 # 0351 before the guide router: its '/guide/{item_id}' would otherwise catch '/guide/questions'.
 app.include_router(guest_questions.router)
 app.include_router(guest_guide_routes.router)
