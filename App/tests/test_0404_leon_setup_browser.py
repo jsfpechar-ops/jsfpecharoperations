@@ -1,5 +1,9 @@
 """0404: the Leon setup wizard in a real browser at 390 px (plus a 1280 px footer check).
 
+0405 adds the test chat's empty and capped states. Every screenshot waits for the page to settle:
+the host pages use cross-document view transitions, so a screenshot taken on URL change can catch
+two pages overlapping.
+
 Screenshots go to docs/tasks/screenshots-0404/. Skipped when Chromium is missing, unless
 UBYHOST_REQUIRE_BROWSER=1.
 """
@@ -9,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from app import config, db, guest_guide, guest_guide_import
+from app import config, db, guest_guide, guest_guide_import, leon, rate_limit
 from tests.test_0251_tablet_browser import _context, base, host  # noqa: F401 (fixtures)
 from tests.test_guest_browser_e2e import browser, live_server  # noqa: F401 (fixtures)
 
@@ -25,6 +29,7 @@ def leon_offered(monkeypatch, host):  # noqa: F811
     monkeypatch.setattr(config, "APIFY_TOKEN", "test-token")
     monkeypatch.setattr(guest_guide_import, "enabled", lambda: True)
     db.execute("UPDATE apartment SET leon_enabled = 0, leon_terms_version = NULL WHERE id = ?", (host["apartment"],))
+    db.execute("DELETE FROM rate_limit_event WHERE scope = ?", ("leon_try",))
     return host["apartment"]
 
 
@@ -35,6 +40,17 @@ def _progress(live: bool):
             "must_have_done": 5 if live else 0, "must_have_total": 5, "live": live,
         }
     return progress
+
+
+def _settle(page):
+    """Wait until the wizard is drawn, the network is idle, no skeleton shows and no view transition runs."""
+    page.wait_for_load_state("networkidle")
+    page.wait_for_selector("[data-leon-setup]", state="visible")
+    page.wait_for_function(
+        "() => !document.querySelector('[data-page-skeleton]:not([hidden])')"
+        " && !document.activeViewTransition"
+        " && document.getAnimations().every(a => a.playState !== 'running')"
+    )
 
 
 def _no_overflow(page) -> bool:
@@ -56,6 +72,7 @@ def test_setup_wizard_in_a_browser(live_server, browser, host, base, leon_offere
         page = context.new_page()
         page.goto(f"{base}/apartments/{apt}/leon/setup?lang=en")
         assert page.url.endswith("/leon/setup/switch_on")
+        _settle(page)
         assert _no_overflow(page)
         assert page.locator(".ui-btn-primary").count() == 1
         page.screenshot(path=str(OUT / "switch-on-390.png"), full_page=True)
@@ -63,6 +80,7 @@ def test_setup_wizard_in_a_browser(live_server, browser, host, base, leon_offere
         page.locator("#leon-terms").check()
         page.locator('button[form="leon-setup-on"]').click()
         page.wait_for_url(f"**/apartments/{apt}/leon/setup/import*")
+        _settle(page)
         assert page.locator('input[name="booking_url"]').count() == 1
         assert _no_overflow(page)
         page.screenshot(path=str(OUT / "import-390.png"), full_page=True)
@@ -71,27 +89,43 @@ def test_setup_wizard_in_a_browser(live_server, browser, host, base, leon_offere
         page.locator('input[name="airbnb_url"]').fill("https://www.airbnb.com/rooms/123456")
         page.locator('button[form="leon-setup-import"]').click()
         page.wait_for_selector("[data-leon-import-wait]")
+        _settle(page)
         assert _no_overflow(page)
         page.screenshot(path=str(OUT / "import-waiting-390.png"), full_page=True)
 
         page.locator('button[name="action"][value="skip_import"]').click()
         page.wait_for_url(f"**/apartments/{apt}/leon/setup/cards")
+        _settle(page)
         assert _no_overflow(page)
         page.screenshot(path=str(OUT / "cards-390.png"), full_page=True)
 
         page.set_viewport_size({"width": 1280, "height": 900})
         assert _footer_on_one_row(page)
         page.goto(f"{base}/apartments/{apt}/leon/setup/import?lang=en")
+        _settle(page)
         assert _no_overflow(page)
         page.screenshot(path=str(OUT / "import-1280.png"), full_page=True)
         page.set_viewport_size({"width": 390, "height": 844})
 
         monkeypatch.setattr(guest_guide, "progress", _progress(True))
         page.goto(f"{base}/apartments/{apt}/leon/setup/try?lang=en")
+        _settle(page)
         assert _no_overflow(page)
+        assert page.locator("#leon-try-input").is_enabled()
         page.screenshot(path=str(OUT / "try-390.png"), full_page=True)
+
+        for _ in range(leon.TRY_MAX):
+            rate_limit.record("leon_try", str(apt))
+        page.goto(f"{base}/apartments/{apt}/leon/setup/try?lang=en")
+        _settle(page)
+        assert _no_overflow(page)
+        assert page.locator("[data-leon-try-cap]").is_visible()
+        assert page.locator("#leon-try-input").is_disabled()
+        page.screenshot(path=str(OUT / "try-cap-390.png"), full_page=True)
+
         page.locator('button[name="action"][value="finish"]').click()
         page.wait_for_url(f"**/apartments/{apt}/leon/setup/done")
+        _settle(page)
         assert _no_overflow(page)
         page.screenshot(path=str(OUT / "done-390.png"), full_page=True)
     finally:
