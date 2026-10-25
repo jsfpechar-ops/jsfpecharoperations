@@ -1,6 +1,7 @@
 """Havel's quick-help layer (plan 17c): five topics, each with two to four questions.
 
-An answer is the guide strings named by its keys, in order, shown as paragraphs.
+An answer shows its short string as paragraphs (questions without one show the guide strings
+named by their keys). The guide keys are what the host is told to read more of.
 No model call, no cost, no count. When the host presses "Still need help? Ask
 Havel", the topic and the keys they have just read travel with the message as
 ``topic`` and ``read_keys`` in the host context, so Havel does not repeat them.
@@ -13,37 +14,37 @@ from . import host_i18n
 
 TOPICS: List[Dict[str, Any]] = [
     {"id": "stays", "icon": "calendar-days", "label": "havel.topic.stays", "questions": [
-        {"id": "add", "label": "havel.q.stays.add", "keys": ["guide.stays.body"], "page": "add_stay"},
-        {"id": "change", "label": "havel.q.stays.change", "keys": ["guide.stays.detail"], "page": "stays"},
-        {"id": "cancelled", "label": "havel.q.stays.cancelled",
+        {"id": "add", "label": "havel.q.stays.add", "short": "havel.short.stays.add", "keys": ["guide.stays.body"], "page": "add_stay"},
+        {"id": "change", "label": "havel.q.stays.change", "short": "havel.short.stays.change", "keys": ["guide.stays.detail"], "page": "stays"},
+        {"id": "cancelled", "label": "havel.q.stays.cancelled", "short": "havel.short.stays.cancelled",
          "keys": ["guide.stays.cancelled", "guide.stays.dates_changed"], "page": "stays"},
     ]},
     {"id": "guest_link", "icon": "external-link", "label": "havel.topic.guest_link", "questions": [
-        {"id": "how", "label": "havel.q.guest_link.how",
+        {"id": "how", "label": "havel.q.guest_link.how", "short": "havel.short.guest_link.how",
          "keys": ["guide.guests.body", "guide.guests.step_pin", "guide.guests.step_pick", "guide.guests.step_claim",
                   "guide.guests.step_form"], "page": "property_guests"},
-        {"id": "where", "label": "havel.q.guest_link.where", "keys": ["guide.guest_links.find1", "guide.guest_links.find2",
+        {"id": "where", "label": "havel.q.guest_link.where", "short": "havel.short.guest_link.where", "keys": ["guide.guest_links.find1", "guide.guest_links.find2",
                   "guide.guest_links.find3", "guide.guest_links.find4", "guide.guest_links.find5"],
          "page": "property_guests"},
-        {"id": "broken", "label": "havel.q.guest_link.broken", "keys": ["guide.faq.link_a"], "page": "property_guests"},
+        {"id": "broken", "label": "havel.q.guest_link.broken", "short": "havel.short.guest_link.broken", "keys": ["guide.faq.link_a"], "page": "property_guests"},
     ]},
     {"id": "reporting", "icon": "send", "label": "havel.topic.reporting", "questions": [
-        {"id": "when", "label": "havel.q.reporting.when",
+        {"id": "when", "label": "havel.q.reporting.when", "short": "havel.short.reporting.when",
          "keys": ["guide.reporting.body", "guide.reporting.immediate_detail", "guide.reporting.scheduled_detail",
                   "guide.reporting.manual_detail"], "page": "reports"},
-        {"id": "colours", "label": "havel.q.reporting.colours",
+        {"id": "colours", "label": "havel.q.reporting.colours", "short": "havel.short.reporting.colours",
          "keys": ["guide.statuses.lede", "guide.statuses.ready", "guide.statuses.waiting", "guide.statuses.reported",
                   "guide.statuses.failed"], "page": "guide_statuses"},
-        {"id": "czech", "label": "havel.q.reporting.czech", "keys": ["guide.faq.czech_a"], "page": "reports"},
+        {"id": "czech", "label": "havel.q.reporting.czech", "short": "havel.short.reporting.czech", "keys": ["guide.faq.czech_a"], "page": "reports"},
     ]},
     {"id": "calendars", "icon": "refresh-cw", "label": "havel.topic.calendars", "questions": [
-        {"id": "connect", "label": "havel.q.calendars.connect", "keys": ["guide.stays.calendar1", "guide.stays.calendar2",
+        {"id": "connect", "label": "havel.q.calendars.connect", "short": "havel.short.calendars.connect", "keys": ["guide.stays.calendar1", "guide.stays.calendar2",
                     "guide.stays.calendar3", "guide.stays.calendar4", "guide.stays.calendar5",
                     "guide.stays.calendar6", "guide.stays.calendar7"], "page": "property_calendars"},
-        {"id": "stale", "label": "havel.q.calendars.stale", "keys": ["guide.stays.body"], "page": "property_calendars"},
+        {"id": "stale", "label": "havel.q.calendars.stale", "short": "havel.short.calendars.stale", "keys": ["guide.stays.body"], "page": "property_calendars"},
     ]},
     {"id": "wrong", "icon": "triangle-alert", "label": "havel.topic.wrong", "questions": [
-        {"id": "report", "label": "havel.q.wrong.report", "keys": ["guide.reporting.failure"], "page": "reports"},
+        {"id": "report", "label": "havel.q.wrong.report", "short": "havel.short.wrong.report", "keys": ["guide.reporting.failure"], "page": "reports"},
         {"id": "error", "label": "havel.q.wrong.error", "keys": ["havel.topic.support_body"], "page": None,
          "support": True},
     ]},
@@ -81,6 +82,7 @@ def answer(lang: str, topic_id: str, q_id: str) -> Optional[Dict[str, Any]]:
     q = question(topic_id, q_id)
     if not q:
         return None
-    texts = [host_i18n.translate(lang, k) for k in q["keys"]]
+    keys = [q["short"]] if q.get("short") else q["keys"]
+    texts = [host_i18n.translate(lang, k) for k in keys]
     return {"topic": topic_id, "question": q, "paragraphs": [t for t in texts if t and t != "?"],
             "page": q.get("page"), "support": bool(q.get("support"))}

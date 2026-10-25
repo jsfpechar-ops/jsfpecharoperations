@@ -15,8 +15,11 @@
   var opener = null;
   function fab() { return document.querySelector("[data-havel-fab]"); }
   function hideFab() { var f = fab(); if (f) f.hidden = true; }
+  // 0391: the box exists only once a host has opened it ("Other topic", "Didn't help?").
+  function composerOpen() { var f = form(); return !!(f && !f.hidden); }
+  function openComposer() { var f = form(); if (f) { f.hidden = false; f.removeAttribute("data-havel-locked"); } }
   function focusPanel() {
-    if (PHONE.matches) {
+    if (PHONE.matches || !composerOpen()) {
       var h = root.querySelector("#havel-title");
       if (h) h.focus({ preventScroll: true });
     } else {
@@ -59,7 +62,8 @@
         topic: formValue("[data-havel-topic]", "topic", prev),
         q: formValue("[data-havel-q]", "q", prev),
         open: panel ? panel.open : false,
-        unread: prev.unread === true
+        unread: prev.unread === true,
+        composer: composerOpen() || (!form() && prev.composer === true)
       };
       Object.keys(extra || {}).forEach(function (k) { rec[k] = extra[k]; });
       sessionStorage.setItem(KEY, JSON.stringify(rec));
@@ -86,6 +90,7 @@
     // put back after the composer has loaded, never before.
     var apply = function () {
       t.innerHTML = s.html;
+      if (s.composer) openComposer();
       fill(s);
       if (!panel || typeof panel.show !== "function") return;
       if (s.open) { panel.show(); hideFab(); scrollDown(); }
@@ -218,14 +223,33 @@
     });
   }
 
+  // 0391: topic links keep the hosting page and return_to from the panel's data-src.
+  function withPanelContext(url) {
+    if (!panel) return url;
+    var src = new URL(panel.getAttribute("data-src") || "", location.origin);
+    var u = new URL(url, location.origin);
+    if (u.searchParams.has("page")) return url;
+    ["page", "return_to"].forEach(function (k) {
+      if (!u.searchParams.has(k) && src.searchParams.has(k)) u.searchParams.set(k, src.searchParams.get(k));
+    });
+    return u.pathname + u.search;
+  }
   function load(url, mode) {
+    url = withPanelContext(url);
     fetch(url, { credentials: "same-origin", headers: { "X-Havel": "1", "Accept": "text/html" } })
       .then(function (res) { return res.ok ? res.text() : Promise.reject(new Error(String(res.status))); })
       .then(function (html) {
         swap(html, mode || "replace");
+        var t = thread();
+        // 0391: an ask link opens the box and puts the cursor in it.
+        if (new URL(url, location.origin).searchParams.get("ask") === "1" && composerOpen()) {
+          var ta = textarea();
+          if (ta) ta.focus();
+          scrollDown();
+          return;
+        }
         var answer = root.querySelector(".havel-answer");
         if (answer) answer.focus({ preventScroll: true });
-        var t = thread();
         if (t) t.scrollTop = 0;
       })
       .catch(function () { window.location.href = url; });
@@ -288,17 +312,6 @@
   root.addEventListener("click", function (event) {
     var link = event.target.closest ? event.target.closest("[data-havel-topic-link]") : null;
     if (link) { event.preventDefault(); load(link.getAttribute("href"), "replace"); return; }
-    var ask = event.target.closest ? event.target.closest("[data-havel-ask]") : null;
-    if (ask) {
-      event.preventDefault();
-      var topic = root.querySelector("[data-havel-topic]");
-      var q = root.querySelector("[data-havel-q]");
-      if (topic) topic.value = ask.getAttribute("data-topic") || "";
-      if (q) q.value = ask.getAttribute("data-q") || "";
-      var ta = textarea();
-      if (ta) ta.focus();
-      return;
-    }
     var cancel = event.target.closest ? event.target.closest("[data-havel-cancel]") : null;
     if (cancel) { var card = cancel.closest(".havel-card"); if (card) card.remove(); var ta = textarea(); if (ta) ta.focus(); return; }
     var retry = event.target.closest ? event.target.closest("[data-havel-retry]") : null;
@@ -337,6 +350,7 @@
       if (!panel.open) panel.show();
       ensureForm(function () {
         hideFab();
+        openComposer();
         var ta = textarea();
         if (ta) { if (text) ta.value = text; ta.focus(); ta.dispatchEvent(new Event("input")); }
       });
