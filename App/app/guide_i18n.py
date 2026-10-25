@@ -1,4 +1,4 @@
-"""Help & guide copy (templates/guide.html), English and Czech.
+"""Help & guide copy (templates/guide.html), English and Czech; Vietnamese in host_vi_i18n.py.
 
 Every sentence describes behaviour in the code. When a feature changes,
 change its paragraph here in the same commit.
@@ -732,3 +732,11 @@ GUIDE_STRINGS = {
         "guide.glossary.housebook": "Seznam všech hostů, kteří u vás bydleli, českých i cizích (domovní kniha). Zákon vám ukládá ji vést. UbyHost ji plní z formulářů hostů.",
     },
 }
+
+
+# Vietnamese lives in host_vi_i18n.py with the rest of the vi host copy (brief 0196).
+# Havel reads GUIDE_STRINGS, so vi is built here: every English key, in Vietnamese
+# where host_vi_i18n has it, English otherwise (the door-code terms stay English).
+from .host_vi_i18n import STRINGS as _VI  # noqa: E402
+
+GUIDE_STRINGS["vi"] = {key: _VI.get(key, text) for key, text in GUIDE_STRINGS["en"].items()}

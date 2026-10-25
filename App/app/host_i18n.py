@@ -4791,7 +4791,7 @@ for _lang, _strings in HOST_DESIGN_STRINGS.items():
 
 from .guide_i18n import GUIDE_STRINGS
 for _lang, _strings in GUIDE_STRINGS.items():
-    STRINGS[_lang].update(_strings)
+    STRINGS.setdefault(_lang, {}).update(_strings)
 
 # WP20: self sign-up, its e-mails, and the privacy draft for the Google Ads
 # click ID. Kept in one block so counsel can review the wording in one place.
