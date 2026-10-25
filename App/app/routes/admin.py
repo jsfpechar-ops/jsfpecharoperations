@@ -1786,6 +1786,8 @@ def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]
         "enabled": apartment["lock_provider"] == "ttlock",
         "lock_id": apartment["lock_id"],
         "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
+        # 0391: 0 means every connected lock serves another property.
+        "free_lock_count": len(free_locks),
         "checkin_hour": cin,
         "checkout_hour": cout,
         "tz_warning": bool(selected and _lock_tz_wrong(selected["tz_offset_ms"])),
