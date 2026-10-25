@@ -46,7 +46,7 @@ def test_topics_are_chips(origin):
         page.goto(origin[0] + "/")
         sheet = _open_sheet(page)
         chips = sheet.locator(".havel-chip[data-havel-topic-link]")
-        assert chips.count() == 5
+        assert chips.count() == 6  # 0391: five topics + "Other topic"
         assert sheet.locator(".ui-menu-panel").count() == 0
         for i in range(chips.count()):
             box = chips.nth(i).bounding_box()
@@ -75,6 +75,7 @@ def test_pill_composer(origin):
         page = context.new_page()
         page.goto(origin[0] + "/")
         sheet = _open_sheet(page)
+        sheet.locator("[data-havel-other]").click()
         textarea = sheet.locator("#havel-message")
         textarea.wait_for()
         assert sheet.locator(".havel-input #havel-message").count() == 1
@@ -102,6 +103,9 @@ def test_off_state_has_support_button(origin, monkeypatch):
         page = context.new_page()
         page.goto(origin[0] + "/")
         sheet = _open_sheet(page)
+        # 0391: the status and support button show once the host taps "Other topic".
+        sheet.locator("[data-havel-other]").click()
+        sheet.locator(".havel-support-open").wait_for()
         assert sheet.locator("#havel-message").count() == 0
         assert sheet.locator(".havel-note").count() == 0
         support = sheet.locator(".havel-support-open")
@@ -120,6 +124,6 @@ def test_cs_home_1280(origin):
         page = context.new_page()
         page.goto(origin[0] + "/?lang=cs")
         sheet = _open_sheet(page)
-        assert sheet.locator(".havel-chip[data-havel-topic-link]").count() == 5
+        assert sheet.locator(".havel-chip[data-havel-topic-link]").count() == 6
         page.screenshot(path=str(SHOTS / "home-cs-1280.png"))
         browser.close()

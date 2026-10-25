@@ -1,7 +1,7 @@
 {#- 0312: the composer. Hidden fields carry the signed history, the hosting page,
     the device (set by havel.js in 0324) and the quick-help topic. -#}
 {% from "_icons.html" import icon with context %}
-<form method="post" action="/havel" class="havel-composer" data-havel-form>
+<form method="post" action="/havel" class="havel-composer" data-havel-form{% if havel_locked %} hidden data-havel-locked{% endif %}>
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="history" value="{{ havel_history }}" data-havel-history>
   <input type="hidden" name="history_sig" value="{{ havel_history_sig }}" data-havel-sig>
