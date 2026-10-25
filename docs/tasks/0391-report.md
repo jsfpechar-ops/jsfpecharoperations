@@ -1,26 +1,25 @@
-# 0391 report (session 2)
+# 0391 report: Havel starts with topics
 
-Status: blocked (one question, see Questions)
+Status: review
+Executor: Haiku 5.5, finished by the orchestrator | Branch: claude/0391-havel-topics-first (PR #513)
 
-## Files changed (this session)
+## Files changed
 
-- `App/tests/test_0391_open_buttons_click_browser.py`: browser test now requires `/reservations?range=all`, `/apartments`, `/housebook` and the first property overview at 390 and 1280; clicks with `click(force=True)`; "at least 6" rule removed. New non-browser test: no `row_open()` without an argument, no `<span class="row-open">`, macro renders `<a class="row-open" href=`.
-- `docs/design/MASTER.md`: the `open` variant row now says Open is a real link to the row's own target. (No `row_open` name exists in MASTER, so the `open` row in section 7.1 was used.)
+- App/app/routes/havel.py: `ask` flag; `havel_ask`, `havel_locked` in the context (GET `?ask=1`, every POST but reset)
+- App/app/templates/_havel_form.html: `hidden data-havel-locked` while locked
+- App/app/templates/_havel_topics.html: "Other topic" chip, ask branch with the fixed prompt, "Didn't help?" chip as an `ask=1` link
+- App/app/static/havel.js: composerOpen/openComposer, saved `composer` state, load() keeps page/return_to and focuses the box after an ask link, focusPanel, UbyHavel.open
+- App/app/host_i18n.py, App/app/host_vi_i18n.py: `havel.topic.other`, `havel.other_prompt`, `havel.ask_prompt`; `havel.topic.ask` reworded
+- App/app/templates/base.html, App/tests/static_versions.json: havel.js `20261025-0391`
+- App/tests/test_0391_havel_topics_first_browser.py (new); older Havel tests click "Other topic" or use `?ask=1`, chip count 5 -> 6
+- docs/tasks/screenshots-0391/: topics-390, other-390, answer-ask-390, topics-1280
 
-## Test output
+## Commands (last lines)
 
-- `UBYHOST_REQUIRE_BROWSER=1 ... pytest <brief §3 list> -q --tb=short -x -rs | tail -30`: `27 passed in 73.00s`, 0 skipped.
-- `python3 scripts/context_lint.py`: FAIL. The only ERRORs are that `docs/tasks/0391-open-buttons-click.md` lacks sections `## 2. Context` to `## 9. Report`; the brief uses its own numbering. Other lines are WARN only.
+- `pytest test_0391 test_0386 test_havel*.py test_ai*.py test_static_versions.py test_design_*.py test_guide*.py` (browser required): 286 passed, 1 failed (test_havel_topics ask-chip markup, fixed, file re-run: 4 passed); 0 skipped
+- ruff: All checks passed. design lint: OK. node --check: ok.
 
 ## Deviations
 
-- `settle_motion(page)` (brief §2 step 6) does not exist in the repo. The test uses `page.wait_for_load_state("load")`, as `test_0385_phone_card_open_browser.py` does.
-- Brief §5 step 1 stay-detail check dropped. `reservation_detail.html` has no guests-table Open. Its only `row_open` (line 408) sits in the submissions table, which renders only when the stay has submissions. Demo data has no submissions, so the check could not pass. Test passes without it.
-
-## Questions
-
-1. Should the stay-detail Open check be dropped for good, or should demo data get a submission so the reports-table Open can be tested?
-
-## Owner steps left
-
-- None. Not pushed. Branch `claude/project-thread-by10nz`.
+- restore(): openComposer() runs before fill(), so fill()'s save() keeps `composer: true`.
+- Haiku stopped at the cap with old tests failing; the orchestrator patched those tests.

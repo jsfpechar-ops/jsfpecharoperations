@@ -1,4 +1,4 @@
-"""0391: every visible Open cue is a real link to the row's own target, so a click
+"""0394: every visible Open cue is a real link to the row's own target, so a click
 on Open opens the same place as a click on the row."""
 from __future__ import annotations
 
