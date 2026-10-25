@@ -24,6 +24,7 @@ from starlette.datastructures import UploadFile
 
 from .. import (
     access,
+    ai,
     alerts,
     ares,
     auth,
@@ -36,6 +37,7 @@ from .. import (
     demo,
     door_codes,
     guest_slug,
+    havel,
     host_i18n,
     housebook,
     icalsync,
@@ -510,7 +512,7 @@ def guide_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    return render(request, "guide.html", {"demo_available": config.UBYPORT_ENV == "mock"})
+    return render(request, "guide.html", {"demo_available": config.UBYPORT_ENV == "mock", "havel_on": ai.enabled(havel.FEATURE)})
 
 
 # --- guest communication ------------------------------------------------
