@@ -1,6 +1,6 @@
 # 0395: Havel panel always sits above the page; a stale start screen is never restored
 
-Status: todo
+Status: done
 Depends on: main (0391 topics-first merged) | Branch: claude/0395-havel-panel-layer (already checked out; commit here)
 Executor: Haiku 5.5 | Fits one session: 25 tool calls, 50k tokens
 
