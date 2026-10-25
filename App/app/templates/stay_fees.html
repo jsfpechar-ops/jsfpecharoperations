@@ -168,7 +168,7 @@
             <span class="ui-badge ui-badge-action" data-tone="blue">{{ t('stay_fees.status.ready') }}</span>
           {% endif %}
         </td>
-        <td class="nowrap row-actions" data-label="">{{ row_open() }}{{ row_menu_begin() }}<a class="row-menu-item" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" role="menuitem">{{ t('stay_fees.open_report') }}</a>{{ row_menu_end() }}</td>
+        <td class="nowrap row-actions" data-label="">{{ row_open('/stay-fees/' ~ apartment.id ~ '?month=' ~ selected_month.strftime('%Y-%m')) }}{{ row_menu_begin() }}<a class="row-menu-item" href="/stay-fees/{{ apartment.id }}?month={{ selected_month.strftime('%Y-%m') }}" role="menuitem">{{ t('stay_fees.open_report') }}</a>{{ row_menu_end() }}</td>
       </tr>
       {% endif %}
     {% endfor %}

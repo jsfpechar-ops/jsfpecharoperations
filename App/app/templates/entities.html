@@ -130,7 +130,7 @@
         <td class="ui-sub" data-label="{{ t('entities.archived') }}">{{ entity.archived_at[:10] }}</td>
         <td class="mono" data-label="{{ t('entities.ico') }}">{{ entity.ico or '—' }}</td>
         <td class="nowrap row-actions" data-label="">
-          {{ row_open() }}
+          {{ row_open('/entities?edit=' ~ entity.id) }}
           {{ row_menu_begin() }}
             <form method="post" action="/entities/{{ entity.id }}/unarchive" class="row-menu-form">
               <button class="row-menu-item" type="submit" role="menuitem">{{ t('common.restore') }}</button>
