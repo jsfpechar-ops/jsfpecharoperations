@@ -195,6 +195,17 @@
       </dl>
     </section>
 
+    <section class="guide-section ui-section ui-section-plain" id="glossary">
+      <h2>{{ t('guide.nav.glossary') }}</h2>
+      <p>{{ t('guide.glossary.lede') }}</p>
+      <dl class="kv">
+        {% for term in ['stay', 'guest_link', 'pin', 'ical', 'ubyport', 'idub', 'stay_fee', 'housebook'] %}
+        <dt>{{ t('guide.glossary.' ~ term ~ '_term') }}</dt>
+        <dd>{{ t('guide.glossary.' ~ term) }}</dd>
+        {% endfor %}
+      </dl>
+    </section>
+
     <section class="guide-section ui-section ui-section-plain guide-legal" id="legal">
       <h2>{{ t('guide.nav.legal') }}</h2>
       <p class="lede">{{ t('guide.legal.lede') }}</p>
