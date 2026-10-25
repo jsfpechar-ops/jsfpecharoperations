@@ -209,13 +209,13 @@ Files: App/app/i18n.py, App/app/guest_uk_i18n.py, App/app/mail_notify.py, App/ap
 
 ### Step A1: catalogue
 
-After each language's `"mail_completion_address_label"` entry add `mail_completion_host_action`:
+Remove the `mail_completion_address_label` entry from every language (step A6 drops the address row). After each language's `"mail_completion_checkout_value"` entry add `mail_completion_host_action`:
 en `For your host: open this stay in UbyHost` · cs `Pro hostitele: otevřít pobyt v UbyHost` · de `Für Ihren Gastgeber: Aufenthalt in UbyHost öffnen` · es `Para su anfitrión: abrir la estancia en UbyHost` · fr `Pour votre hôte : ouvrir le séjour dans UbyHost` · uk `Для господаря: відкрити проживання в UbyHost`.
 Keep `mail_completion_action` in the catalogues (the plain-text fallback in claim.py still uses it).
 
 ### Step A2: `build_completion`
 
-Add keyword param `host_url: str = ""` after `address`. Replace the "Slot 2" block (the `_block_quiet_link(stay_url, action)` line and the `text_lines.extend(["", f"{action}: {stay_url}"])` line) with:
+Add keyword param `host_url: str = ""` after `address` (step A6 then removes `address`). Replace the "Slot 2" block (the `_block_quiet_link(stay_url, action)` line and the `text_lines.extend(["", f"{action}: {stay_url}"])` line) with:
 
 ```python
     # Slot 2: one quiet link, for the copied host only. The guest's own stay
@@ -243,6 +243,12 @@ In `_guest_mail_content`'s `build_completion(` call add
 
 Commands: `cd App && .venv/bin/python -m pytest tests/test_guest_mail.py tests/test_guest_languages.py tests/test_property_names_in_mail.py tests/test_mail_side_padding.py tests/test_claim_mail.py tests/test_claim_fallback_text.py tests/test_claim_resend_complete.py -q --tb=short 2>&1 | tail -30`
 
+### Step A6: no address row (owner: "No need for address, there's already property name")
+
+- mail_notify.py `build_completion`: remove the `address` parameter and the `if address:` row.
+- claim.py `_completion_facts`: remove the `street` and `town` lines and the `"address"` key; docstring first line becomes "Check-in and check-out for the receipt's stay panel."
+- test_guest_mail.py: remove `mail_completion_address_label` from `NEW_GUEST_KEYS`; the at-a-glance test no longer passes or asserts an address, and asserts "Address" is not in the html.
+
 ### Step A5: previews
 
-Re-render the 3 previews as in step 5, adding `host_url="https://app.ubyhost.com/reservations/17"` (uk with uk enabled). Commit as `0387 addendum A`. Append a 3-line "Addendum A" section to the report.
+Re-render the 3 previews as in step 5, adding `host_url="https://app.ubyhost.com/reservations/17"` and without `address` (uk with uk enabled). Commit as `0387 addendum A`. Append a 3-line "Addendum A" section to the report.
