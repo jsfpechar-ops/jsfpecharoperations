@@ -22,6 +22,7 @@ def ws(monkeypatch, tmp_path):
     monkeypatch.setattr(mail, "mail_enabled", lambda: False)
     monkeypatch.setattr(auth, "staging_no_login", lambda: False)
     monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
+    monkeypatch.setattr("app.leon.switched_on", lambda apartment: True)  # 0376: host opt-in covered in test_0376_ai_gates.py
     monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
     monkeypatch.setattr(config, "ai_monthly_usd", lambda feature: 10.0)
     monkeypatch.setattr(config, "ai_key_daily_usd", lambda feature: 0.0)
@@ -300,6 +301,7 @@ def test_feature_off_and_spent_budgets_pass_the_message_to_the_host_unread(ws, m
     got = _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "Heating?").json()
     assert got["kind"] == "passed" and got["asked_host"] and "Jana" in got["text"]
     monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
+    monkeypatch.setattr("app.leon.switched_on", lambda apartment: True)  # 0376: host opt-in covered in test_0376_ai_gates.py
     monkeypatch.setattr(config, "ai_monthly_usd", lambda feature: 0.0)
     assert _say(ws, f"/l/{TOKEN}/{rid}/guide/leon", "And the towels?").json()["kind"] == "passed"
     assert fake.calls == []

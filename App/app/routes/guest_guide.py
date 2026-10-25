@@ -12,7 +12,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, Response
 
 from .. import access, auth, config, guest_guide, guest_guide_import, guest_handoff, guest_guide_merge, guide_photos, guide_token, payments, security, templating
-from .. import guide_facts, host_i18n
+from .. import db, guide_facts, host_i18n, leon
 from .admin_helpers import back, flash
 from .. import ai, guide_translate  # 0353: the host usage line
 
@@ -78,6 +78,8 @@ def guide_index(request: Request, apartment_id: int):
         progress=guest_guide.progress(apartment_id),
         next_id=_next_open(apartment_id, 0),
         quick_next=guide_facts.next_step(apartment_id),
+        leon_offer=ai.enabled_for_property(leon.FEATURE, apartment_id),  # 0376
+        leon_on=bool(apartment["leon_enabled"]),
         import_on=guest_guide_import.enabled(),
         import_left=guest_guide_import.imports_left(apartment_id),
         import_busy=guest_guide_import.in_progress(apartment_id),
@@ -100,6 +102,20 @@ async def guide_add(request: Request, apartment_id: int):
     except guest_guide.GuideError as exc:
         return back(_base(apartment_id), err=flash(request, exc.key))
     return back(f"{_base(apartment_id)}/{item_id}")
+
+
+@router.post("/apartments/{apartment_id}/guide/leon")
+async def guide_leon(request: Request, apartment_id: int):
+    """0376: the host's yes/no for Leon (AI) on this property. Off is always allowed."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    _home(request, apartment_id)
+    form = await request.form()
+    on = form.get("on") == "1" and ai.enabled_for_property(leon.FEATURE, apartment_id)
+    db.execute("UPDATE apartment SET leon_enabled = ? WHERE id = ?", (1 if on else 0, apartment_id))
+    key = "flash.guest_guide.leon_on" if on else "flash.guest_guide.leon_off"
+    return back(f"{_base(apartment_id)}#leon", msg=flash(request, key))
 
 
 @router.post("/apartments/{apartment_id}/guide/import")

@@ -322,6 +322,12 @@ SIGNUP_NOTIFY_EMAIL = os.environ.get("UBYHOST_SIGNUP_NOTIFY_EMAIL", "").strip() 
 AI_FEATURES = frozenset(
     part.strip().lower() for part in os.environ.get("UBYHOST_AI_FEATURES", "").split(",") if part.strip()
 )
+# 0376: while AI is tested on production, only these accounts get it (comma-separated
+# e-mails, any case). Empty means every account. Leon and guide translation follow the
+# property owner's e-mail, Havel the signed-in host's.
+AI_TEST_EMAILS = frozenset(
+    part.strip().lower() for part in os.environ.get("UBYHOST_AI_TEST_EMAILS", "").split(",") if part.strip()
+)
 ANTHROPIC_API_KEY = os.environ.get("UBYHOST_ANTHROPIC_API_KEY", "").strip()
 AI_MODEL = os.environ.get("UBYHOST_AI_MODEL", "claude-haiku-5-5")
 # 0334: the provider behind ai.call(). "anthropic" (default) or "mistral", the

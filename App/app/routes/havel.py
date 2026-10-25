@@ -93,9 +93,15 @@ def _thread(request: Request, exchanges: List[Dict[str, str]], last: Optional[Di
     return items
 
 
-def _state(uid: int) -> Optional[str]:
+def _on(request: Request) -> bool:
+    """0376: Havel is on for the signed-in host (UBYHOST_AI_TEST_EMAILS, when set)."""
+    user = auth.current_user(request)
+    return ai.enabled_for(havel.FEATURE, user["email"] if user else "")
+
+
+def _state(request: Request, uid: int) -> Optional[str]:
     """None, 'off' or a limit key suffix."""
-    if not ai.enabled(havel.FEATURE):
+    if not _on(request):
         return "off"
     return havel.limit_state(uid)
 
@@ -103,7 +109,7 @@ def _state(uid: int) -> Optional[str]:
 def _page_context(request: Request, uid: int, items: List[Dict[str, Any]], exchanges: List[Dict[str, str]],
                   *, topic: str = "", q: str = "", page: str = "", return_to: str = "/havel",
                   error: Optional[str] = None) -> Dict[str, Any]:
-    state = _state(uid)
+    state = _state(request, uid)
     payload, sig = havel.sign_history(uid, exchanges)
     nav = next((k for k, v in NAV_TO_PAGE.items() if v == page), "")
     ids = [p["id"] for p in _properties(request)]
@@ -204,7 +210,7 @@ async def havel_send(request: Request):
             forward = "conversation"
             reply_text = _t(request, "havel.limit_turns")
             exchanges = []
-        elif not ai.enabled(havel.FEATURE):
+        elif not _on(request):
             reply_text, support = _t(request, "havel.off"), True
         else:
             limit = havel.limit_state(uid)

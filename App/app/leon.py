@@ -29,6 +29,11 @@ from . import ai, db, guide_facts, host_i18n, i18n, rate_limit
 log = logging.getLogger(__name__)
 
 FEATURE = "leon"
+
+
+def switched_on(apartment) -> bool:
+    """0376: the host ticked yes for this property, Leon is on and the owner may use AI."""
+    return bool(apartment["leon_enabled"]) and ai.enabled_for_property(FEATURE, int(apartment["id"]))
 MAX_TOKENS = 500            # brief replies; 500 so three short Czech parts plus one card's steps fit (owner, 2026-10-24)
 MAX_MESSAGE_CHARS = 500
 MAX_REPLY_CHARS = 800       # one short line per answered part plus one card's steps
