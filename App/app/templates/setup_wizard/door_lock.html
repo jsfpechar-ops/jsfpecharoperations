@@ -1,10 +1,11 @@
 {% extends "setup_wizard/_layout.html" %}
 {% set cta = 'ui-btn ui-btn-primary' %}
 {% from "_components.html" import field_label, help_tip with context %}
+{% from "_smart_lock_share.html" import share_block with context %}
 {% block wizard_content %}
 <p class="setup-wizard-lede">{{ t('why.door_lock') }} {{ help_tip('wizard-lock-help', t('apartment.form.door_code.connect_first')) }}</p>
 {% if door_code %}{% include "_door_code_window.html" %}{% endif %}
-{% if door_code and door_code.account and door_code.locks %}
+{% if door_code and door_code.account and door_code.locks and door_code.free_lock_count %}
 <form method="post" action="/apartments/{{ apartment.id }}" class="setup-wizard-form" id="door-lock-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
   <input type="hidden" name="return_to" value="{{ wizard_next_return_to }}">
@@ -20,23 +21,39 @@
     {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
     <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
       <select id="{{ name }}" name="{{ name }}" required><option value="">{{ t('apartment.form.door_code.choose') }}</option>
-        {% for h in range(24) %}<option value="{{ h }}" {% if apartment[name]|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
+        {% for h in range(24) %}<option value="{{ h }}" {% if (lock_draft if lock_draft is defined else apartment)[name]|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
       </select></div>
     {% endfor %}
   </div>
   <input type="hidden" name="door_codes_fields" value="1">
   <div class="feature-switch-row">
     <label class="switch feature-switch" for="door_codes">
-      <input type="checkbox" role="switch" id="door_codes" name="door_codes" value="1" {% if door_code.enabled %}checked{% endif %}>
+      <input type="checkbox" role="switch" id="door_codes" name="door_codes" value="1" {% if (lock_draft.enabled if lock_draft is defined else door_code.enabled) %}checked{% endif %}>
       <span>{{ t('property_nav.door_switch') }}</span>
     </label>
   </div>
   <div class="field setup-wizard-lock-field"><label for="lock_id">{{ t('apartment.form.door_code.lock') }}</label>
     <select id="lock_id" name="lock_id"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
-      {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and lock.lock_id == door_code.default_lock_id) %}selected{% endif %}>{{ lock.alias }}</option>{% endfor %}
+      {% for lock in door_code.locks %}<option value="{{ lock.lock_id }}" {% if lock.used_by and lock.lock_id != door_code.lock_id %}disabled{% endif %} {% if lock.lock_id == door_code.lock_id or (not door_code.lock_id and lock.lock_id == door_code.default_lock_id) %}selected{% endif %}>{{ lock.alias }}{% if lock.used_by %} · {{ t('apartment.form.door_code.in_use', property=lock.used_by) }}{% endif %}</option>{% endfor %}
     </select>
   </div>
 </form>
+{% if lock_panel and lock_panel.smart_locks_enabled %}
+{#- 0391: a second lock is added here, without leaving the wizard. -#}
+<details class="ui-section setup-wizard-lock-panel" id="smart-locks-add-more">
+  <summary>{{ t('smart_locks.add_more') }}</summary>
+  {{ share_block('ttlock-receiver-more', 'add-more', lock_panel.receiver, lock_panel.return_to, false) }}
+</details>
+{% endif %}
+{% elif door_code and door_code.account and door_code.locks %}
+{#- 0391: every connected lock already serves another property: add this property's lock first. -#}
+<section class="ui-section setup-wizard-lock-panel" id="smart-locks-share">
+  <p class="setup-wizard-instruction">{{ t('wizard.door_lock.all_taken') }}</p>
+  <ul class="setup-wizard-taken-locks">{% for lock in door_code.locks %}<li>{{ lock.alias }} · {{ t('apartment.form.door_code.in_use', property=lock.used_by) }}</li>{% endfor %}</ul>
+  {% if lock_panel and lock_panel.smart_locks_enabled %}
+  {{ share_block('ttlock-receiver', 'share', lock_panel.receiver, lock_panel.return_to, true) }}
+  {% endif %}
+</section>
 {% elif door_code %}
 {#- 0234: one question, two answers. "No" is a real answer (not_needed), never a skip. -#}
 <h2 class="setup-wizard-section-title" id="lock-question">{{ t('wizard.door_lock.question') }}</h2>
@@ -75,7 +92,7 @@
   <input type="hidden" name="step" value="door_lock">
   <button class="ui-btn ui-btn-secondary" type="submit" name="action" value="none" formnovalidate>{{ t('wizard.door_lock.no') }}</button>
 </form>
-<button class="{{ cta }}" type="submit" form="door-lock-form">{{ t('wizard.save_continue') }}</button>
+{% if door_code.free_lock_count %}<button class="{{ cta }}" type="submit" form="door-lock-form">{{ t('wizard.save_continue') }}</button>{% endif %}
 {% elif not door_code %}
 <form method="post" action="/apartments/{{ apartment.id }}/setup" class="inline setup-wizard-skip">
   <input type="hidden" name="_csrf" value="{{ csrf_token }}">
