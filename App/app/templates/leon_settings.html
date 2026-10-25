@@ -1,0 +1,42 @@
+{#- 0396: the host's Leon (AI) page. Off until the host ticks the current terms. Data: app/leon.py. -#}
+{% extends "host_page.html" %}
+{% set body_kind = 'settings' %}
+{% block title %}{{ t('leon_page.title') }} · {{ apartment.internal_name }} · UbyHost{% endblock %}
+{% block page_title %}{{ t('leon_page.title') }}{% endblock %}
+{% block back_url %}/apartments/{{ apartment.id }}{% endblock %}
+{% block back_label %}{{ apartment.internal_name }}{% endblock %}
+{% block meta %}{{ t('leon_page.card.' ~ state) }}{% endblock %}
+{% block body %}
+{% if state == 'terms' %}{{ ui_banner('attention', t('leon_page.terms_updated')) }}
+{% elif state in ('on', 'waiting') %}{{ ui_banner('neutral', t('leon_page.on_banner') if live else t('leon_page.waiting_banner')) }}{% endif %}
+{% call ui_section(t('leon_page.what_title')) %}
+<p class="ui-sub">{{ t('leon_page.what') }}</p>
+{% endcall %}
+{% if state in ('off', 'terms') %}
+{% call ui_section(t('leon_page.warn_title')) %}
+<ul>{% for n in range(1, 7) %}<li>{{ t('leon_page.warn' ~ n) }}</li>{% endfor %}</ul>
+<form method="post" action="/apartments/{{ apartment.id }}/leon">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<input type="hidden" name="action" value="on">
+<div class="checkline"><input type="checkbox" id="leon-terms" name="terms" value="1" required>
+  <label for="leon-terms">{{ t('leon_page.accept') }} <a href="/guide#leon-terms">{{ t('leon_page.terms_link') }}</a></label></div>
+<div class="ui-form-actions">{{ ui_button(t('leon_page.switch_on'), 'primary', type='submit') }}</div>
+</form>
+{% if not live %}<p class="ui-sub">{{ t('leon_page.not_live') }}</p>{{ ui_button(t('leon_page.guide_link'), 'secondary', href='/apartments/' ~ apartment.id ~ '/guide') }}{% endif %}
+{% endcall %}
+{% else %}
+{% call ui_section(t('leon_page.accepted_title')) %}
+<dl class="kv">
+<dt>{{ t('leon_page.accepted_version') }}</dt><dd><a href="/guide#leon-terms">{{ apartment.leon_terms_version }}</a></dd>
+<dt>{{ t('leon_page.accepted_at') }}</dt><dd>{{ accepted_at }}</dd>
+<dt>{{ t('leon_page.accepted_by') }}</dt><dd>{{ accepted_by }}</dd>
+</dl>
+<div class="ui-form-actions">{{ ui_button(t('leon_page.edit_guide'), 'secondary', href='/apartments/' ~ apartment.id ~ '/guide') }}</div>
+<form method="post" action="/apartments/{{ apartment.id }}/leon" data-confirm data-confirm-message="{{ t('leon_page.off_confirm') }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<input type="hidden" name="action" value="off">
+<div class="ui-form-actions">{{ ui_button(t('leon_page.switch_off'), 'secondary', type='submit') }}</div>
+</form>
+{% endcall %}
+{% endif %}
+{% endblock %}

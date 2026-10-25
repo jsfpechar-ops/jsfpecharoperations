@@ -42,7 +42,7 @@
   <div class="host-property-card host-property-card-static"{{ hc_attrs(h_link) }}>{{ icon('external-link', 20) }}<div><strong>{{ hc_dot(h_link) }}<a class="host-property-card-link" href="{{ base_url }}?view=settings&amp;section=guests#communication">{{ t('nav.guest_links') }}</a></strong>
     {{ hc_small(h_link, t('wizard.guest_link.ready')) }}</div>
     <div class="actions host-property-card-actions">{{ copy_inline('overview-guest-url', permalink, t('wizard.guest_link.copy_link')) }}</div>
-    {{ open_pill }}</div>
+    <a class="host-property-card-open" href="{{ base_url }}?view=settings&amp;section=guests#communication" tabindex="-1" aria-hidden="true"><span class="host-property-card-open-text">{{ t('common.open') }}</span></a></div>
   <a class="host-property-card" href="{{ hc_href(h_police, base_url ~ '?view=settings&section=reporting#ubyport') }}"{{ hc_attrs(h_police) }}>{{ icon('send', 20) }}<div><strong>{{ hc_dot(h_police) }}{{ t('host.reporting') }}</strong>
     {{ hc_small(h_police, t('property_nav.report_ready') if not report_missing else tp('property_nav.report_missing', report_missing)) }}</div>{{ open_pill }}</a>
   <a class="host-property-card" href="{{ hc_href(h_business, ('/entities?edit=' ~ apartment.legal_entity_id ~ '&next=' ~ (base_url | urlencode)) if operator else (base_url ~ '?view=settings&section=property#operator-picker')) }}"{{ hc_attrs(h_business) }}>{{ icon('receipt', 20) }}<div><strong>{{ hc_dot(h_business) }}{{ t('host.business') }}</strong>
@@ -54,6 +54,10 @@
   {% if door_code %}
   <a class="host-property-card" href="{{ base_url }}?view=settings&amp;section=lock#door-code"{{ hc_attrs(h_door) }}>{{ icon('key-round', 20) }}<div><strong>{{ hc_dot(h_door) }}{{ t('host.door_code') }}</strong>
     <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div>{{ open_pill }}</a>
+  {% endif %}
+  {% if leon_card %}
+  <a class="host-property-card" href="{{ base_url }}/leon" data-leon-card="{{ leon_card }}">{{ icon('message-circle-question', 20) }}<div><strong>{{ t('leon_page.title') }}</strong>
+    <small>{{ t('leon_page.card.' ~ leon_card) }}</small></div>{{ open_pill }}</a>
   {% endif %}
 </div>
 

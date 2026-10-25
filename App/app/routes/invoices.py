@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from functools import lru_cache
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse, Response
@@ -31,6 +31,7 @@ from .. import (
     security,
     stay_fee,
     validation,
+    vat_register,
 )
 
 VAT_STATUSES = ("non_payer", "identified", "payer")
@@ -481,33 +482,75 @@ def lookup_invoice_details(request: Request, form, entity: Dict[str, Any]) -> Di
 
     The IČO here is lookup-only (0075 policy, kept by 0076): it fills a blank
     registry entry and proposes VAT payer, but is never stored from this form.
+    0394: the MFČR VAT register adds the published bank account and VAT status.
     """
     owner_id = access.owner_id(request)
     lang = _lang(request)
     row = _settings_entity_from_form(entity, form)
-    ares_note = None
-    ares_vat_found = False
+    bank_parts = _typed_bank_parts(form, entity)
+    state: Dict[str, Any] = {
+        "entity": row,
+        "bank_parts": bank_parts,
+        "bic_from_bank": False,
+        "ares_error": None,
+        "ares_note": None,
+        "ares_vat_found": False,
+        "ares_source": "ares.source_note",
+        "register_accounts": [],
+        "vat_needs_dic": False,
+        "vat_unreliable": False,
+    }
     ico = (_form_str(form, "ico") or row.get("ico") or "").strip()
     row["ico"] = ico
-    data, ares_error = register_lookup(owner_id, lang, ico)
-    if data:
-        filled = ares.merge_blank(row, data, _SETTINGS_ARES_FIELDS)
-        if data.get("vat_payer"):
-            ares_vat_found = True
-            current = _form_str(form, "vat_status") or entity.get("vat_status") or "non_payer"
-            if current == "non_payer":
-                row["vat_status"] = "payer"
-                if "vat_status" not in filled:
-                    filled.append("vat_status")
-        ares_note = register_filled_note(lang, filled)
-    return {
-        "entity": row,
-        "bank_parts": _typed_bank_parts(form, entity),
-        "bic_from_bank": False,
-        "ares_error": ares_error,
-        "ares_note": ares_note,
-        "ares_vat_found": ares_vat_found,
-    }
+    data, state["ares_error"] = register_lookup(owner_id, lang, ico)
+    if not data:
+        return state
+    filled = ares.merge_blank(row, data, _SETTINGS_ARES_FIELDS)
+    current = _form_str(form, "vat_status") or entity.get("vat_status") or "non_payer"
+    dic = data.get("dic") or entity.get("dic") or ""
+    vat = vat_register.lookup(dic) if vat_register.dic_digits(dic) else None
+    vat_status = vat["vat_status"] if vat else ("payer" if data.get("vat_payer") else "")
+    state["ares_vat_found"] = vat_status == "payer"
+    if vat_status and current == "non_payer":
+        row["vat_status"] = vat_status
+        filled.append("vat_status")
+    if vat:
+        state["ares_source"] = "vat_register.source_note"
+        state["vat_unreliable"] = vat["unreliable"]
+        filled += _fill_register_account(form, row, state, vat["accounts"])
+    elif not vat_register.dic_digits(dic):
+        state["vat_needs_dic"] = not payments.compose_czech_account(
+            bank_parts["prefix"], bank_parts["number"], bank_parts["bank"]
+        )
+    state["ares_note"] = register_filled_note(lang, filled)
+    return state
+
+
+def _fill_register_account(form, row: Dict[str, Any], state: Dict[str, Any], accounts: List[str]) -> List[str]:
+    """0394: put a published account into empty account fields, or the one the host picked.
+
+    A typed account is never replaced; the other published accounts become
+    "Use …" buttons. Only accounts the register lists are accepted.
+    """
+    filled: List[str] = []
+    parts = state["bank_parts"]
+    typed = payments.compose_czech_account(parts["prefix"], parts["number"], parts["bank"])
+    picked = _form_str(form, "use_register_account")
+    choice = picked if picked in accounts else ("" if typed else (accounts[0] if accounts else ""))
+    if choice and choice != typed:
+        new_parts = payments.czech_account_parts(choice)
+        new_parts["iban"] = ""
+        state["bank_parts"] = new_parts
+        typed = choice
+        filled.append("bank_account")
+        if not str(row.get("bic") or "").strip():
+            bic = payments.bic_for_account(choice)
+            if bic:
+                row["bic"] = bic
+                state["bic_from_bank"] = True
+                filled.append("bic")
+    state["register_accounts"] = [account for account in accounts if account != typed]
+    return filled
 
 
 def _typed_bank_parts(form, entity: Dict[str, Any]) -> Dict[str, str]:

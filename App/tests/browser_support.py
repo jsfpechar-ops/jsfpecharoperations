@@ -9,7 +9,7 @@ def chromium_launch_kwargs() -> dict[str, str]:
 
 
 def settle_motion(page) -> None:
-    """0394: wait for open/close motion to finish before measuring geometry."""
+    """0401: wait for open/close motion to finish before measuring geometry."""
     page.wait_for_function(
         "() => document.getAnimations().every(a => a.playState !== 'running'"
         " || a.effect.getTiming().iterations === Infinity)"
