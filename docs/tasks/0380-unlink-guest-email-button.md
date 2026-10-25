@@ -143,3 +143,20 @@ As in TEMPLATE §8. A test failing twice: stop and report; do not change CSS to 
 ## 9. Report
 
 `docs/tasks/0380-report.md` (200 tokens), `Status: review`, with the test tail. One commit `0380: visible Unlink this e-mail button with help` including the screenshots. Do not push.
+
+## 10. Addendum A (orchestrator review, 2026-10-25)
+
+At 390 px the "?" wraps onto its own line under the full-width button, because the 0199 phone rule in `App/app/static/host-design0123.css` gives the first child of `.stay-command-actions` `flex:1 1 100%`. Keep the "?" beside the button.
+
+Files: `App/app/static/host-design0123.css`, `App/app/templates/base.html` (its key only), `App/tests/static_versions.json` (`--write`), `App/tests/test_0380_unlink_email_browser.py`, `docs/tasks/screenshots-0380/` (re-shot), `docs/tasks/0380-report.md`.
+
+1. In host-design0123.css, directly after the line that starts `  body.host-workspace .host-stay-detail .stay-command-actions > :first-child:not(.row-menu) { flex:1 1 100%; }`, insert (same indent, inside the same media query):
+```
+  /* 0380: the guest-form line keeps its "?" beside the Unlink button. */
+  body.host-workspace .host-stay-detail .stay-claim-line .stay-command-actions { flex-wrap:nowrap; }
+  body.host-workspace .host-stay-detail .stay-claim-line .stay-command-actions > form { flex:1 1 auto; }
+  body.host-workspace .host-stay-detail .stay-claim-line .stay-command-actions > .help-tip { flex:0 0 auto; }
+```
+2. base.html: change `host-design0123.css?v=20261022-0253b` to `host-design0123.css?v=20261025-0380`. From `App/`: `.venv/bin/python tests/test_static_versions.py --write 2>&1 | tail -5`.
+3. In test A of `test_0380_unlink_email_browser.py`, add: the `.help-tip-btn` box's top is within 4 px of the button box's top-to-bottom range (vertical centres differ by less than the button height / 2), i.e. they sit on one row, at every width.
+4. Rerun §6 with `tests/test_static_versions.py` added. Amend into the 0380 commit. Do not push.

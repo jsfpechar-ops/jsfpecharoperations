@@ -164,13 +164,6 @@
             <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.claim.reopen') }}</button>
           </form>
         {% endif %}
-        {% if stay_claim.state != 'unclaimed' %}
-          <form method="post" action="/reservations/{{ reservation.id }}/release-claim" class="row-menu-form"
-                data-confirm data-confirm-message="{{ t('stay.claim.release_confirm') }}">
-            <input type="hidden" name="_csrf" value="{{ csrf_token }}">
-            <button class="row-menu-item" type="submit" role="menuitem">{{ t('stay.claim.release') }}</button>
-          </form>
-        {% endif %}
       {{ row_menu_end() }}
     </div>
   </div>
@@ -184,7 +177,7 @@
 </div>
 
 {% if stay_claim and (stay_claim.state != 'unclaimed' or stay_claim.guest_access_locked_at) %}
-<div class="stay-claim-line">
+<div class="stay-claim-line" data-stay-claim>
   <div class="stay-claim-label">{{ t('stay.claim.title') }}</div>
   <p>
     {% if stay_claim.guest_access_locked_at %}
@@ -197,6 +190,16 @@
       {{ t('stay.claim.unclaimed') }}
     {% endif %}
   </p>
+  {% if stay_claim.state != 'unclaimed' %}
+  <div class="stay-command-actions">
+    <form method="post" action="/reservations/{{ reservation.id }}/release-claim" class="inline"
+          data-confirm data-confirm-message="{{ t('stay.claim.release_confirm') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" data-release-claim>{{ t('stay.claim.release') }}</button>
+    </form>
+    {{ help_tip('release-claim-help', t('stay.claim.release_help')) }}
+  </div>
+  {% endif %}
 </div>
 {% endif %}
 {% if guest_rows or progress.not_registered %}
