@@ -92,11 +92,10 @@ def test_computer_panel_topics_handoff_and_answer(origin):
         dialog.locator("[data-havel-ask]").click()
         assert page.evaluate("document.activeElement.id") == "havel-message"
         assert dialog.locator("[data-havel-topic]").input_value() == "stays"
-        hosts_before = dialog.locator(".havel-msg-host").count()
         page.keyboard.type("And if the guest never arrives?")
         page.keyboard.press("Enter")
         dialog.locator(".havel-msg-havel:not([data-havel-writing])").last.wait_for()
-        assert dialog.locator(".havel-msg-host").count() == hosts_before + 1
+        assert dialog.locator(".havel-msg-host").count() == 1
         assert dialog.locator(".havel-bubble ol li").count() == 2
         assert page.evaluate("document.activeElement.className").startswith("havel-msg havel-msg-havel")
         assert dialog.locator("[data-havel-topics]").count() == 0
@@ -125,9 +124,8 @@ def test_phone_launcher_and_sheet(origin):
         dialog = page.locator("#havel-sheet[open]")
         dialog.wait_for()
         sheet = dialog.locator(".ui-sheet").bounding_box()
-        assert sheet["width"] == 390 and sheet["height"] <= 900 * 0.7 + 1
-        assert sheet["y"] + sheet["height"] <= tabbar["y"] + 1
-        assert page.evaluate("([x, y]) => !!document.elementFromPoint(x, y).closest('.ui-tabbar')", [tabbar["x"] + tabbar["width"] / 2, tabbar["y"] + tabbar["height"] / 2])
+        assert sheet["width"] == 390 and sheet["height"] >= 900 - 48 - 2
+        assert sheet["y"] <= 48 + 1
         assert not fab.is_visible()
         assert dialog.locator("[data-havel-device]").input_value() == "phone"
         assert page.evaluate("document.documentElement.scrollWidth") <= 390

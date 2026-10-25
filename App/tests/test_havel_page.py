@@ -72,7 +72,7 @@ def test_fragment_header_returns_only_the_thread(host):
 def test_off_limit_and_failure_show_the_fixed_sentences(host, monkeypatch):
     monkeypatch.setattr(config, "AI_FEATURES", frozenset())
     page = html.unescape(_post(host, {"message": "How do I add a stay?"}).text)
-    assert "Havel is unavailable right now" in page
+    assert "Chat is paused right now" in page
     monkeypatch.setattr(config, "AI_FEATURES", frozenset({"havel"}))
     ai.set_client_for_tests(FakeClient([reply(text="{broken")]))
     page = html.unescape(_post(host, {"message": "How do I add a stay?"}).text)
@@ -110,7 +110,7 @@ def test_next_requests_render_as_buttons_only_on_the_newest_reply(host):
     page = _post(host, {"message": "Guest link and a stay Friday to Sunday for 2 and sync"}).text
     assert page.count("data-havel-next") == 1 and "You can ask next:" in page
     assert 'name="message" value="Sync my calendars"' in page
-    assert page.count('class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" name="message"') == 2
+    assert page.count('class="ui-chip havel-chip" type="submit" name="message"') == 2
     history = re.search(r'data-havel-next.*?name="history" value="([^"]*)"', page, re.S).group(1)
     sig = re.search(r'data-havel-next.*?name="history_sig" value="([^"]*)"', page, re.S).group(1)
     again = _post(host, {"message": "Sync my calendars", "history": html.unescape(history), "history_sig": sig}).text

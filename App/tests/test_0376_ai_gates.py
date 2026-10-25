@@ -141,7 +141,7 @@ def test_havel_follows_the_test_list(ws, monkeypatch):
     fake = FakeClient([reply(ANSWER)])
     ai.set_client_for_tests(fake)
     monkeypatch.setattr(config, "AI_TEST_EMAILS", frozenset({"josef@example.test"}))
-    assert "Havel is unavailable right now" in _havel(ws["host"], "How do I add a stay?")
+    assert "Chat is paused right now" in _havel(ws["host"], "How do I add a stay?")
     assert fake.calls == []
     monkeypatch.setattr(config, "AI_TEST_EMAILS", frozenset({"gate-owner@example.test"}))
     assert "Tap Add stay." in _havel(ws["host"], "How do I add a stay?")
