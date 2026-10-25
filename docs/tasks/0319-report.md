@@ -1,6 +1,6 @@
 # 0319 report (checkpoint)
 
-Status: stopped at step 9 (checkpoint at the 25-tool-call cap). Steps 1 to 9 written; the remaining test rows are not run.
+Status: review (verification run done; see 0319-report.md)
 
 Base: origin/main is ee05eb7 (brief said 92646d3). Branch HEAD before this commit: 56dd663.
 
@@ -32,10 +32,12 @@ Base: origin/main is ee05eb7 (brief said 92646d3). Branch HEAD before this commi
 - Chromium path is chromium-1243 (brief said 1194).
 - Commit trailer: the brief asks for Co-Authored-By Claude Opus 5.5; the session attribution reminder asks for Haiku 5.5. The brief's lines are used.
 
-## Left to do (step 9 onward)
-- Run: test_mail*.py, test_ses_mail.py, test_*_mail.py, test_notification_copy.py, test_signup.py (mail row, `-x`).
-- Run: test_design_guardrails_browser.py -k havel and test_host_geometry.py (0 skipped); test_a11y_guard_browser.py; full test_havel*.py, test_ai*.py.
-- Run: `python3 scripts/design_lint.py` and `python3 scripts/context_lint.py` from the repo root.
-- Check `_warn_budget` in the Mistral path against the brief (added there, not in the brief).
-- Revert any PNG changes in other screenshots-* folders (git checkout) before committing.
-- Set brief Status to review when the above passes.
+## Verification (run from App/ unless stated)
+- Fix: `tests/test_claim_mail.py::test_the_registered_mail_kinds_are_the_ones_the_app_can_send` pins the exact `mail.KINDS` set. The two new kinds (`havel_support`, `ai_budget`) were added to the pinned set with a comment. Cause: this change; the fix is the two lines in the test.
+- Mail, Havel, AI set (23 files: test_mail*.py, test_ses_mail.py, test_*_mail.py, test_notification_copy.py, test_signup.py, test_havel*.py, test_ai*.py): 361 passed, 0 failed, 0 skipped (the one failure above is fixed; 360 passed before the fix).
+- Browser run with UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome and UBYHOST_REQUIRE_BROWSER=1: test_design_guardrails_browser.py, test_a11y_guard_browser.py, test_host_geometry.py, plus test_claim_mail.py (for the fix): 65 passed, 0 skipped.
+- Lint from repo root: `App/.venv/bin/python scripts/design_lint.py` prints "design lint: OK". `App/.venv/bin/python scripts/context_lint.py` prints "context lint: OK" (its WARN lines name existing open briefs and were not changed by this task).
+- test_host_i18n.py was not in the run list. Its known unrelated failures ("no such table: apartment") were not touched.
+- Budget hook: `_warn_budget(feature)` follows `_record(...)` in both `call()` (ai.py line 228) and the Mistral path (line 305).
+- PNG reverts: screenshots-0314 (3 files) and screenshots-0324 (3 files) were reverted with `git checkout --`. Only docs/tasks/screenshots-0319 changes remain.
+- App/.venv is untracked and was not committed.
