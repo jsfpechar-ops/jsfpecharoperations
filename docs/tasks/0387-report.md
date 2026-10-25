@@ -42,3 +42,9 @@ None.
 
 1. Review the screenshots, then open the PR and merge with `scripts/merge-pr-on-green.sh`.
 2. Deploy as usual.
+
+## Addendum A
+
+- The guest stay link is gone from the receipt; the only link is a host-only "open this stay in UbyHost" link (A1 to A3), and the address row is dropped (A6). Mail test set: 203 passed.
+- Previews re-rendered with `host_url` and no address (A5), with `UBYHOST_GUEST_LANGS=en,cs,uk`; the three PNGs are overwritten.
+- Open question: the footer still says "registered with this address" in all three languages (existing copy, not in the brief, not changed).
