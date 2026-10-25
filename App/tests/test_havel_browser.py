@@ -23,6 +23,7 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.test_submission_retry_cap import host as host  # noqa: F401
 
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0373"
+SHOTS_0374 = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0374"
 ANSWER = {"kind": "answer", "reply": "Open Stays.\n1. Tap Add stay.\n2. Pick the dates.", "sources": ["guide.stays.body"],
           "links": [{"page": "add_stay", "property_id": None}], "action": None, "support_summary": None}
 
@@ -199,4 +200,71 @@ def test_czech_greeting_on_the_phone(origin):
         dialog.wait_for()
         assert "Dobrý den, jsem Havel" in dialog.locator("[data-havel-greeting]").inner_text()
         page.screenshot(path=str(SHOTS / "panel-open-cs-390.png"))
+        browser.close()
+
+
+# 0374: the chat follows the host across pages (sessionStorage, this tab only).
+@pytest.mark.parametrize("width", [1280, 390])
+def test_chat_follows_the_host_across_pages(origin, width):
+    SHOTS_0374.mkdir(parents=True, exist_ok=True)
+    with sync_api.sync_playwright() as pw:
+        browser, context = _context(pw, origin, width)
+        page = context.new_page()
+        page.goto(origin[0] + "/")
+        page.locator("[data-havel-fab]").click()
+        dialog = page.locator("#havel-sheet[open]")
+        dialog.wait_for()
+        composer = dialog.locator("#havel-message")
+        composer.wait_for()
+        composer.fill("How do I add a stay?")
+        composer.press("Enter")
+        dialog.locator(".havel-msg-havel:not([data-havel-writing])").last.wait_for()
+        history_before = dialog.locator("[data-havel-history]").input_value()
+        # The panel is still open on the next page, with the same chat.
+        page.goto(origin[0] + "/guide")
+        dialog = page.locator("#havel-sheet[open]")
+        dialog.wait_for()
+        sync_api.expect(dialog.locator(".havel-msg-host", has_text="How do I add a stay?")).to_have_count(1)
+        sync_api.expect(dialog.locator("[data-havel-history]")).to_have_value(history_before)
+        page.screenshot(path=str(SHOTS_0374 / f"restored-{width}.png"))
+        # Closing only minimises it: the next page starts closed, and the chat is there on opening.
+        dialog.locator("[data-sheet-close]").first.click()
+        sync_api.expect(page.locator("#havel-sheet[open]")).to_have_count(0)
+        page.goto(origin[0] + "/")
+        sync_api.expect(page.locator("[data-havel-fab]")).to_be_visible()
+        assert page.locator("#havel-sheet[open]").count() == 0
+        page.locator("[data-havel-fab]").click()
+        dialog = page.locator("#havel-sheet[open]")
+        dialog.wait_for()
+        sync_api.expect(dialog.locator(".havel-msg-host", has_text="How do I add a stay?")).to_have_count(1)
+        browser.close()
+
+
+def test_new_chat_and_other_user_clear_it(origin):
+    with sync_api.sync_playwright() as pw:
+        browser, context = _context(pw, origin, 390)
+        page = context.new_page()
+        page.goto(origin[0] + "/")
+        page.locator("[data-havel-fab]").click()
+        dialog = page.locator("#havel-sheet[open]")
+        dialog.wait_for()
+        composer = dialog.locator("#havel-message")
+        composer.wait_for()
+        composer.fill("How do I add a stay?")
+        composer.press("Enter")
+        dialog.locator(".havel-msg-havel:not([data-havel-writing])").last.wait_for()
+        dialog.locator("button[name=reset]").click()
+        sync_api.expect(dialog.locator(".havel-msg-host")).to_have_count(0)
+        sync_api.expect(dialog.locator("[data-havel-greeting]")).to_have_count(1)
+        page.goto(origin[0] + "/guide")
+        dialog = page.locator("#havel-sheet[open]")
+        dialog.wait_for()
+        sync_api.expect(dialog.locator(".havel-msg-host")).to_have_count(0)
+        sync_api.expect(dialog.locator("[data-havel-greeting]")).to_have_count(1)
+        # A stored chat that belongs to another user is ignored and removed.
+        page.evaluate("""() => sessionStorage.setItem('ubyhost.havel.chat', JSON.stringify({owner: '999999', saved: Date.now(), html: '<div class="havel-msg havel-msg-host"><div class="havel-bubble"><p>Other user chat</p></div></div>', history: '', sig: '', topic: '', q: '', open: true, unread: false}))""")
+        page.reload()
+        assert page.locator(".havel-msg-host", has_text="Other user chat").count() == 0
+        assert page.locator("#havel-sheet[open]").count() == 0
+        assert page.evaluate("() => sessionStorage.getItem('ubyhost.havel.chat')") is None
         browser.close()

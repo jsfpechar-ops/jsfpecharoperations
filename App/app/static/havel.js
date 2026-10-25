@@ -82,11 +82,16 @@
     if (have && have.value && have.value !== s.history) { save(); return; }
     var t = thread();
     if (!t) return;
-    t.innerHTML = s.html;
-    if (panel) ensureForm(function () { fill(s); }); else fill(s);
-    if (!panel || typeof panel.show !== "function") return;
-    if (s.open) { panel.show(); hideFab(); scrollDown(); }
-    else if (s.unread) { var fb = fab(); if (fb) fb.setAttribute("data-unread", ""); }
+    // The composer fragment can replace the thread (swap with items), so the stored chat is
+    // put back after the composer has loaded, never before.
+    var apply = function () {
+      t.innerHTML = s.html;
+      fill(s);
+      if (!panel || typeof panel.show !== "function") return;
+      if (s.open) { panel.show(); hideFab(); scrollDown(); }
+      else if (s.unread) { var fb = fab(); if (fb) fb.setAttribute("data-unread", ""); }
+    };
+    if (panel) ensureForm(apply); else apply();
   }
   function onOpen() {
     var fb = fab();
