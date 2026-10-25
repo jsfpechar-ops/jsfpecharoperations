@@ -220,7 +220,7 @@ def fill(apartment_id: int, lang: str, cards: List[Dict[str, Any]]) -> None:
 
 def can_fill(apartment_id: int) -> bool:
     """Switched on and inside the budget, so a background fill is worth starting."""
-    return ai.enabled(FEATURE) and ai.budget_state(FEATURE, str(apartment_id)) == "ok"
+    return ai.enabled_for_property(FEATURE, apartment_id) and ai.budget_state(FEATURE, str(apartment_id)) == "ok"
 
 
 def usage(apartment_id: int, month_start: str) -> Dict[str, Any]:

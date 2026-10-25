@@ -36,6 +36,7 @@ def ws(monkeypatch, tmp_path):
     home = db.insert("apartment", {
         "owner_user_id": owner, "legal_entity_id": entity, "internal_name": "Chat flat", "active": 1,
         "created_at": now, "automation_mode": "manual", "permalink_token": TOKEN, "permalink_window_days": 14,
+        "leon_enabled": 1,  # 0376: the host said yes
     })
     guest_guide.ensure_defaults(db.query_one("SELECT * FROM apartment WHERE id = ?", (home,)))
     yield {"home": home, "client": TestClient(app)}

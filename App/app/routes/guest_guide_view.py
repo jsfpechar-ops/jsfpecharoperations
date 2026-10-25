@@ -117,8 +117,8 @@ def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level
             "level": level,
             "groups": _groups(cards, lang),
             "back_url": back_url,
-            # 0352: the chat only while the guide is live and Leon is switched on.
-            "leon_url": leon_url if live and ai.enabled("leon") else "",
+            # 0352: the chat only while the guide is live and Leon is switched on; 0376: and the host said yes.
+            "leon_url": leon_url if live and ai.enabled(leon.FEATURE) and leon.switched_on(apartment) else "",
             "leon_host": leon.host_first_name((context.get("host") or {}).get("name", "")),
             "translating": fill,
         }

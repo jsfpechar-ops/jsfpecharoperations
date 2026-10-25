@@ -512,7 +512,8 @@ def guide_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    return render(request, "guide.html", {"demo_available": config.UBYPORT_ENV == "mock", "havel_on": ai.enabled(havel.FEATURE)})
+    user = auth.current_user(request)
+    return render(request, "guide.html", {"demo_available": config.UBYPORT_ENV == "mock", "havel_on": ai.enabled_for(havel.FEATURE, user["email"] if user else "")})
 
 
 # --- guest communication ------------------------------------------------

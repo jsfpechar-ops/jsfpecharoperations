@@ -185,6 +185,13 @@ VALIDATION: Dict[str, str] = {
 VALIDATION_PATTERNS: Tuple[str, ...] = ("“{code}” không phải mã quốc gia ba chữ cái hợp lệ (ví dụ GBR, USA, DEU).", "Tối đa {limit} ký tự.")
 
 STRINGS: Dict[str, str] = {
+    "guest_guide.leon.title": "Leon (AI) cho khách của bạn",
+    "guest_guide.leon.help": "Leon trả lời câu hỏi của khách dựa trên các thẻ đã đánh dấu Xong và chuyển cho bạn những gì anh ấy không biết. Leon sẽ tắt cho đến khi bạn bật.",
+    "guest_guide.leon.toggle": "Cho phép Leon trả lời khách của tôi",
+    "guest_guide.leon.save": "Lưu",
+    "guest_guide.leon.waiting": "Leon sẽ bắt đầu khi hướng dẫn được công khai.",
+    "flash.guest_guide.leon_on": "Leon (AI) đã bật cho chỗ nghỉ này.",
+    "flash.guest_guide.leon_off": "Leon (AI) đã tắt cho chỗ nghỉ này.",
     "lang.en": "EN",
     "lang.cs": "CS",
     "lang.vi": "VI",

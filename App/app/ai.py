@@ -58,6 +58,30 @@ def enabled(feature: str) -> bool:
     return bool(feature in config.AI_FEATURES and key)
 
 
+def on_test_list(email: Optional[str]) -> bool:
+    """0376: while UBYHOST_AI_TEST_EMAILS is set, only an account on it may use AI; empty lets everyone."""
+    return not config.AI_TEST_EMAILS or (email or "").strip().lower() in config.AI_TEST_EMAILS
+
+
+def owner_on_test_list(apartment_id: int) -> bool:
+    """``on_test_list`` for the property owner's e-mail."""
+    row = db.query_one(
+        "SELECT u.email FROM apartment a JOIN user_account u ON u.id = a.owner_user_id WHERE a.id = ?",
+        (apartment_id,),
+    )
+    return on_test_list(row["email"] if row else "")
+
+
+def enabled_for(feature: str, email: Optional[str]) -> bool:
+    """``enabled`` and the account is on the test list (0376)."""
+    return enabled(feature) and on_test_list(email)
+
+
+def enabled_for_property(feature: str, apartment_id: int) -> bool:
+    """``enabled`` and the property owner is on the test list (0376)."""
+    return enabled(feature) and owner_on_test_list(apartment_id)
+
+
 def set_client_for_tests(client: Any) -> None:
     """Tests pass a fake with ``messages.create(**kwargs)``; ``None`` restores the real one."""
     global _client_override
