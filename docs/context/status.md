@@ -10,6 +10,7 @@ Updated: 2026-10-25.
 ## Now
 
 - 0391 Havel topics: #513.
+- 0394 invoice bank account from MFČR VAT register: #518. **Owner:** review, merge, deploy.
 - Guide + Leon 0341-0355: owner merges #465-#468, evals.
 - 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
