@@ -24,7 +24,7 @@ from tests.browser_support import chromium_launch_kwargs
 from tests.test_submission_retry_cap import host as host  # noqa: F401
 
 SHOTS = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-guide"
-SECTIONS = ("finding", "glossary", "cleaning", "stays", "setup", "stay_fee", "invoices", "overview", "settings")
+SECTIONS = ("finding", "glossary", "cleaning", "guest_links", "business", "stays", "setup", "stay_fee", "invoices", "overview", "settings", "archive", "privacy_requests")
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def origin(host):
     thread.join(timeout=5)
 
 
-@pytest.mark.parametrize("lang", ["en", "cs"])
+@pytest.mark.parametrize("lang", ["en", "cs", "vi"])
 def test_the_guide_fits_a_phone_and_a_computer(origin, lang):
     SHOTS.mkdir(parents=True, exist_ok=True)
     with sync_api.sync_playwright() as pw:
@@ -62,9 +62,10 @@ def test_the_guide_fits_a_phone_and_a_computer(origin, lang):
             page.goto(f"{origin[0]}/guide?lang={lang}")
             page.locator("#finding").wait_for()
             assert page.evaluate("document.documentElement.scrollWidth") <= width, (lang, width)
-            if width == 390 and lang == "en":
+            if width == 390 and lang in ("en", "vi"):
+                suffix = "" if lang == "en" else "-vi"
                 for section in SECTIONS:
                     if page.locator(f"#{section}").count():
-                        page.locator(f"#{section}").screenshot(path=str(SHOTS / f"guide-{section}-390.png"))
+                        page.locator(f"#{section}").screenshot(path=str(SHOTS / f"guide-{section}-390{suffix}.png"))
             context.close()
         browser.close()

@@ -72,8 +72,12 @@ def test_phone_dashboard_compact(calendar_workspace, calendar_origin):
                 if not pin_lines.first.is_visible():
                     page.locator(".needs-you-more > summary").first.click()
                 shot(page, "phone-390-alert")
-                pin_lines.first.locator("[data-notification-dismiss] button").click()
-                page.wait_for_timeout(500)
+                # 0371: wait for the async dismiss POST and for the line to leave, not a fixed sleep.
+                with page.expect_response(lambda response: response.request.method == "POST" and
+                                          response.url.split("?")[0].endswith("/dismiss")) as dismissed:
+                    pin_lines.first.locator("[data-notification-dismiss] button").click()
+                assert dismissed.value.status == 204
+                pin_lines.first.wait_for(state="detached")
                 page.reload()
                 assert page.locator("[data-notification]", has_text="PIN").count() == 0
             else:

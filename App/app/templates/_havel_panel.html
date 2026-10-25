@@ -9,6 +9,7 @@
 {% set havel_return_to = request.url.path %}
 {% set havel_topics = havel_topics_for(nav | default('')) %}
 {% if nav | default('') != 'havel' %}<dialog id="havel-sheet" class="ui-dialog havel-dialog" aria-labelledby="havel-title" data-havel-panel
+        data-src="/havel?page={{ havel_page | urlencode }}&amp;return_to={{ havel_return_to | urlencode }}"
         data-writing="{{ t('havel.writing') }}" data-error="{{ t('havel.error') }}" data-retry="{{ t('havel.retry') }}" data-name="{{ t('havel.name') }}">
   <div class="ui-sheet">
     <span class="ui-sheet-handle" aria-hidden="true"></span>
@@ -21,6 +22,7 @@
     <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
       {% include "_havel_topics.html" %}
     </div>
-    <div data-havel-form-wrap>{% include "_havel_form.html" %}</div>
+    {#- The composer loads on first open (havel.js), so a host page keeps its one primary button. -#}
+    <div data-havel-form-wrap></div>
   </div>
 </dialog>{% endif %}
