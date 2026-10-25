@@ -26,10 +26,12 @@ TOPICS = (
     "emergency",
 )
 
-# Built-in cards: kind -> topic. Order within a topic is the order here.
+# Built-in cards: kind -> topic, in guest order (0354: few, rich cards; each
+# prompt is a checklist of what guests ask). Never rename a kind: rows use it.
 KINDS: Dict[str, str] = {
     "checkin": "arrival",
     "keys": "arrival",
+    "getting_here": "arrival",
     "parking": "arrival",
     "garage": "arrival",
     "wifi": "wifi",
@@ -40,27 +42,40 @@ KINDS: Dict[str, str] = {
     "kitchen_appliances": "kitchen",
     "dishwasher": "kitchen",
     "coffee_machine": "kitchen",
+    "bedrooms": "rooms",
     "sofa_bed": "rooms",
     "balcony": "rooms",
+    "bathroom": "bathroom",
     "washing_machine": "bathroom",
     "house_rules": "rules",
     "trash": "trash",
     "checkout": "checkout",
     "area_tips": "area",
     "emergency": "emergency",
+    "something_wrong": "emergency",
 }
 
-# Every property gets these cards; the others come from imports or the host.
+# Every property gets these cards. The other built-in kinds are narrower cards
+# kept for data that already uses them: they appear only where an import or
+# earlier data created them.
 DEFAULT_KINDS = (
     "checkin",
     "keys",
+    "getting_here",
+    "parking",
     "wifi",
     "heating",
     "hot_water",
+    "kitchen_appliances",
+    "bedrooms",
+    "bathroom",
+    "washing_machine",
     "house_rules",
     "trash",
     "checkout",
+    "area_tips",
     "emergency",
+    "something_wrong",
 )
 
 # The guide goes live for guests once these five are done (or skipped).
@@ -118,8 +133,10 @@ def ensure_defaults(apartment) -> None:
     ``checkin_info`` / ``checkout_info`` were host text never shown anywhere,
     so they become drafts (``'check'``) the host confirms, not live items.
     """
+    have = {r["kind"] for r in db.query("SELECT kind FROM guide_item WHERE apartment_id = ?", (apartment["id"],))}
     for kind in DEFAULT_KINDS:
-        add_kind(apartment["id"], kind)
+        if kind not in have:
+            add_kind(apartment["id"], kind)
     legacy = {"checkin": apartment["checkin_info"], "checkout": apartment["checkout_info"]}
     for kind, text in legacy.items():
         text = (text or "").strip()
@@ -140,7 +157,12 @@ def items(apartment_id: int) -> List[Dict[str, Any]]:
         (apartment_id,),
     )
     out = [dict(row) for row in rows]
-    out.sort(key=lambda r: TOPICS.index(r["topic"]) if r["topic"] in TOPICS else len(TOPICS))
+    for row in out:
+        if row["kind"] in KINDS:
+            # The catalog decides where a built-in card sits, so cards added later
+            # (0354) line up with the ones a property already had.
+            row["topic"], row["sort_order"] = KINDS[row["kind"]], _order(row["kind"])
+    out.sort(key=lambda r: (TOPICS.index(r["topic"]) if r["topic"] in TOPICS else len(TOPICS), r["sort_order"], r["id"]))
     return out
 
 
@@ -263,6 +285,9 @@ def progress(apartment_id: int) -> Dict[str, Any]:
     return {
         "done": done,
         "total": len(counted),
+        # Skipped counts as answered: the host has dealt with the card.
+        "answered": sum(1 for r in rows if r["state"] in ("done", "skipped")),
+        "cards": len(rows),
         "check": sum(1 for r in counted if r["state"] == "check"),
         "must_have_done": must_done,
         "must_have_total": len(MUST_HAVE),

@@ -32,6 +32,7 @@
 .host-workspace .ui-opt { color: var(--ink-3); font-weight: 400; }
 .host-workspace .ui-field .ui-input:not([type="checkbox"]):not([type="radio"]), .host-workspace .ui-field .ui-select, .host-workspace .ui-field .ui-textarea { min-height: var(--input-h); height: var(--input-h); width: 100%; box-sizing: border-box; border: 1px solid var(--input-border); border-radius: var(--input-radius); padding: 0 var(--input-px); font: inherit; font-size: var(--body-size); color: var(--ink); background: var(--surface); box-shadow: none; }
 .host-workspace .ui-field .ui-textarea { height: auto; min-height: calc(var(--input-h) * 2); padding: var(--space-3) var(--input-px); resize: vertical; }
+.host-workspace .ui-field :is(.ui-input, .ui-textarea)::placeholder { color: var(--ink-muted); opacity: 1; }
 .host-workspace .ui-field .ui-select { padding-right: calc(var(--space-8) + var(--space-1)); appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%); background-position: calc(100% - var(--space-5)) 50%, calc(100% - var(--space-4)) 50%; background-size: var(--space-1) var(--space-1); background-repeat: no-repeat; }
 .host-workspace .ui-field :is(.ui-input, .ui-select, .ui-textarea):focus { border-color: var(--accent); }
 .host-workspace .ui-field-err :is(.ui-input, .ui-select, .ui-textarea) { border-color: var(--danger); }

@@ -205,7 +205,10 @@
     "fee-qr-amount",
     "fee-send-line",
     "guide-photos",
-    "guide-photo"
+    "guide-photo",
+    "quick-choice",
+    "quick-choice-options",
+    "quick-choice-option"
   ],
   "hooks": [
     "sr-only",
@@ -957,6 +960,9 @@
     "fee-more": "Stay fee editor in Settings: folds the council's print-only details (address, contact, data box) (0239).",
     "ui-btn-open": "MASTER 7.1 open: soft-coral Open on list rows and cards (0291)",
     "guide-photos": "0343 grid of a guest guide card's photos (a ul of guide-photo).",
-    "guide-photo": "0343 one photo with its delete button under it."
+    "guide-photo": "0343 one photo with its delete button under it.",
+    "quick-choice": "0355 Quick answers: one yes/no question, a fieldset whose legend is a ui-label.",
+    "quick-choice-options": "0355 the row of three answer chips, full width.",
+    "quick-choice-option": "0355 one answer: a label holding a native radio and its chip text; the checked chip is filled like a pressed ui-chip."
   }
 }

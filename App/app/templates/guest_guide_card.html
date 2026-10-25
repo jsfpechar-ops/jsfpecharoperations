@@ -44,9 +44,10 @@
 <form method="post" action="{{ base_url }}/{{ item.id }}">
 <input type="hidden" name="_csrf" value="{{ csrf_token }}">
 {% if custom %}{{ ui_field('guide-title', t('guest_guide.field.title'), name='title', value=values.title, attrs='maxlength="120" required') }}{% endif %}
-{{ ui_field('guide-location', t('guest_guide.field.location'), name='location', value=values.location, help=t('guest_guide.field.location_help'), optional=true, attrs='maxlength="500"') }}
-{{ ui_textarea('guide-steps', t('guest_guide.field.steps'), value=values.steps, name='steps', help=t('guest_guide.field.steps_help'), rows=8, attrs='maxlength="4000"') }}
-{{ ui_textarea('guide-watch-out', t('guest_guide.field.watch_out'), value=values.watch_out, name='watch_out', help=t('guest_guide.field.watch_out_help'), optional=true, rows=3, attrs='maxlength="1000"') }}
+{% set ph = 'guest_guide.custom.ph.' if custom else 'guest_guide.kind.' ~ item.kind ~ '.ph.' %}
+{{ ui_field('guide-location', t('guest_guide.field.location'), name='location', value=values.location, help=t('guest_guide.field.location_help'), optional=true, attrs='maxlength="500"', placeholder=t(ph ~ 'location')) }}
+{{ ui_textarea('guide-steps', t('guest_guide.field.steps'), value=values.steps, name='steps', help=t('guest_guide.field.steps_help'), rows=8, attrs='maxlength="4000"', placeholder=t(ph ~ 'steps')) }}
+{{ ui_textarea('guide-watch-out', t('guest_guide.field.watch_out'), value=values.watch_out, name='watch_out', help=t('guest_guide.field.watch_out_help'), optional=true, rows=3, attrs='maxlength="1000"', placeholder=t(ph ~ 'watch_out')) }}
 {{ ui_field('guide-video', t('guest_guide.field.video'), name='video_url', value=values.video_url, type='url', help=t('guest_guide.field.video_help'), optional=true, attrs='maxlength="500" inputmode="url"') }}
 {{ ui_select('guide-visibility', t('guest_guide.field.visibility'), visibility_options, selected=values.visibility, name='visibility', help=t('guest_guide.field.visibility_help')) }}
 <div class="ui-form-actions">

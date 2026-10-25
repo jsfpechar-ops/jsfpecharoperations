@@ -51,10 +51,10 @@
 </div>
 {%- endmacro %}
 
-{% macro ui_textarea(id, label, value='', name='', help='', error='', optional=false, rows=3, attrs='') -%}
+{% macro ui_textarea(id, label, value='', name='', help='', error='', optional=false, rows=3, attrs='', placeholder='') -%}
 <div class="ui-field{{ ' ui-field-err' if error }}">
   <label class="ui-label" for="{{ id }}">{{ label }}{% if optional %} <span class="ui-opt">{{ t('common.optional') }}</span>{% endif %}</label>
-  <textarea class="ui-textarea" id="{{ id }}" name="{{ name or id }}" rows="{{ rows }}"{% if error %} aria-invalid="true" aria-describedby="{{ id }}-error"{% elif help %} aria-describedby="{{ id }}-help"{% endif %} {{ attrs | safe }}>{{ value }}</textarea>
+  <textarea class="ui-textarea" id="{{ id }}" name="{{ name or id }}" rows="{{ rows }}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if error %} aria-invalid="true" aria-describedby="{{ id }}-error"{% elif help %} aria-describedby="{{ id }}-help"{% endif %} {{ attrs | safe }}>{{ value }}</textarea>
   {% if error %}<span class="ui-error" id="{{ id }}-error">{{ icon('triangle-alert', 16) }}{{ error }}</span>{% elif help %}<span class="ui-help" id="{{ id }}-help">{{ help }}</span>{% endif %}
 </div>
 {%- endmacro %}

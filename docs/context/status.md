@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-23.
+Updated: 2026-10-24.
 
 ## Production
 
@@ -9,6 +9,7 @@ Updated: 2026-10-23.
 
 ## Now
 
+- Guide + Leon 0341-0355: owner merges #465-#468, evals.
 - 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
 - Check-in alerts #435: tests pass; owner merge/deploy.
@@ -17,7 +18,7 @@ Updated: 2026-10-23.
 
 - 0280-0283 short alerts, card borders, signature dialog. **Owner:** PR/deploy/phone test.
 - 0253 four red layout tests. **Owner:** review 0253 PR, iPad.
-- Foolproof rounds 1-3 (0230-0278). **Owner:** deploy (`?v=` keys).
+- Foolproof 0230-0278, design reset 0165-0183 (#405). **Owner:** deploy (`?v=` keys).
 - Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, test on iPhone and Android.
 - #418 onboarding fixes 0203-0212; address open.
 - Stay-fee email 0220-0224: built, owner staging test.
@@ -25,7 +26,6 @@ Updated: 2026-10-23.
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy (`?v=`).
 - AI crawler block (0195): robots.txt, tdmrep.json, Terms §11 TDM (v1.7; lawyer to confirm).
-- Design reset 0165-0183 (#405). **Deploy:** new `?v=` keys.
 - Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
 
 - Check `/healthz`; credential letter to data box ybndqw9.

@@ -24,7 +24,7 @@ import secrets
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
-from . import ai, db, guest_guide, host_i18n, i18n, rate_limit
+from . import ai, db, guide_facts, host_i18n, i18n, rate_limit
 
 log = logging.getLogger(__name__)
 
@@ -191,6 +191,9 @@ def guide_block(cards: List[Dict[str, Any]], property_name: str) -> str:
     lines = [f'<guide property="{_clean_card_text(property_name)}">']
     for card in sorted(cards, key=lambda c: int(c["id"])):
         lines.append(f"[c{card['id']}] {card_title(card)}")
+        facts = [_clean_card_text(f) for f in card.get("facts") or []]
+        if facts:
+            lines.append("facts: " + " ".join(facts))
         if card.get("location"):
             lines.append(f"where: {_clean_card_text(card['location'])}")
         steps = [s.strip() for s in str(card.get("steps") or "").splitlines() if s.strip()]
@@ -220,7 +223,7 @@ def user_turn(redacted: str, lang: str) -> str:
 def _card_corpus(cards: List[Dict[str, Any]], ids: List[int]) -> str:
     wanted = set(ids)
     return "\n".join(
-        " ".join([card_title(c), str(c.get("location") or ""), str(c.get("steps") or ""), str(c.get("watch_out") or "")])
+        " ".join([card_title(c), " ".join(c.get("facts") or []), str(c.get("location") or ""), str(c.get("steps") or ""), str(c.get("watch_out") or "")])
         for c in cards if int(c["id"]) in wanted
     )
 
@@ -538,7 +541,7 @@ def _answer(chat: Dict[str, Any], text: str, *, level: str, property_name: str, 
         return {"kind": "ask_host", "text": body, "message_id": _store(chat_id, "leon", "ask_host", body),
                 "question_id": twin["id"]}
 
-    cards = guest_guide.for_guest(apartment_id, level)
+    cards = guide_facts.for_guest(apartment_id, level, "en")
     used = int(chat.get("model_messages") or 0)
     verdict: Optional[Dict[str, Any]] = None
     reason = ""
