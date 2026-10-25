@@ -58,3 +58,7 @@ categories and recipients are in `ROPA.md`. In scope here:
   consultation with ÚOOU under Art 36, and whether a DPO is needed.
 - This document must be reviewed when the passport policy, the retention anchor
   or the transfer position changes.
+
+## Havel (AI) screening (LAWYER REVIEW, 2026-10-24)
+
+New technology (an AI model) and a transfer to the US, but no systematic monitoring, no special-category data by design, no decision about people, and the host chooses to use it. Screening result: no full DPIA needed, provided redaction, the "do not type guests' details" line and the 90-day gap limit stay. Re-screen before the guest assistant ships. Details: [drafts/havel-ai.md](drafts/havel-ai.md).
