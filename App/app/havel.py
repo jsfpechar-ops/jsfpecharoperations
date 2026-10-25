@@ -68,6 +68,12 @@ GUIDE_ANCHORS: Dict[str, str] = {
     "filters": "guide.nav.filters", "housebook": "guide.nav.housebook", "stay_fee": "guide.nav.stay_fee",
     "invoices": "guide.nav.invoices", "settings": "guide.nav.settings", "door-codes": "guide.nav.door-codes",
     "faster": "guide.nav.faster", "faq": "guide.nav.faq", "legal": "guide.nav.legal",
+    "finding": "guide.nav.finding", "glossary": "guide.nav.glossary", "cleaning": "guide.nav.cleaning",
+    "guest_links": "guide.nav.guest_links", "business": "guide.nav.business", "archive": "guide.nav.archive",
+    "privacy_requests": "guide.nav.privacy_requests",
+    "add-property": "guide.setup.add_title", "setup-guide": "guide.setup.wizard_title",
+    "connect-calendar": "guide.stays.calendar_title", "add-stay": "guide.stays.add_title",
+    "stay-fee-setup": "guide.stay_fee.setup_title", "stay-fee-pay": "guide.stay_fee.pay_title",
 }
 for _anchor, _key in GUIDE_ANCHORS.items():
     PAGES["guide_" + _anchor.replace("-", "_")] = ("/guide#" + _anchor, _key, "Help & guide: " + _anchor)
@@ -209,10 +215,9 @@ def _sig(user_id: int, payload: str) -> str:
 
 
 def sign_history(user_id: int, exchanges: List[Dict[str, str]]) -> Tuple[str, str]:
-    """exchanges: [{"host": "...", "havel": "..."}, ...], newest last. Capped before signing."""
-    trimmed = exchanges[-MAX_HISTORY_EXCHANGES:]
-    while trimmed and sum(len(e.get("host", "")) + len(e.get("havel", "")) for e in trimmed) > MAX_HISTORY_CHARS:
-        trimmed = trimmed[1:]
+    """exchanges: [{"host": "...", "havel": "..."}, ...], newest last. Keeps the last MAX_EXCHANGES (the conversation cap counts them)."""
+    trimmed = [{"host": str(e.get("host", ""))[:MAX_MESSAGE_CHARS], "havel": str(e.get("havel", ""))[:MAX_REPLY_CHARS]}
+                  for e in exchanges[-MAX_EXCHANGES:]]
     payload = json.dumps(trimmed, ensure_ascii=False, separators=(",", ":"))
     return payload, _sig(user_id, payload)
 
@@ -229,7 +234,7 @@ def read_history(user_id: int, payload: str, sig: str) -> List[Dict[str, str]]:
         return []
     clean = [{"host": str(e.get("host", ""))[:MAX_MESSAGE_CHARS], "havel": str(e.get("havel", ""))[:MAX_REPLY_CHARS]}
              for e in items if isinstance(e, dict)]
-    return clean[-MAX_HISTORY_EXCHANGES:]
+    return clean[-MAX_EXCHANGES:]
 
 
 # --- request --------------------------------------------------------------------
@@ -266,11 +271,19 @@ def host_context(host: Host, today: date) -> str:
     return "<host_context>\n" + "\n".join(lines) + "\n</host_context>"
 
 
+def model_history(history: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    """The part of the conversation the model sees: the last MAX_HISTORY_EXCHANGES within MAX_HISTORY_CHARS."""
+    trimmed = history[-MAX_HISTORY_EXCHANGES:]
+    while trimmed and sum(len(e["host"]) + len(e["havel"]) for e in trimmed) > MAX_HISTORY_CHARS:
+        trimmed = trimmed[1:]
+    return trimmed
+
+
 def build_messages(host: Host, history: List[Dict[str, str]], message: str, today: date,
                    mapping: Dict[str, str]) -> List[Dict[str, str]]:
     """The Messages API list: earlier exchanges (redacted), then the new user turn."""
     messages: List[Dict[str, str]] = []
-    for exchange in history:
+    for exchange in model_history(history):
         host_text, _ = redact(exchange["host"], mapping)
         messages.append({"role": "user", "content": f"<message>{host_text}</message>"})
         havel_text, _ = redact(exchange["havel"], mapping)

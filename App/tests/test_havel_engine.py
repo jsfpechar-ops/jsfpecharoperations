@@ -70,7 +70,7 @@ def test_messages_carry_context_and_redacted_history():
     assert last.endswith("<message>What is the PIN?</message>")
     blocks = havel.system_blocks("en")
     assert blocks[0].startswith("You are Havel") and blocks[1].startswith('<guide lang="en">') and blocks[2].startswith("<pages>")
-    assert havel.system_blocks("vi")[1].startswith('<guide lang="en">')
+    assert havel.system_blocks("vi")[1].startswith('<guide lang="vi">')
 
 
 # --- guardrails (plan 9a, cases 49-51)
@@ -230,7 +230,10 @@ def test_history_is_signed_capped_and_dropped_when_forged():
     exchanges = [{"host": f"q{i}", "havel": "a" * 1500} for i in range(6)]
     payload, sig = havel.sign_history(7, exchanges)
     back = havel.read_history(7, payload, sig)
-    assert 1 <= len(back) <= 2 and back[-1]["host"] == "q5"
+    assert len(back) == 6 and back[-1]["host"] == "q5"
+    assert 1 <= len(havel.model_history(back)) <= 2 and havel.model_history(back)[-1]["host"] == "q5"
+    seven = havel.read_history(7, *havel.sign_history(7, exchanges + [{"host": "q6", "havel": "a"}]))
+    assert len(seven) == 6 and seven[0]["host"] == "q1"
     assert havel.read_history(7, payload, sig[:-1] + ("0" if sig[-1] != "0" else "1")) == []
     assert havel.read_history(8, payload, sig) == []
     assert havel.read_history(7, payload.replace("q5", "q9"), sig) == []
