@@ -34,7 +34,7 @@
         <td class="ui-sub" data-label="{{ t('invoices.col.kind') }}">{{ t('invoice.kind.' ~ inv.kind) }}</td>
         <td class="ui-num" data-label="{{ t('invoices.col.total') }}">{{ inv.total_haler | money_czk }}</td>
         <td data-label="{{ t('filter.status') }}">{% if inv.state == 'paid' %}<span class="ui-badge ui-badge-done" data-tone="green">{{ t('invoice.state.paid') }}</span>{% elif inv.state == 'unpaid' %}<span class="ui-badge ui-badge-neutral" data-tone="teal">{{ t('invoice.state.unpaid') }}</span>{% elif inv.state == 'cancelled' %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('invoice.state.cancelled') }}</span>{% else %}<span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('invoice.kind.' ~ inv.kind) }}</span>{% endif %}</td>
-        <td class="row-actions" data-label="">{{ row_open() }}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/invoices/{{ inv.id }}.pdf">{{ t('host.invoice_pdf') }}</a></td>
+        <td class="row-actions" data-label="">{{ row_open('/invoices/' ~ inv.id) }}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/invoices/{{ inv.id }}.pdf">{{ t('host.invoice_pdf') }}</a></td>
       </tr>
     {% endfor %}
     </tbody>
