@@ -451,6 +451,7 @@ def _guest_mail_content(
                 door_code=door_code,
                 filled=filled,
                 expected=expected,
+                host_url=f"{config.app_base_url()}/reservations/{reservation['id']}",
                 **_completion_facts(apartment, reservation, lang),
             )
         if kind == "reminder_guest":
