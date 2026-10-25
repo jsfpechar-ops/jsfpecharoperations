@@ -953,8 +953,17 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-dots i:nth-child(3) { animation-delay: 0.4s; }
 @keyframes havel-blink { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .host-workspace .havel-dots i { animation: none; opacity: 0.6; } }
+/* 0373: corner button (no backdrop; the page stays usable) and the phone sheet above the tab bar. */
+.host-workspace .havel-fab { position: fixed; right: var(--space-6); bottom: var(--space-6); z-index: var(--z-drawer); width: calc(var(--control-h) + var(--space-3)); height: calc(var(--control-h) + var(--space-3)); display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-on, var(--surface)); box-shadow: var(--shadow-2); text-decoration: none; }
+.host-workspace .havel-fab:hover { background: var(--accent-hover); }
+.host-workspace .havel-fab:focus-visible { box-shadow: var(--focus-ring-2); outline: 0; }
+.host-workspace .havel-fab[hidden] { display: none; }
+.host-workspace .havel-greeting { margin-bottom: var(--space-2); }
 @media (max-width: 767px) {
-  .host-workspace .havel-dialog .ui-sheet { max-height: 92dvh; height: 92dvh; }
+  .host-workspace .havel-dialog { position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; z-index: var(--z-drawer); box-shadow: var(--shadow-2); }
+  .host-workspace .havel-dialog .ui-sheet { max-height: 70dvh; height: 70dvh; }
+  .host-workspace .havel-fab { right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4)); }
+  body:has(.ui-sticky-actions) .host-workspace .havel-fab { bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8)); }
 }
 
 /* 0314: Havel confirm cards (plan 17d). A card sits under the bubble, never inside it. */
