@@ -56,6 +56,7 @@
   var inFlight = false;
   var queue = []; // [{text, node}] typed while a reply is pending
   var stale = false; // a history render was skipped (or another device spoke): fetch it after the reply
+  var opened = false; // 0393: the box opens with "Other question" or when the stay already has messages.
 
   function text(name) {
     return root.getAttribute("data-" + name) || "";
@@ -88,7 +89,7 @@
     var item = bubble("leon", "", text("text-welcome"));
     item.setAttribute("data-leon-msg", "welcome");
     var tp = topics();
-    if (!local.length && tp.length) chips(tp, answerSituation, "").setAttribute("data-leon-welcome-chips", "");
+    if (!local.length) chips(withOther(tp), answerSituation, "").setAttribute("data-leon-welcome-chips", "");
     return item;
   }
 
@@ -115,7 +116,8 @@
       b.type = "button";
       b.className = "g-leon-chip";
       b.textContent = it.title;
-      b.addEventListener("click", function () { onPick(it); });
+      if (it.other) b.setAttribute("data-leon-other", "");
+      b.addEventListener("click", function () { it.other ? askOther() : onPick(it); });
       wrap.appendChild(b);
     });
     log.appendChild(wrap);
@@ -160,7 +162,26 @@
     if (last && last.scrollIntoView) last.scrollIntoView({ block: "nearest" });
   }
   function topicChips() {
-    return chips(topics(), answerSituation, "");
+    return chips(withOther(topics()), answerSituation, "");
+  }
+  // 0393: "Other question" is always the last chip. Drawn by the page only: never sent, stored or counted.
+  function withOther(tp) { return tp.concat([{ title: text("text-other"), other: true }]); }
+  // 0393: the box opens with "Other question" or when the stay already has messages.
+  function openBox(focus) {
+    opened = true;
+    form.hidden = false;
+    updateCount(); // the height was measured while the box was hidden
+    if (focus) input.focus();
+  }
+  function askOther() {
+    Array.prototype.forEach.call(log.querySelectorAll(".g-leon-chips"), function (n) {
+      log.removeChild(n);
+      local = local.filter(function (x) { return x !== n; });
+    });
+    // Marked "other", like the welcome, so they never count as a sent message or a reply.
+    keep(bubble("guest", "", text("text-other"))).setAttribute("data-leon-msg", "other");
+    keep(bubble("leon", "", text("text-other-prompt"))).setAttribute("data-leon-msg", "other");
+    openBox(true);
   }
 
   function setWaiting(on) {
@@ -189,6 +210,7 @@
     (data.messages || []).forEach(function (m) {
       bubble(m.role, m.kind, m.text);
     });
+    if ((data.messages || []).length) openBox(false);
     (batch ? batch.items : []).concat(queue).forEach(function (item) {
       log.appendChild(item.node);
     });
@@ -359,7 +381,6 @@
     if (!document.hidden && timer) history().catch(function () {});
   });
 
-  form.hidden = false;
   if (jump) jump.hidden = false;
   updateCount();
   welcome();

@@ -108,7 +108,7 @@ def _state(request: Request, uid: int) -> Optional[str]:
 
 def _page_context(request: Request, uid: int, items: List[Dict[str, Any]], exchanges: List[Dict[str, str]],
                   *, topic: str = "", q: str = "", page: str = "", return_to: str = "/havel",
-                  error: Optional[str] = None) -> Dict[str, Any]:
+                  error: Optional[str] = None, ask: bool = False) -> Dict[str, Any]:
     state = _state(request, uid)
     payload, sig = havel.sign_history(uid, exchanges)
     nav = next((k for k, v in NAV_TO_PAGE.items() if v == page), "")
@@ -118,6 +118,7 @@ def _page_context(request: Request, uid: int, items: List[Dict[str, Any]], excha
         "havel_history": payload, "havel_history_sig": sig, "havel_topic": topic, "havel_q": q, "havel_page": page,
         "havel_return_to": return_to, "havel_max": havel.MAX_MESSAGE_CHARS,
         "havel_fresh": len(exchanges) == 0,
+        "havel_ask": ask, "havel_locked": len(exchanges) == 0 and not ask,
         "havel_topics": havel_topics.ordered(nav), "havel_topic_data": havel_topics.topic(topic) if topic else None,
         "havel_answer": havel_topics.answer(host_i18n.lang_from_request(request), topic, q) if topic and q else None,
         "havel_show_topics": len(exchanges) == 0 and not items,
@@ -143,7 +144,8 @@ def havel_page(request: Request):
     if topic not in havel_topics.TOPIC_IDS:
         topic, q = "", ""
     page = NAV_TO_PAGE.get(request.query_params.get("page", ""), "guide")
-    ctx = _page_context(request, uid, [], [], topic=topic, q=q, page=page,
+    ask = request.query_params.get("ask") == "1"
+    ctx = _page_context(request, uid, [], [], topic=topic, q=q, page=page, ask=ask,
                         return_to=security.safe_local_path(request.query_params.get("return_to", ""), "/havel"))
     if request.headers.get("x-havel") == "1":
         ctx["havel_fragment"] = True
@@ -260,11 +262,11 @@ async def havel_send(request: Request):
 
     if fragment:
         ctx = _page_context(request, uid, last["items"] if last else [], exchanges, topic=topic, q=q, page=page,
-                            return_to=return_to, error=error)
+                            return_to=return_to, error=error, ask=form.get("reset") != "1")
         ctx["havel_fragment"] = True
         return render(request, "_havel_fragment.html", ctx)
     ctx = _page_context(request, uid, _thread(request, exchanges, last), exchanges, topic=topic, q=q, page=page,
-                        return_to=return_to, error=error)
+                        return_to=return_to, error=error, ask=form.get("reset") != "1")
     return render(request, "havel.html", ctx)
 
 

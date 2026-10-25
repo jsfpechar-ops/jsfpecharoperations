@@ -1,4 +1,4 @@
-"""0391: a second property's lock is added inside the setup wizard."""
+"""0394: a second property's lock is added inside the setup wizard."""
 from __future__ import annotations
 
 import json

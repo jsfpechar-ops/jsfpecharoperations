@@ -1786,7 +1786,7 @@ def _door_code_context(apartment, apartment_id: int) -> Optional[Dict[str, Any]]
         "enabled": apartment["lock_provider"] == "ttlock",
         "lock_id": apartment["lock_id"],
         "default_lock_id": free_locks[0]["lock_id"] if len(free_locks) == 1 else "",
-        # 0391: 0 means every connected lock serves another property.
+        # 0394: 0 means every connected lock serves another property.
         "free_lock_count": len(free_locks),
         "checkin_hour": cin,
         "checkout_hour": cout,
@@ -2086,7 +2086,7 @@ async def apartment_update(apartment_id: int, request: Request):
 def _lock_section_refusal(request: Request, apartment_id: int, form, error_key: str):
     """A door-lock save that cannot be stored. The wizard stays on its step."""
     if _form_str(form, "setup_step") == "door_lock":
-        # 0391: keep what the host chose, so a refusal never wipes the step.
+        # 0394: keep what the host chose, so a refusal never wipes the step.
         lock_draft = {
             "checkin_hour": _form_str(form, "checkin_hour"),
             "checkout_hour": _form_str(form, "checkout_hour"),

@@ -9,7 +9,7 @@ Updated: 2026-10-25.
 
 ## Now
 
-- 0391 wizard 2nd lock: owner PR.
+- 0394 wizard 2nd lock: #515.
 - Guide + Leon 0341-0355: owner merges #465-#468, evals.
 - 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.

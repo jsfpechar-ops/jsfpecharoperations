@@ -21,7 +21,15 @@
       {% if havel_answer.support %}{% with havel_support_prefill = t(havel_answer.question.label) %}{% include "_havel_support.html" %}{% endwith %}{% endif %}
     </div>
   </div>
-  {% if not havel_state %}<a class="ui-chip havel-chip" href="#havel-message" data-havel-ask data-topic="{{ havel_topic }}" data-q="{{ havel_q }}">{{ t('havel.topic.ask') }}</a>{% endif %}
+  {% if havel_ask %}
+  {% if not havel_state %}<div class="havel-msg havel-msg-havel" tabindex="-1"><div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span><span class="havel-name">{{ t('havel.name') }}</span></div><div class="havel-bubble"><p>{{ t('havel.ask_prompt') }}</p></div></div>{% endif %}
+  {% else %}
+  <a class="ui-chip havel-chip" href="/havel?topic={{ havel_topic }}&q={{ havel_q }}&ask=1" data-havel-topic-link data-havel-ask-open>{{ t('havel.topic.ask') }}</a>
+  {% endif %}
+  {% elif havel_ask %}
+  <a class="ui-chip havel-chip-back" href="/havel" data-havel-topic-link>{{ icon('chevron-left', 16) }}{{ t('havel.topic.back') }}</a>
+  <div class="havel-msg havel-msg-host"><span class="sr-only">{{ t('havel.you') }}: </span><div class="havel-bubble"><p>{{ t('havel.topic.other') }}</p></div></div>
+  {% if not havel_state %}<div class="havel-msg havel-msg-havel havel-answer" tabindex="-1"><div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span><span class="havel-name">{{ t('havel.name') }}</span></div><div class="havel-bubble"><p>{{ t('havel.other_prompt') }}</p></div></div>{% endif %}
   {% elif havel_topic_data %}
   <a class="ui-chip havel-chip-back" href="/havel" data-havel-topic-link>{{ icon('chevron-left', 16) }}{{ t('havel.topic.back') }}</a>
   <div class="havel-msg havel-msg-host"><span class="sr-only">{{ t('havel.you') }}: </span><div class="havel-bubble"><p>{{ t(havel_topic_data.label) }}</p></div></div>
@@ -31,6 +39,7 @@
   {% else %}
   <div class="ui-chips havel-chips" role="group" aria-label="{{ t('havel.topics_title') }}">
     {% for tp in havel_topics %}<a class="ui-chip havel-chip" href="/havel?topic={{ tp.id }}" data-havel-topic-link>{{ icon(tp.icon, 16) }}{{ t(tp.label) }}</a>{% endfor %}
+    <a class="ui-chip havel-chip" href="/havel?ask=1" data-havel-topic-link data-havel-other>{{ icon('pencil', 16) }}{{ t('havel.topic.other') }}</a>
   </div>
   {% endif %}
 </div>
