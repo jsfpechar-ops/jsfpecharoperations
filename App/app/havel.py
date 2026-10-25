@@ -68,6 +68,12 @@ GUIDE_ANCHORS: Dict[str, str] = {
     "filters": "guide.nav.filters", "housebook": "guide.nav.housebook", "stay_fee": "guide.nav.stay_fee",
     "invoices": "guide.nav.invoices", "settings": "guide.nav.settings", "door-codes": "guide.nav.door-codes",
     "faster": "guide.nav.faster", "faq": "guide.nav.faq", "legal": "guide.nav.legal",
+    "finding": "guide.nav.finding", "glossary": "guide.nav.glossary", "cleaning": "guide.nav.cleaning",
+    "guest_links": "guide.nav.guest_links", "business": "guide.nav.business", "archive": "guide.nav.archive",
+    "privacy_requests": "guide.nav.privacy_requests",
+    "add-property": "guide.setup.add_title", "setup-guide": "guide.setup.wizard_title",
+    "connect-calendar": "guide.stays.calendar_title", "add-stay": "guide.stays.add_title",
+    "stay-fee-setup": "guide.stay_fee.setup_title", "stay-fee-pay": "guide.stay_fee.pay_title",
 }
 for _anchor, _key in GUIDE_ANCHORS.items():
     PAGES["guide_" + _anchor.replace("-", "_")] = ("/guide#" + _anchor, _key, "Help & guide: " + _anchor)
