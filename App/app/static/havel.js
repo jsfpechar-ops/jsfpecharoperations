@@ -11,6 +11,19 @@
   function thread() { return root.querySelector("[data-havel-thread]"); }
   function form() { return root.querySelector("[data-havel-form]"); }
   function textarea() { return root.querySelector("#havel-message"); }
+  // 0373: the corner button is hidden while the panel is open; the opener gets focus on close.
+  var opener = null;
+  function fab() { return document.querySelector("[data-havel-fab]"); }
+  function hideFab() { var f = fab(); if (f) f.hidden = true; }
+  function focusPanel() {
+    if (PHONE.matches) {
+      var h = root.querySelector("#havel-title");
+      if (h) h.focus({ preventScroll: true });
+    } else {
+      var ta = textarea();
+      if (ta) ta.focus();
+    }
+  }
 
   function setDevice() {
     var d = root.querySelector("[data-havel-device]");
@@ -105,6 +118,7 @@
     var data = new FormData(f);
     if (extra) Object.keys(extra).forEach(function (k) { data.set(k, extra[k]); });
     var echoed = extra ? null : echo(text);
+    if (!extra && ta) { ta.value = ""; ta.dispatchEvent(new Event("input")); }
     writing(true);
     fetch(f.getAttribute("action") || "/havel", {
       method: "POST", body: data, credentials: "same-origin",
@@ -211,28 +225,35 @@
 
   document.addEventListener("click", function (event) {
     var launcher = event.target.closest ? event.target.closest('[data-sheet-open="havel-sheet"]') : null;
-    if (launcher) ensureForm();
+    if (launcher) {
+      opener = launcher;
+      ensureForm(function () { hideFab(); focusPanel(); });
+    }
     var more = event.target.closest ? event.target.closest("[data-havel-more]") : null;
-    if (!more || !panel || typeof panel.showModal !== "function") return;
+    if (!more || !panel || typeof panel.show !== "function") return;
     event.preventDefault();
+    opener = more;
     var sheet = document.getElementById("more-sheet");
     if (sheet && sheet.open) sheet.close();
-    if (!panel.open) panel.showModal();
-    ensureForm(function () {
-      var ta = textarea();
-      if (ta && !PHONE.matches) ta.focus();
-    });
+    if (!panel.open) panel.show();
+    ensureForm(function () { hideFab(); focusPanel(); });
   });
 
   if (panel) {
     panel.addEventListener("close", function () {
-      var opener = document.querySelector("[data-havel-launcher]:not([hidden])");
-      if (opener && opener.offsetParent !== null) opener.focus();
+      var f = fab();
+      if (f) f.hidden = false;
+      var back = opener;
+      opener = null;
+      // getClientRects, not offsetParent: the tab bar and the corner button are position: fixed.
+      if (back && document.body.contains(back) && back.getClientRects().length > 0) back.focus();
+      else if (f) f.focus();
     });
     // For 0322 (command palette): open with a prefilled question.
     window.UbyHavel = { open: function (text) {
-      if (!panel.open) panel.showModal();
+      if (!panel.open) panel.show();
       ensureForm(function () {
+        hideFab();
         var ta = textarea();
         if (ta) { if (text) ta.value = text; ta.focus(); ta.dispatchEvent(new Event("input")); }
       });
