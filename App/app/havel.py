@@ -75,6 +75,7 @@ GUIDE_ANCHORS: Dict[str, str] = {
     "add-property": "guide.setup.add_title", "setup-guide": "guide.setup.wizard_title",
     "connect-calendar": "guide.stays.calendar_title", "add-stay": "guide.stays.add_title",
     "stay-fee-setup": "guide.stay_fee.setup_title", "stay-fee-pay": "guide.stay_fee.pay_title",
+    "leon-terms": "guide.leon_terms.title",  # 0394
 }
 for _anchor, _key in GUIDE_ANCHORS.items():
     PAGES["guide_" + _anchor.replace("-", "_")] = ("/guide#" + _anchor, _key, "Help & guide: " + _anchor)
