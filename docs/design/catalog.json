@@ -208,7 +208,37 @@
     "guide-photo",
     "quick-choice",
     "quick-choice-options",
-    "quick-choice-option"
+    "quick-choice-option",
+    "havel-page",
+    "havel-thread",
+    "havel-msg",
+    "havel-msg-host",
+    "havel-msg-havel",
+    "havel-who",
+    "havel-avatar",
+    "havel-name",
+    "havel-bubble",
+    "havel-links",
+    "havel-composer",
+    "havel-actions",
+    "havel-meta",
+    "havel-note",
+    "havel-error",
+    "havel-card",
+    "havel-card-facts",
+    "havel-card-warning",
+    "havel-card-link",
+    "havel-card-pin",
+    "havel-topics",
+    "havel-topic",
+    "havel-answer",
+    "havel-dialog",
+    "havel-head",
+    "havel-head-text",
+    "havel-counter",
+    "havel-writing",
+    "havel-answer-title",
+    "havel-ask"
   ],
   "hooks": [
     "sr-only",
@@ -304,7 +334,12 @@
     "App/app/templates/guest_guide_card.html",
     "App/app/templates/guest_guide_qr.html",
     "App/app/templates/guest_questions.html",
-    "App/app/templates/guest_question.html"
+    "App/app/templates/guest_question.html",
+    "App/app/templates/havel.html",
+    "App/app/templates/_havel_thread.html",
+    "App/app/templates/_havel_form.html",
+    "App/app/templates/_havel_topics.html",
+    "App/app/templates/_havel_fragment.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [
@@ -963,6 +998,7 @@
     "guide-photo": "0343 one photo with its delete button under it.",
     "quick-choice": "0355 Quick answers: one yes/no question, a fieldset whose legend is a ui-label.",
     "quick-choice-options": "0355 the row of three answer chips, full width.",
-    "quick-choice-option": "0355 one answer: a label holding a native radio and its chip text; the checked chip is filled like a pressed ui-chip."
+    "quick-choice-option": "0355 one answer: a label holding a native radio and its chip text; the checked chip is filled like a pressed ui-chip.",
+    "havel-*": "0312-0314: Havel (AI) support assistant: thread, bubbles, composer, cards, topics, panel (plan section 17)."
   }
 }

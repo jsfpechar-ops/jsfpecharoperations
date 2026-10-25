@@ -1,0 +1,7 @@
+{#- 0313: a fragment for havel.js (0324): the topics layer when the thread is
+    empty, the new thread items, then a fresh form (history, counter, state). -#}
+<div data-havel-items data-mode="{{ 'replace' if havel_show_topics else 'append' }}">
+  {% if havel_show_topics %}{% include "_havel_topics.html" %}{% endif %}
+  {% include "_havel_thread.html" %}
+</div>
+<div data-havel-form-wrap>{% include "_havel_form.html" %}</div>
