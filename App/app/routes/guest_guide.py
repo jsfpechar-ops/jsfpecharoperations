@@ -68,6 +68,10 @@ def guide_index(request: Request, apartment_id: int):
     guide_token.ensure(apartment_id)
     rows = guest_guide.items(apartment_id)
     groups = [(topic, [r for r in rows if r["topic"] == topic]) for topic in guest_guide.TOPICS]
+    import_left = guest_guide_import.imports_left(apartment_id)  # 0403
+    import_busy = guest_guide_import.in_progress(apartment_id)
+    import_drafts = guest_guide_merge.drafted_count(apartment_id)
+    import_first = guest_guide_import.enabled() and (import_left > 0 or import_busy or import_drafts > 0)  # 0403
     return _render(
         request,
         "guest_guide.html",
@@ -81,10 +85,12 @@ def guide_index(request: Request, apartment_id: int):
         leon_offer=ai.enabled_for_property(leon.FEATURE, apartment_id),  # 0376
         leon_state=leon.host_state(apartment, bool(guest_guide.progress(apartment_id)["live"])),  # 0396
         import_on=guest_guide_import.enabled(),
-        import_left=guest_guide_import.imports_left(apartment_id),
-        import_busy=guest_guide_import.in_progress(apartment_id),
+        import_left=import_left,
+        import_busy=import_busy,
+        import_sources=guest_guide_import.sources_left(apartment_id),  # 0403
+        import_first=import_first,  # 0403
         imports=guest_guide_import.imports(apartment_id),
-        import_drafts=guest_guide_merge.drafted_count(apartment_id),
+        import_drafts=import_drafts,
         questions_open=guest_handoff.open_count(apartment_id),
         usage=guide_translate.usage(apartment_id, ai.today().replace(day=1).isoformat()),
     )
@@ -174,11 +180,14 @@ async def guide_import(request: Request, apartment_id: int):
         return guard
     _home(request, apartment_id)
     form = await request.form()
+    cap = guest_guide_import.MAX_URL_LENGTH
+    urls = [str(form.get(name, ""))[:cap] for name in ("booking_url", "airbnb_url", "url")]
+    target = f"/apartments/{apartment_id}/leon/setup/import" if form.get("next") == "leon" else f"{_base(apartment_id)}#import"
     try:
-        guest_guide_import.request_import(apartment_id, str(form.get("url", ""))[:guest_guide_import.MAX_URL_LENGTH])
+        guest_guide_import.request_imports(apartment_id, urls)
     except guest_guide_import.GuideImportError as exc:
-        return back(f"{_base(apartment_id)}#import", err=flash(request, exc.key))
-    return back(f"{_base(apartment_id)}#import", msg=flash(request, "flash.guest_guide.import_queued"))
+        return back(target, err=flash(request, exc.key))
+    return back(target, msg=flash(request, "flash.guest_guide.import_queued"))
 
 
 def _guest_url(apartment_id: int) -> str:
