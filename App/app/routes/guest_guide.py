@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, Response
 
 from .. import access, auth, config, guest_guide, guest_guide_import, guest_handoff, guest_guide_merge, guide_photos, guide_token, payments, security, templating
 from .admin_helpers import back, flash
+from .. import ai, guide_translate  # 0353: the host usage line
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
 PRIVATE = {"Cache-Control": "no-store"}
@@ -81,6 +82,7 @@ def guide_index(request: Request, apartment_id: int):
         imports=guest_guide_import.imports(apartment_id),
         import_drafts=guest_guide_merge.drafted_count(apartment_id),
         questions_open=guest_handoff.open_count(apartment_id),
+        usage=guide_translate.usage(apartment_id, ai.today().replace(day=1).isoformat()),
     )
 
 

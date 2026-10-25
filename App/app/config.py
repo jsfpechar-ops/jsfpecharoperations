@@ -355,14 +355,20 @@ AI_PRICE_USD_PER_MTOK = {
 }
 
 
+# 0353: features whose default caps differ from 10 USD a month and no per-key cap.
+_AI_CAP_DEFAULTS = {"guide_translate": ("2", "0.05")}
+
+
 def ai_monthly_usd(feature: str) -> float:
-    """Monthly budget for one feature: UBYHOST_AI_MONTHLY_USD_<FEATURE>, else 10."""
-    return float(os.environ.get(f"UBYHOST_AI_MONTHLY_USD_{feature.upper()}", "10"))
+    """Monthly budget for one feature: UBYHOST_AI_MONTHLY_USD_<FEATURE>, else 10 (or the feature's own default)."""
+    default = _AI_CAP_DEFAULTS.get(feature, ("10", "0"))[0]
+    return float(os.environ.get(f"UBYHOST_AI_MONTHLY_USD_{feature.upper()}", default))
 
 
 def ai_key_daily_usd(feature: str) -> float:
     """Per-key daily cap for one feature: UBYHOST_AI_KEY_DAILY_USD_<FEATURE>; 0 means no per-key cap."""
-    return float(os.environ.get(f"UBYHOST_AI_KEY_DAILY_USD_{feature.upper()}", "0"))
+    default = _AI_CAP_DEFAULTS.get(feature, ("10", "0"))[1]
+    return float(os.environ.get(f"UBYHOST_AI_KEY_DAILY_USD_{feature.upper()}", default))
 
 
 HAVEL_WEEKLY_MESSAGES = int(os.environ.get("UBYHOST_HAVEL_WEEKLY", "8"))

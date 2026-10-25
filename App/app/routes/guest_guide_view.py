@@ -18,10 +18,12 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, RedirectResponse
+from starlette.background import BackgroundTask
 
 from .. import claim, guest_guide, guide_photos, guide_token, host_i18n, mail, rate_limit
 from ..templating import render_guest
 from .. import ai, leon  # 0352: the Leon (AI) chat
+from .. import guide_translate  # 0353: cards in the guest's language
 from .guest import (
     _device_holds_claim,
     _host_owns_apartment,
@@ -78,6 +80,7 @@ def _cards(apartment_id: int, level: str, lang: str, photo_url) -> List[Dict[str
         out.append(
             {
                 "id": item["id"],
+                "kind": item["kind"],
                 "topic": item["topic"],
                 "title": title,
                 "location": item["location"],
@@ -104,6 +107,9 @@ def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level
           leon_url: str = ""):
     live = guest_guide.progress(apartment["id"])["live"]
     cards = _cards(apartment["id"], level, lang, photo_url) if live else []
+    # 0353: cached translations in place; the missing ones are filled after the response.
+    missing = guide_translate.apply(cards, lang)
+    fill = bool(missing) and guide_translate.can_fill(apartment["id"])
     context.update(
         {
             "not_ready": not live,
@@ -113,10 +119,14 @@ def _page(request: Request, lang: str, apartment, context: Dict[str, Any], level
             # 0352: the chat only while the guide is live and Leon is switched on.
             "leon_url": leon_url if live and ai.enabled("leon") else "",
             "leon_host": leon.host_first_name((context.get("host") or {}).get("name", "")),
+            "translating": fill,
         }
     )
     response = render_guest(request, "guest/guide.html", context)
     response.headers.update(HARDEN)
+    if fill:
+        todo = [c for c in cards if int(c["id"]) in missing]
+        response.background = BackgroundTask(guide_translate.fill, apartment["id"], lang, todo)
     return _with_lang(response, lang)
 
 

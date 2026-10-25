@@ -20,6 +20,7 @@
     <p class="g-intro" data-guide-window-note>{{ t('guide_more_from_arrival') }}</p>
   {% endif %}
   {% if leon_url %}<a class="g-leon-jump" href="#leon" data-leon-jump hidden>{{ t('leon_ask') }}</a>{% endif %}
+  {% if translating %}<p class="g-intro" data-guide-translating>{{ t('guide_translating') }}</p>{% endif %}
   {% if not groups %}
     <div class="g-card" data-guide-empty>
       <p class="g-intro" style="margin-bottom:0">{{ t('guide_empty') }}</p>
@@ -48,6 +49,18 @@
         {% endif %}
         {% if card.video_url %}
           <p class="g-guide-video"><a href="{{ card.video_url }}" rel="noopener noreferrer" target="_blank">{{ t('guide_video') }}</a></p>
+        {% endif %}
+        {% if card.original %}
+          {# 0353: the AI translation is shown; the host's own words are one tap away, no JavaScript. #}
+          <details class="g-guide-original" data-guide-original>
+            <summary>{{ t('guide_translated') }}</summary>
+            <div class="g-guide-original-body">
+              <p class="g-guide-original-title">{{ card.original.title }}</p>
+              {% if card.original.location %}<p class="g-guide-where"><span>{{ t('guide_where') }}</span> {{ card.original.location }}</p>{% endif %}
+              {% if card.original.steps %}<ol class="g-guide-steps">{% for step in card.original.steps %}<li>{{ step }}</li>{% endfor %}</ol>{% endif %}
+              {% if card.original.watch_out %}<p class="g-guide-where"><span>{{ t('guide_watch_out') }}</span> {{ card.original.watch_out }}</p>{% endif %}
+            </div>
+          </details>
         {% endif %}
       </div>
     {% endfor %}

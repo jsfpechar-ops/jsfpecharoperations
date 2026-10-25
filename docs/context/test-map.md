@@ -17,6 +17,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Mail, SES | `test_ses_mail.py test_mail_*.py test_*_mail.py test_lifecycle_mail.py test_notification_copy.py` |
 | Retention, privacy, personal data | `test_retention*.py test_privacy_*.py test_no_tracking.py test_cookie_inventory.py test_pii_encryption.py test_dsr_audit.py test_data_keys.py` |
 | Guest bot (Leon) | `test_leon.py test_guest_leon_chat.py test_guest_leon_browser.py test_guest_handoff.py test_privacy_first.py test_cookie_inventory.py test_guest_languages.py test_ai.py` |
+| Guide translation (0353) | `test_guide_translate.py test_guide_translate_browser.py test_guest_guide_view.py test_ai.py` |
 | Database, migrations | `test_migrations.py test_db_*.py` |
 | Public pages, legal, landing | `test_public_*.py test_legal_*.py test_landing_*.py test_terms_copy.py test_wp24_terms_dpa.py` |
 | Copy, translations | `test_*_i18n.py test_no_em_dashes.py test_copy_cleanup.py test_flash_literals.py` |
