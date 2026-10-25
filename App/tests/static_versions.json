@@ -67,6 +67,10 @@
     "sha256": "3bfae56e8e3ecfef985fc8de587b89ec112d8d32ed89b2d7fabd3bc03ff2198d",
     "v": "20261024-0303"
   },
+  "havel.js": {
+    "sha256": "d905e1bfc244052f9005990e12e3ced1b3d662d74ec8adce8aef2f12ea2ba395",
+    "v": "20261025-0324"
+  },
   "host-controls.css": {
     "sha256": "5f187fafa975e322becf8101dd749d862a5c166f03d74523a738f2fd55a2f93d",
     "v": "20261014-0102d"
@@ -84,8 +88,8 @@
     "v": "20261023-door-code-window"
   },
   "host2.css": {
-    "sha256": "6917b039698ec643625766c9073d1d4b6163245e44bd43d4cc0d691b18c82f52",
-    "v": "20261025-0313"
+    "sha256": "4703573cca7b9b09b34cfd4dca05bab7b8153a87e7c94b258a6e80a91a9b0189",
+    "v": "20261025-0324"
   },
   "landing.css": {
     "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",
