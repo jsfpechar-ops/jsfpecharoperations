@@ -946,7 +946,8 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 /* 0324: Havel panel and launcher (MASTER 7.15, plan 17a-17b). Computer: the dialog is anchored
    bottom-right, 400 x 680 at most; phone: the existing bottom sheet, 92dvh. Tokens only. */
 .host-workspace .havel-launcher span { white-space: nowrap; }
-.host-workspace .havel-dialog { --havel-w: 400px; --havel-h: 680px; }
+/* 0395: show() keeps the panel out of the top layer, so it needs its own layer above sticky page rows and dropdowns. */
+.host-workspace .havel-dialog { --havel-w: 400px; --havel-h: 680px; z-index: var(--z-popover); }
 @media (min-width: 768px) {
   .host-workspace .havel-dialog { position: fixed; inset: auto var(--space-6) var(--space-6) auto; margin: 0; width: min(var(--havel-w), calc(100vw - var(--space-12))); }
   .host-workspace .havel-dialog .ui-sheet { height: min(var(--havel-h), calc(100dvh - var(--space-12))); }
@@ -981,7 +982,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 
 .host-workspace .havel-greeting { margin-bottom: var(--space-2); }
 @media (max-width: 767px) {
-  .host-workspace .havel-dialog { position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; z-index: var(--z-drawer); box-shadow: var(--shadow-2); }
+  .host-workspace .havel-dialog { position: fixed; inset: auto 0 calc(var(--tabbar-h) + var(--tabbar-safe)) 0; margin: 0; width: 100%; max-width: 100%; box-shadow: var(--shadow-2); }
   .host-workspace .havel-dialog .ui-sheet { max-height: 70dvh; height: 70dvh; }
   .host-workspace .havel-fab { right: var(--space-4); bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--space-4)); }
   body.host-workspace:has(.ui-sticky-actions) .havel-fab { bottom: calc(var(--tabbar-h) + var(--tabbar-safe) + var(--control-h) + var(--space-8)); }
@@ -1053,7 +1054,7 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-status { text-align: center; }
 .host-workspace .havel-support-open { width: 100%; justify-content: center; border-radius: var(--radius-pill); min-height: var(--control-h-phone); }
 @media (max-width: 767px) {
-  .host-workspace .havel-dialog { inset: var(--space-12) 0 0 0; height: auto; z-index: var(--z-drawer); }
+  .host-workspace .havel-dialog { inset: var(--space-12) 0 0 0; height: auto; }
   .host-workspace .havel-dialog .ui-sheet { height: calc(100dvh - var(--space-12)); max-height: none; padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom)); }
   .host-workspace .havel-composer textarea { font-size: var(--size-16); }
 }

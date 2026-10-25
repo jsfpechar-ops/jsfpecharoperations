@@ -9,7 +9,7 @@ Updated: 2026-10-25.
 
 ## Now
 
-- 0391 Havel topics #513; 0394 VAT bank account #518.
+- Havel 0391 #513, 0395 #520; 0394 VAT bank #518.
 - Guide + Leon 0341-0355: owner merges #465-#468.
 - 0291-0302 buttons/fee steps/invoice/copy. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
