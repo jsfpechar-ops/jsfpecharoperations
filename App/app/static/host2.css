@@ -919,3 +919,12 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .host-workspace .havel-meta { margin: 0; font-size: var(--size-13); color: var(--ink-3); }
 .host-workspace .havel-note { font-size: var(--size-12); }
 .host-workspace .havel-error { margin: 0; font-size: var(--size-13); color: var(--danger); }
+
+/* 0313: quick-help topics (plan 17c): five menu rows, a question list, one answer. Tokens only. */
+.host-workspace .havel-topics { display: flex; flex-direction: column; gap: var(--space-2); }
+.host-workspace .havel-topics .ui-btn-quiet { align-self: flex-start; }
+.host-workspace .havel-answer-title { margin: 0; font-size: var(--size-15); font-weight: 600; color: var(--ink); }
+.host-workspace .havel-topic { min-height: var(--control-h); }
+.host-workspace .havel-topics .havel-answer { max-width: none; }
+.host-workspace .havel-ask { align-self: flex-start; }
+.host-workspace .havel-topics .ui-menu-panel { position: static; display: flex; min-width: 0; box-shadow: none; border-radius: var(--card-radius); padding: var(--space-2); z-index: auto; }

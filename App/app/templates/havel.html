@@ -1,5 +1,5 @@
 {% extends "host_page.html" %}
-{% set nav = 'guide' %}
+{% set nav = 'havel' %}
 {% set body_kind = 'detail' %}
 {% block title %}{{ t('havel.title') }}{% endblock %}
 {% block page_title %}{{ t('havel.name') }}{% endblock %}
@@ -7,6 +7,7 @@
 {% block body %}
 <section class="ui-section havel-page" data-havel-page>
   <div class="havel-thread" role="log" aria-live="polite" data-havel-thread>
+    {% if havel_show_topics %}{% include "_havel_topics.html" %}{% endif %}
     {% include "_havel_thread.html" %}
   </div>
   {% include "_havel_form.html" %}

@@ -3157,6 +3157,7 @@ STRINGS: Dict[str, str] = {
     "havel.topic.back": "Tất cả chủ đề",
     "havel.topic.ask": "Vẫn cần giúp? Hỏi Havel",
     "havel.topic.guide": "Đọc thêm trong hướng dẫn",
+    "havel.topic.support_body": "Hãy viết cho bộ phận hỗ trợ: bạn thấy gì và ở trang nào. Một người sẽ trả lời qua e-mail.",
     "havel.q.stays.add": "Làm sao để thêm lượt ở bằng tay?",
     "havel.q.stays.change": "Tôi có thể sửa gì ở một lượt ở?",
     "havel.q.stays.cancelled": "Một đặt phòng bị hủy hoặc đổi ngày",

@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from fastapi import APIRouter, Depends, Request
 from fastapi.concurrency import run_in_threadpool
 
-from .. import access, ai, auth, havel, host_i18n, security
+from .. import access, ai, auth, havel, havel_topics, host_i18n, security
 from ..templating import render
 
 router = APIRouter(dependencies=[Depends(security.protect_host_post)])
@@ -83,15 +83,27 @@ def _state(request: Request, uid: int) -> Tuple[Optional[str], str]:
 
 
 def _page_context(request: Request, uid: int, items: List[Dict[str, Any]], exchanges: List[Dict[str, str]],
-                  *, topic: str = "", page: str = "", return_to: str = "/havel", error: Optional[str] = None) -> Dict[str, Any]:
+                  *, topic: str = "", q: str = "", page: str = "", return_to: str = "/havel",
+                  error: Optional[str] = None) -> Dict[str, Any]:
     state, remaining = _state(request, uid)
     payload, sig = havel.sign_history(uid, exchanges)
+    nav = next((k for k, v in NAV_TO_PAGE.items() if v == page), "")
+    ids = [p["id"] for p in _properties(request)]
     return {
         "havel_items": items, "havel_state": state, "havel_remaining": remaining, "havel_error": error,
-        "havel_history": payload, "havel_history_sig": sig, "havel_topic": topic, "havel_page": page,
+        "havel_history": payload, "havel_history_sig": sig, "havel_topic": topic, "havel_q": q, "havel_page": page,
         "havel_return_to": return_to, "havel_max": havel.MAX_MESSAGE_CHARS,
         "havel_fresh": len(exchanges) == 0,
+        "havel_topics": havel_topics.ordered(nav), "havel_topic_data": havel_topics.topic(topic) if topic else None,
+        "havel_answer": havel_topics.answer(host_i18n.lang_from_request(request), topic, q) if topic and q else None,
+        "havel_show_topics": len(exchanges) == 0 and not items,
+        "pages": havel.PAGES,
+        "page_url": lambda page_id: havel.page_url(page_id, ids[0] if ids else None, ids),
     }
+
+
+def _clean_id(value: str) -> str:
+    return re.sub(r"[^a-z_]", "", value)[:30]
 
 
 @router.get("/havel")
@@ -100,8 +112,16 @@ def havel_page(request: Request):
     if guard:
         return guard
     uid = int(auth.current_user(request)["id"])
-    topic = re.sub(r"[^a-z_]", "", request.query_params.get("topic", ""))[:30]
-    ctx = _page_context(request, uid, _thread(request, [], None), [], topic=topic, page="guide")
+    topic = _clean_id(request.query_params.get("topic", ""))
+    q = _clean_id(request.query_params.get("q", ""))
+    if topic not in havel_topics.TOPIC_IDS:
+        topic, q = "", ""
+    page = NAV_TO_PAGE.get(request.query_params.get("page", ""), "guide")
+    ctx = _page_context(request, uid, [], [], topic=topic, q=q, page=page,
+                        return_to=security.safe_local_path(request.query_params.get("return_to", ""), "/havel"))
+    if request.headers.get("x-havel") == "1":
+        ctx["havel_fragment"] = True
+        return render(request, "_havel_fragment.html", ctx)
     return render(request, "havel.html", ctx)
 
 
@@ -114,8 +134,12 @@ async def havel_send(request: Request):
     form = await request.form()
     message = str(form.get("message", "")).strip()
     exchanges = havel.read_history(uid, str(form.get("history", "")), str(form.get("history_sig", "")))
-    topic = re.sub(r"[^a-z_]", "", str(form.get("topic", "")))[:30]
+    topic = _clean_id(str(form.get("topic", "")))
+    q = _clean_id(str(form.get("q", "")))
+    if topic not in havel_topics.TOPIC_IDS:
+        topic, q = "", ""
     page = str(form.get("page", ""))
+    page = NAV_TO_PAGE.get(page, page)
     page = page if page in havel.PAGES else ""
     device = "phone" if form.get("device") == "phone" else "computer"
     return_to = security.safe_local_path(str(form.get("return_to", "")), "/havel")
@@ -145,7 +169,7 @@ async def havel_send(request: Request):
                 havel.record_stat("limit_hit")
             else:
                 host = havel.Host(user_id=uid, lang=host_i18n.lang_from_request(request), device=device,
-                                  properties=_properties(request), page=page, topic=topic)
+                                  properties=_properties(request), page=page, topic=topic, read_keys=havel_topics.read_keys(topic, q))
                 try:
                     reply = await run_in_threadpool(havel.ask, host, exchanges, message)
                 except ai.AIDisabled:
@@ -174,10 +198,10 @@ async def havel_send(request: Request):
         last = {"items": items}
 
     if fragment:
-        ctx = _page_context(request, uid, last["items"] if last else [], exchanges, topic=topic, page=page,
+        ctx = _page_context(request, uid, last["items"] if last else [], exchanges, topic=topic, q=q, page=page,
                             return_to=return_to, error=error)
         ctx["havel_fragment"] = True
-        return render(request, "_havel_thread.html", ctx)
-    ctx = _page_context(request, uid, _thread(request, exchanges, last), exchanges, topic=topic, page=page,
+        return render(request, "_havel_fragment.html", ctx)
+    ctx = _page_context(request, uid, _thread(request, exchanges, last), exchanges, topic=topic, q=q, page=page,
                         return_to=return_to, error=error)
     return render(request, "havel.html", ctx)
