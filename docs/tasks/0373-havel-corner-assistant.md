@@ -14,7 +14,8 @@ After this brief:
 2. The Havel panel opens with `dialog.show()` (not `showModal()`): no backdrop, no grey, the page behind stays scrollable and clickable. The panel stays open when the host clicks the page; it closes only with its X button or Escape while focus is inside it.
 3. Phone (< 768 px): the panel is a smaller bottom sheet that sits above the tab bar, full width, at most 70dvh tall, no backdrop. Computer: unchanged size and place (400 x 680, bottom-right).
 4. While the panel is open the corner button is hidden; on close it comes back and gets focus (or the element that opened the panel, if that is still visible).
-5. The home screen of the panel and of `/havel` starts with a Havel bubble with a fixed greeting (`havel.greeting`, en, cs, vi), above "What do you need help with?".
+5. The home screen of the panel and of `/havel` starts with a Havel bubble with a fixed greeting (`havel.intro`, en, cs, vi; `havel.greeting` already exists as havel.py's reply and is not touched), above "What do you need help with?".
+7. No "Open as a page" (expand) icon in the panel header (Josef 2026-10-25: "get rid of the extend feature, I don't want a separate page for Havel"). The `/havel` route stays only as the no-JavaScript fallback; nothing in the JavaScript UI links to it as a page.
 6. The text box empties as soon as a message is sent; on error the text comes back (already done by `showError`).
 
 Out of scope: keeping the chat across pages (brief 0374, same branch, runs after this one). Do NOT edit `App/app/routes/havel.py` or `App/app/templates/_havel_form.html`: another branch is changing them.
@@ -90,16 +91,18 @@ Current code (`grep -n` each before editing; STOP and report if one is missing):
    ```
    <div class="havel-msg havel-msg-havel havel-greeting" data-havel-greeting>
      <div class="havel-who"><span class="havel-avatar" aria-hidden="true">{{ icon('message-circle-question', 16) }}</span><span class="havel-name">{{ t('havel.name') }}</span></div>
-     <div class="havel-bubble"><p>{{ t('havel.greeting') }}</p></div>
+     <div class="havel-bubble"><p>{{ t('havel.intro') }}</p></div>
    </div>
    ```
    It is template text only: no AI call, no limit count, never in `history`. Add the key after each `havel.topics_title` line (draft wording; the owner may replace it later, keep it one key):
-   - en: `"havel.greeting": "Hi, I'm Havel, the UbyHost support assistant (AI). I can show you where everything is in the app and walk you through it step by step. Pick a topic below or just write your question in your own words.",`
-   - cs: `"havel.greeting": "Dobrý den, jsem Havel, asistent podpory UbyHost (AI). Ukážu vám, kde co v aplikaci najdete, a provedu vás krok za krokem. Vyberte si téma níže, nebo mi napište otázku vlastními slovy.",`
-   - vi: `"havel.greeting": "Xin chào, tôi là Havel, trợ lý hỗ trợ của UbyHost (AI). Tôi có thể chỉ cho bạn mọi thứ nằm ở đâu trong ứng dụng và hướng dẫn bạn từng bước. Hãy chọn một chủ đề bên dưới hoặc viết câu hỏi bằng lời của bạn.",`
+   - en: `"havel.intro": "Hi, I'm Havel, the UbyHost support assistant (AI). I can show you where everything is in the app and walk you through it step by step. Pick a topic below or just write your question in your own words.",`
+   - cs: `"havel.intro": "Dobrý den, jsem Havel, asistent podpory UbyHost (AI). Ukážu vám, kde co v aplikaci najdete, a provedu vás krok za krokem. Vyberte si téma níže, nebo mi napište otázku vlastními slovy.",`
+   - vi: `"havel.intro": "Xin chào, tôi là Havel, trợ lý hỗ trợ của UbyHost (AI). Tôi có thể chỉ cho bạn mọi thứ nằm ở đâu trong ứng dụng và hướng dẫn bạn từng bước. Hãy chọn một chủ đề bên dưới hoặc viết câu hỏi bằng lời của bạn.",`
    Placement: `havel.js` `echo(text)` removes `[data-havel-topics]` when the host types, and the greeting must stay as the first message. So put the greeting block BEFORE `<div class="havel-topics" data-havel-topics>`, wrapped in `{% if not havel_answer and not havel_topic_data %}...{% endif %}` so it shows only on the home screen. Not inside the `{% else %}` branch.
 
-7. **MASTER 7.15**: replace "Launchers: sidebar item above Help & guide; phone top-bar icon button and More row. No floating bubble, no toasts in the panel." with "Launcher: one round accent button fixed bottom-right (`.havel-fab`, above the tab bar on phone), hidden while the panel is open; plus the phone More row and the guide page button. The panel opens with `show()`: no backdrop, the page stays usable; it closes with its X or Escape. Phone: bottom sheet above the tab bar, at most 70dvh. The home screen starts with the fixed greeting `havel.greeting` (template, no AI). No toasts in the panel."
+6b. **Remove the expand icon.** In `_havel_panel.html` delete the line `<a class="ui-btn ui-btn-quiet ui-btn-icon" href="/havel" aria-label="{{ t('havel.open_page') }}" ...>{{ icon('external-link', 20) }}</a>`. If `grep -rn "havel.open_page" App/app App/tests` then shows only the i18n files, delete the `havel.open_page` lines in `host_i18n.py` (en, cs) and `host_vi_i18n.py`; fix any test that asserted the icon.
+
+7. **MASTER 7.15**: replace "Launchers: sidebar item above Help & guide; phone top-bar icon button and More row. No floating bubble, no toasts in the panel." with "Launcher: one round accent button fixed bottom-right (`.havel-fab`, above the tab bar on phone), hidden while the panel is open; plus the phone More row and the guide page button. The header has only the close button (no "Open as a page"). The panel opens with `show()`: no backdrop, the page stays usable; it closes with its X or Escape. Phone: bottom sheet above the tab bar, at most 70dvh. The home screen starts with the fixed greeting `havel.intro` (template, no AI). No toasts in the panel."
 
 8. **base.html**: bump `host2.css?v=`, `shell.js?v=` and `havel.js?v=` to `20261025-0373`.
 
@@ -108,12 +111,27 @@ Current code (`grep -n` each before editing; STOP and report if one is missing):
    - `test_havel_browser.py`: computer 1280: click `[data-havel-fab]`, dialog open, `page.evaluate("document.querySelector('#havel-sheet').matches(':modal')")` is False, the fab is hidden, a link in the sidebar is still clickable while open (click `#app-sidebar a[href="/properties"]` or any nav link in a NEW page check is not needed: just assert `page.locator("#app-sidebar a").first.is_enabled()` and that `document.elementFromPoint` at the sidebar centre is inside `#app-sidebar`), Escape with focus in the panel closes it, fab visible again and focused. Phone 390: fab visible above the tab bar (its bottom < tab bar top), tap opens the sheet, sheet bottom <= tab bar top + 1, sheet height <= 0.7 * viewport + 1, the tab bar is still clickable (elementFromPoint inside `.ui-tabbar`). Send a message and assert the textarea is empty before the reply arrives (check right after `press("Enter")`). Replace the old sidebar/topbar locators everywhere with `[data-havel-fab]`.
    - Screenshots to `docs/tasks/screenshots-0373/`: `fab-dashboard-390.png`, `panel-open-390.png` (with greeting), `panel-open-1280.png`, `panel-open-cs-390.png`.
 
-## 5. Checks
+## 5. Do not touch
 
-From `App/`:
+`App/app/routes/havel.py`, `App/app/templates/_havel_form.html` (another branch changes them), `App/app/havel.py`, the existing `havel.greeting` key (it is havel.py's greeting reply; leave its text alone).
+
+## 6. Commands
+
+From `App/` (browser tests: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium`):
 ```
 .venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841 | tail -5
 .venv/bin/python -m pytest tests/test_havel_panel.py tests/test_havel_page.py tests/test_havel_palette.py tests/test_havel_browser.py tests/test_design_*.py tests/test_dev_ui.py tests/test_send_controls.py tests/test_stay_fee_detail.py -q --tb=short 2>&1 | tail -30
 cd .. && python3 scripts/design_lint.py | tail -5 && python3 scripts/context_lint.py | tail -5
 ```
-Browser tests must run with 0 skipped (`UBYHOST_REQUIRE_BROWSER=1`). Then `git checkout -- docs/tasks/screenshots-0*` for folders other than `screenshots-0373` (browser runs rewrite them). Write `docs/tasks/0373-report.md` (what changed, test output tail, screenshot list). Commit; do not push.
+
+## 7. Acceptance
+
+All the Objective points hold; the commands pass with 0 skipped browser tests; ruff, design_lint and context_lint pass. Then `git checkout --` the other `docs/tasks/screenshots-0*` folders the run rewrote.
+
+## 8. Stop and ask
+
+A `grep -n` anchor from section 2 is missing, a copy key already exists, a test outside the Havel files fails in a way this change could cause, or the work needs an edit in a "Do not touch" file.
+
+## 9. Report
+
+`docs/tasks/0373-report.md`: what changed per step, the test output tail (passed/failed/skipped), the screenshot list, deviations. Commit on the branch; do not push.

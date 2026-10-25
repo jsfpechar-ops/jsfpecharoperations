@@ -13,7 +13,7 @@ After this brief:
 1. The chat (thread HTML plus the signed history fields) is kept in the tab's `sessionStorage` under one key and restored on every host page and on `/havel`. The server still stores nothing.
 2. If the panel was open when the page changed, it opens again on the new page (with `show()`, no focus steal, scrolled to the newest message).
 3. "New chat" (the reset submit) and signing out clear the stored chat. A stored chat from another user is ignored and removed.
-4. The `/havel` page link in the panel header ("Open as a page") shows the same chat.
+4. The `/havel` no-JavaScript fallback page (reached only by direct URL) also restores the same chat; there is no link to it in the panel.
 5. If a Havel reply arrives while the panel is closed, the corner button shows a small dot until the panel is opened again.
 
 ## 2. Context
@@ -72,12 +72,27 @@ Privacy (AGENTS.md rule 2): `sessionStorage` is per tab, is gone when the tab cl
    - `test_new_chat_and_other_user_clear_it`: after one message, submit "New chat" (`button[name=reset]`), navigate, assert no `.havel-msg-host` in the thread and the greeting is shown. Then write a fake stored chat with `owner: "999999"` via `page.evaluate` (a Python string is fine here: `page.evaluate` is allowed, only `wait_for_function` strings are blocked), reload, assert it was not restored and the key is gone.
    - Do not add a dot test if it needs a slow fake reply; a unit-level check that `data-unread` is set after a reply that arrives while closed is enough if the fake can delay (grep `ai_fake` for a delay option; skip if none and say so in the report).
 
-## 5. Checks
+## 5. Do not touch
 
-From `App/`:
+`App/app/routes/havel.py`, `App/app/templates/_havel_form.html`, `App/app/havel.py`, the server: nothing is stored server-side.
+
+## 6. Commands
+
+From `App/` (browser tests: `UBYHOST_REQUIRE_BROWSER=1 UBYHOST_BROWSER_EXECUTABLE=/opt/pw-browsers/chromium`):
 ```
 .venv/bin/ruff check app tests tools --select E9,F63,F7,F82,F401,F841 | tail -5
 UBYHOST_REQUIRE_BROWSER=1 .venv/bin/python -m pytest tests/test_havel_panel.py tests/test_havel_page.py tests/test_havel_palette.py tests/test_havel_browser.py tests/test_design_*.py tests/test_dev_ui.py -q --tb=short 2>&1 | tail -30
 cd .. && python3 scripts/design_lint.py | tail -5 && python3 scripts/context_lint.py | tail -5
 ```
-0 skipped. `git checkout --` the other `docs/tasks/screenshots-0*` folders the run rewrote. Write `docs/tasks/0374-report.md`. Commit; do not push.
+
+## 7. Acceptance
+
+All the Objective points hold; the commands pass with 0 skipped browser tests; ruff, design_lint and context_lint pass. Then `git checkout --` the other `docs/tasks/screenshots-0*` folders the run rewrote.
+
+## 8. Stop and ask
+
+A `grep -n` anchor from section 2 is missing, a copy key already exists, a test outside the Havel files fails in a way this change could cause, or the work needs an edit in a "Do not touch" file.
+
+## 9. Report
+
+`docs/tasks/0374-report.md`: what changed per step, the test output tail (passed/failed/skipped), the screenshot list, deviations. Commit on the branch; do not push.
