@@ -1,0 +1,16 @@
+{% from "_components.html" import help_tip, copy_button with context %}
+{#- 0391: the TTLock sharing steps. One copy for the Door lock tab and the setup wizard. -#}
+{% macro share_block(code_id, section, receiver, return_to, primary) %}
+  <h2>{{ t('smart_locks.share_title') }}</h2>
+  <p class="ui-sub">{{ t('smart_locks.warn_owner') }}</p>
+  <p><strong>{{ t('smart_locks.name_label') }}</strong></p>
+  <p><code id="{{ code_id }}">{{ receiver }}</code> {{ copy_button(code_id) }}</p>
+  {# 0090: three essentials here; every TTLock tap lives in the Guide. #}
+  <h3 class="smart-locks-steps-title">{{ t('smart_locks.steps_title') }}
+    {{ help_tip('smart-locks-steps-help-' ~ section, t('smart_locks.steps_help'), '/guide#door-codes-share') }}</h3>
+  <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('smart_locks.essential' ~ n) }}</li>{% endfor %}</ol>
+  <p class="ui-sub"><strong>{{ t('smart_locks.warn_ekey') }}</strong></p>
+  <form method="post" action="/smart-locks/refresh"><input type="hidden" name="return_to" value="{{ return_to }}">
+    <input type="hidden" name="section" value="{{ section }}">
+    <div class="action-group"><button class="{{ 'ui-btn ui-btn-primary' if primary else 'ui-btn ui-btn-secondary' }}" type="submit">{{ t('smart_locks.check') }}</button></div></form>
+{% endmacro %}
