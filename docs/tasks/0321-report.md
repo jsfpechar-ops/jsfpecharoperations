@@ -1,6 +1,6 @@
 # 0321 report
 
-Status: blocked
+Status: review
 Done: steps 1 to 3. Left: step 3 verification (test_havel_cases.py fails until 0327 adds the guide_* page ids), then section 7 acceptance.
 
 ## Files changed
@@ -33,3 +33,5 @@ Done: steps 1 to 3. Left: step 3 verification (test_havel_cases.py fails until 0
 ## Owner steps left
 
 - None before rerun. Real eval (0323, step 3) needs the staging key.
+
+- Orchestrator: after 0327 (page ids) was merged into this branch, `pytest tests/test_havel_cases.py tests/test_havel_engine.py` gives 24 passed; section 7 holds.
