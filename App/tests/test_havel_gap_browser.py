@@ -1,7 +1,13 @@
 """0320: the "This didn't help" button at 390 px."""
+import os
 from pathlib import Path
 
-from playwright import sync_api
+import pytest
+
+if os.environ.get("UBYHOST_REQUIRE_BROWSER") == "1":
+    from playwright import sync_api
+else:
+    sync_api = pytest.importorskip("playwright.sync_api")
 
 from app import ai
 from tests.ai_fake import FakeClient, reply
