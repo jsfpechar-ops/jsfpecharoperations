@@ -511,7 +511,7 @@ def test_the_completion_mail_links_only_the_host():
         host_url=host_url,
     )
     html_part = html.unescape(content["html"])
-    label = "For your host: open this stay in UbyHost"
+    label = "See your stay page (host only)"
     assert host_url in content["html"]
     assert host_url in content["text"]
     assert label in html_part

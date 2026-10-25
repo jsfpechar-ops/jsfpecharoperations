@@ -48,3 +48,4 @@ None.
 - The guest stay link is gone from the receipt; the only link is a host-only "open this stay in UbyHost" link (A1 to A3), and the address row is dropped (A6). Mail test set: 203 passed.
 - Previews re-rendered with `host_url` and no address (A5), with `UBYHOST_GUEST_LANGS=en,cs,uk`; the three PNGs are overwritten.
 - Open question: the footer still says "registered with this address" in all three languages (existing copy, not in the brief, not changed).
+Addendum B: host link label is now 'See your stay page (host only)' in six languages (owner).

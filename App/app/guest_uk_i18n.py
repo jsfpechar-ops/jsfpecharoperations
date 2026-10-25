@@ -409,7 +409,7 @@ STRINGS: Dict[str, str] = {
     "mail_completion_checkin_value": "%(date)s, з %(time)s",
     "mail_completion_checkout_label": "Виселення",
     "mail_completion_checkout_value": "%(date)s, до %(time)s",
-    "mail_completion_host_action": "Для господаря: відкрити проживання в UbyHost",
+    "mail_completion_host_action": "Переглянути сторінку проживання (лише для господаря)",
     "mail_reminder_guest_subject": "Завтра в %(property)s: зареєстровано гостей %(filled)s з %(expected)s",
     "mail_reminder_guest_subject_no_count": "Завтра в %(property)s: реєстрацію гостей не завершено",
     "mail_reminder_guest_preheader": "Ваше проживання починається завтра, а реєстрацію не завершено.",

@@ -252,3 +252,14 @@ Commands: `cd App && .venv/bin/python -m pytest tests/test_guest_mail.py tests/t
 ### Step A5: previews
 
 Re-render the 3 previews as in step 5, adding `host_url="https://app.ubyhost.com/reservations/17"` and without `address` (uk with uk enabled). Commit as `0387 addendum A`. Append a 3-line "Addendum A" section to the report.
+
+## Addendum B (owner, 2026-10-25)
+
+Host link label is now "See your stay page (host only)" in six languages (owner):
+
+- en: See your stay page (host only)
+- cs: Zobrazit stránku pobytu (jen pro hostitele)
+- de: Zur Aufenthaltsseite (nur für Gastgeber)
+- es: Ver la página de su estancia (solo anfitrión)
+- fr: Voir la page du séjour (hôte uniquement)
+- uk: Переглянути сторінку проживання (лише для господаря)
