@@ -1,6 +1,6 @@
 # 0328 report: Guide Dashboard, Settings and security, Archive, Data requests
 
-Status: blocked
+Status: review
 Done: steps 1 to 9. Left: step 10 (look once at the four new 390 px screenshots, commit them, then commit this report with the sentences per screenshot).
 
 ## Files changed
@@ -38,3 +38,5 @@ Done: steps 1 to 9. Left: step 10 (look once at the four new 390 px screenshots,
 ## Owner steps left
 1. Follow "Log in with a passkey" on staging and say if a label differs.
 2. Read "Data requests" and say if you want more on how to answer one.
+
+- Step 10 (orchestrator): the four 390 px screenshots were viewed and committed; the fixed bottom bar over the middle of the element shot is a capture artifact (seen in 0316 too). Key count: 41 is right (every key is listed in the brief).
