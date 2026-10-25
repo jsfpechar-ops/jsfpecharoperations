@@ -209,10 +209,9 @@ def _sig(user_id: int, payload: str) -> str:
 
 
 def sign_history(user_id: int, exchanges: List[Dict[str, str]]) -> Tuple[str, str]:
-    """exchanges: [{"host": "...", "havel": "..."}, ...], newest last. Capped before signing."""
-    trimmed = exchanges[-MAX_HISTORY_EXCHANGES:]
-    while trimmed and sum(len(e.get("host", "")) + len(e.get("havel", "")) for e in trimmed) > MAX_HISTORY_CHARS:
-        trimmed = trimmed[1:]
+    """exchanges: [{"host": "...", "havel": "..."}, ...], newest last. Keeps the last MAX_EXCHANGES (the conversation cap counts them)."""
+    trimmed = [{"host": str(e.get("host", ""))[:MAX_MESSAGE_CHARS], "havel": str(e.get("havel", ""))[:MAX_REPLY_CHARS]}
+                  for e in exchanges[-MAX_EXCHANGES:]]
     payload = json.dumps(trimmed, ensure_ascii=False, separators=(",", ":"))
     return payload, _sig(user_id, payload)
 
@@ -229,7 +228,7 @@ def read_history(user_id: int, payload: str, sig: str) -> List[Dict[str, str]]:
         return []
     clean = [{"host": str(e.get("host", ""))[:MAX_MESSAGE_CHARS], "havel": str(e.get("havel", ""))[:MAX_REPLY_CHARS]}
              for e in items if isinstance(e, dict)]
-    return clean[-MAX_HISTORY_EXCHANGES:]
+    return clean[-MAX_EXCHANGES:]
 
 
 # --- request --------------------------------------------------------------------
@@ -266,11 +265,19 @@ def host_context(host: Host, today: date) -> str:
     return "<host_context>\n" + "\n".join(lines) + "\n</host_context>"
 
 
+def model_history(history: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    """The part of the conversation the model sees: the last MAX_HISTORY_EXCHANGES within MAX_HISTORY_CHARS."""
+    trimmed = history[-MAX_HISTORY_EXCHANGES:]
+    while trimmed and sum(len(e["host"]) + len(e["havel"]) for e in trimmed) > MAX_HISTORY_CHARS:
+        trimmed = trimmed[1:]
+    return trimmed
+
+
 def build_messages(host: Host, history: List[Dict[str, str]], message: str, today: date,
                    mapping: Dict[str, str]) -> List[Dict[str, str]]:
     """The Messages API list: earlier exchanges (redacted), then the new user turn."""
     messages: List[Dict[str, str]] = []
-    for exchange in history:
+    for exchange in model_history(history):
         host_text, _ = redact(exchange["host"], mapping)
         messages.append({"role": "user", "content": f"<message>{host_text}</message>"})
         havel_text, _ = redact(exchange["havel"], mapping)

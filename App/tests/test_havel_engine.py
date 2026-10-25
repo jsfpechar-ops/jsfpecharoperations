@@ -230,7 +230,10 @@ def test_history_is_signed_capped_and_dropped_when_forged():
     exchanges = [{"host": f"q{i}", "havel": "a" * 1500} for i in range(6)]
     payload, sig = havel.sign_history(7, exchanges)
     back = havel.read_history(7, payload, sig)
-    assert 1 <= len(back) <= 2 and back[-1]["host"] == "q5"
+    assert len(back) == 6 and back[-1]["host"] == "q5"
+    assert 1 <= len(havel.model_history(back)) <= 2 and havel.model_history(back)[-1]["host"] == "q5"
+    seven = havel.read_history(7, *havel.sign_history(7, exchanges + [{"host": "q6", "havel": "a"}]))
+    assert len(seven) == 6 and seven[0]["host"] == "q1"
     assert havel.read_history(7, payload, sig[:-1] + ("0" if sig[-1] != "0" else "1")) == []
     assert havel.read_history(8, payload, sig) == []
     assert havel.read_history(7, payload.replace("q5", "q9"), sig) == []

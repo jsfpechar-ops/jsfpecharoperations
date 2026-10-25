@@ -87,3 +87,15 @@ def test_too_long_is_refused_without_a_call(host):
     ai.set_client_for_tests(fake)
     page = _post(host, {"message": "x" * 601}).text
     assert "under 600 characters" in page and fake.calls == []
+
+
+def test_the_seventh_message_starts_a_fresh_conversation(host):
+    from tests.test_submission_retry_cap import USERNAME
+
+    fake = FakeClient([])
+    ai.set_client_for_tests(fake)
+    uid = int(db.query_one("SELECT id FROM user_account WHERE username = ?", (USERNAME,))["id"])
+    full = [{"host": f"question {n}", "havel": "answer"} for n in range(havel.MAX_EXCHANGES)]
+    payload, sig = havel.sign_history(uid, full)
+    page = html.unescape(_post(host, {"message": "One more?", "history": payload, "history_sig": sig}).text)
+    assert "Let's start a fresh conversation." in page and fake.calls == []
