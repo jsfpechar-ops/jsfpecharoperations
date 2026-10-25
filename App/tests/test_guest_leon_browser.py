@@ -270,3 +270,51 @@ def test_leon_greets_first(live_server, browser, monkeypatch):  # noqa: F811
         context.close()
     finally:
         _cleanup()
+
+
+def test_leon_topic_chips(live_server, browser, monkeypatch):  # noqa: F811
+    # 0390: situation chips answered from the guide's own cards. No request, no AI call.
+    monkeypatch.setattr(config, "AI_FEATURES", frozenset({"leon"}))
+    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
+    apartment_id, token = _seed()
+    docs_shots = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0387"
+    try:
+        context = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2)
+        page = context.new_page()
+        leon_reqs = []
+        page.on("request", lambda r: leon_reqs.append(r.url))
+        page.goto(f"{live_server}/g/{token}?lang=en")
+        leon_path = page.get_attribute("[data-leon]", "data-leon-url")
+        chips = page.locator("[data-leon-welcome-chips] .g-leon-chip")
+        # checkin, heating, checkout and emergency are filled; emergency always shows (help line).
+        assert chips.count() == 4
+        assert page.locator(".g-leon-chip", has_text="Wi-Fi").count() == 0
+        assert page.locator(".g-leon-chip", has_text="Emergency").count() == 1
+        SHOTS.mkdir(parents=True, exist_ok=True)
+        docs_shots.mkdir(parents=True, exist_ok=True)
+        page.locator("#leon").screenshot(path=str(SHOTS / "leon-chips-390.png"))
+        shutil.copy(SHOTS / "leon-chips-390.png", docs_shots / "leon-chips-390.png")
+        before = len([u for u in leon_reqs if leon_path in u])
+
+        page.locator(".g-leon-chip", has_text="I can't get in").click()
+        guest = page.locator("[data-leon-msg=guest]", has_text="I can't get in")
+        assert guest.count() == 1
+        card = page.locator("[data-leon-msg=card]", has_text="Step one").first
+        assert card.is_visible()
+        assert card.locator("a", has_text="See the card with photos").get_attribute("href").startswith("#card-")
+        assert page.evaluate("document.documentElement.scrollWidth") <= 390
+        page.locator("#leon").screenshot(path=str(SHOTS / "leon-card-answer-390.png"))
+        shutil.copy(SHOTS / "leon-card-answer-390.png", docs_shots / "leon-card-answer-390.png")
+
+        page.locator(".g-leon-chip", has_text="Emergency").click()
+        assert "112" in page.locator("[data-leon-msg=card]", has_text="112").first.inner_text()
+        assert before == len([u for u in leon_reqs if leon_path in u])
+
+        page.fill("[data-leon-input]", "Hello")
+        page.click("[data-leon-send]")
+        page.wait_for_function("document.querySelector('[data-leon-log]').innerText.includes('What can I do for you')")
+        assert page.locator("[data-leon-msg=card]", has_text="Step one").count() >= 1
+        assert page.evaluate("document.documentElement.scrollWidth") <= 390
+        context.close()
+    finally:
+        _cleanup()

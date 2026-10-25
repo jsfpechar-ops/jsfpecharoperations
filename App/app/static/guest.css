@@ -1395,3 +1395,9 @@ details.g-summary > .g-summary-body { padding: 16px 20px 18px; }
 /* 0388: the AI tag and the concierge line under Leon's name. */
 .g-leon-tag { display: inline-block; margin-left: 6px; padding: 2px 6px; border-radius: 6px; background: var(--g-accent-soft); color: var(--g-accent); font-size: 11px; font-weight: 700; letter-spacing: .04em; vertical-align: middle; }
 .g-leon-role { margin: 2px 0 0; font-size: 14px; color: var(--g-muted); }
+/* 0390: guide topics as chips under Leon's bubbles. */
+.g-leon-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 4px; }
+.g-leon-chip { min-height: 44px; padding: 8px 16px; border: 1px solid var(--g-line); border-radius: var(--g-pill); background: var(--g-surface); color: var(--g-accent); font: inherit; font-size: 15px; font-weight: 600; text-align: left; cursor: pointer; }
+.g-leon-chip:hover { background: var(--g-accent-soft); }
+.g-leon-chip:focus-visible { outline: 2px solid var(--g-accent); outline-offset: 2px; }
+.g-leon-see { display: inline-block; margin-top: 8px; color: var(--g-accent); font-size: 14.5px; font-weight: 600; }
