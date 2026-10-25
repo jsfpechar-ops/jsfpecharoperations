@@ -56,7 +56,7 @@
     <small>{{ t('property_nav.switch_enabled') if door_code.enabled else t('property_nav.switch_off') }}</small></div>{{ open_pill }}</a>
   {% endif %}
   {% if leon_card %}
-  <a class="host-property-card" href="{{ base_url }}/leon" data-leon-card="{{ leon_card }}">{{ icon('message-circle-question', 20) }}<div><strong>{{ t('leon_page.title') }}</strong>
+  <a class="host-property-card" href="{{ base_url }}/leon{{ '' if leon_card == 'on' else '/setup' }}" data-leon-card="{{ leon_card }}">{{ icon('message-circle-question', 20) }}<div><strong>{{ t('leon_page.title') }}</strong>
     <small>{{ t('leon_page.card.' ~ leon_card) }}</small></div>{{ open_pill }}</a>
   {% endif %}
 </div>
