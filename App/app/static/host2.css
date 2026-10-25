@@ -978,3 +978,8 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .havel-links .havel-support { flex-basis: 100%; display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--card-radius); background: var(--surface); }
 .havel-support-title { margin: 0; font-size: var(--size-16); }
 .havel-links > .havel-meta { flex-basis: 100%; }
+
+/* 0332: Havel "You can ask next" buttons under the newest reply */
+.havel-next { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.havel-next .havel-meta { flex-basis: 100%; margin: 0; }
+.havel-next .ui-btn { max-width: 100%; white-space: normal; text-align: left; }

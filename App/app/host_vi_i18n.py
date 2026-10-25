@@ -3437,6 +3437,7 @@ STRINGS: Dict[str, str] = {
     "havel.support.sent": "Đã chuyển đến đội UbyHost. Họ đã biết và thường trả lời trong vòng vài giờ.",
     "havel.support.replies_to": "Hỗ trợ sẽ trả lời đến %(email)s",
     "havel.support.mailto": "Gửi e-mail cho hỗ trợ",
+    "havel.next_title": "Bạn có thể hỏi tiếp:",
     "havel.support.summary": "Nội dung Havel sẽ gửi",
     "havel.support.empty": "Hãy viết bạn cần giúp gì, rồi gửi.",
     "havel.support.limit": "Tuần này bạn đã gửi ba yêu cầu. Hãy viết đến %(email)s.",

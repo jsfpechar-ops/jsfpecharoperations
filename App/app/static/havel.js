@@ -39,6 +39,7 @@
       var replace = mode === "replace" || items.getAttribute("data-mode") === "replace";
       if (replace) t.innerHTML = "";
       var old = t.querySelector("[data-havel-topics]");
+      if (!replace) t.querySelectorAll("[data-havel-next]").forEach(function (n) { n.remove(); });
       if (old && !replace) old.remove();
       while (items.firstChild) t.appendChild(items.firstChild);
     }
@@ -170,6 +171,16 @@
   }
 
   root.addEventListener("submit", function (event) {
+    var nf = event.target.closest ? event.target.closest("[data-havel-next]") : null;
+    if (nf) {
+      event.preventDefault();
+      var picked = event.submitter && event.submitter.value;
+      if (!picked) return;
+      nf.remove();
+      echo(picked);
+      send({ message: picked });
+      return;
+    }
     var f = event.target.closest ? event.target.closest("[data-havel-form]") : null;
     if (!f) return;
     event.preventDefault();
