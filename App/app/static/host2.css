@@ -1013,3 +1013,17 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
 .havel-next { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .havel-next .havel-meta { flex-basis: 100%; margin: 0; }
 .havel-next .ui-btn { max-width: 100%; white-space: normal; text-align: left; }
+
+/* 0385: on phone/tablet row cards the text "Open" gets its own line at the
+   bottom right; the actions cell is see-through and never covers the fields;
+   cells carry no surface of their own (owner 2026-10-25). */
+@media (max-width: 1023px) {
+  .host-workspace .table-cards tbody tr.clickable-row > td { background: transparent; }
+  .host-workspace .table-cards tbody tr.clickable-row:is(:hover, :focus-within, :active) > td { background: transparent; }
+  .host-workspace .table-cards tr.clickable-row > td.row-actions { pointer-events: none; }
+  .host-workspace .table-cards tr.clickable-row > td.row-actions > * { pointer-events: auto; }
+}
+/* 0385: below 720 px the actions cell is lifted to the top corner (0200), so the card keeps a bottom line free for Open. */
+@media (max-width: 720px) {
+  .host-workspace .table-cards tr.clickable-row:has(.row-open) { padding-bottom: calc(var(--control-h-compact) + var(--space-6)); }
+}
