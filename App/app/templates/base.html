@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="/static/host-controls.css?v=20261014-0102d">
   <link rel="stylesheet" href="/static/host-design0123.css?v=20261022-0253b">
   {% if nav | default('') == 'cleaning' %}<link rel="stylesheet" href="/static/cleaning.css?v=20261024-0291">{% endif %}
-  <link rel="stylesheet" href="/static/host2.css?v=20261025-0324">
+  <link rel="stylesheet" href="/static/host2.css?v=20261025-0324b">
   <link rel="stylesheet" href="/static/workflow.css?v=20261024-0355">
   <link rel="stylesheet" href="/static/wizard.css?v=20261022-0274">
   {% endif %}
@@ -247,6 +247,6 @@
 {% if show_nav | default(true) %}<script src="/static/pwa.js?v=20261021-0206" defer></script>{% endif %}
 {% if (show_nav | default(true)) and passkeys_enabled() %}<script src="/static/passkeys.js?v=20261023-passkey-recovery" defer></script>{% endif %}
 {% if show_nav | default(true) %}{% include "_shell_tabbar.html" %}<script src="/static/shell.js?v=20261019-v2a" defer></script>{% endif %}
-{% if (show_nav | default(true)) and current_user %}<script src="/static/havel.js?v=20261025-0324" defer></script>{% endif %}
+{% if (show_nav | default(true)) and current_user %}<script src="/static/havel.js?v=20261025-0324b" defer></script>{% endif %}
 </body>
 </html>
