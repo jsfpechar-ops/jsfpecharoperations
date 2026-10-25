@@ -55,7 +55,7 @@ def test_no_match_opens_havel_with_the_query(origin):
             if width == 390:
                 page.screenshot(path=str(SHOTS / "palette-ask-390.png"))
             option.click()
-            page.wait_for_function("(() => { const t = document.querySelector('#havel-sheet textarea[name=message]');"
-                                   " return t && t.value === 'how do i zzqx'; })()")
+            # A locator check, not wait_for_function: a string predicate is eval'd and CSP blocks it.
+            sync_api.expect(page.locator("#havel-sheet textarea[name=message]")).to_have_value("how do i zzqx")
             assert page.evaluate("document.documentElement.scrollWidth") <= width
             browser.close()
