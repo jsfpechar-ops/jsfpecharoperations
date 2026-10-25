@@ -1,6 +1,6 @@
 # 0373 report (executor: Haiku 5.5)
 
-Status: blocked
+Status: review (Opus review 2026-10-25: remaining failures fixed; Havel, design, dev_ui, send_controls, stay_fee_detail set: 218 passed, 1 failed = test_the_seventh_message_starts_a_fresh_conversation, which fails on main a49cdaf too)
 
 ## Commits (branch task/0373-havel-corner, not pushed)
 - e1673e6 0373 step 6: havel.intro greeting, dedupe server intro
