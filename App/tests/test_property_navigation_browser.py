@@ -462,13 +462,22 @@ def test_tabs_hashes_drafts_history_and_validation_in_browser(host, base):
         assert "/apartments/" in page.url
         assert page.locator("#internal_name").input_value() == "Draft Name Kept"
 
-        # A ctrl-click is left to the browser.
+        # A ctrl-click is left to the browser (0372): no app listener takes it
+        # over and the page does not switch view. Whether Chromium then opens a
+        # tab is its own timing (it can drop one right after load), so any tab
+        # it opens is closed, not awaited.
         page.goto(f"{url}?lang=en")
-        page.evaluate("() => { window.__navMarker = 'm2'; }")
-        with page.context.expect_page() as popup:
-            page.locator('.property-tabs a[data-property-tab="settings"]').click(modifiers=["Control"])
-        popup.value.close()
-        assert page.evaluate(_STATE_JS)["visibleViews"] == ["overview"]
+        page.evaluate("""() => {
+          window.__navMarker = 'm2';
+          window.__modClicks = [];
+          window.addEventListener('click', e => window.__modClicks.push([e.ctrlKey, e.defaultPrevented]));
+        }""")
+        page.context.on("page", lambda popup: popup.close())
+        page.locator('.property-tabs a[data-property-tab="settings"]').click(modifiers=["Control"])
+        assert page.evaluate("() => window.__modClicks") == [[True, False]]
+        state = page.evaluate(_STATE_JS)
+        assert state["visibleViews"] == ["overview"], state
+        assert state["marker"] == "m2", "the ctrl-click navigated this tab"
 
         # A field the browser refuses in a hidden group is revealed and focused.
         page.goto(f"{url}?view=settings&section=property&lang=en")
