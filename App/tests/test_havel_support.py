@@ -38,6 +38,7 @@ def test_escalate_shows_the_card_prefilled_and_sending_queues_one_mail(host, on)
     raw = host.post("/havel?lang=en", data=form).text
     page = html.unescape(raw)
     assert 'action="/havel/support"' in page and "Host sees error 4 on a police report." in page
+    assert "Your last four messages in this conversation and your account e-mail are sent too." in page
     assert 'ui-btn-compact" href="mailto:' not in page  # the nav has its own mailto; the Havel link is gone
     history = html.unescape(re.search(r'name="history" value="([^"]*)"', raw).group(1))
     sig = html.unescape(re.search(r'name="history_sig" value="([^"]*)"', raw).group(1))

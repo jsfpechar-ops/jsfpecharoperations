@@ -257,7 +257,7 @@ def _warn_budget(feature: str) -> None:
         mail_notify.ai_budget(feature=feature, month=today().strftime("%Y-%m"),
                               spent=month_spend_usd(feature), cap=config.ai_monthly_usd(feature))
     except Exception:  # a mail problem must never cost the host the answer
-        log.warning("ai budget mail failed feature=%s", feature)
+        log.exception("ai budget mail failed feature=%s", feature)
 
 
 def call(feature: str, system_blocks: List[str], messages: List[Dict[str, Any]], schema: Dict[str, Any],

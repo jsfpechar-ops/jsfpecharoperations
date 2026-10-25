@@ -2519,13 +2519,13 @@ def havel_support(
     *, user_id: int, account_email: str, workspace: str, lang: str, page: str, summary: str, note: str,
     turns: List[str],
 ) -> Optional[int]:
-    """The host's question to UbyHost support; the same text twice is one mail."""
+    """The host's question to UbyHost support; the same text twice in one week is one mail."""
     content = build_havel_support(account_email=account_email, workspace=workspace, lang=lang, page=page,
                                   summary=summary, note=note, turns=turns)
     digest = hashlib.sha256(f"{summary}\n{note}".encode("utf-8")).hexdigest()[:16]
     return mail.enqueue(
         kind="havel_support",
-        idempotency_key=f"havel-support-{user_id}-{digest}",
+        idempotency_key=f"havel-support-{user_id}-{datetime.now().strftime('%G-%V')}-{digest}",
         to_email=config.OPERATOR_EMAIL,
         subject=content["subject"],
         payload={"text": content["text"], "html": content["html"], "lang": HOST_MAIL_LANGUAGE},

@@ -3221,6 +3221,7 @@ STRINGS: Dict[str, str] = {
     "havel.support.title": "Gửi cho bộ phận hỗ trợ UbyHost",
     "havel.support.add": "Bạn muốn bổ sung gì không?",
     "havel.support.send": "Gửi cho hỗ trợ",
+    "havel.support.includes": "Bốn tin nhắn gần nhất của bạn trong cuộc trò chuyện này và e-mail tài khoản cũng được gửi kèm.",
     "havel.support.sent": "Đã chuyển đến đội UbyHost. Họ đã biết và thường trả lời trong vòng vài giờ.",
     "havel.support.replies_to": "Hỗ trợ sẽ trả lời đến %(email)s",
     "havel.support.mailto": "Gửi e-mail cho hỗ trợ",
