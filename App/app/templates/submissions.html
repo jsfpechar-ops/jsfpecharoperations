@@ -31,7 +31,7 @@
       <td class="ui-num ui-cell-r" data-card="meta" data-label="{{ t('reports.guests') }}">{{ (submission.guest_ids | from_json | length) if submission.guest_ids else 0 }}</td>
       <td data-card="badge" data-label="{{ t('reports.outcome') }}">{{ submission_pill(submission.state) }}</td>
       <td class="ui-mono" data-card="hide" data-label="{{ t('reports.stamp') }}">{{ submission.pseudo_stamp or '—' }}</td>
-      <td class="ui-cell-acts row-actions" data-card="actions" data-label="">{{ row_open() }}
+      <td class="ui-cell-acts row-actions" data-card="actions" data-label="">{{ row_open('/submissions/' ~ submission.id) }}
         {{ row_menu_begin() }}
           <a class="row-menu-item" href="/submissions/{{ submission.id }}" role="menuitem">{{ t('reports.details') }}</a>
           {% if submission.has_receipt %}

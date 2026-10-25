@@ -3,20 +3,7 @@
 
 {% if reauth %}<p class="ui-sub"><strong>{{ t('smart_locks.reauth') }}</strong></p>{% endif %}
 
-{% macro share_block(code_id, section) %}
-  <h2>{{ t('smart_locks.share_title') }}</h2>
-  <p class="ui-sub">{{ t('smart_locks.warn_owner') }}</p>
-  <p><strong>{{ t('smart_locks.name_label') }}</strong></p>
-  <p><code id="{{ code_id }}">{{ receiver }}</code> {{ copy_button(code_id) }}</p>
-  {# 0090: three essentials here; every TTLock tap lives in the Guide. #}
-  <h3 class="smart-locks-steps-title">{{ t('smart_locks.steps_title') }}
-    {{ help_tip('smart-locks-steps-help-' ~ section, t('smart_locks.steps_help'), '/guide#door-codes-share') }}</h3>
-  <ol class="guide-steps">{% for n in range(1, 4) %}<li>{{ t('smart_locks.essential' ~ n) }}</li>{% endfor %}</ol>
-  <p class="ui-sub"><strong>{{ t('smart_locks.warn_ekey') }}</strong></p>
-  <form method="post" action="/smart-locks/refresh"><input type="hidden" name="return_to" value="{{ return_to }}">
-    <input type="hidden" name="section" value="{{ section }}">
-    <div class="action-group"><button class="{{ cta if section == 'share' else 'ui-btn ui-btn-secondary' }}" type="submit">{{ t('smart_locks.check') }}</button></div></form>
-{% endmacro %}
+{% from "_smart_lock_share.html" import share_block with context %}
 
 {% if not account %}
 <section class="ui-section" id="smart-locks-how">
@@ -36,12 +23,12 @@
 {% else %}
 {% if not locks %}
 <section class="ui-section" id="smart-locks-share">
-  {{ share_block('ttlock-receiver', 'share') }}
+  {{ share_block('ttlock-receiver', 'share', receiver, return_to, true) }}
 </section>
 {% else %}
 <details class="ui-section" id="smart-locks-add-more">
   <summary>{{ t('smart_locks.add_more') }}</summary>
-  {{ share_block('ttlock-receiver-more', 'add-more') }}
+  {{ share_block('ttlock-receiver-more', 'add-more', receiver, return_to, false) }}
 </details>
 <section class="ui-section" id="smart-locks-list">
   {% for lock in locks %}

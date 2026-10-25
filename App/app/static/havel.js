@@ -89,7 +89,8 @@
     // The composer fragment can replace the thread (swap with items), so the stored chat is
     // put back after the composer has loaded, never before.
     var apply = function () {
-      t.innerHTML = s.html;
+      // 0395: a saved start screen is never newer than the server's (topics change per page and per deploy).
+      if (s.html.indexOf("havel-msg-host") !== -1) t.innerHTML = s.html;
       if (s.composer) openComposer();
       fill(s);
       if (!panel || typeof panel.show !== "function") return;

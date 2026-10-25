@@ -79,7 +79,7 @@ def guide_index(request: Request, apartment_id: int):
         next_id=_next_open(apartment_id, 0),
         quick_next=guide_facts.next_step(apartment_id),
         leon_offer=ai.enabled_for_property(leon.FEATURE, apartment_id),  # 0376
-        leon_on=bool(apartment["leon_enabled"]),
+        leon_state=leon.host_state(apartment, bool(guest_guide.progress(apartment_id)["live"])),  # 0396
         import_on=guest_guide_import.enabled(),
         import_left=guest_guide_import.imports_left(apartment_id),
         import_busy=guest_guide_import.in_progress(apartment_id),
@@ -104,18 +104,66 @@ async def guide_add(request: Request, apartment_id: int):
     return back(f"{_base(apartment_id)}/{item_id}")
 
 
-@router.post("/apartments/{apartment_id}/guide/leon")
-async def guide_leon(request: Request, apartment_id: int):
-    """0376: the host's yes/no for Leon (AI) on this property. Off is always allowed."""
+def leon_card_state(apartment) -> Optional[str]:
+    """0396: the Leon card on the property overview; None where Leon is not offered."""
+    if not ai.enabled_for_property(leon.FEATURE, apartment["id"]):
+        return None
+    live = bool(guest_guide.progress(apartment["id"])["live"]) if apartment["leon_enabled"] else False
+    return leon.host_state(apartment, live)
+
+
+def _leon_utc(value: Optional[str]) -> str:
+    return f"{value[:16].replace('T', ' ')} UTC" if value else ""
+
+
+@router.get("/apartments/{apartment_id}/leon")
+def leon_page(request: Request, apartment_id: int):
+    """0396: the host's Leon (AI) page: what Leon does, the warnings, the terms accepted."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    apartment = _home(request, apartment_id)
+    if not ai.enabled_for_property(leon.FEATURE, apartment_id):
+        raise HTTPException(404)
+    progress = guest_guide.progress(apartment_id)
+    accepted = None
+    if apartment["leon_terms_accepted_by"]:
+        accepted = db.query_one("SELECT email FROM user_account WHERE id = ?", (apartment["leon_terms_accepted_by"],))
+    return _render(
+        request, "leon_settings.html", apartment=apartment,
+        state=leon.host_state(apartment, bool(progress["live"])), live=bool(progress["live"]),
+        accepted_at=_leon_utc(apartment["leon_terms_accepted_at"]),
+        accepted_by=accepted["email"] if accepted else "",
+    )
+
+
+@router.post("/apartments/{apartment_id}/leon")
+async def leon_save(request: Request, apartment_id: int):
+    """0396: the host switches Leon (AI) on after ticking the current terms, or off (always allowed)."""
     guard = auth.require_login(request)
     if guard:
         return guard
     _home(request, apartment_id)
     form = await request.form()
-    on = form.get("on") == "1" and ai.enabled_for_property(leon.FEATURE, apartment_id)
-    db.execute("UPDATE apartment SET leon_enabled = ? WHERE id = ?", (1 if on else 0, apartment_id))
-    key = "flash.guest_guide.leon_on" if on else "flash.guest_guide.leon_off"
-    return back(f"{_base(apartment_id)}#leon", msg=flash(request, key))
+    page = f"/apartments/{apartment_id}/leon"
+    if form.get("action") == "off":
+        db.execute("UPDATE apartment SET leon_enabled = 0 WHERE id = ?", (apartment_id,))
+        db.audit("leon_switched_off", f"apartment={apartment_id}")
+        return back(page, msg=flash(request, "flash.guest_guide.leon_off"))
+    if form.get("action") == "on":
+        if not ai.enabled_for_property(leon.FEATURE, apartment_id):
+            raise HTTPException(404)
+        if form.get("terms") != "1":
+            return back(page, err=flash(request, "flash.error.leon_terms"))
+        account = auth.current_user(request)
+        db.execute(
+            "UPDATE apartment SET leon_enabled = 1, leon_terms_version = ?, leon_terms_accepted_at = ?, "
+            "leon_terms_accepted_by = ? WHERE id = ?",
+            (leon.LEON_TERMS_VERSION, db.utcnow(), account["id"] if account else None, apartment_id),
+        )
+        db.audit("leon_terms_accepted", f"apartment={apartment_id} version={leon.LEON_TERMS_VERSION}")
+        return back(page, msg=flash(request, "flash.guest_guide.leon_on"))
+    return back(page)
 
 
 @router.post("/apartments/{apartment_id}/guide/import")

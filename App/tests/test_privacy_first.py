@@ -209,7 +209,7 @@ def test_a_full_crawl_sets_exactly_the_strictly_necessary_cookies(guest_pin_on):
         guest.get(f"/l/{TOKEN}/privacy?lang=cs", follow_redirects=True)
 
         # Leon (AI) on the public QR page: the conversation cookie (brief 0350).
-        db.execute("UPDATE apartment SET leon_enabled = 1 WHERE id = ?", (apartment_id,))  # 0376: the host said yes
+        db.execute("UPDATE apartment SET leon_enabled = 1, leon_terms_version = '2026-10-25' WHERE id = ?", (apartment_id,))  # 0376: the host said yes
         guest_guide.ensure_defaults(db.query_one("SELECT * FROM apartment WHERE id = ?", (apartment_id,)))
         cards = {r["kind"]: r for r in guest_guide.items(apartment_id)}
         for kind in guest_guide.MUST_HAVE:
