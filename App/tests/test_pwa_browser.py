@@ -56,7 +56,7 @@ def test_a_failed_page_load_shows_the_offline_page_in_the_hosts_language(base, l
     with sync_api.sync_playwright() as playwright:
         browser, context, page = _open(playwright, base, 390, 844, f"/settings?lang={lang}")
         try:
-            page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+            page.wait_for_function("() => navigator.serviceWorker.controller !== null", timeout=30000)  # a bare string can hit the CSP eval block
             page.wait_for_function(_OFFLINE_CACHED, arg=lang, timeout=30000)
             # Settings > Phone app: on desktop Chromium the generic how-to shows.
             assert page.is_visible("#settings-group-phone [data-pwa-other]")
@@ -76,7 +76,7 @@ def test_guest_links_are_never_answered_by_the_worker(base):
     with sync_api.sync_playwright() as playwright:
         browser, context, page = _open(playwright, base, 390, 844, "/settings?lang=en")
         try:
-            page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=30000)
+            page.wait_for_function("() => navigator.serviceWorker.controller !== null", timeout=30000)  # a bare string can hit the CSP eval block
             context.set_offline(True)
             with pytest.raises(Exception):
                 page.goto(base + "/l/not-a-real-link")

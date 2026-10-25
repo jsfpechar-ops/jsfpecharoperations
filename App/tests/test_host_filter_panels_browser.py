@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 
 from app import auth, db
 from app.main import app
-from tests.browser_support import chromium_launch_kwargs
+from tests.browser_support import chromium_launch_kwargs, settle_motion
 from tests.conftest import login_as
 
 
@@ -478,6 +478,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                 page.goto(base + f"/stay-fees/{host['apartments'][0]}?month=2026-10&lang={lang}")
                 _capture(page, f"stay-fee-detail-{lang}-{width}-collapsed")
                 page.locator("[data-filter-toggle]").click()
+                settle_motion(page)  # 0401: the panel fades in before the month grid measures its room
                 _capture(page, f"stay-fee-detail-{lang}-{width}-expanded")
                 assert page.locator("#filter-month").get_attribute("required") is not None
                 page.locator("[data-month-trigger]").click()
