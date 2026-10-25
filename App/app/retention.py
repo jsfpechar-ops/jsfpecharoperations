@@ -184,16 +184,38 @@ def _alert_retention_step(today: date, dry_run: bool, owner_user_id: Optional[in
     return count
 
 
+HAVEL_LIMIT_DAYS = 32  # rate_limit_event rows of the havel_* scopes (weekly and monthly caps)
+HAVEL_GAP_DAYS = 90  # havel_gap: redacted questions Havel could not answer
+
+
 def _rate_limit_retention_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Delete stale rate-limit events. Global only: the table has no owner."""
     if owner_user_id is not None:
         return 0
     cutoff = time.time() - config.RATE_LIMIT_RETENTION_HOURS * 3600
+    # Havel's weekly and monthly caps count their own rows (0320): keep those a month.
+    havel_cutoff = time.time() - HAVEL_LIMIT_DAYS * 86400
     count = _scalar(
-        "SELECT COUNT(*) AS n FROM rate_limit_event WHERE at < ?", (cutoff,)
+        "SELECT COUNT(*) AS n FROM rate_limit_event WHERE at < ? "
+        "AND (substr(scope, 1, 6) <> 'havel_' OR at < ?)",
+        (cutoff, havel_cutoff),
     )
     if not dry_run and count:
-        db.execute("DELETE FROM rate_limit_event WHERE at < ?", (cutoff,))
+        db.execute(
+            "DELETE FROM rate_limit_event WHERE at < ? AND (substr(scope, 1, 6) <> 'havel_' OR at < ?)",
+            (cutoff, havel_cutoff),
+        )
+    return count
+
+
+def _havel_gap_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Delete Havel gap questions after 90 days. Global only: no owner, no user."""
+    if owner_user_id is not None:
+        return 0
+    cutoff = (today - timedelta(days=HAVEL_GAP_DAYS)).isoformat()
+    count = _scalar("SELECT COUNT(*) AS n FROM havel_gap WHERE created_at < ?", (cutoff,))
+    if not dry_run and count:
+        db.execute("DELETE FROM havel_gap WHERE created_at < ?", (cutoff,))
     return count
 
 
@@ -450,6 +472,7 @@ STEPS: List[tuple] = [
     ("audit_rows", _audit_retention_step),
     ("alerts", _alert_retention_step),
     ("rate_limit_events", _rate_limit_retention_step),
+    ("havel_gap", _havel_gap_step),
     ("login_tokens", _login_token_step),
     ("webauthn_challenges", _webauthn_challenge_step),
     ("door_code_pins", _door_code_pin_step),
@@ -478,7 +501,8 @@ def _cutoffs(today: date) -> Dict[str, str]:
         "stay_fee_records": f"period before {guests}",
         "audit_rows": f"logged before {_days_ago_iso(config.AUDIT_RETENTION_DAYS)}",
         "alerts": f"resolved before {_days_ago_iso(config.ALERT_RETENTION_DAYS)}",
-        "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours",
+        "rate_limit_events": f"older than {config.RATE_LIMIT_RETENTION_HOURS} hours, Havel limits {HAVEL_LIMIT_DAYS} days",
+        "havel_gap": f"created before {(today - timedelta(days=HAVEL_GAP_DAYS)).isoformat()}",
         "login_tokens": "expired more than 1 day ago",
         "webauthn_challenges": "expired more than 1 day ago",
         "door_code_pins": "valid_to more than 1 day ago",
