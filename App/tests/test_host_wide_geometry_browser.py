@@ -23,7 +23,7 @@ else:
 
 from app import alerts, auth, claim, db
 from app.main import app
-from tests.browser_support import chromium_launch_kwargs
+from tests.browser_support import chromium_launch_kwargs, settle_motion
 from tests.conftest import login_as
 
 WIDE_WIDTHS = (1024, 1280, 1440, 1680, 1920, 2048)
@@ -424,6 +424,7 @@ def _assert_stay_menu_copy_geometry(page, width, row_index, locale, *, keyboard=
     assert source.count() == 1
     assert "/l/" in source.input_value()
 
+    settle_motion(page)
     viewport = page.evaluate("({width: innerWidth, height: innerHeight})")
     popup = menu.bounding_box()
     assert popup and popup["x"] >= -1 and popup["y"] >= -1

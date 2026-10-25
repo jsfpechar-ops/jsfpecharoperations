@@ -179,7 +179,7 @@ def test_current_property_name_demo_label_and_distinct_setup_status(wizard_host,
         assert police.count() == 1
         assert page.locator(".host-property-grid > a.host-property-card").count() >= 5
         status.locator("summary").click()
-        assert status.locator(".readiness").is_visible()
+        status.locator(".readiness").wait_for(state="visible")  # 0401: the fold-out slides open
         status.locator("summary").click()
         _fits(page)
         _shot(page, f"40-overview-health-{lang}-{width}.png")

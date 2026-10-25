@@ -1059,3 +1059,48 @@ body.host-workspace.sidebar-collapsed .ui-sidebar .ui-search-row { width: var(--
   .host-workspace .havel-composer textarea { font-size: var(--size-16); }
 }
 .host-workspace .havel-topics > .havel-chip { align-self: flex-start; }
+
+/* ---- 0401 motion: one place for open, close and page-change motion ----
+   Short (180-240 ms) and calm. Browsers without a feature simply snap.
+   Reduced motion: the 0188 rule above shortens every transition; page fades are off.
+   Script-only: with JavaScript off Chromium can leave a fade or slide unfinished, so those pages stay still. */
+@media (scripting: enabled) {
+  :root:has(body.host-workspace) { interpolate-size: allow-keywords; }
+
+  /* Dialogs fade and rise in, fade out; phone sheets slide up from the bottom edge. */
+  .host-workspace dialog { transition: opacity var(--motion-2) var(--ease-standard), translate var(--motion-2) var(--ease-standard), display var(--motion-2) allow-discrete, overlay var(--motion-2) allow-discrete; }
+  .host-workspace dialog:not([open]) { opacity: 0; translate: 0 var(--space-2); }
+  .host-workspace dialog[open] { opacity: 1; translate: 0 0; }
+  @starting-style { .host-workspace dialog[open] { opacity: 0; translate: 0 var(--space-2); } }
+  .host-workspace dialog::backdrop { transition: opacity var(--motion-2) var(--ease-standard), display var(--motion-2) allow-discrete, overlay var(--motion-2) allow-discrete; }
+  .host-workspace dialog:not([open])::backdrop { opacity: 0; }
+  @starting-style { .host-workspace dialog[open]::backdrop { opacity: 0; } }
+  @media (max-width: 767px) {
+    .host-workspace .ui-dialog { transition-duration: var(--motion-3); }
+    .host-workspace .ui-dialog:not([open]) { opacity: 1; translate: 0 100%; }
+    @starting-style { .host-workspace .ui-dialog[open] { opacity: 1; translate: 0 100%; } }
+  }
+
+  /* Fold-outs (help, sections, "more"): the body slides open and shut. Menus that float stay instant. */
+  .host-workspace details:not(.host-account)::details-content { block-size: 0; overflow: clip; overflow-clip-margin: var(--space-1); transition: block-size var(--motion-3) var(--ease-standard), content-visibility var(--motion-3) allow-discrete; }
+  .host-workspace details:not(.host-account)[open]::details-content { block-size: auto; }
+
+  /* Floating menus and the Stays filter panel fade in. */
+  .host-workspace :is(.ui-menu-panel, .host-account-menu, .host-filter-panel) { transition: opacity var(--motion-2) var(--ease-standard), translate var(--motion-2) var(--ease-standard); }
+  @starting-style {
+    .host-workspace :is(.ui-menu-panel.is-open, .ui-menu-panel:not([hidden]), .host-account[open] .host-account-menu, .host-filter-panel:not(.is-collapsed)) { opacity: 0; translate: 0 calc(var(--space-1) * -1); }
+  }
+
+  /* Page to page: a short cross-fade; the rail, top bar and tab bar hold still. */
+  @view-transition { navigation: auto; }
+  .host-workspace .ui-sidebar { view-transition-name: host-rail; }
+  .host-workspace .ui-topbar { view-transition-name: host-topbar; }
+  .host-workspace .ui-tabbar { view-transition-name: host-tabbar; }
+  ::view-transition-group(*) { animation-duration: var(--motion-2); animation-timing-function: var(--ease-standard); }
+  ::view-transition-group(host-rail), ::view-transition-group(host-topbar), ::view-transition-group(host-tabbar) { animation: none; }
+  ::view-transition-old(host-rail), ::view-transition-new(host-rail), ::view-transition-old(host-topbar), ::view-transition-new(host-topbar), ::view-transition-old(host-tabbar), ::view-transition-new(host-tabbar) { animation: none; }
+  @media (prefers-reduced-motion: reduce) {
+    @view-transition { navigation: none; }
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  }
+}
