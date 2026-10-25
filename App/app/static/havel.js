@@ -192,6 +192,8 @@
       if (ta) ta.focus();
       return;
     }
+    var cancel = event.target.closest ? event.target.closest("[data-havel-cancel]") : null;
+    if (cancel) { var card = cancel.closest(".havel-card"); if (card) card.remove(); var ta = textarea(); if (ta) ta.focus(); return; }
     var retry = event.target.closest ? event.target.closest("[data-havel-retry]") : null;
     if (retry) { retry.closest(".havel-msg").remove(); send(); }
   });

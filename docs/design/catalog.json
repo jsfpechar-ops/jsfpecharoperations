@@ -240,7 +240,12 @@
     "havel-answer-title",
     "havel-ask",
     "havel-launcher",
-    "havel-dots"
+    "havel-dots",
+    "havel-card-title",
+    "havel-card-actions",
+    "havel-card-form",
+    "havel-card-change",
+    "havel-card-danger"
   ],
   "hooks": [
     "sr-only",
@@ -342,7 +347,8 @@
     "App/app/templates/_havel_form.html",
     "App/app/templates/_havel_topics.html",
     "App/app/templates/_havel_fragment.html",
-    "App/app/templates/_havel_panel.html"
+    "App/app/templates/_havel_panel.html",
+    "App/app/templates/_havel_card.html"
   ],
   "legacy": {
     "App/app/templates/guest_form_admin.html": [

@@ -1,0 +1,54 @@
+{#- 0314: a confirm card under Havel's bubble (plan 17d). The facts are what the
+    host checks; the real inputs sit behind "Change" (a closed <details> still
+    submits its fields). The form posts to the existing route, which validates
+    again and redirects with its own flash. Havel never claims success. -#}
+{% from "_icons.html" import icon with context %}
+{% from "_ui.html" import ui_pdot with context %}
+{% from "_components.html" import copy_button with context %}
+{% set card = item.card %}
+<div class="ui-card havel-card" data-havel-card="{{ card.type }}">
+  <p class="havel-card-title">{{ t(card.title) }}</p>
+  {% if card.type == 'show_guest_link' %}
+  <dl class="havel-card-facts">
+    <div><dt class="sr-only">{{ t('stays.add_panel.apartment') }}</dt><dd>{{ ui_pdot(card.property.index, card.property.name) }}</dd></div>
+    <div><dt class="sr-only">{{ t('havel.card.title_link') }}</dt><dd class="havel-card-link"><span id="havel-link-{{ card.property.id }}">{{ card.link }}</span>{{ copy_button('havel-link-' ~ card.property.id) }}</dd></div>
+    {% if card.pin %}<div><dt>{{ t('havel.card.pin') }}</dt><dd class="havel-card-pin">{{ card.pin }}</dd></div>{% endif %}
+  </dl>
+  <div class="havel-card-actions"><a class="ui-btn ui-btn-quiet ui-btn-compact" href="{{ card.guests_url }}">{{ t('havel.card.open_guest_links') }}{{ icon('chevron-right', 16) }}</a></div>
+  {% else %}
+  <form method="post" action="{{ card.action }}" class="havel-card-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    {% for name, value in card.hidden.items() %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+    <dl class="havel-card-facts">
+      {% if card.property %}<div><dt class="sr-only">{{ t('stays.add_panel.apartment') }}</dt><dd>{{ ui_pdot(card.property.index, card.property.name) }}</dd></div>{% endif %}
+      {% if card.date_from %}<div><dt class="sr-only">{{ t('stays.add_panel.arrival') }}</dt><dd>{{ card.date_from | weekday }} {{ card.date_from | date_short }}{% if card.date_to %} – {{ card.date_to | weekday }} {{ card.date_to | date_short }}{% endif %}{% if card.start_time %} · {{ card.start_time }}{% if card.end_time %}–{{ card.end_time }}{% endif %}{% endif %}</dd></div>{% endif %}
+      {% if card.nights %}<div><dd>{{ t('havel.card.nights', n=card.nights) }}</dd></div>{% endif %}
+      {% if card.guests %}<div><dd>{{ t('havel.card.guests', n=card.guests) }}</dd></div>{% endif %}
+      {% if card.guest_email %}<div><dd>{{ card.guest_email }}</dd></div>{% endif %}
+      {% if card.note %}<div><dd>{{ card.note }}</dd></div>{% endif %}
+    </dl>
+    {% if card.overlap %}<p class="havel-card-warning">{{ icon('triangle-alert', 16) }}{{ t('havel.card.overlap') }}</p>{% endif %}
+    {% if card.warning %}<p class="havel-card-warning havel-card-danger">{{ icon('triangle-alert', 16) }}{{ t(card.warning) }}</p>{% endif %}
+    {% if card.fields %}
+    <details class="havel-card-change">
+      <summary class="ui-btn ui-btn-quiet ui-btn-compact">{{ t('havel.card.change') }}</summary>
+      {% for f in card.fields %}
+      {% set label = card.cleaning_words(f.label[1]) if f.label[0] == 'cleaning' else t(f.label[1]) %}
+      <label class="ui-field">
+        <span>{{ label }}</span>
+        {% if f.type == 'select' %}
+        <select class="ui-select" name="{{ f.name }}">{% for value, name in f.options %}<option value="{{ value }}"{% if value == f.value %} selected{% endif %}>{{ name }}</option>{% endfor %}</select>
+        {% else %}
+        <input class="ui-input" type="{{ f.type }}" name="{{ f.name }}" value="{{ f.value }}"{% if f.min is defined %} min="{{ f.min }}"{% endif %}{% if f.max is defined %} max="{{ f.max }}"{% endif %}{% if f.type == 'date' %} required{% endif %}>
+        {% endif %}
+      </label>
+      {% endfor %}
+    </details>
+    {% endif %}
+    <div class="havel-card-actions">
+      <button class="ui-btn ui-btn-quiet" type="button" data-havel-cancel>{{ t('havel.card.cancel') }}</button>
+      <button class="ui-btn {{ 'ui-btn-danger' if card.danger else 'ui-btn-primary' }}" type="submit">{{ t(card.confirm) }}</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
