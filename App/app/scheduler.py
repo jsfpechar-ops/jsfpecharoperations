@@ -389,12 +389,12 @@ def _job_push() -> None:
 
 
 def _job_billing() -> None:
-    """UbyHost's own billing, daily at 06:00 (0414): trials. Nothing while billing is off."""
-    from . import billing_trial
+    """UbyHost's own billing, daily at 06:00 (0414, 0417): trials, periods, invoices, dunning."""
+    from . import billing_jobs
 
     started = time.perf_counter()
     try:
-        counts = billing_trial.run()
+        counts = billing_jobs.run()
     except Exception:
         log.exception("billing run failed")
         _job_failed("billing")
