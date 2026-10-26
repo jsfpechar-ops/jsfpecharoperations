@@ -17,7 +17,7 @@ def host():
     db.init_db()
     username = f"enf{secrets.token_hex(4)}"
     owner_id = auth.create_account(f"{username}@example.test", "Enforcement host", username=username)
-    apartment_id = db.insert("apartment", {"internal_name": "Enforcement flat", "owner_user_id": owner_id})
+    apartment_id = db.insert("apartment", {"internal_name": "Enforcement flat", "owner_user_id": owner_id, "created_at": db.utcnow()})
     yield {"owner": owner_id, "username": username, "apartment": apartment_id}
     db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (owner_id,))
     db.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (owner_id,))
