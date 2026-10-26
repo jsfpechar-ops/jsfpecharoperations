@@ -10,6 +10,9 @@
 {%- set property_values = draft -%}
 <div class="property-create-lane"><div class="property-create">
   <div class="property-create-main">
+    {% if copy_property_peers %}
+    <div class="copy-settings-bar">{% with copy_action='/apartments/new', copy_section='' %}{% include "_copy_settings_dialog.html" %}{% endwith %}</div>
+    {% endif %}
     {% if copied_from_name %}
     <p class="panel property-create-copied" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}
       <a href="/apartments/new">{{ t('property_create.copy_clear') }}</a>
@@ -87,8 +90,5 @@
       <li>{{ icon('send', 20) }}<div><strong>{{ t('property_create.next_reporting') }}</strong><small>{{ t('property_create.next_reporting_body') }}</small></div></li>
       <li>{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong><small>{{ t('property_create.next_lock_body') }} <a href="/guide#door-codes" aria-label="{{ t('help.tip.more') }}: {{ t('property_create.next_lock_body') | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a></small></div></li>
     </ul>
-    {% if copy_property_peers %}
-    <div class="property-create-copy">{% with copy_action='/apartments/new', copy_section='' %}{% include "_copy_settings_dialog.html" %}{% endwith %}</div>
-    {% endif %}
   </aside>
 </div></div>

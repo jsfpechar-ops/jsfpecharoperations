@@ -571,6 +571,7 @@ body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: ro
 .host-workspace .copy-settings-list { margin: 0; padding-left: 1.25rem; }
 .host-workspace .copy-settings-list li + li { margin-top: var(--space-1); }
 .host-workspace .copy-settings-never { margin: 0; }
+.host-workspace .copy-settings-dialog .ui-sub { margin: var(--space-3) 0 0; }
 .host-workspace .copy-settings-dialog .copy-settings-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
 .host-workspace .copy-settings-dialog select { width: 100%; }
 .host-workspace .copy-property-form .copyrow .field { margin: 0; }
