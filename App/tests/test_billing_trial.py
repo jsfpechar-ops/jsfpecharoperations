@@ -65,7 +65,8 @@ def test_nothing_happens_while_billing_is_off(owner):
 
 def test_a_passed_connection_test_starts_the_trial(owner, billing_on):
     billing.ensure_account(owner)
-    apartment_id = db.insert("apartment", {"internal_name": "Trial test", "owner_user_id": owner})
+    apartment_id = db.insert("apartment", {"internal_name": "Trial test", "owner_user_id": owner,
+                                                 "created_at": TODAY.isoformat()})
     billing_trial.mark_verified(apartment_id, owner)
     acc = billing.account(owner)
     assert acc["status"] == "trialing"
