@@ -1,6 +1,7 @@
 # 0411: Billing core (B1): migration, plans, prices, entitlements
 
-Status: todo
+Status: review
+Report: docs/tasks/0411-billing-core-report.md
 Depends on: none | Base commit: 1255954 | Branch: task/0411-billing-core
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Order: after 0347, 0350 and 0353 if they are still open (they also name `config.py`, `retention.py`, `RETENTION.md`); the excerpts in §2 catch any drift.
@@ -67,7 +68,7 @@ If any excerpt is not found verbatim, STOP (§8).
 | `App/app/retention.py` | edit | workspace deletion handles the billing tables |
 | `App/tests/test_billing_core.py` | create | tests for all of the above |
 | `docs/privacy/RETENTION.md` | edit | two rows after Excerpt C |
-| `docs/tasks/0411-report.md` | create | the report |
+| `docs/tasks/0411-billing-core-report.md` | create | the report |
 
 No other file may change.
 
@@ -761,7 +762,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/0411-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/0411-billing-core-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

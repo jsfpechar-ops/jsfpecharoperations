@@ -315,6 +315,17 @@ SIGNUP_ENABLED = os.environ.get("UBYHOST_SIGNUP_ENABLED", "0").lower() in ("1", 
 # Where the "new verified sign-up" notice goes. Defaults to the support address.
 SIGNUP_NOTIFY_EMAIL = os.environ.get("UBYHOST_SIGNUP_NOTIFY_EMAIL", "").strip() or OPERATOR_EMAIL
 
+# Brief 0411: UbyHost's own billing, phase 1 = bank transfer on an invoice.
+# Off by default; while off every host is active Standard, exactly as before.
+BILLING_ENABLED = os.environ.get("UBYHOST_BILLING_ENABLED", "0").lower() in ("1", "true", "yes")
+# Printed on UbyHost's invoices and in their QR Platba.
+BILLING_BANK_ACCOUNT = os.environ.get("UBYHOST_BILLING_BANK_ACCOUNT", "").strip()
+BILLING_IBAN = os.environ.get("UBYHOST_BILLING_IBAN", "").strip()
+# "non_payer" until UbyHost registers for VAT, then "payer".
+BILLING_VAT_STATUS = os.environ.get("UBYHOST_BILLING_VAT_STATUS", "non_payer").strip() or "non_payer"
+# How many hosts can get the founder price.
+FOUNDER_SLOTS = int(os.environ.get("UBYHOST_FOUNDER_SLOTS", "100"))
+
 # Model API (docs/plans/havel-support-assistant.md section 3; shared by Havel and
 # the guest bot). A feature is on only when it is listed in UBYHOST_AI_FEATURES
 # AND the key is set. The key is passed to the SDK explicitly; the SDK's own

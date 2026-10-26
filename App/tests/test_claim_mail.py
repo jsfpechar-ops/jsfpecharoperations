@@ -1837,6 +1837,12 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         # 0319: the Havel support hand-off and the AI budget warning, both to the operator.
         "havel_support",
         "ai_budget",
+        # 0413: UbyHost's own invoice to a host.
+        "billing_invoice",
+        # 0414: the trial reminders.
+        "billing_trial",
+        # 0417: payment reminders and the read-only notice.
+        "billing_overdue",
     }
 
 

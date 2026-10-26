@@ -103,40 +103,120 @@ LANDING_STRINGS = {
         "product.faq.title": "Common UbyPort questions",
         "product.guides.title": "Practical guides for Czech hosts",
         "product.cta.title": "Ready to simplify guest reporting?",
-        "pricing.page_title": "UbyHost pricing: tailored for your accommodation",
+        "pricing.page_title": "UbyHost pricing: guest reporting from 99 CZK a month",
         "pricing.meta_description": (
-            "Ask for UbyHost pricing tailored to your number of properties, reservation "
-            "volume, and UbyPort reporting workflow."
+            "Automatic UbyPort reporting with receipts, guest book and stay fee. "
+            "No guest limits. 30 days free."
         ),
-        "pricing.eyebrow": "One plan, priced for your properties",
-        "pricing.title": "Pricing that fits your accommodation.",
+        "pricing.eyebrow": "No guest limits · No paperwork · No fines",
+        "pricing.title": "Guest reporting for 99 CZK a month.",
         "pricing.lede": (
-            "Tell us how you host. We will agree on a clear setup for your properties, "
-            "guest volume, and UbyPort workflow."
+            "Guests register themselves, UbyPort gets the report, you get the receipt. "
+            "You pay per apartment, not per guest."
         ),
-        "pricing.card.kicker": "What you get",
-        "pricing.card.price": "By agreement",
-        "pricing.card.summary": (
-            "One plan with everything below. The monthly price depends on how many properties you run. Write to us and we reply with a quote."
+        "pricing.chips": "30 days free · No card · Cancel anytime",
+        "pricing.calc.label": "Price calculator",
+        "pricing.toggle.label": "Billing",
+        "pricing.toggle.year": "Yearly",
+        "pricing.toggle.year_badge": "save 33%",
+        "pricing.toggle.month": "Monthly",
+        "pricing.count.label": "Apartments",
+        "pricing.count.dec": "Remove an apartment",
+        "pricing.count.inc": "Add an apartment",
+        "pricing.ttlock.label": "I have TTLock smart locks",
+        "pricing.currency": "CZK",
+        "pricing.per_month": "/ month",
+        "pricing.billed_year": "Billed %(amount)s CZK once a year",
+        "pricing.month_hint": "Only %(price)s CZK / month billed yearly",
+        "pricing.apts.one": "%(count)s apartment",
+        "pricing.apts.few": "%(count)s apartments",
+        "pricing.apts": "%(count)s apartments",
+        "pricing.std.name": "UbyHost",
+        "pricing.std.tagline": "Everything for worry-free reporting",
+        "pricing.std.f1": "Automatic UbyPort reports with receipts",
+        "pricing.std.f2": "Online check-in, 6-year guest book",
+        "pricing.std.f3": "Duplicate protection",
+        "pricing.std.f4": "Stay fee report and QR payment",
+        "pricing.std.f5": "Leon answers guests 24/7",
+        "pricing.std.f6": "Unlimited guests, stays and teammates",
+        "pricing.std.note": "no guest limits",
+        "pricing.std.note_ttlock": "incl. TTLock",
+        "pricing.max.name": "UbyHost Max",
+        "pricing.max.badge": "Only here: AI concierge",
+        "pricing.max.tagline": "For hosts who want calm even in high season",
+        "pricing.max.f1": "Everything in UbyHost",
+        "pricing.max.f2": "3× more answers from Leon and Havel",
+        "pricing.max.f3": "TTLock smart locks included",
+        "pricing.max.f4": "Priority support",
+        "pricing.max.f5": "New features first",
+        "pricing.max.note": "TTLock included",
+        "pricing.cta": "Try free for 30 days",
+        "pricing.cta_note": "The trial starts when UbyPort is connected.",
+        "pricing.prices_final": "Prices are final.",
+        "pricing.bands.eyebrow": "Graduated pricing",
+        "pricing.bands.title": "More apartments, lower price",
+        "pricing.bands.body": (
+            "Discounts stack: the first 4 at full price, the 5th to 9th cheaper, "
+            "from the 10th cheapest."
         ),
-        "pricing.card.note": "Priced for what you actually run.",
-        "pricing.card.cta": "Request access and a price",
-        "pricing.cta.subject": "UbyHost pricing",
-        "pricing.includes.title": "The complete guest-reporting workflow",
-        "pricing.includes.1": "Airbnb and Booking.com calendar connections",
-        "pricing.includes.2": "Private online forms for guests",
-        "pricing.includes.3": "Online guest book",
-        "pricing.includes.4": "Direct UbyPort reporting and saved receipts",
-        "pricing.factors.eyebrow": "What we agree on",
-        "pricing.factors.title": "Three things shape the setup.",
-        "pricing.factor.properties.title": "Your properties",
-        "pricing.factor.properties.body": "How many apartments or accommodation facilities you manage.",
-        "pricing.factor.volume.title": "Your guest volume",
-        "pricing.factor.volume.body": "How many stays and foreign-guest reports pass through each month.",
-        "pricing.factor.workflow.title": "Your workflow",
-        "pricing.factor.workflow.body": "The reporting timing, onboarding, and support your team needs.",
-        "pricing.final.title": "Tell us what you run.",
-        "pricing.final.body": "A short email is enough to start the conversation.",
+        "pricing.bands.b1": "1st–4th apartment",
+        "pricing.bands.b2": "5th–9th apartment",
+        "pricing.bands.b3": "10th apartment and up",
+        "pricing.bands.unit_year": "per apartment a month, billed yearly",
+        "pricing.bands.unit_month": "per apartment a month",
+        "pricing.founder.heading": "Founding hosts: 74 CZK a month",
+        "pricing.founder.body": "890 CZK a year per apartment, price locked for 2 years. %(n)s of 100 places left.",
+        "pricing.founder.cta": "Claim a place",
+        "pricing.addons.eyebrow": "Optional",
+        "pricing.addons.title": "Add-ons",
+        "pricing.addon.ttlock.title": "TTLock smart locks",
+        "pricing.addon.ttlock.body": "A code for every stay. +49 CZK per apartment a month, free in Max.",
+        "pricing.addon.wl.title": "White-label for agencies",
+        "pricing.addon.wl.body": "Your logo and colours for guests and owners. +590 CZK a month.",
+        "pricing.anchor.eyebrow": "Why it pays off",
+        "pricing.anchor.title": "Cheaper than one mistake",
+        "pricing.anchor.body": "A year of UbyHost costs 1,190 CZK. An unreported guest can cost up to 50,000 CZK.",
+        "pricing.faq.title": "Questions and answers",
+        "pricing.faq.1.q": "When does the trial start?",
+        "pricing.faq.1.a": (
+            "Once we have verified your UbyPort access, 7 days after sign-up at the latest. "
+            "So you get 30 days of real reporting."
+        ),
+        "pricing.faq.2.q": "What counts as an apartment?",
+        "pricing.faq.2.a": "Every listing with its own calendar. Guests, stays and teammates are unlimited.",
+        "pricing.faq.3.q": "Do I need a card?",
+        "pricing.faq.3.a": "No. You pay by bank transfer on an invoice we send after the trial.",
+        "pricing.faq.4.q": "What if I add an apartment?",
+        "pricing.faq.4.a": (
+            "The price adjusts automatically and you pay only the remaining part. "
+            "When you remove an apartment, the lower price applies from the next period."
+        ),
+        "pricing.faq.5.q": "Can I cancel anytime?",
+        "pricing.faq.5.a": (
+            "Yes. The service runs until the end of the paid period and you can download "
+            "the guest book at any time."
+        ),
+        "pricing.faq.6.q": "Can I get an invoice for my company?",
+        "pricing.faq.6.a": "Yes, with your company ID and VAT ID. We fill in the details from the ARES register.",
+        "pricing.faq.7.q": "What if I pay late?",
+        "pricing.faq.7.a": (
+            "We send a reminder. Everything keeps running for 30 days after the due date, "
+            "and we never stop reporting guests who are already registered."
+        ),
+        "pricing.faq.8.q": "How do I pay?",
+        "pricing.faq.8.a": (
+            "By bank transfer on the invoice: scan the QR code in your banking app. "
+            "We match the payment ourselves. Card payments are coming soon."
+        ),
+        "pricing.faq.9.q": "What about eTurista?",
+        "pricing.faq.9.a": (
+            "It is not law yet and the state has not published its interface. Once it does, "
+            "we connect to it and move your data over with no retyping."
+        ),
+        "pricing.final.title": "Start today, pay in 30 days",
+        "pricing.final.large": "10 or more apartments?",
+        "pricing.final.write": "Write to us.",
+        "pricing.final.subject": "UbyHost for 10 or more apartments",
         "landing.mock.today": "Today",
         "landing.mock.guest_form": "Guest form",
         "landing.features.eyebrow": "Everything in one workflow",
@@ -311,40 +391,120 @@ LANDING_STRINGS = {
         "product.faq.title": "Nejčastější otázky k UbyPortu",
         "product.guides.title": "Praktické průvodce pro české ubytovatele",
         "product.cta.title": "Chcete si zjednodušit hlášení hostů?",
-        "pricing.page_title": "Ceník UbyHostu: cena dle domluvy",
+        "pricing.page_title": "Ceník UbyHostu: hlášení cizinců od 99 Kč měsíčně",
         "pricing.meta_description": (
-            "Zeptejte se na cenu UbyHostu podle počtu ubytování, objemu rezervací "
-            "a způsobu hlášení hostů do UbyPortu."
+            "Automatické hlášení do UbyPortu s doručenkou, ubytovací kniha a poplatek "
+            "z pobytu. Bez limitu hostů. 30 dní zdarma."
         ),
-        "pricing.eyebrow": "Jeden tarif, cena podle vašeho ubytování",
-        "pricing.title": "Cena, která sedí vašemu ubytování.",
+        "pricing.eyebrow": "Bez limitu hostů · Bez papírování · Bez pokut",
+        "pricing.title": "Hlášení cizinců za 99 Kč měsíčně.",
         "pricing.lede": (
-            "Napište nám, jak ubytováváte. Domluvíme jasné řešení podle počtu "
-            "ubytování, hostů a způsobu práce s UbyPortem."
+            "Host se zapíše sám, UbyPort dostane hlášení, vy doručenku. "
+            "Platíte za apartmán, ne za hosty."
         ),
-        "pricing.card.kicker": "Co dostanete",
-        "pricing.card.price": "Dle domluvy",
-        "pricing.card.summary": (
-            "Jeden tarif se vším níže. Měsíční cena závisí na počtu vašich ubytování. Napište nám a pošleme nabídku."
+        "pricing.chips": "30 dní zdarma · Bez platební karty · Zrušíte kdykoli",
+        "pricing.calc.label": "Kalkulačka ceny",
+        "pricing.toggle.label": "Fakturace",
+        "pricing.toggle.year": "Ročně",
+        "pricing.toggle.year_badge": "ušetříte 33 %",
+        "pricing.toggle.month": "Měsíčně",
+        "pricing.count.label": "Počet apartmánů",
+        "pricing.count.dec": "Ubrat apartmán",
+        "pricing.count.inc": "Přidat apartmán",
+        "pricing.ttlock.label": "Mám chytré zámky TTLock",
+        "pricing.currency": "Kč",
+        "pricing.per_month": "/ měsíc",
+        "pricing.billed_year": "Platíte %(amount)s Kč jednou ročně",
+        "pricing.month_hint": "S roční platbou jen %(price)s Kč / měsíc",
+        "pricing.apts.one": "%(count)s apartmán",
+        "pricing.apts.few": "%(count)s apartmány",
+        "pricing.apts": "%(count)s apartmánů",
+        "pricing.std.name": "UbyHost",
+        "pricing.std.tagline": "Vše pro bezstarostné hlášení",
+        "pricing.std.f1": "Automatické hlášení do UbyPortu s doručenkou",
+        "pricing.std.f2": "Online check-in, ubytovací kniha na 6 let",
+        "pricing.std.f3": "Ochrana proti duplicitám",
+        "pricing.std.f4": "Poplatek z pobytu a QR platba",
+        "pricing.std.f5": "Leon odpovídá hostům 24/7",
+        "pricing.std.f6": "Neomezeně hostů, pobytů i kolegů",
+        "pricing.std.note": "bez limitu hostů",
+        "pricing.std.note_ttlock": "vč. TTLock",
+        "pricing.max.name": "UbyHost Max",
+        "pricing.max.badge": "Jen u nás: AI concierge",
+        "pricing.max.tagline": "Pro hostitele, kteří chtějí klid i v sezóně",
+        "pricing.max.f1": "Vše z UbyHostu",
+        "pricing.max.f2": "3× víc odpovědí od Leona a Havla",
+        "pricing.max.f3": "Chytré zámky TTLock v ceně",
+        "pricing.max.f4": "Přednostní podpora",
+        "pricing.max.f5": "Nové funkce jako první",
+        "pricing.max.note": "TTLock v ceně",
+        "pricing.cta": "Vyzkoušet 30 dní zdarma",
+        "pricing.cta_note": "Zkušební doba začne, až propojíte UbyPort.",
+        "pricing.prices_final": "Ceny jsou konečné.",
+        "pricing.bands.eyebrow": "Postupná sleva",
+        "pricing.bands.title": "Čím víc apartmánů, tím nižší cena",
+        "pricing.bands.body": (
+            "Sleva se počítá postupně: první 4 za plnou cenu, 5. až 9. levněji, "
+            "od 10. nejlevněji."
         ),
-        "pricing.card.note": "Cenu nastavíme podle toho, co skutečně provozujete.",
-        "pricing.card.cta": "Požádat o přístup a cenu",
-        "pricing.cta.subject": "Cena UbyHostu",
-        "pricing.includes.title": "Kompletní postup evidence a hlášení hostů",
-        "pricing.includes.1": "Napojení kalendářů Airbnb a Booking.com",
-        "pricing.includes.2": "Soukromé online formuláře pro hosty",
-        "pricing.includes.3": "Online ubytovací kniha",
-        "pricing.includes.4": "Přímé hlášení do UbyPortu a uložené doručenky",
-        "pricing.factors.eyebrow": "Na čem se domluvíme",
-        "pricing.factors.title": "Nastavení určují tři věci.",
-        "pricing.factor.properties.title": "Vaše ubytování",
-        "pricing.factor.properties.body": "Kolik apartmánů nebo ubytovacích zařízení spravujete.",
-        "pricing.factor.volume.title": "Objem hostů",
-        "pricing.factor.volume.body": "Kolik pobytů a hlášení cizinců zpracujete za měsíc.",
-        "pricing.factor.workflow.title": "Váš postup",
-        "pricing.factor.workflow.body": "Časování hlášení, zavedení systému a potřebná podpora.",
-        "pricing.final.title": "Napište nám, co provozujete.",
-        "pricing.final.body": "Pro začátek stačí krátký e-mail.",
+        "pricing.bands.b1": "1.–4. apartmán",
+        "pricing.bands.b2": "5.–9. apartmán",
+        "pricing.bands.b3": "od 10. apartmánu",
+        "pricing.bands.unit_year": "za apartmán měsíčně, placeno ročně",
+        "pricing.bands.unit_month": "za apartmán měsíčně",
+        "pricing.founder.heading": "Zakládající hostitelé: 74 Kč měsíčně",
+        "pricing.founder.body": "890 Kč ročně za apartmán, cena zamčená na 2 roky. Zbývá %(n)s ze 100 míst.",
+        "pricing.founder.cta": "Získat místo",
+        "pricing.addons.eyebrow": "Na přání",
+        "pricing.addons.title": "Doplňky",
+        "pricing.addon.ttlock.title": "Chytré zámky TTLock",
+        "pricing.addon.ttlock.body": "Kód pro každý pobyt. +49 Kč za apartmán měsíčně, v Max zdarma.",
+        "pricing.addon.wl.title": "Vlastní značka pro agentury",
+        "pricing.addon.wl.body": "Vaše logo a barvy pro hosty i majitele. +590 Kč měsíčně.",
+        "pricing.anchor.eyebrow": "Proč se to vyplatí",
+        "pricing.anchor.title": "Levnější než jedna chyba",
+        "pricing.anchor.body": "Rok UbyHostu stojí 1 190 Kč. Za nenahlášeného hosta hrozí pokuta až 50 000 Kč.",
+        "pricing.faq.title": "Časté dotazy",
+        "pricing.faq.1.q": "Kdy začne zkušební doba?",
+        "pricing.faq.1.a": (
+            "Až ověříme vaše přístupy do UbyPortu, nejpozději 7 dní po registraci. "
+            "Máte tak 30 dní skutečného hlášení."
+        ),
+        "pricing.faq.2.q": "Co se počítá jako apartmán?",
+        "pricing.faq.2.a": "Každá nabídka s vlastním kalendářem. Hostů, pobytů a kolegů je neomezeně.",
+        "pricing.faq.3.q": "Musím zadávat kartu?",
+        "pricing.faq.3.a": "Ne. Platíte převodem na fakturu, kterou pošleme až po zkušební době.",
+        "pricing.faq.4.q": "Co když přidám apartmán?",
+        "pricing.faq.4.a": (
+            "Cena se upraví automaticky, doplatíte jen poměrnou část. Když apartmán "
+            "odeberete, nižší cena platí od dalšího období."
+        ),
+        "pricing.faq.5.q": "Můžu zrušit kdykoli?",
+        "pricing.faq.5.a": (
+            "Ano. Služba běží do konce zaplaceného období a ubytovací knihu si můžete "
+            "kdykoli stáhnout."
+        ),
+        "pricing.faq.6.q": "Dostanu fakturu na firmu?",
+        "pricing.faq.6.a": "Ano, s IČO a DIČ. Údaje doplníme z ARES.",
+        "pricing.faq.7.q": "Co když fakturu nestihnu zaplatit?",
+        "pricing.faq.7.a": (
+            "Připomeneme se. Ještě 30 dní po splatnosti běží vše dál a hlášení už "
+            "registrovaných hostů nikdy nezastavíme."
+        ),
+        "pricing.faq.8.q": "Jak platit?",
+        "pricing.faq.8.a": (
+            "Převodem na fakturu, stačí naskenovat QR kód v bankovní aplikaci. "
+            "Platbu spárujeme sami. Platba kartou přibude brzy."
+        ),
+        "pricing.faq.9.q": "Co eTurista?",
+        "pricing.faq.9.a": (
+            "Zákon zatím neplatí a stát nezveřejnil rozhraní. Jakmile ho zveřejní, "
+            "napojíme se a vaše data převedeme bez přepisování."
+        ),
+        "pricing.final.title": "Začněte dnes, platit budete až za 30 dní",
+        "pricing.final.large": "10 a více apartmánů?",
+        "pricing.final.write": "Napište nám.",
+        "pricing.final.subject": "UbyHost pro 10 a více apartmánů",
         "landing.mock.today": "Dnes",
         "landing.mock.guest_form": "Formulář hosta",
         "landing.features.eyebrow": "Celý postup na jednom místě",

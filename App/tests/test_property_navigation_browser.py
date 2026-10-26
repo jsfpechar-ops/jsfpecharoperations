@@ -46,7 +46,7 @@ SETTINGS_NAMES = {
     "addr_okres", "addr_obec", "addr_obec_cast", "addr_street", "addr_house_no", "addr_orient_no", "addr_zip",
     "notes", "permalink_pin", "guest_message", "permalink_window_days",
     "permalink_reachback_days", "passport_photo_policy", "door_code_section", "door_codes_fields", "door_codes",
-    "lock_id", "checkin_hour", "checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark",
+    "lock_id", "checkin_hour", "checkout_hour", "lock_checkin_hour", "lock_checkout_hour", "uby_idub", "uby_ws_user", "uby_ws_password", "uby_mark",
     "uby_name", "uby_contact", "stay_fee_rate_czk", "stay_fee_cadence", "stay_fee_vs", "stay_fee_council_account",
     "_stay_fee_account_existing", "stay_fee_authority_name",
     "stay_fee_authority_address", "stay_fee_authority_contact", "stay_fee_authority_databox",
@@ -620,7 +620,11 @@ def test_shared_timing_pair_is_owned_by_properties(host, base):
         assert page.locator('#property-settings-form [name="checkout_hour"]').count() == 1
         assert page.locator('#arrival-departure').is_visible()
         page.locator('[data-property-section-link="lock"]').click()
+        # 0414: the Door lock tab has its own pickers (lock_*), kept in sync with these.
         assert page.locator('#settings-lock [name="checkin_hour"]').count() == 0
         assert page.locator('#settings-lock [name="checkout_hour"]').count() == 0
-        assert page.locator('#settings-lock a[href*="section=property#arrival-departure"]').is_visible()
+        assert page.locator('#settings-lock [name="lock_checkin_hour"]').is_visible()
+        assert page.locator('#settings-lock [name="lock_checkout_hour"]').is_visible()
+        page.locator('#lock_checkin_hour').select_option('16')
+        assert page.locator('#checkin_hour').input_value() == '16'
         browser.close()
