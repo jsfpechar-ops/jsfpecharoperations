@@ -1,6 +1,6 @@
 # 0419: Operator billing page (B9): /admin/fakturace, statement upload, accountant export
 
-Status: todo
+Status: review
 Depends on: 0413, 0417, 0418 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0419-admin-billing
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

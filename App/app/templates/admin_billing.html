@@ -1,0 +1,97 @@
+{#- 0419: the operator's billing page /admin/fakturace. Admins only, works without JavaScript.
+    Data: routes/admin_billing.py, app/billing_admin.py, app/bank_import.py. -#}
+{% extends "host_page.html" %}
+{% set nav = 'billing_admin' %}
+{% set body_kind = 'detail' %}
+{% from "_ui_layout.html" import ui_section_tabs with context %}
+{% block title %}{{ t('billing.admin.title') }}{% endblock %}
+{% block meta %}{{ t('billing.admin.lede') }}{% endblock %}
+{% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block body %}
+{% set states = ['trial_pending', 'trialing', 'active', 'overdue', 'canceling', 'paused'] %}
+{% call ui_section(t('billing.admin.accounts.title')) %}
+{{ ui_facts([(t('billing.admin.unpaid_total'), unpaid_total ~ ' Kč')]) }}
+<p class="ui-sub" data-billing-admin-accounts>{% for s in states %}{{ t('billing.plan.state.' ~ s) }}: {{ accounts.get(s, 0) }}{{ ' · ' if not loop.last }}{% endfor %}</p>
+{% endcall %}
+
+{% call ui_section(t('billing.admin.unpaid.title'), id='unpaid') %}
+{% if unpaid %}
+{{ ui_table_begin([(t('billing.admin.col.number'), ''), (t('billing.admin.col.buyer'), ''), (t('billing.admin.col.amount'), 'r'), (t('billing.admin.col.due'), 'r')], label=t('billing.admin.unpaid.title')) }}
+{% for inv in unpaid %}
+<tr class="ui-row" data-billing-admin-unpaid="{{ inv.number }}">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a><span class="ui-sub"> VS {{ inv.vs }}</span></td>
+  <td>{{ inv.buyer.name }}</td>
+  <td class="ui-cell-r ui-num">{{ kc(inv.total_haler) }} Kč</td>
+  <td class="ui-cell-r" data-card="badge">{% if inv.overdue %}{{ ui_badge('action', fmt_date(inv.due_date), overdue=true) }}{% else %}{{ fmt_date(inv.due_date) }}{% endif %}</td>
+</tr>
+<tr class="ui-row">
+  <td colspan="4">
+    <form method="post" action="/admin/fakturace/{{ inv.id }}/zaplaceno" class="ui-form-actions">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <label class="ui-sub" for="paid-{{ inv.id }}">{{ t('billing.admin.paid.date') }}</label>
+      <input class="ui-input" type="date" id="paid-{{ inv.id }}" name="paid_on" value="{{ today }}" required>
+      {{ ui_button(t('billing.admin.paid.submit'), 'secondary', type='submit') }}
+    </form>
+    <details>
+      <summary>{{ t('billing.admin.storno.open') }}</summary>
+      <form method="post" action="/admin/fakturace/{{ inv.id }}/storno" class="ui-form-actions">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+        <label class="ui-sub" for="reason-{{ inv.id }}">{{ t('billing.admin.storno.reason') }}</label>
+        <input class="ui-input" type="text" id="reason-{{ inv.id }}" name="reason" maxlength="200" required>
+        {{ ui_button(t('billing.admin.storno.submit'), 'danger', type='submit') }}
+      </form>
+    </details>
+  </td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('billing.admin.unpaid.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.statement.title'), id='statement') %}
+<p class="ui-sub">{{ t('billing.admin.statement.help') }}</p>
+<form method="post" action="/admin/fakturace/vypis" enctype="multipart/form-data" data-billing-admin-statement>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <label class="ui-sub" for="statement-file">{{ t('billing.admin.statement.file') }}</label>
+  <input class="ui-input" type="file" id="statement-file" name="statement" accept=".gpc,.csv,.txt" required>
+  <div class="ui-form-actions">{{ ui_button(t('billing.admin.statement.submit'), 'primary', type='submit') }}</div>
+</form>
+{% endcall %}
+
+{% call ui_section(t('billing.admin.payments.title'), id='payments') %}
+{% if payments %}
+{{ ui_table_begin([(t('billing.admin.col.received'), ''), (t('billing.admin.col.vs'), ''), (t('billing.admin.col.amount'), 'r'), (t('billing.admin.col.state'), 'r')], label=t('billing.admin.payments.title')) }}
+{% for p in payments %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary">{{ fmt_date(p.received_on) }}<span class="ui-sub"> {{ p.message or '' }}</span></td>
+  <td class="ui-mono">{{ p.vs or '—' }}</td>
+  <td class="ui-cell-r ui-num">{{ kc(p.amount_haler) }} Kč</td>
+  <td class="ui-cell-r" data-card="badge">{{ ui_badge('done' if p.status == 'overpaid' else 'action', t('billing.admin.payment.' ~ p.status)) }}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('billing.admin.payments.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.month.title'), id='month') %}
+<form method="get" action="/admin/fakturace" class="ui-form-actions">
+  <label class="ui-sub" for="month-pick">{{ t('billing.admin.month.pick') }}</label>
+  <input class="ui-input" type="month" id="month-pick" name="mesic" value="{{ month }}">
+  {{ ui_button(t('billing.admin.month.show'), 'secondary', type='submit') }}
+  {{ ui_button(t('billing.admin.month.export'), 'primary', href='/admin/fakturace/export?mesic=' ~ month) }}
+</form>
+<p class="ui-sub">{{ t('billing.admin.month.export_help') }}</p>
+{% if invoices %}
+{{ ui_table_begin([(t('billing.admin.col.number'), ''), (t('billing.admin.col.buyer'), ''), (t('billing.admin.col.amount'), 'r'), (t('billing.admin.col.state'), 'r')], label=t('billing.admin.month.title')) }}
+{% for inv in invoices %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a><span class="ui-sub"> {{ fmt_date(inv.issue_date) }}</span></td>
+  <td>{{ inv.buyer.name }}</td>
+  <td class="ui-cell-r ui-num">{{ kc(inv.total_haler) if inv.total_haler >= 0 else '−' ~ kc(-inv.total_haler) }} Kč</td>
+  <td class="ui-cell-r" data-card="badge">{% if inv.voided or inv.kind == 'storno' %}{{ ui_badge('neutral', t('billing.invoices.state.void')) }}{% elif inv.paid_on %}{{ ui_badge('done', t('billing.invoices.state.paid')) }}{% else %}{{ ui_badge('action', t('billing.invoices.state.open')) }}{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('billing.admin.month.none') }}</p>{% endif %}
+{% endcall %}
+{% endblock %}
