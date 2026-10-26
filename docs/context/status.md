@@ -9,9 +9,8 @@ Updated: 2026-10-26.
 
 ## Now
 
-- 0414 copy settings: one-time dialog (Add property, unfinished setup). **Owner:** merge.
-- Billing 0411+0412 (ČSOB, statement upload). **Owner:** OGs plan later.
-- 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
+- Billing 0411+0412 (ČSOB, statements). **Owner:** plan later.
+- 0410 cards #517; 0414 copy. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
 - Guide + Leon 0341-0355: owner merges #465-#468.
 - 0291-0302 buttons, fees, invoice. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
@@ -21,7 +20,7 @@ Updated: 2026-10-26.
 
 - 0280-0283 alerts, borders, signature. **Owner:** PR/deploy/phone.
 - 0253 layout tests. **Owner:** PR, iPad.
-- Foolproof 0230-0278, design reset 0165-0183 (#405). **Owner:** deploy.
+- Foolproof 0230-0278, reset 0165-0183 (#405). **Owner:** deploy.
 - Phone app + alerts (0219, 0225-0229, #421). **Owner:** deploy, phone.
 - #418 onboarding fixes 0203-0212; address open.
 - Stay-fee email 0220-0224: built, owner staging test.
