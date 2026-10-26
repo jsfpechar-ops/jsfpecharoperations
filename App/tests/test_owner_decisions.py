@@ -65,8 +65,8 @@ def test_the_locked_tagline_is_the_final_cta():
 def test_one_public_guest_book_term():
     assert LANDING_STRINGS["en"]["landing.feature.book.title"] == "Online guest book"
     assert LANDING_STRINGS["cs"]["landing.feature.book.title"] == "Online ubytovací kniha"
-    assert LANDING_STRINGS["en"]["pricing.includes.3"] == "Online guest book"
-    assert LANDING_STRINGS["cs"]["pricing.includes.3"] == "Online ubytovací kniha"
+    assert LANDING_STRINGS["en"]["pricing.std.f2"] == "Online check-in, 6-year guest book"
+    assert LANDING_STRINGS["cs"]["pricing.std.f2"] == "Online check-in, ubytovací kniha na 6 let"
     assert "Online house book" not in _get("/jak-to-funguje")
     assert "Online domovní kniha" not in _get("/jak-to-funguje", "cs")
 
