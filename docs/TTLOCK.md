@@ -148,3 +148,29 @@ Source for every code: [X], table "System Error Codes", plus [FAQ] where marked.
 10. **Data:** EU users' data is stored in Germany; TTLock does not think it meets GDPR standards ([DOOR_CODES_LEGAL](privacy/DOOR_CODES_LEGAL.md) §4).
 
 Still unknown: whether an authorization-code (redirect) login exists ([X] lists `10002`, `10008`, `10009`); not needed with the UbyHost-made user.
+
+## Reading TTLock logs and testing the gateway (server runbook)
+
+Learned 2026-10-26. Never use the TTLock developer client secret or a host login for this: UbyHost already holds one TTLock login per host (table `lock_account`, password encrypted, never shown). Run the checks through the app instead.
+
+1. Open the Lightsail console, click the instance, click **Connect using SSH** (browser window; no key needed).
+2. `cd /opt/ubyhost/deploy/lightsail`
+3. Use `./scripts/ttlock-check.sh`:
+
+| Word | What it answers |
+|---|---|
+| `logs [HOURS]` | TTLock lines from web and worker (default 24 h). Empty is normal: the worker logs TTLock only when it makes a call. The `door_codes` job line with `created=0 issued=0 failed=0` means nothing was due. |
+| `accounts` | Account id, owner id, `hjhfa_uh...` username and status per host. Which id belongs to which host is told by the lock list below. |
+| `locks ID` | Locks that account sees. The lock id must be in the answer, otherwise the host has not shared it. |
+| `gateway ID LOCK` | Gateway test, up to 35 s. A lock time means it works. |
+
+Error meaning: `-2012` the lock is not paired under any gateway (the gateway being online is not enough: in the TTLock app, Gateway, the G2, the lock must be listed under it; also try the G2 within 1 to 2 m, walls and metal doors cut range); `-3037` gateway offline or busy; `10011` login expired (the app re-logs in by itself, see Auth and tokens).
+
+Docker keeps only 5 x 10 MB per service, so older lines are gone ([OPERATIONS: Logs](OPERATIONS.md#logs)).
+
+### Easier access later (open, needs an owner decision)
+
+- **Now, no third party:** the browser SSH plus `ttlock-check.sh` above. Two commands, nothing leaves the server.
+- **If it is still too much:** ship the Docker logs to Better Stack Logs (free tier, web search, phone app, email alerts) with their Vector collector as one extra container. Cost: a new container (dependency, needs a line in [decisions](context/decisions.md)) and a new outbound request (give the reason in the PR). Logs are PII-free by design (OPERATIONS: Logs), but they contain lock ids and error codes, so check the lines first. Setup would be a brief for Haiku plus about 5 owner clicks (create the Better Stack source, copy its token into `.env`, deploy).
+- **Better than any tool:** have the app log one line per TTLock call (path, priority, errcode, lock id) and raise an alert (kind in OPERATIONS "Alert kinds") when `-2012` repeats. That is an `App/` change, so it needs a brief.
+
