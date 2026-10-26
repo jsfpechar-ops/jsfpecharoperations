@@ -243,7 +243,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 | Litestream → S3 | continuous (10 s), full snapshot daily, check daily | 7 days | main recovery, including a new instance |
 | `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
 | `backup-gdrive.sh` | weekly | 30 days | copy outside AWS |
-| Lightsail automatic snapshots | daily | 7 | optional; they copy the whole disk, including every local backup, and are billed per GB on top of the bundle |
+| Lightsail automatic snapshots | daily | 7 | keep on: the only copy of the whole server (`.env`, origin certs, cron, photos) and the fastest full restore; billed per GB, so a 7-day local retention keeps them small |
 
 ## Restore runbook (same instance)
 

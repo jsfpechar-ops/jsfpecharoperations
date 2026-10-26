@@ -178,6 +178,6 @@ Write `docs/tasks/0414-report.md` (600 tokens at most) and set `Status: review`:
 1. After merge and deploy, open `https://ubyhost.com` in a browser: it loads as before.
 2. From your laptop run `curl -sk --max-time 10 https://<server static IP>/healthz -H "Host: ubyhost.com"`: it must fail with an empty reply or a reset, not answer `ok`.
 3. In the production `.env` on the server set `UBYHOST_BACKUP_RETENTION_DAYS=7` if it still says 30.
-4. Decide on Lightsail automatic snapshots (Lightsail → instance → Snapshots → Automatic snapshots): turn them off to save their storage cost, since Litestream and Drive cover recovery.
+4. Keep Lightsail automatic snapshots on (owner decision 2026-10-26): they are the only copy of the whole server.
 5. In the S3 bucket's lifecycle rule, consider expiring non-current versions after 7 days instead of 30.
 6. Once a quarter, run the rebuild drill in `docs/LIGHTSAIL.md`.
