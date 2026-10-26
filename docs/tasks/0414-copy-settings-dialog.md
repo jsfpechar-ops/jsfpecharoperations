@@ -1,6 +1,6 @@
 # 0414: Copy settings opens a small dialog
 
-Status: ready (v2, replaces the blocked first run). Executor: Haiku 5.5. Branch: `claude/project-thread-mtzx1z`.
+Status: review
 
 ## 1. Objective
 
