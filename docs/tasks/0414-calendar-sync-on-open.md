@@ -223,22 +223,26 @@ Replace with:
    - with `config.ICAL_OPEN_SYNC_MINUTES = 0` nothing is read.
    - when the fake `sync_feed` raises, the feed ends with `last_status = 'error'` and the function does not raise.
 
-## 5. Test
+## 5. Do not touch
+
+Every file not listed in section 3, the scheduler, and `sync_all`.
+
+## 6. Commands
 
 From `App/`:
 `.venv/bin/python -m pytest tests/test_calendar_sync_on_open.py tests/test_icalsync.py tests/test_ical_skip_unchanged.py tests/test_calendar_sync_ui.py tests/test_dashboard_calendar.py tests/test_dashboard_empty.py -q --tb=short -x 2>&1 | tail -30`
 If an i18n test exists for the changed keys, `grep -ln "calendars.lede\|setup_guide.calendar.text" tests/*.py` and run those too. From the repo root: `python3 scripts/context_lint.py | tail -5`.
 
-## 6. Acceptance
+## 7. Acceptance
 
 - All tests above pass. No browser test is needed: no template or CSS changed.
 - `git diff --stat` lists only the files in section 3 plus this brief and the report.
 
-## 7. Stop and ask
+## 8. Stop and ask
 
 Stop and report (do not improvise) if a find string is missing, if `response.background` is already set on either page, or if any existing test fails for a reason you cannot tie to this change.
 
-## 8. Report
+## 9. Report
 
 Write `docs/tasks/0414-report.md` (400 tokens at most), set `Status: review` in this brief, and commit everything with message `0414: sync calendars when the host opens the app; say how often they update`.
 

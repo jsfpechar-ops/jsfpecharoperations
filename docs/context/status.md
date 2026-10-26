@@ -9,13 +9,13 @@ Updated: 2026-10-26.
 
 ## Now
 
+- 0414 sync on open. **Owner:** merge.
 - Billing 0411+0412 (ČSOB, statement upload). **Owner:** OGs plan later.
 - 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
 - Guide + Leon 0341-0355: owner merges #465-#468.
 - 0291-0302 buttons, fees, invoice. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
-- Check-in alerts #435: owner merge/deploy.
-- TTLock disclosure #434: timing/geometry CI pending.
+- Check-in alerts #435: owner merge. TTLock #434: CI pending.
 - #432 subdomain deployed; root login/calendar review pending.
 
 - 0280-0283 alerts, borders, signature. **Owner:** PR/deploy/phone.
