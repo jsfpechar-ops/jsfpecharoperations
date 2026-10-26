@@ -20,7 +20,7 @@ TRANSITIONS = {
     "trialing": {"active", "paused"},
     "active": {"overdue", "canceling"},
     "overdue": {"active", "paused"},
-    "canceling": {"paused"},
+    "canceling": {"paused", "active"},  # 0416: a host can take a cancellation back
     "paused": {"active"},
 }
 PLANS = ("standard", "max")

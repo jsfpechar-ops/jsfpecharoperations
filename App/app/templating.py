@@ -482,6 +482,17 @@ templates.env.globals["page_tabs"] = _template_page_tabs
 templates.env.globals["passkeys_enabled"] = _template_passkeys_enabled
 templates.env.globals["door_codes_enabled"] = _template_door_codes_enabled
 templates.env.globals["billing_banner"] = _template_billing_banner
+
+
+def _template_billing_on() -> bool:
+    """0416: whether UbyHost's own billing is switched on (the /predplatne link)."""
+    from . import billing
+
+    return billing.enabled()
+
+
+templates.env.globals["billing_on"] = _template_billing_on
+
 # 0230: the five-step story, the same words on every host page.
 from . import workflow  # noqa: E402
 
