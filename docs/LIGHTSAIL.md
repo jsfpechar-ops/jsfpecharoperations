@@ -257,7 +257,7 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 ### Restore onto a **new** Lightsail instance
 
 1. Create instance, static IP, firewall 22/80/443. Run `setup-server.sh`. Clone repo to `/opt/ubyhost`.
-2. Copy `.env` (do not commit it) and `caddy/certs/origin*.pem` from the old host or a secrets store.
+2. Copy `.env` (do not commit it) and `caddy/certs/origin*.pem` from the old host or a secrets store. **Before the first deploy**, set `UBYHOST_SECRET_KEY` in `.env` to the production key from the password manager: with it empty, `deploy.sh` generates a new key and the restored guest data and UBY-WS passwords cannot be decrypted.
 3. `./scripts/deploy.sh` once so volume `ubyhost-data` exists.
 4. `docker compose stop ubyhost`
 5. Place backup files on the host (from Drive): `ubyhost.db` and `secret_key`.
