@@ -22,26 +22,11 @@
   ('automation', t('property_nav.group.automation')),
 ] %}
 
-{% if copy_property_peers %}
-<form method="get" action="{{ base_url }}" class="panel copy-property-form">
-  <input type="hidden" name="view" value="settings">
-  <div class="copyrow">
-    <div class="field grow">
-      <label for="copy_from">{{ t('apartment.form.copy_from.label') }}</label>
-      <select id="copy_from" name="copy_from" required>
-        <option value="" disabled {% if not copy_from_id %}selected{% endif %}>{{ t('apartment.form.copy_from.choose') }}</option>
-        {% for peer in copy_property_peers %}
-        <option value="{{ peer.id }}" {% if copy_from_id == peer.id %}selected{% endif %}>{{ peer.internal_name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <button class="ui-btn ui-btn-secondary" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
-  </div>
-  {% if copied_from_name %}
-  <p class="ui-sub" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}</p>
-  <p class="ui-sub">{{ t('apartment.form.copy_from.vs_hint') }}</p>
-  {% endif %}
-</form>
+{% if copy_property_peers or copied_from_name %}
+<div class="copy-settings-bar">
+  {% if copied_from_name %}<p class="ui-sub" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}</p>{% endif %}
+  {% if copy_property_peers %}{% with copy_action=base_url, copy_section=settings_section %}{% include "_copy_settings_dialog.html" %}{% endwith %}{% endif %}
+</div>
 {% endif %}
 
 <div class="property-settings">
