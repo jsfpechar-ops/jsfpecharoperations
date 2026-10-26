@@ -137,6 +137,7 @@ jobs:
           # shellcheck disable=SC2087
           ssh -o StrictHostKeyChecking=yes -i ~/.ssh/lightsail_deploy.pem "ubuntu@${LIGHTSAIL_HOST}" bash -s <<REMOTE
           DEPLOY_SHA="${DEPLOY_SHA}"
+          UBYHOST_IMAGE="${IMAGE}"
           TARGET="${TARGET}"
           UBYPORT_TARGET="${UBYPORT_TARGET}"
           set -euo pipefail
@@ -187,7 +188,7 @@ jobs:
           git reset --hard "\${DEPLOY_SHA}"
           cd deploy/lightsail
           chmod +x scripts/*.sh
-          ./scripts/deploy.sh
+          UBYHOST_IMAGE="\${UBYHOST_IMAGE}" ./scripts/deploy.sh
           REMOTE
           rm -f ~/.ssh/lightsail_deploy.pem
           if [ -n "${HEALTH_URL}" ]; then
