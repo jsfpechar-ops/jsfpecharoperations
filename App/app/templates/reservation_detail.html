@@ -192,6 +192,13 @@
   </p>
   {% if stay_claim.state != 'unclaimed' %}
   <div class="stay-command-actions">
+    {% if claim_resend.enabled %}
+    <form method="post" action="/reservations/{{ reservation.id }}/resend-claim" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" data-resend-claim
+              title="{{ t('stay.claim.resend_help') }}">{{ t('stay.claim.resend') }}</button>
+    </form>
+    {% endif %}
     <form method="post" action="/reservations/{{ reservation.id }}/release-claim" class="inline"
           data-confirm data-confirm-message="{{ t('stay.claim.release_confirm') }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
