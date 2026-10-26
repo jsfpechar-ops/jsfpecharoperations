@@ -1,6 +1,6 @@
 # 0420: Paid plans in the Terms and Privacy; ČSOB import fitted to the real export (B10)
 
-Status: todo
+Status: review
 Depends on: 0418, 0419 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0420-billing-legal-csob
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
