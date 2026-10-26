@@ -2624,3 +2624,32 @@ def billing_invoice(
             "attachment_name": f"{number}.pdf",
         },
     )
+
+
+def build_billing_trial(*, days_left: int, ends: str) -> Dict[str, str]:
+    lang = "cs"  # UbyHost bills Czech hosts in Czech
+    subject = _text(lang, f"mail.billing_trial.subject_{days_left}")
+    body = _text(lang, "mail.billing_trial.body", date=_fmt_date(ends))
+    action = _text(lang, "mail.billing_trial.action")
+    link = _app("/predplatne")
+    footer = _signup_footer(lang)
+    text = "\n".join([body, "", f"{action}: {link}", "", "--", *footer])
+    blocks = [_block_heading(subject), _block_paragraph(body), _block_button(link, action)]
+    return {"subject": subject, "text": text,
+            "html": _shell(lang=lang, title=subject, preheader=body, blocks=blocks, footer_lines=footer)}
+
+
+def billing_trial(*, owner_user_id: int, days_left: int, ends: str) -> Optional[int]:
+    """One reminder per stage (key billing-trial-<owner>-<end>-<days>). Service mail, not a tip."""
+    from . import billing_invoices
+
+    content = build_billing_trial(days_left=days_left, ends=ends)
+    return mail.enqueue(
+        kind="billing_trial",
+        idempotency_key=f"billing-trial-{owner_user_id}-{ends}-{days_left}",
+        to_email=billing_invoices.recipient(owner_user_id),
+        subject=content["subject"],
+        owner_user_id=owner_user_id,
+        payload={"text": content["text"], "html": content["html"], "lang": "cs",
+                 "reply_to": config.OPERATOR_EMAIL},
+    )

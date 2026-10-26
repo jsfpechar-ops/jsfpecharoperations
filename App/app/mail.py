@@ -67,6 +67,8 @@ KINDS = (
     "ai_budget",
     # 0413: UbyHost's own invoice to a host, PDF attached (service mail).
     "billing_invoice",
+    # 0414: trial reminders, 7 and 3 days before the end and on the last day.
+    "billing_trial",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -114,6 +116,8 @@ HOST_KINDS = (
     "ai_budget",
     # 0413: UbyHost's own invoice to a host, PDF attached (service mail).
     "billing_invoice",
+    # 0414: trial reminders, 7 and 3 days before the end and on the last day.
+    "billing_trial",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.

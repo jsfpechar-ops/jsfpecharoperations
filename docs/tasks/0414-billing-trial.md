@@ -1,6 +1,6 @@
 # 0414: Billing trial (B3): start, reminders, end, the billing line on host pages
 
-Status: todo
+Status: review
 Depends on: 0411, 0413 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0414-billing-trial
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

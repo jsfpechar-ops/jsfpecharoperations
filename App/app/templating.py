@@ -396,6 +396,13 @@ def _template_door_codes_enabled() -> bool:
     return ttlock.enabled()
 
 
+def _template_billing_banner(owner_user_id):
+    """0414: the one billing line for host pages, or None (billing off, OG host)."""
+    from . import billing_trial
+
+    return billing_trial.banner(owner_user_id)
+
+
 def _template_section_tabs(request: Request, section: str, current: str = "") -> list:
     """0099: the sub-page tabs of one rail section, as (href, label key, current).
 
@@ -474,6 +481,7 @@ templates.env.globals["section_tabs"] = _template_section_tabs
 templates.env.globals["page_tabs"] = _template_page_tabs
 templates.env.globals["passkeys_enabled"] = _template_passkeys_enabled
 templates.env.globals["door_codes_enabled"] = _template_door_codes_enabled
+templates.env.globals["billing_banner"] = _template_billing_banner
 # 0230: the five-step story, the same words on every host page.
 from . import workflow  # noqa: E402
 

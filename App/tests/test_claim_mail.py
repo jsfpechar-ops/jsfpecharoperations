@@ -1839,6 +1839,8 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "ai_budget",
         # 0413: UbyHost's own invoice to a host.
         "billing_invoice",
+        # 0414: the trial reminders.
+        "billing_trial",
     }
 
 

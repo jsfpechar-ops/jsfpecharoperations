@@ -598,6 +598,11 @@ def activate(account) -> bool:
     if not done:
         return False
     db.audit("signup_verified", actor=account["username"], owner_user_id=account["id"])
+    # 0414: a confirmed sign-up gets its billing row; the trial clock starts later.
+    from . import billing
+
+    if billing.enabled():
+        billing.ensure_account(int(account["id"]))
     mail_notify.signup_admin(
         user_id=account["id"],
         workspace=account["display_name"] or "",
