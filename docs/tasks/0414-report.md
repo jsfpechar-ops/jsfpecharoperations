@@ -1,29 +1,61 @@
-# 0414 report: billing trial
+# 0414 report: Check-in/out times on the Door lock tab
 
-Status: review. Executed by Haiku 5.5 in worktree w0414.
+Status: review
 
 ## Files changed
-Steps 1-6 (one commit each, `0414 step k`), plus `0414 step 1 fix`. Created: App/app/billing_trial.py, App/app/templates/_billing_banner.html, App/tests/test_billing_trial.py, App/tests/test_0414_billing_banner_browser.py, docs/tasks/screenshots-0414/dashboard-390.png. Edited: App/app/signup.py, App/app/routes/admin.py, App/app/scheduler.py, App/app/templating.py, App/app/templates/base.html, App/app/mail.py, App/app/mail_notify.py, App/app/host_i18n.py, App/tests/test_claim_mail.py.
 
-## Commands (last lines)
-1. billing_trial + billing_core + billing_invoices: `43 passed in 1.56s`
-2. claim_mail + ses_mail + signup + scheduler: `114 passed, 1 warning in 8.65s`
-3. browser (0414 banner + dashboard phone): `2 passed in 9.41s`, 0 skipped
-4. test_host_i18n: `3 failed, 11 passed`. FAILED: test_language_endpoint_sets_cookie_and_rejects_open_redirects, test_a_signed_in_dashboard_keeps_vietnamese, test_language_endpoint_accepts_vietnamese. Error: `sqlite3.OperationalError: no such table: apartment`. The same 3 fail on claude/billing-phase1-impl with the same command, so they are not caused by this brief.
-Lint: `context lint: OK` (warnings only, existing).
+- App/app/routes/admin.py: `_with_lock_tab_hours` helper (folds `lock_checkin_hour` / `lock_checkout_hour` into the saved hours), `FormData` import, one call at the top of `_save_apartment_form`.
+- App/app/templates/_property_editor.html: two time selects inside `#door-code` (`required` while the switch is on), text line and amber warning removed, duplicate `switch_on` set removed, `data-hour-twin` on the Property tab selects.
+- App/app/static/host.js: sync between twin selects, `required` follows the switch live.
+- App/app/templates/base.html: `host.js?v=20261026-door-lock-times`.
+- App/tests/test_door_lock_tab_times_0414.py: new, 5 tests.
+- docs/tasks/0414-door-lock-tab-times.md: Status set to in-progress, then review.
 
-## Acceptance (§7)
-- [ ] Command 4 not green (pre-existing, see above). Command 3 has 0 skipped.
-- [x] Screenshot exists. Looked once: dashboard at 390 px, no horizontal scroll. The billing line is NOT visible in this capture (see Questions).
-- [ ] `git diff --stat claude/billing-phase1-impl` shows the 0415 files as deleted (see Questions), besides the §3 files.
+## Commits
+
+`0414 step 1` (63a0dba0, includes the Status line), `0414 step 2` (1a1fe134), `0414 step 3` (d20225fe), `0414 step 4` (f6d2a523), then this report.
+
+## Commands
+
+Brief §6 command 1 (`pytest ... -q --tb=short`), last lines:
+
+```
+........................................................................ [ 46%]
+........................................................................ [ 92%]
+...........                                                              [100%]
+155 passed in 4.20s
+```
+
+Brief §6 command 2 (`python3 scripts/context_lint.py`), last lines:
+
+```
+WARN  5 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
+next free: task 0415 | migration 0023
+context lint: OK
+```
+
+Also run: Jinja parse of `_property_editor.html` (ok), `node --check App/app/static/host.js` (no output, no error).
+
+## Section 7 acceptance
+
+- [x] Command 1 passes (155 passed, includes the 0397 and 0400 files, no edits to them).
+- [x] Lint OK.
+- [x] One commit per step.
+- [ ] Browser tests and 390 px screenshots: not run here. Playwright is not installed in this container and the brief says not to install it. CI and the reviewer cover them. The Door lock tab's layout changed, so the reviewer needs a 390 px screenshot of the Door lock tab.
 
 ## Deviations
-- Step 1 test fix: the copied test_billing_trial.py inserted an apartment without created_at (NOT NULL). Added created_at (commit `0414 step 1 fix`).
+
+- Step 1 and step 2 were applied with the anchors exactly as given (each anchor occurred once). Step 1's two edits were made in one edit call, same result.
+- The Status line change to `in-progress` was committed with step 1, not as a separate commit.
+- No PR opened and nothing pushed, per the owner's instruction for this run.
+- `test_door_code_missing_times_0397.py` needed no change; all its assertions still pass.
 
 ## Questions
-1. test_host_i18n.py fails on the base branch too. Needs a decision: fix separately or accept.
-2. `git diff --stat claude/billing-phase1-impl` lists deletions of docs/plans/billing-0415/test_billing_enforcement.py and docs/tasks/0415-billing-enforcement.md. This branch does not contain them. The brief said the base is the head of claude/billing-phase1-impl. Not changed by me; check the base.
-3. The 390 px capture shows no billing line. Likely billing is off in the capture fixture. Confirm the banner renders with billing on.
+
+None.
 
 ## Owner steps left
-None. Do not push. No PR opened (per instructions).
+
+1. Review and open the PR from `claude/project-thread-qi1fv7` when ready (not done here).
+2. Check the Door lock tab at 390 px on a property without times.
+3. After merge, deploy as usual (manual).

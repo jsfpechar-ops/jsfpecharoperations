@@ -14,7 +14,7 @@ Status: review
 - `App/tests/test_billing_admin.py` (new, copied)
 - `App/tests/test_0419_admin_billing_browser.py` (new, copied)
 - `docs/tasks/screenshots-0419/admin-fakturace-390.png` (new)
-- `docs/tasks/0419-report.md` (this file)
+- `docs/tasks/0419-admin-billing-report.md` (this file)
 - `docs/tasks/0419-admin-billing.md` (Status line only)
 
 ## Commands (last 5 lines)

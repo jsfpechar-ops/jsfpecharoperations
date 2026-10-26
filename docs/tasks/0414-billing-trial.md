@@ -1,6 +1,7 @@
 # 0414: Billing trial (B3): start, reminders, end, the billing line on host pages
 
 Status: review
+Report: docs/tasks/0414-billing-trial-report.md
 Depends on: 0411, 0413 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0414-billing-trial
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -111,7 +112,7 @@ If any excerpt is not found verbatim, STOP (§8).
 | `App/tests/test_billing_trial.py` | create | copy from `docs/plans/billing-0414/` |
 | `App/tests/test_0414_billing_banner_browser.py` | create | copy from `docs/plans/billing-0414/` |
 | `docs/tasks/screenshots-0414/dashboard-390.png` | create | the screenshot |
-| `docs/tasks/0414-report.md` | create | the report |
+| `docs/tasks/0414-billing-trial-report.md` | create | the report |
 
 ## 4. Steps
 
@@ -330,7 +331,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`
 
 ## 9. Report
 
-`docs/tasks/0414-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
+`docs/tasks/0414-billing-trial-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
 
 ## Risk list (for the reviewer)
 

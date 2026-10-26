@@ -3,7 +3,7 @@
 Status: review
 
 ## Files changed (git diff --stat fb5978a)
-17 files, 729 insertions, 233 deletions: App/app/landing_i18n.py, App/app/routes/legal.py, App/app/static/landing.css, App/app/static/pricing.js (new), App/app/templates/landing.html, App/app/templates/pricing.html, App/app/templates/product.html, App/app/templates/public_guide.html, App/app/templates/public_legal_base.html, App/tests/static_versions.json, App/tests/test_0412_pricing_browser.py (new), App/tests/test_landing_decoration.py, App/tests/test_owner_decisions.py, App/tests/test_public_seo.py, docs/tasks/0412-cenik-calculator.md (Status line only), docs/tasks/0412-report.md, docs/tasks/screenshots-0412/cenik-390.png (new).
+17 files, 729 insertions, 233 deletions: App/app/landing_i18n.py, App/app/routes/legal.py, App/app/static/landing.css, App/app/static/pricing.js (new), App/app/templates/landing.html, App/app/templates/pricing.html, App/app/templates/product.html, App/app/templates/public_guide.html, App/app/templates/public_legal_base.html, App/tests/static_versions.json, App/tests/test_0412_pricing_browser.py (new), App/tests/test_landing_decoration.py, App/tests/test_owner_decisions.py, App/tests/test_public_seo.py, docs/tasks/0412-cenik-calculator.md (Status line only), docs/tasks/0412-cenik-calculator-report.md, docs/tasks/screenshots-0412/cenik-390.png (new).
 
 ## Commands (last lines)
 - Step 6: `replaced 106 lines with 91`; grep for removed classes: `0`.

@@ -1,6 +1,7 @@
 # 0419: Operator billing page (B9): /admin/fakturace, statement upload, accountant export
 
 Status: review
+Report: docs/tasks/0419-admin-billing-report.md
 Depends on: 0413, 0417, 0418 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0419-admin-billing
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -52,7 +53,7 @@ If any excerpt is not found verbatim and once, STOP (§8).
 | `App/tests/test_billing_admin.py` | create | copy |
 | `App/tests/test_0419_admin_billing_browser.py` | create | copy |
 | `docs/tasks/screenshots-0419/` | create | one screenshot |
-| `docs/tasks/0419-report.md` | create | the report |
+| `docs/tasks/0419-admin-billing-report.md` | create | the report |
 
 ## 4. Steps
 
@@ -110,7 +111,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`. After the
 
 ## 9. Report
 
-`docs/tasks/0419-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
+`docs/tasks/0419-admin-billing-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
 
 ## Risk list (for the reviewer)
 

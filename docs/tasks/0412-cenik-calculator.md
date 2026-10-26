@@ -1,6 +1,7 @@
 # 0412: Public /cenik price list with the calculator (B8)
 
 Status: review
+Report: docs/tasks/0412-cenik-calculator-report.md
 Depends on: none (runs in parallel with 0411) | Base commit: 1255954 | Branch: task/0412-cenik-calculator
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Order: after any open brief that also names `tests/static_versions.json` (0219, 0244, 0246, 0344, 0352-0355); rerun step 7 last so the json matches.
@@ -116,7 +117,7 @@ If any excerpt is not found verbatim, STOP (§8).
 | `App/tests/test_landing_decoration.py` | edit | drop the factor lane |
 | `App/tests/test_0412_pricing_browser.py` | create | calculator in a real browser |
 | `docs/tasks/screenshots-0412/cenik-390.png` | create | screenshot |
-| `docs/tasks/0412-report.md` | create | the report |
+| `docs/tasks/0412-cenik-calculator-report.md` | create | the report |
 
 No other file may change.
 
@@ -867,7 +868,7 @@ Stop, and write the report, if:
 
 ## 9. Report
 
-Write `docs/tasks/0412-report.md` (600 tokens at most) and set `Status: review`. The report has:
+Write `docs/tasks/0412-cenik-calculator-report.md` (600 tokens at most) and set `Status: review`. The report has:
 
 1. The files changed (`git diff --stat`).
 2. Each command, with the last 5 lines of its output.

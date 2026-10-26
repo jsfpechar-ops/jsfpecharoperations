@@ -8,7 +8,7 @@ Status: review
 - App/app/terms_i18n.py (§ 15 EN+CS)
 - App/app/privacy_policy_i18n.py (§ 11 EN+CS)
 - App/app/host_i18n.py (billing.admin.statement.done EN+CS)
-- docs/tasks/0420-report.md (this file)
+- docs/tasks/0420-billing-legal-csob-report.md (this file)
 - docs/tasks/0420-billing-legal-csob.md (Status line only)
 
 ## Commands

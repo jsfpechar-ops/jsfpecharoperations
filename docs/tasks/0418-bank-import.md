@@ -1,6 +1,7 @@
 # 0418: ČSOB statement import (B7): read the bank export, match payments to invoices
 
 Status: review
+Report: docs/tasks/0418-bank-import-report.md
 Depends on: 0413, 0417 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0418-bank-import
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -31,7 +32,7 @@ Both files are finished in `docs/plans/billing-0418/`. You copy them and run the
 |---|---|---|
 | `App/app/bank_import.py` | create | copy of `docs/plans/billing-0418/bank_import.py` |
 | `App/tests/test_bank_import.py` | create | copy of `docs/plans/billing-0418/test_bank_import.py` |
-| `docs/tasks/0418-report.md` | create | the report |
+| `docs/tasks/0418-bank-import-report.md` | create | the report |
 
 ## 4. Steps
 
@@ -68,7 +69,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`
 
 ## 9. Report
 
-`docs/tasks/0418-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
+`docs/tasks/0418-bank-import-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
 
 ## Risk list (for the reviewer)
 

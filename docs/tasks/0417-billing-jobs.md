@@ -1,6 +1,7 @@
 # 0417: Billing jobs (B5): new periods, invoices, apartment counts, dunning
 
 Status: todo
+Report: docs/tasks/0417-billing-jobs-report.md
 Depends on: 0413, 0414, 0416 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0417-billing-jobs
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -70,7 +71,7 @@ If any excerpt is not found verbatim (and once, except B), STOP (§8).
 | `App/app/host_i18n.py` | edit | 6 keys EN, 6 keys CS |
 | `App/tests/test_claim_mail.py` | edit | pinned kinds |
 | `App/tests/test_billing_jobs.py` | create | copy |
-| `docs/tasks/0417-report.md` | create | the report |
+| `docs/tasks/0417-billing-jobs-report.md` | create | the report |
 
 ## 4. Steps
 
@@ -190,7 +191,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`
 
 ## 9. Report
 
-`docs/tasks/0417-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
+`docs/tasks/0417-billing-jobs-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
 
 ## Risk list (for the reviewer)
 

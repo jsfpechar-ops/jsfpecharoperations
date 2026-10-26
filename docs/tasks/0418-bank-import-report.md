@@ -6,7 +6,7 @@ Status: review
 - `App/app/bank_import.py` (created, copy of `docs/plans/billing-0418/bank_import.py`)
 - `App/tests/test_bank_import.py` (created, copy of `docs/plans/billing-0418/test_bank_import.py`)
 - `docs/tasks/0418-bank-import.md` (Status line todo to review)
-- `docs/tasks/0418-report.md` (this file)
+- `docs/tasks/0418-bank-import-report.md` (this file)
 
 ## Commands
 1. `.venv/bin/python -m pytest tests/test_bank_import.py tests/test_billing_jobs.py tests/test_billing_invoices.py -q --tb=short -x`

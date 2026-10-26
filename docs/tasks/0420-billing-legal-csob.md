@@ -1,6 +1,7 @@
 # 0420: Paid plans in the Terms and Privacy; ČSOB import fitted to the real export (B10)
 
 Status: review
+Report: docs/tasks/0420-billing-legal-csob-report.md
 Depends on: 0418, 0419 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0420-billing-legal-csob
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -26,7 +27,7 @@ All new code is finished in `docs/plans/billing-0420/`. You copy two files and r
 | `App/app/terms_i18n.py` | edit (script) | § 15 EN + CS |
 | `App/app/privacy_policy_i18n.py` | edit (script) | § 11 EN + CS |
 | `App/app/host_i18n.py` | edit (script) | `billing.admin.statement.done` EN + CS |
-| `docs/tasks/0420-report.md` | create | the report |
+| `docs/tasks/0420-billing-legal-csob-report.md` | create | the report |
 
 ## 4. Steps
 
@@ -67,7 +68,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`, and `cd A
 
 ## 9. Report
 
-`docs/tasks/0420-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
+`docs/tasks/0420-billing-legal-csob-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
 
 ## Risk list (for the reviewer)
 

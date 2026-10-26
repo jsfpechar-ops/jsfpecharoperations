@@ -1,6 +1,7 @@
 # 0415: Billing enforcement (B7): the plan sets AI limits, TTLock, calendars, read-only
 
 Status: review
+Report: docs/tasks/0415-billing-enforcement-report.md
 Depends on: 0411 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0415-billing-enforcement
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Order: after 0414 (both edit nothing in common, but 0414 must merge first).
@@ -98,7 +99,7 @@ If any excerpt is not found verbatim, STOP (§8).
 | `App/app/leon.py` | edit | `plan_multiplier`, scaled cap |
 | `App/app/icalsync.py` | edit | `import_paused`, skip in `sync_all` |
 | `App/tests/test_billing_enforcement.py` | create | copy of `docs/plans/billing-0415/test_billing_enforcement.py` |
-| `docs/tasks/0415-report.md` | create | the report |
+| `docs/tasks/0415-billing-enforcement-report.md` | create | the report |
 
 No other file may change.
 
@@ -253,7 +254,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`
 
 ## 9. Report
 
-`docs/tasks/0415-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
+`docs/tasks/0415-billing-enforcement-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
 
 ## Risk list (for the reviewer)
 

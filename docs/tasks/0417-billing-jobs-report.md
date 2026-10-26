@@ -10,7 +10,7 @@ Status: review
 - App/app/mail_notify.py (build_billing_overdue, billing_overdue)
 - App/app/host_i18n.py (6 EN keys, 6 CS keys)
 - App/tests/test_claim_mail.py (pinned kinds)
-- docs/tasks/0417-report.md
+- docs/tasks/0417-billing-jobs-report.md
 
 ## Commands
 1. `.venv/bin/python -m pytest tests/test_billing_jobs.py tests/test_billing_trial.py tests/test_billing_order.py tests/test_billing_invoices.py tests/test_billing_core.py -q --tb=short -x 2>&1 | tail -30`

@@ -1,6 +1,7 @@
 # 0416: Plan picker (B4): /predplatne order, change, cancel, invoices; /cenik from billing
 
 Status: review
+Report: docs/tasks/0416-plan-picker-report.md
 Depends on: 0411, 0413, 0414, 0415 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0416-plan-picker
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -80,7 +81,7 @@ If any excerpt is not found verbatim (and once), STOP (§8).
 | `App/tests/test_billing_order.py` | create | copy |
 | `App/tests/test_0416_plan_page_browser.py` | create | copy |
 | `docs/tasks/screenshots-0416/` | create | two screenshots |
-| `docs/tasks/0416-report.md` | create | the report |
+| `docs/tasks/0416-plan-picker-report.md` | create | the report |
 
 ## 4. Steps
 
@@ -183,7 +184,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`. After the
 
 ## 9. Report
 
-`docs/tasks/0416-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
+`docs/tasks/0416-plan-picker-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
 
 ## Risk list (for the reviewer)
 

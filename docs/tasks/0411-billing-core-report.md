@@ -10,7 +10,7 @@ Status: review. Branch `task/0411-billing-core`, base 1255954.
 - `App/app/retention.py`: workspace deletion handles billing tables (3 new statements plus the `billing_account` delete).
 - `App/tests/test_billing_core.py`: new, 16 tests.
 - `docs/privacy/RETENTION.md`: 2 rows after the Invoices row.
-- `docs/tasks/0411-report.md`: new (this file).
+- `docs/tasks/0411-billing-core-report.md`: new (this file).
 - `docs/tasks/0411-billing-core.md`: the brief, copied in with `Status: review`.
 
 ## Commands (last lines)

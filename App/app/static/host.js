@@ -332,7 +332,20 @@
     });
   }
   document.addEventListener('change', function (event) {
-    if (event.target.matches('select[name="checkin_hour"], select[name="checkout_hour"]')) updateDoorCodeWindows();
+    // 0414: the Property tab and the Door lock tab each show the two times; keep them equal.
+    var twin = event.target.getAttribute && event.target.getAttribute('data-hour-twin');
+    if (twin) {
+      document.querySelectorAll('select[data-hour-twin="' + twin + '"]').forEach(function (other) {
+        if (other !== event.target) other.value = event.target.value;
+      });
+    }
+    if (twin || event.target.matches('select[name="checkin_hour"], select[name="checkout_hour"]')) updateDoorCodeWindows();
+    // 0414: door codes need both times, so the Door lock tab's pickers are required while the switch is on.
+    if (event.target.id === 'door_codes') {
+      document.querySelectorAll('[data-lock-times] select').forEach(function (select) {
+        select.required = event.target.checked;
+      });
+    }
   });
   updateDoorCodeWindows();
 })();
