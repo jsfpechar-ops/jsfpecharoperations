@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 
-from .. import config, cookie_inventory, host_i18n, operator, signup
+from .. import billing, config, cookie_inventory, host_i18n, operator, signup
 from ..public_guides import GUIDE_TRANSLATIONS
 from ..templating import render
 
@@ -57,12 +57,12 @@ def product_details(request: Request):
     )
 
 
-# Brief 0412: the public price list in whole Kč. Same numbers as app/billing.py
-# (brief 0411); the plan-picker brief replaces this copy with an import and a test.
+# The public price list in whole Kč, read from app/billing.py (brief 0416) so
+# the page and the invoices can never disagree.
 PUBLIC_RATES = {
-    "base": {"month": [149, 119, 99], "year": [1190, 950, 790]},
-    "max": {"month": [79, 59, 39], "year": [760, 570, 370]},
-    "ttlock": {"month": 49, "year": 470},
+    "base": {interval: list(rates) for interval, rates in billing.BASE.items()},
+    "max": {interval: list(rates) for interval, rates in billing.MAX_EXTRA.items()},
+    "ttlock": dict(billing.TTLOCK),
 }
 
 
@@ -104,8 +104,8 @@ def pricing(request: Request):
             **signup.public_context(request),
             "rates": PUBLIC_RATES,
             "start": start,
-            # The founder counter comes with the plan-picker brief; until then no strip.
-            "founder_left": None,
+            # 0416: places left at the founder price, only while billing is on.
+            "founder_left": billing.founder_slots_left() if billing.enabled() else None,
         },
     )
 
