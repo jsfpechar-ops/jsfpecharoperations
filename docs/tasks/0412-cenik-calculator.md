@@ -31,7 +31,7 @@ Prices (final, per apartment, graduated: each band prices only the apartments in
 
 Display rule: the big number is always per month. Yearly selected: big = year total / 12 rounded half up, small line "Platíte {year total} Kč jednou ročně". Monthly selected: big = month total, small line "S roční platbou jen {year total / 12} Kč / měsíc". Checks: 1 apt → 99 (1 190/yr), 149/mo; Max 1 apt → 163 (1 950/yr), 228/mo; 5 apt → 476 (5 710/yr), 715/mo; 5 apt Max monthly → 1 090.
 
-Layout comes from the owner's design canvas "UbyHost pricing & checkout", artboard "Public pricing page /cenik" (already translated into the template and CSS below; you do not need to open it). Differences from the canvas on purpose: no drop shadow on the Max card (`tests/test_landing_decoration.py` forbids shadows on `.pricing-card`), the founder strip uses the light brand tint, not a dark band.
+Look and feel: the page must match the current marketing page (`landing.html`): it reuses `landing-hero`, `landing-section` + `landing-section-head`, the numbered `benefit-list` lanes, `landing-faq-list` and `landing-final`, so type, spacing and widths come from the existing rules (owner, 2026-10-26). Content order comes from the owner's design canvas "UbyHost pricing & checkout", artboard "Public pricing page /cenik" (already translated into the template and CSS below; you do not need to open it). Differences from the canvas on purpose: no drop shadow on the Max card (`tests/test_landing_decoration.py` forbids shadows on `.pricing-card`), the founder strip uses the light brand tint, not a dark band.
 
 **Excerpt A**, `App/app/routes/legal.py` lines 60–67:
 
@@ -255,115 +255,128 @@ Expected: `99 163 True`
 {% include "_public_header.html" %}
 
   <main id="content" class="pricing-page">
-    <section class="pricing-hero" aria-labelledby="pricing-title">
+    <section class="landing-hero" aria-labelledby="pricing-title">
       <p class="landing-eyebrow">{{ t('pricing.eyebrow') }}</p>
       <h1 id="pricing-title">{{ t('pricing.title') }}</h1>
-      <p class="pricing-lede">{{ t('pricing.lede') }}</p>
-      <ul class="pricing-chips">
-        {% for chip in t('pricing.chips').split(' · ') %}<li>{{ chip }}</li>{% endfor %}
-      </ul>
+      <p class="landing-lede">{{ t('pricing.lede') }}</p>
+      <p class="landing-trust">{{ t('pricing.chips') }}</p>
     </section>
 
-    <section class="pricing-calc" aria-label="{{ t('pricing.calc.label') }}" data-pricing-calc hidden
-      data-rates='{{ rates | tojson }}' data-lang="{{ lang }}" data-signup-base="{{ signup_href or '' }}"
-      data-billed-year="{{ t('pricing.billed_year') }}" data-month-hint="{{ t('pricing.month_hint') }}"
-      data-apts-one="{{ t('pricing.apts.one') }}" data-apts-few="{{ t('pricing.apts.few') }}" data-apts-many="{{ t('pricing.apts') }}"
-      data-std-note="{{ t('pricing.std.note') }}" data-std-note-ttlock="{{ t('pricing.std.note_ttlock') }}"
-      data-unit-year="{{ t('pricing.bands.unit_year') }}" data-unit-month="{{ t('pricing.bands.unit_month') }}">
-      <div class="pricing-toggle" role="group" aria-label="{{ t('pricing.toggle.label') }}">
-        <button type="button" data-interval="year" aria-pressed="true">{{ t('pricing.toggle.year') }}<span>{{ t('pricing.toggle.year_badge') }}</span></button>
-        <button type="button" data-interval="month" aria-pressed="false">{{ t('pricing.toggle.month') }}</button>
-      </div>
-      <div class="pricing-stepper">
-        <span id="pricing-count-label">{{ t('pricing.count.label') }}</span>
-        <button type="button" data-step="-1" aria-label="{{ t('pricing.count.dec') }}">−</button>
-        <output aria-labelledby="pricing-count-label" aria-live="polite" data-count>1</output>
-        <button type="button" data-step="1" aria-label="{{ t('pricing.count.inc') }}">+</button>
-      </div>
-      <label class="pricing-ttlock"><input type="checkbox" data-ttlock>{{ t('pricing.ttlock.label') }}</label>
-    </section>
-
-    <section class="pricing-plans" aria-label="{{ t('pricing.std.name') }}, {{ t('pricing.max.name') }}">
-      <article class="pricing-card" data-plan="standard">
-        <div class="pricing-card-head">
-          <div><h2>{{ t('pricing.std.name') }}</h2><p>{{ t('pricing.std.tagline') }}</p></div>
-          <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+    <section class="landing-section pricing-plans-section" aria-label="{{ t('pricing.calc.label') }}">
+      <div class="pricing-calc" data-pricing-calc hidden
+        data-rates='{{ rates | tojson }}' data-lang="{{ lang }}" data-signup-base="{{ signup_href or '' }}"
+        data-billed-year="{{ t('pricing.billed_year') }}" data-month-hint="{{ t('pricing.month_hint') }}"
+        data-apts-one="{{ t('pricing.apts.one') }}" data-apts-few="{{ t('pricing.apts.few') }}" data-apts-many="{{ t('pricing.apts') }}"
+        data-std-note="{{ t('pricing.std.note') }}" data-std-note-ttlock="{{ t('pricing.std.note_ttlock') }}"
+        data-unit-year="{{ t('pricing.bands.unit_year') }}" data-unit-month="{{ t('pricing.bands.unit_month') }}">
+        <div class="pricing-toggle" role="group" aria-label="{{ t('pricing.toggle.label') }}">
+          <button type="button" data-interval="year" aria-pressed="true">{{ t('pricing.toggle.year') }}<span>{{ t('pricing.toggle.year_badge') }}</span></button>
+          <button type="button" data-interval="month" aria-pressed="false">{{ t('pricing.toggle.month') }}</button>
         </div>
-        <p class="pricing-price"><strong data-total>{{ start.std_month }}</strong> {{ t('pricing.currency') }} {{ t('pricing.per_month') }}</p>
-        <p class="pricing-sub" data-sub>{{ t('pricing.billed_year', amount=start.std_year) }}</p>
-        <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span data-note>{{ t('pricing.std.note') }}</span></p>
-        <a class="landing-button primary pricing-button" data-cta-plan="standard" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
-        <ul class="pricing-features">
-          {% for n in range(1, 7) %}<li>{{ tick() }}{{ t('pricing.std.f' ~ n) }}</li>{% endfor %}
-        </ul>
-      </article>
-      <article class="pricing-card pricing-card-max" data-plan="max">
-        <div class="pricing-card-head">
-          <div><h2>{{ t('pricing.max.name') }}</h2><p>{{ t('pricing.max.tagline') }}</p></div>
-          <span class="pricing-badge">{{ t('pricing.max.badge') }}</span>
+        <div class="pricing-stepper">
+          <span id="pricing-count-label">{{ t('pricing.count.label') }}</span>
+          <button type="button" data-step="-1" aria-label="{{ t('pricing.count.dec') }}">−</button>
+          <output aria-labelledby="pricing-count-label" aria-live="polite" data-count>1</output>
+          <button type="button" data-step="1" aria-label="{{ t('pricing.count.inc') }}">+</button>
         </div>
-        <p class="pricing-price"><strong data-total>{{ start.max_month }}</strong> {{ t('pricing.currency') }} {{ t('pricing.per_month') }}</p>
-        <p class="pricing-sub" data-sub>{{ t('pricing.billed_year', amount=start.max_year) }}</p>
-        <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span>{{ t('pricing.max.note') }}</span></p>
-        <a class="landing-button primary pricing-button" data-cta-plan="max" href="{{ cta_href('max') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
-        <ul class="pricing-features">
-          {% for n in range(1, 6) %}<li>{{ tick() }}{{ t('pricing.max.f' ~ n) }}</li>{% endfor %}
-        </ul>
-      </article>
-    </section>
-    <p class="pricing-fineprint">{{ t('pricing.cta_note') }} {{ t('pricing.prices_final') }}</p>
+        <label class="pricing-ttlock"><input type="checkbox" data-ttlock>{{ t('pricing.ttlock.label') }}</label>
+      </div>
 
-    <section class="pricing-bands" aria-labelledby="bands-title">
-      <div>
+      <div class="pricing-plans">
+        <article class="pricing-card" data-plan="standard">
+          <div class="pricing-card-head">
+            <div><h3>{{ t('pricing.std.name') }}</h3><p>{{ t('pricing.std.tagline') }}</p></div>
+            <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+          </div>
+          <p class="pricing-price"><strong data-total>{{ start.std_month }}</strong> {{ t('pricing.currency') }} {{ t('pricing.per_month') }}</p>
+          <p class="pricing-sub" data-sub>{{ t('pricing.billed_year', amount=start.std_year) }}</p>
+          <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span data-note>{{ t('pricing.std.note') }}</span></p>
+          <a class="landing-button primary pricing-button" data-cta-plan="standard" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
+          <ul class="pricing-features">
+            {% for n in range(1, 7) %}<li>{{ tick() }}{{ t('pricing.std.f' ~ n) }}</li>{% endfor %}
+          </ul>
+        </article>
+        <article class="pricing-card pricing-card-max" data-plan="max">
+          <div class="pricing-card-head">
+            <div><h3>{{ t('pricing.max.name') }}</h3><p>{{ t('pricing.max.tagline') }}</p></div>
+            <span class="pricing-badge">{{ t('pricing.max.badge') }}</span>
+          </div>
+          <p class="pricing-price"><strong data-total>{{ start.max_month }}</strong> {{ t('pricing.currency') }} {{ t('pricing.per_month') }}</p>
+          <p class="pricing-sub" data-sub>{{ t('pricing.billed_year', amount=start.max_year) }}</p>
+          <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span>{{ t('pricing.max.note') }}</span></p>
+          <a class="landing-button primary pricing-button" data-cta-plan="max" href="{{ cta_href('max') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
+          <ul class="pricing-features">
+            {% for n in range(1, 6) %}<li>{{ tick() }}{{ t('pricing.max.f' ~ n) }}</li>{% endfor %}
+          </ul>
+        </article>
+      </div>
+      <p class="pricing-fineprint">{{ t('pricing.cta_note') }} {{ t('pricing.prices_final') }}</p>
+
+      {% if founder_left %}
+      <div class="pricing-founder">
+        <div>
+          <h3>{{ t('pricing.founder.heading') }}</h3>
+          <p>{{ t('pricing.founder.body', n=founder_left) }}</p>
+        </div>
+        <a class="landing-button secondary" data-cta-plan="standard" data-cta-interval="year" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.founder.cta') }}</a>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="landing-section" aria-labelledby="bands-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{ t('pricing.bands.eyebrow') }}</p>
         <h2 id="bands-title">{{ t('pricing.bands.title') }}</h2>
         <p>{{ t('pricing.bands.body') }}</p>
       </div>
-      <ol class="pricing-band-list">
+      <ol class="benefit-list">
         {% for i in range(3) %}
-        <li><span>{{ t('pricing.bands.b' ~ (i + 1)) }}</span><strong><span data-band="{{ i }}">{{ start.bands[i] }}</span> {{ t('pricing.currency') }}</strong><span data-unit>{{ t('pricing.bands.unit_year') }}</span></li>
+        <li><span>0{{ i + 1 }}</span><div><h3>{{ t('pricing.bands.b' ~ (i + 1)) }}</h3><p><span data-band="{{ i }}">{{ start.bands[i] }}</span> {{ t('pricing.currency') }} <span data-unit>{{ t('pricing.bands.unit_year') }}</span></p></div></li>
         {% endfor %}
       </ol>
     </section>
 
-    {% if founder_left %}
-    <section class="pricing-founder" aria-labelledby="founder-title">
-      <div>
-        <h2 id="founder-title">{{ t('pricing.founder.heading') }}</h2>
-        <p>{{ t('pricing.founder.body', n=founder_left) }}</p>
+    <section class="landing-section" aria-labelledby="addons-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{ t('pricing.addons.eyebrow') }}</p>
+        <h2 id="addons-title">{{ t('pricing.addons.title') }}</h2>
       </div>
-      <a class="landing-button secondary" data-cta-plan="standard" data-cta-interval="year" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.founder.cta') }}</a>
-    </section>
-    {% endif %}
-
-    <section class="pricing-addons" aria-labelledby="addons-title">
-      <h2 id="addons-title">{{ t('pricing.addons.title') }}</h2>
-      <ul>
-        <li>{{ t('pricing.addon.ttlock') }}</li>
-        <li>{{ t('pricing.addon.wl') }}</li>
-      </ul>
+      <ol class="benefit-list">
+        {% for name in ('ttlock', 'wl') %}
+        <li><span>0{{ loop.index }}</span><div><h3>{{ t('pricing.addon.' ~ name ~ '.title') }}</h3><p>{{ t('pricing.addon.' ~ name ~ '.body') }}</p></div></li>
+        {% endfor %}
+      </ol>
     </section>
 
-    <section class="pricing-anchor" aria-labelledby="anchor-title">
-      <h2 id="anchor-title">{{ t('pricing.anchor.title') }}</h2>
-      <p>{{ t('pricing.anchor.body') }}</p>
+    <section class="landing-section" aria-labelledby="anchor-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{ t('pricing.anchor.eyebrow') }}</p>
+        <h2 id="anchor-title">{{ t('pricing.anchor.title') }}</h2>
+        <p>{{ t('pricing.anchor.body') }}</p>
+      </div>
     </section>
 
     {% include "_privacy_first.html" %}
 
-    <section class="pricing-faq" aria-labelledby="faq-title">
-      <h2 id="faq-title">{{ t('pricing.faq.title') }}</h2>
-      <div class="pricing-faq-list">
+    <section class="landing-section" aria-labelledby="faq-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{ t('landing.faq.eyebrow') }}</p>
+        <h2 id="faq-title">{{ t('pricing.faq.title') }}</h2>
+      </div>
+      <div class="landing-faq-list">
         {% for n in range(1, 10) %}
-        <details><summary>{{ t('pricing.faq.' ~ n ~ '.q') }}</summary><p>{{ t('pricing.faq.' ~ n ~ '.a') }}</p></details>
+        <details>
+          <summary>{{ t('pricing.faq.' ~ n ~ '.q') }}</summary>
+          <p>{{ t('pricing.faq.' ~ n ~ '.a') }}</p>
+        </details>
         {% endfor %}
       </div>
     </section>
 
-    <section class="landing-final pricing-final">
+    <section class="landing-final">
       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
-      <h2>{{ t('pricing.final.title') }}</h2>
-      <a class="landing-button primary pricing-button" data-cta-plan="standard" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
-      <p>{{ t('pricing.final.large') }} <a href="mailto:support@ubyhost.com?subject={{ t('pricing.final.subject') | urlencode }}" data-analytics-event="contact_click">{{ t('pricing.final.write') }}</a></p>
+      <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.large') }} <a href="mailto:support@ubyhost.com?subject={{ t('pricing.final.subject') | urlencode }}" data-analytics-event="contact_click">{{ t('pricing.final.write') }}</a></p></div>
+      <a class="landing-button primary" data-cta-plan="standard" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
     </section>
   </main>
 
@@ -431,6 +444,7 @@ Replace every line from Excerpt B's first line through its last line (the whole 
         "pricing.cta": "Try free for 30 days",
         "pricing.cta_note": "The trial starts when UbyPort is connected.",
         "pricing.prices_final": "Prices are final.",
+        "pricing.bands.eyebrow": "Graduated pricing",
         "pricing.bands.title": "More apartments, lower price",
         "pricing.bands.body": (
             "Discounts stack: the first 4 at full price, the 5th to 9th cheaper, "
@@ -444,9 +458,13 @@ Replace every line from Excerpt B's first line through its last line (the whole 
         "pricing.founder.heading": "Founding hosts: 74 CZK a month",
         "pricing.founder.body": "890 CZK a year per apartment, price locked for 2 years. %(n)s of 100 places left.",
         "pricing.founder.cta": "Claim a place",
+        "pricing.addons.eyebrow": "Optional",
         "pricing.addons.title": "Add-ons",
-        "pricing.addon.ttlock": "TTLock smart locks: a code per stay, +49 CZK per apartment a month (free in Max)",
-        "pricing.addon.wl": "White-label for agencies: +590 CZK a month",
+        "pricing.addon.ttlock.title": "TTLock smart locks",
+        "pricing.addon.ttlock.body": "A code for every stay. +49 CZK per apartment a month, free in Max.",
+        "pricing.addon.wl.title": "White-label for agencies",
+        "pricing.addon.wl.body": "Your logo and colours for guests and owners. +590 CZK a month.",
+        "pricing.anchor.eyebrow": "Why it pays off",
         "pricing.anchor.title": "Cheaper than one mistake",
         "pricing.anchor.body": "A year of UbyHost costs 1,190 CZK. An unreported guest can cost up to 50,000 CZK.",
         "pricing.faq.title": "Questions and answers",
@@ -547,6 +565,7 @@ Replace every line from Excerpt C's first line through its last line (the whole 
         "pricing.cta": "Vyzkoušet 30 dní zdarma",
         "pricing.cta_note": "Zkušební doba začne, až propojíte UbyPort.",
         "pricing.prices_final": "Ceny jsou konečné.",
+        "pricing.bands.eyebrow": "Postupná sleva",
         "pricing.bands.title": "Čím víc apartmánů, tím nižší cena",
         "pricing.bands.body": (
             "Sleva se počítá postupně: první 4 za plnou cenu, 5. až 9. levněji, "
@@ -560,9 +579,13 @@ Replace every line from Excerpt C's first line through its last line (the whole 
         "pricing.founder.heading": "Zakládající hostitelé: 74 Kč měsíčně",
         "pricing.founder.body": "890 Kč ročně za apartmán, cena zamčená na 2 roky. Zbývá %(n)s ze 100 míst.",
         "pricing.founder.cta": "Získat místo",
+        "pricing.addons.eyebrow": "Na přání",
         "pricing.addons.title": "Doplňky",
-        "pricing.addon.ttlock": "Chytré zámky TTLock: kód pro každý pobyt, +49 Kč za apartmán měsíčně (v Max zdarma)",
-        "pricing.addon.wl": "Vlastní značka pro agentury: +590 Kč měsíčně",
+        "pricing.addon.ttlock.title": "Chytré zámky TTLock",
+        "pricing.addon.ttlock.body": "Kód pro každý pobyt. +49 Kč za apartmán měsíčně, v Max zdarma.",
+        "pricing.addon.wl.title": "Vlastní značka pro agentury",
+        "pricing.addon.wl.body": "Vaše logo a barvy pro hosty i majitele. +590 Kč měsíčně.",
+        "pricing.anchor.eyebrow": "Proč se to vyplatí",
         "pricing.anchor.title": "Levnější než jedna chyba",
         "pricing.anchor.body": "Rok UbyHostu stojí 1 190 Kč. Za nenahlášeného hosta hrozí pokuta až 50 000 Kč.",
         "pricing.faq.title": "Časté dotazy",
@@ -609,7 +632,7 @@ Replace every line from Excerpt C's first line through its last line (the whole 
 ```
 
 Run: `.venv/bin/python -c "from app.landing_i18n import LANDING_STRINGS as L; en={k for k in L['en'] if k.startswith('pricing.')}; cs={k for k in L['cs'] if k.startswith('pricing.')}; print(len(en), en == cs)" 2>&1 | tail -3`
-Expected: `82 True`
+Expected: `87 True`
 
 Then run the step 2 check. Expected: `200 True`.
 
@@ -647,7 +670,7 @@ EOF
 
 Expected: `replaced 106 lines with` and a number. If an `assert` fails, STOP (§8).
 
-Run: `grep -c 'pricing-factor\|pricing-includes\|pricing-hero-copy' app/static/landing.css`
+Run: `grep -c 'pricing-factor\|pricing-includes\|pricing-hero\|pricing-faq\|pricing-band' app/static/landing.css`
 Expected: `0`
 
 ### Step 7. New `?v=` key for `landing.css`, register `pricing.js`
@@ -824,7 +847,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30` → ends w
 
 - [ ] `/cenik?lang=cs` without JS shows "99 Kč / měsíc" (UbyHost) and "163 Kč / měsíc" (Max) with "Platíte 1 190 Kč jednou ročně" / "Platíte 1 950 Kč jednou ročně" (test passes).
 - [ ] In the browser: 5 apartments yearly → 476; monthly → 715 and 1 090; TTLock on → 960 (test passes, 0 skipped).
-- [ ] EN and CS have the same 82 `pricing.*` keys; no `pricing.card.*`, `pricing.includes.*`, `pricing.factor*` key is left.
+- [ ] EN and CS have the same 87 `pricing.*` keys; no `pricing.card.*`, `pricing.includes.*`, `pricing.factor*` key is left.
 - [ ] No "domovní kniha" on the page (`curl`-free check: `grep -c 'domovní' app/landing_i18n.py` is unchanged from before, and the new `pricing.*` lines contain none).
 - [ ] `screenshots-0412/cenik-390.png` exists and shows no sideways scroll.
 - [ ] `git diff --stat` lists only the files in §3.
