@@ -47,6 +47,20 @@ def _run_invoice_step(today: date, dry_run: bool, owner_user_id: Optional[int]) 
     return invoices.purge_expired(today, owner_user_id=owner_user_id)
 
 
+def _platform_invoice_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Brief 0413: UbyHost's own invoices and bank payments, 10 years (§ 35 zákon 235/2004 Sb.).
+
+    They are UbyHost's records, not a workspace's, so a one-workspace run skips them.
+    """
+    from . import billing_invoices
+
+    if owner_user_id is not None:
+        return 0
+    if dry_run:
+        return len(billing_invoices.expired_ids(today))
+    return billing_invoices.purge_expired(today)
+
+
 def _claim_email_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Null ``reservation_claim.email`` once the stay is past the grace window."""
     cutoff = (today - timedelta(days=CLAIM_EMAIL_GRACE_DAYS)).isoformat()
@@ -474,6 +488,7 @@ def _guest_chat_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
     ("invoices", _run_invoice_step),
+    ("platform_invoices", _platform_invoice_step),
     ("claim_emails", _claim_email_step),
     ("reservation_contacts", _reservation_contact_step),
     ("submitter_ips", _submitter_ip_step),
