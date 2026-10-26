@@ -196,6 +196,32 @@ Contract clause: account handover — the customer keeps their Hostex account, c
 - Police credential process: reguby@pcr.cz or databox ybndqw9 (UBY-WS account per IDUB)
 - Pricing rules, tiers, unit economics: see the "UbyHost — Pricing Strategy" canvas
 
+## 12. The engine question — Channex & alternatives
+
+**Channex (channex.io)** — white-label channel-manager API built for PMS builders ("wholesale infrastructure for teams that build hotel software"; plausibly the engine behind some PMS channel managers — the Hostex↔Channex link is *unconfirmed*). One WhiteLabel plan: **$130/mo platform fee + $0.50 per connected VR unit** (hotels $7), volume discounts automatic ($0.45 at 2k+, $0.40 at 4k+, $0.30 at 7k+ units); 77 channels incl. Airbnb, Booking.com, Expedia, Google; REST/JSON + API key; webhooks + Booking Revisions Feed (pull recommended, durable ack); **free staging server — no sales call, no card**; certification required before going live; white-label of interface, API responses and docs is the product; **bills the PMS builder — the reseller model is native**. Bookings carry guest name/e-mail/phone. Chat & Reviews messaging add-on $0.50/unit. Caveats: cannot create OTA listings (create on the OTA, then connect; B.com/Airbnb content planned 2027); cannot modify/cancel OTA reservations PMS-side; channel-specific feature differences.
+
+**Cost curve vs Hostex (~$7/property Pro):** 10 units: Hostex $70 vs Channex $135 · **~20 units = break-even** · 50: $350 vs $155 · 100: $700 vs $180 · 200: $1,400 vs $230 · 500: $3,500 vs $380 (~17 Kč/unit).
+
+**Requirements matrix:**
+
+| Requirement | Hostex | Channex | Rentals United | Beds24 |
+|---|---|---|---|---|
+| Two-way Airbnb + Booking.com | ✅ (beta CM) | ✅ 77 channels | ✅ 50+ | ✅ 60+ |
+| Guest e-mail/phone in bookings | ✅ (+ country code) | ✅ name/e-mail/phone | ✅ | ✅ |
+| Open API + webhooks | ✅ (harsh contract) | ✅ + revisions feed | ✅ (strongest reputation) | ⚠️ pull-based |
+| White-label permission | ⚠️ must ask via form | ✅ the product itself | ✅ white-label CM | ❌ product, not infra |
+| Price per VR unit | ~$7 | $0.50 + $130/mo platform | opaque, sales-led, premium | ~$2 + link fees |
+| Free sandbox | ❌ trial only | ✅ free staging | ❌ sales process | cheap |
+| Messaging | ✅ inbox + HostGPT | ✅ add-on $0.50/unit | ✅ | ✅ |
+| Smart locks | ✅ lock codes | ❌ → keep native TTLock | ❌ | partial |
+| Host-facing UI | ✅ full PMS UI | ❌ — we build the surface | ✅ | ✅ |
+
+**Verdict — staged engines behind the adapter (§4.3):**
+1. **Launch Kompletně on Hostex** — cheaper under ~20–30 units, full UI/messaging/lock-codes exist, FE build stays a re-skin; validates the product with minimal engineering.
+2. **Above ~50 connected units, swap the backend to Channex behind the adapter** — FE-1/FE-2 becomes the real product surface (own calendar, reservations, inbox, ARI push model, revisions ingestion); Kompletně gross margin → ~90 %+; no partnership gatekeeper; lock layer simplifies to native TTLock everywhere (drain rule only for legacy Hostex migrants). Channex work: adapter + revisions feed + ARI engine + per-host channel authorization embed + certification on staging first.
+3. **Rentals United** = enterprise fallback if channel depth/SLAs ever dominate budget (bills the PMS partner; sales-led pricing). **Beds24** = not engine material.
+4. Risk: Channex is smaller/younger than Hostex — mitigations: free staging (test deeply before migrating), certification, adapter keeps the swap-back one config away.
+
 ---
 
 *Prepared for Josef Pechar · UbyHost (ubyhost.com) · verified October 2026.*
