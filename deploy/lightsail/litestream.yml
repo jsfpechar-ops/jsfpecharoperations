@@ -34,9 +34,11 @@ snapshot:
 retention:
   enabled: true
 
-# Check the replica's LTX chain for gaps and overlaps a few times a day.
+# Check the replica's LTX chain for gaps and overlaps once a day. 0414: each
+# check reads the replica back from S3 (requests plus transfer to Lightsail),
+# so every 6 hours cost four times as much for no faster recovery.
 validation:
-  interval: 6h
+  interval: 24h
 
 # Dead-man switch: pinged only while every database has synced successfully
 # within the interval, so a missed ping means replication is unhealthy. Empty
