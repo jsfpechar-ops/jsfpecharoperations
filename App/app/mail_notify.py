@@ -2653,3 +2653,36 @@ def billing_trial(*, owner_user_id: int, days_left: int, ends: str) -> Optional[
         payload={"text": content["text"], "html": content["html"], "lang": "cs",
                  "reply_to": config.OPERATOR_EMAIL},
     )
+
+
+def build_billing_overdue(*, stage: str, number: str, amount_czk: int, due: str, today: str) -> Dict[str, str]:
+    lang = "cs"  # UbyHost bills Czech hosts in Czech
+    amount = f"{amount_czk:,}".replace(",", " ")
+    subject = _text(lang, f"mail.billing_overdue.subject_{stage}", number=number)
+    body = _text(lang, "mail.billing_overdue.body_" + ("paused" if stage == "paused" else "reminder"),
+                 number=number, amount=amount, due=_fmt_date(due), date=_fmt_date(today))
+    action = _text(lang, "mail.billing_overdue.action")
+    link = _app("/predplatne")
+    footer = _signup_footer(lang)
+    text = "\n".join([body, "", f"{action}: {link}", "", "--", *footer])
+    blocks = [_block_heading(subject), _block_paragraph(body), _block_button(link, action)]
+    return {"subject": subject, "text": text,
+            "html": _shell(lang=lang, title=subject, preheader=body, blocks=blocks, footer_lines=footer)}
+
+
+def billing_overdue(
+    *, invoice_id: int, owner_user_id: int, stage: str, number: str, amount_czk: int, due: str, today: str,
+) -> Optional[int]:
+    """One mail per invoice and stage (reminder, second, paused). Service mail, not a tip."""
+    from . import billing_invoices
+
+    content = build_billing_overdue(stage=stage, number=number, amount_czk=amount_czk, due=due, today=today)
+    return mail.enqueue(
+        kind="billing_overdue",
+        idempotency_key=f"billing-overdue-{invoice_id}-{stage}",
+        to_email=billing_invoices.recipient(owner_user_id),
+        subject=content["subject"],
+        owner_user_id=owner_user_id,
+        payload={"text": content["text"], "html": content["html"], "lang": "cs",
+                 "reply_to": config.OPERATOR_EMAIL},
+    )
