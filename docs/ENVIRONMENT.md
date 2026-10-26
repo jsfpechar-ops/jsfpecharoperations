@@ -61,6 +61,7 @@ Optional host subdomain: [deployment, exact values and rollback](APP_SUBDOMAIN.m
 | `UBYHOST_RATE_LIMIT_RETENTION_HOURS` | `24` | Stale `rate_limit_event` rows older than this go (BE-4, G-D7). |
 | `UBYHOST_RESTRICTED_BLOCKS_FILING` | `0` | `1` withholds a restricted (Art 18) record from police filing. Off until counsel confirms the statutory duty permits it (BE-9). |
 | `UBYHOST_ICAL_POLL_MINUTES` | `60` | Calendar poll interval. |
+| `UBYHOST_ICAL_OPEN_SYNC_MINUTES` | `10` | Opening the dashboard or Stays re-reads calendars checked longer ago than this; `0` turns it off. |
 | `UBYHOST_SUBMIT_SWEEP_MINUTES` | `10` | Automatic submission sweep interval. |
 | `UBYHOST_HEARTBEAT_URL` | unset | `app/scheduler.py` — pinged after each successful submission sweep. If unset, a dead scheduler is noticed only when someone logs in. |
 | `UBYHOST_HEARTBEAT_ICAL_URL` | unset | Pinged after each successful calendar sync (WP07). |

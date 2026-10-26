@@ -19,6 +19,7 @@ from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlu
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+from starlette.background import BackgroundTask
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 
@@ -428,6 +429,13 @@ def _property_draft(form) -> Dict[str, Any]:
 # --- dashboard -----------------------------------------------------------
 
 
+def _with_calendar_refresh(request: Request, response):
+    """0414: opening the app re-reads stale calendars after the page is sent."""
+    if config.ICAL_OPEN_SYNC_MINUTES > 0 and response.background is None:
+        response.background = BackgroundTask(icalsync.sync_owner_if_stale, access.owner_id(request))
+    return response
+
+
 @router.get("/")
 def dashboard(request: Request):
     if not auth.current_user(request):
@@ -486,7 +494,7 @@ def dashboard(request: Request):
         )["n"]
     )
     milestone, sent_count, minutes_saved = celebrations.celebration_context(owner_user_id)
-    return render(
+    return _with_calendar_refresh(request, render(
         request,
         "dashboard.html",
         {
@@ -514,7 +522,7 @@ def dashboard(request: Request):
             "link_unused": workflow.link_unused(apartments),
             "welcome_back": welcome,
         },
-    )
+    ))
 
 
 @router.get("/guide")
@@ -3101,7 +3109,7 @@ def reservations_list(request: Request):
     def page_url(number: int) -> str:
         return "/reservations?" + urlencode([*query_params, ("page", number)])
 
-    return render(
+    return _with_calendar_refresh(request, render(
         request,
         "reservations.html",
         {
@@ -3139,7 +3147,7 @@ def reservations_list(request: Request):
             + (f"?{request.url.query}" if request.url.query else ""),
             "show_archive": show_archive,
         },
-    )
+    ))
 
 
 @router.post("/reservations")

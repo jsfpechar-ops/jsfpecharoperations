@@ -146,6 +146,8 @@ UBYPORT_MAX_BATCH = int(os.environ.get("UBYHOST_MAX_BATCH", "32"))
 UBYPORT_TIMEOUT = int(os.environ.get("UBYHOST_UBYPORT_TIMEOUT", "60"))
 
 ICAL_POLL_MINUTES = int(os.environ.get("UBYHOST_ICAL_POLL_MINUTES", "60"))
+# 0414: opening the dashboard or Stays re-reads calendars checked longer ago than this. 0 turns it off.
+ICAL_OPEN_SYNC_MINUTES = int(os.environ.get("UBYHOST_ICAL_OPEN_SYNC_MINUTES", "10"))
 SUBMIT_SWEEP_MINUTES = int(os.environ.get("UBYHOST_SUBMIT_SWEEP_MINUTES", "10"))
 # Dead-man switches (for example healthchecks.io), each pinged after a
 # successful run of its job: the submission sweep, the calendar sync and the
