@@ -219,3 +219,38 @@ def test_single_property_host_sees_no_copy_select():
     assert 'name="copy_from"' in new_page.text
     assert 'name="copy_from"' not in edit_page.text
     _cleanup()
+
+
+def test_settings_offers_copy_only_until_setup_is_finished(host_pair):
+    from app import property_setup
+
+    client, _source_id, target_id, _foreign_id, _entity_id, _controller_id = host_pair
+    url = f"/apartments/{target_id}?view=settings&lang=en"
+    assert 'data-sheet-open="copy-settings"' not in client.get(url).text
+    property_setup.start(target_id)
+    text = client.get(url).text
+    assert 'data-sheet-open="copy-settings"' in text
+    assert 'id="copy-settings" class="ui-dialog copy-settings-dialog" aria-labelledby="copy-settings-title">' in text
+    select = text.split('<select id="copy_from"', 1)[1].split(">", 1)[0]
+    assert "required" not in select
+    assert "Police (Ubyport) details" in text
+    assert "Never copied" in text
+    no_js = client.get(url + "&copy=choose").text
+    assert 'aria-labelledby="copy-settings-title" open>' in no_js
+    property_setup.finish(target_id)
+    assert 'data-sheet-open="copy-settings"' not in client.get(url).text
+
+
+def test_new_property_page_opens_copy_in_a_dialog(host_pair):
+    client = host_pair[0]
+    text = client.get("/apartments/new?lang=en").text
+    assert 'data-sheet-open="copy-settings"' in text
+    assert "Never copied" in text
+
+
+def test_copy_keys_never_include_police_address_link_or_lock():
+    from app.routes.admin import _COPY_PROPERTY_KEYS
+
+    for key in _COPY_PROPERTY_KEYS:
+        assert not key.startswith(("uby_", "addr_", "permalink_token", "permalink_pin", "door_", "lock_", "ttlock")), key
+        assert key != "stay_fee_vs", key
