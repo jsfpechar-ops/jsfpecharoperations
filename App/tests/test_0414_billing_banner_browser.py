@@ -18,6 +18,7 @@ from tests.test_dashboard_calendar_browser import (  # noqa: F401
 )
 
 from app import billing, config, db
+from tests.browser_support import settle_motion
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0414"
 
@@ -45,6 +46,8 @@ def test_the_billing_line_shows_and_fits_a_phone(calendar_workspace, calendar_or
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), width
                 if capture and width == 390:
                     EVIDENCE.mkdir(parents=True, exist_ok=True)
+                    settle_motion(page)
+                    page.evaluate("window.scrollTo(0, 0)")
                     page.screenshot(path=str(EVIDENCE / "dashboard-390.png"))
                 db.execute("UPDATE billing_account SET status = 'paused' WHERE owner_user_id = ?", (owner,))
                 page.reload()
