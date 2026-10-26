@@ -1,39 +1,61 @@
-# 0414 report
+# 0414 report: Check-in/out times on the Door lock tab
 
 Status: review
 
 ## Files changed
 
-- App/app/config.py: `ICAL_OPEN_SYNC_MINUTES` (env `UBYHOST_ICAL_OPEN_SYNC_MINUTES`, default 10).
-- App/tests/conftest.py: feature off in tests.
-- App/app/icalsync.py: `sync_owner_if_stale` (one conditional UPDATE claims each feed).
-- App/app/routes/admin.py: `_with_calendar_refresh` attached to dashboard and reservations_list.
-- App/app/host_i18n.py, App/app/host_vi_i18n.py: the two copy keys in en, cs and vi.
-- App/tests/test_calendar_sync_on_open.py: new, 5 tests.
-- docs/ENVIRONMENT.md: one row.
-- docs/tasks/0414-calendar-sync-on-open.md: Status ready to review.
-- docs/tasks/0414-report.md: this file.
+- App/app/routes/admin.py: `_with_lock_tab_hours` helper (folds `lock_checkin_hour` / `lock_checkout_hour` into the saved hours), `FormData` import, one call at the top of `_save_apartment_form`.
+- App/app/templates/_property_editor.html: two time selects inside `#door-code` (`required` while the switch is on), text line and amber warning removed, duplicate `switch_on` set removed, `data-hour-twin` on the Property tab selects.
+- App/app/static/host.js: sync between twin selects, `required` follows the switch live.
+- App/app/templates/base.html: `host.js?v=20261026-door-lock-times`.
+- App/tests/test_door_lock_tab_times_0414.py: new, 5 tests.
+- docs/tasks/0414-door-lock-tab-times.md: Status set to in-progress, then review.
 
-## Commands (last lines)
+## Commits
 
-- `pytest tests/test_calendar_sync_on_open.py tests/test_icalsync.py tests/test_ical_skip_unchanged.py tests/test_calendar_sync_ui.py tests/test_dashboard_calendar.py tests/test_dashboard_empty.py`: `109 passed in 8.61s`
-- `pytest tests/test_copy_cleanup.py` (the i18n key test): `9 passed in 1.28s`
-- `python -c "import app.routes.admin"`: no output.
-- `python3 scripts/context_lint.py`: see Questions.
+`0414 step 1` (63a0dba0, includes the Status line), `0414 step 2` (1a1fe134), `0414 step 3` (d20225fe), `0414 step 4` (f6d2a523), then this report.
 
-## Section 7
+## Commands
 
-No stop condition hit. Find strings all matched once. `response.background` is checked in the helper and skipped if set; no page had it set in the code.
+Brief §6 command 1 (`pytest ... -q --tb=short`), last lines:
+
+```
+........................................................................ [ 46%]
+........................................................................ [ 92%]
+...........                                                              [100%]
+155 passed in 4.20s
+```
+
+Brief §6 command 2 (`python3 scripts/context_lint.py`), last lines:
+
+```
+WARN  5 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
+next free: task 0415 | migration 0023
+context lint: OK
+```
+
+Also run: Jinja parse of `_property_editor.html` (ok), `node --check App/app/static/host.js` (no output, no error).
+
+## Section 7 acceptance
+
+- [x] Command 1 passes (155 passed, includes the 0397 and 0400 files, no edits to them).
+- [x] Lint OK.
+- [x] One commit per step.
+- [ ] Browser tests and 390 px screenshots: not run here. Playwright is not installed in this container and the brief says not to install it. CI and the reviewer cover them. The Door lock tab's layout changed, so the reviewer needs a 390 px screenshot of the Door lock tab.
 
 ## Deviations
 
-- The test needed an owner row: `apartment.owner_user_id` references `user_account`, so the test file has a small `_owner` helper that inserts a user with a fixed id. Not in the brief's text.
-- One commit for the whole brief, as §8 says, not one per step.
+- Step 1 and step 2 were applied with the anchors exactly as given (each anchor occurred once). Step 1's two edits were made in one edit call, same result.
+- The Status line change to `in-progress` was committed with step 1, not as a separate commit.
+- No PR opened and nothing pushed, per the owner's instruction for this run.
+- `test_door_code_missing_times_0397.py` needed no change; all its assertions still pass.
 
 ## Questions
 
-- The context lint fails on the brief's own headings: it expects `## 8. Stop and ask` and `## 9. Report`, while the brief has `## 7. Stop and ask` and `## 8. Report`. I did not renumber the brief.
+None.
 
-## Owner steps
+## Owner steps left
 
-None. The feature is on by default (10 minutes). To turn it off, set `UBYHOST_ICAL_OPEN_SYNC_MINUTES=0` in the server `.env`.
+1. Review and open the PR from `claude/project-thread-qi1fv7` when ready (not done here).
+2. Check the Door lock tab at 390 px on a property without times.
+3. After merge, deploy as usual (manual).

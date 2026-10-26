@@ -948,7 +948,7 @@ def sync_feed(
 
 
 def sync_owner_if_stale(owner_user_id: Optional[int]) -> int:
-    """0414: re-read an owner's calendars when they open the app.
+    """0415: re-read an owner's calendars when they open the app.
 
     A booking made since the hourly poll should be there when the host looks.
     Only calendars not checked for ``ICAL_OPEN_SYNC_MINUTES`` are read, and each
