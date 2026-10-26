@@ -41,7 +41,7 @@ REMOVED_CLASSES = (
     "pricing-factor-grid",
 )
 
-LANES = (".benefit-list", ".pricing-factor-list", ".product-feature-row")
+LANES = (".benefit-list", ".product-feature-row")
 
 TINTED_SELECTORS = (
     ".benefit-blue",
@@ -205,13 +205,6 @@ def test_the_landing_benefits_render_as_three_numbered_lanes():
     for dingbat in ("▦", "✎", "✓"):
         assert dingbat not in section
 
-
-def test_the_pricing_factors_render_as_three_numbered_lanes():
-    section = _section(_render("/cenik"), "pricing-factors")
-    assert 'class="pricing-factor-list"' in section
-    assert section.count("<li>") == 3
-    for name in ("properties", "volume", "workflow"):
-        assert LANDING_STRINGS["en"][f"pricing.factor.{name}.title"] in section
 
 
 def test_the_product_features_are_lanes_with_no_tone():

@@ -75,7 +75,7 @@
       <div class="grid two">
         {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
         <div class="field"><label for="{{ name }}">{{ t(label) }}</label>
-          <select id="{{ name }}" name="{{ name }}"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+          <select id="{{ name }}" name="{{ name }}" data-hour-twin="{{ name }}"><option value="">{{ t('apartment.form.door_code.choose') }}</option>
             {% for h in range(24) %}<option value="{{ h }}" {% if apartment[name]|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
           </select></div>
         {% endfor %}
@@ -199,17 +199,21 @@
     {% include "_door_code_window.html" %}
     {% if door_code.account and door_code.locks %}
     <section class="panel property-section ui-section" id="door-code">
-      <p class="ui-sub">{{ t('why.times') }}
-          {{ t('apartment.form.door_code.checkin') }} {{ '%02d:00' | format(apartment.checkin_hour) if apartment.checkin_hour is not none else '—' }} ·
-          {{ t('apartment.form.door_code.checkout') }} {{ '%02d:00' | format(apartment.checkout_hour) if apartment.checkout_hour is not none else '—' }}.
-          <a href="/apartments/{{ apartment.id }}?view=settings&amp;section=property#arrival-departure">{{ t('host.property_times_edit') }}</a>
-        </p>
-      {% if lock_times_error %}<p class="err-text" id="door-code-times-error" role="alert">{{ t('why.times_missing') }}</p>
-      {% elif apartment.checkin_hour is none or apartment.checkout_hour is none %}<p class="small warn-text">{{ t('why.times_missing') }}</p>{% endif %}
+      <p class="ui-sub">{{ t('why.times') }}</p>
+      {% if lock_times_error %}<p class="err-text" id="door-code-times-error" role="alert">{{ t('why.times_missing') }}</p>{% endif %}
+      {% set switch_on = door_switch_posted if door_switch_posted is defined else door_code.enabled %}
+      {#- 0414: the times live here too, so a host turning on door codes never leaves the tab. -#}
+      <div class="grid two" data-lock-times>
+        {% for name, label in [('checkin_hour', 'apartment.form.door_code.checkin'), ('checkout_hour', 'apartment.form.door_code.checkout')] %}
+        <div class="field"><label for="lock_{{ name }}">{{ t(label) }}</label>
+          <select id="lock_{{ name }}" name="lock_{{ name }}" data-hour-twin="{{ name }}"{% if switch_on %} required{% endif %}{% if lock_times_error %} aria-invalid="true" aria-describedby="door-code-times-error"{% endif %}><option value="">{{ t('apartment.form.door_code.choose') }}</option>
+            {% for h in range(24) %}<option value="{{ h }}" {% if apartment[name]|string == h|string %}selected{% endif %}>{{ '%02d:00' % h }}</option>{% endfor %}
+          </select></div>
+        {% endfor %}
+      </div>
       <div class="field-label-row"><h3 class="property-section-title">{{ t('host.door_code') }}</h3>{{ help_tip('door-code-help', t('apartment.form.door_code.lede') ~ ' ' ~ t('apartment.form.door_code.manual'), '/guide#door-codes') }}</div>
         {% if door_code.test_mode %}<p class="ui-sub"><strong>{{ t('apartment.form.door_code.test_mode') }}</strong></p>{% endif %}
         <input type="hidden" name="door_codes_fields" value="1">
-        {% set switch_on = door_switch_posted if door_switch_posted is defined else door_code.enabled %}
         <div class="feature-switch-row">
           <label class="switch feature-switch" for="door_codes">
             <input type="checkbox" role="switch" id="door_codes" name="door_codes" value="1" {% if switch_on %}checked{% endif %}

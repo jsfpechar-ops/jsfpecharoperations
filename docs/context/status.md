@@ -9,9 +9,9 @@ Updated: 2026-10-26.
 
 ## Now
 
-- Billing 0411+0412 (ČSOB, statements). **Owner:** OGs plan later.
-- 0410 cards #517; 0414 copy. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
-- Guide + Leon 0341-0355: owner merges #465-#468.
+- Billing 0411-0419 in #528, off. **Owner:** ČSOB file, env, counsel.
+- 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
+- Guide + Leon 0341-0355: owner merges #465-468.
 - 0291-0302 buttons, fees, invoice. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.
 - Check-in alerts #435: owner merge/deploy.

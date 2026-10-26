@@ -20,7 +20,7 @@ from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlsplit, urlu
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from starlette.concurrency import run_in_threadpool
-from starlette.datastructures import UploadFile
+from starlette.datastructures import FormData, UploadFile
 
 from .. import (
     access,
@@ -1427,7 +1427,7 @@ def _property_copy_form_context(
         for row in access.apartments(request)
         if apartment_id is None or row["id"] != apartment_id
     ]
-    # 0414: copying is a first-time step. Settings offers it only until setup is finished.
+    # 0421: copying is a first-time step. Settings offers it only until setup is finished.
     if apartment_id is not None:
         setup = property_setup.load(apartment_id)
         if not setup or setup["finished"]:
@@ -2279,6 +2279,26 @@ def _property_hour_changes(form, apartment: Dict[str, Any]) -> tuple[Dict[str, A
     return values, None
 
 
+def _with_lock_tab_hours(form, apartment) -> Any:
+    """0414: the Door lock tab posts its own time pickers (lock_checkin_hour,
+    lock_checkout_hour) in the same form as the Property tab's. A value the
+    host changed there wins; otherwise the Property tab's value stands."""
+    overrides: Dict[str, str] = {}
+    for name in ("checkin_hour", "checkout_hour"):
+        lock_name = f"lock_{name}"
+        if lock_name not in form:
+            continue
+        lock_value = _form_str(form, lock_name)
+        saved = "" if apartment[name] is None else str(apartment[name])
+        if name not in form or lock_value != saved:
+            overrides[name] = lock_value
+    if not overrides:
+        return form
+    items = [(key, value) for key, value in form.multi_items() if key not in overrides]
+    items.extend(overrides.items())
+    return FormData(items)
+
+
 def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Optional[Response], bool]:
     """Persist the property form, or return the redirect that rejects it.
 
@@ -2288,6 +2308,7 @@ def _save_apartment_form(apartment_id: int, request: Request, form) -> tuple[Opt
     apartment = access.apartment(request, apartment_id)
     if not apartment:
         return _back("/apartments", err=_flash(request, "flash.error.no_such_apartment")), False
+    form = _with_lock_tab_hours(form, apartment)
     setup_step = _wizard_setup_step(form)
     if setup_step:
         payload = _wizard_step_payload(form, setup_step)
@@ -2936,6 +2957,10 @@ async def test_connection(apartment_id: int, request: Request):
         f"apartment={apartment_id} endpoint={client.endpoint} "
         f"available={available} max_batch={limit}",
     )
+    # 0414: a passed test is the verified UbyPort connection that starts the trial.
+    from .. import billing_trial
+
+    billing_trial.mark_verified(apartment_id, apartment["owner_user_id"])
     alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     # The error code book carries the severity that decides accepted or not
     # (police letter of 24 September 2026). Load it while the login is known

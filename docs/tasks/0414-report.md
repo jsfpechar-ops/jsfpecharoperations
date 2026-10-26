@@ -1,44 +1,61 @@
-# 0414 report: copy settings opens a small dialog
+# 0414 report: Check-in/out times on the Door lock tab
 
-Status: review (steps 1-7 done; browser tests 0 skipped after playwright 1.63.0 was installed in the venv; screenshots in project files copy-settings-0414)
+Status: review
 
 ## Files changed
 
-- `App/app/templates/_copy_settings_dialog.html` (new, step 1)
-- `App/app/templates/_property_editor.html` (step 2)
-- `App/app/routes/admin.py` (`_property_copy_form_context`, step 2)
-- `App/app/templates/_property_create.html` (step 3)
-- `App/app/static/host2.css`, `App/app/templates/base.html` (cache key `20261026-0414`, step 4)
-- `App/app/host_i18n.py`, `App/app/host_vi_i18n.py` (step 5)
-- `App/tests/test_copy_property_settings.py` (step 6)
+- App/app/routes/admin.py: `_with_lock_tab_hours` helper (folds `lock_checkin_hour` / `lock_checkout_hour` into the saved hours), `FormData` import, one call at the top of `_save_apartment_form`.
+- App/app/templates/_property_editor.html: two time selects inside `#door-code` (`required` while the switch is on), text line and amber warning removed, duplicate `switch_on` set removed, `data-hour-twin` on the Property tab selects.
+- App/app/static/host.js: sync between twin selects, `required` follows the switch live.
+- App/app/templates/base.html: `host.js?v=20261026-door-lock-times`.
+- App/tests/test_door_lock_tab_times_0414.py: new, 5 tests.
+- docs/tasks/0414-door-lock-tab-times.md: Status set to in-progress, then review.
 
-## Steps
+## Commits
 
-- Steps 1 to 6 done, one commit each (`0414 step k`). Not pushed.
+`0414 step 1` (63a0dba0, includes the Status line), `0414 step 2` (1a1fe134), `0414 step 3` (d20225fe), `0414 step 4` (f6d2a523), then this report.
 
-## Commands (last lines)
+## Commands
 
-- Step 3 (`test_copy_property_settings.py test_property_create_browser.py`): `4 passed, 1 skipped`
-- Step 5 (`test_copy_property_settings.py test_host_i18n.py test_no_em_dashes.py`): `22 passed, 1 warning`
-- Step 6 and section 6 (`test_copy_property_settings.py test_property_operator_defaults.py test_property_create_browser.py -rs`): `33 passed, 1 skipped`
-  - Skip: `SKIPPED [1] tests/test_property_create_browser.py:21: could not import 'playwright.sync_api': No module named 'playwright'`
-- Section 6 (`test_design_guardrails_browser.py -rs`): `1 skipped`, same playwright reason
-- `python3 scripts/context_lint.py`: `context lint: FAIL`
-  - `ERROR docs/tasks/0414-copy-settings-dialog.md: needs a 'Status: <blocked|done|in-progress|replaced|review|todo>' line`
-  - The brief's line says `Status: ready (v2, ...)`, which the lint does not accept. I did not edit the brief.
+Brief §6 command 1 (`pytest ... -q --tb=short`), last lines:
+
+```
+........................................................................ [ 46%]
+........................................................................ [ 92%]
+...........                                                              [100%]
+155 passed in 4.20s
+```
+
+Brief §6 command 2 (`python3 scripts/context_lint.py`), last lines:
+
+```
+WARN  5 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
+next free: task 0415 | migration 0023
+context lint: OK
+```
+
+Also run: Jinja parse of `_property_editor.html` (ok), `node --check App/app/static/host.js` (no output, no error).
+
+## Section 7 acceptance
+
+- [x] Command 1 passes (155 passed, includes the 0397 and 0400 files, no edits to them).
+- [x] Lint OK.
+- [x] One commit per step.
+- [ ] Browser tests and 390 px screenshots: not run here. Playwright is not installed in this container and the brief says not to install it. CI and the reviewer cover them. The Door lock tab's layout changed, so the reviewer needs a 390 px screenshot of the Door lock tab.
 
 ## Deviations
 
-- Browser tests cannot run: playwright is missing from `App/.venv`. Acceptance needs 0 skipped. Not installed, because that is a new dependency (needs an owner decision line).
-- Did not run the step-6 extra tests beyond the brief's list; no other test failed.
-- Done: steps 1 to 6. Left: section 6 browser runs (0 skipped), the lint status fix, and the 390 px screenshots (orchestrator).
+- Step 1 and step 2 were applied with the anchors exactly as given (each anchor occurred once). Step 1's two edits were made in one edit call, same result.
+- The Status line change to `in-progress` was committed with step 1, not as a separate commit.
+- No PR opened and nothing pushed, per the owner's instruction for this run.
+- `test_door_code_missing_times_0397.py` needed no change; all its assertions still pass.
 
 ## Questions
 
-- Install playwright in `App/.venv` for the browser tests, or run them in CI? Owner decision.
-- Should the brief's `Status:` line be changed to one the lint accepts (for example `Status: todo`)?
+None.
 
 ## Owner steps left
 
-- Decide on playwright (see Questions).
-- Orchestrator: take the 390 px screenshots of the Settings and Add property pages.
+1. Review and open the PR from `claude/project-thread-qi1fv7` when ready (not done here).
+2. Check the Door lock tab at 390 px on a property without times.
+3. After merge, deploy as usual (manual).

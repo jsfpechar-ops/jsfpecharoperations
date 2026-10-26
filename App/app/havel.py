@@ -325,17 +325,25 @@ def _since_month_start(now: datetime) -> int:
     return max(1, int((now - start).total_seconds()) + 1)
 
 
+def plan_multiplier(user_id: int) -> int:
+    """0415: the plan scales the message limits: 0 paused, 1 Standard, 3 Max."""
+    from . import billing
+
+    return billing.entitlements(int(user_id)).ai_multiplier
+
+
 def limit_state(user_id: int, now: Optional[datetime] = None) -> Optional[str]:
     """None when the host may send, else the copy key suffix: paused, burst, week, month."""
     now = now or ai.now()
     key = str(user_id)
+    scale = plan_multiplier(user_id)
     if rate_limit.blocked("havel_refuse", key, REFUSALS_MAX, _since_week_start(now)):
         return "paused"
     if rate_limit.blocked("havel_burst", key, BURST_MAX, BURST_WINDOW):
         return "limit_burst"
-    if rate_limit.blocked("havel_week", key, config.HAVEL_WEEKLY_MESSAGES, _since_week_start(now)):
+    if rate_limit.blocked("havel_week", key, config.HAVEL_WEEKLY_MESSAGES * scale, _since_week_start(now)):
         return "limit_week"
-    if rate_limit.blocked("havel_month", key, config.HAVEL_MONTHLY_MESSAGES, _since_month_start(now)):
+    if rate_limit.blocked("havel_month", key, config.HAVEL_MONTHLY_MESSAGES * scale, _since_month_start(now)):
         return "limit_month"
     return None
 
@@ -344,8 +352,9 @@ def remaining(user_id: int, now: Optional[datetime] = None) -> Tuple[int, str]:
     """(messages left, 'week' or 'month'): whichever runs out first."""
     now = now or ai.now()
     key = str(user_id)
-    week = config.HAVEL_WEEKLY_MESSAGES - rate_limit._count("havel_week", key, _since_week_start(now))
-    month = config.HAVEL_MONTHLY_MESSAGES - rate_limit._count("havel_month", key, _since_month_start(now))
+    scale = plan_multiplier(user_id)
+    week = config.HAVEL_WEEKLY_MESSAGES * scale - rate_limit._count("havel_week", key, _since_week_start(now))
+    month = config.HAVEL_MONTHLY_MESSAGES * scale - rate_limit._count("havel_month", key, _since_month_start(now))
     return (max(0, month), "month") if month < week else (max(0, week), "week")
 
 

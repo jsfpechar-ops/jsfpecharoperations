@@ -68,3 +68,4 @@ Append-only.
 - 2026-10-24 Guide Quick answers screen (owner).
 - 2026-10-25 | Invoice "Fill from register" also asks the MFČR VAT register (CRPDPH SOAP) on the host's click; sends only the DIČ digits; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
 - 2026-10-26 | Billing phase 1: invoices only, no card gateway yet | owner | 0411
+- 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415

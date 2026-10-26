@@ -84,16 +84,16 @@
     "v": "20261025-0410"
   },
   "host.js": {
-    "sha256": "db4fe0fef3c37a4acc2631e12eaeb0025d4cfbcccd31dfafe6a6471b6c4b76f3",
-    "v": "20261023-door-code-window"
+    "sha256": "9a1c690af6f4edb599cd51ba0d122957dafa94ac4d9572aba3f86fa668b14d6c",
+    "v": "20261026-door-lock-times"
   },
   "host2.css": {
-    "sha256": "8be9216854932bc79c9d6e74c91e9e12d80c8ea770c47fbb716314f29403ef74",
-    "v": "20261026-0414"
+    "sha256": "74d24a6c74da6dca7d8780be653b3719054ed612803c8c38b707bd9798952251",
+    "v": "20261026-0421"
   },
   "landing.css": {
-    "sha256": "9c667ff6188f97facac2f43e018049fb7c9916697b09393c44ab6647d0363f66",
-    "v": "20260919y"
+    "sha256": "59dc3337cd4219817f57645a18eade774fef5672d6cab35b18914df2727650c5",
+    "v": "20261026-0412"
   },
   "landing.js": {
     "sha256": "0e8f2e973a4c2797dfe018fd1ce477669641ee7baa1fdd06c263702c01d972bf",
@@ -106,6 +106,10 @@
   "passkeys.js": {
     "sha256": "a54da46300bec0b817fc47c7fffa811a2e21567e4c9e40748f1345b217ef5773",
     "v": "20261023-passkey-recovery"
+  },
+  "pricing.js": {
+    "sha256": "701273183c6bb0d5cb767eb1d2e53d0366e8a41b9161cc22bb595a7d56d4ce2a",
+    "v": "20261026-0412"
   },
   "pwa.js": {
     "sha256": "42c47bb36919fa186885e4e913823c5447a6ab8e0dd8709a74bd3a216a06a9ce",

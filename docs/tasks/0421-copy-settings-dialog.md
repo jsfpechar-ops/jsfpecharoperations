@@ -1,4 +1,4 @@
-# 0414: Copy settings opens a small dialog
+# 0421: Copy settings opens a small dialog
 
 Status: review
 
@@ -50,7 +50,7 @@ forever. Result:
 Create `App/app/templates/_copy_settings_dialog.html`:
 
 ```jinja
-{#- 0414: copy settings from another property. One small button + one dialog.
+{#- 0421: copy settings from another property. One small button + one dialog.
     Callers set copy_action (form action) and optionally copy_section. -#}
 {%- from "_icons.html" import icon with context -%}
 {%- set copy_open = request.query_params.get('copy') == 'choose' -%}
@@ -113,7 +113,7 @@ In `App/app/routes/admin.py`, inside `_property_copy_form_context`, directly aft
 list (anchor `if apartment_id is None or row["id"] != apartment_id`, then the closing `]`), add:
 
 ```python
-    # 0414: copying is a first-time step. Settings offers it only until setup is finished.
+    # 0421: copying is a first-time step. Settings offers it only until setup is finished.
     if apartment_id is not None:
         setup = property_setup.load(apartment_id)
         if not setup or setup["finished"]:
@@ -144,7 +144,7 @@ In `App/app/static/host2.css` replace the line
 with:
 
 ```css
-/* 0414: copy settings is one small button that opens a dialog. */
+/* 0421: copy settings is one small button that opens a dialog. */
 .host-workspace .copy-settings-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-3); margin: 0 0 var(--space-4); }
 .host-workspace .copy-settings-bar p { margin: 0; margin-right: auto; }
 .host-workspace .copy-settings-open { gap: var(--space-2); }
@@ -159,7 +159,7 @@ with:
 If `--size-14`, `--space-1` or `--space-5` does not exist in host2.css `:root`, use the nearest
 existing token and note it under Deviations.
 
-Then in `App/app/templates/base.html` change `host2.css?v=20261025-0410` to `host2.css?v=20261026-0414`.
+Then in `App/app/templates/base.html` change `host2.css?v=20261025-0410` to `host2.css?v=20261026-0421`.
 
 ### Step 5: copy (EN, CS, VI)
 
@@ -259,5 +259,5 @@ An anchor is not found, a template error mentions `request` or `icon`, or a test
 
 ## 9. Report
 
-`docs/tasks/0414-report.md` per executor.md. Screenshots are done by the orchestrator. Commit each
+`docs/tasks/0421-report.md` per executor.md. Screenshots are done by the orchestrator. Commit each
 step; do not push.

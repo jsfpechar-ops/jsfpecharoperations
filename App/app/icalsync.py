@@ -947,6 +947,19 @@ def sync_feed(
     return stats
 
 
+def import_paused(apartment_id: int, seen: Dict[int, bool]) -> bool:
+    """0415: a paused plan stops calendar import; reporting goes on."""
+    from . import billing
+
+    if not billing.enabled():
+        return False
+    if apartment_id not in seen:
+        row = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
+        owner = row["owner_user_id"] if row else None
+        seen[apartment_id] = owner is not None and not billing.entitlements(int(owner)).ical_import
+    return seen[apartment_id]
+
+
 def sync_all(
     apartment_id: Optional[int] = None, owner_user_id: Optional[int] = None
 ) -> Dict[str, Any]:
@@ -969,7 +982,10 @@ def sync_all(
         "feeds": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0,
         "not_modified": 0, "unchanged": 0, "changed": 0,
     }
+    paused: Dict[int, bool] = {}
     for feed in feeds:
+        if import_paused(int(feed["apartment_id"]), paused):
+            continue
         totals["feeds"] += 1
         try:
             stats = sync_feed(feed)
