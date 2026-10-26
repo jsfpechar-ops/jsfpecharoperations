@@ -43,6 +43,7 @@ on:
 permissions:
   contents: read
   checks: read
+  packages: write # 0415: push the deploy image to GHCR
 
 jobs:
   lightsail:
@@ -109,6 +110,20 @@ jobs:
             echo "Manual: ssh -i YOUR.pem ubuntu@HOST 'cd /opt/ubyhost && git fetch origin ${DEPLOY_REF} && git reset --hard FETCH_HEAD && cd deploy/lightsail && ./scripts/deploy.sh'" >&2
             exit 1
           fi
+          # 0415: build the image here from the exact commit, push it to GHCR
+          # and let the server pull it, so a deploy does not build on the
+          # production CPU. deploy.sh falls back to a server build if the pull fails.
+          IMAGE="ghcr.io/$(printf '%s' "${REPO_SLUG}" | tr '[:upper:]' '[:lower:]'):${DEPLOY_SHA}"
+          SRC="$(mktemp -d)"
+          git -C "${SRC}" init -q
+          git -C "${SRC}" fetch -q --depth 1 "https://x-access-token:${GH_DEPLOY_TOKEN}@github.com/${REPO_SLUG}.git" "${DEPLOY_SHA}"
+          git -C "${SRC}" checkout -q FETCH_HEAD
+          printf '%s' "${GH_DEPLOY_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          docker build --pull -t "${IMAGE}" "${SRC}"
+          docker push "${IMAGE}"
+          docker logout ghcr.io
+          rm -rf "${SRC}"
+          echo "Pushed ${IMAGE}"
           install -m 700 -d ~/.ssh
           printf '%s\n' "${LIGHTSAIL_SSH_PRIVATE_KEY}" > ~/.ssh/lightsail_deploy.pem
           chmod 600 ~/.ssh/lightsail_deploy.pem
