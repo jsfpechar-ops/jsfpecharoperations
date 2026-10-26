@@ -130,7 +130,7 @@ if docker image inspect ubyhost:local >/dev/null 2>&1; then
   echo "Kept the running image as ubyhost:previous for rollback."
 fi
 
-# 0415: the GitHub deploy builds the image from the commit CI passed, pushes it
+# 0422: the GitHub deploy builds the image from the commit CI passed, pushes it
 # to GHCR and passes it here as UBYHOST_IMAGE, so the server only pulls. A
 # manual deploy without it, or a pull that fails, builds here as before.
 if [ -n "${UBYHOST_IMAGE:-}" ] && docker pull "${UBYHOST_IMAGE}"; then

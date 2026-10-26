@@ -1,15 +1,15 @@
-# 0415 report: CI-built image
+# 0422 report: CI-built image
 
 Status: review
-Branch: task/0415-ci-built-image | Executor: Haiku 5.5
+Branch: task/0422-ci-built-image | Executor: Haiku 5.5
 
 ## Files changed
 
 - `deploy/lightsail/scripts/deploy.sh`: pulls `UBYHOST_IMAGE` if set and tags it `ubyhost:local`; else builds as before.
 - `.github/workflows/deploy-lightsail.yml`: `packages: write`; builds from the DEPLOY_SHA commit, pushes to GHCR; passes `UBYHOST_IMAGE` to the server.
 - `.github/workflows/deploy-production.yml`, `.github/workflows/deploy-staging.yml`: `packages: write`.
-- `docs/tasks/0415-ci-built-image.md`: Status set to in-progress, then review.
-- `docs/tasks/0415-report.md`: this file.
+- `docs/tasks/0422-ci-built-image.md`: Status set to in-progress, then review.
+- `docs/tasks/0422-report.md`: this file.
 
 ## Commands (last lines)
 
@@ -29,7 +29,7 @@ Branch: task/0415-ci-built-image | Executor: Haiku 5.5
 
 ## Deviations
 
-- Commits: step 1 includes the status change to in-progress. Step 2 and 3 share one commit (`0415 step 2`). Steps 4 and 5 share one commit (`0415 step 4`). Step 6 is its own commit. Edits are in the same files; splitting them needed interactive staging.
+- Commits: step 1 includes the status change to in-progress. Step 2 and 3 share one commit (`0422 step 2`). Steps 4 and 5 share one commit (`0422 step 4`). Step 6 is its own commit. Edits are in the same files; splitting them needed interactive staging.
 - Step 5 grep: the brief expects 5 lines; the file has 4 matches, each checked by reading. No extra line is missing from the brief's content.
 - Step 7: docker daemon not reachable.
 

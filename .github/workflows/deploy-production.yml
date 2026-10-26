@@ -38,7 +38,7 @@ jobs:
   # for that commit, and checks that the server's .env says production before
   # anything on it changes.
   lightsail:
-    # 0415: deploy-lightsail.yml pushes the image to GHCR. Granted here, not
+    # 0422: deploy-lightsail.yml pushes the image to GHCR. Granted here, not
     # at workflow level, so the other job keeps read-only permissions.
     permissions:
       contents: read

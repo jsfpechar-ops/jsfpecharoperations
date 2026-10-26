@@ -1,4 +1,4 @@
-# 0415: Build the production image in GitHub Actions, pull it on the server
+# 0422: Build the production image in GitHub Actions, pull it on the server
 
 Status: review
 Depends on: none | Base commit: 838bec1 | Branch: task/0415-ci-built-image
@@ -65,7 +65,7 @@ permissions:
 | `.github/workflows/deploy-production.yml` | edit | `packages: write` |
 | `.github/workflows/deploy-staging.yml` | edit | `packages: write` |
 | `deploy/lightsail/scripts/deploy.sh` | edit | pull `UBYHOST_IMAGE` if set, else build |
-| `docs/tasks/0415-report.md` | create | report |
+| `docs/tasks/0422-report.md` | create | report |
 
 No other file may change.
 
@@ -81,7 +81,7 @@ docker compose build --pull
    with exactly:
 
 ```
-# 0415: the GitHub deploy builds the image from the commit CI passed, pushes it
+# 0422: the GitHub deploy builds the image from the commit CI passed, pushes it
 # to GHCR and passes it here as UBYHOST_IMAGE, so the server only pulls. A
 # manual deploy without it, or a pull that fails, builds here as before.
 if [ -n "${UBYHOST_IMAGE:-}" ] && docker pull "${UBYHOST_IMAGE}"; then
@@ -106,13 +106,13 @@ fi
 permissions:
   contents: read
   checks: read
-  packages: write # 0415: push the deploy image to GHCR
+  packages: write # 0422: push the deploy image to GHCR
 ```
 
 3. In the same file, directly before the line `          install -m 700 -d ~/.ssh`, insert exactly (10 leading spaces, like the lines around it):
 
 ```
-          # 0415: build the image here from the exact commit, push it to GHCR
+          # 0422: build the image here from the exact commit, push it to GHCR
           # and let the server pull it, so a deploy does not build on the
           # production CPU. deploy.sh falls back to a server build if the pull fails.
           IMAGE="ghcr.io/$(printf '%s' "${REPO_SLUG}" | tr '[:upper:]' '[:lower:]'):${DEPLOY_SHA}"
@@ -175,7 +175,7 @@ permissions:
 permissions:
   contents: read
   checks: read
-  packages: write # 0415: deploy-lightsail.yml pushes the image to GHCR
+  packages: write # 0422: deploy-lightsail.yml pushes the image to GHCR
 ```
 
    Command: `grep -c "packages: write" .github/workflows/deploy-production.yml .github/workflows/deploy-staging.yml 2>&1 | tail -30` → `1` for each file.
@@ -205,7 +205,7 @@ Stop, and write the report, if an excerpt is not found, a check fails twice, you
 
 ## 9. Report
 
-Write `docs/tasks/0415-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. Commit; the orchestrator pushes and opens the PR.
+Write `docs/tasks/0422-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. Commit; the orchestrator pushes and opens the PR.
 
 ## Risk list (for the reviewer)
 
