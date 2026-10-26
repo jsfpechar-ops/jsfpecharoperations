@@ -533,7 +533,7 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
         )
     # 0415: a paused plan is read-only. An impersonating admin is not blocked.
     if (
-        request.method == "POST"
+        getattr(request, "method", "GET") == "POST"
         and workspace is not None
         and not impersonating
         and not request.url.path.startswith(_READ_ONLY_OPEN_PREFIXES)

@@ -6358,6 +6358,9 @@ _PASSKEY_STRINGS = {
         "mail.passkey_added.intro": "A passkey named \u201c%(name)s\u201d can now log in to your UbyHost account.",
         "mail.passkey_added.help": "If this was not you, log in with the e-mail link, remove it in Settings \u2192 Security, and write to %(support)s.",
         "notification.mail_kind.passkey_added": "new passkey notice",
+        "notification.mail_kind.billing_invoice": "UbyHost invoice",
+        "notification.mail_kind.billing_trial": "trial reminder",
+        "notification.mail_kind.billing_overdue": "payment reminder",
     },
     "cs": {
         "login.passkey": "Přihlásit se pomocí klíče (passkey)",
@@ -6399,6 +6402,9 @@ _PASSKEY_STRINGS = {
         "mail.passkey_added.intro": "Klíčem \u201e%(name)s\u201c se teď lze přihlásit k vašemu účtu UbyHost.",
         "mail.passkey_added.help": "Pokud jste to nebyli vy, přihlaste se odkazem z e-mailu, klíč odeberte v Nastavení \u2192 Zabezpečení a napište na %(support)s.",
         "notification.mail_kind.passkey_added": "oznámení o novém přístupovém klíči",
+        "notification.mail_kind.billing_invoice": "faktura od UbyHost",
+        "notification.mail_kind.billing_trial": "připomínka konce zkušební doby",
+        "notification.mail_kind.billing_overdue": "připomínka platby",
     },
 }
 for _lang, _strings in _PASSKEY_STRINGS.items():

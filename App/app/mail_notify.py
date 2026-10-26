@@ -42,6 +42,8 @@ LOGO_WIDTH = 180
 # exist, this constant is the single place that reads it. Guest mail is
 # unaffected -- it follows the language stored on the claim.
 HOST_MAIL_LANGUAGE = "en"
+# UbyHost's own billing mail (invoices, trial, reminders) is Czech: it bills Czech hosts.
+BILLING_MAIL_LANGUAGE = "cs"
 
 # Brand tokens copied from static/tokens.css. Mail clients do not load the
 # stylesheet, so the values have to be literal here and cannot be custom
@@ -2589,7 +2591,7 @@ def ai_budget(*, feature: str, month: str, spent: float, cap: float) -> Optional
 
 
 def build_billing_invoice(*, number: str, vs: str, amount_czk: int, due: str, period: str) -> Dict[str, str]:
-    lang = "cs"  # UbyHost invoices a Czech host in Czech
+    lang = BILLING_MAIL_LANGUAGE
     amount = f"{amount_czk:,}".replace(",", " ")
     subject = _text(lang, "mail.billing_invoice.subject", number=number)
     body = _text(lang, "mail.billing_invoice.body", number=number, amount=amount,
@@ -2618,7 +2620,7 @@ def billing_invoice(
         payload={
             "text": content["text"],
             "html": content["html"],
-            "lang": "cs",
+            "lang": BILLING_MAIL_LANGUAGE,
             "reply_to": config.OPERATOR_EMAIL,
             mail.PLATFORM_INVOICE_KEY: invoice_id,
             "attachment_name": f"{number}.pdf",
@@ -2627,7 +2629,7 @@ def billing_invoice(
 
 
 def build_billing_trial(*, days_left: int, ends: str) -> Dict[str, str]:
-    lang = "cs"  # UbyHost bills Czech hosts in Czech
+    lang = BILLING_MAIL_LANGUAGE
     subject = _text(lang, f"mail.billing_trial.subject_{days_left}")
     body = _text(lang, "mail.billing_trial.body", date=_fmt_date(ends))
     action = _text(lang, "mail.billing_trial.action")
@@ -2650,13 +2652,13 @@ def billing_trial(*, owner_user_id: int, days_left: int, ends: str) -> Optional[
         to_email=billing_invoices.recipient(owner_user_id),
         subject=content["subject"],
         owner_user_id=owner_user_id,
-        payload={"text": content["text"], "html": content["html"], "lang": "cs",
+        payload={"text": content["text"], "html": content["html"], "lang": BILLING_MAIL_LANGUAGE,
                  "reply_to": config.OPERATOR_EMAIL},
     )
 
 
 def build_billing_overdue(*, stage: str, number: str, amount_czk: int, due: str, today: str) -> Dict[str, str]:
-    lang = "cs"  # UbyHost bills Czech hosts in Czech
+    lang = BILLING_MAIL_LANGUAGE
     amount = f"{amount_czk:,}".replace(",", " ")
     subject = _text(lang, f"mail.billing_overdue.subject_{stage}", number=number)
     body = _text(lang, "mail.billing_overdue.body_" + ("paused" if stage == "paused" else "reminder"),
@@ -2683,6 +2685,6 @@ def billing_overdue(
         to_email=billing_invoices.recipient(owner_user_id),
         subject=content["subject"],
         owner_user_id=owner_user_id,
-        payload={"text": content["text"], "html": content["html"], "lang": "cs",
+        payload={"text": content["text"], "html": content["html"], "lang": BILLING_MAIL_LANGUAGE,
                  "reply_to": config.OPERATOR_EMAIL},
     )
