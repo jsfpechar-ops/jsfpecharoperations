@@ -1,6 +1,6 @@
 # 0414: Check-in/out times on the property's Door lock tab
 
-Status: todo
+Status: in-progress
 Branch: claude/project-thread-qi1fv7 (already checked out from main; commit here)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
