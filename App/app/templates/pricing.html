@@ -22,7 +22,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
-  <link rel="stylesheet" href="/static/landing.css?v=20260919y">
+  <link rel="stylesheet" href="/static/landing.css?v=20261026-0412">
   <script type="application/ld+json">
   {{ {
     "@context": "https://schema.org",
@@ -34,65 +34,163 @@
     "isPartOf": {"@type": "WebSite", "name": "UbyHost", "url": public_base_url ~ "/"}
   } | tojson }}
   </script>
+  <script type="application/ld+json">
+  {{ {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": t("pricing.faq.1.q"), "acceptedAnswer": {"@type": "Answer", "text": t("pricing.faq.1.a")}},
+      {"@type": "Question", "name": t("pricing.faq.2.q"), "acceptedAnswer": {"@type": "Answer", "text": t("pricing.faq.2.a")}},
+      {"@type": "Question", "name": t("pricing.faq.3.q"), "acceptedAnswer": {"@type": "Answer", "text": t("pricing.faq.3.a")}},
+      {"@type": "Question", "name": t("pricing.faq.4.q"), "acceptedAnswer": {"@type": "Answer", "text": t("pricing.faq.4.a")}},
+      {"@type": "Question", "name": t("pricing.faq.5.q"), "acceptedAnswer": {"@type": "Answer", "text": t("pricing.faq.5.a")}},
+      {"@type": "Question", "name": t("pricing.faq.6.q"), "acceptedAnswer": {"@type": "Answer", "text": t("pricing.faq.6.a")}},
+      {"@type": "Question", "name": t("pricing.faq.7.q"), "acceptedAnswer": {"@type": "Answer", "text": t("pricing.faq.7.a")}},
+      {"@type": "Question", "name": t("pricing.faq.8.q"), "acceptedAnswer": {"@type": "Answer", "text": t("pricing.faq.8.a")}},
+      {"@type": "Question", "name": t("pricing.faq.9.q"), "acceptedAnswer": {"@type": "Answer", "text": t("pricing.faq.9.a")}}
+    ]
+  } | tojson }}
+  </script>
   {% include "_posthog.html" %}
 </head>
 <body>
 {% set active = 'pricing' %}{% set switch_path = '/cenik' %}
+{% set cta_event = 'signup_start' if signup_href else 'login_click' %}
+{% macro cta_href(plan, interval='year') -%}
+{%- if signup_href -%}{{ signup_href }}&plan={{ plan }}&interval={{ interval }}&apts=1{%- else -%}/login?lang={{ lang }}{%- endif -%}
+{%- endmacro %}
+{% macro tick() -%}
+<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 9.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{%- endmacro %}
 {% include "_public_header.html" %}
 
   <main id="content" class="pricing-page">
-    <section class="pricing-hero" aria-labelledby="pricing-title">
-      <div class="pricing-hero-copy">
-        <p class="landing-eyebrow">{{ t('pricing.eyebrow') }}</p>
-        <h1 id="pricing-title">{{ t('pricing.title') }}</h1>
-        <p>{{ t('pricing.lede') }}</p>
-      </div>
-      <article class="pricing-card">
-        <div class="pricing-card-head">
-          <span>{{ t('pricing.card.kicker') }}</span>
-          <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
-        </div>
-        <strong class="pricing-price">{{ t('pricing.card.price') }}</strong>
-        <p class="pricing-note">{{ t('pricing.card.summary') }}</p>
-        <p class="pricing-note">{{ t('pricing.card.note') }}</p>
-        <div class="pricing-includes">
-          <h2>{{ t('pricing.includes.title') }}</h2>
-          <ul>
-            {% for item in ('1','2','3','4') %}
-            <li><span aria-hidden="true">✓</span>{{ t('pricing.includes.' ~ item) }}</li>
-            {% endfor %}
-          </ul>
-        </div>
-        <a class="landing-button pricing-button"
-           data-analytics-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }} </a>
-        {% if signup_href %}
-        <a class="landing-button primary pricing-button" href="{{ signup_href }}" data-analytics-event="signup_start">{{ t('signup.cta') }}</a>
-        {% endif %}
-        <small>{{ t('landing.cta.note') }}</small>
-      </article>
+    <section class="landing-hero" aria-labelledby="pricing-title">
+      <p class="landing-eyebrow">{{ t('pricing.eyebrow') }}</p>
+      <h1 id="pricing-title">{{ t('pricing.title') }}</h1>
+      <p class="landing-lede">{{ t('pricing.lede') }}</p>
+      <p class="landing-trust">{{ t('pricing.chips') }}</p>
     </section>
 
-    <section class="pricing-factors" aria-labelledby="factors-title">
-      <header>
-        <p class="landing-eyebrow">{{ t('pricing.factors.eyebrow') }}</p>
-        <h2 id="factors-title">{{ t('pricing.factors.title') }}</h2>
-      </header>
-      <ol class="pricing-factor-list">
-        {% for name in ('properties', 'volume', 'workflow') %}
-        <li><span>0{{ loop.index }}</span><div><h3>{{ t('pricing.factor.' ~ name ~ '.title') }}</h3><p>{{ t('pricing.factor.' ~ name ~ '.body') }}</p></div></li>
+    <section class="landing-section pricing-plans-section" aria-label="{{ t('pricing.calc.label') }}">
+      <div class="pricing-calc" data-pricing-calc hidden
+        data-rates='{{ rates | tojson }}' data-lang="{{ lang }}" data-signup-base="{{ signup_href or '' }}"
+        data-billed-year="{{ t('pricing.billed_year') }}" data-month-hint="{{ t('pricing.month_hint') }}"
+        data-apts-one="{{ t('pricing.apts.one') }}" data-apts-few="{{ t('pricing.apts.few') }}" data-apts-many="{{ t('pricing.apts') }}"
+        data-std-note="{{ t('pricing.std.note') }}" data-std-note-ttlock="{{ t('pricing.std.note_ttlock') }}"
+        data-unit-year="{{ t('pricing.bands.unit_year') }}" data-unit-month="{{ t('pricing.bands.unit_month') }}">
+        <div class="pricing-toggle" role="group" aria-label="{{ t('pricing.toggle.label') }}">
+          <button type="button" data-interval="year" aria-pressed="true">{{ t('pricing.toggle.year') }}<span>{{ t('pricing.toggle.year_badge') }}</span></button>
+          <button type="button" data-interval="month" aria-pressed="false">{{ t('pricing.toggle.month') }}</button>
+        </div>
+        <div class="pricing-stepper">
+          <span id="pricing-count-label">{{ t('pricing.count.label') }}</span>
+          <button type="button" data-step="-1" aria-label="{{ t('pricing.count.dec') }}">−</button>
+          <output aria-labelledby="pricing-count-label" aria-live="polite" data-count>1</output>
+          <button type="button" data-step="1" aria-label="{{ t('pricing.count.inc') }}">+</button>
+        </div>
+        <label class="pricing-ttlock"><input type="checkbox" data-ttlock>{{ t('pricing.ttlock.label') }}</label>
+      </div>
+
+      <div class="pricing-plans">
+        <article class="pricing-card" data-plan="standard">
+          <div class="pricing-card-head">
+            <div><h3>{{ t('pricing.std.name') }}</h3><p>{{ t('pricing.std.tagline') }}</p></div>
+            <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
+          </div>
+          <p class="pricing-price"><strong data-total>{{ start.std_month }}</strong> {{ t('pricing.currency') }} {{ t('pricing.per_month') }}</p>
+          <p class="pricing-sub" data-sub>{{ t('pricing.billed_year', amount=start.std_year) }}</p>
+          <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span data-note>{{ t('pricing.std.note') }}</span></p>
+          <a class="landing-button primary pricing-button" data-cta-plan="standard" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
+          <ul class="pricing-features">
+            {% for n in range(1, 7) %}<li>{{ tick() }}{{ t('pricing.std.f' ~ n) }}</li>{% endfor %}
+          </ul>
+        </article>
+        <article class="pricing-card pricing-card-max" data-plan="max">
+          <div class="pricing-card-head">
+            <div><h3>{{ t('pricing.max.name') }}</h3><p>{{ t('pricing.max.tagline') }}</p></div>
+            <span class="pricing-badge">{{ t('pricing.max.badge') }}</span>
+          </div>
+          <p class="pricing-price"><strong data-total>{{ start.max_month }}</strong> {{ t('pricing.currency') }} {{ t('pricing.per_month') }}</p>
+          <p class="pricing-sub" data-sub>{{ t('pricing.billed_year', amount=start.max_year) }}</p>
+          <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span>{{ t('pricing.max.note') }}</span></p>
+          <a class="landing-button primary pricing-button" data-cta-plan="max" href="{{ cta_href('max') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
+          <ul class="pricing-features">
+            {% for n in range(1, 6) %}<li>{{ tick() }}{{ t('pricing.max.f' ~ n) }}</li>{% endfor %}
+          </ul>
+        </article>
+      </div>
+      <p class="pricing-fineprint">{{ t('pricing.cta_note') }} {{ t('pricing.prices_final') }}</p>
+
+      {% if founder_left %}
+      <div class="pricing-founder">
+        <div>
+          <h3>{{ t('pricing.founder.heading') }}</h3>
+          <p>{{ t('pricing.founder.body', n=founder_left) }}</p>
+        </div>
+        <a class="landing-button secondary" data-cta-plan="standard" data-cta-interval="year" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.founder.cta') }}</a>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="landing-section" aria-labelledby="bands-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{ t('pricing.bands.eyebrow') }}</p>
+        <h2 id="bands-title">{{ t('pricing.bands.title') }}</h2>
+        <p>{{ t('pricing.bands.body') }}</p>
+      </div>
+      <ol class="benefit-list">
+        {% for i in range(3) %}
+        <li><span>0{{ i + 1 }}</span><div><h3>{{ t('pricing.bands.b' ~ (i + 1)) }}</h3><p><span data-band="{{ i }}">{{ start.bands[i] }}</span> {{ t('pricing.currency') }} <span data-unit>{{ t('pricing.bands.unit_year') }}</span></p></div></li>
         {% endfor %}
       </ol>
     </section>
 
+    <section class="landing-section" aria-labelledby="addons-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{ t('pricing.addons.eyebrow') }}</p>
+        <h2 id="addons-title">{{ t('pricing.addons.title') }}</h2>
+      </div>
+      <ol class="benefit-list">
+        {% for name in ('ttlock', 'wl') %}
+        <li><span>0{{ loop.index }}</span><div><h3>{{ t('pricing.addon.' ~ name ~ '.title') }}</h3><p>{{ t('pricing.addon.' ~ name ~ '.body') }}</p></div></li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    <section class="landing-section" aria-labelledby="anchor-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{ t('pricing.anchor.eyebrow') }}</p>
+        <h2 id="anchor-title">{{ t('pricing.anchor.title') }}</h2>
+        <p>{{ t('pricing.anchor.body') }}</p>
+      </div>
+    </section>
+
     {% include "_privacy_first.html" %}
 
-    <section class="landing-final pricing-final">
+    <section class="landing-section" aria-labelledby="faq-title">
+      <div class="landing-section-head">
+        <p class="landing-eyebrow">{{ t('landing.faq.eyebrow') }}</p>
+        <h2 id="faq-title">{{ t('pricing.faq.title') }}</h2>
+      </div>
+      <div class="landing-faq-list">
+        {% for n in range(1, 10) %}
+        <details>
+          <summary>{{ t('pricing.faq.' ~ n ~ '.q') }}</summary>
+          <p>{{ t('pricing.faq.' ~ n ~ '.a') }}</p>
+        </details>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="landing-final">
       <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
-      <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.body') }}</p></div>
-      <a class="landing-button primary" data-analytics-event="contact_click" href="mailto:support@ubyhost.com?subject={{ t('pricing.cta.subject') | urlencode }}">{{ t('pricing.card.cta') }}</a>
+      <div><h2>{{ t('pricing.final.title') }}</h2><p>{{ t('pricing.final.large') }} <a href="mailto:support@ubyhost.com?subject={{ t('pricing.final.subject') | urlencode }}" data-analytics-event="contact_click">{{ t('pricing.final.write') }}</a></p></div>
+      <a class="landing-button primary" data-cta-plan="standard" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
     </section>
   </main>
 
 {% include "_public_footer.html" %}
+<script src="/static/pricing.js?v=20261026-0412" defer></script>
 </body>
 </html>
