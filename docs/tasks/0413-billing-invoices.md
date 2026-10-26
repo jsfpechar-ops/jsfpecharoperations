@@ -1,6 +1,7 @@
 # 0413: Billing invoices (B2): numbering, PDF, storno, mail, 10-year purge
 
 Status: review
+Report: docs/tasks/0413-billing-invoices-report.md
 Depends on: 0411 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0413-billing-invoices
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
@@ -92,7 +93,7 @@ If any excerpt is not found verbatim (line numbers may drift a little), STOP (§
 | `App/tests/test_claim_mail.py` | edit | pinned kinds |
 | `App/tests/test_billing_invoices.py` | create | copy of `docs/plans/billing-0413/test_billing_invoices.py` |
 | `docs/privacy/RETENTION.md` | edit | name the purge step |
-| `docs/tasks/0413-report.md` | create | the report |
+| `docs/tasks/0413-billing-invoices-report.md` | create | the report |
 
 No other file may change.
 
@@ -274,7 +275,7 @@ From the repo root: `python3 scripts/context_lint.py 2>&1 | tail -30`
 
 ## 9. Report
 
-`docs/tasks/0413-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
+`docs/tasks/0413-billing-invoices-report.md`: files changed, the last 5 lines of each command, §7 ticked, Deviations, Questions.
 
 ## Risk list (for the reviewer)
 

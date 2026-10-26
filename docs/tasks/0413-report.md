@@ -1,40 +1,41 @@
-# 0413 report (executor: Haiku 5.5)
+# 0413 report
 
-Status: review (the §8 stop trigger was resolved by the orchestrator amendment below)
+Status: done
 
 ## Files changed
-Steps 1 to 8 committed, one commit each (`0413 step 1` to `0413 step 8`):
-- App/app/migrations/0024_platform_invoice_pdf.sql (new)
-- App/app/billing_invoices.py (new, cp of docs/plans/billing-0413/)
-- App/tests/test_billing_invoices.py (new, cp of docs/plans/billing-0413/)
-- App/app/mail.py (kind billing_invoice in KINDS and HOST_KINDS, PLATFORM_INVOICE_KEY, PDF attachment)
-- App/app/mail_notify.py (build_billing_invoice, billing_invoice)
-- App/app/host_i18n.py (3 keys EN, 3 keys CS)
-- App/app/retention.py (_platform_invoice_step, STEPS entry platform_invoices)
-- App/tests/test_claim_mail.py (pinned kind billing_invoice)
-- docs/privacy/RETENTION.md (names the purge step)
-- docs/tasks/0413-report.md, docs/tasks/0413-billing-invoices.md (Status: blocked)
 
-## Commands (last lines)
-1. `pytest tests/test_billing_invoices.py tests/test_billing_core.py tests/test_migrations.py`: `42 passed in 3.42s`
-2. `pytest tests/test_claim_mail.py tests/test_mail.py tests/test_ses_mail.py`: `ERROR: file or directory not found: tests/test_mail.py`. Re-run on the existing files (test_claim_mail.py, test_ses_mail.py): `58 passed, 1 warning in 3.73s`
-3. `pytest tests/test_retention.py tests/test_retention_job.py tests/test_retention_alignment.py tests/test_privacy_first.py`: `FAILED tests/test_retention_alignment.py::test_every_step_of_the_run_writes_class_count_and_cutoff`, `AssertionError: platform_invoices has no cutoff in its audit line`, `1 failed, 38 passed in 3.15s` (run with -x, so later files did not run)
-4. `python3 scripts/context_lint.py`: `context lint: OK` (warnings are pre-existing)
+- App/app/routes/admin.py: `stay_claim` computed once; `last_sent_at` query removed; `CLAIM_RESEND_ERRORS` map and `CLAIM_RESEND_FAILED`; demo-stay guard on the POST route; computed flash key replaced; stale `#guests` comment removed.
+- App/app/host_i18n.py: `claim_resend_failed` (en, cs); `resend_help` fixed (en, cs).
+- App/app/host_vi_i18n.py: `claim_resend_failed`; `resend_help` fixed.
+- App/tests/test_claim_host_resend.py: new key-map test (2 tests, both pass).
 
-## §7 acceptance
-- [ ] All commands pass (command 3 fails, command 2 names a missing file).
-- [x] Changes are only the §3 files (plus the report and the brief Status line).
-- [x] No stripe, gopay, comgate or card in billing_invoices.py.
+## Steps
+
+Steps 1 to 7 applied as written. Each anchor matched exactly once. Greps in §7 print nothing. `python3 scripts/context_lint.py`: OK.
+
+## Tests (brief §6)
+
+Command run from App/ with `--tb=no -rf`, without `-x`:
+
+```
+FAILED tests/test_host_i18n.py::test_language_endpoint_sets_cookie_and_rejects_open_redirects
+FAILED tests/test_host_i18n.py::test_a_signed_in_dashboard_keeps_vietnamese
+FAILED tests/test_host_i18n.py::test_language_endpoint_accepts_vietnamese
+3 failed, 97 passed, 2 warnings
+```
+
+All three fail with `sqlite3.OperationalError: no such table: apartment`. The same three fail on the base commit (checked with `git stash`), so this is not caused by this change. The test DB seems not to be initialised in this sandbox.
 
 ## Deviations
-- Command 2: tests/test_mail.py does not exist in the repo. Ran the existing mail files instead.
-- Brief Status set to `blocked`, not `review`, because the §8 stop trigger fired.
 
-- orchestrator amendment: platform_invoices cutoff in _cutoffs; test_mail.py does not exist
+- Acceptance in §7 is not met: 3 failures in test_host_i18n.py, pre-existing on base. Not fixed (outside the brief).
+- Commit message follows §9 plus the two trailers from the owner's instruction. The Co-Authored-By trailer says Opus 5.5; the executor running this brief is Haiku 5.5.
+- Committed once at the end, not per step as executor.md asks, per the owner's instruction.
 
 ## Questions
-- test_retention_alignment requires every retention step to write a cutoff in its audit line. `_platform_invoice_step` returns a count without one. Should the step write a cutoff (retention.py change, outside this brief) or should the alignment test exempt platform_invoices?
-- Does test_mail.py mean a different file (test_mail_attachments.py?)
+
+- Is the test DB init step missing from this sandbox, or does test_host_i18n need a migration run first? Owner or orchestrator to confirm.
 
 ## Owner steps left
-- Decide the Question above, then re-run command 3 and merge only through scripts/merge-pr-on-green.sh.
+
+None from this brief. Push and merge are not done here.

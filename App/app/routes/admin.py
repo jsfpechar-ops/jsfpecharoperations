@@ -3319,6 +3319,7 @@ def reservation_detail(reservation_id: int, request: Request):
         ") AND apartment_id = ? ORDER BY created_at DESC",
         (reservation_id, reservation_id, reservation["apartment_id"]),
     )
+    stay_claim = claim.ensure_row(reservation_id)
     return render(
         request,
         "reservation_detail.html",
@@ -3336,7 +3337,15 @@ def reservation_detail(reservation_id: int, request: Request):
                 f"{guest_slug.link_key(apartment) if apartment else reservation['permalink_token']}"
                 f"/{reservation_id}"
             ),
-            "stay_claim": claim.ensure_row(reservation_id),
+            "stay_claim": stay_claim,
+            "claim_resend": {
+                "enabled": bool(
+                    mail.mail_enabled()
+                    and not demo.is_demo_stay(reservation)
+                    and stay_claim["state"] == claim.CLAIMED
+                    and not stay_claim["guest_access_locked_at"]
+                ),
+            },
             "is_demo_stay": demo.is_demo_stay(reservation),
             "hand_filing": (
                 {"count": 0, "candidates": 0}
@@ -3519,6 +3528,44 @@ async def reservation_reopen_guest(reservation_id: int, request: Request):
     claim.reopen_guest_access(reservation_id)
     db.audit("guest_access_reopened", f"reservation={reservation_id}")
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.access_reopened"))
+
+
+# The resend errors that have their own copy; any other code from start_claim
+# gets the generic line, so the host never sees a raw key.
+CLAIM_RESEND_ERRORS = {
+    "not_claimed": "flash.error.claim_resend_not_claimed",
+    "locked": "flash.error.claim_resend_locked",
+    "cooldown": "flash.error.claim_resend_cooldown",
+    "recipient_rate": "flash.error.claim_resend_recipient_rate",
+}
+CLAIM_RESEND_FAILED = "flash.error.claim_resend_failed"
+
+
+@router.post("/reservations/{reservation_id}/resend-claim")
+async def reservation_resend_claim(reservation_id: int, request: Request):
+    """Re-send the guest form link to the stay's one verified e-mail."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+    back = f"/reservations/{reservation_id}"
+    if not mail.mail_enabled():
+        return _back(back, err=_flash(request, "flash.error.claim_resend_mail_off"))
+    if demo.is_demo_stay(reservation):
+        return _back(back, err=_flash(request, CLAIM_RESEND_FAILED))
+    apartment = access.apartment(request, reservation["apartment_id"])
+    if not apartment:
+        return _back(back, err=_flash(request, "flash.error.no_such_stay"))
+    ok, err = await run_in_threadpool(
+        lambda: claim.resend_to_verified_email(reservation, apartment)
+    )
+    if not ok:
+        return _back(back, err=_flash(request, CLAIM_RESEND_ERRORS.get(err, CLAIM_RESEND_FAILED)))
+    # No guest data in the audit row: the stay id is enough to find the mail.
+    db.audit("guest_claim_resent", f"reservation={reservation_id}")
+    return _back(back, msg=_flash(request, "flash.reservations.claim_resent"))
 
 
 @router.post("/reservations/{reservation_id}/release-claim")
