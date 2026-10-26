@@ -1,6 +1,6 @@
 # 0414: Backup cadence, Cloudflare-only origin, fresh-instance restore from Litestream
 
-Status: todo
+Status: in-progress
 Depends on: none | Base commit: 838bec1 | Branch: task/0414-backup-cadence-origin-lock
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

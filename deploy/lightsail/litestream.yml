@@ -19,11 +19,13 @@ logging:
   type: text
   stderr: true
 
-# A full snapshot every 6 hours keeps a restore short (fewer LTX files to
-# replay); snapshots and the LTX files between them are kept for 7 days, so a
-# point-in-time restore can go back a week. Durations accept s, m and h only.
+# A full snapshot once a day: a restore replays at most one day of LTX files,
+# which takes seconds at this database's size. 0414: a snapshot every 6 hours
+# stored four full copies a day in S3 for little gain. Snapshots and the LTX
+# files between them are kept for 7 days, so a point-in-time restore can go
+# back a week. Durations accept s, m and h only.
 snapshot:
-  interval: 6h
+  interval: 24h
   retention: 168h
 
 # Litestream deletes LTX files and snapshots that fall out of the window above.
