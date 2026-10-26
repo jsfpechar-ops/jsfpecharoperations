@@ -1,6 +1,6 @@
 # 0414 report: copy settings opens a small dialog
 
-Status: blocked
+Status: review (steps 1-7 done; browser tests 0 skipped after playwright 1.63.0 was installed in the venv; screenshots in project files copy-settings-0414)
 
 ## Files changed
 
