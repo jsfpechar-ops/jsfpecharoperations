@@ -1,6 +1,6 @@
 # 0418: ČSOB statement import (B7): read the bank export, match payments to invoices
 
-Status: todo
+Status: review
 Depends on: 0413, 0417 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0418-bank-import
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
