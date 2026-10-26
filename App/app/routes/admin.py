@@ -3315,6 +3315,7 @@ def reservation_detail(reservation_id: int, request: Request):
         ") AND apartment_id = ? ORDER BY created_at DESC",
         (reservation_id, reservation_id, reservation["apartment_id"]),
     )
+    stay_claim = claim.ensure_row(reservation_id)
     return render(
         request,
         "reservation_detail.html",
@@ -3332,22 +3333,13 @@ def reservation_detail(reservation_id: int, request: Request):
                 f"{guest_slug.link_key(apartment) if apartment else reservation['permalink_token']}"
                 f"/{reservation_id}"
             ),
-            "stay_claim": claim.ensure_row(reservation_id),
+            "stay_claim": stay_claim,
             "claim_resend": {
                 "enabled": bool(
                     mail.mail_enabled()
                     and not demo.is_demo_stay(reservation)
-                    and claim.ensure_row(reservation_id)["state"] == claim.CLAIMED
-                    and not claim.ensure_row(reservation_id)["guest_access_locked_at"]
-                ),
-                "last_sent_at": (
-                    db.query_one(
-                        "SELECT MAX(sent_at) AS sent_at FROM email_outbox "
-                        "WHERE reservation_id = ? AND kind IN ('claim', 'claim_resend') "
-                        "AND sent_at IS NOT NULL",
-                        (reservation_id,),
-                    )["sent_at"]
-                    or ""
+                    and stay_claim["state"] == claim.CLAIMED
+                    and not stay_claim["guest_access_locked_at"]
                 ),
             },
             "is_demo_stay": demo.is_demo_stay(reservation),
@@ -3534,6 +3526,17 @@ async def reservation_reopen_guest(reservation_id: int, request: Request):
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.access_reopened"))
 
 
+# The resend errors that have their own copy; any other code from start_claim
+# gets the generic line, so the host never sees a raw key.
+CLAIM_RESEND_ERRORS = {
+    "not_claimed": "flash.error.claim_resend_not_claimed",
+    "locked": "flash.error.claim_resend_locked",
+    "cooldown": "flash.error.claim_resend_cooldown",
+    "recipient_rate": "flash.error.claim_resend_recipient_rate",
+}
+CLAIM_RESEND_FAILED = "flash.error.claim_resend_failed"
+
+
 @router.post("/reservations/{reservation_id}/resend-claim")
 async def reservation_resend_claim(reservation_id: int, request: Request):
     """Re-send the guest form link to the stay's one verified e-mail."""
@@ -3543,11 +3546,11 @@ async def reservation_resend_claim(reservation_id: int, request: Request):
     reservation = access.reservation(request, reservation_id)
     if not reservation:
         return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
-    # back() appends ?msg= to this path, so the #guests anchor must come after
-    # the query or the browser would treat the message as part of the fragment.
     back = f"/reservations/{reservation_id}"
     if not mail.mail_enabled():
         return _back(back, err=_flash(request, "flash.error.claim_resend_mail_off"))
+    if demo.is_demo_stay(reservation):
+        return _back(back, err=_flash(request, CLAIM_RESEND_FAILED))
     apartment = access.apartment(request, reservation["apartment_id"])
     if not apartment:
         return _back(back, err=_flash(request, "flash.error.no_such_stay"))
@@ -3555,7 +3558,7 @@ async def reservation_resend_claim(reservation_id: int, request: Request):
         lambda: claim.resend_to_verified_email(reservation, apartment)
     )
     if not ok:
-        return _back(back, err=_flash(request, "flash.error.claim_resend_" + (err or "failed")))
+        return _back(back, err=_flash(request, CLAIM_RESEND_ERRORS.get(err, CLAIM_RESEND_FAILED)))
     # No guest data in the audit row: the stay id is enough to find the mail.
     db.audit("guest_claim_resent", f"reservation={reservation_id}")
     return _back(back, msg=_flash(request, "flash.reservations.claim_resent"))
