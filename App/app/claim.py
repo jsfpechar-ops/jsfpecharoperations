@@ -334,6 +334,41 @@ def start_claim(
     return True, "", secret
 
 
+def resend_to_verified_email(reservation, apartment) -> Tuple[bool, str]:
+    """Host action: re-send the claim link to the one verified e-mail.
+
+    Reuses the claim machinery (kind ``claim_resend``, recipient caps, token
+    rotation) so the host button is exactly the guest's own resend. The stored
+    claim e-mail is the only recipient: hosts never type an address here.
+    Returns (ok, error_code).
+    """
+    row = ensure_row(int(reservation["id"]))
+    if row["state"] != CLAIMED:
+        return False, "not_claimed"
+    if not guest_access_open(reservation, row):
+        return False, "locked"
+    addr = mail.normalise_email(row["email"] or "")
+    if not addr:
+        return False, "not_claimed"
+    ok, err, _secret = start_claim(
+        reservation,
+        apartment,
+        email=addr,
+        party_size=_declared_count(reservation, row),
+        lang=row["lang"] or "cs",
+        resend=True,
+    )
+    return ok, err
+
+
+def _declared_count(reservation, row) -> int:
+    """The headcount a resend keeps: the host's override, else the declared one."""
+    if reservation["expected_guests_override"]:
+        return int(reservation["expected_guests_override"])
+    expected = reporting.reservation_progress(reservation)["expected"]
+    return int(expected or row["declared_guests"] or 1)
+
+
 def _completion_facts(apartment, reservation, lang: str) -> Dict[str, str]:
     """Check-in and check-out for the receipt's stay panel.
 

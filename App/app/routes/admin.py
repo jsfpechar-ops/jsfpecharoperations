@@ -3333,6 +3333,23 @@ def reservation_detail(reservation_id: int, request: Request):
                 f"/{reservation_id}"
             ),
             "stay_claim": claim.ensure_row(reservation_id),
+            "claim_resend": {
+                "enabled": bool(
+                    mail.mail_enabled()
+                    and not demo.is_demo_stay(reservation)
+                    and claim.ensure_row(reservation_id)["state"] == claim.CLAIMED
+                    and not claim.ensure_row(reservation_id)["guest_access_locked_at"]
+                ),
+                "last_sent_at": (
+                    db.query_one(
+                        "SELECT MAX(sent_at) AS sent_at FROM email_outbox "
+                        "WHERE reservation_id = ? AND kind IN ('claim', 'claim_resend') "
+                        "AND sent_at IS NOT NULL",
+                        (reservation_id,),
+                    )["sent_at"]
+                    or ""
+                ),
+            },
             "is_demo_stay": demo.is_demo_stay(reservation),
             "hand_filing": (
                 {"count": 0, "candidates": 0}
@@ -3515,6 +3532,31 @@ async def reservation_reopen_guest(reservation_id: int, request: Request):
     claim.reopen_guest_access(reservation_id)
     db.audit("guest_access_reopened", f"reservation={reservation_id}")
     return _back(f"/reservations/{reservation_id}", msg=_flash(request, "flash.reservations.access_reopened"))
+
+
+@router.post("/reservations/{reservation_id}/resend-claim")
+async def reservation_resend_claim(reservation_id: int, request: Request):
+    """Re-send the guest form link to the stay's one verified e-mail."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    reservation = access.reservation(request, reservation_id)
+    if not reservation:
+        return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
+    back = f"/reservations/{reservation_id}#guests"
+    if not mail.mail_enabled():
+        return _back(back, err=_flash(request, "flash.error.claim_resend_mail_off"))
+    apartment = access.apartment(request, reservation["apartment_id"])
+    if not apartment:
+        return _back(back, err=_flash(request, "flash.error.no_such_stay"))
+    ok, err = await run_in_threadpool(
+        lambda: claim.resend_to_verified_email(reservation, apartment)
+    )
+    if not ok:
+        return _back(back, err=_flash(request, "flash.error.claim_resend_" + (err or "failed")))
+    # No guest data in the audit row: the stay id is enough to find the mail.
+    db.audit("guest_claim_resent", f"reservation={reservation_id}")
+    return _back(back, msg=_flash(request, "flash.reservations.claim_resent"))
 
 
 @router.post("/reservations/{reservation_id}/release-claim")
