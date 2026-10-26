@@ -1,6 +1,6 @@
 # 0416: Plan picker (B4): /predplatne order, change, cancel, invoices; /cenik from billing
 
-Status: todo
+Status: review
 Depends on: 0411, 0413, 0414, 0415 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0416-plan-picker
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
