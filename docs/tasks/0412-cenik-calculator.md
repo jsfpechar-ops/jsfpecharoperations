@@ -1,6 +1,6 @@
 # 0412: Public /cenik price list with the calculator (B8)
 
-Status: blocked
+Status: review
 Depends on: none (runs in parallel with 0411) | Base commit: 1255954 | Branch: task/0412-cenik-calculator
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Order: after any open brief that also names `tests/static_versions.json` (0219, 0244, 0246, 0344, 0352-0355); rerun step 7 last so the json matches.
