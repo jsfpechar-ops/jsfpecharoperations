@@ -66,4 +66,5 @@ Append-only.
 - 2026-10-24 | New dependency `anthropic` (Python SDK 2.3.0, pinned in `App/requirements.txt`, hashes with its transitive packages in `App/requirements.lock`: anthropic docstring-parser httpcore2 httpx2 jiter opentelemetry-api sniffio truststore); model `claude-haiku-5-5`; every model call through `App/app/ai.py`, per-feature switch and budget | Havel support assistant and the guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
 - 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
 - 2026-10-24 Guide Quick answers screen (owner).
-- 2026-10-25 | Invoice details "Fill from register" also asks the MFČR VAT register (official CRPDPH SOAP, getStatusNespolehlivySubjektRozsirenyV2) on the host's click; sends only the DIČ digits; fills empty account fields, offers other published accounts; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
+- 2026-10-25 | Invoice "Fill from register" also asks the MFČR VAT register (CRPDPH SOAP) on the host's click; sends only the DIČ digits; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
+- 2026-10-26 | Billing phase 1: invoices only, no card gateway yet | owner | 0411

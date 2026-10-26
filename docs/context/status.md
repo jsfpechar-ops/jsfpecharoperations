@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-25.
+Updated: 2026-10-26.
 
 ## Production
 
@@ -9,6 +9,7 @@ Updated: 2026-10-25.
 
 ## Now
 
+- Billing 0411+0412 (ČSOB, statement upload). **Owner:** OGs plan later.
 - 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
 - Guide + Leon 0341-0355: owner merges #465-#468.
 - 0291-0302 buttons, fees, invoice. **Owner:** PR; CF rules 3-4.
@@ -17,10 +18,10 @@ Updated: 2026-10-25.
 - TTLock disclosure #434: timing/geometry CI pending.
 - #432 subdomain deployed; root login/calendar review pending.
 
-- 0280-0283 short alerts, card borders, signature dialog. **Owner:** PR/deploy/phone test.
-- 0253 four red layout tests. **Owner:** review 0253 PR, iPad.
-- Foolproof 0230-0278, design reset 0165-0183 (#405). **Owner:** deploy (`?v=` keys).
-- Phone app + urgent alerts (0219, 0225-0229, #421). **Owner:** deploy, phone test.
+- 0280-0283 alerts, borders, signature. **Owner:** PR/deploy/phone.
+- 0253 layout tests. **Owner:** PR, iPad.
+- Foolproof 0230-0278, design reset 0165-0183 (#405). **Owner:** deploy.
+- Phone app + alerts (0219, 0225-0229, #421). **Owner:** deploy, phone.
 - #418 onboarding fixes 0203-0212; address open.
 - Stay-fee email 0220-0224: built, owner staging test.
 - 0203 #419: fee list pay steps. Data box send on hold (DIA).
