@@ -1,4 +1,4 @@
-# 0411: Fix the host "Resend guest form link" action (PR #525 review)
+# 0413: Fix the host "Resend guest form link" action (PR #525 review)
 
 Status: done
 Depends on: none | Base commit: 1f8a8f6 | Branch: vibe/resend-claim-link-446f76 (PR #525, commit on it directly)
@@ -142,7 +142,7 @@ Check: `grep -n 'claim_resend_" +' App/app/routes/admin.py` prints nothing.
 
 7. Create `App/tests/test_claim_host_resend.py`:
 ```python
-"""The host resend button maps every claim error to copy that exists (0411)."""
+"""The host resend button maps every claim error to copy that exists (0413)."""
 from __future__ import annotations
 
 from app import host_i18n
@@ -193,7 +193,7 @@ Stop and write the report if an excerpt is not found, a test fails twice, you re
 
 ## 9. Report
 
-Write `docs/tasks/0411-report.md` (600 tokens at most), set `Status: review`, and commit everything on the current branch with message `0411: resend link fixes from the #525 review`.
+Write `docs/tasks/0413-report.md` (600 tokens at most), set `Status: review`, and commit everything on the current branch with message `0413: resend link fixes from the #525 review`.
 
 ## Risk list (for the reviewer)
 
