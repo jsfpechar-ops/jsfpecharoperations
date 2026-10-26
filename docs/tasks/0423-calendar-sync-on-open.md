@@ -1,4 +1,4 @@
-# 0415: Sync calendars when the host opens the app, and say how syncing works
+# 0423: Sync calendars when the host opens the app, and say how syncing works
 
 Status: review
 Depends on: none | Base commit: 838bec1 | Branch: claude/project-thread-kpvhyc
@@ -40,7 +40,7 @@ ICAL_POLL_MINUTES = int(os.environ.get("UBYHOST_ICAL_POLL_MINUTES", "60"))
 Replace with:
 ```python
 ICAL_POLL_MINUTES = int(os.environ.get("UBYHOST_ICAL_POLL_MINUTES", "60"))
-# 0415: opening the dashboard or Stays re-reads calendars checked longer ago than this. 0 turns it off.
+# 0423: opening the dashboard or Stays re-reads calendars checked longer ago than this. 0 turns it off.
 ICAL_OPEN_SYNC_MINUTES = int(os.environ.get("UBYHOST_ICAL_OPEN_SYNC_MINUTES", "10"))
 ```
 
@@ -63,7 +63,7 @@ def sync_all(
 Insert directly above it:
 ```python
 def sync_owner_if_stale(owner_user_id: Optional[int]) -> int:
-    """0415: re-read an owner's calendars when they open the app.
+    """0423: re-read an owner's calendars when they open the app.
 
     A booking made since the hourly poll should be there when the host looks.
     Only calendars not checked for ``ICAL_OPEN_SYNC_MINUTES`` are read, and each
@@ -122,7 +122,7 @@ def dashboard(request: Request):
 Insert directly above it:
 ```python
 def _with_calendar_refresh(request: Request, response):
-    """0415: opening the app re-reads stale calendars after the page is sent."""
+    """0423: opening the app re-reads stale calendars after the page is sent."""
     if config.ICAL_OPEN_SYNC_MINUTES > 0 and response.background is None:
         response.background = BackgroundTask(icalsync.sync_owner_if_stale, access.owner_id(request))
     return response
@@ -244,7 +244,7 @@ Stop and report (do not improvise) if a find string is missing, if `response.bac
 
 ## 9. Report
 
-Write `docs/tasks/0415-report.md` (400 tokens at most), set `Status: review` in this brief, and commit everything with message `0415: sync calendars when the host opens the app; say how often they update`.
+Write `docs/tasks/0423-report.md` (400 tokens at most), set `Status: review` in this brief, and commit everything with message `0423: sync calendars when the host opens the app; say how often they update`.
 
 ## Risk list (for the reviewer)
 

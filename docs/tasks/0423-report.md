@@ -1,4 +1,4 @@
-# 0415 report
+# 0423 report
 
 Status: review
 
@@ -11,8 +11,8 @@ Status: review
 - App/app/host_i18n.py, App/app/host_vi_i18n.py: the two copy keys in en, cs and vi.
 - App/tests/test_calendar_sync_on_open.py: new, 5 tests.
 - docs/ENVIRONMENT.md: one row.
-- docs/tasks/0415-calendar-sync-on-open.md: Status ready to review.
-- docs/tasks/0415-report.md: this file.
+- docs/tasks/0423-calendar-sync-on-open.md: Status ready to review.
+- docs/tasks/0423-report.md: this file.
 
 ## Commands (last lines)
 

@@ -430,7 +430,7 @@ def _property_draft(form) -> Dict[str, Any]:
 
 
 def _with_calendar_refresh(request: Request, response):
-    """0415: opening the app re-reads stale calendars after the page is sent."""
+    """0423: opening the app re-reads stale calendars after the page is sent."""
     if config.ICAL_OPEN_SYNC_MINUTES > 0 and response.background is None:
         response.background = BackgroundTask(icalsync.sync_owner_if_stale, access.owner_id(request))
     return response
@@ -2960,6 +2960,10 @@ async def test_connection(apartment_id: int, request: Request):
         f"apartment={apartment_id} endpoint={client.endpoint} "
         f"available={available} max_batch={limit}",
     )
+    # 0414: a passed test is the verified UbyPort connection that starts the trial.
+    from .. import billing_trial
+
+    billing_trial.mark_verified(apartment_id, apartment["owner_user_id"])
     alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     # The error code book carries the severity that decides accepted or not
     # (police letter of 24 September 2026). Load it while the login is known

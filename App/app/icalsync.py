@@ -948,7 +948,7 @@ def sync_feed(
 
 
 def sync_owner_if_stale(owner_user_id: Optional[int]) -> int:
-    """0415: re-read an owner's calendars when they open the app.
+    """0423: re-read an owner's calendars when they open the app.
 
     A booking made since the hourly poll should be there when the host looks.
     Only calendars not checked for ``ICAL_OPEN_SYNC_MINUTES`` are read, and each
@@ -967,7 +967,10 @@ def sync_owner_if_stale(owner_user_id: Optional[int]) -> int:
         (owner_user_id, cutoff),
     )
     read = 0
+    paused: Dict[int, bool] = {}
     for feed in feeds:
+        if import_paused(int(feed["apartment_id"]), paused):
+            continue
         claimed = db.execute_rowcount(
             "UPDATE ical_feed SET last_checked_at = ? "
             "WHERE id = ? AND (last_checked_at IS NULL OR last_checked_at < ?)",
@@ -984,6 +987,19 @@ def sync_owner_if_stale(owner_user_id: Optional[int]) -> int:
     if read:
         log.info("ical_open_sync feeds=%s", read)
     return read
+
+
+def import_paused(apartment_id: int, seen: Dict[int, bool]) -> bool:
+    """0415: a paused plan stops calendar import; reporting goes on."""
+    from . import billing
+
+    if not billing.enabled():
+        return False
+    if apartment_id not in seen:
+        row = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
+        owner = row["owner_user_id"] if row else None
+        seen[apartment_id] = owner is not None and not billing.entitlements(int(owner)).ical_import
+    return seen[apartment_id]
 
 
 def sync_all(
@@ -1008,7 +1024,10 @@ def sync_all(
         "feeds": 0, "created": 0, "updated": 0, "cancelled": 0, "errors": 0,
         "not_modified": 0, "unchanged": 0, "changed": 0,
     }
+    paused: Dict[int, bool] = {}
     for feed in feeds:
+        if import_paused(int(feed["apartment_id"]), paused):
+            continue
         totals["feeds"] += 1
         try:
             stats = sync_feed(feed)

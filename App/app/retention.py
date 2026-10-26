@@ -47,6 +47,20 @@ def _run_invoice_step(today: date, dry_run: bool, owner_user_id: Optional[int]) 
     return invoices.purge_expired(today, owner_user_id=owner_user_id)
 
 
+def _platform_invoice_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
+    """Brief 0413: UbyHost's own invoices and bank payments, 10 years (§ 35 zákon 235/2004 Sb.).
+
+    They are UbyHost's records, not a workspace's, so a one-workspace run skips them.
+    """
+    from . import billing_invoices
+
+    if owner_user_id is not None:
+        return 0
+    if dry_run:
+        return len(billing_invoices.expired_ids(today))
+    return billing_invoices.purge_expired(today)
+
+
 def _claim_email_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -> int:
     """Null ``reservation_claim.email`` once the stay is past the grace window."""
     cutoff = (today - timedelta(days=CLAIM_EMAIL_GRACE_DAYS)).isoformat()
@@ -353,6 +367,14 @@ def _delete_workspace(owner_id: int) -> None:
         cur.execute("DELETE FROM push_outbox WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM push_subscription WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
+        # Brief 0411: the billing row goes with the account. UbyHost's own
+        # invoices are accounting records kept 10 years: they only lose the
+        # link (snapshot_json keeps the buyer as printed). A founder slot stays used.
+        cur.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (owner_id,))
+        cur.execute(
+            "UPDATE platform_invoice SET owner_user_id = NULL WHERE owner_user_id = ?", (owner_id,)
+        )
+        cur.execute("UPDATE founder_slot SET owner_user_id = NULL WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         # 0275: the welcome-back dates (last dashboard visit) go with the account.
         welcome_back.forget(cur, owner_id)
@@ -466,6 +488,7 @@ def _guest_chat_step(today: date, dry_run: bool, owner_user_id: Optional[int]) -
 STEPS: List[tuple] = [
     ("guests", _run_guest_step),
     ("invoices", _run_invoice_step),
+    ("platform_invoices", _platform_invoice_step),
     ("claim_emails", _claim_email_step),
     ("reservation_contacts", _reservation_contact_step),
     ("submitter_ips", _submitter_ip_step),
@@ -494,6 +517,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
     return {
         "guests": f"stay ended before {guests}",
         "invoices": f"issued before {invoices.retention_cutoff(today).isoformat()}",
+        "platform_invoices": f"issued before {invoices.retention_cutoff(today).isoformat()}",
         "claim_emails": f"stay ended before {contact}",
         "reservation_contacts": f"stay ended before {contact}",
         "submitter_ips": (

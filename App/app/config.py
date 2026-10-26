@@ -146,7 +146,7 @@ UBYPORT_MAX_BATCH = int(os.environ.get("UBYHOST_MAX_BATCH", "32"))
 UBYPORT_TIMEOUT = int(os.environ.get("UBYHOST_UBYPORT_TIMEOUT", "60"))
 
 ICAL_POLL_MINUTES = int(os.environ.get("UBYHOST_ICAL_POLL_MINUTES", "60"))
-# 0415: opening the dashboard or Stays re-reads calendars checked longer ago than this. 0 turns it off.
+# 0423: opening the dashboard or Stays re-reads calendars checked longer ago than this. 0 turns it off.
 ICAL_OPEN_SYNC_MINUTES = int(os.environ.get("UBYHOST_ICAL_OPEN_SYNC_MINUTES", "10"))
 SUBMIT_SWEEP_MINUTES = int(os.environ.get("UBYHOST_SUBMIT_SWEEP_MINUTES", "10"))
 # Dead-man switches (for example healthchecks.io), each pinged after a
@@ -316,6 +316,17 @@ AWS_SECRET_ACCESS_KEY = os.environ.get("UBYHOST_AWS_SECRET_ACCESS_KEY", "").stri
 SIGNUP_ENABLED = os.environ.get("UBYHOST_SIGNUP_ENABLED", "0").lower() in ("1", "true", "yes")
 # Where the "new verified sign-up" notice goes. Defaults to the support address.
 SIGNUP_NOTIFY_EMAIL = os.environ.get("UBYHOST_SIGNUP_NOTIFY_EMAIL", "").strip() or OPERATOR_EMAIL
+
+# Brief 0411: UbyHost's own billing, phase 1 = bank transfer on an invoice.
+# Off by default; while off every host is active Standard, exactly as before.
+BILLING_ENABLED = os.environ.get("UBYHOST_BILLING_ENABLED", "0").lower() in ("1", "true", "yes")
+# Printed on UbyHost's invoices and in their QR Platba.
+BILLING_BANK_ACCOUNT = os.environ.get("UBYHOST_BILLING_BANK_ACCOUNT", "").strip()
+BILLING_IBAN = os.environ.get("UBYHOST_BILLING_IBAN", "").strip()
+# "non_payer" until UbyHost registers for VAT, then "payer".
+BILLING_VAT_STATUS = os.environ.get("UBYHOST_BILLING_VAT_STATUS", "non_payer").strip() or "non_payer"
+# How many hosts can get the founder price.
+FOUNDER_SLOTS = int(os.environ.get("UBYHOST_FOUNDER_SLOTS", "100"))
 
 # Model API (docs/plans/havel-support-assistant.md section 3; shared by Havel and
 # the guest bot). A feature is on only when it is listed in UBYHOST_AI_FEATURES
