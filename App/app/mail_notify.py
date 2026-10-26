@@ -2586,3 +2586,41 @@ def ai_budget(*, feature: str, month: str, spent: float, cap: float) -> Optional
         subject=content["subject"],
         payload={"text": content["text"], "html": content["html"], "lang": HOST_MAIL_LANGUAGE},
     )
+
+
+def build_billing_invoice(*, number: str, vs: str, amount_czk: int, due: str, period: str) -> Dict[str, str]:
+    lang = "cs"  # UbyHost invoices a Czech host in Czech
+    amount = f"{amount_czk:,}".replace(",", " ")
+    subject = _text(lang, "mail.billing_invoice.subject", number=number)
+    body = _text(lang, "mail.billing_invoice.body", number=number, amount=amount,
+                 period=period, due=_fmt_date(due), vs=vs)
+    action = _text(lang, "mail.billing_invoice.action")
+    link = _app("/predplatne")
+    footer = _signup_footer(lang)
+    text = "\n".join([body, "", f"{action}: {link}", "", "--", *footer])
+    blocks = [_block_heading(subject), _block_paragraph(body), _block_button(link, action)]
+    return {"subject": subject, "text": text,
+            "html": _shell(lang=lang, title=subject, preheader=body, blocks=blocks, footer_lines=footer)}
+
+
+def billing_invoice(
+    *, invoice_id: int, to_email: str, owner_user_id: int, number: str, vs: str,
+    amount_czk: int, due: str, period: str,
+) -> Optional[int]:
+    """One mail per invoice (key billing-invoice-<id>); the PDF is attached at send time."""
+    content = build_billing_invoice(number=number, vs=vs, amount_czk=amount_czk, due=due, period=period)
+    return mail.enqueue(
+        kind="billing_invoice",
+        idempotency_key=f"billing-invoice-{invoice_id}",
+        to_email=to_email,
+        subject=content["subject"],
+        owner_user_id=owner_user_id,
+        payload={
+            "text": content["text"],
+            "html": content["html"],
+            "lang": "cs",
+            "reply_to": config.OPERATOR_EMAIL,
+            mail.PLATFORM_INVOICE_KEY: invoice_id,
+            "attachment_name": f"{number}.pdf",
+        },
+    )
