@@ -1,6 +1,6 @@
 # 0413: Billing invoices (B2): numbering, PDF, storno, mail, 10-year purge
 
-Status: blocked
+Status: review
 Depends on: 0411 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0413-billing-invoices
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

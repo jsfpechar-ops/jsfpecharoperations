@@ -1,6 +1,6 @@
 # 0413 report (executor: Haiku 5.5)
 
-Status: blocked (brief §8 stop trigger: test_retention_alignment fails for a reason outside the brief)
+Status: review (the §8 stop trigger was resolved by the orchestrator amendment below)
 
 ## Files changed
 Steps 1 to 8 committed, one commit each (`0413 step 1` to `0413 step 8`):
@@ -29,6 +29,8 @@ Steps 1 to 8 committed, one commit each (`0413 step 1` to `0413 step 8`):
 ## Deviations
 - Command 2: tests/test_mail.py does not exist in the repo. Ran the existing mail files instead.
 - Brief Status set to `blocked`, not `review`, because the §8 stop trigger fired.
+
+- orchestrator amendment: platform_invoices cutoff in _cutoffs; test_mail.py does not exist
 
 ## Questions
 - test_retention_alignment requires every retention step to write a cutoff in its audit line. `_platform_invoice_step` returns a count without one. Should the step write a cutoff (retention.py change, outside this brief) or should the alignment test exempt platform_invoices?

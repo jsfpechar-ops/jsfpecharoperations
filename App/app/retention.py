@@ -517,6 +517,7 @@ def _cutoffs(today: date) -> Dict[str, str]:
     return {
         "guests": f"stay ended before {guests}",
         "invoices": f"issued before {invoices.retention_cutoff(today).isoformat()}",
+        "platform_invoices": f"issued before {invoices.retention_cutoff(today).isoformat()}",
         "claim_emails": f"stay ended before {contact}",
         "reservation_contacts": f"stay ended before {contact}",
         "submitter_ips": (
