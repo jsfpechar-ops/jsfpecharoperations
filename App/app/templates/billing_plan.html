@@ -1,0 +1,128 @@
+{#- 0416: the host's plan page /predplatne: order, one change at a time, cancel, invoices.
+    Invoices only, no card. Works without JavaScript. Data: routes/billing.py, app/billing_order.py. -#}
+{% extends "host_page.html" %}
+{% from "_components.html" import choice_card with context %}
+{% set nav = 'settings' %}
+{% set body_kind = 'settings' %}
+{% block title %}{{ t('billing.plan.title') }} · UbyHost{% endblock %}
+{% block page_title %}{{ t('billing.plan.title') }}{% endblock %}
+{% block back_url %}/settings{% endblock %}
+{% block back_label %}{{ t('nav.settings') }}{% endblock %}
+{% block body %}
+{% if note %}{{ ui_banner('neutral', note) }}{% endif %}
+
+{% if not acc %}
+{% call ui_section(t('billing.plan.title')) %}
+<p class="ui-sub">{{ t('billing.plan.og') }}</p>
+{% endcall %}
+
+{% elif orderable %}
+{% call ui_section(t('billing.plan.status_title')) %}
+<p class="ui-sub">{{ t('billing.plan.status.' ~ acc.status, date=trial_ends) }}</p>
+{% if acc.plan %}<p class="ui-sub">{{ t('billing.plan.ordered', plan=t('billing.plan.name.' ~ acc.plan), interval=t('billing.interval.' ~ acc.billing_interval)) }}</p>{% endif %}
+{% endcall %}
+<form method="post" action="/predplatne" data-billing-order>
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{% call ui_section(t('billing.order.plan_title')) %}
+<div class="ui-choice-cards">
+{% for plan in ('standard', 'max') %}
+{% call choice_card('plan', plan, t('billing.plan.name.' ~ plan), values.plan == plan) %}<p class="ui-sub">{{ t('billing.order.plan_' ~ plan) }}</p>{% endcall %}
+{% endfor %}
+</div>
+{% if errors.plan %}<p class="ui-error">{{ t(errors.plan) }}</p>{% endif %}
+<div class="ui-choice-cards">
+{% for interval in ('year', 'month') %}
+{{ choice_card('billing_interval', interval, t('billing.interval.' ~ interval), values.billing_interval == interval) }}
+{% endfor %}
+</div>
+{% if founder_offer %}<p class="ui-sub">{{ t('billing.order.founder') }}</p>{% endif %}
+{{ ui_check('addon_ttlock', t('billing.order.ttlock'), checked=values.addon_ttlock) }}
+{{ ui_check('addon_whitelabel', t('billing.order.whitelabel'), checked=values.addon_whitelabel) }}
+<p class="ui-sub">{{ t('billing.order.apartments', n=apartments) }}</p>
+{% endcall %}
+{% call ui_section(t('billing.order.buyer_title')) %}
+{{ ui_field('buyer_ico', t('billing.order.ico'), value=values.buyer_ico, error=t(errors.buyer_ico) if errors.buyer_ico else '', optional=true, attrs='inputmode="numeric" autocomplete="off"') }}
+<div class="ui-form-actions">{{ ui_button(t('billing.order.ares'), 'secondary', type='submit', attrs='name="do" value="ares" formnovalidate') }}</div>
+{{ ui_field('buyer_name', t('billing.order.name'), value=values.buyer_name, error=t(errors.buyer_name) if errors.buyer_name else '', attrs='autocomplete="organization"') }}
+{{ ui_field('buyer_street', t('billing.order.street'), value=values.buyer_street, error=t(errors.buyer_street) if errors.buyer_street else '', attrs='autocomplete="street-address"') }}
+{{ ui_field('buyer_city', t('billing.order.city'), value=values.buyer_city, error=t(errors.buyer_city) if errors.buyer_city else '', attrs='autocomplete="address-level2"') }}
+{{ ui_field('buyer_zip', t('billing.order.zip'), value=values.buyer_zip, error=t(errors.buyer_zip) if errors.buyer_zip else '', attrs='inputmode="numeric" autocomplete="postal-code"') }}
+{{ ui_field('buyer_dic', t('billing.order.dic'), value=values.buyer_dic, optional=true) }}
+{{ ui_field('buyer_email', t('billing.order.email'), value=values.buyer_email, type='email', error=t(errors.buyer_email) if errors.buyer_email else '', help=t('billing.order.email_help'), attrs='autocomplete="email"') }}
+{% endcall %}
+{% call ui_section(t('billing.order.total_title')) %}
+{{ ui_facts([(t('billing.order.total_' ~ values.billing_interval), '<strong class="ui-num" data-billing-total>' ~ quote.total ~ ' Kč</strong>')]) }}
+<p class="ui-sub">{{ t('billing.order.pay_note') }}</p>
+<div class="ui-form-actions">{{ ui_button(t('billing.order.submit'), 'primary', type='submit') }}</div>
+{% endcall %}
+</form>
+
+{% else %}
+{% call ui_section(t('billing.plan.current_title')) %}
+{% set addons = [] %}
+{% if acc.addon_ttlock and acc.plan != 'max' %}{% set _ = addons.append(t('billing.order.ttlock')) %}{% endif %}
+{% if acc.addon_whitelabel %}{% set _ = addons.append(t('billing.order.whitelabel')) %}{% endif %}
+{{ ui_facts([
+  (t('billing.plan.fact.plan'), t('billing.plan.name.' ~ acc.plan) ~ (' · ' ~ t('billing.plan.founder') if acc.founder and acc.billing_interval == 'year' else '')),
+  (t('billing.plan.fact.interval'), t('billing.interval.' ~ acc.billing_interval)),
+  (t('billing.plan.fact.apartments'), acc.apartments_billed | string),
+  (t('billing.plan.fact.addons'), addons | join(', ') or '—'),
+  (t('billing.plan.fact.period_end'), period_end),
+  (t('billing.plan.fact.status'), t('billing.plan.state.' ~ acc.status)),
+]) }}
+{% endcall %}
+{% if preview %}
+{% call ui_section(t('billing.change.preview_title')) %}
+<p class="ui-sub" data-billing-preview="{{ preview.when }}">{{ t('billing.change.when_' ~ preview.when ~ ('_extra' if preview.supplementary_czk else ''), before=preview.before, after=preview.after, extra=preview.supplementary) }}</p>
+<form method="post" action="/predplatne/zmena">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<input type="hidden" name="field" value="{{ preview.field }}"><input type="hidden" name="value" value="{{ preview.value }}"><input type="hidden" name="confirm" value="1">
+<div class="ui-form-actions">{{ ui_button(t('billing.change.confirm'), 'primary', type='submit') }}{{ ui_button(t('billing.change.back'), 'secondary', href='/predplatne') }}</div>
+</form>
+{% endcall %}
+{% endif %}
+{% if acc.status in ('active', 'overdue') %}
+{% call ui_section(t('billing.change.title')) %}
+{% set other_plan = 'standard' if acc.plan == 'max' else 'max' %}
+{% set other_interval = 'month' if acc.billing_interval == 'year' else 'year' %}
+{% set options = [('plan', other_plan, t('billing.change.to_plan', plan=t('billing.plan.name.' ~ other_plan))),
+                  ('billing_interval', other_interval, t('billing.change.to_interval_' ~ other_interval)),
+                  ('addon_whitelabel', '0' if acc.addon_whitelabel else '1', t('billing.change.whitelabel_' ~ ('off' if acc.addon_whitelabel else 'on')))] %}
+{% if acc.plan != 'max' %}{% set _ = options.append(('addon_ttlock', '0' if acc.addon_ttlock else '1', t('billing.change.ttlock_' ~ ('off' if acc.addon_ttlock else 'on')))) %}{% endif %}
+{% for field, value, label in options %}
+<form method="post" action="/predplatne/zmena">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<input type="hidden" name="field" value="{{ field }}"><input type="hidden" name="value" value="{{ value }}">
+<div class="ui-form-actions">{{ ui_button(label, 'secondary', type='submit') }}</div>
+</form>
+{% endfor %}
+<p class="ui-sub">{{ t('billing.change.apartments_note') }}</p>
+{% endcall %}
+{% endif %}
+{% call ui_section(t('billing.cancel.title')) %}
+{% if acc.status == 'canceling' %}
+<form method="post" action="/predplatne/obnovit"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<div class="ui-form-actions">{{ ui_button(t('billing.resume.submit'), 'primary', type='submit') }}</div></form>
+{% else %}
+<p class="ui-sub">{{ t('billing.cancel.body', date=period_end) }}</p>
+<form method="post" action="/predplatne/zrusit" data-confirm data-confirm-message="{{ t('billing.cancel.confirm', date=period_end) }}"><input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<div class="ui-form-actions">{{ ui_button(t('billing.cancel.submit'), 'danger', type='submit') }}</div></form>
+{% endif %}
+{% endcall %}
+{% endif %}
+
+{% if invoices %}
+{% call ui_section(t('billing.invoices.title')) %}
+{{ ui_table_begin([(t('billing.invoices.col.number'), ''), (t('billing.invoices.col.amount'), 'r'), (t('billing.invoices.col.state'), 'r')], label=t('billing.invoices.title')) }}
+{% for inv in invoices %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a href="/predplatne/faktury/{{ inv.id }}.pdf">{{ inv.number }}</a><span class="ui-sub"> {{ inv.issue_date | string | truncate(10, true, '') }}</span></td>
+  <td class="ui-cell-r ui-num">{{ '{:,}'.format(inv.total_haler // 100).replace(',', ' ') }} Kč</td>
+  <td class="ui-cell-r" data-card="badge">{% if inv.voided or inv.kind == 'storno' %}{{ ui_badge('neutral', t('billing.invoices.state.void')) }}{% elif inv.paid_on %}{{ ui_badge('done', t('billing.invoices.state.paid')) }}{% else %}{{ ui_badge('action', t('billing.invoices.state.open')) }}{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+<p class="ui-sub">{{ t('billing.invoices.pay_hint') }}</p>
+{% endcall %}
+{% endif %}
+{% endblock %}

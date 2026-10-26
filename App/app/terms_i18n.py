@@ -226,13 +226,23 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
         ),
         "terms.s15_title": "15. Fees and payment",
         "terms.s15_body": (
-            "If fees apply to the Host's plan, they are due as stated at signup, in-app, or in a separate "
-            "order form. Prices may change on notice for future billing periods. Unless mandatory law "
-            "requires otherwise, fees are non-refundable once a billing period has started. Failure to "
-            "pay may result in suspension or termination. Taxes (including VAT) are the Host's "
-            "responsibility where applicable. If the Service is currently offered without charge, the "
-            "Operator may introduce fees on reasonable notice; continued use after the effective date "
-            "constitutes acceptance of the new pricing."
+            "After a free trial of 30 days the Service is paid. The trial starts when the Host connects "
+            "UbyPort or seven days after sign-up, whichever comes first. The Host chooses a plan and a "
+            "monthly or yearly billing period on the plan page; prices per active apartment are "
+            "published at ubyhost.com/cenik. The Operator invoices each billing period in advance; "
+            "invoices are sent by e-mail and are payable by bank transfer within 14 days. The Operator "
+            "is not a VAT payer; if that changes, prices are stated with VAT from the next billing "
+            "period. An added apartment is billed from the day it becomes active: on a yearly plan by a "
+            "supplementary invoice for the rest of the period, on a monthly plan from the next invoice. "
+            "A lower plan, fewer apartments or a change from yearly to monthly takes effect from the "
+            "next billing period. The Host may cancel at any time; the plan continues to the end of the "
+            "paid period, and a started period is not refunded unless mandatory law requires otherwise. "
+            "If an invoice is not paid when due, the Operator sends reminders; fourteen days after the "
+            "due date the Account becomes read-only until the invoice is paid. Guest details already "
+            "submitted continue to be reported to the police while the Account is read-only. The "
+            "Operator may change prices for future billing periods with at least 30 days' notice. A "
+            "founder price, where granted, stays for as long as the Host keeps the yearly plan without "
+            "interruption."
         ),
         "terms.s16_title": "16. Disclaimer of warranties",
         "terms.s16_body": (
@@ -568,14 +578,23 @@ TERMS_STRINGS: Dict[str, Dict[str, str]] = {
             "Ubytovatel musí před ostrým provozem ověřit nastavení prostředí. Rozlišení demo a produkce "
             "je na Ubytovateli."
         ),
-        "terms.s15_title": "15. Poplatky a platby",
+        "terms.s15_title": "15. Ceny a platby",
         "terms.s15_body": (
-            "Pokud se účtují poplatky, splatí se dle údajů při registraci, v aplikaci nebo v objednávce. "
-            "Ceny se mohou pro budoucí období změnit s předchozím oznámením. Poplatky jsou nevratné po "
-            "zahájení fakturačního období, ledaže kogentní zákon stanoví jinak. Nezaplacení může vést k "
-            "pozastavení nebo ukončení. Daně (včetně DPH) nese Ubytovatel. Je-li Služba nyní bezplatná, "
-            "Provozovatel může zavést poplatky s přiměřeným předstihem; další používání po účinnosti "
-            "znamená souhlas."
+            "Po 30denní zkušební době zdarma je Služba placená. Zkušební doba začíná připojením "
+            "UbyPortu, nejpozději však sedm dní po registraci. Ubytovatel si v přehledu předplatného "
+            "zvolí plán a měsíční nebo roční období; ceny za aktivní ubytování jsou zveřejněny na "
+            "ubyhost.com/cenik. Provozovatel fakturuje každé období předem; faktury posílá e-mailem se "
+            "splatností 14 dní a platí se převodem. Provozovatel není plátcem DPH; pokud se jím stane, "
+            "ceny se od dalšího období uvádějí s DPH. Přidané ubytování se účtuje ode dne, kdy je "
+            "aktivní: u ročního plánu doplatkovou fakturou za zbytek období, u měsíčního od další "
+            "faktury. Nižší plán, méně ubytování nebo přechod z ročního na měsíční platí od dalšího "
+            "období. Ubytovatel může předplatné kdykoli zrušit; plán trvá do konce zaplaceného období a "
+            "za započaté období se peníze nevracejí, ledaže kogentní předpis stanoví jinak. Není-li "
+            "faktura zaplacena včas, Provozovatel pošle připomínky; čtrnáct dní po splatnosti je Účet "
+            "jen pro čtení, dokud faktura není zaplacena. Hosty, kteří už údaje vyplnili, hlásíme "
+            "cizinecké policii i po tuto dobu. Provozovatel může ceny pro budoucí období změnit s "
+            "oznámením nejméně 30 dní předem. Zakladatelská cena, byla-li přiznána, platí, dokud "
+            "Ubytovatel bez přerušení pokračuje v ročním plánu."
         ),
         "terms.s16_title": "16. Vyloučení záruk",
         "terms.s16_body": (

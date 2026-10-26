@@ -388,6 +388,22 @@ def _job_push() -> None:
     _log_run("push", started, True, summary)
 
 
+def _job_billing() -> None:
+    """UbyHost's own billing, daily at 06:00 (0414, 0417): trials, periods, invoices, dunning."""
+    from . import billing_jobs
+
+    started = time.perf_counter()
+    try:
+        counts = billing_jobs.run()
+    except Exception:
+        log.exception("billing run failed")
+        _job_failed("billing")
+        _log_run("billing", started, False)
+        return
+    _job_ok("billing")
+    _log_run("billing", started, True, counts)
+
+
 def _job_stay_fee_mail() -> None:
     """Seal clean stay-fee periods and email the reports (0223). Runs daily at 07:00."""
     started = time.perf_counter()
@@ -484,6 +500,10 @@ def start() -> bool:
     )
     _scheduler.add_job(
         _job_stay_fee_mail, "cron", hour=7, minute=0, id="stay_fee_mail",
+        max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_billing, "cron", hour=6, minute=0, id="billing",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(

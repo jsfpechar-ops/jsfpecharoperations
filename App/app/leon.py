@@ -166,6 +166,16 @@ def looks_dangerous(text: str) -> bool:
     return _DANGER.search(str(text or "")) is not None
 
 
+def plan_multiplier(apartment_id: int) -> int:
+    """0415: the host's plan scales the cap: 0 paused, 1 Standard, 3 Max."""
+    from . import billing
+
+    row = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
+    if not row or row["owner_user_id"] is None:
+        return 1
+    return billing.entitlements(int(row["owner_user_id"])).ai_multiplier
+
+
 def door_cap(door: str) -> int:
     """Lifetime cap of model-answered messages per conversation; the env overrides the constants."""
     name, default = ("UBYHOST_LEON_STAY_MAX", STAY_MAX) if door == "stay" else ("UBYHOST_LEON_QR_MAX", QR_MAX)
@@ -590,7 +600,7 @@ def _answer(chat: Dict[str, Any], text: str, *, level: str, property_name: str, 
     reason = ""
     if not cards:
         reason = "no_guide"
-    elif used >= door_cap(str(chat.get("door") or "qr")):
+    elif used >= door_cap(str(chat.get("door") or "qr")) * plan_multiplier(apartment_id):
         reason = "cap"
     else:
         history = _history(chat_id)

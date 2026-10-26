@@ -396,6 +396,13 @@ def _template_door_codes_enabled() -> bool:
     return ttlock.enabled()
 
 
+def _template_billing_banner(owner_user_id):
+    """0414: the one billing line for host pages, or None (billing off, OG host)."""
+    from . import billing_trial
+
+    return billing_trial.banner(owner_user_id)
+
+
 def _template_section_tabs(request: Request, section: str, current: str = "") -> list:
     """0099: the sub-page tabs of one rail section, as (href, label key, current).
 
@@ -458,7 +465,7 @@ def _template_page_tabs(context) -> list:
         if str(context.get("next_path") or "").startswith("/invoices"):
             return _template_section_tabs(request, "invoices", "settings")
         return _template_section_tabs(request, "properties", "business")
-    if nav in ("settings", "privacy_requests", "users", "incidents", "operations", "funnel"):
+    if nav in ("settings", "privacy_requests", "users", "incidents", "operations", "funnel", "billing_admin"):
         current = (
             "settings" if nav == "settings" and path == "/settings"
             else "archive" if path == "/settings/archived"
@@ -474,6 +481,18 @@ templates.env.globals["section_tabs"] = _template_section_tabs
 templates.env.globals["page_tabs"] = _template_page_tabs
 templates.env.globals["passkeys_enabled"] = _template_passkeys_enabled
 templates.env.globals["door_codes_enabled"] = _template_door_codes_enabled
+templates.env.globals["billing_banner"] = _template_billing_banner
+
+
+def _template_billing_on() -> bool:
+    """0416: whether UbyHost's own billing is switched on (the /predplatne link)."""
+    from . import billing
+
+    return billing.enabled()
+
+
+templates.env.globals["billing_on"] = _template_billing_on
+
 # 0230: the five-step story, the same words on every host page.
 from . import workflow  # noqa: E402
 
