@@ -69,14 +69,17 @@ UbyHost uses the EU host `https://euapi.ttlock.com` for every call [G][CD].
 | `30007` | Monthly call limit exceeded; calls are refused until the 1st of the month, Beijing time [O, TTLock 2026-10-12]. Upgrade: Developer Account, Basic Information, Developer Version | Same as UbyHost's own `budget` stop (0069) |
 | `80000` | `date` off by more than 5 minutes | Owner alert (server clock), retry later |
 | `-2012` | Lock not connected to any gateway | Retry with backoff. For a delete, host mail after 1 h |
-| `-3037` | Gateway busy, or offline and not yet noticed by the server [FAQ 5.4] | Retry with backoff |
+| `-3037` | Official list (owner, 2026-10-26): the lock is busy. [FAQ 5.4] also links it to a gateway that went offline unnoticed | Retry with backoff |
+| `-3002`, `-3003` | Gateway offline / gateway busy | Retry with backoff (unmapped today, so `transient`) |
+| `-3036` | Lock offline | Retry with backoff (unmapped today, so `transient`) |
+| `-1003`, `-2025`, `-4043`, `-4037`, `30008`, `-3006`, `-2032`, `-3045` | Lock missing, lock frozen, function not supported, gateway missing, wrong region host, passcode length, passcode too simple, unsupported digit | Permanent, but unmapped in `ERROR_KINDS`, so retried as `transient`. Known gap |
 | `-4056` | Lock storage full | Host mail |
 | `90000`, `1` | TTLock internal error, generic failure | Retry with backoff |
 | `-3` | Invalid parameter | Log, no retry (a UbyHost bug) |
 | `-1026` | Official (TTLock support, 2026-10-12): "Passcode with this validity period has been generated before and deleted." A type-3 code for exactly this lock and period was made and then deleted; that period can never get a type-3 code again. Seen on staging 2026-10-08 | Do not retry `get`. Worker calls `add`. Host mail is informational (0067). See the plan §6 |
 | `-3008` | A passcode that has never been used on the lock cannot be changed (confirmed by TTLock support 2026-10-12: a random code does not exist on the lock until first use). Once typed, a random code becomes a custom code and can be changed or deleted | UbyHost does not call `change` on a type-3 code |
 
-Source for every code: [X], table "System Error Codes", plus [FAQ] where marked. The reactions are UbyHost design, not TTLock text.
+Source for every code: [X], table "System Error Codes", plus [FAQ] where marked. The official "API Error Codes" list, pasted by the owner 2026-10-26, adds the gateway and lock codes above. The reactions are UbyHost design, not TTLock text.
 
 ## Random passcode (get)
 
@@ -164,7 +167,7 @@ Learned 2026-10-26. Never use the TTLock developer client secret or a host login
 | `locks ID` | Locks that account sees. The lock id must be in the answer, otherwise the host has not shared it. |
 | `gateway ID LOCK` | Gateway test, up to 35 s. A lock time means it works. |
 
-Error meaning: `-2012` the lock is not paired under any gateway (the gateway being online is not enough: in the TTLock app, Gateway, the G2, the lock must be listed under it; also try the G2 within 1 to 2 m, walls and metal doors cut range); `-3037` gateway offline or busy; `10011` login expired (the app re-logs in by itself, see Auth and tokens).
+Error meaning: `-2012` the lock is not paired under any gateway (the gateway being online is not enough: in the TTLock app, Gateway, the G2, the lock must be listed under it; also try the G2 within 1 to 2 m, walls and metal doors cut range); `-3002` gateway offline; `-3003` gateway busy; `-3036` lock offline (batteries); `-3037` lock busy, try again; `10011` refresh token invalid (see Error codes). Full table: Error codes above.
 
 Docker keeps only 5 x 10 MB per service, so older lines are gone ([OPERATIONS: Logs](OPERATIONS.md#logs)).
 

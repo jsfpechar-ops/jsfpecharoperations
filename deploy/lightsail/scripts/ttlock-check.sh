@@ -27,7 +27,7 @@ case "${cmd}" in
     : "${2:?usage: ttlock-check.sh gateway ACCOUNT_ID LOCK_ID}"
     : "${3:?usage: ttlock-check.sh gateway ACCOUNT_ID LOCK_ID}"
     docker compose exec -T worker python -c "import sys; from app import ttlock; print('lock time (ms):', ttlock.query_lock_time(int(sys.argv[1]), sys.argv[2]))" "$2" "$3" 2>&1 | grep -E "errcode|TTLockError|lock time" || true
-    echo "-2012 = lock not under any gateway | -3037 = gateway offline/busy | 10011 = login expired"
+    echo "-2012 lock not under any gateway | -3002 gateway offline | -3003 gateway busy | -3036 lock offline | -3037 lock busy | 10011 refresh token invalid"
     ;;
   *)
     sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'
