@@ -1,3 +1,4 @@
+
 # UbyHost × Hostex — Integration & Launch Plan
 
 *Execution playbook for the Hostex partnership: sync integration, the Kompletně product, the white-label front-end, runbooks and ready-to-send artifacts. Companion to the "UbyHost — Pricing Strategy" canvas (pricing rules, tiers and unit economics live there). All Hostex facts verified October 2026 against api-doc.hostex.io and the Hostex support thread (Alex + Airi Assistant).*
@@ -219,8 +220,44 @@ Contract clause: account handover — the customer keeps their Hostex account, c
 **Verdict — staged engines behind the adapter (§4.3):**
 1. **Launch Kompletně on Hostex** — cheaper under ~20–30 units, full UI/messaging/lock-codes exist, FE build stays a re-skin; validates the product with minimal engineering.
 2. **Above ~50 connected units, swap the backend to Channex behind the adapter** — FE-1/FE-2 becomes the real product surface (own calendar, reservations, inbox, ARI push model, revisions ingestion); Kompletně gross margin → ~90 %+; no partnership gatekeeper; lock layer simplifies to native TTLock everywhere (drain rule only for legacy Hostex migrants). Channex work: adapter + revisions feed + ARI engine + per-host channel authorization embed + certification on staging first.
-3. **Rentals United** = enterprise fallback if channel depth/SLAs ever dominate budget (bills the PMS partner; sales-led pricing). **Beds24** = not engine material.
+3. **Rentals United** = enterprise fallback if channel depth/SLAs ever dominate budget (bills the PMS partner; sales-led pricing). **Beds24** = not engine material. *(Both lines revised in §12.1 — wider market scan, Oct 2026.)*
 4. Risk: Channex is smaller/younger than Hostex — mitigations: free staging (test deeply before migrating), certification, adapter keeps the swap-back one config away.
+
+### 12.1 Wider market scan — the full engine landscape (Oct 2026)
+
+Deep sweep of every vendor that sells channel-manager connectivity *to software builders* (resale model, API-first, white-label-capable). Result: the category has more options than the first pass found — one much cheaper than Channex, one premium with public pricing, one that quietly qualifies as a whole-stack fallback.
+
+**NoBeds (nobeds.com)** — JUST TRADE Ltd, Lithuania, founded 2014, unfunded/bootstrapped. Plans: Free €0 (10-min sync, ≤10 rooms, 3 channels) · Premium €15/mo (1-min sync, unlimited rooms, 30 channels) · **API €99/mo flat — up to 1,000 properties per subscription**, incl. REST API (Swagger at api.nobeds.com), webhooks (HTTP POST on booking create/update/cancel) + SSE, unified messaging API (Booking.com/Airbnb in one endpoint), MCP server, white-label "custom branding support", per-property `api_token`. Direct channels: Booking.com, Airbnb, Expedia, Agoda, Trip.com, Google Hotels, Hostelworld + iCal (~8 total — covers the CZ market core). Bookings searchable by guest name/e-mail → guest contact data is present; even ships smart-lock PIN generation (Yale, Nuki, Igloohome, Schlage).
+- **Yes — NoBeds is the cheapest engine found, by a wide margin.** €99/mo flat: 100 units ≈ €1/unit, 500 units ≈ €0.20/unit. Cheaper than Channex from the first unit, cheaper than everything at any scale.
+- **But it's priced like a tool, not an engine — and the risk profile shows it.** ~8 direct channels vs Channex's 77; white-label is one bullet, not a program; no certification track; and the review record is genuinely mixed: "disappearing bookings, many MANY bugs, no support", "we left Nobeds one month after starting out" alongside happy small-portfolio users. A tiny unfunded vendor is a business-continuity risk for a pipeline with a 3-day legal deadline.
+- **Role: shadow-engine candidate only.** €99/mo buys the entire experiment — run a 60–90-day shadow sync against Hostex behind the adapter before ever routing a real customer through it. If it survives: candidate for a future budget SKU tier. If not: no harm done.
+
+**NextPax (nextpax.com — Supply API)** — the premium engine, and unlike Rentals United it publishes prices: **$3.60/unit/mo (annual billing, from 50+ units) for the White Label API plan**. 100+ directly integrated OTAs (Booking.com, Airbnb, Vrbo, Expedia, Trip.com, HomeToGo…), preferred/elite partner status at Booking.com, Expedia, Vrbo, Airbnb, Trip.com; one API covering content, rates, availability, reservations, messaging, reviews, promotions, payments; GDS via Reconline; channel takeover of existing listings. Cost: 100 units ≈ $360, 500 ≈ $1,800 → ~2–5× Channex. **Role: named premium fallback** — enterprise-credible, public pricing, deeper channel/messaging surface than Channex; relevant only if channel breadth (Vrbo, GDS, full content distribution) becomes a sales argument at scale.
+
+**WebBookingPro (webbookingpro.com)** — Balkan full-stack platform with a PMS-partner offer: **€1.5/unit/mo (capped €10/connection/property), min €100/mo**; 25+ direct channels + ~400 via hubs; white-label "build the entire experience in your own UI"; master accounts per property. Its security copy literally reads "Channex follows industry-standard security practices" — almost certainly Channex-powered underneath. Economics: ≈ Channex at 100 units (€150 vs $180), strictly worse at 500 (€750 vs $380). **Verdict: a Channex reseller with a markup — go to Channex directly.**
+
+**Beds24 — revised verdict (upgraded from "not engine material").** Beds24 *does* run a real white-label reseller program: run the whole system under your own brand with full ownership of customers, marketing, sales, billing and support; API-based white-label CM integration. Usage pricing: base property €15.50/mo · +€3/property · +€1/unit · +€0.55/channel link · private label €19/mo. Strong REST API v2 (token auth, scopes, credit rate limits); premium/preferred partner at Booking.com, Airbnb, Vrbo, Expedia. At 100 units ≈ €300–430/mo — between Channex and NextPax. Trade-offs: engineer-grade UI (fine for us, a minus for end customers), ticket/forum support, pull-based rather than webhook-first. **New role: whole-stack white-label fallback** — if the Hostex partnership (white-label permission or wholesale pricing) ever falls through, the Kompletně architecture can be rebuilt on Beds24's reseller program at comparable cost, lock codes staying native.
+
+**Rejected after review:** WuBook/WooDoo (Italy — genuine partner API, 100+ OTAs, but €5–7/channel/property/mo → €1,500+/mo at 100 single-unit VRs; hotel economics, not VR) · Octorate (160+ channels, white-label only at enterprise tier, quote-led, Italian market DNA) · STAAH (sells direct to properties, not white-label) · Tokeet ($179.90/mo per 10 rentals — PMS pricing, not engine pricing) · SiteMinder (enterprise, hotel-first) · VRBookings/BookingPal-style platforms (tour-operator/agency DNA, not OTA-ARI engines).
+
+**Extended cost curve (monthly, ~23 Kč/€/$):**
+
+| Engine | 100 units | 500 units | White-label | Direct channels | Vendor risk |
+|---|---|---|---|---|---|
+| Hostex (Pro) | ~$700 | ~$3,500 | ⚠️ by permission | ~30 | low |
+| **NoBeds API** | **€99 flat** | **€99 flat** | ⚠️ "branding support" | ~8 | **high** |
+| WebBookingPro | €150 | €750 | ✅ own UI | 25 + hubs | medium |
+| **Channex** | **$180** | **$380** | ✅ the product | 77 | medium |
+| Beds24 | ~€300–430 | ~€1,500 | ✅ reseller program | 60+ | low |
+| NextPax WL API | $360 | $1,800 | ✅ | 100+ | low |
+| Rentals United | opaque (premium) | opaque | ✅ | 90+ | low |
+
+**Verdict update (supersedes §12 point 3):**
+1. **Launch Kompletně on Hostex** — unchanged.
+2. **Channex at ~50+ units** — unchanged; still the best risk-adjusted engine ($0.50/unit, 77 channels, free staging, native reseller billing).
+3. **NoBeds is the price floor of the entire market** — and precisely because of that, treat it as a €99/mo experiment: shadow-test 60–90 days behind the adapter, then decide. It can power a budget tier; it must never be the first production swap, because for a compliance pipeline vendor reliability *is* the product.
+4. **NextPax replaces Rentals United as the named premium fallback** (public pricing, deeper channel set, messaging/reviews/content in one API); RU remains the last resort.
+5. **Beds24 upgraded to whole-stack fallback** — the exit route for Kompletně if the Hostex partnership fails, at comparable cost and with the adapter unchanged.
 
 ---
 
