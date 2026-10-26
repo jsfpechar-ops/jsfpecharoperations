@@ -465,7 +465,7 @@ def _template_page_tabs(context) -> list:
         if str(context.get("next_path") or "").startswith("/invoices"):
             return _template_section_tabs(request, "invoices", "settings")
         return _template_section_tabs(request, "properties", "business")
-    if nav in ("settings", "privacy_requests", "users", "incidents", "operations", "funnel"):
+    if nav in ("settings", "privacy_requests", "users", "incidents", "operations", "funnel", "billing_admin"):
         current = (
             "settings" if nav == "settings" and path == "/settings"
             else "archive" if path == "/settings/archived"
