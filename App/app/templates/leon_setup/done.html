@@ -1,0 +1,19 @@
+{% extends "leon_setup/_layout.html" %}
+{% block wizard_content %}
+<div class="ui-banner setup-wizard-celebrate" role="status" data-setup-celebrate="done">
+  <span class="setup-wizard-confetti" aria-hidden="true">{% for n in range(12) %}<i></i>{% endfor %}</span>
+  <span class="setup-wizard-celebrate-mark" aria-hidden="true">✓</span>
+  <div class="grow setup-wizard-celebrate-copy">
+    <strong class="setup-wizard-celebrate-title">{{ t('leon_setup.done.title') }}</strong>
+    <span>{{ t('leon_setup.done.text') }}</span>
+  </div>
+</div>
+<ul class="setup-wizard-checklist host-property-grid">
+  <li><a class="host-property-card" href="/apartments/{{ apartment.id }}/guide/qr"><div><strong>{{ t('guest_guide.qr.link') }}</strong></div></a></li>
+  <li><a class="host-property-card" href="/apartments/{{ apartment.id }}/guide"><div><strong>{{ t('leon_page.guide_link') }}</strong></div></a></li>
+  <li><a class="host-property-card" href="/apartments/{{ apartment.id }}/leon"><div><strong>{{ t('guest_guide.leon.open') }}</strong></div></a></li>
+</ul>
+{% endblock %}
+{% block wizard_actions %}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}">{{ t('leon_setup.done.back') }}</a>
+{% endblock %}

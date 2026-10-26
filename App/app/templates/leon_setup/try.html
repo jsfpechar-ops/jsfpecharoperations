@@ -1,0 +1,32 @@
+{% extends "leon_setup/_layout.html" %}
+{#- 0404 placeholder: 0405 fills this step with the test chat. -#}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('leon_setup.try.lede') }} {{ t('leon_setup.try.limit', n=try_max) }}</p>
+{% if not live %}
+<p class="setup-wizard-instruction">{{ t('leon_page.not_live') }}</p>
+{% else %}
+<div class="havel-card" data-leon-try data-leon-try-url="/apartments/{{ apartment.id }}/leon/setup/try">
+  <ol data-leon-try-log aria-live="polite">
+    {% if asked %}<li class="havel-bubble" data-role="host">{{ asked }}</li>
+    <li class="havel-answer" data-role="leon">{{ answer.text }}{% if answer.would_ask %}<p class="ui-sub">{{ t('leon_setup.try.would_ask') }}</p>{% endif %}</li>{% endif %}
+  </ol>
+  <form method="post" action="/apartments/{{ apartment.id }}/leon/setup/try" class="havel-composer" data-leon-try-form>
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <label for="leon-try-input">{{ t('leon_setup.try.label') }}</label>
+    <input class="havel-input" id="leon-try-input" name="message" maxlength="500" autocomplete="off" placeholder="{{ t('leon_setup.try.placeholder') }}"{% if try_left <= 0 %} disabled{% endif %} required>
+    <button class="ui-btn ui-btn-secondary" type="submit">{{ t('leon_setup.try.send') }}</button>
+  </form>
+  {% if try_left <= 0 %}<p class="ui-sub" data-leon-try-cap>{{ t('leon_setup.try.cap') }}</p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}
+{% block wizard_actions %}
+{% if live %}
+<form method="post" action="/apartments/{{ apartment.id }}/leon/setup">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<button class="ui-btn ui-btn-primary" type="submit" name="action" value="finish">{{ t('leon_setup.finish') }}</button>
+</form>
+{% else %}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}/leon/setup/cards">{{ t('leon_setup.step.cards') }}</a>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "leon_setup/_layout.html" %}
+{% block wizard_content %}
+<p class="setup-wizard-lede">{{ t('leon_setup.cards.lede') }}</p>
+{% if live %}
+<p class="setup-wizard-instruction">{{ t('leon_setup.cards.live') }}</p>
+{% else %}
+<p class="setup-wizard-instruction">{{ t('guest_guide.not_live', done=progress.must_have_done, total=progress.must_have_total) }}</p>
+{% endif %}
+{% if progress.check %}{{ ui_banner('attention', t('guest_guide.check_waiting')) }}{% endif %}
+{% if open_cards %}
+{{ ui_table_begin([(t('guest_guide.col.card'), ''), (t('guest_guide.col.state'), 'r')], label=t('leon_setup.step.cards')) }}
+{% for card in open_cards %}
+{% set card_title = card.title if card.kind == 'custom' else t('guest_guide.kind.' ~ card.kind ~ '.title') %}
+<tr class="ui-row clickable-row" data-href="/apartments/{{ apartment.id }}/guide/{{ card.id }}?from=leon" tabindex="0" role="link" aria-label="{{ card_title }}">
+  <td class="ui-cell-first" data-card="primary"><a href="/apartments/{{ apartment.id }}/guide/{{ card.id }}?from=leon">{{ card_title }}</a></td>
+  <td class="ui-cell-r" data-card="badge">{% if card.state == 'check' %}{{ ui_badge('attention', t('guest_guide.state.check')) }}{% else %}{{ ui_badge('action', t('guest_guide.state.missing')) }}{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% endif %}
+<div class="ui-form-actions">{{ ui_button(t('guest_guide.quick.link'), 'secondary', href='/apartments/' ~ apartment.id ~ '/guide/quick') }}{{ ui_button(t('leon_page.guide_link'), 'secondary', href='/apartments/' ~ apartment.id ~ '/guide') }}</div>
+{% endblock %}
+{% block wizard_actions %}
+{% if next_id %}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}/guide/{{ next_id }}?from=leon">{{ t('leon_setup.cards.next') }}</a>
+{% else %}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}/leon/setup/try">{{ t('leon_setup.next') }}</a>
+{% endif %}
+{% endblock %}

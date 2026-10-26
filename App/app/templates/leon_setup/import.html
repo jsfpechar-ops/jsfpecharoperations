@@ -1,0 +1,50 @@
+{% extends "leon_setup/_layout.html" %}
+{% macro history() %}
+{{ ui_table_begin([(t('guest_guide.import.col.source'), ''), (t('guest_guide.import.col.state'), 'r')], label=t('guest_guide.import.title')) }}
+{% for row in imports %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary">{{ t('guest_guide.import.source.' ~ row.source) }}<span class="ui-sub"> {{ row.created_at[:10] }}</span>{% if row.status == 'failed' and (row.error or '').startswith('merge') %}<p class="ui-sub">{{ t('guest_guide.import.merge_failed') }}</p>{% endif %}</td>
+  <td class="ui-cell-r" data-card="badge">{% if row.status in ('queued', 'running') %}{{ ui_badge('action', t('guest_guide.import.state.running')) }}{% elif row.status == 'failed' %}{{ ui_badge('attention', t('guest_guide.import.state.failed')) }}{% elif row.status == 'done' %}{{ ui_badge('action', t('guest_guide.import.state.drafting')) }}{% else %}{{ ui_badge('done', t('guest_guide.import.state.done')) }}{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% endmacro %}
+{% block wizard_content %}
+{% if not import_on %}
+<p class="setup-wizard-lede">{{ t('leon_setup.import.off') }}</p>
+{% elif import_busy %}
+<p class="setup-wizard-instruction" data-leon-import-wait>{{ t('leon_setup.import.waiting') }}</p>
+{% if imports %}{{ history() }}{% endif %}
+<p><a class="ui-btn ui-btn-secondary" href="/apartments/{{ apartment.id }}/leon/setup/import">{{ t('wizard.try_it.check_again') }}</a></p>
+{% elif sources %}
+<p class="setup-wizard-lede">{{ t('leon_setup.import.lede') }}</p>
+<form method="post" action="/apartments/{{ apartment.id }}/guide/import" id="leon-setup-import">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<input type="hidden" name="next" value="leon">
+{% if 'booking' in sources %}{{ ui_field('leon-setup-booking', t('guest_guide.import.booking_url'), name='booking_url', type='url', placeholder='https://www.booking.com/hotel/cz/...', attrs='maxlength="2048" inputmode="url" autocomplete="off"') }}{% endif %}
+{% if 'airbnb' in sources %}{{ ui_field('leon-setup-airbnb', t('guest_guide.import.airbnb_url'), name='airbnb_url', type='url', placeholder='https://www.airbnb.com/rooms/...', attrs='maxlength="2048" inputmode="url" autocomplete="off"') }}{% endif %}
+</form>
+{% if imports %}{{ history() }}{% endif %}
+{% else %}
+<p class="setup-wizard-instruction">{{ t('leon_setup.import.result', n=drafts) }}</p>
+{% if imports %}{{ history() }}{% endif %}
+{% endif %}
+{% endblock %}
+{% block wizard_actions %}
+{% if not import_on %}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}/leon/setup/cards">{{ t('leon_setup.next') }}</a>
+{% elif import_busy %}
+<form method="post" action="/apartments/{{ apartment.id }}/leon/setup">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<button class="ui-btn ui-btn-primary" type="submit" name="action" value="skip_import">{{ t('leon_setup.import.meanwhile') }}</button>
+</form>
+{% elif sources %}
+<form method="post" action="/apartments/{{ apartment.id }}/leon/setup">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+<button class="ui-btn ui-btn-secondary setup-wizard-skip" type="submit" name="action" value="skip_import">{{ t('leon_setup.import.by_hand') }}</button>
+</form>
+<button class="ui-btn ui-btn-primary" type="submit" form="leon-setup-import">{{ t('leon_setup.import.button') }}</button>
+{% else %}
+<a class="ui-btn ui-btn-primary" href="/apartments/{{ apartment.id }}/leon/setup/cards">{{ t('leon_setup.import.check_cards') }}</a>
+{% endif %}
+{% endblock %}

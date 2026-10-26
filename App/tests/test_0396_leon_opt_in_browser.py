@@ -50,6 +50,7 @@ def test_overview_card_and_leon_page_at_390px(live_server, browser, host, base, 
         page.locator("#leon-terms").check()
         page.get_by_role("button", name="Switch Leon on").click()
         page.wait_for_load_state()
+        page.goto(f"{base}/apartments/{apt}/leon?lang=en")
         assert "Leon is on and starts once your guest guide is live" in page.content()
         assert _no_overflow(page)
         page.screenshot(path=str(OUT / "leon-on-390.png"), full_page=True)

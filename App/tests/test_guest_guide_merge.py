@@ -257,3 +257,8 @@ def test_an_unexpected_crash_counts_one_attempt_and_the_next_row_still_merges(ws
     assert merged == 1
     assert status(first) == {"status": "done", "error": "merge:error:1", "raw_json": status(first)["raw_json"]}
     assert status(second)["status"] == "used"
+
+
+def test_rule_six_combines_both_listings():
+    # 0403: the merge keeps details from both listings, not only the earlier text.
+    assert "Combine both" in gm.SYSTEM_RULES

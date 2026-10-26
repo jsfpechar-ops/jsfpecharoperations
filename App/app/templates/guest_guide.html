@@ -11,6 +11,35 @@
 {% block secondary_actions %}{{ ui_button(t('guest_guide.quick.link'), 'secondary', href=base_url ~ '/quick') }} {{ ui_button(t('guest_guide.qr.link'), 'secondary', href=base_url ~ '/qr') }} {{ ui_button(t('guest_questions.link', n=questions_open), 'secondary', href=base_url ~ '/questions') }}{% endblock %}
 {% block primary_action %}{% if next_id %}{{ ui_button(t('guest_guide.continue'), 'primary', href=base_url ~ '/' ~ next_id) }}{% endif %}{% endblock %}
 {% block body %}
+{% macro import_section() %}
+{% call ui_section(t('guest_guide.import.title'), id='import') %}
+{% if not import_on %}
+<p class="ui-sub">{{ t('guest_guide.import.off') }}</p>
+{% else %}
+{% if import_busy %}{{ ui_banner('neutral', t('guest_guide.import.running')) }}{% endif %}
+{% if import_drafts %}<p class="ui-sub">{{ t('guest_guide.import.drafted', n=import_drafts) }}</p>{% endif %}
+<p class="ui-sub">{{ t('guest_guide.import.help') }} {{ t('guest_guide.import.left', n=import_left) }}</p>
+{% if import_left > 0 and not import_busy %}
+<form method="post" action="{{ base_url }}/import">
+<input type="hidden" name="_csrf" value="{{ csrf_token }}">
+{% if 'booking' in import_sources %}{{ ui_field('guide-import-booking', t('guest_guide.import.booking_url'), name='booking_url', type='url', placeholder='https://www.booking.com/hotel/cz/...', attrs='maxlength="2048" inputmode="url" autocomplete="off"') }}{% endif %}
+{% if 'airbnb' in import_sources %}{{ ui_field('guide-import-airbnb', t('guest_guide.import.airbnb_url'), name='airbnb_url', type='url', placeholder='https://www.airbnb.com/rooms/...', attrs='maxlength="2048" inputmode="url" autocomplete="off"') }}{% endif %}
+<div class="ui-form-actions">{{ ui_button(t('guest_guide.import.button'), 'secondary', type='submit', icon_name='download') }}</div>
+</form>
+{% endif %}
+{% if imports %}
+{{ ui_table_begin([(t('guest_guide.import.col.source'), ''), (t('guest_guide.import.col.state'), 'r')], label=t('guest_guide.import.title')) }}
+{% for row in imports %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary">{{ t('guest_guide.import.source.' ~ row.source) }}<span class="ui-sub"> {{ row.created_at[:10] }}</span>{% if row.status == 'failed' and (row.error or '').startswith('merge') %}<p class="ui-sub">{{ t('guest_guide.import.merge_failed') }}</p>{% endif %}</td>
+  <td class="ui-cell-r" data-card="badge">{% if row.status in ('queued', 'running') %}{{ ui_badge('action', t('guest_guide.import.state.running')) }}{% elif row.status == 'failed' %}{{ ui_badge('attention', t('guest_guide.import.state.failed')) }}{% elif row.status == 'done' %}{{ ui_badge('action', t('guest_guide.import.state.drafting')) }}{% else %}{{ ui_badge('done', t('guest_guide.import.state.done')) }}{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% endif %}
+{% endif %}
+{% endcall %}
+{% endmacro %}
 {% set topic_options = [] %}{% for topic in topics %}{% set _ = topic_options.append((topic, t('guest_guide.topic.' ~ topic))) %}{% endfor %}
 {% if progress.live %}
 {{ ui_banner('neutral', t('guest_guide.live')) }}
@@ -20,6 +49,7 @@
 {% if progress.check %}{{ ui_banner('attention', t('guest_guide.check_waiting')) }}{% endif %}
 {% if quick_next %}{{ ui_banner('neutral', t('guest_guide.quick.banner'), t('guest_guide.quick.start'), base_url ~ '/quick') }}{% endif %}
 {% if usage.leon or usage.languages %}<p class="ui-sub" data-guide-usage>{% if usage.leon %}{{ t('guest_guide.usage.leon', n=usage.leon) }}{% endif %}{% if usage.leon and usage.languages %} · {% endif %}{% if usage.languages %}{{ t('guest_guide.usage.languages', langs=usage.languages | join(', ') | upper) }}{% endif %}</p>{% endif %}
+{% if import_first %}{{ import_section() }}{% endif %}
 
 {% for topic, cards in groups %}
 {% call ui_section(t('guest_guide.topic.' ~ topic), id='topic-' ~ topic) %}
@@ -43,32 +73,7 @@
 <div class="ui-form-actions">{{ ui_button(t('guest_guide.leon.open'), 'secondary', href='/apartments/' ~ apartment.id ~ '/leon') }}</div>
 {% endcall %}
 {% endif %}
-{% call ui_section(t('guest_guide.import.title'), id='import') %}
-{% if not import_on %}
-<p class="ui-sub">{{ t('guest_guide.import.off') }}</p>
-{% else %}
-{% if import_busy %}{{ ui_banner('neutral', t('guest_guide.import.running')) }}{% endif %}
-{% if import_drafts %}<p class="ui-sub">{{ t('guest_guide.import.drafted', n=import_drafts) }}</p>{% endif %}
-<p class="ui-sub">{{ t('guest_guide.import.help') }} {{ t('guest_guide.import.left', n=import_left) }}</p>
-{% if import_left > 0 and not import_busy %}
-<form method="post" action="{{ base_url }}/import">
-<input type="hidden" name="_csrf" value="{{ csrf_token }}">
-{{ ui_field('guide-import-url', t('guest_guide.import.url'), name='url', type='url', placeholder='https://www.airbnb.com/rooms/...', attrs='maxlength="2048" required inputmode="url" autocomplete="off"') }}
-<div class="ui-form-actions">{{ ui_button(t('guest_guide.import.button'), 'secondary', type='submit', icon_name='download') }}</div>
-</form>
-{% endif %}
-{% if imports %}
-{{ ui_table_begin([(t('guest_guide.import.col.source'), ''), (t('guest_guide.import.col.state'), '')], label=t('guest_guide.import.title')) }}
-{% for row in imports %}
-<tr class="ui-row">
-  <td class="ui-cell-first" data-card="primary">{{ t('guest_guide.import.source.' ~ row.source) }}<span class="ui-sub"> {{ row.created_at[:10] }}</span>{% if row.status == 'failed' and (row.error or '').startswith('merge') %}<p class="ui-sub">{{ t('guest_guide.import.merge_failed') }}</p>{% endif %}</td>
-  <td data-card="badge">{% if row.status in ('queued', 'running') %}{{ ui_badge('action', t('guest_guide.import.state.running')) }}{% elif row.status == 'failed' %}{{ ui_badge('attention', t('guest_guide.import.state.failed')) }}{% elif row.status == 'done' %}{{ ui_badge('action', t('guest_guide.import.state.drafting')) }}{% else %}{{ ui_badge('done', t('guest_guide.import.state.done')) }}{% endif %}</td>
-</tr>
-{% endfor %}
-{{ ui_table_end() }}
-{% endif %}
-{% endif %}
-{% endcall %}
+{% if not import_first %}{{ import_section() }}{% endif %}
 
 {% call ui_section(t('guest_guide.add.title'), id='add-card') %}
 <form method="post" action="{{ base_url }}/cards">

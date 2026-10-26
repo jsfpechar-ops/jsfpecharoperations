@@ -1,0 +1,42 @@
+{#- 0404: the Leon setup wizard. Mirrors setup_wizard/_layout.html; one question per page. -#}
+{% extends "host_page.html" %}
+{% from "_icons.html" import icon with context %}
+{% set body_kind = 'form' %}
+{% block title %}{{ t('leon_setup.title', name=apartment.internal_name) }}{% endblock %}
+{% block page_title %}{{ t('leon_setup.title', name=apartment.internal_name) }}{% endblock %}
+{% block meta %}{% if number %}{{ t('leon_setup.count', n=number, total=total, step=t('leon_setup.step.' ~ step)) }}{% endif %}{% endblock %}
+{% block body %}
+<div class="setup-wizard" data-leon-setup data-leon-setup-step="{{ step }}">
+  <div class="setup-wizard-head">
+    <div class="setup-wizard-meter">
+      <ol class="setup-wizard-progress" aria-hidden="true">
+        {% for s in steps %}
+        <li class="is-{{ 'done' if s in done_steps else 'current' if s == step else 'todo' }}"></li>
+        {% endfor %}
+      </ol>
+      <p class="setup-wizard-done-count">{{ t('wizard.done_count', n=done_steps|length, total=total) }}</p>
+    </div>
+    <div class="setup-wizard-exit"><a class="ui-btn ui-btn-secondary" href="/apartments/{{ apartment.id }}">{{ t('wizard.exit') }}</a></div>
+  </div>
+  <div class="setup-wizard-body">
+    {% set step_icons = {'switch_on': 'message-circle-question', 'import': 'download', 'cards': 'book-open', 'try': 'send'} %}
+    {% set step_tones = {'switch_on': 'blue', 'import': 'teal', 'cards': 'purple', 'try': 'blue'} %}
+    {% if step in step_icons %}
+    <div class="setup-wizard-ask" data-step-tone="{{ step_tones[step] }}">
+      <span class="setup-wizard-ask-icon">{{ icon(step_icons[step], 22) }}</span>
+      <h2 class="setup-wizard-question">{{ t('leon_setup.question.' ~ step) }}</h2>
+    </div>
+    {% endif %}
+    {% block wizard_content %}{% endblock %}
+  </div>
+  <footer class="setup-wizard-foot">
+    {% if prev_step %}
+    <a class="ui-btn ui-btn-quiet setup-wizard-back" href="/apartments/{{ apartment.id }}/leon/setup/{{ prev_step }}">{{ t('wizard.back') }}</a>
+    {% else %}
+    <span></span>
+    {% endif %}
+    {% block wizard_actions %}{% endblock %}
+  </footer>
+</div>
+<script src="/static/leon-setup.js?v=20261026-0405b" defer></script>
+{% endblock %}

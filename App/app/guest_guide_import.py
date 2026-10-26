@@ -113,6 +113,12 @@ def imports_left(apartment_id: int) -> int:
     return len(set(ACTORS) - used_sources(apartment_id))
 
 
+def sources_left(apartment_id: int) -> List[str]:
+    """0403: the platforms this property may still import, in form order."""
+    used = used_sources(apartment_id)
+    return [s for s in ("booking", "airbnb") if s not in used]
+
+
 def runs_this_month() -> int:
     row = db.query_one(
         "SELECT calls FROM lock_api_usage WHERE month = ? AND provider = 'apify'", (_month_key(),)
@@ -136,24 +142,40 @@ def global_budget_left() -> bool:
 # --- the queue ----------------------------------------------------------------
 
 
-def request_import(apartment_id: int, raw_url: str) -> int:
-    """Queue one import for a property the caller has checked; returns the row id."""
+def request_imports(apartment_id: int, raw_urls: List[str]) -> List[int]:
+    """Queue one import per pasted link (0403: a Booking and an Airbnb link may come together).
+
+    Every check runs before any row is written, so a refusal queues nothing.
+    """
     if not enabled():
         raise GuideImportError("flash.error.guide_import_off")
-    link = normalise_url(raw_url)
+    raws = [r for r in (raw_urls or []) if str(r or "").strip()]
+    if not raws:
+        raise GuideImportError("flash.error.guide_import_empty")
+    links = [normalise_url(r) for r in raws]
+    sources = [link["source"] for link in links]
+    if len(set(sources)) != len(sources):
+        raise GuideImportError("flash.error.guide_import_same")
     if db.query_one(
         "SELECT id FROM guide_import WHERE apartment_id = ? AND status IN ('queued', 'running')",
         (apartment_id,),
     ):
         raise GuideImportError("flash.error.guide_import_busy")
-    if link["source"] in used_sources(apartment_id):
+    if set(sources) & used_sources(apartment_id):
         raise GuideImportError("flash.error.guide_import_limit")
-    if not global_budget_left():
+    limit = config.APIFY_MONTHLY_RUNS
+    if limit > 0 and runs_this_month() + len(links) > limit:
         raise GuideImportError("flash.error.guide_import_budget")
-    return int(db.insert("guide_import", {
+    now = db.utcnow()
+    return [int(db.insert("guide_import", {
         "apartment_id": apartment_id, "source": link["source"], "url": link["url"],
-        "status": "queued", "created_at": db.utcnow(),
-    }) or 0)
+        "status": "queued", "created_at": now,
+    }) or 0) for link in links]
+
+
+def request_import(apartment_id: int, raw_url: str) -> int:
+    """Queue one import for a property the caller has checked; returns the row id."""
+    return request_imports(apartment_id, [raw_url])[0]
 
 
 def imports(apartment_id: int) -> List[Dict[str, Any]]:
