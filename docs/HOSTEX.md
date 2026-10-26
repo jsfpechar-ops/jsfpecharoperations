@@ -259,6 +259,89 @@ Deep sweep of every vendor that sells channel-manager connectivity *to software 
 4. **NextPax replaces Rentals United as the named premium fallback** (public pricing, deeper channel set, messaging/reviews/content in one API); RU remains the last resort.
 5. **Beds24 upgraded to whole-stack fallback** — the exit route for Kompletně if the Hostex partnership fails, at comparable cost and with the adapter unchanged.
 
+### 12.2 NextPax deep dive — the engine to pursue (Oct 2026)
+
+**Decision:** NextPax is the engine we go for. Deep-dive below; integration blueprint and partner application drafted. Two things still gate the final call: sub-50-unit availability and the guest-fields check in sandbox.
+
+**Vendor (verified):** NextPax Travel Technology B.V. — founded 2006 by Erik Engel; HQ World Trade Center Almere, Netherlands; offices in the USA and Singapore; ~59 employees; network of 600k+ properties / 50k hotels; Booking.com Premier Connectivity Partner (2020); ISO 27001 referenced; early Google co-development partner; first to launch Booking.com's Content API and Airbnb's multi-unit + LOS pricing. Twenty years in distribution — the vendor-risk profile is the exact opposite of NoBeds, and materially lower than Channex.
+
+**Pricing (published on nextpax.com/nextpax-pricing):** White Label API plan — **$3.60/unit/mo billed annually ($4 monthly), from 50+ units**; the "Supported PMS" plan is identically priced. Annual billing for the $3.60 rate. Below 50 units: not listed — must ask (question 2 in the application). At 83 Kč/unit this is ~half of Hostex Pro (~$7) and ~7× Channex ($0.50 + $130 platform).
+
+**Supply API surface (verified — product page, Developer Portal, March 2026 release notes):**
+
+| Capability | Detail |
+|---|---|
+| Accommodation Partner **Account Creation via API** | Per-customer partner accounts created programmatically — Kompletně isolation without manual hidden accounts |
+| **OTA contracting via API** | Create Airbnb Host Accounts, request Booking.com agreements, initiate Vrbo contracting flows — the last manual onboarding step becomes an orchestrated API flow under our brand |
+| Onboarding & **Take-Over** | Take over existing Booking.com/Airbnb listings (channelPropertyId/channelRoomId), incl. content + future reservations; keep reviews & ranking; property-level Airbnb Host ID for multi-account managers (immutable once set) |
+| Content Management | Descriptions, amenities, policies, media — pushed to all channels |
+| ARI | Availability, rates, inventory in real time; multiple rate plans & policies; multi-unit + multi-property |
+| Channel settings | e.g. Booking.com `payments_by_booking_enabled`; Airbnb `minimum_notice_before_booking`, `exclude_availability_data_from_los_records` (fixes price recalc on alterations) |
+| Bookings API | Reservation management + payments (Stripe Connect, Payments by Booking.com, VCC flows) |
+| **NAPI (Notifications API, Mar 2026)** | Production webhooks for bookings + messages; FIFO delivery; Basic Auth or X-API-Token; validation during setup; auto-retry → temp deactivation → auto-reactivation; consumer returns 200 OK. **Official best practice = hybrid: poll `GET /bookings` + `GET /threads` every 10–30 min with `modifiedSince`** — exactly our Phase A/B poll-first design |
+| Messaging API | Booking.com, Airbnb, Expedia, Vrbo in one interface |
+| Guest Reviews + Promotions API | Reviews collect/respond via API; promotions across Booking, Expedia, Vrbo, Airbnb, Homes & Villas by Marriott |
+| Distribution | 100+ direct channels (Booking, Airbnb, Vrbo, Expedia, Trip.com, Agoda, HomeToGo, Holidu…), 150+ total, GDS via reconline (Sabre/Amadeus/Travelport) |
+| Tooling | Sandbox environment; self-service Developer Portal (developer.nextpax.app) with Swagger; MCP server; support.api@nextpax.com |
+| Import from OTAs | Existing listings incl. content + future reservations — migration path from any incumbent |
+
+**NextPax vs Hostex — requirement matrix:**
+
+| Requirement | Hostex | NextPax Supply API |
+|---|---|---|
+| Price per VR unit | ~$7 (Pro) | $3.60 annual, from 50+ units |
+| Channels | ~30 | 100+ direct + GDS, 150+ total |
+| Per-customer accounts | manual (hidden, pre-OAuth) | **created via API** |
+| Channel authorization | manual portal step | **contracting via API flows** |
+| Guest data in bookings | name/e-mail/phone + country code | reservations API — ⚠️ verify exact guest fields (name/e-mail/phone/nationality) in sandbox before committing |
+| Realtime sync | webhooks (harsh contract) | NAPI + officially recommended hybrid polling |
+| Migration of live listings | ❌ | ✅ take-over incl. future bookings |
+| Messaging | inbox + HostGPT | Messaging API (4 channels, **no AI — Leon stays ours**) |
+| Reviews / Promotions | ❌ / ❌ | ✅ / ✅ |
+| Content distribution | limited | ✅ full |
+| Smart locks | ✅ lock codes | ❌ → native TTLock everywhere |
+| Host-facing UI | ✅ full PMS (re-skin) | ❌ → our FE is the product |
+| Sandbox | trial only | ✅ sandbox + dev portal |
+| Vendor maturity | young (HK) | since 2006, NL, Booking.com premier partner |
+| Minimum scale | any | 50+ units at list price (⚠️ confirm below) |
+
+**Architecture consequences if NextPax is the engine:**
+1. **TTLock:** Hostex passthrough dies — every Kompletně customer runs **native TTLock** (PIN generation stays ours; +49 Kč standalone or bundled into Kompletně). Migration drain rule unchanged.
+2. **FE build becomes a prerequisite** for scale-phase Kompletně (no re-skin possible) — this was the FE-2 direction anyway; NextPax makes it mandatory, Hostex made it optional.
+3. **Onboarding automation:** API account creation + API OTA contracting = the first **fully self-serve** Kompletně onboarding; the customer's only manual act is typing OTA credentials into the channel's own screen, orchestrated by API.
+4. **Leon keeps the AI layer** — NextPax has no AI messaging, so our compliance-aware reply drafts remain a differentiator vs HostGPT-style features.
+
+**Cost truth (honest):** ~half of Hostex per unit; ~2× Channex. The premium vs Channex buys: API-created partner accounts, API-driven OTA contracting, take-over/migration, messaging + reviews + promotions, GDS, full content distribution, and a 20-year-old vendor. If we only ever need ARI + bookings for Czech hosts on Booking/Airbnb/Expedia, Channex is still the cheaper engine; the moment distribution breadth or self-serve onboarding matters, NextPax wins.
+
+**Go-live path (starts now):**
+1. **Send the partner application (drafted below)** — sandbox access, WL terms, sub-50-unit pricing, reseller billing.
+2. **Sandbox (week 1–2):** verify reservations payload guest fields (name/e-mail/phone/nationality — the one unverified compliance-critical item), NAPI delivery + retry behavior, Booking.com/Airbnb take-over incl. future reservations.
+3. **Build the NextPax adapter** behind the §4.3 interface (`Listing`/`PriceUpdate`/`Conversation`) — poll-first (`GET /bookings` + `modifiedSince`, 15–30 min), then NAPI, mirroring the Phase A→B plan built for Hostex.
+4. **Certification:** one integration with NextPax; OTA certifications are theirs to maintain.
+5. **Switch Kompletně backend at ~50 units.** Hostex remains the launch engine for cohorts under 50 unless NextPax confirms availability below 50 — at which point NextPax can also take the launch slot (trade-off: no lock codes, FE build required first).
+
+**Ready-to-send — NextPax partner application:**
+
+> **To:** support.api@nextpax.com (or the contact form at nextpax.com/channel-manager/supply-api)
+> **Subject:** UbyHost — Supply API white-label partnership (Czech Republic, PMS builder)
+>
+> Dear NextPax team,
+>
+> We are UbyHost (ubyhost.com), a Czech short-term-rental compliance platform. Our core product automatically reports foreign guests to the Czech Foreign Police (via the Uby-WS/UbyPort interface), maintains the digital house book, and archives delivery confirmations. We are now adding channel management to our platform under our own brand, and the Supply API is our preferred engine.
+>
+> Before we start development, three commercial questions:
+>
+> 1. **Sandbox access** — can we get credentials for the Supply API, Bookings API and NAPI on developer.nextpax.app now? Our stack is Python/FastAPI; we can begin immediately.
+> 2. **Scale** — the White Label API plan is listed from 50+ units at $3.60/unit (annual). Is the plan available below 50 units, and at what price? We expect to launch with ~10–30 connected units and scale past 50 within months.
+> 3. **Billing model** — do you invoice us as the technology partner (reseller model), with our customers never invoiced or contacted by NextPax?
+>
+> Technical items we will verify during sandbox evaluation: guest fields on the reservations payload (name, e-mail, phone, nationality/country), Booking.com and Airbnb take-over including future reservations, property-level Airbnb Host ID for multi-account setups, and NAPI retry/reactivation behavior.
+>
+> Timeline: sandbox evaluation immediately; production integration within ~2 months of starting.
+>
+> Best regards,
+> Josef Pechar, UbyHost
+
 ---
 
 *Prepared for Josef Pechar · UbyHost (ubyhost.com) · verified October 2026.*
