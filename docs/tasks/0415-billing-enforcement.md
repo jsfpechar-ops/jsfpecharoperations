@@ -1,6 +1,6 @@
 # 0415: Billing enforcement (B7): the plan sets AI limits, TTLock, calendars, read-only
 
-Status: todo
+Status: review
 Depends on: 0411 | Base commit: the head of `claude/billing-phase1-impl` | Branch: task/0415-billing-enforcement
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Order: after 0414 (both edit nothing in common, but 0414 must merge first).
