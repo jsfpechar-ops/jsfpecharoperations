@@ -236,6 +236,15 @@ Weekly off-site (Sunday 04:00 UTC) after `rclone config` remote **`gdrive`**:
 
 Passport photos are **not** in the DB backup. After restore, unverified uploads may be missing; hosts re-check IDs if needed.
 
+**Backup layers (0414).** One continuous copy, one quick local copy and one independent copy are enough:
+
+| Layer | How often | Kept | Used for |
+|---|---|---|---|
+| Litestream → S3 | continuous (10 s), full snapshot daily, check daily | 7 days | main recovery, including a new instance |
+| `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
+| `backup-gdrive.sh` | weekly | 30 days | copy outside AWS |
+| Lightsail automatic snapshots | daily | 7 | optional; they copy the whole disk, including every local backup, and are billed per GB on top of the bundle |
+
 ## Restore runbook (same instance)
 
 1. `AGE_IDENTITY_FILE=/path/on/host ./scripts/restore.sh <stamp>` — the age identity must be on the host, never on the volume.
