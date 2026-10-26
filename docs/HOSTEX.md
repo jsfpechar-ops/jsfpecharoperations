@@ -320,27 +320,33 @@ Deep sweep of every vendor that sells channel-manager connectivity *to software 
 4. **Certification:** one integration with NextPax; OTA certifications are theirs to maintain.
 5. **Switch Kompletně backend at ~50 units.** Hostex remains the launch engine for cohorts under 50 unless NextPax confirms availability below 50 — at which point NextPax can also take the launch slot (trade-off: no lock codes, FE build required first).
 
-**Ready-to-send — NextPax partner application:**
+**Ready-to-send — NextPax partner application (final draft):**
 
 > **To:** support.api@nextpax.com (or the contact form at nextpax.com/channel-manager/supply-api)
-> **Subject:** UbyHost — Supply API white-label partnership (Czech Republic, PMS builder)
+> **Subject:** UbyHost × NextPax — Supply API white-label partnership (sandbox + three questions)
 >
 > Dear NextPax team,
 >
-> We are UbyHost (ubyhost.com), a Czech short-term-rental compliance platform. Our core product automatically reports foreign guests to the Czech Foreign Police (via the Uby-WS/UbyPort interface), maintains the digital house book, and archives delivery confirmations. We are now adding channel management to our platform under our own brand, and the Supply API is our preferred engine.
+> My name is Josef Pechar and I'm the founder of UbyHost (ubyhost.com), a short-term-rental compliance platform from the Czech Republic.
 >
-> Before we start development, three commercial questions:
+> What UbyHost does today: we automatically report foreign guests to the Czech Foreign Police via the official Uby-WS/UbyPort interface, maintain the legally required digital house book, archive delivery confirmations, and handle guest registration — so Czech hosts always meet the 3-day reporting deadline. We are now adding channel management to the platform under our own brand, and the Supply API is our preferred engine: API-created accommodation partner accounts, OTA contracting flows, the NAPI webhooks with their hybrid polling model, and take-over support are exactly the architecture we have designed around.
 >
-> 1. **Sandbox access** — can we get credentials for the Supply API, Bookings API and NAPI on developer.nextpax.app now? Our stack is Python/FastAPI; we can begin immediately.
-> 2. **Scale** — the White Label API plan is listed from 50+ units at $3.60/unit (annual). Is the plan available below 50 units, and at what price? We expect to launch with ~10–30 connected units and scale past 50 within months.
+> Three questions before we start development:
+>
+> 1. **Sandbox access** — may we receive credentials for the Supply API, Bookings API and NAPI on developer.nextpax.app? Our stack is Python/FastAPI on AWS; we can begin immediately.
+> 2. **Scale** — the White Label API plan is listed from 50+ units at $3.60/unit (annual). Is the plan available below 50 units, and at what price? We expect to launch with ~10–30 connected units and cross 50 within months.
 > 3. **Billing model** — do you invoice us as the technology partner (reseller model), with our customers never invoiced or contacted by NextPax?
 >
-> Technical items we will verify during sandbox evaluation: guest fields on the reservations payload (name, e-mail, phone, nationality/country), Booking.com and Airbnb take-over including future reservations, property-level Airbnb Host ID for multi-account setups, and NAPI retry/reactivation behavior.
+> During sandbox evaluation we will verify: guest fields on the reservations payload (name, e-mail, phone, nationality/country — required for our police-reporting pipeline), Booking.com and Airbnb take-over including future reservations, property-level Airbnb Host ID for multi-account setups, and NAPI retry/reactivation behavior.
 >
-> Timeline: sandbox evaluation immediately; production integration within ~2 months of starting.
+> Timeline: sandbox immediately; production integration within ~2 months; first connected units shortly after.
+>
+> Happy to jump on a call at your convenience — we are on CET.
 >
 > Best regards,
-> Josef Pechar, UbyHost
+> Josef Pechar
+> Founder, UbyHost
+> ubyhost.com · josef@ubyhost.com
 
 ---
 
