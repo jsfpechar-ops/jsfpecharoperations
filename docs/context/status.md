@@ -9,7 +9,7 @@ Updated: 2026-10-26.
 
 ## Now
 
-- Billing 0411+0412 (ČSOB, statement upload). **Owner:** OGs plan later.
+- Billing 0411-0419 built on `claude/billing-phase1-impl` (#528), off by default. **Owner:** real ČSOB export, env vars, counsel on Terms § 15 draft, OGs plan.
 - 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
 - Guide + Leon 0341-0355: owner merges #465-#468.
 - 0291-0302 buttons, fees, invoice. **Owner:** PR; CF rules 3-4.
