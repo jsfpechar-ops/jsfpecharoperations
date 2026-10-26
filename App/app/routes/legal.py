@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 
-from .. import config, cookie_inventory, host_i18n, operator, signup
+from .. import billing, config, cookie_inventory, host_i18n, operator, signup
 from ..public_guides import GUIDE_TRANSLATIONS
 from ..templating import render
 
@@ -57,13 +57,56 @@ def product_details(request: Request):
     )
 
 
+# The public price list in whole Kč, read from app/billing.py (brief 0416) so
+# the page and the invoices can never disagree.
+PUBLIC_RATES = {
+    "base": {interval: list(rates) for interval, rates in billing.BASE.items()},
+    "max": {interval: list(rates) for interval, rates in billing.MAX_EXTRA.items()},
+    "ttlock": dict(billing.TTLOCK),
+}
+
+
+def _graduated(count: int, rates) -> int:
+    """Each band prices only the apartments in it: 1-4, 5-9, 10 and up."""
+    return sum(rates[0 if i <= 4 else 1 if i <= 9 else 2] for i in range(1, count + 1))
+
+
+def _per_month(year_total: int) -> int:
+    """A yearly total shown per month, rounded half up like Math.round in pricing.js."""
+    return (year_total * 2 + 12) // 24
+
+
+def _kc(amount: int, lang: str) -> str:
+    """1 190 (no-break space) in Czech, 1,190 in English, as pricing.js prints it."""
+    text = f"{amount:,}"
+    return text.replace(",", " ") if lang == "cs" else text
+
+
 @router.get("/cenik")
 def pricing(request: Request):
-    """Public contact-led pricing page."""
+    """Public price list with the calculator (brief 0412). Without JS: 1 apartment, yearly."""
+    lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)
+    std_year = _graduated(1, PUBLIC_RATES["base"]["year"])
+    max_year = std_year + _graduated(1, PUBLIC_RATES["max"]["year"])
+    start = {
+        "std_month": _kc(_per_month(std_year), lang),
+        "max_month": _kc(_per_month(max_year), lang),
+        "std_year": _kc(std_year, lang),
+        "max_year": _kc(max_year, lang),
+        "bands": [_kc(_per_month(rate), lang) for rate in PUBLIC_RATES["base"]["year"]],
+    }
     return render(
         request,
         "pricing.html",
-        {"show_nav": False, "open_alerts": [], **signup.public_context(request)},
+        {
+            "show_nav": False,
+            "open_alerts": [],
+            **signup.public_context(request),
+            "rates": PUBLIC_RATES,
+            "start": start,
+            # 0416: places left at the founder price, only while billing is on.
+            "founder_left": billing.founder_slots_left() if billing.enabled() else None,
+        },
     )
 
 

@@ -489,6 +489,13 @@ _ACCEPTANCE_EXEMPT_PATHS = (
     "/subprocessors",
 )
 
+# 0415: what a paused (read-only) account may still post: the way back to a
+# plan, the account and its safety, the data export, and UbyPort filing.
+_READ_ONLY_OPEN_PREFIXES = ("/predplatne", "/logout", "/account", "/settings", "/exports")
+_READ_ONLY_OPEN_PATHS = re.compile(
+    r"^/(reservations/submit-ready|reservations/\d+/submit|guests/\d+/resend)$"
+)
+
 
 def require_login(request: Request) -> Optional[RedirectResponse]:
     """Return a redirect unless a valid account session identifies this host."""
@@ -524,6 +531,18 @@ def require_login(request: Request) -> Optional[RedirectResponse]:
         return RedirectResponse(
             f"/account/accept?next={quote(next_path)}", status_code=303
         )
+    # 0415: a paused plan is read-only. An impersonating admin is not blocked.
+    if (
+        getattr(request, "method", "GET") == "POST"
+        and workspace is not None
+        and not impersonating
+        and not request.url.path.startswith(_READ_ONLY_OPEN_PREFIXES)
+        and not _READ_ONLY_OPEN_PATHS.match(request.url.path)
+    ):
+        from . import billing
+
+        if billing.entitlements(int(workspace["id"])).read_only:
+            return RedirectResponse("/predplatne?paused=1", status_code=303)
     db.set_current_actor(
         account["id"], account["username"], impersonating=impersonating
     )

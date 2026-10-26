@@ -1,0 +1,8 @@
+{#- 0414: one billing line (trial, overdue, paused, canceling). Nothing while billing is off or for OG hosts. -#}
+{% set billing_line = billing_banner(workspace_user.id if workspace_user else None) %}
+{% if billing_line %}
+<aside class="banner {{ 'warning' if billing_line.warning }} billing-banner" role="status" data-billing-banner="{{ billing_line.kind }}">
+  <div class="grow"><strong>{{ t('billing.banner.' ~ billing_line.kind, date=billing_line.date) }}</strong></div>
+  <a class="btn small" href="/predplatne">{{ t('billing.banner.action_' ~ billing_line.kind) }}</a>
+</aside>
+{% endif %}

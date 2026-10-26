@@ -18,7 +18,7 @@
 # The optional app hostname shares this backend, TLS policy and upload limit.
 {$UBYHOST_DOMAIN} {$UBYHOST_APP_DOMAIN} {
 	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem
-	# 0414: only Cloudflare may reach the app. A request straight to the
+	# 0421: only Cloudflare may reach the app. A request straight to the
 	# server's IP would skip Cloudflare's WAF, bot checks and rate limits.
 	# remote_ip is the TCP peer, not the forwarded client IP. Same ranges as
 	# trusted_proxies above: when Cloudflare publishes new ones, update both.

@@ -1,43 +1,61 @@
-# 0414 report
+# 0414 report: Check-in/out times on the Door lock tab
 
 Status: review
 
 ## Files changed
 
-- `deploy/lightsail/litestream.yml`: snapshot and validation interval 6h to 24h (steps 1, 2).
-- `deploy/lightsail/caddy/Caddyfile.cloudflare`: `@not_cloudflare` matcher and `abort` after the `tls` line (step 3).
-- `docs/LIGHTSAIL.md`: backup layers table, key warning in new-instance step 2, Litestream restore in step 5, rebuild drill paragraph after step 8 (steps 4 to 7).
-- `docs/tasks/0414-backup-cadence-origin-lock.md`: Status line only.
-- `docs/tasks/0414-report.md`: this file.
+- App/app/routes/admin.py: `_with_lock_tab_hours` helper (folds `lock_checkin_hour` / `lock_checkout_hour` into the saved hours), `FormData` import, one call at the top of `_save_apartment_form`.
+- App/app/templates/_property_editor.html: two time selects inside `#door-code` (`required` while the switch is on), text line and amber warning removed, duplicate `switch_on` set removed, `data-hour-twin` on the Property tab selects.
+- App/app/static/host.js: sync between twin selects, `required` follows the switch live.
+- App/app/templates/base.html: `host.js?v=20261026-door-lock-times`.
+- App/tests/test_door_lock_tab_times_0414.py: new, 5 tests.
+- docs/tasks/0414-door-lock-tab-times.md: Status set to in-progress, then review.
 
-## Commands (last lines)
+## Commits
 
-- `grep -n "interval: 24h" deploy/lightsail/litestream.yml` gave `28:  interval: 24h`; after step 2, `grep -c` gave `2`.
-- Caddy range check: `same`.
-- `python3 scripts/context_lint.py`: `next free: task 0415 | migration 0023`, `context lint: OK` (the WARN lines are existing open-brief overlaps, not from this change).
-- `App/.venv/bin/python -m pytest tests/test_wp32_container_sizing.py tests/test_backup_data.py -q --tb=short -x`: `21 passed in 0.60s`.
-- Caddy tab check: `^\t@not_cloudflare` 1 line, `^\tabort @not_cloudflare` 1 line.
+`0414 step 1` (63a0dba0, includes the Status line), `0414 step 2` (1a1fe134), `0414 step 3` (d20225fe), `0414 step 4` (f6d2a523), then this report.
 
-## Section 7
+## Commands
 
-- [x] `litestream.yml` has `interval: 24h` twice and no `interval: 6h`.
-- [x] Caddy `not remote_ip` list equals `trusted_proxies` list (`same`).
-- [x] `docs/LIGHTSAIL.md` has the backup layers table, key warning, Litestream restore and drill paragraph.
-- [x] §6 tests pass (21 passed).
+Brief §6 command 1 (`pytest ... -q --tb=short`), last lines:
+
+```
+........................................................................ [ 46%]
+........................................................................ [ 92%]
+...........                                                              [100%]
+155 passed in 4.20s
+```
+
+Brief §6 command 2 (`python3 scripts/context_lint.py`), last lines:
+
+```
+WARN  5 commit(s) touched App/ after the last status.md update. Orchestrator: update docs/context/status.md at review.
+next free: task 0415 | migration 0023
+context lint: OK
+```
+
+Also run: Jinja parse of `_property_editor.html` (ok), `node --check App/app/static/host.js` (no output, no error).
+
+## Section 7 acceptance
+
+- [x] Command 1 passes (155 passed, includes the 0397 and 0400 files, no edits to them).
+- [x] Lint OK.
+- [x] One commit per step.
+- [ ] Browser tests and 390 px screenshots: not run here. Playwright is not installed in this container and the brief says not to install it. CI and the reviewer cover them. The Door lock tab's layout changed, so the reviewer needs a 390 px screenshot of the Door lock tab.
 
 ## Deviations
 
-- Step 6: the Bash command that inserted the Litestream restore text was refused by the safety check (the inserted block contains `rm -rf` inside a quoted `docker compose run` command; nothing was deleted or run). Steps 4 and 5 were applied and committed with Bash, and the step 6 text was inserted with the Edit tool, which runs no shell command. The commit `f5cb2d7` contains only the intended 10 insertions and 1 deletion.
-- The Edit tool reported that `docs/LIGHTSAIL.md` had changed on disk after my read. `git show` for commits `f5cb2d7` and `2ef2645` shows only my lines, and `git status` was clean before this report.
-- Test setup: `App/requirements-dev.txt` does not include the runtime `requirements.txt`, so `requests` was missing and conftest failed to import. I installed `-r requirements.txt` into the local `App/.venv` (no repo change). The §6 install command alone is not enough; the orchestrator may want to correct it.
-- Status line of the brief was set to `in-progress` in the step 1 commit, and to `review` in the final commit.
+- Step 1 and step 2 were applied with the anchors exactly as given (each anchor occurred once). Step 1's two edits were made in one edit call, same result.
+- The Status line change to `in-progress` was committed with step 1, not as a separate commit.
+- No PR opened and nothing pushed, per the owner's instruction for this run.
+- `test_door_code_missing_times_0397.py` needed no change; all its assertions still pass.
 
 ## Questions
 
-- Should §6 install `requirements.txt` as well as `requirements-dev.txt`? The brief's install line does not install `requests`.
+None.
 
 ## Owner steps left
 
-From brief "Owner steps": 1 to 6 (check `https://ubyhost.com` loads; `curl` against the origin IP fails; set `UBYHOST_BACKUP_RETENTION_DAYS=7` in production `.env`; decide on Lightsail automatic snapshots; consider the S3 lifecycle change; run the rebuild drill once a quarter). Not run by the executor.
-
-No push, PR, merge or deploy was done.
+1. Review and open the PR from `claude/project-thread-qi1fv7` when ready (not done here).
+2. Check the Door lock tab at 390 px on a property without times.
+3. After merge, deploy as usual (manual).

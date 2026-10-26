@@ -1,4 +1,4 @@
-# 0414: Backup cadence, Cloudflare-only origin, fresh-instance restore from Litestream
+# 0421: Backup cadence, Cloudflare-only origin, fresh-instance restore from Litestream
 
 Status: review
 Depends on: none | Base commit: 838bec1 | Branch: task/0414-backup-cadence-origin-lock
@@ -45,7 +45,7 @@ validation:
 | `deploy/lightsail/litestream.yml` | edit | snapshot and validation every 24h |
 | `deploy/lightsail/caddy/Caddyfile.cloudflare` | edit | abort non-Cloudflare peers |
 | `docs/LIGHTSAIL.md` | edit | backup layers table; new-instance restore from Litestream; key warning |
-| `docs/tasks/0414-report.md` | create | report |
+| `docs/tasks/0421-report.md` | create | report |
 
 No other file may change.
 
@@ -55,7 +55,7 @@ No other file may change.
 
 ```
 # A full snapshot once a day: a restore replays at most one day of LTX files,
-# which takes seconds at this database's size. 0414: a snapshot every 6 hours
+# which takes seconds at this database's size. 0421: a snapshot every 6 hours
 # stored four full copies a day in S3 for little gain. Snapshots and the LTX
 # files between them are kept for 7 days, so a point-in-time restore can go
 # back a week. Durations accept s, m and h only.
@@ -69,7 +69,7 @@ snapshot:
 2. In the same file, replace the 3-line validation excerpt with exactly:
 
 ```
-# Check the replica's LTX chain for gaps and overlaps once a day. 0414: each
+# Check the replica's LTX chain for gaps and overlaps once a day. 0421: each
 # check reads the replica back from S3 (requests plus transfer to Lightsail),
 # so every 6 hours cost four times as much for no faster recovery.
 validation:
@@ -81,7 +81,7 @@ validation:
 3. In `deploy/lightsail/caddy/Caddyfile.cloudflare`, directly after the line `	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin-key.pem` (line 20), insert these lines (one leading TAB each, matching the file):
 
 ```
-	# 0414: only Cloudflare may reach the app. A request straight to the
+	# 0421: only Cloudflare may reach the app. A request straight to the
 	# server's IP would skip Cloudflare's WAF, bot checks and rate limits.
 	# remote_ip is the TCP peer, not the forwarded client IP. Same ranges as
 	# trusted_proxies above: when Cloudflare publishes new ones, update both.
@@ -94,7 +94,7 @@ validation:
 4. In `docs/LIGHTSAIL.md`, directly after the line `Passport photos are **not** in the DB backup. After restore, unverified uploads may be missing; hosts re-check IDs if needed.` insert a blank line and then:
 
 ```
-**Backup layers (0414).** One continuous copy, one quick local copy and one independent copy are enough:
+**Backup layers (0421).** One continuous copy, one quick local copy and one independent copy are enough:
 
 | Layer | How often | Kept | Used for |
 |---|---|---|---|
@@ -104,7 +104,7 @@ validation:
 | Lightsail automatic snapshots | daily | 7 | optional; they copy the whole disk, including every local backup, and are billed per GB on top of the bundle |
 ```
 
-   Command: `grep -n "Backup layers (0414)" docs/LIGHTSAIL.md 2>&1 | tail -30` → one line.
+   Command: `grep -n "Backup layers (0421)" docs/LIGHTSAIL.md 2>&1 | tail -30` → one line.
 
 5. In `docs/LIGHTSAIL.md`, replace the line `2. Copy `.env` (do not commit it) and `caddy/certs/origin*.pem` from the old host or a secrets store.` with:
 
@@ -167,7 +167,7 @@ Stop, and write the report, if an excerpt is not found, a test fails twice, you 
 
 ## 9. Report
 
-Write `docs/tasks/0414-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. Commit; the orchestrator pushes and opens the PR.
+Write `docs/tasks/0421-report.md` (600 tokens at most) and set `Status: review`: files changed, each command with its last 5 lines, §7 ticked, deviations, questions, owner steps left. Commit; the orchestrator pushes and opens the PR.
 
 ## Risk list (for the reviewer)
 

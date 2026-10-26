@@ -8,7 +8,6 @@ themselves, and answer in Czech to the hosts the product is built for.
 from __future__ import annotations
 
 import re
-from urllib.parse import quote
 
 from starlette.testclient import TestClient
 
@@ -129,32 +128,34 @@ def test_product_details_preserve_ubyport_search_content_off_the_short_homepage(
         assert "UbyPort" in _title(page.text)
 
 
-def test_pricing_is_contact_led_and_honest_in_both_languages():
+def test_pricing_shows_the_price_list_in_both_languages():
     for lang in ("cs", "en"):
         strings = LANDING_STRINGS[lang]
         page = _client().get(f"/cenik?lang={lang}")
         assert page.status_code == 200
-        assert strings["pricing.card.price"] in page.text
-        assert strings["pricing.card.summary"] in page.text
-        assert strings["pricing.card.cta"] in page.text
-        assert strings["landing.cta.note"] in page.text
-        subject = quote(strings["pricing.cta.subject"])
-        assert f'href="mailto:support@ubyhost.com?subject={subject}"' in page.text
-        other = "en" if lang == "cs" else "cs"
-        assert quote(LANDING_STRINGS[other]["pricing.cta.subject"]) not in page.text
+        assert strings["pricing.title"] in page.text
+        assert strings["pricing.cta"] in page.text
+        assert strings["pricing.std.f1"] in page.text
+        assert strings["pricing.max.f2"] in page.text
+        assert strings["pricing.faq.9.q"] in page.text
         assert '"@type": "WebPage"' in page.text
-        assert '"@type": "Offer"' not in page.text
-        assert '"price"' not in page.text
+        assert '"@type": "FAQPage"' in page.text
         assert f'hreflang="{lang}"' in page.text
+        assert "Dle domluvy" not in page.text and "By agreement" not in page.text
+        assert "stripe" not in page.text.lower()
 
 
-def test_the_pricing_page_answers_the_price_question_in_the_first_sentence():
-    """The page said "By agreement" and then explained nothing for a screen."""
-    for lang in ("cs", "en"):
-        summary = LANDING_STRINGS[lang]["pricing.card.summary"]
-        page = _client().get(f"/cenik?lang={lang}")
-        price = page.text.index(LANDING_STRINGS[lang]["pricing.card.price"])
-        assert page.text.index(summary) > price, f"{lang}: the answer is not under the price"
+def test_without_javascript_the_page_shows_one_apartment_billed_yearly():
+    """The server renders the default (1 apartment, yearly, shown per month); JS only updates it."""
+    cs = _client().get("/cenik?lang=cs").text
+    assert "<strong data-total>99</strong>" in cs
+    assert "<strong data-total>163</strong>" in cs
+    assert "Platíte 1 190 Kč jednou ročně" in cs
+    assert "Platíte 1 950 Kč jednou ročně" in cs
+    assert "1 apartmán" in cs
+    assert "data-pricing-calc hidden" in cs
+    en = _client().get("/cenik?lang=en").text
+    assert "Billed 1,190 CZK once a year" in en
 
 
 def test_the_login_page_describes_itself_for_the_search_snippet():

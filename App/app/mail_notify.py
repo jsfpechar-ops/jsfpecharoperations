@@ -42,6 +42,8 @@ LOGO_WIDTH = 180
 # exist, this constant is the single place that reads it. Guest mail is
 # unaffected -- it follows the language stored on the claim.
 HOST_MAIL_LANGUAGE = "en"
+# UbyHost's own billing mail (invoices, trial, reminders) is Czech: it bills Czech hosts.
+BILLING_MAIL_LANGUAGE = "cs"
 
 # Brand tokens copied from static/tokens.css. Mail clients do not load the
 # stylesheet, so the values have to be literal here and cannot be custom
@@ -2585,4 +2587,104 @@ def ai_budget(*, feature: str, month: str, spent: float, cap: float) -> Optional
         to_email=config.OPERATOR_EMAIL,
         subject=content["subject"],
         payload={"text": content["text"], "html": content["html"], "lang": HOST_MAIL_LANGUAGE},
+    )
+
+
+def build_billing_invoice(*, number: str, vs: str, amount_czk: int, due: str, period: str) -> Dict[str, str]:
+    lang = BILLING_MAIL_LANGUAGE
+    amount = f"{amount_czk:,}".replace(",", " ")
+    subject = _text(lang, "mail.billing_invoice.subject", number=number)
+    body = _text(lang, "mail.billing_invoice.body", number=number, amount=amount,
+                 period=period, due=_fmt_date(due), vs=vs)
+    action = _text(lang, "mail.billing_invoice.action")
+    link = _app("/predplatne")
+    footer = _signup_footer(lang)
+    text = "\n".join([body, "", f"{action}: {link}", "", "--", *footer])
+    blocks = [_block_heading(subject), _block_paragraph(body), _block_button(link, action)]
+    return {"subject": subject, "text": text,
+            "html": _shell(lang=lang, title=subject, preheader=body, blocks=blocks, footer_lines=footer)}
+
+
+def billing_invoice(
+    *, invoice_id: int, to_email: str, owner_user_id: int, number: str, vs: str,
+    amount_czk: int, due: str, period: str,
+) -> Optional[int]:
+    """One mail per invoice (key billing-invoice-<id>); the PDF is attached at send time."""
+    content = build_billing_invoice(number=number, vs=vs, amount_czk=amount_czk, due=due, period=period)
+    return mail.enqueue(
+        kind="billing_invoice",
+        idempotency_key=f"billing-invoice-{invoice_id}",
+        to_email=to_email,
+        subject=content["subject"],
+        owner_user_id=owner_user_id,
+        payload={
+            "text": content["text"],
+            "html": content["html"],
+            "lang": BILLING_MAIL_LANGUAGE,
+            "reply_to": config.OPERATOR_EMAIL,
+            mail.PLATFORM_INVOICE_KEY: invoice_id,
+            "attachment_name": f"{number}.pdf",
+        },
+    )
+
+
+def build_billing_trial(*, days_left: int, ends: str) -> Dict[str, str]:
+    lang = BILLING_MAIL_LANGUAGE
+    subject = _text(lang, f"mail.billing_trial.subject_{days_left}")
+    body = _text(lang, "mail.billing_trial.body", date=_fmt_date(ends))
+    action = _text(lang, "mail.billing_trial.action")
+    link = _app("/predplatne")
+    footer = _signup_footer(lang)
+    text = "\n".join([body, "", f"{action}: {link}", "", "--", *footer])
+    blocks = [_block_heading(subject), _block_paragraph(body), _block_button(link, action)]
+    return {"subject": subject, "text": text,
+            "html": _shell(lang=lang, title=subject, preheader=body, blocks=blocks, footer_lines=footer)}
+
+
+def billing_trial(*, owner_user_id: int, days_left: int, ends: str) -> Optional[int]:
+    """One reminder per stage (key billing-trial-<owner>-<end>-<days>). Service mail, not a tip."""
+    from . import billing_invoices
+
+    content = build_billing_trial(days_left=days_left, ends=ends)
+    return mail.enqueue(
+        kind="billing_trial",
+        idempotency_key=f"billing-trial-{owner_user_id}-{ends}-{days_left}",
+        to_email=billing_invoices.recipient(owner_user_id),
+        subject=content["subject"],
+        owner_user_id=owner_user_id,
+        payload={"text": content["text"], "html": content["html"], "lang": BILLING_MAIL_LANGUAGE,
+                 "reply_to": config.OPERATOR_EMAIL},
+    )
+
+
+def build_billing_overdue(*, stage: str, number: str, amount_czk: int, due: str, today: str) -> Dict[str, str]:
+    lang = BILLING_MAIL_LANGUAGE
+    amount = f"{amount_czk:,}".replace(",", " ")
+    subject = _text(lang, f"mail.billing_overdue.subject_{stage}", number=number)
+    body = _text(lang, "mail.billing_overdue.body_" + ("paused" if stage == "paused" else "reminder"),
+                 number=number, amount=amount, due=_fmt_date(due), date=_fmt_date(today))
+    action = _text(lang, "mail.billing_overdue.action")
+    link = _app("/predplatne")
+    footer = _signup_footer(lang)
+    text = "\n".join([body, "", f"{action}: {link}", "", "--", *footer])
+    blocks = [_block_heading(subject), _block_paragraph(body), _block_button(link, action)]
+    return {"subject": subject, "text": text,
+            "html": _shell(lang=lang, title=subject, preheader=body, blocks=blocks, footer_lines=footer)}
+
+
+def billing_overdue(
+    *, invoice_id: int, owner_user_id: int, stage: str, number: str, amount_czk: int, due: str, today: str,
+) -> Optional[int]:
+    """One mail per invoice and stage (reminder, second, paused). Service mail, not a tip."""
+    from . import billing_invoices
+
+    content = build_billing_overdue(stage=stage, number=number, amount_czk=amount_czk, due=due, today=today)
+    return mail.enqueue(
+        kind="billing_overdue",
+        idempotency_key=f"billing-overdue-{invoice_id}-{stage}",
+        to_email=billing_invoices.recipient(owner_user_id),
+        subject=content["subject"],
+        owner_user_id=owner_user_id,
+        payload={"text": content["text"], "html": content["html"], "lang": BILLING_MAIL_LANGUAGE,
+                 "reply_to": config.OPERATOR_EMAIL},
     )

@@ -236,7 +236,7 @@ Weekly off-site (Sunday 04:00 UTC) after `rclone config` remote **`gdrive`**:
 
 Passport photos are **not** in the DB backup. After restore, unverified uploads may be missing; hosts re-check IDs if needed.
 
-**Backup layers (0414).** One continuous copy, one quick local copy and one independent copy are enough:
+**Backup layers (0421).** One continuous copy, one quick local copy and one independent copy are enough:
 
 | Layer | How often | Kept | Used for |
 |---|---|---|---|
