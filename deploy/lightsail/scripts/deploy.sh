@@ -130,8 +130,21 @@ if docker image inspect ubyhost:local >/dev/null 2>&1; then
   echo "Kept the running image as ubyhost:previous for rollback."
 fi
 
-echo "==> Building image"
-docker compose build --pull
+# 0415: the GitHub deploy builds the image from the commit CI passed, pushes it
+# to GHCR and passes it here as UBYHOST_IMAGE, so the server only pulls. A
+# manual deploy without it, or a pull that fails, builds here as before.
+if [ -n "${UBYHOST_IMAGE:-}" ] && docker pull "${UBYHOST_IMAGE}"; then
+  echo "==> Using CI-built image ${UBYHOST_IMAGE}"
+  docker tag "${UBYHOST_IMAGE}" ubyhost:local
+  # Drop the extra tag so old commit images do not pile up on the disk.
+  docker image rm "${UBYHOST_IMAGE}" >/dev/null
+else
+  if [ -n "${UBYHOST_IMAGE:-}" ]; then
+    echo "WARNING: could not pull ${UBYHOST_IMAGE}; building on the server instead." >&2
+  fi
+  echo "==> Building image"
+  docker compose build --pull
+fi
 
 if [ -n "${BACKUP_STAMP}" ]; then
   echo "==> Dry-running database migration against a copy of the live database"
