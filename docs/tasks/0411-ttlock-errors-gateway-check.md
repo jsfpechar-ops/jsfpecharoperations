@@ -37,11 +37,11 @@ Owner (Josef, 2026-10-26): lock 35874326 answers `-2012` ("not connected to any 
 4. **Script.** In `ttlock-check.sh` add the case `gateway-state` that runs `ttlock.gateway_check(int(sys.argv[1]), sys.argv[2])` through `docker compose exec -T worker python -c`, printing `gateways found: N`, then per gateway `online yes/no, locks N, signal strong/medium/weak`. Add the word to the usage lines at the top. `bash -n` and shellcheck clean.
 5. **Docs.** `docs/TTLOCK.md`: move the "known gap" sentence in the error table into the new kinds (`lock_unusable`, `bad_pin`) and add the two paths to the path list. `docs/OPERATIONS.md` "Alert kinds": add `lock_no_gateway`.
 
-## 5. Not allowed
+## 5. Do not touch
 
 Storing gateway names/MACs, a new dependency, a new table or migration, changing retry timings, touching `-3037` handling, running `gateway_check` from a page or on a schedule (owner runs it by hand).
 
-## 6. Tests
+## 6. Commands
 
 From `App/`: `.venv/bin/python -m pytest tests/test_ttlock_errors_0411.py tests/test_ttlock*.py tests/test_door_code*.py -q --tb=short -x 2>&1 | tail -30`, then `.venv/bin/python -m pytest tests/test_host_i18n.py tests/test_privacy_first.py -q 2>&1 | tail -30` (if `test_host_i18n.py` fails with `no such table`, that is the known isolation bug, see 0394 report: run it alone and say so). From the root: `python3 scripts/context_lint.py | tail -5`, `bash -n deploy/lightsail/scripts/ttlock-check.sh`.
 
@@ -58,3 +58,7 @@ From `App/`: `.venv/bin/python -m pytest tests/test_ttlock_errors_0411.py tests/
 ## 8. Stop and ask
 
 An anchor is not found, TTLock rejects POST on the gateway paths, `door_code_failed` is wired in a way this brief does not describe, or a test fails twice.
+
+## 9. Report
+
+`docs/tasks/0411-report.md`, 600 tokens at most (executor.md), `Status: review`, one PR, owner merges and deploys. Owner steps after deploy: run `./scripts/ttlock-check.sh gateway-state 3 35874326` and read the answer.
