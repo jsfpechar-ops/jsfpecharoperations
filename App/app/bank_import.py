@@ -4,6 +4,10 @@ The operator downloads a statement from ČSOB internet banking (GPC/ABO or CSV)
 and uploads it on /admin/fakturace. Nothing here calls the bank: there is no
 outbound request. A payment whose variable symbol and amount fit an unpaid
 invoice marks it paid; everything else waits for the operator.
+
+The account also receives other money (Booking.com payouts, card refunds). A
+credit whose variable symbol cannot be a UbyHost invoice is skipped and not
+stored (brief 0420): only what billing needs is kept.
 """
 from __future__ import annotations
 
@@ -18,6 +22,8 @@ from typing import Any, Dict, List, Optional
 from . import billing_invoices, billing_jobs, db
 
 STATUSES = ("matched", "unmatched", "partial", "overpaid")
+# Our VS is the year and a 4-digit number (UBY-2026-0042 -> 20260042).
+INVOICE_VS = re.compile(r"20\d{6}")
 
 
 class StatementError(ValueError):
@@ -90,6 +96,7 @@ _CSV_FIELDS = {
     "amount": ("castka", "objem", "amount"),
     "vs": ("variabilnisymbol", "vs"),
     "account": ("protiucet", "cisloprotiuctu", "protiucetabanka", "counteraccount"),
+    "bank": ("kodbankyprotiuctu", "kodbanky", "bankcode"),
     "message": ("zpravaproprijemce", "poznamka", "popis", "zprava", "message"),
 }
 
@@ -146,12 +153,15 @@ def parse_csv(text: str) -> List[Dict[str, Any]]:
         if amount is None or received is None or amount <= 0:
             continue
         tx = cell("id")
+        account = cell("account")
+        if account and cell("bank") and "/" not in account:
+            account = f"{account}/{cell('bank')}"
         rows.append({
-            "bank_tx_id": f"csv-{tx}" if tx else _row_id(received, str(amount), cell("vs"), cell("account"), cell("message")),
+            "bank_tx_id": f"csv-{tx}" if tx else _row_id(received, str(amount), cell("vs"), account, cell("message")),
             "received_on": received,
             "amount_haler": amount,
             "vs": _vs(cell("vs")),
-            "counter_account": cell("account"),
+            "counter_account": account,
             "message": cell("message")[:140],
         })
     return rows
@@ -202,10 +212,14 @@ def record(row: Dict[str, Any], *, actor: str = "admin") -> Optional[str]:
 
 
 def import_statement(data: bytes, *, actor: str = "admin") -> Dict[str, int]:
-    """Read and record every credit in the file; counts per status, plus ``seen`` for repeats."""
+    """Record every credit that could pay an invoice; counts per status, ``seen`` for repeats, ``ignored`` for the rest."""
     counts = {status: 0 for status in STATUSES}
     counts["seen"] = 0
+    counts["ignored"] = 0
     for row in parse(data):
+        if not INVOICE_VS.fullmatch(row["vs"]):
+            counts["ignored"] += 1
+            continue
         status = record(row, actor=actor)
         counts[status or "seen"] += 1
     db.audit("bank_statement_import", " ".join(f"{k}={v}" for k, v in counts.items()), actor=actor)

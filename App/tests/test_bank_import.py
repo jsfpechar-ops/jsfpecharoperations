@@ -111,9 +111,10 @@ def test_an_exact_payment_marks_the_invoice_paid_and_a_repeat_is_only_seen(invoi
 def test_too_little_too_much_and_unknown_wait_for_the_operator(invoice):
     _owner, inv = invoice
     short = _gpc_line(_tx(), inv["total_haler"] - 100, inv["vs"])
-    unknown = _gpc_line(_tx(), 9900, "123")
-    counts = bank_import.import_statement(_gpc(short, unknown), actor="test")
-    assert counts["partial"] == 1 and counts["unmatched"] == 1
+    unknown = _gpc_line(_tx(), 9900, "20991234")
+    other = _gpc_line(_tx(), 9900, "123")
+    counts = bank_import.import_statement(_gpc(short, unknown, other), actor="test")
+    assert counts["partial"] == 1 and counts["unmatched"] == 1 and counts["ignored"] == 1
     assert billing_invoices.get(inv["id"])["paid_on"] is None
     waiting = {r["status"] for r in bank_import.unmatched() if r["message"] == "TEST 0418"}
     assert waiting == {"partial", "unmatched"}
@@ -144,3 +145,36 @@ def test_no_outbound_request():
     source = (bank_import.__file__ and open(bank_import.__file__, encoding="utf-8").read())
     for name in ("requests", "httpx", "urllib", "socket"):
         assert f"import {name}" not in source
+
+
+# The real ČSOB export header (2026-10), UTF-8 with BOM, CRLF; rows are made up.
+CSOB_HEADER = (
+    "číslo účtu;datum zaúčtování;částka;měna;zůstatek;číslo protiúčtu;kód banky protiúčtu;"
+    "jméno protistrany;adresa protistrany;konstantní symbol;variabilní symbol;specifický symbol;"
+    "označení operace;název trvalého příkazu;vlastní poznámka;zpráva;kategorie;původní transakce;"
+    "kurz;E2E identifikace;reference plátce;původní plátce;konečný příjemce;ID transakce"
+)
+
+
+def _csob(rows: list) -> bytes:
+    lines = ["Pohyby na účtu 123456789/0300 dne 26.10.2026 21:05:08.", "", CSOB_HEADER]
+    for date_, amount, account, bank, vs, message, tx in rows:
+        cells = ["123456789/0300", date_, amount, "CZK", "1000,00", account, bank, "Penzion Test", "", "",
+                 vs, "", "Příchozí úhrada", "", "", message, "Příjem", "", "", "", "", "", "", tx]
+        lines.append(";".join(cells))
+    return ("\ufeff" + "\r\n".join(lines) + "\r\n").encode("utf-8")
+
+
+def test_the_real_csob_export_is_read_and_other_money_is_skipped(invoice):
+    _owner, inv = invoice
+    kc = f"{inv['total_haler'] // 100},00"
+    data = _csob([
+        (TODAY.strftime("%d.%m.%Y"), kc, "1234567890", "0800", inv["vs"], "TEST 0418", f"transhist-{_tx()}"),
+        (TODAY.strftime("%d.%m.%Y"), "29248,95", "2550840118", "2600", "0000000000", "TEST 0418", f"transhist-{_tx()}"),
+        (TODAY.strftime("%d.%m.%Y"), "-219,00", "", "", "205000298", "TEST 0418", f"transhist-{_tx()}"),
+    ])
+    rows = bank_import.parse(data)
+    assert len(rows) == 2 and rows[0]["counter_account"] == "1234567890/0800"
+    counts = bank_import.import_statement(data, actor="test")
+    assert counts["matched"] == 1 and counts["ignored"] == 1 and counts["unmatched"] == 0
+    assert billing_invoices.get(inv["id"])["paid_via"] == "bank_auto"
