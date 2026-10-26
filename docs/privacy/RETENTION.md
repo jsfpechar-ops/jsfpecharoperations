@@ -23,6 +23,8 @@ under the GDPR storage-limitation principle, also a ceiling.
 | Submission envelopes (XML with doc numbers) | `submission.request_xml`, `response_xml` | submission created | 90 days | `reporting.purge_submission_payloads` (12 h sweep) | Minimisation |
 | Orphaned submissions | `submission` | six-year cutoff, no guest points at it | 6 years | `housebook.purge_orphan_submissions` | § 101 evidence |
 | Invoices | `invoice`, `invoice_item` | issue date | 10 years | `invoices.purge_expired` | Accounting law |
+| UbyHost's own invoices to hosts and the bank payments for them (buyer name, address, IČO/DIČ, e-mail as printed; amount, VS, payer account and message) | `platform_invoice`, `bank_payment` | issue / receipt date | 10 years from the end of the year of issue; when the workspace is deleted the invoice keeps its printed copy and loses the account link | `retention.py` workspace deletion (link only); 10-year purge step comes with the billing-invoices brief, first due 2037 | Accounting law (§ 35 zákon 235/2004 Sb.) |
+| Billing details and plan (buyer name, address, IČO/DIČ, e-mail; plan, apartments, dates) | `billing_account` | account | life of the account | `retention.py` workspace deletion | Contract |
 | Mail rows | `email_outbox`, `console_mail_log` | created | 14 days | `mail.purge_old` | Minimisation |
 | Audit rows | `audit` | created | 3 years, except `legal_accepted` (G-D7) | `retention.py` audit step | Accountability |
 | Acceptance evidence | `legal_acceptance` | account disabled + 3 years | life of account + 3 years (G-D7) | `retention.py` acceptance step | Accountability |

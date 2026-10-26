@@ -353,6 +353,14 @@ def _delete_workspace(owner_id: int) -> None:
         cur.execute("DELETE FROM push_outbox WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM push_subscription WHERE user_account_id = ?", (owner_id,))
         cur.execute("DELETE FROM lock_account WHERE owner_user_id = ?", (owner_id,))
+        # Brief 0411: the billing row goes with the account. UbyHost's own
+        # invoices are accounting records kept 10 years: they only lose the
+        # link (snapshot_json keeps the buyer as printed). A founder slot stays used.
+        cur.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (owner_id,))
+        cur.execute(
+            "UPDATE platform_invoice SET owner_user_id = NULL WHERE owner_user_id = ?", (owner_id,)
+        )
+        cur.execute("UPDATE founder_slot SET owner_user_id = NULL WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM audit WHERE owner_user_id = ?", (owner_id,))
         # 0275: the welcome-back dates (last dashboard visit) go with the account.
         welcome_back.forget(cur, owner_id)

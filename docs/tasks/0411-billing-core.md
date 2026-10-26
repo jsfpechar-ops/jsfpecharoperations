@@ -1,6 +1,6 @@
 # 0411: Billing core (B1): migration, plans, prices, entitlements
 
-Status: todo
+Status: review
 Depends on: none | Base commit: 1255954 | Branch: task/0411-billing-core
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 Order: after 0347, 0350 and 0353 if they are still open (they also name `config.py`, `retention.py`, `RETENTION.md`); the excerpts in §2 catch any drift.
