@@ -200,7 +200,12 @@ def enabled() -> bool:
 
 
 def allowed_for(owner_user_id: Optional[int]) -> bool:
-    return enabled() and owner_user_id is not None
+    if not enabled() or owner_user_id is None:
+        return False
+    # 0415: the plan decides: Max or the TTLock add-on; trials and OG hosts keep it.
+    from . import billing
+
+    return billing.entitlements(int(owner_user_id)).ttlock
 
 
 def locks_of(account: Optional[dict]) -> List[dict]:
