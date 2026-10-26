@@ -283,6 +283,8 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
 7. `./scripts/deploy.sh` then `./scripts/status.sh` and a login test.
 8. Point Cloudflare A record at the **new** static IP. Keep Full (strict).
 
+**Rebuild drill (once a quarter).** Run steps 1 to 7 on a throwaway instance, skip step 8, sign in through `curl --resolve` or a hosts-file entry, and note how long it took in [status](context/status.md). Delete the instance afterwards. The drill proves the replica, the `.env` copy and the password-manager key together; `restore_test.sh` only proves the replica.
+
 ## Scheduler
 
 `UBYHOST_ENABLE_SCHEDULER=1` (default) starts APScheduler. Since WP06 it runs
