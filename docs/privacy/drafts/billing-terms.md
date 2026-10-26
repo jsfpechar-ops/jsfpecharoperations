@@ -1,6 +1,6 @@
 # Draft: Terms § 15 and Privacy note for paid plans (billing phase 1)
 
-Status: **draft for the owner and counsel.** Nothing here is live. Applying it is a Terms/Privacy text change, so it needs a version bump (1.6 → 1.7 in `App/app/config.py` defaults and `docs/ENVIRONMENT.md`), a new `UBYHOST_LEGAL_EFFECTIVE_DATE`, and notice to hosts at least 30 days before (Terms § 22). Today's § 15 already allows fees "on reasonable notice", so billing can be switched on for **new** hosts before this lands; existing ("OG") hosts are never billed by the code.
+Status: **applied** in brief 0420 (2026-10-26): the owner signed off as counsel; no hosts are official yet, so it ships with the pending 1.7 release without extra notice. The questions at the end stay as notes for later.
 
 What the text must match (the code, briefs 0411–0419):
 
