@@ -37,3 +37,12 @@ Each row says what the spec says, what the code actually has, and how the briefs
 | 22 | "Platba kartou přibude brzy" in both `pricing.pay_note` and FAQ 8; "Bez platební karty" in both the hero chips and `pricing.cta_note` | One explanation in one place: /cenik says the card line in FAQ 8 only (`pricing.pay_note` belongs to the plan picker, B4), and `pricing.cta_note` is just "Zkušební doba začne, až propojíte UbyPort." since the chip already says "Bez platební karty". |
 
 Checked and fine: `invoice_pdf.render`, `payments.spayd`/`qr_png_bytes`, `ares.lookup`, `operator.details`, `lifecycle_mail.py`, `mail.attachments`, `scheduler.py` (APScheduler), `door_codes.py`, `icalsync.py`, `_shell_topbar.html`, `_privacy_first.html`, `routes/legal.py:pricing`, `templates/pricing.html`, `landing_i18n.py`, `landing.css`; next free migration `0023`, next free task `0411`. `static/pricing.js`, `billing.py`, `billing_invoices.py`, `bank_import.py`, `routes/billing.py` and `routes/admin_billing.py` are new files.
+
+## Owner answers (2026-10-26)
+
+| Question | Answer | Effect on the briefs |
+|---|---|---|
+| Business bank account | ČSOB (not Fio) | No Fio adapter and no `UBYHOST_FIO_TOKEN`. B6 matches payments from an uploaded ČSOB statement (GPC/ABO or CSV export) plus "Označit jako zaplaceno"; no outbound bank request. A ČSOB API integration is a later decision. |
+| `UBYHOST_OPERATOR_*` | correct | none |
+| Accountant | UBY-2026-0001 numbering, "Nejsem plátce DPH" and CSV + PDF export are enough | B9 export as specified; no ISDOC/Pohoda |
+| Current customers | stay as they are ("OGs"), no invoice yet; owner decides later | B1 behaviour stands: no `billing_account` row = active Standard, never invoiced or paused |

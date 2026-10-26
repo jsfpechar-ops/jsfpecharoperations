@@ -62,7 +62,7 @@ If any excerpt is not found verbatim, STOP (§8).
 | Path | Action | What |
 |---|---|---|
 | `App/app/migrations/0023_billing.sql` | create | 5 tables, 3 indexes, 1 apartment column |
-| `App/app/config.py` | edit | 6 billing settings after Excerpt A |
+| `App/app/config.py` | edit | 5 billing settings after Excerpt A |
 | `App/app/billing.py` | create | prices, statuses, entitlements, changes, founder slots |
 | `App/app/retention.py` | edit | workspace deletion handles the billing tables |
 | `App/tests/test_billing_core.py` | create | tests for all of the above |
@@ -188,8 +188,6 @@ BILLING_BANK_ACCOUNT = os.environ.get("UBYHOST_BILLING_BANK_ACCOUNT", "").strip(
 BILLING_IBAN = os.environ.get("UBYHOST_BILLING_IBAN", "").strip()
 # "non_payer" until UbyHost registers for VAT, then "payer".
 BILLING_VAT_STATUS = os.environ.get("UBYHOST_BILLING_VAT_STATUS", "non_payer").strip() or "non_payer"
-# Optional read-only Fio API token; with it, bank payments are matched automatically.
-FIO_TOKEN = os.environ.get("UBYHOST_FIO_TOKEN", "").strip()
 # How many hosts can get the founder price.
 FOUNDER_SLOTS = int(os.environ.get("UBYHOST_FOUNDER_SLOTS", "100"))
 ```
