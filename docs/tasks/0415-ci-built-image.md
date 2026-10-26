@@ -1,6 +1,6 @@
 # 0415: Build the production image in GitHub Actions, pull it on the server
 
-Status: in-progress
+Status: review
 Depends on: none | Base commit: 838bec1 | Branch: task/0415-ci-built-image
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
