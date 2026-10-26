@@ -26,7 +26,7 @@ def setup(monkeypatch):
     monkeypatch.setattr(config, "MAIL_BACKEND", "console")
     monkeypatch.setattr(config, "BILLING_IBAN", "CZ6503000000000123456789")
     suffix = secrets.token_hex(4)
-    admin = auth.create_account(f"adm{suffix}@example.test", "Admin", role="admin", username=f"adm{suffix}")
+    auth.create_account(f"adm{suffix}@example.test", "Admin", role="admin", username=f"adm{suffix}")
     host = auth.create_account(f"hst{suffix}@example.test", "Host", username=f"hst{suffix}")
     db.insert("apartment", {"internal_name": "Admin 1", "owner_user_id": host, "created_at": db.utcnow()})
     billing.ensure_account(host)

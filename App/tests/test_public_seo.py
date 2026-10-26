@@ -8,7 +8,6 @@ themselves, and answer in Czech to the hosts the product is built for.
 from __future__ import annotations
 
 import re
-from urllib.parse import quote
 
 from starlette.testclient import TestClient
 
