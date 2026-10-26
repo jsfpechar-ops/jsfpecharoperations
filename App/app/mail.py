@@ -69,6 +69,8 @@ KINDS = (
     "billing_invoice",
     # 0414: trial reminders, 7 and 3 days before the end and on the last day.
     "billing_trial",
+    # 0417: payment reminders 1 and 7 days after the due date, and the read-only notice.
+    "billing_overdue",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -118,6 +120,8 @@ HOST_KINDS = (
     "billing_invoice",
     # 0414: trial reminders, 7 and 3 days before the end and on the last day.
     "billing_trial",
+    # 0417: payment reminders 1 and 7 days after the due date, and the read-only notice.
+    "billing_overdue",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.
