@@ -98,4 +98,3 @@ Grep. **HR**: owner decides.
 - K-MORE: #436 undeployed.
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
-- 2026-10-26 TTLock lock 35874326 (account 3): errcode -2012 'not connected to any gateway'; G2 online, lock probably not paired under it. Owner checking. Runbook: [TTLOCK](../TTLOCK.md#reading-ttlock-logs-and-testing-the-gateway-server-runbook)
