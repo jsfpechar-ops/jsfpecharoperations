@@ -947,6 +947,48 @@ def sync_feed(
     return stats
 
 
+def sync_owner_if_stale(owner_user_id: Optional[int]) -> int:
+    """0423: re-read an owner's calendars when they open the app.
+
+    A booking made since the hourly poll should be there when the host looks.
+    Only calendars not checked for ``ICAL_OPEN_SYNC_MINUTES`` are read, and each
+    is claimed with one conditional UPDATE so two workers (or a quick reload)
+    never read the same calendar twice. Returns how many calendars were read.
+    """
+    minutes = config.ICAL_OPEN_SYNC_MINUTES
+    if minutes <= 0:
+        return 0
+    now = db.utcnow()
+    cutoff = (datetime.fromisoformat(now) - timedelta(minutes=minutes)).isoformat()
+    feeds = db.query(
+        "SELECT f.* FROM ical_feed f JOIN apartment a ON a.id = f.apartment_id "
+        f"WHERE f.active = 1 AND a.active = 1 AND {db.null_safe_eq('a.owner_user_id')} "
+        "AND (f.last_checked_at IS NULL OR f.last_checked_at < ?)",
+        (owner_user_id, cutoff),
+    )
+    read = 0
+    paused: Dict[int, bool] = {}
+    for feed in feeds:
+        if import_paused(int(feed["apartment_id"]), paused):
+            continue
+        claimed = db.execute_rowcount(
+            "UPDATE ical_feed SET last_checked_at = ? "
+            "WHERE id = ? AND (last_checked_at IS NULL OR last_checked_at < ?)",
+            (now, feed["id"], cutoff),
+        )
+        if not claimed:
+            continue
+        read += 1
+        try:
+            sync_feed(feed)
+        except Exception as exc:  # noqa: BLE001 - one feed must not stop the rest
+            log.exception("ical open-sync feed %s failed", feed["id"])
+            _record_feed_failure(feed, exc, db.utcnow())
+    if read:
+        log.info("ical_open_sync feeds=%s", read)
+    return read
+
+
 def import_paused(apartment_id: int, seen: Dict[int, bool]) -> bool:
     """0415: a paused plan stops calendar import; reporting goes on."""
     from . import billing
