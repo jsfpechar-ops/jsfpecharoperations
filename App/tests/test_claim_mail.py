@@ -1841,6 +1841,8 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "billing_invoice",
         # 0414: the trial reminders.
         "billing_trial",
+        # 0417: payment reminders and the read-only notice.
+        "billing_overdue",
     }
 
 
