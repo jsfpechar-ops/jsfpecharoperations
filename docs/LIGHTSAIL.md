@@ -260,7 +260,16 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 2. Copy `.env` (do not commit it) and `caddy/certs/origin*.pem` from the old host or a secrets store. **Before the first deploy**, set `UBYHOST_SECRET_KEY` in `.env` to the production key from the password manager: with it empty, `deploy.sh` generates a new key and the restored guest data and UBY-WS passwords cannot be decrypted.
 3. `./scripts/deploy.sh` once so volume `ubyhost-data` exists.
 4. `docker compose stop ubyhost`
-5. Place backup files on the host (from Drive): `ubyhost.db` and `secret_key`.
+5. Restore the database. **From Litestream (preferred, newest data):** `.env` must have the `LITESTREAM_*` values and `COMPOSE_PROFILES=litestream`. Then:
+
+```bash
+docker compose stop worker litestream
+docker compose run --rm --no-deps -T --entrypoint sh litestream -c \
+  'rm -rf /data/ubyhost.db /data/ubyhost.db-wal /data/ubyhost.db-shm /data/.ubyhost.db-litestream &&
+   litestream restore -config /etc/litestream.yml -o /data/ubyhost.db "$LITESTREAM_DB_PATH"'
+```
+
+   Then go to step 7. **From a Drive copy instead:** place `ubyhost.db` and `secret_key` on the host and run:
 
 ```bash
 docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
