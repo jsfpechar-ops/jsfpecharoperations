@@ -1,0 +1,91 @@
+/* Brief 0412: the price list and calculator (/cenik). The page reuses the
+   landing hero, sections, lanes, FAQ list and final band; only the calculator,
+   the two plan cards and the founder strip need rules of their own. Container
+   widths come from the shared rule at the top of this file. */
+.pricing-page { overflow: hidden; }
+.pricing-plans-section { padding-top: 0; }
+
+.pricing-calc { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px 28px; margin-bottom: 32px; }
+.pricing-calc[hidden] { display: none; }
+.pricing-toggle { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: var(--radius-pill); background: var(--canvas-subtle); }
+.pricing-toggle button {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--ink-secondary);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pricing-toggle button[aria-pressed="true"] { color: var(--ink); background: var(--surface); }
+.pricing-toggle button span { margin-left: 6px; color: var(--brand-ink); font-size: var(--text-sm); }
+.pricing-stepper { display: inline-flex; align-items: center; gap: 12px; font-weight: 700; }
+.pricing-stepper button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+.pricing-stepper button:hover { background: var(--surface-hover); }
+.pricing-stepper button:disabled { opacity: .4; cursor: default; }
+.pricing-stepper output { min-width: 2ch; font-size: 1.25rem; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+.pricing-ttlock { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 600; cursor: pointer; }
+.pricing-ttlock input { width: 20px; height: 20px; margin: 0; accent-color: var(--brand); }
+
+.pricing-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; align-items: stretch; max-width: 1040px; margin-inline: auto; }
+.pricing-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: clamp(24px, 4vw, 40px);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.pricing-card-max { border-color: var(--brand); outline: 1px solid var(--brand); }
+.pricing-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.pricing-card-head h3 { margin: 0; font-size: clamp(1.4rem, 2.4vw, 1.8rem); font-weight: 780; letter-spacing: -.04em; }
+.pricing-card-head p { margin: 6px 0 0; color: var(--ink-secondary); }
+.pricing-card-head img { width: 44px; mix-blend-mode: multiply; }
+.pricing-badge {
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--brand) 28%, var(--border));
+  border-radius: var(--radius-pill);
+  color: var(--brand-ink);
+  background: var(--brand-soft);
+  font-size: var(--text-xs);
+  font-weight: 750;
+  white-space: nowrap;
+}
+.pricing-price { margin: 0; color: var(--ink-secondary); }
+.pricing-price strong { color: var(--ink); font-size: clamp(2.8rem, 5vw, 4rem); font-weight: 800; line-height: 1; letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
+.pricing-sub { margin: -10px 0 0; color: var(--ink-secondary); }
+.pricing-meta { margin: -12px 0 0; color: var(--ink-muted); font-size: var(--text-sm); }
+.pricing-button { width: 100%; }
+.pricing-features { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.pricing-features li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: start; color: var(--ink-secondary); }
+.pricing-features svg { margin-top: 3px; color: var(--green); }
+.pricing-fineprint { margin: 18px 0 0; color: var(--ink-muted); font-size: var(--text-sm); text-align: center; }
+
+.pricing-founder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 28px;
+  max-width: 1040px;
+  margin: 32px auto 0;
+  padding: clamp(24px, 4vw, 36px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--brand-soft);
+}
+.pricing-founder h3 { margin: 0; font-size: clamp(1.3rem, 2.2vw, 1.7rem); font-weight: 760; letter-spacing: -.035em; }
+.pricing-founder p { margin: 6px 0 0; color: var(--ink-secondary); }
