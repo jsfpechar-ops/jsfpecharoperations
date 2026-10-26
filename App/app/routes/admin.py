@@ -3543,7 +3543,9 @@ async def reservation_resend_claim(reservation_id: int, request: Request):
     reservation = access.reservation(request, reservation_id)
     if not reservation:
         return _back("/reservations", err=_flash(request, "flash.error.no_such_stay"))
-    back = f"/reservations/{reservation_id}#guests"
+    # back() appends ?msg= to this path, so the #guests anchor must come after
+    # the query or the browser would treat the message as part of the fragment.
+    back = f"/reservations/{reservation_id}"
     if not mail.mail_enabled():
         return _back(back, err=_flash(request, "flash.error.claim_resend_mail_off"))
     apartment = access.apartment(request, reservation["apartment_id"])
