@@ -1,6 +1,6 @@
 # 0411: Fix the host "Resend guest form link" action (PR #525 review)
 
-Status: todo
+Status: done
 Depends on: none | Base commit: 1f8a8f6 | Branch: vibe/resend-claim-link-446f76 (PR #525, commit on it directly)
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
