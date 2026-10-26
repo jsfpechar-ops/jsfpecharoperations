@@ -1,6 +1,6 @@
 # Status
 
-Updated: 2026-10-26.
+Updated: 2026-10-25.
 
 ## Production
 
@@ -9,7 +9,7 @@ Updated: 2026-10-26.
 
 ## Now
 
-- #525 resend link + 0411 fixes: merge on green. 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
+- 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
 - Guide + Leon 0341-0355: owner merges #465-#468.
 - 0291-0302 buttons, fees, invoice. **Owner:** PR; CF rules 3-4.
 - 0290: passkey CI/phone pending.

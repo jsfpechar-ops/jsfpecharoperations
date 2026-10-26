@@ -93,7 +93,7 @@ Grep. **HR**: owner decides.
 | K-U16 | Review | Host UI | #389 polish; CI pending | 0102 |
 
 - K-UI-CACHE: bump `?v=` on edits; 1y cache (0172).
-- K-NAV-418: 3 host_i18n tests fail when the file runs alone (no DB init); pass after any DB-seeding test (0411).
+- K-NAV-418: 3 host_i18n tests fail.
 - K-CHECKIN: form alert fix #435; undeployed.
 - K-MORE: #436 undeployed.
 - K-PK0290: passkey fix open.
