@@ -90,6 +90,11 @@ def test_stale_start_screen_not_restored(origin):
         _open(page)
         page.evaluate("document.getElementById('havel-sheet').close()")
         page.locator("#havel-sheet:not([open])").wait_for(state="attached")
+        # The close event saves {open: false} a task later; let it land before seeding.
+        page.wait_for_function(
+            "k => { try { return JSON.parse(sessionStorage.getItem(k) || 'null').open === false; } catch (e) { return false; } }",
+            arg=KEY,
+        )
 
         _set_saved(page, '<div class="havel-topics" data-havel-topics><p>STALE</p></div>')
         page.reload()
