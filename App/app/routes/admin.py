@@ -2931,6 +2931,10 @@ async def test_connection(apartment_id: int, request: Request):
         f"apartment={apartment_id} endpoint={client.endpoint} "
         f"available={available} max_batch={limit}",
     )
+    # 0414: a passed test is the verified UbyPort connection that starts the trial.
+    from .. import billing_trial
+
+    billing_trial.mark_verified(apartment_id, apartment["owner_user_id"])
     alerts.resolve(f"ubyport_auth_failed:{apartment_id}")
     # The error code book carries the severity that decides accepted or not
     # (police letter of 24 September 2026). Load it while the login is known
