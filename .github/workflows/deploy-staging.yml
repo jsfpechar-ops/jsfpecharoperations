@@ -50,6 +50,12 @@ concurrency:
 
 jobs:
   lightsail:
+    # 0422: deploy-lightsail.yml pushes the image to GHCR. Granted here, not
+    # at workflow level, so the other job keeps read-only permissions.
+    permissions:
+      contents: read
+      checks: read
+      packages: write
     uses: ./.github/workflows/deploy-lightsail.yml
     with:
       environment: staging

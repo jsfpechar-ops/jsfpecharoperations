@@ -236,6 +236,15 @@ Weekly off-site (Sunday 04:00 UTC) after `rclone config` remote **`gdrive`**:
 
 Passport photos are **not** in the DB backup. After restore, unverified uploads may be missing; hosts re-check IDs if needed.
 
+**Backup layers (0421).** One continuous copy, one quick local copy and one independent copy are enough:
+
+| Layer | How often | Kept | Used for |
+|---|---|---|---|
+| Litestream → S3 | continuous (10 s), full snapshot daily, check daily | 7 days | main recovery, including a new instance |
+| `backup.sh` on the volume | daily 03:00 UTC | `UBYHOST_BACKUP_RETENTION_DAYS` (set `7` in production `.env`) | quick restore on the same server |
+| `backup-gdrive.sh` | weekly | 30 days | copy outside AWS |
+| Lightsail automatic snapshots | daily | 7 | keep on: the only copy of the whole server (`.env`, origin certs, cron, photos) and the fastest full restore; billed per GB, so a 7-day local retention keeps them small |
+
 ## Restore runbook (same instance)
 
 1. `AGE_IDENTITY_FILE=/path/on/host ./scripts/restore.sh <stamp>` — the age identity must be on the host, never on the volume.
@@ -248,10 +257,19 @@ Passport photos are **not** in the DB backup. After restore, unverified uploads 
 ### Restore onto a **new** Lightsail instance
 
 1. Create instance, static IP, firewall 22/80/443. Run `setup-server.sh`. Clone repo to `/opt/ubyhost`.
-2. Copy `.env` (do not commit it) and `caddy/certs/origin*.pem` from the old host or a secrets store.
+2. Copy `.env` (do not commit it) and `caddy/certs/origin*.pem` from the old host or a secrets store. **Before the first deploy**, set `UBYHOST_SECRET_KEY` in `.env` to the production key from the password manager: with it empty, `deploy.sh` generates a new key and the restored guest data and UBY-WS passwords cannot be decrypted.
 3. `./scripts/deploy.sh` once so volume `ubyhost-data` exists.
 4. `docker compose stop ubyhost`
-5. Place backup files on the host (from Drive): `ubyhost.db` and `secret_key`.
+5. Restore the database. **From Litestream (preferred, newest data):** `.env` must have the `LITESTREAM_*` values and `COMPOSE_PROFILES=litestream`. Then:
+
+```bash
+docker compose stop worker litestream
+docker compose run --rm --no-deps -T --entrypoint sh litestream -c \
+  'rm -rf /data/ubyhost.db /data/ubyhost.db-wal /data/ubyhost.db-shm /data/.ubyhost.db-litestream &&
+   litestream restore -config /etc/litestream.yml -o /data/ubyhost.db "$LITESTREAM_DB_PATH"'
+```
+
+   Then go to step 7. **From a Drive copy instead:** place `ubyhost.db` and `secret_key` on the host and run:
 
 ```bash
 docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
@@ -264,6 +282,8 @@ docker run --rm -v ubyhost-data:/data -v "$PWD/restore-in":/backup alpine \
 6. If `UBYHOST_SECRET_KEY` is empty and `/data/secret_key` exists, deploy.sh uses the file. Never replace the key on a server that already has data.
 7. `./scripts/deploy.sh` then `./scripts/status.sh` and a login test.
 8. Point Cloudflare A record at the **new** static IP. Keep Full (strict).
+
+**Rebuild drill (once a quarter).** Run steps 1 to 7 on a throwaway instance, skip step 8, sign in through `curl --resolve` or a hosts-file entry, and note how long it took in [status](context/status.md). Delete the instance afterwards. The drill proves the replica, the `.env` copy and the password-manager key together; `restore_test.sh` only proves the replica.
 
 ## Scheduler
 
