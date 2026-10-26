@@ -65,6 +65,8 @@ KINDS = (
     # 0319: Havel support hand-off and the AI budget warning, both to the operator.
     "havel_support",
     "ai_budget",
+    # 0413: UbyHost's own invoice to a host, PDF attached (service mail).
+    "billing_invoice",
 )
 
 # The kinds addressed to a guest rather than to the host. A guest has no
@@ -110,6 +112,8 @@ HOST_KINDS = (
     # 0319: Havel support hand-off and the AI budget warning, both to the operator.
     "havel_support",
     "ai_budget",
+    # 0413: UbyHost's own invoice to a host, PDF attached (service mail).
+    "billing_invoice",
 )
 # The only kinds a host can unsubscribe from (WP12). Everything else is service
 # mail about filings, stays or the account and ignores the opt-out flag.
@@ -342,6 +346,7 @@ def delivery_html(payload: Dict[str, Any]) -> str:
 STAY_FEE_FILING_KEY = "stay_fee_filing_id"
 QR_SPAYD_KEY = "qr_spayd"
 QR_CONTENT_ID = "stayfeeqr"
+PLATFORM_INVOICE_KEY = "platform_invoice_id"
 
 
 def attachments(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -356,6 +361,14 @@ def attachments(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
         if not data:
             raise MailConfigError("stay fee filing PDF is missing")
         name = str(payload.get("attachment_name") or f"poplatek-z-pobytu-{row['period_key']}.pdf")
+        parts.append({"filename": name, "maintype": "application", "subtype": "pdf",
+                      "data": data, "cid": None})
+    platform_invoice_id = payload.get(PLATFORM_INVOICE_KEY)
+    if platform_invoice_id:
+        from . import billing_invoices
+
+        data = billing_invoices.pdf_bytes(int(platform_invoice_id))
+        name = str(payload.get("attachment_name") or f"faktura-{platform_invoice_id}.pdf")
         parts.append({"filename": name, "maintype": "application", "subtype": "pdf",
                       "data": data, "cid": None})
     spayd = str(payload.get(QR_SPAYD_KEY) or "")
