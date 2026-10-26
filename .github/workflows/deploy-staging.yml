@@ -42,6 +42,7 @@ on:
 permissions:
   contents: read
   checks: read
+  packages: write # 0415: deploy-lightsail.yml pushes the image to GHCR
 
 # One staging deploy at a time; never cancel one half-way.
 concurrency:

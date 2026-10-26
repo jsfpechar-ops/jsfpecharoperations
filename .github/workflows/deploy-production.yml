@@ -24,6 +24,7 @@ on:
 permissions:
   contents: read
   checks: read
+  packages: write # 0415: deploy-lightsail.yml pushes the image to GHCR
 
 # One production deploy at a time: two overlapping runs would race the same
 # checkout on the server. The running one is never cancelled — a half-applied
