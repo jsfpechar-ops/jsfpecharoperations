@@ -68,5 +68,4 @@ Append-only.
 - 2026-10-24 Guide Quick answers screen (owner).
 - 2026-10-25 | Invoice "Fill from register" also asks the MFČR VAT register (CRPDPH SOAP) on the host's click; sends only the DIČ digits; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
 - 2026-10-26 | Billing phase 1: invoices only, no card gateway yet | owner | 0411
-- 2026-10-26 | Billing pause after 14 days unpaid is read-only, never blocks UbyPort filing; payments matched only from uploaded ČSOB GPC/CSV (no bank API, no outbound request); accountant export = monthly ZIP (CSV + PDFs) | owner (ČSOB, accountant), orchestrator | 0415, 0418, 0419
-- 2026-10-26 | Terms § 15 billing text stays a draft (`docs/privacy/drafts/billing-terms.md`) until counsel and a 1.7 version bump; current § 15 allows fees for new hosts | orchestrator | B10
+- 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
