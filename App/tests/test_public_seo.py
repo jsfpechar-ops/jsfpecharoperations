@@ -156,6 +156,12 @@ def test_without_javascript_the_page_shows_one_apartment_billed_yearly():
     assert "data-pricing-calc hidden" in cs
     en = _client().get("/cenik?lang=en").text
     assert "Billed 1,190 CZK once a year" in en
+    assert "+39 CZK per apartment / month, billed yearly: 470 CZK" in en
+    assert "+472 CZK / month, billed yearly: 5,660 CZK" in en
+    assert "Optional, account-wide. Excluded from plan totals." in en
+    assert "Both plans also include Havel" in en
+    assert "save 33%" not in en
+    assert "ušetříte 33 %" not in cs
 
 
 def test_the_login_page_describes_itself_for_the_search_snippet():
