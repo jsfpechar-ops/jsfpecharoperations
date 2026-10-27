@@ -16,6 +16,15 @@ from tests.test_host_stay_actions_browser import _browser
 SELECTION = {"plan": "standard", "interval": "year", "apartments": "7", "ttlock": "1"}
 
 
+def fits(page):
+    geometry = page.evaluate("""() => ({width: innerWidth,
+        scroll: document.documentElement.scrollWidth,
+        overflow: [...document.querySelectorAll("body *")].filter(el => {
+            const r = el.getBoundingClientRect(); return r.right > innerWidth + 1;
+        }).slice(0, 8).map(el => el.tagName + "." + el.className)})""")
+    assert geometry["scroll"] <= geometry["width"] + 1, geometry
+
+
 def screenshot(page, name):
     root = Path(os.environ.get("UBYHOST_SHOTS_DIR", ".pytest_cache/signup-pricing-shots"))
     root.mkdir(parents=True, exist_ok=True)
@@ -42,8 +51,8 @@ def test_signup_and_onboarding_review_fit_without_js(
         assert page.locator('input[name="apartments"]').input_value() == "7"
         assert page.locator('input[name="plan"]').input_value() == "standard"
         assert page.locator('form[action="/signup"] button[type="submit"]').is_visible()
-        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
         screenshot(page, f"signup-pricing-{lang}-{width}-js{int(javascript)}.png")
+        fits(page)
 
         context.add_cookies([{"name": auth.SESSION_COOKIE,
                              "value": host["client"].cookies.get(auth.SESSION_COOKIE),
@@ -57,8 +66,8 @@ def test_signup_and_onboarding_review_fit_without_js(
         )
         assert review.is_visible()
         assert "7" in review.inner_text()
-        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
         screenshot(page, f"onboarding-pricing-{lang}-{width}-js{int(javascript)}.png")
+        fits(page)
         # Billing review remains a regular link, usable with scripting disabled.
         review.locator('a[href="/predplatne"]').click()
         page.wait_for_url("**/predplatne")
