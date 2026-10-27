@@ -138,6 +138,15 @@ def test_pricing_shows_the_price_list_in_both_languages():
         assert strings["pricing.cta"] in page.text
         assert strings["pricing.std.f1"] in page.text
         assert strings["pricing.max.f2"] in page.text
+        assert "5×" in strings["pricing.max.f2"]
+        assert "Leon" in strings["pricing.max.f2"]
+        assert "5×" in strings["pricing.max.f3"]
+        assert "Leon Lite" in page.text
+        max_card = re.search(r'<article[^>]*data-plan="max".*?</article>', page.text, re.S).group(0)
+        assert max_card.count("TTLock") == 1
+        assert "whitelabel" not in page.text.lower()
+        assert strings["pricing.max.f6"] in page.text
+        assert ("not yet available" if lang == "en" else "zatím nedostupné") in strings["pricing.max.f6"]
         assert strings["pricing.faq.9.q"] in page.text
         assert '"@type": "WebPage"' in page.text
         assert '"@type": "FAQPage"' in page.text
@@ -150,17 +159,16 @@ def test_without_javascript_the_page_shows_one_apartment_billed_yearly():
     """The server renders the default (1 apartment, yearly, shown per month); JS only updates it."""
     cs = _client().get("/cenik?lang=cs").text
     assert "<strong data-total>99</strong>" in cs
-    assert "<strong data-total>163</strong>" in cs
+    assert "<strong data-total>159</strong>" in cs
     assert "Platíte 1 190 Kč jednou ročně" in cs
-    assert "Platíte 1 950 Kč jednou ročně" in cs
+    assert "Platíte 1 908 Kč jednou ročně" in cs
     assert "1 apartmán" in cs
     assert "data-pricing-calc hidden" in cs
     en = _client().get("/cenik?lang=en").text
     assert "Billed 1,190 CZK once a year" in en
-    assert "+39 CZK per apartment / month, billed yearly: 470 CZK" in en
-    assert "+472 CZK / month, billed yearly: 5,660 CZK" in en
-    assert "Optional, account-wide. Excluded from plan totals." in en
-    assert "Both plans also include Havel" in en
+    assert "+470 CZK / apartment / year" in en
+    assert "5,660" not in en and "whitelabel" not in en.lower()
+    assert "Leon Lite" in en and "Havel" in en
     assert "save 33%" not in en
     assert "ušetříte 33 %" not in cs
 

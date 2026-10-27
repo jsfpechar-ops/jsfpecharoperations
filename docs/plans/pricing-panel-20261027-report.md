@@ -1,23 +1,13 @@
-# Pricing panel implementation, 2026-10-27
+# Pricing simplification, 2026-10-27
 
-Status: draft; CI and visual review pending.
+Status: draft; fresh CI and visual review pending.
 
-## Release dependency
+Restored two calm plan cards immediately after billing and apartment controls. Removed the empty badge row, duplicate total descriptions, duplicate Max TTLock block and large discount/branding panels. Six intrinsic shared rows align desktop trial buttons. Standard TTLock remains an inline optional checkbox with the selected interval fee; Max includes it once.
 
-**Do not merge or publish PR #536 without PR #537.** Pricing copy and FAQ structured data now promise that the 30-day trial starts after successful email verification and account activation. PR #537 supplies that trial behavior and removes automatic founder offers. Both PRs remain drafts and need coordinated review before release.
+Apartment bands sit immediately below the cards in a compact disclosure whose summary always shows all three rates. Expanded text explains marginal bands. Branding is a short account-wide optional fee line, excluded from plan totals.
 
-## Changes
+Owner's latest direction: Standard includes Havel; Max adds Leon and five times Havel usage. Both languages and subscription descriptions reflect this. OCR is explicitly coming soon, not available, with no live-feature checkmark. Existing 159 / 1908 pricing, tier math and JS/no-JS signup handoffs are preserved. No founder offer added.
 
-Consolidated billing controls, marginal apartment bands, plans and add-ons into one pricing decision. Intrinsic shared grid rows align trial buttons. Standard alone selects TTLock; Max includes it. Add-on prices follow the billing interval and canonical rates; white-label is account-wide and excluded from plan totals. Existing calculator and signup parameters remain intact. Czech and English copy explain AI roles. Asset versions and hashes updated.
+Updated browser coverage checks card/control spacing, close discount placement, aligned CTAs, premium Leon copy, one TTLock inclusion, disclosure access and accurate annual add-on fees. Existing widths are 360/390/1024/1280 in both languages; CI captures 390px screenshots and an English desktop screenshot. CSS cache key and SHA-256 manifest updated.
 
-## Verification
-
-GitHub CI for bfac481: context, Docker, smoke, shellcheck and secrets passed. Full tests found the last pricing-card logo CSS rule omitted its documented 44px width; corrected without weakening the test. Browser shards were still running at this report update. Follow-up CI confirmed the logo fix; the new trial assertion used the wrong Czech grammatical case, now corrected to match the rendered email-verification sentence. Latest commit requires fresh CI.
-
-The actual pricing.js passed 600 supplementary calculator/handoff assertions across counts 1–50, both billing periods and TTLock states. This does not replace browser verification.
-
-Expanded browser tests cover both languages at 360/390/1024/1280px, marginal totals, button geometry, add-ons, CTA parameters and no-JS fallback. Screenshot capture uses CI browser artifact storage.
-
-## Limitations and owner review
-
-Managed workspace unavailable; no local pytest or browser run. No screenshots have been viewed. Before merge, require green CI, inspect cenik-cs-390.png, cenik-en-390.png and cenik-en-1280.png in browser artifacts, and coordinate #537. No merge or deployment performed.
+Managed workspace startup failed: managed network requirements require sandbox enforcement. No local tests or browser screenshot inspection were possible. CI must pass and screenshots must be inspected before owner merge. No merge or deployment performed.
