@@ -167,10 +167,23 @@ jobs:
           persist-credentials: false
 
       - name: Prepare image Python
+        id: browser_python
         run: |
-          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), sys.version'
-          python3 -m venv /tmp/ubyhost-browser-venv
+          if ! output=$(python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), sys.version' 2>&1); then
+            printf 'problem=%s\n' "$(echo "$output" | tr '\n' ' ' | cut -c1-1500)" >> "$GITHUB_OUTPUT"
+            echo "$output"
+            exit 1
+          fi
+          if ! output=$(python3 -m venv /tmp/ubyhost-browser-venv 2>&1); then
+            printf 'problem=%s\n' "$(echo "$output" | tr '\n' ' ' | cut -c1-1500)" >> "$GITHUB_OUTPUT"
+            echo "$output"
+            exit 1
+          fi
           echo "/tmp/ubyhost-browser-venv/bin" >> "$GITHUB_PATH"
+
+      - name: ${{ steps.browser_python.outputs.problem || 'Image Python ready' }}
+        if: always()
+        run: 'true'
 
       - name: Install Python dependencies
         timeout-minutes: 8
