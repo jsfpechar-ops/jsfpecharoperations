@@ -122,15 +122,7 @@
       </div>
       <p class="pricing-fineprint">{{ t('pricing.cta_note') }} {{ t('pricing.prices_final') }}</p>
 
-      {% if founder_left %}
-      <div class="pricing-founder">
-        <div>
-          <h3>{{ t('pricing.founder.heading') }}</h3>
-          <p>{{ t('pricing.founder.body', n=founder_left) }}</p>
-        </div>
-        <a class="landing-button secondary" data-cta-plan="standard" data-cta-interval="year" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.founder.cta') }}</a>
-      </div>
-      {% endif %}
+
     </section>
 
     <section class="landing-section" aria-labelledby="bands-title">
