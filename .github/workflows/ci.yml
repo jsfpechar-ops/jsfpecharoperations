@@ -174,11 +174,12 @@ jobs:
             echo "$output"
             exit 1
           fi
-          if ! output=$(python3 -m venv /tmp/ubyhost-browser-venv 2>&1); then
+          if ! output=$(python3 -m venv --without-pip /tmp/ubyhost-browser-venv 2>&1); then
             printf 'problem=%s\n' "$(echo "$output" | tr '\n' ' ' | cut -c1-1500)" >> "$GITHUB_OUTPUT"
             echo "$output"
             exit 1
           fi
+          echo "CI_IMAGE_PYTHON=$(command -v python3)" >> "$GITHUB_ENV"
           echo "/tmp/ubyhost-browser-venv/bin" >> "$GITHUB_PATH"
 
       - name: ${{ steps.browser_python.outputs.problem || 'Image Python ready' }}
@@ -188,8 +189,8 @@ jobs:
       - name: Install Python dependencies
         timeout-minutes: 8
         run: |
-          pip install --require-hashes -r requirements.lock
-          pip install -r requirements-dev.txt playwright==1.63.0
+          "$CI_IMAGE_PYTHON" -m pip --python /tmp/ubyhost-browser-venv install --require-hashes -r requirements.lock
+          "$CI_IMAGE_PYTHON" -m pip --python /tmp/ubyhost-browser-venv install -r requirements-dev.txt playwright==1.63.0
 
       - name: Verify preinstalled Chromium and WebKit
         timeout-minutes: 2
