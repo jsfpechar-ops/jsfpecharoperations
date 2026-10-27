@@ -1,0 +1,40 @@
+{#- 0424: copy settings from another property. One small button + one dialog.
+    Callers set copy_action (form action) and optionally copy_section. -#}
+{%- from "_icons.html" import icon with context -%}
+{%- set copy_open = request.query_params.get('copy') == 'choose' -%}
+{%- set copy_query = ('view=settings&section=' ~ copy_section ~ '&') if copy_section else '' -%}
+<a class="ui-btn ui-btn-secondary ui-btn-compact copy-settings-open" href="{{ copy_action }}?{{ copy_query }}copy=choose" data-sheet-open="copy-settings">{{ icon('copy', 16) }}{{ t('apartment.form.copy_from.open') }}</a>
+<dialog id="copy-settings" class="ui-dialog copy-settings-dialog" aria-labelledby="copy-settings-title"{% if copy_open %} open{% endif %}>
+  <div class="ui-sheet">
+    <span class="ui-sheet-handle" aria-hidden="true"></span>
+    <h2 id="copy-settings-title">{{ t('apartment.form.copy_from.title') }}</h2>
+    <form method="get" action="{{ copy_action }}" class="copy-property-form">
+      {% if copy_section %}
+      <input type="hidden" name="view" value="settings">
+      <input type="hidden" name="section" value="{{ copy_section }}">
+      {% endif %}
+      <div class="field">
+        <label for="copy_from">{{ t('apartment.form.copy_from.source') }}</label>
+        <select id="copy_from" name="copy_from">
+          {% for peer in copy_property_peers %}
+          <option value="{{ peer.id }}" {% if copy_from_id == peer.id %}selected{% endif %}>{{ peer.internal_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <h3>{{ t('apartment.form.copy_from.copied_head') }}</h3>
+      <ul class="copy-settings-list">
+        <li>{{ t('apartment.form.copy_from.item_operator') }}</li>
+        <li>{{ t('apartment.form.copy_from.item_automation') }}</li>
+        <li>{{ t('apartment.form.copy_from.item_link') }}</li>
+        <li>{{ t('apartment.form.copy_from.item_fee') }}</li>
+      </ul>
+      <h3>{{ t('apartment.form.copy_from.never_head') }}</h3>
+      <p class="copy-settings-never">{{ t('apartment.form.copy_from.never_body') }}</p>
+      {% if copy_section %}<p class="ui-sub">{{ t('apartment.form.copy_from.empty_only') }}</p>{% endif %}
+      <div class="copy-settings-actions">
+        <button class="ui-btn ui-btn-primary" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
+        <button class="ui-btn ui-btn-secondary" type="submit" formmethod="dialog" formnovalidate data-sheet-close>{{ t('confirm.cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</dialog>

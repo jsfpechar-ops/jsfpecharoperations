@@ -1435,6 +1435,11 @@ def _property_copy_form_context(
         for row in access.apartments(request)
         if apartment_id is None or row["id"] != apartment_id
     ]
+    # 0424: copying is a first-time step. Settings offers it only until setup is finished.
+    if apartment_id is not None:
+        setup = property_setup.load(apartment_id)
+        if not setup or setup["finished"]:
+            peers = []
     copy_from_id = _query_int(request, "copy_from")
     property_prefill: Dict[str, Any] = {}
     copied_from_name: Optional[str] = None

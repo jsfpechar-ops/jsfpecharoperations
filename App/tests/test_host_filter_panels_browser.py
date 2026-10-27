@@ -196,12 +196,19 @@ def test_guest_register_delete_label_keeps_soft_archive_route(host):
     assert "Archived entries" in register_after.text
 
 
+def _keep_page_error(errors, error):
+    # A goto during a cross-document view transition makes Chromium abort it with this
+    # rejection; it comes from the browser, not from our scripts.
+    if not str(error).startswith("Transition was aborted"):
+        errors.append(str(error))
+
+
 def test_filter_draft_calendar_and_month_grid_commit_once(host, base):
     with sync_api.sync_playwright() as playwright:
         browser, context, page = _browser_context(playwright, host, base)
         requests = []
         page_errors = []
-        page.on("pageerror", lambda error: page_errors.append(str(error)))
+        page.on("pageerror", lambda error: _keep_page_error(page_errors, error))
         page.on("request", lambda request: requests.append(request) if request.method == "GET" else None)
 
         page.goto(base + "/reservations?range=all&lang=en")
@@ -386,7 +393,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
     with sync_api.sync_playwright() as playwright:
         browser, _context, page = _browser_context(playwright, host, base, width=1280)
         page_errors = []
-        page.on("pageerror", lambda error: page_errors.append(str(error)))
+        page.on("pageerror", lambda error: _keep_page_error(page_errors, error))
         for width in widths:
             page.set_viewport_size({"width": width, "height": 1000})
             for lang in ("en", "cs"):
@@ -457,6 +464,7 @@ def test_filter_geometry_and_popovers_stay_inside_the_viewport_in_english_and_cz
                         popover = page.locator("[data-month-grid-panel]")
                         if capture and route == "/invoices":
                             _capture(page, f"{name}-{lang}-{width}-month-grid")
+                    settle_motion(page)  # measure the popover where it lands, not mid-motion
                     bounds = popover.bounding_box()
                     assert bounds is not None, f"{width}px {lang} {route}: popover should be visible"
                     assert bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1

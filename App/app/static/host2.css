@@ -563,7 +563,17 @@ body.host-workspace.sidebar-collapsed .sidebar-collapse .ui-icon { transform: ro
 .host-workspace .checkline > span { font-weight: 500; }
 
 /* 0170 */
-.host-workspace .copy-property-form .copyrow { display: flex; align-items: flex-end; gap: var(--space-3); }
+/* 0424: copy settings is one small button that opens a dialog. */
+.host-workspace .copy-settings-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-3); margin: 0 0 var(--space-4); }
+.host-workspace .copy-settings-bar p { margin: 0; margin-right: auto; }
+.host-workspace .copy-settings-open { gap: var(--space-2); }
+.host-workspace .copy-settings-dialog h3 { margin: var(--space-4) 0 var(--space-2); font-size: var(--size-14); font-weight: var(--control-weight); }
+.host-workspace .copy-settings-list { margin: 0; padding-left: 1.25rem; }
+.host-workspace .copy-settings-list li + li { margin-top: var(--space-1); }
+.host-workspace .copy-settings-never { margin: 0; }
+.host-workspace .copy-settings-dialog .ui-sub { margin: var(--space-3) 0 0; }
+.host-workspace .copy-settings-dialog .copy-settings-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
+.host-workspace .copy-settings-dialog select { width: 100%; }
 .host-workspace .copy-property-form .copyrow .field { margin: 0; }
 .host-workspace .copy-property-form .copyrow > .ui-btn { align-self: flex-end; }
 .host-workspace .settings-grid > .ui-form-actions { grid-column: 1 / -1; justify-self: start; }

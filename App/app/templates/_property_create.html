@@ -10,6 +10,9 @@
 {%- set property_values = draft -%}
 <div class="property-create-lane"><div class="property-create">
   <div class="property-create-main">
+    {% if copy_property_peers %}
+    <div class="copy-settings-bar">{% with copy_action='/apartments/new', copy_section='' %}{% include "_copy_settings_dialog.html" %}{% endwith %}</div>
+    {% endif %}
     {% if copied_from_name %}
     <p class="panel property-create-copied" role="status">{{ t('apartment.form.copy_from.notice', name=copied_from_name) }}
       <a href="/apartments/new">{{ t('property_create.copy_clear') }}</a>
@@ -87,19 +90,5 @@
       <li>{{ icon('send', 20) }}<div><strong>{{ t('property_create.next_reporting') }}</strong><small>{{ t('property_create.next_reporting_body') }}</small></div></li>
       <li>{{ icon('key-round', 20) }}<div><strong>{{ t('host.door_code') }} <span class="opt">{{ t('common.optional') }}</span></strong><small>{{ t('property_create.next_lock_body') }} <a href="/guide#door-codes" aria-label="{{ t('help.tip.more') }}: {{ t('property_create.next_lock_body') | striptags | truncate(50) }}">{{ t('help.tip.more') }}</a></small></div></li>
     </ul>
-    {% if copy_property_peers %}
-    <form method="get" action="/apartments/new" class="property-create-copy">
-      <label for="copy_from">{{ t('apartment.form.copy_from.label') }}</label>
-      <div class="copyrow">
-        <select id="copy_from" name="copy_from" required>
-          <option value="" disabled {% if not copy_from_id %}selected{% endif %}>{{ t('apartment.form.copy_from.choose') }}</option>
-          {% for peer in copy_property_peers %}
-          <option value="{{ peer.id }}" {% if copy_from_id == peer.id %}selected{% endif %}>{{ peer.internal_name }}</option>
-          {% endfor %}
-        </select>
-        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('apartment.form.copy_from.button') }}</button>
-      </div>
-    </form>
-    {% endif %}
   </aside>
 </div></div>
