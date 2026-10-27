@@ -30,6 +30,11 @@ SUBMITTER_IP_GRACE_DAYS = 90
 _OWNER_SCOPE = "(? IS NULL OR a.owner_user_id = ?)"
 
 
+# signup_selection_json: advisory plan/interval/property forecast/TTLock choices.
+# Needed to resume verified signup on another device; removed with the account,
+# including the existing seven-day purge of unverified signups. No ad identifiers.
+
+
 def _scalar(sql: str, params: tuple = ()) -> int:
     row = db.query_one(sql, params)
     return int(row["n"]) if row and row["n"] is not None else 0

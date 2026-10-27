@@ -40,6 +40,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
+import json
 import logging
 import re
 import secrets
@@ -244,7 +245,9 @@ def attribution(params: Any, *, mint: bool = False) -> Dict[str, str]:
 
 def signup_href(lang: str, params: Any) -> str:
     """The ``/signup`` link with the visitor's attribution carried along."""
-    query = {"lang": lang, **attribution(params, mint=True)}
+    from . import signup_selection
+
+    query = {"lang": lang, **attribution(params, mint=True), **signup_selection.clean(params)}
     return "/signup?" + urlencode(query)
 
 
@@ -493,6 +496,7 @@ def register(
     onboarding_opt_out: bool = False,
     lang: str,
     request: Any = None,
+    selection: Optional[Dict[str, str]] = None,
 ) -> str:
     """Create or refresh a pending account and queue the right e-mail.
 
@@ -500,6 +504,8 @@ def register(
     audit and tests only. The page shown to the visitor must not depend on it.
     Inputs are already validated by the route.
     """
+    from . import signup_selection
+
     now = db.utcnow()
     nonce = secrets.token_urlsafe(16)
     existing = db.query_one("SELECT * FROM user_account WHERE email = ?", (email,))
@@ -517,6 +523,7 @@ def register(
         db.audit("signup_repeated", actor="anonymous", owner_user_id=existing["id"])
         return "exists"
     values = {
+        "signup_selection_json": json.dumps(signup_selection.clean(selection or {}), sort_keys=True),
         "display_name": workspace,
         "password_hash": "",
         "signup_at": now,
