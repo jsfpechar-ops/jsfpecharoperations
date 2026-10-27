@@ -82,7 +82,7 @@ def test_pending_trial_recovers_from_verification_without_a_seven_day_delay(owne
     acc = billing.account(owner)
     assert acc["status"] == "trialing"
     assert acc["trial_started_at"] == confirmed.isoformat()
-    assert acc["trial_ends_at"] == (confirmed + timedelta(days=29)).isoformat()
+    assert acc["trial_ends_at"] == (confirmed + timedelta(days=30)).isoformat()
 
 
 def test_og_hosts_without_a_row_are_never_touched(owner, billing_on):

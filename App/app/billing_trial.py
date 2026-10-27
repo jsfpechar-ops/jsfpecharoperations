@@ -46,16 +46,20 @@ def verified(owner_user_id: int) -> bool:
 
 
 def activation_dates(stamp: str) -> tuple[date, date]:
-    """Thirty calendar days in the configured timezone, including activation day.
+    """An inclusive local end date that cannot shorten thirty elapsed days.
 
-    The stored end date is inclusive, as required by finish()/period_end().
+    Add thirty days in UTC, then retain access through the local date containing
+    that instant. finish() transitions only on a later local date. Date-only
+    storage may extend access by a local day; this is not an exact expiry time.
     Existing running trials keep their original dates.
     """
     moment = datetime.fromisoformat(stamp)
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=timezone.utc)
-    first = moment.astimezone(ZoneInfo(config.TIMEZONE)).date()
-    return first, first + timedelta(days=TRIAL_DAYS - 1)
+    zone = ZoneInfo(config.TIMEZONE)
+    first = moment.astimezone(zone).date()
+    minimum_end = moment.astimezone(timezone.utc) + timedelta(days=TRIAL_DAYS)
+    return first, minimum_end.astimezone(zone).date()
 
 
 def start(owner_user_id: int, *, today: Optional[date] = None) -> bool:

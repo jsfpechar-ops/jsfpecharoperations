@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import secrets
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -39,12 +40,43 @@ def _order():
     }
 
 
-def test_calendar_trial_has_thirty_days_across_prague_dst(monkeypatch):
+@pytest.mark.parametrize("stamp, expected_end", [
+    ("2026-10-27T23:59:00+01:00", date(2026, 11, 26)),
+    ("2026-03-01T23:59:00+01:00", date(2026, 4, 1)),  # spring DST, late activation
+    ("2026-10-01T23:59:00+02:00", date(2026, 10, 31)),  # fall DST
+    ("2026-10-24T23:30:00+00:00", date(2026, 11, 24)),  # UTC vs local day
+    ("2026-10-27T00:00:00", date(2026, 11, 26)),  # legacy naive stamps mean UTC
+])
+def test_date_only_trial_never_shortens_thirty_elapsed_days(monkeypatch, stamp, expected_end):
     monkeypatch.setattr(config, "TIMEZONE", "Europe/Prague")
-    first, last = billing_trial.activation_dates("2026-10-24T23:30:00+00:00")
-    assert first == date(2026, 10, 25)
-    assert last == date(2026, 11, 23)
-    assert (last - first).days + 1 == 30
+    moment = datetime.fromisoformat(stamp)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    first, last = billing_trial.activation_dates(stamp)
+    assert first == moment.astimezone(ZoneInfo("Europe/Prague")).date()
+    assert last == expected_end
+    earliest_finish = datetime.combine(
+        last + timedelta(days=1), time.min, tzinfo=ZoneInfo("Europe/Prague"),
+    ).astimezone(timezone.utc)
+    minimum_end = moment.astimezone(timezone.utc) + timedelta(days=30)
+    assert earliest_finish >= minimum_end
+    assert earliest_finish - minimum_end <= timedelta(hours=25)
+
+
+def test_late_activation_survives_the_day_containing_the_minimum_expiry(owner, monkeypatch):
+    monkeypatch.setattr(config, "TIMEZONE", "Europe/Prague")
+    monkeypatch.setattr(db, "utcnow", lambda: "2026-03-01T22:59:00+00:00")
+    assert signup.activate(_pending(owner))
+    acc = billing.account(owner)
+    assert acc["trial_started_at"] == "2026-03-01"
+    assert acc["trial_ends_at"] == "2026-04-01"
+    # At March 31 midnight local, fewer than thirty elapsed days have passed.
+    billing_trial.run(date(2026, 3, 31))
+    assert billing.account(owner)["status"] == "trialing"
+    billing_trial.run(date(2026, 4, 1))
+    assert billing.account(owner)["status"] == "trialing"
+    billing_trial.run(date(2026, 4, 2))
+    assert billing.account(owner)["status"] == "paused"
 
 
 def test_activation_retry_cannot_restart_trial(owner):

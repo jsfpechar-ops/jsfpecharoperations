@@ -10,9 +10,14 @@ lifecycle slice of the self-service plan in draft PR #535.
 - Verification POST activates the account and creates its initial trial in one
   short database transaction when billing is enabled. A failed trial insert
   rolls activation back; a repeated verification cannot restart the clock.
-- Thirty calendar days, including activation day, use the configured timezone
-  (Prague by default). The end date is inclusive to match existing trial finish
-  and billing period conventions. Existing running trial dates are unchanged.
+- New trials receive at least thirty elapsed days: calculate activation plus
+  thirty days in UTC, then store the date containing that instant in the
+  configured timezone (Prague by default) as the inclusive trial end date.
+  The daily scheduler transitions only on a later local date. This can extend
+  access by a local day, plus any job delay; date-only storage cannot represent
+  an exact 30-by-24-hour expiration. Existing running trial dates are unchanged.
+  Late-night, spring/fall DST, UTC/local-date and naive timestamp tests cover
+  the minimum-duration guarantee.
 - Recovery of an existing pending billing row anchors to email verification;
   no seven-day delay, created-at fallback, or UbyPort-triggered start remains.
   One conditional write sets status and dates together. Recovery never creates
@@ -26,7 +31,7 @@ lifecycle slice of the self-service plan in draft PR #535.
 
 The managed environment cannot start: "managed network requirements require
 sandbox enforcement". No application, lint, security, billing or browser tests
-were run. Files were inspected and edited through the connected GitHub tools.
+were run locally. Files were inspected and edited through the connected GitHub tools.
 No dependencies, schema, guest filing behavior, deployment or feature flags
 were changed.
 
@@ -45,3 +50,11 @@ pricing-copy work is separate in draft PR #536. The existing root signup redirec
 and passkey/wizard journey still require end-to-end implementation and evidence.
 Legacy free accounts remain free through absence of a billing_account row.
 Existing cancellation and period transition logic is retained.
+
+## Duration correction
+
+The first draft counted activation day toward thirty calendar days, which could
+expire a late signup before thirty elapsed days. The revised UTC-based minimum
+and inclusive local end date prevent that. No schema change or running-trial
+backfill is performed. The first draft main CI test job passed; the duration
+correction requires a new CI run before review.
