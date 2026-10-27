@@ -35,7 +35,7 @@
   <td data-card="secondary">{{ 'UbyHost Max' if customer.plan == 'max' else 'UbyHost' if customer.plan == 'standard' else t('customers.not_ordered') }}{% if customer.email %}<span class="ui-sub">{{ customer.email }}</span>{% endif %}</td>
   <td data-card="badge">{{ ui_badge('action' if customer.customer_state in ['overdue', 'unverified'] else 'neutral', t('customers.state.' ~ customer.customer_state)) }}</td>
   <td data-card="meta">{{ t('customers.' ~ customer.billing_interval) if customer.billing_interval else t('customers.not_recorded') }}</td>
-  <td class="ui-cell-acts" data-card="actions">{{ ui_button(t('customers.open'), 'secondary', href='/admin/customers/' ~ customer.id, size='compact') }}</td>
+  <td class="ui-cell-acts" data-card="actions">{{ ui_button(t('common.open'), 'secondary', href='/admin/customers/' ~ customer.id, size='compact') }}</td>
 </tr>
 {% endfor %}
 {{ ui_table_end() }}
