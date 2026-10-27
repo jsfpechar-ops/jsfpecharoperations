@@ -11,3 +11,5 @@ Owner request: restore the original two-card presentation, retain the current pl
 - No changes to authentication, trial timing, AI enforcement, legacy access, or issued invoices. Public rates and new billing quotes use the same constants.
 
 Validation: update the existing billing strategy assertions and pricing browser checks for the revised totals and feature counts. Browser checks exercise Czech/English at 360, 390, 1024 and 1280 px, both billing intervals, 1–50 apartments, TTLock, signup URLs, CTA geometry and no-JavaScript fallback. CI captures `cenik-cs-390.png` and `cenik-en-390.png` in its browser-shots artifact. Execution is pending GitHub CI; the managed workspace could not start. No local test or visual-review result is claimed.
+
+CI follow-up: invoice expectations now include the new monthly Max supplement. Keep the documented 44 px logo width explicit. The Havel phone geometry test now waits for first-open fragment replacement before measuring topic nodes; all existing count, visibility and size assertions remain.

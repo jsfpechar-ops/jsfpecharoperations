@@ -21,6 +21,9 @@ def _open_sheet(page):
     page.locator("[data-havel-fab]").click()
     sheet = page.locator("#havel-sheet[open]")
     sheet.wait_for()
+    # The first-open fetch replaces the topic nodes before filling this wrapper.
+    # Wait for that swap, including the AI-off state, before measuring the chips.
+    sheet.locator("[data-havel-form-wrap] > *").first.wait_for(state="attached")
     return sheet
 
 
@@ -49,6 +52,7 @@ def test_topics_are_chips(origin):
         assert chips.count() == 6  # 0391: five topics + "Other topic"
         assert sheet.locator(".ui-menu-panel").count() == 0
         for i in range(chips.count()):
+            sync_api.expect(chips.nth(i)).to_be_visible()
             box = chips.nth(i).bounding_box()
             assert box["x"] + box["width"] <= 390
             assert box["height"] >= 40
