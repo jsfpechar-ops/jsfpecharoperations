@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 
-from .. import access, auth, db, host_i18n, login_link, mail, rate_limit, signup, turnstile
+from .. import access, auth, db, host_i18n, login_link, mail, rate_limit, signup, signup_selection, turnstile
 from ..templating import render
 from .admin_accounts import _keep_login_language, _require_admin
 from .admin_helpers import back as _back
@@ -24,9 +24,10 @@ def _require_enabled() -> None:
         raise HTTPException(status_code=404)
 
 
-def _form_context(request: Request, attr: dict, consents=None, **extra) -> dict:
+def _form_context(request: Request, attr: dict, consents=None, selection=None, **extra) -> dict:
     lang = host_i18n.resolve_language(request, default=host_i18n.PUBLIC_DEFAULT_LANGUAGE)
-    href = signup.signup_href(lang, attr)
+    selection = signup_selection.clean(selection or {})
+    href = signup.signup_href(lang, {**attr, **selection})
     consents = consents or {}
     # One optional box per ad platform the visitor's click came from, and none
     # at all without a click: there is nothing to consent to.
@@ -41,6 +42,7 @@ def _form_context(request: Request, attr: dict, consents=None, **extra) -> dict:
     ]
     return {
         "attr": attr,
+        "selection": selection,
         "consent_boxes": boxes,
         # The language switch posts back to this address, so the click value
         # and the campaign labels survive a change of language.
@@ -55,7 +57,7 @@ def signup_form(request: Request):
     if auth.current_user(request):
         return RedirectResponse("/", status_code=303)
     attr = signup.attribution(request.query_params, mint=True)
-    return render(request, "signup.html", _form_context(request, attr))
+    return render(request, "signup.html", _form_context(request, attr, selection=request.query_params))
 
 
 @router.post("/signup")
@@ -63,6 +65,7 @@ async def signup_submit(request: Request):
     _require_enabled()
     form = await request.form()
     attr = signup.attribution(form)
+    selection = signup_selection.clean(form)
     email = mail.normalise_email(_form_str(form, "email"))
     raw_email = _form_str(form, "email")[:254]
     workspace = " ".join(_form_str(form, "workspace").split())
@@ -82,6 +85,7 @@ async def signup_submit(request: Request):
                 request,
                 attr,
                 consents,
+                selection=selection,
                 error=error,
                 error_field=field,
                 email=raw_email,
@@ -106,6 +110,7 @@ async def signup_submit(request: Request):
     signup.register(
         email=email,
         workspace=workspace,
+        selection=selection,
         attr=attr,
         consents=consents,
         onboarding_opt_out=onboarding_opt_out,
@@ -144,7 +149,8 @@ async def signup_verify_submit(request: Request):
         login_link.record_consume_failure(ip_key)
         return render(request, "signup_verify.html", {"expired": True}, status_code=410)
     refreshed = db.query_one("SELECT * FROM user_account WHERE id = ?", (account["id"],))
-    response = RedirectResponse("/", status_code=303)
+    destination = "/onboarding" if signup_selection.for_owner(refreshed["id"]) else "/"
+    response = RedirectResponse(destination, status_code=303)
     auth.attach_session(
         response, auth.issue_session(refreshed["id"], refreshed["session_version"])
     )

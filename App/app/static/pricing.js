@@ -68,6 +68,13 @@
     document.querySelectorAll("[data-unit]").forEach(function (el) {
       el.textContent = calc.getAttribute(yearly ? "data-unit-year" : "data-unit-month");
     });
+    document.querySelectorAll("[data-addon]").forEach(function (el) {
+      var addon = rates[el.getAttribute("data-addon")];
+      var pattern = el.getAttribute(yearly ? "data-year" : "data-month");
+      el.textContent = fill(fill(pattern, "price", kc(yearly ? addon.year / 12 : addon.month)), "amount", kc(addon.year));
+    });
+    var selected = document.querySelector("[data-ttlock-selected]");
+    if (selected) selected.hidden = !state.ttlock;
     calc.querySelector("[data-count]").textContent = String(state.n);
     calc.querySelectorAll("[data-interval]").forEach(function (button) {
       button.setAttribute("aria-pressed", button.getAttribute("data-interval") === state.interval ? "true" : "false");
@@ -97,10 +104,15 @@
       render();
     });
   });
-  calc.querySelector("[data-ttlock]").addEventListener("change", function (event) {
-    state.ttlock = event.target.checked;
-    render();
-  });
+  var ttlock = document.querySelector('[data-plan="standard"] [data-ttlock]');
+  if (ttlock) {
+    ttlock.addEventListener("change", function (event) {
+      state.ttlock = event.target.checked;
+      render();
+    });
+    ttlock.closest("[data-ttlock-control]").hidden = false;
+    document.querySelector(".pricing-option-fallback").hidden = true;
+  }
   calc.hidden = false;
   render();
 })();

@@ -169,8 +169,11 @@ def test_cenik_uses_the_billing_price_list(monkeypatch):
     assert legal.PUBLIC_RATES["base"] == {k: list(v) for k, v in billing.BASE.items()}
     assert legal.PUBLIC_RATES["max"] == {k: list(v) for k, v in billing.MAX_EXTRA.items()}
     assert legal.PUBLIC_RATES["ttlock"] == dict(billing.TTLOCK)
-    monkeypatch.setattr(config, "BILLING_ENABLED", True)
     monkeypatch.setattr(config, "FOUNDER_SLOTS", 10_000)
-    assert "pricing-founder" in TestClient(app).get("/cenik?lang=cs").text
-    monkeypatch.setattr(config, "BILLING_ENABLED", False)
-    assert "pricing-founder" not in TestClient(app).get("/cenik?lang=cs").text
+    client = TestClient(app)
+    for enabled in (True, False):
+        monkeypatch.setattr(config, "BILLING_ENABLED", enabled)
+        for lang in ("cs", "en"):
+            page = client.get(f"/cenik?lang={lang}")
+            assert page.status_code == 200
+            assert "pricing-founder" not in page.text

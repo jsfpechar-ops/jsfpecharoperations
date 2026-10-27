@@ -16,6 +16,9 @@
     {% for key in ('click', 'utm_source', 'utm_medium', 'utm_campaign') %}
       {% if attr.get(key) %}<input type="hidden" name="{{ key }}" value="{{ attr[key] }}">{% endif %}
     {% endfor %}
+    {% for key, value in selection.items() %}
+    <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
     <div class="auth-field">
       <label for="email">{{ t('signup.email') }}</label>
       <input type="email" id="email" name="email" required maxlength="254"

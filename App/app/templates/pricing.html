@@ -22,7 +22,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
-  <link rel="stylesheet" href="/static/landing.css?v=20261026-0412">
+  <link rel="stylesheet" href="/static/landing.css?v=20261027-pricing-panel-b">
   <script type="application/ld+json">
   {{ {
     "@context": "https://schema.org",
@@ -89,73 +89,65 @@
           <output aria-labelledby="pricing-count-label" aria-live="polite" data-count>1</output>
           <button type="button" data-step="1" aria-label="{{ t('pricing.count.inc') }}">+</button>
         </div>
-        <label class="pricing-ttlock"><input type="checkbox" data-ttlock>{{ t('pricing.ttlock.label') }}</label>
+      </div>
+
+      <div class="pricing-bands" aria-labelledby="bands-title">
+        <h2 id="bands-title">{{ t('pricing.bands.title') }}</h2>
+        <p>{{ t('pricing.bands.body') }}</p>
+        <ol>
+          {% for i in range(3) %}
+          <li><strong>{{ t('pricing.bands.b' ~ (i + 1)) }}</strong><span><b data-band="{{ i }}">{{ start.bands[i] }}</b> {{ t('pricing.currency') }} <span data-unit>{{ t('pricing.bands.unit_year') }}</span></span></li>
+          {% endfor %}
+        </ol>
       </div>
 
       <div class="pricing-plans">
         <article class="pricing-card" data-plan="standard">
+          <div class="pricing-badge-slot" aria-hidden="true"></div>
           <div class="pricing-card-head">
             <div><h3>{{ t('pricing.std.name') }}</h3><p>{{ t('pricing.std.tagline') }}</p></div>
             <img src="/static/ubyhost-mark.png?v=20261004a" alt="">
           </div>
           <p class="pricing-price"><strong data-total>{{ start.std_month }}</strong> {{ t('pricing.currency') }} {{ t('pricing.per_month') }}</p>
           <p class="pricing-sub" data-sub>{{ t('pricing.billed_year', amount=start.std_year) }}</p>
+          <p class="pricing-total-label">{{ t('pricing.total_label') }}</p>
           <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span data-note>{{ t('pricing.std.note') }}</span></p>
           <a class="landing-button primary pricing-button" data-cta-plan="standard" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
           <ul class="pricing-features">
             {% for n in range(1, 7) %}<li>{{ tick() }}{{ t('pricing.std.f' ~ n) }}</li>{% endfor %}
           </ul>
+          <div class="pricing-option">
+            <label class="pricing-ttlock" data-ttlock-control hidden><input type="checkbox" data-ttlock>{{ t('pricing.ttlock.label') }}</label>
+            <strong class="pricing-option-fallback">{{ t('pricing.addon.ttlock.title') }}</strong>
+            <p>{{ t('pricing.ttlock.help') }}</p>
+            <p data-addon="ttlock" data-year="{{ t('pricing.ttlock.year') }}" data-month="{{ t('pricing.ttlock.month') }}">{{ t('pricing.ttlock.year', price=start.ttlock_month, amount=start.ttlock_year) }}</p>
+            <p data-ttlock-selected hidden>{{ t('pricing.ttlock.selected') }}</p>
+          </div>
         </article>
         <article class="pricing-card pricing-card-max" data-plan="max">
+          <div class="pricing-badge-slot"><span class="pricing-badge">{{ t('pricing.max.badge') }}</span></div>
           <div class="pricing-card-head">
             <div><h3>{{ t('pricing.max.name') }}</h3><p>{{ t('pricing.max.tagline') }}</p></div>
-            <span class="pricing-badge">{{ t('pricing.max.badge') }}</span>
           </div>
           <p class="pricing-price"><strong data-total>{{ start.max_month }}</strong> {{ t('pricing.currency') }} {{ t('pricing.per_month') }}</p>
           <p class="pricing-sub" data-sub>{{ t('pricing.billed_year', amount=start.max_year) }}</p>
+          <p class="pricing-total-label">{{ t('pricing.total_label') }}</p>
           <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span>{{ t('pricing.max.note') }}</span></p>
           <a class="landing-button primary pricing-button" data-cta-plan="max" href="{{ cta_href('max') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
           <ul class="pricing-features">
             {% for n in range(1, 6) %}<li>{{ tick() }}{{ t('pricing.max.f' ~ n) }}</li>{% endfor %}
           </ul>
+          <div class="pricing-option"><strong>{{ t('pricing.max.note') }}</strong><p>{{ t('pricing.ttlock.help') }}</p></div>
         </article>
       </div>
+      <div class="pricing-whitelabel">
+        <div><h2>{{ t('pricing.addon.wl.title') }}</h2><p>{{ t('pricing.addon.wl.body') }}</p></div>
+        <div><p data-addon="whitelabel" data-year="{{ t('pricing.wl.year') }}" data-month="{{ t('pricing.wl.month') }}">{{ t('pricing.wl.year', price=start.wl_month, amount=start.wl_year) }}</p><p>{{ t('pricing.wl.scope') }} <a href="mailto:support@ubyhost.com" data-analytics-event="contact_click">{{ t('pricing.final.write') }}</a></p></div>
+      </div>
+      <p class="pricing-ai-note">{{ t('pricing.havel') }}</p>
       <p class="pricing-fineprint">{{ t('pricing.cta_note') }} {{ t('pricing.prices_final') }}</p>
 
-      {% if founder_left %}
-      <div class="pricing-founder">
-        <div>
-          <h3>{{ t('pricing.founder.heading') }}</h3>
-          <p>{{ t('pricing.founder.body', n=founder_left) }}</p>
-        </div>
-        <a class="landing-button secondary" data-cta-plan="standard" data-cta-interval="year" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.founder.cta') }}</a>
-      </div>
-      {% endif %}
-    </section>
 
-    <section class="landing-section" aria-labelledby="bands-title">
-      <div class="landing-section-head">
-        <p class="landing-eyebrow">{{ t('pricing.bands.eyebrow') }}</p>
-        <h2 id="bands-title">{{ t('pricing.bands.title') }}</h2>
-        <p>{{ t('pricing.bands.body') }}</p>
-      </div>
-      <ol class="benefit-list">
-        {% for i in range(3) %}
-        <li><span>0{{ i + 1 }}</span><div><h3>{{ t('pricing.bands.b' ~ (i + 1)) }}</h3><p><span data-band="{{ i }}">{{ start.bands[i] }}</span> {{ t('pricing.currency') }} <span data-unit>{{ t('pricing.bands.unit_year') }}</span></p></div></li>
-        {% endfor %}
-      </ol>
-    </section>
-
-    <section class="landing-section" aria-labelledby="addons-title">
-      <div class="landing-section-head">
-        <p class="landing-eyebrow">{{ t('pricing.addons.eyebrow') }}</p>
-        <h2 id="addons-title">{{ t('pricing.addons.title') }}</h2>
-      </div>
-      <ol class="benefit-list">
-        {% for name in ('ttlock', 'wl') %}
-        <li><span>0{{ loop.index }}</span><div><h3>{{ t('pricing.addon.' ~ name ~ '.title') }}</h3><p>{{ t('pricing.addon.' ~ name ~ '.body') }}</p></div></li>
-        {% endfor %}
-      </ol>
     </section>
 
     <section class="landing-section" aria-labelledby="anchor-title">
@@ -191,6 +183,6 @@
   </main>
 
 {% include "_public_footer.html" %}
-<script src="/static/pricing.js?v=20261026-0412" defer></script>
+<script src="/static/pricing.js?v=20261027-pricing-panel" defer></script>
 </body>
 </html>

@@ -1,0 +1,50 @@
+{% extends "host_page.html" %}
+{% set nav = 'users' %}
+{% set body_kind = 'detail' %}
+{% block title %}{{ customer.display_name or customer.username }}{% endblock %}
+{% block meta %}{{ t('customers.state.' ~ customer.customer_state) }}{% endblock %}
+{% block back_url %}/admin/customers{% endblock %}
+{% block back_label %}{{ t('customers.title') }}{% endblock %}
+{% block secondary_actions %}
+{{ ui_button(t('customers.manage'), 'secondary', href='/admin/users?manage=' ~ customer.id ~ '#user-manage') }}
+{{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}
+{% endblock %}
+{% block body %}
+{% if not billing_enabled %}{{ ui_banner('neutral', t('customers.billing_off')) }}{% endif %}
+{% if customer.customer_state == 'legacy' %}<p class="ui-sub">{{ t('customers.legacy_note') }}</p>{% endif %}
+{% call ui_section(t('customers.account')) %}
+{{ ui_facts([
+(t('customers.search'), customer.email | e if customer.email else t('customers.not_recorded')),
+(t('customers.created'), fmt_date(customer.created_at)),
+(t('customers.verified'), fmt_date(customer.email_verified_at) if customer.email_verified_at else t('customers.not_recorded')),
+(t('customers.last_login'), fmt_date(customer.last_login_at) if customer.last_login_at else t('customers.not_recorded')),
+(t('customers.properties'), customer.active_properties)
+]) }}
+{% endcall %}
+{% call ui_section(t('customers.billing')) %}
+{{ ui_facts([
+(t('customers.plan'), 'UbyHost Max' if customer.plan == 'max' else 'UbyHost' if customer.plan == 'standard' else t('customers.not_ordered')),
+(t('customers.period'), t('customers.' ~ customer.billing_interval) if customer.billing_interval else t('customers.not_recorded')),
+(t('customers.trial_start'), fmt_date(customer.trial_started_at) if customer.trial_started_at else t('customers.not_recorded')),
+(t('customers.trial_end'), fmt_date(customer.trial_ends_at) if customer.trial_ends_at else t('customers.not_recorded')),
+(t('customers.period_start'), fmt_date(customer.period_start) if customer.period_start else t('customers.not_recorded')),
+(t('customers.period_end'), fmt_date(customer.period_end) if customer.period_end else t('customers.not_recorded')),
+(t('customers.ttlock'), t('customers.yes') if customer.addon_ttlock else t('customers.no')),
+(t('customers.whitelabel'), t('customers.yes') if customer.addon_whitelabel else t('customers.no'))
+]) }}
+{% endcall %}
+{% call ui_section(t('customers.invoices')) %}
+{% if customer.invoices %}
+{{ ui_table_begin([(t('customers.invoice'), ''), (t('customers.amount'), 'r'), (t('customers.due'), ''), (t('customers.state'), '')], label=t('customers.invoices')) }}
+{% for inv in customer.invoices %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a></td>
+  <td class="ui-cell-r" data-card="meta">{{ inv.total_haler | money_czk }}</td>
+  <td data-card="secondary">{{ fmt_date(inv.due_date) }}</td>
+  <td data-card="badge">{{ t('billing.invoices.state.void') if inv.voided or inv.kind == 'storno' else t('billing.invoices.state.paid') if inv.paid_on else t('billing.invoices.state.open') }}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('customers.invoice_none') }}</p>{% endif %}
+{% endcall %}
+{% endblock %}

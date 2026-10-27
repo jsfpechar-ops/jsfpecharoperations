@@ -11,7 +11,21 @@
   const name = (el) => (el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.classList.length ? '.' + [...el.classList].slice(0, 3).join('.') : '') + ' "' + (el.textContent || el.value || el.getAttribute('aria-label') || '').trim().replace(/\s+/g, ' ').slice(0, 30) + '"');
   // 1. no sideways page scroll
   const sw = document.documentElement.scrollWidth;
-  if (sw > vw + 1) out.push(['page-scroll', sw, vw]);
+  if (sw > vw + 1) {
+    // Include the boxes that actually cross the viewport so CI names the cause.
+    const overflowing = [...document.body.querySelectorAll('*')]
+      .filter(el => vis(el) && !inScroller(el))
+      .map(el => {
+        const r = el.getBoundingClientRect();
+        return {element: name(el), left: Math.round(r.left * 100) / 100,
+          right: Math.round(r.right * 100) / 100, width: Math.round(r.width * 100) / 100,
+          scroll: el.scrollWidth, client: el.clientWidth};
+      })
+      .filter(r => r.right > vw + 1)
+      .sort((a, b) => b.right - a.right)
+      .slice(0, 12);
+    out.push(['page-scroll', sw, vw, overflowing]);
+  }
   // 2. nothing under the rail or past the right edge
   const ws = document.querySelector('.host-workspace main, .host-workspace') || document.body;
   const lane = ws.getBoundingClientRect();

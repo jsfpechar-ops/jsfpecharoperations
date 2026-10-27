@@ -2956,7 +2956,9 @@ label { color: var(--ink-secondary); font-weight: 620; }
   border-color: var(--brand);
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
-.auth-remember { min-height: 44px; width: max-content; font-weight: 650; }
+.auth-remember { min-height: 44px; width: 100%; min-width: 0; font-weight: 650; }
+.auth-remember > span { min-width: 0; overflow-wrap: anywhere; }
+.auth-remember input { flex-shrink: 0; }
 .auth-remember input { accent-color: var(--brand); }
 /* BE-1/FE-1: the acceptance screen's document list and checkbox. */
 .auth-accept-docs { display: grid; gap: 10px; margin: 0 0 20px; padding: 0; list-style: none; }
