@@ -1,4 +1,4 @@
-# 0421: Payment requests — migration and models (P1.1)
+# 0425: Payment requests — migration and models (P1.1)
 
 Status: todo
 Depends on: none | Base commit: b93d6f03 | Branch: task/0421-payment-request-model
@@ -64,7 +64,7 @@ No other file may change. `db.py` SCHEMA is NOT touched: numbered migrations are
 
 ## 4. Steps
 
-**Step 1 — migration `0026_payment_requests.sql`.** Header comment: brief 0421, one paragraph: ubyhost never receives or holds funds; card rail = Stripe on the host's connected account (merchant of record, fee 0); QR rail = direct guest→host bank transfer, ubyhost is technology provider only; `stripe_account` mirrors status only, never Stripe secrets or documents.
+**Step 1 — migration `0026_payment_requests.sql`.** Header comment: brief 0425, one paragraph: ubyhost never receives or holds funds; card rail = Stripe on the host's connected account (merchant of record, fee 0); QR rail = direct guest→host bank transfer, ubyhost is technology provider only; `stripe_account` mirrors status only, never Stripe secrets or documents.
 
 ```sql
 -- stripe_account: one row per host account (owner) with a Stripe Express
@@ -174,3 +174,7 @@ Expected: clean.
 - If `retention.py` has no simple two-line pattern.
 - If the `invoice` FK reference needs a column that doesn't exist (check `db.py` invoice table first).
 - If `db.audit` has a different signature than two positional strings (check `App/app/invoices.py:696` usage before coding).
+
+## 9. Report
+
+`docs/tasks/0425-report.md`, per executor.md: files changed, commands, §7 ticks, Deviations, Questions, owner steps left. Status `review` (or `blocked`), one PR.
