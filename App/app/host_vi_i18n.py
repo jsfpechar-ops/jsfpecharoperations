@@ -214,7 +214,7 @@ STRINGS: Dict[str, str] = {
     "leon_setup.cards.next": "Kiểm tra thẻ tiếp theo",
     "leon_setup.try.lede": "Hãy hỏi Leon vài câu như một khách sẽ hỏi. Không có gì được gửi cho ai cả.",
     "leon_setup.finish": "Hoàn tất",
-    "leon_setup.try.limit": "Bạn có thể gửi %(n)s tin nhắn thử mỗi ngày.",
+    "leon_setup.try.limit": "Trò chuyện thử có giới hạn sử dụng. Nếu đạt giới hạn, vui lòng thử lại sau.",
     "leon_setup.try.label": "Câu hỏi của bạn cho Leon",
     "leon_setup.try.placeholder": "Ví dụ: Tôi đỗ xe ở đâu?",
     "leon_setup.try.send": "Gửi",
