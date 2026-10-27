@@ -17,11 +17,11 @@ else:
 
 import uvicorn
 
-from app import db
+from app import db, signup
 from app.main import app
 from tests.browser_support import chromium_launch_kwargs
 
-EVIDENCE = Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-0412"
+EVIDENCE = Path(os.environ.get("UBYHOST_SHOTS_DIR", str(Path(__file__).resolve().parents[2] / "docs" / "tasks" / "screenshots-pricing-panel")))
 
 
 @pytest.fixture(scope="module")
@@ -52,31 +52,96 @@ def _browser(playwright):
         pytest.skip("Chromium is required for the pricing calculator test")
 
 
-def test_the_calculator_updates_and_fits_a_phone(base):
-    capture = os.environ.get("UBYHOST_CAPTURE_0412") == "1"
-    if capture:
-        EVIDENCE.mkdir(parents=True, exist_ok=True)
+
+def _number(locator):
+    return int(locator.inner_text().replace("\u00a0", "").replace(",", ""))
+
+
+def _geometry(page, width):
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+    if width >= 1024:
+        boxes = [page.locator(f'[data-plan="{plan}"] .pricing-button').bounding_box()
+                 for plan in ("standard", "max")]
+        assert abs(boxes[0]["y"] - boxes[1]["y"]) <= 1, boxes
+        assert abs(boxes[0]["height"] - boxes[1]["height"]) <= 1, boxes
+
+
+@pytest.mark.parametrize("lang", ["cs", "en"])
+@pytest.mark.parametrize("width", [360, 390, 1024, 1280])
+def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
+    monkeypatch.setattr(signup, "enabled", lambda: True)
     with sync_api.sync_playwright() as playwright:
         browser = _browser(playwright)
-        for width in (390, 1280):
-            page = browser.new_page(viewport={"width": width, "height": 900})
-            page.goto(f"{base}/cenik?lang=cs")
-            page.wait_for_load_state("networkidle")
-            assert page.locator("[data-pricing-calc]").is_visible(), width
-            std = page.locator('[data-plan="standard"] [data-total]')
-            top = page.locator('[data-plan="max"] [data-total]')
-            assert (std.inner_text(), top.inner_text()) == ("99", "163"), width
-            if capture and width == 390:
-                page.screenshot(path=str(EVIDENCE / "cenik-390.png"), full_page=True)
-            for _ in range(4):
+        page = browser.new_page(viewport={"width": width, "height": 900})
+        errors = []
+        page.on("pageerror", lambda error: errors.append(str(error)))
+        page.goto(f"{base}/cenik?lang={lang}")
+        page.wait_for_load_state("networkidle")
+        assert page.locator("[data-pricing-calc]").is_visible()
+        std = page.locator('[data-plan="standard"] [data-total]')
+        top = page.locator('[data-plan="max"] [data-total]')
+        assert (_number(std), _number(top)) == (99, 163)
+        assert page.locator('[data-plan="standard"] [data-ttlock]').count() == 1
+        assert page.locator('[data-plan="max"] [data-ttlock]').count() == 0
+        assert page.locator(".pricing-founder").count() == 0
+        assert page.locator(".pricing-plans-section [data-band]").count() == 3
+        assert page.locator(".pricing-plans-section [data-addon]").count() == 2
+        assert "470" in page.locator('[data-addon="ttlock"]').inner_text()
+        assert "472" in page.locator('[data-addon="whitelabel"]').inner_text()
+        _geometry(page, width)
+        if (width == 390 or (width == 1280 and lang == "en")) and (
+            os.environ.get("UBYHOST_SHOTS_DIR") or os.environ.get("UBYHOST_CAPTURE_0412") == "1"
+        ):
+            EVIDENCE.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(EVIDENCE / f"cenik-{lang}-{width}.png"), full_page=True)
+        count = 1
+        for n, annual, monthly in ((1, 1190, 149), (4, 4760, 596),
+                                   (5, 5710, 715), (9, 9510, 1191),
+                                   (10, 10300, 1290), (50, 41900, 5250)):
+            for _ in range(n - count):
                 page.locator('[data-step="1"]').click()
-            assert page.locator("[data-count]").inner_text() == "5", width
-            assert std.inner_text() == "476", width  # 5 710 / 12
-            assert page.locator('[data-plan="standard"] [data-apts]').inner_text() == "5 apartmánů", width
-            page.locator('[data-interval="month"]').click()
-            assert (std.inner_text(), top.inner_text()) == ("715", "1 090"), width
-            page.locator("[data-ttlock]").check()
-            assert std.inner_text() == "960", width  # 715 + 5 x 49
-            assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"), width
-            page.close()
+            count = n
+            for interval in ("year", "month"):
+                page.locator(f'[data-interval="{interval}"]').click()
+                assert [_number(page.locator(f'[data-band="{i}"]')) for i in range(3)] == (
+                    [99, 79, 66] if interval == "year" else [149, 119, 99]
+                )
+                assert ("472" if interval == "year" else "590") in page.locator('[data-addon="whitelabel"]').inner_text()
+                assert ("470" if interval == "year" else "49") in page.locator('[data-addon="ttlock"]').inner_text()
+                max_price = _number(top)
+                for lock in (False, True):
+                    page.locator("[data-ttlock]").set_checked(lock)
+                    expected = ((annual + (470 * n if lock else 0)) * 2 + 12) // 24 if interval == "year" else monthly + (49 * n if lock else 0)
+                    assert _number(std) == expected, (lang, width, n, interval, lock)
+                    assert _number(top) == max_price
+                    assert page.locator("[data-ttlock-selected]").is_visible() == lock
+                    _geometry(page, width)
+                    for plan in ("standard", "max"):
+                        href = page.locator(f'[data-plan="{plan}"] [data-cta-plan]').get_attribute("href")
+                        assert f"plan={plan}" in href and f"interval={interval}" in href and f"apts={n}" in href
+                        assert ("ttlock=1" in href) == (lock and plan == "standard")
+                    if n == 5 and interval == "month":
+                        assert _number(top) == 1090
+                page.locator("[data-ttlock]").uncheck()
+        assert page.locator('[data-step="1"]').is_disabled()
+        assert not errors, errors
+        page.close()
+        browser.close()
+
+
+@pytest.mark.parametrize("lang", ["cs", "en"])
+def test_no_javascript_has_truthful_annual_prices_and_login_fallback(base, monkeypatch, lang):
+    monkeypatch.setattr(signup, "enabled", lambda: False)
+    with sync_api.sync_playwright() as playwright:
+        browser = _browser(playwright)
+        page = browser.new_page(java_script_enabled=False, viewport={"width": 390, "height": 900})
+        page.goto(f"{base}/cenik?lang={lang}")
+        assert not page.locator("[data-pricing-calc]").is_visible()
+        assert not page.locator("[data-ttlock-control]").is_visible()
+        assert [_number(page.locator(f'[data-plan="{plan}"] [data-total]')) for plan in ("standard", "max")] == [99, 163]
+        assert "470" in page.locator('[data-addon="ttlock"]').inner_text()
+        assert "472" in page.locator('[data-addon="whitelabel"]').inner_text()
+        assert page.locator(".pricing-ai-note").is_visible()
+        assert all("/login?lang=" in href for href in page.locator("a[data-cta-plan]").evaluate_all("(links) => links.map(link => link.getAttribute('href'))"))
+        _geometry(page, 390)
         browser.close()

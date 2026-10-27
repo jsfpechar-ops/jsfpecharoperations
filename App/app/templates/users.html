@@ -5,6 +5,7 @@
 {% block title %}{{ t('users.title') }}{% endblock %}
 {% block meta %}{{ t('users.lede') }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
+{% block secondary_actions %}{{ ui_button(t('customers.title'), 'secondary', href='/admin/customers') }}{% endblock %}
 {% block body %}
 {% from "_components.html" import row_menu_begin, row_menu_end with context %}
 {% from "_ui.html" import ui_button, ui_field with context %}

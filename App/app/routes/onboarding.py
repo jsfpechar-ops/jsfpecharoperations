@@ -10,7 +10,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
-from .. import access, auth, celebrations, db, demo, onboarding, security, welcome_back
+from .. import access, auth, billing, celebrations, db, demo, onboarding, security, signup_selection, welcome_back
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -49,7 +49,10 @@ def onboarding_view(request: Request):
     guard = auth.require_login(request)
     if guard:
         return guard
-    return render(request, "onboarding.html")
+    return render(request, "onboarding.html", {
+        "billing_enabled": billing.enabled(),
+        "signup_selection": signup_selection.for_owner(access.owner_id(request)),
+    })
 
 
 @router.post("/onboarding/dismiss")

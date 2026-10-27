@@ -4,8 +4,8 @@
     "v": "20261010a"
   },
   "app.css": {
-    "sha256": "6c1cc8329082852628f0a2deefbdea45b92f63ec226b4e9caa7eb203fa98710b",
-    "v": "20261020-0188e"
+    "sha256": "e0d77c407de8feb5737ac28015f98ff2e964baf4aa8ec0babe5798179ffe6fcd",
+    "v": "20261027-signup-wrap"
   },
   "app.js": {
     "sha256": "bad08e58325b355367e6301b10474934f5ddb417c3c6b7500c758acbc87ea45e",
@@ -92,8 +92,8 @@
     "v": "20261026-0424"
   },
   "landing.css": {
-    "sha256": "59dc3337cd4219817f57645a18eade774fef5672d6cab35b18914df2727650c5",
-    "v": "20261026-0412"
+    "sha256": "5fd8aa4a0e9a930346b6b7cfe2fdb29a3cd94e3b83dcea0c47b67e68ffdae9af",
+    "v": "20261027-pricing-panel-b"
   },
   "landing.js": {
     "sha256": "0e8f2e973a4c2797dfe018fd1ce477669641ee7baa1fdd06c263702c01d972bf",
@@ -108,8 +108,8 @@
     "v": "20261023-passkey-recovery"
   },
   "pricing.js": {
-    "sha256": "701273183c6bb0d5cb767eb1d2e53d0366e8a41b9161cc22bb595a7d56d4ce2a",
-    "v": "20261026-0412"
+    "sha256": "da9feab211a3a4aa99f46ea6f448e4705b4e11f34acd6fec12a0969db83db19b",
+    "v": "20261027-pricing-panel"
   },
   "pwa.js": {
     "sha256": "42c47bb36919fa186885e4e913823c5447a6ab8e0dd8709a74bd3a216a06a9ce",

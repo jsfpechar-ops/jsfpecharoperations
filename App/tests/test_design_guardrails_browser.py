@@ -125,6 +125,8 @@ def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
     assert cookie
     routes = {
         "admin-users": "/admin/users",
+        "admin-customers": "/admin/customers",
+        "admin-customer": f"/admin/customers/{wide_host['owner']}",
         "admin-users-manage": f"/admin/users?manage={wide_host['owner']}",
         "admin-operations": "/admin/operations",
     }
@@ -155,6 +157,12 @@ def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
                         )
                         _wait_for_host_layout(page)
                         _dismiss_optional_security_prompt(page)
+                        shots = os.environ.get("UBYHOST_SHOTS_DIR")
+                        if shots and name in ("admin-customers", "admin-customer"):
+                            target = Path(shots) / "customers"
+                            target.mkdir(parents=True, exist_ok=True)
+                            page.screenshot(path=str(target / f"{name}-{width}-{state}.png"),
+                                            full_page=True)
                         for finding in page.evaluate(GUARD, width < 1024):
                             findings.append((name, width, state, finding))
                         trigger = page.locator("button.row-menu-trigger:visible").first
