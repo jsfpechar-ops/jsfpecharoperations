@@ -47,3 +47,13 @@ retain their earlier unbounded lists; links do not make those pages scalable.
   separate delivery slices.
 - Public signup/pricing/passkey/wizard flow and recurring billing validation are
   tracked separately. This dashboard does not enable billing or collect payment.
+
+## CI layout correction
+
+The first browser shard 2 run found 4 units of sideways page overflow on the
+customer list at phone width. The summary stat grid was nested inside a padded
+section even though the catalog stat row is designed to occupy the page lane.
+The stat row now sits directly in the body; no global CSS or guard assertion
+is changed. Both new pages now save phone and wide screenshots into the existing
+CI screenshot artifact directory. The revised head requires another CI run;
+screenshots still need inspection.

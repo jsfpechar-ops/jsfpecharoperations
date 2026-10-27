@@ -20,14 +20,12 @@
 {% endblock %}
 {% block body %}
 {% if not billing_enabled %}{{ ui_banner('neutral', t('customers.billing_off')) }}{% endif %}
-{% call ui_section(t('customers.overview')) %}
 {% set stats = [] %}
 {% for value in ['legacy', 'unverified', 'trialing', 'ending', 'active', 'overdue'] %}
 {% set _ = stats.append((href(state=value, q='', plan=''), summary.get(value, 0), t('customers.ending') if value == 'ending' else t('customers.state.' ~ value))) %}
 {% endfor %}
 {{ ui_stats(stats, label=t('customers.overview')) }}
 <p class="ui-sub">{{ t('customers.as_of', date=today) }}</p>
-{% endcall %}
 {% if customers %}
 {{ ui_table_begin([(t('customers.customer'), ''), (t('customers.properties'), 'r'), (t('customers.plan'), ''), (t('customers.state'), ''), (t('customers.period'), ''), (t('common.actions'), '')], label=t('customers.title')) }}
 {% for customer in customers %}
