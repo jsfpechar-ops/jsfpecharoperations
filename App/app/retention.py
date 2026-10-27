@@ -34,6 +34,13 @@ _OWNER_SCOPE = "(? IS NULL OR a.owner_user_id = ?)"
 # Needed to resume verified signup on another device; removed with the account,
 # including the existing seven-day purge of unverified signups. No ad identifiers.
 
+# 0421: payment_request.guest_email / guest_note are the guest's address a
+# request was sent to and the host's short note. Kept while the request is
+# useful (paid/expired requests are the host's money trail); deleted with the
+# workspace. Never used for anything but sending that one request.
+# 0421: stripe_account holds no personal data beyond the owner reference; it
+# mirrors onboarding status (no keys, no documents) and is deleted with the workspace.
+
 
 def _scalar(sql: str, params: tuple = ()) -> int:
     row = db.query_one(sql, params)
@@ -376,6 +383,10 @@ def _delete_workspace(owner_id: int) -> None:
         # invoices are accounting records kept 10 years: they only lose the
         # link (snapshot_json keeps the buyer as printed). A founder slot stays used.
         cur.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (owner_id,))
+        # Brief 0425: payment requests carry a guest e-mail and note; they go
+        # with the workspace. stripe_account mirrors status only (no secrets).
+        cur.execute("DELETE FROM payment_request WHERE owner_user_id = ?", (owner_id,))
+        cur.execute("DELETE FROM stripe_account WHERE owner_user_id = ?", (owner_id,))
         cur.execute(
             "UPDATE platform_invoice SET owner_user_id = NULL WHERE owner_user_id = ?", (owner_id,)
         )
