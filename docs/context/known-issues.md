@@ -98,3 +98,7 @@ Grep. **HR**: owner decides.
 - K-MORE: #436 undeployed.
 - K-PK0290: passkey fix open.
 - K-CF01: mid-session challenge: see CLOUDFLARE Rule 3.
+
+## Max pricing draft verification
+
+Max 159 Kč annual equivalent and 5× AI draft needs green CI and 390 px pricing/subscription screenshot review; managed workspace unavailable. OCR remains unavailable, including during trial. See [report](../reports/max-159-fivefold-ai.md).

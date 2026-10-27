@@ -138,6 +138,9 @@ def test_pricing_shows_the_price_list_in_both_languages():
         assert strings["pricing.cta"] in page.text
         assert strings["pricing.std.f1"] in page.text
         assert strings["pricing.max.f2"] in page.text
+        assert "5×" in strings["pricing.max.f2"]
+        assert strings["pricing.max.f5"] in page.text
+        assert ("Not available yet" if lang == "en" else "Zatím není dostupné") in strings["pricing.max.f5"]
         assert strings["pricing.faq.9.q"] in page.text
         assert '"@type": "WebPage"' in page.text
         assert '"@type": "FAQPage"' in page.text
@@ -150,9 +153,9 @@ def test_without_javascript_the_page_shows_one_apartment_billed_yearly():
     """The server renders the default (1 apartment, yearly, shown per month); JS only updates it."""
     cs = _client().get("/cenik?lang=cs").text
     assert "<strong data-total>99</strong>" in cs
-    assert "<strong data-total>163</strong>" in cs
+    assert "<strong data-total>159</strong>" in cs
     assert "Platíte 1 190 Kč jednou ročně" in cs
-    assert "Platíte 1 950 Kč jednou ročně" in cs
+    assert "Platíte 1 908 Kč jednou ročně" in cs
     assert "1 apartmán" in cs
     assert "data-pricing-calc hidden" in cs
     en = _client().get("/cenik?lang=en").text

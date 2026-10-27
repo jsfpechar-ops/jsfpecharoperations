@@ -167,7 +167,7 @@ def looks_dangerous(text: str) -> bool:
 
 
 def plan_multiplier(apartment_id: int) -> int:
-    """0415: the host's plan scales the cap: 0 paused, 1 Standard, 3 Max."""
+    """0415: the host's plan scales the cap: 0 paused, 1 Standard, 5 Max."""
     from . import billing
 
     row = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))

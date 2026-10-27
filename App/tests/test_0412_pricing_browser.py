@@ -80,7 +80,7 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
         assert page.locator("[data-pricing-calc]").is_visible()
         std = page.locator('[data-plan="standard"] [data-total]')
         top = page.locator('[data-plan="max"] [data-total]')
-        assert (_number(std), _number(top)) == (99, 163)
+        assert (_number(std), _number(top)) == (99, 159)
         assert page.locator('[data-plan="standard"] [data-ttlock]').count() == 1
         assert page.locator('[data-plan="max"] [data-ttlock]').count() == 0
         assert page.locator(".pricing-founder").count() == 0
@@ -108,7 +108,10 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
                 )
                 assert ("472" if interval == "year" else "590") in page.locator('[data-addon="whitelabel"]').inner_text()
                 assert ("470" if interval == "year" else "49") in page.locator('[data-addon="ttlock"]').inner_text()
-                max_price = _number(top)
+                max_annual = annual + min(n, 4) * 718 + min(max(n - 4, 0), 5) * 570 + max(n - 9, 0) * 370
+                max_monthly = monthly + min(n, 4) * 79 + min(max(n - 4, 0), 5) * 59 + max(n - 9, 0) * 39
+                max_price = (max_annual * 2 + 12) // 24 if interval == "year" else max_monthly
+                assert _number(top) == max_price
                 for lock in (False, True):
                     page.locator("[data-ttlock]").set_checked(lock)
                     expected = ((annual + (470 * n if lock else 0)) * 2 + 12) // 24 if interval == "year" else monthly + (49 * n if lock else 0)
@@ -138,7 +141,7 @@ def test_no_javascript_has_truthful_annual_prices_and_login_fallback(base, monke
         page.goto(f"{base}/cenik?lang={lang}")
         assert not page.locator("[data-pricing-calc]").is_visible()
         assert not page.locator("[data-ttlock-control]").is_visible()
-        assert [_number(page.locator(f'[data-plan="{plan}"] [data-total]')) for plan in ("standard", "max")] == [99, 163]
+        assert [_number(page.locator(f'[data-plan="{plan}"] [data-total]')) for plan in ("standard", "max")] == [99, 159]
         assert "470" in page.locator('[data-addon="ttlock"]').inner_text()
         assert "472" in page.locator('[data-addon="whitelabel"]').inner_text()
         assert page.locator(".pricing-ai-note").is_visible()
