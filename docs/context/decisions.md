@@ -63,13 +63,10 @@ Append-only.
 - 2026-10-23 More skips loader, no on-track count (owner).
 - 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
 - 2026-10-24 1 primary/group; soft Open; CF once (owner).
-- 2026-10-24 | New dependency `anthropic` (Python SDK 2.3.0, pinned in `App/requirements.txt`, hashes with its transitive packages in `App/requirements.lock`: anthropic docstring-parser httpcore2 httpx2 jiter opentelemetry-api sniffio truststore); model `claude-haiku-5-5`; every model call through `App/app/ai.py`, per-feature switch and budget | Havel support assistant and the guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
+- 2026-10-24 | New dependency `anthropic` 2.3.0; pinned+hashed in `App/requirements.lock`; model `claude-haiku-5-5`; every model call through `App/app/ai.py`, per-feature switch and budget | Havel support assistant and the guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
 - 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
 - 2026-10-24 Guide Quick answers screen (owner).
 - 2026-10-25 | Invoice "Fill from register" also asks the MFČR VAT register (CRPDPH SOAP) on the host's click; sends only the DIČ digits; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
 - 2026-10-26 | Billing phase 1: invoices only, no card gateway yet | owner | 0411
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
-
-- 2026-10-27 | Max: first-band annual total 1,908 Kč (159/month equivalent), 5× Leon/Havel message allowance; OCR coming soon only, unavailable today | owner | max-159-fivefold-ai
-
-- 2026-10-27 | Standard includes permanent Leon Lite at base allowance; Max same capabilities with 5× Leon/Havel capacity. Withdraw white label from new orders/upgrades; preserve existing contracts/data. Supersedes Max-only Leon | owner | MAX-159
+- 2026-10-27 | Max/Lite/white-label policy: [report](../reports/max-159-fivefold-ai.md) | owner
