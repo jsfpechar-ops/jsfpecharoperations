@@ -1118,7 +1118,7 @@ a { color: inherit; }
 .pricing-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; }
 .pricing-card { display: grid; grid-row: span 9; grid-template-rows: subgrid; row-gap: 16px; min-width: 0; padding: clamp(24px, 3vw, 36px); }
 .pricing-card > * { min-width: 0; }
-.pricing-card-head img { flex-shrink: 0; }
+.pricing-card-head img { width: 44px; flex-shrink: 0; }
 .pricing-badge-slot { line-height: 1.5; }
 .pricing-badge { display: inline-block; white-space: normal; }
 .pricing-sub, .pricing-meta, .pricing-total-label { margin: 0; }

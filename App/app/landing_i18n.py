@@ -157,7 +157,7 @@ LANDING_STRINGS = {
         "pricing.max.f5": "New features first",
         "pricing.max.note": "TTLock included",
         "pricing.cta": "Try free for 30 days",
-        "pricing.cta_note": "The trial starts when UbyPort is connected.",
+        "pricing.cta_note": "The 30-day trial starts when you verify your email address.",
         "pricing.prices_final": "Prices are final.",
         "pricing.bands.eyebrow": "Graduated pricing",
         "pricing.bands.title": "UbyHost base price",
@@ -181,10 +181,7 @@ LANDING_STRINGS = {
         "pricing.anchor.body": "A year of UbyHost costs 1,190 CZK. An unreported guest can cost up to 50,000 CZK.",
         "pricing.faq.title": "Questions and answers",
         "pricing.faq.1.q": "When does the trial start?",
-        "pricing.faq.1.a": (
-            "Once we have verified your UbyPort access, 7 days after sign-up at the latest. "
-            "So you get 30 days of real reporting."
-        ),
+        "pricing.faq.1.a": "Your 30-day trial starts when you verify your email address and activate your account. You can connect UbyPort during the trial.",
         "pricing.faq.2.q": "What counts as an apartment?",
         "pricing.faq.2.a": "Every listing with its own calendar. Guests, stays and teammates are unlimited.",
         "pricing.faq.3.q": "Do I need a card?",
@@ -448,7 +445,7 @@ LANDING_STRINGS = {
         "pricing.max.f5": "Nové funkce jako první",
         "pricing.max.note": "TTLock v ceně",
         "pricing.cta": "Vyzkoušet 30 dní zdarma",
-        "pricing.cta_note": "Zkušební doba začne, až propojíte UbyPort.",
+        "pricing.cta_note": "Zkušební doba 30 dní začne ověřením vaší e-mailové adresy.",
         "pricing.prices_final": "Ceny jsou konečné.",
         "pricing.bands.eyebrow": "Postupná sleva",
         "pricing.bands.title": "Základní cena UbyHost",
@@ -472,10 +469,7 @@ LANDING_STRINGS = {
         "pricing.anchor.body": "Rok UbyHostu stojí 1 190 Kč. Za nenahlášeného hosta hrozí pokuta až 50 000 Kč.",
         "pricing.faq.title": "Časté dotazy",
         "pricing.faq.1.q": "Kdy začne zkušební doba?",
-        "pricing.faq.1.a": (
-            "Až ověříme vaše přístupy do UbyPortu, nejpozději 7 dní po registraci. "
-            "Máte tak 30 dní skutečného hlášení."
-        ),
+        "pricing.faq.1.a": "Zkušební doba 30 dní začne, když ověříte svou e-mailovou adresu a aktivujete účet. UbyPort můžete propojit během zkušební doby.",
         "pricing.faq.2.q": "Co se počítá jako apartmán?",
         "pricing.faq.2.a": "Každá nabídka s vlastním kalendářem. Hostů, pobytů a kolegů je neomezeně.",
         "pricing.faq.3.q": "Musím zadávat kartu?",

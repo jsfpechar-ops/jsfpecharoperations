@@ -7,6 +7,7 @@ themselves, and answer in Czech to the hosts the product is built for.
 """
 from __future__ import annotations
 
+import json
 import re
 
 from starlette.testclient import TestClient
@@ -378,3 +379,19 @@ def test_guides_are_linked_and_listed_for_discovery():
 
 def test_unknown_guide_is_a_real_404():
     assert _client().get("/pruvodce/neexistuje").status_code == 404
+
+
+def test_pricing_trial_copy_and_faq_schema_follow_email_verification():
+    for lang in ("cs", "en"):
+        strings = LANDING_STRINGS[lang]
+        page = _client().get(f"/cenik?lang={lang}").text
+        assert strings["pricing.cta_note"] in page
+        assert strings["pricing.faq.1.a"] in page
+        scripts = re.findall(r'<script type="application/ld\+json">\s*(.*?)\s*</script>', page, re.S)
+        faq = next(item for item in map(json.loads, scripts) if item.get("@type") == "FAQPage")
+        assert faq["mainEntity"][0]["acceptedAnswer"]["text"] == strings["pricing.faq.1.a"]
+        assert ("verify your email" if lang == "en" else "e-mailové adresy") in strings["pricing.faq.1.a"]
+        assert "The trial starts when UbyPort is connected." not in page
+        assert "Zkušební doba začne, až propojíte UbyPort." not in page
+        assert "7 days after sign-up" not in page
+        assert "nejpozději 7 dní po registraci" not in page
