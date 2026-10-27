@@ -22,7 +22,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/static/favicon.png?v=20261004a">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png?v=20261004a">
   <link rel="stylesheet" href="/static/tokens.css?v=20261022-0284">
-  <link rel="stylesheet" href="/static/landing.css?v=20261027-pricing-simple">
+  <link rel="stylesheet" href="/static/landing.css?v=20261027-pricing-v3">
   <script type="application/ld+json">
   {{ {
     "@context": "https://schema.org",
@@ -102,7 +102,7 @@
           <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span data-note>{{ t('pricing.std.note') }}</span></p>
           <a class="landing-button primary pricing-button" data-cta-plan="standard" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
           <ul class="pricing-features">
-            {% for n in range(1, 8) %}<li>{{ tick() }}{{ t('pricing.std.f' ~ n) }}</li>{% endfor %}
+            {% for n in range(1, 7) %}<li>{{ tick() }}{{ t('pricing.std.f' ~ n) }}</li>{% endfor %}
             <li class="pricing-option"><div>
               <label class="pricing-ttlock" data-ttlock-control hidden><input type="checkbox" data-ttlock>{{ t('pricing.ttlock.label') }}</label>
               <strong class="pricing-option-fallback">{{ t('pricing.addon.ttlock.title') }}</strong>
@@ -114,13 +114,14 @@
         <article class="pricing-card pricing-card-max" data-plan="max">
           <div class="pricing-card-head">
             <div><h3>{{ t('pricing.max.name') }}</h3><p>{{ t('pricing.max.tagline') }}</p></div>
+            <span class="pricing-badge">{{ t('pricing.max.badge') }}</span>
           </div>
           <p class="pricing-price"><strong data-total>{{ start.max_month }}</strong> {{ t('pricing.currency') }} {{ t('pricing.per_month') }}</p>
           <p class="pricing-sub" data-sub>{{ t('pricing.billed_year', amount=start.max_year) }}</p>
           <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span></p>
           <a class="landing-button primary pricing-button" data-cta-plan="max" href="{{ cta_href('max') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
           <ul class="pricing-features">
-            {% for n in range(1, 7) %}<li{% if n == 6 %} class="pricing-coming-soon"{% endif %}>{% if n != 6 %}{{ tick() }}{% else %}<span aria-hidden="true">◷</span>{% endif %}{{ t('pricing.max.f' ~ n) }}</li>{% endfor %}
+            {% for n in (1, 2, 4, 5, 6) %}<li{% if n == 6 %} class="pricing-coming-soon"{% endif %}>{% if n != 6 %}{{ tick() }}{% else %}<span aria-hidden="true">◷</span>{% endif %}{{ t('pricing.max.f' ~ n) }}</li>{% endfor %}
           </ul>
         </article>
       </div>
