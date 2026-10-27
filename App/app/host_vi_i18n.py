@@ -3507,8 +3507,6 @@ STRINGS: Dict[str, str] = {
     "havel.writing": "Havel đang viết…",
     "havel.you": "Bạn",
     "havel.new": "Cuộc trò chuyện mới",
-    "havel.remaining_week": "Tuần này còn %(n)s tin nhắn",
-    "havel.remaining_month": "Tháng này còn %(n)s tin nhắn",
     "havel.greeting": "Xin chào. Hãy hỏi tôi cách một việc gì đó hoạt động trong UbyHost, hoặc chọn một chủ đề ở trên.",
     "havel.thanks": "Không có gì. Nếu cần gì thêm, tôi luôn ở đây.",
     "havel.too_long": "Vui lòng viết dưới 600 ký tự.",
