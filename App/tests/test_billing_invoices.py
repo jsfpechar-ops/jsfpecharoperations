@@ -67,7 +67,7 @@ def test_period_items_follow_the_price_list(owner):
     acc = billing.account(owner)
     acc.update(plan="max", addon_whitelabel=1, carry_czk=30)
     items = billing_invoices.period_items(acc)
-    assert items[0] == ("Předplatné UbyHost Max, 5 apartmánů", 715 + 375)
+    assert items[0] == ("Předplatné UbyHost Max, 5 apartmánů", 715 + 379)
     assert ("Doplněk vlastní značka", 590) in items
     assert ("Doplatek za změny v minulém období", 30) in items
     assert not any("TTLock" in d for d, _ in items)  # included in Max

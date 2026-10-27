@@ -1106,7 +1106,7 @@ a { color: inherit; }
 .pricing-plans { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 20px; }
 .pricing-card { display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 20px; min-width: 0; }
 .pricing-card > * { min-width: 0; }
-.pricing-card-head img { flex-shrink: 0; }
+.pricing-card-head img { width: 44px; flex-shrink: 0; }
 .pricing-button { align-self: start; box-sizing: border-box; text-align: center; }
 .pricing-price { overflow-wrap: anywhere; }
 .pricing-features { align-content: start; }
