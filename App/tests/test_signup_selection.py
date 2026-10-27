@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -115,3 +116,24 @@ def test_saved_order_wins_and_preferences_are_owner_scoped(client):
     assert signup_selection.for_owner(row["id"])["plan"] == "max"
     db.update("user_account", second["id"], {"signup_selection_json": json.dumps(["invalid"])})
     assert signup_selection.for_owner(second["id"]) == {}
+
+
+def test_existing_pricing_cta_apts_survives_signup_and_verification(client):
+    # Same parameter names as pricing.html/pricing.js, including the existing apts key.
+    page = client.get("/signup?plan=standard&interval=year&apts=7&ttlock=1&lang=en")
+    assert page.status_code == 200
+    assert 'name="apartments" value="7"' in page.text
+    hidden = dict(re.findall(r'<input type="hidden" name="([^"]+)" value="([^"]*)"', page.text))
+    response = client.post("/signup?lang=en", data={
+        **hidden, "email": "pricing-link@selection.test", "workspace": "Selection", "accept": "1",
+    }, follow_redirects=False)
+    assert response.status_code == 200
+    row = db.query_one("SELECT * FROM user_account WHERE email = ?",
+                       ("pricing-link@selection.test",))
+    assert client.post("/signup/verify", data={"t": token(row)},
+                       follow_redirects=False).headers["location"] == "/onboarding"
+    assert signup_selection.for_owner(row["id"]) == {
+        "plan": "standard", "interval": "year", "apartments": "7", "ttlock": "1",
+    }
+    assert billing_order.form_values(row["id"])["billing_interval"] == "year"
+    assert billing_order.apartments(row["id"]) == 1

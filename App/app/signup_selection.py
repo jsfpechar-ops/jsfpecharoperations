@@ -18,7 +18,8 @@ def clean(params: Any) -> dict[str, str]:
         value = params.get(field)
         if value in choices:
             result[field] = value
-    count = params.get("apartments")
+    # Existing pricing CTAs use apts; hidden forms use the canonical name.
+    count = params.get("apartments") if params.get("apartments") is not None else params.get("apts")
     if isinstance(count, str) and re.fullmatch(r"[1-9][0-9]?", count):
         if int(count) <= 50:
             result["apartments"] = str(int(count))

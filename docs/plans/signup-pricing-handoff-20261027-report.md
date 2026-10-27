@@ -43,8 +43,9 @@ UI release requirements remain browser/geometry tests with zero skips and
 
 Merge with #537 for activation-based trials and retirement of new founder grants.
 The edits to signup.register and billing_order.form_values are separate from
-#537's activation and founder logic. #536 pricing calculator buttons must send
-plan, interval, apartments and ttlock with the documented exact parameter names.
+#537's activation and founder logic. Existing pricing calculator buttons use plan, interval, apts and ttlock;
+this implementation accepts apts as an alias for the canonical apartments field.
+No pricing URL migration is required.
 No frontend or end-to-end passkey ceremony was exercised, and no browser claim is
 made. Existing property-setup, passkey and billing components were reused; full
 signup-to-setup-to-confirmed-bank-transfer-order evidence remains outstanding.
