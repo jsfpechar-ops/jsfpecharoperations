@@ -125,6 +125,8 @@ def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
     assert cookie
     routes = {
         "admin-users": "/admin/users",
+        "admin-customers": "/admin/customers",
+        "admin-customer": f"/admin/customers/{wide_host['owner']}",
         "admin-users-manage": f"/admin/users?manage={wide_host['owner']}",
         "admin-operations": "/admin/operations",
     }

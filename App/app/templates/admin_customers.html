@@ -1,0 +1,50 @@
+{% extends "host_page.html" %}
+{% set nav = 'users' %}
+{% set body_kind = 'list' %}
+{% block title %}{{ t('customers.title') }}{% endblock %}
+{% block meta %}{{ t('customers.meta') }}{% endblock %}
+{% block secondary_actions %}{{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}{% endblock %}
+{% block toolbar %}
+<form method="get" action="/admin/customers" class="ui-section">
+  <div class="ui-pair">
+    {{ ui_field('customer-search', t('customers.search'), name='q', value=q, type='search', attrs='maxlength="120"') }}
+    {% set options = [('', t('customers.all')), ('ending', t('customers.ending'))] %}
+    {% for value in states %}{% set _ = options.append((value, t('customers.state.' ~ value))) %}{% endfor %}
+    {{ ui_select('customer-state', t('customers.state'), options, selected=state, name='state') }}
+  </div>
+  <div class="ui-pair">
+    {{ ui_select('customer-plan', t('customers.plan'), [('', t('customers.all')), ('standard', 'UbyHost'), ('max', 'UbyHost Max')], selected=plan, name='plan') }}
+    <div class="ui-form-actions">{{ ui_button(t('customers.apply'), 'primary', type='submit') }}</div>
+  </div>
+</form>
+{% endblock %}
+{% block body %}
+{% if not billing_enabled %}{{ ui_banner('neutral', t('customers.billing_off')) }}{% endif %}
+{% call ui_section(t('customers.overview')) %}
+{% set stats = [] %}
+{% for value in ['legacy', 'unverified', 'trialing', 'ending', 'active', 'overdue'] %}
+{% set _ = stats.append((href(state=value, q='', plan=''), summary.get(value, 0), t('customers.ending') if value == 'ending' else t('customers.state.' ~ value))) %}
+{% endfor %}
+{{ ui_stats(stats, label=t('customers.overview')) }}
+<p class="ui-sub">{{ t('customers.as_of', date=today) }}</p>
+{% endcall %}
+{% if customers %}
+{{ ui_table_begin([(t('customers.customer'), ''), (t('customers.properties'), 'r'), (t('customers.plan'), ''), (t('customers.state'), ''), (t('customers.period'), ''), (t('common.actions'), '')], label=t('customers.title')) }}
+{% for customer in customers %}
+<tr class="ui-row" data-customer-id="{{ customer.id }}">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ customer.id }}">{{ customer.display_name or customer.username }}</a></td>
+  <td class="ui-cell-r" data-card="meta">{{ customer.active_properties }}</td>
+  <td data-card="secondary">{{ 'UbyHost Max' if customer.plan == 'max' else 'UbyHost' if customer.plan == 'standard' else t('customers.not_ordered') }}{% if customer.email %}<span class="ui-sub">{{ customer.email }}</span>{% endif %}</td>
+  <td data-card="badge">{{ ui_badge('action' if customer.customer_state in ['overdue', 'unverified'] else 'neutral', t('customers.state.' ~ customer.customer_state)) }}</td>
+  <td data-card="meta">{{ t('customers.' ~ customer.billing_interval) if customer.billing_interval else t('customers.not_recorded') }}</td>
+  <td class="ui-cell-acts" data-card="actions">{{ ui_button(t('customers.open'), 'secondary', href='/admin/customers/' ~ customer.id, size='compact') }}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}{{ ui_empty(t('customers.empty'), '') }}{% endif %}
+<nav class="ui-form-actions" aria-label="{{ t('customers.title') }}">
+{% if newer_url %}{{ ui_button(t('customers.newer'), 'secondary', href=newer_url) }}{% endif %}
+{% if older_url %}{{ ui_button(t('customers.older'), 'secondary', href=older_url) }}{% endif %}
+{% if newer_url or older_url %}{{ ui_button(t('customers.reset'), 'quiet', href=href()) }}{% endif %}
+</nav>
+{% endblock %}

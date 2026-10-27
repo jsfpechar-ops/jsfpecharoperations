@@ -24,7 +24,7 @@
 
 | Area | Files |
 |---|---|
-| App + routes | `App/app/main.py` (routers), `App/app/routes/` (guest, admin, admin_accounts, invoices, stay_fees, exports, signup, legal, privacy_requests, onboarding, onboarding_wizard, api, mail_unsubscribe) |
+| App + routes | `App/app/main.py` (routers), `App/app/routes/` (guest, admin, admin_accounts, admin_customers, invoices, stay_fees, exports, signup, legal, privacy_requests, onboarding, onboarding_wizard, api, mail_unsubscribe) |
 | Police filing | `App/app/ubyport/` (SOAP client, errors), `App/app/reporting.py` (batches, sweep, state), `App/app/deadlines.py`, `App/app/filing_watchdog.py` |
 | Stays and guests | `App/app/icalsync.py` (feeds), `App/app/claim.py` (guest claim), `App/app/housebook.py`, `App/app/validation.py`, `App/app/passport_photos.py` |
 | Auth and security | `App/app/auth.py` (accounts, sessions, TOTP), `App/app/login_link.py` (e-mail login links), `App/app/passkeys.py` (WebAuthn), `App/app/security.py`, `App/app/access.py`, `App/app/rate_limit.py`, `App/app/turnstile.py`, `App/app/client_ip.py`, `App/app/env_guard.py` |
@@ -59,3 +59,5 @@
 - Run `python3 scripts/context_lint.py` to get the next free task and migration numbers.
 - The historic WP/patch series (WP01–WP33, patches 0001–0034) is done and lives in `docs/archive/UbyHost_workplan/`.
 **Cleaning:** `routes/cleaning.py` serves host CRUD/settings and separately token-authorized team views. `cleaning.py` reconciles persisted checkout events and preserves overrides/dismissals. `cleaning_codes.py` provisions permanent property codes in the existing serial door-code worker. Both layouts reuse `dashboard-calendar.js` and the server-rendered `_cleaning_list.html`; no cleaner identities, claims or completion state.
+
+**Operator customers:** `admin_customers.py` and `routes/admin_customers.py` provide a read-only, admin-only customer list and detail with fixed-size keyset pagination, filters and batched active-property counts. Existing account support and billing pages retain all mutations.
