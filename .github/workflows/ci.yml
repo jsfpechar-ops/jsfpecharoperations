@@ -245,9 +245,16 @@ jobs:
       - name: Test report
         id: report
         if: always()
-        run: python3 ${{ github.workspace }}/scripts/ci_junit.py /tmp/ubyhost-tests.xml "Browser shard ${{ matrix.shard }}" --no-skips
+        run: |
+          status=0
+          python3 ../scripts/ci_junit.py /tmp/ubyhost-tests.xml "Browser shard ${{ matrix.shard }}" --no-skips > /tmp/browser-report.log 2>&1 || status=$?
+          cat /tmp/browser-report.log
+          if [ "$status" -ne 0 ]; then
+            printf 'report_problem=%s\n' "$(tr '\n' ' ' < /tmp/browser-report.log | tail -c 1500)" >> "$GITHUB_OUTPUT"
+          fi
+          exit "$status"
 
-      - name: ${{ steps.report.outputs.summary || 'Browser summary' }}
+      - name: ${{ steps.report.outputs.summary || steps.report.outputs.report_problem || 'Browser summary' }}
         if: always()
         run: 'true'
 
