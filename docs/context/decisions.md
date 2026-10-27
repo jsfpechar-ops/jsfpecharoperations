@@ -70,3 +70,4 @@ Append-only.
 - 2026-10-26 | Billing phase 1: invoices only, no card gateway yet | owner | 0411
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 | [Max policy](../reports/max-159-fivefold-ai.md); [original layout, 229 monthly](../reports/original-pricing-229.md) | owner
+- 2026-10-27 | Direct payments (Connect): folded into the existing FastAPI app; payment requests first, page booking second; QR rail = technology provider only; `stripe` SDK (pinned+hashed) arrives with brief 0422 | owner | plan direct-payments-build-plan, brief 0421
