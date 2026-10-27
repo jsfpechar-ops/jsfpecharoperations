@@ -12,7 +12,7 @@ Consolidated billing controls, marginal apartment bands, plans and add-ons into 
 
 ## Verification
 
-GitHub CI for bfac481: context, Docker, smoke, shellcheck and secrets passed. Full tests found the last pricing-card logo CSS rule omitted its documented 44px width; corrected without weakening the test. Browser shards were still running at this report update. Follow-up commit requires fresh CI.
+GitHub CI for bfac481: context, Docker, smoke, shellcheck and secrets passed. Full tests found the last pricing-card logo CSS rule omitted its documented 44px width; corrected without weakening the test. Browser shards were still running at this report update. Follow-up CI confirmed the logo fix; the new trial assertion used the wrong Czech grammatical case, now corrected to match the rendered email-verification sentence. Latest commit requires fresh CI.
 
 The actual pricing.js passed 600 supplementary calculator/handoff assertions across counts 1–50, both billing periods and TTLock states. This does not replace browser verification.
 

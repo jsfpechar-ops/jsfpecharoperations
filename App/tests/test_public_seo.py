@@ -390,7 +390,7 @@ def test_pricing_trial_copy_and_faq_schema_follow_email_verification():
         scripts = re.findall(r'<script type="application/ld\+json">\s*(.*?)\s*</script>', page, re.S)
         faq = next(item for item in map(json.loads, scripts) if item.get("@type") == "FAQPage")
         assert faq["mainEntity"][0]["acceptedAnswer"]["text"] == strings["pricing.faq.1.a"]
-        assert ("verify your email" if lang == "en" else "e-mailové adresy") in strings["pricing.faq.1.a"]
+        assert ("verify your email" if lang == "en" else "ověříte svou e-mailovou adresu") in strings["pricing.faq.1.a"]
         assert "The trial starts when UbyPort is connected." not in page
         assert "Zkušební doba začne, až propojíte UbyPort." not in page
         assert "7 days after sign-up" not in page
