@@ -63,28 +63,26 @@ def test_nothing_happens_while_billing_is_off(owner):
     assert billing_trial.banner(owner) is None
 
 
-def test_a_passed_connection_test_starts_the_trial(owner, billing_on):
+def test_a_passed_connection_test_does_not_start_the_trial(owner, billing_on):
     billing.ensure_account(owner)
     apartment_id = db.insert("apartment", {"internal_name": "Trial test", "owner_user_id": owner,
-                                                 "created_at": TODAY.isoformat()})
+                                         "created_at": TODAY.isoformat()})
     billing_trial.mark_verified(apartment_id, owner)
+    assert billing.account(owner)["status"] == "trial_pending"
+    assert db.query_one("SELECT ubyport_verified_at FROM apartment WHERE id = ?", (apartment_id,))[0]
+    assert billing_trial.start(owner) is False  # email remains unverified
+
+
+def test_pending_trial_recovers_from_verification_without_a_seven_day_delay(owner, billing_on):
+    billing.ensure_account(owner)
+    confirmed = TODAY - timedelta(days=6)
+    db.execute("UPDATE user_account SET email_verified_at = ? WHERE id = ?",
+               (confirmed.isoformat(), owner))
+    assert billing_trial.run(TODAY)["started"] == 1
     acc = billing.account(owner)
     assert acc["status"] == "trialing"
-    assert acc["trial_ends_at"] == (TODAY + timedelta(days=30)).isoformat()
-    assert db.query_one("SELECT ubyport_verified_at FROM apartment WHERE id = ?", (apartment_id,))[0]
-    assert billing_trial.start(owner) is False  # already running
-
-
-def test_the_trial_starts_by_itself_after_seven_days(owner, billing_on):
-    billing.ensure_account(owner)
-    db.execute("UPDATE user_account SET email_verified_at = ? WHERE id = ?",
-               ((TODAY - timedelta(days=6)).isoformat(), owner))
-    billing_trial.run(TODAY)
-    assert billing.account(owner)["status"] == "trial_pending"
-    db.execute("UPDATE user_account SET email_verified_at = ? WHERE id = ?",
-               ((TODAY - timedelta(days=7)).isoformat(), owner))
-    billing_trial.run(TODAY)
-    assert billing.account(owner)["status"] == "trialing"
+    assert acc["trial_started_at"] == confirmed.isoformat()
+    assert acc["trial_ends_at"] == (confirmed + timedelta(days=29)).isoformat()
 
 
 def test_og_hosts_without_a_row_are_never_touched(owner, billing_on):
@@ -141,4 +139,10 @@ def test_confirming_the_sign_up_opens_a_billing_row(owner, billing_on):
     db.execute("UPDATE user_account SET signup_verify_nonce = 'n-0414', active = 0 WHERE id = ?", (owner,))
     account = db.query_one("SELECT * FROM user_account WHERE id = ?", (owner,))
     assert signup.activate(account) is True
-    assert billing.account(owner)["status"] == "trial_pending"
+    acc = billing.account(owner)
+    assert acc["status"] == "trialing"
+    first, last = billing_trial.activation_dates(
+        db.query_one("SELECT email_verified_at FROM user_account WHERE id = ?", (owner,))[0]
+    )
+    assert acc["trial_started_at"] == first.isoformat()
+    assert acc["trial_ends_at"] == last.isoformat()

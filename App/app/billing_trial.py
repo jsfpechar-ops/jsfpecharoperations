@@ -1,21 +1,20 @@
 """The 30-day trial (brief 0414): when it starts, the reminders, and what follows.
 
-A new host's trial starts when UbyPort is verified for one of their apartments
-(a passed connection test or a guest already reported), or 7 days after they
-confirmed their e-mail, whichever comes first. At the end the account becomes
+A new host's trial starts when their email is verified and the account is
+activated. UbyPort setup never starts or restarts this clock. At the end the account becomes
 active on the plan the host ordered, or paused when they ordered none.
 Hosts without a ``billing_account`` row (the "OG" hosts) are never touched.
 """
 from __future__ import annotations
 
 import calendar
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, Optional
+from zoneinfo import ZoneInfo
 
-from . import billing, db, validation
+from . import billing, config, db, validation
 
 TRIAL_DAYS = 30
-START_AFTER_DAYS = 7
 REMINDER_DAYS = (7, 3, 0)
 
 
@@ -46,42 +45,53 @@ def verified(owner_user_id: int) -> bool:
     return row is not None
 
 
+def activation_dates(stamp: str) -> tuple[date, date]:
+    """Thirty calendar days in the configured timezone, including activation day.
+
+    The stored end date is inclusive, as required by finish()/period_end().
+    Existing running trials keep their original dates.
+    """
+    moment = datetime.fromisoformat(stamp)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    first = moment.astimezone(ZoneInfo(config.TIMEZONE)).date()
+    return first, first + timedelta(days=TRIAL_DAYS - 1)
+
+
 def start(owner_user_id: int, *, today: Optional[date] = None) -> bool:
-    """Start the trial of a ``trial_pending`` account; False when there is nothing to start."""
+    """Recover a pending trial from its verified date; never create a billing row."""
     if not billing.enabled():
         return False
-    acc = billing.account(owner_user_id)
-    if acc is None or acc["status"] != "trial_pending":
-        return False
-    if not billing.set_status(owner_user_id, "trialing"):
-        return False
-    day = today or date.today()
-    db.execute(
-        "UPDATE billing_account SET trial_started_at = ?, trial_ends_at = ?, updated_at = ? "
-        "WHERE owner_user_id = ?",
-        (day.isoformat(), (day + timedelta(days=TRIAL_DAYS)).isoformat(), db.utcnow(), owner_user_id),
+    row = db.query_one(
+        "SELECT email_verified_at FROM user_account WHERE id = ? AND active = 1",
+        (owner_user_id,),
     )
-    return True
+    if row is None or not row["email_verified_at"]:
+        return False
+    first, last = activation_dates(row["email_verified_at"])
+    day = today or datetime.now(ZoneInfo(config.TIMEZONE)).date()
+    if first > day:
+        return False
+    # One conditional write: competing jobs cannot expose a trial with missing
+    # dates, or reset a trial that another request already started.
+    changed = db.execute(
+        "UPDATE billing_account SET status = 'trialing', trial_started_at = ?, "
+        "trial_ends_at = ?, updated_at = ? WHERE owner_user_id = ? "
+        "AND status = 'trial_pending' AND trial_started_at IS NULL AND trial_ends_at IS NULL",
+        (first.isoformat(), last.isoformat(), db.utcnow(), owner_user_id),
+    )
+    if changed:
+        db.audit("billing_status", "trial_pending->trialing", owner_user_id=owner_user_id,
+                 actor="system")
+    return bool(changed)
 
 
 def mark_verified(apartment_id: int, owner_user_id: Optional[int]) -> None:
-    """A passed UbyPort connection test: remember it and start the trial."""
+    """Remember a passed UbyPort test without changing the billing clock."""
     db.execute(
         "UPDATE apartment SET ubyport_verified_at = ? WHERE id = ? AND ubyport_verified_at IS NULL",
         (db.utcnow(), apartment_id),
     )
-    if owner_user_id is not None:
-        start(int(owner_user_id))
-
-
-def _confirmed_on(owner_user_id: int) -> Optional[date]:
-    row = db.query_one(
-        "SELECT email_verified_at, created_at FROM user_account WHERE id = ?", (owner_user_id,)
-    )
-    if row is None:
-        return None
-    stamp = row["email_verified_at"] or row["created_at"]
-    return date.fromisoformat(str(stamp)[:10]) if stamp else None
 
 
 def finish(owner_user_id: int, *, today: date) -> str:
@@ -109,12 +119,10 @@ def run(today: Optional[date] = None) -> Dict[str, int]:
     counts = {"started": 0, "reminded": 0, "active": 0, "paused": 0}
     if not billing.enabled():
         return counts
-    day = today or date.today()
+    day = today or datetime.now(ZoneInfo(config.TIMEZONE)).date()
     for row in db.query("SELECT owner_user_id FROM billing_account WHERE status = 'trial_pending'"):
         owner = int(row["owner_user_id"])
-        confirmed = _confirmed_on(owner)
-        due = confirmed is not None and confirmed + timedelta(days=START_AFTER_DAYS) <= day
-        if (due or verified(owner)) and start(owner, today=day):
+        if start(owner, today=day):
             counts["started"] += 1
     for row in db.query(
         "SELECT owner_user_id, trial_ends_at, plan FROM billing_account WHERE status = 'trialing'"
@@ -141,7 +149,7 @@ def banner(owner_user_id: Optional[int]) -> Optional[Dict[str, Any]]:
     status = acc["status"]
     if status == "trialing" and not acc["plan"]:
         ends = date.fromisoformat(acc["trial_ends_at"][:10])
-        left = (ends - date.today()).days
+        left = (ends - datetime.now(ZoneInfo(config.TIMEZONE)).date()).days
         return {"kind": "trial", "warning": left <= 3, "date": validation.fmt_date(ends.isoformat())}
     if status in ("overdue", "paused"):
         return {"kind": status, "warning": True, "date": ""}

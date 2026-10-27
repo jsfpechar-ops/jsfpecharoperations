@@ -87,9 +87,9 @@ def read_form(form: Dict[str, str]) -> Tuple[Dict[str, Any], Dict[str, str]]:
 
 
 def founder_offer(owner_user_id: int) -> bool:
-    """The founder price can apply: the host holds a slot, or one is still free."""
+    """Keep an already confirmed founder agreement; new orders get list prices."""
     acc = billing.account(owner_user_id) or {}
-    return bool(acc.get("founder")) or billing.founder_slots_left() > 0
+    return bool(acc.get("founder"))
 
 
 def quote(owner_user_id: int, values: Dict[str, Any]) -> Dict[str, int]:
@@ -110,8 +110,6 @@ def place(owner_user_id: int, values: Dict[str, Any], *, today: Optional[date] =
         raise ValueError("already_ordered")
     day = today or date.today()
     founder = 1 if acc["founder"] else 0
-    if values["billing_interval"] == "year" and not founder:
-        founder = 1 if billing.claim_founder_slot(owner_user_id) is not None else 0
     db.execute(
         "UPDATE billing_account SET plan = ?, billing_interval = ?, addon_ttlock = ?, "
         "addon_whitelabel = ?, founder = ?, apartments_billed = ?, pending_change_json = NULL, "

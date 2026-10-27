@@ -583,26 +583,28 @@ def register(
 def activate(account) -> bool:
     """Mark the account verified and active. False if someone else won the race."""
     now = db.utcnow()
-    done = db.update_if(
-        "user_account",
-        account["id"],
-        {
-            "active": 1,
-            "email_verified_at": now,
-            "signup_verify_nonce": None,
-            "must_change_password": 0,
-        },
-        {"signup_verify_nonce": account["signup_verify_nonce"]},
-        extra_where="email_verified_at IS NULL",
-    )
-    if not done:
-        return False
-    db.audit("signup_verified", actor=account["username"], owner_user_id=account["id"])
-    # 0414: a confirmed sign-up gets its billing row; the trial clock starts later.
-    from . import billing
+    from . import billing, billing_trial
 
-    if billing.enabled():
-        billing.ensure_account(int(account["id"]))
+    # Account activation and initial trial are one transaction. A scanner GET
+    # never reaches this function; a stale/replayed POST changes neither row.
+    with db.immediate() as cur:
+        cur.execute(
+            "UPDATE user_account SET active = 1, email_verified_at = ?, "
+            "signup_verify_nonce = NULL, must_change_password = 0 "
+            "WHERE id = ? AND signup_verify_nonce = ? AND email_verified_at IS NULL",
+            (now, account["id"], account["signup_verify_nonce"]),
+        )
+        if cur.rowcount != 1:
+            return False
+        if billing.enabled():
+            first, last = billing_trial.activation_dates(now)
+            cur.execute(
+                "INSERT INTO billing_account "
+                "(owner_user_id, status, trial_started_at, trial_ends_at, updated_at) "
+                "VALUES (?, 'trialing', ?, ?, ?) ON CONFLICT(owner_user_id) DO NOTHING",
+                (account["id"], first.isoformat(), last.isoformat(), now),
+            )
+    db.audit("signup_verified", actor=account["username"], owner_user_id=account["id"])
     mail_notify.signup_admin(
         user_id=account["id"],
         workspace=account["display_name"] or "",
