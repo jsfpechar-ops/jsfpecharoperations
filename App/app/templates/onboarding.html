@@ -11,7 +11,7 @@
   <p class="ui-sub">{% if lang == 'cs' %}Uložený výběr z ceníku. Zatím jste nic neobjednali.{% else %}Your saved pricing selection. You have not placed an order yet.{% endif %}</p>
   {% if signup_selection.plan %}<p>{{ t('billing.plan.name.' ~ signup_selection.plan) }}{% if signup_selection.interval %} · {{ t('billing.interval.' ~ signup_selection.interval) }}{% endif %}</p>{% endif %}
   {% if signup_selection.apartments %}<p>{% if lang == 'cs' %}Počet apartmánů z kalkulačky: {{ signup_selection.apartments }}. Objednávka používá skutečný počet aktivních apartmánů.{% else %}Apartments from the calculator: {{ signup_selection.apartments }}. Your order uses the actual number of active apartments.{% endif %}</p>{% endif %}
-  {% if billing_enabled %}<a class="btn" href="/predplatne">{{ t('billing.plan.title') }}</a>{% endif %}
+  {% if billing_enabled %}{{ ui_button(t('billing.plan.title'), href='/predplatne') }}{% endif %}
 {% endcall %}
 {% endif %}
 {% endblock %}
