@@ -168,6 +168,16 @@ On **Render `ubyhost-staging`**, keep `UBYHOST_UBYPORT_ENV=mock`, set
 `UBYHOST_DOOR_CODES_LIVE` off, and use console mail for the door-code PIN. See
 [DEPLOYMENT.md](DEPLOYMENT.md#door-codes-on-render-staging).
 
+
+## Connect payments (direct payments for hosts)
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `UBYHOST_STRIPE_MODE` | `off` | `off`, `test` or `live`. `off` hides all payment-request UI and endpoints; `test` uses Stripe test keys; `live` uses live keys. Never set `live` before the sandbox checklist and the lawyer sign-off pass. |
+| `UBYHOST_STRIPE_SECRET_KEY` | unset | Secret key (`sk_test_...` or `sk_live_...`) matching `UBYHOST_STRIPE_MODE`. Set in Lightsail `.env` or Render Environment only, never in git. Unset means the feature is off even if `UBYHOST_STRIPE_MODE` is set. |
+| `UBYHOST_STRIPE_WEBHOOK_SECRET` | unset | Signing secret (`whsec_...`) for the platform webhook endpoint. Unset means webhooks are logged-and-ignored in tests; in `test`/`live` mode an unset value fails verification loudly. |
+| `UBYHOST_STRIPE_MONTHLY_API_CALLS` | `50000` | Shared monthly cap on Stripe API calls (all hosts), same guard pattern as `UBYHOST_TTLOCK_MONTHLY_CALLS`. `0` removes the cap. |
+
 ## Guest guide imports (Apify)
 
 | Variable | Default | Notes |

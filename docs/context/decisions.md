@@ -2,12 +2,6 @@
 
 Append-only.
 
-- 2026-09-09 | Core product = automatic UbyPort filing plus the house book; everything else is optional | the owner's founding rule | [UBYPORT_CORE](../UBYPORT_CORE.md)
-- 2026-09-13 | Production on AWS Lightsail; Render is staging with mock UbyPort, permanently | cost, control | [LIGHTSAIL](../LIGHTSAIL.md)
-- 2026-09-14 | Hosts use TOTP 2FA + 8 recovery codes, forced in production; Turnstile on login and guest PIN | security | [SECURITY](../SECURITY.md)
-- 2026-09-16 | Light mode only; dark mode parked | owner policy | [DESIGN](../DESIGN.md#color-mode-light-only-no-dark-mode)
-- 2026-09-18 | Mail via AWS SES (no-reply@ubyhost.com, DKIM) | already on AWS; keeps SMS/login options open | [SES](../SES.md)
-- 2026-10-03 | Stay fee charged per started day (arrival, departure]; use the rate the period was saved with | under-charging is the host's liability | P Q-answers
 - 2026-10-03 | Sign-up stays off in production (`UBYHOST_SIGNUP_ENABLED`) until the owner chooses | launch with invited hosts | [ENVIRONMENT](../ENVIRONMENT.md#accounts)
 - 2026-10-05 | WP22/WP24 legal texts 1.6 shipped without the counsel gate; lawyer review stays open | ship with real hosts | K-L rows
 - 2026-10-05 | Admin preview: full workspace, optional reason, 24 h default | owner support | PR #280, K-P01
@@ -58,15 +52,16 @@ Append-only.
 - 2026-10-22 [workflow] iPad: cloud WebKit; route tests: `service_workers="block"` (0253).
 - 2026-10-22 [workflow] iPad: cloud WebKit; route tests: `service_workers="block"` (0253).
 - 2026-10-22 Wizard coral bar OK
-- 2026-10-22 Alerts: short line + fix link; off `/` only red (owner).
+- 2026-10-22 Alerts: short line + fix link (owner).
 - 2026-10-22 [deps] Signature font: self-hosted Dancing Script (OFL) (owner).
-- 2026-10-23 More skips loader, no on-track count (owner).
+- 2026-10-23 Skips loader; no on-track count (owner).
 - 2026-10-23 Subdomain: same RP ID; #435 alerts resolve live+worker (owner).
-- 2026-10-24 1 primary/group; soft Open; CF once (owner).
-- 2026-10-24 | New dependency `anthropic` 2.3.0; pinned+hashed in `App/requirements.lock`; model `claude-haiku-5-5`; every model call through `App/app/ai.py`, per-feature switch and budget | Havel support assistant and the guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
+- 2026-10-24 1 primary/group; soft Open (owner).
+- 2026-10-24 | [deps] `anthropic` 2.3.0 pinned+hashed; model `claude-haiku-5-5`; every call through `App/app/ai.py`, per-feature switch and budget | Havel + guest assistant; one module to swap providers | plan havel-support-assistant, task 0310
 - 2026-10-24 [Guest guide](../plans/guest-guide.md) 0341+; Fable critical briefs (owner).
 - 2026-10-24 Guide Quick answers screen (owner).
-- 2026-10-25 | Invoice "Fill from register" also asks the MFČR VAT register (CRPDPH SOAP) on the host's click; sends only the DIČ digits; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
-- 2026-10-26 | Billing phase 1: invoices only, no card gateway yet | owner | 0411
+- 2026-10-25 | Invoice "Fill from register" also asks the MFČR VAT register (CRPDPH SOAP); sends DIČ digits only; 24 h cache; no new dependency | owner | [0394](../tasks/0394-vat-register-bank-account.md)
+- 2026-10-26 | Billing phase 1: invoices only, no gateway yet | owner | 0411
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 | [Max policy](../reports/max-159-fivefold-ai.md); [original layout, 229 monthly](../reports/original-pricing-229.md) | owner
+- 2026-10-27 | Direct payments folded into the FastAPI app; requests first, page booking second; QR rail = tech provider only | owner | plan direct-payments-build-plan, 0425
