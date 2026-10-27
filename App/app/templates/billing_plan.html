@@ -37,7 +37,6 @@
 </div>
 {% if founder_offer %}<p class="ui-sub">{{ t('billing.order.founder') }}</p>{% endif %}
 {{ ui_check('addon_ttlock', t('billing.order.ttlock'), checked=values.addon_ttlock) }}
-{{ ui_check('addon_whitelabel', t('billing.order.whitelabel'), checked=values.addon_whitelabel) }}
 <p class="ui-sub">{{ t('billing.order.apartments', n=apartments) }}</p>
 {% endcall %}
 {% call ui_section(t('billing.order.buyer_title')) %}
@@ -86,8 +85,8 @@
 {% set other_plan = 'standard' if acc.plan == 'max' else 'max' %}
 {% set other_interval = 'month' if acc.billing_interval == 'year' else 'year' %}
 {% set options = [('plan', other_plan, t('billing.change.to_plan', plan=t('billing.plan.name.' ~ other_plan))),
-                  ('billing_interval', other_interval, t('billing.change.to_interval_' ~ other_interval)),
-                  ('addon_whitelabel', '0' if acc.addon_whitelabel else '1', t('billing.change.whitelabel_' ~ ('off' if acc.addon_whitelabel else 'on')))] %}
+                  ('billing_interval', other_interval, t('billing.change.to_interval_' ~ other_interval))] %}
+{% if acc.addon_whitelabel %}{% set _ = options.append(('addon_whitelabel', '0', t('billing.change.whitelabel_off'))) %}{% endif %}
 {% if acc.plan != 'max' %}{% set _ = options.append(('addon_ttlock', '0' if acc.addon_ttlock else '1', t('billing.change.ttlock_' ~ ('off' if acc.addon_ttlock else 'on')))) %}{% endif %}
 {% for field, value, label in options %}
 <form method="post" action="/predplatne/zmena">

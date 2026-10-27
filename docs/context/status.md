@@ -9,7 +9,7 @@ Updated: 2026-10-26.
 
 ## Now
 
-- Max 159 Kč annual equivalent + 5× AI: draft; CI/visual review pending; OCR coming soon only.
+- Max 159 Kč annual equivalent + 5× Leon/Havel; Standard Leon Lite permanent; white label closed to new purchases. Draft: CI/visual review pending; OCR unavailable.
 
 - 0423 sync on open: merge.
 - Billing 0411-0419 in #528, off. **Owner:** ČSOB file, env, counsel.

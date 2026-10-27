@@ -167,7 +167,7 @@ def looks_dangerous(text: str) -> bool:
 
 
 def plan_multiplier(apartment_id: int) -> int:
-    """Leon allowance: 0 without access, 1 legacy/trial, 5 billed Max."""
+    """Leon allowance: 0 paused, 1 Standard Lite/legacy/trial, 5 Max."""
     from . import billing
 
     row = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))

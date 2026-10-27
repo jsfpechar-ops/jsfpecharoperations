@@ -146,7 +146,7 @@ def entitlements(owner_user_id: int) -> Entitlements:
         status=status,
         plan=plan,
         ai_multiplier=5 if is_max else 1,
-        leon=is_max,
+        leon=True,
         ttlock=is_max or bool(acc["addon_ttlock"]),
         whitelabel=bool(acc["addon_whitelabel"]),
         priority_support=is_max,
@@ -221,6 +221,8 @@ def apply_change(
     if acc is None or acc["plan"] is None:
         raise ValueError("no ordered plan to change")
     field, value = next(iter(change.items()))
+    if field == "addon_whitelabel" and value and not acc["addon_whitelabel"]:
+        raise ValueError("whitelabel_unavailable")
     current = {
         "apartments": acc["apartments_billed"],
         "plan": acc["plan"],

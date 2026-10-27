@@ -102,7 +102,7 @@
           <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span> · <span data-note>{{ t('pricing.std.note') }}</span></p>
           <a class="landing-button primary pricing-button" data-cta-plan="standard" href="{{ cta_href('standard') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
           <ul class="pricing-features">
-            {% for n in range(1, 7) %}<li>{{ tick() }}{{ t('pricing.std.f' ~ n) }}</li>{% endfor %}
+            {% for n in range(1, 8) %}<li>{{ tick() }}{{ t('pricing.std.f' ~ n) }}</li>{% endfor %}
             <li class="pricing-option"><div>
               <label class="pricing-ttlock" data-ttlock-control hidden><input type="checkbox" data-ttlock>{{ t('pricing.ttlock.label') }}</label>
               <strong class="pricing-option-fallback">{{ t('pricing.addon.ttlock.title') }}</strong>
@@ -128,7 +128,6 @@
         <summary><strong>{{ t('pricing.bands.title') }}</strong> · {% for i in range(3) %}<span>{{ t('pricing.bands.b' ~ (i + 1)) }}: <b data-band="{{ i }}">{{ start.bands[i] }}</b> {{ t('pricing.currency') }}</span>{% if not loop.last %} · {% endif %}{% endfor %} <span data-unit>{{ t('pricing.bands.unit_year') }}</span></summary>
         <p>{{ t('pricing.bands.body') }}</p>
       </details>
-      <p class="pricing-whitelabel"><strong>{{ t('pricing.addon.wl.title') }}</strong> · <span data-addon="whitelabel" data-year="{{ t('pricing.wl.year') }}" data-month="{{ t('pricing.wl.month') }}">{{ t('pricing.wl.year', price=start.wl_month, amount=start.wl_year) }}</span> {{ t('pricing.wl.scope') }}</p>
       <p class="pricing-fineprint">{{ t('pricing.cta_note') }} {{ t('pricing.prices_final') }}</p>
 
 

@@ -64,7 +64,7 @@ def test_the_plan_sets_ttlock_and_ai(host, billing_on, monkeypatch, status, plan
     _status(host["owner"], status, plan, addon)
     assert ttlock.allowed_for(host["owner"]) is allowed
     assert havel.plan_multiplier(host["owner"]) == multiplier
-    assert leon.plan_multiplier(host["apartment"]) == (0 if plan == "standard" else multiplier)
+    assert leon.plan_multiplier(host["apartment"]) == multiplier
 
 
 def test_havel_limits_scale_with_the_plan(host, billing_on):

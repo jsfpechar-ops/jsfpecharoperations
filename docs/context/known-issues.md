@@ -102,3 +102,5 @@ Grep. **HR**: owner decides.
 ## Max pricing draft verification
 
 Max 159 Kč annual equivalent and 5× AI draft needs green CI and 390 px pricing/subscription screenshot review; managed workspace unavailable. OCR remains unavailable, including during trial. See [report](../reports/max-159-fivefold-ai.md).
+
+Latest MAX-159 scope restores permanent Standard Leon Lite and closes white label to new purchases. CI must verify forged form/API rejection and preservation of existing contracts; no local tests or screenshots inspected.

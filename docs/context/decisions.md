@@ -71,3 +71,5 @@ Append-only.
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 
 - 2026-10-27 | Max: first-band annual total 1,908 Kč (159/month equivalent), 5× Leon/Havel message allowance; OCR coming soon only, unavailable today | owner | max-159-fivefold-ai
+
+- 2026-10-27 | Standard includes permanent Leon Lite at base allowance; Max same capabilities with 5× Leon/Havel capacity. Withdraw white label from new orders/upgrades; preserve existing contracts/data. Supersedes Max-only Leon | owner | MAX-159

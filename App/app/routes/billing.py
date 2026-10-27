@@ -22,7 +22,7 @@ _CHANGE_VALUES = {
     "plan": billing.PLANS,
     "billing_interval": billing.INTERVALS,
     "addon_ttlock": ("0", "1"),
-    "addon_whitelabel": ("0", "1"),
+    "addon_whitelabel": ("0",),
 }
 _ARES_MAP = {"buyer_name": "name", "buyer_street": "street", "buyer_city": "city",
              "buyer_zip": "zip", "buyer_dic": "dic"}
