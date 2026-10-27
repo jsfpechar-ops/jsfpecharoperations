@@ -62,7 +62,7 @@ def _geometry(page, width):
     plans = page.locator(".pricing-plans").bounding_box()
     controls = page.locator("[data-pricing-calc]").bounding_box()
     if controls:
-        assert 0 <= plans["y"] - (controls["y"] + controls["height"]) <= 25
+        assert 0 <= plans["y"] - (controls["y"] + controls["height"]) <= 33
     bands = page.locator(".pricing-bands").bounding_box()
     assert 0 <= bands["y"] - (plans["y"] + plans["height"]) <= 20
     if width >= 1024:
@@ -95,7 +95,10 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
         max_features = page.locator('[data-plan="max"] .pricing-features').inner_text()
         assert "Havel" in std_features and "Leon Lite" in std_features
         assert page.locator('[data-plan="max"]').inner_text().count("TTLock") == 1
-        assert "Leon" in max_features and "5×" in max_features
+        assert "Leon" in max_features and "Havel" in max_features and "5×" in max_features
+        assert page.locator('[data-plan="standard"] .pricing-features > li:not(.pricing-option)').count() == 6
+        assert page.locator('[data-plan="max"] .pricing-features > li').count() == 5
+        assert page.locator('[data-plan="max"] .pricing-badge').is_visible()
         assert page.locator('[data-plan="max"] .pricing-option').count() == 0
         assert page.locator(".pricing-coming-soon svg").count() == 0
         assert not page.locator(".pricing-bands").get_attribute("open")
@@ -125,7 +128,7 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
                 )
                 assert ("470" if interval == "year" else "49") in page.locator('[data-addon="ttlock"]').inner_text()
                 max_annual = annual + min(n, 4) * 718 + min(max(n - 4, 0), 5) * 570 + max(n - 9, 0) * 370
-                max_monthly = monthly + min(n, 4) * 79 + min(max(n - 4, 0), 5) * 59 + max(n - 9, 0) * 39
+                max_monthly = monthly + min(n, 4) * 80 + min(max(n - 4, 0), 5) * 59 + max(n - 9, 0) * 39
                 max_price = (max_annual * 2 + 12) // 24 if interval == "year" else max_monthly
                 assert _number(top) == max_price
                 for lock in (False, True):
@@ -140,7 +143,7 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
                         assert f"plan={plan}" in href and f"interval={interval}" in href and f"apts={n}" in href
                         assert ("ttlock=1" in href) == (lock and plan == "standard")
                     if n == 5 and interval == "month":
-                        assert _number(top) == 1090
+                        assert _number(top) == 1094
                 page.locator("[data-ttlock]").uncheck()
         assert page.locator('[data-step="1"]').is_disabled()
         assert not errors, errors

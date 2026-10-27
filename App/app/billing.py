@@ -30,7 +30,7 @@ INTERVALS = ("month", "year")
 # prices only the apartments inside it.
 BAND_TOPS = (4, 9)
 BASE = {"month": (149, 119, 99), "year": (1190, 950, 790)}
-MAX_EXTRA = {"month": (79, 59, 39), "year": (718, 570, 370)}
+MAX_EXTRA = {"month": (80, 59, 39), "year": (718, 570, 370)}
 TTLOCK = {"month": 49, "year": 470}
 WHITELABEL = {"month": 590, "year": 5660}
 FOUNDER_YEAR = 890

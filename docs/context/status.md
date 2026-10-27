@@ -7,7 +7,7 @@ Updated: 2026-10-27.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- #541: CI/visual review pending.
+- #541 merged; pricing CI.
 - 0423 sync on open: merge.
 - Billing 0411-0419 in #528, off. **Owner:** ČSOB file, env, counsel.
 - 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
