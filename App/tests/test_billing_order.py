@@ -126,7 +126,7 @@ def test_the_page_orders_without_javascript(host):
     login_as(client, host["username"], url="/login?lang=cs")
     page = client.get("/predplatne?plan=max&interval=year")
     assert page.status_code == 200 and "Objednat" in page.text and "Platíte převodem" in page.text
-    assert "5× vyšší limit AI odpovědí" in page.text
+    assert "5× vyšší využití AI pro Leona i Havla" in page.text
     assert "Skenování dokladů (OCR): připravujeme" in page.text
     assert "Zatím není dostupné, ani během zkušební doby." in page.text
     bad = client.post("/predplatne", data={**BUYER, "buyer_zip": "1"}, follow_redirects=False)

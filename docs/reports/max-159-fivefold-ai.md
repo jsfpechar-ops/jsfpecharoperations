@@ -17,3 +17,11 @@ Owner authorized implementation with Sol on 2026-10-27. Based on main 1a82d40.
 Managed workspace cannot start: managed network requirements require sandbox enforcement. No local pytest, context lint, browser or screenshots were run. Changes assembled through connected GitHub tools; CI must verify this draft. Required test-map rows: billing, Havel/AI, public pages, copy and host browser/geometry for subscription text. Existing pricing browser tests capture 390 px Czech/English screenshots in CI artifacts; inspect those and the subscription page before release.
 
 No deployment, merge, feature enablement, dependencies, schema or guest-filing changes.
+
+## Private AI allowances follow-up
+
+- Public pricing and subscription copy explicitly says “5× AI usage for both Leon and Havel” (Czech equivalent). No absolute message allowance or unlimited claim is advertised.
+- Havel customer routes, panel, page and JavaScript already omit allowance counts. Remove unused remaining-quota translation keys and the stale design instruction. Internal Havel remaining(), enforcement and admin observability stay intact.
+- Leon setup trial chat no longer publishes its daily test-message count or returns numeric left in its customer JSON. The response explicitly allows only kind, text, would_ask, boolean blocked, note and cap. Templates and JavaScript use the boolean; internal accounting and rate limits stay intact. Exhaustion copy honestly states a usage limit and asks the host to try again later.
+- Add rendering regression coverage for Havel with varied internal caps and a failing remaining() stub. Update Leon API/render tests to reject numeric allowance exposure while verifying the cap still stops model calls.
+- Local tests, browser/geometry checks, screenshots and context lint remain unrun because the managed workspace is unavailable. CI must verify the changed Leon setup, Havel, host, copy, public and billing test-map rows; inspect 390 px Leon setup and pricing/subscription screenshots before release.

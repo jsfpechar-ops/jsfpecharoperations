@@ -53,7 +53,8 @@ def test_answer_is_shown_and_nothing_is_stored(ws, monkeypatch):
     assert r.status_code == 200
     body = r.json()
     assert body["kind"] == "answer" and "Park in the yard." in body["text"]
-    assert body["left"] == 4 and body["note"] == ""
+    assert body["blocked"] is False and body["note"] == ""
+    assert set(body) == {"kind", "text", "would_ask", "blocked", "note", "cap"}
     assert _stored() == before
     assert len(calls) == 1
 
@@ -70,17 +71,19 @@ def test_a_question_for_the_host_is_flagged_and_not_sent(ws, monkeypatch):
 def test_small_talk_is_free(ws, monkeypatch):
     home, calls = _setup(ws, monkeypatch, ANSWER)
     body = _try(ws["host"], home, "hi").json()
-    assert body["kind"] == "smalltalk" and body["left"] == 5
+    assert body["kind"] == "smalltalk" and body["blocked"] is False
+    assert "left" not in body
     assert calls == []
 
 
 def test_the_sixth_model_message_is_refused_without_a_call(ws, monkeypatch):
     home, calls = _setup(ws, monkeypatch, *[ANSWER] * 5)
-    lefts = [_try(ws["host"], home, "Where do I park?").json()["left"] for _ in range(5)]
-    assert lefts == [4, 3, 2, 1, 0]
+    responses = [_try(ws["host"], home, "Where do I park?").json() for _ in range(leon.TRY_MAX)]
+    assert [body["blocked"] for body in responses] == [False] * (leon.TRY_MAX - 1) + [True]
+    assert all("left" not in body for body in responses)
     body = _try(ws["host"], home, "Where do I park?").json()
-    assert body["kind"] == "cap" and body["text"] and body["left"] == 0
-    assert len(calls) == 5
+    assert body["kind"] == "cap" and body["text"] and body["blocked"] is True
+    assert len(calls) == leon.TRY_MAX
     page = ws["host"].get(f"/apartments/{home}/leon/setup/try?lang=en").text
     assert "data-leon-try-cap" in page and " disabled" in page
 
@@ -106,6 +109,8 @@ def test_without_javascript_the_page_shows_the_exchange(ws, monkeypatch):
     r = _try(ws["host"], home, "Where do I park?", as_json=False)
     assert r.status_code == 200 and "text/html" in r.headers["content-type"]
     assert "Where do I park?" in r.text and "Park in the yard." in r.text
+    assert "test messages a day" not in r.text
+    assert "usage limits" in r.text
 
 
 def test_try_is_404_when_leon_is_off_not_live_or_unknown(ws, monkeypatch):

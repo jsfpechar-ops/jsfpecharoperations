@@ -139,6 +139,8 @@ def test_pricing_shows_the_price_list_in_both_languages():
         assert strings["pricing.std.f1"] in page.text
         assert strings["pricing.max.f2"] in page.text
         assert "5×" in strings["pricing.max.f2"]
+        assert ("Leon" if lang == "en" else "Leona") in strings["pricing.max.f2"]
+        assert ("Havel" if lang == "en" else "Havla") in strings["pricing.max.f2"]
         assert strings["pricing.max.f5"] in page.text
         assert ("Not available yet" if lang == "en" else "Zatím není dostupné") in strings["pricing.max.f5"]
         assert strings["pricing.faq.9.q"] in page.text
