@@ -54,11 +54,11 @@ def _order(owner_id: int, **fields) -> None:
 @pytest.mark.parametrize(
     "n, month, month_max, year, year_max",
     [
-        (1, 149, 228, 1190, 1950),
-        (3, 447, 684, 3570, 5850),
-        (5, 715, 1090, 5710, 9320),
-        (12, 1488, 2216, 11880, 18880),
-        (20, 2280, 3320, 18200, 28160),
+        (1, 149, 229, 1190, 1908),
+        (3, 447, 687, 3570, 5724),
+        (5, 715, 1094, 5710, 9152),
+        (12, 1488, 2220, 11880, 18712),
+        (20, 2280, 3324, 18200, 27992),
     ],
 )
 def test_totals_match_the_strategy_table(n, month, month_max, year, year_max):
@@ -94,7 +94,7 @@ def test_paused_still_reports_registered_guests(owner, billing_on):
 def test_max_and_addons(owner, billing_on):
     _order(owner, plan="max")
     ent = billing.entitlements(owner)
-    assert (ent.ai_multiplier, ent.ttlock, ent.priority_support) == (3, True, True)
+    assert (ent.ai_multiplier, ent.ttlock, ent.priority_support) == (5, True, True)
     _order(owner, plan="standard", addon_ttlock=0)
     assert billing.entitlements(owner).ttlock is False
     _order(owner, plan="standard", addon_ttlock=1, addon_whitelabel=1)
@@ -119,6 +119,13 @@ def test_an_added_apartment_bills_the_remaining_whole_months(owner):
     assert billing.account(owner)["apartments_billed"] == 3
     billing.apply_change(owner, {"apartments": 4}, today=date(2026, 11, 1), confirm=True)
     assert billing.account(owner)["apartments_billed"] == 4
+
+
+def test_max_upgrade_bills_the_revised_annual_extra(owner):
+    _order(owner, period_end="2027-05-01")
+    preview = billing.apply_change(owner, {"plan": "max"}, today=date(2026, 11, 1))
+    assert preview["period_total_after"] == 1908
+    assert (preview["months"], preview["supplementary_czk"], preview["carry_czk"]) == (6, 359, 0)
 
 
 def test_under_fifty_kc_is_carried_to_the_next_invoice(owner):

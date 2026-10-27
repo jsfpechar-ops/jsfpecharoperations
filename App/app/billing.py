@@ -30,7 +30,7 @@ INTERVALS = ("month", "year")
 # prices only the apartments inside it.
 BAND_TOPS = (4, 9)
 BASE = {"month": (149, 119, 99), "year": (1190, 950, 790)}
-MAX_EXTRA = {"month": (79, 59, 39), "year": (760, 570, 370)}
+MAX_EXTRA = {"month": (80, 59, 39), "year": (718, 570, 370)}
 TTLOCK = {"month": 49, "year": 470}
 WHITELABEL = {"month": 590, "year": 5660}
 FOUNDER_YEAR = 890
@@ -100,7 +100,9 @@ class Entitlements:
     ubyport_submit: bool = True
     read_only: bool = False
     ical_import: bool = True
-    ai_multiplier: int = 1  # 0 off, 1 base limits, 3 Max
+    ai_multiplier: int = 1  # 0 off, 1 base limits, 5 Max
+    # Free trials and grandfathered hosts keep their existing Leon access.
+    leon: bool = True
     ttlock: bool = True
     whitelabel: bool = False
     priority_support: bool = False
@@ -135,7 +137,7 @@ def entitlements(owner_user_id: int) -> Entitlements:
     if status == "paused":
         return Entitlements(
             status=status, plan=plan, read_only=True, ical_import=False,
-            ai_multiplier=0, ttlock=False,
+            ai_multiplier=0, leon=False, ttlock=False,
         )
     if status in ("trial_pending", "trialing"):
         return Entitlements(status=status, plan="standard")
@@ -143,7 +145,8 @@ def entitlements(owner_user_id: int) -> Entitlements:
     return Entitlements(
         status=status,
         plan=plan,
-        ai_multiplier=3 if is_max else 1,
+        ai_multiplier=5 if is_max else 1,
+        leon=True,
         ttlock=is_max or bool(acc["addon_ttlock"]),
         whitelabel=bool(acc["addon_whitelabel"]),
         priority_support=is_max,
@@ -218,6 +221,8 @@ def apply_change(
     if acc is None or acc["plan"] is None:
         raise ValueError("no ordered plan to change")
     field, value = next(iter(change.items()))
+    if field == "addon_whitelabel" and value and not acc["addon_whitelabel"]:
+        raise ValueError("whitelabel_unavailable")
     current = {
         "apartments": acc["apartments_billed"],
         "plan": acc["plan"],

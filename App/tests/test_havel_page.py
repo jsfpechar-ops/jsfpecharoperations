@@ -115,3 +115,17 @@ def test_next_requests_render_as_buttons_only_on_the_newest_reply(host):
     sig = re.search(r'data-havel-next.*?name="history_sig" value="([^"]*)"', page, re.S).group(1)
     again = _post(host, {"message": "Sync my calendars", "history": html.unescape(history), "history_sig": sig}).text
     assert "data-havel-next" not in again
+
+@pytest.mark.parametrize("weekly,monthly", [(7, 19), (41, 103)])
+def test_customer_pages_do_not_read_or_publish_absolute_quota(host, monkeypatch, weekly, monthly):
+    monkeypatch.setattr(config, "HAVEL_WEEKLY_MESSAGES", weekly)
+    monkeypatch.setattr(config, "HAVEL_MONTHLY_MESSAGES", monthly)
+
+    def private_remaining(*args, **kwargs):
+        raise AssertionError("Customer rendering must not read absolute quota")
+
+    monkeypatch.setattr(havel, "remaining", private_remaining)
+    for headers in ({}, {"X-Havel": "1"}):
+        page = host.get("/havel?lang=en", headers=headers).text
+        assert "messages left" not in page
+        assert "data-havel-remaining" not in page

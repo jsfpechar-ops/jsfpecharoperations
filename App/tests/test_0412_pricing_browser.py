@@ -59,6 +59,12 @@ def _number(locator):
 
 def _geometry(page, width):
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+    plans = page.locator(".pricing-plans").bounding_box()
+    controls = page.locator("[data-pricing-calc]").bounding_box()
+    if controls:
+        assert 0 <= plans["y"] - (controls["y"] + controls["height"]) <= 33
+    bands = page.locator(".pricing-bands").bounding_box()
+    assert 0 <= bands["y"] - (plans["y"] + plans["height"]) <= 20
     if width >= 1024:
         boxes = [page.locator(f'[data-plan="{plan}"] .pricing-button').bounding_box()
                  for plan in ("standard", "max")]
@@ -80,14 +86,28 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
         assert page.locator("[data-pricing-calc]").is_visible()
         std = page.locator('[data-plan="standard"] [data-total]')
         top = page.locator('[data-plan="max"] [data-total]')
-        assert (_number(std), _number(top)) == (99, 163)
+        assert (_number(std), _number(top)) == (99, 159)
         assert page.locator('[data-plan="standard"] [data-ttlock]').count() == 1
         assert page.locator('[data-plan="max"] [data-ttlock]').count() == 0
         assert page.locator(".pricing-founder").count() == 0
+        assert page.locator(".pricing-badge-slot, .pricing-total-label").count() == 0
+        std_features = page.locator('[data-plan="standard"] .pricing-features').inner_text()
+        max_features = page.locator('[data-plan="max"] .pricing-features').inner_text()
+        assert "Havel" in std_features and "Leon Lite" in std_features
+        assert page.locator('[data-plan="max"]').inner_text().count("TTLock") == 1
+        assert "Leon" in max_features and "Havel" in max_features and "5×" in max_features
+        assert page.locator('[data-plan="standard"] .pricing-features > li:not(.pricing-option)').count() == 6
+        assert page.locator('[data-plan="max"] .pricing-features > li').count() == 5
+        assert page.locator('[data-plan="max"] .pricing-badge').is_visible()
+        assert page.locator('[data-plan="max"] .pricing-option').count() == 0
+        assert page.locator(".pricing-coming-soon svg").count() == 0
+        assert not page.locator(".pricing-bands").get_attribute("open")
+        page.locator(".pricing-bands summary").click()
+        assert page.locator(".pricing-bands > p").is_visible()
+        page.locator(".pricing-bands summary").click()
         assert page.locator(".pricing-plans-section [data-band]").count() == 3
-        assert page.locator(".pricing-plans-section [data-addon]").count() == 2
+        assert page.locator(".pricing-plans-section [data-addon]").count() == 1
         assert "470" in page.locator('[data-addon="ttlock"]').inner_text()
-        assert "472" in page.locator('[data-addon="whitelabel"]').inner_text()
         _geometry(page, width)
         if (width == 390 or (width == 1280 and lang == "en")) and (
             os.environ.get("UBYHOST_SHOTS_DIR") or os.environ.get("UBYHOST_CAPTURE_0412") == "1"
@@ -106,9 +126,11 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
                 assert [_number(page.locator(f'[data-band="{i}"]')) for i in range(3)] == (
                     [99, 79, 66] if interval == "year" else [149, 119, 99]
                 )
-                assert ("472" if interval == "year" else "590") in page.locator('[data-addon="whitelabel"]').inner_text()
                 assert ("470" if interval == "year" else "49") in page.locator('[data-addon="ttlock"]').inner_text()
-                max_price = _number(top)
+                max_annual = annual + min(n, 4) * 718 + min(max(n - 4, 0), 5) * 570 + max(n - 9, 0) * 370
+                max_monthly = monthly + min(n, 4) * 80 + min(max(n - 4, 0), 5) * 59 + max(n - 9, 0) * 39
+                max_price = (max_annual * 2 + 12) // 24 if interval == "year" else max_monthly
+                assert _number(top) == max_price
                 for lock in (False, True):
                     page.locator("[data-ttlock]").set_checked(lock)
                     expected = ((annual + (470 * n if lock else 0)) * 2 + 12) // 24 if interval == "year" else monthly + (49 * n if lock else 0)
@@ -121,7 +143,7 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
                         assert f"plan={plan}" in href and f"interval={interval}" in href and f"apts={n}" in href
                         assert ("ttlock=1" in href) == (lock and plan == "standard")
                     if n == 5 and interval == "month":
-                        assert _number(top) == 1090
+                        assert _number(top) == 1094
                 page.locator("[data-ttlock]").uncheck()
         assert page.locator('[data-step="1"]').is_disabled()
         assert not errors, errors
@@ -138,10 +160,10 @@ def test_no_javascript_has_truthful_annual_prices_and_login_fallback(base, monke
         page.goto(f"{base}/cenik?lang={lang}")
         assert not page.locator("[data-pricing-calc]").is_visible()
         assert not page.locator("[data-ttlock-control]").is_visible()
-        assert [_number(page.locator(f'[data-plan="{plan}"] [data-total]')) for plan in ("standard", "max")] == [99, 163]
+        assert [_number(page.locator(f'[data-plan="{plan}"] [data-total]')) for plan in ("standard", "max")] == [99, 159]
         assert "470" in page.locator('[data-addon="ttlock"]').inner_text()
-        assert "472" in page.locator('[data-addon="whitelabel"]').inner_text()
-        assert page.locator(".pricing-ai-note").is_visible()
+        assert "Havel" in page.locator('[data-plan="standard"] .pricing-features').inner_text()
+        assert page.locator('[data-addon="whitelabel"]').count() == 0
         assert all("/login?lang=" in href for href in page.locator("a[data-cta-plan]").evaluate_all("(links) => links.map(link => link.getAttribute('href'))"))
         _geometry(page, 390)
         browser.close()

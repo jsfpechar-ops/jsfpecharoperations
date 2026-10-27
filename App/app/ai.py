@@ -78,7 +78,13 @@ def enabled_for(feature: str, email: Optional[str]) -> bool:
 
 
 def enabled_for_property(feature: str, apartment_id: int) -> bool:
-    """``enabled`` and the property owner is on the test list (0376)."""
+    """Feature/test-list gates and, for Leon, the owner\'s subscription access."""
+    if feature == "leon":
+        from . import billing
+
+        row = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
+        if row and row["owner_user_id"] is not None and not billing.entitlements(int(row["owner_user_id"])).leon:
+            return False
     return enabled(feature) and owner_on_test_list(apartment_id)
 
 

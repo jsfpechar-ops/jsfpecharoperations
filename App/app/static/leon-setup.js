@@ -49,7 +49,7 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         bubble("havel-answer", "leon", d.text, d.note);
-        input.disabled = d.left <= 0;
+        input.disabled = d.blocked;
         if (d.cap) {
           var cap = document.createElement("p");
           cap.className = "ui-sub"; cap.setAttribute("data-leon-try-cap", ""); cap.textContent = d.cap;

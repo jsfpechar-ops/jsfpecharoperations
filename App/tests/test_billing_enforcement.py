@@ -55,8 +55,8 @@ def test_og_hosts_keep_everything(host, billing_on, monkeypatch):
     ("trialing", None, 0, True, 1),
     ("active", "standard", 0, False, 1),
     ("active", "standard", 1, True, 1),
-    ("active", "max", 0, True, 3),
-    ("overdue", "max", 0, True, 3),
+    ("active", "max", 0, True, 5),
+    ("overdue", "max", 0, True, 5),
     ("paused", "max", 0, False, 0),
 ])
 def test_the_plan_sets_ttlock_and_ai(host, billing_on, monkeypatch, status, plan, addon, allowed, multiplier):
@@ -70,7 +70,7 @@ def test_the_plan_sets_ttlock_and_ai(host, billing_on, monkeypatch, status, plan
 def test_havel_limits_scale_with_the_plan(host, billing_on):
     _status(host["owner"], "active", "max")
     left, _period = havel.remaining(host["owner"])
-    assert left == 3 * min(config.HAVEL_WEEKLY_MESSAGES, config.HAVEL_MONTHLY_MESSAGES)
+    assert left == 5 * min(config.HAVEL_WEEKLY_MESSAGES, config.HAVEL_MONTHLY_MESSAGES)
     _status(host["owner"], "paused", "max")
     assert havel.remaining(host["owner"])[0] == 0
     assert havel.limit_state(host["owner"]) is not None

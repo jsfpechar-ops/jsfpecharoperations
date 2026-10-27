@@ -326,7 +326,7 @@ def _since_month_start(now: datetime) -> int:
 
 
 def plan_multiplier(user_id: int) -> int:
-    """0415: the plan scales the message limits: 0 paused, 1 Standard, 3 Max."""
+    """0415: the plan scales the message limits: 0 paused, 1 Standard, 5 Max."""
     from . import billing
 
     return billing.entitlements(int(user_id)).ai_multiplier

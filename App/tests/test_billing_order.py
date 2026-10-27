@@ -126,6 +126,11 @@ def test_the_page_orders_without_javascript(host):
     login_as(client, host["username"], url="/login?lang=cs")
     page = client.get("/predplatne?plan=max&interval=year")
     assert page.status_code == 200 and "Objednat" in page.text and "Platíte převodem" in page.text
+    assert "Leon Lite" in page.text
+    assert "5× vyšším využitím než Lite" in page.text
+    assert 'name="addon_whitelabel"' not in page.text
+    assert "Skenování dokladů (OCR): připravujeme" in page.text
+    assert "Zatím není dostupné, ani během zkušební doby." in page.text
     bad = client.post("/predplatne", data={**BUYER, "buyer_zip": "1"}, follow_redirects=False)
     assert bad.status_code == 400 and "PSČ má pět číslic." in bad.text
     ok = client.post("/predplatne", data=BUYER, follow_redirects=False)
@@ -177,3 +182,54 @@ def test_cenik_uses_the_billing_price_list(monkeypatch):
             page = client.get(f"/cenik?lang={lang}")
             assert page.status_code == 200
             assert "pricing-founder" not in page.text
+
+
+@pytest.mark.parametrize("confirm", [False, True])
+def test_white_label_cannot_be_purchased_through_change_api(host, confirm):
+    _set(host["owner"], status="active", plan="standard", billing_interval="month")
+    with pytest.raises(ValueError, match="whitelabel_unavailable"):
+        billing_order.change(host["owner"], "addon_whitelabel", 1, confirm=confirm)
+    assert billing.account(host["owner"])["addon_whitelabel"] == 0
+    assert billing_invoices.for_owner(host["owner"]) == []
+
+
+def test_forged_white_label_order_is_rejected_without_creating_a_contract(host):
+    with pytest.raises(ValueError, match="whitelabel_unavailable"):
+        billing_order.place(host["owner"], _values(addon_whitelabel="1"))
+    acc = billing.account(host["owner"])
+    assert acc["plan"] is None and acc["addon_whitelabel"] == 0
+    assert billing_invoices.for_owner(host["owner"]) == []
+
+
+def test_white_label_purchase_forms_are_rejected(host):
+    client = TestClient(app)
+    login_as(client, host["username"], url="/login?lang=en")
+    response = client.post("/predplatne", data={**BUYER, "addon_whitelabel": "1"},
+                           follow_redirects=False)
+    assert response.status_code == 303
+    assert billing.account(host["owner"])["plan"] is None
+    _set(host["owner"], status="active", plan="standard", billing_interval="month")
+    page = client.get("/predplatne").text
+    assert "Add your own brand" not in page
+    for confirm in ("0", "1"):
+        response = client.post("/predplatne/zmena",
+                               data={"field": "addon_whitelabel", "value": "1", "confirm": confirm},
+                               follow_redirects=False)
+        assert response.status_code == 303
+    assert billing.account(host["owner"])["addon_whitelabel"] == 0
+    assert billing_invoices.for_owner(host["owner"]) == []
+
+
+def test_existing_white_label_contract_survives_reordering_and_plan_change(host):
+    _set(host["owner"], status="paused", plan="standard", billing_interval="month",
+         addon_whitelabel=1)
+    # The removed checkbox is omitted from a legitimate order; the saved contract wins.
+    assert billing_order.quote(host["owner"], _values())["whitelabel"] == billing.WHITELABEL["month"]
+    result = billing_order.place(host["owner"], _values())
+    invoice = billing_invoices.get(result["invoice_id"])
+    assert invoice["total_haler"] == (2 * 149 + 590) * 100
+    assert billing.account(host["owner"])["addon_whitelabel"] == 1
+    assert billing.entitlements(host["owner"]).whitelabel
+    billing_order.change(host["owner"], "plan", "max", confirm=True)
+    assert billing.account(host["owner"])["addon_whitelabel"] == 1
+    assert billing_invoices.get(result["invoice_id"])["total_haler"] == invoice["total_haler"]

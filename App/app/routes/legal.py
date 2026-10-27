@@ -63,7 +63,6 @@ PUBLIC_RATES = {
     "base": {interval: list(rates) for interval, rates in billing.BASE.items()},
     "max": {interval: list(rates) for interval, rates in billing.MAX_EXTRA.items()},
     "ttlock": dict(billing.TTLOCK),
-    "whitelabel": dict(billing.WHITELABEL),
 }
 
 
@@ -96,8 +95,6 @@ def pricing(request: Request):
         "max_year": _kc(max_year, lang),
         "ttlock_month": _kc(_per_month(PUBLIC_RATES["ttlock"]["year"]), lang),
         "ttlock_year": _kc(PUBLIC_RATES["ttlock"]["year"], lang),
-        "wl_month": _kc(_per_month(PUBLIC_RATES["whitelabel"]["year"]), lang),
-        "wl_year": _kc(PUBLIC_RATES["whitelabel"]["year"], lang),
         "bands": [_kc(_per_month(rate), lang) for rate in PUBLIC_RATES["base"]["year"]],
     }
     return render(

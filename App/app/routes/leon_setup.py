@@ -116,7 +116,7 @@ async def setup_save(request: Request, apartment_id: int):
 def _try_context(apartment_id: int, step: str, asked: str, answer: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if step != "try":
         return {}
-    return {"try_left": leon.try_left(apartment_id), "try_max": leon.TRY_MAX, "asked": asked, "answer": answer or {}}
+    return {"try_blocked": leon.try_left(apartment_id) <= 0, "asked": asked, "answer": answer or {}}
 
 
 @router.post("/apartments/{apartment_id}/leon/setup/try")
@@ -143,5 +143,7 @@ async def setup_try(request: Request, apartment_id: int):
     note = host_i18n.translate(host_lang, "leon_setup.try.would_ask") if result["would_ask"] else ""
     if "application/json" in request.headers.get("accept", ""):
         cap = host_i18n.translate(host_lang, "leon_setup.try.cap") if result["left"] <= 0 and result["kind"] != "cap" else ""
-        return JSONResponse(dict(result, note=note, cap=cap), headers={"Cache-Control": "no-store"})
+        public_result = {key: result[key] for key in ("kind", "text", "would_ask")}
+        return JSONResponse(dict(public_result, blocked=result["left"] <= 0, note=note, cap=cap),
+                            headers={"Cache-Control": "no-store"})
     return _step_page(request, apartment_id, "try", asked=message[:500], answer=result)

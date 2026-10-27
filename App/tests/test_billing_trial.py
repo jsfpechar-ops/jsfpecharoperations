@@ -112,7 +112,7 @@ def test_trial_end_with_a_plan_starts_the_first_period(owner, billing_on):
     assert acc["status"] == "active"
     assert acc["period_start"] == TODAY.isoformat()
     assert acc["period_end"] == billing_trial.period_end(TODAY, "month").isoformat()
-    assert billing.entitlements(owner).ai_multiplier == 3
+    assert billing.entitlements(owner).ai_multiplier == 5
 
 
 def test_trial_end_without_a_plan_pauses_but_keeps_reporting(owner, billing_on):
