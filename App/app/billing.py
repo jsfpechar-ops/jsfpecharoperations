@@ -101,6 +101,8 @@ class Entitlements:
     read_only: bool = False
     ical_import: bool = True
     ai_multiplier: int = 1  # 0 off, 1 base limits, 5 Max
+    # Free trials and grandfathered hosts keep their existing Leon access.
+    leon: bool = True
     ttlock: bool = True
     whitelabel: bool = False
     priority_support: bool = False
@@ -135,7 +137,7 @@ def entitlements(owner_user_id: int) -> Entitlements:
     if status == "paused":
         return Entitlements(
             status=status, plan=plan, read_only=True, ical_import=False,
-            ai_multiplier=0, ttlock=False,
+            ai_multiplier=0, leon=False, ttlock=False,
         )
     if status in ("trial_pending", "trialing"):
         return Entitlements(status=status, plan="standard")
@@ -144,6 +146,7 @@ def entitlements(owner_user_id: int) -> Entitlements:
         status=status,
         plan=plan,
         ai_multiplier=5 if is_max else 1,
+        leon=is_max,
         ttlock=is_max or bool(acc["addon_ttlock"]),
         whitelabel=bool(acc["addon_whitelabel"]),
         priority_support=is_max,

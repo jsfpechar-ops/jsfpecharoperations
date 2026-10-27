@@ -167,13 +167,14 @@ def looks_dangerous(text: str) -> bool:
 
 
 def plan_multiplier(apartment_id: int) -> int:
-    """0415: the host's plan scales the cap: 0 paused, 1 Standard, 5 Max."""
+    """Leon allowance: 0 without access, 1 legacy/trial, 5 billed Max."""
     from . import billing
 
     row = db.query_one("SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,))
     if not row or row["owner_user_id"] is None:
         return 1
-    return billing.entitlements(int(row["owner_user_id"])).ai_multiplier
+    ent = billing.entitlements(int(row["owner_user_id"]))
+    return ent.ai_multiplier if ent.leon else 0
 
 
 def door_cap(door: str) -> int:
@@ -678,6 +679,8 @@ def try_reply(apartment, text: str, *, lang: str, host_name: str) -> Dict[str, A
     def out(kind: str, body: str, would_ask: bool = False) -> Dict[str, Any]:
         return {"kind": kind, "text": body, "would_ask": would_ask, "left": try_left(apartment_id)}
 
+    if plan_multiplier(apartment_id) <= 0:
+        return out("passed", _named(lang, "leon_passed_to_host", host_name), True)
     if not text or len(text) > MAX_MESSAGE_CHARS:
         return out("too_long", _fixed(lang, "leon_too_long", n=MAX_MESSAGE_CHARS))
     small = smalltalk_kind(text)
