@@ -7,16 +7,14 @@ Updated: 2026-10-27.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 0425 payment model #542.
-- 0423 sync on open: merge.
-- #541 merged.
+- 0428 Stripe Connect module (accounts, onboarding, webhook) — review PR.
+- 0425 payment model #542. #541 merged; 0423 sync-on-open: merge.
 - Billing 0411-0419 in #528, off. **Owner:** ČSOB file, env, counsel.
 - 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
 - Guide + Leon 0341-0355: owner merges #465-468.
 - 0291-0302 buttons, fees, invoice. **Owner:** PR; CF rules 3-4.
-- 0290: passkey CI/phone pending.
-- Check-in alerts #435: owner merge. TTLock #434: CI pending.
-- #432 subdomain deployed; root login/calendar review pending.
+- 0290 passkey CI/phone; check-in #435 owner merge; TTLock #434 CI pending.
+- #432 subdomain live; root login/calendar review pending.
 - 0280-0283 alerts, borders, signature. **Owner:** PR/deploy/phone.
 - 0253 layout tests. **Owner:** PR, iPad.
 - Foolproof 0230-0278, reset 0165-0183 (#405). **Owner:** deploy.
@@ -27,7 +25,7 @@ Updated: 2026-10-27.
 - #416: lock tab, stay buttons, phone pass (0196-0201).
 - Langs 0196: vi host app, uk guest form. **Owner:** add `uk` to `UBYHOST_GUEST_LANGS`; deploy.
 - AI crawler block 0195: Terms §11 TDM v1.7, lawyer to confirm.
-- Cleaning 0104: #396 CI/staging review pending ([brief](../tasks/0104-cleaning-management.md)); calendar 0103 on main.
+- Cleaning 0104: #396 CI/staging review; calendar 0103 on main.
 - Check `/healthz`; credential letter to data box ybndqw9.
 - Lawyer: **LAWYER REVIEW** legal v1.7 (0005), if unsigned.
 
