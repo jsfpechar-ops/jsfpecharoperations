@@ -20,6 +20,61 @@
 ]) }}
 {% endcall %}
 
+{% call ui_section(t('billing.admin.trend.title'), id='trend') %}
+{% if trend_rows %}
+{{ ui_table_begin([(t('billing.admin.trend.month'), ''), (t('billing.admin.revenue.billed'), 'r'), (t('billing.admin.revenue.collected'), 'r')], label=t('billing.admin.trend.title')) }}
+{% for r in trend_rows %}
+<tr class="ui-row" data-billing-admin-trend="{{ r.month }}">
+  <td class="ui-cell-first" data-card="primary">{{ r.month }}</td>
+  <td class="ui-cell-r ui-num">{{ r.billed_czk }} Kč</td>
+  <td class="ui-cell-r ui-num">{{ r.collected_czk }} Kč</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('billing.admin.trend.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.movement.title'), id='movement') %}
+{{ ui_facts([
+  (t('billing.admin.movement.change'), (movement.total_change ~ ' Kč') if movement.total_change >= 0 else ('−' ~ (0 - movement.total_change) ~ ' Kč')),
+  (t('billing.admin.movement.new'), movement.parts.new ~ ' Kč'),
+  (t('billing.admin.movement.expansion'), movement.parts.expansion ~ ' Kč'),
+  (t('billing.admin.movement.contraction'), movement.parts.contraction ~ ' Kč'),
+  (t('billing.admin.movement.churn'), movement.parts.churn ~ ' Kč'),
+]) }}
+<p class="ui-sub">{{ t('billing.admin.movement.help') }}</p>
+{% endcall %}
+
+{% call ui_section(t('billing.admin.funnel.title'), id='funnel') %}
+{{ ui_facts([
+  (t('billing.admin.funnel.hosts'), funnel_counts.hosts),
+  (t('billing.admin.funnel.verified'), funnel_counts.verified),
+  (t('billing.admin.funnel.trialed'), funnel_counts.trialed),
+  (t('billing.admin.funnel.converted'), funnel_counts.converted),
+  (t('billing.admin.funnel.rate'), funnel_counts.trial_conversion ~ ' %'),
+]) }}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.discounts.title'), id='discounts') %}
+{{ ui_facts([
+  (t('billing.admin.discounts.list_mrr'), discounts.list_mrr_czk ~ ' Kč'),
+  (t('billing.admin.revenue.mrr'), discounts.net_mrr_czk ~ ' Kč'),
+  (t('billing.admin.discounts.giveaway'), discounts.giveaway_mrr_czk ~ ' Kč'),
+]) }}
+{% if discounts.customers %}
+{{ ui_table_begin([(t('billing.admin.col.buyer'), ''), (t('billing.admin.discounts.percent'), 'r'), (t('billing.admin.discounts.reason'), ''), (t('billing.admin.portfolio.monthly'), 'r')], label=t('billing.admin.discounts.title')) }}
+{% for c in discounts.customers %}
+<tr class="ui-row" data-billing-admin-discount="{{ c.owner_user_id }}">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ c.owner_user_id }}">{{ c.display_name or c.username }}</a></td>
+  <td class="ui-cell-r ui-num">{{ c.discount_percent }} %</td>
+  <td>{{ c.discount_reason or '' }}</td>
+  <td class="ui-cell-r ui-num">{{ c.monthly_czk }} Kč</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('billing.admin.discounts.none') }}</p>{% endif %}
+{% endcall %}
+
 {% call ui_section(t('billing.admin.watch.title'), id='watch') %}
 {% set ns = namespace(rows=[]) %}
 {% for tr in watch.trials_ending %}{% set ns.rows = ns.rows + [(t('billing.admin.watch.trial'), tr.display_name, tr.trial_ends_at[:10])] %}{% endfor %}

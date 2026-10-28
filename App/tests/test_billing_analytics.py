@@ -117,3 +117,131 @@ def test_the_page_shows_the_cockpit(setup):
     assert "data-billing-admin-portfolio=" in page
     assert "data-billing-admin-portfolio-filter" in page
     assert "data-billing-admin-watch" in page
+
+
+def test_a_discount_reissues_the_unpaid_invoice(setup):
+    """D1: storno + reissue with the discount; the host pays only the new number."""
+    from app import billing_invoices as bi
+    host = setup["host_id"]
+    old = setup["invoice"]
+    result = billing.apply_discount(host, 20, reason="Verno věrným", actor="operator:adm")
+    assert result["reissued_invoice_ids"] and result["period_total_after"] < result["period_total_before"]
+    assert bi.get(old["id"])["voided"] == 1
+    rows = [r for r in db.query(
+        "SELECT * FROM platform_invoice WHERE owner_user_id = ? AND kind = 'invoice' AND voided = 0", (host,))]
+    expected = billing.quote(1, "standard", "month", discount_percent=20)["total"] * 100
+    assert len(rows) == 1 and rows[0]["total_haler"] == expected
+    stornos = [r for r in db.query(
+        "SELECT * FROM platform_invoice WHERE owner_user_id = ? AND kind = 'storno'", (host,))]
+    assert len(stornos) == 1 and stornos[0]["corrects_id"] == old["id"]
+
+
+def test_a_discount_reason_is_required(setup):
+    import pytest as _pytest
+    with _pytest.raises(ValueError, match="reason_missing"):
+        billing.apply_discount(setup["host_id"], 10, reason="", actor="operator:adm")
+
+
+def test_the_discounted_invoice_prints_the_discount_line(setup):
+    import json as _json
+    host = setup["host_id"]
+    billing.apply_discount(host, 10, reason="Stálý zákazník", actor="operator:adm")
+    fresh = db.query_one(
+        "SELECT snapshot_json FROM platform_invoice WHERE owner_user_id = ? AND voided = 0 AND kind = 'invoice'",
+        (host,))
+    items = _json.loads(fresh["snapshot_json"])["items"]
+    assert any("Sleva" in it["description"] for it in items)
+    assert any(it["gross_haler"] < 0 for it in items)
+
+
+def test_operator_can_change_the_plan_through_the_engine(setup):
+    host = setup["host_id"]
+    result = billing.apply_change(host, {"plan": "max"}, today=TODAY, confirm=True,
+                                  actor="operator:adm")
+    assert result["period_total_after"] > result["period_total_before"]
+    assert billing.account(host)["plan"] == "max"
+
+
+def test_month_snapshot_and_movement(setup):
+    host = setup["host_id"]
+    assert billing_analytics.write_month_snapshot() == 1
+    month = f"{TODAY:%Y-%m}"
+    row = db.query_one("SELECT * FROM billing_month_snapshot WHERE owner_user_id = ?", (host,))
+    assert row["month"] == month and row["net_czk"] == 149 and row["monthly_czk"] == 149
+    move = billing_analytics.movement(month)
+    assert move["current_mrr"] == 149
+    assert move["parts"]["new"] == 149  # first month: everything is new business
+
+
+def test_funnel_counts_the_setup(setup):
+    counts = billing_analytics.funnel()
+    assert counts["hosts"] >= 1 and counts["converted"] >= 1
+
+
+def test_discount_overview_after_a_discount(setup):
+    billing.apply_discount(setup["host_id"], 25, reason="Založení", actor="operator:adm")
+    overview = billing_analytics.discount_overview()
+    assert overview["list_mrr_czk"] > overview["net_mrr_czk"]
+    assert overview["giveaway_mrr_czk"] > 0
+    assert [c["owner_user_id"] for c in overview["customers"]] == [setup["host_id"]]
+
+
+def test_trend_lists_months(setup):
+    rows = billing_analytics.trend()
+    assert rows and rows[-1]["billed_czk"] == setup["invoice"]["total_haler"] // 100
+    assert rows[-1]["collected_czk"] == 0
+
+
+def test_the_page_shows_the_new_sections(setup):
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    page = client.get("/admin/fakturace").text
+    assert "data-billing-admin-trend=" in page
+    assert "data-billing-admin-discount=" in page or "Peníze se slevou" in page
+    detail = client.get(f"/admin/customers/{setup['host_id']}").text
+    assert "data-customer-discount" in detail
+    assert "data-customer-plan" in detail
+    assert "data-customer-status" in detail
+
+
+def test_operator_forms_work_end_to_end(setup):
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    host = setup["host_id"]
+
+    r = client.post(f"/admin/customers/{host}/sleva", data={"percent": "15", "reason": "Loajalita"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    assert billing.account(host)["discount_percent"] == 15
+
+    r = client.post(f"/admin/customers/{host}/plan",
+                    data={"field": "apartments", "value": "2"}, follow_redirects=False)
+    assert r.status_code == 303
+    assert billing.account(host)["apartments_billed"] == 2
+
+    r = client.post(f"/admin/customers/{host}/stav", data={"status": "canceling"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    assert billing.account(host)["status"] == "canceling"
+    r = client.post(f"/admin/customers/{host}/stav", data={"status": "active"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    assert billing.account(host)["status"] == "active"
+
+
+def test_operator_form_refuses_bad_values(setup):
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    host = setup["host_id"]
+    client.post(f"/admin/customers/{host}/sleva", data={"percent": "150", "reason": "x"})
+    assert billing.account(host)["discount_percent"] == 0
+    client.post(f"/admin/customers/{host}/plan", data={"field": "plan", "value": "gold"})
+    assert billing.account(host)["plan"] == "standard"
+
+
+def test_a_host_cannot_use_the_operator_forms(setup):
+    client = TestClient(app)
+    login_as(client, setup["host"], url="/login?lang=cs")
+    host = setup["host_id"]
+    assert client.post(f"/admin/customers/{host}/sleva", data={"percent": "50", "reason": "x"}).status_code == 403
+    assert client.post(f"/admin/customers/{host}/stav", data={"status": "paused"}).status_code == 403

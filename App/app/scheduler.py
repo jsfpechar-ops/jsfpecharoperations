@@ -10,6 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from . import (
     alerts,
+    billing_analytics,
     claim,
     config,
     db,
@@ -89,6 +90,7 @@ def job_intervals() -> dict:
         "push": 1,
         "guide_import": 1,
         "stay_fee_mail": 24 * 60,
+        "billing_snapshot": 24 * 60,
     }
 
 
@@ -404,6 +406,20 @@ def _job_billing() -> None:
     _log_run("billing", started, True, counts)
 
 
+def _job_billing_snapshot() -> None:
+    """Refresh billing_month_snapshot for the current month (0444). Runs daily."""
+    started = time.perf_counter()
+    try:
+        rows = billing_analytics.write_month_snapshot()
+    except Exception:
+        log.exception("billing snapshot failed")
+        _job_failed("billing_snapshot")
+        _log_run("billing_snapshot", started, False)
+        return
+    _job_ok("billing_snapshot")
+    _log_run("billing_snapshot", started, True, {"rows": rows})
+
+
 def _job_stay_fee_mail() -> None:
     """Seal clean stay-fee periods and email the reports (0223). Runs daily at 07:00."""
     started = time.perf_counter()
@@ -504,6 +520,10 @@ def start() -> bool:
     )
     _scheduler.add_job(
         _job_billing, "cron", hour=6, minute=0, id="billing",
+        max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_billing_snapshot, "cron", hour=6, minute=15, id="billing_snapshot",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(

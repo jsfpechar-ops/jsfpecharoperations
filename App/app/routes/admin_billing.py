@@ -53,6 +53,10 @@ def billing_admin_page(request: Request, mesic: str = "", q: str = "", state: st
         "watch": billing_analytics.watchlists(),
         "aging": billing_analytics.aging(),
         "forecast": billing_analytics.forecast(),
+        "trend_rows": billing_analytics.trend(),
+        "movement": billing_analytics.movement(month),
+        "funnel_counts": billing_analytics.funnel(),
+        "discounts": billing_analytics.discount_overview(),
     })
 
 
