@@ -1,6 +1,6 @@
 # 0429: Payments dashboard — connect state, request screen, `?` system (P1.5)
 
-Status: todo
+Status: review
 Depends on: 0425, 0428 (merged) | Base commit: after #550 | Branch: task/0429-payments-ux
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 
