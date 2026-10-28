@@ -106,7 +106,7 @@
             <li class="pricing-option"><div>
               <label class="pricing-ttlock" data-ttlock-control hidden><input type="checkbox" data-ttlock>{{ t('pricing.ttlock.label') }}</label>
               <strong class="pricing-option-fallback">{{ t('pricing.addon.ttlock.title') }}</strong>
-              <span data-addon="ttlock" data-year="{{ t('pricing.ttlock.year') }}" data-month="{{ t('pricing.ttlock.month') }}">{{ t('pricing.ttlock.year', price=start.ttlock_month, amount=start.ttlock_year) }}</span>
+              <span data-addon="ttlock" data-month="{{ t('pricing.ttlock.month') }}">{{ t('pricing.ttlock.month', price=start.ttlock_month) }}</span>
               <span data-ttlock-selected hidden>{{ t('pricing.ttlock.selected') }}</span>
             </div></li>
           </ul>
