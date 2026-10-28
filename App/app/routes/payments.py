@@ -11,8 +11,9 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import Response
 
-from .. import access, auth, config, db, payment_request, security, stripe_connect
+from .. import access, auth, config, db, host_i18n, i18n, mail, payment_links, payment_request, security, stripe_connect
 from ..templating import render
 from .admin_helpers import back as _back
 from .admin_helpers import flash as _flash
@@ -108,14 +109,125 @@ async def payment_request_new(request: Request):
     from datetime import date, timedelta
 
     expires = (date.today() + timedelta(days=30)).isoformat()
-    payment_request.create(
+    rail = str(form.get("rail") or "card").strip()
+    if rail not in payment_request.RAILS:
+        return back
+    request_id = payment_request.create(
         owner_id,
         reservation_id=reservation_id,
         reason=reason,
         amount_czk=int(raw_amount),
-        rail="card",
+        rail=rail,
         expires_at=expires,
         guest_email=(str(form.get("guest_email") or "").strip() or None),
         guest_note=(str(form.get("guest_note") or "").strip() or None),
     )
     return _back("/payments", msg=_flash(request, "payments.draft_saved"))
+
+
+def _host_reply_to(row) -> str:
+    """Guest mails answer the host, never UbyHost support (mail.py contract)."""
+    from .. import db as _db
+
+    entity = _db.query_one(
+        "SELECT le.contact_email FROM legal_entity le"
+        " JOIN apartment a ON a.legal_entity_id = le.id"
+        " WHERE a.owner_user_id = ? LIMIT 1",
+        (int(row["owner_user_id"]),),
+    )
+    if entity is None:
+        entity = _db.query_one(
+            "SELECT contact_email FROM legal_entity WHERE owner_user_id = ? LIMIT 1",
+            (int(row["owner_user_id"]),),
+        )
+    return str(entity["contact_email"] or "") if entity else ""
+
+
+@router.post("/payments/requests/{request_id}/send")
+async def payment_request_send(request: Request, request_id: int):
+    """0435/0436: send the request to the guest (card link or QR page)."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    row = payment_request.get(request_id)
+    if row is None or int(row["owner_user_id"]) != owner_id:
+        return _back("/payments", err=_flash(request, "payments.err.invalid"))
+    if row["status"] not in ("draft", "sent"):
+        return _back("/payments", err=_flash(request, "payments.err.cannot_send"))
+    resend = row["status"] == "sent"
+    guest_email = (row["guest_email"] or "").strip()
+    if not guest_email:
+        return _back("/payments", err=_flash(request, "payments.err.no_email"))
+    lang = "cs"
+    link: str
+    if row["rail"] == "card":
+        try:
+            link = payment_links.send(request_id) or ""
+        except stripe_connect.StripeOff:
+            return _back("/payments", err=_flash(request, "payments.err.stripe_off"))
+        if not link:
+            return _back("/payments", err=_flash(request, "payments.err.not_ready"))
+    else:
+        link = f"/payments/qr/{request_id}"
+    if not resend:
+        payment_request.set_status(request_id, "sent", today=__import__("datetime").date.today())
+    translate = i18n.translator(lang)
+    reason_label = host_i18n.translate(lang, f"payments.reason.{row['reason']}")
+    mail.enqueue(
+        kind="payment_request",
+        idempotency_key=f"payment_request:{request_id}:sent:v{2 if resend else 1}",
+        to_email=guest_email,
+        subject=translate(
+            "mail_payment_request_subject",
+            amount=row["amount_czk"],
+        ),
+        payload={"text": translate(
+            "mail_payment_request_text",
+            amount=row["amount_czk"],
+            reason=reason_label,
+            link=link,
+        ), "lang": lang, "reply_to": _host_reply_to(row), "apartment": None},
+        reservation_id=row["reservation_id"],
+        owner_user_id=owner_id,
+    )
+    return _back("/payments", msg=_flash(request, "payments.sent"))
+
+
+@router.get("/payments/qr/{request_id:int}.png")
+def payment_request_qr_png(request: Request, request_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    row = payment_request.get(request_id)
+    if row is None or int(row["owner_user_id"]) != owner_id or row["rail"] != "qr":
+        return Response(status_code=404)
+    try:
+        _, png = payment_request.qr_payload(row)
+    except ValueError:
+        return Response(status_code=404)
+    return Response(content=png, media_type="image/png")
+
+
+@router.get("/payments/qr/{request_id}")
+def payment_request_qr(request: Request, request_id: int):
+    """0436: the guest's SPAYD page (public via token later; host preview now)."""
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    row = payment_request.get(request_id)
+    if row is None or int(row["owner_user_id"]) != owner_id or row["rail"] != "qr":
+        return _back("/payments", err=_flash(request, "payments.err.invalid"))
+    try:
+        payload, png = payment_request.qr_payload(row)
+    except ValueError as exc:
+        return _back("/payments", err=_flash(request, "payments.err.no_iban"))
+    return render(
+        request,
+        "payments_qr.html",
+        {"nav": "payments", "request": row, "qr_payload": payload, "show_nav": False},
+    )
+
+

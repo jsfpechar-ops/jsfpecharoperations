@@ -299,5 +299,9 @@ def process_event(event: Dict[str, Any]) -> None:
     0428; the card/QR rail events arrive in later briefs and are recorded."""
     if not _record_event(event):
         return
-    if event.get("type") == "account.updated":
+    etype = event.get("type")
+    if etype == "account.updated":
         mirror_by_account_id(dict(event["data"]["object"]), config.STRIPE_MODE)
+    elif etype in ("payment_link.paid", "checkout.session.completed"):
+        from . import payment_links
+        payment_links.on_paid(event)

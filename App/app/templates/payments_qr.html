@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ t('payments.qr.title') }}{% endblock %}
+{% block content %}
+<div class="ui-section" style="max-width:480px;margin:2rem auto;padding:1.5rem;">
+  <h1>{{ t('payments.qr.title') }}</h1>
+  <p>{{ t('payments.qr.amount') }}: <strong>{{ request.amount_czk }} {{ t('payments.czk') }}</strong></p>
+  <p>{{ t('payments.qr.vs') }}: <strong class="ui-mono">{{ request.variable_symbol }}</strong></p>
+  <img src="/payments/qr/{{ request.id }}.png" alt="{{ t('payments.qr.alt') }}" width="260" height="260" style="display:block;margin:1rem auto;">
+  <p class="ui-sub">{{ t('payments.qr.disclosure') }}</p>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 # 0436: QR rail — SPAYD request, confirm, invoice-draft trigger (payments P1.4)
 
-Status: todo
+Status: review
 Depends on: 0429; independent of 0435 | Base commit: after 0429 | Branch: task/0436-qr-rail
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

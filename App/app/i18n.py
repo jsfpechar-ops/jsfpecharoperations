@@ -554,6 +554,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
         # both built from these keys, so the two cannot drift apart.
         "mail_claim_subject": "Confirm your stay at %(property)s (link valid 30 min)",
         "mail_claim_resend_subject": "New link: confirm your stay at %(property)s",
+        "mail_payment_request_subject": "Payment request from your host (%(amount)s CZK)",
+        "mail_payment_request_text": "Hello,\n\nYour host asks for a payment of %(amount)s CZK for: %(reason)s.\nPay here: %(link)s\n\nIf you did not expect this message, ignore it.\n",
         "mail_claim_preheader": (
             "Tap the button, then fill in each guest (about 2 minutes per person)."
         ),
@@ -1215,6 +1217,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
             "Potvrďte svůj pobyt – %(property)s (odkaz platí 30 minut)"
         ),
         "mail_claim_resend_subject": "Nový odkaz: potvrďte svůj pobyt – %(property)s",
+        "mail_payment_request_subject": "Žádost o platbu od vašeho hostitele (%(amount)s Kč)",
+        "mail_payment_request_text": "Dobrý den,\n\nVáš hostitel vás žádá o platbu %(amount)s Kč za: %(reason)s.\nZaplaťte zde: %(link)s\n\nPokud jste tuto zprávu nečekali, ignorujte ji.\n",
         "mail_claim_preheader": (
             "Klepněte na tlačítko a vyplňte údaje hostů – asi 2 minuty na osobu."
         ),

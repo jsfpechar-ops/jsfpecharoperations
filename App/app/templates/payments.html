@@ -50,6 +50,13 @@
       <span>{{ t('payments.field.guest_email') }}</span>
       <input class="ui-input" type="email" name="guest_email">
     </label>
+    <fieldset class="ui-field">
+      <legend>{{ t('payments.field.rail') }}</legend>
+      <div class="ui-chips">
+        <label class="ui-chip"><input type="radio" name="rail" value="card" checked> {{ t('payments.rail.card') }}</label>
+        <label class="ui-chip"><input type="radio" name="rail" value="qr"> {{ t('payments.rail.qr') }}</label>
+      </div>
+    </fieldset>
     {{ ui_button(t('payments.new.save_draft'), 'primary', type='submit') }}
   </form>
 </div>
@@ -64,6 +71,7 @@
         <th>{{ t('payments.col.amount') }}</th>
         <th>{{ t('payments.col.rail') }}</th>
         <th>{{ t('filter.status') }}</th>
+        <th><span class="sr-only">{{ t('common.actions') }}</span></th>
       </tr></thead>
       <tbody>
       {% for req in requests %}
@@ -73,6 +81,16 @@
           <td class="ui-num" data-label="{{ t('payments.col.amount') }}">{{ req.amount_czk }} {{ t('payments.czk') }}</td>
           <td data-label="{{ t('payments.col.rail') }}">{{ t('payments.rail.' ~ req.rail) }}</td>
           <td data-label="{{ t('filter.status') }}"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('payments.status.' ~ req.status) }}</span></td>
+          <td class="row-actions" data-label="">
+            {% if req.status == 'draft' and req.guest_email %}
+            <form method="post" action="/payments/requests/{{ req.id }}/send" style="display:inline">
+              <button class="ui-btn ui-btn-primary ui-btn-compact" type="submit">{{ t('payments.send') }}</button>
+            </form>
+            {% elif req.status == 'draft' %}
+            <span class="ui-sub">{{ t('payments.need_email') }}</span>
+            {% endif %}
+            {% if req.status == 'draft' and req.rail == 'qr' %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments/qr/{{ req.id }}">{{ t('payments.qr.preview') }}</a>{% endif %}
+          </td>
         </tr>
       {% endfor %}
       </tbody>
