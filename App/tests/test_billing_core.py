@@ -69,7 +69,7 @@ def test_totals_match_the_strategy_table(n, month, month_max, year, year_max):
 
 
 def test_addons_and_founder_price():
-    assert billing.quote(2, "standard", "month", ttlock=True)["total"] == 298 + 98
+    assert billing.quote(2, "standard", "month", ttlock=True)["total"] == 298 + 80
     assert billing.quote(2, "max", "month", ttlock=True)["ttlock"] == 0
     assert billing.quote(1, "standard", "year", whitelabel=True)["total"] == 1190 + 5660
     assert billing.quote(6, "standard", "year", founder=True)["base"] == 890 * 6
@@ -133,9 +133,9 @@ def test_under_fifty_kc_is_carried_to_the_next_invoice(owner):
     result = billing.apply_change(
         owner, {"addon_ttlock": 1}, today=date(2026, 11, 1), confirm=True
     )
-    assert (result["supplementary_czk"], result["carry_czk"]) == (0, 39)
+    assert (result["supplementary_czk"], result["carry_czk"]) == (0, 40)
     row = billing.account(owner)
-    assert row["addon_ttlock"] == 1 and row["carry_czk"] == 39
+    assert row["addon_ttlock"] == 1 and row["carry_czk"] == 40
 
 
 def test_a_downgrade_waits_for_the_next_period(owner):
