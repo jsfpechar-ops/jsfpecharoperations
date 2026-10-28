@@ -323,3 +323,15 @@ them; Render does.
 | `RCLONE_REMOTE` | `gdrive` | `backup-gdrive.sh` |
 | `RCLONE_BACKUP_FOLDER` | `UbyHost-backups` | `backup-gdrive.sh` |
 | `SKIP_PUBLIC_SMOKE` | unset | `deploy.sh` — skips the post-deploy public smoke check |
+
+## Observability (Grafana Cloud, profile "monitoring")
+
+Opt-in monitoring stack (brief 0425, docs/OBSERVABILITY.md). The three
+containers start only when "monitoring" is in COMPOSE_PROFILES.
+
+| Variable | What breaks if wrong |
+|---|---|
+| `COMPOSE_PROFILES` | without "monitoring" the stack never starts; a typo in another profile name silently drops that service |
+| `GRAFANA_PROM_URL` / `GRAFANA_PROM_USER` / `GRAFANA_PROM_TOKEN` | empty or wrong: alloy cannot remote-write metrics; with "monitoring" in the profile alloy restarts and logs auth errors (nothing else breaks; the app is untouched) |
+| `GRAFANA_LOKI_URL` / `GRAFANA_LOKI_USER` / `GRAFANA_LOKI_TOKEN` | empty or wrong: alloy cannot push logs; same restart-and-auth-error symptom, app untouched |
+| `UBYHOST_ALLOY_MEM` | too low: the OOM killer restarts alloy; default 512m |
