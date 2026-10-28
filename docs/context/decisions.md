@@ -68,3 +68,4 @@ Append-only.
 - Grafana Cloud free tier (EU) is the subprocessor for operational logs and metrics; logs stay PII-free per OPS-3 (owner, 2026-10-27).
 - Monitoring containers grafana/alloy, gcr.io/cadvisor/cadvisor and prom/node-exporter added behind compose profile "monitoring" (owner, 2026-10-27).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); every call through `App/app/stripe_connect.py`, shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
+- 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, one fetch), page pipeline deterministic, no AI step; host reviews once, then publish | owner | plan property-pages, 0431
