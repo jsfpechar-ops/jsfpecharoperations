@@ -1,6 +1,6 @@
 # 0432: Property page OTA photos — download, re-host, review (property pages C)
 
-Status: todo
+Status: review
 Depends on: 0431 | Base commit: after 0431 | Branch: task/0432-page-photos
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="/static/wizard.css?v=20261022-0274">
   {% endif %}
   <link rel="stylesheet" href="/static/skeleton.css?v=20261014-0102c">
+  {% block head_extra %}{% endblock %}
 </head>
 <body class="layout-host {{ 'host-workspace' if show_nav | default(true) }} {{ 'no-nav' if not (show_nav | default(true)) }}">
 <a class="skip-link" href="#main-content">{{ t('a11y.skip_to_content') }}</a>

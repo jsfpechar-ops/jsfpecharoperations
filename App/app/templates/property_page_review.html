@@ -22,7 +22,17 @@
       <button class="ui-btn ui-btn-primary ui-btn-compact" type="submit" name="publish" value="1">{{ t('payments.page.publish_btn') }}</button>
     </form>
     {% endif %}
+    {% if published %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/p/{{ slug }}" target="_blank">{{ t('payments.page.preview') }}</a>{% endif %}
   </p>
+  {% if published %}
+  <form method="post" action="/apartments/{{ apartment.id }}/page" class="ui-form">
+    <label class="ui-field">
+      <input type="checkbox" name="hide_from_search" value="1" {% if page.hide_from_search %}checked{% endif %}>
+      {{ t('payments.page.hide_search') }}
+    </label>
+    <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" name="search_save" value="1">{{ t('common.save') }}</button>
+  </form>
+  {% endif %}
 </div>
 <form method="post" action="/apartments/{{ apartment.id }}/page" class="ui-form">
   <div class="ui-section">
@@ -37,4 +47,23 @@
     <button class="ui-btn ui-btn-primary" type="submit">{{ t('common.save') }}</button>
   </div>
 </form>
+<div class="ui-section">
+  <h3>{{ t('payments.page.photos') }}</h3>
+  <p class="ui-sub">{{ t('payments.page.photos_notice') }}</p>
+  {% if page_photos %}
+  <div style="display:flex;flex-wrap:wrap;gap:8px;">
+    {% for p in page_photos %}
+    <div style="position:relative">
+      <img src="{{ p }}" alt="{{ t('payments.page.photo_alt') }} {{ loop.index }}" width="120" height="90" style="object-fit:cover;border-radius:8px;">
+      <form method="post" action="/apartments/{{ apartment.id }}/page/photo-delete" style="position:absolute;top:4px;right:4px;">
+        <input type="hidden" name="path" value="{{ p }}">
+        <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" aria-label="{{ t('payments.page.photo_delete') }}">×</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="ui-sub">{{ t('payments.page.photos_empty') }}</p>
+  {% endif %}
+</div>
 {% endblock %}

@@ -1,6 +1,6 @@
 # 0433: Property page — sitemap, noindex, OG tags, guest preview (property pages D)
 
-Status: todo
+Status: review
 Depends on: 0432 | Base commit: after 0432 | Branch: task/0433-page-meta
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

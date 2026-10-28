@@ -1,5 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ page.name }}{% endblock %}
+{% block head_extra %}
+{% if page.noindex %}<meta name="robots" content="noindex">{% endif %}
+<meta property="og:title" content="{{ page.og.title }}">
+<meta property="og:description" content="{{ page.og.description }}">
+<meta property="og:url" content="{{ page.og.url }}">
+{% if page.og.image %}<meta property="og:image" content="{{ page.og.image }}">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+{% endblock %}
 {% block content %}
 <main class="pp">
   <section class="pp-hero">

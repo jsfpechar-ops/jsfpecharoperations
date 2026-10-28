@@ -191,3 +191,104 @@ def publish_page(apartment_id: int, *, published: bool) -> None:
          db.utcnow(), apartment_id),
     )
     publish(apartment_id, published=published)
+
+
+# --- OTA photos (brief 0432: download once, re-host, never hotlink) ------------
+
+import os as _os
+import secrets as _secrets
+from pathlib import Path as _Path
+
+import requests as _requests
+
+from . import config as _config
+from . import guide_photos as _guide_photos
+
+MAX_PAGE_PHOTOS = 10
+_PHOTO_TIMEOUT = (5, 30)
+
+
+def photos_dir() -> _Path:
+    d = _config.DATA_DIR / "property_photos"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def store_photo(content: bytes) -> str:
+    """Re-encode + shrink through the 0343 pipeline (EXIF stripped), store,
+    return the public path. Raises ValueError on type/size refusal."""
+    from . import passport_photos
+
+    if len(content) < 64 or len(content) > _guide_photos.MAX_UPLOAD_BYTES:
+        raise ValueError("photo_size")
+    try:
+        clean = _guide_photos._shrink(passport_photos.reencode_image(content))
+    except ValueError:
+        raise ValueError("photo_type") from None
+    name = _secrets.token_hex(16) + ".jpg"
+    target = photos_dir() / name
+    tmp = target.with_suffix(".tmp")
+    tmp.write_bytes(clean)
+    _os.replace(tmp, target)
+    return f"/photos/property/{name}"
+
+
+def download_listing_photos(apartment_id: int, urls: list) -> int:
+    """Download the OTA listing's photos once (the host's own import run),
+    re-host up to MAX_PAGE_PHOTOS of them. Returns the stored count."""
+    stored = []
+    page = page_for(apartment_id)
+    already = _json.loads(page["photos_json"] or "[]")
+    for url in [u for u in urls if isinstance(u, str) and u.startswith("https://")]:
+        if len(already) + len(stored) >= MAX_PAGE_PHOTOS:
+            break
+        try:
+            response = _requests.get(url, timeout=_PHOTO_TIMEOUT)
+            if response.status_code != 200:
+                continue
+            path = store_photo(response.content)
+        except (ValueError, _requests.RequestException):
+            continue
+        stored.append(path)
+    if stored:
+        merged = already + stored
+        db.execute(
+            "UPDATE property_page SET photos_json = ?, updated_at = ? WHERE apartment_id = ?",
+            (_json.dumps(merged[:MAX_PAGE_PHOTOS], ensure_ascii=False),
+             db.utcnow(), apartment_id),
+        )
+    return len(stored)
+
+
+def delete_photo(apartment_id: int, path: str) -> None:
+    page = _page_row(apartment_id)
+    if page is None:
+        return
+    photos = _json.loads(page["photos_json"] or "[]")
+    if path not in photos:
+        return
+    photos.remove(path)
+    db.execute(
+        "UPDATE property_page SET photos_json = ?, updated_at = ? WHERE apartment_id = ?",
+        (_json.dumps(photos, ensure_ascii=False), db.utcnow(), apartment_id),
+    )
+    name = path.rsplit("/", 1)[-1]
+    target = photos_dir() / name
+    if target.is_file():
+        target.unlink()
+
+
+# --- sitemap / search visibility / preview (brief 0433) -----------------------
+
+
+def published_pages() -> list:
+    """Published + search-visible pages for the sitemap."""
+    return [
+        dict(r)
+        for r in db.query(
+            "SELECT ps.slug, pp.published_at, pp.hide_from_search"
+            " FROM property_slug ps JOIN property_page pp ON pp.apartment_id = ps.apartment_id"
+            " WHERE ps.published = 1 AND COALESCE(pp.hide_from_search, 0) = 0"
+            " ORDER BY ps.slug"
+        )
+    ]

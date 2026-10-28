@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS property_page (
     checkout_text  TEXT,
     published      INTEGER NOT NULL DEFAULT 0,
     published_at   TEXT,
+    hide_from_search INTEGER NOT NULL DEFAULT 1,
     created_at     TEXT NOT NULL,
     updated_at     TEXT NOT NULL,
     UNIQUE (apartment_id)
