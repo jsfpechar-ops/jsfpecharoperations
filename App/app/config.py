@@ -406,6 +406,19 @@ META_ACCESS_TOKEN = os.environ.get("UBYHOST_META_ACCESS_TOKEN", "").strip()
 # Events Manager > Test events. Only for trying the integration on staging;
 # Meta says to remove it for production traffic.
 META_TEST_EVENT_CODE = os.environ.get("UBYHOST_META_TEST_EVENT_CODE", "").strip()
+
+# 0426: Stripe Connect (direct payments for hosts). Off unless the mode and the
+# secret key are set; the webhook secret is only needed when the mode is on.
+STRIPE_MODE = os.environ.get("UBYHOST_STRIPE_MODE", "off").strip().lower()
+STRIPE_SECRET_KEY = os.environ.get("UBYHOST_STRIPE_SECRET_KEY", "").strip()
+STRIPE_WEBHOOK_SECRET = os.environ.get("UBYHOST_STRIPE_WEBHOOK_SECRET", "").strip()
+# Shared monthly cap on Stripe API calls (0 removes the cap), like the TTLock budget.
+STRIPE_MONTHLY_API_CALLS = int(os.environ.get("UBYHOST_STRIPE_MONTHLY_API_CALLS", "50000"))
+
+
+def stripe_enabled() -> bool:
+    return STRIPE_MODE in ("test", "live") and bool(STRIPE_SECRET_KEY)
+
 # Graph API version for graph.facebook.com/<version>/<dataset>/events.
 # v26.0 was the latest on 4 Oct 2026 (Graph API changelog).
 META_GRAPH_VERSION = os.environ.get("UBYHOST_META_GRAPH_VERSION", "v26.0").strip()

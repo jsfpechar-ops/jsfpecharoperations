@@ -31,6 +31,7 @@ from . import (
 )
 from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, guest_guide as guest_guide_routes, guest_guide_view, leon_setup as leon_setup_routes, guest_leon, guest_questions, havel as havel_routes, invoices, legal, mail_unsubscribe, billing as billing_routes, admin_billing as admin_billing_routes, onboarding_wizard, stay_fees
 from .routes import admin_customers as admin_customer_routes
+from .routes import stripe as stripe_routes
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -361,6 +362,8 @@ app.include_router(leon_setup_routes.router)
 app.include_router(billing_routes.router)
 app.include_router(admin_billing_routes.router)
 app.include_router(admin_customer_routes.router)
+app.include_router(stripe_routes.router)
+app.include_router(stripe_routes.host_router)
 app.include_router(guest_guide_routes.router)
 app.include_router(guest_guide_view.router)
 app.include_router(guest_leon.router)
