@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ page.name }}{% endblock %}
+{% block content %}
+<main class="pp">
+  <section class="pp-hero">
+    {% if page.photos %}
+    <div class="pp-hero-grid">
+      {% for photo in page.photos[:5] %}
+      <img class="pp-photo {% if loop.first %}pp-photo-main{% endif %}" src="{{ photo }}" alt="{{ page.name }} — photo {{ loop.index }}" loading="lazy">
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="pp-hero pp-hero-empty"></div>
+    {% endif %}
+  </section>
+  <section class="pp-main">
+    <h1>{{ page.name }}</h1>
+    <p class="pp-location">{{ page.district }}</p>
+    {% if page.checkin_text or page.checkout_text %}
+    <p class="pp-times">
+      {% if page.checkin_text %}<span>{{ t('pp.checkin') }}: <strong>{{ page.checkin_text }}</strong></span>{% endif %}
+      {% if page.checkout_text %}<span>{{ t('pp.checkout') }}: <strong>{{ page.checkout_text }}</strong></span>{% endif %}
+    </p>
+    {% endif %}
+    {% if page.description %}
+    <div class="pp-desc">
+      {{ page.description[:400] }}
+      {% if page.description|length > 400 %}
+      <details>
+        <summary>{{ t('pp.more') }}</summary>
+        {{ page.description[400:] }}
+      </details>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if page.amenities %}
+    <h2>{{ t('pp.amenities') }}</h2>
+    <ul class="pp-amenities">
+      {% for a in page.amenities %}<li>{{ a }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% if page.cards %}
+    <h2>{{ t('pp.guide') }}</h2>
+    <div class="pp-cards">
+      {% for card in page.cards %}
+      <div class="pp-card">
+        {% if card.title %}<h3>{{ card.title }}</h3>{% endif %}
+        <p>{{ card.body }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

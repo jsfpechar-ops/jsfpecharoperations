@@ -1,0 +1,40 @@
+{% extends "host_page.html" %}
+{% set nav = 'properties' %}
+{% set body_kind = 'form' %}
+{% block title %}{{ t('payments.page.title') }} · {{ apartment.internal_name }}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block tabs %}{% endblock %}
+{% block toolbar %}{% endblock %}
+{% block body %}
+<div class="ui-section">
+  <h2>{{ t('payments.page.title') }} — {{ apartment.internal_name }}</h2>
+  <p>
+    {% if published %}
+    <span class="ui-badge ui-badge-done" data-tone="green">{{ t('payments.page.live') }}</span>
+    <code>/p/{{ slug }}</code>
+    <form method="post" action="/apartments/{{ apartment.id }}/page" style="display:inline">
+      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" name="unpublish" value="1">{{ t('payments.page.unpublish_btn') }}</button>
+    </form>
+    {% else %}
+    <span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('payments.page.off') }}</span>
+    <code>/p/{{ slug }}</code>
+    <form method="post" action="/apartments/{{ apartment.id }}/page" style="display:inline">
+      <button class="ui-btn ui-btn-primary ui-btn-compact" type="submit" name="publish" value="1">{{ t('payments.page.publish_btn') }}</button>
+    </form>
+    {% endif %}
+  </p>
+</div>
+<form method="post" action="/apartments/{{ apartment.id }}/page" class="ui-form">
+  <div class="ui-section">
+    <label class="ui-field">
+      <span>{{ t('payments.page.description') }}</span>
+      <textarea class="ui-input" name="description" rows="8">{{ page.description or '' }}</textarea>
+    </label>
+    <label class="ui-field">
+      <span>{{ t('payments.page.amenities') }}</span>
+      <textarea class="ui-input" name="amenities" rows="6">{{ (page.amenities_json or '') | replace('["', '') | replace('", "', '&#10;') | replace('"]', '') }}</textarea>
+    </label>
+    <button class="ui-btn ui-btn-primary" type="submit">{{ t('common.save') }}</button>
+  </div>
+</form>
+{% endblock %}

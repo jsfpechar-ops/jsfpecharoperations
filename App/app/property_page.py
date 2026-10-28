@@ -113,3 +113,81 @@ def publish(apartment_id: int, *, published: bool) -> None:
             apartment_id,
         ),
     )
+
+
+# --- page content (brief 0431: scrape prefill, no AI) ------------------------
+
+import json as _json
+
+
+def _page_row(apartment_id: int) -> Optional[Dict[str, Any]]:
+    row = db.query_one(
+        "SELECT * FROM property_page WHERE apartment_id = ?", (apartment_id,)
+    )
+    return dict(row) if row else None
+
+
+def page_for(apartment_id: int) -> Dict[str, Any]:
+    """The page row for this apartment, created empty on first use."""
+    row = _page_row(apartment_id)
+    if row is not None:
+        return row
+    now = db.utcnow()
+    db.insert(
+        "property_page",
+        {"apartment_id": apartment_id, "created_at": now, "updated_at": now},
+    )
+    return _page_row(apartment_id)  # type: ignore[return-value]
+
+
+def prefill_from_import(apartment_id: int, import_row: Dict[str, Any]) -> None:
+    """Map import fields into page columns; empty fields only, never edits.
+
+    Deterministic field mapping, no AI: the listing text lands verbatim in
+    the named columns (already trimmed/capped by the 0347 import).
+    """
+    data = _json.loads(import_row["raw_json"] or "{}")
+    page = page_for(apartment_id)
+    now = db.utcnow()
+    updates: Dict[str, Any] = {}
+    if not page["description"]:
+        text = data.get("description") or data.get("subDescription")
+        if text:
+            updates["description"] = str(text)
+    if not page["checkin_text"] and data.get("checkIn"):
+        updates["checkin_text"] = str(data["checkIn"])
+    if not page["checkout_text"] and data.get("checkOut"):
+        updates["checkout_text"] = str(data["checkOut"])
+    if not page["amenities_json"] and isinstance(data.get("amenities"), list):
+        updates["amenities_json"] = _json.dumps(data["amenities"], ensure_ascii=False)
+    if updates:
+        sets = ", ".join(f"{k} = ?" for k in updates)
+        db.execute(
+            f"UPDATE property_page SET {sets}, updated_at = ? WHERE apartment_id = ?",
+            (*updates.values(), now, apartment_id),
+        )
+
+
+def save_page(apartment_id: int, *, description: str, amenities: list) -> None:
+    """The host's review-screen save: overwrites, this is the host writing."""
+    page_for(apartment_id)
+    db.execute(
+        "UPDATE property_page SET description = ?, amenities_json = ?, updated_at = ?"
+        " WHERE apartment_id = ?",
+        (
+            description or None,
+            _json.dumps(amenities, ensure_ascii=False) if amenities else None,
+            db.utcnow(),
+            apartment_id,
+        ),
+    )
+
+
+def publish_page(apartment_id: int, *, published: bool) -> None:
+    db.execute(
+        "UPDATE property_page SET published = ?, published_at = ?, updated_at = ?"
+        " WHERE apartment_id = ?",
+        (1 if published else 0, db.utcnow() if published else None,
+         db.utcnow(), apartment_id),
+    )
+    publish(apartment_id, published=published)

@@ -231,3 +231,66 @@ def payment_request_qr(request: Request, request_id: int):
     )
 
 
+
+
+# --- property page review screen (brief 0431) -------------------------------
+
+
+@router.get("/apartments/{apartment_id}/page")
+def property_page_review(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    apartment = db.query_one(
+        "SELECT id, internal_name FROM apartment WHERE id = ? AND owner_user_id = ?",
+        (apartment_id, owner_id),
+    )
+    if apartment is None:
+        return Response(status_code=404)
+    from .. import property_page as pp
+
+    page = pp.page_for(apartment_id)
+    slug_row = pp.ensure_slug(apartment_id)
+    return render(
+        request,
+        "property_page_review.html",
+        {
+            "nav": "properties",
+            "apartment": apartment,
+            "page": page,
+            "slug": slug_row["slug"],
+            "published": bool(page["published"]),
+        },
+    )
+
+
+@router.post("/apartments/{apartment_id}/page")
+async def property_page_save(request: Request, apartment_id: int):
+    guard = auth.require_login(request)
+    if guard:
+        return guard
+    owner_id = access.owner_id(request)
+    apartment = db.query_one(
+        "SELECT id FROM apartment WHERE id = ? AND owner_user_id = ?",
+        (apartment_id, owner_id),
+    )
+    if apartment is None:
+        return Response(status_code=404)
+    from .. import property_page as pp
+
+    form = await request.form()
+    if "publish" in form or "unpublish" in form:
+        pp.publish_page(apartment_id, published="publish" in form)
+        msg = "payments.page.published" if "publish" in form else "payments.page.unpublished"
+        return _back(f"/apartments/{apartment_id}/page", msg=_flash(request, msg))
+    pp.save_page(
+        apartment_id,
+        description=str(form.get("description") or "").strip(),
+        amenities=[
+            ln.strip()
+            for ln in str(form.get("amenities") or "").splitlines()
+            if ln.strip()
+        ],
+    )
+    return _back(f"/apartments/{apartment_id}/page", msg=_flash(request, "payments.page.saved"))
