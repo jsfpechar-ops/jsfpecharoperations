@@ -22,6 +22,7 @@ from . import (
     db,
     env_guard,
     host_i18n,
+    metrics,
     passport_photos,
     scheduler,
     security,
@@ -299,6 +300,12 @@ async def cloudflare_connecting_ip(request: Request, call_next):
         response.headers.setdefault("Cache-Control", _static_cache_control(request))
     if config.ACCESS_LOG:
         _log_access(request, response.status_code, started, stats)
+    # Brief 0427 prep: PII-free usage counters (route template + status only).
+    if request.url.path not in ("/metrics", "/healthz") and not request.url.path.startswith("/static/"):
+        metrics.observe_request(
+            request.method, _access_route(request), response.status_code,
+            time.perf_counter() - started,
+        )
     return response
 
 
@@ -464,6 +471,16 @@ async def set_language(request: Request):
     response = RedirectResponse(target, status_code=303)
     host_i18n.remember_language(response, lang)
     return response
+
+
+@app.get("/metrics", include_in_schema=False)
+def prometheus_metrics():
+    """Usage counters in Prometheus text format (brief 0427 prep).
+
+    Sits on the compose-internal network only; caddy does not expose it, so
+    the world cannot scrape it. Route templates and status codes only (OPS-3).
+    """
+    return PlainTextResponse(metrics.render(), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
 @app.get("/healthz", include_in_schema=False)

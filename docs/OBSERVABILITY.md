@@ -8,6 +8,7 @@ profile "monitoring"): alloy, node-exporter, cadvisor.
 | alloy | every compose container's log lines | Grafana Cloud Loki |
 | node-exporter | host CPU, memory, disk | Grafana Cloud Prometheus |
 | cadvisor | per-container CPU, memory | Grafana Cloud Prometheus |
+| ubyhost (app) | request counters + duration histogram per route *template* (`/metrics`, compose-internal only; caddy answers 404 to the world) | Grafana Cloud Prometheus, job `ubyhost` |
 
 ## Privacy boundary
 
@@ -50,7 +51,11 @@ quietly unnoticed. Cron line on the server:
 
 ## Reading it
 
-Queries, dashboards and alerts are documented here by brief 0427.
+Queries, dashboards and alerts are documented here by brief 0427. The app
+metrics answer usage questions without any user data (OPS-3): rate of
+`ubyhost_requests_total` per route template, error ratio by `status`, and
+request latency from `ubyhost_request_duration_seconds` —
+e.g. requests/s per feature: `sum by (route) (rate(ubyhost_requests_total[15m]))`.
 
 ## Costs and limits
 
