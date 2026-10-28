@@ -2,22 +2,22 @@
 
 Append-only.
 
-- 2026-10-03 | Sign-up stays off in production (`UBYHOST_SIGNUP_ENABLED`) until the owner chooses | launch with invited hosts | [ENVIRONMENT](../ENVIRONMENT.md#accounts)
+- 2026-10-03 | Signup off in production until owner chooses | invited hosts | ENVIRONMENT
 - 2026-10-05 | Legal texts 1.6 shipped; counsel review open | real hosts | K-L
-- 2026-10-05 | Admin preview: full workspace, optional reason, 24 h default | owner support | PR #280, K-P01
-- 2026-10-06 | [workflow] Context: AGENTS.md L0, context L1, plans L2; audits archived; known-issues replaces FOLLOWUPS | re-reading used 87% of spend | [README](README.md)
-- 2026-10-06 | [workflow] WP/patch series closed at WP33/0034; new work uses task numbers NNNN | one numbering scheme | [workflow](workflow.md)
+- 2026-10-05 | Admin preview: full workspace, reason, 24 h | owner support | PR #280
+- 2026-10-06 | [workflow] Context: AGENTS L0, context L1, plans L2; audits archived | [workflow](workflow.md)
+- 2026-10-06 | [workflow] WP series closed at WP33/0034; tasks use NNNN | [workflow](workflow.md)
 - 2026-10-06 | [workflow] At most one council per plan, only for HIGH RISK (filing, deletion, legal); never per PR | 3 councils in a day, same findings | [workflow](workflow.md)
 - 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
-- 2026-10-06 | [workflow] Context-rollout bundle: flat files only; MANIFEST at root | place_files paths | [TEMPLATE](../tasks/TEMPLATE.md)
+- 2026-10-06 | [workflow] Context rollout: flat files, MANIFEST at root | place_files | TEMPLATE.md
 - 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
-- 2026-10-06 | New dependency `webauthn==3.0.1` plus transitive `cbor2`, `pyOpenSSL`, `pyasn1`, `pyasn1-modules`, hash-pinned | no hand-rolled passkeys; owner approved | task 0004
-- 2026-10-06 | Login is e-mail link only (hard cutover, passwords removed); TOTP and passkeys are optional extras; admin same as hosts | owner choice | task 0003, 0004
-- 2026-10-06 | Downloads skip the navigation skeleton (`download`, `data-no-skeleton`, path-ending rule), pinned by a template scan test | PDF click blanked page | skeleton.js
-- 2026-10-06 | Stay-fee PDF: host bed-day adjustments fold into the facility row; the CSV keeps one neutral line so it adds up | a correction line confuses the office | stay_fee.py
-- 2026-10-06 | UbyPort outcome: 0-2 accepted, 4-6 not; 112 = reported late = accepted (replaces batch-not-received) | police letter A1-A5 | [OPERATIONS](../OPERATIONS.md)
-- 2026-10-06 | Sweep: one send per refused record, then wait for host fix (was 3 tries) | police B2-B3 | [OPERATIONS](../OPERATIONS.md)
-- 2026-10-06 | Staging may use the police test env (`ubyport_env=test`); credentials only in staging | police B4 | [LIGHTSAIL](../LIGHTSAIL.md)
+- 2026-10-06 | [deps] `webauthn==3.0.1` + transitives, hash-pinned | no hand-rolled passkeys | 0004
+- 2026-10-06 | Login is e-mail link only; TOTP/passkeys optional | owner | 0003, 0004
+- 2026-10-06 | Downloads skip the nav skeleton; template scan test pins it | PDF blanked page | skeleton.js
+- 2026-10-06 | Stay-fee PDF: bed-day adjustments fold into the facility row; CSV one neutral line | office confusion | stay_fee.py
+- 2026-10-06 | UbyPort: 0-2 accepted, 4-6 not; 112 = late = accepted | police A1-A5 | OPERATIONS
+- 2026-10-06 | Sweep: one send per refused record, then host fix | police B2-B3 | OPERATIONS
+- 2026-10-06 | Staging may use the police test env; creds only in staging | police B4 | LIGHTSAIL
 - 2026-10-06 | Abbreviation check accepts 5-6 alphanumeric characters | police test abbreviation | validation.py
 - 2026-10-08 | Door codes (TTLock pilot): timed codes, test mode until live; full rules in the plan | owner + council-lite | [ttlock-door-codes](../plans/ttlock-door-codes.md)
 - 2026-10-08 | Funnel: in-app dashboard, no JS; Umami public-only | own rows | 0018
@@ -70,3 +70,5 @@ Append-only.
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); every call through `App/app/stripe_connect.py`, shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
 - 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, one fetch), page pipeline deterministic, no AI step; host reviews once, then publish | owner | plan property-pages, 0431
 - 2026-10-28 | Property page design: Airbnb-style layout patterns (hero grid, 65ch description, icon amenities); no Airbnb brand assets, fonts or copied CSS | owner | plan property-pages, 0431
+- 2026-10-28 | Page photos: download + re-host from the host's own import run (max 10, EXIF stripped), never hotlink; host confirms rights at review | owner | plan property-pages, 0432
+- 2026-10-28 | Booking widget: Airbnb-style interaction built from our own calendar/fee logic, no-JS form, Stripe checkout on the host account; no dark patterns, no tracking | owner | plan property-pages, 0434

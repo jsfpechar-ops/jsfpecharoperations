@@ -42,6 +42,31 @@ Host pastes their OTA link(s)
   guide merge without AI, that is a separate decision for the guide workstream.
 - Host's own listing only: the host pastes their own link (0347 rule), so the
   content and photos are the host's; reusing them on their own page is fine.
+
+### OTA photos (owner decision, 28 Oct: platforms pull them; so do we)
+
+How the others do it: Hospitable/Hostaway/Hostex import photos through the
+**official Airbnb/Booking partner APIs** (OAuth-connected accounts), then
+re-host the files. Airbnb's own help says downloaded listing photos are for
+personal use and may not be used on another rental site — which is why
+permissioned platforms use the API and why the host, not ubyhost, is the one
+acting here: the host imports **their own listing's photos** and confirms
+publication on **their own page**. We scrape the listing the host owns, on
+their instruction — but we still do it cleanly:
+
+- **Download and re-host, never hotlink.** OTA CDN URLs (e.g. muscache) are
+  signed and expire; hotlinked photos break within days. The import worker
+  downloads each photo once (host's own run, counts against the same actor
+  run), stores it through the existing image pipeline (0343 caps), and the
+  page serves our copy.
+- Caps: max 10 photos per property, existing per-file size cap, image-type
+  allowlist only, EXIF stripped (privacy rule 2 — no GPS in listing photos).
+- The review screen shows the imported photos with a one-line notice
+  (cs/en): "Use only photos of your property that you have the right to
+  publish." The host can delete any photo or replace it with their own
+  upload before publishing.
+- One import per platform per property (existing cap) covers text + photos:
+  no extra fetches.
 - Host review is one screen, once: pre-filled fields the host can edit, then
   publish. Unreviewed page drafts never publish.
 - Import data needs a retention line (raw OTA text retained for the page
@@ -128,9 +153,10 @@ geometry tests with 390 px screenshots per page state.
 | # | Deliverable | Depends on |
 |---|---|---|
 | A (0430) | Slug mapper + `property_slug` migration (0028) + redirect; no template yet, tests for mapper/redirects | — |
-| B (0431) | Scrape prefill: page fields on the import row (description/photos/amenities verbatim, no AI), review screen (pre-filled, editable), publish toggle, public page template, 404 when off; browser + geometry tests, 390 px screenshots | A; reuses the existing Apify fetch (0347) |
-| C (0432) | sitemap + noindex switch + cache/rate-limit pass | B |
-| D | Booking widget slot (payments P2.1, Stripe checkout on the host's connected account) | B + payments P1.5 |
+| B (0431) | Scrape prefill: page fields on the import row (description/amenities verbatim, no AI), review screen (pre-filled, editable), publish toggle, public page template (Airbnb-pattern design), 404 when off | A; reuses the existing Apify fetch (0347) |
+| C (0432) | OTA photo pipeline: download on import, re-host via 0343 caps, EXIF strip, 10-photo cap, review-screen notice + delete/replace | B |
+| D (0433) | sitemap + noindex switch + cache/rate-limit + OG/meta tags + guest-preview link on the review screen | C |
+| E (0434) | Booking widget (payments P2.1): Airbnb-style dates/guests card reusing the existing stay calendar and stay-fee total logic, no-JS form POST, Stripe Checkout Session on the host's connected account | C + payments P1.3/P1.5 |
 
 0430 and 0431 are one session each; 0432 is small. Each brief follows the repo's
 TEMPLATE.md and lands per the [test-map](../context/test-map.md) (new row:
