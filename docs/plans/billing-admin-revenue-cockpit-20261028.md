@@ -135,6 +135,7 @@ No free-text editing of booked invoice amounts, no editing of paid history — c
 - **0443 Discount + reissue** (§5 + §6 + D1): migration, `quote()` change, invoice line, operator form, storno+reissue of unpaid invoices. D1 decided — no longer blocked.
 - **0444 Movement, funnel, trend, monthly snapshot** (§3 B + G + §6 `billing_month_snapshot`, scheduler hook).
 - **0445 Click-through + CSV everywhere** (§6b): every figure links to its filtered table; movement/aging/funnel CSV.
+- **0446 Bulk export** (§12 2a): `/admin/fakturace/export-vse` ZIP of customers/invoices/payments/snapshot CSVs, full history.
 
 0440–0442 safe to run in sequence after approval; 0443–0445 follow. Each brief fits one Haiku session.
 
@@ -172,6 +173,7 @@ Billing data is first-party business data; it does **not** go to Google Analytic
 
 1. **`billing_month_snapshot` (§6)** — one row per customer per month; this is the analytical source of truth. It exists in the database, so anything with SQL access can analyse it.
 2. **CSV exports (§6b)** — portfolio, movement, aging, funnel, all openable in Excel/Google Sheets. Sheets can auto-refresh via `IMPORTDATA`-style pulls in the future if the operator wants a live dashboard.
+2a. **Bulk export ("everything", added 2026-10-28):** one admin route `/admin/fakturace/export-vse` that streams a ZIP of flat CSVs covering the whole history, no month limit: `customers.csv` (current billing state per account, incl. discount fields), `invoices.csv` (all `platform_invoice` rows incl. storno/voided, with kind, corrects_id, paid_on, paid_via), `payments.csv` (all `bank_payment` rows incl. unmatched), `snapshot.csv` (every `billing_month_snapshot` row). Each file has a header row with the same column names the UI shows, UTF-8 with BOM so Excel opens Czech diacritics correctly, amounts in whole Kč with a decimal-friendly format. Built with the existing stream-zip pattern (temp file, unlink after send); no pagination limit. For an operator who wants to analyse in Excel/Sheets/Power BI, this single download replaces every per-view CSV.
 3. **Optional later brief (owner decision, not planned now): a read-only, token-protected JSON export endpoint** of a month's snapshot rows, so a BI tool (Metabase, Looker Studio, Grafana) can pull it. This is an outbound request decision line in `decisions.md` when it is built.
 
 If product analytics (which features hosts use) is ever wanted on admin/host pages, that is a separate owner decision extending the existing PostHog scope — independent of this plan.
