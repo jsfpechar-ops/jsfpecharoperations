@@ -296,6 +296,22 @@ def _actor_input(source: str, url: str) -> Dict[str, Any]:
     return body
 
 
+def _photo_urls(source: str, item: Dict[str, Any]) -> list:
+    """The listing's own photo URLs, capped; the page re-hosts, never hotlinks."""
+    if source == "booking":
+        raw = item.get("photos") or item.get("images") or []
+        if isinstance(raw, str):
+            raw = [{"url": raw}]
+        return [
+            p.get("url") if isinstance(p, dict) else str(p)
+            for p in raw[:20]
+        ]
+    raw = item.get("images") or item.get("photos") or []
+    if isinstance(raw, str):
+        return [raw]
+    return [str(p.get("url") or p) if isinstance(p, dict) else str(p) for p in raw[:20]]
+
+
 def _fetch(source: str, url: str) -> Dict[str, Any]:
     """One synchronous actor run. Raises GuideImportError with a short code."""
     actor = ACTORS[source]
@@ -341,6 +357,19 @@ def _run_one(row) -> None:
             (json.dumps(data, ensure_ascii=False), db.utcnow(), import_id),
         )
         log.info("guide import id=%s source=%s done", import_id, row["source"])
+        # 0432: one fetch feeds both consumers — the page photos ride this
+        # same run; a failure here never fails the import (the text stands).
+        try:
+            from . import property_page
+
+            property_page.prefill_from_import(row["apartment_id"], {
+                "raw_json": json.dumps(data, ensure_ascii=False),
+            })
+            photos = _photo_urls(row["source"], data)
+            if photos:
+                property_page.download_listing_photos(row["apartment_id"], photos)
+        except Exception:  # noqa: BLE001 — the page is a bonus consumer
+            log.info("guide import id=%s: page prefill skipped", import_id, exc_info=True)
     except GuideImportError as exc:
         db.execute(
             "UPDATE guide_import SET status = 'failed', error = ?, finished_at = ? WHERE id = ?",

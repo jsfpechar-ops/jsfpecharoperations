@@ -1,6 +1,6 @@
 # 0434: Property page booking widget (property pages E, payments P2.1 first slice)
 
-Status: todo
+Status: review
 Depends on: 0433; payments P1.3 + P1.5 | Base commit: after both | Branch: task/0434-booking-widget
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens — the hold
 system (§4 step 3) may spill into a follow-up brief; ship the form + total +

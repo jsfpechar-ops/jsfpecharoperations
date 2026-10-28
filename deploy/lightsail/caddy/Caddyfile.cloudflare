@@ -22,8 +22,12 @@
 	# server's IP would skip Cloudflare's WAF, bot checks and rate limits.
 	# remote_ip is the TCP peer, not the forwarded client IP. Same ranges as
 	# trusted_proxies above: when Cloudflare publishes new ones, update both.
+	@metrics path /metrics
 	@not_cloudflare not remote_ip 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
 	abort @not_cloudflare
+	# 0427 prep: the app's Prometheus metrics stay compose-internal (alloy
+	# scrapes ubyhost:8080 directly). Never served to the internet.
+	respond @metrics 404
 	# The guest form posts its signature and its passport upload as one
 	# multipart body, so this must stay above passport_photos.MAX_PDF_BYTES
 	# (15 MB). 20 MB admits every legitimate body and rejects an unbounded one

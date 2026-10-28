@@ -121,6 +121,10 @@ def _datetime_local(value: Optional[str], seconds: bool = False) -> str:
 
 @pass_context
 def _template_translate(context, key: str, **kwargs) -> str:
+    # An explicit context lang wins (0433: the listing pages are English-only
+    # by owner decision; the cookie switch does not apply to them).
+    if context.get("lang") in host_i18n.LANGUAGES:
+        return host_i18n.translate(context["lang"], key, **kwargs)
     request = context.get("request")
     lang = host_i18n.lang_from_request(request) if request else host_i18n.DEFAULT_LANGUAGE
     return host_i18n.translate(lang, key, **kwargs)
@@ -601,6 +605,11 @@ def render(request: Request, name: str, context: Optional[Dict[str, Any]] = None
     if public_page and request.state.lang not in host_i18n.PUBLIC_LANGUAGES:
         request.state.lang = "en"
     data["lang"] = request.state.lang
+    # 0433: an explicit context lang wins (the listing pages are English-only
+    # by owner decision; the cookie/accept-language switch does not apply).
+    if (context or {}).get("lang") in host_i18n.LANGUAGES:
+        data["lang"] = context["lang"]
+        request.state.lang = context["lang"]
     # Only the app-root login must omit the marketing root's canonical links.
     # Keep the established /login and public-page SEO behavior.
     head_links = {} if request.url.path == "/" and name == "login.html" else seo.head_links(request)

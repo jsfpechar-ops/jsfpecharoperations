@@ -433,7 +433,10 @@ def test_the_payments_group_ships_no_heading_until_a_panel_joins_it():
     try:
         body = _browser().get(f"/reservations/{stays[0]}").text
         assert 'id="money"' not in body
-        assert "Payments" not in body
+        # 0429 added a Payments item to the nav, so the bare word now appears
+        # on every page. The money group heading is an h2 inside #money; the
+        # nav item is an anchor, so the heading pattern is what must be absent.
+        assert "<h2>Payments</h2>" not in body
         source = (TEMPLATES / "reservation_detail.html").read_text(encoding="utf-8")
         assert "{% if money_panels %}" in source
         assert source.index('id="guests"') < source.index('id="money"')

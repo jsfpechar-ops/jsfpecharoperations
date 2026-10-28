@@ -161,5 +161,20 @@ def sitemap_xml() -> str:
                     f'    <xhtml:link rel="alternate" hreflang="{code}" href="{href}"/>'
                 )
             lines.append("  </url>")
+    # 0433: published property pages (search-visible only; the listing pages
+    # are English-only per the owner decision, so no per-language variants).
+    try:
+        from . import config as _config
+        from . import property_page
+
+        base = _config.PUBLIC_BASE_URL.rstrip("/")
+        for row in property_page.published_pages():
+            lines.append("  <url>")
+            lines.append(f"    <loc>{base}/p/{row['slug']}</loc>")
+            if row["published_at"]:
+                lines.append(f"    <lastmod>{row['published_at']}</lastmod>")
+            lines.append("  </url>")
+    except Exception:
+        pass
     lines += ["</urlset>", ""]
     return "\n".join(lines)

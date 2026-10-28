@@ -1,6 +1,6 @@
 # 0431: Property page — scrape prefill, review screen, public template (property pages B)
 
-Status: todo
+Status: review
 Depends on: 0430 | Base commit: after 0430 | Branch: task/0431-property-page
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens — if the session
 runs out, the prefill half (§4 steps 1–3) ships alone in this branch

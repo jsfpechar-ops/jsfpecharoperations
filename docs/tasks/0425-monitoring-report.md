@@ -21,7 +21,7 @@ Also restored `docs/tasks/0425-report.md` (belongs to the other 0425 task, PR #5
 
 ## §7 Acceptance
 
-- [ ] compose config -q with profile / absent without — still unverified (no docker locally); structure now parsed and confirmed: alloy/node-exporter/cadvisor are top-level services under `services:`, profile `monitoring` only. Review fixed: they were previously nested under `caddy` by a 4-space indent error (caught in review, would have started zero monitoring containers and recreated caddy). Owner/CI to still run compose config.
+- [x] compose config with profile / absent without — verified live on the production deploy (2026-10-28): with `COMPOSE_PROFILES=litestream,monitoring` the three containers start (`docker ps` shows ubyhost-alloy-1, ubyhost-node-exporter-1, ubyhost-cadvisor-1); without the profile they don't. Data confirmed in Grafana Cloud after token/URL fixes. (The earlier indent bug — services nested under `caddy` — was caught in review and fixed pre-merge.)
 - [x] every new service has json-file 10m × 5 logging block and a mem_limit
 - [x] config.alloy has no literal credentials, only env() references
 - [x] `git diff --stat` lists only the six §3 files (plus the report files)
@@ -43,3 +43,5 @@ Review follow-ups fixed on this branch:
 ## Owner steps left
 
 Per the brief: review the compose diff; merge with `scripts/merge-pr-on-green.sh`; create the Grafana Cloud EU free stack and fill the six GRAFANA_* values in `deploy/lightsail/.env`; deploy; verify `{container="ubyhost"}` in Explore; pin the three images by digest in a follow-up.
+
+Status 2026-10-28: all owner steps done. Deployed, verified live (logs in Loki, node/cadvisor `up == 1` in Prometheus). Images pinned by digest in this follow-up (manifest-list digests, same convention as litestream/caddy).

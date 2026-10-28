@@ -22,6 +22,7 @@ from . import (
     db,
     env_guard,
     host_i18n,
+    metrics,
     passport_photos,
     scheduler,
     security,
@@ -32,6 +33,8 @@ from . import (
 from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, guest_guide as guest_guide_routes, guest_guide_view, leon_setup as leon_setup_routes, guest_leon, guest_questions, havel as havel_routes, invoices, legal, mail_unsubscribe, billing as billing_routes, admin_billing as admin_billing_routes, onboarding_wizard, stay_fees
 from .routes import admin_customers as admin_customer_routes
 from .routes import stripe_connect as stripe_connect_routes
+from .routes import payments as payments_routes
+from .routes import property_page as property_page_routes
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -297,6 +300,12 @@ async def cloudflare_connecting_ip(request: Request, call_next):
         response.headers.setdefault("Cache-Control", _static_cache_control(request))
     if config.ACCESS_LOG:
         _log_access(request, response.status_code, started, stats)
+    # Brief 0427 prep: PII-free usage counters (route template + status only).
+    if request.url.path not in ("/metrics", "/healthz") and not request.url.path.startswith("/static/"):
+        metrics.observe_request(
+            request.method, _access_route(request), response.status_code,
+            time.perf_counter() - started,
+        )
     return response
 
 
@@ -370,6 +379,9 @@ app.include_router(legal.router)
 app.include_router(mail_unsubscribe.router)
 # 0428: host onboarding + public Stripe webhook (its own signature is the gate).
 app.include_router(stripe_connect_routes.router)
+app.include_router(payments_routes.router)
+# 0430: the public property page (/p/<slug>) — public host, no session.
+app.include_router(property_page_routes.router)
 app.include_router(dev_ui.router)
 
 
@@ -459,6 +471,16 @@ async def set_language(request: Request):
     response = RedirectResponse(target, status_code=303)
     host_i18n.remember_language(response, lang)
     return response
+
+
+@app.get("/metrics", include_in_schema=False)
+def prometheus_metrics():
+    """Usage counters in Prometheus text format (brief 0427 prep).
+
+    Sits on the compose-internal network only; caddy does not expose it, so
+    the world cannot scrape it. Route templates and status codes only (OPS-3).
+    """
+    return PlainTextResponse(metrics.render(), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
 @app.get("/healthz", include_in_schema=False)
