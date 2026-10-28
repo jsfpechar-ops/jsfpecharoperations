@@ -130,6 +130,7 @@ def test_admin_pages_pass_the_layout_guard(wide_host, wide_base):
         "admin-customer": f"/admin/customers/{wide_host['owner']}",
         "admin-users-manage": f"/admin/users?manage={wide_host['owner']}",
         "admin-operations": "/admin/operations",
+        "admin-billing": "/admin/fakturace",
     }
     findings = []
     try:

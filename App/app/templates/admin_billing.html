@@ -9,7 +9,7 @@
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block body %}
 {% set states = ['trial_pending', 'trialing', 'active', 'overdue', 'canceling', 'paused'] %}
-{% call ui_section(t('billing.admin.revenue.title')) %}
+{% call ui_section(t('billing.admin.revenue.title'), id='revenue') %}
 {{ ui_facts([
   (t('billing.admin.revenue.mrr'), cockpit.mrr_czk ~ ' Kč'),
   (t('billing.admin.revenue.arr'), cockpit.arr_czk ~ ' Kč'),
@@ -134,7 +134,7 @@
 {% else %}<p class="ui-sub">{{ t('billing.admin.portfolio.none') }}</p>{% endif %}
 {% endcall %}
 
-{% call ui_section(t('billing.admin.accounts.title')) %}
+{% call ui_section(t('billing.admin.accounts.title'), id='accounts') %}
 <p class="ui-sub" data-billing-admin-accounts>{% for s in states %}{{ t('billing.plan.state.' ~ s) }}: {{ accounts.get(s, 0) }}{{ ' · ' if not loop.last }}{% endfor %}</p>
 {% endcall %}
 

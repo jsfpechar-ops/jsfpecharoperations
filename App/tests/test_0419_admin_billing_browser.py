@@ -55,6 +55,10 @@ def test_the_billing_admin_page_fits(calendar_workspace, calendar_origin, monkey
                 page.evaluate("window.scrollTo(0, 0)")
                 assert page.locator(f'[data-billing-admin-unpaid="{number}"]').count() == 1, width
                 assert page.locator("[data-billing-admin-statement]").is_visible(), width
+                for section in ("#revenue", "#trend", "#movement", "#funnel", "#discounts",
+                               "#watch", "#portfolio", "#accounts"):
+                    assert page.locator(section).count() == 1, f"{section} missing at {width}"
+                assert page.locator("[data-billing-admin-portfolio-filter]").is_visible(), width
                 assert _fits(page), width
                 if capture and width == 390:
                     EVIDENCE.mkdir(parents=True, exist_ok=True)
