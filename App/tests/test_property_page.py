@@ -120,7 +120,7 @@ def test_review_save(owner, client):
 
 
 def test_foreign_apartment_404(owner, client):
-    aid = _apartment(owner)
+    _apartment(owner)
     other = int(db.insert("user_account", {"username": "otherpp",
                                             "password_hash": "x",
                                             "created_at": db.utcnow()}))

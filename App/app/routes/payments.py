@@ -114,7 +114,7 @@ async def payment_request_new(request: Request):
     rail = str(form.get("rail") or "card").strip()
     if rail not in payment_request.RAILS:
         return back
-    request_id = payment_request.create(
+    payment_request.create(
         owner_id,
         reservation_id=reservation_id,
         reason=reason,
@@ -224,7 +224,7 @@ def payment_request_qr(request: Request, request_id: int):
         return _back("/payments", err=_flash(request, "payments.err.invalid"))
     try:
         payload, png = payment_request.qr_payload(row)
-    except ValueError as exc:
+    except ValueError:
         return _back("/payments", err=_flash(request, "payments.err.no_iban"))
     return render(
         request,

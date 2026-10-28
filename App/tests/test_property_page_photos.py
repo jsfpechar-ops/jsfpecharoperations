@@ -77,7 +77,6 @@ def test_store_photo_strips_and_rehosts(owner, monkeypatch):
     path = property_page.store_photo(_jpeg())
     assert path.startswith("/photos/property/")
     assert path.endswith(".jpg")
-    from app import config
     target = property_page.photos_dir() / path.rsplit("/", 1)[-1]
     assert target.is_file()
     # the stored file is a clean re-encode (no EXIF block of the original)

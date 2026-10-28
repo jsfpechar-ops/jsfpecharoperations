@@ -5,7 +5,6 @@ local code. The mail kind is real, enqueued into email_outbox.
 """
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Any, Dict, List
 
 import pytest
