@@ -138,9 +138,9 @@ def test_pricing_shows_the_price_list_in_both_languages():
         assert strings["pricing.cta"] in page.text
         assert strings["pricing.std.f1"] in page.text
         assert strings["pricing.max.f2"] in page.text
-        assert "5×" in strings["pricing.max.f2"]
         assert "Leon" in strings["pricing.max.f2"]
-        assert "5×" in strings["pricing.max.f3"]
+        assert "24/7" in strings["pricing.max.f2"]
+        assert "24/7" in strings["pricing.max.f3"]
         assert "Leon Lite" in page.text
         max_card = re.search(r'<article[^>]*data-plan="max".*?</article>', page.text, re.S).group(0)
         assert max_card.count("TTLock") == 1
@@ -166,7 +166,7 @@ def test_without_javascript_the_page_shows_one_apartment_billed_yearly():
     assert "data-pricing-calc hidden" in cs
     en = _client().get("/cenik?lang=en").text
     assert "Billed 1,190 CZK once a year" in en
-    assert "+470 CZK / apartment / year" in en
+    assert "+39 CZK / apartment / month" in en
     assert "5,660" not in en and "whitelabel" not in en.lower()
     assert "Leon Lite" in en and "Havel" in en
     assert "save 33%" not in en

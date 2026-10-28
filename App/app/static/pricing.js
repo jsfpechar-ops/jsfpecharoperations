@@ -70,8 +70,8 @@
     });
     document.querySelectorAll("[data-addon]").forEach(function (el) {
       var addon = rates[el.getAttribute("data-addon")];
-      var pattern = el.getAttribute(yearly ? "data-year" : "data-month");
-      el.textContent = fill(fill(pattern, "price", kc(yearly ? addon.year / 12 : addon.month)), "amount", kc(addon.year));
+      var pattern = el.getAttribute("data-month");
+      el.textContent = fill(pattern, "price", kc(yearly ? addon.year / 12 : addon.month));
     });
     var selected = document.querySelector("[data-ttlock-selected]");
     if (selected) selected.hidden = !state.ttlock;

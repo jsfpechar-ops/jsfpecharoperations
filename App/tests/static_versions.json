@@ -108,8 +108,8 @@
     "v": "20261023-passkey-recovery"
   },
   "pricing.js": {
-    "sha256": "da9feab211a3a4aa99f46ea6f448e4705b4e11f34acd6fec12a0969db83db19b",
-    "v": "20261027-pricing-panel"
+    "sha256": "4ebb282d09e55fcd782087dfd47c494c78f542f6c26648ddb55fc4390fe50b09",
+    "v": "20261028-ttlock-month"
   },
   "pwa.js": {
     "sha256": "42c47bb36919fa186885e4e913823c5447a6ab8e0dd8709a74bd3a216a06a9ce",

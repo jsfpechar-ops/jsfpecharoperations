@@ -94,7 +94,6 @@ def pricing(request: Request):
         "std_year": _kc(std_year, lang),
         "max_year": _kc(max_year, lang),
         "ttlock_month": _kc(_per_month(PUBLIC_RATES["ttlock"]["year"]), lang),
-        "ttlock_year": _kc(PUBLIC_RATES["ttlock"]["year"], lang),
         "bands": [_kc(_per_month(rate), lang) for rate in PUBLIC_RATES["base"]["year"]],
     }
     return render(
