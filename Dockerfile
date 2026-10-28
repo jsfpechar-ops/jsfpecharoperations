@@ -12,7 +12,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UBYHOST_WEB_WORKERS=2
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates sqlite3 age \
+    && apt-get install -y --no-install-recommends ca-certificates sqlite3 age tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 
 COPY App/requirements.lock .

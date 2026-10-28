@@ -247,6 +247,18 @@
       <p class="passport-file-err err" id="passport-file-err" role="alert" hidden
          data-missing="{{ t('passport_photo_missing') }}"></p>
       <div class="hint">{{ t('passport_photo_hint') }}</div>
+      {% if ocr_available %}
+      <div class="g-field" id="ocr-scan">
+        <label class="checkline" for="ocr-scan-toggle">
+          <input type="checkbox" id="ocr-scan-toggle">
+          <span>
+            {{ t('ocr_scan_label') }}
+            <small>{{ t('ocr_scan_help') }}</small>
+          </span>
+        </label>
+        <p class="hint" id="ocr-scan-status" role="status" aria-live="polite" hidden></p>
+      </div>
+      {% endif %}
       {{ err_for('passport_photo') }}
     </div>
   </div>
@@ -399,6 +411,76 @@
   }
   nationality.addEventListener('change', sync);
   sync();
+
+  var scanToggle = document.getElementById('ocr-scan-toggle');
+  var scanStatus = document.getElementById('ocr-scan-status');
+
+  function fillFields(values) {
+    var map = { surname: 'surname', first_name: 'first_name', birth_date: 'birth_date',
+                nationality: 'nationality', doc_number: 'doc_number' };
+    Object.keys(map).forEach(function (k) {
+      var el = document.getElementById(map[k]);
+      if (!el || !values[k]) return;
+      el.value = k === 'birth_date'
+        ? values[k].replace(/(\d{2})(\d{2})(\d{4})/, '$1.$2.$3')
+        : values[k];
+    });
+  }
+
+  function runScan() {
+    var file = input.files && input.files[0];
+    if (!file) {
+      if (scanStatus) {
+        scanStatus.textContent = {{ t('ocr_no_file') | tojson }};
+        scanStatus.hidden = false;
+      }
+      return;
+    }
+    var body = new FormData();
+    body.append('passport_photo', file);
+    body.append('_csrf', form.elements._csrf.value);
+    scanToggle.disabled = true;
+    if (scanStatus) {
+      scanStatus.textContent = {{ t('ocr_scan_working') | tojson }};
+      scanStatus.hidden = false;
+    }
+    fetch(form.getAttribute('action').replace(/\/save\?/, '/scan?'), {
+      method: 'POST',
+      body: body,
+      headers: { Accept: 'application/json' }
+    }).then(function (res) { return res.json(); }).then(function (data) {
+      if (data.kind === 'values') {
+        fillFields(data.values);
+        if (typeof sync === 'function') sync();
+        if (scanStatus) {
+          scanStatus.textContent = {{ t('ocr_scan_done') | tojson }};
+          scanStatus.hidden = false;
+        }
+      } else {
+        if (scanStatus) {
+          scanStatus.textContent = data.message || {{ t('ocr_unavailable') | tojson }};
+          scanStatus.hidden = false;
+        }
+      }
+    }).catch(function () {
+      if (scanStatus) {
+        scanStatus.textContent = {{ t('ocr_unavailable') | tojson }};
+        scanStatus.hidden = false;
+      }
+    }).then(function () {
+      scanToggle.disabled = false;
+    });
+  }
+
+  if (scanToggle) {
+    scanToggle.addEventListener('change', function () {
+      if (scanToggle.checked) runScan();
+    });
+    // A photo picked after the tick, or a retake, scans again.
+    input.addEventListener('change', function () {
+      if (scanToggle.checked && input.files && input.files[0]) runScan();
+    });
+  }
 })();
 </script>
 {% endif %}

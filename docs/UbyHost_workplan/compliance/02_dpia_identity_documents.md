@@ -114,4 +114,10 @@ Remaining improvements, not blockers:
 
 The processing is necessary for the hosts' statutory duties, and the optional ID photo is limited in time and scope. With the measures in section 5, the residual risk is low to medium, not high. Prior consultation with the ÚOOÚ under Art. 36 is therefore not required. Re-assess if UbyHost ever adds automatic reading of documents (OCR, MRZ, face matching), keeps ID photos longer, or moves data outside the EEA.
 
+
+
+## 8. Re-assessment: document scanning (OCR), 2026
+
+Section 7 asked for a re-check when automatic reading was added. The shipped OCR runs **locally in the app's own container** (Tesseract, no external service, no model API): the photo the guest already chose is read once per scan click, the machine-readable zone's ICAO check digits must validate before any field is offered, and the read returns to the browser as form suggestions only. UbyHost stores nothing from the read - no row, no file, no copy of the text. No MRZ template store, no face matching, and the photo's retention is unchanged. The exposure is narrower than the assessed manual review (same data, no new processor, no transfer). Residual risk stays low to medium; prior consultation under Art. 36 remains not required. Re-open if reads ever become stored, or the engine moves outside the container.
+
 Sign-off: [OWNER TO FILL: name, date].
