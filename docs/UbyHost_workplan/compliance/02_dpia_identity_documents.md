@@ -114,4 +114,10 @@ Remaining improvements, not blockers:
 
 The processing is necessary for the hosts' statutory duties, and the optional ID photo is limited in time and scope. With the measures in section 5, the residual risk is low to medium, not high. Prior consultation with the ÚOOÚ under Art. 36 is therefore not required. Re-assess if UbyHost ever adds automatic reading of documents (OCR, MRZ, face matching), keeps ID photos longer, or moves data outside the EEA.
 
+
+
+## 8. Re-assessment: document scanning (OCR), 2026
+
+Section 7 asked for a re-check when automatic reading was added. The shipped OCR is a guest-triggered prefill: the photo the guest already chose is sent once per scan click to Anthropic, the read fields return to the browser as suggestions, and UbyHost stores nothing from the read (no row, no file, no copy of the text). No MRZ pipeline, no face matching, no template store, and the photo's retention is unchanged. The exposure is therefore narrower than the assessed manual review (same data, same processor as Havel/Leon, shorter lifetime). Residual risk stays low to medium; prior consultation under Art. 36 remains not required. Re-open if the read results ever become stored, or photos move to another processor or region.
+
 Sign-off: [OWNER TO FILL: name, date].

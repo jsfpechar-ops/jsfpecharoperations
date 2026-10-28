@@ -44,9 +44,30 @@ class AIDisabled(AIError):
 
 
 def estimate_input_tokens(system_blocks: List[str], messages: List[Dict[str, Any]]) -> int:
-    """Over-estimate of a request's input tokens: 1 token per 2 characters, rounded up."""
-    chars = sum(len(text) for text in system_blocks) + len(json.dumps(messages, ensure_ascii=False))
-    return (chars + 1) // 2
+    """Over-estimate of a request's input tokens: 1 token per 2 characters, rounded up.
+
+    Image blocks are not text: a base64 photo would otherwise count as a
+    million-plus characters and refuse every scan. Each image is billed by
+    its pixels, so count it at the ceiling the caller was told to respect
+    (doc_ocr.MAX_EDGE), roughly (1568*1568)/750 tokens, rounded up.
+    """
+    IMAGE_TOKENS = 3400
+    images = 0
+    text_messages = []
+    for message in messages:
+        content = message.get("content")
+        if not isinstance(content, list):
+            text_messages.append(message)
+            continue
+        blocks = []
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "image":
+                images += 1
+            else:
+                blocks.append(block)
+        text_messages.append({**message, "content": blocks})
+    chars = sum(len(text) for text in system_blocks) + len(json.dumps(text_messages, ensure_ascii=False))
+    return (chars + 1) // 2 + images * IMAGE_TOKENS
 
 
 class AIBudgetError(AIError):
@@ -69,6 +90,12 @@ def owner_on_test_list(apartment_id: int) -> bool:
         "SELECT u.email FROM apartment a JOIN user_account u ON u.id = a.owner_user_id WHERE a.id = ?",
         (apartment_id,),
     )
+    return on_test_list(row["email"] if row else "")
+
+
+def on_test_list_by_id(owner_user_id: int) -> bool:
+    """``on_test_list`` for an account id, for gates that never see an e-mail."""
+    row = db.query_one("SELECT email FROM user_account WHERE id = ?", (owner_user_id,))
     return on_test_list(row["email"] if row else "")
 
 

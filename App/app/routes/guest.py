@@ -20,13 +20,13 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.concurrency import run_in_threadpool
 from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, door_codes, guest_slug, guest_uk_i18n, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+from .. import ai, alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -1541,6 +1541,9 @@ def _form_context(
                 (apartment["passport_photo_policy"] or "off").strip().lower()
                 == "required_foreign"
             ),
+            # Max-plan document scanning: flag, key, test list and plan gate in
+            # one place, so the template only shows what the route accepts.
+            "ocr_available": doc_ocr.available(apartment),
         }
     )
     return context
@@ -1905,3 +1908,57 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
     )
     _remember_owned(response, _owned_ids(request) + [saved_id])
     return _with_lang(response, lang)
+
+
+# --- document scanning (OCR, Max plan) ------------------------------------
+
+@router.post("/l/{token}/{reservation_id}/scan")
+async def guest_document_scan(token: str, reservation_id: int, request: Request):
+    """Read the chosen passport photo into form values. A suggestion only:
+    nothing is stored, and the guest corrects the fields before saving."""
+    from .. import doc_ocr
+
+    lang = _language(request)
+    apartment, token, early = _open_link(request, token, lang)
+    if early:
+        return early
+    pin_guard = _require_pin(request, token, lang)
+    if pin_guard:
+        return pin_guard
+    reservation = _reservation_for_guest(apartment, reservation_id, request)
+    if not reservation:
+        return _unavailable(request, lang, "stay_gone", 404, token)
+    throttle = _throttle_guest_post(request, token, "guest_scan", lang)
+    if throttle:
+        return throttle
+    claim_guard = _require_claim_session(request, reservation, token, lang)
+    if claim_guard:
+        return _with_lang(claim_guard, lang)
+    translate = i18n.translator(lang)
+    if not doc_ocr.available(apartment):
+        return JSONResponse({"kind": "unavailable"}, status_code=503)
+
+    form = await request.form()
+    upload = form.get("passport_photo")
+    if not upload or not hasattr(upload, "read"):
+        return JSONResponse({"kind": "error", "message": translate("ocr_no_file")}, status_code=400)
+    try:
+        raw_upload = await passport_photos.read_upload_limited(upload)
+        jpeg = await run_in_threadpool(
+            doc_ocr.prepare_image, raw_upload, upload.content_type or ""
+        )
+    except ValueError:
+        return JSONResponse(
+            {"kind": "error", "message": translate("ocr_bad_file")}, status_code=400
+        )
+    try:
+        values = await run_in_threadpool(
+            doc_ocr.read_document, jpeg, str(apartment["id"])
+        )
+    except ai.AIBudgetError:
+        return JSONResponse({"kind": "unavailable"}, status_code=503)
+    except ai.AIError:
+        return JSONResponse({"kind": "error", "message": translate("ocr_failed")}, status_code=502)
+    if not any(values.values()):
+        return JSONResponse({"kind": "error", "message": translate("ocr_nothing_read")}, status_code=422)
+    return JSONResponse({"kind": "values", "values": values})

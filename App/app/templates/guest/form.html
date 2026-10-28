@@ -247,6 +247,13 @@
       <p class="passport-file-err err" id="passport-file-err" role="alert" hidden
          data-missing="{{ t('passport_photo_missing') }}"></p>
       <div class="hint">{{ t('passport_photo_hint') }}</div>
+      {% if ocr_available %}
+      <div class="g-field" id="ocr-scan">
+        <p class="hint">{{ t('ocr_scan_help') }}</p>
+        <button class="g-btn secondary" type="button" id="ocr-scan-btn">{{ t('ocr_scan_button') }}</button>
+        <p class="hint" id="ocr-scan-status" role="status" aria-live="polite" hidden></p>
+      </div>
+      {% endif %}
       {{ err_for('passport_photo') }}
     </div>
   </div>
@@ -399,6 +406,63 @@
   }
   nationality.addEventListener('change', sync);
   sync();
+
+  var scanBtn = document.getElementById('ocr-scan-btn');
+  var scanStatus = document.getElementById('ocr-scan-status');
+  var scanLabel = scanBtn ? scanBtn.textContent : '';
+  if (scanBtn && form) {
+    scanBtn.addEventListener('click', function () {
+      var file = input.files && input.files[0];
+      if (!file) {
+        if (scanStatus) {
+          scanStatus.textContent = {{ t('ocr_no_file') | tojson }};
+          scanStatus.hidden = false;
+        }
+        return;
+      }
+      var body = new FormData();
+      body.append('passport_photo', file);
+      body.append('_csrf', form.elements._csrf.value);
+      scanBtn.disabled = true;
+      scanBtn.textContent = {{ t('ocr_scan_working') | tojson }};
+      if (scanStatus) scanStatus.hidden = true;
+      fetch(form.getAttribute('action').replace(/\/save\?/, '/scan?'), {
+        method: 'POST',
+        body: body,
+        headers: { Accept: 'application/json' }
+      }).then(function (res) { return res.json(); }).then(function (data) {
+        if (data.kind === 'values') {
+          var map = { surname: 'surname', first_name: 'first_name', birth_date: 'birth_date',
+                      nationality: 'nationality', doc_number: 'doc_number' };
+          Object.keys(map).forEach(function (k) {
+            var el = document.getElementById(map[k]);
+            if (!el || !data.values[k]) return;
+            el.value = k === 'birth_date'
+              ? data.values[k].replace(/(\d{2})(\d{2})(\d{4})/, '$1.$2.$3')
+              : data.values[k];
+          });
+          if (typeof sync === 'function') sync();
+          if (scanStatus) {
+            scanStatus.textContent = {{ t('ocr_scan_done') | tojson }};
+            scanStatus.hidden = false;
+          }
+        } else {
+          if (scanStatus) {
+            scanStatus.textContent = data.message || {{ t('ocr_unavailable') | tojson }};
+            scanStatus.hidden = false;
+          }
+        }
+      }).catch(function () {
+        if (scanStatus) {
+          scanStatus.textContent = {{ t('ocr_unavailable') | tojson }};
+          scanStatus.hidden = false;
+        }
+      }).then(function () {
+        scanBtn.disabled = false;
+        scanBtn.textContent = scanLabel;
+      });
+    });
+  }
 })();
 </script>
 {% endif %}

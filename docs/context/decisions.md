@@ -72,3 +72,4 @@ Append-only.
 - 2026-10-28 | Property page design: Airbnb-style layout patterns (hero grid, 65ch description, icon amenities); no Airbnb brand assets, fonts or copied CSS | owner | plan property-pages, 0431
 - 2026-10-28 | Page photos: download + re-host from the host's own import run (max 10, EXIF stripped), never hotlink; host confirms rights at review | owner | plan property-pages, 0432
 - 2026-10-28 | Booking widget: Airbnb-style interaction built from our own calendar/fee logic, no-JS form, Stripe checkout on the host account; no dark patterns, no tracking | owner | plan property-pages, 0434
+- 2026-10-29 | Document scanning (OCR): Anthropic vision via the one AI door, feature `doc_ocr`, Max plan only (not trial), prefill only — nothing from the read is stored; no new dependency | owner | test_doc_ocr
