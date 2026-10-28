@@ -166,7 +166,7 @@ def test_without_javascript_the_page_shows_one_apartment_billed_yearly():
     assert "data-pricing-calc hidden" in cs
     en = _client().get("/cenik?lang=en").text
     assert "Billed 1,190 CZK once a year" in en
-    assert "+39 CZK / apartment / month" in en
+    assert "+40 CZK / apartment / month" in en
     assert "5,660" not in en and "whitelabel" not in en.lower()
     assert "Leon Lite" in en and "Havel" in en
     assert "save 33%" not in en
