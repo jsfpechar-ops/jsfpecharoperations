@@ -97,7 +97,7 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
         assert page.locator('[data-plan="max"]').inner_text().count("TTLock") == 1
         assert "Leon" in max_features and "Havel" in max_features and "24/7" in max_features
         assert page.locator('[data-plan="standard"] .pricing-features > li:not(.pricing-option)').count() == 6
-        assert page.locator('[data-plan="max"] .pricing-features > li').count() == 5
+        assert page.locator('[data-plan="max"] .pricing-features > li').count() == 6
         assert page.locator('[data-plan="max"] .pricing-badge').is_visible()
         assert page.locator('[data-plan="max"] .pricing-option').count() == 0
         assert page.locator(".pricing-coming-soon svg").count() == 0

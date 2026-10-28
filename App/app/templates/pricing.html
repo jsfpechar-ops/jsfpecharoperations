@@ -121,7 +121,7 @@
           <p class="pricing-meta"><span data-apts>{{ tp('pricing.apts', 1) }}</span></p>
           <a class="landing-button primary pricing-button" data-cta-plan="max" href="{{ cta_href('max') }}" data-analytics-event="{{ cta_event }}">{{ t('pricing.cta') }}</a>
           <ul class="pricing-features">
-            {% for n in (1, 2, 4, 5, 6) %}<li{% if n == 6 %} class="pricing-coming-soon"{% endif %}>{% if n != 6 %}{{ tick() }}{% else %}<span aria-hidden="true">◷</span>{% endif %}{{ t('pricing.max.f' ~ n) }}</li>{% endfor %}
+            {% for n in (1, 2, 3, 4, 5, 6) %}<li{% if n == 6 %} class="pricing-coming-soon"{% endif %}>{% if n != 6 %}{{ tick() }}{% else %}<span aria-hidden="true">◷</span>{% endif %}{{ t('pricing.max.f' ~ n) }}</li>{% endfor %}
           </ul>
         </article>
       </div>
@@ -167,6 +167,6 @@
   </main>
 
 {% include "_public_footer.html" %}
-<script src="/static/pricing.js?v=20261027-pricing-panel" defer></script>
+<script src="/static/pricing.js?v=20261028-ttlock-month" defer></script>
 </body>
 </html>
