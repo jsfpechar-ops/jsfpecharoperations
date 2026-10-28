@@ -16,7 +16,8 @@
         ('/reservations', 'calendar-days', t('nav.stays'), stays_nav),
         ('/apartments', 'house', t('nav.properties'), properties_nav),
         ('/stay-fees', 'invoice-slip', t('nav.stay_fees'), nav == 'stay_fees'),
-        ('/cleaning', 'brush-cleaning', t('nav.cleaning'), nav == 'cleaning')] %}
+        ('/cleaning', 'brush-cleaning', t('nav.cleaning'), nav == 'cleaning'),
+        ('/payments', 'credit-card', t('nav.payments'), nav == 'payments')] %}
     <a href="{{ href }}" title="{{ label }}" {% if active %}aria-current="page"{% endif %}>{{ icon(icon_name, 20) }}<span>{{ label }}</span>{% if href == '/' and nav_action_count is defined and nav_action_count %}<span class="ui-nav-count">{{ nav_action_count if nav_action_count < 10 else '9+' }}</span>{% endif %}</a>
     {% endfor %}
     <a href="/settings" title="{{ t('nav.settings') }}" {% if nav == 'settings' %}aria-current="page"{% endif %}>{{ icon('settings', 20) }}<span>{{ t('nav.settings') }}</span></a>

@@ -32,6 +32,7 @@ from . import (
 from .routes import admin, cleaning as cleaning_routes, dev_ui, guest, guest_guide as guest_guide_routes, guest_guide_view, leon_setup as leon_setup_routes, guest_leon, guest_questions, havel as havel_routes, invoices, legal, mail_unsubscribe, billing as billing_routes, admin_billing as admin_billing_routes, onboarding_wizard, stay_fees
 from .routes import admin_customers as admin_customer_routes
 from .routes import stripe_connect as stripe_connect_routes
+from .routes import payments as payments_routes
 from .sample_calendar import sample_calendar_response
 
 logging.basicConfig(
@@ -370,6 +371,7 @@ app.include_router(legal.router)
 app.include_router(mail_unsubscribe.router)
 # 0428: host onboarding + public Stripe webhook (its own signature is the gate).
 app.include_router(stripe_connect_routes.router)
+app.include_router(payments_routes.router)
 app.include_router(dev_ui.router)
 
 
