@@ -21,7 +21,7 @@ Also restored `docs/tasks/0425-report.md` (belongs to the other 0425 task, PR #5
 
 ## §7 Acceptance
 
-- [ ] compose config -q with profile / absent without — **unverified (no docker locally); owner/CI to run**
+- [ ] compose config -q with profile / absent without — still unverified (no docker locally); structure now parsed and confirmed: alloy/node-exporter/cadvisor are top-level services under `services:`, profile `monitoring` only. Review fixed: they were previously nested under `caddy` by a 4-space indent error (caught in review, would have started zero monitoring containers and recreated caddy). Owner/CI to still run compose config.
 - [x] every new service has json-file 10m × 5 logging block and a mem_limit
 - [x] config.alloy has no literal credentials, only env() references
 - [x] `git diff --stat` lists only the six §3 files (plus the report files)
@@ -30,6 +30,11 @@ Also restored `docs/tasks/0425-report.md` (belongs to the other 0425 task, PR #5
 ## Deviations
 
 Done: steps 1–6 and the lint. Left: the three docker compose checks (no docker locally).
+
+Review follow-ups fixed on this branch:
+
+- docker-compose.yml: the three monitoring services were indented 4 spaces (nested as keys of `caddy`); de-indented to 2 spaces so they are real top-level services.
+- config.alloy: `loki.source.docker` does not support `relabel_rules`; replaced with a `loki.relabel` stage that sets `container` from `__meta_docker_container_name`, stripping the leading `/` so `{container="ubyhost"}` matches.
 
 ## Questions
 

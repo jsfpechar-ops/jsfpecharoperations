@@ -8,17 +8,21 @@ discovery.docker "containers" {
   refresh_interval = "60s"
 }
 
+loki.relabel "containers" {
+  forward_to = [loki.write.grafanacloud.receiver]
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    target_label  = "container"
+    regex        = "\\/(.*)"
+    replacement  = "$1"
+  }
+}
+
 loki.source.docker "containers" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.docker.containers.targets
-  forward_to = [loki.write.grafanacloud.receiver]
-
-  relabel_rules {
-    rule {
-      source_labels = ["__meta_docker_container_name"]
-      target_label  = "container"
-    }
-  }
+  forward_to = [loki.relabel.containers.receiver]
 }
 
 loki.write "grafanacloud" {
