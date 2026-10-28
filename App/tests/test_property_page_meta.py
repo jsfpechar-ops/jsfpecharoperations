@@ -70,6 +70,7 @@ def test_sitemap_excludes_unpublished(owner):
 
 def test_noindex_default_on_and_switchable(owner):
     client = TestClient(app)
+    client.cookies.set("ubyhost_lang", "cs")
     response = client.get(f"/p/{_slug(owner)}")
     assert response.status_code == 200
     assert '<meta name="robots" content="noindex">' in response.text
@@ -102,3 +103,13 @@ def _jpeg_bytes() -> bytes:
     buf = io.BytesIO()
     Image.new("RGB", (64, 64), (10, 20, 30)).save(buf, "JPEG")
     return buf.getvalue()
+
+
+def test_listing_page_is_english_only(owner):
+    """Owner decision (28 Oct): the listing page renders English even for a
+    Czech visitor; OTA listing copy is never translated per listing."""
+    client = TestClient(app)
+    client.cookies.set("ubyhost_lang", "cs")
+    response = client.get(f"/p/{_slug(owner)}")
+    assert response.status_code == 200
+    assert '<html lang="en">' in response.text

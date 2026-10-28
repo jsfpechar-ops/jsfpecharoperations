@@ -45,7 +45,10 @@ def property_page_view(request: Request, slug: str):
     page["noindex"] = _noindex(apartment_id)
     page["og"] = _og(apartment_id, page)
     page["bookable"] = property_page.widget_ready(apartment_id)
-    return render(request, "property_page.html", {"page": page, "show_nav": False})
+    # Owner decision (28 Oct): listing pages stay English — hosts' OTA copy is
+    # not translated per listing; no per-language variants, no cookie switch.
+    return render(request, "property_page.html",
+                  {"page": page, "show_nav": False, "lang": "en"})
 
 
 def _noindex(apartment_id: int) -> bool:
@@ -68,31 +71,6 @@ def _og(apartment_id: int, page: dict) -> dict:
         "description": (page["description"] or "")[:200],
     }
 
-
-@router.get("/sitemap.xml")
-def sitemap(request: Request):
-    scope = "property_sitemap"
-    key = rate_limit.client_key(request, scope)
-    if rate_limit.blocked(scope, key, 60, _RATE_WINDOW):
-        return PlainTextResponse("slow down", status_code=429)
-    rate_limit.record(scope, key)
-    from .. import config as _config
-
-    base = _config.PUBLIC_BASE_URL.rstrip("/")
-    urls = [
-        f"<url><loc>{base}/p/{row['slug']}</loc>"
-        + (f"<lastmod>{row['published_at']}</lastmod>" if row["published_at"] else "")
-        + "</url>"
-        for row in property_page.published_pages()
-    ]
-    body = (
-        '<?xml version="1.0" encoding="UTF-8"?>'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-        + "".join(urls)
-        + "</urlset>"
-    )
-    return Response(content=body, media_type="application/xml",
-                    headers={"Cache-Control": "public, max-age=3600"})
 
 
 def _page_context(apartment_id: int):
@@ -201,6 +179,7 @@ async def property_page_book(request: Request, slug: str):
         {
             "page": page,
             "show_nav": False,
+            "lang": "en",
             "slug": slug,
             "date_from": date_from,
             "date_to": date_to,
@@ -254,4 +233,4 @@ async def property_page_request(request: Request, slug: str):
         guest_email=guest_email,
     )
     return render(request, "property_page_booked.html",
-                  {"show_nav": False, "slug": slug})
+                  {"show_nav": False, "slug": slug, "lang": "en"})
