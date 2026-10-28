@@ -5606,7 +5606,7 @@ _SIGNUP_STRINGS = {
         "billing.interval.month": "Měsíčně",
         "billing.order.plan_title": "Plán",
         "billing.order.plan_standard": "Automatické hlášení hostů, online check-in, AI pomocník Havel a Leon Lite pro hosty, trvale s omezeným využitím AI.",
-        "billing.order.plan_max": "AI koncierž Leon na plný výkon pro vaše hosty nonstop 24/7 a AI Havel na plný výkon pro vás, kódy TTLock a přednostní podpora. Skenování dokladů (OCR): připravujeme. Zatím není dostupné, ani během zkušební doby.",
+        "billing.order.plan_max": "AI concierge Leon pro vaše hosty nonstop 24/7 a AI Havel naplno pro vás, kódy TTLock a přednostní podpora. Skenování dokladů (OCR): připravujeme. Zatím není dostupné, ani během zkušební doby.",
         "billing.order.founder": "Roční Standard za zakladatelskou cenu 890 Kč za apartmán, dokud jsou volná místa.",
         "billing.order.ttlock": "Kódy do dveří TTLock (v Max v ceně)",
         "billing.order.whitelabel": "Vlastní značka na stránkách pro hosty",

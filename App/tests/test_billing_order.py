@@ -127,7 +127,7 @@ def test_the_page_orders_without_javascript(host):
     page = client.get("/predplatne?plan=max&interval=year")
     assert page.status_code == 200 and "Objednat" in page.text and "Platíte převodem" in page.text
     assert "Leon Lite" in page.text
-    assert "AI koncierž Leon na plný výkon" in page.text
+    assert "AI concierge Leon pro vaše hosty" in page.text
     assert 'name="addon_whitelabel"' not in page.text
     assert "Skenování dokladů (OCR): připravujeme" in page.text
     assert "Zatím není dostupné, ani během zkušební doby." in page.text
