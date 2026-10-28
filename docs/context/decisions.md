@@ -65,3 +65,5 @@ Append-only.
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 | [Max policy](../reports/max-159-fivefold-ai.md); [original layout, 229 monthly](../reports/original-pricing-229.md) | owner
 - 2026-10-27 | Direct payments folded into the FastAPI app; requests first, page booking second; QR rail = tech provider only | owner | plan direct-payments-build-plan, 0425
+- Grafana Cloud free tier (EU) is the subprocessor for operational logs and metrics; logs stay PII-free per OPS-3 (owner, 2026-10-27).
+- Monitoring containers grafana/alloy, gcr.io/cadvisor/cadvisor and prom/node-exporter added behind compose profile "monitoring" (owner, 2026-10-27).
