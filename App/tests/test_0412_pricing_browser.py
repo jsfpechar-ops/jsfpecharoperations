@@ -126,7 +126,7 @@ def test_the_calculator_updates_and_aligns(base, monkeypatch, lang, width):
                 assert [_number(page.locator(f'[data-band="{i}"]')) for i in range(3)] == (
                     [99, 79, 66] if interval == "year" else [149, 119, 99]
                 )
-                assert "49" in page.locator('[data-addon="ttlock"]').inner_text()
+                assert ("39" if interval == "year" else "49") in page.locator('[data-addon="ttlock"]').inner_text()
                 max_annual = annual + min(n, 4) * 718 + min(max(n - 4, 0), 5) * 570 + max(n - 9, 0) * 370
                 max_monthly = monthly + min(n, 4) * 80 + min(max(n - 4, 0), 5) * 59 + max(n - 9, 0) * 39
                 max_price = (max_annual * 2 + 12) // 24 if interval == "year" else max_monthly
