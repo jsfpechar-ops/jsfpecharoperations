@@ -81,6 +81,28 @@ Everything renders server-side; no client fetch. Languages: the property page
 follows the guest-view language set (cs/en + configured `UBYHOST_GUEST_LANGS`),
 same cookie/no-JS rules as 0344/0353.
 
+### Design (owner decision, 28 Oct: "attractive like an Airbnb property page")
+
+The page's look must sell the host on publishing it. Model: the **Airbnb
+property-page layout** — but the *patterns*, never their brand:
+
+- Hero photo grid (one large + smaller thumbnails; horizontally scrollable
+  strip on mobile), rounded corners, generous white space.
+- Title block: property name, district, guest-capacity line, then the
+  description in a readable measure (~65ch) with a "show more" `<details>`
+  collapse — no JS needed.
+- Amenities as an icon+label grid (the existing icon set; no Airbnb glyphs).
+- "Everyone" guide cards in the existing guest-guide card style (0344) so the
+  page and the guest view feel like one product.
+- Sticky bottom "Book" bar on mobile when Phase 2 is on.
+- Hard limits: no Airbnb name, logo, wordmarks, fonts, their exact icon set,
+  or copied CSS — layout proportions and interaction patterns only (public
+  repo, rule 3; also avoids trade-dress issues). Light mode only (rule: the
+  repo is light mode). Works at 390 px and without JavaScript (rules 6/7).
+
+The design is part of brief 0431, reviewed against the repo's browser and
+geometry tests with 390 px screenshots per page state.
+
 ## 4. Publication model
 
 - Default **unpublished**. Host toggles "Public page" in the property settings;

@@ -66,8 +66,13 @@ consumers. **No Haiku/AI step anywhere in this pipeline.**
 2. Prefill: after an import row lands (0347 worker), map fields into
    `property_page` (empty-fields-only overwrite rule).
 3. Review screen + publish toggle + flash copy.
-4. Public template per plan §3 table; 404 when unpublished; photo rendering via
-   the existing proxy; "Book" CTA slot present but hidden until Phase 2.
+4. Public template per plan §3 table and the plan's Design section
+   (Airbnb-style layout patterns: hero photo grid, title block with district
+   and capacity, ~65ch description with a no-JS "show more" `<details>`,
+   icon+label amenities grid, guide cards in the 0344 style; sticky mobile
+   Book bar when Phase 2 is on). NO Airbnb name, logo, fonts, icon set or
+   copied CSS — patterns only. Light mode; 390 px; no-JS. 404 when
+   unpublished; photos via the existing proxy.
 5. Tests: mapping per source (Booking/Airbnb field names), no-overwrite rule,
    publish/unpublish, template render + no-JS, browser + geometry, screenshots.
 
@@ -86,7 +91,8 @@ tests/test_property_slug.py tests/test_guide_import*.py -q --tb=short -x
 
 - [ ] An import prefills the page fields verbatim; nothing AI-generated.
 - [ ] Host edits are never overwritten by a later import.
-- [ ] Unpublished 404; published renders all §3 sections; no-JS works.
+- [ ] Unpublished 404; published renders all §3 sections in the
+      Airbnb-pattern layout; no-JS works; nothing Airbnb-branded.
 - [ ] Browser + geometry 0 skipped; 390 px screenshots in the report.
 - [ ] Migration guard passes; retention note added; lint OK.
 

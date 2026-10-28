@@ -3,7 +3,7 @@
 Append-only.
 
 - 2026-10-03 | Sign-up stays off in production (`UBYHOST_SIGNUP_ENABLED`) until the owner chooses | launch with invited hosts | [ENVIRONMENT](../ENVIRONMENT.md#accounts)
-- 2026-10-05 | WP22/WP24 legal texts 1.6 shipped without the counsel gate; lawyer review stays open | ship with real hosts | K-L rows
+- 2026-10-05 | Legal texts 1.6 shipped; counsel review open | real hosts | K-L
 - 2026-10-05 | Admin preview: full workspace, optional reason, 24 h default | owner support | PR #280, K-P01
 - 2026-10-06 | [workflow] Context: AGENTS.md L0, context L1, plans L2; audits archived; known-issues replaces FOLLOWUPS | re-reading used 87% of spend | [README](README.md)
 - 2026-10-06 | [workflow] WP/patch series closed at WP33/0034; new work uses task numbers NNNN | one numbering scheme | [workflow](workflow.md)
@@ -69,3 +69,4 @@ Append-only.
 - Monitoring containers grafana/alloy, gcr.io/cadvisor/cadvisor and prom/node-exporter added behind compose profile "monitoring" (owner, 2026-10-27).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); every call through `App/app/stripe_connect.py`, shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
 - 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, one fetch), page pipeline deterministic, no AI step; host reviews once, then publish | owner | plan property-pages, 0431
+- 2026-10-28 | Property page design: Airbnb-style layout patterns (hero grid, 65ch description, icon amenities); no Airbnb brand assets, fonts or copied CSS | owner | plan property-pages, 0431
