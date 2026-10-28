@@ -194,6 +194,87 @@ services:
     networks:
       - web
 
+    # OBS-1 (brief 0425): observability stack, started only with
+    # COMPOSE_PROFILES=monitoring (combine: COMPOSE_PROFILES=litestream,monitoring).
+    # Ships container logs to Grafana Cloud Loki and host/container metrics to
+    # Prometheus — see docs/OBSERVABILITY.md.
+    alloy:
+      profiles: ["monitoring"]
+      # TODO(owner): pin by digest after the first green deploy (repo convention).
+      image: grafana/alloy:v1.10.1
+      restart: unless-stopped
+      command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
+      # Same pattern as litestream: only the variables this service needs.
+      environment:
+        GRAFANA_PROM_URL: ${GRAFANA_PROM_URL:-}
+        GRAFANA_PROM_USER: ${GRAFANA_PROM_USER:-}
+        GRAFANA_PROM_TOKEN: ${GRAFANA_PROM_TOKEN:-}
+        GRAFANA_LOKI_URL: ${GRAFANA_LOKI_URL:-}
+        GRAFANA_LOKI_USER: ${GRAFANA_LOKI_USER:-}
+        GRAFANA_LOKI_TOKEN: ${GRAFANA_LOKI_TOKEN:-}
+      volumes:
+        - ./monitoring/config.alloy:/etc/alloy/config.alloy:ro
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+      mem_limit: ${UBYHOST_ALLOY_MEM:-512m}
+      logging:
+        driver: json-file
+        options:
+          max-size: "10m"
+          max-file: "5"
+      networks:
+        - web
+
+    node-exporter:
+      profiles: ["monitoring"]
+      # TODO(owner): pin by digest after the first green deploy.
+      image: prom/node-exporter:v1.9.1
+      restart: unless-stopped
+      pid: host
+      volumes:
+        - /proc:/host/proc:ro
+        - /sys:/host/sys:ro
+        - /:/rootfs:ro
+      command:
+        - --path.procfs=/host/proc
+        - --path.sysfs=/host/sys
+        - --path.rootfs=/rootfs
+        - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+)($|/)
+      mem_limit: 128m
+      logging:
+        driver: json-file
+        options:
+          max-size: "10m"
+          max-file: "5"
+      networks:
+        - web
+
+    cadvisor:
+      profiles: ["monitoring"]
+      # TODO(owner): pin by digest after the first green deploy.
+      image: gcr.io/cadvisor/cadvisor:v0.52.1
+      restart: unless-stopped
+      privileged: true
+      devices:
+        - /dev/kmsg:/dev/kmsg
+      volumes:
+        - /:/rootfs:ro
+        - /var/run:/var/run:ro
+        - /sys:/sys:ro
+        - /var/lib/docker/:/var/lib/docker:ro
+        - /dev/disk/:/dev/disk:ro
+      command:
+        - --docker_only=true
+        - --housekeeping_interval=30s
+        - --store_container_labels=false
+      mem_limit: 256m
+      logging:
+        driver: json-file
+        options:
+          max-size: "10m"
+          max-file: "5"
+      networks:
+        - web
+
 volumes:
   ubyhost-data:
     name: ubyhost-data
