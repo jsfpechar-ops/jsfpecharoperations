@@ -126,8 +126,7 @@ async def customer_plan(request: Request, user_id: int):
     else:
         return _back(f"{PAGE}/{user_id}", err=_flash(request, "billing.admin.plan.bad_field"))
     try:
-        result = billing_order.change(user_id, field, value, confirm=True,
-                                      today=date.today())
+        billing_order.change(user_id, field, value, confirm=True, today=date.today())
     except ValueError:
         return _back(f"{PAGE}/{user_id}", err=_flash(request, "billing.admin.plan.refused"))
     billing_analytics.write_month_snapshot()
