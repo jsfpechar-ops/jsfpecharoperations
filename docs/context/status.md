@@ -1,14 +1,13 @@
 # Status
 
-Updated: 2026-10-27.
+Updated: 2026-10-28.
 
 ## Production
 - Magic-link 1–2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)); checked; access log off.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 0428 Stripe Connect module (accounts, onboarding, webhook) — review PR.
-- 0425 payment model #542. #541 merged; 0423 sync-on-open: merge.
+- 0428 #550 merged; 0425 #542. Next: 0429 payments UX (P1.5), 0430 property slugs (property-pages plan draft: owner approve). Dependabot #546/#547, Hostex plan #534 merged.
 - Billing 0411-0419 in #528, off. **Owner:** ČSOB file, env, counsel.
 - 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
 - Guide + Leon 0341-0355: owner merges #465-468.
