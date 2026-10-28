@@ -429,7 +429,13 @@
 
   function runScan() {
     var file = input.files && input.files[0];
-    if (!file) return;
+    if (!file) {
+      if (scanStatus) {
+        scanStatus.textContent = {{ t('ocr_no_file') | tojson }};
+        scanStatus.hidden = false;
+      }
+      return;
+    }
     var body = new FormData();
     body.append('passport_photo', file);
     body.append('_csrf', form.elements._csrf.value);

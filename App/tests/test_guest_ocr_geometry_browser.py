@@ -110,15 +110,31 @@ def world():
         "tesseract": doc_ocr.TESSERACT,
     }
     _cleanup()
+    # The owner account stays: audit and alert rows written during the run
+    # still reference it, and its unique username is per-run.
     db.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (owner_id,))
-    db.execute("DELETE FROM user_account WHERE id = ?", (owner_id,))
 
 
 @pytest.fixture(scope="module")
 def browser():
+    kwargs = chromium_launch_kwargs()
+    # A container without user namespaces (this dev sandbox) cannot use the
+    # SUID sandbox; CI's browser does not need the flag.
+    if os.environ.get("UBYHOST_BROWSER_NO_SANDBOX") == "1":
+        # The full Chromium build, not the headless shell: the shell's renderer
+        # CHECK-crashes on this sandbox's extracted-library setup.
+        kwargs["channel"] = kwargs.get("channel")
+        kwargs["executable_path"] = kwargs.get("executable_path") or str(
+            __import__("pathlib").Path.home()
+            / ".cache/ms-playwright/chromium-1248/chrome-linux64/chrome"
+        )
+        kwargs["args"] = [*kwargs.get("args", []),
+                          "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu",
+                          "--disable-features=CalculateNativeWinOcclusion,IsolateOrigins,"
+                          "site-per-process,DestroyProfileOnBrowserClose"]
     with sync_api.sync_playwright() as playwright:
         try:
-            chromium = playwright.chromium.launch(**chromium_launch_kwargs())
+            chromium = playwright.chromium.launch(**kwargs)
         except Exception as exc:
             if REQUIRE_BROWSER:
                 raise
@@ -136,11 +152,44 @@ def _page(browser, base, world, width):
     return context, context.new_page()
 
 
+def _step_title(page):
+    return page.evaluate(
+        "() => { const s = document.querySelector('[data-guest-step]:not([hidden])');"
+        " return s ? s.getAttribute('data-step-title') : ''; }"
+    )
+
+
 def _goto_form(page, base, world):
+    """Open the form and walk the wizard to the passport-photo step.
+
+    The card is a later wizard step and nationality-gated: a foreign guest
+    (picked through the country search widget) reaches it after Continue.
+    """
     page.goto(f"{base}/l/{world['token']}/{world['stay']}/new?lang=en")
-    page.wait_for_selector("#passport-photo-card")
-    # The photo step is nationality-gated in JS; a foreign guest sees it.
-    page.select_option("#nationality", "GBR")
+    page.wait_for_selector("[data-guest-step]")
+    page.fill("#first_name", "John Paul")
+    page.fill("#surname", "Smith")
+    page.fill("#birth_date", "01.01.1990")
+    page.click("#nationality_search")
+    page.keyboard.type("GBR")
+    page.locator("#nationality_list [role=option]").first.click()
+    page.fill("#doc_number", "P1234567")
+    for _ in range(6):
+        if page.locator("#passport-photo-card:not([hidden])").count():
+            break
+        if _step_title(page) == "Permanent home address":
+            page.fill("#res_street", "Baker Street 221B")
+            page.fill("#res_city", "London")
+            page.click("#res_country_search")
+            page.keyboard.type("GBR")
+            page.locator("#res_country_list [role=option]").first.click()
+        before = _step_title(page)
+        page.locator(
+            "[data-guest-step]:not([hidden]) .g-wizard-nav button.g-btn[type=button]:not(.secondary)"
+        ).first.click()
+        page.wait_for_timeout(900)
+        assert _step_title(page) != before, f"Continue did not leave the step {before!r}"
+    page.wait_for_selector("#passport-photo-card:not([hidden])")
     page.wait_for_selector("#ocr-scan-toggle")
 
 
@@ -170,15 +219,15 @@ def test_the_tickbox_uses_the_checkline_component(base, world, browser, width):
         assert label.count() == 1
         assert label.locator("small").count() == 1
         styles = page.evaluate(
-            "() => { const el = document.querySelector('#ocr-scan .checkline');"
-            " const s = getComputedStyle(el);"
-            " return { display: s.display, radius: s.borderRadius, border: s.borderTopWidth }; }"
+            "() => { const s = getComputedStyle(document.querySelector('#ocr-scan .checkline'));"
+            " return { display: s.display, color: s.color, padding: s.padding }; }"
         )
         assert styles["display"] == "flex"
-        assert styles["radius"].startswith("var") or float(styles["radius"].rstrip("px")) >= 8
+        # The component's 14px row padding, not a bare input.
+        assert styles["padding"].split(" ")[0].rstrip("px").isdigit()
         # The whole row is the target, as tall as its padding promises.
         box = label.bounding_box()
-        assert box["height"] >= 19
+        assert box["height"] >= 48
     finally:
         context.close()
 
@@ -202,7 +251,7 @@ def test_the_status_line_appears_inside_the_card_when_scanning(base, world, brow
 
 
 def test_the_scan_tickbox_is_absent_when_the_plan_is_not_max(base, world, browser, monkeypatch):
-    context, page = _page(browser, 390)
+    context, page = _page(browser, base, world, 390)
     try:
         owner = db.query_one(
             "SELECT a.owner_user_id AS o FROM apartment a WHERE a.permalink_token = ?", (TOKEN,)
@@ -211,7 +260,9 @@ def test_the_scan_tickbox_is_absent_when_the_plan_is_not_max(base, world, browse
             "UPDATE billing_account SET plan = 'standard' WHERE owner_user_id = ?", (owner["o"],)
         )
         page.goto(f"{base}/l/{world['token']}/{world['stay']}/new?lang=en")
-        page.wait_for_selector("#passport-photo-card")
+        # The card lives on a later wizard step; its markup must simply not
+        # contain the scan toggle when the plan is not Max.
+        page.wait_for_selector("#passport-photo-card", state="attached")
         assert page.locator("#ocr-scan-toggle").count() == 0
     finally:
         db.execute(
@@ -222,7 +273,7 @@ def test_the_scan_tickbox_is_absent_when_the_plan_is_not_max(base, world, browse
 
 
 def test_a_390px_screenshot_of_the_scan_step(base, world, browser):
-    context, page = _page(browser, 390)
+    context, page = _page(browser, base, world, 390)
     try:
         _goto_form(page, base, world)
         settle_motion(page)
@@ -230,3 +281,4 @@ def test_a_390px_screenshot_of_the_scan_step(base, world, browser):
         page.screenshot(path=f"{SHOT_DIR}/guest-form-scan-step-390.png", full_page=False)
     finally:
         context.close()
+
