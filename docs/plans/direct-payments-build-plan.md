@@ -45,6 +45,7 @@ Host picks a stay (or no stay) → amount + reason → chooses rail: **Card link
 11. Dispute evidence pack: auto-compiled from stored acceptance records + booking details; host notified with Express Dashboard link (host-managed disputes, we don't adjudicate).
 12. Expiry sweeps (`scheduler.py`): requests expire per `expires_at`; expired-hold notifications to both parties.
 13. Page generator + Apify import: **deferred — separate plan.** The deterministic URL→page mapper and scraper orchestration are a separate workstream; this plan covers the payments product only.
+    Plan written: [property-pages](property-pages.md) (draft, owner approval pending).
 
 ### Explicitly out of scope (this plan)
 - Deposits/damage-fee off-session charges — **blocked until Stripe answers MCC Q3** (question set in `ubyhost-complete-stripe.md`, "Still open" 1b).

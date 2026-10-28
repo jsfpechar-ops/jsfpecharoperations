@@ -31,6 +31,9 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Public/app domain configuration | `test_app_domain.py test_env_guard.py test_passkeys.py test_pwa.py`, login/auth/security row, relevant mail tests; Caddy validation in both TLS modes |
 | Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` (browser checks 0 skipped) |
 | Direct payments, Stripe Connect | `test_payment_request_model.py test_stripe_connect.py` |
+| Payments dashboard (0429) | `test_payments_dashboard.py test_payment_request_model.py test_stripe_connect.py`, design row when templates change |
+| Public property pages | `test_property_slug.py test_property_page.py test_property_page_photos.py test_property_page_meta.py` (+ browser/geometry row when templates land) |
+| Page booking widget | `test_booking_widget.py test_property_page.py test_stripe_connect.py test_payment_request_model.py` |
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
 
 A row missing or wrong: the orchestrator fixes this table in the same brief.
