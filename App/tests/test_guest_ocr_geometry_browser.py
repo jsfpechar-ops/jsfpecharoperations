@@ -22,7 +22,7 @@ else:
 import uvicorn
 from fastapi.testclient import TestClient
 
-from app import auth, claim, db
+from app import db
 from app import doc_ocr
 from app.main import app
 from app.routes import guest
