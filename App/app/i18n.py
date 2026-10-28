@@ -1433,6 +1433,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
     # WP26: German. Machine-assisted; a native speaker should review it,
     # the legal notice and privacy keys first (see notes/WP26-guest-languages.md).
     "de": {
+        "mail_payment_request_subject": "Zahlungsanforderung von Ihrem Gastgeber (%(amount)s CZK)",
+        "mail_payment_request_text": "Guten Tag,\n\nIhr Gastgeber bittet um eine Zahlung von %(amount)s CZK für: %(reason)s.\nHier bezahlen: %(link)s\n\nWenn Sie diese Nachricht nicht erwartet haben, ignorieren Sie sie.\n",
         "title": "Gästeregistrierung",
         "language_label": "Sprache",
         "date_placeholder": "TT.MM.JJJJ",
@@ -1870,6 +1872,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
     # WP26: Spanish. Machine-assisted; a native speaker should review it,
     # the legal notice and privacy keys first (see notes/WP26-guest-languages.md).
     "es": {
+        "mail_payment_request_subject": "Solicitud de pago de su anfitrión (%(amount)s CZK)",
+        "mail_payment_request_text": "Buenos días:\n\nSu anfitrión le solicita un pago de %(amount)s CZK por: %(reason)s.\nPague aquí: %(link)s\n\nSi no esperaba este mensaje, ignórelo.\n",
         "title": "Registro de huéspedes",
         "language_label": "Idioma",
         "date_placeholder": "DD.MM.AAAA",
@@ -2307,6 +2311,8 @@ STRINGS: Dict[str, Dict[str, str]] = {
     # WP26: French. Machine-assisted; a native speaker should review it,
     # the legal notice and privacy keys first (see notes/WP26-guest-languages.md).
     "fr": {
+        "mail_payment_request_subject": "Demande de paiement de votre hôte (%(amount)s CZK)",
+        "mail_payment_request_text": "Bonjour,\n\nVotre hôte vous demande un paiement de %(amount)s CZK pour : %(reason)s.\nPayez ici : %(link)s\n\nSi vous n'attendiez pas ce message, ignorez-le.\n",
         "title": "Enregistrement des voyageurs",
         "language_label": "Langue",
         "date_placeholder": "JJ.MM.AAAA",

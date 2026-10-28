@@ -383,6 +383,8 @@ STRINGS: Dict[str, str] = {
     "fix_errors": "Будь ласка, виправте таке:",
     "back": "Назад",
     "mail_claim_subject": "Підтвердьте проживання в %(property)s (посилання дійсне 30 хв)",
+    "mail_payment_request_subject": "Запит на оплату від вашого хоста (%(amount)s CZK)",
+    "mail_payment_request_text": "Добрий день,\n\nВаш хост просить оплату %(amount)s CZK за: %(reason)s.\nОплатіть тут: %(link)s\n\nЯкщо ви не очікували цього повідомлення, проігноруйте його.\n",
     "mail_claim_resend_subject": "Нове посилання: підтвердьте проживання в %(property)s",
     "mail_claim_preheader": "Натисніть кнопку, а потім заповніть дані кожного гостя (близько 2 хвилин на особу).",
     "mail_claim_resend_preheader": "Попереднє посилання більше не діє. Ось нове.",

@@ -55,7 +55,7 @@
     {% for p in page_photos %}
     <div style="position:relative">
       <img src="{{ p }}" alt="{{ t('payments.page.photo_alt') }} {{ loop.index }}" width="120" height="90" style="object-fit:cover;border-radius:8px;">
-      <form method="post" action="/apartments/{{ apartment.id }}/page/photo-delete" style="position:absolute;top:4px;right:4px;">
+      <form method="post" action="/apartments/{{ apartment.id }}/page/photo-delete" data-confirm data-confirm-message="{{ t('payments.page.photo_delete_confirm') }}" style="position:absolute;top:4px;right:4px;">
         <input type="hidden" name="path" value="{{ p }}">
         <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit" aria-label="{{ t('payments.page.photo_delete') }}">×</button>
       </form>
