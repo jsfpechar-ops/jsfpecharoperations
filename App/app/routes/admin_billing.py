@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 from starlette.datastructures import UploadFile
 
-from .. import bank_import, billing_admin, billing_invoices, security, validation
+from .. import bank_import, billing_admin, billing_analytics, billing_invoices, security, validation
 from ..templating import render
 from .admin_accounts import _require_admin
 from .admin_helpers import back as _back
@@ -29,7 +29,7 @@ def _kc(haler: int) -> str:
 
 
 @router.get(PAGE)
-def billing_admin_page(request: Request, mesic: str = ""):
+def billing_admin_page(request: Request, mesic: str = "", q: str = "", state: str = ""):
     account, guard = _require_admin(request)
     if guard:
         return guard
@@ -46,6 +46,13 @@ def billing_admin_page(request: Request, mesic: str = ""):
         "kc": _kc,
         "fmt_date": validation.fmt_date,
         "today": date.today().isoformat(),
+        "q": q.strip()[:120],
+        "state": state if state in ("trial_pending", "trialing", "active", "overdue", "canceling", "paused") else "",
+        "cockpit": billing_analytics.portfolio(),
+        "revenue": billing_analytics.revenue_totals(),
+        "watch": billing_analytics.watchlists(),
+        "aging": billing_analytics.aging(),
+        "forecast": billing_analytics.forecast(),
     })
 
 
@@ -108,6 +115,15 @@ def billing_admin_pdf(request: Request, invoice_id: int):
         return _back(PAGE)
     return Response(billing_invoices.pdf_bytes(invoice_id), media_type="application/pdf",
                     headers={"Content-Disposition": f'inline; filename="{row["number"]}.pdf"'})
+
+
+@router.get(PAGE + "/export-vse")
+def billing_admin_export_all(request: Request):
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    return Response(billing_analytics.export_all_zip(), media_type="application/zip",
+                    headers={"Content-Disposition": 'attachment; filename="ubyhost-billing-all.zip"'})
 
 
 @router.get(PAGE + "/export")
