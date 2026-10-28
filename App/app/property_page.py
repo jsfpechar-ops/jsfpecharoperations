@@ -292,3 +292,67 @@ def published_pages() -> list:
             " ORDER BY ps.slug"
         )
     ]
+
+
+# --- booking widget (brief 0434: our own availability + fee logic) ------------
+
+
+def nightly_price(apartment_id: int) -> int | None:
+    page = _page_row(apartment_id)
+    if page is None:
+        return None
+    price = page.get("nightly_price_czk")
+    return int(price) if price else None
+
+
+def dates_available(apartment_id: int, date_from: str, date_to: str) -> bool:
+    """Free nights: no reservation, no live hold, over the requested range."""
+    clash = db.query_one(
+        "SELECT id FROM reservation r"
+        " WHERE r.apartment_id = ? AND r.status = 'active'"
+        " AND r.date_from < ? AND r.date_to > ?",
+        (apartment_id, date_to, date_from),
+    )
+    if clash is not None:
+        return False
+    hold = db.query_one(
+        "SELECT id FROM booking_hold"
+        " WHERE apartment_id = ? AND expires_at > ?"
+        " AND date_from < ? AND date_to > ?",
+        (apartment_id, db.utcnow(), date_to, date_from),
+    )
+    return hold is None
+
+
+def create_hold(apartment_id: int, date_from: str, date_to: str,
+                *, minutes: int = 15) -> int:
+    from datetime import datetime, timedelta, timezone
+
+    expires = (datetime.now(timezone.utc) + timedelta(minutes=minutes)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    return int(db.insert("booking_hold", {
+        "apartment_id": apartment_id,
+        "date_from": date_from, "date_to": date_to,
+        "expires_at": expires, "created_at": db.utcnow(),
+    }))
+
+
+def release_expired_holds() -> int:
+    return db.execute(
+        "DELETE FROM booking_hold WHERE expires_at <= ?", (db.utcnow(),)
+    )
+
+
+def widget_ready(apartment_id: int) -> bool:
+    """The Book card shows when the page is published, priced and the host's
+    Stripe account is complete (the charge goes to the host's account)."""
+    from . import stripe_connect
+
+    row = db.query_one(
+        "SELECT a.owner_user_id FROM apartment a WHERE a.id = ?", (apartment_id,)
+    )
+    if row is None or nightly_price(apartment_id) is None:
+        return False
+    account = stripe_connect.account_for_owner(int(row["owner_user_id"]))
+    return account is not None and account["onboarding_state"] == "complete"

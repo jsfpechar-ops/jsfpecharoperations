@@ -44,6 +44,7 @@ def property_page_view(request: Request, slug: str):
         return Response(status_code=404)
     page["noindex"] = _noindex(apartment_id)
     page["og"] = _og(apartment_id, page)
+    page["bookable"] = property_page.widget_ready(apartment_id)
     return render(request, "property_page.html", {"page": page, "show_nav": False})
 
 
@@ -159,3 +160,98 @@ def property_photo_file(request: Request, name: str):
         return Response(status_code=404)
     return FileResponse(path, media_type="image/jpeg",
                         headers={"Cache-Control": "public, max-age=86400"})
+
+
+# --- booking widget (brief 0434) -----------------------------------------------
+
+
+@router.post("/p/{slug}/book")
+async def property_page_book(request: Request, slug: str):
+    """No-JS form POST: dates + guests -> availability + itemized total.
+    The hold is created at the payment step, not here."""
+    from datetime import date as _date
+
+    from fastapi.responses import PlainTextResponse
+
+    resolved = property_page.resolve(slug)
+    if resolved is None or "redirect" in resolved or resolved.get("missing"):
+        return Response(status_code=404)
+    apartment_id = int(resolved["apartment_id"])
+    if not property_page.widget_ready(apartment_id):
+        return PlainTextResponse("not available", status_code=404)
+    form = await request.form()
+
+    def _day(name: str) -> str:
+        return str(form.get(name) or "").strip()
+
+    date_from, date_to = _day("date_from"), _day("date_to")
+    try:
+        nights = (_date.fromisoformat(date_to) - _date.fromisoformat(date_from)).days
+    except ValueError:
+        return _book_error(slug, "bad_dates")
+    if nights < 1 or nights > 30:
+        return _book_error(slug, "bad_dates")
+    if not property_page.dates_available(apartment_id, date_from, date_to):
+        return _book_error(slug, "taken")
+    price = property_page.nightly_price(apartment_id) or 0
+    page = _page_context(apartment_id) or {}
+    return render(
+        request,
+        "property_page_book.html",
+        {
+            "page": page,
+            "show_nav": False,
+            "slug": slug,
+            "date_from": date_from,
+            "date_to": date_to,
+            "nights": nights,
+            "nightly": price,
+            "total": price * nights,
+        },
+    )
+
+
+def _book_error(slug: str, kind: str) -> Response:
+    return RedirectResponse(f"/p/{slug}?book={kind}", status_code=303)
+
+
+@router.post("/p/{slug}/request")
+async def property_page_request(request: Request, slug: str):
+    """Request-to-book: the guest asks, the host confirms (P2.2 adds the
+    charge-on-approval; here the request lands in the host's list)."""
+    from fastapi.responses import PlainTextResponse
+
+    resolved = property_page.resolve(slug)
+    if resolved is None or "redirect" in resolved or resolved.get("missing"):
+        return Response(status_code=404)
+    apartment_id = int(resolved["apartment_id"])
+    if not property_page.widget_ready(apartment_id):
+        return PlainTextResponse("not available", status_code=404)
+    form = await request.form()
+    date_from = str(form.get("date_from") or "").strip()
+    date_to = str(form.get("date_to") or "").strip()
+    guest_email = str(form.get("guest_email") or "").strip()
+    if not guest_email or "@" not in guest_email:
+        return _book_error(slug, "bad_email")
+    if not property_page.dates_available(apartment_id, date_from, date_to):
+        return _book_error(slug, "taken")
+    apartment = db.query_one(
+        "SELECT owner_user_id FROM apartment WHERE id = ?", (apartment_id,)
+    )
+    price = property_page.nightly_price(apartment_id) or 0
+    from datetime import date as _date
+
+    nights = (_date.fromisoformat(date_to) - _date.fromisoformat(date_from)).days
+    from .. import payment_request
+
+    payment_request.create(
+        int(apartment["owner_user_id"]),
+        apartment_id=apartment_id,
+        reason="custom",
+        amount_czk=price * nights,
+        rail="card",
+        expires_at=(_date.today().replace(day=28)).isoformat(),
+        guest_email=guest_email,
+    )
+    return render(request, "property_page_booked.html",
+                  {"show_nav": False, "slug": slug})

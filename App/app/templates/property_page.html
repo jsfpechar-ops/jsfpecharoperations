@@ -58,6 +58,18 @@
       {% endfor %}
     </div>
     {% endif %}
+    {% if page.bookable %}
+    <div class="pp-book">
+      <form method="post" action="/p/{{ page.og.url.rsplit('/', 1)[1] }}/book" class="ui-form">
+        <h2>{{ t('pp.book.title') }}</h2>
+        <label class="ui-field"><span>{{ t('pp.book.from') }}</span>
+          <input class="ui-input" type="date" name="date_from" required></label>
+        <label class="ui-field"><span>{{ t('pp.book.to') }}</span>
+          <input class="ui-input" type="date" name="date_to" required></label>
+        <button class="ui-btn ui-btn-primary" type="submit">{{ t('pp.book.check') }}</button>
+      </form>
+    </div>
+    {% endif %}
   </section>
 </main>
 {% endblock %}
