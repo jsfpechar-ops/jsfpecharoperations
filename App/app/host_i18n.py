@@ -6595,6 +6595,7 @@ _PASSKEY_STRINGS = {
         "notification.mail_kind.billing_invoice": "UbyHost invoice",
         "notification.mail_kind.billing_trial": "trial reminder",
         "notification.mail_kind.billing_overdue": "payment reminder",
+        "notification.mail_kind.payment_request": "payment request",
     },
     "cs": {
         "login.passkey": "Přihlásit se pomocí klíče (passkey)",
@@ -6639,6 +6640,7 @@ _PASSKEY_STRINGS = {
         "notification.mail_kind.billing_invoice": "faktura od UbyHost",
         "notification.mail_kind.billing_trial": "připomínka konce zkušební doby",
         "notification.mail_kind.billing_overdue": "připomínka platby",
+        "notification.mail_kind.payment_request": "platební žádost",
     },
 }
 for _lang, _strings in _PASSKEY_STRINGS.items():
