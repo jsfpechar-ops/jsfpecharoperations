@@ -1,6 +1,6 @@
 # 0435: Card rail — Stripe Payment Links on the host's account (payments P1.3)
 
-Status: todo
+Status: review
 Depends on: 0428 (#550 merged), 0429 shipped or in flight | Base commit: after 0429 | Branch: task/0435-card-rail
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

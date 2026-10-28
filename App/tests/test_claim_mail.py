@@ -1804,6 +1804,8 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
     assert set(mail.KINDS) == {
         "claim",
         "claim_resend",
+        # 0435: the guest's payment link mail.
+        "payment_request",
         "reminder_guest",
         "reminder_host",
         "completion",

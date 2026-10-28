@@ -1,0 +1,103 @@
+{% extends "host_page.html" %}
+{% set nav = 'payments' %}
+{% set how_key = 'payments' %}
+{% set body_kind = 'list' %}
+{% from "_components.html" import empty_state with context %}
+{% from "_ui.html" import ui_button, ui_tip with context %}
+{% block title %}{{ t('payments.title') }}{% endblock %}
+{% block primary_action %}{% endblock %}
+{% block tabs %}{% endblock %}
+{% block toolbar %}{% endblock %}
+{% block body %}
+<div class="ui-section">
+  <h2>{{ t('payments.connect.title') }}</h2>
+  {% if stripe_off %}
+  <p>{{ t('payments.connect.off') }}</p>
+  {% elif connect_state.onboarding_state == 'complete' %}
+  <p><span class="ui-badge ui-badge-done" data-tone="green">{{ t('payments.connect.complete') }}</span>
+    {{ ui_tip('tip-pay-complete', t('payments.help.stripe_role')) }}</p>
+  {% elif connect_state.onboarding_state == 'rejected' or connect_state.onboarding_state == 'disabled' %}
+  <p>{{ t('payments.connect.' ~ connect_state.onboarding_state) }}</p>
+  <p>{{ t('payments.connect.support') }}</p>
+  {% else %}
+  <p>{{ t('payments.connect.' ~ connect_state.onboarding_state) }}</p>
+  <form method="post" action="/payments/connect/start">
+    {{ ui_button(t('payments.connect.open_stripe'), 'primary', type='submit') }}
+  </form>
+  {% endif %}
+</div>
+<div class="ui-section">
+  <h2>{{ t('payments.new.title') }}</h2>
+  <form method="post" action="/payments/requests/new" class="ui-form">
+    <label class="ui-field">
+      <span>{{ t('payments.field.stay') }}</span>
+      <select name="reservation_id" class="ui-input">
+        <option value="">{{ t('payments.field.no_stay') }}</option>
+        {% for s in stays %}<option value="{{ s.id }}">{{ s.label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="ui-field">
+      <span>{{ t('payments.field.amount') }}</span>
+      <input class="ui-input" type="number" name="amount_czk" min="1" step="1" required>
+    </label>
+    <fieldset class="ui-field">
+      <legend>{{ t('payments.field.reason') }}</legend>
+      <div class="ui-chips">
+        {% for r in reasons %}<label class="ui-chip"><input type="radio" name="reason" value="{{ r }}" {% if loop.first %}required{% endif %}> {{ t('payments.reason.' ~ r) }}</label>{% endfor %}
+      </div>
+    </fieldset>
+    <label class="ui-field">
+      <span>{{ t('payments.field.guest_email') }}</span>
+      <input class="ui-input" type="email" name="guest_email">
+    </label>
+    <fieldset class="ui-field">
+      <legend>{{ t('payments.field.rail') }}</legend>
+      <div class="ui-chips">
+        <label class="ui-chip"><input type="radio" name="rail" value="card" checked> {{ t('payments.rail.card') }}</label>
+        <label class="ui-chip"><input type="radio" name="rail" value="qr"> {{ t('payments.rail.qr') }}</label>
+      </div>
+    </fieldset>
+    {{ ui_button(t('payments.new.save_draft'), 'primary', type='submit') }}
+  </form>
+</div>
+<div class="ui-section">
+  <h2>{{ t('payments.list.title') }} {{ ui_tip('tip-pay-list', t('payments.help.payout')) }}</h2>
+  {% if requests %}
+  <div class="ui-table-wrap">
+    <table class="ui-table ui-table-stack">
+      <thead><tr>
+        <th>{{ t('payments.col.date') }}</th>
+        <th>{{ t('payments.col.reason') }}</th>
+        <th>{{ t('payments.col.amount') }}</th>
+        <th>{{ t('payments.col.rail') }}</th>
+        <th>{{ t('filter.status') }}</th>
+        <th><span class="sr-only">{{ t('common.actions') }}</span></th>
+      </tr></thead>
+      <tbody>
+      {% for req in requests %}
+        <tr>
+          <td class="ui-sub" data-label="{{ t('payments.col.date') }}">{{ req.created_at | date_cz }}</td>
+          <td data-label="{{ t('payments.col.reason') }}">{{ t('payments.reason.' ~ req.reason) }}</td>
+          <td class="ui-num" data-label="{{ t('payments.col.amount') }}">{{ req.amount_czk }} {{ t('payments.czk') }}</td>
+          <td data-label="{{ t('payments.col.rail') }}">{{ t('payments.rail.' ~ req.rail) }}</td>
+          <td data-label="{{ t('filter.status') }}"><span class="ui-badge ui-badge-neutral" data-tone="grey">{{ t('payments.status.' ~ req.status) }}</span></td>
+          <td class="row-actions" data-label="">
+            {% if req.status == 'draft' and req.guest_email %}
+            <form method="post" action="/payments/requests/{{ req.id }}/send" style="display:inline">
+              <button class="ui-btn ui-btn-primary ui-btn-compact" type="submit">{{ t('payments.send') }}</button>
+            </form>
+            {% elif req.status == 'draft' %}
+            <span class="ui-sub">{{ t('payments.need_email') }}</span>
+            {% endif %}
+            {% if req.status == 'draft' and req.rail == 'qr' %}<a class="ui-btn ui-btn-secondary ui-btn-compact" href="/payments/qr/{{ req.id }}">{{ t('payments.qr.preview') }}</a>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {{ empty_state(t('payments.list.empty_title'), t('payments.list.empty'), '', '', primary=false) }}
+  {% endif %}
+</div>
+{% endblock %}

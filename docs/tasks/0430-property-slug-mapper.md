@@ -1,6 +1,6 @@
 # 0430: Property page slugs — mapper, migration, redirects (property pages A)
 
-Status: todo
+Status: review
 Depends on: property-pages plan (owner approval pending) | Base commit: after 0429 | Branch: task/0430-property-slug
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 60k tokens
 

@@ -7,7 +7,7 @@ Updated: 2026-10-28.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 0428 #550, 0425 #542, plan #551 merged. Next: 0429 payments UX, 0430-34 pages, 0435-36 card+QR rails (owner 28 Oct). Dependabot #546/#547, Hostex #534 merged.
+- 0429 payments UX implemented (CI browser row pending). Next: 0435-36 rails, 0430-34 pages. Plan #551, rails #553, fix #554 merged.
 - Billing 0411-0419 in #528, off. **Owner:** ČSOB file, env, counsel.
 - 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 #518; 0400 #515.
 - Guide + Leon 0341-0355: owner merges #465-468. 0403/0404/0405 in review.

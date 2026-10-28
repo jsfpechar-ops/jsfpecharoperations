@@ -28,6 +28,7 @@ COMPLAINED = "complained"
 KINDS = (
     "claim",
     "claim_resend",
+    "payment_request",
     "reminder_guest",
     "reminder_host",
     "completion",
@@ -83,6 +84,7 @@ KINDS = (
 GUEST_KINDS = (
     "claim",
     "claim_resend",
+    "payment_request",
     "reminder_guest",
     "completion",
     "invoice_issued",

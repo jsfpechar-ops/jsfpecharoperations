@@ -38,6 +38,9 @@ _OWNER_SCOPE = "(? IS NULL OR a.owner_user_id = ?)"
 # request was sent to and the host's short note. Kept while the request is
 # useful (paid/expired requests are the host's money trail); deleted with the
 # workspace. Never used for anything but sending that one request.
+# 0430-0434: property_page/property_slug hold the host's own content and
+# public names (no personal data); booking_hold holds dates only; a page
+# booking request lands in payment_request (covered above: guest e-mail).
 # 0421: stripe_account holds no personal data beyond the owner reference; it
 # mirrors onboarding status (no keys, no documents) and is deleted with the workspace.
 
@@ -387,6 +390,15 @@ def _delete_workspace(owner_id: int) -> None:
         # with the workspace. stripe_account mirrors status only (no secrets).
         cur.execute("DELETE FROM payment_request WHERE owner_user_id = ?", (owner_id,))
         cur.execute("DELETE FROM stripe_account WHERE owner_user_id = ?", (owner_id,))
+        # Brief 0430-0434: the public page and its bookings go with the
+        # property (CASCADE on apartment); holds expire on their own. The
+        # page content is the host's own listing text (no guest data).
+        for table in ("property_page", "property_slug", "property_slug_history", "booking_hold"):
+            cur.execute(
+                f"DELETE FROM {table} WHERE apartment_id IN"
+                " (SELECT id FROM apartment WHERE owner_user_id = ?)",
+                (owner_id,),
+            )
         cur.execute(
             "UPDATE platform_invoice SET owner_user_id = NULL WHERE owner_user_id = ?", (owner_id,)
         )
