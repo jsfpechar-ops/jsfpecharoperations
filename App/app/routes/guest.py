@@ -26,7 +26,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 import posixpath
 import re
-from .. import ai, alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
+from .. import alerts, auth, claim, codelists, config, cookie_inventory, db, doc_ocr, door_codes, guest_slug, guest_uk_i18n, host_i18n, i18n, incidents, mail, passport_photos, rate_limit, reporting, security, turnstile, validation, validation_i18n, workflow
 from ..templating import render_guest
 from .admin_helpers import guest_form_raw as _guest_form_raw
 from .admin_helpers import kept_signature as _kept_signature
@@ -1952,12 +1952,14 @@ async def guest_document_scan(token: str, reservation_id: int, request: Request)
             {"kind": "error", "message": translate("ocr_bad_file")}, status_code=400
         )
     try:
-        values = await run_in_threadpool(
-            doc_ocr.read_document, jpeg, str(apartment["id"])
+        values = await run_in_threadpool(doc_ocr.read_document, jpeg)
+    except doc_ocr.NothingRead:
+        return JSONResponse(
+            {"kind": "error", "message": translate("ocr_nothing_read")}, status_code=422
         )
-    except ai.AIBudgetError:
+    except doc_ocr.NoEngine:
         return JSONResponse({"kind": "unavailable"}, status_code=503)
-    except ai.AIError:
+    except Exception:
         return JSONResponse({"kind": "error", "message": translate("ocr_failed")}, status_code=502)
     if not any(values.values()):
         return JSONResponse({"kind": "error", "message": translate("ocr_nothing_read")}, status_code=422)

@@ -382,7 +382,7 @@ AI_PRICE_USD_PER_MTOK = {
 
 
 # 0353: features whose default caps differ from 10 USD a month and no per-key cap.
-_AI_CAP_DEFAULTS = {"guide_translate": ("2", "0.05"), "doc_ocr": ("2", "0.05")}
+_AI_CAP_DEFAULTS = {"guide_translate": ("2", "0.05")}
 
 
 def ai_monthly_usd(feature: str) -> float:

@@ -1,7 +1,9 @@
-"""Document scanning (OCR): the Max-plan guest prefill, through the one AI door.
+"""Document scanning (OCR): local Tesseract MRZ read, Max plan only.
 
 A suggestion, never a record: the scan route reads the photo the guest chose
 and returns form values; nothing lands in the database or the photo store.
+The engine is a local subprocess; tests monkeypatch it, so no binary is
+needed to run them.
 """
 from __future__ import annotations
 
@@ -11,11 +13,10 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from app import ai, config, db
+from app import config, db
+from app import doc_ocr
 from app.main import app
 from app.routes import guest
-from app import doc_ocr
-from tests.ai_fake import FakeClient, reply
 from tests.conftest import complete_guest_claim
 from tests.test_guest_navigation import (
     _cleanup,
@@ -32,12 +33,44 @@ def _jpeg(width=2000, height=1500):
     return out.getvalue()
 
 
+def _check(text: str) -> str:
+    total = 0
+    weights = (7, 3, 1)
+    for i, ch in enumerate(text):
+        value = "0123456789".find(ch)
+        if value < 0:
+            value = 0 if ch == "<" else 10 + ord(ch) - ord("A")
+        total += value * weights[i % 3]
+    return str(total % 10)
+
+
+def _td3_text(doc: str = "P1234567", surname: str = "SMITH", given: str = "JOHN PAUL",
+              nationality: str = "GBR", birth: str = "900101") -> str:
+    doc = doc.ljust(9, "<")[:9]
+    line2 = doc + _check(doc) + nationality + birth + _check(birth)
+    line2 = line2.ljust(44, "<")
+    line1 = ("P<" + nationality + surname.replace(" ", "<") + "<<" +
+              given.replace(" ", "<")).ljust(44, "<")
+    return line1 + "\n" + line2 + "\n"
+
+
+def _td1_text(doc: str = "ID1234567", surname: str = "NOVAK", given: str = "JANA",
+              nationality: str = "CZE", birth: str = "850505") -> str:
+    doc = doc.ljust(9, "<")[:9]
+    line1 = ("ID" + nationality + doc + _check(doc)).ljust(30, "<")
+    # TD1 line 2: birth(6) check(1) sex(1) expiry(6) check(1) nationality(3).
+    expiry = "300101"
+    line2 = birth + _check(birth) + "M" + expiry + _check(expiry) + nationality
+    line2 = line2.ljust(30, "<")
+    line3 = (surname + "<<" + given).ljust(30, "<")
+    return line1 + "\n" + line2 + "\n" + line3 + "\n"
+
+
 def _max_owner(monkeypatch):
-    """Give the fixture apartment an owner on the AI test list, active on Max."""
-    monkeypatch.setattr(config, "AI_FEATURES", frozenset({"doc_ocr"}))
-    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
+    """Give the fixture apartment an owner with an active Max subscription."""
     monkeypatch.setattr(config, "AI_TEST_EMAILS", "")
-    monkeypatch.setattr(config, "BILLING_ENABLED", True)
+    monkeypatch.setattr(doc_ocr, "TESSERACT", "/usr/bin/tesseract")
+    monkeypatch.setattr(billing_mod(), "entitlements", _max_entitlements)
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
     if (apartment["passport_photo_policy"] or "off") != "required_foreign":
         db.update("apartment", apartment["id"], {"passport_photo_policy": "required_foreign"})
@@ -62,6 +95,18 @@ def _max_owner(monkeypatch):
     return apartment
 
 
+def billing_mod():
+    from app import billing
+
+    return billing
+
+
+def _max_entitlements(owner_user_id: int):
+    from app import billing
+
+    return billing.Entitlements(status="active", plan="max")
+
+
 @pytest.fixture
 def browser():
     db.init_db()
@@ -70,7 +115,6 @@ def browser():
     client.cookies.set(guest.LANG_COOKIE, "en")
     complete_guest_claim(client, token, stay, party_size=2)
     yield client, token, stay
-    ai.set_client_for_tests(None)
     _cleanup()
     db.execute("DELETE FROM billing_account WHERE plan = 'max'")
     db.execute("DELETE FROM user_account WHERE username = 'ocr-owner'")
@@ -86,21 +130,11 @@ def _scan(client, token, stay, files=None):
 
 # --- availability gates -------------------------------------------------------
 
-def test_off_without_the_flag_and_key(browser, monkeypatch):
+def test_off_without_tesseract(browser, monkeypatch):
     _, token, stay = browser
     apartment = db.query_one("SELECT * FROM apartment WHERE permalink_token = ?", (TOKEN,))
-    monkeypatch.setattr(config, "AI_FEATURES", frozenset())
-    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "test-key")
-    assert not doc_ocr.available(apartment)
-    monkeypatch.setattr(config, "AI_FEATURES", frozenset({"doc_ocr"}))
-    monkeypatch.setattr(config, "ANTHROPIC_API_KEY", "")
-    assert not doc_ocr.available(apartment)
-
-
-def test_off_for_the_mistral_provider(browser, monkeypatch):
-    _, token, stay = browser
-    apartment = _max_owner(monkeypatch)
-    monkeypatch.setattr(config, "AI_PROVIDER", "mistral")
+    monkeypatch.setattr(doc_ocr, "TESSERACT", "")
+    monkeypatch.setattr(config, "AI_TEST_EMAILS", "")
     assert not doc_ocr.available(apartment)
 
 
@@ -108,25 +142,30 @@ def test_off_for_standard_and_trial_plans(browser, monkeypatch):
     _, token, stay = browser
     apartment = _max_owner(monkeypatch)
     assert doc_ocr.available(apartment)
-    db.execute(
-        "UPDATE billing_account SET plan = 'standard' WHERE owner_user_id = ?",
-        (apartment["owner_user_id"],),
-    )
-    assert not doc_ocr.available(apartment)
-    db.execute(
-        "UPDATE billing_account SET status = 'trialing', plan = 'max' WHERE owner_user_id = ?",
-        (apartment["owner_user_id"],),
-    )
+    real = billing_mod().entitlements
+
+    def standard(owner_user_id):
+        return billing_mod().Entitlements(status="active", plan="standard")
+
+    monkeypatch.setattr(billing_mod(), "entitlements", standard)
     assert not doc_ocr.available(apartment)
 
+    def trial(owner_user_id):
+        return billing_mod().Entitlements(status="trialing", plan="max")
 
-def test_the_form_hides_the_button_until_max_and_flagged(browser, monkeypatch):
+    monkeypatch.setattr(billing_mod(), "entitlements", trial)
+    assert not doc_ocr.available(apartment)
+    monkeypatch.setattr(billing_mod(), "entitlements", real)
+
+
+def test_the_form_hides_the_button_until_max_and_installed(browser, monkeypatch):
     client, token, stay = browser
+    monkeypatch.setattr(doc_ocr, "TESSERACT", "")
     page = client.get(f"/l/{token}/{stay}/new?lang=en")
-    assert "ocr-scan-btn" not in page.text
+    assert "ocr-scan-toggle" not in page.text
     _max_owner(monkeypatch)
     page = client.get(f"/l/{token}/{stay}/new?lang=en")
-    assert "ocr-scan-btn" in page.text
+    assert "ocr-scan-toggle" in page.text
 
 
 # --- the route --------------------------------------------------------------
@@ -134,11 +173,7 @@ def test_the_form_hides_the_button_until_max_and_flagged(browser, monkeypatch):
 def test_the_scan_returns_values_and_stores_nothing(browser, monkeypatch):
     client, token, stay = browser
     _max_owner(monkeypatch)
-    fake = FakeClient([reply({
-        "surname": "Smith", "first_name": "John Paul", "birth_date": "1990-01-01",
-        "nationality": "GBR", "doc_number": "P 1234567",
-    })])
-    ai.set_client_for_tests(fake)
+    monkeypatch.setattr(doc_ocr, "run_tesseract", lambda jpeg: _td3_text())
     res = _scan(client, token, stay)
     assert res.status_code == 200
     data = res.json()
@@ -147,72 +182,56 @@ def test_the_scan_returns_values_and_stores_nothing(browser, monkeypatch):
         "surname": "SMITH", "first_name": "JOHN PAUL", "birth_date": "01011990",
         "nationality": "GBR", "doc_number": "P1234567",
     }
-    kwargs = fake.calls[0]
-    assert kwargs["model"] == "claude-haiku-5-5"
-    block = kwargs["messages"][0]["content"][0]
-    assert block["type"] == "image"
-    assert block["source"]["media_type"] == "image/jpeg"
     # A suggestion, never a record: the read stored nothing.
     assert db.query_one("SELECT COUNT(*) AS n FROM guest")["n"] == 0
-    assert not db.query_one("SELECT * FROM ai_usage WHERE feature = 'doc_ocr' AND key = ''")
 
 
-def test_the_scan_sends_the_property_key_and_records_usage(browser, monkeypatch):
-    client, token, stay = browser
-    apartment = _max_owner(monkeypatch)
-    db.execute("DELETE FROM ai_usage WHERE feature = 'doc_ocr'", ())
-    fake = FakeClient([reply({
-        "surname": "SMITH", "first_name": "JOHN", "birth_date": "1990-01-01",
-        "nationality": "GBR", "doc_number": "P1234567",
-    })])
-    ai.set_client_for_tests(fake)
-    res = _scan(client, token, stay)
-    assert res.status_code == 200
-    row = db.query_one("SELECT * FROM ai_usage WHERE feature = 'doc_ocr'")
-    assert row["key"] == str(apartment["id"])
-    assert row["requests"] == 1
-
-
-def test_a_pdf_is_refused_before_any_model_call(browser, monkeypatch):
+def test_the_scan_reads_a_td1_id_card_too(browser, monkeypatch):
     client, token, stay = browser
     _max_owner(monkeypatch)
-    fake = FakeClient([])
-    ai.set_client_for_tests(fake)
+    monkeypatch.setattr(doc_ocr, "run_tesseract", lambda jpeg: _td1_text())
+    res = _scan(client, token, stay)
+    assert res.status_code == 200
+    values = res.json()["values"]
+    assert values["surname"] == "NOVAK"
+    assert values["doc_number"] == "ID1234567"
+
+
+def test_a_pdf_is_refused_before_any_ocr(browser, monkeypatch):
+    client, token, stay = browser
+    _max_owner(monkeypatch)
     from tests.test_guest_navigation import MINIMAL_PDF
 
     res = _scan(client, token, stay, files={"passport_photo": ("form.pdf", MINIMAL_PDF, "application/pdf")})
     assert res.status_code == 400
     assert res.json()["kind"] == "error"
-    assert not fake.calls
 
 
-def test_a_model_failure_is_502_with_a_friendly_message(browser, monkeypatch):
+def test_an_unreadable_zone_is_422(browser, monkeypatch):
     client, token, stay = browser
     _max_owner(monkeypatch)
-    fake = FakeClient([reply({}, text="not json", thinking_first=False)])
-    ai.set_client_for_tests(fake)
-    res = _scan(client, token, stay)
-    assert res.status_code == 502
-    assert "hand" in res.json()["message"]
-
-
-def test_an_empty_read_is_422(browser, monkeypatch):
-    client, token, stay = browser
-    _max_owner(monkeypatch)
-    fake = FakeClient([reply({
-        "surname": "", "first_name": "", "birth_date": "", "nationality": "XX", "doc_number": ""
-    })])
-    ai.set_client_for_tests(fake)
+    monkeypatch.setattr(doc_ocr, "run_tesseract", lambda jpeg: "hello world\nnothing here\n")
     res = _scan(client, token, stay)
     assert res.status_code == 422
     assert res.json()["kind"] == "error"
 
 
-def test_the_budget_cap_ends_in_503_not_an_error_page(browser, monkeypatch):
+def test_a_bad_check_digit_is_refused_not_guessed(browser, monkeypatch):
     client, token, stay = browser
     _max_owner(monkeypatch)
-    db.execute("DELETE FROM ai_usage", ())
-    monkeypatch.setattr(config, "ai_monthly_usd", lambda feature: 0.0 if feature == "doc_ocr" else 10.0)
+    text = _td3_text()
+    # Corrupt the document-number check digit.
+    lines = text.splitlines()
+    bad = lines[1][:9] + ("0" if lines[1][9] != "0" else "1") + lines[1][10:]
+    monkeypatch.setattr(doc_ocr, "run_tesseract", lambda jpeg: lines[0] + "\n" + bad + "\n")
+    res = _scan(client, token, stay)
+    assert res.status_code == 422
+
+
+def test_a_missing_engine_answers_503(browser, monkeypatch):
+    client, token, stay = browser
+    _max_owner(monkeypatch)
+    monkeypatch.setattr(doc_ocr, "TESSERACT", "")
     res = _scan(client, token, stay)
     assert res.status_code == 503
     assert res.json()["kind"] == "unavailable"
@@ -229,11 +248,12 @@ def test_a_claimless_browser_cannot_scan(browser, monkeypatch):
 
 # --- image handling ---------------------------------------------------------
 
-def test_prepare_image_shrinks_and_reencodes():
+def test_prepare_image_shrinks_and_greyscales():
     big = _jpeg(3000, 2000)
     out = doc_ocr.prepare_image(big, "image/jpeg")
     with Image.open(io.BytesIO(out)) as image:
         assert image.format == "JPEG"
+        assert image.mode == "L"
         assert max(image.size) <= doc_ocr.MAX_EDGE
     small = doc_ocr.prepare_image(PNG_BYTES, "image/png")
     assert small[:2] == b"\xff\xd8"  # JPEG magic
@@ -246,13 +266,28 @@ def test_prepare_image_refuses_a_pdf():
         doc_ocr.prepare_image(MINIMAL_PDF, "application/pdf")
 
 
-def test_the_input_estimate_counts_an_image_block_not_its_bytes():
-    tiny = "x" * 100
-    small = ai.estimate_input_tokens(["p"], [{"role": "user", "content": tiny}])
-    image = [{"role": "user", "content": [
-        {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": "A" * 2_000_000}},
-        {"type": "text", "text": tiny},
-    ]}]
-    large = ai.estimate_input_tokens(["p"], image)
-    # The base64 payload must not be counted as text, or every scan is refused.
-    assert large < small + 2 * 3400
+# --- MRZ parsing ------------------------------------------------------------
+
+def test_check_digits_are_the_icao_731_weights():
+    # The module and this file's helper must agree on the 7-3-1 weights.
+    for field in ("520927", "901010", "P1234567", "ID123456"):
+        assert doc_ocr._check_digit(field) == _check(field)
+
+
+def test_o_and_zero_confusion_resolves_by_check_digit():
+    line1, line2 = _td3_text().splitlines()
+    # The misread: 0 read as O inside the document number.
+    misread = line2[:9].replace("0", "O") + line2[9:]
+    values = doc_ocr._td3(line1, misread)
+    assert values and values["doc_number"] == "P1234567"
+
+
+def test_td3_requires_the_passport_marker():
+    line1, line2 = _td3_text().splitlines()
+    assert doc_ocr._td3("I<" + line1[2:], line2) is None
+
+
+def test_nationality_is_validated_against_the_country_list():
+    text = _td3_text(nationality="XX")  # not an ISO code the list knows
+    with pytest.raises(doc_ocr.NothingRead):
+        doc_ocr.parse_mrz(text)
