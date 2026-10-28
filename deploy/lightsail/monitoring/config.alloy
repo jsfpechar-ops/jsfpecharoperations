@@ -13,7 +13,7 @@ discovery.docker "containers" {
 // log files are read from the start, so entries older than the window are
 // dropped here before they can poison a push.
 loki.process "drop_old" {
-  forward_to = [loki.relabel.containers.receiver]
+  forward_to = [loki.write.grafanacloud.receiver]
 
   stage.drop {
     older_than = "168h"
