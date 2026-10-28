@@ -31,7 +31,7 @@ INTERVALS = ("month", "year")
 BAND_TOPS = (4, 9)
 BASE = {"month": (149, 119, 99), "year": (1190, 950, 790)}
 MAX_EXTRA = {"month": (80, 59, 39), "year": (718, 570, 370)}
-TTLOCK = {"month": 49, "year": 470}
+TTLOCK = {"month": 40, "year": 480}
 WHITELABEL = {"month": 590, "year": 5660}
 FOUNDER_YEAR = 890
 # A supplementary amount under this is carried to the next invoice instead.
