@@ -665,6 +665,7 @@ Summary of the provider's written response (kept here as the record; the numbere
 - **No CZK virtual IBAN** (financial accounts issue EUR IBANs in the EU region only, and are a separate product from Connect payouts) → SPAYD QR must carry the **host's own bank account**, exactly as scoped.
 - **Deposits / pay-part-now-rest-later (E3):** no native split-payment primitive — model as **two PaymentIntents** or a saved payment method charged later. This shapes our booking flow: request-to-book + 100% upfront (our default) is trivial; any deposit mode (<100%) means a second charge step, not a Stripe feature flag.
 - **Disputes (F1–F2):** Stripe debits the connected account's balance first; dispute-fee responsibility follows the fee-collector config (account-billed = host pays the dispute fee, not us); hosts can self-manage disputes/refunds in the Express Dashboard.
+- **Controller API, not `type=express` (0428 build note):** the account-level `type` parameter is deprecated. Accounts are created with the controller params exactly as §2/§12 scope them — `controller[fees][payer]=account`, `controller[losses][payments]=stripe`, `controller[stripe_dashboard][type]=express`, `controller[requirement_collection]=stripe`. The dashboard type is **immutable after account creation**: a later switch (e.g. to embedded onboarding) means provisioning **new accounts** for every host — there is no in-place Express migration.
 
 ### Next actions
 

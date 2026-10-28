@@ -30,6 +30,7 @@ Run only the row for the area you changed, from `App/`, always ending `-q --tb=s
 | Any host template, host CSS or host JS | test_design_guardrails_browser.py (0 skipped; the rules are in MASTER 11.0) |
 | Public/app domain configuration | `test_app_domain.py test_env_guard.py test_passkeys.py test_pwa.py`, login/auth/security row, relevant mail tests; Caddy validation in both TLS modes |
 | Operator customer dashboard | `test_admin_customers.py test_host_*.py test_design_guardrails_browser.py` (browser checks 0 skipped) |
+| Direct payments, Stripe Connect | `test_payment_request_model.py test_stripe_connect.py` |
 | A module with no row | `tests/test_<module name>*.py`; none exists: `-k <module name>` |
 
 A row missing or wrong: the orchestrator fixes this table in the same brief.
