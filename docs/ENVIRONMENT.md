@@ -335,3 +335,4 @@ containers start only when "monitoring" is in COMPOSE_PROFILES.
 | `GRAFANA_PROM_URL` / `GRAFANA_PROM_USER` / `GRAFANA_PROM_TOKEN` | empty or wrong: alloy cannot remote-write metrics; with "monitoring" in the profile alloy restarts and logs auth errors (nothing else breaks; the app is untouched) |
 | `GRAFANA_LOKI_URL` / `GRAFANA_LOKI_USER` / `GRAFANA_LOKI_TOKEN` | empty or wrong: alloy cannot push logs; same restart-and-auth-error symptom, app untouched |
 | `UBYHOST_ALLOY_MEM` | too low: the OOM killer restarts alloy; default 512m |
+| `UBYHOST_HEARTBEAT_MONITORING_URL` | unset: `scripts/monitoring-watchdog.sh` still prints its checks but nobody is alerted when the monitoring stack silently dies (containers down, remote-write broken, alloy erroring). Set it to a healthchecks.io-style URL: pinged every 15 min when healthy, `<url>/fail` on any failed check. |
