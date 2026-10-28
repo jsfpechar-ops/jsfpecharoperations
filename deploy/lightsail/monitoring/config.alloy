@@ -47,6 +47,12 @@ prometheus.scrape "cadvisor" {
   forward_to      = [prometheus.remote_write.grafanacloud.receiver]
 }
 
+prometheus.scrape "ubyhost" {
+  targets         = [{ "__address__" = "ubyhost:8080", "job" = "ubyhost" }]
+  scrape_interval = "30s"
+  forward_to      = [prometheus.remote_write.grafanacloud.receiver]
+}
+
 prometheus.remote_write "grafanacloud" {
   endpoint {
     url = env("GRAFANA_PROM_URL")
