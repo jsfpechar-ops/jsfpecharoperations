@@ -9,10 +9,10 @@ Updated: 2026-10-28.
 ## Now
 - 0428 #550 merged; 0425 #542. Next: 0429 payments UX (P1.5), 0430 property slugs (property-pages plan draft: owner approve). Dependabot #546/#547, Hostex plan #534 merged.
 - Billing 0411-0419 in #528, off. **Owner:** ČSOB file, env, counsel.
-- 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 VAT bank #518; 0400 lock #515.
-- Guide + Leon 0341-0355: owner merges #465-468.
+- 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 #518; 0400 #515.
+- Guide + Leon 0341-0355: owner merges #465-468. 0403/0404/0405 in review.
 - 0291-0302 buttons, fees, invoice. **Owner:** PR; CF rules 3-4.
-- 0290 passkey CI/phone; check-in #435 owner merge; TTLock #434 CI pending.
+- 0290 passkey CI/phone; #435 merge; TTLock #434 CI pending.
 - #432 subdomain live; root login/calendar review pending.
 - 0280-0283 alerts, borders, signature. **Owner:** PR/deploy/phone.
 - 0253 layout tests. **Owner:** PR, iPad.
