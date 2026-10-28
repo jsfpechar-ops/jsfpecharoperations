@@ -118,6 +118,12 @@ def browser():
     _cleanup()
     db.execute("DELETE FROM billing_account WHERE plan = 'max'")
     db.execute("DELETE FROM user_account WHERE username = 'ocr-owner'")
+    # The scan tests spend guest throttle budgets shared with the navigation
+    # suite through the same link token and test address; give them back.
+    db.execute(
+        "DELETE FROM rate_limit_event WHERE scope IN "
+        "('guest_save', 'guest_scan', 'claim_confirm', 'claim_mail_recipient', 'claim_mail_reservation', 'claim_start')"
+    )
 
 
 def _scan(client, token, stay, files=None):
@@ -291,3 +297,24 @@ def test_nationality_is_validated_against_the_country_list():
     text = _td3_text(nationality="XX")  # not an ISO code the list knows
     with pytest.raises(doc_ocr.NothingRead):
         doc_ocr.parse_mrz(text)
+
+
+# --- design conformance (the browser geometry run is test_guest_ocr_geometry_browser) ---
+
+def test_the_tickbox_uses_the_design_system_checkline():
+    """The scan toggle must be the guest form's own checkbox component:
+    ``checkline`` (full-row tap target, help inside the label), inside a
+    ``g-field``, with the status line as the field's ``hint``."""
+    from pathlib import Path
+
+    here = Path(__file__).resolve().parent.parent
+    form = (here / "app" / "templates" / "guest" / "form.html").read_text(encoding="utf-8")
+    css = (here / "app" / "static" / "guest.css").read_text(encoding="utf-8")
+    assert '<label class="checkline" for="ocr-scan-toggle">' in form
+    assert 'id="ocr-scan-toggle"' in form and 'class="g-check"' not in form
+    assert '<small>{{ t(\'ocr_scan_help\') }}</small>' in form
+    assert '<div class="g-field" id="ocr-scan">' in form
+    assert 'id="ocr-scan-status" role="status" aria-live="polite"' in form
+    # The component and its tokens exist in the guest stylesheet.
+    assert ".checkline" in css and ".checkline small" in css
+    assert "checkline:has(input:checked)" in css

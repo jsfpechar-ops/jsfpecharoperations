@@ -249,11 +249,13 @@
       <div class="hint">{{ t('passport_photo_hint') }}</div>
       {% if ocr_available %}
       <div class="g-field" id="ocr-scan">
-        <label class="g-check">
-          <input type="checkbox" id="ocr-scan-toggle" data-guest-ocr>
-          <span>{{ t('ocr_scan_label') }}</span>
+        <label class="checkline" for="ocr-scan-toggle">
+          <input type="checkbox" id="ocr-scan-toggle">
+          <span>
+            {{ t('ocr_scan_label') }}
+            <small>{{ t('ocr_scan_help') }}</small>
+          </span>
         </label>
-        <p class="hint">{{ t('ocr_scan_help') }}</p>
         <p class="hint" id="ocr-scan-status" role="status" aria-live="polite" hidden></p>
       </div>
       {% endif %}
