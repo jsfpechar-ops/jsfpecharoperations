@@ -8,6 +8,19 @@ discovery.docker "containers" {
   refresh_interval = "60s"
 }
 
+// Grafana Cloud Loki rejects any batch containing an entry older than its
+// 7-day ingestion window, which silently discards the whole batch. Container
+// log files are read from the start, so entries older than the window are
+// dropped here before they can poison a push.
+loki.process "drop_old" {
+  forward_to = [loki.relabel.containers.receiver]
+
+  stage.drop {
+    older_than = "168h"
+    drop_counter_reason = "older_than_7d"
+  }
+}
+
 loki.relabel "containers" {
   forward_to = [loki.write.grafanacloud.receiver]
 
@@ -22,7 +35,7 @@ loki.relabel "containers" {
 loki.source.docker "containers" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.docker.containers.targets
-  forward_to = [loki.relabel.containers.receiver]
+  forward_to = [loki.process.drop_old.receiver]
 }
 
 loki.write "grafanacloud" {
