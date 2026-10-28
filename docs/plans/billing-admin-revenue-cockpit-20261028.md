@@ -165,3 +165,13 @@ No free-text editing of booked invoice amounts, no editing of paid history — c
 - The cockpit page must stay usable with hundreds of accounts: SQL aggregates, LIMIT + seek pagination on the portfolio table (reuse the admin_customers cursor pattern), never a full-table render.
 - No new dependencies: CSS bars only. If a real chart is ever wanted, that is an owner decision line in decisions.md.
 - Complexity control: the cockpit grows in briefs; each brief ships a page that is complete without the later ones.
+
+## 12. Where the data goes for analysis (no web analytics)
+
+Billing data is first-party business data; it does **not** go to Google Analytics or any web-analytics tracker. GA tracks page views via a third-party script — the repo forbids that (rule 2, PostHog is already wired for public pages in `analytics.py`), and page-view data could not answer MRR questions anyway. The analysis funnel is:
+
+1. **`billing_month_snapshot` (§6)** — one row per customer per month; this is the analytical source of truth. It exists in the database, so anything with SQL access can analyse it.
+2. **CSV exports (§6b)** — portfolio, movement, aging, funnel, all openable in Excel/Google Sheets. Sheets can auto-refresh via `IMPORTDATA`-style pulls in the future if the operator wants a live dashboard.
+3. **Optional later brief (owner decision, not planned now): a read-only, token-protected JSON export endpoint** of a month's snapshot rows, so a BI tool (Metabase, Looker Studio, Grafana) can pull it. This is an outbound request decision line in `decisions.md` when it is built.
+
+If product analytics (which features hosts use) is ever wanted on admin/host pages, that is a separate owner decision extending the existing PostHog scope — independent of this plan.
