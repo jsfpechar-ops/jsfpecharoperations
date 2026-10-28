@@ -14,7 +14,6 @@ stays small.
 from __future__ import annotations
 
 import threading
-import time
 
 _lock = threading.Lock()
 
