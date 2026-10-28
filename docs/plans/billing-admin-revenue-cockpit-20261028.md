@@ -123,6 +123,7 @@ No free-text editing of booked invoice amounts, no editing of paid history — c
 
 - Every number in §3 is a link to the filtered portfolio table behind it (e.g. click MRR of Max-year → customers with that plan+interval).
 - Month selector (existing `mesic` param) drives §3 A/B/F/G for the chosen month; trend row always shows ±12 months.
+- **Search on the portfolio table** (§3 C): reuses the admin_customers toolbar pattern — free-text `q` matching email, display name, username (and invoice number / VS on the receivables views), plus filters by state, plan, billing interval, has-discount, and overdue. Seek pagination as in admin_customers.py, so search+filters stay fast at hundreds of accounts.
 - CSV exports: portfolio view, movement month, aging, funnel. Same data as the screen, no new export pipeline beyond a CSV response per table (accountant's ZIP untouched).
 - No JS charts: CSS bars, tables, badges from the existing `ui_*` kit; works without JavaScript (rule 6).
 
