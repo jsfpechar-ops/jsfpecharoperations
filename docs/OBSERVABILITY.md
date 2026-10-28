@@ -28,6 +28,26 @@ subprocessor.
 5. Grafana → Explore → Loki: {container="ubyhost"} must show lines;
    Prometheus: up must be 1 for the node and cadvisor jobs.
 
+## Watchdog (who watches the watchman?)
+
+`deploy/lightsail/scripts/monitoring-watchdog.sh` is a tiny cron-side script
+that checks the monitoring stack itself every 15 minutes:
+
+1. alloy, node-exporter and cadvisor containers are running;
+2. Grafana Cloud Prometheus answers the `up` query with both the `node` and
+   `cadvisor` series (i.e. remote-write is actually arriving, not just
+   containers being up);
+3. no `level=error` lines in alloy's log over the last 15 minutes
+   (catches 401/404 auth or URL regressions early).
+
+Prints one line per check and prints no tokens. Exit 0 = healthy.
+With `UBYHOST_HEARTBEAT_MONITORING_URL` set (healthchecks.io or anything
+with the same ping semantics) it pings the URL on success and `<url>/fail`
+on any failure, so a dead monitoring stack emails you instead of going
+quietly unnoticed. Cron line on the server:
+
+    */15 * * * * cd /opt/ubyhost/deploy/lightsail && ./scripts/monitoring-watchdog.sh
+
 ## Reading it
 
 Queries, dashboards and alerts are documented here by brief 0427.
