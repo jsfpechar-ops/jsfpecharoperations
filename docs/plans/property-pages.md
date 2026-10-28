@@ -45,14 +45,19 @@ Host pastes their OTA link(s)
 
 ### OTA photos (owner decision, 28 Oct: platforms pull them; so do we)
 
-How the others do it: Hospitable/Hostaway/Hostex import photos through the
-**official Airbnb/Booking partner APIs** (OAuth-connected accounts), then
-re-host the files. Airbnb's own help says downloaded listing photos are for
-personal use and may not be used on another rental site — which is why
-permissioned platforms use the API and why the host, not ubyhost, is the one
-acting here: the host imports **their own listing's photos** and confirms
-publication on **their own page**. We scrape the listing the host owns, on
-their instruction — but we still do it cleanly:
+How the others do it (owner correction, 28 Oct: not the official APIs): the
+PMS/direct-booking tools in this space do **not** use Airbnb/Booking partner
+APIs for listing content — those APIs are restricted to approved channel
+partners and don't hand out photos to small third parties. What actually
+happens: the host connects their own OTA account or pastes their own listing
+link, the platform fetches the listing pages (API where the host's own
+credentials allow, scraping where not), downloads the photo files and
+**re-hosts them**. That is also our model, minus the credentials: the host
+pastes their own listing link, Apify fetches it on their instruction, the
+worker downloads the photos once and re-hosts them through our own image
+pipeline. The rights position does not change: they are the host's own
+listing photos, the host confirms publication on their own page, and the
+review screen carries the rights notice. Cleanly:
 
 - **Download and re-host, never hotlink.** OTA CDN URLs (e.g. muscache) are
   signed and expire; hotlinked photos break within days. The import worker
