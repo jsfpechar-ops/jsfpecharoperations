@@ -200,8 +200,8 @@ services:
   # Prometheus — see docs/OBSERVABILITY.md.
   alloy:
     profiles: ["monitoring"]
-    # TODO(owner): pin by digest after the first green deploy (repo convention).
-    image: grafana/alloy:v1.10.1
+    # Pinned by digest (repo convention, like litestream/caddy).
+    image: grafana/alloy:v1.10.1@sha256:582f5a5169cd67a2bdbf98777c1a6f596203f573cdef5c021749fd3279605768
     restart: unless-stopped
     command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
     # Same pattern as litestream: only the variables this service needs.
@@ -226,8 +226,8 @@ services:
 
   node-exporter:
     profiles: ["monitoring"]
-    # TODO(owner): pin by digest after the first green deploy.
-    image: prom/node-exporter:v1.9.1
+    # Pinned by digest.
+    image: prom/node-exporter:v1.9.1@sha256:d00a542e409ee618a4edc67da14dd48c5da66726bbd5537ab2af9c1dfc442c8a
     restart: unless-stopped
     pid: host
     volumes:
@@ -250,8 +250,8 @@ services:
 
   cadvisor:
     profiles: ["monitoring"]
-    # TODO(owner): pin by digest after the first green deploy.
-    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    # Pinned by digest.
+    image: gcr.io/cadvisor/cadvisor:v0.52.1@sha256:f40e65878e25c2e78ea037f73a449527a0fb994e303dc3e34cb6b187b4b91435
     restart: unless-stopped
     privileged: true
     devices:
