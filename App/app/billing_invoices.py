@@ -234,6 +234,13 @@ def mark_paid(invoice_id: int, *, paid_on: str, via: str, actor: str = "system")
         row = get(invoice_id)
         db.audit("platform_invoice_paid", f"{row['number']} {via}", actor=actor,
                  owner_user_id=row["owner_user_id"])
+        from . import mail_notify
+        if row["owner_user_id"] is not None:
+            mail_notify.billing_paid(
+                invoice_id=invoice_id, owner_user_id=int(row["owner_user_id"]),
+                number=row["number"], amount_czk=int(row["total_haler"]) // 100,
+                paid_on=paid_on,
+            )
     return bool(changed)
 
 

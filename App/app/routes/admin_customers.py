@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Request
 
-from .. import admin_customers, billing, billing_analytics, billing_order, config, validation
+from .. import admin_customers, billing, billing_analytics, billing_order, config, db, validation
 from ..templating import render
 from .admin_accounts import _require_admin
 from .admin_helpers import back as _back
@@ -20,6 +20,23 @@ STATUSES = ("trial_pending", "trialing", "active", "overdue", "canceling", "paus
 
 def _cursor(value: str) -> int:
     return int(value) if value.isascii() and value.isdigit() and len(value) <= 18 else 0
+
+
+@router.get("/admin")
+def admin_home(request: Request):
+    """0440: the operator console home — what needs attention today."""
+    _account, guard = _require_admin(request)
+    if guard:
+        return guard
+    day = datetime.now(ZoneInfo(config.TIMEZONE)).date()
+    queue = billing_analytics.operator_queue(day)
+    summary = admin_customers.summary(day)
+    portfolio = billing_analytics.portfolio(day) if billing.enabled() else None
+    return render(request, "admin_home.html", {
+        "queue": queue, "summary": summary, "portfolio": portfolio,
+        "today": day.isoformat(), "billing_enabled": billing.enabled(),
+        "fmt_date": validation.fmt_date, "kc": _kc,
+    })
 
 
 @router.get(PAGE)
@@ -171,6 +188,42 @@ async def customer_extend_trial(request: Request, user_id: int):
     if not new_end:
         return _back(f"{PAGE}/{user_id}", err=_flash(request, "billing.admin.extend.not_trialing"))
     return _back(f"{PAGE}/{user_id}", msg=_flash(request, "billing.admin.extend.done", days=days))
+
+
+@router.post(PAGE + "/{user_id}/aktivovat")
+async def customer_toggle_active(request: Request, user_id: int):
+    """0438: the toggle surface on the customer page, delegating to the
+    existing /admin/users/{id}/toggle logic (one code path)."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    target = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    if not target:
+        raise HTTPException(status_code=404)
+    if user_id == account["id"]:
+        return _back(f"{PAGE}/{user_id}", err=_flash(request, "auth.error.own_disable"))
+    active = 0 if target["active"] else 1
+    db.execute(
+        "UPDATE user_account SET active = ?, session_version = session_version + 1 WHERE id = ?",
+        (active, user_id),
+    )
+    db.audit("user_enabled" if active else "user_disabled",
+             actor=f"operator:{account['username']}", owner_user_id=user_id)
+    key = "customers.ops.enabled" if active else "customers.ops.disabled"
+    return _back(f"{PAGE}/{user_id}", msg=_flash(request, key, username=target["username"]))
+
+
+@router.post(PAGE + "/{user_id}/overit-znovu")
+async def customer_resend_verification(request: Request, user_id: int):
+    """0438: re-send a pending signup's verification link (retires the old one)."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    from .. import signup as signup_module
+
+    if signup_module.resend_operator(user_id, actor=f"operator:{account['username']}"):
+        return _back(f"{PAGE}/{user_id}", msg=_flash(request, "customers.ops.verify_sent"))
+    return _back(f"{PAGE}/{user_id}", err=_flash(request, "customers.ops.verify_refused"))
 
 
 @router.post(PAGE + "/{user_id}/stav")

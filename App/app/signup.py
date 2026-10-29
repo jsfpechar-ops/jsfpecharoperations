@@ -587,6 +587,36 @@ def register(
     return outcome
 
 
+def resend_operator(user_id: int, *, actor: str) -> bool:
+    """The operator re-sends a pending account's verification link (0438).
+
+    Retires the older link (new nonce), queues one signup_verify mail, audits.
+    False when the account is not a pending unverified signup.
+    """
+    import secrets as _secrets
+
+    from . import mail_notify
+
+    account = db.query_one("SELECT * FROM user_account WHERE id = ?", (user_id,))
+    if not account or account["email_verified_at"] is not None:
+        return False
+    if account["signup_at"] is None or account["active"]:
+        return False
+    nonce = _secrets.token_urlsafe(16)
+    db.update("user_account", user_id, {"signup_verify_nonce": nonce})
+    db.audit("signup_resend_operator", actor=actor, owner_user_id=user_id)
+    mail_notify.signup_verify(
+        user_id=user_id,
+        to_email=account["email"],
+        lang="cs",
+        workspace=account["display_name"] or account["username"],
+        username=account["username"],
+        token=issue_token(user_id, nonce),
+        nonce=nonce,
+    )
+    return True
+
+
 def activate(account) -> bool:
     """Mark the account verified and active. False if someone else won the race."""
     now = db.utcnow()

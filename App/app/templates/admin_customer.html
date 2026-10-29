@@ -8,6 +8,7 @@
 {% block secondary_actions %}
 {{ ui_button(t('customers.manage'), 'secondary', href='/admin/users?manage=' ~ customer.id ~ '#user-manage') }}
 {{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}
+{{ ui_button(t('customers.ops.preview'), 'secondary', href='/admin/users?manage=' ~ customer.id ~ '#user-manage') }}
 {% endblock %}
 {% block body %}
 {% if not billing_enabled %}{{ ui_banner('neutral', t('customers.billing_off')) }}{% endif %}
@@ -147,6 +148,51 @@
 </form>
 {% endcall %}
 {% endif %}
+{% call ui_section(t('customers.ops.title'), id='operator-actions-card') %}
+<div class="ui-form-actions">
+  <form method="post" action="/admin/customers/{{ customer.id }}/aktivovat" data-customer-toggle>
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    {{ ui_button(t('customers.ops.enable' if not customer.active else 'customers.ops.disable'),
+                 'secondary', type='submit') }}
+  </form>
+  {% if customer.customer_state == 'unverified' %}
+  <form method="post" action="/admin/customers/{{ customer.id }}/overit-znovu" data-customer-verify>
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    {{ ui_button(t('customers.ops.verify'), 'secondary', type='submit') }}
+  </form>
+  {% endif %}
+</div>
+<p class="ui-sub">{{ t('customers.ops.help') }}</p>
+{% endcall %}
+
+{% call ui_section(t('customers.activity.title'), id='activity-card') %}
+{% if customer.activity %}
+{{ ui_table_begin([(t('customers.activity.when'), ''), (t('customers.activity.kind'), ''), (t('customers.activity.what'), '')], label=t('customers.activity.title')) }}
+{% for ev in customer.activity %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="meta">{{ fmt_date(ev.at) }}</td>
+  <td data-card="secondary">{{ t('customers.activity.' ~ ev.kind) }}</td>
+  <td data-card="primary">{{ (ev.detail or '') | e }}{% if ev.extra %} <span class="ui-sub">{{ ev.extra | e }}</span>{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('customers.activity.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('customers.oplog.title'), id='operator-log-card') %}
+{% if customer.operator_log %}
+{{ ui_table_begin([(t('customers.activity.when'), ''), (t('customers.oplog.action'), ''), (t('customers.oplog.who'), '')], label=t('customers.oplog.title')) }}
+{% for row in customer.operator_log %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="meta">{{ fmt_date(row.at) }}</td>
+  <td data-card="primary">{{ row.action | e }}{% if row.detail %} <span class="ui-sub">{{ row.detail | e }}</span>{% endif %}</td>
+  <td data-card="secondary">{{ row.actor | e }}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('customers.activity.none') }}</p>{% endif %}
+{% endcall %}
+
 {% call ui_section(t('customers.invoices')) %}
 {% if customer.invoices %}
 {{ ui_table_begin([(t('customers.invoice'), ''), (t('customers.amount'), 'r'), (t('customers.due'), ''), (t('customers.state'), '')], label=t('customers.invoices')) }}

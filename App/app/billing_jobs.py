@@ -15,9 +15,11 @@ from . import billing, billing_invoices, billing_order, billing_trial, db
 
 log = logging.getLogger(__name__)
 
-# Days after the due date: first reminder, second reminder, read-only.
-REMIND_AFTER = 1
-SECOND_AFTER = 7
+# Days after the due date: first reminder, second reminder, monthly repeat, read-only.
+# Owner decision 2026-10-29: due+7, due+14, then monthly while unpaid.
+REMIND_AFTER = 7
+SECOND_AFTER = 14
+MONTHLY_AFTER = 44  # the monthly repeats start one month after the second (14 + 30)
 PAUSE_AFTER = 14
 BILLED = ("active", "overdue", "canceling")
 
@@ -104,7 +106,7 @@ def _unpaid_overdue(today: date, owner_user_id: Optional[int] = None) -> list:
 
 
 def dunning(today: date, owner_user_id: Optional[int] = None) -> Dict[str, int]:
-    """Reminders 1 and 7 days after the due date; read-only after 14. One mail per stage."""
+    """Reminders 7 and 14 days after the due date, then monthly; read-only after 14."""
     from . import mail_notify
 
     counts = {"overdue": 0, "reminded": 0, "paused": 0}
@@ -122,11 +124,16 @@ def dunning(today: date, owner_user_id: Optional[int] = None) -> Dict[str, int]:
             stage = "second"
         elif late >= REMIND_AFTER:
             stage = "reminder"
+        if stage in ("second", "paused") and late >= MONTHLY_AFTER:
+            # Monthly repeat (owner decision 2026-10-29): one mail per ~30 days
+            # even after the pause, bucketed so it never duplicates within a month.
+            bucket = (late - SECOND_AFTER) // 30
+            stage = f"monthly{bucket}"
         if stage and mail_notify.billing_overdue(
-            invoice_id=int(inv["id"]), owner_user_id=owner, stage=stage, number=inv["number"],
-            amount_czk=int(inv["total_haler"]) // 100, due=inv["due_date"][:10],
-            today=today.isoformat(),
-        ):
+                invoice_id=int(inv["id"]), owner_user_id=owner, stage=stage, number=inv["number"],
+                amount_czk=int(inv["total_haler"]) // 100, due=inv["due_date"][:10],
+                today=today.isoformat(),
+            ):
             counts["reminded"] += 1
     return counts
 

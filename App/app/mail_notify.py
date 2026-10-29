@@ -2654,13 +2654,63 @@ def billing_trial(*, owner_user_id: int, days_left: int, ends: str) -> Optional[
         owner_user_id=owner_user_id,
         payload={"text": content["text"], "html": content["html"], "lang": BILLING_MAIL_LANGUAGE,
                  "reply_to": config.OPERATOR_EMAIL},
+        cc_email=config.OPERATOR_EMAIL or None,
     )
+
+
+def build_billing_paid(*, number: str, amount_czk: int, paid_on: str) -> Dict[str, str]:
+    lang = BILLING_MAIL_LANGUAGE
+    amount = f"{amount_czk:,}".replace(",", " ")
+    subject = _text(lang, "mail.billing_paid.subject", number=number)
+    body = _text(lang, "mail.billing_paid.body", number=number, amount=amount,
+                 date=_fmt_date(paid_on))
+    action = _text(lang, "mail.billing_overdue.action")
+    link = _app("/predplatne")
+    footer = _signup_footer(lang)
+    text = "\n".join([body, "", f"{action}: {link}", "", "--", *footer])
+    blocks = [_block_heading(subject), _block_paragraph(body), _block_button(link, action)]
+    return {"subject": subject, "text": text,
+            "html": _shell(lang=lang, title=subject, preheader=body, blocks=blocks, footer_lines=footer)}
+
+
+def billing_paid(
+    *, invoice_id: int, owner_user_id: int, number: str, amount_czk: int, paid_on: str,
+) -> int:
+    """Payment-received confirmation, both recipients (owner decision 2026-10-29).
+
+    One copy to the invoice buyer e-mail and one to the account e-mail; a single
+    copy when the addresses are identical. One idempotency key per invoice and
+    recipient, so a re-recorded payment never re-sends.
+    """
+    from . import billing_invoices
+
+    buyer = billing_invoices.recipient(owner_user_id)
+    account_row = db.query_one("SELECT email FROM user_account WHERE id = ?", (owner_user_id,))
+    account = (account_row["email"] or "").strip() if account_row else ""
+    content = build_billing_paid(number=number, amount_czk=amount_czk, paid_on=paid_on)
+    sent = 0
+    for tag, to_email in (("buyer", buyer), ("account", account)):
+        if not to_email or (tag == "account" and to_email == buyer):
+            continue
+        if mail.enqueue(
+            kind="billing_paid",
+            idempotency_key=f"billing-paid-{invoice_id}-{tag}",
+            to_email=to_email,
+            subject=content["subject"],
+            owner_user_id=owner_user_id,
+            payload={"text": content["text"], "html": content["html"],
+                     "lang": BILLING_MAIL_LANGUAGE, "reply_to": config.OPERATOR_EMAIL},
+            cc_email=config.OPERATOR_EMAIL or None,
+        ):
+            sent += 1
+    return sent
 
 
 def build_billing_overdue(*, stage: str, number: str, amount_czk: int, due: str, today: str) -> Dict[str, str]:
     lang = BILLING_MAIL_LANGUAGE
     amount = f"{amount_czk:,}".replace(",", " ")
-    subject = _text(lang, f"mail.billing_overdue.subject_{stage}", number=number)
+    stage_key = stage if stage in ("reminder", "second", "paused") else "second"
+    subject = _text(lang, f"mail.billing_overdue.subject_{stage_key}", number=number)
     body = _text(lang, "mail.billing_overdue.body_" + ("paused" if stage == "paused" else "reminder"),
                  number=number, amount=amount, due=_fmt_date(due), date=_fmt_date(today))
     action = _text(lang, "mail.billing_overdue.action")
@@ -2687,4 +2737,5 @@ def billing_overdue(
         owner_user_id=owner_user_id,
         payload={"text": content["text"], "html": content["html"], "lang": BILLING_MAIL_LANGUAGE,
                  "reply_to": config.OPERATOR_EMAIL},
+        cc_email=config.OPERATOR_EMAIL or None,
     )
