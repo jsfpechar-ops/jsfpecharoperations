@@ -73,7 +73,7 @@ it does not touch host or guest pages.
 ## 3. What we build (build order)
 
 ### Slice A — close the billing mail gaps
-1. **Payment-received mail** (`billing_jobs.settle()` hook + `mail_notify.build_billing_paid()`): plain Czech "Faktura VS… byla zaplacena, děkujeme" on bank match and operator mark-paid; idempotent per invoice. Nothing else — dunning exists (0417), do not touch its schedule.
+1. **Payment-received mail** (`billing_jobs.settle()` hook + `mail_notify.build_billing_paid()`): plain Czech "Faktura VS… byla zaplacena, děkujeme" on bank match and operator mark-paid; sent to **both** the invoice buyer e-mail and the account e-mail (owner decision §7.2; one copy when identical); idempotent per invoice. Nothing else — dunning exists (0417), do not touch its schedule.
 
 ### Slice B — one user-action surface ("sort out my users")
 3. `/admin/customers/{id}` operator card: **activate/deactivate via the existing `/admin/users/{id}/toggle` route** (link/form, no new logic), resend verification (reuse the existing token flow), and the existing account-support link — POST + CSRF as 0448 did. New *surface*, not new *actions*.
@@ -158,20 +158,25 @@ What deliberately does NOT scale (and why that's correct at enterprise too):
 | 2 | 0438: customer-page operator card: toggle surface + verification resend, reusing existing routes | — |
 | 3 | 0439: preview link + audit/activity cards on the customer detail (bounded, keyset) | 0438 |
 | 4 | 0440: /admin operations home: queue cards (snapshot-fed, `LIMIT ≤ 25` per card, migration 0032 adds the unpaid-overdue index) | — |
-| 5 | 0441: daily operator digest mail (same queue functions as 0440) | 0440 |
+| 5 | ~~0441: daily operator digest mail~~ dropped (owner decision §7.3) | — |
 
-## 7. Open items for the owner (decide, don't build)
+## 7. Owner decisions (2026-10-29, chat) — resolved
 
-1. Dunning schedule: 0417's due+1/+7 + pause-14 ships today — keep as is, or retune the constants? (No new code either way.)
-2. Payment-received mail: to the buyer e-mail on the invoice, or the account e-mail (they can differ)?
-3. Digest by mail (06:30) or in-app-only queue on /admin?
-4. Second admin account now (family/staff) or stay single-admin?
+1. **Dunning schedule: keep as is** (0417's due+1/+7, pause-14; no retune).
+2. **Payment-received mail: both** — the buyer e-mail on the invoice *and* the
+   host's account e-mail. One mail kind, two recipients, one idempotency key
+   per invoice; if the addresses are identical, one recipient (no duplicate).
+3. **Digest: not built now** — brief 0441 (digest mail) dropped from this plan;
+   the in-app queue on /admin remains in scope (brief 0440).
+4. **Second admin: not now** — single-admin stands; the `role='admin'` gate
+   already covers adding one later. No invite flow in any brief.
 
 ## 8. Fit for what UbyHost admin needs today (verified)
 
 Checked against the code this session: dunning (0417), overdue derivation,
 recurring issuance, activate/deactivate, admin preview, keyset pagination,
 9-state filters, cockpit + snapshot — all exist and are reused, not rebuilt.
-This plan adds exactly four things the admin lacks today: payment-received
-mail, one user-action surface, a needs-attention queue, and the audit/activity
-view — each additive, each with its enterprise-scale pattern decided in §4.
+This plan adds exactly three things the admin lacks today: payment-received
+mail (both recipients, per decision §7.2), one user-action surface, a
+needs-attention queue (in-app only, per §7.3), and the audit/activity view —
+each additive, each with its enterprise-scale pattern decided in §4.
