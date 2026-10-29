@@ -66,33 +66,36 @@ def test_disabled_when_mode_off(owner, monkeypatch):
 def test_ensure_account_creates_mirror_row(owner):
     created = _acct()
     with mock.patch.object(stripe_connect, "_client") as client:
-        client.return_value.accounts.create.return_value = created
+        client.return_value.v2.core.accounts.create.return_value = created
         row = stripe_connect.ensure_account(owner, base_url="https://ubyhost.cz")
     assert row["stripe_account_id"] == "acct_test123"
     assert row["onboarding_state"] == "pending"
     assert row["mode"] == "test"
-    client.return_value.accounts.create.assert_called_once()
-    kwargs = client.return_value.accounts.create.call_args.kwargs
-    assert kwargs["controller"]["fees"]["payer"] == "account"
-    assert kwargs["controller"]["losses"]["payments"] == "stripe"
-    assert kwargs["controller"]["stripe_dashboard"]["type"] == "express"
-    assert kwargs["country"] == "CZ"
+    client.return_value.v2.core.accounts.create.assert_called_once()
+    kwargs = client.return_value.v2.core.accounts.create.call_args.kwargs
+    resp = kwargs["defaults"]["responsibilities"]
+    assert resp["fees_collector"] == "stripe"
+    assert resp["losses_collector"] == "stripe"
+    assert kwargs["dashboard"] == "express"
+    assert kwargs["identity"]["country"] == "CZ"
+    assert kwargs["configuration"]["merchant"]["capabilities"]["card_payments"]["requested"] is True
     # Prefill sends name/email/url only — never sensitive personal data.
-    assert "individual" not in kwargs
-    assert set(kwargs["business_profile"]) == {"name", "url", "product_description"}
+    bd = kwargs["identity"]["business_details"]
+    assert set(bd) == {"registered_name", "url", "product_description"}
+    assert "dob" not in str(kwargs).lower() and "address" not in str(kwargs).lower()
 
 
 def test_ensure_account_is_idempotent(owner):
     with mock.patch.object(stripe_connect, "_client") as client:
-        client.return_value.accounts.create.return_value = _acct()
+        client.return_value.v2.core.accounts.create.return_value = _acct()
         stripe_connect.ensure_account(owner, base_url="https://ubyhost.cz")
         stripe_connect.ensure_account(owner, base_url="https://ubyhost.cz")
-    assert client.return_value.accounts.create.call_count == 1
+    assert client.return_value.v2.core.accounts.create.call_count == 1
 
 
 def test_sync_account_maps_states(owner):
     with mock.patch.object(stripe_connect, "_client") as client:
-        client.return_value.accounts.create.return_value = _acct()
+        client.return_value.v2.core.accounts.create.return_value = _acct()
         stripe_connect.ensure_account(owner, base_url="https://ubyhost.cz")
         client.return_value.accounts.retrieve.return_value = _acct(
             charges_enabled=True, payouts_enabled=True,
@@ -107,7 +110,7 @@ def test_sync_account_maps_states(owner):
 
 def test_sync_account_rejected(owner):
     with mock.patch.object(stripe_connect, "_client") as client:
-        client.return_value.accounts.create.return_value = _acct()
+        client.return_value.v2.core.accounts.create.return_value = _acct()
         stripe_connect.ensure_account(owner, base_url="https://ubyhost.cz")
         client.return_value.accounts.retrieve.return_value = _acct(
             requirements={"currently_due": [], "past_due": [],
@@ -123,7 +126,7 @@ def _event(evt_id, etype, obj):
 
 def test_webhook_account_updated(owner):
     with mock.patch.object(stripe_connect, "_client") as client:
-        client.return_value.accounts.create.return_value = _acct()
+        client.return_value.v2.core.accounts.create.return_value = _acct()
         stripe_connect.ensure_account(owner, base_url="https://ubyhost.cz")
         event = _event("evt_1", "account.updated", dict(_acct(
             charges_enabled=True, payouts_enabled=True,

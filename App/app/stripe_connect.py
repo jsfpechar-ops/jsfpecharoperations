@@ -27,7 +27,7 @@ NORMAL = "normal"
 
 # The only Stripe requests this module may make (outbound requests have a
 # reason in the PR, AGENTS.md rule 2).
-ALLOWED = ("accounts.create", "accounts.retrieve", "account_links.create")
+ALLOWED = ("v2.core.accounts.create", "accounts.retrieve", "account_links.create")
 
 
 class StripeDisabledError(RuntimeError):
@@ -101,21 +101,41 @@ def ensure_account(owner_user_id: int, *, base_url: str, priority: str = NORMAL)
     entity = _entity(owner_user_id)
     if entity is None:
         raise ValueError("host has no legal entity; cannot create a Stripe account")
-    acct = _client().accounts.create(
-        controller={
-            "fees": {"payer": "account"},
-            "losses": {"payments": "stripe"},
-            "stripe_dashboard": {"type": "express"},
-            "requirement_collection": "stripe",
+    # Accounts v2 (POST /v2/core/accounts): v1 creation is disabled on new
+    # platforms. Responsibilities map 1:1 to our locked v1 controller design:
+    # fees_collector=stripe (host pays their own Stripe fees), losses_collector
+    # =stripe (Stripe carries negative balances), dashboard=express, and KYC
+    # collection follows automatically from those (requirements_collector
+    # becomes stripe). Immutable: set correctly at creation.
+    acct = _client().v2.core.accounts.create(
+        contact_email=entity["contact_email"] or None,
+        display_name=entity["name"],
+        dashboard="express",
+        identity={
+            "country": "CZ",
+            "entity_type": "individual",
+            "business_details": {
+                "registered_name": entity["name"],
+                "url": base_url,
+                "product_description": (
+                    "Short-term accommodation rental by the host (ubyhost page)"
+                ),
+            },
         },
-        country="CZ",
-        default_currency="czk",
-        business_type="individual",
-        email=entity["contact_email"] or None,
-        business_profile={
-            "name": entity["name"],
-            "url": base_url,
-            "product_description": "Short-term accommodation rental by the host (ubyhost page)",
+        configuration={
+            "merchant": {
+                "capabilities": {
+                    "card_payments": {"requested": True},
+                    "stripe_balance.payouts": {"requested": True},
+                }
+            }
+        },
+        defaults={
+            "currency": "czk",
+            "responsibilities": {
+                "fees_collector": "stripe",
+                "losses_collector": "stripe",
+            },
         },
     )
     _count_call()

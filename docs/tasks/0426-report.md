@@ -36,3 +36,8 @@ Branch: task/0426-stripe-connect
 
 - After staging deploy: register the webhook destination (Connected accounts, snapshot) pointing at `https://<staging>/stripe/webhook`; set `UBYHOST_STRIPE_MODE=test`, `UBYHOST_STRIPE_SECRET_KEY`, `UBYHOST_STRIPE_WEBHOOK_SECRET` in the staging env.
 - Sandbox validations per the go-live checklist (onboarding triggers, dispute sim, test clocks).
+
+## Addendum 29 Oct
+
+- Discovered on the owner's account: Accounts v1 creation disabled for new platforms. Migrated ensure_account to Accounts v2 (`v2.core.accounts.create`) with the responsibilities map (fees_collector=stripe, losses_collector=stripe, dashboard=express, merchant config with card_payments + payouts). Tests updated; 22 passed.
+- CI never queued for the branch (known Actions quirk); owner merged on local verification.
