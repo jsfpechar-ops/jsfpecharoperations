@@ -810,6 +810,10 @@ def sweep_reminders() -> Dict[str, int]:
         complete = alerts.forms_complete(progress)
         if complete:
             alerts.resolve(f"guest_incomplete_checkin:{reservation['id']}")
+        elif start < today:
+            # The check-in-day warning names a day that has passed: after it,
+            # the deadline chase is the reminder that is still true.
+            alerts.resolve(f"guest_incomplete_checkin:{reservation['id']}")
         if (
             start == today + timedelta(days=1)
             and now_local.hour >= 9

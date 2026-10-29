@@ -1,7 +1,7 @@
 """Arrival warnings follow live completion and are cleared by the next sweep."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -106,6 +106,30 @@ def test_worker_resolves_completion_and_warns_again_if_forms_become_incomplete(s
     assert claim.sweep_reminders()["host"] == 1
     assert alerts.open_alert(key)["id"] != original_id
     assert len(alerts.present_many(_rows(stay), "en")) == 1
+
+
+def test_worker_resolves_the_warning_once_checkin_day_has_passed(stay, monkeypatch):
+    key = _raise(stay)
+    stay[2].update(filled=1, expected=2, incomplete=True, status="incomplete")
+    arrival = date.fromisoformat(
+        db.query_one("SELECT date_from FROM reservation WHERE id = ?", (stay[0],))["date_from"]
+    )
+    monkeypatch.setattr(claim, "prague_today", lambda: arrival + timedelta(days=12))
+
+    assert claim.sweep_reminders()["host"] == 0
+    assert alerts.open_alert(key) is None
+
+
+def test_reported_stay_counts_as_complete_even_without_expected_count():
+    assert alerts.forms_complete(
+        {"filled": 4, "expected": None, "incomplete": [], "status": "reported"}
+    ) is True
+    assert alerts.forms_complete(
+        {"filled": 4, "expected": None, "incomplete": [], "status": "not_required"}
+    ) is True
+    assert alerts.forms_complete(
+        {"filled": 4, "expected": None, "incomplete": ["g"], "status": "incomplete"}
+    ) is False
 
 
 def test_unreadable_guest_data_does_not_hide_the_warning(stay, monkeypatch):

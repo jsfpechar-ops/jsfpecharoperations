@@ -16,6 +16,7 @@ def test_notification_copy_keys_exist_in_en_and_cs():
         "notification.reason.overdue_hours_forms",
         "notification.reason.urgent_forms",
         "notification.reason.checkin_incomplete",
+        "notification.reason.checkin_incomplete_past",
         "notification.open_stay",
         "notification.feed_duplicate_uid.title",
         "notification.reason.feed_duplicate_uid",
@@ -59,6 +60,19 @@ def test_checkin_reason_drops_masked_email():
     assert "@" not in en and "@" not in cs
     assert "Claimed" not in en
     assert "registration link" not in en
+
+
+def test_checkin_reason_names_the_day_once_it_has_passed():
+    arrival = date(2026, 10, 17)
+    today = date(2026, 10, 29)
+    en = alerts.checkin_incomplete_reason("en", arrival, today)
+    cs = alerts.checkin_incomplete_reason("cs", arrival, today)
+    assert en == "Check-in was on 17.10.2026 · forms incomplete"
+    assert "17.10.2026" in cs
+    assert "today" not in en.lower()
+    # On the day itself, and with no date to read, the copy stays "today".
+    assert alerts.checkin_incomplete_reason("en", today, today) == "Check-in today · forms incomplete"
+    assert alerts.checkin_incomplete_reason("en", None, today) == "Check-in today · forms incomplete"
 
 
 def test_present_rebuilds_stay_title_with_czech_dates(monkeypatch):
@@ -131,7 +145,8 @@ def test_present_checkin_omits_email(monkeypatch):
     assert shown["display_title"] == (
         "Vinohrady Studio (demo) · 19.09.2026 – 21.09.2026"
     )
-    assert shown["display_detail"] == "Check-in today · forms incomplete"
+    # 19.09.2026 is in the past, so the reason names the day instead of "today".
+    assert shown["display_detail"] == "Check-in was on 19.09.2026 · forms incomplete"
     assert "@" not in shown["display_detail"]
 
 

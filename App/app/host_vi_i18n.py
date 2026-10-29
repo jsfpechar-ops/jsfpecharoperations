@@ -739,6 +739,7 @@ STRINGS: Dict[str, str] = {
     "notification.reason.overdue_hours_forms": "Quá hạn %(n)s giờ · %(filled)s/%(expected)s",
     "notification.reason.urgent_forms": "Đến hạn ngay · %(filled)s/%(expected)s",
     "notification.reason.checkin_incomplete": "Nhận phòng hôm nay · biểu mẫu chưa đầy đủ",
+    "notification.reason.checkin_incomplete_past": "Nhận phòng ngày %(date)s · biểu mẫu chưa đầy đủ",
     "notification.dates_changed_resign.title": "Lịch đã đổi ngày của lượt lưu trú này sau khi khách ký.",
     "notification.reason.headcount_mismatch": "Chờ biểu mẫu khách · %(filled)s/%(expected)s",
     "notification.feed_duplicate_uid.title": "%(property)s: một đặt phòng xuất hiện hai lần.",
