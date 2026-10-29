@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
-from . import db
+from . import db, validation
 
 PAGE_SIZE = 25
 STATES = ("legacy", "unverified", "disabled", "trial_pending", "trialing",
@@ -110,4 +110,39 @@ def detail(user_id: int) -> dict[str, Any] | None:
         "SELECT id, number, issue_date, due_date, total_haler, paid_on, voided, kind "
         "FROM platform_invoice WHERE owner_user_id = ? ORDER BY id DESC LIMIT 10", (user_id,),
     )]
+    customer["buyer_prefill"] = buyer_prefill(user_id)
     return customer
+
+
+def buyer_prefill(user_id: int) -> dict[str, str]:
+    """Known operator details for the assign-plan buyer fields (0448 prefill).
+
+    Blanks only: the operator keeps what they typed. Sources are the host's
+    legal entity (name, IČO, DIČ, contact e-mail) and the first active
+    apartment's address (street + house number, municipality, ZIP).
+    """
+    entity = db.query_one(
+        "SELECT name, ico, dic, contact_email FROM legal_entity "
+        "WHERE owner_user_id = ? ORDER BY id LIMIT 1", (user_id,))
+    apartment = db.query_one(
+        "SELECT addr_street, addr_house_no, addr_obec, addr_zip FROM apartment "
+        "WHERE owner_user_id = ? AND active = 1 AND archived_at IS NULL ORDER BY id LIMIT 1",
+        (user_id,))
+    prefill: dict[str, str] = {}
+    if entity:
+        prefill.update(buyer_name=(entity["name"] or "").strip(),
+                       buyer_ico=(entity["ico"] or "").strip(),
+                       buyer_dic=(entity["dic"] or "").strip(),
+                       buyer_email=(entity["contact_email"] or "").strip())
+    if apartment:
+        street = " ".join(part for part in (
+            (apartment["addr_street"] or "").strip(),
+            (apartment["addr_house_no"] or "").strip()) if part)
+        if street:
+            prefill["buyer_street"] = street
+        if (apartment["addr_obec"] or "").strip():
+            prefill["buyer_city"] = apartment["addr_obec"].strip()
+        zipcode = validation.normalise_zip(apartment["addr_zip"] or "")
+        if zipcode:
+            prefill["buyer_zip"] = zipcode
+    return prefill
