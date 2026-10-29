@@ -113,24 +113,62 @@ def test_an_archived_apartment_counts_from_the_next_period(owner):
 
 
 def test_dunning_reminds_then_pauses_and_payment_reopens(owner):
+    """Owner decision 2026-10-29: reminder due+7, second due+14, pause at 14,
+    then monthly; payment mails both recipients and reopens the account."""
     _period(owner, TODAY - timedelta(days=20), TODAY + timedelta(days=9))
     invoice_id = billing_invoices.issue_for_period(owner, (TODAY - timedelta(days=20)).isoformat(),
                                                    (TODAY + timedelta(days=9)).isoformat(),
                                                    today=TODAY - timedelta(days=20))
+    # due+6: nothing yet (the old schedule reminded at +1).
     db.execute("UPDATE platform_invoice SET due_date = ? WHERE id = ?",
-               ((TODAY - timedelta(days=1)).isoformat(), invoice_id))
+               ((TODAY - timedelta(days=6)).isoformat(), invoice_id))
+    billing_jobs.dunning(TODAY, owner)
+    assert _kinds(owner).count("billing_overdue") == 0
+    # due+7: first reminder, account overdue.
+    db.execute("UPDATE platform_invoice SET due_date = ? WHERE id = ?",
+               ((TODAY - timedelta(days=7)).isoformat(), invoice_id))
     billing_jobs.dunning(TODAY, owner)
     assert billing.account(owner)["status"] == "overdue"
+    assert _kinds(owner).count("billing_overdue") == 1
+    # due+14: second reminder, account paused; a rerun sends nothing new.
     db.execute("UPDATE platform_invoice SET due_date = ? WHERE id = ?",
                ((TODAY - timedelta(days=14)).isoformat(), invoice_id))
     billing_jobs.dunning(TODAY, owner)
     billing_jobs.dunning(TODAY, owner)
     assert billing.account(owner)["status"] == "paused"
     assert _kinds(owner).count("billing_overdue") == 2
+    # due+45 (monthly bucket): one more reminder, idempotent within the bucket.
+    db.execute("UPDATE platform_invoice SET due_date = ? WHERE id = ?",
+               ((TODAY - timedelta(days=45)).isoformat(), invoice_id))
+    billing_jobs.dunning(TODAY, owner)
+    billing_jobs.dunning(TODAY, owner)
+    assert _kinds(owner).count("billing_overdue") == 3
     assert billing_jobs.settle(owner, today=TODAY) is False
+    # Payment: both recipients get billing_paid (buyer == account here, so one),
+    # and the account reopens.
     billing_invoices.mark_paid(invoice_id, paid_on=TODAY.isoformat(), via="bank_manual")
+    assert _kinds(owner).count("billing_paid") >= 1
     assert billing_jobs.settle(owner, today=TODAY) is True
     assert billing.account(owner)["status"] == "active"
+
+
+def test_payment_mail_reaches_both_addresses(owner):
+    """0437: buyer e-mail differs from the account e-mail, both get one mail."""
+    db.execute("UPDATE user_account SET email = ? WHERE id = ?",
+               ("account-owner@example.cz", owner))
+    db.execute("UPDATE billing_account SET buyer_email = ? WHERE owner_user_id = ?",
+               ("buyer-company@example.cz", owner))
+    invoice_id = billing_invoices.issue_for_period(owner, TODAY.isoformat(),
+                                                   (TODAY + timedelta(days=29)).isoformat(), today=TODAY)
+    billing_invoices.mark_paid(invoice_id, paid_on=TODAY.isoformat(), via="bank_manual")
+    rows = [dict(r) for r in db.query(
+        "SELECT to_email FROM email_outbox WHERE owner_user_id = ? AND kind = 'billing_paid'", (owner,))]
+    assert sorted(r["to_email"] for r in rows) == [
+        "account-owner@example.cz", "buyer-company@example.cz"]
+    # a re-record attempt must not duplicate
+    billing_invoices.mark_paid(invoice_id, paid_on=TODAY.isoformat(), via="bank_manual")
+    assert len([r for r in db.query(
+        "SELECT id FROM email_outbox WHERE owner_user_id = ? AND kind = 'billing_paid'", (owner,))]) == 2
 
 
 def test_one_broken_account_does_not_stop_the_run(owner):

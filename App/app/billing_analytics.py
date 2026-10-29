@@ -128,6 +128,29 @@ def watchlists(today: Optional[date] = None) -> Dict[str, List[Dict[str, Any]]]:
     return {"trials_ending": trials, "overdue": overdue, "ending": ending}
 
 
+def operator_queue(today: Optional[date] = None) -> Dict[str, List[Dict[str, Any]]]:
+    """The /admin console queue (0440): what needs attention today, bounded rows.
+
+    Reuses the watchlist queries' shapes with LIMIT 25 per card; counts come
+    from summary()/portfolio() aggregates, not live scans of the full tables.
+    """
+    day = today or date.today()
+    lists = watchlists(day)
+    unverified = [dict(r) for r in db.query(
+        "SELECT u.id, u.display_name, u.email, u.created_at "
+        "FROM user_account u "
+        "WHERE u.role = 'host' AND u.signup_at IS NOT NULL AND u.email_verified_at IS NULL "
+        "AND u.active = 0 ORDER BY u.created_at DESC LIMIT 25",
+    )]
+    queue = {
+        "overdue": lists["overdue"][:25],
+        "trials_ending": lists["trials_ending"][:25],
+        "ending": lists["ending"][:25],
+        "unverified": unverified,
+    }
+    return queue
+
+
 def aging(today: Optional[date] = None) -> Dict[str, int]:
     """Unpaid, unvoided invoices bucketed by days past due."""
     day = today or date.today()

@@ -1,0 +1,77 @@
+{% extends "host_page.html" %}
+{% set nav = 'users' %}
+{% set body_kind = 'list' %}
+{% block title %}{{ t('home.admin.title') }}{% endblock %}
+{% block meta %}{{ t('home.admin.meta', date=today) }}{% endblock %}
+{% block secondary_actions %}
+{{ ui_button(t('customers.title'), 'secondary', href='/admin/customers') }}
+{{ ui_button(t('customers.payments'), 'secondary', href='/admin/fakturace') }}
+{% endblock %}
+{% block body %}
+{% if not billing_enabled %}{{ ui_banner('neutral', t('customers.billing_off')) }}{% endif %}
+
+{% if billing_enabled and portfolio %}
+{{ ui_stats([
+('/admin/fakturace', portfolio.mrr_czk | money_czk, t('home.admin.mrr')),
+('/admin/fakturace', portfolio.arr_czk | money_czk, t('home.admin.arr')),
+('/admin/customers?state=overdue', summary.get('overdue', 0), t('customers.state.overdue')),
+('/admin/customers?state=trialing', summary.get('trialing', 0), t('home.admin.trialing'))
+]) }}
+{% endif %}
+
+{% call ui_section(t('home.admin.queue.overdue'), id='queue-overdue') %}
+{% if queue.overdue %}
+{{ ui_table_begin([(t('customers.invoice'), ''), (t('customers.amount'), 'r'), (t('home.admin.late'), ''), (t('home.admin.customer'), '')], label=t('home.admin.queue.overdue')) }}
+{% for inv in queue.overdue %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/fakturace/{{ inv.id }}.pdf">{{ inv.number }}</a></td>
+  <td class="ui-cell-r" data-card="meta">{{ inv.total_haler | money_czk }}</td>
+  <td data-card="secondary">{{ t('home.admin.days_late', n=inv.days_late) }}</td>
+  <td data-card="badge"><a href="/admin/customers/{{ inv.owner_user_id }}">{{ inv.display_name or inv.owner_user_id }}</a></td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('home.admin.queue.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('home.admin.queue.trials'), id='queue-trials') %}
+{% if queue.trials_ending %}
+{{ ui_table_begin([(t('home.admin.customer'), ''), (t('customers.trial_end'), ''), (t('home.admin.open'), '')], label=t('home.admin.queue.trials')) }}
+{% for row in queue.trials_ending %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ row.owner_user_id }}">{{ row.display_name or row.owner_user_id }}</a></td>
+  <td data-card="secondary">{{ fmt_date(row.trial_ends_at) }}</td>
+  <td data-card="meta"><a href="/admin/customers/{{ row.owner_user_id }}/">{{ t('home.admin.open') }}</a></td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('home.admin.queue.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('home.admin.queue.unverified'), id='queue-unverified') %}
+{% if queue.unverified %}
+{{ ui_table_begin([(t('home.admin.customer'), ''), (t('customers.created'), ''), (t('home.admin.open'), '')], label=t('home.admin.queue.unverified')) }}
+{% for row in queue.unverified %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ row.id }}">{{ row.display_name or row.username }}</a></td>
+  <td data-card="secondary">{{ fmt_date(row.created_at) }}</td>
+  <td data-card="meta"><a href="/admin/customers/{{ row.id }}">{{ t('home.admin.open') }}</a></td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('home.admin.queue.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('home.admin.queue.ending'), id='queue-ending') %}
+{% if queue.ending %}
+{{ ui_table_begin([(t('home.admin.customer'), ''), (t('customers.period_end'), '')], label=t('home.admin.queue.ending')) }}
+{% for row in queue.ending %}
+<tr class="ui-row">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ row.owner_user_id }}">{{ row.display_name or row.owner_user_id }}</a></td>
+  <td data-card="secondary">{{ fmt_date(row.period_end) }}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('home.admin.queue.none') }}</p>{% endif %}
+{% endcall %}
+{% endblock %}

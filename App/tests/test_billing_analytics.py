@@ -352,6 +352,90 @@ def test_extend_refuses_a_non_trialing_account(setup):
     assert billing.account(setup["host_id"])["trial_ends_at"] is None
 
 
+def test_the_operator_toggles_a_customer_from_the_customer_page(setup):
+    host = _legacy_host(setup)
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    r = client.post(f"/admin/customers/{host}/aktivovat", data={}, follow_redirects=False)
+    assert r.status_code == 303
+    row = db.query_one("SELECT active FROM user_account WHERE id = ?", (host,))
+    assert row["active"] == 0
+    audit = db.query_one("SELECT * FROM audit WHERE owner_user_id = ? AND action = 'user_disabled' "
+                         "ORDER BY id DESC", (host,))
+    assert audit["actor"].startswith("operator:")
+    r = client.post(f"/admin/customers/{host}/aktivovat", data={}, follow_redirects=False)
+    assert db.query_one("SELECT active FROM user_account WHERE id = ?", (host,))["active"] == 1
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (host,))
+
+
+def test_a_host_cannot_toggle_or_verify(setup):
+    client = TestClient(app)
+    login_as(client, setup["host"], url="/login?lang=cs")
+    host = setup["host_id"]
+    assert client.post(f"/admin/customers/{host}/aktivovat", data={}).status_code == 403
+    assert client.post(f"/admin/customers/{host}/overit-znovu", data={}).status_code == 403
+
+
+def test_the_operator_resends_verification_to_a_pending_signup(setup):
+    suffix = secrets.token_hex(4)
+    pending = auth.create_account(f"pend{suffix}@example.test", "Pending Host",
+                                  username=f"pend{suffix}")
+    db.execute("UPDATE user_account SET active = 0, signup_at = ?, email_verified_at = NULL "
+               "WHERE id = ?", (db.utcnow(), pending))
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    r = client.post(f"/admin/customers/{pending}/overit-znovu", data={}, follow_redirects=False)
+    assert r.status_code == 303
+    row = db.query_one("SELECT kind FROM email_outbox WHERE owner_user_id = ? AND kind = 'signup_verify' "
+                       "ORDER BY id DESC", (pending,))
+    assert row is not None
+    audit = db.query_one("SELECT * FROM audit WHERE owner_user_id = ? AND action = 'signup_resend_operator' "
+                         "ORDER BY id DESC", (pending,))
+    assert audit is not None
+    # a verified account is refused
+    r = client.post(f"/admin/customers/{setup['host_id']}/overit-znovu", data={},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (pending,))
+    db.execute("DELETE FROM audit WHERE owner_user_id = ?", (pending,))
+    db.execute("DELETE FROM user_account WHERE id = ?", (pending,))
+
+
+def test_the_customer_detail_shows_activity_and_operator_log(setup):
+    host = _legacy_host(setup)
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    client.post(f"/admin/customers/{host}/aktivovat", data={})
+    page = client.get(f"/admin/customers/{host}").text
+    assert "data-customer-toggle" in page
+    assert "operator-log-card" in page
+    assert "activity-card" in page
+    assert "user_disabled" in page
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (host,))
+
+
+def test_the_admin_home_lists_the_queue(setup):
+    db.execute("UPDATE platform_invoice SET due_date = ? WHERE owner_user_id = ? AND voided = 0",
+               ((TODAY - timedelta(days=3)).isoformat(), setup["host_id"]))
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    page = client.get("/admin").text
+    assert "queue-overdue" in page
+    assert "queue-trials" in page
+    assert "queue-unverified" in page
+    assert "queue-ending" in page
+    # the overdue invoice from setup appears with its number
+    inv = db.query_one("SELECT number FROM platform_invoice WHERE owner_user_id = ? AND voided = 0",
+                       (setup["host_id"],))
+    assert inv["number"] in page
+
+
+def test_a_host_cannot_open_the_admin_home(setup):
+    client = TestClient(app)
+    login_as(client, setup["host"], url="/login?lang=cs")
+    assert client.get("/admin").status_code == 403
+
+
 def test_a_host_cannot_assign_plans(setup):
     client = TestClient(app)
     login_as(client, setup["host"], url="/login?lang=cs")

@@ -111,7 +111,39 @@ def detail(user_id: int) -> dict[str, Any] | None:
         "FROM platform_invoice WHERE owner_user_id = ? ORDER BY id DESC LIMIT 10", (user_id,),
     )]
     customer["buyer_prefill"] = buyer_prefill(user_id)
+    customer["activity"] = activity(user_id)
+    customer["operator_log"] = operator_log(user_id)
     return customer
+
+
+def activity(user_id: int) -> list[dict[str, Any]]:
+    """The customer's recent events: logins, mails, billing actions (latest 20)."""
+    rows = db.query(
+        "SELECT 'login' AS kind, a.at AS at, NULL AS detail, a.actor AS actor, "
+        "COALESCE(a.detail, '') AS extra FROM audit a "
+        "WHERE a.owner_user_id = ? AND a.action = 'login' "
+        "UNION ALL "
+        "SELECT 'mail' AS kind, e.created_at AS at, e.kind AS detail, NULL AS actor, "
+        "COALESCE(e.subject, '') AS extra FROM email_outbox e WHERE e.owner_user_id = ? "
+        "UNION ALL "
+        "SELECT 'billing' AS kind, a.at AS at, a.action AS detail, a.actor AS actor, "
+        "COALESCE(a.detail, '') AS extra FROM audit a "
+        "WHERE a.owner_user_id = ? AND a.action LIKE 'billing%' "
+        "ORDER BY at DESC, detail LIMIT 20",
+        (user_id, user_id, user_id),
+    )
+    return [dict(r) for r in rows]
+
+
+def operator_log(user_id: int) -> list[dict[str, Any]]:
+    """The operator's recent actions on this customer (latest 20, audited)."""
+    rows = db.query(
+        "SELECT action, actor, detail, at FROM audit "
+        "WHERE owner_user_id = ? AND actor LIKE 'operator:%' "
+        "ORDER BY id DESC LIMIT 20",
+        (user_id,),
+    )
+    return [dict(r) for r in rows]
 
 
 def buyer_prefill(user_id: int) -> dict[str, str]:

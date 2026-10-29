@@ -1845,6 +1845,8 @@ def test_the_registered_mail_kinds_are_the_ones_the_app_can_send():
         "billing_trial",
         # 0417: payment reminders and the read-only notice.
         "billing_overdue",
+        # 0437: the payment-received confirmation (both e-mails, CC support).
+        "billing_paid",
     }
 
 
