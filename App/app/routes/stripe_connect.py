@@ -61,7 +61,11 @@ async def connect_start(request: Request):
     if owner_id is None:
         return RedirectResponse("/", status_code=303)
     try:
-        url = stripe_connect.onboarding_link(owner_id, base_url=str(request.base_url).rstrip("/"))
+        # Deterministic https base (config.app_base_url(): the env-configured
+        # public URL). request.base_url behind the TLS-terminating proxy is
+        # http:// — and an http refresh/return URL drops the host's Secure
+        # session cookie on the bounce, landing them on the login page (0440).
+        url = stripe_connect.onboarding_link(owner_id, base_url=config.app_base_url())
     except (stripe_connect.StripeOff, ValueError) as exc:
         log.warning("connect start failed: %s", exc)
         return RedirectResponse("/", status_code=303)
