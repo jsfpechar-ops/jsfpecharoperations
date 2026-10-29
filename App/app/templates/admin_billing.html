@@ -148,7 +148,7 @@
   <td class="ui-cell-r ui-num">{{ kc(inv.total_haler) }} Kč</td>
   <td class="ui-cell-r" data-card="badge">{% if inv.overdue %}{{ ui_badge('action', fmt_date(inv.due_date), overdue=true) }}{% else %}{{ fmt_date(inv.due_date) }}{% endif %}</td>
 </tr>
-<tr class="ui-row">
+<tr class="ui-row ui-row-actions">
   <td colspan="4">
     <form method="post" action="/admin/fakturace/{{ inv.id }}/zaplaceno" class="ui-form-actions">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">
