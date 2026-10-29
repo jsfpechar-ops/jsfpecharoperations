@@ -62,12 +62,16 @@ def stripe_env(monkeypatch):
 
 
 class _FakeAccount:
+    """Mimics the real SDK 16.x v2 service STRICTLY: one ``params`` dict, no
+    kwargs. A call with the wrong convention must fail here, not in prod."""
+
     def __init__(self) -> None:
         self.created: List[Dict[str, Any]] = []
         self.retrieved: List[str] = []
         self.state = _account_dict(charges=False, payouts=False, due=[])
 
-    def create(self, **params):
+    def create(self, params=None, options=None):
+        assert params is not None, "v2 create must pass params= (no kwargs)"
         self.created.append(params)
         self.state["id"] = "acct_test_123"
         return dict(self.state)
@@ -78,10 +82,13 @@ class _FakeAccount:
 
 
 class _FakeAccountLink:
+    """Strict SDK-16 shape: params dict only."""
+
     def __init__(self) -> None:
         self.created: List[Dict[str, Any]] = []
 
-    def create(self, **params):
+    def create(self, params=None, options=None):
+        assert params is not None, "account_links.create must pass params="
         self.created.append(params)
         return {"url": "https://connect.stripe.com/setup/e/test_123"}
 

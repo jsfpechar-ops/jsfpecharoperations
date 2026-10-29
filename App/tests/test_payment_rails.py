@@ -64,10 +64,13 @@ def client(owner):
 
 
 class _FakePaymentLink:
+    """Strict SDK-16 shape: params dict only."""
+
     def __init__(self) -> None:
         self.created: List[Dict[str, Any]] = []
 
-    def create(self, **params):
+    def create(self, params=None, options=None):
+        assert params is not None, "payment_links.create must pass params="
         self.created.append(params)
         return {"id": "plink_test_1", "url": "https://buy.stripe.com/test_1"}
 
