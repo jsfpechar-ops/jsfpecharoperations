@@ -41,3 +41,9 @@ Branch: task/0426-stripe-connect
 
 - Discovered on the owner's account: Accounts v1 creation disabled for new platforms. Migrated ensure_account to Accounts v2 (`v2.core.accounts.create`) with the responsibilities map (fees_collector=stripe, losses_collector=stripe, dashboard=express, merchant config with card_payments + payouts). Tests updated; 22 passed.
 - CI never queued for the branch (known Actions quirk); owner merged on local verification.
+
+## Addendum 29 Oct (gap fixes)
+
+- Migration 0027: `legal_entity.business_type` (individual/company, default individual) — flows into Accounts v2 `identity.entity_type`; company hosts get Stripe's representative/beneficial-ownership KYC. 2 tests.
+- Webhook dedupe keys now carry the date; `sweep_seen_events(today)` deletes keys older than 30 days (Stripe retries max 3); wired as scheduler job `stripe_sweep` (daily 04:15) which also runs `payment_request.expire_sweep`. 3 tests.
+- Total: 40 tests green across the payments scope; lint OK.

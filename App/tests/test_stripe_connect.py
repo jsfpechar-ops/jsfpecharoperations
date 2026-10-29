@@ -171,3 +171,56 @@ def test_verify_and_parse_roundtrip(owner):
     assert event["id"] == "evt_4"
     with pytest.raises(Exception):
         stripe_connect.verify_and_parse(payload, "t=1,v1=bad")
+
+
+def test_company_host_onboards_as_company(owner, monkeypatch):
+    db.execute(
+        "UPDATE legal_entity SET business_type = 'company' WHERE owner_user_id = ?",
+        (owner,),
+    )
+    with mock.patch.object(stripe_connect, "_client") as client:
+        client.return_value.v2.core.accounts.create.return_value = _acct()
+        stripe_connect.ensure_account(owner, base_url="https://ubyhost.cz")
+        kwargs = client.return_value.v2.core.accounts.create.call_args.kwargs
+    assert kwargs["identity"]["entity_type"] == "company"
+
+
+def test_individual_host_onboards_as_individual(owner):
+    with mock.patch.object(stripe_connect, "_client") as client:
+        client.return_value.v2.core.accounts.create.return_value = _acct()
+        stripe_connect.ensure_account(owner, base_url="https://ubyhost.cz")
+        kwargs = client.return_value.v2.core.accounts.create.call_args.kwargs
+    assert kwargs["identity"]["entity_type"] == "individual"
+
+
+def test_migration_0027_default_is_individual(owner):
+    row = db.query_one(
+        "SELECT business_type FROM legal_entity WHERE owner_user_id = ?", (owner,)
+    )
+    assert row["business_type"] == "individual"
+
+
+def test_sweep_seen_events_ages_keys(owner):
+    db.execute(
+        "INSERT INTO settings (key, value) VALUES ('stripe_event:old', '2026-09-01')"
+        " ON CONFLICT (key) DO NOTHING"
+    )
+    db.execute(
+        "INSERT INTO settings (key, value) VALUES ('stripe_event:new', '2026-10-28')"
+        " ON CONFLICT (key) DO NOTHING"
+    )
+    deleted = stripe_connect.sweep_seen_events(TODAY)
+    assert deleted == 1
+    keys = {r["key"] for r in db.query(
+        "SELECT key FROM settings WHERE key LIKE 'stripe_event:%'")}
+    assert "stripe_event:old" not in keys
+    assert "stripe_event:new" in keys
+
+
+def test_webhook_dedupe_key_carries_date(owner):
+    event = _event("evt_date", "invoice.created", {"id": "in_x"})
+    stripe_connect.handle_event(event)
+    row = db.query_one(
+        "SELECT value FROM settings WHERE key = 'stripe_event:evt_date'")
+    from datetime import date as _date
+    _date.fromisoformat(row["value"])  # parses = the key carries a real date

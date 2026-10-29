@@ -73,7 +73,7 @@ def _client() -> stripe.StripeClient:
 
 def _entity(owner_user_id: int) -> Optional[Dict[str, Any]]:
     return db.query_one(
-        "SELECT name, contact_email FROM legal_entity WHERE owner_user_id = ?",
+        "SELECT name, contact_email, business_type FROM legal_entity WHERE owner_user_id = ?",
         (owner_user_id,),
     )
 
@@ -107,13 +107,17 @@ def ensure_account(owner_user_id: int, *, base_url: str, priority: str = NORMAL)
     # =stripe (Stripe carries negative balances), dashboard=express, and KYC
     # collection follows automatically from those (requirements_collector
     # becomes stripe). Immutable: set correctly at creation.
+    # Company hosts (s.r.o.) get entity_type=company so Stripe collects
+    # representative and beneficial-ownership KYC itself; individuals are the
+    # default. Chosen explicitly by the host (migration 0027), never inferred.
+    entity_type = "company" if entity["business_type"] == "company" else "individual"
     acct = _client().v2.core.accounts.create(
         contact_email=entity["contact_email"] or None,
         display_name=entity["name"],
         dashboard="express",
         identity={
             "country": "CZ",
-            "entity_type": "individual",
+            "entity_type": entity_type,
             "business_details": {
                 "registered_name": entity["name"],
                 "url": base_url,
@@ -263,10 +267,27 @@ def _event_seen(event_id: str) -> bool:
 
 
 def _mark_event_seen(event_id: str) -> None:
+    # value = the day the key was written, so the sweep can age keys out.
     db.execute(
-        "INSERT INTO settings (key, value) VALUES (?, '1') ON CONFLICT (key) DO NOTHING",
-        (f"stripe_event:{event_id}",),
+        "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING",
+        (f"stripe_event:{event_id}", _today().isoformat()),
     )
+
+
+def sweep_seen_events(today) -> int:
+    """Delete stripe_event:* keys older than 30 days (Stripe retries max 3
+    days, so 30 is generous); returns the deleted count. The scheduler calls
+    this so the settings table never grows unbounded."""
+    cutoff = today.fromordinal(today.toordinal() - 30).isoformat()
+    # keys carry the deletion date so the sweep can age them out without
+    # scanning unrelated settings; store 'YYYY-MM-DD' as the value
+    deleted = db.execute_rowcount(
+        "DELETE FROM settings WHERE key LIKE 'stripe_event:%' AND value < ?",
+        (cutoff,),
+    )
+    if deleted:
+        db.audit("stripe_event_sweep", f"deleted={deleted}")
+    return deleted
 
 
 def handle_event(event: Any) -> None:
