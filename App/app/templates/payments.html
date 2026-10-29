@@ -21,9 +21,12 @@
   <p>{{ t('payments.connect.support') }}</p>
   {% else %}
   <p>{{ t('payments.connect.' ~ connect_state.onboarding_state) }}</p>
-  <form method="post" action="/payments/connect/start" target="_blank" rel="noopener">
-    {{ ui_button(t('payments.connect.open_stripe'), 'primary', type='submit') }}
-  </form>
+  {#- A plain link, not a form POST: the same-origin POST/303 navigation is
+      eaten by the PWA submit handling (live-observed hang on the skeleton);
+      link navigation works everywhere, and target=_blank keeps the dashboard
+      open behind the single-use Stripe onboarding. -#}
+  {{ ui_button(t('payments.connect.open_stripe'), 'primary',
+               href='/payments/connect/start', attrs='target="_blank" rel="noopener"') }}
   {% endif %}
 </div>
 <div class="ui-section">
