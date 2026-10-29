@@ -185,3 +185,17 @@ def test_anonymous_redirected_to_login(owner):
     response = anonymous.get("/payments", follow_redirects=False)
     assert response.status_code == 303
     assert "/login" in response.headers["location"]
+
+
+def test_connect_button_is_a_plain_link(client, monkeypatch):
+    """0442: the Open Stripe button is an anchor to the GET route (plain link
+    navigation — the path that works with the PWA layer), never a form POST
+    (which hangs on the skeleton loader)."""
+    monkeypatch.setattr(config, "STRIPE_MODE", "test")
+    monkeypatch.setattr(config, "STRIPE_SECRET_KEY", "sk_test_x")
+    response = client.get("/payments")
+    html = response.text
+    assert 'href="/payments/connect/start"' in html
+    assert 'target="_blank"' in html
+    assert 'rel="noopener"' in html
+    assert '<form method="post" action="/payments/connect/start"' not in html
