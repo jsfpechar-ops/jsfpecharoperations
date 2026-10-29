@@ -245,3 +245,92 @@ def test_a_host_cannot_use_the_operator_forms(setup):
     host = setup["host_id"]
     assert client.post(f"/admin/customers/{host}/sleva", data={"percent": "50", "reason": "x"}).status_code == 403
     assert client.post(f"/admin/customers/{host}/stav", data={"status": "paused"}).status_code == 403
+
+
+def _legacy_host(setup):
+    """A second host with no billing row: the 'Legacy free' case."""
+    suffix = secrets.token_hex(4)
+    host = auth.create_account(f"leg{suffix}@example.test", "Legacy Host", username=f"leg{suffix}")
+    db.insert("apartment", {"internal_name": "Legacy 1", "owner_user_id": host,
+                            "created_at": db.utcnow()})
+    return host
+
+
+def test_the_operator_assigns_a_plan_to_a_legacy_host(setup):
+    host = _legacy_host(setup)
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    detail = client.get(f"/admin/customers/{host}").text
+    assert "data-customer-assign" in detail
+
+    r = client.post(f"/admin/customers/{host}/priradit", data={
+        "plan": "standard", "billing_interval": "month", "addon_ttlock": "0",
+        "buyer_name": "Legacy Host s.r.o.", "buyer_street": "Hlavní 1",
+        "buyer_city": "Brno", "buyer_zip": "60200", "buyer_ico": "27074358",
+        "buyer_dic": "", "buyer_email": "legacy@example.test",
+    }, follow_redirects=False)
+    assert r.status_code == 303
+    acc = billing.account(host)
+    assert acc["plan"] == "standard" and acc["status"] == "active"
+    assert acc["period_start"] == TODAY.isoformat()
+    invoices = [dict(x) for x in db.query(
+        "SELECT * FROM platform_invoice WHERE owner_user_id = ? AND kind = 'invoice' AND voided = 0",
+        (host,))]
+    assert len(invoices) == 1  # the first invoice, issued now
+    audit = db.query_one("SELECT * FROM audit WHERE owner_user_id = ? AND action = 'billing_order' "
+                         "ORDER BY id DESC", (host,))
+    assert "operator:" in audit["actor"]
+    db.execute("DELETE FROM platform_invoice WHERE owner_user_id = ?", (host,))
+    db.execute("DELETE FROM email_outbox WHERE owner_user_id = ?", (host,))
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (host,))
+    db.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (host,))
+
+
+def test_assign_refuses_a_host_who_already_has_a_plan(setup):
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    r = client.post(f"/admin/customers/{setup['host_id']}/priradit", data={
+        "plan": "standard", "billing_interval": "month", "addon_ttlock": "0",
+        "buyer_name": "X", "buyer_street": "Y", "buyer_city": "Z",
+        "buyer_zip": "60200", "buyer_email": "x@example.test",
+    }, follow_redirects=False)
+    assert r.status_code == 303
+    assert billing.account(setup["host_id"])["plan"] == "standard"
+
+
+def test_the_operator_extends_a_running_trial(setup):
+    host = _legacy_host(setup)
+    billing.ensure_account(host)
+    db.execute(
+        "UPDATE billing_account SET status = 'trialing', trial_started_at = ?, trial_ends_at = ? "
+        "WHERE owner_user_id = ?",
+        (TODAY.isoformat(), (TODAY + timedelta(days=3)).isoformat(), host))
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    detail = client.get(f"/admin/customers/{host}").text
+    assert "data-customer-extend" in detail
+    r = client.post(f"/admin/customers/{host}/prodlouzit", data={"days": "7"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    assert billing.account(host)["trial_ends_at"][:10] == (TODAY + timedelta(days=10)).isoformat()
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (host,))
+    db.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (host,))
+
+
+def test_extend_refuses_a_non_trialing_account(setup):
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    r = client.post(f"/admin/customers/{setup['host_id']}/prodlouzit", data={"days": "7"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    assert billing.account(setup["host_id"])["trial_ends_at"] is None
+
+
+def test_a_host_cannot_assign_plans(setup):
+    client = TestClient(app)
+    login_as(client, setup["host"], url="/login?lang=cs")
+    assert client.post(f"/admin/customers/{setup['host_id']}/priradit", data={
+        "plan": "standard", "billing_interval": "month", "addon_ttlock": "0",
+        "buyer_name": "X", "buyer_street": "Y", "buyer_city": "Z",
+        "buyer_zip": "60200", "buyer_email": "x@example.test",
+    }).status_code == 403
