@@ -69,40 +69,90 @@ class StripeOff(Exception):
     """Raised when code calls Stripe while the feature is off or out of budget."""
 
 
+def _client():
+    """The StripeClient every guarded call uses (brief 0437).
+
+    Accounts v2 (``client.v2.core.accounts``) needs the client instance; the
+    v1 endpoints used for Account Links (``client.account_links``) work on the
+    same object, so one client serves both.
+    """
+    return stripe.StripeClient(config.STRIPE_SECRET_KEY)
+
+
 def _api():
-    """The configured Stripe client; every call goes through this guard."""
+    """The configured Stripe client; every call goes through this guard.
+
+    Kept under its 0428 name because the rails (payment_links) call it; it now
+    returns the StripeClient (call sites: .Account.create -> .v2.core.accounts
+    .create in 0437; AccountLink/PaymentLink stay on the client's v1-style
+    services, which accept v2 account ids).
+    """
     if not enabled():
         raise StripeOff("stripe is off: UBYHOST_STRIPE_MODE/UBYHOST_STRIPE_SECRET_KEY")
     if not _budget_allows():
         raise StripeOff("monthly Stripe API call cap reached")
     _count_call()
     stripe.api_key = config.STRIPE_SECRET_KEY
-    return stripe
+    return _client()
 
 
 # --- connected account -----------------------------------------------------
 
 
-def _controller_params() -> Dict[str, Any]:
-    """The current controller API; the deprecated type=express is not used."""
+def _identity_params(entity: Dict[str, Any]) -> Dict[str, Any]:
+    """Accounts v2 identity block (brief 0437): business_details replaces the
+    v1 business_profile, and entity_type comes from the host's explicit
+    business_type choice (migration 0032) — company hosts get Stripe's
+    representative/beneficial-ownership KYC; individuals are the default.
+
+    The v1 controller design maps 1:1 to v2 responsibilities: fees payer =
+    account -> fees_collector = stripe (host pays their own Stripe fees);
+    losses = stripe -> losses_collector = stripe; Express dashboard -> the
+    dashboard property; requirement collection follows automatically from
+    those. Responsibilities are immutable after creation, so they are set
+    here, once, correctly.
+    """
+    entity_type = "company" if entity.get("business_type") == "company" else "individual"
     return {
-        "fees": {"payer": "account"},
-        "losses": {"payments": "stripe"},
-        "requirement_collection": "stripe",
-        "stripe_dashboard": {"type": "express"},
+        "country": "CZ",
+        "entity_type": entity_type,
+        "business_details": {
+            "registered_name": entity["name"],
+            "url": config.PUBLIC_BASE_URL,
+            # One sentence, accommodation-shaped, for Stripe's underwriting
+            # review; also the MCC signal so classification never falls
+            # through to the 5734 default (MCC round 2, Q1).
+            "product_description": (
+                "Short-term accommodation rentals: the host rents out their "
+                "own property to guests (booking payments, extra-guest fees, "
+                "cleaning and repair contributions)."
+            ),
+        },
     }
 
 
-def _business_profile(entity: Dict[str, Any]) -> Dict[str, Any]:
+def _merchant_config() -> Dict[str, Any]:
+    """The merchant configuration requested at creation: card payments plus
+    payouts, the capabilities the rails need."""
     return {
-        "name": entity["name"],
-        "url": config.PUBLIC_BASE_URL,
-        # One sentence, accommodation-shaped, for Stripe's underwriting review.
-        "product_description": (
-            "Short-term accommodation rentals: the host rents out their own "
-            "property to guests (booking payments, extra-guest fees, cleaning "
-            "and repair contributions)."
-        ),
+        "merchant": {
+            "capabilities": {
+                "card_payments": {"requested": True},
+                "stripe_balance.payouts": {"requested": True},
+            }
+        }
+    }
+
+
+def _responsibilities() -> Dict[str, Any]:
+    """v2 responsibilities (immutable after creation): Stripe collects fees
+    from the host directly, Stripe carries negative balances."""
+    return {
+        "currency": "czk",
+        "responsibilities": {
+            "fees_collector": "stripe",
+            "losses_collector": "stripe",
+        },
     }
 
 
@@ -125,10 +175,15 @@ def create_or_get_account(owner_user_id: int) -> Dict[str, Any]:
     )
     if entity is None:
         raise ValueError("host has no legal entity; connect needs the business profile")
-    account = _api().Account.create(
-        controller=_controller_params(),
-        country="CZ",
-        business_profile=_business_profile(dict(entity)),
+    account = _as_dict(
+        _api().v2.core.accounts.create(
+            contact_email=entity["contact_email"] or None,
+            display_name=entity["name"],
+            dashboard="express",
+            identity=_identity_params(dict(entity)),
+            configuration=_merchant_config(),
+            defaults=_responsibilities(),
+        )
     )
     now = db.utcnow()
     db.insert(
@@ -226,11 +281,13 @@ def onboarding_link(owner_user_id: int, *, base_url: str) -> str:
     """A single-use hosted onboarding link. The refresh URL lands back here,
     which regenerates; the return URL checks requirements (return ≠ verified)."""
     row = create_or_get_account(owner_user_id)
-    link = _api().AccountLink.create(
-        account=row["stripe_account_id"],
-        refresh_url=f"{base_url}/payments/connect/start",
-        return_url=f"{base_url}/payments/connect/return",
-        type="account_onboarding",
+    link = _as_dict(
+        _api().account_links.create(
+            account=row["stripe_account_id"],
+            refresh_url=f"{base_url}/payments/connect/start",
+            return_url=f"{base_url}/payments/connect/return",
+            type="account_onboarding",
+        )
     )
     return str(link["url"])
 
@@ -240,7 +297,7 @@ def handle_return(owner_user_id: int) -> str:
     row = account_for_owner(owner_user_id)
     if row is None:
         raise ValueError("no connected account for this host")
-    account = dict(_api().Account.retrieve(row["stripe_account_id"]))
+    account = _as_dict(_api().accounts.retrieve(row["stripe_account_id"]))
     _mirror(owner_user_id, account)
     updated = account_for_owner(owner_user_id)
     assert updated is not None
@@ -292,6 +349,22 @@ def _record_event(event: Dict[str, Any]) -> bool:
     except sqlite3.IntegrityError:
         return False
     return True
+
+
+def sweep_webhook_events(today) -> int:
+    """Prune processed-event rows older than 30 days (brief 0437).
+
+    Stripe retries at most 3 days, so 30 is a generous margin; without this
+    the dedupe table grows forever (one row per delivered event).
+    """
+    cutoff = today.fromordinal(today.toordinal() - 30).isoformat()
+    deleted = db.execute_rowcount(
+        "DELETE FROM stripe_webhook_event WHERE created_at < ?",
+        (cutoff,),
+    )
+    if deleted:
+        db.audit("stripe_webhook_sweep", f"deleted={deleted}")
+    return deleted
 
 
 def process_event(event: Dict[str, Any]) -> None:

@@ -33,7 +33,7 @@ def send(request_id: int) -> str | None:
     account = stripe_connect.account_for_owner(int(row["owner_user_id"]))
     if account is None or account["onboarding_state"] != "complete":
         return None
-    link = stripe_connect._api().PaymentLink.create(
+    link = stripe_connect._api().payment_links.create(
         line_items=[
             {
                 "quantity": 1,

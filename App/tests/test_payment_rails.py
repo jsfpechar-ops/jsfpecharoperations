@@ -75,7 +75,11 @@ class _FakePaymentLink:
 @pytest.fixture
 def fake_link(monkeypatch, stripe_env):
     link = _FakePaymentLink()
-    monkeypatch.setattr(stripe_connect.stripe, "PaymentLink", link)
+
+    class _Client:
+        payment_links = link
+
+    monkeypatch.setattr(stripe_connect, "_client", lambda: _Client())
     return link
 
 

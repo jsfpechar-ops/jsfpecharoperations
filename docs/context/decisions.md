@@ -75,3 +75,4 @@ Append-only.
 - 2026-10-29 | 0448: legacy hosts get an immediate plan start with the first invoice issued now, no trial | owner | 0448
 - 2026-10-29 | Discounts reissue an unpaid invoice with the discount applied | owner | 0448
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
+- 2026-10-29 | Stripe Accounts v2 (v1 creation disabled on new platforms); responsibilities immutable; company hosts via business_type | owner | 0437
