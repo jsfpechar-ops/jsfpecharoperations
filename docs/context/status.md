@@ -7,8 +7,8 @@ Updated: 2026-10-29.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- Billing cockpit merged (#561). 0448 in #565 (green, draft): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
-- Billing off (`UBYHOST_BILLING_ENABLED=0`). **Owner:** #565, #566 merge via `scripts/merge-pr-on-green.sh`; ČSOB file, env, counsel; deploy manual.
+- Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
+- Billing off (`UBYHOST_BILLING_ENABLED=0`). **Owner:** ČSOB file, env, counsel, then flip; deploy manual.
 - 0429 payments UX (CI browser row pending). Next: 0435-36 rails, 0430-34 pages. Plan #551, rails #553, fix #554 merged.
 - Billing 0411-0419 in #528, off. 0410 cards #517. Havel 0391/0395, 0394, 0400: #513/#520, #518, #515.
 - Guide + Leon 0341-0355: owner merges #465-468. 0403-0405 in review.
