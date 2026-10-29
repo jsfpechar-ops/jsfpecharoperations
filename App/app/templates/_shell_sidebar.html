@@ -26,7 +26,7 @@
   <div class="host-rail-bottom">
     <nav class="ui-nav ui-nav-bottom" aria-label="{{ t('nav.guide') }}">
       <a class="host-help" href="/guide">{{ icon('book-open', 20) }}<span>{{ t('nav.guide') }}</span></a>
-      {% if current_user.role == 'admin' %}<a href="/admin/users" {% if nav == 'admin' %}aria-current="page"{% endif %}>{{ icon('shield', 20) }}<span>{{ t('nav.admin') }}</span></a>{% endif %}
+      {% if current_user.role == 'admin' %}<a href="/admin" {% if nav == 'admin' %}aria-current="page"{% endif %}>{{ icon('shield', 20) }}<span>{{ t('nav.admin') }}</span></a>{% endif %}
     </nav>
     <details class="host-account" data-host-account>
       <summary aria-label="{{ t('nav.account') }}: {{ workspace_user.display_name or workspace_user.username }}">
@@ -42,6 +42,7 @@
         <a href="/settings/archived">{{ t('settings.nav.archive') }}</a>
         <a href="/privacy-requests">{{ t('nav.privacy_requests') }}</a>
         {% if current_user.role == 'admin' %}
+        <a href="/admin">{{ t('home.admin.title') }}</a>
         <a href="/admin/users">{{ t('nav.users') }}</a>
         <a href="/admin/incidents">{{ t('users.incidents_link') }}</a>
         <a href="/admin/operations">{{ t('ops.title') }}</a>

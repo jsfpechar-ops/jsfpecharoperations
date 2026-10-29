@@ -21,7 +21,7 @@
       <a class="ui-menu-item" href="/settings">{{ icon('settings', 16) }}{{ t('nav.settings') }}</a>
       <a class="ui-menu-item" href="/havel" data-havel-more>{{ icon('message-circle-question', 16) }}{{ t('havel.name') }}</a>
       <a class="ui-menu-item" href="/guide">{{ icon('book-open', 16) }}{{ t('nav.guide') }}</a>
-      {% if current_user and current_user.role == 'admin' %}<a class="ui-menu-item" href="/admin/users">{{ icon('shield', 16) }}{{ t('nav.admin') }}</a>{% endif %}
+      {% if current_user and current_user.role == 'admin' %}<a class="ui-menu-item" href="/admin">{{ icon('shield', 16) }}{{ t('nav.admin') }}</a>{% endif %}
       <a class="ui-menu-item" href="/settings/archived">{{ icon('archive', 16) }}{{ t('settings.nav.archive') }}</a>
       <a class="ui-menu-item" href="/privacy-requests">{{ icon('file-lock', 16) }}{{ t('nav.privacy_requests') }}</a>
       <form method="post" action="/language" class="lang-switch compact ui-sheet-lang">
