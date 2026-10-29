@@ -113,40 +113,47 @@ def _identity_params(entity: Dict[str, Any]) -> Dict[str, Any]:
     here, once, correctly.
     """
     entity_type = "company" if entity.get("business_type") == "company" else "individual"
+    # business_details carries no product_description or url in v2 (both
+    # live-verified as 'Unknown field', 29 Oct). The accommodation signal
+    # for MCC review is the registered name; the merchant config's mcc
+    # field is the explicit lever once Stripe names the preferred code.
     return {
         "country": "CZ",
         "entity_type": entity_type,
         "business_details": {
             "registered_name": entity["name"],
-            "url": config.PUBLIC_BASE_URL,
-            # One sentence, accommodation-shaped, for Stripe's underwriting
-            # review; also the MCC signal so classification never falls
-            # through to the 5734 default (MCC round 2, Q1).
-            "product_description": (
-                "Short-term accommodation rentals: the host rents out their "
-                "own property to guests (booking payments, extra-guest fees, "
-                "cleaning and repair contributions)."
-            ),
         },
     }
 
 
 def _merchant_config() -> Dict[str, Any]:
-    """The merchant configuration requested at creation: card payments plus
-    payouts, the capabilities the rails need."""
+    """The merchant configuration requested at creation (brief 0439).
+
+    In Accounts v2, payouts are not a separate capability: the merchant
+    configuration carries them. card_payments is the one capability the
+    rails need. The merchant config also exposes the mcc field for when
+    Stripe's review names the preferred code for CZ short-term rentals.
+    """
     return {
         "merchant": {
             "capabilities": {
                 "card_payments": {"requested": True},
-                "stripe_balance.payouts": {"requested": True},
             }
         }
     }
 
 
 def _responsibilities() -> Dict[str, Any]:
-    """v2 responsibilities (immutable after creation): Stripe collects fees
-    from the host directly, Stripe carries negative balances."""
+    """v2 responsibilities (immutable after creation), brief 0439.
+
+    Stripe collects fees from the host directly and Stripe carries negative
+    balances — the zero-platform-liability design. Live-probed on the
+    platform account (29 Oct): this combination pairs with dashboard="full"
+    (Express pairs with application collectors; Stripe collectors + Express
+    is preview-only). Hosts get the full Stripe Dashboard; their daily
+    surface remains the ubyhost dashboard, with Stripe's dashboard used
+    only for onboarding and disputes.
+    """
     return {
         "currency": "czk",
         "responsibilities": {
@@ -181,7 +188,7 @@ def create_or_get_account(owner_user_id: int) -> Dict[str, Any]:
             params={
                 "contact_email": entity["contact_email"] or None,
                 "display_name": entity["name"],
-                "dashboard": "express",
+                "dashboard": "full",
                 "identity": _identity_params(dict(entity)),
                 "configuration": _merchant_config(),
                 "defaults": _responsibilities(),

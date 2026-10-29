@@ -2483,3 +2483,15 @@ Stripe's R1–R29 answers and the final email are quoted verbatim in Part 2 §12
 ---
 
 *All URLs in this appendix were resolved and verified by live web search on 27 October 2026. Citation IDs from the working session are listed so every inline `search-result://` reference in the body can be traced back to its origin; the URLs are the authoritative form.*
+
+---
+
+# Addendum 29 Oct (briefs 0428–0439, implementation record)
+
+The implementation (another session built 0428/0435/0436; 0437–0439 ported and corrected it) established, all live-verified against the platform account:
+
+- **Accounts v2 is the only path** (v1 creation disabled on new platforms). Client services take a single `params` dict; SDK 16.0.1 pinned+hashed.
+- **Configuration matrix (live-probed):** Express + Stripe collectors = preview-only, rejected. Express + application collectors = works but platform liability — **rejected** (breaks zero-liability). **Adopted: full Stripe Dashboard + Stripe collectors** — hosts pay their own Stripe fees, Stripe carries negative balances, merchant of record unchanged. Dashboard type immutable (one-way door, taken deliberately).
+- **v2 payload:** `identity.business_details` carries **registered_name only** (no product_description, no url — both live-verified 'Unknown field'); `payouts` is not a capability (the merchant configuration carries it); the explicit MCC lever is `configuration.merchant.mcc`, to be set when Stripe's specialist review names the preferred code.
+- Webhook endpoint: `/webhooks/stripe`, raw-body signature verification, event-id dedupe (30-day sweep, scheduler job `stripe_sweep`), connected-accounts destination.
+- Company hosts: `legal_entity.business_type` (migration 0032) → `identity.entity_type`.
