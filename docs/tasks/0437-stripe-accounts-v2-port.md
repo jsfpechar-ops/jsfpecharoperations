@@ -21,3 +21,34 @@ Three defects in the deployed Stripe integration, found live:
 ## Verification
 
 - 90 passed across stripe/rails/model/migrations/retention/scheduler suites; app imports; context lint OK.
+
+## Files
+
+| Path | Action | What |
+|---|---|---|
+| `App/app/stripe_connect.py` | edit | v2 client, account create via v2, call-site moves, sweep_webhook_events |
+| `App/app/payment_links.py` | edit | payment_links.create call-site |
+| `App/app/migrations/0032_legal_entity_business_type.sql` | create | business_type column |
+| `App/app/scheduler.py` | edit | stripe_sweep job |
+| `App/tests/test_stripe_connect.py`, `App/tests/test_payment_rails.py` | edit | client-shaped fakes, new tests |
+
+## Commands
+
+- `python -m pytest tests/test_stripe_connect.py tests/test_payment_rails.py tests/test_payment_request_model.py tests/test_migrations.py tests/test_retention.py tests/test_scheduler.py -q --tb=short` → `90 passed`
+- `python3 scripts/context_lint.py` → OK
+
+## Acceptance
+
+- [x] Account creation uses `client.v2.core.accounts.create` with responsibilities (fees=stripe, losses=stripe), dashboard=express, merchant capabilities; no v1 `controller` params.
+- [x] Company/individual entity_type flows from `legal_entity.business_type` (default individual).
+- [x] `sweep_webhook_events` prunes rows older than 30 days; scheduler job runs daily.
+- [x] All call sites use StripeClient services; rails (0435/0436) unchanged in behavior.
+- [x] 90 tests passed; lint OK.
+
+## Stop and ask
+
+None — none triggered.
+
+## Report
+
+`docs/tasks/0437-report.md` — Status: review.
