@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from datetime import date
 from typing import Any, Dict, List, Optional
 
 from . import db, deadlines, host_i18n, validation
@@ -51,6 +52,14 @@ _FEED_ALERT_KINDS = frozenset({"feed_incomplete", "feed_duplicate_uid", "feed_re
 # One date format for the whole app: an alert, an e-mail and a page must never
 # print the same stay differently.
 _fmt_date = validation.fmt_date
+
+
+def _row_get(row: Any, key: str, default: Any = None) -> Any:
+    try:
+        value = row[key]
+    except (KeyError, IndexError, TypeError):
+        return default
+    return default if value is None else value
 
 
 def _stay_dates(reservation: Any) -> str:
@@ -98,6 +107,8 @@ def deadline_reason(lang: str, check_in, progress: Dict[str, Any], now=None) -> 
 
 def forms_complete(progress: Dict[str, Any]) -> bool:
     """Use the same live completion rule for reminder creation and presentation."""
+    if progress["status"] in ("reported", "not_required"):
+        return True
     return (
         progress["expected"] is not None
         and progress["filled"] >= progress["expected"]
@@ -105,7 +116,18 @@ def forms_complete(progress: Dict[str, Any]) -> bool:
     )
 
 
-def checkin_incomplete_reason(lang: str) -> str:
+def checkin_incomplete_reason(lang: str, arrival: Optional[date] = None, today: Optional[date] = None) -> str:
+    """"Check-in today" only while it is true; afterwards the day is named.
+
+    The card is stored once and read for days, so the frozen copy would lie
+    the moment the calendar moves on.
+    """
+    current = today if today is not None else deadlines.local_now().date()
+    parsed = arrival if isinstance(arrival, date) else validation.parse_iso_date(arrival or "")
+    if parsed and parsed < current:
+        return host_i18n.translate(
+            lang, "notification.reason.checkin_incomplete_past", date=validation.fmt_date(parsed.isoformat())
+        )
     return host_i18n.translate(lang, "notification.reason.checkin_incomplete")
 
 
@@ -276,7 +298,7 @@ def _present_computed(
         row["display_detail"] = host_i18n.translate(lang, f"notification.reason.{kind}")
         return row
     if kind == "guest_incomplete_checkin":
-        row["display_detail"] = checkin_incomplete_reason(lang)
+        row["display_detail"] = checkin_incomplete_reason(lang, _row_get(reservation, "date_from"))
         return row
     from . import reporting
 
