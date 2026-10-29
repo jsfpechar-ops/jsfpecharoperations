@@ -89,7 +89,6 @@ def test_the_cockpit_and_customer_pages_pass_the_layout_guard(wide_host, wide_ba
     monkeypatch.setattr(config, "MAIL_BACKEND", "console")
     monkeypatch.setattr(config, "BILLING_IBAN", "CZ6503000000000123456789")
     owner = wide_host["owner"]
-    db.execute("UPDATE user_account SET role = 'admin' WHERE id = ?", (owner,))
     _seed_rich_billing(owner)
     username = f"guard-admin-{os.urandom(4).hex()}"
     admin_id = auth.create_account(f"{username}@example.test", "Guard Admin", role="admin",
@@ -154,8 +153,13 @@ def test_every_cockpit_section_is_present_with_rich_data(wide_host, wide_base, m
     monkeypatch.setattr(config, "MAIL_BACKEND", "console")
     monkeypatch.setattr(config, "BILLING_IBAN", "CZ6503000000000123456789")
     owner = wide_host["owner"]
-    db.execute("UPDATE user_account SET role = 'admin' WHERE id = ?", (owner,))
     _seed_rich_billing(owner)
+    username = f"guard-admin-{os.urandom(4).hex()}"
+    auth.create_account(f"{username}@example.test", "Guard Admin", role="admin", username=username)
+    client = TestClient(app)
+    login_as(client, username, url="/login?lang=cs", follow_redirects=False)
+    cookie = client.cookies.get(auth.SESSION_COOKIE)
+    assert cookie
     try:
         with sync_api.sync_playwright() as playwright:
             try:
@@ -167,7 +171,7 @@ def test_every_cockpit_section_is_present_with_rich_data(wide_host, wide_base, m
             for width in (390, 1280):
                 context = browser.new_context(viewport={"width": width, "height": 1000})
                 context.add_cookies([{"name": auth.SESSION_COOKIE,
-                                      "value": wide_host["cookie"], "url": wide_base + "/"}])
+                                      "value": cookie, "url": wide_base + "/"}])
                 page = context.new_page()
                 page.goto(f"{wide_base}/admin/fakturace?lang=cs")
                 settle_motion(page)
@@ -181,7 +185,6 @@ def test_every_cockpit_section_is_present_with_rich_data(wide_host, wide_base, m
             browser.close()
     finally:
         _cleanup(owner)
-        db.execute("UPDATE user_account SET role = 'host' WHERE id = ?", (owner,))
 
 
 def test_the_operator_forms_work_without_javascript(wide_host, monkeypatch):
