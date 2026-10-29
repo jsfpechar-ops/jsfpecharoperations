@@ -561,8 +561,13 @@ def dashboard_overview_candidate(
         today <= arrival <= today + timedelta(days=days_ahead)
     )
     unresolved = progress.get("status") not in FINISHED_STATUSES
+    # An unresolved stay that already departed must not vanish from the
+    # Overview on the last day of its reporting window: a weekend or holiday
+    # check-in can push the working-day deadline days past the departure, so
+    # "urgent" (inside the final 24 hours) matters exactly as much as
+    # "overdue" for a stay the host still has to report.
     urgent_old_work = progress.get("status") == "failed" or (
-        urgency == "overdue" and unresolved
+        urgency in ("overdue", "urgent") and unresolved
     )
     return routine or urgent_old_work
 
