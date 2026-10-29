@@ -7,8 +7,8 @@ Updated: 2026-10-29.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- Billing cockpit merged (#561). 0448 in #565 (green, draft): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
-- Billing off (`UBYHOST_BILLING_ENABLED=0`). **Owner:** #565, #566 merge via `scripts/merge-pr-on-green.sh`; ČSOB file, env, counsel; deploy manual.
+- Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
+- Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; cockpit #561, 0448 #565). Deploy manual.
 - 0429 payments UX (CI browser row pending). Next: 0435-36 rails, 0430-34 pages. Plan #551, rails #553, fix #554 merged.
 - Billing 0411-0419 in #528, off. 0410 cards #517. Havel 0391/0395, 0394, 0400: #513/#520, #518, #515.
 - Guide + Leon 0341-0355: owner merges #465-468. 0403-0405 in review.
@@ -30,7 +30,7 @@ Updated: 2026-10-29.
 ## Blocked: needs owner, lawyer or council
 - Lawyer review of legal texts (0005 and K-L rows in [known-issues](known-issues.md)).
 - Stale signed dates (K-F18). HIGH RISK filing: K-F02, K-F03, K-F07; secret rotation K-S10.
-- Decide with owner: founder-price flag on the customer page or discount-% only; when to flip `UBYHOST_BILLING_ENABLED` in production (needs ČSOB file, env, counsel).
+- Decide with owner: founder-price flag on the customer page or discount-% only.
 
 ## Owner done
 - SES, Turnstile, healthchecks, Better Stack, Cloudflare pre-clearance, autopurge, Render staging, backup drill, 0001 (#281) done.
