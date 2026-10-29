@@ -137,7 +137,7 @@ What deliberately does NOT scale (and why that's correct at enterprise too):
   If enterprise brings custom schedules, the constants move to a table —
   additive migration, no rework.
 - **SQLite→Postgres portability is preserved** (rule 5): all new queries via
-  `db.py` helpers; new indexes in a numbered migration (next free: 0032).
+  `db.py` helpers; new indexes in a numbered migration (next free: 0034).
 
 ### Explicitly out of scope
 - Card auto-bill, Stripe subscriptions (0410/#517 track it).
@@ -174,7 +174,7 @@ What deliberately does NOT scale (and why that's correct at enterprise too):
 | 1 | 0437: dunning retune (due+7/+14/monthly) + CC support on all billing mails + payment-received mail (settle hook, idempotent, both recipients) + tests | — |
 | 2 | 0438: customer-page operator card: toggle surface + verification resend, reusing existing routes | — |
 | 3 | 0439: preview link + audit/activity cards on the customer detail (bounded, keyset) | 0438 |
-| 4 | 0440: /admin operations home: queue cards (snapshot-fed, `LIMIT ≤ 25` per card, migration 0032 adds the unpaid-overdue index) | — |
+| 4 | 0440: /admin operations home: queue cards (snapshot-fed, `LIMIT ≤ 25` per card, migration 0033 adds the unpaid-overdue index) | — |
 | 5 | ~~0441: daily operator digest mail~~ dropped (owner decision §7.3) | — |
 
 ## 7. Owner decisions (2026-10-29, chat) — resolved
