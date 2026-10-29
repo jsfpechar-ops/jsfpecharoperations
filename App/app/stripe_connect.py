@@ -175,14 +175,17 @@ def create_or_get_account(owner_user_id: int) -> Dict[str, Any]:
     )
     if entity is None:
         raise ValueError("host has no legal entity; connect needs the business profile")
+    # v2 service methods take one params dict (SDK 16.x), not kwargs.
     account = _as_dict(
         _api().v2.core.accounts.create(
-            contact_email=entity["contact_email"] or None,
-            display_name=entity["name"],
-            dashboard="express",
-            identity=_identity_params(dict(entity)),
-            configuration=_merchant_config(),
-            defaults=_responsibilities(),
+            params={
+                "contact_email": entity["contact_email"] or None,
+                "display_name": entity["name"],
+                "dashboard": "express",
+                "identity": _identity_params(dict(entity)),
+                "configuration": _merchant_config(),
+                "defaults": _responsibilities(),
+            }
         )
     )
     now = db.utcnow()
@@ -283,10 +286,12 @@ def onboarding_link(owner_user_id: int, *, base_url: str) -> str:
     row = create_or_get_account(owner_user_id)
     link = _as_dict(
         _api().account_links.create(
-            account=row["stripe_account_id"],
-            refresh_url=f"{base_url}/payments/connect/start",
-            return_url=f"{base_url}/payments/connect/return",
-            type="account_onboarding",
+            params={
+                "account": row["stripe_account_id"],
+                "refresh_url": f"{base_url}/payments/connect/start",
+                "return_url": f"{base_url}/payments/connect/return",
+                "type": "account_onboarding",
+            }
         )
     )
     return str(link["url"])

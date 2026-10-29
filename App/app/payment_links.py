@@ -34,17 +34,19 @@ def send(request_id: int) -> str | None:
     if account is None or account["onboarding_state"] != "complete":
         return None
     link = stripe_connect._api().payment_links.create(
-        line_items=[
-            {
-                "quantity": 1,
-                "price_data": {
-                    "currency": "czk",
-                    "unit_amount": int(row["amount_czk"]) * 100,
-                    "product_data": {"name": f"UbyHost payment request #{row['id']}"},
-                },
-            }
-        ],
-        stripe_account=account["stripe_account_id"],
+        params={
+            "line_items": [
+                {
+                    "quantity": 1,
+                    "price_data": {
+                        "currency": "czk",
+                        "unit_amount": int(row["amount_czk"]) * 100,
+                        "product_data": {"name": f"UbyHost payment request #{row['id']}"},
+                    },
+                }
+            ],
+            "stripe_account": account["stripe_account_id"],
+        }
     )
     db.execute(
         "UPDATE payment_request SET stripe_payment_link_id = ?, updated_at = ?"
