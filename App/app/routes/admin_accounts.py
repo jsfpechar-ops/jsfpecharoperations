@@ -969,7 +969,11 @@ def funnel_admin(request: Request):
     if guard:
         return guard
     posthog_url = config.POSTHOG_APP_URL if analytics.enabled() else ""
-    return render(request, "admin_funnel.html", {"posthog_url": posthog_url})
+    return render(
+        request,
+        "admin_funnel.html",
+        {"posthog_url": posthog_url, "signup_enabled": config.SIGNUP_ENABLED, "ads_export_days": signup.GOOGLE_EXPORT_DAYS},
+    )
 
 
 @router.post("/admin/incidents")
