@@ -286,6 +286,32 @@ def test_the_operator_assigns_a_plan_to_a_legacy_host(setup):
     db.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (host,))
 
 
+def test_the_assign_form_prefills_the_operators_known_details(setup):
+    host = _legacy_host(setup)
+    db.insert("legal_entity", {
+        "owner_user_id": host, "name": "Legacy Host s.r.o.", "seat": "Hlavni 1, 60200 Brno",
+        "ico": "27074358", "dic": "CZ27074358", "contact_email": "book@legacy.test",
+        "vat_status": "non_payer", "created_at": db.utcnow(),
+    })
+    db.execute(
+        "UPDATE apartment SET addr_street = 'Hlavni', addr_house_no = '1', "
+        "addr_obec = 'Brno', addr_zip = '60200' WHERE owner_user_id = ?", (host,))
+    client = TestClient(app)
+    login_as(client, setup["admin"], url="/login?lang=cs")
+    page = client.get(f"/admin/customers/{host}").text
+    assert "data-customer-assign" in page
+    assert 'value="Legacy Host s.r.o."' in page
+    assert 'value="Hlavni 1"' in page
+    assert 'value="Brno"' in page
+    assert 'value="60200"' in page
+    assert 'value="27074358"' in page
+    assert 'value="CZ27074358"' in page
+    assert 'value="book@legacy.test"' in page
+    db.execute("DELETE FROM legal_entity WHERE owner_user_id = ?", (host,))
+    db.execute("DELETE FROM apartment WHERE owner_user_id = ?", (host,))
+    db.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (host,))
+
+
 def test_assign_refuses_a_host_who_already_has_a_plan(setup):
     client = TestClient(app)
     login_as(client, setup["admin"], url="/login?lang=cs")

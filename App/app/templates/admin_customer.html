@@ -67,21 +67,26 @@
   </div>
   <div class="ui-form-actions">
     <label class="ui-sub" for="assign-name">{{ t('customers.assign.buyer_name') }}</label>
-    <input class="ui-input" type="text" id="assign-name" name="buyer_name" value="{{ customer.display_name or '' }}" required>
+    <input class="ui-input" type="text" id="assign-name" name="buyer_name" value="{{ customer.buyer_prefill.get('buyer_name') or customer.display_name or '' }}" required>
     <label class="ui-sub" for="assign-street">{{ t('customers.assign.buyer_street') }}</label>
-    <input class="ui-input" type="text" id="assign-street" name="buyer_street" required>
+    <input class="ui-input" type="text" id="assign-street" name="buyer_street" required
+           value="{{ customer.buyer_prefill.get('buyer_street', '') }}">
     <label class="ui-sub" for="assign-city">{{ t('customers.assign.buyer_city') }}</label>
-    <input class="ui-input" type="text" id="assign-city" name="buyer_city" required>
+    <input class="ui-input" type="text" id="assign-city" name="buyer_city" required
+           value="{{ customer.buyer_prefill.get('buyer_city', '') }}">
   </div>
   <div class="ui-form-actions">
     <label class="ui-sub" for="assign-zip">{{ t('customers.assign.buyer_zip') }}</label>
-    <input class="ui-input" type="text" id="assign-zip" name="buyer_zip" required>
+    <input class="ui-input" type="text" id="assign-zip" name="buyer_zip" required
+           value="{{ customer.buyer_prefill.get('buyer_zip', '') }}">
     <label class="ui-sub" for="assign-ico">{{ t('customers.assign.buyer_ico') }}</label>
-    <input class="ui-input" type="text" id="assign-ico" name="buyer_ico">
+    <input class="ui-input" type="text" id="assign-ico" name="buyer_ico"
+           value="{{ customer.buyer_prefill.get('buyer_ico', '') }}">
     <label class="ui-sub" for="assign-dic">{{ t('customers.assign.buyer_dic') }}</label>
-    <input class="ui-input" type="text" id="assign-dic" name="buyer_dic">
+    <input class="ui-input" type="text" id="assign-dic" name="buyer_dic"
+           value="{{ customer.buyer_prefill.get('buyer_dic', '') }}">
     <label class="ui-sub" for="assign-email">{{ t('customers.assign.buyer_email') }}</label>
-    <input class="ui-input" type="email" id="assign-email" name="buyer_email" value="{{ customer.email or '' }}" required>
+    <input class="ui-input" type="email" id="assign-email" name="buyer_email" value="{{ customer.buyer_prefill.get('buyer_email') or customer.email or '' }}" required>
   </div>
   <div class="ui-form-actions">
     {{ ui_button(t('customers.assign.submit'), 'primary', type='submit') }}
