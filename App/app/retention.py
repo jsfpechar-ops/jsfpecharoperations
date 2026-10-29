@@ -386,6 +386,10 @@ def _delete_workspace(owner_id: int) -> None:
         # invoices are accounting records kept 10 years: they only lose the
         # link (snapshot_json keeps the buyer as printed). A founder slot stays used.
         cur.execute("DELETE FROM billing_account WHERE owner_user_id = ?", (owner_id,))
+        # Brief 0443/0444: the operator's discount and the analytics snapshot go
+        # with the billing row; the derived monthly snapshot is rebuilt from
+        # invoices if ever needed.
+        cur.execute("DELETE FROM billing_month_snapshot WHERE owner_user_id = ?", (owner_id,))
         # Brief 0425: payment requests carry a guest e-mail and note; they go
         # with the workspace. stripe_account mirrors status only (no secrets).
         cur.execute("DELETE FROM payment_request WHERE owner_user_id = ?", (owner_id,))

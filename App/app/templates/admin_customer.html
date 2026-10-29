@@ -32,7 +32,57 @@
 (t('customers.ttlock'), t('customers.yes') if customer.addon_ttlock else t('customers.no')),
 (t('customers.whitelabel'), t('customers.yes') if customer.addon_whitelabel else t('customers.no'))
 ]) }}
+{% if quote %}
+{{ ui_facts([
+(t('customers.money.list'), quote.list ~ ' Kč'),
+(t('customers.money.discount'), (customer.discount_percent ~ ' %') if customer.discount_percent else t('customers.money.no_discount')),
+(t('customers.money.net'), quote.total ~ ' Kč'),
+(t('customers.money.monthly'), (quote.total if customer.billing_interval == 'month' else (quote.total / 12) | round(0, 'floor') | int) ~ ' Kč')
+]) }}
+{% if customer.discount_reason %}<p class="ui-sub">{{ t('customers.money.reason') }}: {{ customer.discount_reason }}</p>{% endif %}
+{% endif %}
 {% endcall %}
+
+{% if billing_enabled and quote %}
+{% call ui_section(t('customers.actions.title'), id='operator-actions') %}
+<form method="post" action="/admin/customers/{{ customer.id }}/sleva" class="ui-form-actions" data-customer-discount>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <label class="ui-sub" for="discount-percent">{{ t('customers.actions.discount') }}</label>
+  <input class="ui-input" type="number" id="discount-percent" name="percent" min="0" max="100" value="{{ customer.discount_percent or 0 }}" required>
+  <label class="ui-sub" for="discount-reason">{{ t('customers.actions.reason') }}</label>
+  <input class="ui-input" type="text" id="discount-reason" name="reason" maxlength="200" value="{{ customer.discount_reason or '' }}">
+  {{ ui_button(t('customers.actions.discount_submit'), 'secondary', type='submit') }}
+</form>
+<p class="ui-sub">{{ t('customers.actions.discount_help') }}</p>
+<form method="post" action="/admin/customers/{{ customer.id }}/plan" class="ui-form-actions" data-customer-plan>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <label class="ui-sub" for="plan-field">{{ t('customers.actions.change') }}</label>
+  <select class="ui-input" id="plan-field" name="field">
+    <option value="plan">{{ t('customers.actions.field_plan') }}</option>
+    <option value="billing_interval">{{ t('customers.actions.field_interval') }}</option>
+    <option value="apartments">{{ t('customers.actions.field_apartments') }}</option>
+    <option value="addon_ttlock">{{ t('customers.actions.field_ttlock') }}</option>
+    <option value="addon_whitelabel">{{ t('customers.actions.field_whitelabel') }}</option>
+  </select>
+  <label class="ui-sub" for="plan-value">{{ t('customers.actions.value') }}</label>
+  <input class="ui-input" type="text" id="plan-value" name="value" required>
+  {{ ui_button(t('customers.actions.change_submit'), 'secondary', type='submit') }}
+</form>
+<p class="ui-sub">{{ t('customers.actions.change_help') }}</p>
+<form method="post" action="/admin/customers/{{ customer.id }}/stav" class="ui-form-actions" data-customer-status>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <label class="ui-sub" for="status-new">{{ t('customers.actions.status') }}</label>
+  <select class="ui-input" id="status-new" name="status">
+    <option value="active">{{ t('billing.plan.state.active') }}</option>
+    <option value="paused">{{ t('billing.plan.state.paused') }}</option>
+    <option value="canceling">{{ t('billing.plan.state.canceling') }}</option>
+    <option value="overdue">{{ t('billing.plan.state.overdue') }}</option>
+    <option value="trialing">{{ t('billing.plan.state.trialing') }}</option>
+  </select>
+  {{ ui_button(t('customers.actions.status_submit'), 'secondary', type='submit') }}
+</form>
+{% endcall %}
+{% endif %}
 {% call ui_section(t('customers.invoices')) %}
 {% if customer.invoices %}
 {{ ui_table_begin([(t('customers.invoice'), ''), (t('customers.amount'), 'r'), (t('customers.due'), ''), (t('customers.state'), '')], label=t('customers.invoices')) }}

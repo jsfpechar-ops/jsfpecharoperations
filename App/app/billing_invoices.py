@@ -44,6 +44,7 @@ def period_items(acc: Dict[str, Any]) -> List[Tuple[str, int]]:
         ttlock=bool(acc["addon_ttlock"]),
         whitelabel=bool(acc["addon_whitelabel"]),
         founder=founder,
+        discount_percent=int(acc["discount_percent"] or 0),
     )
     label = f"Předplatné UbyHost {PLAN_NAMES[plan]}, {apartments_cs(n)}"
     if founder:
@@ -53,6 +54,12 @@ def period_items(acc: Dict[str, Any]) -> List[Tuple[str, int]]:
         items.append((f"Doplněk TTLock, {apartments_cs(n)}", q["ttlock"]))
     if q["whitelabel"]:
         items.append(("Doplněk vlastní značka", q["whitelabel"]))
+    if q["discount"]:
+        items.append((
+            f"Sleva {int(acc['discount_percent'])} %" + (
+                f" ({acc['discount_reason']})" if acc.get("discount_reason") else ""),
+            -q["discount"],
+        ))
     if int(acc["carry_czk"] or 0):
         items.append(("Doplatek za změny v minulém období", int(acc["carry_czk"])))
     return items

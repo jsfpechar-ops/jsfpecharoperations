@@ -71,10 +71,17 @@ def quote(
     ttlock: bool = False,
     whitelabel: bool = False,
     founder: bool = False,
+    discount_percent: int = 0,
 ) -> Dict[str, int]:
-    """Whole-Kč amounts for one period (a month or a year). Prices are final."""
+    """Whole-Kč amounts for one period (a month or a year). Prices are final.
+
+    ``discount_percent`` is the operator's reduction (0-100). The discount line
+    is separate so every surface can show list - discount = net.
+    """
     if plan not in PLANS or interval not in INTERVALS:
         raise ValueError(f"unknown plan or interval: {plan} {interval}")
+    if not 0 <= int(discount_percent) <= 100:
+        raise ValueError(f"discount out of range: {discount_percent}")
     n = max(0, int(apartments))
     if founder and interval == "year":
         base = FOUNDER_YEAR * n
@@ -83,12 +90,16 @@ def quote(
     extra = graduated(n, MAX_EXTRA[interval]) if plan == "max" else 0
     lock = TTLOCK[interval] * n if ttlock and plan != "max" else 0
     brand = WHITELABEL[interval] if whitelabel else 0
+    list_total = base + extra + lock + brand
+    discount = round(list_total * int(discount_percent) / 100)
     return {
         "base": base,
         "max": extra,
         "ttlock": lock,
         "whitelabel": brand,
-        "total": base + extra + lock + brand,
+        "discount": discount,
+        "list": list_total,
+        "total": list_total - discount,
     }
 
 
@@ -195,6 +206,7 @@ def _period_total(state: Dict[str, Any]) -> int:
         ttlock=bool(state["addon_ttlock"]),
         whitelabel=bool(state["addon_whitelabel"]),
         founder=bool(state["founder"]),
+        discount_percent=int(state.get("discount_percent") or 0),
     )["total"]
 
 
@@ -230,6 +242,7 @@ def apply_change(
         "addon_ttlock": acc["addon_ttlock"],
         "addon_whitelabel": acc["addon_whitelabel"],
         "founder": acc["founder"],
+        "discount_percent": int(acc["discount_percent"] or 0),
     }
     target = {**current, field: value}
     before = _period_total(current)
@@ -273,6 +286,70 @@ def apply_change(
         )
     db.audit("billing_change", f"{field} {when}", actor=actor, owner_user_id=owner_user_id)
     return result
+
+
+def apply_discount(
+    owner_user_id: int,
+    percent: int,
+    *,
+    reason: str,
+    actor: str,
+    today: Optional[date] = None,
+) -> Dict[str, Any]:
+    """Set or clear the operator's discount (0443).
+
+    Per owner decision D1: an issued, unpaid, unvoided invoice is storno'd and
+    reissued for the same period with the discount applied; matched payments
+    follow the new VS by the existing bank matching. Returns the preview/save
+    result. Only ``invoice``-kind documents are reissued; paid or voided ones
+    are never touched.
+    """
+    from . import billing_invoices  # late: billing_invoices imports billing
+    day = today or date.today()
+    if not 0 <= int(percent) <= 100:
+        raise ValueError("discount_out_of_range")
+    reason = (reason or "").strip()[:200]
+    if int(percent) > 0 and not reason:
+        raise ValueError("reason_missing")
+    acc = account(owner_user_id)
+    if acc is None or acc["plan"] is None:
+        raise ValueError("no_plan")
+    before = _period_total({
+        "apartments": acc["apartments_billed"], "plan": acc["plan"],
+        "billing_interval": acc["billing_interval"],
+        "addon_ttlock": acc["addon_ttlock"], "addon_whitelabel": acc["addon_whitelabel"],
+        "founder": acc["founder"], "discount_percent": int(acc["discount_percent"] or 0),
+    })
+    db.execute(
+        "UPDATE billing_account SET discount_percent = ?, discount_reason = ?, updated_at = ? "
+        "WHERE owner_user_id = ?",
+        (int(percent), reason or None, db.utcnow(), owner_user_id),
+    )
+    db.audit("billing_discount", f"{int(percent)} % {reason}", actor=actor, owner_user_id=owner_user_id)
+    reissued = []
+    for row in db.query(
+        "SELECT id, period_from, period_to FROM platform_invoice "
+        "WHERE owner_user_id = ? AND kind = 'invoice' AND voided = 0 AND paid_on IS NULL",
+        (owner_user_id,),
+    ):
+        billing_invoices.storno(int(row["id"]), reason=f"sleva {int(percent)} % ({reason})", today=day)
+        reissued.append(billing_invoices.issue_for_period(
+            owner_user_id, row["period_from"], row["period_to"], today=day))
+    refreshed = account(owner_user_id)
+    return {
+        "percent": int(percent),
+        "reason": reason,
+        "period_total_before": before,
+        "period_total_after": _period_total({
+            "apartments": refreshed["apartments_billed"], "plan": refreshed["plan"],
+            "billing_interval": refreshed["billing_interval"],
+            "addon_ttlock": refreshed["addon_ttlock"],
+            "addon_whitelabel": refreshed["addon_whitelabel"],
+            "founder": refreshed["founder"],
+            "discount_percent": int(percent),
+        }),
+        "reissued_invoice_ids": reissued,
+    }
 
 
 def founder_slots_left() -> int:

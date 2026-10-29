@@ -9,8 +9,132 @@
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block body %}
 {% set states = ['trial_pending', 'trialing', 'active', 'overdue', 'canceling', 'paused'] %}
-{% call ui_section(t('billing.admin.accounts.title')) %}
-{{ ui_facts([(t('billing.admin.unpaid_total'), unpaid_total ~ ' Kč')]) }}
+{% call ui_section(t('billing.admin.revenue.title'), id='revenue') %}
+{{ ui_facts([
+  (t('billing.admin.revenue.mrr'), cockpit.mrr_czk ~ ' Kč'),
+  (t('billing.admin.revenue.arr'), cockpit.arr_czk ~ ' Kč'),
+  (t('billing.admin.revenue.billed'), revenue.billed_czk ~ ' Kč'),
+  (t('billing.admin.revenue.collected'), revenue.collected_czk ~ ' Kč'),
+  (t('billing.admin.revenue.forecast'), forecast.next_30_days_czk ~ ' Kč'),
+  (t('billing.admin.unpaid_total'), unpaid_total ~ ' Kč'),
+]) }}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.trend.title'), id='trend') %}
+{% if trend_rows %}
+{{ ui_table_begin([(t('billing.admin.trend.month'), ''), (t('billing.admin.revenue.billed'), 'r'), (t('billing.admin.revenue.collected'), 'r')], label=t('billing.admin.trend.title')) }}
+{% for r in trend_rows %}
+<tr class="ui-row" data-billing-admin-trend="{{ r.month }}">
+  <td class="ui-cell-first" data-card="primary">{{ r.month }}</td>
+  <td class="ui-cell-r ui-num">{{ r.billed_czk }} Kč</td>
+  <td class="ui-cell-r ui-num">{{ r.collected_czk }} Kč</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('billing.admin.trend.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.movement.title'), id='movement') %}
+{{ ui_facts([
+  (t('billing.admin.movement.change'), (movement.total_change ~ ' Kč') if movement.total_change >= 0 else ('−' ~ (0 - movement.total_change) ~ ' Kč')),
+  (t('billing.admin.movement.new'), movement.parts.new ~ ' Kč'),
+  (t('billing.admin.movement.expansion'), movement.parts.expansion ~ ' Kč'),
+  (t('billing.admin.movement.contraction'), movement.parts.contraction ~ ' Kč'),
+  (t('billing.admin.movement.churn'), movement.parts.churn ~ ' Kč'),
+]) }}
+<p class="ui-sub">{{ t('billing.admin.movement.help') }}</p>
+{% endcall %}
+
+{% call ui_section(t('billing.admin.funnel.title'), id='funnel') %}
+{{ ui_facts([
+  (t('billing.admin.funnel.hosts'), funnel_counts.hosts),
+  (t('billing.admin.funnel.verified'), funnel_counts.verified),
+  (t('billing.admin.funnel.trialed'), funnel_counts.trialed),
+  (t('billing.admin.funnel.converted'), funnel_counts.converted),
+  (t('billing.admin.funnel.rate'), funnel_counts.trial_conversion ~ ' %'),
+]) }}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.discounts.title'), id='discounts') %}
+{{ ui_facts([
+  (t('billing.admin.discounts.list_mrr'), discounts.list_mrr_czk ~ ' Kč'),
+  (t('billing.admin.revenue.mrr'), discounts.net_mrr_czk ~ ' Kč'),
+  (t('billing.admin.discounts.giveaway'), discounts.giveaway_mrr_czk ~ ' Kč'),
+]) }}
+{% if discounts.customers %}
+{{ ui_table_begin([(t('billing.admin.col.buyer'), ''), (t('billing.admin.discounts.percent'), 'r'), (t('billing.admin.discounts.reason'), ''), (t('billing.admin.portfolio.monthly'), 'r')], label=t('billing.admin.discounts.title')) }}
+{% for c in discounts.customers %}
+<tr class="ui-row" data-billing-admin-discount="{{ c.owner_user_id }}">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ c.owner_user_id }}">{{ c.display_name or c.username }}</a></td>
+  <td class="ui-cell-r ui-num">{{ c.discount_percent }} %</td>
+  <td>{{ c.discount_reason or '' }}</td>
+  <td class="ui-cell-r ui-num">{{ c.monthly_czk }} Kč</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('billing.admin.discounts.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.watch.title'), id='watch') %}
+{% set ns = namespace(rows=[]) %}
+{% for tr in watch.trials_ending %}{% set ns.rows = ns.rows + [(t('billing.admin.watch.trial'), tr.display_name, tr.trial_ends_at[:10])] %}{% endfor %}
+{% for o in watch.overdue %}{% set ns.rows = ns.rows + [(t('billing.admin.watch.overdue'), o.display_name ~ ' · ' ~ o.number ~ ' · ' ~ kc(o.total_haler) ~ ' Kč · ' ~ o.days_late), o.due_date[:10]] %}{% endfor %}
+{% for e in watch.ending %}{% set ns.rows = ns.rows + [(t('billing.admin.watch.ending'), e.display_name, (e.period_end or '')[:10])] %}{% endfor %}
+{% if ns.rows %}
+{{ ui_table_begin([(t('billing.admin.watch.kind'), ''), (t('billing.admin.watch.customer'), ''), (t('billing.admin.watch.date'), 'r')], label=t('billing.admin.watch.title')) }}
+{% for kind, who, when in ns.rows %}
+<tr class="ui-row" data-billing-admin-watch="{{ loop.index }}">
+  <td class="ui-cell-first" data-card="primary">{{ kind }}</td>
+  <td>{{ who }}</td>
+  <td class="ui-cell-r">{{ when }}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub" data-billing-admin-watch="none">{{ t('billing.admin.watch.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.portfolio.title'), id='portfolio') %}
+<form method="get" action="/admin/fakturace" class="ui-form-actions" data-billing-admin-portfolio-filter>
+  <label class="ui-sub" for="portfolio-q">{{ t('billing.admin.portfolio.search') }}</label>
+  <input class="ui-input" type="search" id="portfolio-q" name="q" value="{{ q }}" placeholder="{{ t('billing.admin.portfolio.search_placeholder') }}">
+  <label class="ui-sub" for="portfolio-state">{{ t('billing.admin.portfolio.state') }}</label>
+  <select class="ui-input" id="portfolio-state" name="state">
+    <option value="">{{ t('billing.admin.portfolio.all') }}</option>
+    {% for s in states %}<option value="{{ s }}"{% if state == s %} selected{% endif %}>{{ t('billing.plan.state.' ~ s) }}</option>{% endfor %}
+  </select>
+  {{ ui_button(t('billing.admin.portfolio.show'), 'secondary', type='submit') }}
+  {{ ui_button(t('billing.admin.portfolio.export_all'), 'primary', href='/admin/fakturace/export-vse') }}
+</form>
+{% set shown = [] %}
+{% for c in cockpit.customers %}
+{% if (not q) or (q | lower in ((c.display_name or '') ~ ' ' ~ (c.email or '') ~ ' ' ~ (c.username or '')) | lower) %}
+{% if (not state) or (c.status == state) %}{% set _ = shown.append(c) %}{% endif %}
+{% endif %}
+{% endfor %}
+{% if shown %}
+{{ ui_table_begin([
+  (t('billing.admin.col.buyer'), ''),
+  (t('billing.admin.portfolio.plan'), ''),
+  (t('billing.admin.portfolio.state_col'), ''),
+  (t('billing.admin.portfolio.price'), 'r'),
+  (t('billing.admin.portfolio.monthly'), 'r'),
+  (t('billing.admin.portfolio.period_end'), 'r'),
+], label=t('billing.admin.portfolio.title')) }}
+{% for c in shown %}
+<tr class="ui-row" data-billing-admin-portfolio="{{ c.owner_user_id }}">
+  <td class="ui-cell-first" data-card="primary"><a href="/admin/customers/{{ c.owner_user_id }}">{{ c.display_name or c.username }}</a><span class="ui-sub"> {{ c.email or '' }}</span></td>
+  <td>{{ t('billing.plan.name.' ~ c.plan) }} · {{ t('billing.interval.' ~ c.billing_interval) }} · {{ c.apartments_billed }}</td>
+  <td>{{ ui_badge('done' if c.status == 'active' else ('action' if c.status in ('overdue', 'canceling') else 'neutral'), t('billing.plan.state.' ~ c.status)) }}</td>
+  <td class="ui-cell-r ui-num">{{ c.net_czk }} Kč</td>
+  <td class="ui-cell-r ui-num">{{ c.monthly_czk }} Kč</td>
+  <td class="ui-cell-r">{{ (c.period_end or '')[:10] }}{% if c.cancel_at_period_end %} · {{ t('billing.admin.watch.ending') }}{% endif %}{% if c.trial_days_left is not none %} · {{ t('billing.admin.portfolio.trial_left') }} {{ c.trial_days_left }}{% endif %}</td>
+</tr>
+{% endfor %}
+{{ ui_table_end() }}
+{% else %}<p class="ui-sub">{{ t('billing.admin.portfolio.none') }}</p>{% endif %}
+{% endcall %}
+
+{% call ui_section(t('billing.admin.accounts.title'), id='accounts') %}
 <p class="ui-sub" data-billing-admin-accounts>{% for s in states %}{{ t('billing.plan.state.' ~ s) }}: {{ accounts.get(s, 0) }}{{ ' · ' if not loop.last }}{% endfor %}</p>
 {% endcall %}
 
@@ -24,7 +148,7 @@
   <td class="ui-cell-r ui-num">{{ kc(inv.total_haler) }} Kč</td>
   <td class="ui-cell-r" data-card="badge">{% if inv.overdue %}{{ ui_badge('action', fmt_date(inv.due_date), overdue=true) }}{% else %}{{ fmt_date(inv.due_date) }}{% endif %}</td>
 </tr>
-<tr class="ui-row">
+<tr class="ui-row ui-row-actions">
   <td colspan="4">
     <form method="post" action="/admin/fakturace/{{ inv.id }}/zaplaceno" class="ui-form-actions">
       <input type="hidden" name="_csrf" value="{{ csrf_token }}">

@@ -51,6 +51,9 @@
       if (!vis(td)) continue;
       for (const kid of td.querySelectorAll('*')) {
         if (!vis(kid) || kid.closest('[role=menu]') || kid.tagName === 'IFRAME') continue;
+        // A closed details clips its content away (block-size 0 + overflow clip);
+        // the hidden children still report layout boxes, so skip them.
+        if (kid.closest('details:not([open])')) continue;
         const kr = kid.getBoundingClientRect();
         if (kr.bottom > rr.bottom + 2 || kr.top < rr.top - 2) { out.push(['spills-out-of-row', name(kid), Math.round(kr.top), Math.round(kr.bottom), Math.round(rr.top), Math.round(rr.bottom)]); break; }
       }
