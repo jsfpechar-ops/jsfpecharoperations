@@ -1,12 +1,15 @@
 # Status
 
-Updated: 2026-10-28.
+Updated: 2026-10-29.
 
 ## Production
 - Magic-link 1–2 done ([0007](../tasks/0007-post-magic-link-deploy-phase2.md)); checked; access log off.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
+- **Billing cockpit merged (#561)**: /admin/fakturace revenue cockpit (MRR/ARR, movement, funnel, aging, watchlists, portfolio search, bulk CSV `/admin/fakturace/export-vse`), operator actions on /admin/customers/{id} (discount with D1 unpaid-reissue, plan/status changes), migration 0031, snapshot job 06:15. Dashboard fix included: `urgent` counts like `overdue` for unresolved departed stays (reporting.py).
+- **#565 open (draft, this branch's last commit)**: 0448 assign-plan-to-legacy-host card + trial extension. Owner decisions: legacy hosts start immediately with the first invoice (no trial); discounts adjust founder pricing (reissue while unpaid); trial extendable 1-365 days.
+- Owner steps: billing off in production (`UBYHOST_BILLING_ENABLED=0`); #565 needs review/merge, deploy manual.
 - 0429 payments UX implemented (CI browser row pending). Next: 0435-36 rails, 0430-34 pages. Plan #551, rails #553, fix #554 merged.
 - Billing 0411-0419 in #528, off. **Owner:** ČSOB file, env, counsel.
 - 0410 cards #517. Havel 0391 #513, 0395 #520; 0394 #518; 0400 #515.
