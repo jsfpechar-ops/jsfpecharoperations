@@ -3,52 +3,56 @@
 Status: review
 Depends on: 0428, 0435, 0436 (merged; deployed) | Branch: task/0437-stripe-v2-port
 
-## Why
+## 1. Objective
 
-Three defects in the deployed Stripe integration, found live:
-1. **Accounts v1 creation is disabled on new platforms** (proved on the owner's account: the CLI trigger failed with "Create connected accounts with POST /v2/core/accounts instead") — the deployed `Account.create(controller=...)` call would 400 on every onboarding.
-2. **Company hosts (s.r.o.) had no path** — entity_type was hardcoded individual; representatives/beneficial ownership would never be collected.
-3. **`stripe_webhook_event` grows forever** — one dedupe row per delivered event, no pruning.
+Fix three defects in the deployed Stripe integration: (1) Accounts v1 creation is disabled on new platforms — the deployed `Account.create(controller=...)` 400s on every onboarding (proved live); (2) company hosts (s.r.o.) had no path to representative/beneficial-ownership KYC; (3) the webhook dedupe table grows forever.
 
-## Changes
+## 2. Context
 
-- `App/app/stripe_connect.py`: `_client()` returns a real `StripeClient`; `_api()` keeps its 0428 contract (rails unchanged) but returns the client. Account creation via `client.v2.core.accounts.create` with `identity` (business_details = registered_name/url/product_description, entity_type from the host's choice), `dashboard="express"`, `configuration.merchant` (card_payments + stripe_balance.payouts), `defaults.responsibilities` (fees_collector=stripe, losses_collector=stripe — the 1:1 map of the v1 controller design; immutable after creation). Account Links + account retrieve on the client's v1-style services (v2-account-id compatible). `sweep_webhook_events(today)` prunes dedupe rows older than 30 days.
-- `App/app/payment_links.py`: call-site `.PaymentLink.create` → `.payment_links.create` (client service).
-- Migration **0032**: `legal_entity.business_type` (individual/company, default individual) — explicit host choice, never inferred from IČO.
-- `App/app/scheduler.py`: `stripe_sweep` daily 04:15 — request expiry + webhook-event pruning.
-- Tests: `fake_stripe` fixture reshaped to the client (v2 accounts + v1-style services); new tests: v2 create params, company/individual entity_type, sweep aging. `test_payment_rails` fake likewise.
+- The live proof: the owner's CLI trigger failed with "Create connected accounts with POST /v2/core/accounts instead." Accounts v2 request shape verified against docs.stripe.com (29 Oct) and the installed SDK 16.0.1 (`client.v2.core.accounts.create`).
+- v1 controller → v2 responsibilities map (1:1, from Stripe's own property map): `fees.payer=account` → `fees_collector=stripe`; `losses.payments=stripe` → `losses_collector=stripe`; Express dashboard → `dashboard="express"`; requirement collection follows automatically. Responsibilities are immutable after creation.
+- Entity type cannot be inferred from IČO (OSVč individuals have one), so it is an explicit host choice.
+- Stripe retries webhook delivery at most 3 days; 30-day pruning is a generous margin.
 
-## Verification
-
-- 90 passed across stripe/rails/model/migrations/retention/scheduler suites; app imports; context lint OK.
-
-## Files
+## 3. Files
 
 | Path | Action | What |
 |---|---|---|
-| `App/app/stripe_connect.py` | edit | v2 client, account create via v2, call-site moves, sweep_webhook_events |
-| `App/app/payment_links.py` | edit | payment_links.create call-site |
-| `App/app/migrations/0032_legal_entity_business_type.sql` | create | business_type column |
-| `App/app/scheduler.py` | edit | stripe_sweep job |
-| `App/tests/test_stripe_connect.py`, `App/tests/test_payment_rails.py` | edit | client-shaped fakes, new tests |
+| `App/app/stripe_connect.py` | edit | `_client()` StripeClient; account create via v2; account_links/accounts call-sites; `sweep_webhook_events` |
+| `App/app/payment_links.py` | edit | `payment_links.create` call-site |
+| `App/app/migrations/0032_legal_entity_business_type.sql` | create | `legal_entity.business_type` |
+| `App/app/scheduler.py` | edit | `stripe_sweep` job (daily 04:15) |
+| `App/tests/test_stripe_connect.py`, `App/tests/test_payment_rails.py` | edit | client-shaped fakes; new tests |
 
-## Commands
+## 4. Steps
+
+1. Migration 0032: business_type column, default individual, CHECK constraint.
+2. `stripe_connect`: `_client()` returns StripeClient; `_api()` keeps the 0428 contract (rails unchanged) and returns the client; account creation via `client.v2.core.accounts.create` with `identity` (business_details: registered_name/url/product_description; entity_type from business_type), `dashboard="express"`, `configuration.merchant` (card_payments + stripe_balance.payouts), `defaults.responsibilities` (fees=stripe, losses=stripe); Account Links and account retrieve on the client's v1-style services (v2-id compatible); `sweep_webhook_events(today)` prunes rows older than 30 days.
+3. `payment_links.send`: `.PaymentLink.create` → `.payment_links.create`.
+4. Scheduler: `stripe_sweep` daily 04:15 — request expiry + webhook-event pruning.
+5. Tests: fakes reshaped to the client (v2 accounts + v1-style services); new: v2 create params, company/individual entity_type, sweep aging.
+
+## 5. Do not touch
+
+Rails behavior (0435/0436 request flows), invoices, stay fees, retention, db.py SCHEMA (migration only). No new dependency (stripe 16.0.1 already pinned+hashed).
+
+## 6. Commands
 
 - `python -m pytest tests/test_stripe_connect.py tests/test_payment_rails.py tests/test_payment_request_model.py tests/test_migrations.py tests/test_retention.py tests/test_scheduler.py -q --tb=short` → `90 passed`
 - `python3 scripts/context_lint.py` → OK
 
-## Acceptance
+## 7. Acceptance
 
-- [x] Account creation uses `client.v2.core.accounts.create` with responsibilities (fees=stripe, losses=stripe), dashboard=express, merchant capabilities; no v1 `controller` params.
+- [x] Account creation uses v2 with responsibilities (fees=stripe, losses=stripe), dashboard=express, merchant capabilities; no v1 controller params.
 - [x] Company/individual entity_type flows from `legal_entity.business_type` (default individual).
-- [x] `sweep_webhook_events` prunes rows older than 30 days; scheduler job runs daily.
-- [x] All call sites use StripeClient services; rails (0435/0436) unchanged in behavior.
+- [x] `sweep_webhook_events` prunes rows older than 30 days; scheduler job registered.
+- [x] All call sites use StripeClient services; rails unchanged in behavior.
 - [x] 90 tests passed; lint OK.
 
-## Stop and ask
+## 8. Stop and ask
 
 None — none triggered.
 
-## Report
+## 9. Report
 
 `docs/tasks/0437-report.md` — Status: review.
