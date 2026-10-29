@@ -43,6 +43,65 @@
 {% endif %}
 {% endcall %}
 
+{% if billing_enabled and not quote %}
+{% call ui_section(t('customers.assign.title'), id='assign-plan') %}
+<p class="ui-sub">{{ t('customers.assign.help') }}</p>
+<form method="post" action="/admin/customers/{{ customer.id }}/priradit" data-customer-assign>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <div class="ui-form-actions">
+    <label class="ui-sub" for="assign-plan">{{ t('customers.assign.plan') }}</label>
+    <select class="ui-input" id="assign-plan" name="plan">
+      <option value="standard">{{ t('billing.plan.name.standard') }}</option>
+      <option value="max">{{ t('billing.plan.name.max') }}</option>
+    </select>
+    <label class="ui-sub" for="assign-interval">{{ t('customers.actions.field_interval') }}</label>
+    <select class="ui-input" id="assign-interval" name="billing_interval">
+      <option value="month">{{ t('billing.interval.month') }}</option>
+      <option value="year">{{ t('billing.interval.year') }}</option>
+    </select>
+    <label class="ui-sub" for="assign-ttlock">{{ t('customers.actions.field_ttlock') }}</label>
+    <select class="ui-input" id="assign-ttlock" name="addon_ttlock">
+      <option value="0">{{ t('customers.no') }}</option>
+      <option value="1">{{ t('customers.yes') }}</option>
+    </select>
+  </div>
+  <div class="ui-form-actions">
+    <label class="ui-sub" for="assign-name">{{ t('customers.assign.buyer_name') }}</label>
+    <input class="ui-input" type="text" id="assign-name" name="buyer_name" value="{{ customer.display_name or '' }}" required>
+    <label class="ui-sub" for="assign-street">{{ t('customers.assign.buyer_street') }}</label>
+    <input class="ui-input" type="text" id="assign-street" name="buyer_street" required>
+    <label class="ui-sub" for="assign-city">{{ t('customers.assign.buyer_city') }}</label>
+    <input class="ui-input" type="text" id="assign-city" name="buyer_city" required>
+  </div>
+  <div class="ui-form-actions">
+    <label class="ui-sub" for="assign-zip">{{ t('customers.assign.buyer_zip') }}</label>
+    <input class="ui-input" type="text" id="assign-zip" name="buyer_zip" required>
+    <label class="ui-sub" for="assign-ico">{{ t('customers.assign.buyer_ico') }}</label>
+    <input class="ui-input" type="text" id="assign-ico" name="buyer_ico">
+    <label class="ui-sub" for="assign-dic">{{ t('customers.assign.buyer_dic') }}</label>
+    <input class="ui-input" type="text" id="assign-dic" name="buyer_dic">
+    <label class="ui-sub" for="assign-email">{{ t('customers.assign.buyer_email') }}</label>
+    <input class="ui-input" type="email" id="assign-email" name="buyer_email" value="{{ customer.email or '' }}" required>
+  </div>
+  <div class="ui-form-actions">
+    {{ ui_button(t('customers.assign.submit'), 'primary', type='submit') }}
+  </div>
+</form>
+<p class="ui-sub">{{ t('customers.assign.help2') }}</p>
+{% endcall %}
+{% endif %}
+
+{% if billing_enabled and customer.customer_state == 'trialing' %}
+{% call ui_section(t('customers.extend.title'), id='extend-trial') %}
+<form method="post" action="/admin/customers/{{ customer.id }}/prodlouzit" class="ui-form-actions" data-customer-extend>
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <label class="ui-sub" for="extend-days">{{ t('customers.extend.days') }}</label>
+  <input class="ui-input" type="number" id="extend-days" name="days" min="1" max="365" required>
+  {{ ui_button(t('customers.extend.submit'), 'secondary', type='submit') }}
+</form>
+{% endcall %}
+{% endif %}
+
 {% if billing_enabled and quote %}
 {% call ui_section(t('customers.actions.title'), id='operator-actions') %}
 <form method="post" action="/admin/customers/{{ customer.id }}/sleva" class="ui-form-actions" data-customer-discount>

@@ -5,7 +5,7 @@ transfer. Nothing here knows about a card or a payment gateway.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Dict, Optional, Tuple
 
 from . import billing, billing_invoices, billing_trial, db, mail, signup_selection, validation
@@ -178,3 +178,49 @@ def resume(owner_user_id: int) -> bool:
     db.execute("UPDATE billing_account SET cancel_at_period_end = 0, updated_at = ? WHERE owner_user_id = ?",
                (db.utcnow(), owner_user_id))
     return True
+
+
+def place_for_operator(owner_user_id: int, values: Dict[str, Any], *, actor: str,
+                       today: Optional[date] = None) -> Dict[str, Any]:
+    """Assign a plan to a host who has none (0448: legacy accounts).
+
+    The operator's flow for an account with no billing row: create it as
+    trial_pending, order the chosen plan, start it today and issue the first
+    invoice immediately - a legacy host has no trial left to run (owner
+    decision 2026-10-29). The discount set later by the operator applies to the
+    next invoice (or reissues this one while unpaid, per D1).
+    """
+    day = today or date.today()
+    acc = billing.ensure_account(owner_user_id)
+    if acc["plan"] is not None:
+        raise ValueError("already_ordered")
+    if values.get("addon_whitelabel") and not acc["addon_whitelabel"]:
+        raise ValueError("whitelabel_unavailable")
+    db.execute(
+        "UPDATE billing_account SET status = 'paused', updated_at = ? WHERE owner_user_id = ?",
+        (db.utcnow(), owner_user_id),
+    )
+    result = place(owner_user_id, values, today=day)
+    db.audit("billing_order", f"{values['plan']} {values['billing_interval']} (operator assign)",
+             actor=actor, owner_user_id=owner_user_id)
+    return result
+
+
+def extend_trial(owner_user_id: int, days: int, *, actor: str,
+                 today: Optional[date] = None) -> str:
+    """Move a running trial's end date (0448). Returns the new date, '' if refused."""
+    day = today or date.today()
+    if days <= 0 or days > 365:
+        raise ValueError("bad_days")
+    acc = billing.account(owner_user_id)
+    if acc is None or acc["status"] != "trialing" or not acc["trial_ends_at"]:
+        return ""
+    current = date.fromisoformat(acc["trial_ends_at"][:10])
+    new_end = max(current, day) + timedelta(days=days)
+    db.execute(
+        "UPDATE billing_account SET trial_ends_at = ?, updated_at = ? WHERE owner_user_id = ?",
+        (new_end.isoformat(), db.utcnow(), owner_user_id),
+    )
+    db.audit("billing_trial_extended", f"+{days}d -> {new_end.isoformat()}", actor=actor,
+             owner_user_id=owner_user_id)
+    return new_end.isoformat()

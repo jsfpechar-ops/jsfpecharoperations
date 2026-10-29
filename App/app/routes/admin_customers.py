@@ -133,6 +133,46 @@ async def customer_plan(request: Request, user_id: int):
     return _back(f"{PAGE}/{user_id}", msg=_flash(request, "billing.admin.plan.done"))
 
 
+@router.post(PAGE + "/{user_id}/priradit")
+async def customer_assign_plan(request: Request, user_id: int):
+    """0448: assign a first plan to a legacy host; starts today, first invoice now."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    form = await request.form()
+    values, errors = billing_order.read_form({k: str(v) for k, v in form.items()})
+    if errors:
+        return _back(f"{PAGE}/{user_id}", err=_flash(request, "billing.admin.assign.error"))
+    try:
+        billing_order.place_for_operator(
+            user_id, values, actor=f"operator:{account['username']}")
+    except ValueError:
+        return _back(f"{PAGE}/{user_id}", err=_flash(request, "billing.admin.assign.refused"))
+    billing_analytics.write_month_snapshot()
+    return _back(f"{PAGE}/{user_id}", msg=_flash(request, "billing.admin.assign.done"))
+
+
+@router.post(PAGE + "/{user_id}/prodlouzit")
+async def customer_extend_trial(request: Request, user_id: int):
+    """0448: extend a running trial by N days (the operator's lever)."""
+    account, guard = _require_admin(request)
+    if guard:
+        return guard
+    form = await request.form()
+    try:
+        days = int(str(form.get("days") or "").strip())
+    except ValueError:
+        return _back(f"{PAGE}/{user_id}", err=_flash(request, "billing.admin.extend.bad_days"))
+    try:
+        new_end = billing_order.extend_trial(
+            user_id, days, actor=f"operator:{account['username']}")
+    except ValueError:
+        return _back(f"{PAGE}/{user_id}", err=_flash(request, "billing.admin.extend.bad_days"))
+    if not new_end:
+        return _back(f"{PAGE}/{user_id}", err=_flash(request, "billing.admin.extend.not_trialing"))
+    return _back(f"{PAGE}/{user_id}", msg=_flash(request, "billing.admin.extend.done", days=days))
+
+
 @router.post(PAGE + "/{user_id}/stav")
 async def customer_status(request: Request, user_id: int):
     """0442: status change through the existing state machine, no bypass."""
