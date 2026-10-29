@@ -101,16 +101,6 @@
   </section>
 
   <aside class="ui-section">
-    {% if signup_enabled %}
-    <form method="post" action="/admin/ads-conversions.csv">
-      <button class="ui-btn ui-btn-secondary" type="submit">{{ t('users.ads_export') }}</button>
-    </form>
-    <p class="ui-sub">{{ t('users.ads_export_hint', days=ads_export_days) }}</p>
-    <form method="post" action="/admin/ads-conversions.csv">
-      <input type="hidden" name="again" value="1">
-      <button class="ui-btn ui-btn-secondary ui-btn-compact" type="submit">{{ t('users.ads_export_again') }}</button>
-    </form>
-    {% endif %}
     <h2>{{ t('users.create.title') }}</h2>
     <p class="ui-sub">{{ t('users.create.lede') }}</p>
     <form method="post" action="/admin/users">

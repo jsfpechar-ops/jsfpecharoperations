@@ -2882,6 +2882,8 @@ STRINGS: Dict[str, str] = {
     "funnel.title": "Phễu",
     "funnel.posthog_body": "Số liệu chủ nhà và chiến dịch nằm trong PostHog.",
     "funnel.posthog_link": "Mở PostHog",
+    "funnel.posthog.title": "Phễu chủ nhà",
+    "funnel.ads.title": "Chuyển đổi Google Ads",
     "notification.mail_kind.lifecycle_no_property": "mẹo thiết lập: thêm chỗ ở",
     "notification.mail_kind.lifecycle_no_calendar": "mẹo thiết lập: kết nối lịch",
     "notification.mail_kind.lifecycle_no_guest": "mẹo thiết lập: gửi liên kết cho khách",

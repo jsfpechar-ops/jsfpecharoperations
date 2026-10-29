@@ -6219,11 +6219,15 @@ _ADMIN_FUNNEL_STRINGS = {
         "funnel.title": "Funnel",
         "funnel.posthog_body": "Host and campaign figures are in PostHog.",
         "funnel.posthog_link": "Open PostHog",
+        "funnel.posthog.title": "Host funnel",
+        "funnel.ads.title": "Google Ads conversions",
     },
     "cs": {
         "funnel.title": "Trychtýř",
         "funnel.posthog_body": "Údaje o hostitelích a kampaních jsou v PostHogu.",
         "funnel.posthog_link": "Otevřít PostHog",
+        "funnel.posthog.title": "Trychtýř hostitelů",
+        "funnel.ads.title": "Konverze pro Google Ads",
     },
 }
 for _lang, _strings in _ADMIN_FUNNEL_STRINGS.items():

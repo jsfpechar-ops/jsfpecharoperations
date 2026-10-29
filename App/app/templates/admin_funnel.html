@@ -1,12 +1,27 @@
 {% extends "host_page.html" %}
 {% set nav = 'funnel' %}
 {% set body_kind = 'detail' %}
-{% from "_ui_layout.html" import ui_section_tabs with context %}
+{% from "_ui_layout.html" import ui_section, ui_section_tabs with context %}
+{% from "_ui.html" import ui_button with context %}
 {% block title %}{{ t('funnel.title') }}{% endblock %}
 {% block tabs %}{{ ui_section_tabs() }}{% endblock %}
 {% block body %}
-<p>{{ t('funnel.posthog_body') }}</p>
-{% if posthog_url %}
-<p><a class="ui-btn ui-btn-secondary" href="{{ posthog_url }}">{{ t('funnel.posthog_link') }}</a></p>
+{% call ui_section(t('funnel.posthog.title'), id='funnel-posthog') %}
+  <p class="ui-sub">{{ t('funnel.posthog_body') }}</p>
+  {% if posthog_url %}{{ ui_button(t('funnel.posthog_link'), 'secondary', href=posthog_url) }}{% endif %}
+{% endcall %}
+{% if signup_enabled %}
+{% call ui_section(t('funnel.ads.title'), id='funnel-ads-export') %}
+  <p class="ui-sub">{{ t('users.ads_export_hint', days=ads_export_days) }}</p>
+  <div class="ui-btn-group">
+    <form method="post" action="/admin/ads-conversions.csv">
+      {{ ui_button(t('users.ads_export'), 'primary') }}
+    </form>
+    <form method="post" action="/admin/ads-conversions.csv">
+      <input type="hidden" name="again" value="1">
+      {{ ui_button(t('users.ads_export_again'), 'secondary') }}
+    </form>
+  </div>
+{% endcall %}
 {% endif %}
 {% endblock %}
