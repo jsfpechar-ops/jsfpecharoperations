@@ -11,7 +11,7 @@ Append-only.
 - 2026-10-06 | [workflow] 0001 merged before review; post-merge review OK | [report](../tasks/0001-report.md)
 - 2026-10-06 | [workflow] Context rollout: flat files, MANIFEST at root | place_files | TEMPLATE.md
 - 2026-10-06 | [workflow] Every chat AI orchestrates within the token budget (executor: see 2026-10-17)
-- 2026-10-06 | [deps] `webauthn==3.0.1` + transitives, hash-pinned | no hand-rolled passkeys | 0004
+- 2026-10-06 | [deps] `webauthn==3.0.1` hash-pinned | no hand-rolled passkeys | 0004
 - 2026-10-06 | Login is e-mail link only; TOTP/passkeys optional | owner | 0003, 0004
 - 2026-10-06 | Downloads skip the nav skeleton; template scan test pins it | PDF blanked page | skeleton.js
 - 2026-10-06 | Stay-fee PDF: bed-day adjustments fold into the facility row; CSV one neutral line | office confusion | stay_fee.py
@@ -34,7 +34,7 @@ Append-only.
 - 2026-10-10 | Taken type-3 period: worker `add`, host warned; no shift, reuse or `change`; deleted untyped code is dead (lock test) | staging | [0037](../tasks/0037-door-code-taken-period.md)
 - 2026-10-11 | ARES lookup on host click; sends only the IČO; requests lib; 24 h cache; 20/h per user | owner | [0055](../tasks/0055-ares-lookup.md)
 - 2026-10-11 | Facility abbreviation: suffix after UBY-WS_ | owner | [0043](../tasks/0043-police-setup-fewer-fields.md)
-- 2026-10-11 | Web-service credential request: data box ybndqw9, Ředitelství služby cizinecké policie, Olšanská 2, 130 51 Praha 3 | owner | [0044](../tasks/0044-ws-request-letter.md)
+- 2026-10-11 | Web-service credential request: data box ybndqw9, Ředitelství služby cizinecké policie, Praha 3 | owner | [0044](../tasks/0044-ws-request-letter.md)
 - 2026-10-12 | TTLock: -1026 = created/deleted; host provider, no SCCs; same-period reuse needs custom PIN/mail; retry deletion to end (0067–69) | [legal](../privacy/DOOR_CODES_LEGAL.md)
 - 2026-10-12 | Host UX: [UI](ui-decisions.md), 0087–0094 | owner; staging first
 - 2026-10-15 | Watchdog digest every 72 h (server 10-15, repo 10-20) | owner | [OPERATIONS](../OPERATIONS.md)
@@ -49,8 +49,7 @@ Append-only.
 - 2026-10-21 Stay-fee email: auto-confirm clean; PDF+QR on 2nd; Settings switch | owner, [plan](../plans/stay-fee-monthly-email.md)
 - 2026-10-22 One needs-you card on `/`; unopened-link reminder once/stay; no new host emails | owner.
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
-- 2026-10-22 [workflow] iPad: cloud WebKit; route tests: `service_workers="block"` (0253).
-- 2026-10-22 [workflow] iPad: cloud WebKit; route tests: `service_workers="block"` (0253).
+
 - 2026-10-22 Wizard coral bar OK
 - 2026-10-22 Alerts: short line + fix link (owner).
 - 2026-10-22 [deps] Signature font: self-hosted Dancing Script (OFL) (owner).
@@ -65,8 +64,7 @@ Append-only.
 - 2026-10-26 | Unpaid = read-only, filing never blocked | owner | 0415
 - 2026-10-27 | [Max policy](../reports/max-159-fivefold-ai.md); [original layout, 229 monthly](../reports/original-pricing-229.md) | owner
 - 2026-10-27 | Direct payments folded into the FastAPI app; requests first, page booking second; QR rail = tech provider only | owner | plan direct-payments-build-plan, 0425
-- Grafana Cloud free tier (EU) is the subprocessor for operational logs and metrics; logs stay PII-free per OPS-3 (owner, 2026-10-27).
-- Monitoring containers grafana/alloy, gcr.io/cadvisor/cadvisor and prom/node-exporter added behind compose profile "monitoring" (owner, 2026-10-27).
+- Grafana Cloud free tier (EU) is the subprocessor for operational logs and metrics (PII-free per OPS-3); monitoring containers behind compose profile "monitoring" (owner, 2026-10-27).
 - 2026-10-28 | [deps] `stripe` 16.0.1 pinned+hashed in requirements.lock (owner); every call through `App/app/stripe_connect.py`, shared monthly cap `UBYHOST_STRIPE_MONTHLY_API_CALLS` | 0428
 - 2026-10-28 | Property pages: Apify scrape-first prefill (page + Leon guide, one fetch), page pipeline deterministic, no AI step; host reviews once, then publish | owner | plan property-pages, 0431
 - 2026-10-28 | Property page design: Airbnb-style layout patterns (hero grid, 65ch description, icon amenities); no Airbnb brand assets, fonts or copied CSS | owner | plan property-pages, 0431
@@ -74,3 +72,6 @@ Append-only.
 - 2026-10-28 | Booking widget: Airbnb-style interaction built from our own calendar/fee logic, no-JS form, Stripe checkout on the host account; no dark patterns, no tracking | owner | plan property-pages, 0434
 - 2026-10-28 | Listing pages are English-only; no per-listing translation, no per-language variants (OTA copy verbatim) | owner | plan property-pages, 0431/0433
 - 2026-10-29 | OCR: local Tesseract in the image (no AI, photo stays on the server), MRZ check digits required, prefill only, Max plan only, guest tickbox | owner | test_doc_ocr
+- 2026-10-29 | 0448: legacy hosts get an immediate plan start with the first invoice issued now, no trial | owner | 0448
+- 2026-10-29 | Discounts reissue an unpaid invoice with the discount applied | owner | 0448
+- 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
