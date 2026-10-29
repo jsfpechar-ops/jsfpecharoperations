@@ -147,18 +147,20 @@ def test_create_uses_accounts_v2_with_responsibilities(fake_stripe):
     # Accounts v2 (0437): no controller block, no deprecated type=express.
     assert "controller" not in params
     assert "type" not in params
-    assert params["dashboard"] == "express"
+    assert params["dashboard"] == "full"
     assert params["identity"]["country"] == "CZ"
     resp = params["defaults"]["responsibilities"]
     assert resp["fees_collector"] == "stripe"
     assert resp["losses_collector"] == "stripe"
     caps = params["configuration"]["merchant"]["capabilities"]
     assert caps["card_payments"]["requested"] is True
-    assert caps["stripe_balance.payouts"]["requested"] is True
+    # v2: payouts are not a capability; the merchant config carries them.
+    assert "stripe_balance.payouts" not in caps
     bd = params["identity"]["business_details"]
     assert bd["registered_name"] == "Ubytovani s.r.o."
-    assert bd["url"]
-    assert "accommodation" in bd["product_description"]
+    # v2 business_details: no product_description, no url (both
+    # live-verified 'Unknown field'); merchant.mcc is the explicit lever.
+    assert "product_description" not in bd and "url" not in bd
     # Prefill is name/email/url only — never DOB, address or ID numbers.
     assert "dob" not in str(params).lower() and "address" not in str(params).lower()
 
