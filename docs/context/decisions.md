@@ -44,10 +44,6 @@ Append-only.
 
 - 2026-10-19 [workflow] `test_static_versions.py --write` refuses a changed file under an old `?v=` key (0172).
 - 2026-10-19 Accessibility: WCAG 2.2 AA, `a11y_guard.js`; no statement page (owner).
-- 2026-10-21 | Why-ledes; signature with stay fee; guest window 1 day | owner
-- 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
-- 2026-10-21 Stay-fee email: auto-confirm clean; PDF+QR on 2nd; Settings switch | owner, [plan](../plans/stay-fee-monthly-email.md)
-- 2026-10-22 One needs-you card on `/`; unopened-link reminder once/stay; no new host emails | owner.
 - 2026-10-22 Open cue on clickable rows; phone tabs wrap | owner
 
 - 2026-10-22 Wizard coral bar OK
@@ -75,3 +71,4 @@ Append-only.
 - 2026-10-29 | 0448: legacy hosts get an immediate plan start with the first invoice issued now, no trial | owner | 0448
 - 2026-10-29 | Discounts reissue an unpaid invoice with the discount applied | owner | 0448
 - 2026-10-29 | Trials are extendable by the operator, 1-365 days | owner | 0448
+- 2026-10-29 | Stripe Accounts v2; responsibilities immutable; company hosts via business_type | owner | 0437

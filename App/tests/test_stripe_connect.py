@@ -106,9 +106,22 @@ def _account_dict(*, charges: bool, payouts: bool, due: list, errors: list = Non
 
 @pytest.fixture
 def fake_stripe(monkeypatch, owner, stripe_env):
+    """A StripeClient fake shaped like the real 16.x client: v2 account
+    creation on .v2.core.accounts, v1-style account_links/accounts services
+    (they accept v2 account ids)."""
     account, link = _FakeAccount(), _FakeAccountLink()
-    monkeypatch.setattr(stripe_connect.stripe, "Account", account)
-    monkeypatch.setattr(stripe_connect.stripe, "AccountLink", link)
+
+    class _V2Core:
+        accounts = account
+
+    class _Client:
+        v2 = SimpleNamespace(core=_V2Core())
+        account_links = link
+        accounts = SimpleNamespace(
+            retrieve=lambda account_id, **kw: account.retrieve(account_id, **kw)
+        )
+
+    monkeypatch.setattr(stripe_connect, "_client", lambda: _Client())
     return SimpleNamespace(account=account, link=link)
 
 
@@ -121,21 +134,59 @@ def test_off_by_default(monkeypatch, owner):
     assert not stripe_connect.enabled()
 
 
-def test_create_uses_controller_api_not_deprecated_type(fake_stripe):
+def test_create_uses_accounts_v2_with_responsibilities(fake_stripe):
     stripe_connect.create_or_get_account(_owner_id())
     params = fake_stripe.account.created[0]
+    # Accounts v2 (0437): no controller block, no deprecated type=express.
+    assert "controller" not in params
     assert "type" not in params
-    assert params["controller"] == {
-        "fees": {"payer": "account"},
-        "losses": {"payments": "stripe"},
-        "requirement_collection": "stripe",
-        "stripe_dashboard": {"type": "express"},
-    }
-    assert params["country"] == "CZ"
-    profile = params["business_profile"]
-    assert profile["name"] == "Ubytovani s.r.o."
-    assert profile["url"]
-    assert "accommodation" in profile["product_description"]
+    assert params["dashboard"] == "express"
+    assert params["identity"]["country"] == "CZ"
+    resp = params["defaults"]["responsibilities"]
+    assert resp["fees_collector"] == "stripe"
+    assert resp["losses_collector"] == "stripe"
+    caps = params["configuration"]["merchant"]["capabilities"]
+    assert caps["card_payments"]["requested"] is True
+    assert caps["stripe_balance.payouts"]["requested"] is True
+    bd = params["identity"]["business_details"]
+    assert bd["registered_name"] == "Ubytovani s.r.o."
+    assert bd["url"]
+    assert "accommodation" in bd["product_description"]
+    # Prefill is name/email/url only — never DOB, address or ID numbers.
+    assert "dob" not in str(params).lower() and "address" not in str(params).lower()
+
+
+def test_company_host_onboards_as_company(fake_stripe):
+    db.execute(
+        "UPDATE legal_entity SET business_type = 'company' WHERE owner_user_id = ?",
+        (_owner_id(),),
+    )
+    stripe_connect.create_or_get_account(_owner_id())
+    params = fake_stripe.account.created[0]
+    assert params["identity"]["entity_type"] == "company"
+
+
+def test_individual_is_the_default_entity_type(fake_stripe):
+    stripe_connect.create_or_get_account(_owner_id())
+    params = fake_stripe.account.created[0]
+    assert params["identity"]["entity_type"] == "individual"
+
+
+def test_sweep_webhook_events_ages_rows(owner):
+    db.execute(
+        "INSERT INTO stripe_webhook_event (event_id, event_type, mode, created_at)"
+        " VALUES ('evt_old', 'account.updated', 'test', '2026-09-01T00:00:00')"
+    )
+    db.execute(
+        "INSERT INTO stripe_webhook_event (event_id, event_type, mode, created_at)"
+        " VALUES ('evt_new', 'account.updated', 'test', '2026-10-28T00:00:00')"
+    )
+    from datetime import date
+
+    deleted = stripe_connect.sweep_webhook_events(date(2026, 10, 29))
+    assert deleted == 1
+    ids = {r["event_id"] for r in db.query("SELECT event_id FROM stripe_webhook_event")}
+    assert ids == {"evt_new"}
 
 
 def test_create_is_idempotent_per_owner(fake_stripe):

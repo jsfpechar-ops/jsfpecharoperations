@@ -18,3 +18,7 @@ Moved from docs/context/decisions.md during compaction.
 - 2026-09-16 | Light mode only; dark mode parked | owner policy | [DESIGN](../DESIGN.md#color-mode-light-only-no-dark-mode)
 - 2026-09-18 | Mail via AWS SES (no-reply@ubyhost.com, DKIM) | already on AWS; keeps SMS/login options open | [SES](../SES.md)
 - 2026-10-03 | Stay fee charged per started day (arrival, departure]; use the rate the period was saved with | under-charging is the host's liability | P Q-answers
+- 2026-10-21 | Why-ledes; signature with stay fee; guest window 1 day | owner
+- 2026-10-21 PWA + push for 4 critical alerts only, no pywebpush (owner, 0219, 0225-0229).
+- 2026-10-21 Stay-fee email: auto-confirm clean; PDF+QR on 2nd; Settings switch | owner, [plan](../plans/stay-fee-monthly-email.md)
+- 2026-10-22 One needs-you card on `/`; unopened-link reminder once/stay; no new host emails | owner.

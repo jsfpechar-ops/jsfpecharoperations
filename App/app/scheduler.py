@@ -90,6 +90,7 @@ def job_intervals() -> dict:
         "push": 1,
         "guide_import": 1,
         "stay_fee_mail": 24 * 60,
+        "stripe_sweep": 24 * 60,
         "billing_snapshot": 24 * 60,
     }
 
@@ -420,6 +421,26 @@ def _job_billing_snapshot() -> None:
     _log_run("billing_snapshot", started, True, {"rows": rows})
 
 
+def _job_stripe_sweep() -> None:
+    """Expire stale payment requests and prune webhook dedupe rows (0437)."""
+    import datetime
+
+    from . import payment_request, stripe_connect
+
+    started = time.perf_counter()
+    today = datetime.date.today()
+    try:
+        expired = payment_request.expire_sweep(today)
+        swept = stripe_connect.sweep_webhook_events(today)
+    except Exception:
+        log.exception("stripe sweep run failed")
+        _job_failed("stripe_sweep")
+        _log_run("stripe_sweep", started, False)
+        return
+    _job_ok("stripe_sweep")
+    _log_run("stripe_sweep", started, True, {"expired": expired, "swept": swept})
+
+
 def _job_stay_fee_mail() -> None:
     """Seal clean stay-fee periods and email the reports (0223). Runs daily at 07:00."""
     started = time.perf_counter()
@@ -516,6 +537,10 @@ def start() -> bool:
     )
     _scheduler.add_job(
         _job_stay_fee_mail, "cron", hour=7, minute=0, id="stay_fee_mail",
+        max_instances=1, coalesce=True,
+    )
+    _scheduler.add_job(
+        _job_stripe_sweep, "cron", hour=4, minute=15, id="stripe_sweep",
         max_instances=1, coalesce=True,
     )
     _scheduler.add_job(
