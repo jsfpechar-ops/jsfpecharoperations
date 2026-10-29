@@ -72,6 +72,23 @@ it does not touch host or guest pages.
 
 ## 3. What we build (build order)
 
+### Bank-výpis guard (no bank feed connected yet)
+
+Today a payment is recorded only by bank import (ČSOB file — not connected in
+production) or the operator's manual mark-paid. Risk: the operator forgets to
+record a payment the host actually made, and dunning chases a paid host.
+Mitigations, in this plan:
+- **CC support on every billing mail** (decision §7.1): each reminder doubles
+  as the operator's to-do to check the výpis and mark paid.
+- **The /admin queue (0440) lists overdue invoices with a one-tap mark-paid**
+  link to the existing `/admin/fakturace` action — recording a payment from the
+  queue takes one click, which is the real fix for "wouldn't it be difficult".
+- The payment-received mail (0437) closes the loop: when the operator does
+  record it, the host immediately gets the "zaplaceno" confirmation both ways.
+- Not in this plan (tracked already): connecting the ČSOB import in production
+  is the owner's env/file step in status.md — when it lands, manual recording
+  stops being the primary path and the guard becomes a backstop.
+
 ### Slice A — close the billing mail gaps
 1. **Payment-received mail** (`billing_jobs.settle()` hook + `mail_notify.build_billing_paid()`): plain Czech "Faktura VS… byla zaplacena, děkujeme" on bank match and operator mark-paid; sent to **both** the invoice buyer e-mail and the account e-mail (owner decision §7.2; one copy when identical); idempotent per invoice. Nothing else — dunning exists (0417), do not touch its schedule.
 
@@ -154,7 +171,7 @@ What deliberately does NOT scale (and why that's correct at enterprise too):
 
 | # | Brief | Depends on |
 |---|---|---|
-| 1 | 0437: payment-received host mail (settle hook + idempotency + tests) | — |
+| 1 | 0437: dunning retune (due+7/+14/monthly) + CC support on all billing mails + payment-received mail (settle hook, idempotent, both recipients) + tests | — |
 | 2 | 0438: customer-page operator card: toggle surface + verification resend, reusing existing routes | — |
 | 3 | 0439: preview link + audit/activity cards on the customer detail (bounded, keyset) | 0438 |
 | 4 | 0440: /admin operations home: queue cards (snapshot-fed, `LIMIT ≤ 25` per card, migration 0032 adds the unpaid-overdue index) | — |
@@ -162,7 +179,15 @@ What deliberately does NOT scale (and why that's correct at enterprise too):
 
 ## 7. Owner decisions (2026-10-29, chat) — resolved
 
-1. **Dunning schedule: keep as is** (0417's due+1/+7, pause-14; no retune).
+1. **Dunning schedule retuned (owner, 2026-10-29)**: first reminder at **due+7**,
+   second at **due+14**, then a **monthly** reminder while unpaid; read-only
+   pause stays coupled to the existing 0417 pause rule. Constants in
+   `billing_jobs.py` (`REMIND_AFTER=7`, `SECOND_AFTER=14`, plus a new
+   `MONTHLY_AFTER`/repeat rule) — numbers only, the engine is untouched.
+   **Every reminder and payment mail CCs support** (`cc_email=OPERATOR_EMAIL`,
+   already supported by `mail.enqueue`): with no bank feed connected yet, the
+   CC is the operator's prompt to record the payment ("Označit jako zaplaceno")
+   — see the výpis guard below.
 2. **Payment-received mail: both** — the buyer e-mail on the invoice *and* the
    host's account e-mail. One mail kind, two recipients, one idempotency key
    per invoice; if the addresses are identical, one recipient (no duplicate).
