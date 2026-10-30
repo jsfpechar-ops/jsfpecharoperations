@@ -6,7 +6,9 @@ Status: plan for owner decision, 2026-10-30. Written at the owner's request ("be
 1. **Rev 1:** Postgres on a managed DB ($15/mo) + Metabase.
 2. **Rev 2:** owner relaxed privacy as a driver ("full in for efficiency"); options re-weighed.
 3. **Rev 3:** owner noted the existing $44/mo 8 GB Lightsail bundle; production Postgres moved onto that box, $0/mo.
-4. **Rev 4 (final, this text):** owner steer — "consider the migration for the next executive CTO." **Production stays SQLite.** The migration becomes a fully pre-analyzed playbook with explicit triggers (§4), owned by whoever holds the CTO seat when a trigger fires. Business metrics ship **now** through an analytics replica (§5) — the production database is untouched, so the BI blocker dies without a migration.
+4. **Rev 4:** owner steer — "consider the migration for the next executive CTO." **Production stays SQLite.** The migration becomes a fully pre-analyzed playbook with explicit triggers (§4), owned by whoever holds the CTO seat when a trigger fires. Business metrics ship **now** through an analytics replica (§5) — the production database is untouched, so the BI blocker dies without a migration.
+
+5. **Rev 5 (this text):** the owner asked for the complete runway of pending steps to be part of the plan — everything that must be done, in gate order (§8), before anything new pushes further.
 
 ## 0. Owner constraints (2026-10-30, the owner's words)
 
@@ -92,16 +94,57 @@ Pre-analyzed 2026-10-30 against the full repo. **Do not start until a §4 trigge
 - **PostHog Cloud EU**: unchanged (web/product analytics, funnel). Host-app instrumentation is unlocked by the efficiency steer but waits for a real question to answer.
 - **Grafana Cloud free**: ops only. Optional free additions: a postgres-exporter panel for the analytics DB; the existing `metrics.py` app job is the pattern.
 
-## 8. Sequencing
+## 8. The runway: what must be done, in order
 
-| Phase | What | Effort | When |
-|---|---|---|---|
-| 1 | Analytics sync job + `postgres-analytics` + Metabase compose services; first dashboards + alerts | 1-2 briefs | now |
-| 2 | Dashboards tuned to the cockpit plan §12; heartbeat wired | 1 brief | after phase 1 |
-| 3 | Migration playbook review (this doc §4-§6) | 0 — read it | each monthly check |
-| 4 | Migration execution | 5 sessions (§6) | only when a §4 trigger fires |
+**Nothing in a lower gate starts before the gates above it are closed.** Source of truth for each line: [status](../context/status.md) (updated 2026-10-29 — re-check it before executing; some rows may already be closed), plus this plan and the UX plan. Each gate lists its exit criterion.
 
-The UX smoothness plan (PR #581) and the payments rails (0435-0442) are independent and higher-priority than anything here.
+**Gate 0 — the owner queue (one batched morning: merges, deploys, staging checks, letters)**
+
+1. Merge the reviewed PRs with `scripts/merge-pr-on-green.sh`: Guide + Leon #465-468; the 0291-0302 buttons/fees/invoice line; #435 (passkey); TTLock #434 once its CI row is green.
+2. Production deploy of everything merged since the last deploy (Actions → Deploy production, `force_confirm=DEPLOY`).
+3. Add `uk` to `UBYHOST_GUEST_LANGS` and redeploy (0196 guest form).
+4. Owner staging tests: TTLock change / calendar-stays / DST; door codes 0037-0038 owner steps; stay-fee e-mail 0220-0224; root login/calendar review (from #432).
+5. Cloudflare rules 3-4 (0291-0302 row); passkey phone + iPad checks (0280-0283, 0290).
+6. Credential letter to data box ybndqw9; verify `/healthz`.
+7. 0403-0405 (guide import / Leon setup) reviews closed.
+
+*Exit: no reviewed-but-unmerged PR older than a week; production runs the merged main; staging rows in status are ticked.*
+
+**Gate 1 — the money path (the only code work that outranks this plan)**
+
+8. 0429 payments UX: close the pending CI browser row, merge the line (#553 rails and #554 fix are already merged).
+9. 0435-0436 card and QR rails; 0430-0434 property pages; 0437-0442 Stripe Connect v2 port and fixes: review, merge, deploy each on green.
+10. End-to-end money check in production: a host signs up, connects Stripe, a guest pays, an invoice exists, billing records it. 0448 (first plan to legacy hosts) is already merged and live.
+11. OPS-2: after the next age-encrypted backup lands, purge the legacy plaintext backups from Lightsail/S3 per the backup runbook.
+
+*Exit: a host can be paid end-to-end without hand-holding; the backup layers are all encrypted.*
+
+**Gate 2 — parked decisions (cheap to make; each unblocks a row elsewhere)**
+
+12. Founder-price flag on the customer page vs discount-% only (status Blocked row).
+13. Lawyer round: legal v1.7 signature, TDM §11 confirmation (0195), the Terms/DPA line from the file-retention plan, and the K-L rows.
+14. HIGH RISK filing rows K-F02/K-F03/K-F07, stale signed dates K-F18, secret rotation K-S10: schedule each or explicitly park it with a date.
+15. Support mailbox vendor choice (vendors.md open row).
+
+*Exit: every status Blocked row is either closed or has an owner and a date.*
+
+**Gate 3 — this plan, Phase 1 (starts only when Gates 0-1 are closed; Gate 2 can run in parallel)**
+
+16. Brief: the `analytics_sync` scheduled job + `postgres-analytics` + Metabase compose services (§5), following the task system.
+17. Build, review, merge on green; deploy with the `analytics` profile; wire the heartbeat (existing healthchecks.io pattern).
+18. First dashboards and alerts (§5); tune against the cockpit plan §12.
+
+*Exit: MRR, plan mix, churn watchlist and overdue-invoice alerts exist outside the morning checklist.*
+
+**Gate 4 — the UX plan**
+
+19. PR #581 review and merge, then its workstreams W1-W5 per its own sequencing — after the money path, in parallel with Gate 3.
+
+*Exit: UX plan merged; its briefs enter the normal task queue.*
+
+**Gate 5 — dormant**
+
+20. The Postgres playbook (§4-§6): read once at each monthly check; execute only when a trigger fires. Until then: nothing.
 
 ## 9. Costs
 
