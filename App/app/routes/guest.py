@@ -1544,6 +1544,13 @@ def _form_context(
             # Max-plan document scanning: flag, key, test list and plan gate in
             # one place, so the template only shows what the route accepts.
             "ocr_available": doc_ocr.available(apartment),
+            # The submit button says what the save will do next: the last
+            # outstanding person submits the whole registration, everyone
+            # before them just saves and continues to the next guest. An
+            # undeclared headcount keeps the plain submit wording.
+            "is_last_outstanding": remaining == 1 if remaining is not None else True,
+            # The previous guest's save sent us here; say so without a hub stop.
+            "just_saved": request.query_params.get("saved") == "1",
         }
     )
     return context
@@ -1903,9 +1910,20 @@ async def guest_form_save(token: str, reservation_id: int, request: Request):
         )
     )
 
-    response = RedirectResponse(
-        _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303
-    )
+    # Direct progression: a guest who is not the last outstanding one goes
+    # straight to the next empty form instead of through the hub. The URL is
+    # the same /new the Add-a-person link used, so nothing new has to be
+    # guarded; the /new capacity re-check is what stops an overshoot of the
+    # declared headcount from ever creating an extra person.
+    fresh = reporting.reservation_progress(reservation)
+    if fresh["missing"] and fresh["missing"] > 0:
+        response = RedirectResponse(
+            _guest_link(token, reservation_id) + "/new" + _lang_q(lang, "&saved=1"), status_code=303
+        )
+    else:
+        response = RedirectResponse(
+            _guest_link(token, reservation_id) + _lang_q(lang, "&saved=1"), status_code=303
+        )
     _remember_owned(response, _owned_ids(request) + [saved_id])
     return _with_lang(response, lang)
 

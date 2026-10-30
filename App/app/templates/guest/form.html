@@ -67,6 +67,9 @@
       <span>{{ t('person_progress', current=person_number, total=expected_people) }}</span>
     {% endif %}
   </p>
+  {% if just_saved %}
+  <p class="hint g-saved-strip" role="status">{{ t('person_saved') }}</p>
+  {% endif %}
   <div class="g-wizard-progress" data-wizard-progress aria-live="polite" hidden>
     <span data-wizard-label></span><span class="g-bar"><i data-wizard-bar></i></span>
   </div>
@@ -280,19 +283,22 @@
     <input type="hidden" id="signature" name="signature"
            value="{{ values.get('signature') or stored_signature }}">
     {{ err_for('signature') }}
-  </div>
 
-  <div data-guest-step data-step-title="{{ t('legal_notice_title') }}">
-    <div class="g-card g-review" data-wizard-review
+    <div class="g-review" data-wizard-review
          data-edit-label="{{ t('review_edit') }}" hidden>
       <h2>{{ t('review_title') }}</h2>
       <p class="g-intro">{{ t('review_help') }}</p>
       <dl class="g-summary-list g-review-list"></dl>
     </div>
 
-    {% include "guest/_legal_notice.html" %}
+    <details class="g-legal-fold">
+      <summary>{{ t('legal_notice_title') }}</summary>
+      {% include "guest/_legal_notice.html" %}
+    </details>
 
-    <button class="g-btn" type="submit">{{ t('submit') }}</button>
+    {# The final outstanding guest submits; everyone before them saves and
+     goes straight to the next person's empty form (no hub stop). #}
+    <button class="g-btn" type="submit">{{ t('submit_registration') if is_last_outstanding else t('save_continue_next') }}</button>
   </div>
 </form>
 {% include "guest/_why.html" %}
