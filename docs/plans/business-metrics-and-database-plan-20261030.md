@@ -161,3 +161,16 @@ No BigQuery, no data warehouse, no enterprise Looker, no per-seat BI, no Supabas
 ## 12. What if we do nothing
 
 Stated honestly, because it is viable: SQLite + the 0446 export endpoint + spreadsheets answers every business question at this scale, for $0. The cost of doing nothing is the status quo the owner described: the BI blocker stays, every future tool needs a sync layer, and the migration debt grows with the data. The trigger for this plan is that the owner wants live dashboards and wants to stop changing tools — and with revision 3, closing the question permanently costs nothing per month.
+
+## 13. Repo assets this plan builds on (audit 2026-10-30)
+
+The plan above was written against the full repo. These existing assets make each phase cheaper than it looks on paper:
+
+- **Restore drills are already institutionalized**: `restore-drill.yml` runs the rebuild drill; the WAL-G restore path joins it instead of needing a new habit.
+- **The heartbeat pattern exists**: `UBYHOST_HEARTBEAT_FILING_URL` and `UBYHOST_HEARTBEAT_MONITORING_URL` already alert on silent failure via healthchecks.io. WAL-G archive health gets a `UBYHOST_HEARTBEAT_BACKUP_URL` sibling — same pattern, same runbook.
+- **A staging compose profile already runs on the production host** (`staging` + `mock-ubyport`), so Phase 2 can rehearse against a Postgres right next to the app; Neon branches stay for disposable full-data rehearsals.
+- **The metrics pipeline already has an app job**: `metrics.py` exports `ubyhost_requests_total` etc. to Grafana Cloud Prometheus; a postgres exporter joins the same stack (`OBSERVABILITY.md` pattern, compose profile `monitoring`).
+- **In-app analytics already exist and stay**: the funnel dashboard (0018, `admin_funnel.py`), `billing_analytics.py` and the 0446 export endpoint answer host-facing and export questions. Metabase is the operator-side layer on top of the money tables, not a replacement for any of these.
+- **Env var discipline exists**: `ENVIRONMENT.md` + `.env.example` + `env_guard.py` mean `UBYHOST_DB_URL` gets one documented row with a wrong-if-absent note, exactly like every other var.
+- **No new subprocessors either way**: Postgres on the existing instance and self-hosted Metabase keep the vendor evidence file (`docs/vendors/README.md`) unchanged — efficient and true.
+- **Execution runs through the existing task system**: each phase becomes one or two `docs/tasks/NNNN-*.md` briefs, merged with `scripts/merge-pr-on-green.sh`, deployed by the owner. Nothing about the workflow changes.
