@@ -55,6 +55,20 @@ This covers `App/app/templates/guest/`, `guest*.css` and `signature.js`. Markup 
 
 Playwright comes from `.cursor/install.sh` (or `pip install playwright==1.63.0 && python -m playwright install chromium`). Bump the `?v=` cache key in `App/app/templates/guest/base.html` for each CSS/JS file you change. The full checklist is in [DESIGN](../DESIGN.md#product-rules-that-affect-the-guest-screens). Host template/CSS changes need `App/tests/test_host_geometry.py` and the checklist in `.github/PULL_REQUEST_TEMPLATE.md`.
 
+## UX and interaction (host and admin)
+
+Set 2026-10-30, owner decision. The rationale and work plan is [docs/plans/ux-smoothness-plan-20261030.md](../plans/ux-smoothness-plan-20261030.md). These rules bind every host-app and admin change; guest, marketing, auth and legal pages keep their own rules.
+
+- **Light mode only.** No dark mode, no theme toggle, no `prefers-color-scheme` switching.
+- **One design system.** Colors, spacing, radii, shadows and type sizes exist only in `tokens.css`; component styles only in `components.css`; app layout in `host.css`. Do not add a new stylesheet or a new design generation. New UI is built from `ui_*` macros, and a component not shown on `dev_ui.html` does not exist.
+- **One attention surface per page.** At most one banner above the first content section. Alerts, billing notices and environment warnings fold into the page's needs-you card or the topbar, never stack.
+- **Density.** At most 4 `ui_stats` tiles per page; one page answers one question; every list has an `ui_empty` state.
+- **Progressive enhancement.** Every flow works without JavaScript. JS layers (prefetch, view transitions, partial swaps) add smoothness on top and must respect `prefers-reduced-motion`. Vanilla ES modules only, no framework, no build step.
+- **Instant-feel budget.** Perceived click-to-content under ~200 ms on the production host; no layout shift on navigation; no white flash on transitions.
+- **Assets that never regress:** the command palette, keyboard navigation, undo toasts, skeleton screens, the offline page, PWA, screen-reader live regions and the three UI languages keep working in every change.
+- **Admin is first-class.** Admin accounts see an Administrace nav group in the sidebar; no admin function is more than one click from the shell.
+- Changed host/admin pages ship before/after 390 px screenshots in the PR and pass `App/tests/test_host_geometry.py`.
+
 ## Copy
 
 - Strings live in `i18n.py`, `host_i18n.py` or a template.
