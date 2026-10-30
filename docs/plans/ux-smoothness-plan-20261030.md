@@ -24,7 +24,7 @@ What is *not* wrong: the shell bones are better than Wolt's (see D4), and `admin
 
 | | Full SPA rewrite (React/Vite) | Turbo-MPA (this plan) |
 |---|---|---|
-| Feel achievable | Wolt-level | Wolt-level (§ W3 reaches it) |
+| Feel achievable | Wolt-level | Wolt-level (§1.1 says exactly how much) |
 | Lines of throwaway work | All 49 templates + routes become JSON APIs | None; each phase ships on top of current pages |
 | Toolchains to maintain | Two (Python API + Node build, state mgmt, tokens/auth) | One (Python + a few small vanilla JS files, no build step) |
 | Risk to the filing path | High (every route rewritten) | Zero (no `ubyport/`, `reporting.py` or deadline code touched) |
@@ -37,6 +37,41 @@ What is *not* wrong: the shell bones are better than Wolt's (see D4), and `admin
 - Zero white flash on navigation.
 - Zero cumulative layout shift on page swap.
 - One design system rendering every pixel of the host and admin surfaces.
+
+### 1.1 What "smooth" decomposes into (the honest ceiling)
+
+The Wolt feel is not one thing. Whoever executes this plan must know which parts of the feel each layer buys, and where the honest ceiling is. Checked against browser support as of 2026-10-30:
+
+| Feel component | Delivered by | Wolt-level? |
+|---|---|---|
+| 1. Pages appear instantly (~100 ms) | W3-L1 prefetch on pointerover/focus | **100%.** The single biggest contributor to the feel; browser-level, not architecture |
+| 2. No white flash; content morphs | W3-L2 view transitions | **~95%.** Same-document transitions are Baseline (Chrome 111+, Safari 18+, Firefox 144+). Cross-document morphs ship in Chrome/Edge 126+ and Safari 18.2+ (desktop and iOS); Firefox does not ship cross-document transitions in a stable release and falls back to a fast, prefetched, non-animated navigation. The morph is always enhancement, never requirement |
+| 3. Actions never reload the page | W3-L3 partial swaps + undo toasts | **100%** for the covered flows (the top 5 by frequency) |
+| 4. Consistent visuals, low density | W1 + W2 | **100%.** Not architecture-dependent at all |
+| 5. Client-side state lives in memory | URL state, sessionStorage, fragments | **~70-80%.** The one genuine residual gap; see §1.2 |
+
+### 1.2 The residual gap, named precisely
+
+The only thing an MPA cannot fully replicate is client-side state living in memory: a filter kept perfectly across pages, a half-scrolled modal, wizard state, optimistic UI on every interaction. Mitigations that close most of it: URL state (`_list_filter.html` already does this), sessionStorage for drafts, fragment swaps for actions. The gap only matters on interaction-dense surfaces - drag-and-drop planning, real-time collaboration, offline-first editing - none of which exist in UbyHost today. The dominant interaction pattern (navigate, look, act, confirm) is fully covered by the plan.
+
+### 1.3 The price math
+
+Full SPA = 100% of the feel for roughly 5x the cost and ~10x the long-term maintenance (two toolchains, npm dependency churn, state management, API contract drift between FastAPI and frontend types, keyboard and screen-reader support re-implemented from scratch) - plus rewrite risk over the filing path, which rule 1 forbids taking lightly. Turbo-MPA = ~95% of the perceptible feel for roughly a week of executor sessions and zero architectural change, with one operator maintaining one toolchain. The last 5% costs more than the first 95%.
+
+### 1.4 When this decision flips (the reversal triggers)
+
+D2 is a decision with named exit conditions, not a dogma. Revisit it only if one of these happens, and record the trigger in the decision line:
+
+- A drag-and-drop or real-time collaborative surface becomes a real planned feature (live calendar planning, co-editing).
+- Offline-first field use becomes a requirement (hosts using the app without connectivity).
+- A dedicated frontend engineer joins the project.
+- After W1-W3 ship, the owner can **name specific daily interactions that still feel wrong** (for example "the filter resets when I go back"). Evidence beats prediction: use the app for two weeks post-ship and decide from named pain, not from a guess made before shipping.
+
+If reversed: do not start from zero. W1's token system is the design system a SPA needs; W3's `?fragment=` endpoints are proto-API endpoints; the SPA consumes both. The reversal is a continuation, not a rewrite.
+
+### 1.5 The insurance policy
+
+The plan is deliberately the migration path to a SPA. Tokens (W1) and fragment endpoints (W3-L3) keep the option open at zero carrying cost. The owner pays for the SPA option only if a §1.4 trigger fires. Any executor proposing a SPA rewrite before a trigger fires should be pointed at this section.
 
 ## 2. Workstreams
 
@@ -77,11 +112,11 @@ Acceptance: no host or admin page shows more than one banner above its first con
 
 Goal: Wolt's click feel without a rewrite. Three layers, each a separate task/PR, in this order. All JS is vanilla ES modules served from `App/app/static/`, no framework, no build step. Every layer is progressive enhancement: with JS off, the app behaves exactly as today.
 
-**L1 — Prefetch (Effort S).** On `pointerover`/`focusin` of a same-origin link, inject `<link rel="prefetch">`. After `requestIdleCallback`, prefetch the sidebar destinations. Respect `Save-Data` and never prefetch POST targets. Expected effect: most sidebar clicks render from cache in <100 ms.
+**L1 — Prefetch (Effort S).** On `pointerover`/`focusin` of a same-origin link, inject `<link rel="prefetch">`. After `requestIdleCallback`, prefetch the sidebar destinations. Respect `Save-Data` and never prefetch POST targets. Expected effect: most sidebar clicks render from cache in <100 ms. This is the single highest-leverage layer of the whole plan (§1.1, component 1).
 
-**L2 — View transitions (Effort S).** Wrap navigations in the View Transitions API (`document.startViewTransition` / cross-document `@view-transition` where supported). Shared-element classes on the shell (sidebar, topbar, page title, primary card) so the content area morphs instead of flashing. Honor `prefers-reduced-motion` (fall back to plain navigation). Fallback where unsupported: today's behavior.
+**L2 — View transitions (Effort S).** Wrap navigations in the View Transitions API (`document.startViewTransition` / cross-document `@view-transition` where supported). Shared-element classes on the shell (sidebar, topbar, page title, primary card) so the content area morphs instead of flashing. Honor `prefers-reduced-motion` (fall back to plain navigation). Fallback where unsupported: today's behavior - and remember the browser matrix in §1.1: Firefox users get the L1-fast navigation without the morph, which is acceptable.
 
-**L3 — Partial swaps (Effort M).** Extend the existing `data-toggle-panel` / `data-dashboard-refresh` patterns into one tiny helper (`App/app/static/app.js`, target ~150 lines): a `data-swap` action fetches the re-rendered fragment and swaps it in place, then posts the existing undo toast. Cover the top ~5 high-frequency flows first: archive/delete stay, mark cleaning done, admin mark-paid, admin storno, plan-change confirm. Server side: the route already re-renders the page; add a `?fragment=…` mode returning the relevant include. Skeleton screens (already built) cover the fetch.
+**L3 — Partial swaps (Effort M).** Extend the existing `data-toggle-panel` / `data-dashboard-refresh` patterns into one tiny helper (`App/app/static/app.js`, target ~150 lines): a `data-swap` action fetches the re-rendered fragment and swaps it in place, then posts the existing undo toast. Cover the top ~5 high-frequency flows first: archive/delete stay, mark cleaning done, admin mark-paid, admin storno, plan-change confirm. Server side: the route already re-renders the page; add a `?fragment=…` mode returning the relevant include. Skeleton screens (already built) cover the fetch. These `?fragment=` endpoints are also the proto-API of the §1.5 insurance policy - design their payloads so a future SPA could consume them.
 
 Acceptance (all of W3):
 
@@ -127,7 +162,7 @@ Total: roughly a focused week of executor sessions spread over 2-3 weeks of owne
 ## 4. Non-goals
 
 - No dark mode (D1).
-- No SPA rewrite, no JS framework, no build step (D2).
+- No SPA rewrite, no JS framework, no build step (D2). The reversal conditions for D2 are in §1.4; until one fires, an executor proposing a SPA rewrite is off-plan.
 - No changes to guest pages, marketing, auth or legal surfaces (D3).
 - No new third-party scripts, fonts or CDNs (privacy rules unchanged).
 - No regression of the D4 assets, ever.
