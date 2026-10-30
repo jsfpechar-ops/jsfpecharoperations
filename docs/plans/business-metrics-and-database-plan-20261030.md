@@ -8,7 +8,9 @@ Status: plan for owner decision, 2026-10-30. Written at the owner's request ("be
 3. **Rev 3:** owner noted the existing $44/mo 8 GB Lightsail bundle; production Postgres moved onto that box, $0/mo.
 4. **Rev 4:** owner steer — "consider the migration for the next executive CTO." **Production stays SQLite.** The migration becomes a fully pre-analyzed playbook with explicit triggers (§4), owned by whoever holds the CTO seat when a trigger fires. Business metrics ship **now** through an analytics replica (§5) — the production database is untouched, so the BI blocker dies without a migration.
 
-5. **Rev 5 (this text):** the owner asked for the complete runway of pending steps to be part of the plan — everything that must be done, in gate order (§8), before anything new pushes further.
+5. **Rev 5:** the owner asked for the complete runway of pending steps to be part of the plan — everything that must be done, in gate order (§8), before anything new pushes further.
+
+6. **Rev 6 (this text, post-review correction):** defines and reconciles the business metrics BEFORE any new infrastructure (§5a); Metabase OSS over a separate analytics copy is the preferred candidate, conditional on measured capacity, recovery and operational cost — "no additional hosting subscription" is a target, not a zero-cost or zero-risk guarantee. Metric/UX contract work proceeds independently of infrastructure. The first application step is a small read-only extraction (brief 0444), not the sync job.
 
 ## 0. Owner constraints (2026-10-30, the owner's words)
 
@@ -22,7 +24,7 @@ Status: plan for owner decision, 2026-10-30. Written at the owner's request ("be
 
 ## 1. The recommendation now
 
-**Do nothing to the production database.** SQLite stays, Litestream stays, the four backup layers stay. Instead, one new scheduled job copies the money tables into a small **analytics Postgres container** on the existing 8 GB instance (a read-only copy by construction), and **self-hosted Metabase OSS** runs on top of that copy. Total: **$0/month, zero production risk, business metrics in one brief.** The SQLite-to-Postgres migration is fully pre-analyzed below (§6) and waits for its triggers (§4) — the next executive CTO (a future chat, a future hire, or the owner) executes a playbook that is already written, not a project that must be re-discovered.
+**Do nothing to the production database.** SQLite stays, Litestream stays, the four backup layers stay. Instead, the path is: first define and reconcile the metrics (§5a), then a small read-only extraction of verified values (brief 0444), then — only if its preconditions (§5) hold — one scheduled job copying minimal, field-minimized money tables into an **analytics Postgres container** on the existing 8 GB instance (a read-only copy by construction), with **self-hosted Metabase OSS** on top. Corrected framing: the target is no additional hosting subscription, not a $0 or zero-risk guarantee; capacity, recovery and operating cost are measured before anything ships (§5), and a read-only copy removes most — not all — production risk (the sync job reads production through db.py). The SQLite-to-Postgres migration is fully pre-analyzed below (§6) and waits for its triggers (§4) — the next executive CTO (a future chat, a future hire, or the owner) executes a playbook that is already written, not a project that must be re-discovered.
 
 The anti-churn principle survives untouched: the Postgres-portable SQL rules (`ON CONFLICT`, `RETURNING`, no `lastrowid`) are the standing insurance that the migration, whenever it happens, is a project measured in sessions, not months.
 
@@ -57,12 +59,54 @@ Execute the playbook (§6) when **any** of these fires:
 
 Until a trigger fires, the playbook is dormant — reviewed when the owner's monthly check looks at spend and Grafana, not acted on.
 
-## 5. The interim build: analytics replica + Metabase (the only new thing)
+## 5a. Metric definitions and reconciliation (REV 6: before any infrastructure)
 
-**What ships:** one brief, one PR.
+These definitions bind every surface that shows a money number (cockpit, export, future Metabase). A metric without a definition here is not published.
+
+| Metric | Required meaning |
+|---|---|
+| Subscription MRR | Effective recurring platform price, net of VAT and recurring discounts, normalized monthly. Excludes trials, one-off fees (carry, supplementary) and guest/merchant payment volume (Stripe rails money is not platform revenue) |
+| Issued invoices | Count and amount reported SEPARATELY, with currency, tax treatment (BILLING_VAT_STATUS), voids, credits (storno) and replacements (corrective chain) defined |
+| Overdue invoices | Explicit due-date rule, status rule (voided = excluded, paid_on set = excluded) and remaining-balance rule (no partial payments exist in source) |
+| Collections | Distinguishes invoice `paid_on` status from actual cash: `bank_payment` rows with `matched_invoice_id` are the only allocation evidence; unmatched payments are not collections |
+| MRR movement | Opening + new + expansion − contraction − churn = closing; explicit reactivation policy and sufficient snapshot history required; missing history is reported as unavailable, never zero |
+| Account churn | Eligible paying accounts lost in period ÷ eligible accounts at period start; a cancellation REQUEST (`cancel_at_period_end`) differs from an effective end |
+| Trials / account counts | Explicit grain (billing_account row vs user_account), eligibility (trial_started_at) and date basis (Europe/Prague business dates); joins must not multiply accounts |
+
+Money rules: integer minor units (haler) or exact decimals; never float. Currencies stay separate (CZK only today) until an FX policy exists. Business dates are Europe/Prague. Missing history means unavailable, not zero.
+
+Source gaps to resolve before any extraction ships (reverified against source 2026-10-30):
+
+- `portfolio()` computes current quote-derived values (whole-Kč via `billing.quote`, net of recurring discount, incl. carry); annual normalization rounds whole-Kč (`_monthly`). VAT-exempt (`BILLING_VAT_STATUS=non_payer` default) — verify with the owner whether that is the filing reality.
+- Invoice aggregates sum `total_haler` then truncate to whole CZK (`// 100`); storno marks the corrected invoice `voided = 1` and requires it unpaid; `mark_paid` only sets `paid_on`/`paid_via` on unpaid, unvoided, non-storno invoices. No partial payments, refunds or allocations exist in source.
+- "Collected" today = invoices with `paid_on` in the month (status-derived). A cash-allocation ledger does not exist; `bank_payment.matched_invoice_id` (set by `bank_import`) is the only allocation evidence.
+- Existing-row trends do not prove a complete historical month series; the snapshot job writes the CURRENT month only (scheduler daily + billing mutations). Historical movement/churn metrics are not yet verifiable.
+- Billing tables are defined in migrations `0023_billing.sql` and `0031_billing_discount_snapshot.sql` (verified); scheduler call site `_job_billing_snapshot` (verified).
+
+## 5. The interim build: analytics copy + Metabase (candidate, conditional)
+
+**Preconditions (all measured before this phase starts):**
+
+- Headroom: RAM, CPU, disk growth and I/O of app + workers + monitoring + backups on the 8 GB box, measured with the analytics services added. Earlier 512 MB Postgres / 1 GB Metabase caps were unverified.
+- Recovery: Metabase needs a persistent production application database for dashboards/users/configuration, separate from its reporting connection; embedded H2 is not acceptable. Configuration/application data backed up off-host; restoring a dashboard and access settings demonstrated.
+- Operational cost: refresh runs, stale-generation handling, upgrades and one more service to watch, accepted by the owner.
+
+**Target architecture:**
+
+```
+Production SQLite
+  -> consistent minimal snapshot (db.py helpers, explicit field minimization)
+  -> isolated analytics load (staging generations: run id, schema version, source timestamp)
+  -> validated published generation (transactional publish after validation)
+  -> Metabase OSS (read-only BI role, private database networking)
+```
+
+**Requirements:** SQL only through `db.py` helpers; consistent extraction with explicit field minimization (contact/name fields do not enter the extract by default); staging generations with run id, schema version and source timestamp; transactional publication after validation; idempotent retries; correction/deletion propagation; a failed refresh retains the last successful generation, visibly stale; dashboards display the last successful source time and the expected refresh; freshness/missed-heartbeat checks independent of the sync job; a read-only BI reporting role and private database networking.
+
+**What ships when the preconditions hold:**
 
 - **Sync job**: a new scheduled job in the existing `scheduler.py` pattern (like `retention` at 03:30) — e.g. `analytics_sync` nightly. It reads the money tables through `db.py` helpers and writes them into the analytics Postgres: `billing_month_snapshot`, `platform_invoice`, `billing_account` (plan, discount, trial state), stay-fee aggregates, host account counts, churn/trial-ending views. Money tables only, by design: business metrics need revenue, not guest data.
-- **Compose**: a `postgres-analytics` service (digest-pinned, `mem_limit: 512m`, profile `analytics`, joins `ubyhost-web`, no published ports) plus the Metabase service (`mem_limit: 1g`, profile `analytics`). Both live inside the existing $44 instance's headroom.
+- **Compose**: a `postgres-analytics` service (digest-pinned, profile `analytics`, joins `ubyhost-web`, no published ports) plus the Metabase service (profile `analytics`). Memory limits are set AFTER the §5 precondition measurement, not assumed (earlier 512 MB / 1 GB figures were unverified).
 - **Read-only by construction**: the replica cannot corrupt production because it is a copy, not a connection. No read-only-user discipline needed against the live DB.
 - **Health**: the job raises a `job_failed` alert on failure (existing pattern) and gets a `UBYHOST_HEARTBEAT_BACKUP_URL`-style heartbeat ping (existing healthchecks.io pattern) so silent staleness is impossible.
 - **First dashboards** (from the cockpit plan §12): MRR + movement waterfall, plan mix, churn watchlist (trials ending, overdue invoices), portfolio aging, fee vs. subscription revenue. **Alerts**: overdue invoice, trial ending without conversion, MRR drop — the morning checklist automated.
@@ -83,8 +127,8 @@ Pre-analyzed 2026-10-30 against the full repo. **Do not start until a §4 trigge
 **Stages when executed:**
 1. `db.py` Postgres connection branch behind `UBYHOST_DB_URL` (one documented `ENVIRONMENT.md` row); CI dual-database. SQLite stays default.
 2. Staging rehearsal: migrations replayed on a Neon free branch or the host's staging compose profile; full suite + filing dry-run green, twice.
-3. Data-migration rehearsal: row counts, billing totals in Kč reconciled to the cockpit, snapshots month-by-month.
-4. Cutover morning: final Litestream restore point; migrate on-host; flip the env var; smoke host app, admin, billing run, one filing dry-run; Grafana watch. Rollback: flip back — the SQLite file is untouched.
+3. Data-migration rehearsal: row counts, billing totals in minor units reconciled to the cockpit, snapshots month-by-month; money and filing rehearsals explicitly verified.
+4. Cutover morning: final Litestream restore point; migrate on-host; flip the env var; smoke host app, admin, billing run, one filing dry-run; Grafana watch. Rollback: flipping back is only safe BEFORE Postgres accepts new authoritative writes; after that, rollback requires a rehearsed reverse reconciliation (and quiescence of web mutations, workers, schedulers and callbacks, with final reconciliation before destination writes). An untouched SQLite file is not a rollback plan once the destination has accepted writes.
 5. Close out: rules.md Database section updated ("UbyHost runs on Postgres…"), LIGHTSAIL.md rows updated, Litestream decommissioned after two clean weeks, WAL-G joins the restore drill.
 
 **Hard gates:** filing path green before and after; HIGH RISK filing rule requires a written owner decision — the trigger + this playbook presented as that decision.
@@ -130,7 +174,8 @@ Pre-analyzed 2026-10-30 against the full repo. **Do not start until a §4 trigge
 
 **Gate 3 — this plan, Phase 1 (starts only when Gates 0-1 are closed; Gate 2 can run in parallel)**
 
-16. Brief: the `analytics_sync` scheduled job + `postgres-analytics` + Metabase compose services (§5), following the task system.
+16. First: metric definitions (§5a) reconciled and brief 0444 (small read-only extraction of current portfolio values and invoice issue/paid aggregates) built and merged — no scheduler registration, no new dependencies, no migrations, no containers.
+16b. Then, only if the §5 preconditions hold: brief for the `analytics_sync` scheduled job + `postgres-analytics` + Metabase compose services (§5), following the task system.
 17. Build, review, merge on green; deploy with the `analytics` profile; wire the heartbeat (existing healthchecks.io pattern).
 18. First dashboards and alerts (§5); tune against the cockpit plan §12.
 
@@ -151,19 +196,19 @@ Pre-analyzed 2026-10-30 against the full repo. **Do not start until a §4 trigge
 | Item | Monthly |
 |---|---|
 | Everything existing (Lightsail 8 GB, S3, PostHog, Grafana, SES…) | unchanged |
-| Analytics Postgres container + Metabase on the existing instance | $0 |
-| **Total new** | **$0** |
+| Analytics Postgres container + Metabase on the existing instance | $0 subscription (target; RAM/CPU/disk headroom and ops time are real costs, measured per §5) |
+| **Total new subscription** | **$0 (target, not a guarantee)** |
 
 ## 10. Decisions needed from the owner
 
 - **D1 — Production database stays SQLite.** The migration is deferred to §4 triggers; this document is the written record of that decision and the playbook the next executive CTO executes.
-- **D2 — $0 new monthly spend confirmed.**
-- **D3 — Metabase OSS self-hosted confirmed as the BI tool**, pointing at the analytics replica. Looker Studio remains a co-equal alternative against the same replica.
+- **D2 — no additional hosting subscription is the target** (confirmed). It is not a zero-cost or zero-risk guarantee: headroom, ops time and recovery work are real and measured per §5.
+- **D3 — Metabase OSS self-hosted is the preferred candidate, conditional on the §5 preconditions**, pointing at the analytics copy. Looker Studio remains a co-equal alternative against the same copy.
 - Lines in `docs/context/decisions.md` when the phase-1 PR lands.
 
 ## 11. Non-goals
 
-No production database change now, no managed database, no BigQuery, no warehouse, no per-seat BI, no Supabase, no Neon in production, no change to the backup layers, no change to PostHog or Grafana scopes, no change to guest pages.
+No production database change now, no managed database, no BigQuery, no warehouse, no per-seat BI, no Supabase, no Neon in production, no change to the backup layers, no change to PostHog or Grafana scopes, no change to guest pages. The read-only extraction (0444) ships without scheduler registration, new drivers, schema migrations, containers, Metabase deployment, secrets or production queries, and makes no historical movement/churn claims.
 
 ## 12. What if we do nothing
 

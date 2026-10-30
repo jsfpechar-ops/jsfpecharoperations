@@ -1,6 +1,14 @@
-# Host app and admin: the Wolt-level smoothness plan
+# Host app and admin: the smoothness plan (Wolt-merchant-portal benchmark)
 
-Status: plan for the owner, accepted 2026-10-30. Written after comparing the app against the Wolt merchant portal (owner screenshots, 2026-10-30) and a code audit of `base.html`, `_shell_sidebar.html`, `_shell_topbar.html`, `dashboard.html`, `admin_home.html` and the ten host stylesheets. The binding rules from this plan are in `docs/context/rules.md` (section "UX and interaction"); this file is the rationale and the work plan.
+Status: plan for the owner, accepted 2026-10-30; revised same day after review to remove unverified claims (see Revision). Written after comparing the app against the Wolt merchant portal (owner screenshots, 2026-10-30) and a code audit of `base.html`, `_shell_sidebar.html`, `_shell_topbar.html`, `dashboard.html`, `admin_home.html` and the ten host stylesheets. The binding rules from this plan are in `docs/context/rules.md` (section "UX and interaction"); this file is the rationale and the work plan.
+
+## Revision (2026-10-30, post-review correction)
+
+This revision removes claims the code cannot support and reframes delivery:
+
+- No "95% of Wolt" claim, no 5x/10x cost multipliers, no one-week delivery promise, no guaranteed sub-200 ms navigation, no zero-risk claim. Each performance layer is a separately measured pilot; 200 ms is an aspirational warm-navigation target (see §1.1, §5).
+- The delivery order changes: the plan starts with one demonstrated dashboard or desktop admin-navigation improvement, then page-specific work (density, filters, empty states, admin), then style consolidation alongside affected components, then prefetch / transition / partial-action pilots - each with verified source anchors, a small file allowlist, exact changes and concrete acceptance checks. A full stylesheet consolidation, a database migration and the unrelated backlog are NOT prerequisites for useful UX work.
+- The earlier idea of aggregating every attention line's severity in the dashboard template is discarded: `needs_you.py` already sorts lines by tone rank (verified `App/app/needs_you.py:177` and the browser fixture assertions in `App/tests/test_host_quiet_dashboard_browser.py`), so the first-item summary is consistent with the producer contract. No template aggregation and no duplicate regression test.
 
 ## Owner decisions (2026-10-30)
 
@@ -24,19 +32,19 @@ What is *not* wrong: the shell bones are better than Wolt's (see D4), and `admin
 
 | | Full SPA rewrite (React/Vite) | Turbo-MPA (this plan) |
 |---|---|---|
-| Feel achievable | Wolt-level | Wolt-level (§1.1 says exactly how much) |
+| Feel achievable | Wolt-level | Most of the Wolt feel; the ceiling is named in §1.1 and each layer is measured, not promised |
 | Lines of throwaway work | All 49 templates + routes become JSON APIs | None; each phase ships on top of current pages |
 | Toolchains to maintain | Two (Python API + Node build, state mgmt, tokens/auth) | One (Python + a few small vanilla JS files, no build step) |
 | Risk to the filing path | High (every route rewritten) | Zero (no `ubyport/`, `reporting.py` or deadline code touched) |
 | Solo-operator maintainability | Worse: double review surface, double dependency churn | Same as today |
 | Escape hatch if a SPA is ever truly needed | - | W1's token system + W3's partial endpoints are the migration path |
 
-**The feel budget (the definition of done for "smooth like Wolt"):**
+**The feel budget (aspirational targets; each layer is measured per §5, never promised):**
 
-- Perceived click-to-content under ~200 ms on the production Lightsail host.
+- Warm-navigation perceived click-to-content trending toward ~200 ms on the production host; cold, warm and back/forward navigation are measured and reported separately. Cold navigation is not expected to hit this target.
 - Zero white flash on navigation.
 - Zero cumulative layout shift on page swap.
-- One design system rendering every pixel of the host and admin surfaces.
+- Style consolidation progresses alongside the components each task touches; legacy and justified page-owned styles may coexist during migration. Files are not deleted merely to reach a three-stylesheet target.
 
 ### 1.1 What "smooth" decomposes into (the honest ceiling)
 
@@ -44,10 +52,10 @@ The Wolt feel is not one thing. Whoever executes this plan must know which parts
 
 | Feel component | Delivered by | Wolt-level? |
 |---|---|---|
-| 1. Pages appear instantly (~100 ms) | W3-L1 prefetch on pointerover/focus | **100%.** The single biggest contributor to the feel; browser-level, not architecture |
-| 2. No white flash; content morphs | W3-L2 view transitions | **~95%.** Same-document transitions are Baseline (Chrome 111+, Safari 18+, Firefox 144+). Cross-document morphs ship in Chrome/Edge 126+ and Safari 18.2+ (desktop and iOS); Firefox does not ship cross-document transitions in a stable release and falls back to a fast, prefetched, non-animated navigation. The morph is always enhancement, never requirement |
-| 3. Actions never reload the page | W3-L3 partial swaps + undo toasts | **100%** for the covered flows (the top 5 by frequency) |
-| 4. Consistent visuals, low density | W1 + W2 | **100%.** Not architecture-dependent at all |
+| 1. Pages appear faster | W3-L1 prefetch on pointerover/focus | Expected to be the biggest contributor to the feel; browser-level, not architecture. Verified by a measured pilot with an explicit side-effect-free GET allowlist before wider rollout |
+| 2. No white flash; content morphs | W3-L2 view transitions | Enhancement only. Same-document transitions are Baseline (Chrome 111+, Safari 18+, Firefox 144+). Cross-document morphs ship in Chrome/Edge 126+ and Safari 18.2+ (desktop and iOS); Firefox does not ship cross-document transitions in a stable release and falls back to a fast, prefetched, non-animated navigation. Cross-document transitions require same-origin CSS opt-in on both documents; `document.startViewTransition()` is for a DOM update within the current document. Reduced-motion and unsupported-browser fallbacks are preserved |
+| 3. Some actions avoid a full reload | W3-L3 partial swaps + undo toasts | Only for covered low-impact flows whose server-supported reversal is verified; the ordinary no-JS form stays. Financial actions keep separate durable-result, audit and compensating-action contracts - a toast does not reverse an issued invoice or an external payment |
+| 4. Consistent visuals, lower density | W1 + W2 | Independent of architecture |
 | 5. Client-side state lives in memory | URL state, sessionStorage, fragments | **~70-80%.** The one genuine residual gap; see §1.2 |
 
 ### 1.2 The residual gap, named precisely
@@ -56,7 +64,7 @@ The only thing an MPA cannot fully replicate is client-side state living in memo
 
 ### 1.3 The price math
 
-Full SPA = 100% of the feel for roughly 5x the cost and ~10x the long-term maintenance (two toolchains, npm dependency churn, state management, API contract drift between FastAPI and frontend types, keyboard and screen-reader support re-implemented from scratch) - plus rewrite risk over the filing path, which rule 1 forbids taking lightly. Turbo-MPA = ~95% of the perceptible feel for roughly a week of executor sessions and zero architectural change, with one operator maintaining one toolchain. The last 5% costs more than the first 95%.
+A full SPA rewrite brings two toolchains, npm dependency churn, state management, API contract drift between FastAPI and frontend types, and keyboard and screen-reader support re-implemented from scratch - plus rewrite risk over the filing path, which rule 1 forbids taking lightly. Turbo-MPA adds small vanilla ES modules with no build step and keeps one toolchain with one operator; each layer is a separately reviewable task whose effect is measured. No fixed multiplier or delivery date is claimed; cost is stated per task in executor sessions when briefed.
 
 ### 1.4 When this decision flips (the reversal triggers)
 
@@ -75,28 +83,28 @@ The plan is deliberately the migration path to a SPA. Tokens (W1) and fragment e
 
 ## 2. Workstreams
 
-Each workstream is independently shippable. Suggested order: W1 → W2 → W3 → W4 → W5.
+Each workstream is independently shippable as small, separately reviewable tasks. The first task ships one demonstrated dashboard or desktop admin-navigation improvement (complete brief, screenshots, checks); later tasks add page-specific density, filters, empty states and admin improvements, fold style consolidation into the components they touch, and run the prefetch / transition / partial-action pilots separately. Suggested order: first-demonstrated-improvement → W2/W4 page work → W1 incremental → W3 → W5.
 
 ### W1: One design system — Effort M · Risk MEDIUM (visual regressions)
 
-Goal: exactly three layers for host+admin: `tokens.css` (colors, spacing, radii, shadows, type scale), `components.css` (every `ui_*` macro's styles), `host.css` (app-surface layout). Guest and marketing stylesheets are untouched (D3).
+Goal: host+admin styling converges on `tokens.css` (colors, spacing, radii, shadows, type scale), `components.css` (every `ui_*` macro's styles) and `host.css` (app-surface layout). Guest and marketing stylesheets are untouched (D3). Consolidation is incremental: map callers and cascade behavior before removing styles, do it alongside the components a task already touches, and never delete a file merely to reach a three-stylesheet target - legacy and justified page-owned styles may coexist while the migration is in progress.
 
 Tasks:
 
 1. Inventory every class used by the host/admin templates; map legacy classes (host-design0123, host2, host-controls) to `ui_*` equivalents. Output: a mapping table in the workstream's task file.
-2. Fold `host-controls.css`, `host-design0123.css`, `host2.css` into `components.css`/`host.css`; feature styles (`workflow.css`, `wizard.css`, `cleaning.css`) are folded or kept only if a page genuinely owns them; delete what is folded.
+2. Fold `host-controls.css`, `host-design0123.css`, `host2.css` into `components.css`/`host.css` where a task already touches those components; feature styles (`workflow.css`, `wizard.css`, `cleaning.css`) are folded or kept if a page genuinely owns them. Nothing is deleted without a verified caller map and cascade check.
 3. Re-point `base.html` to the consolidated set; bump every `?v=` cache key.
 4. Freeze the component inventory on `dev_ui.html`: every `ui_*` component in every state (default, hover, focus, disabled, empty, error) lives on that page. A component not on `dev_ui.html` does not exist.
 
 Acceptance:
 
-- No template or stylesheet references the deleted files (`grep -r` clean).
+- Where files were folded away, no template or stylesheet references them (`grep -r` clean). Coexisting legacy layers are listed in the task report with their justification.
 - `App/tests/test_host_geometry.py` passes; before/after 390 px screenshots of the 12 key pages (dashboard, stays, stay detail, reservations, cleaning, housebook, settings, predplatne, admin home, fakturace, customers, customer detail) reviewed by the owner.
 - No visual change is *intended* in W1 — this is consolidation, not redesign. Where legacy layers disagreed, `components.css` wins.
 
 ### W2: Density discipline — Effort S · Risk LOW
 
-Goal: one attention surface per page. The dashboard's "What needs you" card (comment 0241) becomes the app-wide pattern: the card is *the* place where attention demands live.
+Goal: one attention surface per page. The dashboard's "What needs you" card (comment 0241) becomes the app-wide pattern: the card is *the* place where attention demands live. Folding a banner never removes its warning severity, action, dismissal or visibility: a badge may draw attention to a warning but cannot hide a blocking one, and the producer's tone ordering (`needs_you.py` sorts by tone rank) stays the contract the template renders.
 
 Tasks:
 
@@ -112,18 +120,18 @@ Acceptance: no host or admin page shows more than one banner above its first con
 
 Goal: Wolt's click feel without a rewrite. Three layers, each a separate task/PR, in this order. All JS is vanilla ES modules served from `App/app/static/`, no framework, no build step. Every layer is progressive enhancement: with JS off, the app behaves exactly as today.
 
-**L1 — Prefetch (Effort S).** On `pointerover`/`focusin` of a same-origin link, inject `<link rel="prefetch">`. After `requestIdleCallback`, prefetch the sidebar destinations. Respect `Save-Data` and never prefetch POST targets. Expected effect: most sidebar clicks render from cache in <100 ms. This is the single highest-leverage layer of the whole plan (§1.1, component 1).
+**L1 — Prefetch (Effort S, measured pilot first).** On `pointerover`/`focusin` of a same-origin link, inject `<link rel="prefetch">`. After `requestIdleCallback`, prefetch sidebar destinations from an explicit allowlist of verified side-effect-free GETs. Never prefetch sign-out, exports/downloads, token creation, action links, or payment/authentication destinations. Bound and deduplicate in-flight requests, respect cache policy and `Save-Data`, and verify logout, account switching and fresh-data visibility still behave correctly. Never weaken a security policy (e.g. Cache-Control) to make caching work. Measured as a pilot on a few verified routes before wider rollout.
 
-**L2 — View transitions (Effort S).** Wrap navigations in the View Transitions API (`document.startViewTransition` / cross-document `@view-transition` where supported). Shared-element classes on the shell (sidebar, topbar, page title, primary card) so the content area morphs instead of flashing. Honor `prefers-reduced-motion` (fall back to plain navigation). Fallback where unsupported: today's behavior - and remember the browser matrix in §1.1: Firefox users get the L1-fast navigation without the morph, which is acceptable.
+**L2 — View transitions (Effort S).** Same-document updates use `document.startViewTransition()` (a DOM update within the current document). Cross-document transitions use `@view-transition` only with the same-origin CSS opt-in present on both documents. Reduced-motion and unsupported-browser fallbacks are preserved. Shared-element classes on the shell (sidebar, topbar, page title, primary card) so the content area morphs instead of flashing. Honor `prefers-reduced-motion` (fall back to plain navigation). Fallback where unsupported: today's behavior - and remember the browser matrix in §1.1: Firefox users get the L1-fast navigation without the morph, which is acceptable.
 
-**L3 — Partial swaps (Effort M).** Extend the existing `data-toggle-panel` / `data-dashboard-refresh` patterns into one tiny helper (`App/app/static/app.js`, target ~150 lines): a `data-swap` action fetches the re-rendered fragment and swaps it in place, then posts the existing undo toast. Cover the top ~5 high-frequency flows first: archive/delete stay, mark cleaning done, admin mark-paid, admin storno, plan-change confirm. Server side: the route already re-renders the page; add a `?fragment=…` mode returning the relevant include. Skeleton screens (already built) cover the fetch. These `?fragment=` endpoints are also the proto-API of the §1.5 insurance policy - design their payloads so a future SPA could consume them.
+**L3 — Partial swaps (Effort M, one low-impact action first).** Extend the existing `data-toggle-panel` / `data-dashboard-refresh` patterns into one tiny helper (`App/app/static/app.js`, target ~150 lines): a `data-swap` action fetches the re-rendered fragment and swaps it in place, then posts the existing undo toast. Start with ONE low-impact action whose server-supported reversal is verified, and specify for it: CSRF and role checks, duplicate-submission handling, uncertain mutation results, error and expired-session paths, focus and screen-reader announcements. Preserve the ordinary no-JS form. Never blindly retry an uncertain mutation. Financial actions (mark-paid, storno, invoice issue) are out of scope until each has separate durable-result, audit and compensating-action contracts - a toast does not reverse an issued invoice or an external payment. Server side: the route already re-renders the page; add a `?fragment=…` mode returning the relevant include. Skeleton screens (already built) cover the fetch. These `?fragment=` endpoints are also the proto-API of the §1.5 insurance policy - design their payloads so a future SPA could consume them.
 
 Acceptance (all of W3):
 
 - Playwright tests for the 5 flows assert the swap and the undo path.
 - A no-JS walkthrough of the same flows completes them identically.
 - Keyboard navigation and screen-reader live regions behave exactly as today through every swap (announce the swap region).
-- Perf budget verified on staging: p95 perceived navigation < 200 ms, zero layout shift on L2 morphs.
+- Performance measured, not promised: record route, browser/device, viewport, network, cache state and sample count; report cold, warm and back/forward navigation separately. 200 ms warm is an aspirational target, not an acceptance gate. Zero layout shift on L2 morphs.
 
 ### W4: Admin surface, Wolt patterns — Effort M · Risk LOW
 
@@ -144,20 +152,21 @@ Acceptance: every admin page passes the same checklist as host pages (screenshot
 1. The binding rules are already added to `docs/context/rules.md` (section "UX and interaction", same commit as this plan). That section is the single source of truth; this plan is the rationale.
 2. Fold the overlapping design notes in `docs/DESIGN.md` to point at the rules section (one editing task, no rule changes beyond the pointer).
 3. Add to `.github/PULL_REQUEST_TEMPLATE.md`: "UX and interaction rules checked (rules.md §UX): tokens-only styling, one banner, ui_* component, dev_ui.html updated if a component changed."
-4. `dev_ui.html` is the acceptance surface for all component work; a PR that changes a component's look updates it in the same PR.
+4. `dev_ui.html` is the acceptance surface for all component work; a PR that changes a component's look updates it in the same PR, including the component catalog entry in `docs/design/`.
 
 ## 3. Sequencing and effort
 
 | Phase | Ships | Effort | Risk |
 |---|---|---|---|
-| W1 design system | alone, first | M (2-3 sessions) | MEDIUM (visual) |
-| W2 density | after W1 | S | LOW |
-| W3 L1 + L2 | any time after W1 | S+S | MEDIUM (motion) |
-| W3 L3 | after L1/L2 | M | MEDIUM |
-| W4 admin surface | after W1 (parallel with W3) | M | LOW |
+| First demonstrated improvement (dashboard or desktop admin navigation) | alone, first - a complete small task before anything else | S | LOW |
+| W1 design system | alongside affected components, incrementally | M (several sessions) | MEDIUM (visual) |
+| W2 density | page by page, alongside W1 where touched | S per page | LOW |
+| W3 L1 + L2 | measured pilots, after their safety rules are briefed | S+S | MEDIUM (motion) |
+| W3 L3 | one verified-reversible low-impact action first | M | MEDIUM |
+| W4 admin surface | after the first demonstrated improvement | M | LOW |
 | W5 standard | last | S | LOW |
 
-Total: roughly a focused week of executor sessions spread over 2-3 weeks of owner review. No schema changes, no new dependencies, no new outbound requests, no guest-page changes.
+Total effort is stated per task when briefed; the order above is the suggested sequence and any phase may pause between tasks. No schema changes, no new dependencies, no new outbound requests, no guest-page changes.
 
 ## 4. Non-goals
 
