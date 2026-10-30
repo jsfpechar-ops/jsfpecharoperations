@@ -1,176 +1,138 @@
-# Plan: business metrics and the database endgame (Postgres + Metabase)
+# Plan: business metrics now, Postgres later (analytics replica + a shelf-ready migration)
 
-Status: plan for owner decision, 2026-10-30. Written at the owner's request ("be my CTO") after the Looker Studio / Neon / Supabase discussion. Supersedes the tool-neutral recommendation in [data-tool-research-20261029.md](data-tool-research-20261029.md): the owner now wants a scalable, churn-resistant stack, not a deferral. Nothing here is executed yet; every phase needs its own PR.
+Status: plan for owner decision, 2026-10-30. Written at the owner's request ("be my CTO"). Supersedes the tool-neutral recommendation in [data-tool-research-20261029.md](data-tool-research-20261029.md).
 
-**Revision 2 (2026-10-30):** the owner's steer — "don't worry about privacy or users data, lets go full in for efficiency." Data location, subprocessors, and PII-minimization are removed as decision drivers; the objective is owner time, cost predictability, and speed.
-
-**Revision 3 (2026-10-30, decisive):** the owner pointed out production already runs on a **General purpose 8 GB / 2 vCPU / 160 GB Lightsail bundle ($44/mo)** — ~4 GB free above the container caps, a four-layer backup system (Litestream→S3 continuous, daily on-volume snapshots, weekly Drive off-site, daily Lightsail instance snapshots), and digest-pinned images as the repo convention. Production Postgres therefore moves **onto the existing instance** as one more Compose service. Total new spend for the whole plan: **$0/month.** The Lightsail managed database is demoted to a documented escape hatch — its automated backups are daily-only, which would **regress** recovery point from today's ~10 s Litestream RPO to up to 24 h. That fact alone disqualifies it as the default.
+**Revision history (same day, four steers):**
+1. **Rev 1:** Postgres on a managed DB ($15/mo) + Metabase.
+2. **Rev 2:** owner relaxed privacy as a driver ("full in for efficiency"); options re-weighed.
+3. **Rev 3:** owner noted the existing $44/mo 8 GB Lightsail bundle; production Postgres moved onto that box, $0/mo.
+4. **Rev 4 (final, this text):** owner steer — "consider the migration for the next executive CTO." **Production stays SQLite.** The migration becomes a fully pre-analyzed playbook with explicit triggers (§4), owned by whoever holds the CTO seat when a trigger fires. Business metrics ship **now** through an analytics replica (§5) — the production database is untouched, so the BI blocker dies without a migration.
 
 ## 0. Owner constraints (2026-10-30, the owner's words)
 
 - "I want to be scalable into the future, don't want to keep changing apps, ideally want to stay with one as long as possible on free tier."
 - "Don't worry about privacy or users data, lets go full in for efficiency."
 - "I already have a Lightsail instance for 44 USD."
-- PostHog already covers web analytics (marketing pages, funnel). Nothing covers business metrics (MRR, invoices, churn).
-- "SQLite has been an enormous blocker" (2026-10-30, on BI tooling). The app is getting real users; billing is live in-app.
-- Solo operator: every hour of ops time must earn itself; costs must be predictable, not metered surprises.
+- "Consider the migration for the next executive CTO."
+- PostHog already covers web analytics. Nothing covers business metrics (MRR, invoices, churn).
+- Billing went live in production 2026-10-29; Stripe Connect rails (0435-0442) and property pages (0430-0434) are mid-flight.
+- Solo operator: every hour must earn itself; risk belongs where the revenue is.
 
-## 1. The recommendation in one paragraph
+## 1. The recommendation now
 
-Move the production database from SQLite to **PostgreSQL running as a Compose service on the existing $44/mo Lightsail instance**, with continuous WAL archiving to the existing S3 bucket replacing Litestream, then stand up **self-hosted Metabase OSS (free)** on the same box for business metrics. PostHog stays for web/product analytics, Grafana stays for ops. Total new cost: **$0/month**. This is the last database migration UbyHost should ever do. Efficiency-wise it is the strongest version of the plan: no new AWS resources, no new providers, no new bills, the database lives where the app lives (as it does today with SQLite), and the backup promise stays the same class as what runs in production right now.
+**Do nothing to the production database.** SQLite stays, Litestream stays, the four backup layers stay. Instead, one new scheduled job copies the money tables into a small **analytics Postgres container** on the existing 8 GB instance (a read-only copy by construction), and **self-hosted Metabase OSS** runs on top of that copy. Total: **$0/month, zero production risk, business metrics in one brief.** The SQLite-to-Postgres migration is fully pre-analyzed below (§6) and waits for its triggers (§4) — the next executive CTO (a future chat, a future hire, or the owner) executes a playbook that is already written, not a project that must be re-discovered.
+
+The anti-churn principle survives untouched: the Postgres-portable SQL rules (`ON CONFLICT`, `RETURNING`, no `lastrowid`) are the standing insurance that the migration, whenever it happens, is a project measured in sessions, not months.
 
 ## 2. The strategic principle: anti-churn lives at the data layer
 
-The owner's stated fear is changing tools every year. The fix is not picking a "final BI tool" — it is making the **contract** stable so every layer above the database is swappable.
+The owner's stated fear is changing tools every year. Two mechanisms kill that churn:
 
-The stable contract is the Postgres schema: `billing_month_snapshot`, `platform_invoice`, `billing_account`, the stay-fee tables. Every serious BI tool (Metabase, Looker Studio, Grafana, Superset, Power BI, Tableau, a future hire's favourite) speaks SQL against Postgres. Once the database is Postgres:
+- **The portable-SQL rules** make the production database switchable at low cost at any time. That is why they exist; they stay verbatim.
+- **The analytics replica** makes the BI layer independent of whatever the production database is. Metabase, Looker Studio, or any future tool points at the replica; switching BI tools is a weekend, and switching the production DB (§6) never re-triggers a BI change.
 
-- Switching BI tools later = re-point a connection + rebuild dashboards. No app change, no migration project.
-- The warehouse question (BigQuery et al.) never opens, because at this scale Postgres answers business questions directly.
+Together: both layers are swappable, so nothing needs to be switched *now* to be safe *later*.
 
-So: churn-proof the database (one migration, once), keep the BI layer thin and replaceable. Do the opposite — keep SQLite and pick a cloud BI tool — and every future tool needs a sync layer, an export job, or a connector hack. That is the churn the owner is trying to avoid.
+## 3. Why deferral is the right call (the CTO reasoning)
 
-## 3. Why Postgres, and why now (the CTO call)
+The original case for migrating now had three legs. Under the full-repo audit, two of them disappear and one gets a cheaper answer:
 
-Three needs converge at the same time:
+1. **"BI needs a connectable database"** — true, but BI needs *a* database, not *the* database. The replica (§5) gives Metabase a real Postgres with zero production coupling. Cheaper and safer than migrating production to get the same dashboards.
+2. **"Concurrency is arriving"** — not yet. The app is single-host, write volume is calendar-sync + filings + month-end billing; SQLite's single-writer model has not shown contention. The ceiling exists but there is no evidence we are near it. The rule "no logic may assume a single writer" already keeps the door open.
+3. **"Backups get simpler"** — Litestream + the four layers (0421) work and are drilled. No reason to churn a working, drilled backup system while billing is days old.
 
-1. **BI needs a connectable database.** No serious BI tool reads SQLite natively (Metabase cannot; Looker Studio cannot). Every one of them reads Postgres natively. This is the blocker the owner keeps hitting.
-2. **Concurrency is arriving.** Paying users, subscriptions, invoices: SQLite's single-writer model is fine today, but the ceiling appears as operational pain (write contention under backup, lock timeouts during month-end billing runs), not as traffic. Postgres removes the ceiling permanently.
-3. **The infrastructure for Postgres is already bought.** The 8 GB / 2 vCPU box has ~4 GB free above the container caps, the app+DB already share a host today (SQLite is on the same volume as the app), the deploy convention (digest-pinned Compose services, profile-gated) slots a `postgres` service in exactly where `litestream` sits now, and the S3 bucket, retention layers, and restore drills already exist. The marginal cost of Postgres here is one Compose service and one env-var switch in `db.py`.
+Risk timing: with billing live since yesterday and the payments rails mid-flight, the highest-risk week to churn the data layer is this one. Nothing about deferral is wasted: the audit numbers, the staging plan, the backup mapping and the escape hatches are all written down (§6) — that work is banked.
 
-The current rule says "UbyHost runs on SQLite. Postgres comes only when a second app server is needed." This plan proposes the owner-approved update: **Postgres comes when live business metrics + multi-user write load justify it — which is now, at $0 marginal cost.** The portability rules below it (`ON CONFLICT`, `RETURNING`, no `lastrowid`, `null_safe_eq`, no SQLite-only syntax) stay verbatim; the repo has been writing Postgres-portable SQL for exactly this day. That foresight is what makes this a Medium-risk project instead of a rewrite.
+## 4. Triggers: when the next executive CTO pulls the ripcord
 
-## 4. Where Postgres runs (options re-weighed, rev 3)
+Execute the playbook (§6) when **any** of these fires:
 
-| Option | Cost | Verdict |
-|---|---|---|
-| **Postgres container on the existing 8 GB instance** | **$0 marginal** | **Recommended.** Joins the `ubyhost-web` Compose network as a `postgres` service (digest-pinned like caddy/alloy/litestream), no port published to the host — unreachable from outside, exactly like the app. Same failure domain as today (app + DB on one host is the status quo with SQLite). Caps: `mem_limit: 1g` (`UBYHOST_PG_MEM`) — with web 2g + worker 1g + caddy 256m + alloy 512m + the rest, caps sum to ~5.5 GB on an 8 GB box, leaving OS/Docker/page cache the same class of headroom as today. Backup continuity in §4.1. |
-| **Lightsail managed DB, Frankfurt ($15/mo)** | $15/mo | **Demoted to escape hatch.** The decisive fact: its automated backups are **daily** with no point-in-time recovery — moving to it would regress RPO from today's ~10 s (Litestream) to up to 24 h, on the one system (guest filings) where losing a day is the worst outcome. It also adds $180/yr for patching-and-isolation benefits the solo operator can get from a digest bump. Keep as the documented lift-and-shift target if the box ever runs out of headroom (pg_dump hop, one session). |
-| Neon, free tier (100 CU-hrs/project/mo, 1 GB, 10 branches) | $0 | **Rejected for production, promoted for staging.** Free cannot disable scale-to-zero (compute suspends after 5 min idle) and continuous traffic exhausts 100 CU-hrs in days, after which compute is **suspended until the next month** — an outage, not a bill. But as the rehearsal environment it is ideal: zero install, zero ops, disposable copy-on-write branches for migration rehearsals (§5). |
-| Postgres on a new instance | $7-20/mo | Rejected: new bill for no failure-isolation benefit at this scale. |
-| Supabase (free: 500 MB, pauses after 7 days) | $0/$25 | Rejected: 90% of the bundle unused; a paused production database is an outage with extra steps. |
-| Amazon RDS | ~$13-20/mo effective | Rejected for now. Escape hatch if HA/multi-AZ is ever genuinely needed. |
+- **T1 — A second app server is needed** (scaling, zero-downtime deploys, split worker host). This is the original rules.md condition, restated.
+- **T2 — Real write contention**: SQLite `SQLITE_BUSY`/lock timeouts show up in the logs or Grafana, or the month-end billing run visibly degrades the app.
+- **T3 — The box is out of headroom** for app + worker + monitoring + replica + Metabase, and the bundle upgrade path is exhausted.
+- **T4 — HA/managed-database requirements appear** (real paying scale, contractual uptime, multi-AZ) — at that point the playbook's RDS escape hatch is the target, not Lightsail managed DB (its daily-only backups regress today's ~10 s Litestream RPO).
+- **T5 — The replica stops being enough**: sync lag becomes a decision problem (e.g. needing intraday MRR), or the money tables outgrow the nightly-copy pattern.
 
-### 4.1 Backup continuity: WAL archiving replaces Litestream, same promise
+Until a trigger fires, the playbook is dormant — reviewed when the owner's monthly check looks at spend and Grafana, not acted on.
 
-Today's four layers (0421) map one-to-one:
+## 5. The interim build: analytics replica + Metabase (the only new thing)
 
-| Layer | Today (SQLite) | After cutover (Postgres) |
-|---|---|---|
-| Continuous off-site | Litestream → S3, 10 s sync | **WAL-G → same S3 bucket**, continuous WAL archiving, same RPO class (seconds/minutes) |
-| Quick local copy | `backup.sh` daily (`sqlite3 .backup`) | `backup.sh` variant running `pg_dump` daily to the same `/data/backups` age-encrypted retention |
-| Independent off-site | `backup-gdrive.sh` weekly | unchanged |
-| Whole-server snapshot | Lightsail automatic daily snapshots (7-day) | unchanged — it captures the Postgres volume too |
+**What ships:** one brief, one PR.
 
-WAL-G slots into Compose as a profile service shaped exactly like `litestream` (same env pattern, same S3 credentials, `depends_on` the app, digest-pinned image). The restore runbook gets a WAL-G equivalent of the Litestream restore block; the quarterly rebuild drill covers it from then on. **Litestream stays in place until the cutover PR disables it** — the old and new continuous layers overlap during the migration window.
+- **Sync job**: a new scheduled job in the existing `scheduler.py` pattern (like `retention` at 03:30) — e.g. `analytics_sync` nightly. It reads the money tables through `db.py` helpers and writes them into the analytics Postgres: `billing_month_snapshot`, `platform_invoice`, `billing_account` (plan, discount, trial state), stay-fee aggregates, host account counts, churn/trial-ending views. Money tables only, by design: business metrics need revenue, not guest data.
+- **Compose**: a `postgres-analytics` service (digest-pinned, `mem_limit: 512m`, profile `analytics`, joins `ubyhost-web`, no published ports) plus the Metabase service (`mem_limit: 1g`, profile `analytics`). Both live inside the existing $44 instance's headroom.
+- **Read-only by construction**: the replica cannot corrupt production because it is a copy, not a connection. No read-only-user discipline needed against the live DB.
+- **Health**: the job raises a `job_failed` alert on failure (existing pattern) and gets a `UBYHOST_HEARTBEAT_BACKUP_URL`-style heartbeat ping (existing healthchecks.io pattern) so silent staleness is impossible.
+- **First dashboards** (from the cockpit plan §12): MRR + movement waterfall, plan mix, churn watchlist (trials ending, overdue invoices), portfolio aging, fee vs. subscription revenue. **Alerts**: overdue invoice, trial ending without conversion, MRR drop — the morning checklist automated.
+- **Fallback unchanged**: the 0446 export endpoint and `backup.sh`/restore drills keep working exactly as today; the replica adds, replaces nothing.
 
-## 5. The migration project (Medium risk, staged)
+If Looker Studio is ever preferred (co-equal per rev 2), it points at the replica's Postgres: publishing the replica endpoint (never the production DB) with a Google IP allowlist is an ops line item, acceptable per the owner's steer.
 
-Audit numbers from 2026-10-30: ~46 files use `db.immediate()`, ~51 `PRAGMA` references, one connection layer (`App/app/db.py`), 31+ migrations to replay, and the filing path (ZapisUbytovane, SOAP, Doručenka PDFs) as the crown-jewel regression surface.
+## 6. The migration playbook (shelf-ready; owned by the next executive CTO)
 
-**Stage 1 — Compose service + connection branch (1-2 sessions).** Add the digest-pinned `postgres` service (profile-gated, `UBYHOST_PG_MEM` cap, joins `ubyhost-web`, no published ports) and the WAL-G profile service. `db.py` gains a Postgres connection branch selected by an env var (`UBYHOST_DB_URL`); SQLite stays the default. CI runs the suite against both.
+Pre-analyzed 2026-10-30 against the full repo. **Do not start until a §4 trigger fires.** Read §4 first, then this.
 
-**Stage 2 — staging rehearsal (1 session).** Replay all migrations on a **Neon free-tier project** (or a local Compose `postgres` on the dev machine — either is a real Postgres). Full pytest + guest e2e + a filing dry-run. Fix dialect gaps as they surface (`PRAGMA` calls, transaction tweaks). Exit gate: everything green, twice.
+**Audit numbers:** ~46 files use `db.immediate()`, ~51 `PRAGMA` references, one connection layer (`App/app/db.py`, 69 KB), 31+ migrations to replay (`0001` frozen `db.SCHEMA`), Litestream in the deploy path, filing path (ZapisUbytovane, SOAP, Doručenka PDFs) as the crown-jewel regression surface.
 
-**Stage 3 — data migration rehearsal (1 session).** The migration script runs on-host (the SQLite file and Postgres are on the same volume — no network transfer, the simplest possible migration). Reconciliation checks: row counts per table, billing totals in Kč matched to the admin cockpit, snapshot tables matched month by month. Rehearse against a throwaway Neon branch loaded with a production backup first; then once on-host with the stack stopped.
+**Target (rev 3 analysis stands):** Postgres container on the existing 8 GB instance, private network only, $0 marginal. Managed DB demoted (daily-only backups regress Litestream's ~10 s RPO); RDS is the HA escape hatch. Neon rejected for production (Free cannot disable scale-to-zero; 100 CU-hrs suspends under continuous load) but used for disposable branch rehearsals.
 
-**Stage 4 — cutover (one quiet morning).** Maintenance notice; final Litestream restore point saved; run the migration on-host; flip `UBYHOST_DB_URL`; smoke test the host app, admin, billing run, and one filing dry-run; watch Grafana for a day. Rollback: unset the env var, restart on the untouched SQLite file (kept in place, never deleted), WAL-G and Litestream both warm for two weeks.
+**Backup mapping (0421 layers):** Litestream → WAL-G on the same S3 bucket (continuous WAL archiving, same RPO class); `backup.sh` `sqlite3 .backup` → `pg_dump` variant; Drive weekly and Lightsail instance snapshots unchanged.
 
-**Stage 5 — close out (same week).** `rules.md` Database section updated in the cutover PR: "UbyHost runs on Postgres (container on the production instance, Frankfurt). SQLite is the dev/staging default." `docs/LIGHTSAIL.md` lines updated ("Do not buy Lightsail managed MySQL" row and the "Managed database: not needed" cost row). Litestream service removed after two clean weeks; backup runbook + restore drill updated to the WAL-G path.
+**Stages when executed:**
+1. `db.py` Postgres connection branch behind `UBYHOST_DB_URL` (one documented `ENVIRONMENT.md` row); CI dual-database. SQLite stays default.
+2. Staging rehearsal: migrations replayed on a Neon free branch or the host's staging compose profile; full suite + filing dry-run green, twice.
+3. Data-migration rehearsal: row counts, billing totals in Kč reconciled to the cockpit, snapshots month-by-month.
+4. Cutover morning: final Litestream restore point; migrate on-host; flip the env var; smoke host app, admin, billing run, one filing dry-run; Grafana watch. Rollback: flip back — the SQLite file is untouched.
+5. Close out: rules.md Database section updated ("UbyHost runs on Postgres…"), LIGHTSAIL.md rows updated, Litestream decommissioned after two clean weeks, WAL-G joins the restore drill.
 
-**Hard gates:** the filing path must pass its tests unchanged before and after; HIGH RISK filing changes need a written owner decision first — this document, once the owner approves it, is that decision for the cutover step itself.
-
-## 6. Business metrics: Metabase OSS (default), Looker Studio (co-equal alternative)
-
-### 6.1 Metabase, self-hosted on the same box
-
-- Free forever, unlimited dashboards and users (unlike the $100/mo Cloud Starter).
-- One more Compose service on the 8 GB instance (`mem_limit: 1g`), talking to Postgres over the private `ubyhost-web` network. Sizing check: web 2g + worker 1g + pg 1g + metabase 1g + caddy/alloy/exporters ~1.2g ≈ 6.2 GB in caps on 8 GB — caps are ceilings, actual usage is far lower, and the documented bundle-upgrade path exists if it ever gets tight.
-- Connects through a **read-only Postgres user**. The read-only rule is an operational guardrail, not privacy: a typo'd BI query must never be able to touch production; incident recovery is the most expensive activity a solo operator has.
-- Alerts (e-mail) on: overdue invoices, trials ending without conversion, MRR drop — the churn watchlist from the revenue-cockpit plan, automated instead of a morning checklist.
-- The de-facto startup standard: if the owner ever hires, the next person already knows it.
-
-### 6.2 Looker Studio — a legitimate alternative
-
-With data location off the table (owner, 2026-10-30), the choice is purely capability vs ops:
-
-| | Metabase OSS (self-hosted) | Looker Studio (free) |
-|---|---|---|
-| Cost | $0 | $0 |
-| Hosting effort | One container to keep updated | Zero |
-| SQL | Full SQL editor + visual builder | Presentation layer; attached queries, weaker |
-| Alerts/scheduling | Built-in, e-mail | Limited |
-| Setup requirement | Private network only | A DB endpoint reachable from Google's connector IP ranges — possible with a published port + allowlist, one ops line item, acceptable per owner |
-| Switching later | Either to the other is a weekend, because the Postgres contract holds (§2) | same |
-
-Metabase remains the default on capability (full SQL, alerts, the churn-watchlist automation); Looker Studio is equally acceptable on principle. If the owner ever wants zero-hosting BI, activating it against the same Postgres is a non-event.
-
-### 6.3 Rejected
-
-- **Enterprise Looker** ($60k+/yr): absurd for one operator. The sensible "Looker" is Looker Studio.
-- **BigQuery**: a warehouse + ETL pipeline for data that fits in Postgres memory. Never at this scale.
-- **Power BI / Tableau**: per-seat pricing ($14/$75 user/mo) for a single viewer.
-- **Superset**: Flask+Redis+Celery ops burden exceeds Metabase's for one person.
-- **Grafana for business tables**: stays ops-only (Loki + Prometheus), as today.
-- **PostHog for business metrics**: event analytics ≠ SQL reporting; MRR and invoices live in the database, and shipping them as events duplicates the source of truth.
+**Hard gates:** filing path green before and after; HIGH RISK filing rule requires a written owner decision — the trigger + this playbook presented as that decision.
 
 ## 7. PostHog and Grafana
 
-- **PostHog Cloud EU**: unchanged for web/product analytics and the host funnel. **New option unlocked by the efficiency steer:** instrumenting the host app itself (feature usage, onboarding drop-off) is now available — a separate small decision, not part of this plan.
-- **Grafana Cloud free**: ops only. Optional later (free, ops-scope): a postgres exporter panel — connections, cache hit ratio, WAL-lag alert — next to the existing panels.
+- **PostHog Cloud EU**: unchanged (web/product analytics, funnel). Host-app instrumentation is unlocked by the efficiency steer but waits for a real question to answer.
+- **Grafana Cloud free**: ops only. Optional free additions: a postgres-exporter panel for the analytics DB; the existing `metrics.py` app job is the pattern.
 
 ## 8. Sequencing
 
-| Phase | What | Effort | Depends on |
+| Phase | What | Effort | When |
 |---|---|---|---|
-| 0 | Nothing changes today. The 0446 export endpoint still ships — the tool-neutral surface and fallback path. | — | — |
-| 1 | `postgres` + WAL-G Compose services; `db.py` Postgres branch behind env var; CI dual-database | 1-2 sessions | owner D1+D2 |
-| 2 | Staging rehearsal (Neon free or local Compose): migrations replayed, suite green on Postgres | 1 session | phase 1 |
-| 3 | Data-migration rehearsal + reconciliation checks | 1 session | phase 2 |
-| 4 | Cutover morning + smoke + one-day Grafana watch | 1 morning | phase 3, quiet window |
-| 5 | Metabase container + read-only user + first dashboard set + alerts | 1 session | phase 4 |
-| 6 | Optional: postgres exporter in Grafana; Looker Studio eval; host-app PostHog instrumentation | later | — |
+| 1 | Analytics sync job + `postgres-analytics` + Metabase compose services; first dashboards + alerts | 1-2 briefs | now |
+| 2 | Dashboards tuned to the cockpit plan §12; heartbeat wired | 1 brief | after phase 1 |
+| 3 | Migration playbook review (this doc §4-§6) | 0 — read it | each monthly check |
+| 4 | Migration execution | 5 sessions (§6) | only when a §4 trigger fires |
 
-The UX smoothness plan (PR #581) is independent: different surface, no shared files. Run in parallel or in either order.
+The UX smoothness plan (PR #581) and the payments rails (0435-0442) are independent and higher-priority than anything here.
 
 ## 9. Costs
 
 | Item | Monthly |
 |---|---|
-| Lightsail General purpose 8 GB bundle | $44 (unchanged, already paid) |
-| Postgres container on that instance | $0 |
-| WAL-G → existing S3 bucket | $0 (marginal storage) |
-| Neon free tier (staging/rehearsal) | $0 |
-| Metabase OSS self-hosted | $0 |
-| PostHog, Grafana, S3 | unchanged |
-| **Total new spend for the whole plan** | **$0** |
-
-Governance overhead dropped as a decision driver per the owner's steer. The only paperwork left is the `decisions.md` lines in §10.
+| Everything existing (Lightsail 8 GB, S3, PostHog, Grafana, SES…) | unchanged |
+| Analytics Postgres container + Metabase on the existing instance | $0 |
+| **Total new** | **$0** |
 
 ## 10. Decisions needed from the owner
 
-- **D1 — Postgres migration approved.** Updates the Database rule (rules.md) and the LIGHTSAIL.md cost/architecture rows in the cutover PR. This document, once approved, is the written owner decision the HIGH RISK filing rule requires.
-- **D2 — zero new monthly spend confirmed** (Postgres on the existing $44 instance; managed DB explicitly declined on RPO grounds).
-- **D3 — BI tool confirmed.** Metabase by default; Looker Studio equally acceptable — a taste decision, reversible in a weekend either way.
-- Each gets its line in `docs/context/decisions.md` when the corresponding PR lands.
+- **D1 — Production database stays SQLite.** The migration is deferred to §4 triggers; this document is the written record of that decision and the playbook the next executive CTO executes.
+- **D2 — $0 new monthly spend confirmed.**
+- **D3 — Metabase OSS self-hosted confirmed as the BI tool**, pointing at the analytics replica. Looker Studio remains a co-equal alternative against the same replica.
+- Lines in `docs/context/decisions.md` when the phase-1 PR lands.
 
 ## 11. Non-goals
 
-No BigQuery, no data warehouse, no enterprise Looker, no per-seat BI, no Supabase bundle, no Neon for production, no Lightsail managed database (RPO regression), no new AWS resources, no change to PostHog or Grafana scopes, no change to guest pages, and no SPA rewrite (that debate lives in the UX plan).
+No production database change now, no managed database, no BigQuery, no warehouse, no per-seat BI, no Supabase, no Neon in production, no change to the backup layers, no change to PostHog or Grafana scopes, no change to guest pages.
 
 ## 12. What if we do nothing
 
-Stated honestly, because it is viable: SQLite + the 0446 export endpoint + spreadsheets answers every business question at this scale, for $0. The cost of doing nothing is the status quo the owner described: the BI blocker stays, every future tool needs a sync layer, and the migration debt grows with the data. The trigger for this plan is that the owner wants live dashboards and wants to stop changing tools — and with revision 3, closing the question permanently costs nothing per month.
+Stated honestly: SQLite + the 0446 export endpoint + spreadsheets answers every business question at this scale for $0. The cost is the owner's morning checklist staying manual and the BI blocker surviving. Phase 1 costs one brief and closes it; the migration playbook costs nothing to keep.
 
 ## 13. Repo assets this plan builds on (audit 2026-10-30)
 
-The plan above was written against the full repo. These existing assets make each phase cheaper than it looks on paper:
-
-- **Restore drills are already institutionalized**: `restore-drill.yml` runs the rebuild drill; the WAL-G restore path joins it instead of needing a new habit.
-- **The heartbeat pattern exists**: `UBYHOST_HEARTBEAT_FILING_URL` and `UBYHOST_HEARTBEAT_MONITORING_URL` already alert on silent failure via healthchecks.io. WAL-G archive health gets a `UBYHOST_HEARTBEAT_BACKUP_URL` sibling — same pattern, same runbook.
-- **A staging compose profile already runs on the production host** (`staging` + `mock-ubyport`), so Phase 2 can rehearse against a Postgres right next to the app; Neon branches stay for disposable full-data rehearsals.
-- **The metrics pipeline already has an app job**: `metrics.py` exports `ubyhost_requests_total` etc. to Grafana Cloud Prometheus; a postgres exporter joins the same stack (`OBSERVABILITY.md` pattern, compose profile `monitoring`).
-- **In-app analytics already exist and stay**: the funnel dashboard (0018, `admin_funnel.py`), `billing_analytics.py` and the 0446 export endpoint answer host-facing and export questions. Metabase is the operator-side layer on top of the money tables, not a replacement for any of these.
-- **Env var discipline exists**: `ENVIRONMENT.md` + `.env.example` + `env_guard.py` mean `UBYHOST_DB_URL` gets one documented row with a wrong-if-absent note, exactly like every other var.
-- **No new subprocessors either way**: Postgres on the existing instance and self-hosted Metabase keep the vendor evidence file (`docs/vendors/README.md`) unchanged — efficient and true.
-- **Execution runs through the existing task system**: each phase becomes one or two `docs/tasks/NNNN-*.md` briefs, merged with `scripts/merge-pr-on-green.sh`, deployed by the owner. Nothing about the workflow changes.
+- **Restore drills are institutionalized** (`restore-drill.yml`): a future WAL-G path joins an existing habit.
+- **The heartbeat pattern exists** (`UBYHOST_HEARTBEAT_FILING_URL`, `UBYHOST_HEARTBEAT_MONITORING_URL`): the sync job's health uses the same healthchecks.io pattern.
+- **The scheduler pattern exists** (`retention` at 03:30, `photo_sweep`): `analytics_sync` is one more row in `OPERATIONS.md`'s jobs table.
+- **The staging compose profile and mock UbyPort run on the host**: rehearsal environments already exist.
+- **In-app analytics stay**: the funnel dashboard (0018, `admin_funnel.py`), `billing_analytics.py`, and the 0446 export endpoint keep their roles; Metabase is the operator layer on the money tables.
+- **Env discipline exists** (`ENVIRONMENT.md`, `.env.example`, `env_guard.py`): new vars get documented rows.
+- **No new subprocessors**: everything self-hosted; the vendor evidence file is unchanged.
+- **Execution runs through the task system**: phase 1 is one or two `docs/tasks/NNNN-*.md` briefs, merged with `merge-pr-on-green.sh`, deployed by the owner.
