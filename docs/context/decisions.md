@@ -68,4 +68,4 @@ Append-only.
 - 2026-10-30 | [workflow/db/deps] PostgreSQL kit, psycopg3 + pgBackRest approved; Haiku-only execution; manual cutover | 0455–0456
 - 2026-10-31 | Postgres now (#592), Go port G1–G6 now after cutover + tenancy, per-feature rollback, no load-test gate. Deadline: 3 working days, weekends only. `ws_uby_test` and golden files dropped; XML snapshot test before G5. [workflow] Fable briefs critical items, Haiku implements | owner | [plan v4](../plans/postgresql/migration-plan-v4.md)
 - 2026-10-31 | D1 managed PostgreSQL (Lightsail or RDS), not self-hosted pgBackRest; D2 required reviewer on the `production` environment; D3 goose at step 10; D4 Postgres job table with `SKIP LOCKED`, not River | owner | plan v4 §4
-- 2026-10-31 | Every change lean: no dead code, no extras; dead code found on the way is removed in its own small commit or PR | owner | 0461
+- 2026-10-31 | Every change lean: no dead code, no extras; dead code found on the way is removed in its own small commit or PR | owner | plan v4
