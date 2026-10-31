@@ -37,7 +37,9 @@ fi
 # shellcheck source=postgres-lib.sh
 source "$(dirname "$0")/postgres-lib.sh"
 load_private_env
-require_postgres_backend
+# Restore must not depend on forward-backup configuration such as the age
+# recipient: it needs the overlay/secret files only.
+require_restore_backend
 pg_compose config --quiet
 
 if docker volume inspect "${volume_name}" >/dev/null 2>&1; then
