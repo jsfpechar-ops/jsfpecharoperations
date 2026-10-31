@@ -39,7 +39,7 @@ Sizes: S = one Haiku chat, M = 2–3 Haiku chats, L = a Fable brief plus several
 | 1 | Job intervals: `door_codes` 5 min, `guide_import` 60 min, `push` after checking what it sends ([0457](../../tasks/0457-job-intervals.md)) | ~4,300 empty runs/day, hides real errors, costs nothing to fix | S | Haiku | none |
 | 2 | Deadline rule: 3 working days, weekends only ([0458](../../tasks/0458-deadline-weekends-only.md)) | Owner decision; shortens deadlines on holiday weeks, never lengthens | S | Haiku | none |
 | 3 | Tenancy audit and fix ([0459](../../tasks/0459-tenancy-audit.md), then fix briefs) | Cross-host data read is a legal and reputational risk today, with any database. Must be fixed before any route is ported to Go, or the port copies the bug | L | Fable brief, Haiku | none |
-| 4 | Postgres service in CI so `test_db_postgres.py` runs with 0 skipped | 45 tests that never run in CI are not tests. Merge gate for #592 | S | Haiku | none |
+| 4 | Postgres service in CI so `test_db_postgres.py` runs with 0 skipped ([0460](../../tasks/0460-postgres-tests-in-ci.md)) | 45 tests that never run in CI are not tests. Merge gate for #592 | S | Haiku | none |
 | 5 | Independent review of #592 runtime half (`db.py`, `db_postgres.py`, `config.py`, `pg_schema.py`, `sqlite_to_postgres.py`) | HIGH RISK database code, 0 reviews so far | M | Fable brief, Haiku fixes | 4 |
 | 6 | Decide D1 (managed vs self-hosted Postgres). If managed: strip the pgBackRest/Docker half of #592 to a cutover script plus runbook. If self-hosted: rehearse the full kit on a disposable VM (build image, encrypted backup, restore, PITR, every abort path) | The unrehearsed half is the biggest single risk; a managed database removes most of it | M (managed) / L (self-hosted) | Fable brief, Haiku; owner runs the rehearsal | 5, D1 |
 | 7 | Merge #592, deploy with `UBYHOST_DATABASE_URL` unset | Code on main, production still SQLite, zero risk | S | owner | 5, 6 |
@@ -57,7 +57,7 @@ Sizes: S = one Haiku chat, M = 2–3 Haiku chats, L = a Fable brief plus several
 
 Steps 1, 2, 3, 4 start now, in parallel. Steps 11 and 12 can run while G1–G2 are built. Everything not in this table is out: load test, Lightsail resizing, ARES/VAT cleanup, log-noise tuning, Rust or Node.
 
-## 4. Open decisions (owner)
+## 4. Decisions (owner, 2026-10-31: all four taken as recommended)
 
 - **D1 Managed or self-hosted Postgres.** Self-hosted is what #592 builds: postgres 18.6 + pgBackRest in Docker on the same VM, S3 repository, encrypted key bundles, all unrehearsed. Managed (Lightsail database or RDS) gives automatic backups and PITR, removes ~1,500 lines of ops shell, costs about 15 USD/month and runs PG 16/17, not 18. Recommendation: managed. Nothing in #592's runtime half needs PG 18.
 - **D2 Deploy gate.** Add a required reviewer to the GitHub `production` environment (one settings click) or keep auto-deploy on green `main`. With cutover and route-flips ahead, recommendation: add the reviewer now.
