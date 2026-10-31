@@ -45,3 +45,7 @@ UbyHost monthly check. Read docs/context/README.md and docs/context/workflow.md#
 ```
 Before reporting, grep docs/context/known-issues.md for the file. Skip listed IDs. Report only new, concrete, reproducible bugs, and append them as K- rows in the same PR.
 ```
+
+## Scoped Luna prompt for PRs #581–583
+
+For the owner-authorized 2026-10-30 task only, substitute Luna for Haiku in the executor prompt. Follow one verified brief and all normal safeguards. Return local diffs and evidence; do not merge or deploy. See [workflow](workflow.md#task-specific-luna-execution-2026-10-30).

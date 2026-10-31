@@ -20,6 +20,10 @@ This file is the single source of truth for how work is done. When the process c
 
 Closed 2026-10-17. The Luna 6.0 and Cursor-executor exception is retired; Haiku 5.5 is the only executor. Never push main, bypass CI, merge for preview or deploy production. See [decision](ui-decisions.md).
 
+## Task-specific Luna execution (2026-10-30)
+
+Closed by the latest owner-supplied AGENTS.md: Haiku 5.5 is the only executor. Existing Luna work is preserved for review; further implementation follows the Haiku handoff.
+
 ## Token budget (every AI, every session)
 
 - **Every chat, orchestrator or Haiku:** checkpoint at 60k tokens, hard stop at 100k. Agents cannot count tokens exactly, so also count calls: an orchestrator stops after 25 tool calls and 5 file reads, Haiku after 30 tool calls. At the checkpoint, stop new work and hand over (see below). Orchestrators aim for 40k.

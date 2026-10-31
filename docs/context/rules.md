@@ -34,7 +34,7 @@ The repo is **public**, including its full git history. A secret key and a guest
 
 ## Database
 
-UbyHost runs on SQLite. Postgres comes only when a second app server is needed.
+Production stays on SQLite pending owner cutover. PostgreSQL migration code is owner-requested (0455–0456); verify compatibility and recovery before switching.
 
 - All SQL goes through the `App/app/db.py` helpers, parameterised. f-strings may only build placeholder lists or name trusted columns.
 - No new triggers and no SQLite-only syntax:
@@ -57,17 +57,15 @@ Playwright comes from `.cursor/install.sh` (or `pip install playwright==1.63.0 &
 
 ## UX and interaction (host and admin)
 
-Set 2026-10-30, owner decision. The rationale and work plan is [docs/plans/ux-smoothness-plan-20261030.md](../plans/ux-smoothness-plan-20261030.md). These rules bind every host-app and admin change; guest, marketing, auth and legal pages keep their own rules.
+Set 2026-10-30, owner direction. The staged plan is [docs/plans/ux-smoothness-plan-20261030.md](../plans/ux-smoothness-plan-20261030.md). These rules bind host-app and admin changes; guest, marketing, authentication and legal pages keep their own rules.
 
-- **Light mode only.** No dark mode, no theme toggle, no `prefers-color-scheme` switching.
-- **One design system.** Colors, spacing, radii, shadows and type sizes exist only in `tokens.css`; component styles only in `components.css`; app layout in `host.css`. Do not add a new stylesheet or a new design generation. New UI is built from `ui_*` macros, and a component not shown on `dev_ui.html` does not exist.
-- **One attention surface per page.** At most one banner above the first content section. Alerts, billing notices and environment warnings fold into the page's needs-you card or the topbar, never stack.
-- **Density.** At most 4 `ui_stats` tiles per page; one page answers one question; every list has an `ui_empty` state.
-- **Progressive enhancement.** Every flow works without JavaScript. JS layers (prefetch, view transitions, partial swaps) add smoothness on top and must respect `prefers-reduced-motion`. Vanilla ES modules only, no framework, no build step.
-- **Instant-feel budget.** Perceived click-to-content under ~200 ms on the production host; no layout shift on navigation; no white flash on transitions.
-- **Assets that never regress:** the command palette, keyboard navigation, undo toasts, skeleton screens, the offline page, PWA, screen-reader live regions and the three UI languages keep working in every change.
-- **Admin is first-class.** Admin accounts see an Administrace nav group in the sidebar; no admin function is more than one click from the shell.
-- Changed host/admin pages ship before/after 390 px screenshots in the PR and pass `App/tests/test_host_geometry.py`.
+- **Light mode and architecture.** Keep light mode, FastAPI, Jinja and progressive enhancement. Do not add a theme toggle or plan a SPA rewrite without a separately reviewed owner decision.
+- **Reuse and migrate safely.** Reuse existing tokens and components. Map callers and inspect cascade behavior before removing or moving styles. Legacy and justified page-owned styles may coexist during migration. Do not require global stylesheet consolidation or delete files to reach a stylesheet-count target.
+- **Attention and density.** Prefer one coherent attention area and at most four summary tiles where suitable; allow documented page-specific exceptions. Preserve warning severity, action, dismissal and visibility. A badge or collapsed area must not hide a blocking warning. Keep useful filters and empty states for the affected task.
+- **Progressive enhancement.** Preserve ordinary server forms without JavaScript, server authorization, core navigation and existing phone navigation. Prefetch, transitions and partial actions are separate pilots with verified source contracts and fallbacks. Respect reduced-motion preferences. Never blindly retry an uncertain mutation.
+- **Preserve established behavior.** Keep the command palette, keyboard navigation, server-supported undo, skeletons, offline page, PWA, screen-reader announcements and existing languages working for each affected flow.
+- **Measure, do not promise.** Record route, browser/device, viewport, network, cache state and sample count; measure cold, warm and back/forward navigation separately. A 200 ms warm-navigation result is aspirational, not a guarantee. Do not claim zero risk or guaranteed performance.
+- **Task scope and checks.** Follow the applicable component guidance and page add-on, including phone navigation. Update the component catalog when components change. Host/admin template and CSS changes require the applicable browser and geometry checks and the repository-required viewport screenshots in the report. Run only applicable test-map rows.
 
 ## Copy
 

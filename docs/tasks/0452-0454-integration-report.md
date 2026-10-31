@@ -1,10 +1,10 @@
 # 0452 + 0454 integration report — remaining handoff plan
 
-Status: review. Opened as a pull request; no merge, deploy or production access.
+Status: review. One pull request for the remaining handoff content; no merge, deploy or production access.
 
 ## Scope and base
 
-Applies the two **review**-status code pieces left in
+Applies the remaining manifest content from
 `docs/plans/postgresql/ubyhost-handoff/current-files/` on top of current `main`
 (`1f31d41a`). Bundle recorded base `8b5317d0` was verified present and all 48
 manifest SHA-256 hashes matched at source. The bundle was not applied wholesale:
@@ -20,11 +20,20 @@ drafts remain blocked.
   overflowing; the secondary-nav landmark follows its visible links (Guide for
   host, Guide / Admin for admin); `host.css` cache key bumped; new host-nav test
   and an entities-lane geometry test at 390/820/1024/1180/1280 in en/cs/vi.
-- Revised plans (`business-metrics-and-database-plan-20261030.md`,
-  `ux-smoothness-plan-20261030.md`) and the 0452/0454 briefs, reports and
-  390 px screenshots.
-- **Not included:** 0453 (PR #583 shipped its own contextual help), 0455/0456
-  (blocked PostgreSQL drafts), stale bundle copies of `docs/context/*`.
+- Revised plans and the bundle's context updates: `docs/context/decisions.md`,
+  `known-issues.md`, `prompts.md`, `rules.md`, `status.md` (rewritten for the
+  current merge state), `workflow.md`.
+- Task briefs/reports/screenshots for 0451, 0452, 0453, 0454, 0455 and 0456,
+  including the 0453 evidence screenshots. 0455/0456 documents stay marked
+  blocked; their runtime/operations draft patches are **not** applied.
+- **Superseded, not overwritten:** the bundle's guest templates/routes/i18n and
+  `_email_purpose_help.html` describe the pre-merge implementation; merged PR
+  #583 already ships save-and-continue, visible acknowledgement and its own
+  contextual help, so those files stay at the merged version. The bundle's
+  0451 screenshots are replaced by the merged #583 evidence.
+- **Not included:** the unreviewed PostgreSQL 0455/0456 runtime and operations
+  patches (`handoff/UNREVIEWED-*.patch`); they are explicitly blocked and are
+  not manifest files.
 
 ## Source verification for 0452
 
