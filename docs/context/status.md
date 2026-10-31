@@ -7,7 +7,7 @@ Updated: 2026-10-31.
 - `/healthz`: 1.1.0; deploy SHA: `git rev-parse HEAD` in `/opt/ubyhost`.
 
 ## Now
-- 2026-10-31: PostgreSQL + Go, plan [migration-plan-v4](../plans/postgresql/migration-plan-v4.md). Merged #593–#607 (PG runtime, PG 16 in Compose + `pg-cutover.sh`, encrypted `pg_dump` + restore, c935c55 repair, briefs 0465–0467); deployed 17:01Z, postgres up, app on SQLite. Running: 0462 full suite on PG (gate for cutover). Next: 0465 goose. **Owner:** [owner-steps](../plans/postgresql/owner-steps-cutover.md): `rehearse` now, `cutover` after the go.
+- 2026-10-31: PostgreSQL + Go, plan [migration-plan-v4](../plans/postgresql/migration-plan-v4.md). Merged #593–#607 (PG runtime, PG 16 in Compose + `pg-cutover.sh`, encrypted `pg_dump` + restore, c935c55 repair, briefs 0465–0467); deployed 17:01Z, postgres up, app on SQLite. 0462 merged (#609): full suite green on PG, `test-postgres-full` gates every merge. Next: 0465 goose. **Owner:** [owner-steps](../plans/postgresql/owner-steps-cutover.md): `rehearse`, then `cutover`.
 - #583 merged: guest save-and-continue, visible acknowledgement, contextual help. #587 open: 0452 read-only billing extract + 0454 host UX + handoff documentation.
 - Billing cockpit merged (#561). 0448 merged (#565): first plan to legacy hosts (immediate start, invoice now, no trial) + trial extension 1–365 days. Decisions 2026-10-29 in decisions.md.
 - Billing ON in production (`UBYHOST_BILLING_ENABLED=1`, 2026-10-29; cockpit #561, 0448 #565). Deploy manual.
