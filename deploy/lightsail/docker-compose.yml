@@ -7,6 +7,34 @@
 name: ubyhost
 
 services:
+  # 0463: PostgreSQL 16 for the cutover. No password: the server never listens on
+  # a network (network_mode none, listen_addresses empty), so only containers that
+  # mount the ubyhost-pgsock volume can reach it, the same trust boundary as the
+  # SQLite file. pg-cutover.sh runs the rehearsal and the cutover against it.
+  postgres:
+    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ubyhost
+      POSTGRES_DB: ubyhost
+      POSTGRES_HOST_AUTH_METHOD: trust
+    network_mode: none
+    command: ["postgres", "-c", "listen_addresses=", "-c", "shared_buffers=256MB", "-c", "max_connections=50", "-c", "log_min_duration_statement=1000"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ubyhost", "-d", "ubyhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ubyhost-pgdata:/var/lib/postgresql/data
+      - ubyhost-pgsock:/var/run/postgresql
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
   ubyhost:
     build:
       context: ../..
@@ -24,6 +52,7 @@ services:
       UBYHOST_ROLE: web
     volumes:
       - ubyhost-data:/data
+      - ubyhost-pgsock:/var/run/postgresql
     expose:
       - "8080"
     healthcheck:
@@ -70,6 +99,7 @@ services:
     command: ["python", "-m", "app.worker"]
     volumes:
       - ubyhost-data:/data
+      - ubyhost-pgsock:/var/run/postgresql
     # No HTTP server: the worker touches /data/worker.alive every 30 s while
     # its scheduler runs.
     healthcheck:
@@ -278,6 +308,10 @@ services:
 volumes:
   ubyhost-data:
     name: ubyhost-data
+  ubyhost-pgdata:
+    name: ubyhost-pgdata
+  ubyhost-pgsock:
+    name: ubyhost-pgsock
   caddy-data:
     name: ubyhost-caddy-data
   caddy-config:

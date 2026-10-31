@@ -212,6 +212,9 @@ All from `deploy/lightsail/`:
 | `./scripts/logs.sh ubyhost` | App logs only |
 | `./scripts/backup.sh` | Age-encrypted snapshot with time-based retention |
 | `./scripts/restore.sh <stamp>` | Stop app, replace DB from a volume snapshot, start, wait for health |
+| `./scripts/pg-cutover.sh rehearse` | Copy the SQLite data into a throwaway PostgreSQL database, verify it, drop it |
+| `./scripts/pg-cutover.sh cutover` | Stop the app, copy and verify into PostgreSQL, switch `.env`, start; any failure returns to SQLite |
+| `./scripts/pg-cutover.sh rollback` | Switch `.env` back to SQLite (type ROLLBACK to confirm) |
 | `./scripts/backup-gdrive.sh` | Snapshot + rclone copy newest folder to Google Drive |
 
 Public `GET /healthz` in **production** returns `status`, `version`, `data_dir_writable` only (no env labels). Confirm `ubyport_env` with `./scripts/status.sh` or Settings.
