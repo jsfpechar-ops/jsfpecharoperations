@@ -47,6 +47,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -139,24 +140,73 @@ def check_backup(
     path: Optional[str],
     max_age_hours: float = DEFAULT_MAX_BACKUP_AGE_HOURS,
     now: Optional[float] = None,
+    backup_reference: Optional[str] = None,
 ) -> Path:
     """The backup file, or SystemExit saying why it is not good enough."""
+    if config.DB_BACKEND == "postgresql":
+        if path:
+            raise SystemExit("Refusing to write on PostgreSQL: use --backup-reference, not --backup.")
+        if not backup_reference:
+            raise SystemExit("Refusing to write on PostgreSQL: pass the verified pgBackRest --backup-reference.")
+        backup = Path(backup_reference).expanduser()
+        if backup.is_symlink() or not backup.is_file():
+            raise SystemExit("Refusing to write: PostgreSQL backup reference must be a regular non-symlink file.")
+        try:
+            receipt = json.loads(backup.read_text(encoding="utf-8"))
+            expected = {
+                "format_version", "database", "target_fingerprint", "stanza", "backup_label",
+                "backup_type", "started_at_utc", "stopped_at_utc", "verified_at_utc",
+                "backup_ok", "check_ok", "info_ok",
+            }
+            if set(receipt) != expected or receipt["format_version"] != 1:
+                raise ValueError("unsupported receipt shape")
+            if not all(receipt[key] is True for key in ("backup_ok", "check_ok", "info_ok")):
+                raise ValueError("backup verification did not succeed")
+            if not receipt["stanza"] or not receipt["backup_label"]:
+                raise ValueError("missing backup identity")
+            if receipt["database"] != db.current_database_name():
+                raise ValueError("backup is for a different database")
+            if receipt["target_fingerprint"] != config._database_target_fingerprint(config.DATABASE_URL):
+                raise ValueError("backup is for a different PostgreSQL target")
+            times = [datetime.fromisoformat(receipt[key].replace("Z", "+00:00")) for key in
+                     ("started_at_utc", "stopped_at_utc", "verified_at_utc")]
+            if any(value.tzinfo is None or value.utcoffset() is None for value in times):
+                raise ValueError("timestamps must include UTC offsets")
+            start, stop, verified = times
+            if not start <= stop <= verified:
+                raise ValueError("backup timestamps are out of order")
+            age_hours = ((now if now is not None else time.time()) - verified.timestamp()) / 3600
+            if age_hours < 0 or age_hours > max_age_hours:
+                raise ValueError("verified backup is outside the freshness window")
+        except Exception as exc:
+            raise SystemExit(f"Refusing to write: invalid PostgreSQL backup reference ({type(exc).__name__}).") from None
+        return backup
+    if backup_reference:
+        raise SystemExit("Refusing to write on SQLite: use the existing --backup path.")
     if not path:
         raise SystemExit(
             "Refusing to write: pass --backup with the path of a backup taken just now "
             "(for example the ubyhost.db or the .tar/.tar.age from scripts/backup_data.sh)."
         )
     backup = Path(path).expanduser()
-    if not backup.is_file():
-        raise SystemExit(f"Refusing to write: backup {backup} does not exist or is not a file.")
-    if backup.stat().st_size == 0:
+    if not backup.exists() or not (backup.is_file() or backup.is_dir()):
+        raise SystemExit(f"Refusing to write: backup {backup} does not exist or is not a file/directory.")
+    if backup.is_dir():
+        artifacts = [item for item in backup.rglob("*") if item.is_file()]
+        size = sum(item.stat().st_size for item in artifacts)
+        modified = max((item.stat().st_mtime for item in artifacts), default=backup.stat().st_mtime)
+    else:
+        size = backup.stat().st_size
+        modified = backup.stat().st_mtime
+    if size == 0:
         raise SystemExit(f"Refusing to write: backup {backup} is empty.")
-    try:
-        if backup.resolve() == Path(config.DB_PATH).resolve():
-            raise SystemExit("Refusing to write: --backup points at the live database.")
-    except OSError:
-        pass
-    age_hours = ((now if now is not None else time.time()) - backup.stat().st_mtime) / 3600
+    if config.DB_BACKEND == "sqlite":
+        try:
+            if backup.resolve() == Path(config.DB_PATH).resolve():
+                raise SystemExit("Refusing to write: --backup points at the live database.")
+        except OSError:
+            pass
+    age_hours = ((now if now is not None else time.time()) - modified) / 3600
     if age_hours > max_age_hours:
         raise SystemExit(
             f"Refusing to write: backup {backup} is {age_hours:.1f} hours old; take a new "
@@ -187,15 +237,16 @@ def require_keys(writing: bool) -> None:
 
 
 def open_database() -> None:
-    """Make sure UBYHOST_DB is an existing UbyHost database, then add new columns."""
-    path = Path(config.DB_PATH)
-    if not path.exists():
-        raise SystemExit(f"No database at {path}. Point UBYHOST_DB at the file the app uses.")
-    found = db.query_one(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'guest'"
-    )
-    if not found:
-        raise SystemExit(f"{path} does not look like a UbyHost database.")
+    """Validate the selected UbyHost backend before rotating any data keys."""
+    if config.DB_BACKEND == "sqlite":
+        path = Path(config.DB_PATH)
+        if not path.exists():
+            raise SystemExit(f"No database at {path}. Point UBYHOST_DB at the file the app uses.")
+    try:
+        if not db.column_names("guest"):
+            raise SystemExit("Selected database does not look like a UbyHost database.")
+    except Exception as exc:
+        raise SystemExit("Selected database is not a valid UbyHost database.") from exc
     db.init_db()
 
 
@@ -385,7 +436,7 @@ def run(dry_run: bool, batch_size: int = DEFAULT_BATCH, vacuum: bool = True) -> 
     rotate_outbox(report, batch_size)
     rotate_photos(report)
     blanked = sum(c.encrypted + c.blanked for c in report.targets.values())
-    if vacuum and blanked and not dry_run:
+    if vacuum and blanked and not dry_run and config.DB_BACKEND == "sqlite":
         # secure_delete overwrites freed pages, but VACUUM is what makes sure
         # the old plaintext and the old ciphertext are not left in the file.
         db.execute("VACUUM")
@@ -425,7 +476,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         description="Re-encrypt stored data under the first key in UBYHOST_DATA_KEYS."
     )
-    parser.add_argument("--backup", help="path of a backup taken just before this run")
+    parser.add_argument("--backup", help="SQLite backup file/directory taken just before this run")
+    parser.add_argument("--backup-reference", help="verified pgBackRest receipt JSON for PostgreSQL")
     parser.add_argument("--dry-run", action="store_true", help="count, write nothing")
     parser.add_argument(
         "--check",
@@ -448,7 +500,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     read_only = args.dry_run or args.check
     if not read_only:
-        check_backup(args.backup, args.max_backup_age_hours)
+        check_backup(args.backup, args.max_backup_age_hours, backup_reference=args.backup_reference)
     require_keys(writing=not read_only and not args.rollback_new_fields)
     open_database()
 
@@ -460,6 +512,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         )
     for line in report.lines():
         print(line)
+    if config.DB_BACKEND == "postgresql" and not read_only and not args.no_vacuum:
+        print("PostgreSQL key rotation committed; VACUUM is not a secure erase of old tuples or WAL copies.")
     if read_only:
         print("Dry run: nothing was written.")
     if report.unreadable:
