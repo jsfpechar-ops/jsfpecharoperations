@@ -1,5 +1,5 @@
 # 0464: Nightly PostgreSQL dump in the existing backup, and a tested restore
-Status: todo
+Status: in-progress
 Depends on: 0463 on main | Base commit: main | Branch: task/0464-postgres-backups
 Executor: Haiku 5.5 | Fits one session: 30 tool calls, 80k tokens
 ## 1. Objective
