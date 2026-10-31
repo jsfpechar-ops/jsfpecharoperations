@@ -1366,6 +1366,56 @@ def test_transfer_names_an_unknown_table(transfer_workspace):
     assert not report.exists()
 
 
+def _add_retired_stay_fee_columns(source: Path) -> None:
+    connection = sqlite3.connect(source)
+    try:
+        connection.execute("ALTER TABLE apartment ADD COLUMN stay_fee_cash INTEGER NOT NULL DEFAULT 1")
+        connection.execute("ALTER TABLE apartment ADD COLUMN stay_fee_payment_link TEXT")
+        connection.execute("ALTER TABLE apartment ADD COLUMN stay_fee_policy TEXT NOT NULL DEFAULT 'on'")
+        connection.execute("ALTER TABLE guest ADD COLUMN fee_claim TEXT")
+        connection.execute("ALTER TABLE reservation ADD COLUMN stay_fee_paid_amount_czk INTEGER")
+        connection.execute("ALTER TABLE reservation ADD COLUMN stay_fee_paid_at TEXT")
+        connection.execute("ALTER TABLE reservation ADD COLUMN stay_fee_rate_czk INTEGER")
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def test_transfer_skips_retired_columns_with_defaults(transfer_workspace):
+    root = transfer_workspace["root"]
+    source = root / "retired-defaults-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], source)
+    _add_retired_stay_fee_columns(source)
+    _reset_public_schema()
+    report = root / "retired-defaults-report.json"
+    copy = _run_transfer(source, report)
+    assert copy.returncode == 0, copy.stderr[-2000:]
+    assert "copied-and-verified OK" in copy.stdout
+    assert report.exists()
+
+
+def test_transfer_refuses_a_retired_column_with_data(transfer_workspace):
+    root = transfer_workspace["root"]
+    source = root / "retired-data-source.sqlite"
+    shutil.copy2(transfer_workspace["source"], source)
+    _add_retired_stay_fee_columns(source)
+    connection = sqlite3.connect(source)
+    try:
+        apartment_id = connection.execute("SELECT id FROM apartment ORDER BY id LIMIT 1").fetchone()[0]
+        connection.execute(
+            "UPDATE apartment SET stay_fee_payment_link = ? WHERE id = ?",
+            ("https://x", apartment_id),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+    report = root / "retired-data-report.json"
+    result = _run_transfer(source, report)
+    assert result.returncode == 1
+    assert "retired column apartment.stay_fee_payment_link holds data" in result.stderr
+    assert not report.exists()
+
+
 def test_transfer_refuses_an_unsupported_source_schema_version(transfer_workspace):
     root = transfer_workspace["root"]
     stale = root / "stale-source.sqlite"
